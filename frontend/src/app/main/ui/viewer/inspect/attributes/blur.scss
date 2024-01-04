@@ -8,15 +8,16 @@
 
 .attributes-block {
   @include flexColumn;
-  .title-spacing-blur {
-    @extend .attr-title;
-  }
 }
-.attributes-content {
-  .blur-row {
-    @extend .attr-row;
-  }
-  .button-children {
-    @extend .copy-button-children;
-  }
+
+.title-spacing-blur {
+  @extend .attr-title;
+}
+
+.blur-row {
+  @extend .attr-row;
+}
+
+.button-children {
+  @extend .copy-button-children;
 }

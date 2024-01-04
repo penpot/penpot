@@ -11,7 +11,6 @@
    [app.common.data.macros :as dm]
    [app.main.ui.components.copy-button :refer [copy-button]]
    [app.main.ui.components.title-bar :refer [title-bar]]
-   [app.main.ui.context :as ctx]
    [app.main.ui.viewer.inspect.attributes.common :refer [color-row]]
    [app.util.code-gen.style-css :as css]
    [app.util.i18n :refer [tr]]
@@ -50,29 +49,16 @@
                     :on-change-format #(reset! color-format %)}]]))
 
 (mf/defc shadow-panel [{:keys [shapes]}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)
-        shapes (->> shapes (filter has-shadow?))]
+  (let [shapes (->> shapes (filter has-shadow?))]
 
-    (if new-css-system
-      (when (and (seq shapes) (> (count shapes) 0))
-        [:div {:class (stl/css :attributes-block)}
-         [:& title-bar {:collapsable? false
-                        :title        (tr "inspect.attributes.shadow")
-                        :class        (stl/css :title-spacing-shadow)}]
+    (when (and (seq shapes) (> (count shapes) 0))
+      [:div {:class (stl/css :attributes-block)}
+       [:& title-bar {:collapsable? false
+                      :title        (tr "inspect.attributes.shadow")
+                      :class        (stl/css :title-spacing-shadow)}]
 
-         [:div {:class (stl/css :attributes-content)}
-          (for [shape shapes]
-            (for [shadow (:shadow shape)]
-              [:& shadow-block {:shape shape
-                                :shadow shadow}]))]])
-
-      (when (and (seq shapes) (> (count shapes) 0))
-        [:div.attributes-block
-         [:div.attributes-block-title
-          [:div.attributes-block-title-text (tr "inspect.attributes.shadow")]]
-
-         [:div.attributes-shadow-blocks
-          (for [shape shapes]
-            (for [shadow (:shadow shape)]
-              [:& shadow-block {:shape shape
-                                :shadow shadow}]))]]))))
+       [:div {:class (stl/css :attributes-content)}
+        (for [shape shapes]
+          (for [shadow (:shadow shape)]
+            [:& shadow-block {:shape shape
+                              :shadow shadow}]))]])))
