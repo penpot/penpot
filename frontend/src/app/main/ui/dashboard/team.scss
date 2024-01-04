@@ -102,7 +102,7 @@
     }
   }
   .btn-primary {
-    @extends .button-primary;
+    @extend .button-primary;
     height: $s-32;
   }
 }
@@ -650,6 +650,7 @@
       color: var(--modal-title-foreground-color);
     }
   }
+
   .invitation-row {
     margin-top: $s-8;
     margin-bottom: $s-24;
@@ -671,48 +672,56 @@
 
 .modal-overlay {
   @extend .modal-overlay-base;
-  .modal-container {
-    @extend .modal-container-base;
-    border: $s-1 solid var(--modal-border-color);
-    .modal-header {
-      margin-bottom: $s-24;
-      .modal-title {
-        @include tabTitleTipography;
-        color: var(--modal-title-foreground-color);
-      }
-      .modal-close-btn {
-        @extend .modal-close-btn-base;
-      }
-    }
+}
 
-    .modal-content {
-      @include flexColumn;
-      gap: $s-24;
-      @include titleTipography;
-      margin-bottom: $s-24;
+.modal-container {
+  @extend .modal-container-base;
+  border: $s-1 solid var(--modal-border-color);
+}
 
-      .fields-row {
-        @include flexColumn;
-        .select-title {
-          @include titleTipography;
-          color: var(--modal-title-foreground-color);
-        }
-        .custom-input-checkbox {
-          align-items: flex-start;
-        }
-      }
-    }
+.modal-header {
+  margin-bottom: $s-24;
+}
 
-    .modal-footer {
-      .action-buttons {
-        @extend .modal-action-btns;
-        button {
-          @extend .modal-accept-btn;
-        }
-        .cancel-button {
-          @extend .modal-cancel-btn;
-        }
-      }
-    }
+.modal-title {
+  @include tabTitleTipography;
+  color: var(--modal-title-foreground-color);
+}
+
+.modal-close-btn {
+  @extend .modal-close-btn-base;
+}
+
+.modal-content {
+  @include flexColumn;
+  gap: $s-24;
+  @include titleTipography;
+  margin-bottom: $s-24;
+}
+
+.fields-row {
+  @include flexColumn;
+}
+
+.select-title {
+  @include titleTipography;
+  color: var(--modal-title-foreground-color);
+}
+
+.custom-input-checkbox {
+  align-items: flex-start;
+}
+
+.hint {
+  color: var(--modal-text-foreground-color);
+}
+
+.action-buttons {
+  @extend .modal-action-btns;
+  button {
+    @extend .modal-accept-btn;
+  }
+  .cancel-button {
+    @extend .modal-cancel-btn;
   }
 }

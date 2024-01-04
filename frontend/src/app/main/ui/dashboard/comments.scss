@@ -47,9 +47,11 @@
   font-size: $fs-12;
   padding: $s-24;
   text-align: center;
+  color: $df-secondary;
 
   svg {
-    fill: $df-secondary;
+    stroke: $df-secondary;
+    fill: none;
     height: $s-24;
     margin-bottom: $s-24;
     width: $s-24;
@@ -65,21 +67,22 @@
   width: $s-32;
 
   svg {
-    width: $s-16;
-    height: $s-16;
-    fill: $df-secondary;
+    min-width: $s-16;
+    min-height: $s-16;
+    stroke: $df-secondary;
+    fill: none;
   }
 
   &.unread svg,
   &.open svg {
-    fill: $da-tertiary;
+    stroke: $da-tertiary;
   }
 
   &:hover {
     background-color: $db-cuaternary;
 
     svg {
-      fill: $da-primary;
+      stroke: $da-primary;
     }
   }
 }

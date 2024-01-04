@@ -386,21 +386,19 @@
 (mf/defc submit-button*
   {::mf/wrap-props false}
   [props]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)
-        form      (or (unchecked-get props "form")
+  (let [form      (or (unchecked-get props "form")
                       (mf/use-ctx form-ctx))
 
         label     (unchecked-get props "label")
         on-click  (unchecked-get props "onClick")
         children  (unchecked-get props "children")
 
-        class     (d/nilv (unchecked-get props "className") "btn-primary btn-large")
+        class     (unchecked-get props "className")
         name      (d/nilv (unchecked-get props "name") "submit")
 
         disabled? (or (and (some? form) (not (:valid @form)))
                       (true? (unchecked-get props "disabled")))
 
-        klass     (dm/str class " " (if disabled? "btn-disabled" ""))
         new-klass (dm/str class " " (if disabled? (stl/css :btn-disabled) ""))
 
         on-key-down
@@ -416,7 +414,7 @@
                       (obj/set! "onKeyDown" on-key-down)
                       (obj/set! "name" name)
                       (obj/set! "label" mf/undefined)
-                      (obj/set! "className" (if new-css-system new-klass klass))
+                      (obj/set! "className" new-klass)
                       (obj/set! "type" "submit"))]
 
     [:> "button" props

@@ -12,92 +12,91 @@
   font-size: $fs-16;
   margin-top: $s-20;
   width: $s-800;
-
-  .table-header {
-    color: $df-secondary;
-    display: grid;
-    font-size: $fs-12;
-    grid-template-columns: 43% 1fr $s-108 $s-12;
-    height: $s-40;
-    max-width: $s-1000;
-    padding: 0 $s-16;
-    text-transform: uppercase;
-    width: 100%;
-  }
-
-  .table-rows {
-    color: $db-secondary;
-    display: flex;
-    flex-direction: column;
-    margin-top: $s-16;
-    max-width: $s-1000;
-    padding-top: 0;
-    width: 100%;
-  }
-
-  .table-row {
-    align-items: center;
-    background-color: $db-tertiary;
-    border-radius: $br-8;
-    color: $df-primary;
-    display: grid;
-    font-size: $fs-14;
-    grid-template-columns: 1fr 43% $s-12;
-    height: fit-content;
-    min-height: $s-40;
-    padding: 0 $s-16;
-    width: 100%;
-
-    &:not(:first-child) {
-      margin-top: $s-8;
-    }
-  }
-
-  .table-field {
-    display: flex;
-    align-items: center;
-
-    .icon {
-      padding-left: $s-12;
-      cursor: pointer;
-    }
-
-    &.name {
-      -webkit-box-orient: vertical;
-      -webkit-line-clamp: 2;
-      color: $df-primary;
-      display: -webkit-box;
-      max-width: $s-480;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    &.expiration-date {
-      color: $df-secondary;
-      font-size: $fs-14;
-
-      .content {
-        padding: $s-2 $s-6;
-        &.expired {
-          background-color: var(--warning-color);
-          border-radius: $br-4;
-          color: $db-secondary;
-        }
-      }
-    }
-    &.access-token-created {
-      word-break: break-all;
-    }
-
-    &.actions {
-      position: relative;
-    }
-  }
-
   svg {
     width: $s-12;
     height: $s-12;
     fill: $df-primary;
+  }
+}
+
+.table-header {
+  color: $df-secondary;
+  display: grid;
+  font-size: $fs-12;
+  grid-template-columns: 43% 1fr $s-108 $s-12;
+  height: $s-40;
+  max-width: $s-1000;
+  padding: 0 $s-16;
+  text-transform: uppercase;
+  width: 100%;
+}
+
+.table-rows {
+  color: $db-secondary;
+  display: flex;
+  flex-direction: column;
+  margin-top: $s-16;
+  max-width: $s-1000;
+  padding-top: 0;
+  width: 100%;
+}
+
+.table-row {
+  align-items: center;
+  background-color: $db-tertiary;
+  border-radius: $br-8;
+  color: $df-primary;
+  display: grid;
+  font-size: $fs-14;
+  grid-template-columns: 1fr 43% $s-12;
+  height: fit-content;
+  min-height: $s-40;
+  padding: 0 $s-16;
+  width: 100%;
+
+  &:not(:first-child) {
+    margin-top: $s-8;
+  }
+}
+
+.table-field {
+  display: flex;
+  align-items: center;
+
+  .icon {
+    padding-left: $s-12;
+    cursor: pointer;
+  }
+
+  &.name {
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    color: $df-primary;
+    display: -webkit-box;
+    max-width: $s-480;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &.expiration-date {
+    color: $df-secondary;
+    font-size: $fs-14;
+
+    .content {
+      padding: $s-2 $s-6;
+      &.expired {
+        background-color: var(--warning-color);
+        border-radius: $br-4;
+        color: $db-secondary;
+      }
+    }
+  }
+  &.access-token-created {
+    word-break: break-all;
+  }
+
+  &.actions {
+    position: relative;
   }
 }
 
@@ -171,75 +170,85 @@
 
 .modal-overlay {
   @extend .modal-overlay-base;
-  .modal-container {
-    @extend .modal-container-base;
-    min-width: $s-408;
-    border: $s-1 solid var(--modal-border-color);
-    .modal-header {
-      margin-bottom: $s-24;
-      .modal-title {
-        @include tabTitleTipography;
-        color: var(--modal-title-foreground-color);
-      }
-      .modal-close-btn {
-        @extend .modal-close-btn-base;
-      }
-    }
+}
 
-    .modal-content {
-      @include flexColumn;
-      gap: $s-24;
-      @include titleTipography;
-      margin-bottom: $s-24;
+.modal-container {
+  @extend .modal-container-base;
+  min-width: $s-408;
+  border: $s-1 solid var(--modal-border-color);
+}
 
-      .fields-row {
-        @include flexColumn;
-        .select-title {
-          @include titleTipography;
-          color: var(--modal-title-foreground-color);
-        }
-        .custon-input-wrapper {
-          @include flexRow;
-          border-radius: $br-8;
-          height: $s-32;
-          background-color: var(--input-background-color);
-        }
-        .custom-input-token {
-          @extend .input-element;
-          margin: 0;
-          flex-grow: 1;
-          &:focus {
-            outline: none;
-            border: $s-1 solid var(--input-border-color-active);
-          }
-        }
-        .token-value {
-          @include textEllipsis;
-          @include titleTipography;
-          flex-grow: 1;
-        }
-        .copy-btn {
-          @include flexCenter;
-          @extend .button-secondary;
-          height: $s-28;
-          width: $s-28;
-          svg {
-            @extend .button-icon-small;
-          }
-        }
-      }
-    }
-
-    .modal-footer {
-      .action-buttons {
-        @extend .modal-action-btns;
-        button {
-          @extend .modal-accept-btn;
-        }
-        .cancel-button {
-          @extend .modal-cancel-btn;
-        }
-      }
-    }
+.modal-header {
+  margin-bottom: $s-24;
+  .modal-title {
+    @include tabTitleTipography;
+    color: var(--modal-title-foreground-color);
   }
+  .modal-close-btn {
+    @extend .modal-close-btn-base;
+  }
+}
+
+.modal-content {
+  @include flexColumn;
+  gap: $s-24;
+  @include titleTipography;
+  margin-bottom: $s-24;
+}
+
+.fields-row {
+  @include flexColumn;
+}
+
+.select-title {
+  @include titleTipography;
+  color: var(--modal-title-foreground-color);
+}
+
+.custon-input-wrapper {
+  @include flexRow;
+  border-radius: $br-8;
+  height: $s-32;
+  background-color: var(--input-background-color);
+}
+
+.custom-input-token {
+  @extend .input-element;
+  margin: 0;
+  flex-grow: 1;
+  &:focus {
+    outline: none;
+    border: $s-1 solid var(--input-border-color-active);
+  }
+}
+
+.token-value {
+  @include textEllipsis;
+  @include titleTipography;
+  flex-grow: 1;
+}
+
+.copy-btn {
+  @include flexCenter;
+  @extend .button-secondary;
+  height: $s-28;
+  width: $s-28;
+  svg {
+    @extend .button-icon-small;
+  }
+}
+
+.token-created-info {
+  color: var(--modal-text-foreground-color);
+}
+
+.action-buttons {
+  @extend .modal-action-btns;
+  button {
+    @extend .modal-accept-btn;
+  }
+}
+
+.cancel-button {
+  @extend .modal-cancel-btn;
 }

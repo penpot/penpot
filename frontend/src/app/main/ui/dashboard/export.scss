@@ -8,58 +8,63 @@
 
 .modal-overlay {
   @extend .modal-overlay-base;
+}
 
-  .modal-container {
-    @extend .modal-container-base;
-    .modal-header {
-      margin-bottom: $s-24;
-      .modal-title {
-        @include tabTitleTipography;
-        color: var(--modal-title-foreground-color);
-      }
-      .modal-close-btn {
-        @extend .modal-close-btn-base;
-      }
-    }
+.modal-container {
+  @extend .modal-container-base;
+}
 
-    .modal-content {
-      @include titleTipography;
-      margin-bottom: $s-24;
-      .export-option {
-        @extend .input-checkbox;
-        width: 100%;
-        align-items: flex-start;
-        label {
-          align-items: flex-start;
-          .modal-subtitle {
-            @include tabTitleTipography;
-            color: var(--modal-title-foreground-color);
-          }
-        }
-        span {
-          margin-top: $s-8;
-        }
-        .option-content {
-          @include flexColumn;
-          @include titleTipography;
-        }
-      }
-    }
+.modal-header {
+  margin-bottom: $s-24;
+}
 
-    .modal-footer {
-      .action-buttons {
-        @extend .modal-action-btns;
-        .cancel-button {
-          @extend .modal-cancel-btn;
-        }
-        .accept-btn {
-          @extend .modal-accept-btn;
-          &.danger {
-            @extend .modal-danger-btn;
-          }
-        }
-      }
+.modal-title {
+  @include tabTitleTipography;
+  color: var(--modal-title-foreground-color);
+}
+
+.modal-close-btn {
+  @extend .modal-close-btn-base;
+}
+
+.modal-content {
+  @include titleTipography;
+  margin-bottom: $s-24;
+}
+
+.export-option {
+  @extend .input-checkbox;
+  width: 100%;
+  align-items: flex-start;
+  label {
+    align-items: flex-start;
+    .modal-subtitle {
+      @include tabTitleTipography;
+      color: var(--modal-title-foreground-color);
     }
+  }
+  span {
+    margin-top: $s-8;
+  }
+}
+
+.option-content {
+  @include flexColumn;
+  @include titleTipography;
+}
+
+.action-buttons {
+  @extend .modal-action-btns;
+}
+
+.cancel-button {
+  @extend .modal-cancel-btn;
+}
+
+.accept-btn {
+  @extend .modal-accept-btn;
+  &.danger {
+    @extend .modal-danger-btn;
   }
 }
 

@@ -39,9 +39,11 @@
         stroke: var(--icon-foreground);
       }
     }
+
     .modal-title {
       @include tabTitleTipography;
       margin-bottom: $s-16;
+      color: var(--modal-title-foreground-color);
     }
 
     .modal-content {
@@ -161,6 +163,7 @@
           .section-list-empty {
             @include titleTipography;
             @include flexCenter;
+            color: var(--empty-message-foreground-color);
 
             svg {
               @extend .button-icon-small;

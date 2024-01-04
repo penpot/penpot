@@ -11,7 +11,6 @@
    [app.common.data.macros :as dm]
    [app.main.refs :as refs]
    [app.main.ui.components.dropdown :refer [dropdown']]
-   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -68,7 +67,6 @@
         min-width?     (gobj/get props "min-width?" false)
         origin         (gobj/get props "origin")
         route          (mf/deref refs/route)
-        new-css-system (mf/use-ctx ctx/new-css-system)
         in-dashboard?  (= :dashboard-projects (:name (:data route)))
         local          (mf/use-state {:offset-y 0
                                       :offset-x 0
@@ -191,149 +189,79 @@
       (tm/schedule-on-idle
        #(dom/focus! (dom/get-element (first ids)))))
 
-    (if new-css-system
-      (when (and open? (some? (:levels @local)))
-        [:> dropdown' props
-         (let [level (-> @local :levels peek)
-               original-options (:options level)
-               parent-original (:parent-option level)]
-           [:div {:class (stl/css-case :is-selectable is-selectable
-                                       :context-menu true
-                                       :is-open open?
-                                       :fixed fixed?)
-                  :style {:top (+ top (:offset-y @local))
-                          :left (+ left (:offset-x @local))}
-                  :on-key-down (on-key-down original-options parent-original)}
-            (let [level (-> @local :levels peek)]
-              [:ul {:class (stl/css-case :min-width min-width?
-                                         :context-menu-items true)
-                    :role "menu"
-                    :ref check-menu-offscreen}
-               (when-let [parent-option (:parent-option level)]
-                 [:*
-                  [:& context-menu-a11y-item
-                   {:id "go-back-sub-option"
-                    :class (stl/css :context-menu-item)
-                    :tab-index "0"
-                    :on-key-down (fn [event]
-                                   (dom/prevent-default event))}
-                   [:button {:class (stl/css :context-menu-action :submenu-back)
+    (when (and open? (some? (:levels @local)))
+      [:> dropdown' props
+       (let [level (-> @local :levels peek)
+             original-options (:options level)
+             parent-original (:parent-option level)]
+         [:div {:class (stl/css-case :is-selectable is-selectable
+                                     :context-menu true
+                                     :is-open open?
+                                     :fixed fixed?)
+                :style {:top (+ top (:offset-y @local))
+                        :left (+ left (:offset-x @local))}
+                :on-key-down (on-key-down original-options parent-original)}
+          (let [level (-> @local :levels peek)]
+            [:ul {:class (stl/css-case :min-width min-width?
+                                       :context-menu-items true)
+                  :role "menu"
+                  :ref check-menu-offscreen}
+             (when-let [parent-option (:parent-option level)]
+               [:*
+                [:& context-menu-a11y-item
+                 {:id "go-back-sub-option"
+                  :class (stl/css :context-menu-item)
+                  :tab-index "0"
+                  :on-key-down (fn [event]
+                                 (dom/prevent-default event))}
+                 [:button {:class (stl/css :context-menu-action :submenu-back)
+                           :data-no-close true
+                           :on-click exit-submenu}
+                  [:span {:class (stl/css :submenu-icon-back)} i/arrow-refactor]
+                  parent-option]]
+
+                [:li {:class (stl/css :separator)}]])
+
+             (for [[index option] (d/enumerate (:options level))]
+               (let [option-name (:option-name option)
+                     id (:id option)
+                     sub-options (:sub-options option)
+                     option-handler (:option-handler option)
+                     data-test (:data-test option)]
+                 (when option-name
+                   (if (= option-name :separator)
+                     [:li {:key (dm/str "context-item-" index)
+                           :class (stl/css :separator)}]
+                     [:& context-menu-a11y-item
+                      {:id id
+                       :key id
+                       :class (stl/css-case
+                               :is-selected (and selected (= option-name selected))
+                               :selected (and selected (= data-test selected))
+                               :context-menu-item true)
+                       :key-index (dm/str "context-item-" index)
+                       :tab-index "0"
+                       :on-key-down (fn [event]
+                                      (dom/prevent-default event))}
+                      (if-not sub-options
+                        [:a {:class (stl/css :context-menu-action)
+                             :on-click #(do (dom/stop-propagation %)
+                                            (on-close)
+                                            (option-handler %))
+                             :data-test data-test}
+                         (if (and in-dashboard? (= option-name "Default"))
+                           (tr "dashboard.default-team-name")
+                           option-name)
+
+                         (when (and selected (= data-test selected))
+                           [:span {:class (stl/css :selected-icon)} i/tick-refactor])]
+
+                        [:a {:class (stl/css :context-menu-action :submenu)
                              :data-no-close true
-                             :on-click exit-submenu}
-                    [:span {:class (stl/css :submenu-icon-back)} i/arrow-refactor]
-                    parent-option]]
-
-                  [:li {:class (stl/css :separator)}]])
-
-               (for [[index option] (d/enumerate (:options level))]
-                 (let [option-name (:option-name option)
-                       id (:id option)
-                       sub-options (:sub-options option)
-                       option-handler (:option-handler option)
-                       data-test (:data-test option)]
-                   (when option-name
-                     (if (= option-name :separator)
-                       [:li {:key (dm/str "context-item-" index)
-                             :class (stl/css :separator)}]
-                       [:& context-menu-a11y-item
-                        {:id id
-                         :key id
-                         :class (stl/css-case
-                                 :is-selected (and selected (= option-name selected))
-                                 :selected (and selected (= data-test selected))
-                                 :context-menu-item true)
-                         :key-index (dm/str "context-item-" index)
-                         :tab-index "0"
-                         :on-key-down (fn [event]
-                                        (dom/prevent-default event))}
-                        (if-not sub-options
-                          [:a {:class (stl/css :context-menu-action)
-                               :on-click #(do (dom/stop-propagation %)
-                                              (on-close)
-                                              (option-handler %))
-                               :data-test data-test}
-                           (if (and in-dashboard? (= option-name "Default"))
-                             (tr "dashboard.default-team-name")
-                             option-name)
-
-                           (when (and selected (= data-test selected))
-                             [:span {:class (stl/css :selected-icon)} i/tick-refactor])]
-
-                          [:a {:class (stl/css :context-menu-action :submenu)
-                               :data-no-close true
-                               :on-click (enter-submenu option-name sub-options)
-                               :data-test data-test}
-                           option-name
-                           [:span {:class (stl/css :submenu-icon)} i/arrow-refactor]])]))))])])])
-
-      ;; OLD
-      (when (and open? (some? (:levels @local)))
-        [:> dropdown' props
-
-         (let [level (-> @local :levels peek)
-               original-options (:options level)
-               parent-original (:parent-option level)]
-           [:div {:class (dom/classnames :is-selectable is-selectable
-                                         :context-menu true
-                                         :is-open open?
-                                         :fixed fixed?)
-                  :style {:top (+ top (:offset-y @local))
-                          :left (+ left (:offset-x @local))}
-                  :on-key-down (on-key-down original-options parent-original)}
-            (let [level (-> @local :levels peek)]
-              [:ul {:class (dom/classnames :min-width min-width?
-                                           :context-menu-items true)
-                    :role "menu"
-                    :ref check-menu-offscreen}
-               (when-let [parent-option (:parent-option level)]
-                 [:*
-                  [:& context-menu-a11y-item
-                   {:id "go-back-sub-option"
-                    :tab-index "0"
-                    :on-key-down (fn [event]
-                                   (dom/prevent-default event))}
-                   [:div {:class (dom/classnames :context-menu-action true
-                                                 :submenu-back true)
-                          :data-no-close true
-                          :on-click exit-submenu}
-                    [:span  i/arrow-slide]
-
-                    parent-option]]
-
-                  [:li.separator]])
-
-               (for [[index option] (d/enumerate (:options level))]
-                 (let [option-name (:option-name option)
-                       id (:id option)
-                       sub-options (:sub-options option)
-                       option-handler (:option-handler option)
-                       data-test (:data-test option)]
-                   (when option-name
-                     (if (= option-name :separator)
-                       [:li.separator {:key (dm/str "context-item-" index)}]
-                       [:& context-menu-a11y-item
-                        {:id id
-                         :key id
-                         :class (dom/classnames :is-selected (and selected (= option-name selected)))
-                         :key-index (dm/str "context-item-" index)
-                         :tab-index "0"
-                         :on-key-down (fn [event]
-                                        (dom/prevent-default event))}
-                        (if-not sub-options
-                          [:a {:class (dom/classnames :context-menu-action true)
-                               :on-click #(do (dom/stop-propagation %)
-                                              (on-close)
-                                              (option-handler %))
-                               :data-test data-test}
-                           (if (and in-dashboard? (= option-name "Default"))
-                             (tr "dashboard.default-team-name")
-                             option-name)]
-                          [:a.context-menu-action.submenu
-                           {:data-no-close true
-                            :on-click (enter-submenu option-name sub-options)
-                            :data-test data-test}
-                           option-name
-                           [:span i/arrow-slide]])]))))])])]))))
+                             :on-click (enter-submenu option-name sub-options)
+                             :data-test data-test}
+                         option-name
+                         [:span {:class (stl/css :submenu-icon)} i/arrow-refactor]])]))))])])])))
 
 (mf/defc context-menu-a11y
   {::mf/wrap-props false}

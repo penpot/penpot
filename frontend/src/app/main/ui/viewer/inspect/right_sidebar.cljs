@@ -10,11 +10,8 @@
    [app.common.data.macros :as dm]
    [app.common.types.component :as ctk]
    [app.main.refs :as refs]
-   [app.main.ui.components.shape-icon :as si]
    [app.main.ui.components.shape-icon-refactor :as sir]
    [app.main.ui.components.tab-container :refer [tab-container tab-element]]
-   [app.main.ui.components.tabs-container :refer [tabs-container tabs-element]]
-   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.main.ui.viewer.inspect.attributes :refer [attributes]]
    [app.main.ui.viewer.inspect.code :refer [code]]
@@ -44,8 +41,7 @@
 (mf/defc right-sidebar
   [{:keys [frame page objects file selected shapes page-id file-id share-id from on-change-section on-expand]
     :or {from :inspect}}]
-  (let [new-css-system  (mf/use-ctx ctx/new-css-system)
-        section         (mf/use-state :info #_:code)
+  (let [section         (mf/use-state :info #_:code)
         objects         (or objects (:objects page))
         shapes          (or shapes
                             (resolve-shapes objects selected))
@@ -86,113 +82,60 @@
        (when-not (seq shapes)
          (handle-change-tab :info))))
 
-    (if new-css-system
-      [:aside {:class (stl/css-case :settings-bar-right true
-                                    :viewer-code (= from :inspect))}
-       (if (seq shapes)
-         [:div {:class (stl/css :tool-windows)}
-          [:div {:class (stl/css :shape-row)}
-           (if (> (count shapes) 1)
-             [:*
-              [:span {:class (stl/css :layers-icon)} i/layers-refactor]
-              [:span {:class (stl/css :layer-title)} (tr "inspect.tabs.code.selected.multiple" (count shapes))]]
-             [:*
-              [:span {:class (stl/css :shape-icon)}
-               [:& sir/element-icon-refactor {:shape first-shape :main-instance? main-instance?}]]
-                   ;; Execution time translation strings:
-                   ;;   inspect.tabs.code.selected.circle
-                   ;;   inspect.tabs.code.selected.component
-                   ;;   inspect.tabs.code.selected.curve
-                   ;;   inspect.tabs.code.selected.frame
-                   ;;   inspect.tabs.code.selected.group
-                   ;;   inspect.tabs.code.selected.image
-                   ;;   inspect.tabs.code.selected.mask
-                   ;;   inspect.tabs.code.selected.path
-                   ;;   inspect.tabs.code.selected.rect
-                   ;;   inspect.tabs.code.selected.svg-raw
-                   ;;   inspect.tabs.code.selected.text
-              [:span {:class (stl/css :layer-title)} (:name first-shape)]])]
-          [:div {:class (stl/css :inspect-content)}
-           [:& tab-container {:on-change-tab handle-change-tab
-                              :selected @section}
-            [:& tab-element {:id :info :title (tr "inspect.tabs.info")}
-             [:& attributes {:page-id page-id
-                             :objects objects
-                             :file-id file-id
-                             :frame frame
-                             :shapes shapes
-                             :from from
-                             :libraries libraries
-                             :share-id share-id}]]
+    [:aside {:class (stl/css-case :settings-bar-right true
+                                  :viewer-code (= from :inspect))}
+     (if (seq shapes)
+       [:div {:class (stl/css :tool-windows)}
+        [:div {:class (stl/css :shape-row)}
+         (if (> (count shapes) 1)
+           [:*
+            [:span {:class (stl/css :layers-icon)} i/layers-refactor]
+            [:span {:class (stl/css :layer-title)} (tr "inspect.tabs.code.selected.multiple" (count shapes))]]
+           [:*
+            [:span {:class (stl/css :shape-icon)}
+             [:& sir/element-icon-refactor {:shape first-shape :main-instance? main-instance?}]]
+                       ;; Execution time translation strings:
+                       ;;   inspect.tabs.code.selected.circle
+                       ;;   inspect.tabs.code.selected.component
+                       ;;   inspect.tabs.code.selected.curve
+                       ;;   inspect.tabs.code.selected.frame
+                       ;;   inspect.tabs.code.selected.group
+                       ;;   inspect.tabs.code.selected.image
+                       ;;   inspect.tabs.code.selected.mask
+                       ;;   inspect.tabs.code.selected.path
+                       ;;   inspect.tabs.code.selected.rect
+                       ;;   inspect.tabs.code.selected.svg-raw
+                       ;;   inspect.tabs.code.selected.text
+            [:span {:class (stl/css :layer-title)} (:name first-shape)]])]
+        [:div {:class (stl/css :inspect-content)}
+         [:& tab-container {:on-change-tab handle-change-tab
+                            :selected @section}
+          [:& tab-element {:id :info :title (tr "inspect.tabs.info")}
+           [:& attributes {:page-id page-id
+                           :objects objects
+                           :file-id file-id
+                           :frame frame
+                           :shapes shapes
+                           :from from
+                           :libraries libraries
+                           :share-id share-id}]]
 
-            [:& tab-element {:id :code :title (tr "inspect.tabs.code")}
-             [:& code {:frame frame
-                       :shapes shapes
-                       :on-expand handle-expand
-                       :from from}]]]]]
-         [:div {:class (stl/css :empty)}
-          [:div {:class (stl/css :code-info)}
-           [:span {:class (stl/css :placeholder-icon)}
-            i/code-refactor]
-           [:span {:class (stl/css :placeholder-label)}
-            (tr "inspect.empty.select")]]
-          [:div {:class (stl/css :help-info)}
-           [:span {:class (stl/css :placeholder-icon)}
-            i/help-refactor]
-           [:span {:class (stl/css :placeholder-label)}
-            (tr "inspect.empty.help")]]
-          [:button {:class (stl/css :more-info-btn)
-                    :on-click navigate-to-help}
-           (tr "inspect.empty.more-info")]])]
-
-
-      [:aside.settings-bar.settings-bar-right
-       [:div.settings-bar-inside
-        (if (seq shapes)
-          [:div.tool-window
-           [:div.tool-window-bar.big
-            (if (> (count shapes) 1)
-              [:*
-               [:span.tool-window-bar-icon i/layers]
-               [:span.tool-window-bar-title (tr "inspect.tabs.code.selected.multiple" (count shapes))]]
-              [:*
-               [:span.tool-window-bar-icon
-                [:& si/element-icon {:shape first-shape :main-instance? main-instance?}]]
-                   ;; Execution time translation strings:
-                   ;;   inspect.tabs.code.selected.circle
-                   ;;   inspect.tabs.code.selected.component
-                   ;;   inspect.tabs.code.selected.curve
-                   ;;   inspect.tabs.code.selected.frame
-                   ;;   inspect.tabs.code.selected.group
-                   ;;   inspect.tabs.code.selected.image
-                   ;;   inspect.tabs.code.selected.mask
-                   ;;   inspect.tabs.code.selected.path
-                   ;;   inspect.tabs.code.selected.rect
-                   ;;   inspect.tabs.code.selected.svg-raw
-                   ;;   inspect.tabs.code.selected.text
-               [:span.tool-window-bar-title (:name first-shape)]])]
-           [:div.tool-window-content.inspect
-            [:& tabs-container {:on-change-tab handle-change-tab
-                                :selected @section}
-             [:& tabs-element {:id :info :title (tr "inspect.tabs.info")}
-              [:& attributes {:page-id page-id
-                              :objects objects
-                              :file-id file-id
-                              :frame frame
-                              :shapes shapes
-                              :from from
-                              :libraries libraries
-                              :share-id share-id}]]
-
-             [:& tabs-element {:id :code :title (tr "inspect.tabs.code")}
-              [:& code {:frame frame
-                        :shapes shapes
-                        :on-expand handle-expand
-                        :from from}]]]]]
-          [:div.empty
-           [:span.tool-window-bar-icon i/code]
-           [:div (tr "inspect.empty.select")]
-           [:span.tool-window-bar-icon i/help]
-           [:div (tr "inspect.empty.help")]
-           [:button.btn-primary.action {:on-click navigate-to-help} (tr "inspect.empty.more-info")]])]])
-    ))
+          [:& tab-element {:id :code :title (tr "inspect.tabs.code")}
+           [:& code {:frame frame
+                     :shapes shapes
+                     :on-expand handle-expand
+                     :from from}]]]]]
+       [:div {:class (stl/css :empty)}
+        [:div {:class (stl/css :code-info)}
+         [:span {:class (stl/css :placeholder-icon)}
+          i/code-refactor]
+         [:span {:class (stl/css :placeholder-label)}
+          (tr "inspect.empty.select")]]
+        [:div {:class (stl/css :help-info)}
+         [:span {:class (stl/css :placeholder-icon)}
+          i/help-refactor]
+         [:span {:class (stl/css :placeholder-label)}
+          (tr "inspect.empty.help")]]
+        [:button {:class (stl/css :more-info-btn)
+                  :on-click navigate-to-help}
+         (tr "inspect.empty.more-info")]])]))

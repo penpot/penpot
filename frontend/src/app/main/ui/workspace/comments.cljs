@@ -28,8 +28,7 @@
 
 (mf/defc sidebar-options
   []
-  (let [new-css-system  (mf/use-ctx ctx/new-css-system)
-        {cmode :mode cshow :show} (mf/deref refs/comments-local)
+  (let [{cmode :mode cshow :show} (mf/deref refs/comments-local)
         update-mode
         (mf/use-fn
          (fn [event]
@@ -45,53 +44,30 @@
            (let [mode (if (= :pending cshow) :all :pending)]
              (st/emit! (dcm/update-filters {:show mode})))))]
 
-    (if new-css-system
-      [:ul {:class (stl/css :comment-mode-dropdown)}
-       [:li {:class (stl/css-case :dropdown-item true
-                                  :selected (or (= :all cmode) (nil? cmode)))
-             :data-value "all"
-             :on-click update-mode}
+    [:ul {:class (stl/css :comment-mode-dropdown)}
+     [:li {:class (stl/css-case :dropdown-item true
+                                :selected (or (= :all cmode) (nil? cmode)))
+           :data-value "all"
+           :on-click update-mode}
 
-        [:span {:class (stl/css :label)} (tr "labels.show-all-comments")]
-        [:span {:class (stl/css :icon)} i/tick-refactor]]
-       [:li {:class  (stl/css-case :dropdown-item true
-                                   :selected (= :yours cmode))
-             :data-value "yours"
-             :on-click update-mode}
-        [:span {:class (stl/css :label)}  (tr "labels.show-your-comments")]
-        [:span {:class (stl/css :icon)} i/tick-refactor]]
-       [:li {:class (stl/css :separator)}]
-       [:li {:class (stl/css-case :dropdown-item true
-                                  :selected (= :pending cshow))
-             :on-click update-show}
-        [:span {:class (stl/css :label)}  (tr "labels.hide-resolved-comments")]
-        [:span {:class (stl/css :icon)} i/tick-refactor]]]
-
-
-      [:ul.dropdown.with-check
-       [:li {:class (dom/classnames :selected (or (= :all cmode) (nil? cmode)))
-             :data-value "all"
-             :on-click update-mode}
-        [:span.icon i/tick]
-        [:span.label (tr "labels.show-all-comments")]]
-
-       [:li {:class (dom/classnames :selected (= :yours cmode))
-             :data-value "yours"
-             :on-click update-mode}
-        [:span.icon i/tick]
-        [:span.label (tr "labels.show-your-comments")]]
-
-       [:hr]
-
-       [:li {:class (dom/classnames :selected (= :pending cshow))
-             :on-click update-show}
-        [:span.icon i/tick]
-        [:span.label (tr "labels.hide-resolved-comments")]]])))
+      [:span {:class (stl/css :label)} (tr "labels.show-all-comments")]
+      [:span {:class (stl/css :icon)} i/tick-refactor]]
+     [:li {:class  (stl/css-case :dropdown-item true
+                                 :selected (= :yours cmode))
+           :data-value "yours"
+           :on-click update-mode}
+      [:span {:class (stl/css :label)}  (tr "labels.show-your-comments")]
+      [:span {:class (stl/css :icon)} i/tick-refactor]]
+     [:li {:class (stl/css :separator)}]
+     [:li {:class (stl/css-case :dropdown-item true
+                                :selected (= :pending cshow))
+           :on-click update-show}
+      [:span {:class (stl/css :label)}  (tr "labels.hide-resolved-comments")]
+      [:span {:class (stl/css :icon)} i/tick-refactor]]]))
 
 (mf/defc comments-sidebar
   [{:keys [users threads page-id from-viewer]}]
-  (let [new-css-system  (mf/use-ctx ctx/new-css-system)
-        threads-map (mf/deref refs/threads-ref)
+  (let [threads-map (mf/deref refs/threads-ref)
         profile     (mf/deref refs/profile)
         users-refs  (mf/deref refs/current-file-comments-users)
         users       (or users users-refs)
@@ -139,75 +115,41 @@
                         (dwcm/center-to-comment-thread thread)
                         (-> (dcm/open-thread thread)
                             (with-meta {::ev/origin "workspace"})))))))]
-    (if new-css-system
-      [:div  {:class (stl/css :comments-section)}
-       [:div {:class (stl/css :comments-section-title)}
-        [:span (tr "labels.comments")]
-        [:button {:class (stl/css :close-button)
-                  :on-click close-section}
-         i/close-refactor]]
+    [:div  {:class (stl/css :comments-section)}
+     [:div {:class (stl/css :comments-section-title)}
+      [:span (tr "labels.comments")]
+      [:button {:class (stl/css :close-button)
+                :on-click close-section}
+       i/close-refactor]]
 
-       [:button {:class (stl/css :mode-dropdown-wrapper)
-                 :on-click toggle-mode-selector}
+     [:button {:class (stl/css :mode-dropdown-wrapper)
+               :on-click toggle-mode-selector}
 
-        [:span {:class (stl/css :mode-label)} (case (:mode local)
-                                                (nil :all) (tr "labels.show-all-comments")
-                                                :yours     (tr "labels.show-your-comments"))]
-        [:div {:class (stl/css :icon)} i/arrow-refactor]]
+      [:span {:class (stl/css :mode-label)} (case (:mode local)
+                                              (nil :all) (tr "labels.show-all-comments")
+                                              :yours     (tr "labels.show-your-comments"))]
+      [:div {:class (stl/css :icon)} i/arrow-refactor]]
 
-       [:& dropdown {:show options?
-                     :on-close #(reset! state* false)}
-        [:& sidebar-options {:local local}]]
+     [:& dropdown {:show options?
+                   :on-close #(reset! state* false)}
+      [:& sidebar-options {:local local}]]
 
-       [:div {:class (stl/css :comments-section-content)}
+     [:div {:class (stl/css :comments-section-content)}
 
-        (if (seq tgroups)
-          [:div {:class (stl/css :thread-groups)}
+      (if (seq tgroups)
+        [:div {:class (stl/css :thread-groups)}
+         [:& cmt/comment-thread-group
+          {:group (first tgroups)
+           :on-thread-click on-thread-click
+           :users users}]
+         (for [tgroup (rest tgroups)]
            [:& cmt/comment-thread-group
-            {:group (first tgroups)
+            {:group tgroup
              :on-thread-click on-thread-click
-             :users users}]
-           (for [tgroup (rest tgroups)]
-             [:& cmt/comment-thread-group
-              {:group tgroup
-               :on-thread-click on-thread-click
-               :users users
-               :key (:page-id tgroup)}])]
+             :users users
+             :key (:page-id tgroup)}])]
 
-          [:div {:class (stl/css :thread-group-placeholder)}
-           [:span {:class (stl/css :placeholder-icon)} i/comments-refactor]
-           [:span {:class (stl/css :placeholder-label)}
-            (tr "labels.no-comments-available")]])]]
-
-
-      [:div.comments-section.comment-threads-section
-       [:div.workspace-comment-threads-sidebar-header
-        [:div.label (tr "labels.comments")]
-        [:div.options {:on-click toggle-mode-selector}
-         [:div.label (case (:mode local)
-                       (nil :all) (tr "labels.all")
-                       :yours     (tr "labels.only-yours"))]
-         [:div.icon i/arrow-down]]
-
-        [:& dropdown {:show options?
-                      :on-close #(reset! state* false)}
-         [:& sidebar-options {:local local}]]]
-
-       (if (seq tgroups)
-         [:div.thread-groups
-          [:& cmt/comment-thread-group
-           {:group (first tgroups)
-            :on-thread-click on-thread-click
-            :users users}]
-          (for [tgroup (rest tgroups)]
-            [:*
-             [:hr]
-             [:& cmt/comment-thread-group
-              {:group tgroup
-               :on-thread-click on-thread-click
-               :users users
-               :key (:page-id tgroup)}]])]
-
-         [:div.thread-groups-placeholder
-          i/chat
-          (tr "labels.no-comments-available")])])))
+        [:div {:class (stl/css :thread-group-placeholder)}
+         [:span {:class (stl/css :placeholder-icon)} i/comments-refactor]
+         [:span {:class (stl/css :placeholder-label)}
+          (tr "labels.no-comments-available")]])]]))

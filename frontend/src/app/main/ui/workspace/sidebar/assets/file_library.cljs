@@ -64,8 +64,8 @@
                                       (mf/html [:div {:class (stl/css :special-title)}
                                                 file-name]))}
       (when-not local?
-        [:span.tool-link.tooltip.tooltip-left {:alt "Open library file"}
-         [:a {:class (dom/classnames  true)
+        [:span {:title "Open library file"}
+         [:a {:class (stl/css :file-link)
               :href (str "#" url)
               :target "_blank"
               :on-click dom/stop-propagation}

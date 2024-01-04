@@ -133,6 +133,7 @@
         @include titleTipography;
         text-align: center;
         width: $s-184;
+        color: var(--empty-message-foreground-color);
       }
     }
   }

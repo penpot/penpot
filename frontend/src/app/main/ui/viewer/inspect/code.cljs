@@ -20,7 +20,6 @@
    [app.main.ui.components.code-block :refer [code-block]]
    [app.main.ui.components.copy-button :refer [copy-button]]
    [app.main.ui.components.select :refer [select]]
-   [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.icons :as i]
@@ -100,8 +99,7 @@
 
 (mf/defc code
   [{:keys [shapes frame on-expand from]}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)
-        style-type*    (mf/use-state "css")
+  (let [style-type*    (mf/use-state "css")
         markup-type*   (mf/use-state "html")
         fontfaces-css* (mf/use-state nil)
         images-data*   (mf/use-state nil)
@@ -232,135 +230,80 @@
             (fn [result]
               (reset! images-data* result)))))
 
-    (if new-css-system
-      [:div {:class (stl/css :element-options)}
-       [:div {:class (stl/css :attributes-block)}
-        [:button {:class (stl/css :download-button)
-                  :on-click handle-copy-all-code}
-         "Copy all code"]]
+    [:div {:class (stl/css :element-options)}
+     [:div {:class (stl/css :attributes-block)}
+      [:button {:class (stl/css :download-button)
+                :on-click handle-copy-all-code}
+       "Copy all code"]]
 
-       #_[:div.attributes-block
-          [:button.download-button {:on-click handle-open-review}
-           "Preview"]]
+     #_[:div.attributes-block
+        [:button.download-button {:on-click handle-open-review}
+         "Preview"]]
 
-       [:div {:class (stl/css :code-block)}
-        [:div {:class (stl/css :code-row-lang)}
-         [:button {:class (stl/css :toggle-btn)
-                   :data-type "css"
-                   :on-click handle-collapse}
-          [:span {:class (stl/css-case
-                          :collapsabled-icon true
-                          :rotated collapsed-css?)}
-           i/arrow-refactor]]
+     [:div {:class (stl/css :code-block)}
+      [:div {:class (stl/css :code-row-lang)}
+       [:button {:class (stl/css :toggle-btn)
+                 :data-type "css"
+                 :on-click handle-collapse}
+        [:span {:class (stl/css-case
+                        :collapsabled-icon true
+                        :rotated collapsed-css?)}
+         i/arrow-refactor]]
 
-         [:& select {:default-value style-type
-                     :class (stl/css :code-lang-select)
-                     :options [{:label "CSS" :value "css"}]}]
+       [:& select {:default-value style-type
+                   :class (stl/css :code-lang-select)
+                   :on-change set-style
+                   :options [{:label "CSS" :value "css"}]}]
 
-         [:div {:class (stl/css :action-btns)}
-          [:button {:class (stl/css :expand-button)
-                    :on-click on-expand}
-           i/code-refactor]
+       [:div {:class (stl/css :action-btns)}
+        [:button {:class (stl/css :expand-button)
+                  :on-click on-expand}
+         i/code-refactor]
 
-          [:& copy-button {:data #(replace-map style-code images-data)
-                           :on-copied on-style-copied}]]]
+        [:& copy-button {:data #(replace-map style-code images-data)
+                         :on-copied on-style-copied}]]]
 
-        (when-not collapsed-css?
-          [:div {:class (stl/css :code-row-display)
-                 :style #js {"--code-height" (str (or style-size 400) "px")}}
-           [:& code-block {:type style-type
-                           :code style-code}]])
-
-        [:div {:class (stl/css :resize-area)
-               :on-pointer-down on-style-pointer-down
-               :on-lost-pointer-capture on-style-lost-pointer-capture
-               :on-pointer-move on-style-pointer-move}]]
-
-       [:div {:class (stl/css :code-block)}
-        [:div {:class (stl/css :code-row-lang)}
-         [:button {:class (stl/css :toggle-btn)
-                   :data-type "markup"
-                   :on-click handle-collapse}
-          [:span {:class (stl/css-case
-                          :collapsabled-icon true
-                          :rotated collapsed-markup?)}
-           i/arrow-refactor]]
-         [:& select {:default-value markup-type
-                     :class (stl/css :code-lang-select)
-                     :options [{:label "HTML" :value "html"}
-                               {:label "SVG" :value "svg"}]
-                     :on-change set-markup}]
-
-         [:div {:class (stl/css :action-btns)}
-          [:button {:class (stl/css :expand-button)
-                    :on-click on-expand}
-           i/code-refactor]
-
-          [:& copy-button {:data #(replace-map markup-code images-data)
-                           :on-copied on-markup-copied}]]]
-
-        (when-not collapsed-markup?
-          [:div {:class (stl/css :code-row-display)
-                 :style #js {"--code-height" (str (or markup-size 400) "px")}}
-           [:& code-block {:type markup-type
-                           :code markup-code}]])
-
-        [:div {:class (stl/css :resize-area)
-               :on-pointer-down on-markup-pointer-down
-               :on-lost-pointer-capture on-markup-lost-pointer-capture
-               :on-pointer-move on-markup-pointer-move}]]]
-
-
-
-      [:div.element-options
-       [:div.attributes-block
-        [:button.download-button {:on-click handle-copy-all-code}
-         "Copy all code"]]
-
-       #_[:div.attributes-block
-          [:button.download-button {:on-click handle-open-review}
-           "Preview"]]
-
-       [:div.code-block
-        [:div.code-row-lang
-         [:& select {:default-value style-type
-                     :class "custom-select"
-                     :options [{:label "CSS" :value "css"}]
-                     :on-change set-style}]
-         [:button.expand-button
-          {:on-click on-expand}
-          i/full-screen]
-
-         [:& copy-button {:data #(replace-map style-code images-data)
-                          :on-copied on-style-copied}]]
-
-        [:div.code-row-display {:style #js {"--code-height" (str (or style-size 400) "px")}}
+      (when-not collapsed-css?
+        [:div {:class (stl/css :code-row-display)
+               :style #js {"--code-height" (str (or style-size 400) "px")}}
          [:& code-block {:type style-type
-                         :code style-code}]]
+                         :code style-code}]])
 
-        [:div.resize-area {:on-pointer-down on-style-pointer-down
-                           :on-lost-pointer-capture on-style-lost-pointer-capture
-                           :on-pointer-move on-style-pointer-move}]]
+      [:div {:class (stl/css :resize-area)
+             :on-pointer-down on-style-pointer-down
+             :on-lost-pointer-capture on-style-lost-pointer-capture
+             :on-pointer-move on-style-pointer-move}]]
 
-       [:div.code-block
-        [:div.code-row-lang
-         [:& select {:default-value markup-type
-                     :class "input-option"
-                     :options [{:label "HTML" :value "html"}
-                               {:label "SVG" :value "svg"}]
-                     :on-change set-markup}]
+     [:div {:class (stl/css :code-block)}
+      [:div {:class (stl/css :code-row-lang)}
+       [:button {:class (stl/css :toggle-btn)
+                 :data-type "markup"
+                 :on-click handle-collapse}
+        [:span {:class (stl/css-case
+                        :collapsabled-icon true
+                        :rotated collapsed-markup?)}
+         i/arrow-refactor]]
+       [:& select {:default-value markup-type
+                   :class (stl/css :code-lang-select)
+                   :options [{:label "HTML" :value "html"}
+                             {:label "SVG" :value "svg"}]
+                   :on-change set-markup}]
 
-         [:button.expand-button
-          {:on-click on-expand}
-          i/full-screen]
+       [:div {:class (stl/css :action-btns)}
+        [:button {:class (stl/css :expand-button)
+                  :on-click on-expand}
+         i/code-refactor]
 
-         [:& copy-button {:data #(replace-map markup-code images-data)
-                          :on-copied on-markup-copied}]]
+        [:& copy-button {:data #(replace-map markup-code images-data)
+                         :on-copied on-markup-copied}]]]
 
-        [:div.code-row-display {:style #js {"--code-height" (str (or markup-size 400) "px")}}
+      (when-not collapsed-markup?
+        [:div {:class (stl/css :code-row-display)
+               :style #js {"--code-height" (str (or markup-size 400) "px")}}
          [:& code-block {:type markup-type
-                         :code markup-code}]]
+                         :code markup-code}]])
 
-        [:div.resize-area {:on-pointer-down on-markup-pointer-down
-                           :on-lost-pointer-capture on-markup-lost-pointer-capture
-                           :on-pointer-move on-markup-pointer-move}]]])))
+      [:div {:class (stl/css :resize-area)
+             :on-pointer-down on-markup-pointer-down
+             :on-lost-pointer-capture on-markup-lost-pointer-capture
+             :on-pointer-move on-markup-pointer-move}]]]))

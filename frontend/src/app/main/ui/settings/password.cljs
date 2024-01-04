@@ -12,7 +12,6 @@
    [app.main.data.users :as udu]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
-   [app.main.ui.context :as ctx]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [t tr]]
    [cljs.spec.alpha :as s]
@@ -71,88 +70,51 @@
 
 (mf/defc password-form
   [{:keys [locale] :as props}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)
-        initial (mf/use-memo (constantly {:password-old nil}))
+  (let [initial (mf/use-memo (constantly {:password-old nil}))
         form (fm/use-form :spec ::password-form
                           :validators [(fm/validate-not-all-spaces :password-old (tr "auth.password-not-empty"))
                                        (fm/validate-not-empty :password-1 (tr "auth.password-not-empty"))
                                        (fm/validate-not-empty :password-2 (tr "auth.password-not-empty"))
                                        password-equality]
                           :initial initial)]
-    (if new-css-system
-      [:& fm/form {:class (stl/css :password-form)
-                   :on-submit on-submit
-                   :form form}
+    [:& fm/form {:class (stl/css :password-form)
+                 :on-submit on-submit
+                 :form form}
 
-       [:div {:class (stl/css :fields-row)}
-        [:& fm/input
-         {:type "password"
-          :name :password-old
-          :auto-focus? true
-          :label (t locale "labels.old-password")}]]
+     [:div {:class (stl/css :fields-row)}
+      [:& fm/input
+       {:type "password"
+        :name :password-old
+        :auto-focus? true
+        :label (t locale "labels.old-password")}]]
 
-       [:div {:class (stl/css :fields-row)}
-        [:& fm/input
-         {:type "password"
-          :name :password-1
-          :show-success? true
-          :label (t locale "labels.new-password")}]]
+     [:div {:class (stl/css :fields-row)}
+      [:& fm/input
+       {:type "password"
+        :name :password-1
+        :show-success? true
+        :label (t locale "labels.new-password")}]]
 
-       [:div {:class (stl/css :fields-row)}
-        [:& fm/input
-         {:type "password"
-          :name :password-2
-          :show-success? true
-          :label (t locale "labels.confirm-password")}]]
+     [:div {:class (stl/css :fields-row)}
+      [:& fm/input
+       {:type "password"
+        :name :password-2
+        :show-success? true
+        :label (t locale "labels.confirm-password")}]]
 
-       [:> fm/submit-button*
-        {:label (t locale "dashboard.update-settings")
-         :data-test "submit-password"
-         :class (stl/css :update-btn)}]]
-
-      ;; OLD
-      [:& fm/form {:class "password-form"
-                   :on-submit on-submit
-                   :form form}
-       [:h2 (t locale "dashboard.password-change")]
-       [:div.fields-row
-        [:& fm/input
-         {:type "password"
-          :name :password-old
-          :auto-focus? true
-          :label (t locale "labels.old-password")}]]
-
-       [:div.fields-row
-        [:& fm/input
-         {:type "password"
-          :name :password-1
-          :label (t locale "labels.new-password")}]]
-
-       [:div.fields-row
-        [:& fm/input
-         {:type "password"
-          :name :password-2
-          :label (t locale "labels.confirm-password")}]]
-
-       [:> fm/submit-button*
-        {:label (t locale "dashboard.update-settings")
-         :data-test "submit-password"}]])))
+     [:> fm/submit-button*
+      {:label (t locale "dashboard.update-settings")
+       :data-test "submit-password"
+       :class (stl/css :update-btn)}]]))
 
 ;; --- Password Page
 
 (mf/defc password-page
   [{:keys [locale]}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
-    (mf/use-effect
-     #(dom/set-html-title (tr "title.settings.password")))
+  (mf/use-effect
+   #(dom/set-html-title (tr "title.settings.password")))
 
-    (if new-css-system
-      [:section {:class (stl/css :dashboard-settings)}
-       [:div {:class (stl/css :form-container)}
-        [:h2 (t locale "dashboard.password-change")]
-        [:& password-form {:locale locale}]]]
-
-      ;; old
-      [:section.dashboard-settings.form-container
-       [:div.form-container
-        [:& password-form {:locale locale}]]])))
+  [:section {:class (stl/css :dashboard-settings)}
+   [:div {:class (stl/css :form-container)}
+    [:h2 (t locale "dashboard.password-change")]
+    [:& password-form {:locale locale}]]])

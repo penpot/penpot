@@ -13,7 +13,6 @@
    [app.main.fonts :as fonts]
    [app.main.rasterizer :as thr]
    [app.main.store :as st]
-   [app.main.ui.context :as ctx]
    [app.main.ui.css-cursors :as cur]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
@@ -51,8 +50,7 @@
 (mf/defc pixel-overlay
   {::mf/wrap-props false}
   [props]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)
-        vport          (unchecked-get props "vport")
+  (let [vport          (unchecked-get props "vport")
 
         viewport-ref   (unchecked-get props "viewport-ref")
         viewport-node  (mf/ref-val viewport-ref)
@@ -81,8 +79,8 @@
              (when-let [zoom-view-node (dom/get-element "picker-detail")]
                (when-not (mf/ref-val zoom-view-context)
                  (mf/set-ref-val! zoom-view-context (.getContext zoom-view-node "2d")))
-               (let [canvas-width (if new-css-system 260 200)
-                     canvas-height (if new-css-system 140 160)
+               (let [canvas-width 260
+                     canvas-height 140
                      {brx :left bry :top} (dom/get-bounding-rect viewport-node)
 
                      x (mth/floor (- (.-clientX event) brx))
@@ -100,10 +98,10 @@
 
                      ;; I don't know why, but the zoom view is offset by 24px
                      ;; instead of 25.
-                     sx (- x (if new-css-system 32 24))
-                     sy (- y (if new-css-system 17 20))
-                     sw (if new-css-system 65 50)
-                     sh (if new-css-system 35 40)
+                     sx (- x 32)
+                     sy (- y 17)
+                     sw 65
+                     sh 35
                      dx 0
                      dy 0
                      dw canvas-width

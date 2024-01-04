@@ -100,15 +100,6 @@
   @include titleTipography;
 }
 
-.inline-actions {
-}
-
-.bottom-actions {
-}
-
-.actions {
-}
-
 .action-btn {
   @extend .button-tertiary;
   height: $s-32;

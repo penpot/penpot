@@ -17,7 +17,6 @@
    [app.main.ui.auth.login :as login]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.components.link :as lk]
-   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
    [app.util.i18n :refer [tr tr-html]]
@@ -88,8 +87,7 @@
 
 (mf/defc register-form
   [{:keys [params on-success-callback] :as props}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)
-        initial (mf/use-memo (mf/deps params) (constantly params))
+  (let [initial (mf/use-memo (mf/deps params) (constantly params))
         form    (fm/use-form :spec ::register-form
                              :validators [validate
                                           (fm/validate-not-empty :password (tr "auth.password-not-empty"))]
@@ -114,133 +112,64 @@
                    (partial handle-prepare-register-error form))))))]
 
 
-    (if new-css-system
-      [:& fm/form {:on-submit on-submit :form form}
-       [:div {:class (stl/css :fields-row)}
-        [:& fm/input {:type "email"
-                      :name :email
-                      :label (tr "auth.email")
-                      :data-test "email-input"
-                      :show-success? true
-                      :class (stl/css :form-field)}]]
-       [:div {:class (stl/css :fields-row)}
-        [:& fm/input {:name :password
-                      :hint (tr "auth.password-length-hint")
-                      :label (tr "auth.password")
-                      :show-success? true
-                      :type "password"
-                      :class (stl/css :form-field)}]]
+    [:& fm/form {:on-submit on-submit :form form}
+     [:div {:class (stl/css :fields-row)}
+      [:& fm/input {:type "email"
+                    :name :email
+                    :label (tr "auth.email")
+                    :data-test "email-input"
+                    :show-success? true
+                    :class (stl/css :form-field)}]]
+     [:div {:class (stl/css :fields-row)}
+      [:& fm/input {:name :password
+                    :hint (tr "auth.password-length-hint")
+                    :label (tr "auth.password")
+                    :show-success? true
+                    :type "password"
+                    :class (stl/css :form-field)}]]
 
-       [:> fm/submit-button*
-        {:label (tr "auth.register-submit")
-         :disabled @submitted?
-         :data-test "register-form-submit"
-         :class (stl/css :register-btn)}]]
-
-      ;; OLD
-      [:& fm/form {:on-submit on-submit
-                   :form form}
-       [:div.fields-row
-        [:& fm/input {:type "email"
-                      :name :email
-                      :help-icon i/at
-                      :label (tr "auth.email")
-                      :data-test "email-input"}]]
-       [:div.fields-row
-        [:& fm/input {:name :password
-                      :hint (tr "auth.password-length-hint")
-                      :label (tr "auth.password")
-                      :type "password"}]]
-
-       [:> fm/submit-button*
-        {:label (tr "auth.register-submit")
-         :disabled @submitted?
-         :data-test "register-form-submit"}]])))
+     [:> fm/submit-button*
+      {:label (tr "auth.register-submit")
+       :disabled @submitted?
+       :data-test "register-form-submit"
+       :class (stl/css :register-btn)}]]))
 
 
 (mf/defc register-methods
   [{:keys [params on-success-callback] :as props}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
-    (if new-css-system
-      [:*
-       (when login/show-alt-login-buttons?
-         [:*
-          [:hr {:class (stl/css :separator)}]
-          [:& login/login-buttons {:params params}]])
-       [:hr {:class (stl/css :separator)}]
-       [:& register-form {:params params :on-success-callback on-success-callback}]]
-
-      ;; OLD
-      [:*
-       (when login/show-alt-login-buttons?
-         [:*
-          [:span.separator
-           [:span.line]
-           [:span.text (tr "labels.continue-with")]
-           [:span.line]]
-
-          [:& login/login-buttons {:params params}]
-
-          (when (or (contains? cf/flags :login)
-                    (contains? cf/flags :login-with-ldap))
-            [:span.separator
-             [:span.line]
-             [:span.text (tr "labels.or")]
-             [:span.line]])])
-
-       [:& register-form {:params params :on-success-callback on-success-callback}]])))
+  [:*
+   (when login/show-alt-login-buttons?
+     [:*
+      [:hr {:class (stl/css :separator)}]
+      [:& login/login-buttons {:params params}]])
+   [:hr {:class (stl/css :separator)}]
+   [:& register-form {:params params :on-success-callback on-success-callback}]])
 
 (mf/defc register-page
   [{:keys [params] :as props}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
-    (if new-css-system
-      [:div {:class (stl/css :auth-form)}
-       [:h1 {:class (stl/css :auth-title)
-             :data-test "registration-title"} (tr "auth.register-title")]
-       [:div {:class (stl/css :auth-subtitle)} (tr "auth.register-subtitle")]
+  [:div {:class (stl/css :auth-form)}
+   [:h1 {:class (stl/css :auth-title)
+         :data-test "registration-title"} (tr "auth.register-title")]
+   [:div {:class (stl/css :auth-subtitle)} (tr "auth.register-subtitle")]
 
-       (when (contains? cf/flags :demo-warning)
-         [:& demo-warning])
+   (when (contains? cf/flags :demo-warning)
+     [:& demo-warning])
 
-       [:& register-methods {:params params}]
+   [:& register-methods {:params params}]
 
-       [:div {:class (stl/css :links)}
-        [:div {:class (stl/css :link-entry :account)}
-         [:span (tr "auth.already-have-account") " "]
+   [:div {:class (stl/css :links)}
+    [:div {:class (stl/css :link-entry :account)}
+     [:span (tr "auth.already-have-account") " "]
 
-         [:& lk/link {:action  #(st/emit! (rt/nav :auth-login {} params))
-                      :data-test "login-here-link"}
-          (tr "auth.login-here")]]
+     [:& lk/link {:action  #(st/emit! (rt/nav :auth-login {} params))
+                  :data-test "login-here-link"}
+      (tr "auth.login-here")]]
 
-        (when (contains? cf/flags :demo-users)
-          [:div {:class (stl/css :link-entry :demo-users)}
-           [:span (tr "auth.create-demo-profile") " "]
-           [:& lk/link {:action  #(st/emit! (du/create-demo-profile))}
-            (tr "auth.create-demo-account")]])]]
-
-      ;; OLD
-      [:div.form-container
-       [:h1 {:data-test "registration-title"} (tr "auth.register-title")]
-       [:div.subtitle (tr "auth.register-subtitle")]
-
-       (when (contains? cf/flags :demo-warning)
-         [:& demo-warning])
-
-       [:& register-methods {:params params}]
-
-       [:div.links
-        [:div.link-entry
-         [:span (tr "auth.already-have-account") " "]
-
-         [:& lk/link {:action  #(st/emit! (rt/nav :auth-login {} params))
-                      :data-test "login-here-link"}
-          (tr "auth.login-here")]]
-
-        (when (contains? cf/flags :demo-users)
-          [:div.link-entry
-           [:span (tr "auth.create-demo-profile") " "]
-           [:& lk/link {:action  #(st/emit! (du/create-demo-profile))}
-            (tr "auth.create-demo-account")]])]])))
+    (when (contains? cf/flags :demo-users)
+      [:div {:class (stl/css :link-entry :demo-users)}
+       [:span (tr "auth.create-demo-profile") " "]
+       [:& lk/link {:action  #(st/emit! (du/create-demo-profile))}
+        (tr "auth.create-demo-account")]])]])
 
 ;; --- PAGE: register validation
 
@@ -284,8 +213,7 @@
 
 (mf/defc register-validate-form
   [{:keys [params on-success-callback] :as props}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)
-        form       (fm/use-form :spec ::register-validate-form
+  (let [form       (fm/use-form :spec ::register-validate-form
                                 :validators [(fm/validate-not-empty :fullname (tr "auth.name.not-all-space"))
                                              (fm/validate-length :fullname fm/max-length-allowed (tr "auth.name.too-long"))]
                                 :initial params)
@@ -306,103 +234,55 @@
                   (rx/subs! on-success
                            (partial handle-register-error form))))))]
 
-    (if new-css-system
-      [:& fm/form {:on-submit on-submit :form form}
-       [:div {:class (stl/css :fields-row)}
-        [:& fm/input {:name :fullname
-                      :label (tr "auth.fullname")
-                      :type "text"
-                      :show-success? true
-                      :class (stl/css :form-field)}]]
+    [:& fm/form {:on-submit on-submit :form form}
+     [:div {:class (stl/css :fields-row)}
+      [:& fm/input {:name :fullname
+                    :label (tr "auth.fullname")
+                    :type "text"
+                    :show-success? true
+                    :class (stl/css :form-field)}]]
 
-       (when (contains? cf/flags :terms-and-privacy-checkbox)
-         (let [terms-label
-               (mf/html
-                [:& tr-html
-                 {:tag-name "div"
-                  :label "auth.terms-privacy-agreement-md"
-                  :params [cf/terms-of-service-uri cf/privacy-policy-uri]}])]
-           [:div {:class (stl/css :fields-row :input-visible :accept-terms-and-privacy-wrapper)}
-            [:& fm/input {:name :accept-terms-and-privacy
-                          :class "check-primary"
-                          :type "checkbox"
-                          :label terms-label}]]))
-
-       [:> fm/submit-button*
-        {:label (tr "auth.register-submit")
-         :disabled @submitted?
-         :class (stl/css :register-btn)}]]
-
-      ;; OLD
-      [:& fm/form {:on-submit on-submit
-                   :form form}
-       [:div.fields-row
-        [:& fm/input {:name :fullname
-                      :label (tr "auth.fullname")
-                      :type "text"}]]
-
-       (when (contains? cf/flags :terms-and-privacy-checkbox)
-         [:div.fields-row.input-visible.accept-terms-and-privacy-wrapper
+     (when (contains? cf/flags :terms-and-privacy-checkbox)
+       (let [terms-label
+             (mf/html
+              [:& tr-html
+               {:tag-name "div"
+                :label "auth.terms-privacy-agreement-md"
+                :params [cf/terms-of-service-uri cf/privacy-policy-uri]}])]
+         [:div {:class (stl/css :fields-row :input-visible :accept-terms-and-privacy-wrapper)}
           [:& fm/input {:name :accept-terms-and-privacy
                         :class "check-primary"
-                        :type "checkbox"}
-           [:span
-            (tr "auth.terms-privacy-agreement")]]
-          [:div.auth-links
-           [:a {:href "https://penpot.app/terms" :target "_blank"} (tr "auth.terms-of-service")]
-           [:span ",\u00A0"]
-           [:a {:href "https://penpot.app/privacy" :target "_blank"} (tr "auth.privacy-policy")]]])
+                        :type "checkbox"
+                        :label terms-label}]]))
 
-       [:> fm/submit-button*
-        {:label (tr "auth.register-submit")
-         :disabled @submitted?}]])))
+     [:> fm/submit-button*
+      {:label (tr "auth.register-submit")
+       :disabled @submitted?
+       :class (stl/css :register-btn)}]]))
 
 
 (mf/defc register-validate-page
   [{:keys [params] :as props}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
-    (if new-css-system
-      [:div {:class (stl/css :auth-form)}
-       [:h1 {:class (stl/css :auth-title)
-             :data-test "register-title"} (tr "auth.register-title")]
-       [:div {:class (stl/css :auth-subtitle)} (tr "auth.register-subtitle")]
+  [:div {:class (stl/css :auth-form)}
+   [:h1 {:class (stl/css :auth-title)
+         :data-test "register-title"} (tr "auth.register-title")]
+   [:div {:class (stl/css :auth-subtitle)} (tr "auth.register-subtitle")]
 
-       [:hr {:class (stl/css :separator)}]
+   [:hr {:class (stl/css :separator)}]
 
-       [:& register-validate-form {:params params}]
+   [:& register-validate-form {:params params}]
 
-       [:div {:class (stl/css :links)}
-        [:div {:class (stl/css :link-entry :go-back)}
-         [:& lk/link {:action  #(st/emit! (rt/nav :auth-register {} {}))}
-          (tr "labels.go-back")]]]]
-
-      ;; OLD
-      [:div.form-container
-       [:h1 {:data-test "register-title"} (tr "auth.register-title")]
-       [:div.subtitle (tr "auth.register-subtitle")]
-
-       [:& register-validate-form {:params params}]
-
-       [:div.links
-        [:div.link-entry
-         [:& lk/link {:action  #(st/emit! (rt/nav :auth-register {} {}))}
-          (tr "labels.go-back")]]]])))
+   [:div {:class (stl/css :links)}
+    [:div {:class (stl/css :link-entry :go-back)}
+     [:& lk/link {:action  #(st/emit! (rt/nav :auth-register {} {}))}
+      (tr "labels.go-back")]]]])
 
 (mf/defc register-success-page
   [{:keys [params] :as props}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
-    (if new-css-system
-      [:div {:class (stl/css :auth-form :register-success)}
-       [:div {:class (stl/css :notification-icon)} i/icon-verify]
-       [:div {:class (stl/css :notification-text)} (tr "auth.verification-email-sent")]
-       [:div {:class (stl/css :notification-text-email)} (:email params "")]
-       [:div {:class (stl/css :notification-text)} (tr "auth.check-your-email")]]
-
-      ;; OLD
-      [:div.form-container
-       [:div.notification-icon i/icon-verify]
-       [:div.notification-text (tr "auth.verification-email-sent")]
-       [:div.notification-text-email (:email params "")]
-       [:div.notification-text (tr "auth.check-your-email")]])))
+  [:div {:class (stl/css :auth-form :register-success)}
+   [:div {:class (stl/css :notification-icon)} i/icon-verify]
+   [:div {:class (stl/css :notification-text)} (tr "auth.verification-email-sent")]
+   [:div {:class (stl/css :notification-text-email)} (:email params "")]
+   [:div {:class (stl/css :notification-text)} (tr "auth.check-your-email")]])
 
 

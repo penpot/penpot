@@ -16,7 +16,6 @@
    [app.main.data.users :as du]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -59,8 +58,7 @@
 (mf/defc title
   {::mf/wrap-props false}
   [{:keys [collapsed]}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)
-        on-click
+  (let [on-click
         (mf/use-fn
          (mf/deps collapsed)
          (fn [_event]
@@ -76,27 +74,17 @@
              (dom/prevent-default event)
              (on-click event))))]
 
-    (if new-css-system
-      [:div {:class (stl/css :title)}
-       [:button {:tab-index "0"
-                 :on-click on-click
-                 :on-key-down on-key-down}
-        [:span (tr "dashboard.libraries-and-templates")]
-        [:span {:class (stl/css :icon)} (if ^boolean collapsed i/arrow-up i/arrow-down)]]]
-
-      ;; OLD
-      [:div.title
-       [:button {:tab-index "0"
-                 :on-click on-click
-                 :on-key-down on-key-down}
-        [:span (tr "dashboard.libraries-and-templates")]
-        [:span.icon (if ^boolean collapsed i/arrow-up i/arrow-down)]]])))
+    [:div {:class (stl/css :title)}
+     [:button {:tab-index "0"
+               :on-click on-click
+               :on-key-down on-key-down}
+      [:span (tr "dashboard.libraries-and-templates")]
+      [:span {:class (stl/css :icon)} (if ^boolean collapsed i/arrow-up i/arrow-down)]]]))
 
 (mf/defc card-item
   {::mf/wrap-props false}
   [{:keys [item index is-visible collapsed on-import]}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)
-        id  (dm/str "card-container-" index)
+  (let [id  (dm/str "card-container-" index)
         thb (assoc cf/public-uri :path (dm/str "/images/thumbnails/template-" (:id item) ".jpg"))
 
         on-click
@@ -113,41 +101,24 @@
              (dom/stop-propagation event)
              (on-import item event))))]
 
-    (if new-css-system
-      [:a
-       {:class (stl/css :card-container)
-        :tab-index (if (or (not is-visible) collapsed) "-1" "0")
-        :id id
-        :data-index index
-        :on-click on-click
-        :on-key-down on-key-down}
-       [:div {:class (stl/css :template-card)}
-        [:div {:class (stl/css :img-container)}
-         [:img {:src (dm/str thb)
-                :alt (:name item)}]]
-        [:div {:class (stl/css :card-name)}
-         [:span (:name item)]
-         [:span {:class (stl/css :icon)} i/download]]]]
-      
-      ;; OLD
-      [:a.card-container
-       {:tab-index (if (or (not is-visible) collapsed) "-1" "0")
-        :id id
-        :data-index index
-        :on-click on-click
-        :on-key-down on-key-down}
-       [:div.template-card
-        [:div.img-container
-         [:img {:src (dm/str thb)
-                :alt (:name item)}]]
-        [:div.card-name [:span (:name item)]
-         [:span.icon i/download]]]])))
+    [:a {:class (stl/css :card-container)
+         :tab-index (if (or (not is-visible) collapsed) "-1" "0")
+         :id id
+         :data-index index
+         :on-click on-click
+         :on-key-down on-key-down}
+     [:div {:class (stl/css :template-card)}
+      [:div {:class (stl/css :img-container)}
+       [:img {:src (dm/str thb)
+              :alt (:name item)}]]
+      [:div {:class (stl/css :card-name)}
+       [:span (:name item)]
+       [:span {:class (stl/css :icon)} i/download]]]]))
 
 (mf/defc card-item-link
   {::mf/wrap-props false}
   [{:keys [total is-visible collapsed section]}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)
-        id (dm/str "card-container-" total)
+  (let [id (dm/str "card-container-" total)
 
         on-click
         (mf/use-fn
@@ -165,39 +136,23 @@
              (dom/stop-propagation event)
              (on-click event))))]
 
-    (if new-css-system
-      [:div {:class (stl/css :card-container)}
-       [:div {:class (stl/css :template-card)}
-        [:div {:class (stl/css :img-container)}
-         [:a {:id id
-              :tab-index (if (or (not is-visible) collapsed) "-1" "0")
-              :href "https://penpot.app/libraries-templates.html"
-              :target "_blank"
-              :on-click on-click
-              :on-key-down on-key-down}
-          [:div {:class (stl/css :template-link)}
-           [:div {:class (stl/css :template-link-title)} (tr "dashboard.libraries-and-templates")]
-           [:div {:class (stl/css :template-link-text)} (tr "dashboard.libraries-and-templates.explore")]]]]]]
-
-      ;; OLD
-      [:div.card-container
-       [:div.template-card
-        [:div.img-container
-         [:a {:id id
-              :tab-index (if (or (not is-visible) collapsed) "-1" "0")
-              :href "https://penpot.app/libraries-templates.html"
-              :target "_blank"
-              :on-click on-click
-              :on-key-down on-key-down}
-          [:div.template-link
-           [:div.template-link-title (tr "dashboard.libraries-and-templates")]
-           [:div.template-link-text (tr "dashboard.libraries-and-templates.explore")]]]]]])))
+    [:div {:class (stl/css :card-container)}
+     [:div {:class (stl/css :template-card)}
+      [:div {:class (stl/css :img-container)}
+       [:a {:id id
+            :tab-index (if (or (not is-visible) collapsed) "-1" "0")
+            :href "https://penpot.app/libraries-templates.html"
+            :target "_blank"
+            :on-click on-click
+            :on-key-down on-key-down}
+        [:div {:class (stl/css :template-link)}
+         [:div {:class (stl/css :template-link-title)} (tr "dashboard.libraries-and-templates")]
+         [:div {:class (stl/css :template-link-text)} (tr "dashboard.libraries-and-templates.explore")]]]]]]))
 
 (mf/defc templates-section
   {::mf/wrap-props false}
   [{:keys [default-project-id profile project-id team-id content-width]}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)
-        templates      (mf/deref builtin-templates)
+  (let [templates      (mf/deref builtin-templates)
         templates      (mf/with-memo [templates]
                          (filterv #(not= (:id %) "tutorial-for-beginners") templates))
 
@@ -273,94 +228,50 @@
         (mf/use-fn
          (mf/deps default-project-id project-id section templates team-id)
          (fn [template _event]
-           (import-template! template team-id project-id default-project-id section)))
-
-        ]
+           (import-template! template team-id project-id default-project-id section)))]
 
     (mf/with-effect [profile collapsed]
       (when (and profile (not collapsed))
         (st/emit! (dd/fetch-builtin-templates))))
 
-    (if new-css-system
-      [:div
-       {:class (stl/css-case :dashboard-templates-section true
-                             :collapsed collapsed)}
-       [:& title {:collapsed collapsed}]
+    [:div {:class (stl/css-case :dashboard-templates-section true
+                                :collapsed collapsed)}
+     [:& title {:collapsed collapsed}]
 
-       [:div {:class (stl/css :content)
-              :ref content-ref
-              :style {:left card-offset
-                      :width (dm/str container-size "px")}}
+     [:div {:class (stl/css :content)
+            :ref content-ref
+            :style {:left card-offset
+                    :width (dm/str container-size "px")}}
 
-        (for [index (range (count templates))]
-          [:& card-item
-           {:on-import on-import-template
-            :item (nth templates index)
-            :index index
-            :key index
-            :is-visible (and (>= index first-card)
-                             (<= index last-card))
-            :collapsed collapsed}])
+      (for [index (range (count templates))]
+        [:& card-item
+         {:on-import on-import-template
+          :item (nth templates index)
+          :index index
+          :key index
+          :is-visible (and (>= index first-card)
+                           (<= index last-card))
+          :collapsed collapsed}])
 
-        [:& card-item-link
-         {:is-visible (and (>= total first-card) (<= total last-card))
-          :collapsed collapsed
-          :section section
-          :total total}]]
+      [:& card-item-link
+       {:is-visible (and (>= total first-card) (<= total last-card))
+        :collapsed collapsed
+        :section section
+        :total total}]]
 
-       (when (< card-offset 0)
-         [:button
-          {:class (stl/css :button :left)
-           :tab-index (if ^boolean collapsed "-1" "0")
-           :on-click on-move-left
-           :on-key-down on-move-left-key-down}
-          i/go-prev])
+     (when (< card-offset 0)
+       [:button
+        {:class (stl/css :button :left)
+         :tab-index (if ^boolean collapsed "-1" "0")
+         :on-click on-move-left
+         :on-key-down on-move-left-key-down}
+        i/go-prev])
 
-       (when more-cards
-         [:button
-          {:class (stl/css :button :right)
-           :tab-index (if collapsed "-1" "0")
-           :on-click on-move-right
-           :aria-label (tr "labels.next")
-           :on-key-down  on-move-right-key-down}
-          i/go-next])]
-
-      ;; OLD
-      [:div.dashboard-templates-section
-       {:class (when ^boolean collapsed "collapsed")}
-       [:& title {:collapsed collapsed}]
-
-       [:div.content {:ref content-ref
-                      :style {:left card-offset
-                              :width (dm/str container-size "px")}}
-
-        (for [index (range (count templates))]
-          [:& card-item
-           {:on-import on-import-template
-            :item (nth templates index)
-            :index index
-            :key index
-            :is-visible (and (>= index first-card)
-                             (<= index last-card))
-            :collapsed collapsed}])
-
-        [:& card-item-link
-         {:is-visible (and (>= total first-card) (<= total last-card))
-          :collapsed collapsed
-          :section section
-          :total total}]]
-
-       (when (< card-offset 0)
-         [:button.button.left
-          {:tab-index (if ^boolean collapsed "-1" "0")
-           :on-click on-move-left
-           :on-key-down on-move-left-key-down}
-          i/go-prev])
-
-       (when more-cards
-         [:button.button.right
-          {:tab-index (if collapsed "-1" "0")
-           :on-click on-move-right
-           :aria-label (tr "labels.next")
-           :on-key-down  on-move-right-key-down}
-          i/go-next])])))
+     (when more-cards
+       [:button
+        {:class (stl/css :button :right)
+         :tab-index (if collapsed "-1" "0")
+         :on-click on-move-right
+         :aria-label (tr "labels.next")
+         :on-key-down  on-move-right-key-down}
+        i/go-next])]))

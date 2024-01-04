@@ -48,6 +48,7 @@
 }
 .hint {
   flex-grow: 1;
+  color: var(--modal-text-foreground-color);
 }
 .custon-input-wrapper {
   @include flexRow;
@@ -68,6 +69,7 @@
     border: $s-1 solid var(--input-border-color-active);
   }
 }
+
 .copy-button {
   @extend .button-secondary;
   @include flexRow;
@@ -93,9 +95,11 @@
 .button-active {
   @extend .modal-accept-btn;
 }
+
 .button-cancel {
   @extend .modal-cancel-btn;
 }
+
 .button-danger {
   @extend .modal-danger-btn;
 }
@@ -126,12 +130,20 @@
     transform: rotate(90deg);
   }
 }
+
 .view-mode,
 .access-mode,
 .inspect-mode {
   display: flex;
   width: 100%;
 }
+
+.view-mode {
+  max-height: $s-248;
+  overflow: hidden auto;
+  scrollbar-gutter: stable;
+}
+
 .subtitle {
   color: var(--modal-text-foreground-color);
   display: flex;

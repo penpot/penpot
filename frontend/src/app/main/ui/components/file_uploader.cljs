@@ -30,15 +30,14 @@
      (when label-text
        [:label {:for input-id :class-name label-class} label-text])
 
-     [:input
-      {:style {:display "none"
-               :width 0}
-       :id input-id
-       :multiple multi
-       :accept accept
-       :type "file"
-       :ref input-ref
-       :on-change on-files-selected
-       :data-test data-test
-       :aria-label "uploader"}]]))
+     [:input {:style {:display "none"
+                      :width 0}
+              :id input-id
+              :multiple multi
+              :accept accept
+              :type "file"
+              :ref input-ref
+              :on-change on-files-selected
+              :data-test data-test
+              :aria-label "uploader"}]]))
 
