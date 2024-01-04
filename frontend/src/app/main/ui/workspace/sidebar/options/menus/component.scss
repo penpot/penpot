@@ -96,11 +96,7 @@
   }
 
   .component-swap {
-    .element-set-title {
-      @include titleTipography;
-      text-transform: uppercase;
-      margin: $s-16 $s-4 0 $s-12;
-    }
+
 
     svg {
       stroke: var(--icon-foreground);
@@ -179,11 +175,7 @@
       padding-left: $s-20;
     }
 
-    .library-name {
-      @include titleTipography;
-      @include textEllipsis;
-      margin: $s-20 $s-4 0 $s-12;
-    }
+
 
     .listing-options-wrapper {
       width: 100%;
@@ -382,4 +374,18 @@
       }
     }
   }
+}
+
+.library-name {
+  @include titleTipography;
+  @include textEllipsis;
+  margin: $s-20 $s-4 0 $s-12;
+  color: var(--title-foreground-color);
+}
+
+.element-set-title {
+  @include titleTipography;
+  text-transform: uppercase;
+  margin: $s-16 $s-4 0 $s-12;
+  color: var(--title-foreground-color);
 }
