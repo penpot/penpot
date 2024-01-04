@@ -243,6 +243,12 @@
       (prn (str (:name frame) " - " (:id frame))))
     nil))
 
+(defn ^:export select-by-object-id
+  [object-id]
+  (let [[_ page-id shape-id _] (str/split object-id #"/")]
+    (st/emit! (dw/go-to-page (uuid/uuid page-id)))
+    (st/emit! (dws/select-shape (uuid/uuid shape-id)))))
+
 (defn ^:export select-by-id
   [shape-id]
   (st/emit! (dws/select-shape (uuid/uuid shape-id))))

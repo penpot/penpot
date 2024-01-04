@@ -580,11 +580,11 @@
   (ptk/reify ::detach-components
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [undo-id (js/Symbol)]
-        (rx/concat
-         (rx/of (dwu/start-undo-transaction undo-id))
-         (rx/map #(detach-component %) (rx/from ids))
-         (rx/of (dwu/commit-undo-transaction undo-id)))))))
+           (let [undo-id (js/Symbol)]
+             (rx/concat
+              (rx/of (dwu/start-undo-transaction undo-id))
+              (rx/map #(detach-component %) (rx/from ids))
+              (rx/of (dwu/commit-undo-transaction undo-id)))))))
 
 (def detach-selected-components
   (ptk/reify ::detach-selected-components
@@ -797,12 +797,12 @@
      (watch [_ state _]
        (let [current-file-id (:current-file-id state)
              undo-id         (js/Symbol)]
-         (rx/of
-          (dwu/start-undo-transaction undo-id)
-          (sync-file current-file-id file-id :components component-id undo-group)
-          (when (not= current-file-id file-id)
-            (sync-file file-id file-id :components component-id undo-group))
-          (dwu/commit-undo-transaction undo-id)))))))
+          (rx/of
+           (dwu/start-undo-transaction undo-id)
+           (sync-file current-file-id file-id :components component-id undo-group)
+           (when (not= current-file-id file-id)
+             (sync-file file-id file-id :components component-id undo-group))
+           (dwu/commit-undo-transaction undo-id)))))))
 
 (defn update-component-thumbnail
   "Update the thumbnail of the component with the given id, in the
@@ -811,12 +811,7 @@
   (ptk/reify ::update-component-thumbnail
     ptk/WatchEvent
     (watch [_ state _]
-      (rx/of (update-component-thumbnail-sync state component-id file-id "component"))
-      #_(let [data            (get state :workspace-data)
-              component       (ctkl/get-component data component-id)
-              page-id         (:main-instance-page component)
-              root-id         (:main-instance-id component)]
-          (rx/of (dwt/request-thumbnail file-id page-id root-id "component"))))))
+      (rx/of (update-component-thumbnail-sync state component-id file-id "component")))))
 
 (defn- find-shape-index
   [objects id shape-id]
@@ -965,15 +960,15 @@
 
 
                find-frames (fn [change]
-                             (->> (ch/frames-changed file change)
-                                  (map #(assoc %1 :page-id (:page-id change)))))
+                            (->> (ch/frames-changed file change)
+                                 (map #(assoc %1 :page-id (:page-id change)))))
 
 
 
                updated-frames (->> changes
-                                   :redo-changes
-                                   (mapcat find-frames)
-                                   distinct)]
+                                    :redo-changes
+                                    (mapcat find-frames)
+                                    distinct)]
 
            (log/debug :msg "SYNC-FILE finished" :js/rchanges (log-changes
                                                               (:redo-changes changes)

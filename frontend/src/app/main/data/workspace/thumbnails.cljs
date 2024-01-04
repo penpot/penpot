@@ -10,7 +10,6 @@
    [app.common.files.helpers :as cfh]
    [app.common.logging :as l]
    [app.common.thumbnails :as thc]
-   [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.notifications :as-alias wnt]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -183,7 +182,7 @@
                    (rx/filter (ptk/type? ::clear-thumbnail))
                    (rx/filter #(= (deref %) object-id)))))))))
 
-(defn- extract-frame-changes
+(defn- extract-root-frame-changes
   "Process a changes set in a commit to extract the frames that are changing"
   [page-id [event [old-data new-data]]]
   (let [changes (-> event deref :changes)
@@ -209,10 +208,10 @@
                 new-frame-id (if (cfh/frame-shape? new-shape) id (:frame-id new-shape))]
 
             (cond-> #{}
-              (and (some? old-frame-id) (not= uuid/zero old-frame-id))
+              (cfh/root-frame? old-objects old-frame-id)
               (conj old-frame-id)
 
-              (and (some? new-frame-id) (not= uuid/zero new-frame-id))
+              (cfh/root-frame? new-objects new-frame-id)
               (conj new-frame-id))))]
 
     (into #{}
@@ -251,16 +250,16 @@
                        (rx/filter dch/commit-changes?)
                        (rx/observe-on :async)
                        (rx/with-latest-from workspace-data-s)
-                       (rx/merge-map (partial extract-frame-changes page-id))
-                       (rx/tap #(l/trc :hint "inconming change" :origin "local" :frame-id (dm/str %))))
+                       (rx/merge-map (partial extract-root-frame-changes page-id))
+                       (rx/tap #(l/trc :hint "incoming change" :origin "local" :frame-id (dm/str %))))
 
                   ;; NOTIFICATIONS CHANGES
                   (->> stream
                        (rx/filter (ptk/type? ::wnt/handle-file-change))
                        (rx/observe-on :async)
                        (rx/with-latest-from workspace-data-s)
-                       (rx/merge-map (partial extract-frame-changes page-id))
-                       (rx/tap #(l/trc :hint "inconming change" :origin "notifications" :frame-id (dm/str %))))
+                       (rx/merge-map (partial extract-root-frame-changes page-id))
+                       (rx/tap #(l/trc :hint "incoming change" :origin "notifications" :frame-id (dm/str %))))
 
                   ;; PERSISTENCE CHANGES
                   (->> stream
@@ -270,7 +269,7 @@
                                     (and (= file-id file-id)
                                          (= page-id page-id))))
                        (rx/map (fn [[_ _ frame-id]] frame-id))
-                       (rx/tap #(l/trc :hint "inconming change" :origin "persistence" :frame-id (dm/str %)))))
+                       (rx/tap #(l/trc :hint "incoming change" :origin "persistence" :frame-id (dm/str %)))))
 
                  (rx/share))
 
@@ -285,15 +284,13 @@
               ;; and interrupt any ongoing update-thumbnail process
               ;; related to current frame-id
               (->> changes-s
-                   (rx/map (fn [frame-id]
-                             (clear-thumbnail file-id page-id frame-id "frame"))))
+                   (rx/map #(clear-thumbnail file-id page-id % "frame")))
 
               ;; Generate thumbnails in batchs, once user becomes
               ;; inactive for some instant
               (->> changes-s
                    (rx/buffer-until notifier-s)
                    (rx/mapcat #(into #{} %))
-                   (rx/map (fn [frame-id]
-                             (request-thumbnail file-id page-id frame-id "frame")))))
+                   (rx/map #(request-thumbnail file-id page-id % "frame"))))
 
              (rx/take-until stopper-s))))))
