@@ -5080,7 +5080,7 @@ msgid "workspace.context-menu.grid-track.row.add-before"
 msgstr "Add 1 row above"
 
 msgid "workspace.context-menu.grid-track.row.add-after"
-msgstr "Add 1 row bellow"
+msgstr "Add 1 row below"
 
 msgid "workspace.context-menu.grid-track.row.delete"
 msgstr "Delete row"

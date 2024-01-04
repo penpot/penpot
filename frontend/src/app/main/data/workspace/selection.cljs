@@ -500,7 +500,6 @@
                        (pcb/amend-last-change #(assoc % :old-id (:id obj)))
                        (cond-> (ctl/grid-layout? objects (:parent-id obj))
                          (-> (pcb/update-shapes [(:parent-id obj)] ctl/assign-cells {:with-objects? true})
-                             (pcb/update-shapes [(:parent-id obj)] ctl/check-deassigned-cells {:with-objects? true})
                              (pcb/reorder-grid-children [(:parent-id obj)]))))
 
            changes (cond-> changes
