@@ -11,6 +11,7 @@
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.db.sql :as-alias sql]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.media :as media]
@@ -179,8 +180,7 @@
                 (db/update! conn :team-font-variant
                             {:font-family name}
                             {:font-id id
-                             :team-id team-id}
-                            {::db/return-keys? false})
+                             :team-id team-id})
 
                 (rph/with-meta (rph/wrap nil)
                   {::audit/replace-props {:id id
@@ -201,7 +201,6 @@
    ::webhooks/event? true
    ::sm/params schema:delete-font}
   [cfg {:keys [::rpc/profile-id id team-id]}]
-
   (db/tx-run! cfg
               (fn [{:keys [::db/conn ::sto/storage] :as cfg}]
                 (teams/check-edition-permissions! conn profile-id team-id)
@@ -209,7 +208,7 @@
                                         {:team-id team-id
                                          :font-id id
                                          :deleted-at nil}
-                                        {::db/for-update? true})
+                                        {::sql/for-update true})
                       storage (media/configure-assets-storage storage conn)
                       tnow    (dt/now)]
 
@@ -220,8 +219,7 @@
                   (doseq [font fonts]
                     (db/update! conn :team-font-variant
                                 {:deleted-at tnow}
-                                {:id (:id font)}
-                                {::db/return-keys? false})
+                                {:id (:id font)})
                     (some->> (:woff1-file-id font) (sto/touch-object! storage))
                     (some->> (:woff2-file-id font) (sto/touch-object! storage))
                     (some->> (:ttf-file-id font) (sto/touch-object! storage))
@@ -250,13 +248,12 @@
                 (teams/check-edition-permissions! conn profile-id team-id)
                 (let [variant (db/get conn :team-font-variant
                                       {:id id :team-id team-id}
-                                      {::db/for-update? true})
+                                      {::sql/for-update true})
                       storage (media/configure-assets-storage storage conn)]
 
                   (db/update! conn :team-font-variant
                               {:deleted-at (dt/now)}
-                              {:id (:id variant)}
-                              {::db/return-keys? false})
+                              {:id (:id variant)})
 
                   (some->> (:woff1-file-id variant) (sto/touch-object! storage))
                   (some->> (:woff2-file-id variant) (sto/touch-object! storage))

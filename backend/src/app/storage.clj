@@ -170,8 +170,7 @@
   (let [id (if (impl/object? object-or-id) (:id object-or-id) object-or-id)
         rs (db/update! pool-or-conn :storage-object
                        {:touched-at (dt/now)}
-                       {:id id}
-                       {::db/return-keys? false})]
+                       {:id id})]
     (pos? (db/get-update-count rs))))
 
 (defn get-object-data
@@ -220,8 +219,7 @@
   (let [id  (if (impl/object? object-or-id) (:id object-or-id) object-or-id)
         res (db/update! pool-or-conn :storage-object
                         {:deleted-at (dt/now)}
-                        {:id id}
-                        {::db/return-keys? false})]
+                        {:id id})]
     (pos? (db/get-update-count res))))
 
 (dm/export impl/resolve-backend)

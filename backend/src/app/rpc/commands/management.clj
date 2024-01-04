@@ -215,7 +215,7 @@
                 (-> file
                     (update :features #(db/create-array conn "text" %))
                     (update :data blob/encode))
-                {::db/return-keys? false})
+                {::db/return-keys false})
 
     ;; The file profile creation is optional, so when no profile is
     ;; present (when this function is called from profile less
@@ -231,10 +231,10 @@
                   {::db/return-keys? false}))
 
     (doseq [params flibs]
-      (db/insert! conn :file-library-rel params ::db/return-keys? false))
+      (db/insert! conn :file-library-rel params ::db/return-keys false))
 
     (doseq [params fmeds]
-      (db/insert! conn :file-media-object params ::db/return-keys? false))
+      (db/insert! conn :file-media-object params ::db/return-keys false))
 
     file))
 

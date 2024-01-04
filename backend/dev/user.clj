@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.files.helpers :as cfh]
    [app.common.fressian :as fres]
    [app.common.geom.matrix :as gmt]
    [app.common.logging :as l]
@@ -136,3 +137,12 @@
     (add-tap #(locking debug-tap
                 (prn "tap debug:" %)))
     1))
+
+
+(defn calculate-frames
+  [{:keys [data]}]
+  (->> (vals (:pages-index data))
+       (mapcat (comp vals :objects))
+       (filter cfh/is-direct-child-of-root?)
+       (filter cfh/frame-shape?)
+       (count)))

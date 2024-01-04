@@ -11,6 +11,7 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.db :as db]
+   [app.db.sql :as-alias sql]
    [app.util.blob :as blob]
    [app.util.objects-map :as omap]
    [app.util.pointer-map :as pmap]))
@@ -38,8 +39,8 @@
   [system file-id id]
   (let [{:keys [content]} (db/get system :file-data-fragment
                                   {:id id :file-id file-id}
-                                  {::db/columns [:content]
-                                   ::db/check-deleted? false})]
+                                  {::sql/columns [:content]
+                                   ::db/check-deleted false})]
     (when-not content
       (ex/raise :type :internal
                 :code :fragment-not-found

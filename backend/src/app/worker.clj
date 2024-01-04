@@ -42,8 +42,8 @@
 
 (defmethod ig/init-key ::executor
   [_ _]
-  (let [factory (px/thread-factory :prefix  "penpot/default/")
-        executor (px/cached-executor :factory factory :keepalive 30000)]
+  (let [factory  (px/thread-factory :prefix "penpot/default/")
+        executor (px/cached-executor :factory factory :keepalive 60000)]
     (l/inf :hint "starting executor")
     (reify
       java.lang.AutoCloseable

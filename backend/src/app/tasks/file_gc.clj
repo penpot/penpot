@@ -249,8 +249,7 @@
                                (blob/encode))]
         (db/update! conn :file
                     {:data data}
-                    {:id file-id}
-                    {::db/return-keys? false}))
+                    {:id file-id}))
 
       (count unused))))
 
@@ -315,7 +314,6 @@
       ;; Mark file as trimmed
       (db/update! conn :file
                   {:has-media-trimmed true}
-                  {:id id}
-                  {::db/return-keys? false})
+                  {:id id})
 
       (feat.fdata/persist-pointers! cfg id))))

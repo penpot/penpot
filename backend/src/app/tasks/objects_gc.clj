@@ -89,9 +89,7 @@
                  ;; CASCADE database triggers. This may leave orphan
                  ;; teams, but there is a special task for deleting
                  ;; orphaned teams.
-                 (db/delete! conn :profile
-                             {:id id}
-                             {::db/return-keys? false})
+                 (db/delete! conn :profile {:id id})
 
                  (inc total))
                0)))
@@ -118,20 +116,16 @@
                  (some->> photo-id (sto/touch-object! storage))
 
                  ;; And finally, permanently delete the team.
-                 (db/delete! conn :team
-                             {:id id}
-                             {::db/return-keys? false})
+                 (db/delete! conn :team {:id id})
 
                  ;; Mark for deletion in cascade
                  (db/update! conn :team-font-variant
                              {:deleted-at deleted-at}
-                             {:team-id id}
-                             {::db/return-keys? false})
+                             {:team-id id})
 
                  (db/update! conn :project
                              {:deleted-at deleted-at}
-                             {:team-id id}
-                             {::db/return-keys? false})
+                             {:team-id id})
 
                  (inc total))
                0)))
@@ -162,9 +156,7 @@
                  (some->> (:ttf-file-id font)   (sto/touch-object! storage))
 
                  ;; And finally, permanently delete the team font variant
-                 (db/delete! conn :team-font-variant
-                             {:id id}
-                             {::db/return-keys? false})
+                 (db/delete! conn :team-font-variant {:id id})
 
                  (inc total))
                0)))
@@ -187,16 +179,14 @@
                         :id (str id)
                         :team-id (str team-id)
                         :deleted-at (dt/format-instant deleted-at))
+
                  ;; And finally, permanently delete the project.
-                 (db/delete! conn :project
-                             {:id id}
-                             {::db/return-keys? false})
+                 (db/delete! conn :project {:id id})
 
                  ;; Mark files to be deleted
                  (db/update! conn :file
                              {:deleted-at deleted-at}
-                             {:project-id id}
-                             {::db/return-keys? false})
+                             {:project-id id})
 
                  (inc total))
                0)))
@@ -221,25 +211,21 @@
                         :deleted-at (dt/format-instant deleted-at))
 
                  ;; And finally, permanently delete the file.
-                 (db/delete! conn :file
-                             {:id id}
-                             {::db/return-keys? false})
+                 (db/delete! conn :file {:id id})
 
                  ;; Mark file media objects to be deleted
                  (db/update! conn :file-media-object
                              {:deleted-at deleted-at}
-                             {:file-id id}
-                             {::db/return-keys? false})
+                             {:file-id id})
 
                  ;; Mark thumbnails to be deleted
                  (db/update! conn :file-thumbnail
                              {:deleted-at deleted-at}
-                             {:file-id id}
-                             {::db/return-keys? false})
+                             {:file-id id})
+
                  (db/update! conn :file-tagged-object-thumbnail
                              {:deleted-at deleted-at}
-                             {:file-id id}
-                             {::db/return-keys? false})
+                             {:file-id id})
 
                  (inc total))
                0)))

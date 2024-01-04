@@ -317,7 +317,7 @@
   [cfg file-id]
   (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
                  (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
-                   (some-> (db/get* conn :file {:id file-id} {::db/remove-deleted? false})
+                   (some-> (db/get* conn :file {:id file-id} {::db/remove-deleted false})
                            (files/decode-row)
                            (update :data feat.fdata/process-pointers deref))))))
 
@@ -664,6 +664,7 @@
           (case feature
             "components/v2"
             (feat.compv2/migrate-file! options file-id
+                                       :max-procs 2
                                        :validate? validate?
                                        :throw-on-validate? true)
 

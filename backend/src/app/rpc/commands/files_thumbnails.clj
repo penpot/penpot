@@ -17,6 +17,7 @@
    [app.common.types.shape-tree :as ctt]
    [app.config :as cf]
    [app.db :as db]
+   [app.db.sql :as-alias sql]
    [app.features.fdata :as feat.fdata]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
@@ -236,8 +237,8 @@
                        {:file-id file-id
                         :object-id object-id
                         :tag tag}
-                       {::db/remove-deleted? false
-                        ::db/for-update? true})
+                       {::db/remove-deleted false
+                        ::sql/for-update true})
 
         path  (:path media)
         mtype (:mtype media)
@@ -312,14 +313,13 @@
   (when-let [{:keys [media-id tag]} (db/get* conn :file-tagged-object-thumbnail
                                              {:file-id file-id
                                               :object-id object-id}
-                                             {::db/for-update? true})]
+                                             {::sql/for-update true})]
     (sto/touch-object! storage media-id)
     (db/update! conn :file-tagged-object-thumbnail
                 {:deleted-at (dt/now)}
                 {:file-id file-id
                  :object-id object-id
-                 :tag tag}
-                {::db/return-keys? false})))
+                 :tag tag})))
 
 (s/def ::delete-file-object-thumbnail
   (s/keys :req [::rpc/profile-id]
@@ -365,8 +365,8 @@
         thumb (db/get* conn :file-thumbnail
                        {:file-id file-id
                         :revn revn}
-                       {::db/remove-deleted? false
-                        ::db/for-update? true})]
+                       {::db/remove-deleted false
+                        ::sql/for-update true})]
 
     (if (some? thumb)
       (do

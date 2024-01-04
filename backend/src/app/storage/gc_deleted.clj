@@ -47,8 +47,7 @@
   [conn ids]
   (let [ids (db/create-array conn "uuid" ids)]
     (-> (db/exec-one! conn [sql:delete-sobjects ids])
-         (db/get-update-count))))
-
+        (db/get-update-count))))
 
 (defn- delete-in-bulk!
   [cfg backend-id ids]
@@ -60,7 +59,6 @@
                 (fn [{:keys [::db/conn ::sto/storage]}]
                   (when-let [ids (lock-ids conn ids)]
                     (let [total (delete-sobjects! conn ids)]
-
                       (-> (impl/resolve-backend storage backend-id)
                           (impl/del-objects-in-bulk ids))
 
@@ -68,7 +66,6 @@
                         (l/dbg :hint "permanently delete storage object"
                                :id (str id)
                                :backend (name backend-id)))
-
                       total))))
     (catch Throwable cause
       (l/err :hint "unexpected error on bulk deletion"

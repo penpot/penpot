@@ -149,7 +149,7 @@
 
     (let [row (th/db-get :team
                          {:id (:default-team-id prof)}
-                         {::db/remove-deleted? false})]
+                         {::db/remove-deleted false})]
       (t/is (nil? (:deleted-at row))))
 
     (let [result (th/run-task! :orphan-teams-gc {:min-age 0})]
@@ -157,7 +157,7 @@
 
     (let [row (th/db-get :team
                          {:id (:default-team-id prof)}
-                         {::db/remove-deleted? false})]
+                         {::db/remove-deleted false})]
       (t/is (dt/instant? (:deleted-at row))))
 
     ;; query profile after delete

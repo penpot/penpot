@@ -29431,12 +29431,13 @@ const optimize = (input, config) => {
 
 exports.optimize = optimize;
 
-},{"./svgo/parser.js":322,"./svgo/plugins.js":324,"./svgo/stringifier.js":381,"./svgo/tools.js":383,"lodash/isPlainObject":308}],320:[function(require,module,exports){
+},{"./svgo/parser.js":322,"./svgo/plugins.js":324,"./svgo/stringifier.js":382,"./svgo/tools.js":384,"lodash/isPlainObject":308}],320:[function(require,module,exports){
 'use strict';
 
 exports.builtin = [
   require('./plugins/default.js'),
   require('./plugins/safe.js'),
+  require('./plugins/safeAndFast.js'),
   require('./plugins/addAttributesToSVGElement.js'),
   require('./plugins/addClassesToSVGElement.js'),
   require('./plugins/cleanupAttrs.js'),
@@ -29489,7 +29490,7 @@ exports.builtin = [
   require('./plugins/sortDefsChildren.js'),
 ];
 
-},{"./plugins/addAttributesToSVGElement.js":328,"./plugins/addClassesToSVGElement.js":329,"./plugins/cleanupAttrs.js":331,"./plugins/cleanupEnableBackground.js":332,"./plugins/cleanupIds.js":333,"./plugins/cleanupListOfValues.js":334,"./plugins/cleanupNumericValues.js":335,"./plugins/collapseGroups.js":336,"./plugins/convertColors.js":337,"./plugins/convertEllipseToCircle.js":338,"./plugins/convertPathData.js":339,"./plugins/convertShapeToPath.js":340,"./plugins/convertStyleToAttrs.js":341,"./plugins/convertTransform.js":342,"./plugins/default.js":343,"./plugins/inlineStyles.js":344,"./plugins/mergePaths.js":345,"./plugins/mergeStyles.js":346,"./plugins/minifyStyles.js":347,"./plugins/moveElemsAttrsToGroup.js":348,"./plugins/moveGroupAttrsToElems.js":349,"./plugins/prefixIds.js":350,"./plugins/removeAttributesBySelector.js":351,"./plugins/removeAttrs.js":352,"./plugins/removeComments.js":353,"./plugins/removeDesc.js":354,"./plugins/removeDimensions.js":355,"./plugins/removeDoctype.js":356,"./plugins/removeEditorsNSData.js":357,"./plugins/removeElementsByAttr.js":358,"./plugins/removeEmptyAttrs.js":359,"./plugins/removeEmptyContainers.js":360,"./plugins/removeEmptyText.js":361,"./plugins/removeHiddenElems.js":362,"./plugins/removeMetadata.js":363,"./plugins/removeNonInheritableGroupAttrs.js":364,"./plugins/removeOffCanvasPaths.js":365,"./plugins/removeRasterImages.js":366,"./plugins/removeScriptElement.js":367,"./plugins/removeStyleElement.js":368,"./plugins/removeTitle.js":369,"./plugins/removeUnknownsAndDefaults.js":370,"./plugins/removeUnusedNS.js":371,"./plugins/removeUselessDefs.js":372,"./plugins/removeUselessStrokeAndFill.js":373,"./plugins/removeViewBox.js":374,"./plugins/removeXMLNS.js":375,"./plugins/removeXMLProcInst.js":376,"./plugins/reusePaths.js":377,"./plugins/safe.js":378,"./plugins/sortAttrs.js":379,"./plugins/sortDefsChildren.js":380}],321:[function(require,module,exports){
+},{"./plugins/addAttributesToSVGElement.js":328,"./plugins/addClassesToSVGElement.js":329,"./plugins/cleanupAttrs.js":331,"./plugins/cleanupEnableBackground.js":332,"./plugins/cleanupIds.js":333,"./plugins/cleanupListOfValues.js":334,"./plugins/cleanupNumericValues.js":335,"./plugins/collapseGroups.js":336,"./plugins/convertColors.js":337,"./plugins/convertEllipseToCircle.js":338,"./plugins/convertPathData.js":339,"./plugins/convertShapeToPath.js":340,"./plugins/convertStyleToAttrs.js":341,"./plugins/convertTransform.js":342,"./plugins/default.js":343,"./plugins/inlineStyles.js":344,"./plugins/mergePaths.js":345,"./plugins/mergeStyles.js":346,"./plugins/minifyStyles.js":347,"./plugins/moveElemsAttrsToGroup.js":348,"./plugins/moveGroupAttrsToElems.js":349,"./plugins/prefixIds.js":350,"./plugins/removeAttributesBySelector.js":351,"./plugins/removeAttrs.js":352,"./plugins/removeComments.js":353,"./plugins/removeDesc.js":354,"./plugins/removeDimensions.js":355,"./plugins/removeDoctype.js":356,"./plugins/removeEditorsNSData.js":357,"./plugins/removeElementsByAttr.js":358,"./plugins/removeEmptyAttrs.js":359,"./plugins/removeEmptyContainers.js":360,"./plugins/removeEmptyText.js":361,"./plugins/removeHiddenElems.js":362,"./plugins/removeMetadata.js":363,"./plugins/removeNonInheritableGroupAttrs.js":364,"./plugins/removeOffCanvasPaths.js":365,"./plugins/removeRasterImages.js":366,"./plugins/removeScriptElement.js":367,"./plugins/removeStyleElement.js":368,"./plugins/removeTitle.js":369,"./plugins/removeUnknownsAndDefaults.js":370,"./plugins/removeUnusedNS.js":371,"./plugins/removeUselessDefs.js":372,"./plugins/removeUselessStrokeAndFill.js":373,"./plugins/removeViewBox.js":374,"./plugins/removeXMLNS.js":375,"./plugins/removeXMLProcInst.js":376,"./plugins/reusePaths.js":377,"./plugins/safe.js":378,"./plugins/safeAndFast.js":379,"./plugins/sortAttrs.js":380,"./plugins/sortDefsChildren.js":381}],321:[function(require,module,exports){
 'use strict';
 
 const isTag = (node) => {
@@ -30102,7 +30103,7 @@ const stringifyPathData = ({ pathData, precision, disableSpaceAfterFlags }) => {
 };
 exports.stringifyPathData = stringifyPathData;
 
-},{"./tools.js":383}],324:[function(require,module,exports){
+},{"./tools.js":384}],324:[function(require,module,exports){
 'use strict';
 
 const { builtin } = require('./builtin.js');
@@ -33826,7 +33827,7 @@ const applyMatrixToPathData = (pathData, matrix) => {
   }
 };
 
-},{"../style.js":382,"../tools.js":383,"./_collections.js":325,"./_path.js":326,"./_transforms.js":327}],331:[function(require,module,exports){
+},{"../style.js":383,"../tools.js":384,"./_collections.js":325,"./_path.js":326,"./_transforms.js":327}],331:[function(require,module,exports){
 'use strict';
 
 exports.name = 'cleanupAttrs';
@@ -33948,7 +33949,7 @@ exports.fn = (root) => {
   };
 };
 
-},{"../xast.js":384}],333:[function(require,module,exports){
+},{"../xast.js":385}],333:[function(require,module,exports){
 'use strict';
 
 const { visitSkip } = require('../xast.js');
@@ -34207,7 +34208,7 @@ exports.fn = (_root, params) => {
   };
 };
 
-},{"../xast.js":384,"./_collections.js":325}],334:[function(require,module,exports){
+},{"../xast.js":385,"./_collections.js":325}],334:[function(require,module,exports){
 'use strict';
 
 const { removeLeadingZero } = require('../tools.js');
@@ -34345,7 +34346,7 @@ exports.fn = (_root, params) => {
   };
 };
 
-},{"../tools.js":383}],335:[function(require,module,exports){
+},{"../tools.js":384}],335:[function(require,module,exports){
 'use strict';
 
 const { removeLeadingZero } = require('../tools.js');
@@ -34451,7 +34452,7 @@ exports.fn = (_root, params) => {
   };
 };
 
-},{"../tools.js":383}],336:[function(require,module,exports){
+},{"../tools.js":384}],336:[function(require,module,exports){
 'use strict';
 
 const { inheritableAttrs, elemsGroups } = require('./_collections.js');
@@ -35838,7 +35839,7 @@ function data2Path(params, pathData) {
   }, '');
 }
 
-},{"../style.js":382,"../tools.js":383,"../xast.js":384,"./_collections.js":325,"./_path.js":326,"./applyTransforms.js":330}],340:[function(require,module,exports){
+},{"../style.js":383,"../tools.js":384,"../xast.js":385,"./_collections.js":325,"./_path.js":326,"./applyTransforms.js":330}],340:[function(require,module,exports){
 'use strict';
 
 const { stringifyPathData } = require('../path.js');
@@ -36004,7 +36005,7 @@ exports.fn = (root, params) => {
   };
 };
 
-},{"../path.js":323,"../xast.js":384}],341:[function(require,module,exports){
+},{"../path.js":323,"../xast.js":385}],341:[function(require,module,exports){
 'use strict';
 
 const { attrsGroups } = require('./_collections');
@@ -36506,7 +36507,7 @@ const smartRound = (precision, data) => {
   return data;
 };
 
-},{"../tools.js":383,"./_transforms.js":327}],343:[function(require,module,exports){
+},{"../tools.js":384,"./_transforms.js":327}],343:[function(require,module,exports){
 'use strict';
 
 const { createPreset } = require('../tools.js');
@@ -36590,7 +36591,7 @@ const presetDefault = createPreset({
 
 module.exports = presetDefault;
 
-},{"../tools.js":383,"./cleanupAttrs.js":331,"./cleanupEnableBackground.js":332,"./cleanupIds.js":333,"./cleanupNumericValues.js":335,"./collapseGroups.js":336,"./convertColors.js":337,"./convertEllipseToCircle.js":338,"./convertPathData.js":339,"./convertShapeToPath.js":340,"./convertTransform.js":342,"./inlineStyles.js":344,"./mergePaths.js":345,"./mergeStyles.js":346,"./minifyStyles.js":347,"./moveElemsAttrsToGroup.js":348,"./moveGroupAttrsToElems.js":349,"./removeComments.js":353,"./removeDesc.js":354,"./removeDoctype.js":356,"./removeEditorsNSData.js":357,"./removeEmptyAttrs.js":359,"./removeEmptyContainers.js":360,"./removeEmptyText.js":361,"./removeHiddenElems.js":362,"./removeMetadata.js":363,"./removeNonInheritableGroupAttrs.js":364,"./removeTitle.js":369,"./removeUnknownsAndDefaults.js":370,"./removeUnusedNS.js":371,"./removeUselessDefs.js":372,"./removeUselessStrokeAndFill.js":373,"./removeViewBox.js":374,"./removeXMLProcInst.js":376,"./sortAttrs.js":379,"./sortDefsChildren.js":380}],344:[function(require,module,exports){
+},{"../tools.js":384,"./cleanupAttrs.js":331,"./cleanupEnableBackground.js":332,"./cleanupIds.js":333,"./cleanupNumericValues.js":335,"./collapseGroups.js":336,"./convertColors.js":337,"./convertEllipseToCircle.js":338,"./convertPathData.js":339,"./convertShapeToPath.js":340,"./convertTransform.js":342,"./inlineStyles.js":344,"./mergePaths.js":345,"./mergeStyles.js":346,"./minifyStyles.js":347,"./moveElemsAttrsToGroup.js":348,"./moveGroupAttrsToElems.js":349,"./removeComments.js":353,"./removeDesc.js":354,"./removeDoctype.js":356,"./removeEditorsNSData.js":357,"./removeEmptyAttrs.js":359,"./removeEmptyContainers.js":360,"./removeEmptyText.js":361,"./removeHiddenElems.js":362,"./removeMetadata.js":363,"./removeNonInheritableGroupAttrs.js":364,"./removeTitle.js":369,"./removeUnknownsAndDefaults.js":370,"./removeUnusedNS.js":371,"./removeUselessDefs.js":372,"./removeUselessStrokeAndFill.js":373,"./removeViewBox.js":374,"./removeXMLProcInst.js":376,"./sortAttrs.js":380,"./sortDefsChildren.js":381}],344:[function(require,module,exports){
 'use strict';
 
 const csstree = require('css-tree');
@@ -36937,7 +36938,7 @@ exports.fn = (root, params) => {
   };
 };
 
-},{"../xast.js":384,"css-tree":25,"csso":138}],345:[function(require,module,exports){
+},{"../xast.js":385,"css-tree":25,"csso":138}],345:[function(require,module,exports){
 'use strict';
 
 const { detachNodeFromParent } = require('../xast.js');
@@ -37035,7 +37036,7 @@ exports.fn = (root, params) => {
   };
 };
 
-},{"../style.js":382,"../xast.js":384,"./_path.js":326}],346:[function(require,module,exports){
+},{"../style.js":383,"../xast.js":385,"./_path.js":326}],346:[function(require,module,exports){
 'use strict';
 
 const { visitSkip, detachNodeFromParent } = require('../xast.js');
@@ -37119,7 +37120,7 @@ exports.fn = () => {
   };
 };
 
-},{"../xast.js":384}],347:[function(require,module,exports){
+},{"../xast.js":385}],347:[function(require,module,exports){
 'use strict';
 
 const csso = require('csso');
@@ -37364,7 +37365,7 @@ exports.fn = (root) => {
   };
 };
 
-},{"../xast.js":384,"./_collections.js":325}],349:[function(require,module,exports){
+},{"../xast.js":385,"./_collections.js":325}],349:[function(require,module,exports){
 'use strict';
 
 const { pathElems, referencesProps } = require('./_collections.js');
@@ -37742,7 +37743,7 @@ exports.fn = (root, params) => {
   return {};
 };
 
-},{"../xast.js":384}],352:[function(require,module,exports){
+},{"../xast.js":385}],352:[function(require,module,exports){
 'use strict';
 
 exports.name = 'removeAttrs';
@@ -37924,7 +37925,7 @@ exports.fn = () => {
   };
 };
 
-},{"../xast.js":384}],354:[function(require,module,exports){
+},{"../xast.js":385}],354:[function(require,module,exports){
 'use strict';
 
 const { detachNodeFromParent } = require('../xast.js');
@@ -37963,7 +37964,7 @@ exports.fn = (root, params) => {
   };
 };
 
-},{"../xast.js":384}],355:[function(require,module,exports){
+},{"../xast.js":385}],355:[function(require,module,exports){
 'use strict';
 
 exports.name = 'removeDimensions';
@@ -38046,7 +38047,7 @@ exports.fn = () => {
   };
 };
 
-},{"../xast.js":384}],357:[function(require,module,exports){
+},{"../xast.js":385}],357:[function(require,module,exports){
 'use strict';
 
 const { detachNodeFromParent } = require('../xast.js');
@@ -38110,7 +38111,7 @@ exports.fn = (_root, params) => {
   };
 };
 
-},{"../xast.js":384,"./_collections.js":325}],358:[function(require,module,exports){
+},{"../xast.js":385,"./_collections.js":325}],358:[function(require,module,exports){
 'use strict';
 
 const { detachNodeFromParent } = require('../xast.js');
@@ -38183,7 +38184,7 @@ exports.fn = (root, params) => {
   };
 };
 
-},{"../xast.js":384}],359:[function(require,module,exports){
+},{"../xast.js":385}],359:[function(require,module,exports){
 'use strict';
 
 const { attrsGroups } = require('./_collections.js');
@@ -38270,7 +38271,7 @@ exports.fn = () => {
   };
 };
 
-},{"../xast.js":384,"./_collections.js":325}],361:[function(require,module,exports){
+},{"../xast.js":385,"./_collections.js":325}],361:[function(require,module,exports){
 'use strict';
 
 const { detachNodeFromParent } = require('../xast.js');
@@ -38321,7 +38322,7 @@ exports.fn = (root, params) => {
   };
 };
 
-},{"../xast.js":384}],362:[function(require,module,exports){
+},{"../xast.js":385}],362:[function(require,module,exports){
 'use strict';
 
 const {
@@ -38631,7 +38632,7 @@ exports.fn = (root, params) => {
   };
 };
 
-},{"../path.js":323,"../style.js":382,"../xast.js":384}],363:[function(require,module,exports){
+},{"../path.js":323,"../style.js":383,"../xast.js":385}],363:[function(require,module,exports){
 'use strict';
 
 const { detachNodeFromParent } = require('../xast.js');
@@ -38658,7 +38659,7 @@ exports.fn = () => {
   };
 };
 
-},{"../xast.js":384}],364:[function(require,module,exports){
+},{"../xast.js":385}],364:[function(require,module,exports){
 'use strict';
 
 const {
@@ -38815,7 +38816,7 @@ exports.fn = () => {
   };
 };
 
-},{"../path.js":323,"../xast.js":384,"./_path.js":326}],366:[function(require,module,exports){
+},{"../path.js":323,"../xast.js":385,"./_path.js":326}],366:[function(require,module,exports){
 'use strict';
 
 const { detachNodeFromParent } = require('../xast.js');
@@ -38846,7 +38847,7 @@ exports.fn = () => {
   };
 };
 
-},{"../xast.js":384}],367:[function(require,module,exports){
+},{"../xast.js":385}],367:[function(require,module,exports){
 'use strict';
 
 const { detachNodeFromParent } = require('../xast.js');
@@ -38873,7 +38874,7 @@ exports.fn = () => {
   };
 };
 
-},{"../xast.js":384}],368:[function(require,module,exports){
+},{"../xast.js":385}],368:[function(require,module,exports){
 'use strict';
 
 const { detachNodeFromParent } = require('../xast.js');
@@ -38900,7 +38901,7 @@ exports.fn = () => {
   };
 };
 
-},{"../xast.js":384}],369:[function(require,module,exports){
+},{"../xast.js":385}],369:[function(require,module,exports){
 'use strict';
 
 const { detachNodeFromParent } = require('../xast.js');
@@ -38927,7 +38928,7 @@ exports.fn = () => {
   };
 };
 
-},{"../xast.js":384}],370:[function(require,module,exports){
+},{"../xast.js":385}],370:[function(require,module,exports){
 'use strict';
 
 const { visitSkip, detachNodeFromParent } = require('../xast.js');
@@ -39135,7 +39136,7 @@ exports.fn = (root, params) => {
   };
 };
 
-},{"../style.js":382,"../xast.js":384,"./_collections":325}],371:[function(require,module,exports){
+},{"../style.js":383,"../xast.js":385,"./_collections":325}],371:[function(require,module,exports){
 'use strict';
 
 exports.name = 'removeUnusedNS';
@@ -39252,7 +39253,7 @@ const collectUsefulNodes = (node, usefulNodes) => {
   }
 };
 
-},{"../xast.js":384,"./_collections.js":325}],373:[function(require,module,exports){
+},{"../xast.js":385,"./_collections.js":325}],373:[function(require,module,exports){
 'use strict';
 
 const { visit, visitSkip, detachNodeFromParent } = require('../xast.js');
@@ -39390,7 +39391,7 @@ exports.fn = (root, params) => {
   };
 };
 
-},{"../style.js":382,"../xast.js":384,"./_collections.js":325}],374:[function(require,module,exports){
+},{"../style.js":383,"../xast.js":385,"./_collections.js":325}],374:[function(require,module,exports){
 'use strict';
 
 exports.name = 'removeViewBox';
@@ -39497,7 +39498,7 @@ exports.fn = () => {
   };
 };
 
-},{"../xast.js":384}],377:[function(require,module,exports){
+},{"../xast.js":385}],377:[function(require,module,exports){
 'use strict';
 
 exports.name = 'reusePaths';
@@ -39678,7 +39679,72 @@ const presetSafe = createPreset({
 
 module.exports = presetSafe;
 
-},{"../tools.js":383,"./cleanupAttrs.js":331,"./cleanupEnableBackground.js":332,"./cleanupIds.js":333,"./cleanupNumericValues.js":335,"./collapseGroups.js":336,"./convertColors.js":337,"./convertEllipseToCircle.js":338,"./convertPathData.js":339,"./convertTransform.js":342,"./inlineStyles.js":344,"./mergePaths.js":345,"./mergeStyles.js":346,"./minifyStyles.js":347,"./removeComments.js":353,"./removeDesc.js":354,"./removeDoctype.js":356,"./removeEditorsNSData.js":357,"./removeEmptyAttrs.js":359,"./removeEmptyContainers.js":360,"./removeEmptyText.js":361,"./removeHiddenElems.js":362,"./removeMetadata.js":363,"./removeNonInheritableGroupAttrs.js":364,"./removeTitle.js":369,"./removeUnknownsAndDefaults.js":370,"./removeUnusedNS.js":371,"./removeUselessDefs.js":372,"./removeUselessStrokeAndFill.js":373,"./removeViewBox.js":374,"./removeXMLProcInst.js":376,"./sortDefsChildren.js":380}],379:[function(require,module,exports){
+},{"../tools.js":384,"./cleanupAttrs.js":331,"./cleanupEnableBackground.js":332,"./cleanupIds.js":333,"./cleanupNumericValues.js":335,"./collapseGroups.js":336,"./convertColors.js":337,"./convertEllipseToCircle.js":338,"./convertPathData.js":339,"./convertTransform.js":342,"./inlineStyles.js":344,"./mergePaths.js":345,"./mergeStyles.js":346,"./minifyStyles.js":347,"./removeComments.js":353,"./removeDesc.js":354,"./removeDoctype.js":356,"./removeEditorsNSData.js":357,"./removeEmptyAttrs.js":359,"./removeEmptyContainers.js":360,"./removeEmptyText.js":361,"./removeHiddenElems.js":362,"./removeMetadata.js":363,"./removeNonInheritableGroupAttrs.js":364,"./removeTitle.js":369,"./removeUnknownsAndDefaults.js":370,"./removeUnusedNS.js":371,"./removeUselessDefs.js":372,"./removeUselessStrokeAndFill.js":373,"./removeViewBox.js":374,"./removeXMLProcInst.js":376,"./sortDefsChildren.js":381}],379:[function(require,module,exports){
+'use strict';
+
+const { createPreset } = require('../tools.js');
+
+const removeDoctype = require('./removeDoctype.js');
+const removeXMLProcInst = require('./removeXMLProcInst.js');
+const removeComments = require('./removeComments.js');
+const removeMetadata = require('./removeMetadata.js');
+const removeEditorsNSData = require('./removeEditorsNSData.js');
+const cleanupAttrs = require('./cleanupAttrs.js');
+const mergeStyles = require('./mergeStyles.js');
+const minifyStyles = require('./minifyStyles.js');
+const cleanupIds = require('./cleanupIds.js');
+const removeUselessDefs = require('./removeUselessDefs.js');
+const cleanupNumericValues = require('./cleanupNumericValues.js');
+const convertColors = require('./convertColors.js');
+const removeUnknownsAndDefaults = require('./removeUnknownsAndDefaults.js');
+const removeNonInheritableGroupAttrs = require('./removeNonInheritableGroupAttrs.js');
+const removeUselessStrokeAndFill = require('./removeUselessStrokeAndFill.js');
+const removeViewBox = require('./removeViewBox.js');
+const cleanupEnableBackground = require('./cleanupEnableBackground.js');
+const removeHiddenElems = require('./removeHiddenElems.js');
+const removeEmptyText = require('./removeEmptyText.js');
+const collapseGroups = require('./collapseGroups.js');
+const removeEmptyAttrs = require('./removeEmptyAttrs.js');
+const removeEmptyContainers = require('./removeEmptyContainers.js');
+const mergePaths = require('./mergePaths.js');
+const removeUnusedNS = require('./removeUnusedNS.js');
+const sortDefsChildren = require('./sortDefsChildren.js');
+const removeTitle = require('./removeTitle.js');
+const removeDesc = require('./removeDesc.js');
+
+const presetSafe = createPreset({
+  name: 'safeAndFastPreset',
+  plugins: [
+    removeDoctype,
+    removeXMLProcInst,
+    removeComments,
+    removeMetadata,
+    removeEditorsNSData,
+    cleanupAttrs,
+    mergeStyles,
+    cleanupIds,
+    removeUselessDefs,
+    cleanupNumericValues,
+    convertColors,
+    removeUnknownsAndDefaults,
+    removeNonInheritableGroupAttrs,
+    removeUselessStrokeAndFill,
+    removeViewBox,
+    cleanupEnableBackground,
+    removeHiddenElems,
+    removeEmptyText,
+    collapseGroups,
+    removeEmptyAttrs,
+    removeEmptyContainers,
+    removeUnusedNS,
+    removeTitle,
+    removeDesc,
+  ],
+});
+
+module.exports = presetSafe;
+
+},{"../tools.js":384,"./cleanupAttrs.js":331,"./cleanupEnableBackground.js":332,"./cleanupIds.js":333,"./cleanupNumericValues.js":335,"./collapseGroups.js":336,"./convertColors.js":337,"./mergePaths.js":345,"./mergeStyles.js":346,"./minifyStyles.js":347,"./removeComments.js":353,"./removeDesc.js":354,"./removeDoctype.js":356,"./removeEditorsNSData.js":357,"./removeEmptyAttrs.js":359,"./removeEmptyContainers.js":360,"./removeEmptyText.js":361,"./removeHiddenElems.js":362,"./removeMetadata.js":363,"./removeNonInheritableGroupAttrs.js":364,"./removeTitle.js":369,"./removeUnknownsAndDefaults.js":370,"./removeUnusedNS.js":371,"./removeUselessDefs.js":372,"./removeUselessStrokeAndFill.js":373,"./removeViewBox.js":374,"./removeXMLProcInst.js":376,"./sortDefsChildren.js":381}],380:[function(require,module,exports){
 'use strict';
 
 exports.name = 'sortAttrs';
@@ -39778,7 +39844,7 @@ exports.fn = (_root, params) => {
   };
 };
 
-},{}],380:[function(require,module,exports){
+},{}],381:[function(require,module,exports){
 'use strict';
 
 exports.name = 'sortDefsChildren';
@@ -39836,7 +39902,7 @@ exports.fn = () => {
   };
 };
 
-},{}],381:[function(require,module,exports){
+},{}],382:[function(require,module,exports){
 'use strict';
 
 const { textElems } = require('./plugins/_collections.js');
@@ -40070,7 +40136,7 @@ const stringifyText = (node, config, state) => {
   );
 };
 
-},{"./plugins/_collections.js":325}],382:[function(require,module,exports){
+},{"./plugins/_collections.js":325}],383:[function(require,module,exports){
 'use strict';
 
 const csstree = require('css-tree');
@@ -40300,7 +40366,7 @@ const computeStyle = (stylesheet, node) => {
 };
 exports.computeStyle = computeStyle;
 
-},{"./plugins/_collections.js":325,"./xast.js":384,"css-tree":25,"csso":138}],383:[function(require,module,exports){
+},{"./plugins/_collections.js":325,"./xast.js":385,"css-tree":25,"csso":138}],384:[function(require,module,exports){
 (function (Buffer){(function (){
 'use strict';
 
@@ -40455,7 +40521,7 @@ exports.invokePlugins = invokePlugins;
 exports.createPreset = createPreset;
 
 }).call(this)}).call(this,require("buffer").Buffer)
-},{"./xast.js":384,"buffer":4}],384:[function(require,module,exports){
+},{"./xast.js":385,"buffer":4}],385:[function(require,module,exports){
 'use strict';
 
 const { selectAll, selectOne, is } = require('css-select');
