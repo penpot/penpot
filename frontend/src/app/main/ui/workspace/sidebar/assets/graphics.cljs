@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.sidebar.assets.graphics
-  (:require-macros [app.main.style :refer [css]])
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -46,7 +46,6 @@
         dragging?      (deref dragging*)
 
         read-only?     (mf/use-ctx ctx/workspace-read-only?)
-        new-css-system (mf/use-ctx ctx/new-css-system)
 
         on-drop
         (mf/use-fn
@@ -84,90 +83,49 @@
         (mf/use-fn
          (mf/deps object-id on-asset-click)
          (partial on-asset-click object-id nil))]
-    (if ^boolean new-css-system
-      [:div {:ref item-ref
-             :class-name (dom/classnames
-                          (css :selected) (contains? selected-objects object-id)
-                          (css :grid-cell) listing-thumbs?
-                          (css :enum-item) (not listing-thumbs?))
-             :draggable (not read-only?)
-             :on-click on-asset-click
-             :on-context-menu on-context-menu
-             :on-drag-start on-grahic-drag-start
-             :on-drag-enter on-drag-enter
-             :on-drag-leave on-drag-leave
-             :on-drag-over dom/prevent-default
-             :on-drop on-drop}
+    [:div {:ref item-ref
+           :class-name (stl/css-case
+                        :selected (contains? selected-objects object-id)
+                        :grid-cell listing-thumbs?
+                        :enum-item (not listing-thumbs?))
+           :draggable (not read-only?)
+           :on-click on-asset-click
+           :on-context-menu on-context-menu
+           :on-drag-start on-grahic-drag-start
+           :on-drag-enter on-drag-enter
+           :on-drag-leave on-drag-leave
+           :on-drag-over dom/prevent-default
+           :on-drop on-drop}
 
-       (when visible?
-         [:*
-          [:img {:src (when visible? (cf/resolve-file-media object true))
-                 :class (css :graphic-image)
-                 :draggable false}] ;; Also need to add css pointer-events: none
+     (when visible?
+       [:*
+        [:img {:src (when visible? (cf/resolve-file-media object true))
+               :class (stl/css :graphic-image)
+               :draggable false}] ;; Also need to add css pointer-events: none
 
-          (let [renaming? (= renaming (:id object))]
-            [:*
-             [:& editable-label
-              {:class (dom/classnames
-                       (css :cell-name) listing-thumbs?
-                       (css :item-name) (not listing-thumbs?)
-                       (css :editing) renaming?)
-               :value (cfh/merge-path-item (:path object) (:name object))
-               :tooltip (cfh/merge-path-item (:path object) (:name object))
-               :display-value (:name object)
-               :editing renaming?
-               :disable-dbl-click true
-               :on-change do-rename
-               :on-cancel cancel-rename}]
+        (let [renaming? (= renaming (:id object))]
+          [:*
+           [:& editable-label
+            {:class (stl/css-case
+                     :cell-name listing-thumbs?
+                     :item-name (not listing-thumbs?)
+                     :editing renaming?)
+             :value (cfh/merge-path-item (:path object) (:name object))
+             :tooltip (cfh/merge-path-item (:path object) (:name object))
+             :display-value (:name object)
+             :editing renaming?
+             :disable-dbl-click true
+             :on-change do-rename
+             :on-cancel cancel-rename}]
 
-             (when ^boolean dragging?
-               [:div {:class (dom/classnames (css :dragging) true)}])])])]
-
-      [:div {:ref item-ref
-             :class-name (dom/classnames
-                          :selected (contains? selected-objects object-id)
-                          :grid-cell listing-thumbs?
-                          :enum-item (not listing-thumbs?))
-             :draggable (not read-only?)
-             :on-click on-asset-click
-             :on-context-menu on-context-menu
-             :on-drag-start on-grahic-drag-start
-             :on-drag-enter on-drag-enter
-             :on-drag-leave on-drag-leave
-             :on-drag-over dom/prevent-default
-             :on-drop on-drop}
-
-       (when visible?
-         [:*
-          [:img {:src (when visible? (cf/resolve-file-media object true))
-                 :loading "lazy"
-                 :decoding "async"
-                 :draggable false}] ;; Also need to add css pointer-events: none
-
-          (let [renaming? (= renaming (:id object))]
-            [:*
-             [:& editable-label
-              {:class (dom/classnames
-                       :cell-name listing-thumbs?
-                       :item-name (not listing-thumbs?)
-                       :editing renaming?)
-               :value (cfh/merge-path-item (:path object) (:name object))
-               :tooltip (cfh/merge-path-item (:path object) (:name object))
-               :display-value (:name object)
-               :editing renaming?
-               :disable-dbl-click true
-               :on-change do-rename
-               :on-cancel cancel-rename}]
-
-             (when ^boolean dragging?
-               [:div.dragging])])])])))
+           (when ^boolean dragging?
+             [:div {:class (stl/css :dragging)}])])])]))
 
 (mf/defc graphics-group
   [{:keys [file-id prefix groups open-groups force-open? renaming listing-thumbs? selected-objects on-asset-click
            on-drag-start do-rename cancel-rename on-rename-group on-ungroup
            on-context-menu selected-full]}]
   (let [group-open?    (get open-groups prefix true)
-        new-css-system (mf/use-ctx ctx/new-css-system)
         dragging*      (mf/use-state false)
         dragging?      (deref dragging*)
 
@@ -194,143 +152,75 @@
          (mf/deps dragging* prefix selected-paths selected-full)
          (fn [event]
            (cmm/on-drop-asset-group event dragging* prefix selected-paths selected-full dwl/rename-media)))]
-    (if  ^boolean new-css-system
-      [:div {:class (dom/classnames (css :graphics-group) true)
-             :on-drag-enter on-drag-enter
-             :on-drag-leave on-drag-leave
-             :on-drag-over dom/prevent-default
-             :on-drop on-drop}
-       [:& grp/asset-group-title
-        {:file-id file-id
-         :section :graphics
-         :path prefix
-         :group-open? group-open?
-         :on-rename on-rename-group
-         :on-ungroup on-ungroup}]
-       (when group-open?
-         [:*
-          (let [objects (get groups "" [])]
-            [:div {:class-name (dom/classnames
-                                (css :asset-grid) listing-thumbs?
-                                (css :asset-enum) (not listing-thumbs?)
-                                (css :drop-space) (and
-                                                   (empty? objects)
-                                                   (some? groups)
-                                                   (not dragging?)))
-                   :on-drag-enter on-drag-enter
-                   :on-drag-leave on-drag-leave
-                   :on-drag-over dom/prevent-default
-                   :on-drop on-drop}
+    [:div {:class (stl/css :graphics-group)
+           :on-drag-enter on-drag-enter
+           :on-drag-leave on-drag-leave
+           :on-drag-over dom/prevent-default
+           :on-drop on-drop}
+     [:& grp/asset-group-title
+      {:file-id file-id
+       :section :graphics
+       :path prefix
+       :group-open? group-open?
+       :on-rename on-rename-group
+       :on-ungroup on-ungroup}]
+     (when group-open?
+       [:*
+        (let [objects (get groups "" [])]
+          [:div {:class-name (stl/css-case
+                              :asset-grid listing-thumbs?
+                              :asset-enum (not listing-thumbs?)
+                              :drop-space (and
+                                           (empty? objects)
+                                           (some? groups)
+                                           (not dragging?)))
+                 :on-drag-enter on-drag-enter
+                 :on-drag-leave on-drag-leave
+                 :on-drag-over dom/prevent-default
+                 :on-drop on-drop}
 
-             (when ^boolean dragging?
-               [:div {:class (dom/classnames (css :grid-placeholder) true)} "\u00A0"])
+           (when ^boolean dragging?
+             [:div {:class (stl/css :grid-placeholder)} "\u00A0"])
 
-             (when (and (empty? objects)
-                        (some? groups))
-               [:div {:class (dom/classnames (css :drop-space) true)}])
+           (when (and (empty? objects)
+                      (some? groups))
+             [:div {:class (stl/css :drop-space)}])
 
-             (for [object objects]
-               [:& graphics-item
-                {:key (dm/str "object-" (:id object))
-                 :file-id file-id
-                 :object object
-                 :renaming renaming
-                 :listing-thumbs? listing-thumbs?
-                 :selected-objects selected-objects
-                 :on-asset-click on-asset-click
-                 :on-context-menu on-context-menu
-                 :on-drag-start on-drag-start
-                 :do-rename do-rename
-                 :cancel-rename cancel-rename
-                 :selected-full selected-full
-                 :selected-paths selected-paths}])])
-          (for [[path-item content] groups]
-            (when-not (empty? path-item)
-              [:& graphics-group {:file-id file-id
-                                  :key path-item
-                                  :prefix (cfh/merge-path-item prefix path-item)
-                                  :groups content
-                                  :open-groups open-groups
-                                  :force-open? force-open?
-                                  :renaming renaming
-                                  :listing-thumbs? listing-thumbs?
-                                  :selected-objects selected-objects
-                                  :on-asset-click on-asset-click
-                                  :on-drag-start on-drag-start
-                                  :do-rename do-rename
-                                  :cancel-rename cancel-rename
-                                  :on-rename-group on-rename-group
-                                  :on-ungroup on-ungroup
-                                  :on-context-menu on-context-menu
-                                  :selected-full selected-full
-                                  :selected-paths selected-paths}]))])]
-
-      [:div {:on-drag-enter on-drag-enter
-             :on-drag-leave on-drag-leave
-             :on-drag-over dom/prevent-default
-             :on-drop on-drop}
-       [:& grp/asset-group-title {:file-id file-id
-                                  :section :graphics
-                                  :path prefix
-                                  :group-open? group-open?
-                                  :on-rename on-rename-group
-                                  :on-ungroup on-ungroup}]
-       (when group-open?
-         [:*
-          (let [objects (get groups "" [])]
-            [:div {:class-name (dom/classnames
-                                :asset-grid listing-thumbs?
-                                :asset-enum (not listing-thumbs?)
-                                :drop-space (and
-                                             (empty? objects)
-                                             (some? groups)
-                                             (not dragging?)))
-                   :on-drag-enter on-drag-enter
-                   :on-drag-leave on-drag-leave
-                   :on-drag-over dom/prevent-default
-                   :on-drop on-drop}
-
-             (when ^boolean dragging?
-               [:div.grid-placeholder "\u00A0"])
-
-             (when (and (empty? objects)
-                        (some? groups))
-               [:div.drop-space])
-
-             (for [object objects]
-               [:& graphics-item {:key (dm/str "object-" (:id object))
-                                  :file-id file-id
-                                  :object object
-                                  :renaming renaming
-                                  :listing-thumbs? listing-thumbs?
-                                  :selected-objects selected-objects
-                                  :on-asset-click on-asset-click
-                                  :on-context-menu on-context-menu
-                                  :on-drag-start on-drag-start
-                                  :do-rename do-rename
-                                  :cancel-rename cancel-rename
-                                  :selected-full selected-full
-                                  :selected-paths selected-paths}])])
-          (for [[path-item content] groups]
-            (when-not (empty? path-item)
-              [:& graphics-group {:file-id file-id
-                                  :key path-item
-                                  :prefix (cfh/merge-path-item prefix path-item)
-                                  :groups content
-                                  :open-groups open-groups
-                                  :force-open? force-open?
-                                  :renaming renaming
-                                  :listing-thumbs? listing-thumbs?
-                                  :selected-objects selected-objects
-                                  :on-asset-click on-asset-click
-                                  :on-drag-start on-drag-start
-                                  :do-rename do-rename
-                                  :cancel-rename cancel-rename
-                                  :on-rename-group on-rename-group
-                                  :on-ungroup on-ungroup
-                                  :on-context-menu on-context-menu
-                                  :selected-full selected-full
-                                  :selected-paths selected-paths}]))])])))
+           (for [object objects]
+             [:& graphics-item
+              {:key (dm/str "object-" (:id object))
+               :file-id file-id
+               :object object
+               :renaming renaming
+               :listing-thumbs? listing-thumbs?
+               :selected-objects selected-objects
+               :on-asset-click on-asset-click
+               :on-context-menu on-context-menu
+               :on-drag-start on-drag-start
+               :do-rename do-rename
+               :cancel-rename cancel-rename
+               :selected-full selected-full
+               :selected-paths selected-paths}])])
+        (for [[path-item content] groups]
+          (when-not (empty? path-item)
+            [:& graphics-group {:file-id file-id
+                                :key path-item
+                                :prefix (cfh/merge-path-item prefix path-item)
+                                :groups content
+                                :open-groups open-groups
+                                :force-open? force-open?
+                                :renaming renaming
+                                :listing-thumbs? listing-thumbs?
+                                :selected-objects selected-objects
+                                :on-asset-click on-asset-click
+                                :on-drag-start on-drag-start
+                                :do-rename do-rename
+                                :cancel-rename cancel-rename
+                                :on-rename-group on-rename-group
+                                :on-ungroup on-ungroup
+                                :on-context-menu on-context-menu
+                                :selected-full selected-full
+                                :selected-paths selected-paths}]))])]))
 
 (mf/defc graphics-section
   {::mf/wrap-props false}
@@ -362,7 +252,6 @@
 
         components-v2     (mf/use-ctx ctx/components-v2)
         team-id           (mf/use-ctx ctx/current-team-id)
-        new-css-system    (mf/use-ctx ctx/new-css-system)
 
         add-graphic
         (mf/use-fn
@@ -496,26 +385,16 @@
                            :section :graphics
                            :assets-count (count objects)
                            :open? open?}
-     (if new-css-system
-       (when local?
-         [:& cmm/asset-section-block {:role :title-button}
-          (when (and (not components-v2) (not read-only?))
-            [:button {:class (dom/classnames (css :assets-btn) true)
-                   :on-click add-graphic}
-             i/add-refactor
-             [:& file-uploader {:accept cm/str-image-types
-                                :multi true
-                                :ref input-ref
-                                :on-selected on-file-selected}]])])
-       (when local?
-         [:& cmm/asset-section-block {:role :title-button}
-          (when (and (not components-v2) (not read-only?))
-            [:div.assets-button {:on-click add-graphic}
-             i/plus
-             [:& file-uploader {:accept cm/str-image-types
-                                :multi true
-                                :ref input-ref
-                                :on-selected on-file-selected}]])]))
+     (when local?
+       [:& cmm/asset-section-block {:role :title-button}
+        (when (and (not components-v2) (not read-only?))
+          [:button {:class (stl/css :assets-btn)
+                    :on-click add-graphic}
+           i/add-refactor
+           [:& file-uploader {:accept cm/str-image-types
+                              :multi true
+                              :ref input-ref
+                              :on-selected on-file-selected}]])])
 
      [:& cmm/asset-section-block {:role :content}
       [:& graphics-group {:file-id file-id
@@ -538,21 +417,14 @@
         [:& cmm/assets-context-menu
          {:on-close on-close-menu
           :state @menu-state
-          :options (if new-css-system
-                     [(when-not (or multi-objects? multi-assets?)
-                        {:option-name    (tr "workspace.assets.rename")
-                         :id             "assets-rename-graphics"
-                         :option-handler on-rename})
-                      {:option-name    (tr "workspace.assets.delete")
-                       :id             "assets-delete-graphics"
-                       :option-handler on-delete}
-                      (when-not multi-assets?
-                        {:option-name    (tr "workspace.assets.group")
-                         :id             "assets-group-graphics"
-                         :option-handler on-group})]
-
-                     [(when-not (or multi-objects? multi-assets?)
-                        [(tr "workspace.assets.rename") on-rename])
-                      [(tr "workspace.assets.delete") on-delete]
-                      (when-not multi-assets?
-                        [(tr "workspace.assets.group") on-group])])}])]]))
+          :options [(when-not (or multi-objects? multi-assets?)
+                      {:option-name    (tr "workspace.assets.rename")
+                       :id             "assets-rename-graphics"
+                       :option-handler on-rename})
+                    {:option-name    (tr "workspace.assets.delete")
+                     :id             "assets-delete-graphics"
+                     :option-handler on-delete}
+                    (when-not multi-assets?
+                      {:option-name    (tr "workspace.assets.group")
+                       :id             "assets-group-graphics"
+                       :option-handler on-group})]}])]]))

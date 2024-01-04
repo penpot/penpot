@@ -13,7 +13,6 @@
    [app.common.uuid :as uuid]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
-   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
@@ -22,8 +21,7 @@
 
 (mf/defc editable-select
   [{:keys [value type options class on-change placeholder on-blur input-class] :as params}]
-  (let [new-css-system  (mf/use-ctx ctx/new-css-system)
-        state* (mf/use-state {:id (uuid/next)
+  (let [state* (mf/use-state {:id (uuid/next)
                               :is-open? false
                               :current-value value
                               :top nil
@@ -32,9 +30,6 @@
         state (deref state*)
         is-open? (:is-open? state)
         current-value (:current-value state)
-        top-value (:top state)
-        left-value (:left state)
-        bottom-value (:bottom state)
         element-id (:id state)
 
         min-val (get params :min)
@@ -42,11 +37,6 @@
 
         emit-blur? (mf/use-ref nil)
         font-size-wrapper-ref (mf/use-ref)
-
-        open-dropdown
-        (fn [event]
-          (dom/stop-propagation event)
-          (swap! state* assoc :is-open? true))
 
         toggle-dropdown
         (mf/use-fn
@@ -170,81 +160,43 @@
       (mf/set-ref-val! emit-blur? (not is-open?)))
 
 
-    (if new-css-system
-      [:div {:class (dm/str class " " (stl/css :editable-select))
-             :ref on-node-load}
-       (if (= type "number")
-         [:> numeric-input* {:value (or (some-> current-value value->label) "")
-                             :className input-class
-                             :on-change set-value
-                             :on-focus handle-focus
-                             :on-blur handle-blur
-                             :placeholder placeholder}]
-         [:input {:value (or (some-> current-value value->label) "")
-                  :class input-class
-                  :on-change handle-change-input
-                  :on-key-down handle-key-down
-                  :on-focus handle-focus
-                  :on-blur handle-blur
-                  :placeholder placeholder
-                  :type type}])
+    [:div {:class (dm/str class " " (stl/css :editable-select))
+           :ref on-node-load}
+     (if (= type "number")
+       [:> numeric-input* {:value (or (some-> current-value value->label) "")
+                           :className input-class
+                           :on-change set-value
+                           :on-focus handle-focus
+                           :on-blur handle-blur
+                           :placeholder placeholder}]
+       [:input {:value (or (some-> current-value value->label) "")
+                :class input-class
+                :on-change handle-change-input
+                :on-key-down handle-key-down
+                :on-focus handle-focus
+                :on-blur handle-blur
+                :placeholder placeholder
+                :type type}])
 
-       [:span {:class (stl/css :dropdown-button)
-               :on-click toggle-dropdown}
-        i/arrow-refactor]
+     [:span {:class (stl/css :dropdown-button)
+             :on-click toggle-dropdown}
+      i/arrow-refactor]
 
-       [:& dropdown {:show (or is-open? false)
-                     :on-close close-dropdown}
-        [:ul {:class (stl/css :custom-select-dropdown)
-              :ref font-size-wrapper-ref}
-         (for [[index item] (map-indexed vector options)]
-           (if (= :separator item)
-             [:li {:class (stl/css :separator)
-                   :key (dm/str element-id "-" index)}]
-             (let [[value label] (as-key-value item)]
-               [:li
-                {:key (str element-id "-" index)
-                 :class (stl/css-case :dropdown-element true
-                                      :is-selected (= (dm/str value) current-value))
-                 :data-value value
-                 :on-click select-item}
-                [:span {:class (stl/css :label)} label]
-                [:span {:class (stl/css :check-icon)}
-                 i/tick-refactor]])))]]]
-
-
-      [:div.editable-select {:class class
-                             :ref on-node-load}
-       (if (= type "number")
-         [:> numeric-input* {:value (or (some-> current-value value->label) "")
-                             :on-change set-value
-                             :on-focus handle-focus
-                             :on-blur handle-blur
-                             :placeholder placeholder}]
-         [:input.input-text {:value (or (some-> current-value value->label) "")
-                             :on-change handle-change-input
-                             :on-key-down handle-key-down
-                             :on-focus handle-focus
-                             :on-blur handle-blur
-                             :placeholder placeholder
-                             :type type}])
-       [:span.dropdown-button {:on-click open-dropdown} i/arrow-down]
-
-       [:& dropdown {:show (or is-open? false)
-                     :on-close close-dropdown}
-        [:ul.custom-select-dropdown {:style {:position "fixed"
-                                             :top top-value
-                                             :left left-value
-                                             :bottom bottom-value}
-                                     :ref font-size-wrapper-ref}
-         (for [[index item] (map-indexed vector options)]
-           (if (= :separator item)
-             [:hr {:key (str element-id "-" index)}]
-             (let [[value label] (as-key-value item)]
-               [:li.checked-element
-                {:key (str element-id "-" index)
-                 :class (when (= (str value) current-value) "is-selected")
-                 :data-value value
-                 :on-click select-item}
-                [:span.check-icon i/tick]
-                [:span.checked-element-value label]])))]]])))
+     [:& dropdown {:show (or is-open? false)
+                   :on-close close-dropdown}
+      [:ul {:class (stl/css :custom-select-dropdown)
+            :ref font-size-wrapper-ref}
+       (for [[index item] (map-indexed vector options)]
+         (if (= :separator item)
+           [:li {:class (stl/css :separator)
+                 :key (dm/str element-id "-" index)}]
+           (let [[value label] (as-key-value item)]
+             [:li
+              {:key (str element-id "-" index)
+               :class (stl/css-case :dropdown-element true
+                                    :is-selected (= (dm/str value) current-value))
+               :data-value value
+               :on-click select-item}
+              [:span {:class (stl/css :label)} label]
+              [:span {:class (stl/css :check-icon)}
+               i/tick-refactor]])))]]]))

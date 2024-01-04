@@ -10,7 +10,6 @@
    [app.common.data :as d]
    [app.main.ui.components.copy-button :refer [copy-button]]
    [app.main.ui.components.title-bar :refer [title-bar]]
-   [app.main.ui.context :as ctx]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
