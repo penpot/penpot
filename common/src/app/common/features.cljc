@@ -93,7 +93,6 @@
   [flag]
   (case flag
     :feature-components-v2 "components/v2"
-    :feature-new-css-system "styles/v2"
     :feature-styles-v2 "styles/v2"
     :feature-grid-layout "layout/grid"
     :feature-fdata-objects-map "fdata/objects-map"

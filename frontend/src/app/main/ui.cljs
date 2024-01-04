@@ -7,7 +7,6 @@
 (ns app.main.ui
   (:require
    [app.config :as cf]
-   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
@@ -58,10 +57,8 @@
 (mf/defc main-page
   {::mf/wrap [#(mf/catch % {:fallback on-main-error})]}
   [{:keys [route profile]}]
-  (let [{:keys [data params]} route
-        new-css-system (features/use-feature "styles/v2")]
+  (let [{:keys [data params]} route]
     [:& (mf/provider ctx/current-route) {:value route}
-     [:& (mf/provider ctx/new-css-system) {:value new-css-system}
      (case (:name data)
        (:auth-login
         :auth-register
@@ -171,7 +168,7 @@
        :frame-preview
        [:& frame-preview/frame-preview]
 
-       nil)]]))
+       nil)]))
 
 (mf/defc app
   []

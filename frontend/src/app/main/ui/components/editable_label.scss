@@ -19,3 +19,23 @@
   border: $s-1 solid var(--input-border-color-focus);
   color: var(--layer-row-foreground-color);
 }
+
+.editable-label {
+  display: flex;
+
+  &.is-hidden {
+    display: none;
+  }
+}
+
+.editable-label-close {
+  cursor: pointer;
+
+  svg {
+    @extend .button-icon;
+    height: $s-12;
+    width: $s-12;
+    stroke: var(--icon-foreground);
+    margin: 0;
+  }
+}

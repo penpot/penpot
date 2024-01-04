@@ -14,10 +14,6 @@
 (defn ^:export is-components-v2 []
   (features/active-feature? @st/state "components/v2"))
 
-(defn ^:export new-css-system []
-  (tm/schedule-on-idle #(st/emit! (features/toggle-feature "styles/v2")))
-  nil)
-
 (defn ^:export grid []
   (tm/schedule-on-idle #(st/emit! (features/toggle-feature "layout/grid")))
   nil)
