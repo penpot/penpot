@@ -53,6 +53,7 @@
 
 .project-name {
   @include tabTitleTipography;
+  color: var(--title-foreground-color);
 }
 
 .sitemap-text {

@@ -9,33 +9,37 @@
 .attributes-block {
   @include flexColumn;
   margin-bottom: $s-16;
-  .image-wrapper {
-    background-color: var(--menu-background-color);
-    position: relative;
-    @include flexCenter;
-    width: $s-248;
-    height: $s-160;
-    max-height: $s-160;
-    max-width: $s-248;
-    margin: $s-8 0;
-    border-radius: $br-8;
+}
 
-    img {
-      height: 100%;
-      width: 100%;
-      object-fit: contain;
-    }
+.image-wrapper {
+  background-color: var(--menu-background-color);
+  position: relative;
+  @include flexCenter;
+  width: $s-248;
+  height: $s-160;
+  max-height: $s-160;
+  max-width: $s-248;
+  margin: $s-8 0;
+  border-radius: $br-8;
+
+  img {
+    height: 100%;
+    width: 100%;
+    object-fit: contain;
   }
-  .image-row {
-    @extend .attr-row;
-    .button-children {
-      @extend .copy-button-children;
-    }
-  }
-  .download-button {
-    @extend .button-secondary;
-    @include tabTitleTipography;
-    height: $s-32;
-    margin-top: $s-4;
-  }
+}
+
+.image-row {
+  @extend .attr-row;
+}
+
+.button-children {
+  @extend .copy-button-children;
+}
+
+.download-button {
+  @extend .button-secondary;
+  @include tabTitleTipography;
+  height: $s-32;
+  margin-top: $s-4;
 }
