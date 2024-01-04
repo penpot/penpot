@@ -18,6 +18,7 @@
   height: $s-48;
   width: 100vw;
   padding: $s-8 $s-12;
+  transition: transform 400ms ease 300ms;
   background-color: var(--panel-background-color);
 }
 
@@ -299,4 +300,13 @@
       }
     }
   }
+}
+
+/** FULLSCREEN */
+[data-fullscreen="true"] .viewer-header {
+  transform: translateY(-$s-48);
+}
+
+[data-force-visible="true"] .viewer-header {
+  transform: translateY(0);
 }

@@ -101,7 +101,7 @@
   width: 100%;
   height: $s-40;
   padding-right: 0 $s-8 $s-40 $s-8;
-  transition: bottom 400ms ease 300ms;
+  transition: transform 400ms ease 300ms;
   z-index: $z-index-2;
 }
 
@@ -177,4 +177,13 @@
 
 :global(svg#loader-pencil) {
   fill: var(--icon-foreground);
+}
+
+/** FULLSCREEN */
+[data-fullscreen="true"] .viewer-bottom {
+  transform: translateY($s-40);
+}
+
+[data-force-visible="true"] .viewer-bottom {
+  transform: translateY(0);
 }

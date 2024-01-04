@@ -547,6 +547,11 @@
                         []
                         (partition 2 params))))
 
+(defn ^boolean id?
+  [node id]
+  (when (some? node)
+    (= (.-id ^js node) id)))
+
 (defn ^boolean class? [node class-name]
   (when (some? node)
     (let [class-list (.-classList ^js node)]

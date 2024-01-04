@@ -324,14 +324,14 @@
         (mf/use-fn
          (fn [event]
            (let [origin (dom/get-target event)
-                 over-section? (dom/class? origin "viewer-section")
+                 over-section? (dom/get-data origin "viewer-section")
                  layout (dom/get-element "viewer-layout")
-                 has-force? (dom/class? layout "force-visible")]
+                 has-force? (dom/get-data layout "force-visible")]
 
              (when over-section?
-               (if has-force?
-                 (dom/remove-class! layout "force-visible")
-                 (dom/add-class! layout "force-visible"))))))
+               (if (= has-force? "true")
+                 (dom/set-data! layout "force-visible" false)
+                 (dom/set-data! layout "force-visible" true))))))
 
         on-click
         (mf/use-fn
@@ -351,10 +351,11 @@
         (mf/use-fn
          (fn [event]
            (let [event  (.getBrowserEvent ^js event)
-                 wrapper (dom/get-element-by-class "inspect-svg-wrapper")
-                 section (dom/get-element-by-class "inspect-svg-container")
+                 wrapper (dom/get-element "inspect-svg-wrapper")
+                 section (dom/get-element "inspect-svg-container")
                  target (.-target event)]
-             (when (or (dom/child? target wrapper) (dom/class? target "inspect-svg-container"))
+             ;; TODO: Reemplazar el dom/class? por un data-attribute
+             (when (or (dom/child? target wrapper) (dom/id? target "inspect-svg-container"))
                (let [norm-event ^js (nw/normalize-wheel event)
                      mod? (kbd/mod? event)
                      shift? (kbd/shift? event)
@@ -516,8 +517,9 @@
      {:class (stl/css-case
               :force-visible (:show-thumbnails local)
               :viewer-layout (not= section :inspect)
-              :inspect-layout (= section :inspect)
-              :fullscreen fullscreen?)}
+              :inspect-layout (= section :inspect))
+      :data-fullscreen fullscreen?
+      :data-force-visible (:show-thumbnails local)}
 
      [:div {:class (stl/css :viewer-content)}
       [:& header/header {:project project
@@ -542,6 +544,7 @@
 
       [:section {:id "viewer-section"
                  :ref viewer-section-ref
+                 :data-viewer-section true
                  :class (stl/css-case :viewer-section true
                                       :fulscreen fullscreen?)
                  :on-click click-on-screen}
