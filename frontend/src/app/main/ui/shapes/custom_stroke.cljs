@@ -282,17 +282,11 @@
 
 (mf/defc outer-stroke
   {::mf/wrap-props false}
-  [props]
-
-  (let [child        (unchecked-get props "children")
-        shape        (unchecked-get props "shape")
-        stroke       (unchecked-get props "stroke")
-        index        (unchecked-get props "index")
-
-        shape-id     (dm/get-prop shape :id)
+  [{:keys [children shape stroke index]}]
+  (let [shape-id     (dm/get-prop shape :id)
         render-id    (mf/use-ctx muc/render-id)
 
-        props        (obj/get child "props")
+        props        (obj/get children "props")
         style        (obj/get props "style")
 
         stroke-width (:stroke-width stroke 0)
@@ -305,7 +299,7 @@
     [:g.outer-stroke-shape
      [:defs
       [:& stroke-defs {:shape shape :stroke stroke :render-id render-id :index index}]
-      (let [type  (obj/get child "type")
+      (let [type  (obj/get children "type")
             style (-> (obj/clone style)
                       (obj/unset! "fill")
                       (obj/unset! "fillOpacity")
