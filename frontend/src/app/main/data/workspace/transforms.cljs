@@ -45,13 +45,13 @@
 ;; for example, right will only grow in the x coordinate and left
 ;; will grow in the inverse of the x coordinate
 (def ^:private handler-multipliers
-  {:right        [ 1  0]
-   :bottom       [ 0  1]
+  {:right        [1  0]
+   :bottom       [0  1]
    :left         [-1  0]
-   :top          [ 0 -1]
-   :top-right    [ 1 -1]
+   :top          [0 -1]
+   :top-right    [1 -1]
    :top-left     [-1 -1]
-   :bottom-right [ 1  1]
+   :bottom-right [1  1]
    :bottom-left  [-1  1]})
 
 (defn- handler-resize-origin

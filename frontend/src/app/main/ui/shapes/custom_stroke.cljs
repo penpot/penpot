@@ -105,106 +105,106 @@
                     (:stroke-opacity stroke))]
 
     [:*
-      (when (or (= cap-start :line-arrow)
-                (= cap-end :line-arrow))
-        [:marker {:id (dm/str id-prefix "-line-arrow")
-                  :viewBox "0 0 3 6"
-                  :refX "2"
-                  :refY "3"
-                  :markerWidth "8.5"
-                  :markerHeight "8.5"
-                  :orient "auto-start-reverse"
-                  :fill color
-                  :fillOpacity opacity}
-         [:path {:d "M 0.5 0.5 L 3 3 L 0.5 5.5 L 0 5 L 2 3 L 0 1 z"}]])
+     (when (or (= cap-start :line-arrow)
+               (= cap-end :line-arrow))
+       [:marker {:id (dm/str id-prefix "-line-arrow")
+                 :viewBox "0 0 3 6"
+                 :refX "2"
+                 :refY "3"
+                 :markerWidth "8.5"
+                 :markerHeight "8.5"
+                 :orient "auto-start-reverse"
+                 :fill color
+                 :fillOpacity opacity}
+        [:path {:d "M 0.5 0.5 L 3 3 L 0.5 5.5 L 0 5 L 2 3 L 0 1 z"}]])
 
-      (when (or (= cap-start :triangle-arrow)
-                (= cap-end :triangle-arrow))
-        [:marker {:id (dm/str id-prefix "-triangle-arrow")
-                  :viewBox "0 0 3 6"
-                  :refX "2"
-                  :refY "3"
-                  :markerWidth "8.5"
-                  :markerHeight "8.5"
-                  :orient "auto-start-reverse"
-                  :fill color
-                  :fillOpacity opacity}
-         [:path {:d "M 0 0 L 3 3 L 0 6 z"}]])
+     (when (or (= cap-start :triangle-arrow)
+               (= cap-end :triangle-arrow))
+       [:marker {:id (dm/str id-prefix "-triangle-arrow")
+                 :viewBox "0 0 3 6"
+                 :refX "2"
+                 :refY "3"
+                 :markerWidth "8.5"
+                 :markerHeight "8.5"
+                 :orient "auto-start-reverse"
+                 :fill color
+                 :fillOpacity opacity}
+        [:path {:d "M 0 0 L 3 3 L 0 6 z"}]])
 
-      (when (or (= cap-start :square-marker)
-                (= cap-end :square-marker))
-        [:marker {:id (dm/str id-prefix "-square-marker")
-                  :viewBox "0 0 6 6"
-                  :refX "3"
-                  :refY "3"
-                  :markerWidth "4.2426" ;; diagonal length of a 3x3 square
-                  :markerHeight "4.2426"
-                  :orient "auto-start-reverse"
-                  :fill color
-                  :fillOpacity opacity}
-         [:rect {:x 0 :y 0 :width 6 :height 6}]])
+     (when (or (= cap-start :square-marker)
+               (= cap-end :square-marker))
+       [:marker {:id (dm/str id-prefix "-square-marker")
+                 :viewBox "0 0 6 6"
+                 :refX "3"
+                 :refY "3"
+                 :markerWidth "4.2426" ;; diagonal length of a 3x3 square
+                 :markerHeight "4.2426"
+                 :orient "auto-start-reverse"
+                 :fill color
+                 :fillOpacity opacity}
+        [:rect {:x 0 :y 0 :width 6 :height 6}]])
 
-      (when (or (= cap-start :circle-marker)
-                (= cap-end :circle-marker))
-        [:marker {:id (dm/str id-prefix "-circle-marker")
-                  :viewBox "0 0 6 6"
-                  :refX "3"
-                  :refY "3"
-                  :markerWidth "4"
-                  :markerHeight "4"
-                  :orient "auto-start-reverse"
-                  :fill color
-                  :fillOpacity opacity}
-         [:circle {:cx "3" :cy "3" :r "3"}]])
+     (when (or (= cap-start :circle-marker)
+               (= cap-end :circle-marker))
+       [:marker {:id (dm/str id-prefix "-circle-marker")
+                 :viewBox "0 0 6 6"
+                 :refX "3"
+                 :refY "3"
+                 :markerWidth "4"
+                 :markerHeight "4"
+                 :orient "auto-start-reverse"
+                 :fill color
+                 :fillOpacity opacity}
+        [:circle {:cx "3" :cy "3" :r "3"}]])
 
-      (when (or (= cap-start :diamond-marker)
-                (= cap-end :diamond-marker))
-        [:marker {:id (dm/str id-prefix "-diamond-marker")
-                  :viewBox "0 0 6 6"
-                  :refX "3"
-                  :refY "3"
-                  :markerWidth "6"
-                  :markerHeight "6"
-                  :orient "auto-start-reverse"
-                  :fill color
-                  :fillOpacity opacity}
-         [:path {:d "M 3 0 L 6 3 L 3 6 L 0 3 z"}]])
+     (when (or (= cap-start :diamond-marker)
+               (= cap-end :diamond-marker))
+       [:marker {:id (dm/str id-prefix "-diamond-marker")
+                 :viewBox "0 0 6 6"
+                 :refX "3"
+                 :refY "3"
+                 :markerWidth "6"
+                 :markerHeight "6"
+                 :orient "auto-start-reverse"
+                 :fill color
+                 :fillOpacity opacity}
+        [:path {:d "M 3 0 L 6 3 L 3 6 L 0 3 z"}]])
 
       ;; If the user wants line caps but different in each end,
       ;; simulate it with markers.
-      (when (and (or (= cap-start :round)
-                     (= cap-end :round))
-                 (not= cap-start cap-end))
-        [:marker {:id (dm/str id-prefix "-round")
-                  :viewBox "0 0 6 6"
-                  :refX "3"
-                  :refY "3"
-                  :markerWidth "6"
-                  :markerHeight "6"
-                  :orient "auto-start-reverse"
-                  :fill color
-                  :fillOpacity opacity}
-         [:path {:d "M 3 2.5 A 0.5 0.5 0 0 1 3 3.5 "}]])
+     (when (and (or (= cap-start :round)
+                    (= cap-end :round))
+                (not= cap-start cap-end))
+       [:marker {:id (dm/str id-prefix "-round")
+                 :viewBox "0 0 6 6"
+                 :refX "3"
+                 :refY "3"
+                 :markerWidth "6"
+                 :markerHeight "6"
+                 :orient "auto-start-reverse"
+                 :fill color
+                 :fillOpacity opacity}
+        [:path {:d "M 3 2.5 A 0.5 0.5 0 0 1 3 3.5 "}]])
 
-      (when (and (or (= cap-start :square)
-                     (= cap-end :square))
-                 (not= cap-start cap-end))
-        [:marker {:id (dm/str id-prefix "-square")
-                  :viewBox "0 0 6 6"
-                  :refX "3"
-                  :refY "3"
-                  :markerWidth "6"
-                  :markerHeight "6"
-                  :orient "auto-start-reverse"
-                  :fill color
-                  :fillOpacity opacity}
-         [:rect {:x 3 :y 2.5 :width 0.5 :height 1}]])]))
+     (when (and (or (= cap-start :square)
+                    (= cap-end :square))
+                (not= cap-start cap-end))
+       [:marker {:id (dm/str id-prefix "-square")
+                 :viewBox "0 0 6 6"
+                 :refX "3"
+                 :refY "3"
+                 :markerWidth "6"
+                 :markerHeight "6"
+                 :orient "auto-start-reverse"
+                 :fill color
+                 :fillOpacity opacity}
+        [:rect {:x 3 :y 2.5 :width 0.5 :height 1}]])]))
 
 (mf/defc stroke-defs
   {::mf/wrap-props false}
   [{:keys [shape stroke render-id index]}]
   (let [open-path?    (and ^boolean (cfh/path-shape? shape)
-                       ^boolean (gsh/open-path? shape))
+                           ^boolean (gsh/open-path? shape))
         gradient      (:stroke-color-gradient stroke)
         alignment     (:stroke-alignment stroke :center)
         width         (:stroke-width stroke 0)
@@ -487,11 +487,11 @@
                         props
                         (cond-> props
                           (and (some? shape-blur)
-                            (not ^boolean (:hidden shape-blur)))
+                               (not ^boolean (:hidden shape-blur)))
                           (obj/set! "filter" (dm/fmt "url(#filter-blur-%)" render-id))
 
                           (and (empty? shape-fills)
-                            (some? (->> shape-shadow (remove :hidden) seq)))
+                               (some? (->> shape-shadow (remove :hidden) seq)))
                           (obj/set! "filter" (dm/fmt "url(#filter-%)" render-id))))]
 
     (when (d/not-empty? shape-strokes)

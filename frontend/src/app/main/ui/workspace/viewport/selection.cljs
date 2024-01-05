@@ -69,7 +69,7 @@
                 :outside
                 :inside)]
     (->>
-     [ ;; TOP-LEFT
+     [;; TOP-LEFT
       {:type :rotation
        :position :top-left
        :props {:cx x :cy y}}

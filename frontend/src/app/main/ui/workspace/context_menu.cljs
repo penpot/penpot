@@ -555,7 +555,7 @@
          (mf/deps grid-id type index)
          (fn []
            (st/emit! (dwsl/remove-layout-track [grid-id] type index {:with-shapes? true}))))]
-    
+
     (if (= type :column)
       [:*
        [:& menu-entry {:title (tr "workspace.context-menu.grid-track.column.duplicate") :on-click do-duplicate-track}]

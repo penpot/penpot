@@ -76,11 +76,11 @@
         parent-id   (:parent-id frame)
 
         frame-data  (if (:blocked frame)
-                     []
-                     (->> (snap/shape->snap-points frame)
-                          (mapv #(array-map :type :shape
-                                            :id frame-id
-                                            :pt %))))
+                      []
+                      (->> (snap/shape->snap-points frame)
+                           (mapv #(array-map :type :shape
+                                             :id frame-id
+                                             :pt %))))
         grid-x-data (get-grids-snap-points frame :x)
         grid-y-data (get-grids-snap-points frame :y)]
 

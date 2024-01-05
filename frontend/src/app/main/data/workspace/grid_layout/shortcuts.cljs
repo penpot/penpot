@@ -64,8 +64,7 @@
 
    :zoom-selected   {:tooltip (ds/shift "2")
                      :command "shift+2"
-                     :fn #(st/emit! dw/zoom-to-selected-shape)}
-   })
+                     :fn #(st/emit! dw/zoom-to-selected-shape)}})
 
 (defn get-tooltip [shortcut]
   (assert (contains? shortcuts shortcut) (str shortcut))

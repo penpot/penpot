@@ -19,12 +19,12 @@
     (update [_ state]
       (let [expand-fn (fn [expanded]
                         (merge expanded
-                          (->> ids
-                               (map #(cfh/get-parent-ids objects %))
-                               flatten
-                               (remove #(= % uuid/zero))
-                               (map (fn [id] {id true}))
-                               (into {}))))]
+                               (->> ids
+                                    (map #(cfh/get-parent-ids objects %))
+                                    flatten
+                                    (remove #(= % uuid/zero))
+                                    (map (fn [id] {id true}))
+                                    (into {}))))]
         (update-in state [:workspace-local :expanded] expand-fn)))))
 
 

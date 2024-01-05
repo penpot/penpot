@@ -229,8 +229,7 @@
 
                            (contains? node :typography-ref-id)
                            (conj {:id (:typography-ref-id node)
-                                  :file-id (:typography-ref-file node)})
-                           )))
+                                  :file-id (:typography-ref-file node)}))))
 
                (into [])))
 
@@ -406,8 +405,8 @@
           (rx/reduce conj [])
           (rx/with-latest-from files-stream)
           (rx/merge-map (fn [[data files]]
-                         (->> (uz/compress-files data)
-                              (rx/map #(vector (get files file-id) %)))))))))
+                          (->> (uz/compress-files data)
+                               (rx/map #(vector (get files file-id) %)))))))))
 
 (defmethod impl/handler :export-binary-file
   [{:keys [files export-type] :as message}]
@@ -450,5 +449,5 @@
                (rx/catch (fn [err]
                            (js/console.error err)
                            (rx/of {:type :error
-                             :error (str err)
-                             :file-id (:id file)}))))))))
+                                   :error (str err)
+                                   :file-id (:id file)}))))))))

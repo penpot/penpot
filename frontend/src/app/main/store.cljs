@@ -43,7 +43,7 @@
                    (when (and *debug-events*
                               (ptk/event? e)
                               (not (debug-exclude-events (ptk/type e))))
-                     (.log js/console (str "[stream]: " (ptk/repr-event e)) )))))
+                     (.log js/console (str "[stream]: " (ptk/repr-event e)))))))
 
 (defonce state
   (ptk/store {:resolve ptk/resolve

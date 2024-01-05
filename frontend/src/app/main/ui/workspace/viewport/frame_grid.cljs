@@ -173,7 +173,7 @@
     [:g.grid-display {:style {:pointer-events "none"}}
      (for [frame frames]
        (when (and #_(not (is-transform? frame))
-                  (not (ctst/rotated-frame? frame))
+              (not (ctst/rotated-frame? frame))
                   (or (empty? focus) (contains? focus (:id frame))))
          [:& grid-display-frame {:key (str "grid-" (:id frame))
                                  :zoom zoom

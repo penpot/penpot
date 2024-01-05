@@ -275,11 +275,11 @@
         (update-in [target-frame-id :modifiers] ctm/change-property :layout-item-v-sizing :fix)))))
 
 (defn modif->js
-     [modif-tree objects]
-     (clj->js (into {}
-                    (map (fn [[k v]]
-                           [(get-in objects [k :name]) v]))
-                    modif-tree)))
+  [modif-tree objects]
+  (clj->js (into {}
+                 (map (fn [[k v]]
+                        [(get-in objects [k :name]) v]))
+                 modif-tree)))
 
 (defn apply-text-modifier
   [shape {:keys [width height]}]
@@ -301,19 +301,19 @@
                (d/update-when result id apply-text-modifier text-modifier))))))
 
 #_(defn apply-path-modifiers
-  [objects path-modifiers]
-  (letfn [(apply-path-modifier
-            [shape {:keys [content-modifiers]}]
-            (let [shape (update shape :content upc/apply-content-modifiers content-modifiers)
-                  [points selrect] (helpers/content->points+selrect shape (:content shape))]
-              (assoc shape :selrect selrect :points points)))]
-    (loop [modifiers (seq path-modifiers)
-           result objects]
-      (if (empty? modifiers)
-        result
-        (let [[id path-modifier] (first modifiers)]
-          (recur (rest modifiers)
-                 (update objects id apply-path-modifier path-modifier)))))))
+    [objects path-modifiers]
+    (letfn [(apply-path-modifier
+              [shape {:keys [content-modifiers]}]
+              (let [shape (update shape :content upc/apply-content-modifiers content-modifiers)
+                    [points selrect] (helpers/content->points+selrect shape (:content shape))]
+                (assoc shape :selrect selrect :points points)))]
+      (loop [modifiers (seq path-modifiers)
+             result objects]
+        (if (empty? modifiers)
+          result
+          (let [[id path-modifier] (first modifiers)]
+            (recur (rest modifiers)
+                   (update objects id apply-path-modifier path-modifier)))))))
 
 (defn- calculate-modifiers
   ([state modif-tree]
@@ -544,8 +544,7 @@
                            :layout-item-margin-type
                            :layout-grid-cells
                            :layout-grid-columns
-                           :layout-grid-rows
-                           ]})
+                           :layout-grid-rows]})
                  ;; We've applied the text-modifier so we can dissoc the temporary data
                  (fn [state]
                    (update state :workspace-text-modifier #(apply dissoc % ids)))

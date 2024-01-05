@@ -58,7 +58,7 @@
                                        (-> (dw/toggle-layout-flag :colorpalette)
                                            (vary-meta assoc ::ev/origin "workspace-colorpicker"))))))
 
-        shared-libs-options (mapv (fn[lib] {:value (d/name (:id lib)) :label (:name lib)} ) (vals shared-libs))
+        shared-libs-options (mapv (fn [lib] {:value (d/name (:id lib)) :label (:name lib)}) (vals shared-libs))
 
 
         library-options [{:value "recent" :label  (tr "workspace.libraries.colors.recent-colors")}
@@ -69,7 +69,7 @@
         on-color-click
         (mf/use-fn
          (mf/deps state)
-         (fn[event]
+         (fn [event]
            (on-select-color state event)))]
 
     ;; Load library colors when the select is changed

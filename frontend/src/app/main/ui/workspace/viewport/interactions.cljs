@@ -55,11 +55,11 @@
         dest-x-center (+ dest-x-left (/ (:width dest-rect) 2))
 
         orig-pos (if (<= orig-x-right dest-x-left) :right
-                   (if (>= orig-x-left dest-x-right) :left
-                     (if (<= orig-x-center dest-x-center) :left :right)))
+                     (if (>= orig-x-left dest-x-right) :left
+                         (if (<= orig-x-center dest-x-center) :left :right)))
         dest-pos (if (<= orig-x-right dest-x-left) :left
-                   (if (>= orig-x-left dest-x-right) :right
-                     (if (<= orig-x-center dest-x-center) :left :right)))
+                     (if (>= orig-x-left dest-x-right) :right
+                         (if (<= orig-x-center dest-x-center) :left :right)))
 
         orig-x (if (= orig-pos :right) orig-x-right orig-x-left)
         dest-x (if (= dest-pos :right) dest-x-right dest-x-left)
@@ -84,11 +84,11 @@
         dest-y (:y dest-point)
 
         orig-pos (if (<= orig-x-right dest-x) :right
-                   (if (>= orig-x-left dest-x) :left
-                     (if (<= orig-x-center dest-x) :right :left)))
+                     (if (>= orig-x-left dest-x) :left
+                         (if (<= orig-x-center dest-x) :right :left)))
         dest-pos (if (<= orig-x-right dest-x) :left
-                   (if (>= orig-x-left dest-x) :right
-                     (if (<= orig-x-center dest-x) :right :left)))
+                     (if (>= orig-x-left dest-x) :right
+                         (if (<= orig-x-center dest-x) :right :left)))
 
         orig-x (if (= orig-pos :right) orig-x-right orig-x-left)
         orig-y (+ (:y orig-rect) (/ (:height orig-rect) 2))]
@@ -121,21 +121,21 @@
                      nil)
         inv-zoom (/ 1 zoom)]
     [:*
-      [:circle {:cx 0
-                :cy 0
-                :r (if (some? action-type) 11 4)
-                :fill stroke
-                :transform (str
-                             "scale(" inv-zoom ", " inv-zoom ") "
-                             "translate(" (* zoom x) ", " (* zoom y) ")")}]
-      (when icon-pdata
-        [:path {:fill stroke
-                :stroke-width 2
-                :stroke "var(--color-white)"
-                :d icon-pdata
-                :transform (str
-                             "scale(" inv-zoom ", " inv-zoom ") "
-                             "translate(" (* zoom x) ", " (* zoom y) ")")}])]))
+     [:circle {:cx 0
+               :cy 0
+               :r (if (some? action-type) 11 4)
+               :fill stroke
+               :transform (str
+                           "scale(" inv-zoom ", " inv-zoom ") "
+                           "translate(" (* zoom x) ", " (* zoom y) ")")}]
+     (when icon-pdata
+       [:path {:fill stroke
+               :stroke-width 2
+               :stroke "var(--color-white)"
+               :d icon-pdata
+               :transform (str
+                           "scale(" inv-zoom ", " inv-zoom ") "
+                           "translate(" (* zoom x) ", " (* zoom y) ")")}])]))
 
 
 (mf/defc interaction-path
@@ -252,7 +252,7 @@
         [:g {:on-pointer-down start-move-position
              :on-pointer-enter #(reset! hover-disabled? true)
              :on-pointer-leave #(reset! hover-disabled? false)}
-         [:g {:transform (gmt/translate-matrix (gpt/point (- marker-x dest-x) (- marker-y dest-y))) }
+         [:g {:transform (gmt/translate-matrix (gpt/point (- marker-x dest-x) (- marker-y dest-y)))}
           [:& (mf/provider muc/render-thumbnails) {:value true}
            [:& (mf/provider embed/context) {:value false}
             [:& shape-wrapper {:shape dest-shape}]]]]

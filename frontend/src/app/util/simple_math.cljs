@@ -15,7 +15,7 @@
 
 (def parser
   (insta/parser
-    "opt-expr = '' | expr
+   "opt-expr = '' | expr
      expr = term (<spaces> ('+'|'-') <spaces> expr)* |
             ('+'|'-'|'*'|'/') <spaces> factor
      term = factor (<spaces> ('*'|'/') <spaces> term)*
@@ -98,7 +98,7 @@
                            (map :expecting)
                            (filter some?))]
         (js/console.debug
-          (str "Invalid value '" text "' at index " index
-               ". Expected one of " expecting "."))
+         (str "Invalid value '" text "' at index " index
+              ". Expected one of " expecting "."))
         nil))))
 

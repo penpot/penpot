@@ -15,7 +15,7 @@
 (defn format-viewbox
   "Format a viewbox to a string"
   [vbox]
-  (dm/str (format-number(:x vbox 0)) " "
+  (dm/str (format-number (:x vbox 0)) " "
           (format-number (:y vbox 0)) " "
           (format-number (:width vbox 0)) " "
           (format-number (:height vbox 0))))

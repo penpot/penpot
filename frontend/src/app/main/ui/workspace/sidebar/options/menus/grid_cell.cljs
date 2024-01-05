@@ -46,28 +46,28 @@
            (set-alignment (-> value keyword))))]
 
     [:div {:class (stl/css :self-align-menu)}
-       [:& radio-buttons {:selected (d/name alignment)
-                          :on-change handle-set-alignment
-                          :name (dm/str "flex-align-items-" type)}
-        [:& radio-button {:value "start"
-                          :icon  (if is-col? i/align-self-row-left-refactor i/align-self-column-top-refactor)
-                          :title "Align self start"
-                          :id     (dm/str "align-self-start-" type)}]
+     [:& radio-buttons {:selected (d/name alignment)
+                        :on-change handle-set-alignment
+                        :name (dm/str "flex-align-items-" type)}
+      [:& radio-button {:value "start"
+                        :icon  (if is-col? i/align-self-row-left-refactor i/align-self-column-top-refactor)
+                        :title "Align self start"
+                        :id     (dm/str "align-self-start-" type)}]
 
-        [:& radio-button {:value "center"
-                          :icon  (if is-col? i/align-self-row-center-refactor i/align-self-column-center-refactor)
-                          :title "Align self center"
-                          :id     (dm/str "align-self-center-" type)}]
+      [:& radio-button {:value "center"
+                        :icon  (if is-col? i/align-self-row-center-refactor i/align-self-column-center-refactor)
+                        :title "Align self center"
+                        :id     (dm/str "align-self-center-" type)}]
 
-        [:& radio-button {:value "end"
-                          :icon  (if is-col? i/align-self-row-right-refactor i/align-self-column-bottom-refactor)
-                          :title "Align self end"
-                          :id     (dm/str "align-self-end-" type)}]
+      [:& radio-button {:value "end"
+                        :icon  (if is-col? i/align-self-row-right-refactor i/align-self-column-bottom-refactor)
+                        :title "Align self end"
+                        :id     (dm/str "align-self-end-" type)}]
 
-        [:& radio-button {:value "stretch"
-                          :icon  (if is-col? i/align-self-row-strech i/align-self-column-strech)
-                          :title "Align self stretch"
-                          :id     (dm/str "align-self-stretch-" type)}]]]))
+      [:& radio-button {:value "stretch"
+                        :icon  (if is-col? i/align-self-row-strech i/align-self-column-strech)
+                        :title "Align self stretch"
+                        :id     (dm/str "align-self-stretch-" type)}]]]))
 
 
 (mf/defc options

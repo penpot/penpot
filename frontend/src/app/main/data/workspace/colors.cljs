@@ -332,9 +332,9 @@
   (ptk/reify ::reorder-strokes
     ptk/WatchEvent
     (watch [_ _ _]
-           (rx/of (dch/update-shapes
-                   ids
-                   #(swap-attrs % :strokes index new-index))))))
+      (rx/of (dch/update-shapes
+              ids
+              #(swap-attrs % :strokes index new-index))))))
 
 (defn picker-for-selected-shape
   []
@@ -529,9 +529,9 @@
     ptk/UpdateEvent
     (update [_ state]
       (update state :colorpicker
-        (fn [state]
-          (-> state
-              (assoc :type tab)))))))
+              (fn [state]
+                (-> state
+                    (assoc :type tab)))))))
 
 (defn finalize-colorpicker
   []
@@ -622,10 +622,10 @@
     ptk/UpdateEvent
     (update [_ state]
       (update state :colorpicker
-        (fn [state]
-          (-> state
-              (assoc :type :color)
-              (dissoc :editing-stop :stops :gradient)))))))
+              (fn [state]
+                (-> state
+                    (assoc :type :color)
+                    (dissoc :editing-stop :stops :gradient)))))))
 
 (defn activate-colorpicker-gradient
   [type]
@@ -642,13 +642,13 @@
                       (d/dissoc-in [:current-color :image])
                       (cond-> (not (:stops state))
                         (assoc :editing-stop 0
-                          :stops  [(-> color
-                                       (assoc :offset 0)
-                                       (materialize-color-components))
-                                   (-> color
-                                       (assoc :alpha 0)
-                                       (assoc :offset 1)
-                                       (materialize-color-components))])))))))))
+                               :stops  [(-> color
+                                            (assoc :offset 0)
+                                            (materialize-color-components))
+                                        (-> color
+                                            (assoc :alpha 0)
+                                            (assoc :offset 1)
+                                            (materialize-color-components))])))))))))
 
 (defn activate-colorpicker-image
   []
@@ -656,10 +656,10 @@
     ptk/UpdateEvent
     (update [_ state]
       (update state :colorpicker
-        (fn [state]
-          (-> state
-              (assoc :type :image)
-              (dissoc :editing-stop :stops :gradient)))))))
+              (fn [state]
+                (-> state
+                    (assoc :type :image)
+                    (dissoc :editing-stop :stops :gradient)))))))
 
 (defn select-color
   [position add-color]
@@ -671,13 +671,13 @@
             shape      (first shapes)
             fills      (if (cfh/text-shape? shape)
                          (:fills (dwt/current-text-values
-                                   {:editor-state (dm/get-in state [:workspace-editor-state (:id shape)])
-                                    :shape shape
-                                    :attrs (conj dwt/text-fill-attrs :fills)}))
+                                  {:editor-state (dm/get-in state [:workspace-editor-state (:id shape)])
+                                   :shape shape
+                                   :attrs (conj dwt/text-fill-attrs :fills)}))
                          (:fills shape))
             fill       (first fills)
             single?    (and (= 1 (count selected))
-                         (= 1 (count fills)))
+                            (= 1 (count fills)))
             data       (if single?
                          (d/without-nils {:color (:fill-color fill)
                                           :opacity (:fill-opacity fill)
@@ -685,13 +685,13 @@
                          {:color "#406280"
                           :opacity 1})]
         (rx/of (md/show :colorpicker
-                 {:x (:x position)
-                  :y (:y position)
-                  :on-accept add-color
-                  :data data
-                  :position :right})
-          (ptk/event ::ev/event {::ev/name "add-asset-to-library"
-                                 :asset-type "color"}))))))
+                        {:x (:x position)
+                         :y (:y position)
+                         :on-accept add-color
+                         :data data
+                         :position :right})
+               (ptk/event ::ev/event {::ev/name "add-asset-to-library"
+                                      :asset-type "color"}))))))
 
 (defn get-active-color-tab
   []

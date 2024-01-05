@@ -147,9 +147,9 @@
          [:div {:class (stl/css :modal-footer)}
           [:div {:class (stl/css :action-buttons)}
            [:input {:class (stl/css :cancel-button)
-             :type "button"
-             :value (tr "labels.cancel")
-             :on-click cancel-fn}]
+                    :type "button"
+                    :value (tr "labels.cancel")
+                    :on-click cancel-fn}]
 
            [:input {:class (stl/css-case :accept-btn true
                                          :btn-disabled (or in-progress? all-unchecked?))

@@ -40,7 +40,7 @@
            (let [mode (-> (dom/get-current-target event)
                           (dom/get-data "value")
                           (keyword))]
-           (st/emit! (dcm/update-filters {:mode mode})))))
+             (st/emit! (dcm/update-filters {:mode mode})))))
 
         update-show
         (mf/use-callback
@@ -48,7 +48,7 @@
            (let [mode (-> (dom/get-current-target event)
                           (dom/get-data "value")
                           (d/read-string))]
-           (st/emit! (dcm/update-filters {:show mode})))))
+             (st/emit! (dcm/update-filters {:show mode})))))
 
         update-options
         (mf/use-callback

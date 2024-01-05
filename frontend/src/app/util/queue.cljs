@@ -55,12 +55,12 @@
 ;; NOTE: Right now there are no cases where we need to cancel a process
 ;;       but if we do, we can use this function
 #_(defn- cancel-process
-  [queue]
-  (l/dbg :hint "queue::cancel-process")
-  (let [timeout (unchecked-get queue "timeout")]
-    (when (some? timeout)
-      (js/clearTimeout timeout))
-    (unchecked-set queue "timeout" nil)))
+    [queue]
+    (l/dbg :hint "queue::cancel-process")
+    (let [timeout (unchecked-get queue "timeout")]
+      (when (some? timeout)
+        (js/clearTimeout timeout))
+      (unchecked-set queue "timeout" nil)))
 
 (defn- process
   [queue]

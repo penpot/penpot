@@ -145,8 +145,7 @@
                       :revn file-revn
                       :session-id sid
                       :changes-with-metadata (into [] changes)
-                      :features features
-                      }]
+                      :features features}]
 
         (->> (rp/cmd! :update-file params)
              (rx/mapcat (fn [lagged]

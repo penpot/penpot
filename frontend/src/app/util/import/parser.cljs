@@ -778,7 +778,7 @@
                                 :stroke-cap-end (get-meta stroke-node :stroke-cap-end keyword)})))
                      (mapv d/without-nils)
                      (filterv #(not= (:stroke-color %) "none")))]
-    
+
     (if (seq strokes)
       strokes
       (->> [(-> (add-stroke {} node svg-data)
@@ -848,7 +848,7 @@
             (find-node :g)
             (find-node :g)
             (find-node :image))]
-        
+
     (or (= type :image)
         (some? pattern-image))))
 
@@ -1034,8 +1034,7 @@
              :layout-item-min-w (get-meta data :layout-item-min-w d/parse-double)
              :layout-item-align-self (get-meta data :layout-item-align-self keyword)
              :layout-item-align-absolute (get-meta data :layout-item-align-absolute str->bool)
-             :layout-item-align-index (get-meta data :layout-item-align-index d/parse-double)
-             }))
+             :layout-item-align-index (get-meta data :layout-item-align-index d/parse-double)}))
     props))
 
 (defn parse-data

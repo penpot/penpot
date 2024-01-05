@@ -42,7 +42,7 @@
               (rx/filter mse/mouse-click-event?)
               (rx/switch-map #(rx/take 1 ms/mouse-position))
               (rx/with-latest-from ms/keyboard-space)
-              (rx/filter (fn [[_ space]] (not space)) )
+              (rx/filter (fn [[_ space]] (not space)))
               (rx/map first)
               (rx/map handle-comment-layer-click)
               (rx/take-until stoper))

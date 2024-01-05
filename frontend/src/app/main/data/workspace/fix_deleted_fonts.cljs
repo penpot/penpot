@@ -25,8 +25,8 @@
   [node]
   (let [fonts (deref fonts/fontsdb)]
     (and
-      (some? (:font-family node))
-      (nil? (get fonts (:font-id node))))))
+     (some? (:font-family node))
+     (nil? (get fonts (:font-id node))))))
 
 (defn calculate-alternative-font-id
   [value]
@@ -66,9 +66,9 @@
 (defn fix-deleted-font-component
   [component]
   (update component
-    :objects
-    (fn [objects]
-      (d/mapm #(fix-deleted-font-shape %2) objects))))
+          :objects
+          (fn [objects]
+            (d/mapm #(fix-deleted-font-shape %2) objects))))
 
 (defn fix-deleted-font-typography
   [typography]
@@ -84,8 +84,8 @@
       (let [objects (wsh/lookup-page-objects state)
 
             ids (into #{}
-                  (comp (filter should-fix-deleted-font-shape?) (map :id))
-                  (vals objects))
+                      (comp (filter should-fix-deleted-font-shape?) (map :id))
+                      (vals objects))
 
             components (->> (wsh/lookup-local-components state)
                             (vals)
@@ -93,11 +93,11 @@
 
             component-changes
             (into []
-              (map (fn [component]
-                     {:type :mod-component
-                      :id (:id component)
-                      :objects (-> (fix-deleted-font-component component) :objects)}))
-              components)
+                  (map (fn [component]
+                         {:type :mod-component
+                          :id (:id component)
+                          :objects (-> (fix-deleted-font-component component) :objects)}))
+                  components)
 
             typographies (->> (get-in state [:workspace-data :typographies])
                               (vals)
@@ -105,25 +105,25 @@
 
             typography-changes
             (into []
-              (map (fn [typography]
-                     {:type :mod-typography
-                      :typography (fix-deleted-font-typography typography)}))
-              typographies)]
+                  (map (fn [typography]
+                         {:type :mod-typography
+                          :typography (fix-deleted-font-typography typography)}))
+                  typographies)]
 
         (rx/concat
-          (rx/of (dch/update-shapes ids #(fix-deleted-font-shape %) {:reg-objects? false
-                                                           :save-undo? false
-                                                           :ignore-tree true}))
-          (if (empty? component-changes)
-            (rx/empty)
-            (rx/of (dch/commit-changes {:origin it
-                                        :redo-changes component-changes
-                                        :undo-changes []
-                                        :save-undo? false})))
+         (rx/of (dch/update-shapes ids #(fix-deleted-font-shape %) {:reg-objects? false
+                                                                    :save-undo? false
+                                                                    :ignore-tree true}))
+         (if (empty? component-changes)
+           (rx/empty)
+           (rx/of (dch/commit-changes {:origin it
+                                       :redo-changes component-changes
+                                       :undo-changes []
+                                       :save-undo? false})))
 
-          (if (empty? typography-changes)
-            (rx/empty)
-            (rx/of (dch/commit-changes {:origin it
-                                        :redo-changes typography-changes
-                                        :undo-changes []
-                                        :save-undo? false}))))))))
+         (if (empty? typography-changes)
+           (rx/empty)
+           (rx/of (dch/commit-changes {:origin it
+                                       :redo-changes typography-changes
+                                       :undo-changes []
+                                       :save-undo? false}))))))))

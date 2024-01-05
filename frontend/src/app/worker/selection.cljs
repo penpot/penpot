@@ -127,20 +127,20 @@
         match-criteria?
         (fn [shape]
           (and (not (:hidden shape))
-            (or (= :frame (:type shape)) ;; We return frames even if blocked
-              (not (:blocked shape)))
-            (or (not frame-id) (= frame-id (:frame-id shape)))
-            (case (:type shape)
-              :frame   include-frames?
-              (:bool :group) (not ignore-groups?)
-              true)
+               (or (= :frame (:type shape)) ;; We return frames even if blocked
+                   (not (:blocked shape)))
+               (or (not frame-id) (= frame-id (:frame-id shape)))
+               (case (:type shape)
+                 :frame   include-frames?
+                 (:bool :group) (not ignore-groups?)
+                 true)
 
-            (or (not full-frame?)
-              (not= :frame (:type shape))
-              (and (d/not-empty? (:shapes shape))
-                (gsh/rect-contains-shape? rect shape))
-              (and (empty? (:shapes shape))
-                (gsh/overlaps? shape rect)))))
+               (or (not full-frame?)
+                   (not= :frame (:type shape))
+                   (and (d/not-empty? (:shapes shape))
+                        (gsh/rect-contains-shape? rect shape))
+                   (and (empty? (:shapes shape))
+                        (gsh/overlaps? shape rect)))))
 
         overlaps-outer-shape?
         (fn [shape]
@@ -153,8 +153,8 @@
 
                 scalev     (gpt/point (/ (+ (:width shape) padding)
                                          (:width shape))
-                             (/ (+ (:height shape) padding)
-                                (:height shape)))
+                                      (/ (+ (:height shape) padding)
+                                         (:height shape)))
 
                 outer-shape (-> shape
                                 (gsh/transform-shape (-> (ctm/empty)
@@ -173,8 +173,8 @@
 
                 scalev     (gpt/point (/ (- (:width shape) padding)
                                          (:width shape))
-                             (/ (- (:height shape) padding)
-                                (:height shape)))
+                                      (/ (- (:height shape) padding)
+                                         (:height shape)))
 
                 inner-shape (-> shape
                                 (gsh/transform-shape (-> (ctm/empty)

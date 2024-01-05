@@ -121,7 +121,7 @@
   [{:keys [section index users frame page]}]
   (let [comments-local  (mf/deref refs/comments-local)
         show-sidebar?   (and (= section :comments) (:show-sidebar? comments-local))]
-     [:*
+    [:*
      [:& viewer-pagination
       {:index index
        :num-frames (count (:frames page))

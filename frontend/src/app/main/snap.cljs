@@ -181,7 +181,7 @@
                           range-tree
                           (- cd snap-distance-accuracy)
                           (+ cd snap-distance-accuracy))
-                         (map #(- (first %) cd ))))))))
+                         (map #(- (first %) cd))))))))
 
         get-middle-snaps
         (fn [lt-dist gt-dist]

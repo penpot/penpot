@@ -7,8 +7,8 @@
 (ns frontend-tests.util-snap-data-test
   (:require
    [app.common.files.builder :as fb]
-   [app.common.uuid :as uuid]
    [app.common.types.shape :as cts]
+   [app.common.uuid :as uuid]
    [app.util.snap-data :as sd]
    [cljs.pprint :refer [pprint]]
    [cljs.test :as t :include-macros true]))
@@ -418,8 +418,7 @@
           result-zero-x-2 (sd/query data (:id page) uuid/zero :x [0 200])
           result-zero-y-2 (sd/query data (:id page) uuid/zero :y [0 200])
           result-frame-x-2 (sd/query data (:id page) frame-id :x [0 200])
-          result-frame-y-2 (sd/query data (:id page) frame-id :y [0 200])
-          ]
+          result-frame-y-2 (sd/query data (:id page) frame-id :y [0 200])]
 
       (t/is (some? data))
 
@@ -431,5 +430,4 @@
       (t/is (= (count result-zero-x-2) 1))
       (t/is (= (count result-zero-y-2) 0))
       (t/is (= (count result-frame-x-2) 1))
-      (t/is (= (count result-frame-y-2) 0))))
-  )
+      (t/is (= (count result-frame-y-2) 0)))))

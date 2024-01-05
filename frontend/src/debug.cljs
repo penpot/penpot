@@ -433,10 +433,10 @@
 
          (->> (rp/cmd! :update-file params)
               (rx/subs! (fn [_]
-                         (when reload?
-                           (dom/reload-current-window)))
-                       (fn [cause]
-                         (errors/print-error! cause)))))))))
+                          (when reload?
+                            (dom/reload-current-window)))
+                        (fn [cause]
+                          (errors/print-error! cause)))))))))
 
 (defn ^:export fix-orphan-shapes
   []
@@ -464,12 +464,12 @@
          (rx/map http/conditional-decode-transit)
          (rx/mapcat rp/handle-response)
          (rx/subs! (fn [result]
-                    (let [result (map (fn [row]
-                                        (update row :id str))
-                                      result)]
-                      (js/console.table (clj->js result))))
-                  (fn [cause]
-                    (js/console.log "EE:" cause))))
+                     (let [result (map (fn [row]
+                                         (update row :id str))
+                                       result)]
+                       (js/console.table (clj->js result))))
+                   (fn [cause]
+                     (js/console.log "EE:" cause))))
     nil))
 
 (defn ^:export take-snapshot
@@ -482,9 +482,9 @@
          (rx/map http/conditional-decode-transit)
          (rx/mapcat rp/handle-response)
          (rx/subs! (fn [{:keys [id]}]
-                    (println "Snapshot saved:" (str id)))
-                  (fn [cause]
-                    (js/console.log "EE:" cause))))))
+                     (println "Snapshot saved:" (str id)))
+                   (fn [cause]
+                     (js/console.log "EE:" cause))))))
 
 (defn ^:export restore-snapshot
   [id file-id]
@@ -497,7 +497,7 @@
            (rx/map http/conditional-decode-transit)
            (rx/mapcat rp/handle-response)
            (rx/subs! (fn [_]
-                      (println "Snapshot restored " id)
-                      #_(.reload js/location))
-                    (fn [cause]
-                      (js/console.log "EE:" cause)))))))
+                       (println "Snapshot restored " id)
+                       #_(.reload js/location))
+                     (fn [cause]
+                       (js/console.log "EE:" cause)))))))

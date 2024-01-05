@@ -225,7 +225,7 @@
         (mf/use-fn
          (mf/deps index)
          (fn [value]
-          (update-interaction index #(ctsi/set-delay % value))))
+           (update-interaction index #(ctsi/set-delay % value))))
 
         change-destination
         (mf/use-fn
@@ -246,27 +246,27 @@
         (mf/use-fn
          (mf/deps index)
          (fn [event]
-          (let [value (-> event dom/get-target dom/checked?)]
-            (update-interaction index #(ctsi/set-preserve-scroll % value)))))
+           (let [value (-> event dom/get-target dom/checked?)]
+             (update-interaction index #(ctsi/set-preserve-scroll % value)))))
 
         change-url
         (mf/use-fn
          (mf/deps index)
          (fn [event]
-          (let [target      (dom/get-target event)
-                value       (dom/get-value target)
-                has-prefix? (or (str/starts-with? value "http://")
-                                (str/starts-with? value "https://"))
-                value       (if has-prefix?
-                              value
-                              (str "http://" value))]
-            (when-not has-prefix?
-              (dom/set-value! target value))
-            (if (dom/valid? target)
-              (do
-                (dom/remove-class! target "error")
-                (update-interaction index #(ctsi/set-url % value)))
-              (dom/add-class! target "error")))))
+           (let [target      (dom/get-target event)
+                 value       (dom/get-value target)
+                 has-prefix? (or (str/starts-with? value "http://")
+                                 (str/starts-with? value "https://"))
+                 value       (if has-prefix?
+                               value
+                               (str "http://" value))]
+             (when-not has-prefix?
+               (dom/set-value! target value))
+             (if (dom/valid? target)
+               (do
+                 (dom/remove-class! target "error")
+                 (update-interaction index #(ctsi/set-url % value)))
+               (dom/add-class! target "error")))))
 
         change-overlay-pos-type
         (mf/use-fn
@@ -290,15 +290,15 @@
         (mf/use-fn
          (mf/deps index)
          (fn [event]
-          (let [value (-> event dom/get-target dom/checked?)]
-            (update-interaction index #(ctsi/set-close-click-outside % value)))))
+           (let [value (-> event dom/get-target dom/checked?)]
+             (update-interaction index #(ctsi/set-close-click-outside % value)))))
 
         change-background-overlay
         (mf/use-fn
          (mf/deps index)
          (fn [event]
-          (let [value (-> event dom/get-target dom/checked?)]
-            (update-interaction index #(ctsi/set-background-overlay % value)))))
+           (let [value (-> event dom/get-target dom/checked?)]
+             (update-interaction index #(ctsi/set-background-overlay % value)))))
 
         change-animation-type
         (mf/use-fn
@@ -310,36 +310,36 @@
              (update-interaction index #(ctsi/set-animation-type % value)))))
 
         change-duration
-        (mf/use-fn(fn [value]
-          (update-interaction index #(ctsi/set-duration % value))))
+        (mf/use-fn (fn [value]
+                     (update-interaction index #(ctsi/set-duration % value))))
 
         change-easing
         (mf/use-fn
          (mf/deps index)
          (fn [event]
-          (let [value (keyword event)]
-            (update-interaction index #(ctsi/set-easing % value)))))
+           (let [value (keyword event)]
+             (update-interaction index #(ctsi/set-easing % value)))))
 
         change-way
         (mf/use-fn
          (mf/deps index)
          (fn [event]
-          (let [value (keyword event)]
-            (update-interaction index #(ctsi/set-way % value)))))
+           (let [value (keyword event)]
+             (update-interaction index #(ctsi/set-way % value)))))
 
         change-direction
         (mf/use-fn
          (mf/deps index)
          (fn [event]
-          (let [value (keyword event)]
-            (update-interaction index #(ctsi/set-direction % value)))))
+           (let [value (keyword event)]
+             (update-interaction index #(ctsi/set-direction % value)))))
 
         change-offset-effect
         (mf/use-fn
          (mf/deps index)
          (fn [event]
-          (let [value (-> event dom/get-target dom/checked?)]
-            (update-interaction index #(ctsi/set-offset-effect % value)))))
+           (let [value (-> event dom/get-target dom/checked?)]
+             (update-interaction index #(ctsi/set-offset-effect % value)))))
 
 
         event-type-options   [{:value :click :label (tr "workspace.options.interaction-on-click")}

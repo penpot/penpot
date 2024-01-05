@@ -33,16 +33,16 @@
 
 (def ^:private xform-css
   (keep (fn [k]
-         (cond
-           (keyword? k)
-           (let [knm (name k)
-                 kns (namespace k)]
-             (case kns
-               "global" knm
-               (str *css-prefix* knm)))
+          (cond
+            (keyword? k)
+            (let [knm (name k)
+                  kns (namespace k)]
+              (case kns
+                "global" knm
+                (str *css-prefix* knm)))
 
-           (string? k)
-           k))))
+            (string? k)
+            k))))
 
 (defmacro css*
   "Just coerces all params to strings and concats them with

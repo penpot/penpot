@@ -361,17 +361,17 @@
                         (zero? (count @items)))
 
         klass (str (get props :class) " "
-                           (stl/css-case
-                            :focus          @focus?
-                            :valid          (and touched? (not error))
-                            :invalid        (and touched? error)
-                            :empty          empty?
-                            :custom-multi-input true))
+                   (stl/css-case
+                    :focus          @focus?
+                    :valid          (and touched? (not error))
+                    :invalid        (and touched? error)
+                    :empty          empty?
+                    :custom-multi-input true))
 
         in-klass (str class " "
-                              (stl/css-case
-                               :inside-input true
-                               :no-padding   (pos? (count @items))))
+                      (stl/css-case
+                       :inside-input true
+                       :no-padding   (pos? (count @items))))
 
         on-focus
         (mf/use-fn #(reset! focus? true))
@@ -481,7 +481,7 @@
   (> (count value) length))
 
 (defn validate-length
-  [field length errors-msg ]
+  [field length errors-msg]
   (fn [errors data]
     (cond-> errors
       (max-length? (get data field) length)
@@ -500,6 +500,6 @@
     (let [value (get data field)]
       (cond-> errors
         (and
-          (all-spaces? value)
-          (> (count value) 0))
+         (all-spaces? value)
+         (> (count value) 0))
         (assoc field {:message error-msg})))))

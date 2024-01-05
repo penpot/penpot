@@ -260,27 +260,27 @@
   (let [{entries :items} (mf/deref workspace-undo)
         objects (mf/deref refs/workspace-page-objects)]
 
-   [:div {:class (stl/css :history-entry-detail)}
-    (case (:operation entry)
-      :new
-      (:name (get-object (:detail entry) entries objects))
+    [:div {:class (stl/css :history-entry-detail)}
+     (case (:operation entry)
+       :new
+       (:name (get-object (:detail entry) entries objects))
 
-      :delete
-      [:ul {:class (stl/css :history-entry-details-list)}
-       (for [id (:detail entry)]
-         (let [shape-name (:name (get-object id entries objects))]
-           [:li {:key id} shape-name]))]
+       :delete
+       [:ul {:class (stl/css :history-entry-details-list)}
+        (for [id (:detail entry)]
+          (let [shape-name (:name (get-object id entries objects))]
+            [:li {:key id} shape-name]))]
 
 
-      :modify
-      [:ul {:class (stl/css :history-entry-details-list)}
-       (for [[id attributes] (:detail entry)]
-         (let [shape-name (:name (get-object id entries objects))]
-           [:li {:key id}
-            [:div shape-name]
-            [:div (str/join ", " attributes)]]))]
+       :modify
+       [:ul {:class (stl/css :history-entry-details-list)}
+        (for [[id attributes] (:detail entry)]
+          (let [shape-name (:name (get-object id entries objects))]
+            [:li {:key id}
+             [:div shape-name]
+             [:div (str/join ", " attributes)]]))]
 
-      nil)]))
+       nil)]))
 
 (mf/defc history-entry [{:keys [locale entry idx-entry disabled? current?]}]
   (let [hover?         (mf/use-state false)

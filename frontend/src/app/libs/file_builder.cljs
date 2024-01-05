@@ -133,8 +133,8 @@
           (rx/reduce conj [])
           (rx/with-latest-from files-stream)
           (rx/merge-map (fn [[data _]]
-                         (->> (uz/compress-files data)
-                              (rx/map #(vector file %)))))))))
+                          (->> (uz/compress-files data)
+                               (rx/map #(vector file %)))))))))
 
 (deftype File [^:mutable file]
   Object
@@ -263,4 +263,4 @@
   (File. (fb/create-file name)))
 
 (defn exports []
-  #js { :createFile    create-file-export })
+  #js {:createFile    create-file-export})

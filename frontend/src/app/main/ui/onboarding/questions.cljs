@@ -93,7 +93,7 @@
 
 (s/def ::questions-form-step-3
   (s/keys :req-un [::experience-design-tool]
-    :opt-un[::experience-design-tool-other]))
+          :opt-un [::experience-design-tool-other]))
 
 (defn- step-3-form-validator
   [errors data]
@@ -134,7 +134,7 @@
 
 (s/def ::questions-form-step-4
   (s/keys :req-un [::team-size ::role]
-    :opt-un [::role-other]))
+          :opt-un [::role-other]))
 
 (defn- step-4-form-validator
   [errors data]

@@ -949,7 +949,7 @@
     (mf/with-effect [team]
       (st/emit! (dd/fetch-team-webhooks)))
 
-     [:*
+    [:*
      [:& header {:team team :section :dashboard-team-webhooks}]
      [:section {:class (stl/css :dashboard-container :dashboard-team-webhooks)}
       [:*

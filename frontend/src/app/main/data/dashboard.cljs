@@ -306,8 +306,8 @@
   (ptk/reify ::fetch-builtin-templates
     ptk/WatchEvent
     (watch [_ _ _]
-        (->> (rp/cmd! :get-builtin-templates)
-             (rx/map builtin-templates-fetched)))))
+      (->> (rp/cmd! :get-builtin-templates)
+           (rx/map builtin-templates-fetched)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Selection
@@ -320,7 +320,7 @@
     (update [_ state]
       (update state :dashboard-local
               assoc :selected-files #{}
-                    :selected-project nil))))
+              :selected-project nil))))
 
 (defn toggle-file-select
   [{:keys [id project-id] :as file}]
@@ -377,10 +377,10 @@
              :or {on-success identity
                   on-error rx/throw}} (meta params)
             features (features/get-enabled-features state)]
-            params   {:name name
-                      :emails #{emails}
-                      :role role
-                      :features features}
+        params   {:name name
+                  :emails #{emails}
+                  :role role
+                  :features features}
         (->> (rp/cmd! :create-team-with-invitations params)
              (rx/tap on-success)
              (rx/map team-created)
@@ -817,7 +817,7 @@
           (d/update-in-when [:dashboard-files id :is-shared] (constantly is-shared))
           (d/update-in-when [:dashboard-recent-files id :is-shared] (constantly is-shared))
           (cond->
-            (not is-shared)
+           (not is-shared)
             (d/update-when :dashboard-shared-files dissoc id))))
 
     ptk/WatchEvent
@@ -1010,9 +1010,9 @@
        (let [team-id (:current-team-id state)]
          (if (empty? term)
            (do
-              (dom/focus! (dom/get-element "search-input"))
-              (rx/of (rt/nav :dashboard-search
-                              {:team-id team-id})))
+             (dom/focus! (dom/get-element "search-input"))
+             (rx/of (rt/nav :dashboard-search
+                            {:team-id team-id})))
            (rx/of (rt/nav :dashboard-search
                           {:team-id team-id}
                           {:search-term term})))))

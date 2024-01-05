@@ -18,4 +18,4 @@
                           (keyboard-action event)))
          :tab-index "0"
          :data-test data-test}
-   [:* children]]))
+     [:* children]]))

@@ -127,31 +127,31 @@
         (mf/use-fn #(swap! filters* assoc :open-menu false))
 
         options (into [] (remove nil?
-                        [{:option-name    (tr "workspace.assets.box-filter-all")
-                          :id             "section-all"
-                          :option-handler on-section-filter-change
-                          :data-test      "all"}
+                                 [{:option-name    (tr "workspace.assets.box-filter-all")
+                                   :id             "section-all"
+                                   :option-handler on-section-filter-change
+                                   :data-test      "all"}
 
-                         {:option-name    (tr "workspace.assets.components")
-                          :id             "section-components"
-                          :option-handler on-section-filter-change
-                          :data-test      "components"}
+                                  {:option-name    (tr "workspace.assets.components")
+                                   :id             "section-components"
+                                   :option-handler on-section-filter-change
+                                   :data-test      "components"}
 
-                         (when (not components-v2)
-                           {:option-name    (tr "workspace.assets.graphics")
-                            :id             "section-graphics"
-                            :option-handler on-section-filter-change
-                            :data-test      "graphics"})
+                                  (when (not components-v2)
+                                    {:option-name    (tr "workspace.assets.graphics")
+                                     :id             "section-graphics"
+                                     :option-handler on-section-filter-change
+                                     :data-test      "graphics"})
 
-                         {:option-name    (tr "workspace.assets.colors")
-                          :id             "section-color"
-                          :option-handler on-section-filter-change
-                          :data-test      "colors"}
+                                  {:option-name    (tr "workspace.assets.colors")
+                                   :id             "section-color"
+                                   :option-handler on-section-filter-change
+                                   :data-test      "colors"}
 
-                         {:option-name    (tr "workspace.assets.typography")
-                          :id             "section-typography"
-                          :option-handler on-section-filter-change
-                          :data-test      "typographies"}]))]
+                                  {:option-name    (tr "workspace.assets.typography")
+                                   :id             "section-typography"
+                                   :option-handler on-section-filter-change
+                                   :data-test      "typographies"}]))]
 
     [:div  {:class (stl/css :assets-bar)}
      [:div {:class (stl/css :assets-header)}

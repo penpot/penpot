@@ -111,7 +111,7 @@
 (mf/defc right-sidebar
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
-  [{:keys [layout section file page-id ] :as props}]
+  [{:keys [layout section file page-id] :as props}]
   (let [drawing-tool     (:tool (mf/deref refs/workspace-drawing))
 
         is-comments?     (= drawing-tool :comments)

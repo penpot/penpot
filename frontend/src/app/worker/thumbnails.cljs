@@ -66,17 +66,17 @@
             background-color (dm/get-in page [:options :background])
             element  (if frame
                        (mf/element render/frame-svg #js
-                                   {:objects objects
-                                    :frame frame
-                                    :use-thumbnails true
-                                    :background-color background-color
-                                    :aspect-ratio (/ 2 3)})
+                                                     {:objects objects
+                                                      :frame frame
+                                                      :use-thumbnails true
+                                                      :background-color background-color
+                                                      :aspect-ratio (/ 2 3)})
 
                        (mf/element render/page-svg #js
-                                   {:data page
-                                    :use-thumbnails true
-                                    :embed true
-                                    :aspect-ratio (/ 2 3)}))
+                                                    {:data page
+                                                     :use-thumbnails true
+                                                     :embed true
+                                                     :aspect-ratio (/ 2 3)}))
             data     (rds/renderToStaticMarkup element)]
         {:data data
          :fonts @fonts/loaded-hints
