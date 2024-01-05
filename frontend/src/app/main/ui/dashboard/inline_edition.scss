@@ -12,42 +12,42 @@
   padding-right: $s-24;
   position: relative;
   margin-right: $s-24;
+}
 
-  input.element-title {
-    background-color: $db-primary;
-    border-radius: $br-8;
-    color: $df-primary;
-    font-size: $fs-16;
-    height: $s-32;
-    margin: 0;
-    border: none;
-    padding: $s-6;
-    width: 100%;
+input.element-title {
+  background-color: $db-primary;
+  border-radius: $br-8;
+  color: $df-primary;
+  font-size: $fs-16;
+  height: $s-32;
+  margin: 0;
+  border: none;
+  padding: $s-6;
+  width: 100%;
 
-    &:focus-visible {
-      border: $s-1 solid $da-primary;
-      outline: none;
-    }
+  &:focus-visible {
+    border: $s-1 solid $da-primary;
+    outline: none;
   }
+}
 
-  .close {
-    cursor: pointer;
-    position: absolute;
+.close {
+  cursor: pointer;
+  position: absolute;
 
-    top: $s-1;
-    right: calc(-1 * $s-8);
+  top: $s-1;
+  right: calc(-1 * $s-8);
 
+  svg {
+    fill: $df-secondary;
+    height: $s-16;
+    transform: rotate(45deg) translateY(7px);
+    width: $s-16;
+    margin: 0;
+  }
+  &:hover {
     svg {
-      fill: $df-secondary;
-      height: $s-16;
-      transform: rotate(45deg) translateY(7px);
-      width: $s-16;
-      margin: 0;
-    }
-    &:hover {
-      svg {
-        fill: var(--warning-color);
-      }
+      fill: var(--warning-color);
     }
   }
 }

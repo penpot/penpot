@@ -10,7 +10,6 @@
    [app.auth.oidc :as-alias oidc]
    [app.auth.oidc.providers :as-alias oidc.providers]
    [app.common.logging :as l]
-   [app.common.svg :as csvg]
    [app.config :as cf]
    [app.db :as-alias db]
    [app.email :as-alias email]
@@ -34,7 +33,10 @@
    [app.srepl :as-alias srepl]
    [app.storage :as-alias sto]
    [app.storage.fs :as-alias sto.fs]
+   [app.storage.gc-deleted :as-alias sto.gc-deleted]
+   [app.storage.gc-touched :as-alias sto.gc-touched]
    [app.storage.s3 :as-alias sto.s3]
+   [app.svgo :as-alias svgo]
    [app.util.time :as dt]
    [app.worker :as-alias wrk]
    [cider.nrepl :refer [cider-nrepl-handler]]
@@ -202,11 +204,11 @@
    :app.storage.tmp/cleaner
    {::wrk/executor (ig/ref ::wrk/executor)}
 
-   ::sto/gc-deleted-task
+   ::sto.gc-deleted/handler
    {::db/pool      (ig/ref ::db/pool)
     ::sto/storage  (ig/ref ::sto/storage)}
 
-   ::sto/gc-touched-task
+   ::sto.gc-touched/handler
    {::db/pool (ig/ref ::db/pool)}
 
    ::http.client/client
@@ -314,7 +316,7 @@
     ::mtx/metrics        (ig/ref ::mtx/metrics)
     ::mbus/msgbus        (ig/ref ::mbus/msgbus)
     ::rds/redis          (ig/ref ::rds/redis)
-    ::csvg/optimizer     (ig/ref ::csvg/optimizer)
+    ::svgo/optimizer     (ig/ref ::svgo/optimizer)
 
     ::rpc/climit         (ig/ref ::rpc/climit)
     ::rpc/rlimit         (ig/ref ::rpc/rlimit)
@@ -337,12 +339,13 @@
     ::wrk/tasks
     {:sendmail           (ig/ref ::email/handler)
      :objects-gc         (ig/ref :app.tasks.objects-gc/handler)
+     :orphan-teams-gc    (ig/ref :app.tasks.orphan-teams-gc/handler)
      :file-gc            (ig/ref :app.tasks.file-gc/handler)
      :file-xlog-gc       (ig/ref :app.tasks.file-xlog-gc/handler)
-     :storage-gc-deleted (ig/ref ::sto/gc-deleted-task)
-     :storage-gc-touched (ig/ref ::sto/gc-touched-task)
      :tasks-gc           (ig/ref :app.tasks.tasks-gc/handler)
      :telemetry          (ig/ref :app.tasks.telemetry/handler)
+     :storage-gc-deleted (ig/ref ::sto.gc-deleted/handler)
+     :storage-gc-touched (ig/ref ::sto.gc-touched/handler)
      :session-gc         (ig/ref ::session.tasks/gc)
      :audit-log-archive  (ig/ref ::audit.tasks/archive)
      :audit-log-gc       (ig/ref ::audit.tasks/gc)
@@ -372,6 +375,9 @@
    :app.tasks.objects-gc/handler
    {::db/pool     (ig/ref ::db/pool)
     ::sto/storage (ig/ref ::sto/storage)}
+
+   :app.tasks.orphan-teams-gc/handler
+   {::db/pool     (ig/ref ::db/pool)}
 
    :app.tasks.file-gc/handler
    {::db/pool     (ig/ref ::db/pool)
@@ -403,8 +409,9 @@
     ;; module requires the migrations to run before initialize.
     ::migrations (ig/ref :app.migrations/migrations)}
 
-   ::csvg/optimizer
-   {}
+   ::svgo/optimizer
+   {::wrk/executor   (ig/ref ::wrk/executor)
+    ::svgo/max-procs (cf/get :svgo-max-procs)}
 
    ::audit.tasks/archive
    {::props              (ig/ref ::setup/props)
@@ -457,6 +464,9 @@
 
      {:cron #app/cron "0 0 0 * * ?" ;; daily
       :task :objects-gc}
+
+     {:cron #app/cron "0 0 0 * * ?" ;; daily
+      :task :orphan-teams-gc}
 
      {:cron #app/cron "0 0 0 * * ?" ;; daily
       :task :storage-gc-deleted}

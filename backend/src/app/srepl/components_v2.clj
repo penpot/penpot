@@ -6,8 +6,6 @@
 
 (ns app.srepl.components-v2
   (:require
-   [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.logging :as l]
    [app.common.pprint :as pp]
    [app.db :as db]
@@ -18,6 +16,13 @@
    [promesa.exec :as px]
    [promesa.exec.semaphore :as ps]
    [promesa.util :as pu]))
+
+(def ^:dynamic *scope* nil)
+(def ^:dynamic *semaphore* nil)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; PRIVATE HELPERS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- print-stats!
   [stats]
@@ -87,210 +92,228 @@
         res (db/exec-one! pool [sql])]
     (:count res)))
 
-(defn migrate-file!
-  [system file-id & {:keys [rollback?] :or {rollback? true}}]
 
-  (l/dbg :hint "migrate:start")
-  (let [tpoint (dt/tpoint)]
-    (try
-      (binding [feat/*stats* (atom {})]
+(defn- mark-team-migration!
+  [{:keys [::db/pool]} team-id]
+  ;; We execute this out of transaction because we want this
+  ;; change to be visible to all other sessions before starting
+  ;; the migration
+  (let [sql (str "UPDATE team SET features = "
+                 "    array_append(features, 'ephimeral/v2-migration') "
+                 " WHERE id = ?")]
+    (db/exec-one! pool [sql team-id])))
+
+(defn- unmark-team-migration!
+  [{:keys [::db/pool]} team-id]
+  ;; We execute this out of transaction because we want this
+  ;; change to be visible to all other sessions before starting
+  ;; the migration
+  (let [sql (str "UPDATE team SET features = "
+                 "    array_remove(features, 'ephimeral/v2-migration') "
+                 " WHERE id = ?")]
+    (db/exec-one! pool [sql team-id])))
+
+(def ^:private sql:get-teams
+  "SELECT id, features
+     FROM team
+    WHERE deleted_at IS NULL
+    ORDER BY created_at ASC")
+
+(defn- get-teams
+  [conn]
+  (->> (db/cursor conn sql:get-teams)
+       (map feat/decode-row)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; PUBLIC API
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn migrate-file!
+  [system file-id & {:keys [rollback? max-procs]
+                     :or {rollback? true}}]
+
+  (l/dbg :hint "migrate:start" :rollback rollback?)
+  (let [tpoint (dt/tpoint)
+        file-id (if (string? file-id)
+                  (parse-uuid file-id)
+                  file-id)]
+    (binding [feat/*stats* (atom {})]
+      (try
         (-> (assoc system ::db/rollback rollback?)
-            (feat/migrate-file! file-id))
+            (feat/migrate-file! file-id :max-procs max-procs))
 
         (-> (deref feat/*stats*)
-            (assoc :elapsed (dt/format-duration (tpoint)))))
+            (assoc :elapsed (dt/format-duration (tpoint))))
 
-      (catch Throwable cause
-        (l/wrn :hint "migrate:error" :cause cause))
+        (catch Throwable cause
+          (l/wrn :hint "migrate:error" :cause cause))
 
-      (finally
-        (let [elapsed (dt/format-duration (tpoint))]
-          (l/dbg :hint "migrate:end" :elapsed elapsed))))))
-
-(defn migrate-files!
-  [{:keys [::db/pool] :as system}
-   & {:keys [chunk-size max-jobs max-items start-at preset rollback? skip-on-error validate?]
-      :or {chunk-size 10
-           skip-on-error true
-           max-jobs 10
-           max-items Long/MAX_VALUE
-           preset :shutdown-on-failure
-           rollback? true
-           validate? false}}]
-  (letfn [(get-chunk [cursor]
-            (let [sql  (str/concat
-                        "SELECT id, created_at FROM file "
-                        " WHERE created_at < ? AND deleted_at IS NULL "
-                        " ORDER BY created_at desc LIMIT ?")
-                  rows (db/exec! pool [sql cursor chunk-size])]
-              [(some->> rows peek :created-at) (seq rows)]))
-
-          (get-candidates []
-            (->> (d/iteration get-chunk
-                              :vf second
-                              :kf first
-                              :initk (or start-at (dt/now)))
-                 (take max-items)
-                 (map :id)))]
-
-    (l/dbg :hint "migrate:start")
-    (let [fsem   (ps/create :permits max-jobs)
-          total  (get-total-files pool)
-          stats  (atom {:files/total total})
-          tpoint (dt/tpoint)]
-
-      (add-watch stats :progress-report (report-progress-files tpoint))
-
-      (binding [feat/*stats* stats
-                feat/*semaphore* fsem
-                feat/*skip-on-error* skip-on-error]
-        (try
-          (pu/with-open [scope (px/structured-task-scope :preset preset :factory :virtual)]
-
-            (run! (fn [file-id]
-                    (ps/acquire! feat/*semaphore*)
-                    (px/submit! scope (fn []
-                                        (-> (assoc system ::db/rollback rollback?)
-                                            (feat/migrate-file! file-id
-                                                                :validate? validate?
-                                                                :throw-on-validate? (not skip-on-error))))))
-                  (get-candidates))
-
-            (p/await! scope))
-
-          (-> (deref feat/*stats*)
-              (assoc :elapsed (dt/format-duration (tpoint))))
-
-          (catch Throwable cause
-            (l/dbg :hint "migrate:error" :cause cause))
-
-          (finally
-            (let [elapsed (dt/format-duration (tpoint))]
-              (l/dbg :hint "migrate:end" :elapsed elapsed))))))))
+        (finally
+          (let [elapsed (dt/format-duration (tpoint))]
+            (l/dbg :hint "migrate:end" :rollback rollback? :elapsed elapsed)))))))
 
 (defn migrate-team!
-  [{:keys [::db/pool] :as system} team-id
-   & {:keys [rollback? skip-on-error validate?]
-      :or {rollback? true skip-on-error true validate? false}}]
-  (l/dbg :hint "migrate:start")
+  [{:keys [::db/pool] :as system} team-id & {:keys [rollback? skip-on-error validate? max-procs]
+                                             :or {rollback? true
+                                                  skip-on-error true
+                                                  validate? false
+                                                  max-procs 1 }
+                                             :as opts}]
 
-  (let [total  (get-total-files pool :team-id team-id)
-        stats  (atom {:total/files total})
-        tpoint (dt/tpoint)]
+  (l/dbg :hint "migrate:start" :rollback rollback?)
+
+  (let [team-id   (if (string? team-id)
+                    (parse-uuid team-id)
+                    team-id)
+        total     (get-total-files pool :team-id team-id)
+        stats     (atom {:total/files total})
+        tpoint    (dt/tpoint)]
 
     (add-watch stats :progress-report (report-progress-files tpoint))
 
-    (try
-      (binding [feat/*stats* stats
-                feat/*skip-on-error* skip-on-error]
+    (binding [feat/*stats* stats
+              feat/*skip-on-error* skip-on-error]
+
+      (try
+        (mark-team-migration! system team-id)
+
         (-> (assoc system ::db/rollback rollback?)
             (feat/migrate-team! team-id
+                                :max-procs max-procs
                                 :validate? validate?
                                 :throw-on-validate? (not skip-on-error)))
 
         (print-stats!
          (-> (deref feat/*stats*)
              (dissoc :total/files)
-             (assoc :elapsed (dt/format-duration (tpoint))))))
+             (assoc :elapsed (dt/format-duration (tpoint)))))
 
-      (catch Throwable cause
-        (l/dbg :hint "migrate:error" :cause cause))
+        (catch Throwable cause
+          (l/dbg :hint "migrate:error" :cause cause))
 
-      (finally
-        (let [elapsed (dt/format-duration (tpoint))]
-          (l/dbg :hint "migrate:end" :elapsed elapsed))))))
+        (finally
+          (unmark-team-migration! system team-id)
 
-(defn default-on-end
-  [stats]
-  (print-stats!
-   (-> stats
-       (update :elapsed/total dt/format-duration)
-       (dissoc :total/teams))))
+          (let [elapsed (dt/format-duration (tpoint))]
+            (l/dbg :hint "migrate:end" :rollback rollback? :elapsed elapsed)))))))
 
 (defn migrate-teams!
-  [{:keys [::db/pool] :as system}
-   & {:keys [chunk-size max-jobs max-items start-at
-             rollback? validate? preset skip-on-error
-             max-time on-start on-progress on-error on-end]
-      :or {chunk-size 10000
-           validate? false
-           rollback? true
-           skip-on-error true
-           on-end default-on-end
-           preset :shutdown-on-failure
-           max-jobs Integer/MAX_VALUE
-           max-items Long/MAX_VALUE}}]
+  "A REPL helper for migrate all teams.
 
-  (letfn [(get-chunk [cursor]
-            (let [sql  (str/concat
-                        "SELECT id, created_at, features FROM team "
-                        " WHERE created_at < ? AND deleted_at IS NULL "
-                        " ORDER BY created_at desc LIMIT ?")
-                  rows (db/exec! pool [sql cursor chunk-size])]
-              [(some->> rows peek :created-at) (seq rows)]))
+  This function starts multiple concurrent team migration processes
+  until thw maximum number of jobs is reached which by default has the
+  value of `1`. This is controled with the `:max-jobs` option.
 
-          (get-candidates []
-            (->> (d/iteration get-chunk
-                              :vf second
-                              :kf first
-                              :initk (or start-at (dt/now)))
-                 (map #(update % :features db/decode-pgarray #{}))
-                 (remove #(contains? (:features %) "ephimeral/v2-migration"))
-                 (take max-items)
-                 (map :id)))
+  Each tram migration process also can start multiple procs for
+  graphics migration, the total of that procs is controled with the
+  `:max-procs` option.
 
-          (migrate-team [team-id]
-            (try
-              (-> (assoc system ::db/rollback rollback?)
-                  (feat/migrate-team! team-id
-                                      :validate? validate?
-                                      :throw-on-validate? (not skip-on-error)))
-              (catch Throwable cause
-                (l/err :hint "unexpected error on processing team" :team-id (dm/str team-id) :cause cause))))
+  Internally, the graphics migration process uses SVGO module which by
+  default has a limited number of maximum concurent
+  operations (globally), ensure setting up correct number with
+  PENPOT_SVGO_MAX_PROCS environment variable."
 
-          (process-team [scope tpoint mtime team-id]
-            (ps/acquire! feat/*semaphore*)
-            (let [ts (tpoint)]
-              (if (and mtime (neg? (compare mtime ts)))
-                (l/inf :hint "max time constraint reached" :elapsed (dt/format-duration ts))
-                (px/submit! scope (partial migrate-team team-id)))))]
+  [{:keys [::db/pool] :as system} & {:keys [max-jobs max-procs max-items
+                                            rollback? validate? preset
+                                            skip-on-error max-time
+                                            on-start on-progress on-error on-end]
+                                     :or {validate? false
+                                          rollback? true
+                                          skip-on-error true
+                                          preset :shutdown-on-failure
+                                          max-jobs 1
+                                          max-procs 10
+                                          max-items Long/MAX_VALUE}
+                                     :as opts}]
 
-    (l/dbg :hint "migrate:start")
+  (let [total  (get-total-teams pool)
+        stats  (atom {:total/teams (min total max-items)})
 
-    (let [sem    (ps/create :permits max-jobs)
-          total  (get-total-teams pool)
-          stats  (atom {:total/teams (min total max-items)})
-          tpoint (dt/tpoint)
-          mtime  (some-> max-time dt/duration)]
+        tpoint (dt/tpoint)
+        mtime  (some-> max-time dt/duration)
 
-      (when (fn? on-start)
-        (on-start {:total total :rollback rollback?}))
+        scope  (px/structured-task-scope :preset preset :factory :virtual)
+        sjobs  (ps/create :permits max-jobs)
 
-      (add-watch stats :progress-report (report-progress-teams tpoint on-progress))
+        migrate-team
+        (fn [{:keys [id features] :as team}]
+          (ps/acquire! sjobs)
+          (let [ts (tpoint)]
+            (cond
+              (and mtime (neg? (compare mtime ts)))
+              (do
+                (l/inf :hint "max time constraint reached"
+                       :team-id (str id)
+                       :elapsed (dt/format-duration ts))
+                (ps/release! sjobs)
+                (reduced nil))
 
-      (binding [feat/*stats* stats
-                feat/*semaphore* sem
-                feat/*skip-on-error* skip-on-error]
+              (or (contains? features "ephimeral/v2-migration")
+                  (contains? features "components/v2"))
+              (do
+                (l/dbg :hint "skip team" :team-id (str id))
+                (ps/release! sjobs))
+
+              :else
+              (px/submit! scope (fn []
+                                    (try
+                                      (mark-team-migration! system id)
+                                      (-> (assoc system ::db/rollback rollback?)
+                                          (feat/migrate-team! id
+                                                              :max-procs max-procs
+                                                              :validate? validate?
+                                                              :throw-on-validate? (not skip-on-error)))
+                                      (catch Throwable cause
+                                        (l/err :hint "unexpected error on processing team"
+                                               :team-id (str id)
+                                               :cause cause))
+                                      (finally
+                                        (ps/release! sjobs)
+                                        (unmark-team-migration! system id))))))))]
+
+    (l/dbg :hint "migrate:start"
+           :rollback rollback?
+           :total total
+           :max-jobs max-jobs
+           :max-procs max-procs
+           :max-items max-items)
+
+    (add-watch stats :progress-report (report-progress-teams tpoint on-progress))
+
+    (binding [feat/*stats* stats
+              feat/*skip-on-error* skip-on-error]
+      (try
+        (when (fn? on-start)
+          (on-start {:total total :rollback rollback?}))
+
+        (db/tx-run! system
+                    (fn [{:keys [::db/conn]}]
+                      (run! (partial migrate-team)
+                            (->> (get-teams conn)
+                                 (take max-items)))))
         (try
-          (pu/with-open [scope (px/structured-task-scope :preset preset
-                                                         :factory :virtual)]
-            (loop [candidates (get-candidates)]
-              (when-let [team-id (first candidates)]
-                (when (process-team scope tpoint mtime team-id)
-                  (recur (rest candidates)))))
-
-            (p/await! scope))
-
-          (when (fn? on-end)
-            (-> (deref stats)
-                (assoc :elapsed/total (tpoint))
-                (on-end)))
-
-          (catch Throwable cause
-            (l/dbg :hint "migrate:error" :cause cause)
-            (when (fn? on-error)
-              (on-error cause)))
-
+          (p/await! scope)
           (finally
-            (let [elapsed (dt/format-duration (tpoint))]
-              (l/dbg :hint "migrate:end" :elapsed elapsed))))))))
+            (pu/close! scope)))
+
+
+        (if (fn? on-end)
+          (-> (deref stats)
+              (assoc :elapsed/total (tpoint))
+              (on-end))
+          (-> (deref stats)
+              (assoc :elapsed/total (tpoint))
+              (update :elapsed/total dt/format-duration)
+              (dissoc :total/teams)
+              (print-stats!)))
+
+        (catch Throwable cause
+          (l/dbg :hint "migrate:error" :cause cause)
+          (when (fn? on-error)
+            (on-error cause)))
+
+        (finally
+          (let [elapsed (dt/format-duration (tpoint))]
+            (l/dbg :hint "migrate:end"
+                   :rollback rollback?
+                   :elapsed elapsed)))))))

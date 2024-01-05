@@ -54,7 +54,9 @@
                         :hint "the current account does not have password")
               (let [result (profile/verify-password cfg password (:password profile))]
                 (when (:update result)
-                  (l/trace :hint "updating profile password" :id (:id profile) :email (:email profile))
+                  (l/trc :hint "updating profile password"
+                         :id (str (:id profile))
+                         :email (:email profile))
                   (profile/update-profile-password! conn (assoc profile :password password)))
                 (:valid result))))
 
@@ -131,7 +133,8 @@
 
           (update-password [conn profile-id]
             (let [pwd (profile/derive-password cfg password)]
-              (db/update! conn :profile {:password pwd} {:id profile-id})))]
+              (db/update! conn :profile {:password pwd} {:id profile-id})
+              nil))]
 
     (db/with-atomic [conn pool]
       (->> (validate-token token)
@@ -301,7 +304,8 @@
     (-> (db/update! conn :profile
                     {:default-team-id (:id team)
                      :default-project-id  (:default-project-id team)}
-                    {:id id})
+                    {:id id}
+                    {::db/return-keys true})
         (profile/decode-row))))
 
 

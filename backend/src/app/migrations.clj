@@ -337,7 +337,40 @@
     :fn (mg/resource "app/migrations/sql/0106-mod-team-table.sql")}
 
    {:name "0107-mod-file-tagged-object-thumbnail-table"
-    :fn (mg/resource "app/migrations/sql/0107-mod-file-tagged-object-thumbnail-table.sql")}])
+    :fn (mg/resource "app/migrations/sql/0107-mod-file-tagged-object-thumbnail-table.sql")}
+
+   {:name "0107-add-deletion-protection-trigger-function"
+    :fn (mg/resource "app/migrations/sql/0107-add-deletion-protection-trigger-function.sql")}
+
+   {:name "0108-mod-file-thumbnail-table"
+    :fn (mg/resource "app/migrations/sql/0108-mod-file-thumbnail-table.sql")}
+
+   {:name "0109-mod-file-tagged-object-thumbnail-table"
+    :fn (mg/resource "app/migrations/sql/0109-mod-file-tagged-object-thumbnail-table.sql")}
+
+   {:name "0110-mod-file-media-object-table"
+    :fn (mg/resource "app/migrations/sql/0110-mod-file-media-object-table.sql")}
+
+   {:name "0111-mod-file-data-fragment-table"
+    :fn (mg/resource "app/migrations/sql/0111-mod-file-data-fragment-table.sql")}
+
+   {:name "0112-mod-profile-table"
+    :fn (mg/resource "app/migrations/sql/0112-mod-profile-table.sql")}
+
+   {:name "0113-mod-team-font-variant-table"
+    :fn (mg/resource "app/migrations/sql/0113-mod-team-font-variant-table.sql")}
+
+   {:name "0114-mod-team-table"
+    :fn (mg/resource "app/migrations/sql/0114-mod-team-table.sql")}
+
+   {:name "0115-mod-project-table"
+    :fn (mg/resource "app/migrations/sql/0115-mod-project-table.sql")}
+
+   {:name "0116-mod-file-table"
+    :fn (mg/resource "app/migrations/sql/0116-mod-file-table.sql")}
+
+   {:name "0117-mod-file-object-thumbnail-table"
+    :fn (mg/resource "app/migrations/sql/0117-mod-file-object-thumbnail-table.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

@@ -98,11 +98,11 @@
                 (gsh/move delta)))
 
             [new-instance-shape new-instance-shapes _]
-            (ctst/clone-object main-instance-shape
-                               (:parent-id main-instance-shape)
-                               (:objects main-instance-page)
-                               update-new-shape
-                               update-original-shape)
+            (ctst/clone-shape main-instance-shape
+                              (:parent-id main-instance-shape)
+                              (:objects main-instance-page)
+                              :update-new-shape update-new-shape
+                              :update-original-shape update-original-shape)
 
             remap-frame
             (fn [shape]
@@ -134,10 +134,9 @@
       (let [component-root (d/seek #(nil? (:parent-id %)) (vals (:objects component)))
 
             [new-component-shape new-component-shapes _]
-            (ctst/clone-object component-root
-                               nil
-                               (get component :objects)
-                               identity)]
+            (ctst/clone-shape component-root
+                              nil
+                              (get component :objects))]
 
         [new-component-shape new-component-shapes nil nil]))))
 
@@ -185,7 +184,8 @@
                   (fn [shape objects]
                     (-> shape
                         (ctl/push-into-cell [(:id first-shape)] row column)
-                        (ctl/assign-cells objects))))
+                        (ctl/assign-cells objects)))
+                  {:with-objects? true})
                  (pcb/reorder-grid-children [(:parent-id first-shape)])))
            changes)
 
@@ -975,11 +975,12 @@
                                 original-shape)
 
         [_ new-shapes _]
-        (ctst/clone-object component-shape
+        (ctst/clone-shape component-shape
                            (:id parent-shape)
                            (get component-page :objects)
-                           update-new-shape
-                           update-original-shape)
+                           :update-new-shape update-new-shape
+                           :update-original-shape update-original-shape
+                           :dest-objects (get container :objects))
 
         add-obj-change (fn [changes shape']
                          (update changes :redo-changes conj
@@ -1037,11 +1038,11 @@
                                   original-shape))
 
         [_new-shape new-shapes updated-shapes]
-        (ctst/clone-object shape
-                           (:id component-parent-shape)
-                           (get page :objects)
-                           update-new-shape
-                           update-original-shape)
+        (ctst/clone-shape shape
+                          (:id component-parent-shape)
+                          (get page :objects)
+                          :update-new-shape update-new-shape
+                          :update-original-shape update-original-shape)
 
         add-obj-change (fn [changes shape']
                          (update changes :redo-changes conj

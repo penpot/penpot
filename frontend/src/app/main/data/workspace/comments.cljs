@@ -13,7 +13,7 @@
    [app.common.schema :as sm]
    [app.common.types.shape-tree :as ctst]
    [app.main.data.comments :as dcm]
-   [app.main.data.workspace.changes :as dwc]
+   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwco]
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -148,7 +148,7 @@
                  (pcb/update-page-option :comment-threads-position assoc thread-id (select-keys thread [:position :frame-id])))]
 
          (rx/merge
-          (rx/of (dwc/commit-changes changes))
+          (rx/of (dch/commit-changes changes))
           (->> (rp/cmd! :update-comment-thread-position thread)
                (rx/catch #(rx/throw {:type :update-comment-thread-position}))
                (rx/ignore))))))))

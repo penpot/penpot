@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
     <title>Penpot - Design Freedom for Teams</title>
+
     <meta name="description" content="The open-source solution for design and prototyping.">
     <meta property="og:locale" content="en_US">
     <meta property="og:title" content="Penpot | Design Freedom for Teams">
@@ -17,6 +18,9 @@
     <meta name="twitter:creator" content="@penpotapp">
     <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
     <link id="theme" href="css/main.css?ts={{& ts}}" rel="stylesheet" type="text/css" />
+    {{#isDebug}}
+    <link href="css/debug.css?ts={{& ts}}" rel="stylesheet" type="text/css" />
+    {{/isDebug}}
 
     <link rel="icon" href="images/favicon.png" />
 

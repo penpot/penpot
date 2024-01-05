@@ -6,6 +6,7 @@
 
 (ns backend-tests.rpc-file-thumbnails-test
   (:require
+   [app.common.pprint :as pp]
    [app.common.thumbnails :as thc]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
@@ -114,8 +115,11 @@
 
       ;; Run the File GC task that should remove unused file object
       ;; thumbnails
-      (let [result (th/run-task! :file-gc {:min-age (dt/duration 0)})]
+      (let [result (th/run-task! :file-gc {:min-age 0})]
         (t/is (= 1 (:processed result))))
+
+      (let [result (th/run-task! :objects-gc {:min-age 0})]
+        (t/is (= 2 (:processed result))))
 
       ;; check if row2 related thumbnail row still exists
       (let [[row :as rows] (th/db-query :file-tagged-object-thumbnail
@@ -136,19 +140,19 @@
         (t/is (= 0 (:freeze res))))
 
       ;; check that storage object is still exists but is marked as deleted
-      (let [row (th/db-get :storage-object {:id (:media-id row1)} {::db/remove-deleted? false})]
+      (let [row (th/db-get :storage-object {:id (:media-id row1)} {::db/remove-deleted false})]
         (t/is (some? (:deleted-at row))))
 
       ;; Run the storage gc deleted task, it should permanently delete
       ;; all storage objects related to the deleted thumbnails
-      (let [result (th/run-task! :storage-gc-deleted {:min-age (dt/duration 0)})]
+      (let [result (th/run-task! :storage-gc-deleted {:min-age 0})]
         (t/is (= 1 (:deleted result))))
 
       (t/is (nil? (sto/get-object storage (:media-id row1))))
       (t/is (some? (sto/get-object storage (:media-id row2))))
 
       ;; check that storage object is still exists but is marked as deleted
-      (let [row (th/db-get :storage-object {:id (:media-id row1)} {::db/remove-deleted? false})]
+      (let [row (th/db-get :storage-object {:id (:media-id row1)} {::db/remove-deleted false})]
         (t/is (nil? row))))))
 
 (t/deftest create-file-thumbnail
@@ -188,13 +192,12 @@
 
     (let [[row1 row2 :as rows] (th/db-query :file-thumbnail
                                             {:file-id (:id file)}
-                                            {:order-by [[:created-at :asc]]})]
+                                            {:order-by [[:revn :asc]]})]
       (t/is (= 2 (count rows)))
 
       (t/is (= (:file-id data1) (:file-id row1)))
       (t/is (= (:revn data1) (:revn row1)))
       (t/is (uuid? (:media-id row1)))
-
       (t/is (= (:file-id data2) (:file-id row2)))
       (t/is (= (:revn data2) (:revn row2)))
       (t/is (uuid? (:media-id row2)))
@@ -215,7 +218,10 @@
 
       ;; Run the File GC task that should remove unused file object
       ;; thumbnails
-      (let [result (th/run-task! :file-gc {:min-age (dt/duration 0)})]
+      (let [result (th/run-task! :file-gc {:min-age 0})]
+        (t/is (= 1 (:processed result))))
+
+      (let [result (th/run-task! :objects-gc {:min-age 0})]
         (t/is (= 1 (:processed result))))
 
       ;; check if row1 related thumbnail row still exists
@@ -227,19 +233,54 @@
         (t/is (= (:object-id data1) (:object-id row)))
         (t/is (uuid? (:media-id row1))))
 
+      (let [result (th/run-task! :storage-gc-touched {:min-age 0})]
+        (t/is (= 1 (:delete result))))
+
       ;; Check if storage objects still exists after file-gc
       (t/is (nil? (sto/get-object storage (:media-id row1))))
       (t/is (some? (sto/get-object storage (:media-id row2))))
 
-      (let [row (th/db-get :storage-object {:id (:media-id row1)} {::db/remove-deleted? false})]
+      (let [row (th/db-get :storage-object {:id (:media-id row1)} {::db/remove-deleted false})]
         (t/is (some? (:deleted-at row))))
 
       ;; Run the storage gc deleted task, it should permanently delete
       ;; all storage objects related to the deleted thumbnails
-      (let [result (th/run-task! :storage-gc-deleted {:min-age (dt/duration 0)})]
+      (let [result (th/run-task! :storage-gc-deleted {:min-age 0})]
         (t/is (= 1 (:deleted result))))
 
-      (t/is (some? (sto/get-object storage (:media-id row2)))))))
+      (t/is (some? (sto/get-object storage (:media-id row2))))
+
+      )))
+
+(t/deftest error-on-direct-storage-obj-deletion
+  (let [storage (::sto/storage th/*system*)
+        profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false
+                                    :revn 3})
+
+        data1   {::th/type :create-file-thumbnail
+                 ::rpc/profile-id (:id profile)
+                 :file-id (:id file)
+                 :revn 2
+                 :media {:filename "sample.jpg"
+                         :size 7923
+                         :path (th/tempfile "backend_tests/test_files/sample2.jpg")
+                         :mtype "image/jpeg"}}]
+
+    (let [out (th/command! data1)]
+      ;; (th/print-result! out)
+      (t/is (nil? (:error out)))
+      (t/is (contains? (:result out) :uri)))
+
+    (let [[row1 :as rows] (th/db-query :file-thumbnail {:file-id (:id file)})]
+      (t/is (= 1 (count rows)))
+
+      (t/is (thrown? org.postgresql.util.PSQLException
+                     (th/db-delete! :storage-object {:id (:media-id row1)}))))))
+
+
 
 (t/deftest get-file-object-thumbnail
   (let [storage (::sto/storage th/*system*)
@@ -279,6 +320,3 @@
 
       (let [result (:result out)]
         (t/is (contains? result "test-key-2"))))))
-
-
-

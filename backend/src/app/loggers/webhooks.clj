@@ -111,9 +111,11 @@
                               " where id=?")
                          err
                          (:id whook)]
-                    res (db/exec-one! pool sql {::db/return-keys? true})]
+                    res (db/exec-one! pool sql {::db/return-keys true})]
                 (when (>= (:error-count res) max-errors)
-                  (db/update! pool :webhook {:is-active false} {:id (:id whook)})))
+                  (db/update! pool :webhook
+                              {:is-active false}
+                              {:id (:id whook)})))
 
               (db/update! pool :webhook
                           {:updated-at (dt/now)

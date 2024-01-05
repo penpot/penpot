@@ -8,35 +8,35 @@
 .tool-window {
   margin-bottom: $s-24;
 }
-.library-title {
-  .file-name {
-    @include titleTipography;
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    flex-grow: 100;
-    height: 100%;
-  }
 
-  .special-title {
-    @include textEllipsis;
-    color: var(--title-foreground-color-hover);
-    margin-left: $s-2;
-    text-align: left;
-  }
+.file-name {
+  @include titleTipography;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  flex-grow: 100;
+  height: 100%;
+}
 
-  .file-link {
-    @extend .button-tertiary;
-    height: $s-32;
-    width: $s-28;
-    border-radius: $br-8;
-    svg {
-      @extend .button-icon;
-      stroke: var(--icon-foreground);
-      fill: var(--title-foreground-color-hover);
-    }
+.special-title {
+  @include textEllipsis;
+  color: var(--title-foreground-color-hover);
+  margin-left: $s-2;
+  text-align: left;
+}
+
+.file-link {
+  @extend .button-tertiary;
+  height: $s-32;
+  width: $s-28;
+  border-radius: $br-8;
+  svg {
+    @extend .button-icon;
+    stroke: var(--icon-foreground);
+    fill: var(--title-foreground-color-hover);
   }
 }
+
 .library-content {
   display: flex;
   flex-direction: column;
@@ -53,22 +53,23 @@
   flex-direction: column;
   align-items: center;
   gap: $s-8;
-  .no-found-icon {
-    @include flexCenter;
-    background-color: var(--not-found-background-color);
-    border-radius: $br-circle;
-    height: $s-48;
-    width: $s-48;
-    svg {
-      @extend .button-icon;
-      height: $s-24;
-      width: $s-24;
-      stroke: var(--not-found-foreground-color);
-    }
-  }
+}
 
-  .no-found-text {
-    @include titleTipography;
-    color: var(--not-found-foreground-color);
+.no-found-icon {
+  @include flexCenter;
+  background-color: var(--not-found-background-color);
+  border-radius: $br-circle;
+  height: $s-48;
+  width: $s-48;
+  svg {
+    @extend .button-icon;
+    height: $s-24;
+    width: $s-24;
+    stroke: var(--not-found-foreground-color);
   }
+}
+
+.no-found-text {
+  @include titleTipography;
+  color: var(--not-found-foreground-color);
 }

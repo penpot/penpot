@@ -20,7 +20,6 @@
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.tab-container :refer [tab-container tab-element]]
-   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.colorpicker.color-inputs :refer [color-inputs]]
    [app.main.ui.workspace.colorpicker.gradients :refer [gradients]]
@@ -52,8 +51,7 @@
 
 (mf/defc colorpicker
   [{:keys [data disable-gradient disable-opacity disable-image on-change on-accept]}]
-  (let [new-css-system         (mf/use-ctx ctx/new-css-system)
-        state                  (mf/deref refs/colorpicker)
+  (let [state                  (mf/deref refs/colorpicker)
         node-ref               (mf/use-ref)
 
         ;; TODO: I think we need to put all this picking state under
@@ -267,235 +265,123 @@
                                 :h h :s s :v v
                                 :alpha (/ alpha 255)}))))
 
-    (if new-css-system
-      [:div {:class (stl/css :colorpicker)
-             :ref node-ref
-             :style {:touch-action "none"}}
-       [:div {:class (stl/css :top-actions)}
-        (when (or (not disable-gradient) (not disable-image))
-          [:div {:class (stl/css :select)}
-           [:& select
-            {:default-value selected-mode
-             :options options
-             :on-change handle-change-mode}]])
-        (when (not= selected-mode :image)
-          [:button {:class (stl/css-case :picker-btn true
-                             :selected picking-color?)
-                    :on-click handle-click-picker}
-           i/picker-refactor])]
+    [:div {:class (stl/css :colorpicker)
+           :ref node-ref
+           :style {:touch-action "none"}}
+     [:div {:class (stl/css :top-actions)}
+      (when (or (not disable-gradient) (not disable-image))
+        [:div {:class (stl/css :select)}
+         [:& select
+          {:default-value selected-mode
+           :options options
+           :on-change handle-change-mode}]])
+      (when (not= selected-mode :image)
+        [:button {:class (stl/css-case :picker-btn true
+                                       :selected picking-color?)
+                  :on-click handle-click-picker}
+         i/picker-refactor])]
 
-       (when (or (= selected-mode :linear-gradient)
+     (when (or (= selected-mode :linear-gradient)
                (= selected-mode :radial-gradient))
-         [:& gradients
-          {:stops (:stops state)
-           :editing-stop (:editing-stop state)
-           :on-select-stop handle-change-stop}])
+       [:& gradients
+        {:stops (:stops state)
+         :editing-stop (:editing-stop state)
+         :on-select-stop handle-change-stop}])
 
-       (if (= selected-mode :image)
-         (let [uri (cfg/resolve-file-media (:image current-color))]
-           [:div {:class (stl/css :select-image)}
-            [:div {:class (stl/css :content)}
-             (when (:image current-color)
-               [:img {:src uri}])]
-            [:button
-             {:class (stl/css :choose-image)
-              :title (tr "media.choose-image")
-              :aria-label (tr "media.choose-image")
-              :on-click on-fill-image-click}
-             (tr "media.choose-image")
-             [:& file-uploader
-              {:input-id "fill-image-upload"
-               :accept "image/jpeg,image/png"
-               :multi false
-               :ref fill-image-ref
-               :on-selected on-fill-image-selected}]]])
-         [:*
-          [:div {:class (stl/css :colorpicker-tabs)}
-           [:& tab-container
-            {:on-change-tab set-tab!
-             :selected @active-color-tab
-             :collapsable? false}
+     (if (= selected-mode :image)
+       (let [uri (cfg/resolve-file-media (:image current-color))]
+         [:div {:class (stl/css :select-image)}
+          [:div {:class (stl/css :content)}
+           (when (:image current-color)
+             [:img {:src uri}])]
+          [:button
+           {:class (stl/css :choose-image)
+            :title (tr "media.choose-image")
+            :aria-label (tr "media.choose-image")
+            :on-click on-fill-image-click}
+           (tr "media.choose-image")
+           [:& file-uploader
+            {:input-id "fill-image-upload"
+             :accept "image/jpeg,image/png"
+             :multi false
+             :ref fill-image-ref
+             :on-selected on-fill-image-selected}]]])
+       [:*
+        [:div {:class (stl/css :colorpicker-tabs)}
+         [:& tab-container
+          {:on-change-tab set-tab!
+           :selected @active-color-tab
+           :collapsable? false}
 
-            [:& tab-element {:id :ramp :title i/rgba-refactor}
-             (if picking-color?
-               [:div {:class (stl/css :picker-detail-wrapper)}
-                [:div {:class (stl/css :center-circle)}]
-                [:canvas#picker-detail {:width 256 :height 140}]]
-               [:& ramp-selector
-                {:color current-color
-                 :disable-opacity disable-opacity
-                 :on-change handle-change-color
-                 :on-start-drag on-start-drag
-                 :on-finish-drag on-finish-drag}])]
-
-            [:& tab-element {:id :harmony :title i/rgba-complementary-refactor}
-             (if picking-color?
-               [:div {:class (stl/css :picker-detail-wrapper)}
-                [:div {:class (stl/css :center-circle)}]
-                [:canvas#picker-detail {:width 256 :height 140}]]
-               [:& harmony-selector
-                {:color current-color
-                 :disable-opacity disable-opacity
-                 :on-change handle-change-color
-                 :on-start-drag on-start-drag
-                 :on-finish-drag on-finish-drag}])]
-
-            [:& tab-element {:id :hsva :title i/hsva-refactor}
-             (if picking-color?
-               [:div {:class (stl/css :picker-detail-wrapper)}
-                [:div {:class (stl/css :center-circle)}]
-                [:canvas#picker-detail {:width 256 :height 140}]]
-               [:& hsva-selector
-                {:color current-color
-                 :disable-opacity disable-opacity
-                 :on-change handle-change-color
-                 :on-start-drag on-start-drag
-                 :on-finish-drag on-finish-drag}])]]]
-
-          [:& color-inputs
-           {:type (if (= @active-color-tab :hsva) :hsv :rgb)
-            :disable-opacity disable-opacity
-            :color current-color
-            :on-change handle-change-color}]
-
-          [:& libraries
-           {:state state
-            :current-color current-color
-            :disable-gradient disable-gradient
-            :disable-opacity disable-opacity
-            :disable-image disable-image
-            :on-select-color on-select-library-color
-            :on-add-library-color on-add-library-color}]])
-
-       (when on-accept
-         [:div {:class (stl/css :actions)}
-          [:button {:class (stl/css-case
-                             :accept-color true
-                             :btn-disabled disabled-color-accept?)
-                    :on-click on-color-accept
-                    :disabled disabled-color-accept?}
-           (tr "workspace.libraries.colors.save-color")]])]
-
-      [:div.colorpicker {:ref node-ref
-                         :style {:touch-action "none"}}
-       [:div.colorpicker-content
-        [:div.top-actions
-         (when (or (not disable-gradient) (not disable-image))
-           [:div.element-set-content
-            [:& select
-             {:default-value selected-mode
-              :options options
-              :on-change handle-change-mode}]])
-         (when (not= selected-mode :image)
-           [:button.picker-btn
-            {:class (when picking-color? "active")
-             :on-click handle-click-picker}
-            i/picker])]
-
-        (when (or (= (:type state) :linear-gradient)
-                (= (:type state) :radial-gradient))
-
-          [:& gradients
-           {:stops (:stops state)
-            :editing-stop (:editing-stop state)
-            :on-select-stop handle-change-stop}])
-
-        (if (= selected-mode :image)
-          (let [uri (cfg/resolve-file-media (:image current-color))]
-            [:div.select-image
-             [:div.content
-              (when (:image current-color)
-                [:img {:src uri}])]
-             [:button.btn-secondary
-              {:title (tr "media.choose-image")
-               :aria-label (tr "media.choose-image")
-               :on-click on-fill-image-click}
-              (tr "media.choose-image")
-              [:& file-uploader
-               {:input-id "fill-image-upload"
-                :accept "image/jpeg,image/png"
-                :multi false
-                :ref fill-image-ref
-                :on-selected on-fill-image-selected}]]])
-          [:*
-           [:div.colorpicker-tabs
-            [:div.colorpicker-tab.tooltip.tooltip-bottom.tooltip-expand
-             {:class (when (= @active-color-tab :ramp) "active")
-              :alt (tr "workspace.libraries.colors.rgba")
-              :on-click set-tab!
-              :data-tab "ramp"} i/picker-ramp]
-            [:div.colorpicker-tab.tooltip.tooltip-bottom.tooltip-expand
-             {:class (when (= @active-color-tab :harmony) "active")
-              :alt (tr "workspace.libraries.colors.rgb-complementary")
-              :on-click set-tab!
-              :data-tab "harmony"} i/picker-harmony]
-            [:div.colorpicker-tab.tooltip.tooltip-bottom.tooltip-expand
-             {:class (when (= @active-color-tab :hsva) "active")
-              :alt (tr "workspace.libraries.colors.hsv")
-              :on-click set-tab!
-              :data-tab "hsva"} i/picker-hsv]]
-
+          [:& tab-element {:id :ramp :title i/rgba-refactor}
            (if picking-color?
-             [:div.picker-detail-wrapper
-              [:div.center-circle]
-              [:canvas#picker-detail {:width 200 :height 160}]]
-             (case @active-color-tab
-               :ramp
-               [:& ramp-selector
-                {:color current-color
-                 :disable-opacity disable-opacity
-                 :on-change handle-change-color
-                 :on-start-drag on-start-drag
-                 :on-finish-drag on-finish-drag}]
-               :harmony
-               [:& harmony-selector
-                {:color current-color
-                 :disable-opacity disable-opacity
-                 :on-change handle-change-color
-                 :on-start-drag on-start-drag
-                 :on-finish-drag on-finish-drag}]
-               :hsva
-               [:& hsva-selector
-                {:color current-color
-                 :disable-opacity disable-opacity
-                 :on-change handle-change-color
-                 :on-start-drag on-start-drag
-                 :on-finish-drag on-finish-drag}]
-               nil))
+             [:div {:class (stl/css :picker-detail-wrapper)}
+              [:div {:class (stl/css :center-circle)}]
+              [:canvas#picker-detail {:width 256 :height 140}]]
+             [:& ramp-selector
+              {:color current-color
+               :disable-opacity disable-opacity
+               :on-change handle-change-color
+               :on-start-drag on-start-drag
+               :on-finish-drag on-finish-drag}])]
 
-           [:& color-inputs
-            {:type (if (= @active-color-tab :hsva) :hsv :rgb)
-             :disable-opacity disable-opacity
-             :color current-color
-             :on-change handle-change-color}]
+          [:& tab-element {:id :harmony :title i/rgba-complementary-refactor}
+           (if picking-color?
+             [:div {:class (stl/css :picker-detail-wrapper)}
+              [:div {:class (stl/css :center-circle)}]
+              [:canvas#picker-detail {:width 256 :height 140}]]
+             [:& harmony-selector
+              {:color current-color
+               :disable-opacity disable-opacity
+               :on-change handle-change-color
+               :on-start-drag on-start-drag
+               :on-finish-drag on-finish-drag}])]
 
-           [:& libraries
-            {:state state
-             :current-color current-color
-             :disable-gradient disable-gradient
-             :disable-opacity disable-opacity
-             :disable-image disable-image
-             :on-select-color on-select-library-color
-             :on-add-library-color on-add-library-color}]])
+          [:& tab-element {:id :hsva :title i/hsva-refactor}
+           (if picking-color?
+             [:div {:class (stl/css :picker-detail-wrapper)}
+              [:div {:class (stl/css :center-circle)}]
+              [:canvas#picker-detail {:width 256 :height 140}]]
+             [:& hsva-selector
+              {:color current-color
+               :disable-opacity disable-opacity
+               :on-change handle-change-color
+               :on-start-drag on-start-drag
+               :on-finish-drag on-finish-drag}])]]]
 
-        (when on-accept
-          [:div.actions
-           [:button.btn-primary.btn-large
-            {:on-click on-color-accept
-             :disabled disabled-color-accept?
-             :class (dom/classnames
-                      :btn-disabled disabled-color-accept?)}
-            (tr "workspace.libraries.colors.save-color")]])]])))
+        [:& color-inputs
+         {:type (if (= @active-color-tab :hsva) :hsv :rgb)
+          :disable-opacity disable-opacity
+          :color current-color
+          :on-change handle-change-color}]
+
+        [:& libraries
+         {:state state
+          :current-color current-color
+          :disable-gradient disable-gradient
+          :disable-opacity disable-opacity
+          :disable-image disable-image
+          :on-select-color on-select-library-color
+          :on-add-library-color on-add-library-color}]])
+
+     (when on-accept
+       [:div {:class (stl/css :actions)}
+        [:button {:class (stl/css-case
+                          :accept-color true
+                          :btn-disabled disabled-color-accept?)
+                  :on-click on-color-accept
+                  :disabled disabled-color-accept?}
+         (tr "workspace.libraries.colors.save-color")]])]))
 
 (defn calculate-position
   "Calculates the style properties for the given coordinates and position"
-  [{vh :height} position x y new-css-system]
+  [{vh :height} position x y]
   (let [;; picker height in pixels
-        h(if new-css-system 510 430)
+        h 510
         ;; Checks for overflow outside the viewport height
         overflow-fix (max 0 (+ y (- 50) h (- vh)))
 
-        x-pos (if new-css-system 325 250)]
+        x-pos 325]
     (cond
       (or (nil? x) (nil? y)) {:left "auto" :right "16rem" :top "4rem"}
       (= position :left) {:left (str (- x x-pos) "px")
@@ -512,12 +398,11 @@
            disable-opacity
            disable-image
            on-change on-close on-accept] :as props}]
-  (let [new-css-system      (mf/use-ctx ctx/new-css-system)
-        vport (mf/deref viewport)
+  (let [vport (mf/deref viewport)
         dirty? (mf/use-var false)
         last-change (mf/use-var nil)
         position (or position :left)
-        style (calculate-position vport position x y new-css-system)
+        style (calculate-position vport position x y)
 
         handle-change
         (fn [new-data]
@@ -531,7 +416,7 @@
        #(when (and @dirty? @last-change on-close)
           (on-close @last-change))))
 
-    [:div {:class (stl/css new-css-system :colorpicker-tooltip)
+    [:div {:class (stl/css :colorpicker-tooltip)
            :style (clj->js style)}
      [:& colorpicker {:data data
                       :disable-gradient disable-gradient

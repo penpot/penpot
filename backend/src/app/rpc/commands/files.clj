@@ -20,6 +20,7 @@
    [app.common.types.file :as ctf]
    [app.config :as cf]
    [app.db :as db]
+   [app.db.sql :as-alias sql]
    [app.features.fdata :as feat.fdata]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
@@ -238,8 +239,7 @@
         (db/update! conn :file
                     {:data (blob/encode (:data file))
                      :features (db/create-array conn "text" (:features file))}
-                    {:id id}
-                    {::db/return-keys? false})
+                    {:id id})
 
         (when (contains? (:features file) "fdata/pointer-map")
           (feat.fdata/persist-pointers! cfg id)))
@@ -262,9 +262,9 @@
                       (when (some? project-id)
                         {:project-id project-id}))
         file   (-> (db/get conn :file params
-                           {::db/check-deleted? (not include-deleted?)
-                            ::db/remove-deleted? (not include-deleted?)
-                            ::db/for-update? lock-for-update?})
+                           {::db/check-deleted (not include-deleted?)
+                            ::db/remove-deleted (not include-deleted?)
+                            ::sql/for-update lock-for-update?})
                    (decode-row))]
     (if migrate?
       (migrate-file cfg file)
@@ -516,7 +516,7 @@
           ft.media_id
      from file as f
     inner join project as p on (p.id = f.project_id)
-     left join file_thumbnail as ft on (ft.file_id = f.id and ft.revn = f.revn)
+     left join file_thumbnail as ft on (ft.file_id = f.id and ft.revn = f.revn and ft.deleted_at is null)
     where f.is_shared = true
       and f.deleted_at is null
       and p.deleted_at is null
@@ -733,7 +733,8 @@
   (db/update! conn :file
               {:name name
                :modified-at (dt/now)}
-              {:id id}))
+              {:id id}
+              {::db/return-keys true}))
 
 (sv/defmethod ::rename-file
   {::doc/added "1.17"
@@ -860,9 +861,7 @@
                (let [file (assoc file :is-shared true)]
                  (db/update! conn :file
                              {:is-shared true}
-                             {:id id}
-                             ::db/return-keys? false)
-
+                             {:id id})
                  file)
 
                :else
@@ -899,7 +898,7 @@
   (db/update! conn :file
               {:deleted-at (dt/now)}
               {:id file-id}
-              {::db/columns [:id :name :is-shared :project-id :created-at :modified-at]}))
+              {::db/return-keys [:id :name :is-shared :project-id :created-at :modified-at]}))
 
 (def ^:private
   schema:delete-file
@@ -998,8 +997,8 @@
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id file-id)
-    (unlink-file-from-library conn params)))
-
+    (unlink-file-from-library conn params)
+    nil))
 
 ;; --- MUTATION COMMAND: update-sync
 
@@ -1008,7 +1007,8 @@
   (db/update! conn :file-library-rel
               {:synced-at (dt/now)}
               {:file-id file-id
-               :library-file-id library-id}))
+               :library-file-id library-id}
+              {::db/return-keys true}))
 
 (def ^:private schema:update-file-library-sync-status
   [:map {:title "update-file-library-sync-status"}
@@ -1031,7 +1031,8 @@
   [conn {:keys [file-id date] :as params}]
   (db/update! conn :file
               {:ignore-sync-until date}
-              {:id file-id}))
+              {:id file-id}
+              {::db/return-keys true}))
 
 (s/def ::ignore-file-library-sync-status
   (s/keys :req [::rpc/profile-id]

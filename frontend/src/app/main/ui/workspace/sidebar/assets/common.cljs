@@ -6,7 +6,7 @@
 
 
 (ns app.main.ui.workspace.sidebar.assets.common
-  (:require-macros [app.main.style :refer [css]])
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
@@ -22,7 +22,6 @@
    [app.main.refs :as refs]
    [app.main.render :refer [component-svg component-svg-thumbnail]]
    [app.main.store :as st]
-   [app.main.ui.components.context-menu :refer [context-menu]]
    [app.main.ui.components.context-menu-a11y :refer [context-menu-a11y]]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
@@ -111,24 +110,14 @@
 (mf/defc assets-context-menu
   {::mf/wrap-props false}
   [{:keys [options state on-close]}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)]
-    (if new-css-system
-      [:& context-menu-a11y
-       {:show (:open? state)
-        :fixed? (or (not= (:top state) 0) (not= (:left state) 0))
-        :on-close on-close
-        :top (:top state)
-        :left (:left state)
-        :options options
-        :workspace? true}]
-
-      [:& context-menu
-       {:selectable false
-        :show (:open? state)
-        :on-close on-close
-        :top (:top state)
-        :left (:left state)
-        :options options}])))
+  [:& context-menu-a11y
+   {:show (:open? state)
+    :fixed? (or (not= (:top state) 0) (not= (:left state) 0))
+    :on-close on-close
+    :top (:top state)
+    :left (:left state)
+    :options options
+    :workspace? true}])
 
 (mf/defc section-icon
   [{:keys [section] :as props}]
@@ -145,34 +134,24 @@
                             (filter some?))
         get-role       #(.. % -props -role)
         title-buttons  (filter #(= (get-role %) :title-button) children)
-        content        (filter #(= (get-role %) :content) children)
-        new-css-system (mf/use-ctx ctx/new-css-system)]
-    (if ^boolean new-css-system
-      [:div {:class (dom/classnames (css :asset-section) true)}
-       [:& title-bar {:collapsable? true
-                      :collapsed?   (not open?)
-                      :clickable-all? true
-                      :on-collapsed #(st/emit! (dw/set-assets-section-open file-id section (not open?)))
-                      :class        (css :title-spacing)
-                      :title        (mf/html [:span {:class (dom/classnames (css :title-name) true)}
-                                              [:span {:class (dom/classnames (css :section-icon) true)}
-                                               [:& section-icon {:section section}]]
-                                              [:span {:class (dom/classnames (css :section-name) true)}
-                                               title]
+        content        (filter #(= (get-role %) :content) children)]
+    [:div {:class (stl/css :asset-section)}
+     [:& title-bar {:collapsable? true
+                    :collapsed?   (not open?)
+                    :clickable-all? true
+                    :on-collapsed #(st/emit! (dw/set-assets-section-open file-id section (not open?)))
+                    :class        (stl/css :title-spacing)
+                    :title        (mf/html [:span {:class (stl/css :title-name)}
+                                            [:span {:class (stl/css :section-icon)}
+                                             [:& section-icon {:section section}]]
+                                            [:span {:class (stl/css :section-name)}
+                                             title]
 
-                                              [:span {:class (dom/classnames (css :num-assets) true)}
-                                               assets-count]])}
-        title-buttons]
-       (when ^boolean open?
-         content)]
-      [:div.asset-section
-       [:div.asset-title {:class (when (not ^boolean open?) "closed")}
-        [:span {:on-click #(st/emit! (dw/set-assets-section-open file-id section (not open?)))}
-         i/arrow-slide title]
-        [:span.num-assets (dm/str "\u00A0(") assets-count ")"] ;; Unicode 00A0 is non-breaking space
-        title-buttons]
-       (when ^boolean open?
-         content)])))
+                                            [:span {:class (stl/css :num-assets)}
+                                             assets-count]])}
+      title-buttons]
+     (when ^boolean open?
+       content)]))
 
 (mf/defc asset-section-block
   [{:keys [children]}]

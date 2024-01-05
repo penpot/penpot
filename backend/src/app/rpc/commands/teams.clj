@@ -963,5 +963,6 @@
 
       (let [invitation (db/delete! conn :team-invitation
                                    {:team-id team-id
-                                    :email-to (str/lower email)})]
+                                    :email-to (str/lower email)}
+                                   {::db/return-keys true})]
         (rph/wrap nil {::audit/props {:invitation-id (:id invitation)}})))))

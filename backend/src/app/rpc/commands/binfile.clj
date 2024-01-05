@@ -317,7 +317,7 @@
   [cfg file-id]
   (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
                  (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
-                   (some-> (db/get* conn :file {:id file-id} {::db/remove-deleted? false})
+                   (some-> (db/get* conn :file {:id file-id} {::db/remove-deleted false})
                            (files/decode-row)
                            (update :data feat.fdata/process-pointers deref))))))
 
@@ -593,6 +593,7 @@
 (declare lookup-index)
 (declare update-index)
 (declare relink-media)
+(declare relink-colors)
 (declare relink-shapes)
 
 (defmulti read-import ::version)
@@ -663,6 +664,7 @@
           (case feature
             "components/v2"
             (feat.compv2/migrate-file! options file-id
+                                       :max-procs 2
                                        :validate? validate?
                                        :throw-on-validate? true)
 
@@ -723,6 +725,7 @@
                           (update :pages-index relink-shapes)
                           (update :components relink-shapes)
                           (update :media relink-media)
+                          (update :colors relink-colors)
                           (d/without-nils))))))
 
 
@@ -996,6 +999,17 @@
                    res)))
              media
              media))
+
+(defn- relink-colors
+  "A function responsible of process the :colors attr of file data and
+  remap the old ids with the new ones."
+  [colors]
+  (reduce-kv (fn [res k v]
+               (if (:image v)
+                 (update-in res [k :image :id] lookup-index)
+                 res))
+    colors
+    colors))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HIGH LEVEL API

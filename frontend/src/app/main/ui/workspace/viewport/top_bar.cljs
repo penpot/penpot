@@ -13,7 +13,6 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
-   [app.main.ui.icons :as i]
    [app.main.ui.workspace.viewport.grid-layout-editor :refer [grid-edition-actions]]
    [app.main.ui.workspace.viewport.path-actions :refer [path-actions]]
    [app.util.i18n :as i18n :refer [tr]]
@@ -21,30 +20,19 @@
 
 (mf/defc view-only-actions
   []
-  (let [new-css-system  (mf/use-ctx ctx/new-css-system)
-        handle-close-view-mode
+  (let [handle-close-view-mode
         (mf/use-callback
          (fn []
            (st/emit! :interrupt
                      (dw/set-options-mode :design)
                      (dw/set-workspace-read-only false))))]
-    (if new-css-system
-      [:div {:class (stl/css :viewport-actions)}
-       [:div {:class (stl/css :viewport-actions-container)}
-        [:div {:class (stl/css :viewport-actions-title)}
-         [:& i18n/tr-html {:tag-name "span"
-                           :label "workspace.top-bar.read-only"}]]
-        [:button {:class (stl/css :done-btn)
-                  :on-click handle-close-view-mode} (tr "workspace.top-bar.read-only.done")]]]
-
-      ;; OLD
-      [:div.viewport-actions
-       [:div.viewport-actions-container
-        [:div.viewport-actions-title
-         [:& i18n/tr-html {:tag-name "span"
-                           :label "workspace.top-bar.read-only"}]]
-        [:button.btn-primary {:on-click handle-close-view-mode} (tr "workspace.top-bar.read-only.done")]
-        [:button.btn-icon-basic {:on-click handle-close-view-mode} i/close]]])))
+    [:div {:class (stl/css :viewport-actions)}
+     [:div {:class (stl/css :viewport-actions-container)}
+      [:div {:class (stl/css :viewport-actions-title)}
+       [:& i18n/tr-html {:tag-name "span"
+                         :label "workspace.top-bar.read-only"}]]
+      [:button {:class (stl/css :done-btn)
+                :on-click handle-close-view-mode} (tr "workspace.top-bar.read-only.done")]]]))
 
 (mf/defc top-bar
   {::mf/wrap [mf/memo]}

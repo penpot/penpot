@@ -18,30 +18,35 @@
 }
 
 .grid-editor-wrapper {
+  cursor: grab;
   width: 100%;
   height: 80%;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
 }
 
+.grid-editor-header-hover {
+  fill: var(--grid-editor-marker-color);
+}
+
 .grid-editor-label {
+  flex: 1;
   background: none;
-  border-bottom: calc($s-1 / var(--zoom)) solid transparent;
   border: 0;
   color: var(--grid-editor-marker-text);
   font-family: worksans;
   font-size: calc($fs-12 / var(--zoom));
   font-weight: 400;
   margin: 0;
-  max-width: calc($s-80 / var(--zoom));
+  max-width: calc($s-60 / var(--zoom));
   padding: 0;
-  padding: $s-4;
+  padding: calc($s-4 / var(--zoom));
   text-align: center;
 
   &:focus {
     outline: none;
-    border-bottom: calc($s-1 / var(--zoom)) solid var(--grid-editor-marker-text);
   }
 }
 

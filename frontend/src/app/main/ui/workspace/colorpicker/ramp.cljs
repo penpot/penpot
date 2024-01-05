@@ -9,16 +9,13 @@
   (:require
    [app.common.colors :as cc]
    [app.common.math :as mth]
-   [app.main.ui.components.color-bullet :refer [color-bullet]]
    [app.main.ui.components.color-bullet-new :as cb]
-   [app.main.ui.context :as ctx]
    [app.main.ui.workspace.colorpicker.slider-selector :refer [slider-selector]]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
 (mf/defc value-saturation-selector [{:keys [saturation value on-change on-start-drag on-finish-drag]}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)
-        dragging? (mf/use-state false)
+  (let [dragging? (mf/use-state false)
         calculate-pos
         (fn [ev]
           (let [{:keys [left right top bottom]} (-> ev dom/get-target dom/get-bounding-rect)
@@ -42,32 +39,20 @@
            (dom/release-pointer event)
            (reset! dragging? false)
            (on-finish-drag)))]
-    (if new-css-system
-      [:div {:class (stl/css :value-saturation-selector)
-             :on-pointer-down handle-start-drag
-             :on-pointer-up handle-stop-drag
-             :on-lost-pointer-capture handle-stop-drag
-             :on-click calculate-pos
-             :on-pointer-move #(when @dragging? (calculate-pos %))}
-       [:div {:class (stl/css :handler)
-              :style {:pointer-events "none"
-                      :left (str (* 100 saturation) "%")
-                      :top (str (* 100 (- 1 (/ value 255))) "%")}}]]
-
-      [:div.value-saturation-selector
-       {:on-pointer-down handle-start-drag
-        :on-pointer-up handle-stop-drag
-        :on-lost-pointer-capture handle-stop-drag
-        :on-click calculate-pos
-        :on-pointer-move #(when @dragging? (calculate-pos %))}
-       [:div.handler {:style {:pointer-events "none"
-                              :left (str (* 100 saturation) "%")
-                              :top (str (* 100 (- 1 (/ value 255))) "%")}}]])))
+    [:div {:class (stl/css :value-saturation-selector)
+           :on-pointer-down handle-start-drag
+           :on-pointer-up handle-stop-drag
+           :on-lost-pointer-capture handle-stop-drag
+           :on-click calculate-pos
+           :on-pointer-move #(when @dragging? (calculate-pos %))}
+     [:div {:class (stl/css :handler)
+            :style {:pointer-events "none"
+                    :left (str (* 100 saturation) "%")
+                    :top (str (* 100 (- 1 (/ value 255))) "%")}}]]))
 
 
 (mf/defc ramp-selector [{:keys [color disable-opacity on-change on-start-drag on-finish-drag]}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)
-        {hex :hex
+  (let [{hex :hex
          hue :h saturation :s value :v alpha :alpha} color
 
         on-change-value-saturation
@@ -90,60 +75,32 @@
         on-change-opacity
         (fn [new-opacity]
           (on-change {:alpha new-opacity}))]
-    (if new-css-system
-      [:*
-       [:& value-saturation-selector
-        {:hue hue
-         :saturation saturation
-         :value value
-         :on-change on-change-value-saturation
-         :on-start-drag on-start-drag
-         :on-finish-drag on-finish-drag}]
+    [:*
+     [:& value-saturation-selector
+      {:hue hue
+       :saturation saturation
+       :value value
+       :on-change on-change-value-saturation
+       :on-start-drag on-start-drag
+       :on-finish-drag on-finish-drag}]
 
-       [:div {:class (stl/css new-css-system :shade-selector)
-              :style #js {"--bullet-size" "52px"}}
-        [:& cb/color-bullet {:color {:color hex
-                                     :opacity alpha}
-                             :area true}]
-        [:div {:class (stl/css :sliders-wrapper)}
-         [:& slider-selector {:type :hue
-                              :max-value 360
-                              :value hue
-                              :on-change on-change-hue
+     [:div {:class (stl/css :shade-selector)
+            :style #js {"--bullet-size" "52px"}}
+      [:& cb/color-bullet {:color {:color hex
+                                   :opacity alpha}
+                           :area true}]
+      [:div {:class (stl/css :sliders-wrapper)}
+       [:& slider-selector {:type :hue
+                            :max-value 360
+                            :value hue
+                            :on-change on-change-hue
+                            :on-start-drag on-start-drag
+                            :on-finish-drag on-finish-drag}]
+
+       (when (not disable-opacity)
+         [:& slider-selector {:type :opacity
+                              :max-value 1
+                              :value alpha
+                              :on-change on-change-opacity
                               :on-start-drag on-start-drag
-                              :on-finish-drag on-finish-drag}]
-
-         (when (not disable-opacity)
-           [:& slider-selector {:type :opacity
-                                :max-value 1
-                                :value alpha
-                                :on-change on-change-opacity
-                                :on-start-drag on-start-drag
-                                :on-finish-drag on-finish-drag}])]]]
-
-      [:*
-       [:& value-saturation-selector
-        {:hue hue
-         :saturation saturation
-         :value value
-         :on-change on-change-value-saturation
-         :on-start-drag on-start-drag
-         :on-finish-drag on-finish-drag}]
-
-       [:div.shade-selector
-        [:& color-bullet {:color {:color hex
-                                  :opacity alpha}}]
-        [:& slider-selector {:class "hue"
-                             :max-value 360
-                             :value hue
-                             :on-change on-change-hue
-                             :on-start-drag on-start-drag
-                             :on-finish-drag on-finish-drag}]
-
-        (when (not disable-opacity)
-          [:& slider-selector {:class "opacity"
-                               :max-value 1
-                               :value alpha
-                               :on-change on-change-opacity
-                               :on-start-drag on-start-drag
-                               :on-finish-drag on-finish-drag}])]])))
+                              :on-finish-drag on-finish-drag}])]]]))

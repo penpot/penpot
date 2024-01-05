@@ -16,7 +16,6 @@
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
-   [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-attrs blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu]]
@@ -268,8 +267,7 @@
   {::mf/wrap [#(mf/memo' % (mf/check-props ["shapes" "shapes-with-children" "page-id" "file-id"]))]
    ::mf/wrap-props false}
   [props]
-  (let [new-css-system       (mf/use-ctx ctx/new-css-system)
-        shapes               (unchecked-get props "shapes")
+  (let [shapes               (unchecked-get props "shapes")
         shapes-with-children (unchecked-get props "shapes-with-children")
 
         ;; remove children from bool shapes
@@ -348,8 +346,7 @@
 
         components (filter ctk/instance-head? shapes)]
 
-    [:div {:class (stl/css-case new-css-system
-                                :options true)}
+    [:div {:class (stl/css :options)}
      (when-not (empty? layer-ids)
        [:& layer-menu {:type type :ids layer-ids :values layer-values}])
 

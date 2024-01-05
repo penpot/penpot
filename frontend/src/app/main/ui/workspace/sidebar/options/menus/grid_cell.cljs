@@ -18,10 +18,8 @@
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.title-bar :refer [title-bar]]
-   [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
-   [app.main.ui.workspace.sidebar.options.menus.layout-container :as lyc]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -38,9 +36,7 @@
 
 (mf/defc set-self-alignment
   [{:keys [is-col? alignment set-alignment] :as props}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)
-        dir-v [:auto :start :center :end :stretch #_:baseline]
-        alignment (or alignment :auto)
+  (let [alignment (or alignment :auto)
         type (if is-col? "col" "row")
 
         handle-set-alignment
@@ -49,8 +45,7 @@
          (fn [value]
            (set-alignment (-> value keyword))))]
 
-    (if new-css-system
-      [:div {:class (stl/css :self-align-menu)}
+    [:div {:class (stl/css :self-align-menu)}
        [:& radio-buttons {:selected (d/name alignment)
                           :on-change handle-set-alignment
                           :name (dm/str "flex-align-items-" type)}
@@ -72,27 +67,14 @@
         [:& radio-button {:value "stretch"
                           :icon  (if is-col? i/align-self-row-strech i/align-self-column-strech)
                           :title "Align self stretch"
-                          :id     (dm/str "align-self-stretch-" type)}]]]
-
-      [:div.align-self-style
-       (for [align dir-v]
-         [:button.align-self.tooltip.tooltip-bottom
-          {:class    (dom/classnames :active  (= alignment align)
-                                     :tooltip-bottom-left (not= align :start)
-                                     :tooltip-bottom (= align :start))
-           :alt      (dm/str "Align self " (d/name align)) ;; TODO fix this tooltip
-           :on-click #(set-alignment align)
-           :key (str "align-self" align)}
-          (lyc/get-layout-flex-icon :align-self align is-col?)])])))
+                          :id     (dm/str "align-self-stretch-" type)}]]]))
 
 
 (mf/defc options
   {::mf/wrap [mf/memo]}
   [{:keys [shape cell cells] :as props}]
 
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)
-
-        state* (mf/use-state {:open true})
+  (let [state* (mf/use-state {:open true})
         open?  (:open @state*)
 
         cells (hooks/use-equal-memo cells)
@@ -181,208 +163,104 @@
                      (dwge/clear-selection (:id shape)))))]
 
 
-    (if new-css-system
-      [:div {:class (stl/css :grid-cell-menu)}
-       [:div {:class (stl/css :grid-cell-menu-title)}
-        [:& title-bar {:collapsable? true
-                       :collapsed?   (not open?)
-                       :on-collapsed #(swap! state* update :open not)
-                       :title        "Grid cell"}]]
+    [:div {:class (stl/css :grid-cell-menu)}
+     [:div {:class (stl/css :grid-cell-menu-title)}
+      [:& title-bar {:collapsable? true
+                     :collapsed?   (not open?)
+                     :on-collapsed #(swap! state* update :open not)
+                     :title        "Grid cell"}]]
 
-       (when open?
-         [:div {:class (stl/css :grid-cell-menu-container)}
-          [:div {:class (stl/css :cell-mode :row)}
-           [:& radio-buttons {:selected (d/name cell-mode)
-                              :on-change set-cell-mode
-                              :name "cell-mode"
-                              :wide true}
-            [:& radio-button {:value "auto" :id :auto}]
-            [:& radio-button {:value "manual" :id :manual}]
-            [:& radio-button {:value "area" :id :area}]]]
+     (when open?
+       [:div {:class (stl/css :grid-cell-menu-container)}
+        [:div {:class (stl/css :cell-mode :row)}
+         [:& radio-buttons {:selected (d/name cell-mode)
+                            :on-change set-cell-mode
+                            :name "cell-mode"
+                            :wide true}
+          [:& radio-button {:value "auto" :id :auto}]
+          [:& radio-button {:value "manual" :id :manual}]
+          [:& radio-button {:value "area"
+                            :id :area
+                            :disabled (not valid-area-cells?)}]]]
 
-          (when (= :area cell-mode)
-            [:div {:class (stl/css :row)}
-             [:input
-              {:class (stl/css :area-input)
-               :key (dm/str "name-" (:id cell))
-               :id "grid-area-name"
-               :type "text"
-               :aria-label "grid-area-name"
-               :placeholder "Area name"
-               :default-value area-name
-               :auto-complete "off"
-               :on-change on-area-name-change}]])
-
-          (when (and (not multiple?) (= :auto cell-mode))
-            [:div {:class (stl/css :row)}
-             [:div {:class (stl/css :grid-coord-group)}
-              [:span {:class (stl/css :icon)} i/flex-vertical-refactor]
-              [:div {:class (stl/css :coord-input)}
-               [:> numeric-input*
-                {:placeholder "--"
-                 :title "Column"
-                 :on-click #(dom/select-target %)
-                 :on-change (partial on-grid-coordinates :all :column)
-                 :value column}]]]
-
-             [:div {:class (stl/css :grid-coord-group)}
-              [:span {:class (stl/css :icon)} i/flex-horizontal-refactor]
-              [:div {:class (stl/css :coord-input)}
-               [:> numeric-input*
-                {:placeholder "--"
-                 :title "Row"
-                 :on-click #(dom/select-target %)
-                 :on-change (partial on-grid-coordinates :all :row)
-                 :value row}]]]])
-
-          (when (and (not multiple?) (or (= :manual cell-mode) (= :area cell-mode)))
-            [:div {:class (stl/css :row)}
-             [:div {:class (stl/css :grid-coord-group)}
-              [:span {:class (stl/css :icon)} i/layout-rows]
-              [:div {:class (stl/css :coord-input)}
-               [:> numeric-input*
-                {:placeholder "--"
-                 :on-pointer-down #(dom/select-target %)
-                 :on-change (partial on-grid-coordinates :start :column)
-                 :value column}]]
-              [:div {:class (stl/css :coord-input)}
-               [:> numeric-input*
-                {:placeholder "--"
-                 :on-pointer-down #(dom/select-target %)
-                 :on-change (partial on-grid-coordinates :end :column)
-                 :value column-end}]]]
-
-             [:div {:class (stl/css :grid-coord-group)}
-              [:span {:class (stl/css :icon)} i/layout-columns]
-              [:div {:class (stl/css :coord-input :double)}
-               [:> numeric-input*
-                {:placeholder "--"
-                 :on-pointer-down #(dom/select-target %)
-                 :on-change (partial on-grid-coordinates :start :row)
-                 :value row}]]
-              [:div {:class (stl/css :coord-input)}
-               [:> numeric-input*
-                {:placeholder "--"
-                 :on-pointer-down #(dom/select-target %)
-                 :on-change (partial on-grid-coordinates :end :row)
-                 :value row-end}]]]])
-
+        (when (= :area cell-mode)
           [:div {:class (stl/css :row)}
-           [:& set-self-alignment {:is-col? false
-                                   :alignment align-self
-                                   :set-alignment set-alignment}]
-           [:& set-self-alignment {:is-col? true
-                                   :alignment justify-self
-                                   :set-alignment set-justify-self}]]
+           [:input
+            {:class (stl/css :area-input)
+             :key (dm/str "name-" (:id cell))
+             :id "grid-area-name"
+             :type "text"
+             :aria-label "grid-area-name"
+             :placeholder "Area name"
+             :default-value area-name
+             :auto-complete "off"
+             :on-change on-area-name-change}]])
 
+        (when (and (not multiple?) (= :auto cell-mode))
           [:div {:class (stl/css :row)}
-           [:button
-            {:class (stl/css :edit-grid-btn)
-             :alt    (tr "workspace.layout_grid.editor.options.edit-grid")
-             :on-click toggle-edit-mode}
-            (tr "workspace.layout_grid.editor.options.edit-grid")]]])]
+           [:div {:class (stl/css :grid-coord-group)}
+            [:span {:class (stl/css :icon)} i/flex-vertical-refactor]
+            [:div {:class (stl/css :coord-input)}
+             [:> numeric-input*
+              {:placeholder "--"
+               :title "Column"
+               :on-click #(dom/select-target %)
+               :on-change (partial on-grid-coordinates :all :column)
+               :value column}]]]
 
+           [:div {:class (stl/css :grid-coord-group)}
+            [:span {:class (stl/css :icon)} i/flex-horizontal-refactor]
+            [:div {:class (stl/css :coord-input)}
+             [:> numeric-input*
+              {:placeholder "--"
+               :title "Row"
+               :on-click #(dom/select-target %)
+               :on-change (partial on-grid-coordinates :all :row)
+               :value row}]]]])
 
-      [:div.element-set
-       [:div.element-set-title
-        [:span "Grid Cell"]]
+        (when (and (not multiple?) (or (= :manual cell-mode) (= :area cell-mode)))
+          [:div {:class (stl/css :row)}
+           [:div {:class (stl/css :grid-coord-group)}
+            [:span {:class (stl/css :icon)} i/layout-rows]
+            [:div {:class (stl/css :coord-input)}
+             [:> numeric-input*
+              {:placeholder "--"
+               :on-pointer-down #(dom/select-target %)
+               :on-change (partial on-grid-coordinates :start :column)
+               :value column}]]
+            [:div {:class (stl/css :coord-input)}
+             [:> numeric-input*
+              {:placeholder "--"
+               :on-pointer-down #(dom/select-target %)
+               :on-change (partial on-grid-coordinates :end :column)
+               :value column-end}]]]
 
-       [:div.element-set-content.layout-grid-item-menu
-        [:div.layout-row
-         [:div.row-title.sizing "Position"]
-         [:div.position-wrapper
-          [:button.position-btn
-           {:on-click #(set-cell-mode :auto)
-            :class (dom/classnames :active (= :auto cell-mode))} "Auto"]
-          (when-not multiple?
-            [:button.position-btn
-             {:on-click #(set-cell-mode :manual)
-              :class (dom/classnames :active (= :manual cell-mode))} "Manual"])
-          [:button.position-btn
-           {:on-click #(set-cell-mode :area)
-            :disabled (not valid-area-cells?)
-            :class (dom/classnames :active (= :area cell-mode))} "Area"]]]
+           [:div {:class (stl/css :grid-coord-group)}
+            [:span {:class (stl/css :icon)} i/layout-columns]
+            [:div {:class (stl/css :coord-input :double)}
+             [:> numeric-input*
+              {:placeholder "--"
+               :on-pointer-down #(dom/select-target %)
+               :on-change (partial on-grid-coordinates :start :row)
+               :value row}]]
+            [:div {:class (stl/css :coord-input)}
+             [:> numeric-input*
+              {:placeholder "--"
+               :on-pointer-down #(dom/select-target %)
+               :on-change (partial on-grid-coordinates :end :row)
+               :value row-end}]]]])
 
-        [:div.manage-grid-columns
-         (when (and (not multiple?) (= :auto cell-mode))
-           [:div.grid-auto
-            [:div.grid-columns-auto
-             [:span.icon i/layout-rows]
-             [:div.input-wrapper
-              [:> numeric-input*
-               {:placeholder "--"
-                :on-click #(dom/select-target %)
-                :on-change (partial on-grid-coordinates :all :column)
-                :value column}]]]
-            [:div.grid-rows-auto
-             [:span.icon i/layout-columns]
-             [:div.input-wrapper
-              [:> numeric-input*
-               {:placeholder "--"
-                :on-click #(dom/select-target %)
-                :on-change (partial on-grid-coordinates :all :row)
-                :value row}]]]])
+        [:div {:class (stl/css :row)}
+         [:& set-self-alignment {:is-col? false
+                                 :alignment align-self
+                                 :set-alignment set-alignment}]
+         [:& set-self-alignment {:is-col? true
+                                 :alignment justify-self
+                                 :set-alignment set-justify-self}]]
 
-         (when (= :area cell-mode)
-           [:div.input-wrapper
-            [:input.input-text
-             {:key (dm/str "name-" (:id cell))
-              :id "grid-area-name"
-              :type "text"
-              :aria-label "grid-area-name"
-              :placeholder "--"
-              :default-value area-name
-              :auto-complete "off"
-              :on-change on-area-name-change}]])
-
-         (when (and (not multiple?) (or (= :manual cell-mode) (= :area cell-mode)))
-           [:div.grid-manual
-            [:div.grid-columns-auto
-             [:span.icon i/layout-rows]
-             [:div.input-wrapper
-              [:> numeric-input*
-               {:placeholder "--"
-                :on-pointer-down #(dom/select-target %)
-                :on-change (partial on-grid-coordinates :start :column)
-                :value column}]
-              [:> numeric-input*
-               {:placeholder "--"
-                :on-pointer-down #(dom/select-target %)
-                :on-change (partial on-grid-coordinates :end :column)
-                :value column-end}]]]
-            [:div.grid-rows-auto
-             [:span.icon i/layout-columns]
-             [:div.input-wrapper
-              [:> numeric-input*
-               {:placeholder "--"
-                :on-pointer-down #(dom/select-target %)
-                :on-change (partial on-grid-coordinates :start :row)
-                :value row}]
-              [:> numeric-input*
-               {:placeholder "--"
-                :on-pointer-down #(dom/select-target %)
-                :on-change (partial on-grid-coordinates :end :row)
-                :value row-end}]]]])]
-
-        [:div.layout-row
-         [:div.row-title "Align"]
-         [:div.btn-wrapper
-          [:& set-self-alignment {:is-col? false
-                                  :alignment align-self
-                                  :set-alignment set-alignment}]]]
-        [:div.layout-row
-         [:div.row-title "Justify"]
-         [:div.btn-wrapper
-          [:& set-self-alignment {:is-col? true
-                                  :alignment justify-self
-                                  :set-alignment set-justify-self}]]]
-
-        [:div.layout-row.single-button
-         [:div.btn-wrapper
-          [:div.edit-mode
-           [:button.tooltip.tooltip-bottom-left
-            {:alt    "Grid edit mode"
-             :on-click toggle-edit-mode
-             :style {:padding 0}}
-            "Edit grid"
-            i/grid-layout-mode]]]]]])))
+        [:div {:class (stl/css :row)}
+         [:button
+          {:class (stl/css :edit-grid-btn)
+           :alt    (tr "workspace.layout_grid.editor.options.edit-grid")
+           :on-click toggle-edit-mode}
+          (tr "workspace.layout_grid.editor.options.edit-grid")]]])]))

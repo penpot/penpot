@@ -12,10 +12,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.tab-container :refer [tab-container tab-element]]
-   [app.main.ui.components.tabs-container :refer [tabs-container tabs-element]]
-   [app.main.ui.context :as ctx]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
-   [app.main.ui.icons :as i]
    [app.main.ui.workspace.comments :refer [comments-sidebar]]
    [app.main.ui.workspace.left-header :refer [left-header]]
    [app.main.ui.workspace.right-header :refer [right-header]]
@@ -26,7 +23,6 @@
    [app.main.ui.workspace.sidebar.options :refer [options-toolbox]]
    [app.main.ui.workspace.sidebar.shortcuts :refer [shortcuts-container]]
    [app.main.ui.workspace.sidebar.sitemap :refer [sitemap]]
-   [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.object :as obj]
    [rumext.v2 :as mf]))
@@ -47,7 +43,6 @@
                              (contains? layout :assets) :assets)
         shortcuts?     (contains? layout :shortcuts)
         show-debug?    (contains? layout :debug-panel)
-        new-css-system (mf/use-ctx ctx/new-css-system)
 
         {on-pointer-down :on-pointer-down on-lost-pointer-capture :on-lost-pointer-capture  on-pointer-move :on-pointer-move parent-ref :parent-ref size :size}
         (use-resize-hook :left-sidebar 275 275 500 :x false :left)
@@ -65,25 +60,17 @@
     [:aside {:ref parent-ref
              :id "left-sidebar-aside"
              :data-size size
-             :class (stl/css-case new-css-system
-                                  :global/settings-bar (not new-css-system)
-                                  :global/settings-bar-left (not new-css-system)
-                                  :left-settings-bar true
+             :class (stl/css-case :left-settings-bar true
                                   :global/two-row   (<= size 300)
                                   :global/three-row (and (> size 300) (<= size 400))
                                   :global/four-row  (> size 400))
              :style #js {"--width" (dm/str size "px")}}
-     (when new-css-system
-       [:& left-header {:file file :layout layout :project project :page-id page-id}])
+     [:& left-header {:file file :layout layout :project project :page-id page-id}]
      [:div {:on-pointer-down on-pointer-down
             :on-lost-pointer-capture on-lost-pointer-capture
             :on-pointer-move on-pointer-move
-            :class (if ^boolean new-css-system
-                     (stl/css :resize-area)
-                     (dom/classnames :resize-area true))}]
-     [:div {:class (if ^boolean new-css-system
-                     (stl/css :settings-bar-inside)
-                     (dom/classnames :settings-bar-inside true))}
+            :class (stl/css :resize-area)}]
+     [:div {:class (stl/css :settings-bar-inside)}
       (cond
         (true? shortcuts?)
         [:& shortcuts-container]
@@ -92,64 +79,32 @@
         [:& debug-panel]
 
         :else
-        (if ^boolean new-css-system
-          [:div  {:class (stl/css :tabs-wrapper)}
-           [:& tab-container
-            {:on-change-tab on-tab-change
-             :selected section
-             :shortcuts? shortcuts?
-             :collapsable? true
-             :handle-collapse handle-collapse
-             :class (stl/css :tab-spacing)}
-            [:& tab-element {:id :layers :title (tr "workspace.sidebar.layers")}
-             [:div {:class (stl/css :layers-tab)
-                    :style #js {"--height" (str size-pages "px")}}
-              [:& sitemap {:layout layout
-                           :toggle-pages toggle-pages
-                           :show-pages? @show-pages?
-                           :size size-pages}]
-              (when @show-pages?
-                [:div {:class (stl/css :resize-area-horiz)
-                       :on-pointer-down on-pointer-down-pages
-                       :on-lost-pointer-capture on-lost-pointer-capture-pages
-                       :on-pointer-move on-pointer-move-pages}])
-              [:& layers-toolbox {:size-parent size
-                                  :size size-pages}]]]
+        [:div  {:class (stl/css :tabs-wrapper)}
+         [:& tab-container
+          {:on-change-tab on-tab-change
+           :selected section
+           :shortcuts? shortcuts?
+           :collapsable? true
+           :handle-collapse handle-collapse
+           :class (stl/css :tab-spacing)}
+          [:& tab-element {:id :layers :title (tr "workspace.sidebar.layers")}
+           [:div {:class (stl/css :layers-tab)
+                  :style #js {"--height" (str size-pages "px")}}
+            [:& sitemap {:layout layout
+                         :toggle-pages toggle-pages
+                         :show-pages? @show-pages?
+                         :size size-pages}]
+            (when @show-pages?
+              [:div {:class (stl/css :resize-area-horiz)
+                     :on-pointer-down on-pointer-down-pages
+                     :on-lost-pointer-capture on-lost-pointer-capture-pages
+                     :on-pointer-move on-pointer-move-pages}])
+            [:& layers-toolbox {:size-parent size
+                                :size size-pages}]]]
 
-            (when-not ^boolean mode-inspect?
-              [:& tab-element {:id :assets :title (tr "workspace.toolbar.assets")}
-               [:& assets-toolbox]])]]
-
-          [:*
-           [:button.collapse-sidebar
-            {:on-click handle-collapse
-             :aria-label (tr "workspace.sidebar.collapse")}
-            i/arrow-slide]
-
-           [:& tabs-container
-            {:on-change-tab on-tab-change
-             :selected section
-             :shortcuts? shortcuts?
-             :collapsable? true
-             :handle-collapse handle-collapse}
-
-            [:& tabs-element {:id :layers :title (tr "workspace.sidebar.layers")}
-             [:div {:class :layers-tab
-                    :style #js {"--height" (str size-pages "px")}}
-              [:& sitemap {:layout layout
-                           :toggle-pages toggle-pages
-                           :show-pages? @show-pages?
-                           :size size-pages}]
-              (when @show-pages?
-                [:div.resize-area-horiz
-                 {:on-pointer-down on-pointer-down-pages
-                  :on-lost-pointer-capture on-lost-pointer-capture-pages
-                  :on-pointer-move on-pointer-move-pages}])
-              [:& layers-toolbox {:size-parent size}]]]
-
-            (when-not ^boolean mode-inspect?
-              [:& tabs-element {:id :assets :title (tr "workspace.toolbar.assets")}
-               [:& assets-toolbox]])]]))]]))
+          (when-not ^boolean mode-inspect?
+            [:& tab-element {:id :assets :title (tr "workspace.toolbar.assets")}
+             [:& assets-toolbox]])]])]]))
 
 ;; --- Right Sidebar (Component)
 
@@ -158,7 +113,6 @@
    ::mf/wrap [mf/memo]}
   [{:keys [layout section file page-id ] :as props}]
   (let [drawing-tool     (:tool (mf/deref refs/workspace-drawing))
-        new-css-system   (mf/use-ctx ctx/new-css-system)
 
         is-comments?     (= drawing-tool :comments)
         is-history?      (contains? layout :document-history)
@@ -195,10 +149,7 @@
             (obj/set! "on-change-section" handle-change-section)
             (obj/set! "on-expand" handle-expand))]
 
-    [:aside {:class (stl/css-case new-css-system
-                                  :global/settings-bar (not new-css-system)
-                                  :global/settings-bar-right (not new-css-system)
-                                  :right-settings-bar true
+    [:aside {:class (stl/css-case :right-settings-bar true
                                   :not-expand (not can-be-expanded?)
                                   :expanded (> size 276))
 
@@ -206,14 +157,13 @@
              :data-size size
              :style #js {"--width" (when can-be-expanded? (dm/str size "px"))}}
      (when can-be-expanded?
-       [:div {:class (stl/css new-css-system :resize-area)
+       [:div {:class (stl/css :resize-area)
               :on-pointer-down on-pointer-down
               :on-lost-pointer-capture on-lost-pointer-capture
               :on-pointer-move on-pointer-move}])
-     (when new-css-system
-       [:& right-header {:file file :layout layout :page-id page-id}])
+     [:& right-header {:file file :layout layout :page-id page-id}]
 
-     [:div {:class (stl/css new-css-system :settings-bar-inside)}
+     [:div {:class (stl/css :settings-bar-inside)}
       (cond
         (true? is-comments?)
         [:& comments-sidebar]

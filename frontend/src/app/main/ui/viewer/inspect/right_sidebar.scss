@@ -16,61 +16,73 @@
   grid-area: right-sidebar;
   padding-top: $s-8;
   padding-left: $s-12;
-  .tool-windows {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    .shape-row {
-      display: flex;
-      gap: $s-8;
-      align-items: center;
-      margin-bottom: $s-16;
-      .layers-icon,
-      .shape-icon {
-        @include flexCenter;
-        svg {
-          @extend .button-icon-small;
-          stroke: var(--icon-foreground);
-        }
-      }
-      .layer-title {
-        @include titleTipography;
-      }
-    }
-  }
-  .empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: $s-40;
-    padding-top: $s-24;
-    .code-info,
-    .help-info {
-      @include flexColumn;
-      align-items: center;
-      justify-content: flex-start;
-      gap: $s-8;
-      .placeholder-icon {
-        @extend .empty-icon;
-      }
-      .placeholder-label {
-        @include titleTipography;
-        text-align: center;
-        width: $s-200;
-      }
-    }
-    .more-info-btn {
-      @extend .button-secondary;
-      @include tabTitleTipography;
-      height: $s-32;
-      padding: $s-8 $s-24;
-    }
-  }
-  .inspect-content {
-    flex: 1;
-    overflow: hidden;
-  }
   &.viewer-code {
     height: calc(100vh - $s-48);
   }
+}
+
+.tool-windows {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.shape-row {
+  display: flex;
+  gap: $s-8;
+  align-items: center;
+  margin-bottom: $s-16;
+}
+
+.layers-icon,
+.shape-icon {
+  @include flexCenter;
+  svg {
+    @extend .button-icon-small;
+    stroke: var(--icon-foreground);
+  }
+}
+
+.layer-title {
+  @include titleTipography;
+  color: $df-primary;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $s-40;
+  padding-top: $s-24;
+}
+
+.code-info,
+.help-info {
+  @include flexColumn;
+  align-items: center;
+  justify-content: flex-start;
+  gap: $s-8;
+}
+
+.placeholder-icon {
+  @extend .empty-icon;
+}
+
+.placeholder-label {
+  @include titleTipography;
+  text-align: center;
+  width: $s-200;
+  color: var(--empty-message-foreground-color);
+}
+
+.more-info-btn {
+  @extend .button-secondary;
+  @include tabTitleTipography;
+  height: $s-32;
+  padding: $s-8 $s-24;
+}
+
+.inspect-content {
+  flex: 1;
+  overflow: hidden;
 }

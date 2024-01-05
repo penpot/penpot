@@ -10,7 +10,6 @@
    [app.common.colors :as cc]
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]
-   [app.main.ui.context :as ctx]
    [app.main.ui.workspace.colorpicker.slider-selector :refer [slider-selector]]
    [app.util.dom :as dom]
    [app.util.object :as obj]
@@ -59,11 +58,8 @@
     (gpt/point x y)))
 
 (mf/defc harmony-selector [{:keys [color disable-opacity on-change on-start-drag on-finish-drag]}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)
-        canvas-ref     (mf/use-ref nil)
-        canvas-side    (if new-css-system
-                         192
-                         152)
+  (let [canvas-ref     (mf/use-ref nil)
+        canvas-side    192
         {hue :h saturation :s value :v alpha :alpha} color
 
         pos-current    (color->point canvas-side hue saturation)
@@ -128,83 +124,44 @@
      (mf/deps canvas-ref)
      (fn [] (when canvas-ref
               (create-color-wheel (mf/ref-val canvas-ref)))))
-    (if new-css-system
-      [:div {:class (stl/css :harmony-selector)}
-       [:div {:class (stl/css :handlers-wrapper)}
-        [:& slider-selector {:type :value
-                             :vertical? true
-                             :reverse? true
-                             :value value
-                             :max-value 255
-                             :vertical true
-                             :on-change on-change-value
-                             :on-start-drag on-start-drag
-                             :on-finish-drag on-finish-drag}]
-        (when (not disable-opacity)
-          [[:& slider-selector {:type :opacity
-                               :vertical? true
-                               :value alpha
-                               :max-value 1
-                               :vertical true
-                               :on-change on-change-opacity
-                               :on-start-drag on-start-drag
-                               :on-finish-drag on-finish-drag}]])]
+    [:div {:class (stl/css :harmony-selector)}
+     [:div {:class (stl/css :handlers-wrapper)}
+      [:& slider-selector {:type :value
+                           :vertical? true
+                           :reverse? true
+                           :value value
+                           :max-value 255
+                           :vertical true
+                           :on-change on-change-value
+                           :on-start-drag on-start-drag
+                           :on-finish-drag on-finish-drag}]
+      (when (not disable-opacity)
+        [[:& slider-selector {:type :opacity
+                              :vertical? true
+                              :value alpha
+                              :max-value 1
+                              :vertical true
+                              :on-change on-change-opacity
+                              :on-start-drag on-start-drag
+                              :on-finish-drag on-finish-drag}]])]
 
-       [:div {:class (stl/css :hue-wheel-wrapper)}
-        [:canvas {:class (stl/css :hue-wheel)
-                  :ref canvas-ref
-                  :width canvas-side
-                  :height canvas-side
-                  :on-pointer-down handle-start-drag
-                  :on-pointer-up handle-stop-drag
-                  :on-lost-pointer-capture handle-stop-drag
-                  :on-click calculate-pos
-                  :on-pointer-move #(when @dragging? (calculate-pos %))}]
-        [:div {:class (stl/css :handler)
-               :style {:pointer-events "none"
-                       :left (:x pos-current)
-                       :top (:y pos-current)}}]
-        [:div {:class (stl/css-case :handler true
-                                    :complement true)
-               :style {:left (:x pos-complement)
-                       :top (:y pos-complement)
-                       :cursor "pointer"}
-               :on-click on-complement-click}]]]
-
-      [:div.harmony-selector
-       [:div.hue-wheel-wrapper
-        [:canvas.hue-wheel
-         {:ref canvas-ref
-          :width canvas-side
-          :height canvas-side
-          :on-pointer-down handle-start-drag
-          :on-pointer-up handle-stop-drag
-          :on-lost-pointer-capture handle-stop-drag
-          :on-click calculate-pos
-          :on-pointer-move #(when @dragging? (calculate-pos %))}]
-        [:div.handler {:style {:pointer-events "none"
-                               :left (:x pos-current)
-                               :top (:y pos-current)}}]
-        [:div.handler.complement {:style {:left (:x pos-complement)
-                                          :top (:y pos-complement)
-                                          :cursor "pointer"}
-                                  :on-click on-complement-click}]]
-       [:div.handlers-wrapper
-        [:& slider-selector {:class "value"
-                             :vertical? true
-                             :reverse? true
-                             :value value
-                             :max-value 255
-                             :vertical true
-                             :on-change on-change-value
-                             :on-start-drag on-start-drag
-                             :on-finish-drag on-finish-drag}]
-        (when (not disable-opacity)
-          [:& slider-selector {:class "opacity"
-                               :vertical? true
-                               :value alpha
-                               :max-value 1
-                               :vertical true
-                               :on-change on-change-opacity
-                               :on-start-drag on-start-drag
-                               :on-finish-drag on-finish-drag}])]])))
+     [:div {:class (stl/css :hue-wheel-wrapper)}
+      [:canvas {:class (stl/css :hue-wheel)
+                :ref canvas-ref
+                :width canvas-side
+                :height canvas-side
+                :on-pointer-down handle-start-drag
+                :on-pointer-up handle-stop-drag
+                :on-lost-pointer-capture handle-stop-drag
+                :on-click calculate-pos
+                :on-pointer-move #(when @dragging? (calculate-pos %))}]
+      [:div {:class (stl/css :handler)
+             :style {:pointer-events "none"
+                     :left (:x pos-current)
+                     :top (:y pos-current)}}]
+      [:div {:class (stl/css-case :handler true
+                                  :complement true)
+             :style {:left (:x pos-complement)
+                     :top (:y pos-complement)
+                     :cursor "pointer"}
+             :on-click on-complement-click}]]]))

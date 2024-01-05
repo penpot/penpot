@@ -216,6 +216,7 @@
 .button-disabled {
   @include buttonStyle;
   @include flexCenter;
+  height: $s-32;
   background-color: var(--button-background-color-disabled);
   border: $s-1 solid var(--button-border-color-disabled);
   color: var(--button-foreground-color-disabled);
@@ -738,7 +739,6 @@
   @include titleTipography;
   color: var(--color-foreground-primary);
   text-align: left;
-
   display: grid;
   grid-template-columns: 1fr 22px;
   grid-template-areas: "name button";

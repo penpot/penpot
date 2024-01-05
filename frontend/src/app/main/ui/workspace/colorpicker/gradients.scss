@@ -13,39 +13,41 @@
   margin: $s-12 0;
   background-color: var(--colorpicker-handlers-color);
   border-radius: $br-6;
+}
 
-  .gradient-background-wrapper {
-    height: 100%;
-    width: 100%;
-    border-radius: $br-6;
-    background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADFJREFUOE9jZGBgEAFifOANPknGUQMYhkkYEEgG+NMJKAwIAbwJbdQABnBCIgRoG4gAIF8IsXB/Rs4AAAAASUVORK5CYII=")
-      left center;
+.gradient-background-wrapper {
+  height: 100%;
+  width: 100%;
+  border-radius: $br-6;
+  background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADFJREFUOE9jZGBgEAFifOANPknGUQMYhkkYEEgG+NMJKAwIAbwJbdQABnBCIgRoG4gAIF8IsXB/Rs4AAAAASUVORK5CYII=")
+    left center;
+}
 
-    .gradient-background {
-      height: 100%;
-      width: 100%;
-      border-radius: $br-6;
-      border: $s-2 solid var(--colorpicker-details-color);
-    }
-  }
-  .gradient-stop-wrapper {
-    position: absolute;
-    width: calc(100% - 2rem);
-    .gradient-stop {
-      position: absolute;
-      display: grid;
-      grid-template-columns: 50% 50%;
-      width: $s-16;
-      height: $s-24;
-      border-radius: $br-4;
-      margin-top: calc(-1 * $s-2);
-      margin-left: calc(-1 * $s-8);
-      border: $s-2 solid var(--colorpicker-handlers-color);
-      background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADFJREFUOE9jZGBgEAFifOANPknGUQMYhkkYEEgG+NMJKAwIAbwJbdQABnBCIgRoG4gAIF8IsXB/Rs4AAAAASUVORK5CYII=")
-        left center;
-      &.selected {
-        border: $s-2 solid var(--colorpicker-details-color-selected);
-      }
-    }
+.gradient-background {
+  height: 100%;
+  width: 100%;
+  border-radius: $br-6;
+  border: $s-2 solid var(--colorpicker-details-color);
+}
+
+.gradient-stop-wrapper {
+  position: absolute;
+  width: calc(100% - 2rem);
+}
+
+.gradient-stop {
+  position: absolute;
+  display: grid;
+  grid-template-columns: 50% 50%;
+  width: $s-16;
+  height: $s-24;
+  border-radius: $br-4;
+  margin-top: calc(-1 * $s-2);
+  margin-left: calc(-1 * $s-8);
+  border: $s-2 solid var(--colorpicker-handlers-color);
+  background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADFJREFUOE9jZGBgEAFifOANPknGUQMYhkkYEEgG+NMJKAwIAbwJbdQABnBCIgRoG4gAIF8IsXB/Rs4AAAAASUVORK5CYII=")
+    left center;
+  &.selected {
+    border: $s-2 solid var(--colorpicker-details-color-selected);
   }
 }

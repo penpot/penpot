@@ -14,7 +14,6 @@
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.select :refer [select]]
-   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -33,9 +32,7 @@
 (mf/defc layer-menu
   {::mf/wrap-props false}
   [props]
-  (let [new-css-system     (mf/use-ctx ctx/new-css-system)
-        ids                (unchecked-get props "ids")
-        type               (unchecked-get props "type")
+  (let [ids                (unchecked-get props "ids")
         values             (unchecked-get props "values")
 
         hidden?            (:hidden values)
@@ -148,90 +145,46 @@
                      preview-complete?))
         (swap! state* assoc :selected-blend-mode current-blend-mode)))
 
-    (if new-css-system
-      [:div {:class (stl/css :element-set)}
-       [:div {:class (stl/css-case :element-set-content true
-                                   :hidden hidden?)}
-        [:div {:class (stl/css :select)}
-         [:& select
-          {:default-value selected-blend-mode
-           :options options
-           :on-change handle-change-blend-mode
-           :is-open? option-highlighted?
-           :class (stl/css-case :hidden-select hidden?)
-           :on-pointer-enter-option handle-blend-mode-enter
-           :on-pointer-leave-option handle-blend-mode-leave}]]
-        [:div {:class (stl/css :input)
-               :title (tr "workspace.options.opacity")}
-         [:span {:class (stl/css :icon)} "%"]
-         [:> numeric-input*
-          {:value (opacity->string current-opacity)
-           :placeholder (tr "settings.multiple")
-           :on-change handle-opacity-change
-           :min 0
-           :max 100
-           :className (stl/css :numeric-input)}]]
+    [:div {:class (stl/css :element-set)}
+     [:div {:class (stl/css-case :element-set-content true
+                                 :hidden hidden?)}
+      [:div {:class (stl/css :select)}
+       [:& select
+        {:default-value selected-blend-mode
+         :options options
+         :on-change handle-change-blend-mode
+         :is-open? option-highlighted?
+         :class (stl/css-case :hidden-select hidden?)
+         :on-pointer-enter-option handle-blend-mode-enter
+         :on-pointer-leave-option handle-blend-mode-leave}]]
+      [:div {:class (stl/css :input)
+             :title (tr "workspace.options.opacity")}
+       [:span {:class (stl/css :icon)} "%"]
+       [:> numeric-input*
+        {:value (opacity->string current-opacity)
+         :placeholder (tr "settings.multiple")
+         :on-change handle-opacity-change
+         :min 0
+         :max 100
+         :className (stl/css :numeric-input)}]]
 
 
-        [:div {:class (stl/css :actions)}
-         (cond
-           (or (= :multiple hidden?) (not hidden?))
-           [:button {:on-click handle-set-hidden
-                     :class (stl/css :hidden-btn)} i/shown-refactor]
+      [:div {:class (stl/css :actions)}
+       (cond
+         (or (= :multiple hidden?) (not hidden?))
+         [:button {:on-click handle-set-hidden
+                   :class (stl/css :hidden-btn)} i/shown-refactor]
 
-           :else
-           [:button {:on-click handle-set-visible
-                     :class (stl/css :hidden-btn)} i/hide-refactor])
+         :else
+         [:button {:on-click handle-set-visible
+                   :class (stl/css :hidden-btn)} i/hide-refactor])
 
-         (cond
-           (or (= :multiple blocked?) (not blocked?))
-           [:button {:on-click handle-set-blocked
-                     :class (stl/css :lock-btn)} i/unlock-refactor]
+       (cond
+         (or (= :multiple blocked?) (not blocked?))
+         [:button {:on-click handle-set-blocked
+                   :class (stl/css :lock-btn)} i/unlock-refactor]
 
-           :else
-           [:button {:on-click handle-set-unblocked
-                     :class (stl/css-case :lock-btn true
-                                          :locked blocked?)} i/lock-refactor])]]]
-
-      [:div.element-set
-       [:div.element-set-title
-        [:span
-         (case type
-           :multiple (tr "workspace.options.layer-options.title.multiple")
-           :group (tr "workspace.options.layer-options.title.group")
-           (tr "workspace.options.layer-options.title"))]]
-
-       [:div.element-set-content
-        [:div.row-flex
-         [:& select
-          {:class "flex-grow no-check"
-           :default-value selected-blend-mode
-           :options options
-           :on-change handle-change-blend-mode
-           :is-open? option-highlighted?
-           :on-pointer-enter-option handle-blend-mode-enter
-           :on-pointer-leave-option handle-blend-mode-leave}]
-
-         [:div.input-element {:title (tr "workspace.options.opacity")
-                              :class "percentail"}
-          [:> numeric-input*
-           {:value (opacity->string current-opacity)
-            :placeholder (tr "settings.multiple")
-            :on-change handle-opacity-change
-            :min 0
-            :max 100}]]
-
-         [:div.element-set-actions.layer-actions
-          (cond
-            (or (= :multiple hidden?) (not hidden?))
-            [:div.element-set-actions-button {:on-click handle-set-hidden} i/eye]
-
-            :else
-            [:div.element-set-actions-button {:on-click handle-set-visible} i/eye-closed])
-
-          (cond
-            (or (= :multiple blocked?) (not blocked?))
-            [:div.element-set-actions-button {:on-click handle-set-blocked} i/unlock]
-
-            :else
-            [:div.element-set-actions-button {:on-click handle-set-unblocked} i/lock])]]]])))
+         :else
+         [:button {:on-click handle-set-unblocked
+                   :class (stl/css-case :lock-btn true
+                                        :locked blocked?)} i/lock-refactor])]]]))

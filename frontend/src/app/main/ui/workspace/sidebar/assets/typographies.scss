@@ -17,34 +17,37 @@
     stroke: var(--icon-foreground);
   }
 }
-.typographies-group {
-  .assets-list {
-    padding: 0 0 0 $s-4;
-    .drop-space {
-      height: $s-12;
-    }
-    .grid-placeholder {
-      height: $s-2;
-      width: 100%;
-      background-color: var(--color-accent-primary);
-    }
-    .typography-item {
-      position: relative;
-      display: flex;
-      align-items: center;
-      margin-bottom: $s-4;
-      border-radius: $br-8;
-      background-color: var(--assets-item-background-color);
-    }
-    .dragging {
-      position: absolute;
-      top: 0;
-      left: 0;
-      height: 100%;
-      width: 100%;
-      border: $s-2 solid var(--assets-item-border-color-drag);
-      border-radius: $s-8;
-      background-color: var(--assets-item-background-color-drag);
-    }
-  }
+
+.assets-list {
+  padding: 0 0 0 $s-4;
+}
+
+.drop-space {
+  height: $s-12;
+}
+
+.grid-placeholder {
+  height: $s-2;
+  width: 100%;
+  background-color: var(--color-accent-primary);
+}
+
+.typography-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: $s-4;
+  border-radius: $br-8;
+  background-color: var(--assets-item-background-color);
+}
+
+.dragging {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  border: $s-2 solid var(--assets-item-border-color-drag);
+  border-radius: $s-8;
+  background-color: var(--assets-item-background-color-drag);
 }

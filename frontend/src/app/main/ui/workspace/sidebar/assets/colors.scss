@@ -9,7 +9,7 @@
 .assets-btn {
   @extend .button-tertiary;
   height: $s-32;
-  width: calc($s-24 + $s-4);
+  width: $s-28;
   padding: 0;
   border-radius: $br-8;
   svg {
@@ -20,83 +20,92 @@
 
 .colors-group {
   margin-top: $s-4;
-  .asset-list {
-    padding: 0 0 0 $s-4;
-    .asset-list-item {
-      position: relative;
-      display: flex;
-      align-items: center;
-      height: $s-32;
-      padding: $s-8;
-      margin-bottom: $s-4;
-      border-radius: $br-8;
-      background-color: var(--assets-item-background-color);
-      cursor: pointer;
-      .bullet-block {
-        @include flexCenter;
-        height: 100%;
-        justify-content: flex-start;
-        margin-right: $s-4;
-      }
-      .name-block {
-        @include titleTipography;
-        display: grid;
-        grid-template-columns: auto 1fr;
-        margin: 0;
-        overflow: hidden;
-        .default-name-only,
-        .name {
-          color: var(--assets-item-name-foreground-color-hover);
-          margin-right: $s-6;
-          @include textEllipsis;
-        }
-        .default-name {
-          min-width: 0;
-          color: var(--assets-item-name-foreground-color);
-        }
-      }
-      .element-name {
-        @include textEllipsis;
-        color: var(--color-foreground-primary);
-      }
-      &.selected {
-        border: $s-1 solid var(--assets-item-border-color);
-      }
+}
 
-      &.editing {
-        border: $s-1 solid var(--input-border-color-focus);
-        input.element-name {
-          @include textEllipsis;
-          @include titleTipography;
-          @include removeInputStyle;
-          flex-grow: 1;
-          height: $s-28;
-          max-width: calc(var(--parent-size) - (var(--depth) * var(--layer-indentation-size)));
-          margin: 0;
-          color: var(--layer-row-foreground-color);
-        }
-      }
-      &:hover {
-        background-color: var(--assets-item-background-color-hover);
-      }
+.asset-list {
+  padding: 0 0 0 $s-4;
+}
+
+.asset-list-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: $s-32;
+  padding: $s-8;
+  margin-bottom: $s-4;
+  border-radius: $br-8;
+  background-color: var(--assets-item-background-color);
+  cursor: pointer;
+
+  &.selected {
+    border: $s-1 solid var(--assets-item-border-color);
+  }
+
+  &.editing {
+    border: $s-1 solid var(--input-border-color-focus);
+    input.element-name {
+      @include textEllipsis;
+      @include titleTipography;
+      @include removeInputStyle;
+      flex-grow: 1;
+      height: $s-28;
+      max-width: calc(var(--parent-size) - (var(--depth) * var(--layer-indentation-size)));
+      margin: 0;
+      color: var(--layer-row-foreground-color);
     }
   }
-  .grid-placeholder {
-    height: $s-2;
-    margin-bottom: $s-2;
-    background-color: var(--color-accent-primary);
+  &:hover {
+    background-color: var(--assets-item-background-color-hover);
   }
-  .drop-space {
-    height: $s-12;
+}
+
+.bullet-block {
+  @include flexCenter;
+  height: 100%;
+  justify-content: flex-start;
+  margin-right: $s-4;
+}
+
+.name-block {
+  @include titleTipography;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  margin: 0;
+  overflow: hidden;
+  .default-name-only,
+  .name {
+    color: var(--assets-item-name-foreground-color-hover);
+    margin-right: $s-6;
+    @include textEllipsis;
   }
-  .dragging {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: $s-8;
-    background-color: var(--assets-item-background-color-drag);
-    border: $s-2 solid var(--assets-item-border-color-drag);
+  .default-name {
+    min-width: 0;
+    color: var(--assets-item-name-foreground-color);
   }
+}
+
+.element-name {
+  @include textEllipsis;
+  color: var(--color-foreground-primary);
+}
+
+.grid-placeholder {
+  height: $s-2;
+  margin-bottom: $s-2;
+  background-color: var(--color-accent-primary);
+}
+
+.drop-space {
+  height: $s-12;
+}
+
+.dragging {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: $s-8;
+  background-color: var(--assets-item-background-color-drag);
+  border: $s-2 solid var(--assets-item-border-color-drag);
 }

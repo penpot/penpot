@@ -19,7 +19,8 @@
   height: $s-32;
   margin-right: $s-4;
   svg {
-    height: $s-32;
+    min-height: $s-32;
+    width: $s-32;
     fill: var(--icon-foreground-hover);
   }
 }

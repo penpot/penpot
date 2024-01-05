@@ -13,6 +13,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.db.sql :as-alias sql]
    [app.email :as eml]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
@@ -99,7 +100,7 @@
     ;; NOTE: we need to retrieve the profile independently if we use
     ;; it or not for explicit locking and avoid concurrent updates of
     ;; the same row/object.
-    (let [profile (-> (db/get-by-id conn :profile profile-id ::db/for-update? true)
+    (let [profile (-> (db/get-by-id conn :profile profile-id ::sql/for-update true)
                       (decode-row))
 
           ;; Update the profile map with direct params
@@ -164,7 +165,7 @@
 
 (defn- validate-password!
   [{:keys [::db/conn] :as cfg} {:keys [profile-id old-password] :as params}]
-  (let [profile (db/get-by-id conn :profile profile-id ::db/for-update? true)]
+  (let [profile (db/get-by-id conn :profile profile-id ::sql/for-update true)]
     (when (and (not= (:password profile) "!")
                (not (:valid (verify-password cfg old-password (:password profile)))))
       (ex/raise :type :validation
@@ -176,7 +177,8 @@
   (when-not (db/read-only? conn)
     (db/update! conn :profile
                 {:password (auth/derive-password password)}
-                {:id id})))
+                {:id id})
+    nil))
 
 ;; --- MUTATION: Update Photo
 
@@ -202,7 +204,7 @@
 (defn update-profile-photo
   [{:keys [::db/pool ::sto/storage] :as cfg} {:keys [profile-id file] :as params}]
   (let [photo   (upload-photo cfg params)
-        profile (db/get-by-id pool :profile profile-id ::db/for-update? true)]
+        profile (db/get-by-id pool :profile profile-id ::sql/for-update true)]
 
     ;; Schedule deletion of old photo
     (when-let [id (:photo-id profile)]
@@ -329,7 +331,7 @@
    ::sm/params schema:update-profile-props}
   [{:keys [::db/pool]} {:keys [::rpc/profile-id props]}]
   (db/with-atomic [conn pool]
-    (let [profile (get-profile conn profile-id ::db/for-update? true)
+    (let [profile (get-profile conn profile-id ::sql/for-update true)
           props   (reduce-kv (fn [props k v]
                                ;; We don't accept namespaced keys
                                (if (simple-ident? k)

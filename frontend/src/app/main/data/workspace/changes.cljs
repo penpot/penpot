@@ -15,6 +15,7 @@
    [app.common.logging :as log]
    [app.common.schema :as sm]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
@@ -51,8 +52,8 @@
 
 (defn update-shapes
   ([ids update-fn] (update-shapes ids update-fn nil))
-  ([ids update-fn {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id ignore-remote? ignore-touched undo-group]
-                   :or {reg-objects? false save-undo? true stack-undo? false ignore-remote? false ignore-touched false}}]
+  ([ids update-fn {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id ignore-remote? ignore-touched undo-group with-objects?]
+                   :or {reg-objects? false save-undo? true stack-undo? false ignore-remote? false ignore-touched false with-objects? false}}]
 
    (dm/assert!
     "expected a valid coll of uuid's"
@@ -70,14 +71,15 @@
              update-layout-ids
              (->> ids
                   (map (d/getf objects))
-                  (filter #(some update-layout-attr? (pcb/changed-attrs % objects update-fn {:attrs attrs})))
+                  (filter #(some update-layout-attr? (pcb/changed-attrs % objects update-fn {:attrs attrs :with-objects? with-objects?})))
                   (map :id))
 
              changes   (reduce
                         (fn [changes id]
                           (let [opts {:attrs attrs
                                       :ignore-geometry? (get ignore-tree id)
-                                      :ignore-touched ignore-touched}]
+                                      :ignore-touched ignore-touched
+                                      :with-objects? with-objects?}]
                             (pcb/update-shapes changes [id] update-fn (d/without-nils opts))))
                         (-> (pcb/empty-changes it page-id)
                             (pcb/set-save-undo? save-undo?)
@@ -86,6 +88,8 @@
                             (cond-> undo-group
                               (pcb/set-undo-group undo-group)))
                         ids)
+             grid-ids (->> ids (filter (partial ctl/grid-layout? objects)))
+             changes (pcb/update-shapes changes grid-ids ctl/assign-cell-positions {:with-objects? true})
              changes (pcb/reorder-grid-children changes ids)
              changes (add-undo-group changes state)]
          (rx/concat

@@ -53,8 +53,7 @@
 
 (mf/defc dashboard-content
   [{:keys [team projects project section search-term profile] :as props}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)
-        container          (mf/use-ref)
+  (let [container          (mf/use-ref)
         content-width      (mf/use-state 0)
         project-id         (:id project)
         team-id            (:id team)
@@ -82,123 +81,65 @@
 
     (mf/use-effect on-resize)
 
-    (if new-css-system
-      [:div {:class (stl/css :dashboard-content)
-             :on-click clear-selected-fn :ref container}
-       (case section
-         :dashboard-projects
-         [:*
-          [:& projects-section
-           {:team team
-            :projects projects
-            :profile profile
-            :default-project-id default-project-id}]
+    [:div {:class (stl/css :dashboard-content)
+           :on-click clear-selected-fn :ref container}
+     (case section
+       :dashboard-projects
+       [:*
+        [:& projects-section
+         {:team team
+          :projects projects
+          :profile profile
+          :default-project-id default-project-id}]
 
+        (when (contains? cf/flags :dashboard-templates-section)
+          [:& templates-section {:profile profile
+                                 :project-id project-id
+                                 :team-id team-id
+                                 :default-project-id default-project-id
+                                 :content-width @content-width}])]
+
+       :dashboard-fonts
+       [:& fonts-page {:team team}]
+
+       :dashboard-font-providers
+       [:& font-providers-page {:team team}]
+
+       :dashboard-files
+       (when project
+         [:*
+          [:& files-section {:team team :project project}]
           (when (contains? cf/flags :dashboard-templates-section)
             [:& templates-section {:profile profile
-                                   :project-id project-id
                                    :team-id team-id
-                                   :default-project-id default-project-id
-                                   :content-width @content-width}])]
-
-         :dashboard-fonts
-         [:& fonts-page {:team team}]
-
-         :dashboard-font-providers
-         [:& font-providers-page {:team team}]
-
-         :dashboard-files
-         (when project
-           [:*
-            [:& files-section {:team team :project project}]
-            (when (contains? cf/flags :dashboard-templates-section)
-              [:& templates-section {:profile profile
-                                     :team-id team-id
-                                     :project-id project-id
-                                     :default-project-id default-project-id
-                                     :content-width @content-width}])])
-
-         :dashboard-search
-         [:& search-page {:team team
-                          :search-term search-term}]
-
-         :dashboard-libraries
-         [:& libraries-page {:team team}]
-
-         :dashboard-team-members
-         [:& team-members-page {:team team :profile profile}]
-
-         :dashboard-team-invitations
-         [:& team-invitations-page {:team team}]
-
-         :dashboard-team-webhooks
-         [:& team-webhooks-page {:team team}]
-
-         :dashboard-team-settings
-         [:& team-settings-page {:team team :profile profile}]
-
-         nil)]
-
-      ;; OLD
-      [:div.dashboard-content {:on-click clear-selected-fn :ref container}
-       (case section
-         :dashboard-projects
-         [:*
-          [:& projects-section
-           {:team team
-            :projects projects
-            :profile profile
-            :default-project-id default-project-id}]
-
-          (when (contains? cf/flags :dashboard-templates-section)
-            [:& templates-section {:profile profile
                                    :project-id project-id
-                                   :team-id team-id
                                    :default-project-id default-project-id
-                                   :content-width @content-width}])]
+                                   :content-width @content-width}])])
 
-         :dashboard-fonts
-         [:& fonts-page {:team team}]
+       :dashboard-search
+       [:& search-page {:team team
+                        :search-term search-term}]
 
-         :dashboard-font-providers
-         [:& font-providers-page {:team team}]
+       :dashboard-libraries
+       [:& libraries-page {:team team}]
 
-         :dashboard-files
-         (when project
-           [:*
-            [:& files-section {:team team :project project}]
-            (when (contains? cf/flags :dashboard-templates-section)
-              [:& templates-section {:profile profile
-                                     :team-id team-id
-                                     :project-id project-id
-                                     :default-project-id default-project-id
-                                     :content-width @content-width}])])
+       :dashboard-team-members
+       [:& team-members-page {:team team :profile profile}]
 
-         :dashboard-search
-         [:& search-page {:team team
-                          :search-term search-term}]
+       :dashboard-team-invitations
+       [:& team-invitations-page {:team team}]
 
-         :dashboard-libraries
-         [:& libraries-page {:team team}]
+       :dashboard-team-webhooks
+       [:& team-webhooks-page {:team team}]
 
-         :dashboard-team-members
-         [:& team-members-page {:team team :profile profile}]
+       :dashboard-team-settings
+       [:& team-settings-page {:team team :profile profile}]
 
-         :dashboard-team-invitations
-         [:& team-invitations-page {:team team}]
-
-         :dashboard-team-webhooks
-         [:& team-webhooks-page {:team team}]
-
-         :dashboard-team-settings
-         [:& team-settings-page {:team team :profile profile}]
-
-         nil)])))
+       nil)]))
 
 (mf/defc dashboard
   [{:keys [route profile] :as props}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)
-        section        (get-in route [:data :name])
+  (let [section        (get-in route [:data :name])
         params         (parse-params route)
 
         project-id     (:project-id params)
@@ -227,59 +168,31 @@
         (fn []
           (events/unlistenByKey key))))
 
-    (if new-css-system
-      [:& (mf/provider ctx/current-team-id) {:value team-id}
-       [:& (mf/provider ctx/current-project-id) {:value project-id}
-        ;; NOTE: dashboard events and other related functions assumes
-        ;; that the team is a implicit context variable that is
-        ;; available using react context or accessing
-        ;; the :current-team-id on the state. We set the key to the
-        ;; team-id because we want to completely refresh all the
-        ;; components on team change. Many components assumes that the
-        ;; team is already set so don't put the team into mf/deps.
-        (when team
-          [:main {:class (stl/css :dashboard)
-                  :key (:id team)}
-           [:& sidebar
-            {:team team
-             :projects projects
-             :project project
+    [:& (mf/provider ctx/current-team-id) {:value team-id}
+     [:& (mf/provider ctx/current-project-id) {:value project-id}
+            ;; NOTE: dashboard events and other related functions assumes
+            ;; that the team is a implicit context variable that is
+            ;; available using react context or accessing
+            ;; the :current-team-id on the state. We set the key to the
+            ;; team-id because we want to completely refresh all the
+            ;; components on team change. Many components assumes that the
+            ;; team is already set so don't put the team into mf/deps.
+      (when team
+        [:main {:class (stl/css :dashboard)
+                :key (:id team)}
+         [:& sidebar
+          {:team team
+           :projects projects
+           :project project
+           :profile profile
+           :section section
+           :search-term search-term}]
+         (when (and team profile (seq projects))
+           [:& dashboard-content
+            {:projects projects
              :profile profile
-             :section section
-             :search-term search-term}]
-           (when (and team profile (seq projects))
-             [:& dashboard-content
-              {:projects projects
-               :profile profile
-               :project project
-               :section section
-               :search-term search-term
-               :team team}])])]]
-
-      [:& (mf/provider ctx/current-team-id) {:value team-id}
-       [:& (mf/provider ctx/current-project-id) {:value project-id}
-        ;; NOTE: dashboard events and other related functions assumes
-        ;; that the team is a implicit context variable that is
-        ;; available using react context or accessing
-        ;; the :current-team-id on the state. We set the key to the
-        ;; team-id because we want to completely refresh all the
-        ;; components on team change. Many components assumes that the
-        ;; team is already set so don't put the team into mf/deps.
-        (when team
-          [:main {:class (dom/classnames :dashboard-layout true) :key (:id team)}
-           [:& sidebar
-            {:team team
-             :projects projects
              :project project
-             :profile profile
              :section section
-             :search-term search-term}]
-           (when (and team profile (seq projects))
-             [:& dashboard-content
-              {:projects projects
-               :profile profile
-               :project project
-               :section section
-               :search-term search-term
-               :team team}])])]])))
+             :search-term search-term
+             :team team}])])]]))
 

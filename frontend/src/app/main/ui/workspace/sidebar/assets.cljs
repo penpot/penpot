@@ -19,7 +19,6 @@
    [app.main.ui.workspace.sidebar.assets.file-library :refer [file-library]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.keyboard :as kbd]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -71,7 +70,6 @@
   []
   (let [components-v2  (mf/use-ctx ctx/components-v2)
         read-only?     (mf/use-ctx ctx/workspace-read-only?)
-        new-css-system (mf/use-ctx ctx/new-css-system)
         filters*       (mf/use-state
                         {:term ""
                          :section "all"
@@ -104,17 +102,8 @@
 
         on-search-term-change
         (mf/use-fn
-         (mf/deps new-css-system)
          (fn [event]
-          ;;  NOTE: When old-css-system is removed this function will recibe value and event
-          ;;  Let won't be necessary any more
-           (let [value (if ^boolean new-css-system
-                         event
-                         (dom/get-target-val event))]
-             (swap! filters* assoc :term value))))
-
-        on-search-clear-click
-        (mf/use-fn #(swap! filters* assoc :term ""))
+           (swap! filters* assoc :term event)))
 
         on-section-filter-change
         (mf/use-fn
@@ -125,22 +114,11 @@
                              (dom/get-attribute $ "data-test")))]
              (swap! filters* assoc :section value :open-menu false))))
 
-        handle-key-down
-        (mf/use-fn
-         (fn [event]
-           (let [enter? (kbd/enter? event)
-                 esc?   (kbd/esc? event)
-                 node   (dom/get-target event)]
-
-             (when ^boolean enter? (dom/blur! node))
-             (when ^boolean esc?   (dom/blur! node)))))
-
         show-libraries-dialog
         (mf/use-fn
          (fn []
            (modal/show! :libraries-dialog {})
            (modal/allow-click-outside!)))
-
 
         on-open-menu
         (mf/use-fn  #(swap! filters* update :open-menu not))
@@ -175,86 +153,43 @@
                           :option-handler on-section-filter-change
                           :data-test      "typographies"}]))]
 
-    (if ^boolean new-css-system
-      [:div  {:class (stl/css :assets-bar)}
-       [:div {:class (stl/css :assets-header)}
-        (when-not ^boolean read-only?
-          [:button {:class (stl/css :libraries-button)
-                    :on-click show-libraries-dialog}
-           [:span {:class (stl/css :libraries-icon)}
-            i/library-refactor]
-           (tr "workspace.assets.libraries")])
+    [:div  {:class (stl/css :assets-bar)}
+     [:div {:class (stl/css :assets-header)}
+      (when-not ^boolean read-only?
+        [:button {:class (stl/css :libraries-button)
+                  :on-click show-libraries-dialog}
+         [:span {:class (stl/css :libraries-icon)}
+          i/library-refactor]
+         (tr "workspace.assets.libraries")])
 
-        [:div {:class (stl/css :search-wrapper)}
-         [:& search-bar {:on-change on-search-term-change
-                        :value term
-                        :placeholder (tr "workspace.assets.search")}
-         [:button
-          {:on-click on-open-menu
-           :class (stl/css :section-button)}
-          i/filter-refactor]]
-        [:& context-menu-a11y
-         {:on-close on-menu-close
-          :selectable true
-          :selected section
-          :show menu-open?
-          :fixed? true
-          :min-width? true
-          :top 152
-          :left 64
-          :options options
-          :workspace? true}]
-         [:button {:class (stl/css :sort-button)
-                   :on-click toggle-ordering}
-          (if reverse-sort?
-            i/asc-sort-refactor
-            i/desc-sort-refactor)]]]
+      [:div {:class (stl/css :search-wrapper)}
+       [:& search-bar {:on-change on-search-term-change
+                       :value term
+                       :placeholder (tr "workspace.assets.search")}
+        [:button
+         {:on-click on-open-menu
+          :class (stl/css :section-button)}
+         i/filter-refactor]]
+       [:& context-menu-a11y
+        {:on-close on-menu-close
+         :selectable true
+         :selected section
+         :show menu-open?
+         :fixed? true
+         :min-width? true
+         :top 152
+         :left 64
+         :options options
+         :workspace? true}]
+       [:button {:class (stl/css :sort-button)
+                 :on-click toggle-ordering}
+        (if reverse-sort?
+          i/asc-sort-refactor
+          i/desc-sort-refactor)]]]
 
-       [:& (mf/provider cmm/assets-filters) {:value filters}
-        [:& (mf/provider cmm/assets-toggle-ordering) {:value toggle-ordering}
-         [:& (mf/provider cmm/assets-toggle-list-style) {:value toggle-list-style}
-          [:div {:class (stl/css :libraries-wrapper)}
-           [:& assets-local-library {:filters filters}]
-           [:& assets-libraries {:filters filters}]]]]]]
-
-      [:div.assets-bar
-       [:div.tool-window
-        [:div.tool-window-content
-         [:div.assets-bar-title
-          (tr "workspace.assets.assets")
-
-          (when-not ^boolean read-only?
-            [:div.libraries-button {:on-click show-libraries-dialog}
-             i/text-align-justify
-             (tr "workspace.assets.libraries")])]
-         [:div.search-block
-          [:input.search-input
-           {:placeholder (tr "workspace.assets.search")
-            :type "text"
-            :value term
-            :on-change on-search-term-change
-            :on-key-down handle-key-down}]
-
-          (if ^boolean (str/empty? term)
-            [:div.search-icon
-             i/search]
-            [:div.search-icon.close
-             {:on-click on-search-clear-click}
-             i/close])]
-
-         [:select.input-select {:value (:section filters)
-                                :data-mousetrap-dont-stop true
-                                :on-change on-section-filter-change}
-          [:option {:value "all"} (tr "workspace.assets.box-filter-all")]
-          [:option {:value "components"} (tr "workspace.assets.components")]
-          (when-not components-v2
-            [:option {:value "graphics"} (tr "workspace.assets.graphics")])
-          [:option {:value "colors"} (tr "workspace.assets.colors")]
-          [:option {:value "typographies"} (tr "workspace.assets.typography")]]]]
-
-       [:& (mf/provider cmm/assets-filters) {:value filters}
-        [:& (mf/provider cmm/assets-toggle-ordering) {:value toggle-ordering}
-         [:& (mf/provider cmm/assets-toggle-list-style) {:value toggle-list-style}
-          [:div.libraries-wrapper
-           [:& assets-local-library {:filters filters}]
-           [:& assets-libraries {:filters filters}]]]]]])))
+     [:& (mf/provider cmm/assets-filters) {:value filters}
+      [:& (mf/provider cmm/assets-toggle-ordering) {:value toggle-ordering}
+       [:& (mf/provider cmm/assets-toggle-list-style) {:value toggle-list-style}
+        [:div {:class (stl/css :libraries-wrapper)}
+         [:& assets-local-library {:filters filters}]
+         [:& assets-libraries {:filters filters}]]]]]]))

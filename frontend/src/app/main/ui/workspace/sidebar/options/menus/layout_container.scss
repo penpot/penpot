@@ -174,6 +174,7 @@
   .grid-layout-menu-title {
     flex: 1;
     font-size: $fs-11;
+    color: var(--title-foreground-color-hover);
   }
 
   .edit-mode-btn {
@@ -245,9 +246,6 @@
     border-right: $s-1 solid var(--panel-background-color);
   }
 
-  .track-info-unit {
-  }
-
   .track-info-unit-selector {
     border-radius: 0 $br-8 $br-8 0;
     width: $s-96;
@@ -289,7 +287,7 @@
   }
 
   .track-name {
-    color: var(--color-foreground-secondary);
+    color: $df-primary;
   }
 
   .track-detail {
@@ -297,6 +295,7 @@
     white-space: nowrap;
     text-overflow: ellipsis;
     width: 100%;
+    color: $df-secondary;
   }
 
   .expand-icon {

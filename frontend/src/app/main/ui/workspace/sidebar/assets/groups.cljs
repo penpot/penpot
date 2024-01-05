@@ -14,7 +14,6 @@
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.components.title-bar :refer [title-bar]]
-   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.util.dom :as dom]
@@ -27,7 +26,6 @@
   (when-not (empty? path)
     (let [[other-path last-path truncated] (cfh/compact-path path 35 true)
           menu-state     (mf/use-state cmm/initial-context-menu-state)
-          new-css-system (mf/use-ctx ctx/new-css-system)
           on-fold-group
           (mf/use-fn
            (mf/deps file-id section path group-open?)
@@ -46,45 +44,28 @@
 
           on-close-menu
           (mf/use-fn #(swap! menu-state cmm/close-context-menu))]
-      (if new-css-system
-        [:div {:class (stl/css :group-title)
-               :on-context-menu on-context-menu}
-         [:& title-bar {:collapsable?   true
-                        :collapsed?     (not group-open?)
-                        :clickable-all? true
-                        :on-collapsed   on-fold-group
-                        :title          (mf/html [:* (when-not (empty? other-path)
-                                                       [:span {:class (stl/css :pre-path)
-                                                               :title (when truncated path)}
-                                                        other-path "\u00A0\u2022\u00A0"])
-                                                  [:span {:class (stl/css :path)
-                                                          :title (when truncated path)}
-                                                   last-path]])}]
-         [:& cmm/assets-context-menu
-          {:on-close on-close-menu
-           :state @menu-state
-           :options [{:option-name    (tr "workspace.assets.rename")
-                      :id             "assets-rename-group"
-                      :option-handler #(on-rename % path last-path)}
-                     {:option-name    (tr "workspace.assets.ungroup")
-                      :id             "assets-ungroup-group"
-                      :option-handler  #(on-ungroup path)}]}]]
-
-
-        [:div.group-title {:class (when-not group-open? "closed")
-                           :on-click on-fold-group
-                           :on-context-menu on-context-menu}
-         [:span i/arrow-slide]
-         (when-not (empty? other-path)
-           [:span.dim {:title (when truncated path)}
-            other-path "\u00A0/\u00A0"])
-         [:span {:title (when truncated path)}
-          last-path]
-         [:& cmm/assets-context-menu
-          {:on-close on-close-menu
-           :state @menu-state
-           :options [[(tr "workspace.assets.rename") #(on-rename % path last-path)]
-                     [(tr "workspace.assets.ungroup") #(on-ungroup path)]]}]]))))
+      [:div {:class (stl/css :group-title)
+             :on-context-menu on-context-menu}
+       [:& title-bar {:collapsable?   true
+                      :collapsed?     (not group-open?)
+                      :clickable-all? true
+                      :on-collapsed   on-fold-group
+                      :title          (mf/html [:* (when-not (empty? other-path)
+                                                     [:span {:class (stl/css :pre-path)
+                                                             :title (when truncated path)}
+                                                      other-path "\u00A0\u2022\u00A0"])
+                                                [:span {:class (stl/css :path)
+                                                        :title (when truncated path)}
+                                                 last-path]])}]
+       [:& cmm/assets-context-menu
+        {:on-close on-close-menu
+         :state @menu-state
+         :options [{:option-name    (tr "workspace.assets.rename")
+                    :id             "assets-rename-group"
+                    :option-handler #(on-rename % path last-path)}
+                   {:option-name    (tr "workspace.assets.ungroup")
+                    :id             "assets-ungroup-group"
+                    :option-handler  #(on-ungroup path)}]}]])))
 
 (defn group-assets
   "Convert a list of assets in a nested structure like this:
@@ -120,8 +101,7 @@
    ::mf/register-as :name-group-dialog}
   [{:keys [path last-path accept] :as ctx
     :or {path "" last-path ""}}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)
-        initial (mf/use-memo
+  (let [initial (mf/use-memo
                  (mf/deps last-path)
                  (constantly {:asset-name last-path}))
         form  (fm/use-form :spec ::name-group-form
@@ -142,69 +122,36 @@
                (accept asset-name)
                (accept path asset-name))
              (modal/hide!))))]
-    (if new-css-system
-      [:div {:class (stl/css :modal-overlay)}
-       [:div {:class (stl/css :modal-container)}
-        [:div {:class (stl/css :modal-header)}
-         [:h2  {:class (stl/css :modal-title)}
-          (if create?
-            (tr "workspace.assets.create-group")
-            (tr "workspace.assets.rename-group"))]
-         [:button {:class (stl/css :modal-close-btn)
-                   :on-click on-close} i/close-refactor]]
+    [:div {:class (stl/css :modal-overlay)}
+     [:div {:class (stl/css :modal-container)}
+      [:div {:class (stl/css :modal-header)}
+       [:h2  {:class (stl/css :modal-title)}
+        (if create?
+          (tr "workspace.assets.create-group")
+          (tr "workspace.assets.rename-group"))]
+       [:button {:class (stl/css :modal-close-btn)
+                 :on-click on-close} i/close-refactor]]
 
-        [:div {:class (stl/css :modal-content)}
-         [:& fm/form {:form form :on-submit on-accept}
-          [:& fm/input {:name :asset-name
-                        :class (stl/css :input-wrapper)
-                        :auto-focus? true
-                        :label (tr "workspace.assets.group-name")
-                        :hint (tr "workspace.assets.create-group-hint")}]]]
+      [:div {:class (stl/css :modal-content)}
+       [:& fm/form {:form form :on-submit on-accept}
+        [:& fm/input {:name :asset-name
+                      :class (stl/css :input-wrapper)
+                      :auto-focus? true
+                      :label (tr "workspace.assets.group-name")
+                      :hint (tr "workspace.assets.create-group-hint")}]]]
 
-        [:div {:class (stl/css :modal-footer)}
-         [:div {:class (stl/css :action-buttons)}
-          [:input
-           {:class (stl/css :cancel-button)
-            :type "button"
-            :value (tr "labels.cancel")
-            :on-click on-close}]
+      [:div {:class (stl/css :modal-footer)}
+       [:div {:class (stl/css :action-buttons)}
+        [:input
+         {:class (stl/css :cancel-button)
+          :type "button"
+          :value (tr "labels.cancel")
+          :on-click on-close}]
 
-          [:input
-           {:type "button"
-            :class (stl/css-case :accept-btn true
-                                 :global/disabled (not (:valid @form) ))
-            :disabled (not (:valid @form))
-            :value (if create? (tr "labels.create") (tr "labels.rename"))
-            :on-click on-accept}]]]]]
-
-
-      [:div.modal-overlay
-       [:div.modal-container.confirm-dialog
-        [:div.modal-header
-         [:div.modal-header-title
-          [:h2 (if create?
-                 (tr "workspace.assets.create-group")
-                 (tr "workspace.assets.rename-group"))]]
-         [:div.modal-close-button
-          {:on-click on-close} i/close]]
-
-        [:div.modal-content.generic-form
-         [:& fm/form {:form form :on-submit on-accept}
-          [:& fm/input {:name :asset-name
-                        :auto-focus? true
-                        :label (tr "workspace.assets.group-name")
-                        :hint (tr "workspace.assets.create-group-hint")}]]]
-
-        [:div.modal-footer
-         [:div.action-buttons
-          [:input.cancel-button
-           {:type "button"
-            :value (tr "labels.cancel")
-            :on-click on-close}]
-
-          [:input.accept-button.primary
-           {:type "button"
-            :class (when-not (:valid @form) "btn-disabled")
-            :disabled (not (:valid @form))
-            :value (if create? (tr "labels.create") (tr "labels.rename"))
-            :on-click on-accept}]]]]])))
+        [:input
+         {:type "button"
+          :class (stl/css-case :accept-btn true
+                               :global/disabled (not (:valid @form)))
+          :disabled (not (:valid @form))
+          :value (if create? (tr "labels.create") (tr "labels.rename"))
+          :on-click on-accept}]]]]]))

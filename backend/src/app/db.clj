@@ -19,6 +19,7 @@
    [app.util.json :as json]
    [app.util.time :as dt]
    [clojure.java.io :as io]
+   [clojure.set :as set]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [next.jdbc :as jdbc]
@@ -239,6 +240,10 @@
       (ex/raise :type :internal
                 :code :unable-resolve-pool))))
 
+(defn get-update-count
+  [result]
+  (:next.jdbc/update-count result))
+
 (defn get-connection
   [cfg-or-conn]
   (if (connection? cfg-or-conn)
@@ -265,48 +270,120 @@
                               :code :unable-resolve-connectable
                               :hint "expected conn, pool or system")))
 
+(def ^:private params-mapping
+  {::return-keys? :return-keys
+   ::return-keys :return-keys})
+
+(defn rename-opts
+  [opts]
+  (set/rename-keys opts params-mapping))
+
+(def ^:private default-insert-opts
+  {:builder-fn sql/as-kebab-maps
+   :return-keys true})
+
 (def ^:private default-opts
   {:builder-fn sql/as-kebab-maps})
 
 (defn exec!
-  ([ds sv]
-   (-> (get-connectable ds)
-       (jdbc/execute! sv default-opts)))
+  ([ds sv] (exec! ds sv nil))
   ([ds sv opts]
-   (-> (get-connectable ds)
-       (jdbc/execute! sv (into default-opts (sql/adapt-opts opts))))))
+   (let [conn (get-connectable ds)
+         opts (if (empty? opts)
+                default-opts
+                (into default-opts (rename-opts opts)))]
+     (jdbc/execute! conn sv opts))))
 
 (defn exec-one!
-  ([ds sv]
-   (-> (get-connectable ds)
-       (jdbc/execute-one! sv default-opts)))
+  ([ds sv] (exec-one! ds sv nil))
   ([ds sv opts]
-   (-> (get-connectable ds)
-       (jdbc/execute-one! sv (into default-opts (sql/adapt-opts opts))))))
+   (let [conn (get-connectable ds)
+         opts (if (empty? opts)
+                default-opts
+                (into default-opts (rename-opts opts)))]
+     (jdbc/execute-one! conn sv opts))))
 
 (defn insert!
-  [ds table params & {:as opts :keys [::return-keys?] :or {return-keys? true}}]
-  (-> (get-connectable ds)
-      (exec-one! (sql/insert table params opts)
-                 (assoc opts ::return-keys? return-keys?))))
+  "A helper that builds an insert sql statement and executes it. By
+  default returns the inserted row with all the field; you can delimit
+  the returned columns with the `::columns` option."
+  [ds table params & {:as opts}]
+  (let [conn (get-connectable ds)
+        sql  (sql/insert table params opts)
+        opts (if (empty? opts)
+               default-insert-opts
+               (into default-insert-opts (rename-opts opts)))]
+    (jdbc/execute-one! conn sql opts)))
 
-(defn insert-multi!
-  [ds table cols rows & {:as opts :keys [::return-keys?] :or {return-keys? true}}]
-  (-> (get-connectable ds)
-      (exec! (sql/insert-multi table cols rows opts)
-             (assoc opts ::return-keys? return-keys?))))
+(defn insert-many!
+  "An optimized version of `insert!` that perform insertion of multiple
+  values at once.
+
+  This expands to a single SQL statement with placeholders for every
+  value being inserted. For large data sets, this may exceed the limit
+  of sql string size and/or number of parameters."
+  [ds table cols rows & {:as opts}]
+  (let [conn (get-connectable ds)
+        sql  (sql/insert-many table cols rows opts)
+        opts (if (empty? opts)
+               default-insert-opts
+               (into default-insert-opts (rename-opts opts)))
+        opts (update opts :return-keys boolean)]
+    (jdbc/execute! conn sql opts)))
 
 (defn update!
-  [ds table params where & {:as opts :keys [::return-keys?] :or {return-keys? true}}]
-  (-> (get-connectable ds)
-      (exec-one! (sql/update table params where opts)
-                 (assoc opts ::return-keys? return-keys?))))
+  "A helper that build an UPDATE SQL statement and executes it.
+
+   Given a connectable object, a table name, a hash map of columns and
+  values to set, and either a hash map of columns and values to search
+  on or a vector of a SQL where clause and parameters, perform an
+  update on the table.
+
+  By default returns an object with the number of affected rows; a
+  complete row can be returned if you pass `::return-keys` with `true`
+  or with a vector of columns.
+
+  Also it can be combined with the `::many` option if you perform an
+  update to multiple rows and you want all the affected rows to be
+  returned."
+  [ds table params where & {:as opts}]
+  (let [conn (get-connectable ds)
+        sql  (sql/update table params where opts)
+        opts (if (empty? opts)
+               default-opts
+               (into default-opts (rename-opts opts)))
+        opts (update opts :return-keys boolean)]
+    (if (::many opts)
+      (jdbc/execute! conn sql opts)
+      (jdbc/execute-one! conn sql opts))))
 
 (defn delete!
-  [ds table params & {:as opts :keys [::return-keys?] :or {return-keys? true}}]
-  (-> (get-connectable ds)
-      (exec-one! (sql/delete table params opts)
-                 (assoc opts ::return-keys? return-keys?))))
+  "A helper that builds an DELETE SQL statement and executes it.
+
+  Given a connectable object, a table name, and either a hash map of columns
+  and values to search on or a vector of a SQL where clause and parameters,
+  perform a delete on the table.
+
+  By default returns an object with the number of affected rows; a
+  complete row can be returned if you pass `::return-keys` with `true`
+  or with a vector of columns.
+
+  Also it can be combined with the `::many` option if you perform an
+  update to multiple rows and you want all the affected rows to be
+  returned."
+  [ds table params & {:as opts}]
+  (let [conn (get-connectable ds)
+        sql  (sql/delete table params opts)
+        opts (if (empty? opts)
+               default-opts
+               (into default-opts (rename-opts opts)))]
+    (if (::many opts)
+      (jdbc/execute! conn sql opts)
+      (jdbc/execute-one! conn sql opts))))
+
+(defn query
+  [ds table params & {:as opts}]
+  (exec! ds (sql/select table params opts) opts))
 
 (defn is-row-deleted?
   [{:keys [deleted-at]}]
@@ -320,7 +397,7 @@
   [ds table params & {:as opts}]
   (let [rows (exec! ds (sql/select table params opts))
         rows (cond->> rows
-               (::remove-deleted? opts true)
+               (::remove-deleted opts true)
                (remove is-row-deleted?))]
     (first rows)))
 
@@ -329,7 +406,7 @@
   filters. Raises :not-found exception if no object is found."
   [ds table params & {:as opts}]
   (let [row (get* ds table params opts)]
-    (when (and (not row) (::check-deleted? opts true))
+    (when (and (not row) (::check-deleted opts true))
       (ex/raise :type :not-found
                 :code :object-not-found
                 :table table
@@ -341,13 +418,28 @@
   (-> (get-connectable ds)
       (jdbc/plan sql sql/default-opts)))
 
+(defn cursor
+  "Return a lazy seq of rows using server side cursors"
+  [conn query & {:keys [chunk-size] :or {chunk-size 25}}]
+  (let [cname  (str (gensym "cursor_"))
+        fquery [(str "FETCH " chunk-size " FROM " cname)]]
+
+    ;; declare cursor
+    (exec-one! conn
+               (if (vector? query)
+                 (into [(str "DECLARE " cname " CURSOR FOR " (nth query 0))]
+                       (rest query))
+                 [(str "DECLARE " cname " CURSOR FOR " query)]))
+
+    ;; return a lazy seq
+    ((fn fetch-more []
+       (lazy-seq
+        (when-let [chunk (seq (exec! conn fquery))]
+          (concat chunk (fetch-more))))))))
+
 (defn get-by-id
   [ds table id & {:as opts}]
   (get ds table {:id id} opts))
-
-(defn query
-  [ds table params & {:as opts}]
-  (exec! ds (sql/select table params opts)))
 
 (defn pgobject?
   ([v]
@@ -547,11 +639,6 @@
     (doto (org.postgresql.util.PGobject.)
       (.setType "jsonb")
       (.setValue (json/encode-str data)))))
-
-(defn get-update-count
-  [result]
-  (:next.jdbc/update-count result))
-
 
 ;; --- Locks
 

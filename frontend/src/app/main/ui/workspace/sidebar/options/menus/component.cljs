@@ -147,7 +147,6 @@
         (when (or @editing? creating?)
           [:div.counter (str @size "/300")])]])))
 
-
 (mf/defc component-swap-item
   {::mf/wrap-props false}
   [{:keys [item loop shapes file-id root-shape container component-id is-search listing-thumbs] :as props}]
@@ -189,7 +188,6 @@
         [:span {:class (stl/css :component-group-path)} (str "\u00A0/\u00A0" path)])
       [:span {:class (stl/css :component-group-name)} (cfh/last-path group-name)]]
      [:span i/arrow-slide]]))
-
 
 (mf/defc component-swap
   [{:keys [shapes] :as props}]
@@ -404,7 +402,6 @@
             :on-click (partial do-action (:action entry))}
        [:span {:class (stl/css :dropdown-label)}
         (tr (:msg  entry))]])]]))
-
 
 (mf/defc component-menu
   [{:keys [shapes swap-opened?] :as props}]

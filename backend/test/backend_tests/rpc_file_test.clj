@@ -149,7 +149,7 @@
           shape-id (uuid/random)]
 
       ;; Preventive file-gc
-      (let [res (th/run-task! "file-gc" {:min-age 0})]
+      (let [res (th/run-task! :file-gc {:min-age 0})]
         (t/is (= 1 (:processed res))))
 
       ;; Check the number of fragments before adding the page
@@ -175,7 +175,7 @@
         (t/is (= 2 (count rows))))
 
       ;; The file-gc should remove unused fragments
-      (let [res (th/run-task! "file-gc" {:min-age 0})]
+      (let [res (th/run-task! :file-gc {:min-age 0})]
         (t/is (= 1 (:processed res))))
 
 
@@ -203,7 +203,7 @@
         (t/is (= 3 (count rows))))
 
       ;; The file-gc should remove unused fragments
-      (let [res (th/run-task! "file-gc" {:min-age 0})]
+      (let [res (th/run-task! :file-gc {:min-age 0})]
         (t/is (= 1 (:processed res))))
 
       ;; Check the number of fragments; should be 3 because changes
@@ -220,12 +220,23 @@
 
       ;; The file-gc should remove fragments related to changes
       ;; snapshots previously deleted.
-      (let [res (th/run-task! "file-gc" {:min-age 0})]
+      (let [res (th/run-task! :file-gc {:min-age 0})]
         (t/is (= 1 (:processed res))))
 
       ;; Check the number of fragments;
       (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
-        (t/is (= 2 (count rows)))))))
+        ;; (pp/pprint rows)
+        (t/is (= 3 (count rows)))
+        (t/is (= 2 (count (remove (comp some? :deleted-at) rows)))))
+
+      (let [res (th/run-task! :objects-gc {:min-age 0})]
+        (t/is (= 1 (:processed res))))
+
+      (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
+        (t/is (= 2 (count rows))))
+      )))
+
+
 
 (t/deftest file-gc-task-with-thumbnails
   (letfn [(add-file-media-object [& {:keys [profile-id file-id]}]
@@ -301,17 +312,16 @@
       ;; freeze because of the deduplication (we have uploaded 2 times
       ;; the same files).
 
-      (let [task (:app.storage/gc-touched-task th/*system*)
-            res  (task {:min-age (dt/duration 0)})]
+      (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
         (t/is (= 2 (:freeze res)))
         (t/is (= 0 (:delete res))))
 
       ;; run the file-gc task immediately without forced min-age
-      (let [res (th/run-task! "file-gc")]
+      (let [res (th/run-task! :file-gc)]
         (t/is (= 0 (:processed res))))
 
       ;; run the task again
-      (let [res (th/run-task! "file-gc" {:min-age 0})]
+      (let [res (th/run-task! :file-gc {:min-age 0})]
         (t/is (= 1 (:processed res))))
 
       ;; retrieve file and check trimmed attribute
@@ -319,8 +329,17 @@
         (t/is (true? (:has-media-trimmed row))))
 
       ;; check file media objects
-      (let [rows (th/db-exec! ["select * from file_media_object where file_id = ?" (:id file)])]
-        (t/is (= 1 (count rows))))
+      (let [rows (th/db-query :file-media-object {:file-id (:id file)})]
+        (t/is (= 2 (count rows)))
+        (t/is (= 1 (count (remove (comp some? :deleted-at) rows)))))
+
+      (let [res (th/run-task! :objects-gc {:min-age 0})]
+        (t/is (= 2 (:processed res))))
+
+      ;; check file media objects
+      (let [rows (th/db-query :file-media-object {:file-id (:id file)})]
+        (t/is (= 1 (count rows)))
+        (t/is (= 1 (count (remove (comp some? :deleted-at) rows)))))
 
       ;; The underlying storage objects are still available.
       (t/is (some? (sto/get-object storage (:media-id fmo2))))
@@ -340,15 +359,16 @@
       ;; Now, we have deleted the usage of pointers to the
       ;; file-media-objects, if we paste file-gc, they should be marked
       ;; as deleted.
-      (let [task  (:app.tasks.file-gc/handler th/*system*)
-            res   (task {:min-age (dt/duration 0)})]
+      (let [res (th/run-task! :file-gc {:min-age 0})]
+        (t/is (= 1 (:processed res))))
+
+      (let [res (th/run-task! :objects-gc {:min-age 0})]
         (t/is (= 1 (:processed res))))
 
       ;; Now that file-gc have deleted the file-media-object usage,
       ;; lets execute the touched-gc task, we should see that two of
       ;; them are marked to be deleted.
-      (let [task (:app.storage/gc-touched-task th/*system*)
-            res  (task {:min-age (dt/duration 0)})]
+      (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
         (t/is (= 0 (:freeze res)))
         (t/is (= 2 (:delete res))))
 
@@ -457,11 +477,14 @@
                 :strokes [{:opacity 1 :stroke-image {:id (:id fmo5) :width 100 :height 100 :mtype "image/jpeg"}}]})}])
 
       ;; run the file-gc task immediately without forced min-age
-      (let [res (th/run-task! "file-gc")]
+      (let [res (th/run-task! :file-gc)]
         (t/is (= 0 (:processed res))))
 
       ;; run the task again
-      (let [res (th/run-task! "file-gc" {:min-age 0})]
+      (let [res (th/run-task! :file-gc {:min-age 0})]
+        (t/is (= 1 (:processed res))))
+
+      (let [res (th/run-task! :objects-gc {:min-age 0})]
         (t/is (= 1 (:processed res))))
 
       ;; retrieve file and check trimmed attribute
@@ -494,15 +517,16 @@
       ;; Now, we have deleted the usage of pointers to the
       ;; file-media-objects, if we paste file-gc, they should be marked
       ;; as deleted.
-      (let [task  (:app.tasks.file-gc/handler th/*system*)
-            res   (task {:min-age (dt/duration 0)})]
+      (let [res (th/run-task! :file-gc {:min-age 0})]
         (t/is (= 1 (:processed res))))
+
+      (let [res (th/run-task! :objects-gc {:min-age 0})]
+        (t/is (= 5 (:processed res))))
 
       ;; Now that file-gc have deleted the file-media-object usage,
       ;; lets execute the touched-gc task, we should see that two of
       ;; them are marked to be deleted.
-      (let [task (:app.storage/gc-touched-task th/*system*)
-            res  (task {:min-age (dt/duration 0)})]
+      (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
         (t/is (= 0 (:freeze res)))
         (t/is (= 2 (:delete res))))
 
@@ -514,7 +538,6 @@
       (t/is (nil? (sto/get-object storage (:media-id fmo3))))
       (t/is (nil? (sto/get-object storage (:media-id fmo2))))
       (t/is (nil? (sto/get-object storage (:media-id fmo1)))))))
-
 
 (t/deftest file-gc-task-with-object-thumbnails
   (letfn [(insert-file-object-thumbnail! [& {:keys [profile-id file-id page-id frame-id]}]
@@ -609,16 +632,16 @@
       ;; because of the deduplication (we have uploaded 2 times the
       ;; same files).
 
-      (let [res (th/run-task! "storage-gc-touched" {:min-age (dt/duration 0)})]
+      (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
         (t/is (= 1 (:freeze res)))
         (t/is (= 0 (:delete res))))
 
       ;; run the file-gc task immediately without forced min-age
-      (let [res (th/run-task! "file-gc")]
+      (let [res (th/run-task! :file-gc)]
         (t/is (= 0 (:processed res))))
 
       ;; run the task again
-      (let [res (th/run-task! "file-gc" {:min-age 0})]
+      (let [res (th/run-task! :file-gc {:min-age 0})]
         (t/is (= 1 (:processed res))))
 
       ;; retrieve file and check trimmed attribute
@@ -648,22 +671,29 @@
                   :page-id page-id
                   :id frame-id-2}])
 
-      (let [res (th/run-task! "file-gc" {:min-age (dt/duration 0)})]
+      (let [res (th/run-task! :file-gc {:min-age 0})]
         (t/is (= 1 (:processed res))))
 
-      (let [rows (th/db-exec! ["select * from file_tagged_object_thumbnail where file_id = ?" file-id])]
-        ;; (pp/pprint rows)
-        (t/is (= 1 (count rows)))
+      (let [rows (th/db-query :file-tagged-object-thumbnail {:file-id file-id})]
+        (t/is (= 2 (count rows)))
+        (t/is (= 1 (count (remove (comp some? :deleted-at) rows))))
+
         (t/is (= (thc/fmt-object-id file-id page-id frame-id-1 "frame")
                  (-> rows first :object-id))))
 
-      ;; Now that file-gc have deleted the object thumbnail lets
+      ;; Now that file-gc have marked for deletion the object
+      ;; thumbnail lets execute the objects-gc task which remove
+      ;; the rows and mark as touched the storage object rows
+      (let [res (th/run-task! :objects-gc {:min-age 0})]
+        (t/is (= 2 (:processed res))))
+
+      ;; Now that objects-gc have deleted the object thumbnail lets
       ;; execute the touched-gc task
-      (let [res (th/run-task! "storage-gc-touched" {:min-age (dt/duration 0)})]
+      (let [res (th/run-task! "storage-gc-touched" {:min-age 0})]
         (t/is (= 1 (:freeze res))))
 
       ;; check file media objects
-      (let [rows (th/db-exec! ["select * from storage_object where deleted_at is null"])]
+      (let [rows (th/db-query :storage-object {:deleted-at nil})]
         ;; (pp/pprint rows)
         (t/is (= 1 (count rows))))
 
@@ -676,30 +706,31 @@
                   :page-id page-id
                   :id frame-id-1}])
 
-      (let [res (th/run-task! "file-gc" {:min-age (dt/duration 0)})]
+      (let [res (th/run-task! :file-gc {:min-age 0})]
         (t/is (= 1 (:processed res))))
 
-      (let [rows (th/db-exec! ["select * from file_tagged_object_thumbnail where file_id = ?" file-id])]
-        (t/is (= 0 (count rows))))
+      (let [rows (th/db-query :file-tagged-object-thumbnail {:file-id file-id})]
+        (t/is (= 1 (count rows)))
+        (t/is (= 0 (count (remove (comp some? :deleted-at) rows)))))
+
+      (let [res (th/run-task! :objects-gc {:min-age 0})]
+        ;; (pp/pprint res)
+        (t/is (= 1 (:processed res))))
 
       ;; We still have th storage objects in the table
-      (let [rows (th/db-exec! ["select * from storage_object where deleted_at is null"])]
+      (let [rows (th/db-query :storage-object {:deleted-at nil})]
         ;; (pp/pprint rows)
         (t/is (= 1 (count rows))))
 
       ;; Now that file-gc have deleted the object thumbnail lets
       ;; execute the touched-gc task
-      (let [res (th/run-task! "storage-gc-touched" {:min-age (dt/duration 0)})]
+      (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
         (t/is (= 1 (:delete res))))
 
       ;; check file media objects
-      (let [rows (th/db-exec! ["select * from storage_object where deleted_at is null"])]
+      (let [rows (th/db-query :storage-object {:deleted-at nil})]
         ;; (pp/pprint rows)
         (t/is (= 0 (count rows)))))))
-
-
-
-
 
 (t/deftest permissions-checks-creating-file
   (let [profile1 (th/create-profile* 1)
@@ -811,13 +842,12 @@
     (t/is (th/ex-of-type? error :not-found))))
 
 (t/deftest deletion
-  (let [task     (:app.tasks.objects-gc/handler th/*system*)
-        profile1 (th/create-profile* 1)
+  (let [profile1 (th/create-profile* 1)
         file     (th/create-file* 1 {:project-id (:default-project-id profile1)
                                      :profile-id (:id profile1)})]
     ;; file is not deleted because it does not meet all
     ;; conditions to be deleted.
-    (let [result (task {:min-age (dt/duration 0)})]
+    (let [result (th/run-task! :objects-gc {:min-age 0})]
       (t/is (= 0 (:processed result))))
 
     ;; query the list of files
@@ -848,7 +878,7 @@
         (t/is (= 0 (count result)))))
 
     ;; run permanent deletion (should be noop)
-    (let [result (task {:min-age (dt/duration {:minutes 1})})]
+    (let [result (th/run-task! :objects-gc {:min-age (dt/duration {:minutes 1})})]
       (t/is (= 0 (:processed result))))
 
     ;; query the list of file libraries of a after hard deletion
@@ -862,7 +892,7 @@
         (t/is (= 0 (count result)))))
 
     ;; run permanent deletion
-    (let [result (task {:min-age (dt/duration 0)})]
+    (let [result (th/run-task! :objects-gc {:min-age 0})]
       (t/is (= 1 (:processed result))))
 
     ;; query the list of file libraries of a after hard deletion
@@ -874,7 +904,8 @@
       (let [error (:error out)
             error-data (ex-data error)]
         (t/is (th/ex-info? error))
-        (t/is (= (:type error-data) :not-found))))))
+        (t/is (= (:type error-data) :not-found))))
+    ))
 
 
 (t/deftest object-thumbnails-ops
@@ -1075,7 +1106,7 @@
       (th/sleep 300)
 
       ;; run the task
-      (let [res (th/run-task! "file-gc" {:min-age 0})]
+      (let [res (th/run-task! :file-gc {:min-age 0})]
         (t/is (= 1 (:processed res))))
 
       ;; check that object thumbnails are still here
@@ -1104,13 +1135,19 @@
         (t/is (= 2 (count res))))
 
       ;; run the task again
-      (let [res (th/run-task! "file-gc" {:min-age 0})]
+      (let [res (th/run-task! :file-gc {:min-age 0})]
         (t/is (= 1 (:processed res))))
 
       ;; check that the unknown frame thumbnail is deleted
-      (let [res (th/db-exec! ["select * from file_tagged_object_thumbnail"])]
-        (t/is (= 1 (count res)))))))
+      (let [rows (th/db-query :file-tagged-object-thumbnail {:file-id (:id file)})]
+        (t/is (= 2 (count rows)))
+        (t/is (= 1 (count (remove (comp some? :deleted-at) rows)))))
 
+      (let [res (th/run-task! :objects-gc {:min-age 0})]
+        (t/is (= 2 (:processed res))))
+
+      (let [rows (th/db-query :file-tagged-object-thumbnail {:file-id (:id file)})]
+        (t/is (= 1 (count rows)))))))
 
 (t/deftest file-thumbnail-ops
   (let [prof (th/create-profile* 1 {:is-active true})
@@ -1155,12 +1192,19 @@
     (t/testing "gc task"
       ;; make the file eligible for GC waiting 300ms (configured
       ;; timeout for testing)
-      (th/sleep 300)
+      (let [res (th/run-task! :file-gc {:min-age 0})]
+        (t/is (= 1 (:processed res))))
 
-      (let [res (th/run-task! "file-gc" {:min-age 0})]
+      (let [rows (th/db-query :file-thumbnail {:file-id (:id file)})]
+        (t/is (= 2 (count rows)))
+        (t/is (= 1 (count (remove (comp some? :deleted-at) rows)))))
+
+      (let [res (th/run-task! :objects-gc {:min-age 0})]
         (t/is (= 1 (:processed res))))
 
       (let [rows (th/db-query :file-thumbnail {:file-id (:id file)})]
         (t/is (= 1 (count rows)))))))
+
+
 
 

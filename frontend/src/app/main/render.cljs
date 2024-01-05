@@ -67,17 +67,24 @@
 
 (defn- calculate-dimensions
   [objects aspect-ratio]
-  (let [bounds
-        (->> (ctst/get-root-objects objects)
-             (map (partial gsb/get-object-bounds objects))
-             (grc/join-rects))]
-    (-> bounds
-        (update :x mth/finite 0)
-        (update :y mth/finite 0)
-        (update :width mth/finite 100000)
-        (update :height mth/finite 100000)
-        (grc/update-rect :position)
-        (grc/fix-aspect-ratio aspect-ratio))))
+  (let [root-objects (ctst/get-root-objects objects)]
+    (if (empty? root-objects)
+      ;; Empty page, we create an arbitrary rect for the thumbnail
+      (-> (grc/make-rect {:x 0 :y 0 :width 100 :height 100})
+          (grc/update-rect :position)
+          (grc/fix-aspect-ratio aspect-ratio))
+
+      (let [bounds
+            (->> root-objects
+                 (map (partial gsb/get-object-bounds objects))
+                 (grc/join-rects))]
+        (-> bounds
+            (update :x mth/finite 0)
+            (update :y mth/finite 0)
+            (update :width mth/finite 100000)
+            (update :height mth/finite 100000)
+            (grc/update-rect :position)
+            (grc/fix-aspect-ratio aspect-ratio))))))
 
 (declare shape-wrapper-factory)
 
@@ -201,6 +208,7 @@
   (let [objects (:objects data)
         shapes  (cfh/get-immediate-children objects)
         dim     (calculate-dimensions objects aspect-ratio)
+        _ (prn ">>DIM" dim)
         vbox    (format-viewbox dim)
         bgcolor (dm/get-in data [:options :background] default-color)
 

@@ -9,7 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
-   [app.db :as-alias db]
+   [app.db :as db]
    [app.storage :as-alias sto]
    [buddy.core.codecs :as bc]
    [buddy.core.hash :as bh]
@@ -21,6 +21,13 @@
    java.nio.file.Files
    java.nio.file.Path
    java.util.UUID))
+
+(defn decode-row
+  "Decode the storage-object row fields"
+  [{:keys [metadata] :as row}]
+  (cond-> row
+    (some? metadata)
+    (assoc :metadata (db/decode-transit-pgobject metadata))))
 
 ;; --- API Definition
 

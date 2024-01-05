@@ -13,55 +13,56 @@
   width: 100%;
   border-radius: $br-8;
   background-color: var(--search-bar-background-color);
+}
 
-  .search-input-wrapper {
-    @include flexCenter;
-    height: $s-32;
+.search-input-wrapper {
+  @include flexCenter;
+  height: $s-32;
+  width: 100%;
+  border: $s-1 solid var(--search-bar-input-border-color);
+  border-radius: $br-8;
+  background-color: var(--search-bar-input-background-color);
+  input {
     width: 100%;
-    border: $s-1 solid var(--search-bar-input-border-color);
-    border-radius: $br-8;
-    background-color: var(--search-bar-input-background-color);
+    height: 100%;
+    margin: 0 $s-8 0 $s-4;
+    border: 0;
+    background-color: var(--input-background-color);
+    font-size: $fs-12;
+    color: var(--input-foreground-color);
+    &:focus {
+      outline: none;
+    }
+  }
+  &:hover {
+    border: $s-1 solid var(--input-background-color-hover);
+    background-color: var(--input-background-color-hover);
     input {
-      width: 100%;
-      height: 100%;
-      margin: 0 $s-8 0 $s-4;
-      border: 0;
-      background-color: var(--input-background-color);
-      font-size: $fs-12;
-      color: var(--input-foreground-color);
-      &:focus {
-        outline: none;
-      }
-    }
-    &:hover {
-      border: $s-1 solid var(--input-background-color-hover);
       background-color: var(--input-background-color-hover);
-      input {
-        background-color: var(--input-background-color-hover);
-      }
     }
-    &:focus-within {
+  }
+  &:focus-within {
+    background-color: var(--input-background-color-active);
+    color: var(--input-foreground-color-active);
+    border: $s-1 solid var(--input-border-color-focus);
+    input {
       background-color: var(--input-background-color-active);
-      color: var(--input-foreground-color-active);
-      border: $s-1 solid var(--input-border-color-focus);
-      input {
-        background-color: var(--input-background-color-active);
-      }
     }
+  }
+}
 
-    .clear {
-      @extend .button-tag;
-      border-radius: $br-8;
-      height: 100%;
-      svg {
-        @extend .button-icon-small;
-        color: transparent;
-        stroke: var(--icon-foreground);
-      }
-    }
+.clear {
+  @extend .button-tag;
+  border-radius: $br-8;
+  height: 100%;
+  svg {
+    @extend .button-icon-small;
+    color: transparent;
+    stroke: var(--icon-foreground);
   }
-  &.has-children .search-input-wrapper {
-    border-radius: $br-2 $br-8 $br-8 $br-2;
-    margin-left: 0;
-  }
+}
+
+.search-box.has-children .search-input-wrapper {
+  border-radius: $br-2 $br-8 $br-8 $br-2;
+  margin-left: 0;
 }

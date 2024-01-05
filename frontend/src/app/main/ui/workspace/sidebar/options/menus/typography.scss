@@ -142,103 +142,104 @@
   height: 100%;
   width: 100%;
   background-color: var(--assets-title-background-color);
-  .typography-info-wrapper {
-    @include flexColumn;
-    margin-bottom: $s-12;
-    .typography-name-wrapper {
-      @extend .asset-element;
-      display: grid;
-      grid-template-columns: $s-24 auto 1fr $s-28;
-      flex: 1;
+}
+
+.typography-info-wrapper {
+  @include flexColumn;
+  margin-bottom: $s-12;
+  .typography-name-wrapper {
+    @extend .asset-element;
+    display: grid;
+    grid-template-columns: $s-24 auto 1fr $s-28;
+    flex: 1;
+    height: $s-32;
+    width: 100%;
+    padding: 0 0 0 $s-12;
+    background-color: var(--assets-item-background-color-hover);
+    margin-bottom: $s-4;
+    .typography-sample {
+      @include flexCenter;
+      min-width: $s-24;
+      font-size: $fs-16;
       height: $s-32;
-      width: 100%;
-      padding: 0 0 0 $s-12;
-      background-color: var(--assets-item-background-color-hover);
-      margin-bottom: $s-4;
-      .typography-sample {
-        @include flexCenter;
-        min-width: $s-24;
-        font-size: $fs-16;
-        height: $s-32;
-        padding: 0;
-        color: var(--assets-item-name-foreground-color-hover);
+      padding: 0;
+      color: var(--assets-item-name-foreground-color-hover);
+    }
+    .typography-name {
+      @include titleTipography;
+      @include textEllipsis;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      margin-left: $s-6;
+      color: var(--assets-item-name-foreground-color-hover);
+    }
+    .typography-font {
+      @include titleTipography;
+      @include textEllipsis;
+      margin-left: $s-6;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      min-width: 0;
+      color: var(--assets-item-name-foreground-color);
+    }
+    .action-btn {
+      @extend .button-tertiary;
+      width: $s-28;
+      height: $s-32;
+      svg {
+        @extend .button-icon;
       }
-      .typography-name {
-        @include titleTipography;
-        @include textEllipsis;
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        margin-left: $s-6;
-        color: var(--assets-item-name-foreground-color-hover);
-      }
-      .typography-font {
-        @include titleTipography;
-        @include textEllipsis;
-        margin-left: $s-6;
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        min-width: 0;
-        color: var(--assets-item-name-foreground-color);
-      }
-      .action-btn {
-        @extend .button-tertiary;
-        width: $s-28;
-        height: $s-32;
-        svg {
-          @extend .button-icon;
-        }
-        &:active {
-          background-color: transparent;
-        }
+      &:active {
+        background-color: transparent;
       }
     }
+  }
 
-    .info-row {
-      display: grid;
-      grid-template-columns: 50% 50%;
-      height: $s-32;
-      --calcualted-width: calc(var(--width) - $s-48);
-      padding-left: $s-2;
-      .info-label {
-        @include titleTipography;
-        @include textEllipsis;
-        width: calc(var(--calcualted-width) / 2);
-        padding-top: $s-8;
-        color: var(--assets-item-name-foreground-color);
-      }
-      .info-content {
-        @include titleTipography;
-        @include textEllipsis;
-        padding-top: $s-8;
-        width: calc(var(--calcualted-width) / 2);
-        color: var(--assets-item-name-foreground-color-hover);
+  .info-row {
+    display: grid;
+    grid-template-columns: 50% 50%;
+    height: $s-32;
+    --calcualted-width: calc(var(--width) - $s-48);
+    padding-left: $s-2;
+    .info-label {
+      @include titleTipography;
+      @include textEllipsis;
+      width: calc(var(--calcualted-width) / 2);
+      padding-top: $s-8;
+      color: var(--assets-item-name-foreground-color);
+    }
+    .info-content {
+      @include titleTipography;
+      @include textEllipsis;
+      padding-top: $s-8;
+      width: calc(var(--calcualted-width) / 2);
+      color: var(--assets-item-name-foreground-color-hover);
+    }
+  }
+
+  .link-btn {
+    @include tabTitleTipography;
+    @extend .button-secondary;
+    width: 100%;
+    height: $s-32;
+    border-radius: $br-8;
+    &:hover {
+      background-color: var(--button-secondary-background-color-hover);
+      color: var(--button-secondary-foreground-color-hover);
+      border: $s-1 solid var(--button-secondary-border-color-hover);
+      text-decoration: none;
+      svg {
+        stroke: var(--button-secondary-foreground-color-hover);
       }
     }
-
-    .link-btn {
-      @include tabTitleTipography;
-      @extend .button-secondary;
-      width: 100%;
-      height: $s-32;
-      border-radius: $br-8;
-      &:hover {
-        background-color: var(--button-secondary-background-color-hover);
-        color: var(--button-secondary-foreground-color-hover);
-        border: $s-1 solid var(--button-secondary-border-color-hover);
-        text-decoration: none;
-        svg {
-          stroke: var(--button-secondary-foreground-color-hover);
-        }
-      }
-      &:focus {
-        background-color: var(--button-secondary-background-color-focus);
-        color: var(--button-secondary-foreground-color-focus);
-        border: $s-1 solid var(--button-secondary-border-color-focus);
-        svg {
-          stroke: var(--button-secondary-foreground-color-focus);
-        }
+    &:focus {
+      background-color: var(--button-secondary-background-color-focus);
+      color: var(--button-secondary-foreground-color-focus);
+      border: $s-1 solid var(--button-secondary-border-color-focus);
+      svg {
+        stroke: var(--button-secondary-foreground-color-focus);
       }
     }
   }

@@ -51,7 +51,6 @@
   (let [data           (unchecked-get props "data")
         wrapper-ref    (mf/use-ref nil)
         components     (mf/deref dm/components)
-        new-css-system (mf/use-ctx ctx/new-css-system)
 
         allow-click-outside (:allow-click-outside data)
 
@@ -78,9 +77,7 @@
 
     (when-let [component (get components (:type data))]
       [:div {:ref wrapper-ref
-             :class (stl/css-case
-                     :modal-wrapper  new-css-system
-                     :global/modal-wrapper (not new-css-system))}
+             :class (stl/css :modal-wrapper)}
        (mf/element component (:props data))])))
 
 (def modal-ref

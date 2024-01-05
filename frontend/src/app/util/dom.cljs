@@ -504,6 +504,10 @@
     (.setAttribute node property value))
   node)
 
+(defn get-text [^js node]
+  (when (some? node)
+    (.-textContent node)))
+
 (defn set-text! [^js node text]
   (when (some? node)
     (set! (.-textContent node) text))

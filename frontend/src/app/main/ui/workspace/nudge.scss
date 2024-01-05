@@ -8,33 +8,37 @@
 
 .modal-overlay {
   @extend .modal-overlay-base;
-  .modal-container {
-    @extend .modal-container-base;
-    min-width: $s-408;
-    border: $s-1 solid var(--modal-border-color);
-    .modal-header {
-      margin-bottom: $s-24;
-      .modal-title {
-        @include tabTitleTipography;
-        color: var(--modal-title-foreground-color);
-      }
-      .modal-close-btn {
-        @extend .modal-close-btn-base;
-      }
-    }
+}
 
-    .modal-content {
-      @include flexColumn;
-      gap: $s-24;
-      @include titleTipography;
-      margin-bottom: $s-24;
-      .input-wrapper {
-        @extend .input-with-label;
-        label {
-          text-transform: none;
-        }
-      }
-    }
+.modal-container {
+  @extend .modal-container-base;
+  min-width: $s-408;
+  border: $s-1 solid var(--modal-border-color);
+}
+
+.modal-header {
+  margin-bottom: $s-24;
+}
+
+.modal-title {
+  @include tabTitleTipography;
+  color: var(--modal-title-foreground-color);
+}
+.modal-close-btn {
+  @extend .modal-close-btn-base;
+}
+
+.modal-content {
+  @include flexColumn;
+  gap: $s-24;
+  @include titleTipography;
+  margin-bottom: $s-24;
+}
+
+.input-wrapper {
+  @extend .input-with-label;
+  label {
+    text-transform: none;
   }
 }
 
