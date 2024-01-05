@@ -121,7 +121,7 @@
   directly on CLJS, on CLJ works as get."
   [obj prop]
   (if (:ns &env)
-    (list 'js* (c/str "(~{}?." (str/snake prop) ")") obj)
+    (list 'js* (c/str "(~{}?." (str/snake prop) "?? ~{})") obj (list 'cljs.core/get obj prop))
     (list `c/get obj prop)))
 
 (def ^:dynamic *assert-context* nil)
