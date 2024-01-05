@@ -40,18 +40,18 @@
   (dom/prevent-default event)
   (->> (rp/cmd! :login-with-oidc (assoc params :provider provider))
        (rx/subs! (fn [{:keys [redirect-uri] :as rsp}]
-                  (if redirect-uri
-                    (.replace js/location redirect-uri)
-                    (log/error :hint "unexpected response from OIDC method"
-                               :resp (pr-str rsp))))
-                (fn [{:keys [type code] :as error}]
-                  (cond
-                    (and (= type :restriction)
-                         (= code :provider-not-configured))
-                    (st/emit! (dm/error (tr "errors.auth-provider-not-configured")))
+                   (if redirect-uri
+                     (.replace js/location redirect-uri)
+                     (log/error :hint "unexpected response from OIDC method"
+                                :resp (pr-str rsp))))
+                 (fn [{:keys [type code] :as error}]
+                   (cond
+                     (and (= type :restriction)
+                          (= code :provider-not-configured))
+                     (st/emit! (dm/error (tr "errors.auth-provider-not-configured")))
 
-                    :else
-                    (st/emit! (dm/error (tr "errors.generic"))))))))
+                     :else
+                     (st/emit! (dm/error (tr "errors.generic"))))))))
 
 (defn- login-with-ldap
   [event params]
@@ -60,20 +60,20 @@
   (let [{:keys [on-error]} (meta params)]
     (->> (rp/cmd! :login-with-ldap params)
          (rx/subs! (fn [profile]
-                    (if-let [token (:invitation-token profile)]
-                      (st/emit! (rt/nav :auth-verify-token {} {:token token}))
-                      (st/emit! (du/login-from-token {:profile profile}))))
-                  (fn [{:keys [type code] :as error}]
-                    (cond
-                      (and (= type :restriction)
-                           (= code :ldap-not-initialized))
-                      (st/emit! (dm/error (tr "errors.ldap-disabled")))
+                     (if-let [token (:invitation-token profile)]
+                       (st/emit! (rt/nav :auth-verify-token {} {:token token}))
+                       (st/emit! (du/login-from-token {:profile profile}))))
+                   (fn [{:keys [type code] :as error}]
+                     (cond
+                       (and (= type :restriction)
+                            (= code :ldap-not-initialized))
+                       (st/emit! (dm/error (tr "errors.ldap-disabled")))
 
-                      (fn? on-error)
-                      (on-error error)
+                       (fn? on-error)
+                       (on-error error)
 
-                      :else
-                      (st/emit! (dm/error (tr "errors.generic")))))))))
+                       :else
+                       (st/emit! (dm/error (tr "errors.generic")))))))))
 
 (s/def ::email ::us/email)
 (s/def ::password ::us/not-empty-string)

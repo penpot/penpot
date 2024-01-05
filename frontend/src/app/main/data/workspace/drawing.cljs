@@ -82,7 +82,7 @@
             (rx/merge
              (rx/of (handle-drawing type))
              (->> stream
-                  (rx/filter (ptk/type? ::common/handle-finish-drawing) )
+                  (rx/filter (ptk/type? ::common/handle-finish-drawing))
                   (rx/take 1)
                   (rx/map #(fn [state] (update state :workspace-drawing dissoc :lock)))))))))))
 

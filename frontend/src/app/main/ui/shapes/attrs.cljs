@@ -144,7 +144,7 @@
                            (not= caps-start caps-end)))
               (obj/set! attrs "markerEnd" (str/ffmt "url(#marker-%-%)" render-id (name caps-end))))))))
 
-        attrs))
+    attrs))
 
 (defn add-layer-styles!
   [props shape]
@@ -197,15 +197,15 @@
                           (add-layer-styles! shape))
 
          url-fill?    (or ^boolean (some? (:fill-image shape))
-                        ^boolean (cfh/image-shape? shape)
-                        ^boolean (> (count shape-fills) 1)
-                        ^boolean (some? (some :fill-color-gradient shape-fills))
-                        ^boolean (some? (some :fill-image shape-fills)))
+                          ^boolean (cfh/image-shape? shape)
+                          ^boolean (> (count shape-fills) 1)
+                          ^boolean (some? (some :fill-color-gradient shape-fills))
+                          ^boolean (some? (some :fill-image shape-fills)))
 
          props        (if (cfh/frame-shape? shape)
                         props
                         (if (or (some? (->> shape-shadow (remove :hidden) seq))
-                              (and (some? shape-blur) (not ^boolean (:hidden shape-blur))))
+                                (and (some? shape-blur) (not ^boolean (:hidden shape-blur))))
                           (obj/set! props "filter" (dm/fmt "url(#filter-%)" render-id))
                           props))]
 
@@ -219,9 +219,9 @@
        ;; reset to normal if a Penpot frame shape appears below
        ;; (see main.ui.shapes.frame/frame-container).
        (and ^boolean (contains? shape :svg-attrs)
-         ^boolean (or ^boolean (= :svg-raw shape-type)
-                    ^boolean (= :group shape-type))
-         ^boolean (empty? shape-fills))
+            ^boolean (or ^boolean (= :svg-raw shape-type)
+                         ^boolean (= :group shape-type))
+            ^boolean (empty? shape-fills))
        (let [wstyle (get shape :wrapper-styles)
              fill   (obj/get wstyle "fill")
              fill   (d/nilv fill clr/black)]
@@ -234,7 +234,7 @@
          (obj/set! props "fill" (dm/fmt "url(#fill-%-%)" position render-id)))
 
        (and ^boolean (some? svg-styles)
-         ^boolean (obj/contains? svg-styles "fill"))
+            ^boolean (obj/contains? svg-styles "fill"))
        (let [fill    (obj/get svg-styles "fill")
              opacity (obj/get svg-styles "fillOpacity")]
          (when (some? fill)
@@ -243,7 +243,7 @@
            (obj/set! style "fillOpacity" opacity)))
 
        (and ^boolean (some? svg-attrs)
-         ^boolean (empty? shape-fills))
+            ^boolean (empty? shape-fills))
        (let [fill    (obj/get svg-attrs "fill")
              opacity (obj/get svg-attrs "fillOpacity")]
          (when (some? fill)
@@ -256,7 +256,7 @@
          (obj/merge! style (get-fill-style fill render-id 0 shape-type)))
 
        (and ^boolean (cfh/path-shape? shape)
-         ^boolean (empty? shape-fills))
+            ^boolean (empty? shape-fills))
        (obj/set! style "fill" "none"))
 
      (-> props

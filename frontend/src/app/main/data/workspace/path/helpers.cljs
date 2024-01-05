@@ -131,7 +131,7 @@
     (let [;; To match the angle, the angle should be matching (angle between points 180deg)
           angle-handlers (angle-points node handler opposite)
 
-          match-angle? (and match-angle? (<= (mth/abs (- 180 angle-handlers) ) 0.1))
+          match-angle? (and match-angle? (<= (mth/abs (- 180 angle-handlers)) 0.1))
 
           ;; To match distance the distance should be matching
           match-distance? (and match-distance? (mth/almost-zero? (- (gpt/distance node handler)

@@ -26,8 +26,8 @@
   (letfn [(select-color [event]
             (st/emit! (mdc/apply-color-from-palette color (kbd/alt? event))))]
     [:div {:class (stl/css-case  :color-cell true
-                                  :is-not-library-color (nil? (:id color))
-                                  :no-text (<= size 64))
+                                 :is-not-library-color (nil? (:id color))
+                                 :no-text (<= size 64))
            :title (uc/get-color-name color)
            :on-click select-color}
      [:& cb/color-bullet {:color color}]

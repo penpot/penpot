@@ -60,8 +60,8 @@
 
           points     (dm/get-prop mask :points)
           points-str (mf/with-memo [points]
-                        (->> (map point->str points)
-                             (str/join " ")))
+                       (->> (map point->str points)
+                            (str/join " ")))
 
           bounds     (mf/with-memo [points]
                        (grc/points->rect points))

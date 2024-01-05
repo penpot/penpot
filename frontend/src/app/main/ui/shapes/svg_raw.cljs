@@ -83,7 +83,7 @@
                           (usa/add-fill-props! shape render-id))]
 
             (when (and (some? element-id)
-                    (contains? ids-mapping element-id))
+                       (contains? ids-mapping element-id))
               (obj/set! props "id" (get ids-mapping element-id)))
 
             props))]

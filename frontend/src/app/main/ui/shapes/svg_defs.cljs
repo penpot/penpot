@@ -59,11 +59,11 @@
                            (= :group type))
                 (update :className #(if % (dm/str % " svg-def") "svg-def")))
               (cond->
-                  transform-gradient?   (add-matrix :gradientTransform transform)
-                  transform-pattern?    (add-matrix :patternTransform transform)
-                  transform-clippath?   (add-matrix :transform transform)
-                  (or transform-filter?
-                      transform-mask?)  (merge bounds)))
+               transform-gradient?   (add-matrix :gradientTransform transform)
+               transform-pattern?    (add-matrix :patternTransform transform)
+               transform-clippath?   (add-matrix :transform transform)
+               (or transform-filter?
+                   transform-mask?)  (merge bounds)))
 
           ;; Fixes race condition with dynamic modifiers forcing redraw this properties before
           ;; the effect triggers

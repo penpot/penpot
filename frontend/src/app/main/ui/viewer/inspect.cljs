@@ -80,7 +80,7 @@
         handle-expand
         (mf/use-callback
          (mf/deps right-size)
-         (fn[]
+         (fn []
            (set-right-size (if (> right-size 276) 276 768))))]
 
     (mf/use-effect on-mount)

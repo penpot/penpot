@@ -41,13 +41,13 @@
 
   (let [margin-type    (or (:layout-item-margin-type values) :simple)
         m1             (when (and (not (= :multiple (:layout-item-margin values)))
-                                (= (dm/get-in values [:layout-item-margin :m1])
-                                   (dm/get-in values [:layout-item-margin :m3])))
+                                  (= (dm/get-in values [:layout-item-margin :m1])
+                                     (dm/get-in values [:layout-item-margin :m3])))
                          (dm/get-in values [:layout-item-margin :m1]))
 
         m2             (when (and (not (= :multiple (:layout-item-margin values)))
-                                (= (dm/get-in values [:layout-item-margin :m2])
-                                   (dm/get-in values [:layout-item-margin :m4])))
+                                  (= (dm/get-in values [:layout-item-margin :m2])
+                                     (dm/get-in values [:layout-item-margin :m4])))
                          (dm/get-in values [:layout-item-margin :m2]))
         select-margins
         (fn [m1? m2? m3? m4?]

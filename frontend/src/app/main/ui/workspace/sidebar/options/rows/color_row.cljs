@@ -264,7 +264,5 @@
      (when select-only
        [:button {:class (stl/css :select-btn)
                  :on-click handle-select}
-        i/move-refactor])]
-
-    ))
+        i/move-refactor])]))
 

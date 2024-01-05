@@ -255,7 +255,7 @@
                           :command "t"
                           :subsections [:tools]
                           :fn #(emit-when-no-readonly dwtxt/start-edit-if-selected
-                                 (dwd/select-for-drawing :text))}
+                                                      (dwd/select-for-drawing :text))}
 
    :draw-path            {:tooltip "P"
                           :command "p"
@@ -399,7 +399,7 @@
                           :command (ds/c-mod "shift+e")
                           :subsections [:basics :main-menu]
                           :fn #(st/emit!
-                                 (de/show-workspace-export-dialog))}
+                                (de/show-workspace-export-dialog))}
 
    :toggle-snap-guide    {:tooltip (ds/meta-shift "G")
                           :command (ds/c-mod "shift+g")
@@ -432,15 +432,15 @@
                          :command (ds/a-mod "p")
                          :subsections [:panels]
                          :fn #(do (r/set-resize-type! :bottom)
-                                (emit-when-no-readonly (dw/remove-layout-flag :textpalette)
-                                  (toggle-layout-flag :colorpalette)))}
+                                  (emit-when-no-readonly (dw/remove-layout-flag :textpalette)
+                                                         (toggle-layout-flag :colorpalette)))}
 
    :toggle-textpalette  {:tooltip (ds/alt "T")
                          :command (ds/a-mod "t")
                          :subsections [:panels]
                          :fn #(do (r/set-resize-type! :bottom)
-                                (emit-when-no-readonly (dw/remove-layout-flag :colorpalette)
-                                  (toggle-layout-flag :textpalette)))}
+                                  (emit-when-no-readonly (dw/remove-layout-flag :colorpalette)
+                                                         (toggle-layout-flag :textpalette)))}
 
    :hide-ui              {:tooltip "\\"
                           :command "\\"

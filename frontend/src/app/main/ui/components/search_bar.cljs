@@ -46,7 +46,7 @@
              (when ^boolean enter? (dom/blur! node))
              (when ^boolean esc? (dom/blur! node)))))]
     [:span {:class (stl/css-case :search-box true
-                                   :has-children (some? children))}
+                                 :has-children (some? children))}
      children
      [:div {:class (stl/css :search-input-wrapper)}
       icon

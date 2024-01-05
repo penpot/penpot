@@ -196,40 +196,40 @@
    (if-not (exists? js/window)
     ;; If we are in the worker environment, we just mark it as loaded
     ;; without really loading it.
-    (do
-      (swap! loaded-hints conj {:font-id font-id :font-variant-id variant-id})
-      (p/resolved font-id))
+     (do
+       (swap! loaded-hints conj {:font-id font-id :font-variant-id variant-id})
+       (p/resolved font-id))
 
-    (let [font (get @fontsdb font-id)]
-      (cond
-        (nil? font)
-        (p/resolved font-id)
+     (let [font (get @fontsdb font-id)]
+       (cond
+         (nil? font)
+         (p/resolved font-id)
 
         ;; Font already loaded, we just continue
-        (contains? @loaded font-id)
-        (p/resolved font-id)
+         (contains? @loaded font-id)
+         (p/resolved font-id)
 
         ;; Font is currently downloading. We attach the caller to the promise
-        (contains? @loading font-id)
-        (p/resolved (get @loading font-id))
+         (contains? @loading font-id)
+         (p/resolved (get @loading font-id))
 
         ;; First caller, we create the promise and then wait
-        :else
-        (let [on-load (fn [resolve]
-                        (swap! loaded conj font-id)
-                        (swap! loading dissoc font-id)
-                        (resolve font-id))
+         :else
+         (let [on-load (fn [resolve]
+                         (swap! loaded conj font-id)
+                         (swap! loading dissoc font-id)
+                         (resolve font-id))
 
-              load-p (->> (p/create
-                           (fn [resolve _]
-                             (-> font
-                                 (assoc ::on-loaded (partial on-load resolve))
-                                 (load-font))))
+               load-p (->> (p/create
+                            (fn [resolve _]
+                              (-> font
+                                  (assoc ::on-loaded (partial on-load resolve))
+                                  (load-font))))
                           ;; We need to wait for the font to be loaded
-                          (p/delay 120))]
+                           (p/delay 120))]
 
-          (swap! loading assoc font-id load-p)
-          load-p))))))
+           (swap! loading assoc font-id load-p)
+           load-p))))))
 
 (defn ready
   [cb]
@@ -253,22 +253,22 @@
   [node]
   (let [nodes  (.from js/Array (dom/query-all node "[style*=font]"))
         result (.reduce nodes (fn [obj node]
-                         (let [style (.-style node)
-                               font-family (.-fontFamily style)
-                               [_ font] (first
-                                         (filter (fn [[_ {:keys [id family]}]]
-                                                   (or (= family font-family)
-                                                       (= id font-family)))
-                                                 @fontsdb))
-                               font-id (:id font)
-                               font-variant (get-variant font (.-fontVariant style))
-                               font-variant-id (:id font-variant)]
-                           (obj/set!
-                            obj
-                            (dm/str font-id ":" font-variant-id)
-                            {:font-id font-id
-                             :font-variant-id font-variant-id})))
-                       #js {})]
+                                (let [style (.-style node)
+                                      font-family (.-fontFamily style)
+                                      [_ font] (first
+                                                (filter (fn [[_ {:keys [id family]}]]
+                                                          (or (= family font-family)
+                                                              (= id font-family)))
+                                                        @fontsdb))
+                                      font-id (:id font)
+                                      font-variant (get-variant font (.-fontVariant style))
+                                      font-variant-id (:id font-variant)]
+                                  (obj/set!
+                                   obj
+                                   (dm/str font-id ":" font-variant-id)
+                                   {:font-id font-id
+                                    :font-variant-id font-variant-id})))
+                        #js {})]
     (.values js/Object result)))
 
 (defn get-content-fonts

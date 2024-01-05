@@ -316,8 +316,8 @@
                    (rx/take 1)
                    (rx/map #(go-to-component (uuid/uuid component-id))))))
 
-                (rx/take-until
-                 (rx/filter (ptk/type? ::fetch-bundle) stream))))))
+           (rx/take-until
+            (rx/filter (ptk/type? ::fetch-bundle) stream))))))
 
 (defn initialize-file
   [project-id file-id]
@@ -1038,12 +1038,12 @@
             shapes-to-select
             (->> selected
                  (reduce
-                   (fn [result shape-id]
-                     (let [parent-id (dm/get-in objects [shape-id :parent-id])]
-                       (if (and (some? parent-id)  (not= parent-id uuid/zero))
-                         (conj result parent-id)
-                         (conj result shape-id))))
-                   (d/ordered-set)))]
+                  (fn [result shape-id]
+                    (let [parent-id (dm/get-in objects [shape-id :parent-id])]
+                      (if (and (some? parent-id)  (not= parent-id uuid/zero))
+                        (conj result parent-id)
+                        (conj result shape-id))))
+                  (d/ordered-set)))]
         (rx/of (dws/select-shapes shapes-to-select))))))
 
 ;; --- Change Page Order (D&D Ordering)
@@ -1470,17 +1470,17 @@
 
             no-bool-shapes? (->> all-selected (some (comp #{:frame :text} :type)))]
 
-          (if (and (some? shape) (not (contains? selected (:id shape))))
-            (rx/concat
-              (rx/of (dws/select-shape (:id shape)))
-              (rx/of (show-shape-context-menu params)))
-            (rx/of (show-context-menu
-                     (-> params
-                         (assoc
-                           :kind :shape
-                           :disable-booleans? (or no-bool-shapes? not-group-like?)
-                           :disable-flatten? no-bool-shapes?
-                           :selected (conj selected (:id shape)))))))))))
+        (if (and (some? shape) (not (contains? selected (:id shape))))
+          (rx/concat
+           (rx/of (dws/select-shape (:id shape)))
+           (rx/of (show-shape-context-menu params)))
+          (rx/of (show-context-menu
+                  (-> params
+                      (assoc
+                       :kind :shape
+                       :disable-booleans? (or no-bool-shapes? not-group-like?)
+                       :disable-flatten? no-bool-shapes?
+                       :selected (conj selected (:id shape)))))))))))
 
 (defn show-page-item-context-menu
   [{:keys [position page] :as params}]
@@ -1488,8 +1488,8 @@
   (ptk/reify ::show-page-item-context-menu
     ptk/WatchEvent
     (watch [_ _ _]
-           (rx/of (show-context-menu
-                   (-> params (assoc :kind :page :selected (:id page))))))))
+      (rx/of (show-context-menu
+              (-> params (assoc :kind :page :selected (:id page))))))))
 
 (defn show-track-context-menu
   [{:keys [grid-id type index] :as params}]
@@ -1902,7 +1902,7 @@
                                 ;; - Align it to the limits on the x and y axis
                                 ;; - Respect the distance of the object to the right and bottom in the original frame
                                 (gpt/point paste-x paste-y))]
-                    [frame-id frame-id delta (dec (count (:shapes selected-frame-obj )))]))
+                    [frame-id frame-id delta (dec (count (:shapes selected-frame-obj)))]))
 
                 (empty? page-selected)
                 (let [frame-id (ctst/top-nested-frame page-objects position)
@@ -1953,8 +1953,7 @@
     (ptk/reify ::paste-shapes
       ptk/WatchEvent
       (watch [it state _]
-        (let [
-              file-id     (:current-file-id state)
+        (let [file-id     (:current-file-id state)
               page        (wsh/lookup-page state)
 
               media-idx   (->> (:media pdata)
@@ -2216,23 +2215,23 @@
     ptk/WatchEvent
     (watch [it state _]
 
-        (let [data (get state :workspace-data)
+      (let [data (get state :workspace-data)
 
-              update-fn
-              (fn [component]
+            update-fn
+            (fn [component]
                 ;; NOTE: we need to ensure the component exists,
                 ;; because there are small possibilities of race
                 ;; conditions with component deletion.
-                (when component
-                  (if (nil? annotation)
-                    (dissoc component :annotation)
-                    (assoc component :annotation annotation))))
+              (when component
+                (if (nil? annotation)
+                  (dissoc component :annotation)
+                  (assoc component :annotation annotation))))
 
-              changes (-> (pcb/empty-changes it)
-                          (pcb/with-library-data data)
-                          (pcb/update-component id update-fn))]
+            changes (-> (pcb/empty-changes it)
+                        (pcb/with-library-data data)
+                        (pcb/update-component id update-fn))]
 
-          (rx/of (dch/commit-changes changes))))))
+        (rx/of (dch/commit-changes changes))))))
 
 (defn set-annotations-expanded
   [expanded?]

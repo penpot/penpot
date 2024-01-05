@@ -75,11 +75,11 @@
 
 (mf/defc options-page
   []
- (mf/use-effect
-  #(dom/set-html-title (tr "title.settings.options")))
+  (mf/use-effect
+   #(dom/set-html-title (tr "title.settings.options")))
 
- [:div {:class (stl/css :dashboard-settings)}
-  [:div {:class (stl/css :form-container) :data-test "settings-form"}
-   [:h2 (tr "labels.settings")]
-   [:& options-form {}]]])
+  [:div {:class (stl/css :dashboard-settings)}
+   [:div {:class (stl/css :form-container) :data-test "settings-form"}
+    [:h2 (tr "labels.settings")]
+    [:& options-form {}]]])
 

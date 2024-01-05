@@ -55,7 +55,7 @@
                    (empty? (remove removed-id? (:shapes group))))
 
             ;; Adds group to the remove and check its parent
-            (let [to-check (concat to-check [(cfh/get-parent-id objects current-id)]) ]
+            (let [to-check (concat to-check [(cfh/get-parent-id objects current-id)])]
               (recur (first to-check)
                      (rest to-check)
                      (conj removed-id? current-id)
@@ -243,10 +243,10 @@
 
         (when-not (empty? selected)
           (rx/of (dwu/start-undo-transaction undo-id)
-               (dch/commit-changes changes)
-               (ptk/data-event :layout/update parents)
-               (dwu/commit-undo-transaction undo-id)
-               (dws/select-shapes child-ids)))))))
+                 (dch/commit-changes changes)
+                 (ptk/data-event :layout/update parents)
+                 (dwu/commit-undo-transaction undo-id)
+                 (dws/select-shapes child-ids)))))))
 
 (def mask-group
   (ptk/reify ::mask-group

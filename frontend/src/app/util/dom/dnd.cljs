@@ -42,14 +42,14 @@
   (let [;;currentTarget (.-currentTarget event)
         relatedTarget (.-relatedTarget event)]
     (js/console.log
-      label
-      "[" (:name data) "]"
+     label
+     "[" (:name data) "]"
       ;; (if currentTarget
       ;;   (str "<" (.-localName currentTarget) " " (.-textContent currentTarget) ">")
       ;;   "null")
-      (if relatedTarget
-        (str "<" (.-localName relatedTarget) " " (.-textContent relatedTarget) ">")
-        "null"))))
+     (if relatedTarget
+       (str "<" (.-localName relatedTarget) " " (.-textContent relatedTarget) ">")
+       "null"))))
 
 (defn set-data!
   ([e data]

@@ -113,15 +113,15 @@
       ;; invitations workflows (and probably other cases).
       (->> (rp/cmd! :get-profile)
            (rx/subs! (fn [{:keys [id] :as profile}]
-                      (cond
-                        (= id uuid/zero)
-                        (st/emit! (rt/nav :auth-login))
+                       (cond
+                         (= id uuid/zero)
+                         (st/emit! (rt/nav :auth-login))
 
-                        empty-path?
-                        (st/emit! (rt/nav :dashboard-projects {:team-id (du/get-current-team-id profile)}))
+                         empty-path?
+                         (st/emit! (rt/nav :dashboard-projects {:team-id (du/get-current-team-id profile)}))
 
-                        :else
-                        (st/emit! (rt/assign-exception {:type :not-found})))))))))
+                         :else
+                         (st/emit! (rt/assign-exception {:type :not-found})))))))))
 
 (defn init-routes
   []

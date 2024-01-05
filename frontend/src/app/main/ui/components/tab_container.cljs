@@ -50,7 +50,7 @@
              (when (fn? on-change) (on-change id)))))]
 
     [:div {:class (stl/css :tab-container)}
-     [:div {:class (dm/str class " "(stl/css :tab-container-tabs))}
+     [:div {:class (dm/str class " " (stl/css :tab-container-tabs))}
       (when collapsable?
         [:button
          {:on-click handle-collapse
@@ -67,7 +67,7 @@
              :data-id (d/name id)
              :on-click select-fn
              :class  (stl/css-case :tab-container-tab-title true
-                                     :current (= selected id))}
+                                   :current (= selected id))}
             title]))]]
-     [:div {:class (dm/str content-class " " (stl/css  :tab-container-content ))}
+     [:div {:class (dm/str content-class " " (stl/css  :tab-container-content))}
       (d/seek #(= selected (-> % .-props .-id)) children)]]))

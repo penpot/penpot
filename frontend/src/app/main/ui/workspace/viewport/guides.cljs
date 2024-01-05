@@ -250,11 +250,11 @@
   [guide frame]
 
   (if (= :x (:axis guide))
-    (and (>= (:position guide) (:x frame) )
-         (<= (:position guide) (+ (:x frame) (:width frame)) ))
+    (and (>= (:position guide) (:x frame))
+         (<= (:position guide) (+ (:x frame) (:width frame))))
 
-    (and (>= (:position guide) (:y frame) )
-         (<= (:position guide) (+ (:y frame) (:height frame)) ))))
+    (and (>= (:position guide) (:y frame))
+         (<= (:position guide) (+ (:y frame) (:height frame))))))
 
 (mf/defc guide
   {::mf/wrap [mf/memo]}

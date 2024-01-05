@@ -257,8 +257,8 @@
                      ;; change
                      (rx/switch-map (partial query-worker page-id coord))
                      (rx/subs! (fn [[lt-shapes gt-shapes]]
-                                (reset! lt-shapes* lt-shapes)
-                                (reset! gt-shapes* gt-shapes))))]
+                                 (reset! lt-shapes* lt-shapes)
+                                 (reset! gt-shapes* gt-shapes))))]
         ;; On unmount dispose
         #(rx/dispose! sub)))
 

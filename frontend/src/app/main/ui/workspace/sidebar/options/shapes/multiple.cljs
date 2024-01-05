@@ -231,8 +231,8 @@
                          (-> values
                              (merge-attrs (select-keys shape attrs))
                              (merge-attrs (merge
-                                            (select-keys txt/default-text-attrs attrs)
-                                            (attrs/get-attrs-multi (txt/node-seq content) attrs))))]
+                                           (select-keys txt/default-text-attrs attrs)
+                                           (attrs/get-attrs-multi (txt/node-seq content) attrs))))]
 
               :children (let [children (->> (:shapes shape []) (map #(get objects %)))
                               [new-ids new-values] (get-attrs* children objects attr-group)]

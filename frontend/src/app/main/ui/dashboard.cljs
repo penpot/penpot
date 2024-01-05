@@ -43,7 +43,7 @@
         team-id     (get-in route [:params :path :team-id])
         project-id  (get-in route [:params :path :project-id])]
     (cond->
-      {:search-term search-term}
+     {:search-term search-term}
 
       (uuid-str? team-id)
       (assoc :team-id (uuid team-id))

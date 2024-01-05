@@ -553,7 +553,7 @@
        [:rect.drop
         {:x (:x start-p-drop)
          :y (:y start-p-drop)
-         :width (if (= type :column)(/ 10 zoom) width)
+         :width (if (= type :column) (/ 10 zoom) width)
          :height (if (= type :row) (/ 10 zoom) height)
          :fill "var(--grid-editor-area-background)"}])
 

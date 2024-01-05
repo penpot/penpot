@@ -97,7 +97,7 @@
            (rx/map #(svg/add-svg-shapes (assoc svg-data :image-data %) position))))))
 
 (defn- process-uris
-  [{:keys [file-id local? name uris mtype on-image on-svg] }]
+  [{:keys [file-id local? name uris mtype on-image on-svg]}]
   (letfn [(svg-url? [url]
             (or (and mtype (= mtype "image/svg+xml"))
                 (str/ends-with? url ".svg")))
@@ -211,28 +211,28 @@
 (defn- process-media-objects
   [{:keys [uris on-error] :as params}]
   (dm/assert!
-    (and (sm/check! schema:process-media-objects params)
-         (or (contains? params :blobs)
-             (contains? params :uris))))
+   (and (sm/check! schema:process-media-objects params)
+        (or (contains? params :blobs)
+            (contains? params :uris))))
 
   (ptk/reify ::process-media-objects
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/concat
-        (rx/of (msg/show {:content (tr "media.loading")
-                          :type :info
-                          :timeout nil
-                          :tag :media-loading}))
-        (->> (if (seq uris)
+       (rx/of (msg/show {:content (tr "media.loading")
+                         :type :info
+                         :timeout nil
+                         :tag :media-loading}))
+       (->> (if (seq uris)
                 ;; Media objects is a list of URL's pointing to the path
-               (process-uris params)
+              (process-uris params)
                 ;; Media objects are blob of data to be upload
-               (process-blobs params))
+              (process-blobs params))
 
               ;; Every stream has its own sideeffect. We need to ignore the result
-             (rx/ignore)
-             (rx/catch #(handle-media-error % on-error))
-             (rx/finalize #(st/emit! (msg/hide-tag :media-loading))))))))
+            (rx/ignore)
+            (rx/catch #(handle-media-error % on-error))
+            (rx/finalize #(st/emit! (msg/hide-tag :media-loading))))))))
 
 ;; Deprecated in components-v2
 (defn upload-media-asset
@@ -256,8 +256,8 @@
 (defn upload-fill-image
   [file on-success]
   (dm/assert!
-    "expected a valid blob for `file` param"
-    (dmm/blob? file))
+   "expected a valid blob for `file` param"
+   (dmm/blob? file))
   (ptk/reify ::upload-fill-image
     ptk/WatchEvent
     (watch [_ state _]
@@ -293,9 +293,9 @@
          (rx/map #(vector (:name media-obj) %))
          (rx/merge-map svg->clj)
          (rx/catch  ; When error downloading media-obj, skip it and continue with next one
-             #(log/error :msg (str "Error downloading " (:name media-obj) " from " path)
-                         :hint (ex-message %)
-                         :error %)))))
+          #(log/error :msg (str "Error downloading " (:name media-obj) " from " path)
+                      :hint (ex-message %)
+                      :error %)))))
 
 (defn create-shapes-svg
   "Convert svg elements into penpot shapes."

@@ -169,10 +169,10 @@
 (mf/defc export-flows
   [{:keys [flows]}]
   [:> "penpot:flows" #js {}
-    (for [{:keys [id name starting-frame]} flows]
-      [:> "penpot:flow" #js {:id id
-                             :name name
-                             :starting-frame starting-frame}])])
+   (for [{:keys [id name starting-frame]} flows]
+     [:> "penpot:flow" #js {:id id
+                            :name name
+                            :starting-frame starting-frame}])])
 
 (mf/defc export-guides
   [{:keys [guides]}]
@@ -253,7 +253,7 @@
    [:*
     (when (contains? shape :svg-attrs)
       (let [svg-transform (get shape :svg-transform)
-            svg-attrs     (->> shape :svg-attrs keys (mapv d/name) (str/join ",") )
+            svg-attrs     (->> shape :svg-attrs keys (mapv d/name) (str/join ","))
             svg-defs      (->> shape :svg-defs keys (mapv d/name) (str/join ","))]
         [:> "penpot:svg-import"
          #js {:penpot:svg-attrs          (when-not (empty? svg-attrs) svg-attrs)
@@ -292,47 +292,47 @@
   (when-let [fills     (seq fills)]
     (let [render-id (mf/use-ctx muc/render-id)]
       (mf/html
-        [:> "penpot:fills" #js {}
-         (for [[index fill] (d/enumerate fills)]
-           (let [fill-image-id (dm/str "fill-image-" render-id "-" index)]
-             [:> "penpot:fill"
-              #js {:penpot:fill-color          (cond
-                                                 (some? (:fill-color-gradient fill))
-                                                 (str/format "url(#%s)" (str "fill-color-gradient-" render-id "-" index))
+       [:> "penpot:fills" #js {}
+        (for [[index fill] (d/enumerate fills)]
+          (let [fill-image-id (dm/str "fill-image-" render-id "-" index)]
+            [:> "penpot:fill"
+             #js {:penpot:fill-color          (cond
+                                                (some? (:fill-color-gradient fill))
+                                                (str/format "url(#%s)" (str "fill-color-gradient-" render-id "-" index))
 
-                                                 :else
-                                                 (d/name (:fill-color fill)))
-                   :key                        (swap! internal-counter inc)
+                                                :else
+                                                (d/name (:fill-color fill)))
+                  :key                        (swap! internal-counter inc)
 
-                   :penpot:fill-image-id       (when (:fill-image fill) fill-image-id)
-                   :penpot:fill-color-ref-file (d/name (:fill-color-ref-file fill))
-                   :penpot:fill-color-ref-id   (d/name (:fill-color-ref-id fill))
-                   :penpot:fill-opacity        (d/name (:fill-opacity fill))}]))]))))
+                  :penpot:fill-image-id       (when (:fill-image fill) fill-image-id)
+                  :penpot:fill-color-ref-file (d/name (:fill-color-ref-file fill))
+                  :penpot:fill-color-ref-id   (d/name (:fill-color-ref-id fill))
+                  :penpot:fill-opacity        (d/name (:fill-opacity fill))}]))]))))
 
 (defn- export-strokes-data [{:keys [strokes]}]
   (when-let [strokes (seq strokes)]
     (let [render-id (mf/use-ctx muc/render-id)]
       (mf/html
-        [:> "penpot:strokes" #js {}
-         (for [[index stroke] (d/enumerate strokes)]
-           (let [stroke-image-id (dm/str "stroke-image-" render-id "-" index)]
-             [:> "penpot:stroke"
-              #js {:penpot:stroke-color          (cond
-                                                   (some? (:stroke-color-gradient stroke))
-                                                   (str/format "url(#%s)" (str "stroke-color-gradient-" render-id "-" index))
+       [:> "penpot:strokes" #js {}
+        (for [[index stroke] (d/enumerate strokes)]
+          (let [stroke-image-id (dm/str "stroke-image-" render-id "-" index)]
+            [:> "penpot:stroke"
+             #js {:penpot:stroke-color          (cond
+                                                  (some? (:stroke-color-gradient stroke))
+                                                  (str/format "url(#%s)" (str "stroke-color-gradient-" render-id "-" index))
 
-                                                   :else
-                                                   (d/name (:stroke-color stroke)))
-                   :key                          (swap! internal-counter inc)
-                   :penpot:stroke-image-id       (when (:stroke-image stroke) stroke-image-id)
-                   :penpot:stroke-color-ref-file (d/name (:stroke-color-ref-file stroke))
-                   :penpot:stroke-color-ref-id   (d/name (:stroke-color-ref-id stroke))
-                   :penpot:stroke-opacity        (d/name (:stroke-opacity stroke))
-                   :penpot:stroke-style          (d/name (:stroke-style stroke))
-                   :penpot:stroke-width          (d/name (:stroke-width stroke))
-                   :penpot:stroke-alignment      (d/name (:stroke-alignment stroke))
-                   :penpot:stroke-cap-start      (d/name (:stroke-cap-start stroke))
-                   :penpot:stroke-cap-end        (d/name (:stroke-cap-end stroke))}]))]))))
+                                                  :else
+                                                  (d/name (:stroke-color stroke)))
+                  :key                          (swap! internal-counter inc)
+                  :penpot:stroke-image-id       (when (:stroke-image stroke) stroke-image-id)
+                  :penpot:stroke-color-ref-file (d/name (:stroke-color-ref-file stroke))
+                  :penpot:stroke-color-ref-id   (d/name (:stroke-color-ref-id stroke))
+                  :penpot:stroke-opacity        (d/name (:stroke-opacity stroke))
+                  :penpot:stroke-style          (d/name (:stroke-style stroke))
+                  :penpot:stroke-width          (d/name (:stroke-width stroke))
+                  :penpot:stroke-alignment      (d/name (:stroke-alignment stroke))
+                  :penpot:stroke-cap-start      (d/name (:stroke-cap-start stroke))
+                  :penpot:stroke-cap-end        (d/name (:stroke-cap-end stroke))}]))]))))
 
 (defn- export-interactions-data [{:keys [interactions]}]
   (when-let [interactions (seq interactions)]

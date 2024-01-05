@@ -42,8 +42,8 @@
                          (refs/children-objects shape-id))
             childs     (mf/deref childs-ref)]
 
-         [:& shape-container {:shape shape :ref ref :disable-shadows? (cfh/is-direct-child-of-root? shape)}
-          [:& frame-shape {:shape shape :childs childs}]]))))
+        [:& shape-container {:shape shape :ref ref :disable-shadows? (cfh/is-direct-child-of-root? shape)}
+         [:& frame-shape {:shape shape :childs childs}]]))))
 
 (defn check-props
   [new-props old-props]

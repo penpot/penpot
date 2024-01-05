@@ -339,8 +339,7 @@
 
       (and (d/not-empty? color-attrs) (nil? (:fills node)))
       (-> (dissoc :fill-color :fill-opacity :fill-color-ref-id :fill-color-ref-file :fill-color-gradient)
-          (assoc :fills [color-attrs])))
-    ))
+          (assoc :fills [color-attrs])))))
 
 (defn migrate-content
   [content]

@@ -275,13 +275,13 @@
         (mf/use-fn
          (mf/deps permissions)
          (fn [event]
-          (let [section (-> (dom/get-current-target event)
-                            (dom/get-data "value")
-                            (keyword))]
+           (let [section (-> (dom/get-current-target event)
+                             (dom/get-data "value")
+                             (keyword))]
 
-            (if (or (= section :interactions) (:is-logged permissions))
-              (st/emit! (dv/go-to-section section))
-              (open-login-dialog)))))]
+             (if (or (= section :interactions) (:is-logged permissions))
+               (st/emit! (dv/go-to-section section))
+               (open-login-dialog)))))]
 
     [:header {:class (stl/css :viewer-header)}
      [:div {:class (stl/css :nav-zone)}

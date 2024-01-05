@@ -43,9 +43,9 @@
   ([width height min-width max-width min-height max-height]
    (let [clamped-width  (mth/clamp width min-width max-width)
          clamped-height (mth/clamp height min-height max-height)]
-      (if (> width height)
-        [clamped-width (get-height-from-width width height clamped-width)]
-        [(get-width-from-height width height clamped-height) clamped-height]))))
+     (if (> width height)
+       [clamped-width (get-height-from-width width height clamped-width)]
+       [(get-width-from-height width height clamped-height) clamped-height]))))
 
 (defn get-relative-size
   "Returns a recommended size given a width and height."

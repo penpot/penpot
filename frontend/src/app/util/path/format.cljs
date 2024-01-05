@@ -30,8 +30,7 @@
         (.toFixed a path-precision)
         (.toFixed b path-precision)
         (.toFixed c path-precision)
-        (.toFixed d path-precision)
-        ))
+        (.toFixed d path-precision)))
   ([a b c d e]
    (js* "\"\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}"
         (.toFixed a path-precision)
@@ -46,8 +45,7 @@
         (.toFixed c path-precision)
         (.toFixed d path-precision)
         (.toFixed e path-precision)
-        (.toFixed f path-precision)
-        ))
+        (.toFixed f path-precision)))
   ([a b c d e f g]
    (js* "\"\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}+\",\"+~{}"
         (.toFixed a path-precision)

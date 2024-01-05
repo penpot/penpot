@@ -145,7 +145,7 @@
                                      cfsh/prepare-create-artboard-from-selection)]
 
     (swap! idmap assoc instance-label (:id group)
-                       component-label component-id)
+           component-label component-id)
     (update state :workspace-data
             cp/process-changes (:redo-changes changes))))
 

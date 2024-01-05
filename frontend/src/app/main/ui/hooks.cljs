@@ -385,11 +385,11 @@
              mnt? (volatile! true)
              sub  (->> (wapi/observe-resize node)
                        (rx/subs! (fn [entries]
-                                  (let [row       (first entries)
-                                        row-rect  (.-contentRect ^js row)
-                                        row-width (.-width ^js row-rect)]
-                                    (when @mnt?
-                                      (reset! width* row-width))))))]
+                                   (let [row       (first entries)
+                                         row-rect  (.-contentRect ^js row)
+                                         row-width (.-width ^js row-rect)]
+                                     (when @mnt?
+                                       (reset! width* row-width))))))]
          (fn []
            (vreset! mnt? false)
            (rx/dispose! sub))))

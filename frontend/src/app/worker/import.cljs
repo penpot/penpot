@@ -319,9 +319,9 @@
 (defn resolve-media
   [context file-id node]
   (if (or (and (not (cip/close? node))
-            (cip/has-image? node))
-        (cip/has-stroke-images? node)
-        (cip/has-fill-images? node))
+               (cip/has-image? node))
+          (cip/has-stroke-images? node)
+          (cip/has-fill-images? node))
     (let [name               (cip/get-image-name node)
           has-image          (cip/has-image? node)
           image-data         (cip/get-image-data node)
@@ -332,34 +332,34 @@
                                   (map #(assoc % :type :stroke)))
 
           images-data        (concat
-                               fill-images-data
-                               stroke-images-data
-                               (when has-image
-                                 [{:href image-data}]))]
+                              fill-images-data
+                              stroke-images-data
+                              (when has-image
+                                [{:href image-data}]))]
       (->> (rx/from images-data)
            (rx/mapcat (fn [image-data]
                         (->> (upload-media-files context file-id name (:href image-data))
                              (rx/catch #(do (.error js/console "Error uploading media: " name)
-                                          (rx/of node)))
+                                            (rx/of node)))
                              (rx/map #(vector (:id image-data) %)))))
            (rx/reduce (fn [acc [id data]] (assoc acc id data)) {})
            (rx/map
-             (fn [images]
-               (let [media (get images nil)]
-                 (-> node
-                     (assoc :images images)
-                     (cond-> (some? media)
-                       (->
-                        (assoc-in [:attrs :penpot:media-id]     (:id media))
-                        (assoc-in [:attrs :penpot:media-width]  (:width media))
-                        (assoc-in [:attrs :penpot:media-height] (:height media))
-                        (assoc-in [:attrs :penpot:media-mtype]  (:mtype media))
+            (fn [images]
+              (let [media (get images nil)]
+                (-> node
+                    (assoc :images images)
+                    (cond-> (some? media)
+                      (->
+                       (assoc-in [:attrs :penpot:media-id]     (:id media))
+                       (assoc-in [:attrs :penpot:media-width]  (:width media))
+                       (assoc-in [:attrs :penpot:media-height] (:height media))
+                       (assoc-in [:attrs :penpot:media-mtype]  (:mtype media))
 
-                        (assoc-in [:attrs :penpot:fill-color]           (:fill image-fill))
-                        (assoc-in [:attrs :penpot:fill-color-ref-file]  (:fill-color-ref-file image-fill))
-                        (assoc-in [:attrs :penpot:fill-color-ref-id]    (:fill-color-ref-id image-fill))
-                        (assoc-in [:attrs :penpot:fill-opacity]         (:fill-opacity image-fill))
-                        (assoc-in [:attrs :penpot:fill-color-gradient]  (:fill-color-gradient image-fill))))))))))
+                       (assoc-in [:attrs :penpot:fill-color]           (:fill image-fill))
+                       (assoc-in [:attrs :penpot:fill-color-ref-file]  (:fill-color-ref-file image-fill))
+                       (assoc-in [:attrs :penpot:fill-color-ref-id]    (:fill-color-ref-id image-fill))
+                       (assoc-in [:attrs :penpot:fill-opacity]         (:fill-opacity image-fill))
+                       (assoc-in [:attrs :penpot:fill-color-gradient]  (:fill-color-gradient image-fill))))))))))
 
     ;; If the node is not an image just return the node
     (->> (rx/of node)
@@ -367,10 +367,10 @@
 
 (defn media-node? [node]
   (or (and (cip/shape? node)
-        (cip/has-image? node)
-        (not (cip/close? node)))
-    (cip/has-stroke-images? node)
-    (cip/has-fill-images? node)))
+           (cip/has-image? node)
+           (not (cip/close? node)))
+      (cip/has-stroke-images? node)
+      (cip/has-fill-images? node)))
 
 (defn import-page
   [context file [page-id page-name content]]
@@ -549,7 +549,7 @@
                      (rx/tap #(progress! context :upload-media (:name %)))
                      (rx/merge-map #(rp/cmd! :upload-file-media-object %))
                      (rx/map (constantly media))
-                     (rx/catch #(do (.error js/console (str "Error uploading media: " (:name media)) )
+                     (rx/catch #(do (.error js/console (str "Error uploading media: " (:name media)))
                                     (rx/empty)))))))
            (rx/reduce fb/add-library-media file)))
     (rx/of file)))
@@ -607,8 +607,8 @@
      (->> (rx/from files)
           (rx/map #(merge context %))
           (rx/merge-map (fn [context]
-                         (->> (create-file context features)
-                              (rx/map #(vector % (first (get data (:file-id context)))))))))
+                          (->> (create-file context features)
+                               (rx/map #(vector % (first (get data (:file-id context)))))))))
 
      (->> (rx/from files)
           (rx/map #(merge context %))

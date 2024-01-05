@@ -96,18 +96,18 @@
       (or (and (neg? ss) (pos? se))
           (and (pos? ss) (neg? ee))
           (and (neg? ss) (> ss se)))
-      (conj [ from-s (+ from-s ss) ])
+      (conj [from-s (+ from-s ss)])
 
       (and (neg? se) (<= ss se))
-      (conj [ from-s (+ from-s se) ])
+      (conj [from-s (+ from-s se)])
 
       (and (pos? es) (<= es ee))
-      (conj [ from-e (+ from-e es) ])
+      (conj [from-e (+ from-e es)])
 
       (or (and (pos? ee) (neg? es))
           (and (neg? ee) (pos? ss))
           (and (pos? ee) (< ee es)))
-      (conj [ from-e (+ from-e ee) ]))))
+      (conj [from-e (+ from-e ee)]))))
 
 ;; ------------------------------------------------
 ;; COMPONENTS
@@ -383,9 +383,9 @@
         pill-width                         (/ flex-display-pill-width zoom)
         pill-height                        (/ flex-display-pill-height zoom)
         hover?                             #(or hover-all?
-                                              (and (or (= % :p1) (= % :p3)) hover-v?)
-                                              (and (or (= % :p2) (= % :p4)) hover-h?)
-                                              (= @hover %))
+                                                (and (or (= % :p1) (= % :p3)) hover-v?)
+                                                (and (or (= % :p2) (= % :p4)) hover-h?)
+                                                (= @hover %))
         negate                             {:p1 (if (:flip-y frame) true false)
                                             :p2 (if (:flip-x frame) true false)
                                             :p3 (if (:flip-y frame) true false)
@@ -459,7 +459,7 @@
                               :value @hover-value}])]))
 
 (mf/defc margin-display [{:keys [shape-id zoom hover-all? hover-v? hover-h? margin-num margin on-pointer-enter on-pointer-leave
-                                  rect-data hover? selected? mouse-pos hover-value]}]
+                                 rect-data hover? selected? mouse-pos hover-value]}]
   (let [resizing?            (mf/use-var false)
         start                (mf/use-var nil)
         original-value       (mf/use-var 0)
@@ -582,7 +582,7 @@
                                         :resize-negate? (:flip-x frame)}}]
 
     [:g.margins {:pointer-events "visible"}
-    (for [[margin-num rect-data] margin-display-data]
+     (for [[margin-num rect-data] margin-display-data]
        [:& margin-display
         {:key (:key rect-data)
          :shape-id shape-id
@@ -611,7 +611,7 @@
                               :value @hover-value}])]))
 
 (mf/defc gap-display [{:keys [frame-id zoom gap-type gap on-pointer-enter on-pointer-leave
-                                  rect-data hover? selected? mouse-pos hover-value]}]
+                              rect-data hover? selected? mouse-pos hover-value]}]
   (let [resizing             (mf/use-var nil)
         start                (mf/use-var nil)
         original-value       (mf/use-var 0)
@@ -654,19 +654,19 @@
                  (reset! hover-value val)
                  (st/emit! (dwm/set-modifiers modifiers)))))))]
 
-     [:rect.gap-rect {:x (:x rect-data)
-                      :y (:y rect-data)
-                      :width (:width rect-data)
-                      :height (:height rect-data)
-                      :on-pointer-enter on-pointer-enter
-                      :on-pointer-leave on-pointer-leave
-                      :on-pointer-down on-pointer-down
-                      :on-lost-pointer-capture on-lost-pointer-capture
-                      :on-pointer-move on-pointer-move
-                      :class (when (or hover? selected?)
-                               (if (= (:resize-axis rect-data) :x) (cur/get-dynamic "resize-ew" 0) (cur/get-dynamic "resize-ew" 90)))
-                      :style {:fill (if (or hover? selected?) distance-color "none")
-                              :opacity (if selected? 0.5 0.25)}}]))
+    [:rect.gap-rect {:x (:x rect-data)
+                     :y (:y rect-data)
+                     :width (:width rect-data)
+                     :height (:height rect-data)
+                     :on-pointer-enter on-pointer-enter
+                     :on-pointer-leave on-pointer-leave
+                     :on-pointer-down on-pointer-down
+                     :on-lost-pointer-capture on-lost-pointer-capture
+                     :on-pointer-move on-pointer-move
+                     :class (when (or hover? selected?)
+                              (if (= (:resize-axis rect-data) :x) (cur/get-dynamic "resize-ew" 0) (cur/get-dynamic "resize-ew" 90)))
+                     :style {:fill (if (or hover? selected?) distance-color "none")
+                             :opacity (if selected? 0.5 0.25)}}]))
 
 (mf/defc gap-rects [{:keys [frame zoom]}]
   (let [frame-id                   (:id frame)

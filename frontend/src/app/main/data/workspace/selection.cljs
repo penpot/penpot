@@ -368,7 +368,7 @@
          (-> (pcb/empty-changes it)
              (pcb/with-page page)
              (pcb/with-objects all-objects))]
-  (prepare-duplicate-changes all-objects page ids delta it libraries library-data file-id init-changes)))
+     (prepare-duplicate-changes all-objects page ids delta it libraries library-data file-id init-changes)))
 
   ([all-objects page ids delta it libraries library-data file-id init-changes]
    (let [shapes         (map (d/getf all-objects) ids)
@@ -495,7 +495,7 @@
                      (not duplicating-component?)
                      (ctk/detach-shape))
 
-           ; We want the first added object to touch it's parent, but not subsequent children
+           ;; We want the first added object to touch it's parent, but not subsequent children
            changes (-> (pcb/add-object changes new-obj {:ignore-touched (and duplicating-component? child?)})
                        (pcb/amend-last-change #(assoc % :old-id (:id obj)))
                        (cond-> (ctl/grid-layout? objects (:parent-id obj))
@@ -506,7 +506,7 @@
                      (and is-component-root? is-component-main?)
                      (regenerate-component new-obj))
 
-           ; This is needed for the recursive call to find the new object as parent
+           ;; This is needed for the recursive call to find the new object as parent
            page' (ctst/add-shape (:id new-obj)
                                  new-obj
                                  {:objects objects}
@@ -545,15 +545,15 @@
     (if-not (empty? frames-with-flow)
       (let [update-flows (fn [flows]
                            (reduce
-                             (fn [flows frame]
-                               (let [name     (cfh/generate-unique-name @unames "Flow 1")
-                                     _        (vswap! unames conj name)
-                                     new-flow {:id (uuid/next)
-                                               :name name
-                                               :starting-frame (get ids-map (:id frame))}]
-                                 (ctp/add-flow flows new-flow)))
-                             flows
-                             frames-with-flow))]
+                            (fn [flows frame]
+                              (let [name     (cfh/generate-unique-name @unames "Flow 1")
+                                    _        (vswap! unames conj name)
+                                    new-flow {:id (uuid/next)
+                                              :name name
+                                              :starting-frame (get ids-map (:id frame))}]
+                                (ctp/add-flow flows new-flow)))
+                            flows
+                            frames-with-flow))]
         (pcb/update-page-option changes :flows update-flows))
       changes)))
 
@@ -611,9 +611,9 @@
         objects-indices (->> index-map (d/mapm fix-indices) (vals) (reduce merge))]
 
     (pcb/amend-changes
-      changes
-      (fn [change]
-        (assoc change :index (get objects-indices (:old-id change)))))))
+     changes
+     (fn [change]
+       (assoc change :index (get objects-indices (:old-id change)))))))
 
 (defn clear-memorize-duplicated
   []
@@ -671,52 +671,52 @@
   ([move-delta?]
    (duplicate-selected move-delta? false))
   ([move-delta? alt-duplication?]
-  (ptk/reify ::duplicate-selected
-    ptk/WatchEvent
-    (watch [it state _]
-      (when (or (not move-delta?) (nil? (get-in state [:workspace-local :transform])))
-        (let [page     (wsh/lookup-page state)
-              objects  (:objects page)
-              selected (->> (wsh/lookup-selected state)
-                            (map #(get objects %))
-                            (remove #(ctk/in-component-copy-not-root? %)) ;; We don't want to change the structure of component copies
-                            (map :id)
-                            set)]
-          (when (seq selected)
-            (let [obj             (get objects (first selected))
-                  delta           (if move-delta?
-                                    (calc-duplicate-delta obj state objects)
-                                    (gpt/point 0 0))
+   (ptk/reify ::duplicate-selected
+     ptk/WatchEvent
+     (watch [it state _]
+       (when (or (not move-delta?) (nil? (get-in state [:workspace-local :transform])))
+         (let [page     (wsh/lookup-page state)
+               objects  (:objects page)
+               selected (->> (wsh/lookup-selected state)
+                             (map #(get objects %))
+                             (remove #(ctk/in-component-copy-not-root? %)) ;; We don't want to change the structure of component copies
+                             (map :id)
+                             set)]
+           (when (seq selected)
+             (let [obj             (get objects (first selected))
+                   delta           (if move-delta?
+                                     (calc-duplicate-delta obj state objects)
+                                     (gpt/point 0 0))
 
-                  file-id         (:current-file-id state)
-                  libraries       (wsh/get-libraries state)
-                  library-data    (wsh/get-file state file-id)
+                   file-id         (:current-file-id state)
+                   libraries       (wsh/get-libraries state)
+                   library-data    (wsh/get-file state file-id)
 
-                  changes         (->> (prepare-duplicate-changes objects page selected delta it libraries library-data file-id)
-                                       (duplicate-changes-update-indices objects selected))
+                   changes         (->> (prepare-duplicate-changes objects page selected delta it libraries library-data file-id)
+                                        (duplicate-changes-update-indices objects selected))
 
-                  tags            (or (:tags changes) #{})
+                   tags            (or (:tags changes) #{})
 
-                  changes         (cond-> changes alt-duplication? (assoc :tags (conj tags :alt-duplication)))
+                   changes         (cond-> changes alt-duplication? (assoc :tags (conj tags :alt-duplication)))
 
-                  id-original     (first selected)
+                   id-original     (first selected)
 
-                  new-selected    (->> changes
-                                       :redo-changes
-                                       (filter #(= (:type %) :add-obj))
-                                       (filter #(selected (:old-id %)))
-                                       (map #(get-in % [:obj :id]))
-                                       (into (d/ordered-set)))
+                   new-selected    (->> changes
+                                        :redo-changes
+                                        (filter #(= (:type %) :add-obj))
+                                        (filter #(selected (:old-id %)))
+                                        (map #(get-in % [:obj :id]))
+                                        (into (d/ordered-set)))
 
-                  id-duplicated   (first new-selected)
+                   id-duplicated   (first new-selected)
 
-                  frames (into #{}
-                               (map #(get-in objects [% :frame-id]))
-                               selected)
-                  undo-id (js/Symbol)]
+                   frames (into #{}
+                                (map #(get-in objects [% :frame-id]))
+                                selected)
+                   undo-id (js/Symbol)]
 
-              ;; Warning: This order is important for the focus mode.
-              (rx/of
+               ;; Warning: This order is important for the focus mode.
+               (rx/of
                 (dwu/start-undo-transaction undo-id)
                 (dch/commit-changes changes)
                 (select-shapes new-selected)

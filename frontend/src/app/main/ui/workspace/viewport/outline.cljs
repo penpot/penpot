@@ -90,8 +90,7 @@
                   :height h
                   :rx (obj/get border-attrs "rx")
                   :ry (obj/get border-attrs "ry")
-                  :d  (obj/get border-attrs "d")})))
-        ]
+                  :d  (obj/get border-attrs "d")})))]
 
     [:> outline-type props]))
 

@@ -24,18 +24,18 @@
 
 (defn open-specialized-panel
   [type]
-   (ptk/reify ::open-specialized-panel
-     ptk/UpdateEvent
-     (update [_ state]
-       (let [page-id         (:current-page-id state)
-             objects         (wsh/lookup-page-objects state page-id)
-             selected-ids    (wsh/lookup-selected state)
-             selected-shapes (map (d/getf objects) selected-ids)]
-         (assoc state :specialized-panel {:type type :shapes selected-shapes})))
-     ptk/WatchEvent
-     (watch [_ _ stream]
-       (->> (rx/merge
-             (rx/filter interrupt? stream)
-             (rx/filter (ptk/type? ::dwc/undo) stream))
-            (rx/take 1)
-            (rx/map clear-specialized-panel)))))
+  (ptk/reify ::open-specialized-panel
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [page-id         (:current-page-id state)
+            objects         (wsh/lookup-page-objects state page-id)
+            selected-ids    (wsh/lookup-selected state)
+            selected-shapes (map (d/getf objects) selected-ids)]
+        (assoc state :specialized-panel {:type type :shapes selected-shapes})))
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (->> (rx/merge
+            (rx/filter interrupt? stream)
+            (rx/filter (ptk/type? ::dwc/undo) stream))
+           (rx/take 1)
+           (rx/map clear-specialized-panel)))))

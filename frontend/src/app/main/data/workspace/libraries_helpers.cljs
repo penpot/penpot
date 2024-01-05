@@ -976,11 +976,11 @@
 
         [_ new-shapes _]
         (ctst/clone-shape component-shape
-                           (:id parent-shape)
-                           (get component-page :objects)
-                           :update-new-shape update-new-shape
-                           :update-original-shape update-original-shape
-                           :dest-objects (get container :objects))
+                          (:id parent-shape)
+                          (get component-page :objects)
+                          :update-new-shape update-new-shape
+                          :update-original-shape update-original-shape
+                          :dest-objects (get container :objects))
 
         add-obj-change (fn [changes shape']
                          (update changes :redo-changes conj

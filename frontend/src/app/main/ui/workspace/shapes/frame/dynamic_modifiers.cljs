@@ -311,6 +311,4 @@
 
       (reset! prev-modifiers modifiers)
       (reset! prev-transforms transforms)
-      (reset! prev-shapes shapes))
-
-    ))
+      (reset! prev-shapes shapes))))

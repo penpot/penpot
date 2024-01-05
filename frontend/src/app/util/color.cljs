@@ -56,7 +56,7 @@
       (not= color :multiple)
       (case format
         :rgba (let [[r g b] (cc/hex->rgb color)]
-               (str/fmt "rgba(%s, %s, %s, %s)" r g b opacity))
+                (str/fmt "rgba(%s, %s, %s, %s)" r g b opacity))
 
         :hsla (let [[h s l] (cc/hex->hsl color)]
                 (str/fmt "hsla(%s, %s, %s, %s)" h (* 100 s) (* 100 l) opacity))

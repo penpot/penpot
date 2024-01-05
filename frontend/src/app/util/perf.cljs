@@ -8,11 +8,11 @@
   "Performance profiling for react components."
   (:require-macros [app.util.perf])
   (:require
-   [app.common.math :as mth]
-   [rumext.v2 :as mf]
-   [goog.functions :as f]
    ["react" :as react]
-   ["tdigest" :as td]))
+   ["tdigest" :as td]
+   [app.common.math :as mth]
+   [goog.functions :as f]
+   [rumext.v2 :as mf]))
 
 ;; For use it, just wrap the component you want to profile with
 ;; `perf/profiler` component and pass a label for debug purpose.

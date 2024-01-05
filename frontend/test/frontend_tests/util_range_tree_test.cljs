@@ -18,14 +18,14 @@
 
 (t/deftest test-insert-and-retrieve-data
   (t/testing "Retrieve on empty tree"
-      (let [tree (rt/make-tree)]
-        (t/is (= (rt/get tree 100) nil))))
+    (let [tree (rt/make-tree)]
+      (t/is (= (rt/get tree 100) nil))))
 
   (t/testing "First insert/retrieval"
-      (let [tree (-> (rt/make-tree)
-                     (rt/insert 100 :a))]
-        (t/is (= (rt/get tree 100) [:a]))
-        (t/is (= (rt/get tree 200) nil))))
+    (let [tree (-> (rt/make-tree)
+                   (rt/insert 100 :a))]
+      (t/is (= (rt/get tree 100) [:a]))
+      (t/is (= (rt/get tree 200) nil))))
 
   (t/testing "Insert best case scenario"
     (let [tree (-> (rt/make-tree)

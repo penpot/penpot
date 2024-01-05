@@ -89,13 +89,13 @@
 
         on-email-change
         (mf/use-callback
-          (fn [_ _]
-            (let [different-emails-error? (= (dma/get-in @form [:errors :email-2 :code]) :different-emails)
-                  email-1                 (dma/get-in @form [:clean-data :email-1])
-                  email-2                 (dma/get-in @form [:clean-data :email-2])]
-              (println "different-emails-error?" (and different-emails-error? (= email-1 email-2)))
-              (when (and different-emails-error? (= email-1 email-2))
-                (swap! form d/dissoc-in [:errors :email-2])))))]
+         (fn [_ _]
+           (let [different-emails-error? (= (dma/get-in @form [:errors :email-2 :code]) :different-emails)
+                 email-1                 (dma/get-in @form [:clean-data :email-1])
+                 email-2                 (dma/get-in @form [:clean-data :email-2])]
+             (println "different-emails-error?" (and different-emails-error? (= email-1 email-2)))
+             (when (and different-emails-error? (= email-1 email-2))
+               (swap! form d/dissoc-in [:errors :email-2])))))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-container)}
@@ -134,8 +134,7 @@
         [:div {:class (stl/css :action-buttons)
                :data-test "change-email-submit"}
          [:> fm/submit-button*
-          {:label (tr "modals.change-email.submit")}]]]]]]
-    ))
+          {:label (tr "modals.change-email.submit")}]]]]]]))
 
 
 

@@ -76,6 +76,6 @@
     (watch [it state _]
       (let [page (wsh/lookup-page state)]
         (rx/of (dch/commit-changes
-                 (-> (pcb/empty-changes it)
-                     (pcb/with-page page)
-                     (pcb/set-page-option [:saved-grids type] params))))))))
+                (-> (pcb/empty-changes it)
+                    (pcb/with-page page)
+                    (pcb/set-page-option [:saved-grids type] params))))))))

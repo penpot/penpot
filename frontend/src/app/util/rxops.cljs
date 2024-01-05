@@ -31,8 +31,8 @@
                 args  (js-arguments)]
 
             (this-as this
-              (set! (.-context state) this)
-              (set! (.-args state) args))
+                     (set! (.-context state) this)
+                     (set! (.-args state) args))
 
             (let [timeout-id (.-timeoutId state)]
               (if (>= (- ctime ltime) delay)

@@ -308,7 +308,7 @@
     ;; edited
     (mf/use-effect
      (fn []
-       (let [text-nodes (->> text-shapes (vals)(mapcat #(txt/node-seq txt/is-text-node? (:content %))))
+       (let [text-nodes (->> text-shapes (vals) (mapcat #(txt/node-seq txt/is-text-node? (:content %))))
              fonts (into #{} (keep :font-id) text-nodes)]
          (run! fonts/ensure-loaded! fonts))))
 

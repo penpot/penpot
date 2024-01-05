@@ -262,7 +262,7 @@
                 :style {:fill rules-background
                         :fill-opacity over-number-opacity}}]
 
-        [:rect {:x (+ (- center-x (/ (:height selection-rect) 2) (* rule-area-half-size zoom-inverse) ) (:height selection-rect))
+        [:rect {:x (+ (- center-x (/ (:height selection-rect) 2) (* rule-area-half-size zoom-inverse)) (:height selection-rect))
                 :y (- center-y (* rule-area-half-size zoom-inverse))
                 :width (* over-number-size zoom-inverse)
                 :height (* rule-area-size zoom-inverse)
@@ -278,7 +278,7 @@
                         :fill selection-area-color}}
          (fmt/format-number (- (:y2 selection-rect) offset-y))]
 
-        [:text {:x (+ center-x (/ (:height selection-rect) 2) )
+        [:text {:x (+ center-x (/ (:height selection-rect) 2))
                 :y center-y
                 :text-anchor "start"
                 :dominant-baseline "middle"

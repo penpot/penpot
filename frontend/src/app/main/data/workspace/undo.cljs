@@ -64,13 +64,13 @@
           items (conj-undo-entry items entry)]
       (-> state
           (update :workspace-undo assoc :items items
-                                        :index (min (inc index)
-                                                    (dec MAX-UNDO-SIZE)))))
+                  :index (min (inc index)
+                              (dec MAX-UNDO-SIZE)))))
     state))
 
 (defn- stack-undo-entry
   [state {:keys [undo-changes redo-changes] :as entry}]
-    (let [index (get-in state [:workspace-undo :index] -1)]
+  (let [index (get-in state [:workspace-undo :index] -1)]
     (if (>= index 0)
       (update-in state [:workspace-undo :items index]
                  (fn [item]
@@ -86,7 +86,7 @@
       (update-in [:workspace-undo :transaction :redo-changes] #(into % redo-changes))
       (cond->
        (nil? (get-in state [:workspace-undo :transaction :undo-group]))
-       (assoc-in [:workspace-undo :transaction :undo-group] undo-group))
+        (assoc-in [:workspace-undo :transaction :undo-group] undo-group))
       (assoc-in [:workspace-undo :transaction :tags] tags)))
 
 (defn append-undo
@@ -101,18 +101,18 @@
   (ptk/reify ::append-undo
     ptk/UpdateEvent
     (update [_ state]
-     (cond
-       (and (get-in state [:workspace-undo :transaction])
-            (or (not stack?)
-                (d/not-empty? (get-in state [:workspace-undo :transaction :undo-changes]))
-                (d/not-empty? (get-in state [:workspace-undo :transaction :redo-changes]))))
-       (accumulate-undo-entry state entry)
+      (cond
+        (and (get-in state [:workspace-undo :transaction])
+             (or (not stack?)
+                 (d/not-empty? (get-in state [:workspace-undo :transaction :undo-changes]))
+                 (d/not-empty? (get-in state [:workspace-undo :transaction :redo-changes]))))
+        (accumulate-undo-entry state entry)
 
-       stack?
-       (stack-undo-entry state entry)
+        stack?
+        (stack-undo-entry state entry)
 
-       :else
-       (add-undo-entry state entry)))))
+        :else
+        (add-undo-entry state entry)))))
 
 (def empty-tx
   {:undo-changes [] :redo-changes []})

@@ -35,7 +35,7 @@
         height     (dm/get-prop selrect :height)
 
         has-image? (or (some? metadata)
-                     (some? image))
+                       (some? image))
 
         uri        (cond
                      (some? metadata)
@@ -45,10 +45,10 @@
                      (cf/resolve-file-media image))
 
         uris       (into [uri]
-                     (comp
-                       (keep :fill-image)
-                       (map cf/resolve-file-media))
-                     fills)
+                         (comp
+                          (keep :fill-image)
+                          (map cf/resolve-file-media))
+                         fills)
 
         transform   (gsh/transform-str shape)
 
@@ -59,8 +59,8 @@
                          :height height}
 
         pat-props   (if (= :path type)
-                     (obj/set! pat-props "patternTransform" transform)
-                     pat-props)]
+                      (obj/set! pat-props "patternTransform" transform)
+                      pat-props)]
 
     (for [[shape-index shape] (d/enumerate (or (:position-data shape) [shape]))]
       [:* {:key (dm/str shape-index)}

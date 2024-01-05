@@ -67,9 +67,9 @@
          (fn [blobs]
            (->> (df/process-upload blobs (:id team))
                 (rx/subs! (fn [result]
-                           (swap! fonts df/merge-and-group-fonts installed-fonts result))
-                         (fn [error]
-                           (js/console.error "error" error))))))
+                            (swap! fonts df/merge-and-group-fonts installed-fonts result))
+                          (fn [error]
+                            (js/console.error "error" error))))))
 
         on-upload
         (mf/use-callback
@@ -79,11 +79,11 @@
            (->> (rp/cmd! :create-font-variant item)
                 (rx/delay-at-least 2000)
                 (rx/subs! (fn [font]
-                           (swap! fonts dissoc (:id item))
-                           (swap! uploading disj (:id item))
-                           (st/emit! (df/add-font font)))
-                         (fn [error]
-                           (js/console.log "error" error))))))
+                            (swap! fonts dissoc (:id item))
+                            (swap! uploading disj (:id item))
+                            (st/emit! (df/add-font font)))
+                          (fn [error]
+                            (js/console.log "error" error))))))
 
         on-upload-all
         (fn [items]
