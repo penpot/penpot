@@ -603,7 +603,7 @@
 (defn last-path
   "Returns the last item of the path."
   [path]
-    (last (split-path path)))
+  (last (split-path path)))
 
 (defn compact-name
   "Append the first item of the path and the name."

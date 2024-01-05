@@ -61,8 +61,8 @@
           dy (dm/get-prop delta :y)]
       (if (d/num? dx dy)
         (mapv #(-> %
-                  (update :x + dx)
-                  (update :y + dy))
+                   (update :x + dx)
+                   (update :y + dy))
               position-data)
         position-data))))
 
@@ -162,8 +162,8 @@
    (-> (gmt/matrix)
        (gmt/translate center)
        (cond->
-           flip-x (gmt/scale (gpt/point -1 1))
-           flip-y (gmt/scale (gpt/point 1 -1)))
+        flip-x (gmt/scale (gpt/point -1 1))
+        flip-y (gmt/scale (gpt/point 1 -1)))
        (gmt/multiply (:transform-inverse shape (gmt/matrix)))
        (gmt/translate (gpt/negate center)))))
 
@@ -207,24 +207,24 @@
             mb7 (/ (- x2 x1) det)
             mb8 (/ (- (* x1 y1) (* x2 y1)) det)]
 
-      (gmt/matrix (+ (* ma0 mb0)
-                     (* ma1 mb3)
-                     (* ma2 mb6))
-                  (+ (* ma3 mb0)
-                     (* ma4 mb3)
-                     (* ma5 mb6))
-                  (+ (* ma0 mb1)
-                     (* ma1 mb4)
-                     (* ma2 mb7))
-                  (+ (* ma3 mb1)
-                     (* ma4 mb4)
-                     (* ma5 mb7))
-                  (+ (* ma0 mb2)
-                     (* ma1 mb5)
-                     (* ma2 mb8))
-                  (+ (* ma3 mb2)
-                     (* ma4 mb5)
-                     (* ma5 mb8)))))))
+        (gmt/matrix (+ (* ma0 mb0)
+                       (* ma1 mb3)
+                       (* ma2 mb6))
+                    (+ (* ma3 mb0)
+                       (* ma4 mb3)
+                       (* ma5 mb6))
+                    (+ (* ma0 mb1)
+                       (* ma1 mb4)
+                       (* ma2 mb7))
+                    (+ (* ma3 mb1)
+                       (* ma4 mb4)
+                       (* ma5 mb7))
+                    (+ (* ma0 mb2)
+                       (* ma1 mb5)
+                       (* ma2 mb8))
+                    (+ (* ma3 mb2)
+                       (* ma4 mb5)
+                       (* ma5 mb8)))))))
 
 (defn calculate-selrect
   [points center]

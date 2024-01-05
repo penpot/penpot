@@ -82,7 +82,7 @@
   (let [[size max-size]
         (case type
           :percent
-          (let [value (/ (* total-value value) 100) ]
+          (let [value (/ (* total-value value) 100)]
             [value value])
 
           :fixed
@@ -190,7 +190,7 @@
         ;; Apply assign-fr to the track-list
         track-list
         (reduce
-         (fn [track-list [idx assignment] ]
+         (fn [track-list [idx assignment]]
            (-> track-list
                (update-in [idx :size] max assignment)))
          track-list

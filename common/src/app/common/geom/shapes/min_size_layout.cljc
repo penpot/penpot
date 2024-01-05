@@ -25,8 +25,8 @@
 
      (and strict? (ctl/fill-width? child) (ctl/flex-layout? child))
      (let [children (cfh/get-immediate-children objects (dm/get-prop child :id) {:remove-hidden true})]
-         (max (ctl/child-min-width child)
-              (gpo/width-points (fb/layout-content-bounds bounds child children objects))))
+       (max (ctl/child-min-width child)
+            (gpo/width-points (fb/layout-content-bounds bounds child children objects))))
 
      (and (ctl/fill-width? child)
           (ctl/grid-layout? child))

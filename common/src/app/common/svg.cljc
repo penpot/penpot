@@ -6,9 +6,9 @@
 
 (ns app.common.svg
   (:require
-   #?(:cljs ["./svg/optimizer.js" :as svgo])
    #?(:clj  [clojure.xml :as xml]
       :cljs [tubax.core :as tubax])
+   #?(:cljs ["./svg/optimizer.js" :as svgo])
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
@@ -115,8 +115,7 @@
     :tspan
     :use
     :view
-    :vkern
-    })
+    :vkern})
 
 ;; https://www.w3.org/TR/SVG11/attindex.html
 (def svg-attr-list
@@ -680,7 +679,7 @@
      ;; Removed this warning because slows a lot rendering with big svgs
      #_(let [filtered-props (->> attrs (remove known-property?) (map first))]
          (when (seq filtered-props)
-           (.warn js/console "Unknown properties: " (str/join ", " filtered-props  ))))
+           (.warn js/console "Unknown properties: " (str/join ", " filtered-props))))
 
      (into {}
            (comp (filter known-property?)
@@ -740,7 +739,7 @@
 
           node-defs (->> rec-result (map first) (reduce merge current-node-defs))]
 
-      [ node-defs node ])))
+      [node-defs node])))
 
 (defn find-attr-references [attrs]
   (->> attrs
@@ -1048,7 +1047,7 @@
                   (conj {:href (or (:href attrs) (:xlink:href attrs))
                          :width (d/parse-integer (:width attrs) 0)
                          :height (d/parse-integer (:height attrs) 0)})))]
-    (reduce-nodes redfn [] svg-data )))
+    (reduce-nodes redfn [] svg-data)))
 
 #?(:clj
    (defn- secure-parser-factory

@@ -30,13 +30,13 @@
 
   (let [parent-id (:id parent)
         parent-bounds @(get bounds parent-id)
-        
+
         {pad-top :p1 pad-right :p2 pad-bottom :p3 pad-left :p4} layout-padding
         pad-top    (or pad-top 0)
         pad-right  (or pad-right 0)
         pad-bottom (or pad-bottom 0)
         pad-left   (or pad-left 0)
-        
+
         layout-points (layout-content-points bounds parent layout-data)]
 
     (if (d/not-empty? layout-points)

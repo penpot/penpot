@@ -83,113 +83,112 @@
     (sm/humanize-explain (::sm/explain data) opts)))
 
 #?(:clj
-(defn format-throwable
-  [^Throwable cause & {:keys [summary? detail? header? data? explain? chain? data-level data-length trace-length]
-                       :or {summary? true
-                            detail? true
-                            header? true
-                            data? true
-                            explain? true
-                            chain? true
-                            data-length 8
-                            data-level 5}}]
+   (defn format-throwable
+     [^Throwable cause & {:keys [summary? detail? header? data? explain? chain? data-level data-length trace-length]
+                          :or {summary? true
+                               detail? true
+                               header? true
+                               data? true
+                               explain? true
+                               chain? true
+                               data-length 8
+                               data-level 5}}]
 
-  (letfn [(print-trace-element [^StackTraceElement e]
-            (let [class (.getClassName e)
-                  method (.getMethodName e)]
-              (let [match (re-matches #"^([A-Za-z0-9_.-]+)\$(\w+)__\d+$" (str class))]
-                (if (and match (= "invoke" method))
-                  (apply printf "%s/%s" (rest match))
-                  (printf "%s.%s" class method))))
-            (printf "(%s:%d)" (or (.getFileName e) "") (.getLineNumber e)))
+     (letfn [(print-trace-element [^StackTraceElement e]
+               (let [class (.getClassName e)
+                     method (.getMethodName e)]
+                 (let [match (re-matches #"^([A-Za-z0-9_.-]+)\$(\w+)__\d+$" (str class))]
+                   (if (and match (= "invoke" method))
+                     (apply printf "%s/%s" (rest match))
+                     (printf "%s.%s" class method))))
+               (printf "(%s:%d)" (or (.getFileName e) "") (.getLineNumber e)))
 
-          (print-explain [explain]
-            (print "    xp: ")
-            (let [[line & lines] (str/lines explain)]
-              (print line)
-              (newline)
-              (doseq [line lines]
-                (println "       " line))))
+             (print-explain [explain]
+               (print "    xp: ")
+               (let [[line & lines] (str/lines explain)]
+                 (print line)
+                 (newline)
+                 (doseq [line lines]
+                   (println "       " line))))
 
-          (print-data [data]
-            (when (seq data)
-              (print "    dt: ")
-              (let [[line & lines] (str/lines (pp/pprint-str data :level data-level :length data-length))]
-                (print line)
-                (newline)
-                (doseq [line lines]
-                  (println "       " line)))))
+             (print-data [data]
+               (when (seq data)
+                 (print "    dt: ")
+                 (let [[line & lines] (str/lines (pp/pprint-str data :level data-level :length data-length))]
+                   (print line)
+                   (newline)
+                   (doseq [line lines]
+                     (println "       " line)))))
 
-          (print-trace-title [^Throwable cause]
-            (print   " →  ")
-            (printf "%s: %s" (.getName (class cause))
-                    (-> (ex-message cause)
-                        (str/lines)
-                        (first)
-                        (str/prune 130)))
+             (print-trace-title [^Throwable cause]
+               (print   " →  ")
+               (printf "%s: %s" (.getName (class cause))
+                       (-> (ex-message cause)
+                           (str/lines)
+                           (first)
+                           (str/prune 130)))
 
-            (when-let [^StackTraceElement e (first (.getStackTrace ^Throwable cause))]
-              (printf " (%s:%d)" (or (.getFileName e) "") (.getLineNumber e)))
+               (when-let [^StackTraceElement e (first (.getStackTrace ^Throwable cause))]
+                 (printf " (%s:%d)" (or (.getFileName e) "") (.getLineNumber e)))
 
-            (newline))
+               (newline))
 
-          (print-summary [^Throwable cause]
-            (let [causes (loop [cause (ex-cause cause)
-                                result []]
-                           (if cause
-                             (recur (ex-cause cause)
-                                    (conj result cause))
-                             result))]
-              (when header?
-                (println "SUMMARY:"))
-              (print-trace-title cause)
-              (doseq [cause causes]
-                (print-trace-title cause))))
+             (print-summary [^Throwable cause]
+               (let [causes (loop [cause (ex-cause cause)
+                                   result []]
+                              (if cause
+                                (recur (ex-cause cause)
+                                       (conj result cause))
+                                result))]
+                 (when header?
+                   (println "SUMMARY:"))
+                 (print-trace-title cause)
+                 (doseq [cause causes]
+                   (print-trace-title cause))))
 
-          (print-trace [^Throwable cause]
-            (print-trace-title cause)
-            (let [st (.getStackTrace cause)]
-              (print "    at: ")
-              (if-let [e (first st)]
-                (print-trace-element e)
-                (print "[empty stack trace]"))
-              (newline)
+             (print-trace [^Throwable cause]
+               (print-trace-title cause)
+               (let [st (.getStackTrace cause)]
+                 (print "    at: ")
+                 (if-let [e (first st)]
+                   (print-trace-element e)
+                   (print "[empty stack trace]"))
+                 (newline)
 
-              (doseq [e (if (nil? trace-length) (rest st) (take (dec trace-length) (rest st)))]
-                (print "        ")
-                (print-trace-element e)
-                (newline))))
+                 (doseq [e (if (nil? trace-length) (rest st) (take (dec trace-length) (rest st)))]
+                   (print "        ")
+                   (print-trace-element e)
+                   (newline))))
 
-          (print-detail [^Throwable cause]
-            (print-trace cause)
-            (when-let [data (ex-data cause)]
-              (when data?
-                (print-data (dissoc data ::s/problems ::s/spec ::s/value ::sm/explain)))
-              (when explain?
-                (if-let [explain (explain data {:length data-length :level data-level})]
-                  (print-explain explain)))))
+             (print-detail [^Throwable cause]
+               (print-trace cause)
+               (when-let [data (ex-data cause)]
+                 (when data?
+                   (print-data (dissoc data ::s/problems ::s/spec ::s/value ::sm/explain)))
+                 (when explain?
+                   (if-let [explain (explain data {:length data-length :level data-level})]
+                     (print-explain explain)))))
 
-          (print-all [^Throwable cause]
-            (when summary?
-              (print-summary cause))
+             (print-all [^Throwable cause]
+               (when summary?
+                 (print-summary cause))
 
-            (when detail?
-              (when header?
-                (println "DETAIL:"))
+               (when detail?
+                 (when header?
+                   (println "DETAIL:"))
 
-              (print-detail cause)
-              (when chain?
-                (loop [cause cause]
-                  (when-let [cause (ex-cause cause)]
-                    (newline)
-                    (print-detail cause)
-                    (recur cause))))))
-          ]
+                 (print-detail cause)
+                 (when chain?
+                   (loop [cause cause]
+                     (when-let [cause (ex-cause cause)]
+                       (newline)
+                       (print-detail cause)
+                       (recur cause))))))]
 
-    (with-out-str
-      (print-all cause)))))
+       (with-out-str
+         (print-all cause)))))
 
 #?(:clj
-(defn print-throwable
-  [cause & {:as opts}]
-  (println (format-throwable cause opts))))
+   (defn print-throwable
+     [cause & {:as opts}]
+     (println (format-throwable cause opts))))

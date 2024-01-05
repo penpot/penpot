@@ -159,8 +159,8 @@
         point->handlers (content->handlers content)
 
         handlers (->> point
-                      (point->handlers )
-                      (filter (fn [[ci cp]] (and (not= index ci) (not= prefix cp)) )))]
+                      (point->handlers)
+                      (filter (fn [[ci cp]] (and (not= index ci) (not= prefix cp)))))]
 
     (cond
       (= (count handlers) 1)

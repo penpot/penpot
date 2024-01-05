@@ -6,10 +6,10 @@
 
 (ns common-tests.colors-test
   (:require
-   [app.common.data :as d]
+   #?(:cljs [goog.color :as gcolors])
    [app.common.colors :as colors]
-   [clojure.test :as t]
-   #?(:cljs [goog.color :as gcolors])))
+   [app.common.data :as d]
+   [clojure.test :as t]))
 
 (t/deftest valid-hex-color
   (t/is (false? (colors/valid-hex-color? nil)))
@@ -18,16 +18,14 @@
   (t/is (false? (colors/valid-hex-color? "#qqqqqq")))
   (t/is (true? (colors/valid-hex-color? "#aaa")))
   (t/is (false? (colors/valid-hex-color? "#aaaa")))
-  (t/is (true? (colors/valid-hex-color? "#fabada")))
-  )
+  (t/is (true? (colors/valid-hex-color? "#fabada"))))
 
 (t/deftest valid-rgb-color
   (t/is (false? (colors/valid-rgb-color? nil)))
   (t/is (false? (colors/valid-rgb-color? "")))
   (t/is (false? (colors/valid-rgb-color? "()")))
   (t/is (true? (colors/valid-rgb-color? "(255, 30, 30)")))
-  (t/is (true? (colors/valid-rgb-color? "rgb(255, 30, 30)")))
-  )
+  (t/is (true? (colors/valid-rgb-color? "rgb(255, 30, 30)"))))
 
 (t/deftest rgb-to-str
   (t/is (= "rgb(1,2,3)" (colors/rgb->str [1 2 3])))
@@ -37,16 +35,14 @@
   ;; (prn (colors/rgb->hsv [1 2 3]))
   ;; (prn (gcolors/rgbToHsv 1 2 3))
   (t/is (= [210.0 0.6666666666666666 3.0] (colors/rgb->hsv [1.0 2.0 3.0])))
-  #?(:cljs (t/is (= (colors/rgb->hsv [1 2 3]) (vec (gcolors/rgbToHsv 1 2 3)))))
-  )
+  #?(:cljs (t/is (= (colors/rgb->hsv [1 2 3]) (vec (gcolors/rgbToHsv 1 2 3))))))
 
 (t/deftest hsv-to-rgb
   (t/is (= [1 2 3]
            (colors/hsv->rgb [210 0.6666666666666666 3])))
   #?(:cljs
      (t/is (= (colors/hsv->rgb [210 0.6666666666666666 3])
-              (vec (gcolors/hsvToRgb 210 0.6666666666666666 3)))))
-  )
+              (vec (gcolors/hsvToRgb 210 0.6666666666666666 3))))))
 
 (t/deftest rgb-to-hex
   (t/is (= "#010203" (colors/rgb->hex [1 2 3]))))
@@ -68,9 +64,7 @@
   (t/is (= [1 2 3] (colors/hsl->rgb [210.0 0.5 0.00784313725490196])))
   (t/is (= [210.0 0.5 0.00784313725490196] (colors/rgb->hsl [1 2 3])))
   #?(:cljs (t/is (= (colors/hsl->rgb [210 0.5 0.00784313725490196])
-                    (vec (gcolors/hslToRgb 210 0.5 0.00784313725490196)))))
-
-  )
+                    (vec (gcolors/hslToRgb 210 0.5 0.00784313725490196))))))
 
 (t/deftest expand-hex
   (t/is (= "aaaaaa" (colors/expand-hex "a")))
@@ -93,8 +87,5 @@
   (t/is (true? (colors/color-string? "magenta")))
   (t/is (false? (colors/color-string? nil)))
   (t/is (false? (colors/color-string? "")))
-  (t/is (false? (colors/color-string? "kkkkkk")))
-
-
-  )
+  (t/is (false? (colors/color-string? "kkkkkk"))))
 

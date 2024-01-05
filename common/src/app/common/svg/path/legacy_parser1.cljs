@@ -107,8 +107,7 @@
                                         [:c2x :number]
                                         [:c2y :number]
                                         [:x   :number]
-                                        [:y   :number]])
-        ]
+                                        [:y   :number]])]
     (for [params param-list]
       {:command :curve-to
        :relative relative
@@ -228,7 +227,7 @@
                       (d/update-in-when [:params :y] + (:y prev-pos))
 
                       (cond->
-                          (= :line-to-horizontal (:command command))
+                       (= :line-to-horizontal (:command command))
                         (d/update-in-when [:params :value] + (:x prev-pos))
 
                         (= :line-to-vertical (:command command))

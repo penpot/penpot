@@ -6,9 +6,9 @@
 
 (ns app.common.geom.matrix
   (:require
+   #?(:clj [app.common.fressian :as fres])
    #?(:cljs [cljs.pprint :as pp]
       :clj  [clojure.pprint :as pp])
-   #?(:clj [app.common.fressian :as fres])
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
@@ -100,7 +100,7 @@
                               (sg/small-double)
                               (sg/small-double)
                               (sg/small-double)
-                              (sg/small-double) )
+                              (sg/small-double))
                     (sg/fmap #(apply pos->Matrix %)))
       ::oapi/type "string"
       ::oapi/format "matrix"
@@ -248,8 +248,8 @@
   ([pt]
    (dm/assert! (gpt/point? pt))
    (pos->Matrix 1 0 0 1
-            (- (dm/get-prop pt :x))
-            (- (dm/get-prop pt :y))))
+                (- (dm/get-prop pt :x))
+                (- (dm/get-prop pt :y))))
 
   ([x y]
    (pos->Matrix 1 0 0 1 (- x) (- y))))

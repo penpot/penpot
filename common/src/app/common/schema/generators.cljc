@@ -74,17 +74,17 @@
 (defn word-string
   []
   (->> (tg/such-that #(re-matches #"\w+" %)
-                       tg/string-alphanumeric
-                       50)
+                     tg/string-alphanumeric
+                     50)
        (tg/such-that (complement str/blank?))))
 
 (defn uri
   []
   (tg/let [scheme (tg/elements ["http" "https"])
-             domain (as-> (word-string) $
-                      (tg/such-that (fn [x] (> (count x) 5)) $ 100)
-                      (tg/fmap str/lower $))
-             ext    (tg/elements ["net" "com" "org" "app" "io"])]
+           domain (as-> (word-string) $
+                    (tg/such-that (fn [x] (> (count x) 5)) $ 100)
+                    (tg/fmap str/lower $))
+           ext    (tg/elements ["net" "com" "org" "app" "io"])]
     (u/uri (str scheme "://" domain "." ext))))
 
 (defn uuid
@@ -102,11 +102,11 @@
   ([dest elements]
    (->> (apply tg/tuple (repeat (count elements) tg/boolean))
         (tg/fmap (fn [bools]
-                     (into dest
-                           (comp
-                            (c/filter first)
-                            (c/map second))
-                           (c/map list bools elements)))))))
+                   (into dest
+                         (comp
+                          (c/filter first)
+                          (c/map second))
+                         (c/map list bools elements)))))))
 
 (defn set
   [g]

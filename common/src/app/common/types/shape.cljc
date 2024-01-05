@@ -194,8 +194,7 @@
     [:vector {:gen/max 1} ::ctss/shadow]]
    [:blur {:optional true} ::ctsb/blur]
    [:grow-type {:optional true}
-    [::sm/one-of #{:auto-width :auto-height :fixed}]]
-   ])
+    [::sm/one-of #{:auto-width :auto-height :fixed}]]])
 
 (sm/define! ::group-attrs
   [:map {:title "GroupAttrs"}
@@ -351,8 +350,8 @@
 (defn has-images?
   [{:keys [fills strokes]}]
   (or
-    (some :fill-image fills)
-    (some :stroke-image strokes)))
+   (some :fill-image fills)
+   (some :stroke-image strokes)))
 
 ;; --- Initialization
 

@@ -6,9 +6,9 @@
 
 (ns common-tests.pages-helpers-test
   (:require
-   [clojure.test :as t]
+   [app.common.files.helpers :as cfh]
    [clojure.pprint :refer [pprint]]
-   [app.common.files.helpers :as cfh]))
+   [clojure.test :as t]))
 
 (t/deftest parse-path-name
   (t/is (= ["foo" "bar"] (cfh/parse-path-name "foo/bar")))

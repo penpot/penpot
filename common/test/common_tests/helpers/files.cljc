@@ -45,111 +45,111 @@
 (defn sample-shape
   [file label type page-id props]
   (ctf/update-file-data
-    file
-    (fn [file-data]
-      (let [frame-id  (get props :frame-id uuid/zero)
-            parent-id (get props :parent-id uuid/zero)
-            shape     (cts/setup-shape
-                       (-> {:type type
-                            :width 1
-                            :height 1}
-                           (merge props)))]
+   file
+   (fn [file-data]
+     (let [frame-id  (get props :frame-id uuid/zero)
+           parent-id (get props :parent-id uuid/zero)
+           shape     (cts/setup-shape
+                      (-> {:type type
+                           :width 1
+                           :height 1}
+                          (merge props)))]
 
-        (swap! idmap assoc label (:id shape))
-        (ctpl/update-page file-data
-                          page-id
-                          #(ctst/add-shape (:id shape)
-                                           shape
-                                           %
-                                           frame-id
-                                           parent-id
-                                           0
-                                           true))))))
+       (swap! idmap assoc label (:id shape))
+       (ctpl/update-page file-data
+                         page-id
+                         #(ctst/add-shape (:id shape)
+                                          shape
+                                          %
+                                          frame-id
+                                          parent-id
+                                          0
+                                          true))))))
 
 (defn sample-component
   [file label page-id shape-id]
   (ctf/update-file-data
-    file
-    (fn [file-data]
-      (let [page (ctpl/get-page file-data page-id)
+   file
+   (fn [file-data]
+     (let [page (ctpl/get-page file-data page-id)
 
-            [component-shape component-shapes updated-shapes]
-            (ctn/make-component-shape (ctn/get-shape page shape-id)
-                                      (:objects page)
-                                      (:id file)
-                                      true)]
+           [component-shape component-shapes updated-shapes]
+           (ctn/make-component-shape (ctn/get-shape page shape-id)
+                                     (:objects page)
+                                     (:id file)
+                                     true)]
 
-        (swap! idmap assoc label (:id component-shape))
-        (-> file-data
-            (ctpl/update-page page-id
-                              #(reduce (fn [page shape] (ctst/set-shape page shape))
-                                       %
-                                       updated-shapes))
-            (ctkl/add-component {:id (:id component-shape)
-                                 :name (:name component-shape)
-                                 :path ""
-                                 :main-instance-id shape-id
-                                 :main-instance-page page-id
-                                 :shapes component-shapes}))))))
+       (swap! idmap assoc label (:id component-shape))
+       (-> file-data
+           (ctpl/update-page page-id
+                             #(reduce (fn [page shape] (ctst/set-shape page shape))
+                                      %
+                                      updated-shapes))
+           (ctkl/add-component {:id (:id component-shape)
+                                :name (:name component-shape)
+                                :path ""
+                                :main-instance-id shape-id
+                                :main-instance-page page-id
+                                :shapes component-shapes}))))))
 
 (defn sample-instance
   [file label page-id library component-id]
   (ctf/update-file-data
-    file
-    (fn [file-data]
-      (let [[instance-shape instance-shapes]
-            (ctn/make-component-instance (ctpl/get-page file-data page-id)
-                                         (ctkl/get-component (:data library) component-id)
-                                         (:data library)
-                                         (gpt/point 0 0)
-                                         true)]
+   file
+   (fn [file-data]
+     (let [[instance-shape instance-shapes]
+           (ctn/make-component-instance (ctpl/get-page file-data page-id)
+                                        (ctkl/get-component (:data library) component-id)
+                                        (:data library)
+                                        (gpt/point 0 0)
+                                        true)]
 
-        (swap! idmap assoc label (:id instance-shape))
-        (-> file-data
-            (ctpl/update-page page-id
-                              #(reduce (fn [page shape]
-                                         (ctst/add-shape (:id shape)
-                                                         shape
-                                                         page
-                                                         uuid/zero
-                                                         (:parent-id shape)
-                                                         0
-                                                         true))
-                                       %
-                                       instance-shapes)))))))
+       (swap! idmap assoc label (:id instance-shape))
+       (-> file-data
+           (ctpl/update-page page-id
+                             #(reduce (fn [page shape]
+                                        (ctst/add-shape (:id shape)
+                                                        shape
+                                                        page
+                                                        uuid/zero
+                                                        (:parent-id shape)
+                                                        0
+                                                        true))
+                                      %
+                                      instance-shapes)))))))
 
 (defn sample-color
   [file label props]
   (ctf/update-file-data
-    file
-    (fn [file-data]
-      (let [id (uuid/next)
-            props (merge {:id id
-                          :name "Color 1"
-                          :color "#000000"
-                          :opacity 1}
-                         props)]
-        (swap! idmap assoc label id)
-        (ctcl/add-color file-data props)))))
+   file
+   (fn [file-data]
+     (let [id (uuid/next)
+           props (merge {:id id
+                         :name "Color 1"
+                         :color "#000000"
+                         :opacity 1}
+                        props)]
+       (swap! idmap assoc label id)
+       (ctcl/add-color file-data props)))))
 
 (defn sample-typography
   [file label props]
   (ctf/update-file-data
-    file
-    (fn [file-data]
-      (let [id (uuid/next)
-            props (merge {:id id
-                          :name "Typography 1"
-                          :font-id "sourcesanspro"
-                          :font-family "sourcesanspro"
-                          :font-size "14"
-                          :font-style "normal"
-                          :font-variant-id "regular"
-                          :font-weight "400"
-                          :line-height "1.2"
-                          :letter-spacing "0"
-                          :text-transform "none"}
-                         props)]
-        (swap! idmap assoc label id)
-        (ctyl/add-typography file-data props)))))
+   file
+   (fn [file-data]
+     (let [id (uuid/next)
+           props (merge {:id id
+                         :name "Typography 1"
+                         :font-id "sourcesanspro"
+                         :font-family "sourcesanspro"
+                         :font-size "14"
+                         :font-style "normal"
+                         :font-variant-id "regular"
+                         :font-weight "400"
+                         :line-height "1.2"
+                         :letter-spacing "0"
+                         :text-transform "none"}
+                        props)]
+       (swap! idmap assoc label id)
+       (ctyl/add-typography file-data props)))))
 

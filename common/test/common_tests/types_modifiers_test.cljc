@@ -6,10 +6,10 @@
 
 (ns common-tests.types-modifiers-test
   (:require
-   [clojure.test :as t]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
-   [app.common.types.modifiers :as ctm]))
+   [app.common.types.modifiers :as ctm]
+   [clojure.test :as t]))
 
 (t/deftest test-modifiers->transform
   (let [modifiers

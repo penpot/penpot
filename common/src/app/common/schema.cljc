@@ -122,9 +122,7 @@
       :encoders (mt/-string-encoders)}
      {:name :collections
       :decoders coders
-      :encoders coders}
-
-     )))
+      :encoders coders})))
 
 (defn validator
   [s]
@@ -304,7 +302,7 @@
              options (into {:type :validation
                             :code :data-validation
                             ::explain explain}
-                            options)
+                           options)
              hint    (get options :hint "schema validation error")]
          (throw (ex-info hint options)))))))
 

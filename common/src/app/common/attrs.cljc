@@ -6,8 +6,8 @@
 
 (ns app.common.attrs
   (:require
-    [app.common.geom.shapes :as gsh]
-    [app.common.math :as mth]))
+   [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]))
 
 (defn- get-attr
   [obj attr]

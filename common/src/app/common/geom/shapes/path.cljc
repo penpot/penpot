@@ -477,8 +477,7 @@
                      result)
             last-start (if (= :move-to command)
                          point
-                         last-start)
-            ]
+                         last-start)]
         (recur (first pending)
                (rest pending)
                result
@@ -523,7 +522,7 @@
   "Point on line"
   [position from-p to-p]
 
-  (let [e1 (gpt/to-vec from-p to-p )
+  (let [e1 (gpt/to-vec from-p to-p)
         e2 (gpt/to-vec from-p position)
 
         len2 (+ (mth/sq (:x e1)) (mth/sq (:y e1)))
@@ -730,7 +729,7 @@
                                       ray-t (get-line-tval ray-line curve-v)]
                                   (and (> ray-t 0)
                                        (> (mth/abs (- curve-tg-angle 180)) 0.01)
-                                       (> (mth/abs (- curve-tg-angle 0)) 0.01)) )))]
+                                       (> (mth/abs (- curve-tg-angle 0)) 0.01)))))]
     (->> curve-ts
          (mapv #(vector (curve-values curve %)
                         (curve-windup curve %))))))

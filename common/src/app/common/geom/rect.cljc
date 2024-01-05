@@ -363,9 +363,9 @@
       (cond-> bounds
         (> target-height height)
         (-> (assoc :height target-height)
-            (update :y - (/ (- target-height height ) 2)))
+            (update :y - (/ (- target-height height) 2)))
 
         (< target-height height)
         (-> (assoc :width target-width)
-            (update :x - (/ (- target-width width ) 2)))))
+            (update :x - (/ (- target-width width) 2)))))
     bounds))

@@ -42,27 +42,27 @@
 ;;     * change-properties
 
 (defrecord Modifiers
-    [last-order ;; Last `order` attribute in the geometry list
-     geometry-parent
-     geometry-child
-     structure-parent
-     structure-child])
+           [last-order ;; Last `order` attribute in the geometry list
+            geometry-parent
+            geometry-child
+            structure-parent
+            structure-child])
 
 (defrecord GeometricOperation
-    [order ;; Need the order to keep consistent between geometry-parent and geometry-child
-     type
-     vector
-     origin
-     transform
-     transform-inverse
-     rotation
-     center])
+           [order ;; Need the order to keep consistent between geometry-parent and geometry-child
+            type
+            vector
+            origin
+            transform
+            transform-inverse
+            rotation
+            center])
 
 (defrecord StructureOperation
-    [type
-     property
-     value
-     index])
+           [type
+            property
+            value
+            index])
 
 ;; Record constructors
 
@@ -599,8 +599,8 @@
   "Transforms a matrix by the translation modifier"
   [matrix modifier]
   (-> (dm/get-prop modifier :vector)
-          (gmt/translate-matrix)
-          (gmt/multiply! matrix)))
+      (gmt/translate-matrix)
+      (gmt/multiply! matrix)))
 
 
 (defn transform-resize!
@@ -656,8 +656,7 @@
   [modifiers]
   (let [modifiers (concat (dm/get-prop modifiers :geometry-parent)
                           (dm/get-prop modifiers :geometry-child))
-        modifiers (sort-by #(dm/get-prop % :order) modifiers)
-        ]
+        modifiers (sort-by #(dm/get-prop % :order) modifiers)]
     (modifiers->transform1 modifiers)))
 
 (defn modifiers->transform-old
