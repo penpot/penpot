@@ -732,14 +732,12 @@
         (mf/use-callback
          (mf/deps on-add-layout)
          (fn []
-           (st/emit! (dwsl/remove-layout ids))
            (on-add-layout :flex)))
 
         set-grid
         (mf/use-callback
          (mf/deps on-add-layout)
          (fn []
-           (st/emit! (dwsl/remove-layout ids))
            (on-add-layout :grid)))
 
         saved-dir (:layout-flex-dir values)
@@ -934,7 +932,10 @@
             [:button {:class (stl/css :add-layout)
                       :data-value :flex
                       :on-click on-set-layout}
-             i/add-refactor])])]]
+             i/add-refactor])
+          [:button {:class (stl/css :remove-layout)
+                    :on-click on-remove-layout}
+           i/remove-refactor]])]]
 
      (when (and open? has-layout?)
        (when (not= :multiple layout-type)
