@@ -62,14 +62,14 @@
 (defn child-min-width
   [child child-bounds bounds objects]
   (+ (ctl/child-width-margin child)
-     (-child-min-width child child-bounds bounds objects)))
+     (-child-min-width child child-bounds bounds objects true)))
 
 (def -child-min-height nil)
 
 (defn child-min-height
   [child child-bounds bounds objects]
   (+ (ctl/child-height-margin child)
-     (-child-min-height child child-bounds bounds objects)))
+     (-child-min-height child child-bounds bounds objects true)))
 
 (defn layout-bounds
   [parent shape-bounds]
