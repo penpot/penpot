@@ -31,10 +31,33 @@ jobs:
       - run: cat .cljfmt.edn
       - run: clj-kondo --version
 
-      # - run:
-      #     name: "fmt check [clj]"
-      #     command: |
-      #       yarn run fmt:clj:check
+      - run:
+          name: "fmt check backend [clj]"
+          working_directory: "./backend"
+          command: |
+            yarn install
+            yarn run fmt:clj:check
+
+      - run:
+          name: "fmt check exporter [clj]"
+          working_directory: "./exporter"
+          command: |
+            yarn install
+            yarn run fmt:clj:check
+
+      - run:
+          name: "fmt check common [clj]"
+          working_directory: "./common"
+          command: |
+            yarn install
+            yarn run fmt:clj:check
+
+      - run:
+          name: "fmt check frontend [clj]"
+          working_directory: "./frontend"
+          command: |
+            yarn install
+            yarn run fmt:clj:check
 
       - run:
           name: common lint
