@@ -193,7 +193,7 @@
 
     [base-id idx-a idx-b]))
 
-(defn is-shape-over-shape?
+(defn- is-shape-over-shape?
   [objects base-shape-id over-shape-id bottom-frames?]
 
   (let [[base-id index-a index-b] (get-base objects base-shape-id over-shape-id)]
@@ -218,7 +218,7 @@
               [0 0])]
 
         (if (= z-index-a z-index-b)
-          (< index-a index-b)
+          (> index-a index-b)
           (< z-index-a z-index-b))))))
 
 (defn sort-z-index
