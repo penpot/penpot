@@ -81,33 +81,34 @@
     (mf/with-effect [default-value]
       (swap! state* assoc :current-value default-value))
 
-    [:div {:on-click open-dropdown
-           :class (dm/str class " " (stl/css-case :custom-select true
-                                                  :disabled disabled))}
-     (let [selected-option (first (filter #(= (:value %) default-value) options))
-           current-icon (:icon selected-option)
-           current-icon-ref (i/key->icon current-icon)]
+    (let [selected-option (first (filter #(= (:value %) default-value) options))
+          current-icon (:icon selected-option)
+          current-icon-ref (i/key->icon current-icon)]
+      [:div {:on-click open-dropdown
+             :class (dm/str class " " (stl/css-case :custom-select true
+                                                    :disabled disabled
+                                                    :icon (some? current-icon-ref)))}
        (when (and current-icon current-icon-ref)
-         [:span {:class (stl/css :current-icon)} @current-icon-ref]))
-     [:span {:class (stl/css :current-label)} current-label]
-     [:span {:class (stl/css :dropdown-button)} i/arrow-refactor]
-     [:& dropdown {:show is-open? :on-close close-dropdown}
-      [:ul {:class (dm/str dropdown-class " " (stl/css :custom-select-dropdown))}
-       (for [[index item] (d/enumerate options)]
-         (if (= :separator item)
-           [:li {:class (dom/classnames (stl/css :separator) true)
-                 :key (dm/str current-id "-" index)}]
-           (let [[value label icon] (as-key-value item)
-                 icon-ref (i/key->icon icon)]
-             [:li
-              {:key (dm/str current-id "-" index)
-               :class (dom/classnames
-                       (stl/css :checked-element) true
-                       (stl/css :is-selected) (= value current-value))
-               :data-value (pr-str value)
-               :on-pointer-enter highlight-item
-               :on-pointer-leave unhighlight-item
-               :on-click select-item}
-              (when (and icon icon-ref) [:span {:class (stl/css :icon)} @icon-ref])
-              [:span {:class (stl/css :label)} label]
-              [:span {:class (stl/css :check-icon)} i/tick-refactor]])))]]]))
+         [:span {:class (stl/css :current-icon)} current-icon-ref])
+       [:span {:class (stl/css :current-label)} current-label]
+       [:span {:class (stl/css :dropdown-button)} i/arrow-refactor]
+       [:& dropdown {:show is-open? :on-close close-dropdown}
+        [:ul {:class (dm/str dropdown-class " " (stl/css :custom-select-dropdown))}
+         (for [[index item] (d/enumerate options)]
+           (if (= :separator item)
+             [:li {:class (dom/classnames (stl/css :separator) true)
+                   :key (dm/str current-id "-" index)}]
+             (let [[value label icon] (as-key-value item)
+                   icon-ref (i/key->icon icon)]
+               [:li
+                {:key (dm/str current-id "-" index)
+                 :class (dom/classnames
+                         (stl/css :checked-element) true
+                         (stl/css :is-selected) (= value current-value))
+                 :data-value (pr-str value)
+                 :on-pointer-enter highlight-item
+                 :on-pointer-leave unhighlight-item
+                 :on-click select-item}
+                (when (and icon icon-ref) [:span {:class (stl/css :icon)} icon-ref])
+                [:span {:class (stl/css :label)} label]
+                [:span {:class (stl/css :check-icon)} i/tick-refactor]])))]]])))
