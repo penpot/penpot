@@ -728,7 +728,7 @@
                                          ::log/sync? true)
                               (let [edata (if (map? cause) cause (ex-data cause))]
                                 (println "Error data:")
-                                (pp/pprint (dissoc edata :explain) {:level 2 :length 10})
+                                (pp/pprint (dissoc edata :explain) {:level 3 :length 10})
 
                                 (when (string? (:explain edata))
                                   (js/console.log (:explain edata)))

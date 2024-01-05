@@ -80,6 +80,9 @@
                          (try
                            (tap "end" (handler))
                            (catch Throwable cause
+                             (binding [l/*context* (errors/request->context request)]
+                               (l/err :hint "unexpected error process streaming response"
+                                      :cause cause))
                              (tap "error" (errors/handle' cause request)))
                            (finally
                              (sp/close! *channel*)
