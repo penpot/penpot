@@ -312,7 +312,7 @@
     (teams/check-read-permissions! conn profile-id team-id))
 
   (let [projs (db/query conn :project
-                           {:team-id team-id})
+                        {:team-id team-id})
 
         files (let [sql (str "SELECT f.id "
                              "  FROM file AS f "

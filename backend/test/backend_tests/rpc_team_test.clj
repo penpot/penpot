@@ -462,5 +462,4 @@
       (t/is (dt/instant? (:deleted-at (first rows)))))
 
     (let [result (th/run-task! :objects-gc {:min-age 0})]
-      (t/is (= 5 (:processed result))))
-    ))
+      (t/is (= 5 (:processed result))))))

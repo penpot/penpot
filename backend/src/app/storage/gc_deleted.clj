@@ -113,13 +113,13 @@
   (fn [params]
     (let [min-age (dt/duration (or (:min-age params) min-age))]
       (db/tx-run! cfg (fn [cfg]
-                          (let [cfg   (assoc cfg ::min-age min-age)
-                                total (clean-deleted! cfg)]
+                        (let [cfg   (assoc cfg ::min-age min-age)
+                              total (clean-deleted! cfg)]
 
-                            (l/inf :hint "task finished"
-                                   :min-age (dt/format-duration min-age)
-                                   :total total)
+                          (l/inf :hint "task finished"
+                                 :min-age (dt/format-duration min-age)
+                                 :total total)
 
-                            {:deleted total}))))))
+                          {:deleted total}))))))
 
 

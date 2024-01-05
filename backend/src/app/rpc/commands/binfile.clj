@@ -816,16 +816,16 @@
                      (update :features #(db/create-array conn "text" %))
                      (update :data blob/encode))]
 
-          (l/dbg :hint "create file" :id (str file-id') ::l/sync? true)
+        (l/dbg :hint "create file" :id (str file-id') ::l/sync? true)
 
-          (if overwrite?
-            (create-or-update-file! conn file)
-            (db/insert! conn :file file))
+        (if overwrite?
+          (create-or-update-file! conn file)
+          (db/insert! conn :file file))
 
-          (when overwrite?
-            (db/delete! conn :file-thumbnail {:file-id file-id'}))
+        (when overwrite?
+          (db/delete! conn :file-thumbnail {:file-id file-id'}))
 
-          file-id'))))
+        file-id'))))
 
 (defmethod read-section :v1/rels
   [{:keys [::db/conn ::input ::timestamp]}]
@@ -1008,8 +1008,8 @@
                (if (:image v)
                  (update-in res [k :image :id] lookup-index)
                  res))
-    colors
-    colors))
+             colors
+             colors))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HIGH LEVEL API
