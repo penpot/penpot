@@ -207,6 +207,8 @@
   --assets-component-background-color-disabled: var(
     --off-white
   ); // We don't want this color to change with palette
+  --assets-component-border-color: var(--color-background-tertiary);
+  --assets-component-border-selected: var(--color-select);
 
   --radio-btns-background-color: var(--color-background-tertiary);
   --radio-btn-background-color-selected: var(--color-background-quaternary);
