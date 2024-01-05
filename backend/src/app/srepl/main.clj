@@ -38,52 +38,45 @@
    [cuerdas.core :as str]))
 
 (defn print-available-tasks
-  [system]
-  (let [tasks (:app.worker/registry system)]
+  []
+  (let [tasks (:app.worker/registry main/system)]
     (p/pprint (keys tasks) :level 200)))
 
 (defn run-task!
-  ([system name]
-   (run-task! system name {}))
-  ([system name params]
-   (let [tasks (:app.worker/registry system)]
-     (if-let [task-fn (get tasks name)]
+  ([tname]
+   (run-task! tname {}))
+  ([tname params]
+   (let [tasks (:app.worker/registry main/system)
+         tname (if (keyword? tname) (name tname) name)]
+     (if-let [task-fn (get tasks tname)]
        (task-fn params)
-       (println (format "no task '%s' found" name))))))
+       (println (format "no task '%s' found" tname))))))
 
 (defn schedule-task!
-  ([system name]
-   (schedule-task! system name {}))
-  ([system name props]
-   (let [pool (:app.db/pool system)]
+  ([name]
+   (schedule-task! name {}))
+  ([name props]
+   (let [pool (:app.db/pool main/system)]
      (wrk/submit!
       ::wrk/conn pool
       ::wrk/task name
       ::wrk/props props))))
 
 (defn send-test-email!
-  [system destination]
-  (us/verify!
-   :expr (some? system)
-   :hint "system should be provided")
-
+  [destination]
   (us/verify!
    :expr (string? destination)
    :hint "destination should be provided")
 
-  (let [handler (:app.email/sendmail system)]
+  (let [handler (:app.email/sendmail main/system)]
     (handler {:body "test email"
               :subject "test email"
               :to [destination]})))
 
 (defn resend-email-verification-email!
-  [system email]
-  (us/verify!
-   :expr (some? system)
-   :hint "system should be provided")
-
-  (let [sprops  (:app.setup/props system)
-        pool    (:app.db/pool system)
+  [email]
+  (let [sprops  (:app.setup/props main/system)
+        pool    (:app.db/pool main/system)
         profile (profile/get-profile-by-email pool email)]
 
     (auth/send-email-verification! pool sprops profile)
@@ -92,8 +85,8 @@
 (defn mark-profile-as-active!
   "Mark the profile blocked and removes all the http sessiones
   associated with the profile-id."
-  [system email]
-  (db/with-atomic [conn (:app.db/pool system)]
+  [email]
+  (db/with-atomic [conn (:app.db/pool main/system)]
     (when-let [profile (db/get* conn :profile
                                 {:email (str/lower email)}
                                 {:columns [:id :email]})]
@@ -104,8 +97,8 @@
 (defn mark-profile-as-blocked!
   "Mark the profile blocked and removes all the http sessiones
   associated with the profile-id."
-  [system email]
-  (db/with-atomic [conn (:app.db/pool system)]
+  [email]
+  (db/with-atomic [conn (:app.db/pool main/system)]
     (when-let [profile (db/get* conn :profile
                                 {:email (str/lower email)}
                                 {:columns [:id :email]})]
@@ -117,9 +110,9 @@
 (defn reset-password!
   "Reset a password to a specific one for a concrete user or all users
   if email is `:all` keyword."
-  [system & {:keys [email password] :or {password "123123"} :as params}]
+  [& {:keys [email password] :or {password "123123"} :as params}]
   (us/verify! (contains? params :email) "`email` parameter is mandatory")
-  (db/with-atomic [conn (:app.db/pool system)]
+  (db/with-atomic [conn (:app.db/pool main/system)]
     (let [password (derive-password password)]
       (if (= email :all)
         (db/exec! conn ["update profile set password=?" password])
@@ -127,21 +120,21 @@
           (db/exec! conn ["update profile set password=? where email=?" password email]))))))
 
 (defn enable-objects-map-feature-on-file!
-  [system & {:keys [save? id]}]
-  (h/update-file! system
+  [& {:keys [save? id]}]
+  (h/update-file! main/system
                   :id id
                   :update-fn features.fdata/enable-objects-map
                   :save? save?))
 
 (defn enable-pointer-map-feature-on-file!
-  [system & {:keys [save? id]}]
-  (h/update-file! system
+  [& {:keys [save? id]}]
+  (h/update-file! main/system
                   :id id
                   :update-fn features.fdata/enable-pointer-map
                   :save? save?))
 
 (defn enable-team-feature!
-  [system team-id feature]
+  [team-id feature]
   (dm/verify!
    "feature should be supported"
    (contains? cfeat/supported-features feature))
@@ -149,7 +142,7 @@
   (let [team-id (if (string? team-id)
                   (parse-uuid team-id)
                   team-id)]
-    (db/tx-run! system
+    (db/tx-run! main/system
                 (fn [{:keys [::db/conn]}]
                   (let [team     (-> (db/get conn :team {:id team-id})
                                      (update :features db/decode-pgarray #{}))
@@ -161,7 +154,7 @@
                       :enabled))))))
 
 (defn disable-team-feature!
-  [system team-id feature]
+  [team-id feature]
   (dm/verify!
    "feature should be supported"
    (contains? cfeat/supported-features feature))
@@ -169,7 +162,7 @@
   (let [team-id (if (string? team-id)
                   (parse-uuid team-id)
                   team-id)]
-    (db/tx-run! system
+    (db/tx-run! main/system
                 (fn [{:keys [::db/conn]}]
                   (let [team     (-> (db/get conn :team {:id team-id})
                                      (update :features db/decode-pgarray #{}))
@@ -181,9 +174,9 @@
                       :disabled))))))
 
 (defn enable-storage-features-on-file!
-  [system & {:as params}]
-  (enable-objects-map-feature-on-file! system params)
-  (enable-pointer-map-feature-on-file! system params))
+  [& {:as params}]
+  (enable-objects-map-feature-on-file! main/system params)
+  (enable-pointer-map-feature-on-file! main/system params))
 
 (defn instrument-var
   [var]
@@ -207,13 +200,13 @@
 (defn take-file-snapshot!
   "An internal helper that persist the file snapshot using non-gc
   collectable file-changes entry."
-  [system & {:keys [file-id label]}]
+  [& {:keys [file-id label]}]
   (let [file-id (h/parse-uuid file-id)]
-    (db/tx-run! system fsnap/take-file-snapshot! {:file-id file-id :label label})))
+    (db/tx-run! main/system fsnap/take-file-snapshot! {:file-id file-id :label label})))
 
 (defn restore-file-snapshot!
-  [system & {:keys [file-id id]}]
-  (db/tx-run! system
+  [& {:keys [file-id id]}]
+  (db/tx-run! main/system
               (fn [cfg]
                 (let [file-id (h/parse-uuid file-id)
                       id      (h/parse-uuid id)]
@@ -224,12 +217,13 @@
 
 
 (defn list-file-snapshots!
-  [system & {:keys [file-id limit]}]
-  (db/tx-run! system (fn [system]
-                       (let [params {:file-id (h/parse-uuid file-id)
-                                     :limit limit}]
-                         (->> (fsnap/get-file-snapshots system (d/without-nils params))
-                              (print-table [:id :revn :created-at :label]))))))
+  [& {:keys [file-id limit]}]
+  (db/tx-run! main/system
+              (fn [system]
+                (let [params {:file-id (h/parse-uuid file-id)
+                              :limit limit}]
+                  (->> (fsnap/get-file-snapshots system (d/without-nils params))
+                       (print-table [:id :revn :created-at :label]))))))
 
 (defn notify!
   [{:keys [::mbus/msgbus ::db/pool]} & {:keys [dest code message level]
@@ -334,12 +328,12 @@
          (into #{})
          (run! send))))
 
-
 (defn duplicate-team
-  [system team-id & {:keys [name]}]
+  [team-id & {:keys [name]}]
   (let [team-id (if (string? team-id) (parse-uuid team-id) team-id)
         name    (or name (fn [prev-name]
                            (str/ffmt "Cloned: % (%)" prev-name (dt/format-instant (dt/now)))))]
-    (db/tx-run! system (fn [cfg]
-                         (db/exec-one! cfg ["SET CONSTRAINTS ALL DEFERRED"])
-                         (mgmt/duplicate-team cfg :team-id team-id :name name)))))
+    (db/tx-run! main/system
+                (fn [cfg]
+                  (db/exec-one! cfg ["SET CONSTRAINTS ALL DEFERRED"])
+                  (mgmt/duplicate-team cfg :team-id team-id :name name)))))
