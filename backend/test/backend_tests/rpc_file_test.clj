@@ -233,8 +233,7 @@
         (t/is (= 1 (:processed res))))
 
       (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
-        (t/is (= 2 (count rows))))
-      )))
+        (t/is (= 2 (count rows)))))))
 
 
 
@@ -904,8 +903,7 @@
       (let [error (:error out)
             error-data (ex-data error)]
         (t/is (th/ex-info? error))
-        (t/is (= (:type error-data) :not-found))))
-    ))
+        (t/is (= (:type error-data) :not-found))))))
 
 
 (t/deftest object-thumbnails-ops

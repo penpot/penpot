@@ -248,9 +248,7 @@
       (let [result (th/run-task! :storage-gc-deleted {:min-age 0})]
         (t/is (= 1 (:deleted result))))
 
-      (t/is (some? (sto/get-object storage (:media-id row2))))
-
-      )))
+      (t/is (some? (sto/get-object storage (:media-id row2)))))))
 
 (t/deftest error-on-direct-storage-obj-deletion
   (let [storage (::sto/storage th/*system*)

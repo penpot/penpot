@@ -166,9 +166,7 @@
           out    (th/command! params)]
       ;; (th/print-result! out)
       (let [result (:result out)]
-        (t/is (= uuid/zero (:id result)))))
-
-    ))
+        (t/is (= uuid/zero (:id result)))))))
 
 (t/deftest registration-domain-whitelist
   (let [whitelist #{"gmail.com" "hey.com" "ya.ru"}]

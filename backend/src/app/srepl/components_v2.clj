@@ -157,7 +157,7 @@
                                              :or {rollback? true
                                                   skip-on-error true
                                                   validate? false
-                                                  max-procs 1 }
+                                                  max-procs 1}
                                              :as opts}]
 
   (l/dbg :hint "migrate:start" :rollback rollback?)
@@ -256,20 +256,20 @@
 
               :else
               (px/submit! scope (fn []
-                                    (try
-                                      (mark-team-migration! system id)
-                                      (-> (assoc system ::db/rollback rollback?)
-                                          (feat/migrate-team! id
-                                                              :max-procs max-procs
-                                                              :validate? validate?
-                                                              :throw-on-validate? (not skip-on-error)))
-                                      (catch Throwable cause
-                                        (l/err :hint "unexpected error on processing team"
-                                               :team-id (str id)
-                                               :cause cause))
-                                      (finally
-                                        (ps/release! sjobs)
-                                        (unmark-team-migration! system id))))))))]
+                                  (try
+                                    (mark-team-migration! system id)
+                                    (-> (assoc system ::db/rollback rollback?)
+                                        (feat/migrate-team! id
+                                                            :max-procs max-procs
+                                                            :validate? validate?
+                                                            :throw-on-validate? (not skip-on-error)))
+                                    (catch Throwable cause
+                                      (l/err :hint "unexpected error on processing team"
+                                             :team-id (str id)
+                                             :cause cause))
+                                    (finally
+                                      (ps/release! sjobs)
+                                      (unmark-team-migration! system id))))))))]
 
     (l/dbg :hint "migrate:start"
            :rollback rollback?
