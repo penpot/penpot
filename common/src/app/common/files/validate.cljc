@@ -48,7 +48,8 @@
     :not-head-main-not-allowed
     :not-head-copy-not-allowed
     :not-component-not-allowed
-    :component-nil-objects-not-allowed})
+    :component-nil-objects-not-allowed
+    :instance-head-not-frame})
 
 (def ^:private
   schema:error
