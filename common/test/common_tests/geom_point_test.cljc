@@ -6,8 +6,8 @@
 
 (ns common-tests.geom-point-test
   (:require
-   [app.common.math :as mth]
    [app.common.geom.point :as gpt]
+   [app.common.math :as mth]
    [clojure.test :as t]))
 
 (t/deftest add-points
@@ -62,8 +62,7 @@
       (t/is (gpt/close? rs p1)))
 
     (let [rs (gpt/min p2 p1)]
-      (t/is (gpt/close? rs p1)))
-    ))
+      (t/is (gpt/close? rs p1)))))
 
 (t/deftest max-point
   (let [p1 (gpt/point 1 2)
@@ -85,8 +84,7 @@
       (t/is (gpt/close? rs p2)))
 
     (let [rs (gpt/max p2 p1)]
-      (t/is (gpt/close? rs p2)))
-    ))
+      (t/is (gpt/close? rs p2)))))
 
 (t/deftest inverse-point
   (let [p1 (gpt/point 1 2)
@@ -154,8 +152,7 @@
         p2 (gpt/point 1 5)
         rs (gpt/angle-sign p1 p2)]
     (t/is (number? rs))
-    (t/is (mth/close? -1 rs)))
-  )
+    (t/is (mth/close? -1 rs))))
 
 (t/deftest update-angle
   (let [p1 (gpt/point 1 3)
@@ -184,8 +181,7 @@
   (let [p1 (gpt/point -1 -3)
         rs (gpt/quadrant p1)]
     (t/is (number? rs))
-    (t/is (mth/close? 3 rs)))
-  )
+    (t/is (mth/close? 3 rs))))
 
 (t/deftest round-point
   (let [p1 (gpt/point 1.34567 3.34567)
@@ -198,8 +194,7 @@
         rs (gpt/round p1 2)]
     (t/is (gpt/point? rs))
     (t/is (mth/close? 1.35 (:x rs)))
-    (t/is (mth/close? 3.35 (:y rs))))
-  )
+    (t/is (mth/close? 3.35 (:y rs)))))
 
 (t/deftest halft-round-point
   (let [p1 (gpt/point 1.34567 3.34567)

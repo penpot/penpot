@@ -621,13 +621,13 @@
 (defmethod migrate 33
   [data]
   (letfn [(update-object [object]
-             ; Ensure all root objects are well formed shapes.
-             (if (= (:id object) uuid/zero)
-               (-> object
-                   (assoc :parent-id uuid/zero
-                          :frame-id uuid/zero)
-                   (cts/setup-shape))
-               object))
+            ;; Ensure all root objects are well formed shapes.
+            (if (= (:id object) uuid/zero)
+              (-> object
+                  (assoc :parent-id uuid/zero
+                         :frame-id uuid/zero)
+                  (cts/setup-shape))
+              object))
 
           (update-container [container]
             (update container :objects update-vals update-object))]

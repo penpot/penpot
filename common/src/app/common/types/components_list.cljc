@@ -87,10 +87,10 @@
    (get-component file-data component-id false))
 
   ([file-data component-id include-deleted?]
-  (let [component (get-in file-data [:components component-id])]
-    (when (or include-deleted?
-              (not (:deleted component)))
-      component))))
+   (let [component (get-in file-data [:components component-id])]
+     (when (or include-deleted?
+               (not (:deleted component)))
+       component))))
 
 (defn get-deleted-component
   [file-data component-id]

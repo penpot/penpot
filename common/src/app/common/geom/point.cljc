@@ -7,11 +7,11 @@
 (ns app.common.geom.point
   (:refer-clojure :exclude [divide min max abs])
   (:require
-   #?(:cljs [cljs.pprint :as pp]
-      :clj  [clojure.pprint :as pp])
+   #?(:clj [app.common.fressian :as fres])
    #?(:cljs [cljs.core :as c]
       :clj [clojure.core :as c])
-   #?(:clj [app.common.fressian :as fres])
+   #?(:cljs [cljs.pprint :as pp]
+      :clj  [clojure.pprint :as pp])
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]

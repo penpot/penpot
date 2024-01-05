@@ -50,6 +50,5 @@
            (t/is (= 10  (dm/get-prop u :a)))
            (t/is (= 20  (dm/get-prop u :b)))
            (t/is (= 124 (:c u)))
-           (t/is (not= u o)))))
-    ))
+           (t/is (not= u o)))))))
 

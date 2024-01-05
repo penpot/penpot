@@ -82,8 +82,7 @@
                    :option [:values :test2]
                    :value nil}]
             res (ch/process-changes data chgs)]
-        (t/is (= [:test1] (keys (get-in res [:pages-index page-id :options :values]))))))
-    ))
+        (t/is (= [:test1] (keys (get-in res [:pages-index page-id :options :values]))))))))
 
 (t/deftest process-change-add-obj
   (let [file-id (uuid/custom 2 2)
@@ -137,8 +136,7 @@
           (t/is (not (nil? (get objects id-a))))
           (t/is (not (nil? (get objects id-b))))
           (t/is (not (nil? (get objects id-c))))
-          (t/is (= [id-b id-c id-a] (get-in objects [uuid/zero :shapes]))))))
-    ))
+          (t/is (= [id-b id-c id-a] (get-in objects [uuid/zero :shapes]))))))))
 
 (t/deftest process-change-mod-obj
   (let [file-id (uuid/custom 2 2)
@@ -164,9 +162,7 @@
                                 :attr :name
                                 :val "foobar"}]}
             res (ch/process-changes data [chg])]
-        (t/is (= res data))))
-
-    ))
+        (t/is (= res data))))))
 
 
 ;; (t/deftest process-change-del-obj

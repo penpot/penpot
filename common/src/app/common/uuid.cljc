@@ -8,10 +8,10 @@
 (ns app.common.uuid
   (:refer-clojure :exclude [next uuid zero? short])
   (:require
-   [app.common.data.macros :as dm]
    #?(:clj [clojure.core :as c])
    #?(:cljs [app.common.uuid-impl :as impl])
-   #?(:cljs [cljs.core :as c]))
+   #?(:cljs [cljs.core :as c])
+   [app.common.data.macros :as dm])
   #?(:clj (:import
            app.common.UUIDv8
            java.util.UUID

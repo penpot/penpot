@@ -6,13 +6,13 @@
 
 (ns common-tests.types-test
   (:require
-   [clojure.test :as t]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
    [app.common.transit :as transit]
-   [app.common.types.shape :as cts]
+   [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
-   [app.common.types.file :as ctf]))
+   [app.common.types.shape :as cts]
+   [clojure.test :as t]))
 
 (t/deftest transit-encode-decode-with-shape
   (sg/check!

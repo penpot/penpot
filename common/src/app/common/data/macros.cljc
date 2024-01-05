@@ -24,7 +24,7 @@
   keys in contrast to clojure.core/select-keys"
   [target keys]
   (assert (vector? keys) "keys expected to be a vector")
-  `{ ~@(mapcat (fn [key] [key (list `c/get target key)]) keys) ~@[] })
+  `{~@(mapcat (fn [key] [key (list `c/get target key)]) keys) ~@[]})
 
 (defmacro get-in
   "A macro version of `get-in`. Useful when the keys vector is known at

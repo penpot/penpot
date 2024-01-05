@@ -169,15 +169,14 @@
                           (map (fn [[k _ s]]
                                  (str (pad "  " level) (str/camel k)
                                       (when (contains? optional k) "?")
-                                      ": " s )))
+                                      ": " s)))
                           (str/join ",\n"))
 
             header   (cond-> (if (zero? level)
                                (str "type " title)
                                (str title))
                        closed?       (str "!")
-                       (some? title) (str " ")
-                       )]
+                       (some? title) (str " "))]
 
         (str header "{\n" entries "\n" (pad "}" level))))))
 

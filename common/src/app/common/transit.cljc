@@ -6,14 +6,14 @@
 
 (ns app.common.transit
   (:require
+   #?(:clj  [datoteka.fs :as fs])
+   #?(:cljs ["luxon" :as lxn])
    [app.common.data :as d]
    [app.common.uri :as uri]
    [cognitect.transit :as t]
    [lambdaisland.uri :as luri]
    [linked.core :as lk]
-   [linked.set :as lks]
-   #?(:clj  [datoteka.fs :as fs])
-   #?(:cljs ["luxon" :as lxn]))
+   [linked.set :as lks])
   #?(:clj
      (:import
       java.io.ByteArrayInputStream

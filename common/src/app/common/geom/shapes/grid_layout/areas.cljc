@@ -30,7 +30,7 @@
        (<= (+ b-y b-height) (+ a-y a-height))))
 
 (defn intersects?
-  [[a-x a-y a-width a-height ]
+  [[a-x a-y a-width a-height]
    [b-x b-y b-width b-height]]
   (not (or (<= (+ b-x b-width) a-x)
            (<= (+ b-y b-height) a-y)
@@ -76,11 +76,9 @@
         y2 (min ra-y rb-y)
         height (- y2 y1)
         rb-x (+ b-x b-width)
-        width (- a-width (- rb-x a-x))
-        ]
+        width (- a-width (- rb-x a-x))]
     (when (and (> width 0) (> height 0))
-      (make-area rb-x y1 width height)))
-  )
+      (make-area rb-x y1 width height))))
 
 (defn difference
   [area-a area-b]
@@ -92,4 +90,4 @@
     (into []
           (keep #(% area-a area-b))
           [top-rect left-rect right-rect bottom-rect])))
- 
+

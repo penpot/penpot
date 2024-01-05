@@ -814,8 +814,8 @@
 (defn- parents-frames
   "Go trough the parents and get all of them that are a frame."
   [id objects]
-    (->> (cfh/get-parents-with-self objects id)
-         (filter cfh/frame-shape?)))
+  (->> (cfh/get-parents-with-self objects id)
+       (filter cfh/frame-shape?)))
 
 (defmulti frames-changed (fn [_ change] (:type change)))
 

@@ -6,11 +6,11 @@
 
 (ns common-tests.types-shape-interactions-test
   (:require
-   [app.common.math :as mth]
    [app.common.exceptions :as ex]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
    [app.common.types.shape :as cts]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.uuid :as uuid]
@@ -48,8 +48,7 @@
             new-interaction
             (ctsi/set-event-type interaction :after-delay frame)]
         (t/is (= :after-delay (:event-type new-interaction)))
-        (t/is (= 300 (:delay new-interaction)))))
-    ))
+        (t/is (= 300 (:delay new-interaction)))))))
 
 
 (t/deftest set-action-type

@@ -46,8 +46,8 @@
                :y (:y wrapper-rect)})
 
     :vtop (let [top (:y rect)]
-             {:x (:x wrapper-rect)
-              :y top})
+            {:x (:x wrapper-rect)
+             :y top})
 
     :vcenter (let [center (+ (:y rect) (/ (:height rect) 2))]
                {:x (:x wrapper-rect)

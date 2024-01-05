@@ -8,8 +8,8 @@
   (:require
    [app.common.data :as d]
    [app.common.text :as txt]
-   [clojure.test :as t :include-macros true]
-   [clojure.pprint :refer [pprint]]))
+   [clojure.pprint :refer [pprint]]
+   [clojure.test :as t :include-macros true]))
 
 (t/deftest test-basic-conversion-roundtrip
   (let [text    "qwqw 🠒"

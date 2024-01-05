@@ -74,7 +74,7 @@
               points
               (if has-resize?
                 (-> (:points shape)
-                    (gco/transform-points (ctm/modifiers->transform modifiers)) )
+                    (gco/transform-points (ctm/modifiers->transform modifiers)))
                 points)]
           [modifiers points])]
     (position-pixel-precision modifiers shape points precision ignore-axis)))

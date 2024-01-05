@@ -14,10 +14,10 @@
      (:require-macros [app.common.data]))
 
   (:require
-   #?(:cljs [cljs.reader :as r]
-      :clj [clojure.edn :as r])
    #?(:cljs [cljs.core :as c]
       :clj [clojure.core :as c])
+   #?(:cljs [cljs.reader :as r]
+      :clj [clojure.edn :as r])
    #?(:cljs [goog.array :as garray])
    [app.common.math :as mth]
    [clojure.set :as set]
@@ -589,8 +589,8 @@
 (defn num-string? [v]
   ;; https://stackoverflow.com/questions/175739/built-in-way-in-javascript-to-check-if-a-string-is-a-valid-number
   #?(:cljs (and (string? v)
-               (not (js/isNaN v))
-               (not (js/isNaN (parse-double v))))
+                (not (js/isNaN v))
+                (not (js/isNaN (parse-double v))))
 
      :clj  (not= (parse-double v :nan) :nan)))
 
@@ -846,26 +846,26 @@
 (def ^:const trail-zeros-regex-2 #"(\.\d*[^0])0+$")
 
 #?(:cljs
-(defn format-precision
-  "Creates a number with predetermined precision and then removes the trailing 0.
+   (defn format-precision
+     "Creates a number with predetermined precision and then removes the trailing 0.
   Examples:
     12.0123, 0 => 12
     12.0123, 1 => 12
     12.0123, 2 => 12.01"
-  [num precision]
+     [num precision]
 
-  (if (number? num)
-    (try
-      (let [num-str (mth/to-fixed num precision)
-            ;; Remove all trailing zeros after the comma 100.00000
-            num-str (str/replace num-str trail-zeros-regex-1 "")]
-        ;; Remove trailing zeros after a decimal number: 0.001|00|
-        (if-let [m (re-find trail-zeros-regex-2 num-str)]
-          (str/replace num-str (first m) (second m))
-          num-str))
-      (catch :default _
-        (str num)))
-    (str num))))
+     (if (number? num)
+       (try
+         (let [num-str (mth/to-fixed num precision)
+               ;; Remove all trailing zeros after the comma 100.00000
+               num-str (str/replace num-str trail-zeros-regex-1 "")]
+           ;; Remove trailing zeros after a decimal number: 0.001|00|
+           (if-let [m (re-find trail-zeros-regex-2 num-str)]
+             (str/replace num-str (first m) (second m))
+             num-str))
+         (catch :default _
+           (str num)))
+       (str num))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Util protocols

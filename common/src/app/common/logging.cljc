@@ -239,7 +239,7 @@
 #?(:clj
    (defn slf4j-log-handler
      {:no-doc true}
-     [_ _ _ {:keys [::logger ::level ::trace ::message] }]
+     [_ _ _ {:keys [::logger ::level ::trace ::message]}]
      (when-let [logger (enabled? logger level)]
        (let [message (cond-> @message
                        (some? trace)
@@ -312,8 +312,8 @@
   (let [cljs? (:ns &env)]
     `(do
        (~(if cljs?
-         `(partial console-log-handler nil nil nil)
-         `(partial slf4j-log-handler nil nil nil))
+           `(partial console-log-handler nil nil nil)
+           `(partial slf4j-log-handler nil nil nil))
         {::logger ~(str *ns*)
          ::level ~level
          ::message (delay ~message)})

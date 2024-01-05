@@ -176,7 +176,7 @@
   [shape rect include-content?]
 
   (when (d/not-empty? (:content shape))
-    (let [ ;; If paths are too complex the intersection is too expensive
+    (let [;; If paths are too complex the intersection is too expensive
           ;; we fallback to check its bounding box otherwise the performance penalty
           ;; is too big
           ;; TODO: Look for ways to optimize this operation
@@ -190,10 +190,10 @@
           start-point (-> shape :content (first) :params (gpt/point))]
 
       (or (intersects-lines? rect-lines path-lines)
-        (if include-content?
-          (or (is-point-inside-nonzero? (first rect-points) path-lines)
-            (is-point-inside-nonzero? start-point rect-lines))
-          false)))))
+          (if include-content?
+            (or (is-point-inside-nonzero? (first rect-points) path-lines)
+                (is-point-inside-nonzero? start-point rect-lines))
+            false)))))
 
 (defn is-point-inside-ellipse?
   "checks if a point is inside an ellipse"

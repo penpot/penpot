@@ -171,9 +171,9 @@
                   layout-gap-row
                   0)
 
-        col-pad (if (or(and row? space-evenly?)
-                       (and row? space-around?)
-                       (and col? content-evenly?))
+        col-pad (if (or (and row? space-evenly?)
+                        (and row? space-around?)
+                        (and col? content-evenly?))
                   layout-gap-col
                   0)
 
