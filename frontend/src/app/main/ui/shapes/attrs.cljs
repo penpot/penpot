@@ -17,16 +17,16 @@
    [app.util.object :as obj]
    [cuerdas.core :as str]))
 
-(defn- stroke-type->dasharray
-  [width style]
-  (let [values (case style
-                 :mixed [5 5 1 5]
-                 ;; We want 0 so they are circles
-                 :dotted [(- width) 5]
-                 :dashed [10 10]
-                 nil)]
-
-    (->> values (map #(+ % width)) (str/join ","))))
+(defn- calculate-dasharray
+  [style width]
+  (let [w+5  (+ 5 width)
+        w+1  (+ 1 width)
+        w+10 (+ 10 width)]
+    (case style
+      :mixed  (str/concat "" w+5 "," w+5 "," w+1 "," w+5)
+      :dotted (str/concat "" (- (* width 2)) "," w+5)
+      :dashed (str/concat "" w+10 "," w+10)
+      "")))
 
 (defn get-border-props
   [shape]
@@ -111,7 +111,7 @@
             (obj/set! attrs "strokeOpacity" opacity)))
 
         (when (not= style :svg)
-          (obj/set! attrs "strokeDasharray" (stroke-type->dasharray width style)))
+          (obj/set! attrs "strokeDasharray" (calculate-dasharray style width)))
 
         ;; For simple line caps we use svg stroke-line-cap attribute. This
         ;; only works if all caps are the same and we are not using the tricks
