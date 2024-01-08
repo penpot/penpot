@@ -261,16 +261,29 @@
 
         on-drop
         (mf/use-fn
-         (mf/deps id index objects)
+         (mf/deps id index objects expanded?)
          (fn [side _data]
-           (let [to-index  (cond
+           (let [shape (get objects id)
+
+                 parent-id
+                 (cond
+                   (= side :center)
+                   id
+
+                   (and expanded? (= side :bot) (d/not-empty? (:shapes shape)))
+                   id
+
+                   :else
+                   (cfh/get-parent-id objects id))
+
+                 parent    (get objects parent-id)
+
+                 to-index  (cond
                              (= side :center) 0
+                             (and expanded? (= side :bot) (d/not-empty? (:shapes shape))) (count (:shapes parent))
                              (= side :top) (inc index)
-                             :else index)
-                 parent-id (if (= side :center)
-                             id
-                             (cfh/get-parent-id objects id))
-                 parent    (get objects parent-id)]
+                             :else index)]
+
              (when-not (ctk/in-component-copy? parent) ;; We don't want to change the structure of component copies
                (st/emit! (dw/relocate-selected-shapes parent-id to-index))))))
 
@@ -308,8 +321,8 @@
         depth           (+ depth 1)
         component-tree? (or component-child? (:component-root item))
 
-        enable-drag      (mf/use-fn #(reset! drag-disabled* true))
-        disable-drag     (mf/use-fn #(reset! drag-disabled* false))]
+        enable-drag      (mf/use-fn #(reset! drag-disabled* false))
+        disable-drag     (mf/use-fn #(reset! drag-disabled* true))]
 
     (mf/with-effect [selected? selected]
       (let [single? (= (count selected) 1)
