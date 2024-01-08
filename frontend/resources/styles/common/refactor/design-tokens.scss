@@ -88,6 +88,7 @@
   --button-constraint-border-color-rest: var(--color-background-tertiary);
   --button-constraint-border-color-hover: var(--color-accent-primary-muted);
   --button-constraint-background-color-hover: var(--color-accent-primary);
+
   --constraint-widget-background-color: var(--color-background-tertiary);
   --constraint-center-area-background-color: var(--color-background-primary);
 
@@ -138,6 +139,8 @@
   // ICONS
   --icon-foreground: var(--color-foreground-secondary);
   --icon-foreground-hover: var(--color-foreground-primary);
+  --icon-foreground-accept: var(--ok-color);
+  --icon-foreground-discard: var(--error-color);
 
   // INPUTS, SELECTS, DROPDOWNS
   --input-background-color: var(--color-background-tertiary);
