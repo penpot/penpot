@@ -15,6 +15,22 @@
 
 (defn conj!
   "A conj! like function for js arrays."
-  [a v]
-  (.push ^js a v)
-  a)
+  ([a v]
+   (.push ^js a v)
+   a)
+  ([a v1 v2]
+   (.push ^js a v1 v2)
+   a)
+  ([a v1 v2 v3]
+   (.push ^js a v1 v2 v3)
+   a)
+  ([a v1 v2 v3 v4]
+   (.push ^js a v1 v2 v3 v4)
+   a)
+  ([a v1 v2 v3 v4 v5]
+   (.push ^js a v1 v2 v3 v4 v5)
+   a)
+  ([a v1 v2 v3 v4 v5 v6]
+   (.push ^js a v1 v2 v3 v4 v5 v6)
+   a))
+
