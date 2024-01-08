@@ -502,6 +502,3 @@
               :hint "error on validating file referential integrity"
               :file-id (:id file)
               :details errors)))
-
-
-

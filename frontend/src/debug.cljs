@@ -393,7 +393,7 @@
      (try
        (->> (if-let [shape-id (some-> shape-id parse-uuid)]
               (let [page (dm/get-in file [:data :pages-index (get @st/state :current-page-id)])]
-                (cfv/validate-shape (uuid shape-id) file page libraries))
+                (cfv/validate-shape shape-id file page libraries))
               (cfv/validate-file file libraries))
             (group-by :code)
             (clj->js))
