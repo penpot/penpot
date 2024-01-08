@@ -383,12 +383,12 @@
 (defn- migrate-components
   "If there is any component in the file library, add a new 'Library
   backup', generate main instances for all components there and remove
-  shapes from library components.  Mark the file with
-  the :components-v2 option."
+  shapes from library components. Mark the file with the :components-v2 option."
   [file-data libraries]
   (sse/tap {:type :migration-progress
             :section :components})
-  (let [components (ctkl/components-seq file-data)]
+  (let [file-data  (prepare-file-data file-data libraries)
+        components (ctkl/components-seq file-data)]
     (if (empty? components)
       (assoc-in file-data [:options :components-v2] true)
       (let [[file-data page-id start-pos]
@@ -503,9 +503,7 @@
           (some-> *team-stats* (swap! update :processed/components (fnil + 0) total))
           (some-> *file-stats* (swap! assoc :processed/components total)))
 
-        (-> file-data
-            (prepare-file-data libraries)
-            (add-instance-grids))))))
+        (add-instance-grids file-data)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GRAPHICS MIGRATION
