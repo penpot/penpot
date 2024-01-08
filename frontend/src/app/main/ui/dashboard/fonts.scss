@@ -17,6 +17,8 @@
 
   .btn-primary {
     font-size: $fs-11;
+    height: $s-32;
+    min-width: $s-100;
   }
 }
 
@@ -150,7 +152,7 @@
 
       &:hover {
         .icon svg {
-          fill: $df-secondary;
+          stroke: $df-secondary;
         }
       }
     }
@@ -187,21 +189,20 @@
       &.failure {
         margin-right: $s-12;
         svg {
-          fill: var(--warning-color);
+          stroke: var(--warning-color);
         }
       }
       svg {
         width: $s-16;
         height: $s-16;
-        fill: $df-secondary;
+        stroke: $df-secondary;
       }
 
       &.close {
         background: none;
         border: none;
         svg {
-          transform: rotate(45deg);
-          fill: $df-secondary;
+          stroke: $df-secondary;
         }
       }
     }
@@ -273,7 +274,7 @@
       padding-top: $s-12;
 
       svg {
-        fill: $df-secondary;
+        stroke: $df-secondary;
         height: $s-20;
         width: $s-20;
       }
@@ -287,7 +288,7 @@
     &.warning {
       background-color: $db-cuaternary;
       .icon svg {
-        fill: var(--warning-color);
+        stroke: var(--warning-color);
       }
     }
   }
@@ -310,7 +311,7 @@
   width: 100%;
 
   .icon svg {
-    fill: $df-secondary;
+    stroke: $df-secondary;
     width: $s-32;
     height: $s-32;
   }
