@@ -608,12 +608,18 @@
                         (contains? svg-attr-list k)
                         (contains? svg-present-list k))
                   (cond
+                    (nil? v)
+                    res
+
                     (= k :class)
                     (assoc res :className v)
 
                     (= k :style)
-                    (let [v (if (string? v) (parse-style v) v)]
-                      (assoc res k (attrs->props v false)))
+                    (let [v (if (string? v) (parse-style v) v)
+                          v (not-empty (attrs->props v false))]
+                      (if v
+                        (assoc res k v)
+                        res))
 
                     :else
                     (let [k (if (contains? non-react-props k)
@@ -623,68 +629,6 @@
                   res))
               {}
               attrs)))
-
-(defn clean-attrs
-  "Transforms attributes to their react equivalent
-
-  DEPRECATED: replaced by attrs->props"
-  ([attrs]
-   (clean-attrs attrs true))
-
-  ([attrs whitelist?]
-   (letfn [(known-property? [[key _]]
-             (or (not whitelist?)
-                 (contains? svg-attr-list key)
-                 (contains? svg-present-list key)))
-
-           (camelize [s]
-             (when (string? s)
-               #?(:cljs (js* "~{}.replace(\":\", \"-\").replace(/-./g, x=>x[1].toUpperCase())", s)
-                  :clj  (str/camel s))))
-
-           (transform-key [key]
-             (if (contains? non-react-props key)
-               key
-               (-> (d/name key)
-                   (camelize)
-                   (keyword))))
-
-           (format-styles [style-str]
-             (->> (str/split style-str ";")
-                  (map str/trim)
-                  (map #(str/split % ":"))
-                  (group-by first)
-                  (map (fn [[key val]]
-                         [(transform-key key)
-                          (second (first val))]))
-                  (into {})))
-
-           (clean-key [[key val]]
-             (let [key (keyword key)]
-               (cond
-                 (= key :class)
-                 [:className val]
-
-                 (and (= key :style)
-                      (string? val))
-                 [key (format-styles val)]
-
-                 (and (= key :style)
-                      (map? val))
-                 [key (clean-attrs val false)]
-
-                 :else
-                 [(transform-key key) val])))]
-
-     ;; Removed this warning because slows a lot rendering with big svgs
-     #_(let [filtered-props (->> attrs (remove known-property?) (map first))]
-         (when (seq filtered-props)
-           (.warn js/console "Unknown properties: " (str/join ", " filtered-props))))
-
-     (into {}
-           (comp (filter known-property?)
-                 (map clean-key))
-           attrs))))
 
 (defn update-attr-ids
   "Replaces the ids inside a property"
@@ -723,7 +667,8 @@
               (reduce visit-node result (:content node))))]
     (visit-node {} content)))
 
-(defn extract-defs [{:keys [attrs] :as node}]
+(defn extract-defs
+  [{:keys [attrs] :as node}]
   (if-not (map? node)
     [{} node]
 
@@ -741,19 +686,22 @@
 
       [node-defs node])))
 
-(defn find-attr-references [attrs]
+(defn find-attr-references
+  [attrs]
   (->> attrs
        (mapcat (fn [[_ attr-value]]
                  (if (string? attr-value)
                    (extract-ids attr-value)
                    (find-attr-references attr-value))))))
 
-(defn find-node-references [node]
+(defn find-node-references
+  [node]
   (let [current (->> (find-attr-references (:attrs node)) (into #{}))
         children (->> (:content node) (map find-node-references) (flatten) (into #{}))]
     (vec (into current children))))
 
-(defn find-def-references [defs references]
+(defn find-def-references
+  [defs references]
   (loop [result (into #{} references)
          checked? #{}
          to-check (first references)
@@ -778,7 +726,8 @@
                (first pending)
                (rest pending))))))
 
-(defn svg-transform-matrix [shape]
+(defn svg-transform-matrix
+  [shape]
   (if (:svg-viewbox shape)
     (let [{svg-x :x
            svg-y :y
@@ -810,34 +759,39 @@
 ;; Transforms spec:
 ;; https://www.w3.org/TR/SVG11/single-page.html#coords-TransformAttribute
 
-
-(defn format-translate-params [params]
+(defn format-translate-params
+  [params]
   (assert (or (= (count params) 1) (= (count params) 2)))
   (if (= (count params) 1)
     [(gpt/point (nth params 0) 0)]
     [(gpt/point (nth params 0) (nth params 1))]))
 
-(defn format-scale-params [params]
+(defn format-scale-params
+  [params]
   (assert (or (= (count params) 1) (= (count params) 2)))
   (if (= (count params) 1)
     [(gpt/point (nth params 0))]
     [(gpt/point (nth params 0) (nth params 1))]))
 
-(defn format-rotate-params [params]
+(defn format-rotate-params
+  [params]
   (assert (or (= (count params) 1) (= (count params) 3)) (str "??" (count params)))
   (if (= (count params) 1)
     [(nth params 0) (gpt/point 0 0)]
     [(nth params 0) (gpt/point (nth params 1) (nth params 2))]))
 
-(defn format-skew-x-params [params]
+(defn format-skew-x-params
+  [params]
   (assert (= (count params) 1))
   [(nth params 0) 0])
 
-(defn format-skew-y-params [params]
+(defn format-skew-y-params
+  [params]
   (assert (= (count params) 1))
   [0 (nth params 0)])
 
-(defn to-matrix [{:keys [type params]}]
+(defn to-matrix
+  [{:keys [type params]}]
   (assert (#{"matrix" "translate" "scale" "rotate" "skewX" "skewY"} type))
   (case type
     "matrix"    (apply gmt/matrix params)
@@ -847,7 +801,8 @@
     "skewX"     (apply gmt/skew-matrix (format-skew-x-params params))
     "skewY"     (apply gmt/skew-matrix (format-skew-y-params params))))
 
-(defn parse-transform [transform-attr]
+(defn parse-transform
+  [transform-attr]
   (if transform-attr
     (let [process-matrix
           (fn [[_ type params]]
@@ -865,7 +820,8 @@
 (defn format-move [[x y]] (str "M" x " " y))
 (defn format-line [[x y]] (str "L" x " " y))
 
-(defn points->path [points-str]
+(defn points->path
+  [points-str]
   (let [points (->> points-str
                     (re-seq number-regex)
                     (filter (comp not empty? first))

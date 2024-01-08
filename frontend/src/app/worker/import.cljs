@@ -199,7 +199,8 @@
        (rx/tap #(progress! context :upload-media name))
        (rx/merge-map #(rp/cmd! :upload-file-media-object %))))
 
-(defn resolve-text-content [node context]
+(defn resolve-text-content
+  [node context]
   (let [resolve (:resolve context)]
     (->> node
          (ct/transform-nodes

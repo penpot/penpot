@@ -29,7 +29,7 @@
 
   (cond
     (map? node)
-    [:> (d/name tag) (clj->js (csvg/clean-attrs attrs))
+    [:> (d/name tag) (obj/map->obj (csvg/attrs->props attrs))
      (for [child content]
        [:& render-xml {:xml child :key (swap! internal-counter inc)}])]
 

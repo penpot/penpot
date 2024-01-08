@@ -12,21 +12,21 @@
 
 (t/deftest clean-attrs-1
   (let [attrs  {:class "foobar"}
-        result (svg/clean-attrs attrs)]
+        result (svg/attrs->props attrs)]
     (t/is (= result {:className "foobar"}))))
 
 (t/deftest clean-attrs-2
   (let [attrs  {:overline-position "top"
                 :style {:fill "none"
                         :stroke-dashoffset 1}}
-        result (svg/clean-attrs attrs true)]
+        result (svg/attrs->props attrs true)]
     (t/is (= result {:overlinePosition "top", :style {:fill "none", :strokeDashoffset 1}}))))
 
 (t/deftest clean-attrs-3
   (let [attrs  {:overline-position "top"
                 :style (str "fill:#00801b;fill-opacity:1;stroke:none;stroke-width:2749.72;"
                             "stroke-linecap:round;stroke-dasharray:none;stop-color:#000000")}
-        result (svg/clean-attrs attrs true)]
+        result (svg/attrs->props attrs true)]
     (t/is (= result {:overlinePosition "top",
                      :style {:fill "#00801b",
                              :fillOpacity "1",
