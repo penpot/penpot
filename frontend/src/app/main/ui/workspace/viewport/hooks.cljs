@@ -167,7 +167,7 @@
             (not))))
 
 (defn setup-hover-shapes
-  [page-id move-stream objects transform selected mod? hover hover-ids hover-top-frame-id hover-disabled? focus zoom show-measures?]
+  [page-id move-stream objects transform selected mod? hover measure-hover hover-ids hover-top-frame-id hover-disabled? focus zoom show-measures?]
   (let [;; We use ref so we don't recreate the stream on a change
         zoom-ref (mf/use-ref zoom)
         mod-ref (mf/use-ref @mod?)
@@ -285,9 +285,6 @@
                mod?
                (filter grouped?)
 
-               show-measures?
-               (filter #(group-empty-space? % objects ids))
-
                (not mod?)
                (filter #(or (root-frame-with-data? %)
                             (group-empty-space? % objects ids))))
@@ -309,9 +306,21 @@
                   (remove #(and mod? (no-fill-nested-frames? %)))
                   (filter #(or (empty? focus) (cpf/is-in-focus? objects focus %)))
                   (first)
-                  (get objects))]
+                  (get objects))
+
+             ;; We keep track of a diferent shape for measures
+             measure-hover-shape
+             (when show-measures?
+               (->> ids
+                    (remove #(group-empty-space? % objects ids))
+                    (remove (partial cfh/hidden-parent? objects))
+                    (remove #(and mod? (no-fill-nested-frames? %)))
+                    (filter #(or (empty? focus) (cpf/is-in-focus? objects focus %)))
+                    (first)
+                    (get objects)))]
 
          (reset! hover hover-shape)
+         (reset! measure-hover measure-hover-shape)
          (reset! hover-ids ids))))))
 
 (defn setup-viewport-modifiers
@@ -420,4 +429,3 @@
        text-editing?
        (do (st/emit! (dsc/push-shortcuts ::text tsc/shortcuts))
            #(st/emit! (dsc/pop-shortcuts ::text)))))))
-

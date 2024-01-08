@@ -122,6 +122,7 @@
         cursor            (mf/use-state (utils/get-cursor :pointer-inner))
         hover-ids         (mf/use-state nil)
         hover             (mf/use-state nil)
+        measure-hover     (mf/use-state nil)
         hover-disabled?   (mf/use-state false)
         hover-top-frame-id (mf/use-state nil)
         frame-hover       (mf/use-state nil)
@@ -264,7 +265,8 @@
     (hooks/setup-viewport-size vport viewport-ref)
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool drawing-path? node-editing? z? workspace-read-only?)
     (hooks/setup-keyboard alt? mod? space? z? shift?)
-    (hooks/setup-hover-shapes page-id move-stream base-objects transform selected mod? hover hover-ids hover-top-frame-id @hover-disabled? focus zoom show-measures?)
+    (hooks/setup-hover-shapes page-id move-stream base-objects transform selected mod? hover measure-hover
+                              hover-ids hover-top-frame-id @hover-disabled? focus zoom show-measures?)
     (hooks/setup-viewport-modifiers modifiers base-objects)
     (hooks/setup-shortcuts node-editing? drawing-path? text-editing? grid-editing?)
     (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform vbox)
@@ -433,7 +435,7 @@
           {:bounds vbox
            :selected-shapes selected-shapes
            :frame selected-frame
-           :hover-shape @hover
+           :hover-shape @measure-hover
            :zoom zoom}])
 
        (when show-padding?
