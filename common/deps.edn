@@ -1,18 +1,18 @@
 {:deps
  {org.clojure/clojure {:mvn/version "1.11.1"}
-  org.clojure/data.json {:mvn/version "2.4.0"}
+  org.clojure/data.json {:mvn/version "2.5.0"}
   org.clojure/tools.cli {:mvn/version "1.0.219"}
   org.clojure/clojurescript {:mvn/version "1.11.60"}
   org.clojure/test.check {:mvn/version "1.1.1"}
   org.clojure/data.fressian {:mvn/version "1.0.0"}
 
   ;; Logging
-  org.apache.logging.log4j/log4j-api {:mvn/version "2.21.1"}
-  org.apache.logging.log4j/log4j-core {:mvn/version "2.21.1"}
-  org.apache.logging.log4j/log4j-web {:mvn/version "2.21.1"}
-  org.apache.logging.log4j/log4j-jul {:mvn/version "2.21.1"}
-  org.apache.logging.log4j/log4j-slf4j2-impl {:mvn/version "2.21.1"}
-  org.slf4j/slf4j-api {:mvn/version "2.0.9"}
+  org.apache.logging.log4j/log4j-api {:mvn/version "2.22.1"}
+  org.apache.logging.log4j/log4j-core {:mvn/version "2.22.1"}
+  org.apache.logging.log4j/log4j-web {:mvn/version "2.22.1"}
+  org.apache.logging.log4j/log4j-jul {:mvn/version "2.22.1"}
+  org.apache.logging.log4j/log4j-slf4j2-impl {:mvn/version "2.22.1"}
+  org.slf4j/slf4j-api {:mvn/version "2.0.10"}
   pl.tkowalcz.tjahzi/log4j2-appender {:mvn/version "0.9.32"}
 
   selmer/selmer {:mvn/version "1.12.59"}
@@ -31,7 +31,7 @@
   org.graalvm.js/js {:mvn/version "23.0.2"}
 
   funcool/tubax {:mvn/version "2021.05.20-0"}
-  funcool/cuerdas {:mvn/version "2022.06.16-403"}
+  funcool/cuerdas {:mvn/version "2023.11.09-407"}
   funcool/promesa {:git/sha "484b7f5c0d08d817746caa685ed9ac5583eb37fa"
                    :git/url "https://github.com/funcool/promesa"}
 
@@ -48,9 +48,10 @@
 
   ;; exception printing
   fipp/fipp {:mvn/version "0.6.26"}
+
   io.github.eerohele/pp
-  {:git/tag "2023-11-25.47"
-   :git/sha "15d572c"}
+  {:git/tag "2024-01-04.60"
+   :git/sha "e8a9773"}
 
   io.aviso/pretty {:mvn/version "1.4.4"}
   environ/environ {:mvn/version "1.2.0"}}

@@ -5,7 +5,7 @@
 
   org.clojure/clojure {:mvn/version "1.11.1"}
   binaryage/devtools {:mvn/version "RELEASE"}
-  metosin/reitit-core {:mvn/version "0.5.18"}
+  metosin/reitit-core {:mvn/version "0.6.0"}
   funcool/okulary {:mvn/version "2022.04.11-16"}
 
   funcool/potok2
@@ -19,8 +19,8 @@
    :git/url "https://github.com/funcool/beicon.git"}
 
   funcool/rumext
-  {:git/tag "v2.8.1"
-   :git/sha "168738b"
+  {:git/tag "v2.9.2"
+   :git/sha "faa6e6c"
    :git/url "https://github.com/funcool/rumext.git"}
 
   instaparse/instaparse {:mvn/version "1.4.12"}
@@ -43,7 +43,7 @@
    :extra-deps
    {thheller/shadow-cljs {:mvn/version "2.26.2"}
     org.clojure/tools.namespace {:mvn/version "RELEASE"}
-    cider/cider-nrepl {:mvn/version "0.37.0"}}}
+    cider/cider-nrepl {:mvn/version "0.44.0"}}}
 
   :shadow-cljs
   {:main-opts ["-m" "shadow.cljs.devtools.cli"]}

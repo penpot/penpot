@@ -12,7 +12,7 @@
    [clojure.data.json :as json]
    [clojure.java.io :as io]
    [cuerdas.core :as str]
-   [rumext.v2.util :as mfu]))
+   [rumext.v2.compiler :as mfu]))
 
 ;; Should match with the `ROOT_NAME` constant in gulpfile.js
 (def ROOT-NAME "app")
@@ -141,7 +141,7 @@
               (mfu/compile-concat :safe? false)))
       `~(binding [*css-prefix* prefix]
           (-> (into [] xform-css-case params)
-              (mfu/compile-concat  :safe? false))))))
+              (mfu/compile-concat :safe? false))))))
 
 (defmacro css-case*
   [& params]

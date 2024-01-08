@@ -135,7 +135,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"archiver@npm:^6.0.0":
+"archiver@npm:^6.0.1":
   version: 6.0.1
   resolution: "archiver@npm:6.0.1"
   dependencies:
@@ -453,13 +453,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cookies@npm:^0.8.0":
-  version: 0.8.0
-  resolution: "cookies@npm:0.8.0"
+"cookies@npm:^0.9.1":
+  version: 0.9.1
+  resolution: "cookies@npm:0.9.1"
   dependencies:
     depd: "npm:~2.0.0"
     keygrip: "npm:~1.1.0"
-  checksum: 0af32f30d1ece0596efc05782c66b9d61659e20c6cc5b695452abf5ceb51883ef43c5c73d86badd7d028a0da7d39f864c95f33640aef04f97fad70f35986bea3
+  checksum: 3ffa1c0e992b62ee119adae4dd2ddd4a89166fa5434cd9bd9ff84ec4d2f14dfe2318a601280abfe32a4f64f884ec9345fb1912e488b002d188d2efa0d3919ba3
   languageName: node
   linkType: hard
 
@@ -727,13 +727,13 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "exporter@workspace:."
   dependencies:
-    archiver: "npm:^6.0.0"
-    cookies: "npm:^0.8.0"
+    archiver: "npm:^6.0.1"
+    cookies: "npm:^0.9.1"
     generic-pool: "npm:^3.9.0"
-    inflation: "npm:^2.0.0"
+    inflation: "npm:^2.1.0"
     ioredis: "npm:^5.3.2"
-    luxon: "npm:^3.4.2"
-    playwright: "npm:^1.37.1"
+    luxon: "npm:^3.4.4"
+    playwright: "npm:^1.40.1"
     raw-body: "npm:^2.5.2"
     shadow-cljs: "npm:2.26.2"
     source-map-support: "npm:^0.5.21"
@@ -1023,7 +1023,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"inflation@npm:^2.0.0":
+"inflation@npm:^2.1.0":
   version: 2.1.0
   resolution: "inflation@npm:2.1.0"
   checksum: aadfcb8047a7e00d644e2e195f901dd9d7266c2be2326b7f8f6a99298f14916f1e322d00108a7e2778d6e76a8dc2174ddb9ac14bcdfe4f4866dfd612b695ab5d
@@ -1181,7 +1181,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"luxon@npm:^3.4.2":
+"luxon@npm:^3.4.4":
   version: 3.4.4
   resolution: "luxon@npm:3.4.4"
   checksum: 02e26a0b039c11fd5b75e1d734c8f0332c95510f6a514a9a0991023e43fb233884da02d7f966823ffb230632a733fc86d4a4b1e63c3fbe00058b8ee0f8c728af
@@ -1555,7 +1555,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"playwright@npm:^1.37.1":
+"playwright@npm:^1.40.1":
   version: 1.40.1
   resolution: "playwright@npm:1.40.1"
   dependencies:
