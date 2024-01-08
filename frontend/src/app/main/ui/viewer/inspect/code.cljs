@@ -240,7 +240,8 @@
         [:button.download-button {:on-click handle-open-review}
          "Preview"]]
 
-     [:div {:class (stl/css :code-block)}
+     [:div {:class (stl/css-case :code-block true
+                                 :collapsed collapsed-css?)}
       [:div {:class (stl/css :code-row-lang)}
        [:button {:class (stl/css :toggle-btn)
                  :data-type "css"
@@ -274,7 +275,8 @@
              :on-lost-pointer-capture on-style-lost-pointer-capture
              :on-pointer-move on-style-pointer-move}]]
 
-     [:div {:class (stl/css :code-block)}
+     [:div {:class (stl/css-case :code-block true
+                                 :collapsed collapsed-markup?)}
       [:div {:class (stl/css :code-row-lang)}
        [:button {:class (stl/css :toggle-btn)
                  :data-type "markup"

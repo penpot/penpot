@@ -16,6 +16,7 @@
   grid-area: right-sidebar;
   padding-top: $s-8;
   padding-left: $s-12;
+  overflow: hidden;
   &.viewer-code {
     height: calc(100vh - $s-48);
   }
