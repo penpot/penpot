@@ -7,249 +7,260 @@
 @import "refactor/common-refactor.scss";
 .element-set {
   margin: 0;
-  .element-content {
-    @include flexColumn;
-    margin-bottom: $s-8;
-    .component-wrapper {
-      display: flex;
-      margin: 0 $s-4 0 $s-8;
-      .component-name-wrapper {
-        @extend .asset-element;
-        @include flexRow;
-        flex-grow: 1;
-        height: 100%;
-        width: 100%;
-        flex-wrap: wrap;
-        padding: 0 0 0 $s-12;
-        margin-top: $s-8;
+}
 
-        &.with-main {
-          padding-bottom: $s-12;
-        }
+.element-content {
+  @include flexColumn;
+  margin-bottom: $s-8;
+}
 
-        .component-icon {
-          @include flexCenter;
-          height: $s-24;
-          width: $s-24;
-          svg {
-            @extend .button-icon;
-            stroke: var(--icon-foreground);
-          }
-        }
-        .component-name {
-          @include titleTipography;
-          @include textEllipsis;
-          width: 70%;
-          flex-grow: 2;
-          margin-left: $s-8;
-        }
-        .component-parent-name {
-          @include titleTipography;
-          @include textEllipsis;
-          padding-left: $s-36;
-          color: var(--title-foreground-color);
-        }
-      }
-      .swappeable {
-        cursor: pointer;
-      }
-      .component-actions {
-        position: relative;
+.component-wrapper {
+  display: flex;
+  margin: 0 $s-4 0 $s-8;
+}
 
-        .menu-btn {
-          @extend .button-tertiary;
-          height: $s-32;
-          width: $s-28;
-          svg {
-            @extend .button-icon;
-          }
-        }
-        .custom-select-dropdown {
-          @extend .dropdown-wrapper;
-          right: 0;
-          left: unset;
-          width: $s-252;
-          .dropdown-element {
-            @extend .dropdown-element-base;
-          }
-        }
-      }
-    }
+.component-name-wrapper {
+  @extend .asset-element;
+  @include flexRow;
+  flex-grow: 1;
+  height: 100%;
+  width: 100%;
+  flex-wrap: wrap;
+  padding: 0 0 0 $s-12;
+  margin-top: $s-8;
+
+  &.with-main {
+    padding-bottom: $s-12;
   }
+}
 
-  .title-back {
-    @include tabTitleTipography;
-    cursor: pointer;
-    width: 100%;
-    background-color: var(--title-background-color);
-    color: var(--title-foreground-color);
-    text-align: left;
-    border: 0;
-    margin-bottom: $s-16;
+.component-icon {
+  @include flexCenter;
+  height: $s-24;
+  width: $s-24;
+  svg {
+    @extend .button-icon;
+    stroke: var(--icon-foreground);
+  }
+}
+
+.component-name {
+  @include titleTipography;
+  @include textEllipsis;
+  width: 70%;
+  flex-grow: 2;
+  margin-left: $s-8;
+}
+
+.component-parent-name {
+  @include titleTipography;
+  @include textEllipsis;
+  padding-left: $s-36;
+  color: var(--title-foreground-color);
+}
+
+.swappeable {
+  cursor: pointer;
+}
+
+.component-actions {
+  position: relative;
+}
+
+.menu-btn {
+  @extend .button-tertiary;
+  height: $s-32;
+  width: $s-28;
+  svg {
+    @extend .button-icon;
+  }
+}
+
+.custom-select-dropdown {
+  @extend .dropdown-wrapper;
+  right: 0;
+  left: unset;
+  width: $s-252;
+}
+
+.dropdown-element {
+  @extend .dropdown-element-base;
+}
+
+.title-back {
+  @include tabTitleTipography;
+  cursor: pointer;
+  width: 100%;
+  background-color: var(--title-background-color);
+  color: var(--title-foreground-color);
+  text-align: left;
+  border: 0;
+  margin-bottom: $s-16;
+  svg {
+    height: $s-8;
+    width: $s-8;
+    stroke: var(--icon-foreground);
+    margin-right: $s-16;
+    transform: rotate(180deg);
+  }
+}
+
+.search-field {
+  display: flex;
+  align-items: center;
+  height: $s-32;
+  margin: $s-16 $s-4 $s-4 $s-12;
+  border-radius: $br-8;
+  font-family: "worksans", sans-serif;
+  background-color: var(--input-background-color);
+}
+
+.search-box {
+  align-items: center;
+  display: flex;
+  width: 100%;
+}
+
+.icon-wrapper {
+  display: flex;
+  svg {
+    @extend .button-icon-small;
+    stroke: var(--icon-foreground);
+  }
+}
+
+.input-text {
+  @include removeInputStyle;
+  height: $s-32;
+  width: 100%;
+  margin: 0;
+  padding: $s-4;
+  border: 0;
+  font-size: $fs-12;
+  color: var(--input-foreground-color-active);
+  &::placeholder {
+    color: var(--input-foreground-color-disabled);
+  }
+  &:focus-visible {
+    border-color: var(--input-border-outline-color-active);
+  }
+}
+
+.clear-btn {
+  @include buttonStyle;
+  @include flexCenter;
+  height: $s-16;
+  width: $s-16;
+  .clear-icon {
+    @include flexCenter;
     svg {
-      height: $s-8;
-      width: $s-8;
-      fill: var(--icon-foreground);
-      margin-right: $s-16;
-      transform: rotate(180deg);
+      @extend .button-icon-small;
+      stroke: var(--icon-foreground);
     }
   }
+}
 
-  .component-swap {
-    .search-field {
-      display: flex;
-      align-items: center;
-      height: $s-32;
-      margin: $s-16 $s-4 $s-4 $s-12;
-      border-radius: $br-8;
-      font-family: "worksans", sans-serif;
-      background-color: var(--input-background-color);
-      .search-box {
-        align-items: center;
-        display: flex;
-        width: 100%;
+.search-icon {
+  @include flexCenter;
+  width: $s-28;
+  svg {
+    @extend .button-icon-small;
+    stroke: var(--icon-foreground);
+  }
+}
 
-        .icon-wrapper {
-          display: flex;
-          svg {
-            @extend .button-icon-small;
-            stroke: var(--icon-foreground);
-          }
-        }
+.select-field {
+  margin: $s-8 $s-4 0 $s-12;
+}
 
-        .input-text {
-          @include removeInputStyle;
-          height: $s-32;
-          width: 100%;
-          margin: 0;
-          padding: $s-4;
-          border: 0;
-          font-size: $fs-12;
-          color: var(--input-foreground-color-active);
-          &::placeholder {
-            color: var(--input-foreground-color-disabled);
-          }
-          &:focus-visible {
-            border-color: var(--input-border-outline-color-active);
-          }
-        }
-        .clear-btn {
-          @include buttonStyle;
-          @include flexCenter;
-          height: $s-16;
-          width: $s-16;
-          .clear-icon {
-            @include flexCenter;
-            svg {
-              @extend .button-icon-small;
-              stroke: var(--icon-foreground);
-            }
-          }
-        }
-      }
-      .search-icon {
-        @include flexCenter;
-        width: $s-28;
-        svg {
-          @extend .button-icon-small;
-          stroke: var(--icon-foreground);
-        }
-      }
-    }
+.select-library {
+  padding-left: $s-20;
+}
 
-    .select-field {
-      margin: $s-8 $s-4 0 $s-12;
-    }
+.listing-options-wrapper {
+  width: 100%;
+}
 
-    .select-library {
-      padding-left: $s-20;
-    }
+.listing-options {
+  margin-left: auto;
+  margin-right: $s-4;
+}
 
-    .listing-options-wrapper {
-      width: 100%;
-    }
+.component-path {
+  @include titleTipography;
+  @include textEllipsis;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+  background-color: var(--title-background-color);
+  color: var(--title-foreground-color);
+  border: 0;
+  margin: $s-16 0 $s-12 0;
+  padding: 0 $s-16 0 $s-24;
+  svg {
+    height: $s-8;
+    width: $s-8;
+    stroke: var(--icon-foreground);
+    margin-right: $s-16;
+    transform: rotate(180deg);
+  }
+}
 
-    .listing-options {
-      margin-left: auto;
-      margin-right: $s-4;
-    }
+.component-path-empty {
+  height: $s-16;
+}
 
-    .component-path {
-      @include titleTipography;
-      @include textEllipsis;
-      text-align: left;
-      cursor: pointer;
-      width: 100%;
-      background-color: var(--title-background-color);
-      color: var(--title-foreground-color);
-      border: 0;
-      margin: $s-16 0 $s-12 0;
-      padding: 0 $s-16 0 $s-24;
-      svg {
-        height: $s-8;
-        width: $s-8;
-        fill: var(--icon-foreground);
-        margin-right: $s-16;
-        transform: rotate(180deg);
-      }
-    }
+.component-list-empty {
+  @include titleTipography;
+  margin: 0 $s-4 0 $s-8;
+}
 
-    .component-path-empty {
-      height: $s-16;
-    }
+.component-list {
+  margin: 0 $s-4 0 $s-8;
+}
 
-    .component-list-empty {
-      @include titleTipography;
-      margin: 0 $s-4 0 $s-8;
-    }
+.component-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: $s-4;
+  font-size: $s-12;
+  cursor: pointer;
+  width: 100%;
+  height: $s-36;
+  border-radius: $br-8;
+  background-color: var(--assets-item-background-color);
+  color: var(--assets-item-name-foreground-color);
 
-    .component-list {
-      margin: 0 $s-4 0 $s-8;
-      .component-item {
-        display: flex;
-        align-items: center;
-        margin-bottom: $s-4;
-        font-size: $s-12;
-        cursor: pointer;
-        width: 100%;
-        height: $s-36;
-        border-radius: $br-8;
-        background-color: var(--assets-item-background-color);
-        color: var(--assets-item-name-foreground-color);
+  .component-name {
+    @include textEllipsis;
+    width: 80%;
+  }
 
-        .component-name {
-          @include textEllipsis;
-          width: 80%;
-        }
+  svg,
+  img {
+    background-color: var(--assets-component-background-color);
+    border-radius: $br-8;
+    height: $s-32;
+    width: $s-32;
+    margin: $s-2 $s-8 $s-2 $s-2;
+  }
 
-        svg,
-        img {
-          background-color: var(--assets-component-background-color);
-          border-radius: $br-8;
-          height: $s-32;
-          width: $s-32;
-          margin: $s-2 $s-8 $s-2 $s-2;
-        }
+  .selected {
+    color: var(--assets-item-name-foreground-color-hover);
+  }
 
-        .selected {
-          color: var(--assets-item-name-foreground-color-hover);
-        }
+  &:hover {
+    color: var(--assets-item-name-foreground-color-hover);
+    background-color: var(--assets-item-background-color-hover);
+  }
 
-        &:hover {
-          color: var(--assets-item-name-foreground-color-hover);
-          background-color: var(--assets-item-background-color-hover);
-        }
+  &.disabled {
+    cursor: auto;
+    color: var(--assets-item-name-foreground-color-disabled);
+    background-color: var(--assets-item-background-color);
 
-        &.disabled {
-          cursor: auto;
-          color: var(--assets-item-name-foreground-color-disabled);
-          background-color: var(--assets-item-background-color);
-
-          svg {
-            cursor: auto;
-          }
-        }
-      }
+    svg {
+      cursor: auto;
     }
   }
 }
@@ -388,5 +399,174 @@
     height: $s-12;
     width: $s-12;
     cursor: pointer;
+  }
+}
+
+// Component annotation
+
+.component-annotation {
+  @include titleTipography;
+  color: var(--entry-foreground-color);
+  border-radius: $br-8;
+
+  .annotation-title {
+    display: flex;
+    align-items: center;
+    height: $s-32;
+
+    &.expanded {
+      border-bottom: $s-1 solid var(--entry-border-color-disabled);
+    }
+
+    &.expandeable {
+      cursor: pointer;
+    }
+
+    div {
+      display: flex;
+      align-items: center;
+      line-height: 2.5;
+    }
+
+    .icon-arrow {
+      @include flexCenter;
+      width: $s-28;
+      height: $s-32;
+      display: flex;
+      margin: 0;
+      padding: 0;
+      cursor: pointer;
+      svg {
+        @extend .button-icon;
+        stroke: var(--icon-foreground);
+        width: $s-16;
+        height: $s-16;
+      }
+      &.expanded svg {
+        transform: rotate(90deg);
+      }
+    }
+
+    .icon {
+      @include flexCenter;
+      width: $s-28;
+      height: $s-32;
+      border-radius: $br-8;
+      display: none;
+      margin: 0;
+      padding: 0;
+      cursor: pointer;
+
+      svg {
+        @extend .button-icon;
+        stroke: var(--icon-foreground);
+        width: $s-16;
+        height: $s-16;
+      }
+
+      &.icon-tick:hover,
+      &.icon-edit:hover {
+        svg {
+          stroke: var(--icon-foreground-accept);
+        }
+      }
+
+      &.icon-cross:hover,
+      &.icon-trash:hover {
+        svg {
+          stroke: var(--icon-foreground-discard);
+        }
+      }
+    }
+
+    .annotation-text {
+      flex-grow: 1;
+      margin-left: $s-12;
+    }
+
+    &:hover {
+      .icon {
+        display: flex;
+      }
+    }
+  }
+
+  &.editing {
+    border: $s-1 solid var(--input-border-color-success);
+    .annotation-title {
+      border-bottom: $s-1 solid var(--entry-border-color-disabled);
+      .icon {
+        display: flex;
+      }
+    }
+
+    textarea {
+      min-height: $s-252;
+    }
+  }
+
+  &.creating {
+    border: $s-1 solid var(--input-border-color-success);
+    .annotation-title .icon {
+      display: flex;
+    }
+    textarea {
+      min-height: $s-252;
+    }
+  }
+
+  .hidden {
+    display: none;
+    svg {
+      display: none;
+    }
+  }
+
+  .counter {
+    @include titleTipography;
+    text-align: right;
+    color: var(--entry-foreground-color);
+    margin: 0 $s-8 $s-8 0;
+  }
+
+  // Auto growing text
+  .grow-wrap {
+    // easy way to plop the elements on top of each other and have them both sized based on the tallest one's height
+    display: grid;
+
+    &:after {
+      // The space is needed to preventy jumpy behavior
+      content: attr(data-replicated-value) " ";
+      white-space: pre-wrap;
+      visibility: hidden;
+    }
+
+    textarea {
+      background-color: var(--input-background-color-active);
+      color: var(--input-foreground-color-active);
+      padding: $s-12;
+
+      border: none;
+      overflow: hidden;
+      outline: none;
+
+      -webkit-box-shadow: none;
+      -moz-box-shadow: none;
+      box-shadow: none;
+
+      resize: none; /*remove the resize handle on the bottom right*/
+    }
+
+    textarea,
+    &:after {
+      /* Identical styling required!! */
+      font: inherit;
+      overflow-wrap: anywhere;
+
+      padding: 10px;
+
+      /* Place on top of each other */
+      grid-area: 1 / 1 / 2 / 2;
+    }
   }
 }
