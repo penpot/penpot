@@ -34,3 +34,13 @@
    (.push ^js a v1 v2 v3 v4 v5 v6)
    a))
 
+(defn normalize-to-array
+  "If `o` is an array, returns it as-is, if not, wrap into an array."
+  [o]
+  (if (array? o)
+    o
+    #js [o]))
+
+(defn without-nils
+  [^js/Array o]
+  (.filter o (fn [v] (some? v))))

@@ -311,7 +311,7 @@
          [:& tab-container
           {:on-change-tab set-tab!
            :selected @active-color-tab
-           :collapsable? false}
+           :collapsable false}
 
           [:& tab-element {:id :ramp :title i/rgba-refactor}
            (if picking-color?

@@ -83,10 +83,9 @@
          [:& tab-container
           {:on-change-tab on-tab-change
            :selected section
-           :shortcuts? shortcuts?
-           :collapsable? true
+           :collapsable true
            :handle-collapse handle-collapse
-           :class (stl/css :tab-spacing)}
+           :header-class (stl/css :tab-spacing)}
           [:& tab-element {:id :layers :title (tr "workspace.sidebar.layers")}
            [:div {:class (stl/css :layers-tab)
                   :style #js {"--height" (str size-pages "px")}}

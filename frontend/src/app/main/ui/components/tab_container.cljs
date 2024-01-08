@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.ui.icons :as i]
+   [app.util.array :as array]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
@@ -17,41 +18,32 @@
 
 (mf/defc tab-element
   {::mf/wrap-props false}
-  [props]
-  (let [children (unchecked-get props "children")]
-    [:div {:class (stl/css :tab-element)}
-     children]))
+  [{:keys [children]}]
+  [:div {:class (stl/css :tab-element)} children])
 
 (mf/defc tab-container
   {::mf/wrap-props false}
-  [props]
-  (let [children        (->>
-                         (unchecked-get props "children")
-                         (filter some?))
-        selected        (unchecked-get props "selected")
-        on-change       (unchecked-get props "on-change-tab")
-        collapsable?    (unchecked-get props "collapsable?")
-        handle-collapse (unchecked-get props "handle-collapse")
-        class           (unchecked-get props "class")
-        content-class   (unchecked-get props "content-class")
+  [{:keys [children selected on-change-tab collapsable handle-collapse header-class content-class]}]
+  (let [children  (-> (array/normalize-to-array children)
+                      (array/without-nils))
 
-        state           (mf/use-state #(or selected (-> children first .-props .-id)))
-        selected        (or selected @state)
+        selected* (mf/use-state #(or selected (-> children first .-props .-id)))
+        selected  (or selected @selected*)
 
-        select-fn
-        (mf/use-fn
-         (mf/deps on-change)
-         (fn [event]
-           (let [id (-> event
-                        (dom/get-current-target)
-                        (dom/get-data "id")
-                        (keyword))]
-             (reset! state id)
-             (when (fn? on-change) (on-change id)))))]
+        on-click  (mf/use-fn
+                   (mf/deps on-change-tab)
+                   (fn [event]
+                     (let [id (-> event
+                                  (dom/get-current-target)
+                                  (dom/get-data "id")
+                                  (keyword))]
+                       (reset! selected* id)
+                       (when (fn? on-change-tab)
+                         (on-change-tab id)))))]
 
     [:div {:class (stl/css :tab-container)}
-     [:div {:class (dm/str class " " (stl/css :tab-container-tabs))}
-      (when collapsable?
+     [:div {:class (dm/str header-class " " (stl/css :tab-container-tabs))}
+      (when ^boolean collapsable
         [:button
          {:on-click handle-collapse
           :class (stl/css :collapse-sidebar)
@@ -61,13 +53,16 @@
        (for [tab children]
          (let [props (.-props tab)
                id    (.-id props)
-               title (.-title props)]
-           [:div
-            {:key (str/concat "tab-" (d/name id))
-             :data-id (d/name id)
-             :on-click select-fn
-             :class  (stl/css-case :tab-container-tab-title true
-                                   :current (= selected id))}
+               title (.-title props)
+               sid   (d/name id)]
+           [:div {:key (str/concat "tab-" sid)
+                  :data-id sid
+                  :on-click on-click
+                  :class  (stl/css-case
+                           :tab-container-tab-title true
+                           :current (= selected id))}
             title]))]]
+
      [:div {:class (dm/str content-class " " (stl/css  :tab-container-content))}
-      (d/seek #(= selected (-> % .-props .-id)) children)]]))
+      (d/seek #(= selected (-> % .-props .-id))
+              children)]]))
