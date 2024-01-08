@@ -46,13 +46,13 @@
             color {:color clr/white}
 
             store (the/prepare-store state done
-              (fn [new-state]
-                (t/is (= (get-in new-state [:workspace-data
-                                            :recent-colors])
-                         [color]))))]
+                                     (fn [new-state]
+                                       (t/is (= (get-in new-state [:workspace-data
+                                                                   :recent-colors])
+                                                [color]))))]
 
         (ptk/emit!
-          store
-          (dwl/add-recent-color color)
-          :the/end)))))
+         store
+         (dwl/add-recent-color color)
+         :the/end)))))
 

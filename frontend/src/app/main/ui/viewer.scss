@@ -124,6 +124,7 @@
   border-radius: $br-8;
   width: $s-64;
   height: $s-32;
+  color: var(--viewer-thumbnails-control-foreground-color);
   background-color: var(--viewer-controls-background-color);
 }
 
@@ -139,4 +140,41 @@
   justify-items: center;
   align-items: center;
   overflow: hidden;
+}
+
+.viewer-overlay-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+
+  &.visible {
+    background-color: rgb(0, 0, 0, 0.2);
+  }
+}
+
+.viewer-overlay {
+  position: absolute;
+}
+
+.viewport-container {
+  clip-path: inset(0 0 0 0);
+  grid-column: 1 / 1;
+  grid-row: 1 / 1;
+
+  .not-fixed {
+    position: absolute;
+  }
+
+  .fixed {
+    position: fixed;
+    pointer-events: none;
+
+    .frame-children g {
+      pointer-events: auto;
+    }
+  }
+}
+
+:global(svg#loader-pencil) {
+  fill: var(--icon-foreground);
 }

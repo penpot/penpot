@@ -6,11 +6,11 @@
 
 (ns common-tests.helpers.components
   (:require
-   [clojure.test :as t]
    [app.common.files.helpers :as cfh]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
-   [app.common.types.file :as ctf]))
+   [app.common.types.file :as ctf]
+   [clojure.test :as t]))
 
 ;; ---- Helpers to manage libraries and synchronization
 
@@ -99,7 +99,7 @@
                               main-shape
                               (ctn/get-shape component (:shape-ref shape))]
 
-                        (t/is (some? main-shape))))]
+                          (t/is (some? main-shape))))]
 
     ;; Validate that the instance tree is well constructed
     (check-instance-root (first shapes-inst))
@@ -135,7 +135,7 @@
                               main-shape
                               (ctn/get-shape component (:shape-ref shape))]
 
-                        (t/is (some? main-shape))))]
+                          (t/is (some? main-shape))))]
 
     ;; Validate that the instance tree is well constructed
     (check-instance-root (first shapes-inst))

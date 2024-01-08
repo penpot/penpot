@@ -132,16 +132,16 @@
 
          (rx/subs! (fn [[messages dropped last]]
                     ;; Send back the dropped messages replies
-                    (doseq [msg dropped]
-                      (drop-message msg))
+                     (doseq [msg dropped]
+                       (drop-message msg))
 
                     ;; Process the message
-                    (doseq [msg (vals messages)]
-                      (handle-message msg))
+                     (doseq [msg (vals messages)]
+                       (handle-message msg))
 
                     ;; After process the buffer we send a clear
-                    (when-not (= last ::clear)
-                      (rx/push! buffer ::clear)))))))
+                     (when-not (= last ::clear)
+                       (rx/push! buffer ::clear)))))))
 
 (defonce process-message-sub (subscribe-buffer-messages))
 

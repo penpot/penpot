@@ -38,14 +38,14 @@
     canvas))
 
 (def get-offscreen-canvas ((fn []
-  (let [internal-state #js { :canvas nil }]
-    (fn [width height]
-      (let [canvas (unchecked-get internal-state "canvas")]
-        (if canvas
-          (resize-offscreen-canvas canvas width height)
-          (let [new-canvas (create-offscreen-canvas width height)]
-            (obj/set! internal-state "canvas" new-canvas)
-            new-canvas))))))))
+                             (let [internal-state #js {:canvas nil}]
+                               (fn [width height]
+                                 (let [canvas (unchecked-get internal-state "canvas")]
+                                   (if canvas
+                                     (resize-offscreen-canvas canvas width height)
+                                     (let [new-canvas (create-offscreen-canvas width height)]
+                                       (obj/set! internal-state "canvas" new-canvas)
+                                       new-canvas))))))))
 
 (mf/defc pixel-overlay
   {::mf/wrap-props false}
@@ -143,11 +143,11 @@
                                    :styles styles)))
                   (rx/mapcat thr/render-node)
                   (rx/subs! (fn [image-bitmap]
-                             (.drawImage canvas-context image-bitmap 0 0)
-                             (let [width (unchecked-get canvas "width")
-                                   height (unchecked-get canvas "height")
-                                   image-data (.getImageData canvas-context 0 0 width height)]
-                               (mf/set-ref-val! canvas-image-data image-data))))))))
+                              (.drawImage canvas-context image-bitmap 0 0)
+                              (let [width (unchecked-get canvas "width")
+                                    height (unchecked-get canvas "height")
+                                    image-data (.getImageData canvas-context 0 0 width height)]
+                                (mf/set-ref-val! canvas-image-data image-data))))))))
 
         handle-svg-change
         (mf/use-callback

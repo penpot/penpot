@@ -201,9 +201,9 @@
       ;; because of the timestamp precission (two concurrent requests), in
       ;; this case we just retry the operation.
       (let [cfg    (-> cfg
-                      (assoc ::rtry/when rtry/conflict-exception?)
-                      (assoc ::rtry/max-retries 6)
-                      (assoc ::rtry/label "persist-audit-log"))
+                       (assoc ::rtry/when rtry/conflict-exception?)
+                       (assoc ::rtry/max-retries 6)
+                       (assoc ::rtry/label "persist-audit-log"))
             params (-> params
                        (update :props db/tjson)
                        (update :context db/tjson)

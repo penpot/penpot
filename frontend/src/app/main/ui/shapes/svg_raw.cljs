@@ -40,7 +40,8 @@
         render-id   (mf/use-ctx muc/render-id)
 
         props       (mf/with-memo [shape render-id]
-                      (-> (usa/get-style-props shape render-id)
+                      (-> #js {}
+                          (usa/add-fill-props! shape render-id)
                           (obj/unset! "transform")
                           (obj/set! "x" x)
                           (obj/set! "y" y)
@@ -78,7 +79,8 @@
         props
         (mf/with-memo [shape render-id]
           (let [element-id (dm/get-in shape [:svg-attrs :id])
-                props      (usa/get-style-props shape render-id)]
+                props (-> #js {}
+                          (usa/add-fill-props! shape render-id))]
 
             (when (and (some? element-id)
                        (contains? ids-mapping element-id))

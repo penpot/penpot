@@ -262,7 +262,7 @@
                    (= scope "penpot/rasterizer"))
           (->> (render payload)
                (rx/subs! (partial send-success! id)
-                        (partial send-failure! id))))))))
+                         (partial send-failure! id))))))))
 
 (defn- listen
   "Initializes the listener for messages from the main thread."

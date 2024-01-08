@@ -131,8 +131,8 @@
         (when profile
           (swap! storage assoc :profile profile)
           (i18n/set-locale! (:lang profile))
-        (when (not= previous-email email)
-          (swap! storage dissoc ::current-team-id)))))))
+          (when (not= previous-email email)
+            (swap! storage dissoc ::current-team-id)))))))
 
 (defn fetch-profile
   []

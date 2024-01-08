@@ -28,7 +28,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc resizing-textarea
-  {::mf/wrap-props false }
+  {::mf/wrap-props false}
   [props]
   (let [value            (d/nilv (unchecked-get props "value") "")
         on-focus         (unchecked-get props "on-focus")
@@ -51,14 +51,14 @@
 
         on-key-down
         (mf/use-fn
-          (mf/deps on-esc on-ctrl-enter on-change*)
-          (fn [event]
-            (cond
-              (and (kbd/esc? event) (fn? on-esc)) (on-esc event)
-              (and (kbd/mod? event) (kbd/enter? event) (fn? on-ctrl-enter))
-                (do
-                  (on-change* event)
-                  (on-ctrl-enter event)))))
+         (mf/deps on-esc on-ctrl-enter on-change*)
+         (fn [event]
+           (cond
+             (and (kbd/esc? event) (fn? on-esc)) (on-esc event)
+             (and (kbd/mod? event) (kbd/enter? event) (fn? on-ctrl-enter))
+             (do
+               (on-change* event)
+               (on-ctrl-enter event)))))
 
         on-focus*
         (mf/use-fn
@@ -168,13 +168,13 @@
         on-change
         (mf/use-fn
          (mf/deps draft)
-          (fn [content]
-            (st/emit! (dcm/update-draft-thread {:content content}))))
+         (fn [content]
+           (st/emit! (dcm/update-draft-thread {:content content}))))
 
         on-submit
         (mf/use-fn
-          (mf/deps draft)
-          (partial on-submit draft))]
+         (mf/deps draft)
+         (partial on-submit draft))]
 
     [:*
      [:div

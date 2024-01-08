@@ -24,7 +24,7 @@
    [app.db :as db]
    [app.db.sql :as sql]
    [app.features.fdata :as feat.fdata]
-   [app.main :refer [system]]
+   [app.main :as main]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.files-update :as files-update]
    [app.util.blob :as blob]
@@ -55,16 +55,17 @@
 
 (defn reset-file-data!
   "Hardcode replace of the data of one file."
-  [system id data]
-  (db/tx-run! system (fn [system]
-                       (db/update! system :file
-                                   {:data data}
-                                   {:id id}))))
+  [id data]
+  (db/tx-run! main/system
+              (fn [system]
+                (db/update! system :file
+                            {:data data}
+                            {:id id}))))
 
 (defn get-file
   "Get the migrated data of one file."
-  [system id & {:keys [migrate?] :or {migrate? true}}]
-  (db/run! system
+  [id & {:keys [migrate?] :or {migrate? true}}]
+  (db/run! main/system
            (fn [system]
              (binding [pmap/*load-fn* (partial feat.fdata/load-pointer system id)]
                (-> (files/get-file system id :migrate? migrate?)
@@ -73,8 +74,8 @@
 (defn validate
   "Validate structure, referencial integrity and semantic coherence of
     all contents of a file. Returns a list of errors."
-  [system id]
-  (db/tx-run! system
+  [id]
+  (db/tx-run! main/system
               (fn [{:keys [::db/conn] :as system}]
                 (binding [pmap/*load-fn* (partial feat.fdata/load-pointer system id)]
                   (let [id   (if (string? id) (parse-uuid id) id)
@@ -90,8 +91,8 @@
 
 (defn repair!
   "Repair the list of errors detected by validation."
-  [system id]
-  (db/tx-run! system
+  [id]
+  (db/tx-run! main/system
               (fn [{:keys [::db/conn] :as system}]
                 (binding [pmap/*tracked* (pmap/create-tracked)
                           pmap/*load-fn* (partial feat.fdata/load-pointer system id)]
@@ -127,8 +128,8 @@
 (defn update-file!
   "Apply a function to the data of one file. Optionally save the changes or not.
   The function receives the decoded and migrated file data."
-  [system & {:keys [update-fn id rollback? migrate? inc-revn?]
-             :or {rollback? true migrate? true inc-revn? true}}]
+  [& {:keys [update-fn id rollback? migrate? inc-revn?]
+      :or {rollback? true migrate? true inc-revn? true}}]
   (letfn [(process-file [{:keys [::db/conn] :as system} {:keys [features] :as file}]
             (binding [pmap/*tracked* (pmap/create-tracked)
                       pmap/*load-fn* (partial feat.fdata/load-pointer system id)
@@ -153,7 +154,7 @@
 
               (dissoc file :data)))]
 
-    (db/tx-run! system
+    (db/tx-run! main/system
                 (fn [system]
                   (binding [*system* system]
                     (try
@@ -163,6 +164,12 @@
                         (when rollback?
                           (db/rollback! system)))))))))
 
+
+(def ^:private sql:get-file-ids
+  "SELECT id FROM file
+    WHERE created_at < ? AND deleted_at is NULL
+    ORDER BY created_at DESC")
+
 (defn analyze-files
   "Apply a function to all files in the database, reading them in
   batches. Do not change data.
@@ -171,21 +178,11 @@
   and the previous state and returns the new state.
 
   Emits rollback at the end of operation."
-  [system & {:keys [chunk-size max-items start-at on-file on-error on-end on-init with-libraries?]
-             :or {chunk-size 10 max-items Long/MAX_VALUE}}]
-  (letfn [(get-chunk [conn cursor]
-            (let [sql  (str "SELECT id, created_at FROM file "
-                            " WHERE created_at < ? AND deleted_at is NULL "
-                            " ORDER BY created_at desc LIMIT ?")
-                  rows (db/exec! conn [sql cursor chunk-size])]
-              [(some->> rows peek :created-at) (map :id rows)]))
-
-          (get-candidates [conn]
-            (->> (d/iteration (partial get-chunk conn)
-                              :vf second
-                              :kf first
-                              :initk (or start-at (dt/now)))
-                 (take max-items)))
+  [& {:keys [max-items start-at on-file on-error on-end on-init with-libraries?]}]
+  (letfn [(get-candidates [conn]
+            (cond->> (db/cursor conn [sql:get-file-ids (or start-at (dt/now))])
+              (some? max-items)
+              (take max-items)))
 
           (on-error* [cause file]
             (println "unexpected exception happened on processing file: " (:id file))
@@ -210,12 +207,13 @@
                 (catch Throwable cause
                   ((or on-error on-error*) cause file)))))]
 
-    (db/tx-run! system
+    (db/tx-run! main/system
                 (fn [{:keys [::db/conn] :as system}]
                   (try
                     (binding [*system* system]
                       (when (fn? on-init) (on-init))
-                      (run! (partial process-file system) (get-candidates conn)))
+                      (run! (partial process-file system)
+                            (get-candidates conn)))
                     (finally
                       (when (fn? on-end)
                         (ex/ignoring (on-end)))
@@ -224,33 +222,20 @@
 (defn process-files!
   "Apply a function to all files in the database, reading them in
   batches."
-
-  [system & {:keys [chunk-size
-                    max-items
-                    workers
-                    start-at
-                    on-file
-                    on-error
-                    on-end
-                    on-init
-                    rollback?]
-             :or {chunk-size 10
-                  max-items Long/MAX_VALUE
-                  workers 1
-                  rollback? true}}]
-  (letfn [(get-chunk [conn cursor]
-            (let [sql  (str "SELECT id, created_at FROM file "
-                            " WHERE created_at < ? AND deleted_at is NULL "
-                            " ORDER BY created_at desc LIMIT ?")
-                  rows (db/exec! conn [sql cursor chunk-size])]
-              [(some->> rows peek :created-at) (map :id rows)]))
-
-          (get-candidates [conn]
-            (->> (d/iteration (partial get-chunk conn)
-                              :vf second
-                              :kf first
-                              :initk (or start-at (dt/now)))
-                 (take max-items)))
+  [& {:keys [max-items
+             workers
+             start-at
+             on-file
+             on-error
+             on-end
+             on-init
+             rollback?]
+      :or {workers 1
+           rollback? true}}]
+  (letfn [(get-candidates [conn]
+            (cond->> (db/cursor conn [sql:get-file-ids (or start-at (dt/now))])
+              (some? max-items)
+              (take max-items)))
 
           (on-error* [cause file]
             (println! "unexpected exception happened on processing file: " (:id file))
@@ -275,7 +260,7 @@
                 ((or on-error on-error*) cause file-id))))
 
           (run-worker [in index]
-            (db/tx-run! system
+            (db/tx-run! main/system
                         (fn [system]
                           (binding [*system* system]
                             (loop [i 0]
@@ -288,15 +273,16 @@
                             (db/rollback! system)))))
 
           (run-producer [input]
-            (db/tx-run! system (fn [{:keys [::db/conn]}]
-                                 (doseq [file-id (get-candidates conn)]
-                                   (println! "=> producer:" file-id "|" (px/get-name))
-                                   (sp/put! input file-id))
-                                 (sp/close! input))))]
+            (db/tx-run! main/system
+                        (fn [{:keys [::db/conn]}]
+                          (doseq [file-id (get-candidates conn)]
+                            (println! "=> producer:" file-id "|" (px/get-name))
+                            (sp/put! input file-id))
+                          (sp/close! input))))]
 
     (when (fn? on-init) (on-init))
 
-    (let [input    (sp/chan :buf chunk-size)
+    (let [input    (sp/chan :buf 25)
           producer (px/thread
                      {:name "penpot/srepl/producer"}
                      (run-producer input))

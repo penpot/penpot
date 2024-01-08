@@ -58,8 +58,8 @@
 (defn set-undo-group
   [changes undo-group]
   (cond-> changes
-          (some? undo-group)
-          (assoc :undo-group undo-group)))
+    (some? undo-group)
+    (assoc :undo-group undo-group)))
 
 (defn with-page
   [changes page]
@@ -166,12 +166,12 @@
           new-changes   (if (< index (count redo-changes))
                           (->> (subvec (:redo-changes changes) index)
                                (map #(-> %
-                                       (assoc :page-id uuid/zero)
-                                       (dissoc :component-id))))
+                                         (assoc :page-id uuid/zero)
+                                         (dissoc :component-id))))
                           [])
           new-file-data (cfc/process-changes file-data new-changes)]
       (vary-meta changes assoc ::file-data new-file-data
-                               ::applied-changes-count (count redo-changes)))
+                 ::applied-changes-count (count redo-changes)))
     changes))
 
 ;; Page changes
@@ -224,9 +224,9 @@
                                     :option option-key
                                     :value option-val})
         (update :undo-changes conj {:type :set-option
-                                         :page-id page-id
-                                         :option option-key
-                                         :value old-val})
+                                    :page-id page-id
+                                    :option option-key
+                                    :value old-val})
         (apply-changes-local))))
 
 (defn update-page-option
@@ -243,9 +243,9 @@
                                     :option option-key
                                     :value new-val})
         (update :undo-changes conj {:type :set-option
-                                         :page-id page-id
-                                         :option option-key
-                                         :value old-val})
+                                    :page-id page-id
+                                    :option option-key
+                                    :value old-val})
         (apply-changes-local))))
 
 ;; Shape tree changes
@@ -292,7 +292,7 @@
      (-> changes
          (update :redo-changes conj add-change)
          (cond->
-           (and (ctk/in-component-copy? parent) (not ignore-touched))
+          (and (ctk/in-component-copy? parent) (not ignore-touched))
            (update :undo-changes conj restore-touched-change))
          (update :undo-changes conj del-change)
          (apply-changes-local)))))
@@ -333,13 +333,13 @@
          mk-undo-change
          (fn [undo-changes shape]
            (let [prev-sibling (cfh/get-prev-sibling objects (:id shape))]
-           (conj undo-changes
-                 {:type :mov-objects
-                  :page-id (::page-id (meta changes))
-                  :parent-id (:parent-id shape)
-                  :shapes [(:id shape)]
-                  :after-shape prev-sibling
-                  :index 0}))) ; index is used in case there is no after-shape (moving bottom shapes)
+             (conj undo-changes
+                   {:type :mov-objects
+                    :page-id (::page-id (meta changes))
+                    :parent-id (:parent-id shape)
+                    :shapes [(:id shape)]
+                    :after-shape prev-sibling
+                    :index 0}))) ; index is used in case there is no after-shape (moving bottom shapes)
 
          restore-touched-change
          {:type :mod-obj
@@ -351,7 +351,7 @@
      (-> changes
          (update :redo-changes conj set-parent-change)
          (cond->
-           (ctk/in-component-copy? parent)
+          (ctk/in-component-copy? parent)
            (update :undo-changes conj restore-touched-change))
          (update :undo-changes #(reduce mk-undo-change % shapes))
          (apply-changes-local)))))
@@ -501,10 +501,10 @@
 
         objects (lookup-objects changes)
         xform   (comp
-                  (mapcat #(cons % (cfh/get-parent-ids objects %)))
-                  (map (d/getf objects))
-                  (filter #(contains? #{:group :bool} (:type %)))
-                  (distinct))
+                 (mapcat #(cons % (cfh/get-parent-ids objects %)))
+                 (map (d/getf objects))
+                 (filter #(contains? #{:group :bool} (:type %)))
+                 (distinct))
         all-parents (sequence xform ids)
 
         generate-operation
@@ -661,59 +661,59 @@
   ([changes id path name new-shapes updated-shapes main-instance-id main-instance-page]
    (add-component changes id path name new-shapes updated-shapes main-instance-id main-instance-page nil))
   ([changes id path name new-shapes updated-shapes main-instance-id main-instance-page annotation]
-  (assert-page-id! changes)
-  (assert-objects! changes)
-  (let [page-id (::page-id (meta changes))
-        objects (lookup-objects changes)
-        lookupf (d/getf objects)
+   (assert-page-id! changes)
+   (assert-objects! changes)
+   (let [page-id (::page-id (meta changes))
+         objects (lookup-objects changes)
+         lookupf (d/getf objects)
 
-        mk-change (fn [shape]
-                    {:type :mod-obj
-                     :page-id page-id
-                     :id (:id shape)
-                     :operations [{:type :set
-                                   :attr :component-id
-                                   :val (:component-id shape)}
-                                  {:type :set
-                                   :attr :component-file
-                                   :val (:component-file shape)}
-                                  {:type :set
-                                   :attr :component-root
-                                   :val (:component-root shape)}
-                                  {:type :set
-                                   :attr :main-instance
-                                   :val (:main-instance shape)}
-                                  {:type :set
-                                   :attr :shape-ref
-                                   :val (:shape-ref shape)}
-                                  {:type :set
-                                   :attr :touched
-                                   :val (:touched shape)}]}) ]
-    (-> changes
-        (update :redo-changes
-                (fn [redo-changes]
-                  (-> redo-changes
-                      (conj (cond-> {:type :add-component
-                                     :id id
-                                     :path path
-                                     :name name
-                                     :main-instance-id main-instance-id
-                                     :main-instance-page main-instance-page
-                                     :annotation annotation}
-                                    (some? new-shapes)  ;; this will be null in components-v2
-                                    (assoc :shapes (vec new-shapes))))
-                      (into (map mk-change) updated-shapes))))
-        (update :undo-changes
-                (fn [undo-changes]
-                  (-> undo-changes
-                      (conj {:type :del-component
-                                  :id id
-                                  :skip-undelete? true})
-                      (into (comp (map :id)
-                                  (map lookupf)
-                                  (map mk-change))
-                            updated-shapes))))
-        (apply-changes-local)))))
+         mk-change (fn [shape]
+                     {:type :mod-obj
+                      :page-id page-id
+                      :id (:id shape)
+                      :operations [{:type :set
+                                    :attr :component-id
+                                    :val (:component-id shape)}
+                                   {:type :set
+                                    :attr :component-file
+                                    :val (:component-file shape)}
+                                   {:type :set
+                                    :attr :component-root
+                                    :val (:component-root shape)}
+                                   {:type :set
+                                    :attr :main-instance
+                                    :val (:main-instance shape)}
+                                   {:type :set
+                                    :attr :shape-ref
+                                    :val (:shape-ref shape)}
+                                   {:type :set
+                                    :attr :touched
+                                    :val (:touched shape)}]})]
+     (-> changes
+         (update :redo-changes
+                 (fn [redo-changes]
+                   (-> redo-changes
+                       (conj (cond-> {:type :add-component
+                                      :id id
+                                      :path path
+                                      :name name
+                                      :main-instance-id main-instance-id
+                                      :main-instance-page main-instance-page
+                                      :annotation annotation}
+                               (some? new-shapes)  ;; this will be null in components-v2
+                               (assoc :shapes (vec new-shapes))))
+                       (into (map mk-change) updated-shapes))))
+         (update :undo-changes
+                 (fn [undo-changes]
+                   (-> undo-changes
+                       (conj {:type :del-component
+                              :id id
+                              :skip-undelete? true})
+                       (into (comp (map :id)
+                                   (map lookupf)
+                                   (map mk-change))
+                             updated-shapes))))
+         (apply-changes-local)))))
 
 (defn update-component
   [changes id update-fn]
@@ -748,7 +748,7 @@
       (update :redo-changes conj {:type :del-component
                                   :id id})
       (update :undo-changes conj {:type :restore-component
-                                        :id id})))
+                                  :id id})))
 
 (defn restore-component
   ([changes id]
@@ -760,7 +760,7 @@
                                    :id id
                                    :page-id page-id})
        (update :undo-changes conj {:type :del-component
-                                        :id id}))))
+                                   :id id}))))
 
 (defn ignore-remote
   [changes]

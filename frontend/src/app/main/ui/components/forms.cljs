@@ -10,7 +10,6 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.ui.components.select :as cs]
-   [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
@@ -28,9 +27,7 @@
 
 (mf/defc input
   [{:keys [label help-icon disabled form hint trim children data-test on-change-value placeholder show-success?] :as props}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)
-
-        input-type   (get props :type "text")
+  (let [input-type   (get props :type "text")
         input-name   (get props :name)
         more-classes (get props :class)
         auto-focus?  (get props :auto-focus? false)
@@ -111,98 +108,61 @@
         show-valid? (and show-success? touched? (not error))
         show-invalid? (and touched? error)]
 
-    (if new-css-system
-      [:div {:class (dm/str more-classes " "
-                            (stl/css-case
-                             :input-wrapper true
-                             :valid         show-valid?
-                             :invalid       show-invalid?
-                             :checkbox      is-checkbox?
-                             :disabled      disabled))}
-       [:*
-        (cond
-          (some? label)
-          [:label {:class (stl/css-case :input-with-label (not is-checkbox?)
-                                        :input-label   is-text?
-                                        :radio-label    is-radio?
-                                        :checkbox-label is-checkbox?)
-                   :tab-index "-1"
-                   :for (name input-name)} label
+    [:div {:class (dm/str more-classes " "
+                          (stl/css-case
+                           :input-wrapper true
+                           :valid         show-valid?
+                           :invalid       show-invalid?
+                           :checkbox      is-checkbox?
+                           :disabled      disabled))}
+     [:*
+      (cond
+        (some? label)
+        [:label {:class (stl/css-case :input-with-label (not is-checkbox?)
+                                      :input-label   is-text?
+                                      :radio-label    is-radio?
+                                      :checkbox-label is-checkbox?)
+                 :tab-index "-1"
+                 :for (name input-name)} label
 
-           (when is-checkbox?
-             [:span {:class (stl/css-case :global/checked value)} i/status-tick-refactor])
+         (when is-checkbox?
+           [:span {:class (stl/css-case :global/checked value)} i/status-tick-refactor])
 
-           (if is-checkbox?
-             [:> :input props]
-
-             [:div {:class (stl/css :input-and-icon)}
-              [:> :input props]
-              (when help-icon'
-                [:span {:class (stl/css :help-icon)
-                        :on-click (when (= "password" input-type)
-                                    swap-text-password)}
-                 help-icon'])
-
-              (when show-valid?
-                [:span {:class (stl/css :valid-icon)}
-                 i/tick-refactor])
-
-              (when show-invalid?
-                [:span {:class (stl/css :invalid-icon)}
-                 i/close-refactor])])]
-
-          (some? children)
-          [:label {:for (name input-name)}
+         (if is-checkbox?
            [:> :input props]
-           children])
+
+           [:div {:class (stl/css :input-and-icon)}
+            [:> :input props]
+            (when help-icon'
+              [:span {:class (stl/css :help-icon)
+                      :on-click (when (= "password" input-type)
+                                  swap-text-password)}
+               help-icon'])
+
+            (when show-valid?
+              [:span {:class (stl/css :valid-icon)}
+               i/tick-refactor])
+
+            (when show-invalid?
+              [:span {:class (stl/css :invalid-icon)}
+               i/close-refactor])])]
+
+        (some? children)
+        [:label {:for (name input-name)}
+         [:> :input props]
+         children])
 
 
 
-        (cond
-          (and touched? (:message error))
-          [:div {:id (dm/str "error-" input-name)
-                 :class (stl/css :error)
-                 :data-test (clojure.string/join [data-test "-error"])}
-           (tr (:message error))]
+      (cond
+        (and touched? (:message error))
+        [:div {:id (dm/str "error-" input-name)
+               :class (stl/css :error)
+               :data-test (clojure.string/join [data-test "-error"])}
+         (tr (:message error))]
 
-          (string? hint)
-          [:div {:class (stl/css :hint)} hint])]]
-
-      ;;OLD
-      [:div
-       {:class (str more-classes " "
-                    (dom/classnames
-                     :focus          @focus?
-                     :valid          (and touched? (not error))
-                     :invalid        (and touched? error)
-                     :disabled       disabled
-                     :empty          (and is-text? (str/empty? value))
-                     :with-icon      (not (nil? help-icon'))
-                     :custom-input   is-text?
-                     :input-radio    is-radio?
-                     :input-checkbox is-checkbox?))}
-       [:*
-        [:> :input props]
-        (cond
-          (some? label)
-          [:label {:for (name input-name)} label]
-
-          (some? children)
-          [:label {:for (name input-name)} children])
-
-        (when help-icon'
-          [:div.help-icon
-           {:style {:cursor "pointer"}
-            :on-click (when (= "password" input-type)
-                        swap-text-password)}
-           help-icon'])
-        (cond
-          (and touched? (:message error))
-          [:span.error {:id (dm/str "error-" input-name)
-                        :data-test (clojure.string/join [data-test "-error"])} (tr (:message error))]
-
-          (string? hint)
-          [:span.hint hint])]])))
+        (string? hint)
+        [:div {:class (stl/css :hint)} hint])]]))
 
 (mf/defc textarea
   [{:keys [label disabled form hint trim] :as props}]
@@ -259,62 +219,28 @@
         [:span.hint hint])]]))
 
 (mf/defc select
-  [{:keys [options disabled label form default data-test] :as props
+  [{:keys [options disabled form default] :as props
     :or {default ""}}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)
-        input-name (get props :name)
+  (let [input-name (get props :name)
         form       (or form (mf/use-ctx form-ctx))
         value      (or (get-in @form [:data input-name]) default)
-        cvalue     (d/seek #(= value (:value %)) options)
-        focus?     (mf/use-state false)
 
         handle-change
         (fn [event]
           (let [value (if (string? event) event (dom/get-target-val event))]
-            (fm/on-input-change form input-name value)))
+            (fm/on-input-change form input-name value)))]
 
-        on-focus
-        (fn [_]
-          (reset! focus? true))
-
-        on-blur
-        (fn [_]
-          (reset! focus? false))]
-
-    (if new-css-system
-      [:div {:class (stl/css :select-wrapper)}
-       [:& cs/select
-        {:default-value value
-         :options options
-         :on-change handle-change}]]
-
-
-      [:div.custom-select
-       [:select {:value value
-                 :on-change handle-change
-                 :on-focus on-focus
-                 :on-blur on-blur
-                 :disabled disabled
-                 :data-test data-test}
-        (for [item options]
-          [:> :option (clj->js (cond-> {:key (:value item) :value (:value item)}
-                                 (:disabled item) (assoc :disabled "disabled")
-                                 (:hidden item) (assoc :style {:display "none"})))
-           (:label item)])]
-
-       [:div.input-container {:class (dom/classnames :disabled disabled :focus @focus?)}
-        [:div.main-content
-         [:label label]
-         [:span.value (:label cvalue "")]]
-
-        [:div.icon
-         i/arrow-slide]]])))
+    [:div {:class (stl/css :select-wrapper)}
+     [:& cs/select
+      {:default-value value
+       :disabled disabled
+       :options options
+       :on-change handle-change}]]))
 
 (mf/defc radio-buttons
   {::mf/wrap-props false}
   [props]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)
-        form          (or (unchecked-get props "form")
+  (let [form          (or (unchecked-get props "form")
                           (mf/use-ctx form-ctx))
         name          (unchecked-get props "name")
 
@@ -337,51 +263,31 @@
 
              (when (fn? on-change)
                (on-change name value)))))]
-    (if new-css-system
-      [:div {:class (stl/css :custom-radio)}
-       (for [{:keys [image value label]} options]
-         (let [image?   (some? image)
-               value'   (encode-fn value)
-               checked? (= value current-value)
-               key      (str/ffmt "%-%" name value')]
-           [:label {:for key
-                    :key key
-                    :style {:background-image (when image? (str/ffmt "url(%)" image))}
-                    :class (stl/css-case :radio-label true
-                                         :global/checked checked?
-                                         :with-image image?)}
-            [:input {:on-change on-change'
-                     :type "radio"
-                     :class (stl/css :radio-input)
-                     :id key
-                     :name name
-                     :value value'
-                     :checked checked?}]
-            (when (not image?)
-              [:span {:class (stl/css-case :radio-icon true
-                                           :global/checked checked?)}
-               (when checked? [:span {:class (stl/css :radio-dot)}])])
+    [:div {:class (stl/css :custom-radio)}
+     (for [{:keys [image value label]} options]
+       (let [image?   (some? image)
+             value'   (encode-fn value)
+             checked? (= value current-value)
+             key      (str/ffmt "%-%" name value')]
+         [:label {:for key
+                  :key key
+                  :style {:background-image (when image? (str/ffmt "url(%)" image))}
+                  :class (stl/css-case :radio-label true
+                                       :global/checked checked?
+                                       :with-image image?)}
+          [:input {:on-change on-change'
+                   :type "radio"
+                   :class (stl/css :radio-input)
+                   :id key
+                   :name name
+                   :value value'
+                   :checked checked?}]
+          (when (not image?)
+            [:span {:class (stl/css-case :radio-icon true
+                                         :global/checked checked?)}
+             (when checked? [:span {:class (stl/css :radio-dot)}])])
 
-            label]))]
-
-
-
-      [:div.custom-radio
-       (for [{:keys [image value label]} options]
-         (let [image? (some? image)
-               value' (encode-fn value)
-               key    (str/ffmt "%-%" name value')]
-           [:div.input-radio {:key key :class (when image? "with-image")}
-            [:input {:on-change on-change'
-                     :type "radio"
-                     :id key
-                     :name name
-                     :value value'
-                     :checked (= value current-value)}]
-            [:label {:for key
-                     :style {:background-image (when image? (str/ffmt "url(%)" image))}
-                     :class (when image? "with-image")}
-             label]]))])))
+          label]))]))
 
 (mf/defc submit-button*
   {::mf/wrap-props false}
@@ -393,12 +299,11 @@
         on-click  (unchecked-get props "onClick")
         children  (unchecked-get props "children")
 
-        class     (unchecked-get props "className")
+        class     (d/nilv (unchecked-get props "className") "btn-primary btn-large")
         name      (d/nilv (unchecked-get props "name") "submit")
 
         disabled? (or (and (some? form) (not (:valid @form)))
                       (true? (unchecked-get props "disabled")))
-
         new-klass (dm/str class " " (if disabled? (stl/css :btn-disabled) ""))
 
         on-key-down
@@ -442,8 +347,7 @@
 
 (mf/defc multi-input
   [{:keys [form label class name trim valid-item-fn caution-item-fn on-submit] :as props}]
-  (let [new-css-system (mf/use-ctx ctx/new-css-system)
-        form       (or form (mf/use-ctx form-ctx))
+  (let [form       (or form (mf/use-ctx form-ctx))
         input-name (get props :name)
         touched?   (get-in @form [:touched input-name])
         error      (get-in @form [:errors input-name])
@@ -456,32 +360,18 @@
         empty?     (and (str/empty? @value)
                         (zero? (count @items)))
 
-        klass      (str (get props :class) " "
-                        (dom/classnames
-                         :focus          @focus?
-                         :valid          (and touched? (not error))
-                         :invalid        (and touched? error)
-                         :empty          empty?
-                         :custom-multi-input true
-                         :custom-input   true))
+        klass (str (get props :class) " "
+                   (stl/css-case
+                    :focus          @focus?
+                    :valid          (and touched? (not error))
+                    :invalid        (and touched? error)
+                    :empty          empty?
+                    :custom-multi-input true))
 
-
-        new-css-klass (str (get props :class) " "
-                           (stl/css-case
-                            :focus          @focus?
-                            :valid          (and touched? (not error))
-                            :invalid        (and touched? error)
-                            :empty          empty?
-                            :custom-multi-input true))
-
-        in-klass  (str class " "
-                       (dom/classnames
-                        :no-padding (pos? (count @items))))
-
-        new-css-in-klass (str class " "
-                              (stl/css-case
-                               :inside-input true
-                               :no-padding   (pos? (count @items))))
+        in-klass (str class " "
+                      (stl/css-case
+                       :inside-input true
+                       :no-padding   (pos? (count @items))))
 
         on-focus
         (mf/use-fn #(reset! focus? true))
@@ -549,59 +439,32 @@
             values (filterv #(:valid %) values)]
         (update-form! values)))
 
-    (if new-css-system
-      [:div {:class new-css-klass}
-       [:input {:id (name input-name)
-                :class new-css-in-klass
-                :type "text"
-                :auto-focus true
-                :on-focus on-focus
-                :on-blur on-blur
-                :on-key-down on-key-down
-                :value @value
-                :on-change on-change
-                :placeholder (when empty? label)}]
-       [:label {:for (name input-name)} label]
+    [:div {:class klass}
+     [:input {:id (name input-name)
+              :class in-klass
+              :type "text"
+              :auto-focus true
+              :on-focus on-focus
+              :on-blur on-blur
+              :on-key-down on-key-down
+              :value @value
+              :on-change on-change
+              :placeholder (when empty? label)}]
+     [:label {:for (name input-name)} label]
 
-       (when-let [items (seq @items)]
-         [:div {:class (stl/css :selected-items)}
-          (for [item items]
-            [:div {:class (stl/css :selected-item)
-                   :key (:text item)
-                   :tab-index "0"
-                   :on-key-down (partial manage-key-down item)}
-             [:span {:class (stl/css-case :around true
-                                          :invalid (not (:valid item))
-                                          :caution (:caution item))}
-              [:span {:class (stl/css :text)} (:text item)]
-              [:button {:class (stl/css :icon)
-                      :on-click #(remove-item! item)} i/close-refactor]]])])]
-
-
-
-      [:div {:class klass}
-       [:input {:id (name input-name)
-                :class in-klass
-                :type "text"
-                :auto-focus true
-                :on-focus on-focus
-                :on-blur on-blur
-                :on-key-down on-key-down
-                :value @value
-                :on-change on-change
-                :placeholder (when empty? label)}]
-       [:label {:for (name input-name)} label]
-
-       (when-let [items (seq @items)]
-         [:div.selected-items
-          (for [item items]
-            [:div.selected-item {:key (:text item)
-                                 :tab-index "0"
-                                 :on-key-down (partial manage-key-down item)}
-             [:span.around {:class (dom/classnames "invalid" (not (:valid item))
-                                                   "caution" (:caution item))}
-              [:span.text (:text item)]
-              [:span.icon {:on-click #(remove-item! item)} i/cross]]])])])))
+     (when-let [items (seq @items)]
+       [:div {:class (stl/css :selected-items)}
+        (for [item items]
+          [:div {:class (stl/css :selected-item)
+                 :key (:text item)
+                 :tab-index "0"
+                 :on-key-down (partial manage-key-down item)}
+           [:span {:class (stl/css-case :around true
+                                        :invalid (not (:valid item))
+                                        :caution (:caution item))}
+            [:span {:class (stl/css :text)} (:text item)]
+            [:button {:class (stl/css :icon)
+                      :on-click #(remove-item! item)} i/close-refactor]]])])]))
 
 ;; --- Validators
 
@@ -618,7 +481,7 @@
   (> (count value) length))
 
 (defn validate-length
-  [field length errors-msg ]
+  [field length errors-msg]
   (fn [errors data]
     (cond-> errors
       (max-length? (get data field) length)
@@ -637,6 +500,6 @@
     (let [value (get data field)]
       (cond-> errors
         (and
-          (all-spaces? value)
-          (> (count value) 0))
+         (all-spaces? value)
+         (> (count value) 0))
         (assoc field {:message error-msg})))))

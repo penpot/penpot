@@ -153,8 +153,7 @@
 
     (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
       (t/is (= 0 (:freeze res)))
-      (t/is (= 6 (:delete res))))
-    ))
+      (t/is (= 6 (:delete res))))))
 
 (t/deftest font-deletion-2
   (let [prof    (th/create-profile* 1 {:is-active true})
@@ -216,8 +215,7 @@
 
     (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
       (t/is (= 0 (:freeze res)))
-      (t/is (= 3 (:delete res))))
-    ))
+      (t/is (= 3 (:delete res))))))
 
 (t/deftest font-deletion-3
   (let [prof    (th/create-profile* 1 {:is-active true})
@@ -278,6 +276,4 @@
 
     (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
       (t/is (= 0 (:freeze res)))
-      (t/is (= 3 (:delete res))))
-
-    ))
+      (t/is (= 3 (:delete res))))))

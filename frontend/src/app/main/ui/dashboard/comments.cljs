@@ -75,9 +75,9 @@
                          (with-meta {::ev/origin "dashboard"})))))]
 
     (mf/use-effect
-      (mf/deps team-id)
-      (fn []
-        (st/emit! (dcm/retrieve-unread-comment-threads team-id))))
+     (mf/deps team-id)
+     (fn []
+       (st/emit! (dcm/retrieve-unread-comment-threads team-id))))
 
     (mf/use-effect
      (mf/deps show?)

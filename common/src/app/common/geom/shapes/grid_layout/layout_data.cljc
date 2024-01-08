@@ -62,14 +62,14 @@
 (defn child-min-width
   [child child-bounds bounds objects]
   (+ (ctl/child-width-margin child)
-     (-child-min-width child child-bounds bounds objects)))
+     (-child-min-width child child-bounds bounds objects true)))
 
 (def -child-min-height nil)
 
 (defn child-min-height
   [child child-bounds bounds objects]
   (+ (ctl/child-height-margin child)
-     (-child-min-height child child-bounds bounds objects)))
+     (-child-min-height child child-bounds bounds objects true)))
 
 (defn layout-bounds
   [parent shape-bounds]
@@ -82,7 +82,7 @@
   (let [[size max-size]
         (case type
           :percent
-          (let [value (/ (* total-value value) 100) ]
+          (let [value (/ (* total-value value) 100)]
             [value value])
 
           :fixed
@@ -190,7 +190,7 @@
         ;; Apply assign-fr to the track-list
         track-list
         (reduce
-         (fn [track-list [idx assignment] ]
+         (fn [track-list [idx assignment]]
            (-> track-list
                (update-in [idx :size] max assignment)))
          track-list

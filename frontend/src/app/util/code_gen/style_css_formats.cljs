@@ -31,8 +31,7 @@
    :padding               :size-array
    :margin                :size-array
    :grid-template-rows    :tracks
-   :grid-template-columns :tracks
-   })
+   :grid-template-columns :tracks})
 
 (defmulti format-value
   (fn [property _value _options] (css-formatters property)))
@@ -139,7 +138,7 @@
   [_ value options]
   (->> value
        (map #(format-shadow % options))
-       (str/join ", " )))
+       (str/join ", ")))
 
 (defmethod format-value :blur
   [_ value _options]

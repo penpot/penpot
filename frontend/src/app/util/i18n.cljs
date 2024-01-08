@@ -30,6 +30,7 @@
    {:label "Euskera (community)" :value "eu"}
    {:label "Français (community)" :value "fr"}
    {:label "Gallego (Community)" :value "gl"}
+   {:label "Hausa (Community)" :value "ha"}
    {:label "Hrvatski (Community)" :value "hr"}
    {:label "Italiano (community)" :value "it"}
    {:label "Norsk - Bokmål (community)" :value "nb_no"}

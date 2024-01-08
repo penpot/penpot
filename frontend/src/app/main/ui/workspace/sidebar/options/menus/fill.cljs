@@ -74,7 +74,7 @@
            (st/emit! (dc/add-fill ids {:color default-color
                                        :opacity 1}))
 
-          (when (not (some? (seq fills))) (open-content))))
+           (when (not (some? (seq fills))) (open-content))))
 
         on-change
         (mf/use-fn

@@ -196,7 +196,7 @@
          (->> (rp/cmd! :get-all-projects)
               (rx/map group-by-team)
               (rx/subs! #(when (mf/ref-val mounted-ref)
-                          (reset! teams %)))))))
+                           (reset! teams %)))))))
 
     (when current-team
       (let [sub-options (concat (vec (for [project current-projects]

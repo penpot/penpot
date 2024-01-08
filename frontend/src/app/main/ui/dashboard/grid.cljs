@@ -74,12 +74,12 @@
       (when (and visible? (not thumbnail-uri))
         (->> (ask-for-thumbnail file-id revn)
              (rx/subs! (fn [url]
-                        (st/emit! (dd/set-file-thumbnail file-id url)))
-                      (fn [cause]
-                        (log/error :hint "unable to render thumbnail"
-                                   :file-if file-id
-                                   :revn revn
-                                   :message (ex-message cause)))))))
+                         (st/emit! (dd/set-file-thumbnail file-id url)))
+                       (fn [cause]
+                         (log/error :hint "unable to render thumbnail"
+                                    :file-if file-id
+                                    :revn revn
+                                    :message (ex-message cause)))))))
 
     [:div {:class (stl/css :grid-item-th)
            :style {:background-color background-color}
@@ -514,12 +514,12 @@
              (do
                (dom/prevent-default e)
                (when-not (or (dnd/from-child? e)
-                           (dnd/broken-event? e))
+                             (dnd/broken-event? e))
                  (when (not= selected-project project-id)
                    (reset! dragging? true))))
 
              (or (dnd/has-type? e "Files")
-               (dnd/has-type? e "application/x-moz-file"))
+                 (dnd/has-type? e "application/x-moz-file"))
              (do
                (dom/prevent-default e)
                (reset! dragging? true)))))
@@ -559,7 +559,7 @@
                    (st/emit! (dd/move-files (with-meta data mdata))))))
 
              (or (dnd/has-type? e "Files")
-               (dnd/has-type? e "application/x-moz-file"))
+                 (dnd/has-type? e "application/x-moz-file"))
              (do
                (dom/prevent-default e)
                (reset! dragging? false)

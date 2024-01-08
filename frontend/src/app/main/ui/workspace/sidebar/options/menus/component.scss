@@ -96,20 +96,6 @@
   }
 
   .component-swap {
-    .element-set-title {
-      @include titleTipography;
-      text-transform: uppercase;
-      margin: $s-16 $s-4 0 $s-12;
-    }
-
-    svg {
-      stroke: var(--icon-foreground);
-      fill: var(--icon-foreground);
-      height: $s-12;
-      width: $s-12;
-      cursor: pointer;
-    }
-
     .search-field {
       display: flex;
       align-items: center;
@@ -177,12 +163,6 @@
 
     .select-library {
       padding-left: $s-20;
-    }
-
-    .library-name {
-      @include titleTipography;
-      @include textEllipsis;
-      margin: $s-20 $s-4 0 $s-12;
     }
 
     .listing-options-wrapper {
@@ -270,116 +250,143 @@
           }
         }
       }
+    }
+  }
+}
 
-      .component-group {
-        @include titleTipography;
-        text-align: left;
-        display: flex;
-        align-items: center;
-        margin: 0 $s-16 $s-8 $s-8;
-        justify-content: space-between;
-        cursor: pointer;
-        height: $s-24;
-        svg {
-          height: $s-8;
-          width: $s-8;
-        }
+.component-group {
+  @include titleTipography;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  margin: 0 $s-16 $s-8 $s-8;
+  justify-content: space-between;
+  cursor: pointer;
+  height: $s-24;
+  svg {
+    height: $s-8;
+    width: $s-8;
+  }
+  div {
+    display: flex;
+    width: 90%;
+  }
+  span {
+    @include textEllipsis;
+  }
+  .component-group-path {
+    direction: rtl;
+  }
+  .component-group-name {
+    color: var(--assets-item-name-foreground-color);
+  }
+  &:hover {
+    color: var(--assets-item-name-foreground-color-hover);
+    .component-group-name {
+      color: var(--assets-item-name-foreground-color-hover);
+    }
+  }
+}
 
-        div {
-          display: flex;
-          width: 90%;
-        }
-        span {
-          @include textEllipsis;
-        }
-        .component-group-path {
-          direction: rtl;
-        }
-        .component-group-name {
-          color: var(--assets-item-name-foreground-color);
-        }
-        &:hover {
-          color: var(--assets-item-name-foreground-color-hover);
-          .component-group-name {
-            color: var(--assets-item-name-foreground-color-hover);
-          }
-        }
-      }
+.component-grid {
+  display: grid;
+  grid-template-columns: repeat(2, $s-124);
+  grid-auto-rows: $s-124;
+  gap: $s-4;
+}
+
+.grid-cell {
+  @include flexCenter;
+  place-items: center;
+  flex-wrap: wrap;
+  position: relative;
+  padding: $s-8;
+  border-radius: $br-8;
+  background-color: var(--assets-component-background-color);
+  overflow: hidden;
+  --assets-component-current-border-color: var(--assets-component-border-color);
+  border: $s-4 solid var(--assets-component-current-border-color);
+  cursor: pointer;
+  img {
+    height: auto;
+    width: auto;
+    max-height: 100%;
+    max-width: 100%;
+    pointer-events: none;
+    border: 0;
+  }
+  svg {
+    height: 100%;
+    width: 100%;
+    stroke: none;
+    object-fit: contain;
+  }
+  .component-name {
+    @include titleTipography;
+    @include textEllipsis;
+    display: none;
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    padding: $s-2;
+    text-align: center;
+    direction: rtl;
+  }
+
+  &:hover {
+    background-color: var(--assets-item-background-color-hover);
+    .component-name {
+      display: block;
+      color: var(--assets-item-name-foreground-color-hover);
+      background: linear-gradient(to top, var(--assets-item-background-color-hover) 0%, transparent 100%);
     }
   }
 
-  .component-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    grid-auto-rows: calc(10vh + $s-16);
-    gap: $s-4;
-    margin: 0 $s-4 0 $s-8;
-    .grid-cell {
-      @include flexCenter;
-      flex-wrap: wrap;
-      position: relative;
-      padding: $s-8;
-      border-radius: $br-8;
-      background-color: var(--assets-component-background-color);
-      overflow: hidden;
-      cursor: pointer;
-      img {
-        height: auto;
-        width: auto;
-        max-height: 100%;
-        max-width: 100%;
-        pointer-events: none;
-        border: 0;
-      }
-      svg {
-        height: 10vh;
-        width: 10vh;
-        stroke: none;
-      }
-      .component-name {
-        @include titleTipography;
-        @include textEllipsis;
-        display: none;
-        position: absolute;
-        left: 0;
-        bottom: 0;
-        width: 100%;
-        padding: $s-2;
-        text-align: center;
-        direction: rtl;
-      }
-
-      &:hover {
-        background-color: var(--assets-item-background-color-hover);
-        .component-name {
-          display: block;
-          color: var(--assets-item-name-foreground-color-hover);
-          background: linear-gradient(to top, var(--assets-item-background-color-hover) 0%, transparent 100%);
-        }
-      }
-
-      &.selected {
-        border: $s-1 solid var(--assets-item-border-color);
-        .component-name {
-          color: var(--assets-item-name-foreground-color-hover);
-        }
-      }
-
-      &.disabled {
-        background: var(--assets-component-background-color-disabled);
-        cursor: auto;
-        svg {
-          cursor: auto;
-        }
-        .component-name {
-          background: linear-gradient(
-            to top,
-            var(--assets-component-background-color-disabled) 0%,
-            transparent 100%
-          );
-          color: var(--assets-item-name-foreground-color-hover);
-        }
-      }
+  &.selected {
+    --assets-component-current-border-color: var(--assets-item-border-color);
+    .component-name {
+      color: var(--assets-item-name-foreground-color-hover);
     }
+  }
+
+  &.disabled {
+    background: var(--assets-component-background-color-disabled);
+    cursor: auto;
+    svg {
+      cursor: auto;
+    }
+    .component-name {
+      background: linear-gradient(
+        to top,
+        var(--assets-component-background-color-disabled) 0%,
+        transparent 100%
+      );
+      color: var(--assets-item-name-foreground-color-hover);
+    }
+  }
+}
+
+.library-name {
+  @include titleTipography;
+  @include textEllipsis;
+  margin: $s-20 $s-4 0 $s-12;
+  color: var(--title-foreground-color);
+}
+
+.element-set-title {
+  @include titleTipography;
+  text-transform: uppercase;
+  margin: $s-16 $s-4 0 $s-12;
+  color: var(--title-foreground-color);
+}
+
+.radio-button {
+  svg {
+    stroke: var(--icon-foreground);
+    fill: var(--icon-foreground);
+    height: $s-12;
+    width: $s-12;
+    cursor: pointer;
   }
 }

@@ -31,13 +31,13 @@
    (create-bounds shape bounds-map objects modif-tree nil))
 
   ([{:keys [id] :as shape} bounds-map objects modif-tree current-ref]
-   (cond
-     (and (cfh/mask-shape? shape) (d/not-empty? (:shapes shape)))
-     (create-bounds (get objects (first (:shapes shape))) bounds-map objects modif-tree)
-
-     (cfh/group-shape? shape)
+   (if (cfh/group-shape? shape)
      (let [modifiers (dm/get-in modif-tree [id :modifiers])
-           children (cfh/get-immediate-children objects id)
+
+           children
+           (cond->> (cfh/get-immediate-children objects id)
+             (cfh/mask-shape? shape)
+             (take 1))
            shape-bounds (if current-ref @current-ref @(get bounds-map id))
            current-bounds
            (cond-> shape-bounds
@@ -49,7 +49,7 @@
                 (mapv #(deref (get bounds-map (:id %)))))]
        (gpo/merge-parent-coords-bounds children-bounds current-bounds))
 
-     :else
+     ;; Shape
      (let [modifiers (dm/get-in modif-tree [id :modifiers])
            shape-bounds (if current-ref @current-ref @(get bounds-map id))]
        (cond-> shape-bounds

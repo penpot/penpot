@@ -224,11 +224,10 @@
                               (cfh/join-path (if (not every-same-file?)
                                                ""
                                                (find-common-path [] 0))))
-
         filters*            (mf/use-state
                              {:term ""
                               :file-id file-id
-                              :path path
+                              :path (or path "")
                               :listing-thumbs? false})
 
         filters             (deref filters*)
@@ -317,75 +316,78 @@
          (fn [style]
            (swap! filters* assoc :listing-thumbs? (= style "grid"))))]
 
-       [:div {:class (stl/css :component-swap)}
-        [:div {:class (stl/css :element-set-title)}
-         [:span (tr "workspace.options.component.swap")]]
-        [:div {:class (stl/css :component-swap-content)}
-         [:div {:class (stl/css :search-field)}
-          [:& search-bar {:on-change on-search-term-change
-                          :clear-action on-search-clear-click
-                          :value (:term filters)
-                          :placeholder (str (tr "labels.search") " " (get-in libraries [current-library-id :name]))
-                          :icon (mf/html [:span {:class (stl/css :search-icon)} i/search-refactor])}]]
+    [:div {:class (stl/css :component-swap)}
+     [:div {:class (stl/css :element-set-title)}
+      [:span (tr "workspace.options.component.swap")]]
+     [:div {:class (stl/css :component-swap-content)}
+      [:div {:class (stl/css :search-field)}
+       [:& search-bar {:on-change on-search-term-change
+                       :clear-action on-search-clear-click
+                       :value (:term filters)
+                       :placeholder (str (tr "labels.search") " " (get-in libraries [current-library-id :name]))
+                       :icon (mf/html [:span {:class (stl/css :search-icon)} i/search-refactor])}]]
 
-         [:div {:class (stl/css :select-field)}
-          [:& select
-           {:class (stl/css :select-library)
-            :default-value current-library-id
-            :options libraries-options
-            :on-change on-library-change}]]
+      [:div {:class (stl/css :select-field)}
+       [:& select
+        {:class (stl/css :select-library)
+         :default-value current-library-id
+         :options libraries-options
+         :on-change on-library-change}]]
 
-         [:div {:class (stl/css :library-name)} current-library-name]
+      [:div {:class (stl/css :library-name)} current-library-name]
 
-         [:div {:class (stl/css :listing-options-wrapper)}
-          [:& radio-buttons {:class (stl/css :listing-options)
-                             :selected (if (:listing-thumbs? filters) "grid" "list")
-                             :on-change toggle-list-style
-                             :name "swap-listing-style"}
-           [:& radio-button {:icon i/view-as-list-refactor
-                             :value "list"
-                             :id "swap-opt-list"}]
-           [:& radio-button {:icon i/flex-grid-refactor
-                             :value "grid"
-                             :id "swap-opt-grid"}]]]
+      [:div {:class (stl/css :listing-options-wrapper)}
+       [:& radio-buttons {:class (stl/css :listing-options)
+                          :selected (if (:listing-thumbs? filters) "grid" "list")
+                          :on-change toggle-list-style
+                          :name "swap-listing-style"}
+        [:& radio-button {:icon i/view-as-list-refactor
+                          :icon-class (stl/css :radio-button)
+                          :value "list"
+                          :id "swap-opt-list"}]
+        [:& radio-button {:icon i/flex-grid-refactor
+                          :icon-class (stl/css :radio-button)
+                          :value "grid"
+                          :id "swap-opt-grid"}]]]
 
 
-         (if (or is-search? (str/empty? (:path filters)))
-           [:div {:class (stl/css :component-path-empty)}]
-           [:button {:class (stl/css :component-path)
-                     :on-click on-go-back
-                     :title (:path filters)}
-            [:span i/arrow-slide]
-            [:span (:path filters)]])
+      (if (or is-search? (str/empty? (:path filters)))
+        [:div {:class (stl/css :component-path-empty)}]
+        [:button {:class (stl/css :component-path)
+                  :on-click on-go-back
+                  :title (:path filters)}
+         [:span i/arrow-slide]
+         [:span (:path filters)]])
 
-         (when (empty? items)
-           [:div {:class (stl/css :component-list-empty)}
-            (tr "workspace.options.component.swap.empty")])
+      (when (empty? items)
+        [:div {:class (stl/css :component-list-empty)}
+         (tr "workspace.options.component.swap.empty")])
 
-         (when (:listing-thumbs? filters)
-           [:div {:class (stl/css :component-list)}
-            (for [item groups]
-              [:& component-group-item {:item item :on-enter-group on-enter-group}])])
+      (when (:listing-thumbs? filters)
+        [:div {:class (stl/css :component-list)}
+         (for [item groups]
+           [:& component-group-item {:item item :on-enter-group on-enter-group}])])
 
-         [:div {:class (stl/css-case :component-grid (:listing-thumbs? filters)
-                                     :component-list (not (:listing-thumbs? filters)))}
-          (for [item items]
-            (if (:id item)
-              (let [data       (get-in libraries [current-library-id :data])
-                    container  (ctf/get-component-page data item)
-                    root-shape (ctf/get-component-root data item)
-                    loop?      (or (contains? parent-components (:main-instance-id item))
-                                   (contains? parent-components (:id item)))]
-                [:& component-swap-item {:item item
-                                         :loop loop?
-                                         :shapes shapes
-                                         :file-id current-library-id
-                                         :root-shape root-shape
-                                         :container container
-                                         :component-id current-comp-id
-                                         :is-search is-search?
-                                         :listing-thumbs (:listing-thumbs? filters)}])
-              [:& component-group-item {:item item :on-enter-group on-enter-group}]))]]]))
+      [:div {:class (stl/css-case :component-grid (:listing-thumbs? filters)
+                                  :component-list (not (:listing-thumbs? filters)))}
+       (for [item items]
+         (if (:id item)
+           (let [data       (get-in libraries [current-library-id :data])
+                 container  (ctf/get-component-page data item)
+                 root-shape (ctf/get-component-root data item)
+                 loop?      (or (contains? parent-components (:main-instance-id item))
+                                (contains? parent-components (:id item)))]
+             [:& component-swap-item {:key (:id item)
+                                      :item item
+                                      :loop loop?
+                                      :shapes shapes
+                                      :file-id current-library-id
+                                      :root-shape root-shape
+                                      :container container
+                                      :component-id current-comp-id
+                                      :is-search is-search?
+                                      :listing-thumbs (:listing-thumbs? filters)}])
+           [:& component-group-item {:item item :on-enter-group on-enter-group}]))]]]))
 
 (mf/defc component-ctx-menu
   [{:keys [menu-entries on-close show] :as props}]
@@ -394,14 +396,14 @@
           (dom/stop-propagation event)
           (action)
           (on-close))]
-  [:& dropdown {:show show :on-close on-close}
-   [:ul {:class (stl/css :custom-select-dropdown)}
-    (for [entry menu-entries :when (not (nil? entry))]
-      [:li {:key (uuid/next)
-            :class (stl/css :dropdown-element)
-            :on-click (partial do-action (:action entry))}
-       [:span {:class (stl/css :dropdown-label)}
-        (tr (:msg  entry))]])]]))
+    [:& dropdown {:show show :on-close on-close}
+     [:ul {:class (stl/css :custom-select-dropdown)}
+      (for [entry menu-entries :when (not (nil? entry))]
+        [:li {:key (uuid/next)
+              :class (stl/css :dropdown-element)
+              :on-click (partial do-action (:action entry))}
+         [:span {:class (stl/css :dropdown-label)}
+          (tr (:msg  entry))]])]]))
 
 (mf/defc component-menu
   [{:keys [shapes swap-opened?] :as props}]

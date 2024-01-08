@@ -232,7 +232,7 @@
              (->> (rp/cmd! :register-profile params)
                   (rx/finalize #(reset! submitted? false))
                   (rx/subs! on-success
-                           (partial handle-register-error form))))))]
+                            (partial handle-register-error form))))))]
 
     [:& fm/form {:on-submit on-submit :form form}
      [:div {:class (stl/css :fields-row)}

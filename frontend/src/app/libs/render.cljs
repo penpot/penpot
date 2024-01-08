@@ -22,7 +22,7 @@
      (fn [resolve reject]
        (->> (r/render-page data)
             (rx/take 1)
-            (rx/subs! resolve reject))) )))
+            (rx/subs! resolve reject))))))
 
 (defn exports []
   #js {:renderPage render-page-export})

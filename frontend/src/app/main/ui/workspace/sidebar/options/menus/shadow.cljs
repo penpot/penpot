@@ -113,7 +113,7 @@
            (st/emit! (dch/update-shapes
                       ids
                       #(assoc-in % [:shadow index :color]
-                         (dissoc color :id :file-id))))))
+                                 (dissoc color :id :file-id))))))
 
         detach-color
         (mf/use-fn

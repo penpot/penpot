@@ -57,7 +57,7 @@
 
          [:div {:class (stl/css :lib-name-wrapper)}
           [:span {:class (stl/css :lib-name)}
-                (dm/str (tr "workspace.libraries.colors.file-library"))]
+           (dm/str (tr "workspace.libraries.colors.file-library"))]
           [:span {:class (stl/css :lib-num)}
            (dm/str "(" (count file-colors) ")")]]
 
@@ -81,7 +81,7 @@
           [:span {:class (stl/css :lib-name)}
            (dm/str (tr "workspace.libraries.colors.recent-colors"))]
           [:span {:class (stl/css :lib-num)}
-           (dm/str "("(count recent-colors) ")")]]
+           (dm/str "(" (count recent-colors) ")")]]
 
          (when (= selected :recent)
            [:span {:class (stl/css :icon-wrapper)}

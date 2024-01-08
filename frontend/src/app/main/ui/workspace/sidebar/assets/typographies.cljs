@@ -387,71 +387,71 @@
          (partial on-asset-click groups))]
 
     (mf/use-effect
-     (mf/deps local-data )
+     (mf/deps local-data)
      (fn []
        (when (:edit-typography local-data)
          (st/emit! #(update % :workspace-global dissoc :edit-typography)))))
 
     [:*
      [:& cmm/asset-section {:file-id file-id
-                           :title (tr "workspace.assets.typography")
-                           :section :typographies
-                           :assets-count (count typographies)
-                           :open? open?}
-     (when local?
-       [:& cmm/asset-section-block {:role :title-button}
-        (when-not read-only?
-          [:button {:class (stl/css :assets-btn)
-                    :on-click add-typography}
-           i/add-refactor])])
+                            :title (tr "workspace.assets.typography")
+                            :section :typographies
+                            :assets-count (count typographies)
+                            :open? open?}
+      (when local?
+        [:& cmm/asset-section-block {:role :title-button}
+         (when-not read-only?
+           [:button {:class (stl/css :assets-btn)
+                     :on-click add-typography}
+            i/add-refactor])])
 
-     [:& cmm/asset-section-block {:role :content}
-      [:& typographies-group {:file-id file-id
-                              :prefix ""
-                              :groups groups
-                              :open-groups open-groups
-                              :force-open? force-open?
-                              :state state
-                              :file file
-                              :local? local?
-                              :selected selected
-                              :editing-id editing-id
-                              :renaming-id renaming-id
-                              :local-data local-data
-                              :on-asset-click on-asset-click
-                              :handle-change handle-change
-                              :apply-typography apply-typography
-                              :on-rename-group on-rename-group
-                              :on-ungroup on-ungroup
-                              :on-context-menu on-context-menu
-                              :selected-full selected-full}]
+      [:& cmm/asset-section-block {:role :content}
+       [:& typographies-group {:file-id file-id
+                               :prefix ""
+                               :groups groups
+                               :open-groups open-groups
+                               :force-open? force-open?
+                               :state state
+                               :file file
+                               :local? local?
+                               :selected selected
+                               :editing-id editing-id
+                               :renaming-id renaming-id
+                               :local-data local-data
+                               :on-asset-click on-asset-click
+                               :handle-change handle-change
+                               :apply-typography apply-typography
+                               :on-rename-group on-rename-group
+                               :on-ungroup on-ungroup
+                               :on-context-menu on-context-menu
+                               :selected-full selected-full}]
 
-      (if local?
-        [:& cmm/assets-context-menu
-         {:on-close on-close-menu
-          :state @menu-state
-          :options [(when-not (or multi-typographies? multi-assets?)
-                      {:option-name    (tr "workspace.assets.rename")
-                       :id             "assets-rename-typography"
-                       :option-handler handle-rename-typography-clicked})
+       (if local?
+         [:& cmm/assets-context-menu
+          {:on-close on-close-menu
+           :state @menu-state
+           :options [(when-not (or multi-typographies? multi-assets?)
+                       {:option-name    (tr "workspace.assets.rename")
+                        :id             "assets-rename-typography"
+                        :option-handler handle-rename-typography-clicked})
 
-                    (when-not (or multi-typographies? multi-assets?)
-                      {:option-name    (tr "workspace.assets.edit")
-                       :id             "assets-edit-typography"
-                       :option-handler handle-edit-typography-clicked})
+                     (when-not (or multi-typographies? multi-assets?)
+                       {:option-name    (tr "workspace.assets.edit")
+                        :id             "assets-edit-typography"
+                        :option-handler handle-edit-typography-clicked})
 
-                    {:option-name    (tr "workspace.assets.delete")
-                     :id             "assets-delete-typography"
-                     :option-handler handle-delete-typography}
+                     {:option-name    (tr "workspace.assets.delete")
+                      :id             "assets-delete-typography"
+                      :option-handler handle-delete-typography}
 
-                    (when-not multi-assets?
-                      {:option-name    (tr "workspace.assets.group")
-                       :id             "assets-group-typography"
-                       :option-handler on-group})]}]
+                     (when-not multi-assets?
+                       {:option-name    (tr "workspace.assets.group")
+                        :id             "assets-group-typography"
+                        :option-handler on-group})]}]
 
-        [:& cmm/assets-context-menu
-         {:on-close on-close-menu
-          :state @menu-state
-          :options [{:option-name   "show info"
-                     :id             "assets-rename-typography"
-                     :option-handler handle-edit-typography-clicked}]}])]]]))
+         [:& cmm/assets-context-menu
+          {:on-close on-close-menu
+           :state @menu-state
+           :options [{:option-name   "show info"
+                      :id             "assets-rename-typography"
+                      :option-handler handle-edit-typography-clicked}]}])]]]))

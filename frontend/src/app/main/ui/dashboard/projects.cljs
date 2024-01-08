@@ -370,8 +370,8 @@
         you-admin?          (get-in team [:permissions :is-admin])
         can-invite?         (or you-owner? you-admin?)
         team-hero?          (and can-invite?
-                              (:team-hero? props true)
-                              (not (:is-default team)))
+                                 (:team-hero? props true)
+                                 (not (:is-default team)))
 
         tutorial-viewed?    (:viewed-tutorial? props true)
         walkthrough-viewed? (:viewed-walkthrough? props true)

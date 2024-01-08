@@ -292,8 +292,8 @@
   (let [;; We need to reverse the second path when making a difference/intersection/exclude
         ;; and both shapes are in the same direction
         should-reverse? (and (not= :union bool-type)
-                            (= (ups/clockwise? content-b)
-                               (ups/clockwise? content-a)))
+                             (= (ups/clockwise? content-b)
+                                (ups/clockwise? content-a)))
 
         content-a (-> content-a
                       (close-paths)

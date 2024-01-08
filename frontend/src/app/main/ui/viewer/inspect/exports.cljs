@@ -13,7 +13,6 @@
    [app.main.store :as st]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar]]
-   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr c]]
@@ -23,8 +22,7 @@
 (mf/defc exports
   {::mf/wrap [#(mf/memo % =)]}
   [{:keys [shapes page-id file-id share-id type] :as props}]
-  (let [new-css-system     (mf/use-ctx ctx/new-css-system)
-        exports     (mf/use-state [])
+  (let [exports     (mf/use-state [])
         xstate      (mf/deref refs/export)
         vstate      (mf/deref refs/viewer-data)
         page        (get-in vstate [:pages page-id])
@@ -136,111 +134,64 @@
                            flatten
                            distinct
                            vec))))
-    (if new-css-system
-      [:div {:class (stl/css :element-set)}
-       [:div {:class (stl/css :element-title)}
-        [:& title-bar {:collapsable? false
-                       :title        (tr "workspace.options.export")
-                       :class        (stl/css :title-spacing-export-viewer)}
-         [:button {:class (stl/css :add-export)
-                   :on-click add-export} i/add-refactor]]]
+    [:div {:class (stl/css :element-set)}
+     [:div {:class (stl/css :element-title)}
+      [:& title-bar {:collapsable? false
+                     :title        (tr "workspace.options.export")
+                     :class        (stl/css :title-spacing-export-viewer)}
+       [:button {:class (stl/css :add-export)
+                 :on-click add-export} i/add-refactor]]]
 
-       (cond
-         (= :multiple exports)
-         [:div {:class (stl/css :multiple-exports)}
-          [:div {:class (stl/css :label)} (tr "settings.multiple")]
-          [:div {:class (stl/css :actions)}
-           [:button {:class (stl/css :action-btn)
-                     :on-click ()}
-            i/remove-refactor]]]
+     (cond
+       (= :multiple exports)
+       [:div {:class (stl/css :multiple-exports)}
+        [:div {:class (stl/css :label)} (tr "settings.multiple")]
+        [:div {:class (stl/css :actions)}
+         [:button {:class (stl/css :action-btn)
+                   :on-click ()}
+          i/remove-refactor]]]
 
-         (seq @exports)
-         [:div {:class (stl/css :element-set-content)}
-          (for [[index export] (d/enumerate @exports)]
-            [:div {:class (stl/css :element-group)
-                   :key index}
-             [:div {:class (stl/css :input-wrapper)}
-              [:div  {:class (stl/css :format-select)}
+       (seq @exports)
+       [:div {:class (stl/css :element-set-content)}
+        (for [[index export] (d/enumerate @exports)]
+          [:div {:class (stl/css :element-group)
+                 :key index}
+           [:div {:class (stl/css :input-wrapper)}
+            [:div  {:class (stl/css :format-select)}
+             [:& select
+              {:default-value (d/name (:type export))
+               :options format-options
+               :dropdown-class (stl/css :dropdown-upwards)
+               :on-change (partial on-type-change index)}]]
+            (when (scale-enabled? export)
+              [:div {:class (stl/css :size-select)}
                [:& select
-                {:default-value (d/name (:type export))
-                 :options format-options
+                {:default-value (str (:scale export))
+                 :options size-options
                  :dropdown-class (stl/css :dropdown-upwards)
-                 :on-change (partial on-type-change index)}]]
-              (when (scale-enabled? export)
-                [:div {:class (stl/css :size-select)}
-                 [:& select
-                  {:default-value (str (:scale export))
-                   :options size-options
-                   :dropdown-class (stl/css :dropdown-upwards)
-                   :on-change (partial on-scale-change index)}]])
-              [:label {:class (stl/css :suffix-input)
-                       :for "suffix-export-input"}
-               [:input {:class (stl/css :type-input)
-                        :id "suffix-export-input"
-                        :type "text"
-                        :value (:suffix export)
-                        :placeholder (tr "workspace.options.export.suffix")
-                        :data-value index
-                        :on-change on-suffix-change
-                        :on-key-down manage-key-down}]]]
+                 :on-change (partial on-scale-change index)}]])
+            [:label {:class (stl/css :suffix-input)
+                     :for "suffix-export-input"}
+             [:input {:class (stl/css :type-input)
+                      :id "suffix-export-input"
+                      :type "text"
+                      :value (:suffix export)
+                      :placeholder (tr "workspace.options.export.suffix")
+                      :data-value index
+                      :on-change on-suffix-change
+                      :on-key-down manage-key-down}]]]
 
-             [:button {:class (stl/css :action-btn)
-                       :on-click (partial delete-export index)}
-              i/remove-refactor]])
-          ])
-          (when (or (= :multiple exports) (seq @exports))
-            [:button
-             {:on-click (when-not in-progress? on-download)
-              :class (stl/css-case
-                      :export-btn true
-                      :btn-disabled in-progress?)
-              :disabled in-progress?}
-             (if in-progress?
-               (tr "workspace.options.exporting-object")
-               (tr "workspace.options.export-object" (c (count shapes))))])
-          ]
-
-
-
-      [:div.element-set.exports-options
-       [:div.element-set-title
-        [:span (tr "workspace.options.export")]
-        [:div.add-page {:on-click add-export} i/close]]
-
-       (when (seq @exports)
-         [:div.element-set-content
-          (for [[index export] (d/enumerate @exports)]
-            [:div.element-set-options-group
-             {:key index}
-             (when (scale-enabled? export)
-               [:select.input-select {:on-change (partial on-scale-change index)
-                                      :value (:scale export)}
-                [:option {:value "0.5"}  "0.5x"]
-                [:option {:value "0.75"} "0.75x"]
-                [:option {:value "1"} "1x"]
-                [:option {:value "1.5"} "1.5x"]
-                [:option {:value "2"} "2x"]
-                [:option {:value "4"} "4x"]
-                [:option {:value "6"} "6x"]])
-
-             [:input.input-text {:value (:suffix export)
-                                 :placeholder (tr "workspace.options.export.suffix")
-                                 :on-change (partial on-suffix-change index)
-                                 :on-key-down manage-key-down}]
-             [:select.input-select {:value (d/name (:type export))
-                                    :on-change (partial on-type-change index)}
-              [:option {:value "png"} "PNG"]
-              [:option {:value "jpeg"} "JPEG"]
-              [:option {:value "svg"} "SVG"]
-              [:option {:value "pdf"} "PDF"]]
-             [:div.delete-icon {:on-click (partial delete-export index)}
-              i/minus]])
-
-          [:div.btn-icon-dark.download-button
-           {:on-click (when-not in-progress? on-download)
-            :class (dom/classnames :btn-disabled in-progress?)
-            :disabled in-progress?}
-           (if in-progress?
-             (tr "workspace.options.exporting-object")
-             (tr "workspace.options.export-object" (c (count shapes))))]])])))
+           [:button {:class (stl/css :action-btn)
+                     :on-click (partial delete-export index)}
+            i/remove-refactor]])])
+     (when (or (= :multiple exports) (seq @exports))
+       [:button
+        {:on-click (when-not in-progress? on-download)
+         :class (stl/css-case
+                 :export-btn true
+                 :btn-disabled in-progress?)
+         :disabled in-progress?}
+        (if in-progress?
+          (tr "workspace.options.exporting-object")
+          (tr "workspace.options.export-object" (c (count shapes))))])]))
 

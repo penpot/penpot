@@ -13,14 +13,14 @@
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
   []
-  
+
   (let [iframe-ref (mf/use-ref nil)
         last-data* (mf/use-state nil)
 
         zoom-ref (mf/use-ref nil)
         zoom* (mf/use-state 1)
         zoom  @zoom*
-        
+
 
         handle-load
         (mf/use-callback
@@ -33,7 +33,7 @@
                (-> iframe-dom .-contentWindow .-document .open)
                (-> iframe-dom .-contentWindow .-document (.write data))
                (-> iframe-dom .-contentWindow .-document .close)))))
-        
+
         load-ref
         (mf/use-callback
          (fn [iframe-dom]
@@ -54,7 +54,7 @@
      (fn []
        (aset js/window "load" handle-load)
        #(js-delete js/window "load")))
-    
+
     [:div {:style {:display "flex" :width "100%" :height "100%" :flex-direction "column" :overflow "auto" :align-items "center"}}
      [:input {:id "zoom-input"
               :ref zoom-ref
@@ -65,6 +65,6 @@
      [:div {:style {:width "100%" :height "100%" :overflow "auto"}}
       [:iframe {:ref load-ref
                 :frame-border "0"
-                :scrolling "no" 
+                :scrolling "no"
                 :style {:transform-origin "top left"
                         :transform (str "scale(" zoom ")")}}]]]))

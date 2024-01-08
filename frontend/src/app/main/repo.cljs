@@ -66,8 +66,7 @@
     :form-data? true}
 
    :export-binfile {:response-type :blob}
-   :retrieve-list-of-builtin-templates {:query-params :all}
-   })
+   :retrieve-list-of-builtin-templates {:query-params :all}})
 
 (defn- send!
   "A simple helper for a common case of sending and receiving transit

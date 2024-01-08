@@ -270,7 +270,7 @@
         (ctkl/update-component component-id #(dissoc % :objects))
         (ctkl/mark-component-undeleted component-id)
         (cond-> update-page?
-                (ctkl/update-component component-id #(assoc % :main-instance-page page-id))))))
+          (ctkl/update-component component-id #(assoc % :main-instance-page page-id))))))
 
 (defn purge-component
   "Remove permanently a component."

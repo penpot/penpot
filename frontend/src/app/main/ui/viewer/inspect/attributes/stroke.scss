@@ -8,16 +8,20 @@
 
 .attributes-block {
   @include flexColumn;
-  .title-spacing-stroke {
-    @extend .attr-title;
-  }
 }
+
+.title-spacing-stroke {
+  @extend .attr-title;
+}
+
 .attributes-stroke-block {
   @include flexColumn;
-  .stroke-row {
-    @extend .attr-row;
-    .button-children {
-      @extend .copy-button-children;
-    }
-  }
+}
+
+.stroke-row {
+  @extend .attr-row;
+}
+
+.button-children {
+  @extend .copy-button-children;
 }

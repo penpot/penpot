@@ -8,9 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.modal :as dm]
-   [app.main.features :as features]
    [app.main.store :as st]
-   [app.main.ui.context :as ctx]
    [app.util.dom :as dom]
    [app.util.keyboard :as k]
    [goog.events :as events]
@@ -86,9 +84,7 @@
 (mf/defc modal
   {::mf/wrap-props false}
   []
-  (let [modal (mf/deref modal-ref)
-        new-css-system (features/use-feature "styles/v2")]
+  (let [modal (mf/deref modal-ref)]
     (when modal
-      [:& (mf/provider ctx/new-css-system) {:value new-css-system}
-       [:& modal-wrapper {:data modal
-                          :key (:id modal)}]])))
+      [:& modal-wrapper {:data modal
+                         :key (:id modal)}])))

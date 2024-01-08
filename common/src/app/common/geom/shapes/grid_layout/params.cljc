@@ -54,13 +54,13 @@
          current-range nil]
     (if pending
       (let [[next-shape rect :as next-shape+rects] (first pending)]
-        
+
         (if (or (not current-range) (overlaps-range? axis current-range rect))
           ;; Add shape to current row
           (let [current-track (conj current-track (:id next-shape))
                 current-range (join-range axis current-range rect)]
             (recur (next pending) result index current-track current-range))
-          
+
           ;; New row
           (recur (next pending)
                  (conj result {:index index

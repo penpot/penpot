@@ -193,7 +193,7 @@
 
     [base-id idx-a idx-b]))
 
-(defn is-shape-over-shape?
+(defn- is-shape-over-shape?
   [objects base-shape-id over-shape-id bottom-frames?]
 
   (let [[base-id index-a index-b] (get-base objects base-shape-id over-shape-id)]
@@ -211,14 +211,21 @@
       ;; Check which index is lower
       :else
       ;; If the base is a layout we should check if the z-index property is set
-      (let [[z-index-a z-index-b]
-            (if (ctl/any-layout? objects base-id)
+      (let [layer-order? (ctl/any-layout? objects base-id)
+            [z-index-a z-index-b]
+            (if layer-order?
               [(ctl/layout-z-index objects (dm/get-in objects [base-id :shapes index-a]))
                (ctl/layout-z-index objects (dm/get-in objects [base-id :shapes index-b]))]
               [0 0])]
 
-        (if (= z-index-a z-index-b)
+        (cond
+          (and (= z-index-a z-index-b) (not layer-order?))
           (< index-a index-b)
+
+          (and (= z-index-a z-index-b) layer-order?)
+          (> index-a index-b)
+
+          :else
           (< z-index-a z-index-b))))))
 
 (defn sort-z-index

@@ -6,6 +6,6 @@
 
 (defn update-strokes-width
   [shape scale]
-  (update shape :strokes 
-    (fn [strokes] 
-      (mapv #(update-stroke-width % scale) strokes))))
+  (update shape :strokes
+          (fn [strokes]
+            (mapv #(update-stroke-width % scale) strokes))))

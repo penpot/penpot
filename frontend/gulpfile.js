@@ -90,6 +90,7 @@ function readLocales() {
     ["ja_jp", "jpn_JP"],
     // ["fi", "fin_FI"],
     ["uk", "ukr_UA"],
+    "ha"
   ];
   const result = {};
 

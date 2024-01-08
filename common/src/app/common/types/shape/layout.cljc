@@ -1054,7 +1054,7 @@
   (->> (cells-seq parent :sort? true)
        (reduce
         (fn [[parent auto?] cell]
-          
+
           (let [[cell auto?]
                 (cond
                   (and (empty? (:shapes cell))
@@ -1067,7 +1067,7 @@
                            (not= (:column-span cell) 1))
                        (= :auto (:position cell)))
                   [(assoc cell :position :manual) false]
-                  
+
                   (empty? (:shapes cell))
                   [cell false]
 
@@ -1129,9 +1129,7 @@
 (defn assign-cells
   [parent objects]
   (prn ">assign-cells")
-  (let [
-
-        parent (assign-cell-positions parent objects)
+  (let [parent (assign-cell-positions parent objects)
 
         shape-has-cell?
         (into #{} (mapcat (comp :shapes second)) (:layout-grid-cells parent))

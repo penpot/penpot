@@ -37,11 +37,11 @@
          (cond
            (:gradient color)
            [:div.color-bullet-wrapper {:style {:background (uc/color->background color)}}]
-           
+
            (:image color)
            (let [uri (cfg/resolve-file-media (:image color))]
              [:div.color-bullet-wrapper {:style {:background-size "contain" :background-image (str/ffmt "url(%)" uri)}}])
-           
+
            :else
            [:div.color-bullet-wrapper
             [:div.color-bullet-left {:style {:background (uc/color->background (assoc color :opacity 1))}}]

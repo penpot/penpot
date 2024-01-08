@@ -7,9 +7,7 @@
 (ns app.main.ui.static
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.main.features :as features]
    [app.main.store :as st]
-   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.globals :as globals]
    [app.util.i18n :refer [tr]]
@@ -81,16 +79,14 @@
 
 (mf/defc exception-page
   [{:keys [data] :as props}]
-  (let [new-css-system   (features/use-feature "styles/v2")]
-    [:& (mf/provider ctx/new-css-system) {:value new-css-system}
-     (case (:type data)
-       :not-found
-       [:& not-found]
+  (case (:type data)
+    :not-found
+    [:& not-found]
 
-       :bad-gateway
-       [:& bad-gateway]
+    :bad-gateway
+    [:& bad-gateway]
 
-       :service-unavailable
-       [:& service-unavailable]
+    :service-unavailable
+    [:& service-unavailable]
 
-       [:& internal-error])]))
+    [:& internal-error]))

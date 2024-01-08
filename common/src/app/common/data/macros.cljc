@@ -24,7 +24,7 @@
   keys in contrast to clojure.core/select-keys"
   [target keys]
   (assert (vector? keys) "keys expected to be a vector")
-  `{ ~@(mapcat (fn [key] [key (list `c/get target key)]) keys) ~@[] })
+  `{~@(mapcat (fn [key] [key (list `c/get target key)]) keys) ~@[]})
 
 (defmacro get-in
   "A macro version of `get-in`. Useful when the keys vector is known at
@@ -121,7 +121,7 @@
   directly on CLJS, on CLJ works as get."
   [obj prop]
   (if (:ns &env)
-    (list 'js* (c/str "(~{}?." (str/snake prop) ")") obj)
+    (list 'js* (c/str "(~{}?." (str/snake prop) "?? ~{})") obj (list 'cljs.core/get obj prop))
     (list `c/get obj prop)))
 
 (def ^:dynamic *assert-context* nil)

@@ -41,13 +41,13 @@
 
   (let [margin-type    (or (:layout-item-margin-type values) :simple)
         m1             (when (and (not (= :multiple (:layout-item-margin values)))
-                                (= (dm/get-in values [:layout-item-margin :m1])
-                                   (dm/get-in values [:layout-item-margin :m3])))
+                                  (= (dm/get-in values [:layout-item-margin :m1])
+                                     (dm/get-in values [:layout-item-margin :m3])))
                          (dm/get-in values [:layout-item-margin :m1]))
 
         m2             (when (and (not (= :multiple (:layout-item-margin values)))
-                                (= (dm/get-in values [:layout-item-margin :m2])
-                                   (dm/get-in values [:layout-item-margin :m4])))
+                                  (= (dm/get-in values [:layout-item-margin :m2])
+                                     (dm/get-in values [:layout-item-margin :m4])))
                          (dm/get-in values [:layout-item-margin :m2]))
         select-margins
         (fn [m1? m2? m3? m4?]
@@ -353,7 +353,6 @@
              (st/emit! (dwsl/update-layout-child ids {:layout-item-absolute (= value :absolute)})))))
 
         ;; Z Index
-
         on-change-z-index
         (mf/use-fn
          (mf/deps ids)
@@ -382,19 +381,18 @@
              [:& radio-button {:value "absolute"
                                :id :absolute-position}]]]
 
-           (when is-absolute?
-             [:div {:class (stl/css :z-index-wrapper)
-                    :title "z-index"}
+           [:div {:class (stl/css :z-index-wrapper)
+                  :title "z-index"}
 
-              [:span {:class (stl/css :icon-text)}
-               "Z"]
-              [:> numeric-input*
-               {:className (stl/css :numeric-input)
-                :placeholder "--"
-                :on-focus #(dom/select-target %)
-                :on-change #(on-change-z-index %)
-                :nillable true
-                :value (:layout-item-z-index values)}]])])
+            [:span {:class (stl/css :icon-text)}
+             "Z"]
+            [:> numeric-input*
+             {:className (stl/css :numeric-input)
+              :placeholder "--"
+              :on-focus #(dom/select-target %)
+              :on-change #(on-change-z-index %)
+              :nillable true
+              :value (:layout-item-z-index values)}]]])
 
         [:div {:class (stl/css :row)}
          [:& element-behaviour {:fill? is-layout-child?

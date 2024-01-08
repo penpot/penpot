@@ -208,7 +208,6 @@
   (let [objects (:objects data)
         shapes  (cfh/get-immediate-children objects)
         dim     (calculate-dimensions objects aspect-ratio)
-        _ (prn ">>DIM" dim)
         vbox    (format-viewbox dim)
         bgcolor (dm/get-in data [:options :background] default-color)
 
@@ -339,53 +338,53 @@
   {::mf/wrap [mf/memo #(mf/deferred % ts/idle-then-raf)]}
   [{:keys [objects root-shape show-grids? zoom] :or {zoom 1} :as props}]
   (when root-shape
-  (let [root-shape-id (:id root-shape)
-        include-metadata (mf/use-ctx export/include-metadata-ctx)
+    (let [root-shape-id (:id root-shape)
+          include-metadata (mf/use-ctx export/include-metadata-ctx)
 
-        vector
-        (mf/use-memo
-         (mf/deps (:x root-shape) (:y root-shape))
-         (fn []
-           (-> (gpt/point (:x root-shape) (:y root-shape))
-               (gpt/negate))))
+          vector
+          (mf/use-memo
+           (mf/deps (:x root-shape) (:y root-shape))
+           (fn []
+             (-> (gpt/point (:x root-shape) (:y root-shape))
+                 (gpt/negate))))
 
-        objects
-        (mf/use-memo
-         (mf/deps vector objects root-shape-id)
-         (fn []
-           (let [children-ids (cons root-shape-id (cfh/get-children-ids objects root-shape-id))
-                 update-fn    #(update %1 %2 gsh/transform-shape (ctm/move-modifiers vector))]
-             (reduce update-fn objects children-ids))))
+          objects
+          (mf/use-memo
+           (mf/deps vector objects root-shape-id)
+           (fn []
+             (let [children-ids (cons root-shape-id (cfh/get-children-ids objects root-shape-id))
+                   update-fn    #(update %1 %2 gsh/transform-shape (ctm/move-modifiers vector))]
+               (reduce update-fn objects children-ids))))
 
-        root-shape' (get objects root-shape-id)
-        width       (* (:width root-shape') zoom)
-        height      (* (:height root-shape') zoom)
-        vbox        (format-viewbox {:width (:width root-shape' 0)
-                                     :height (:height root-shape' 0)})
-        root-shape-wrapper
-        (mf/use-memo
-         (mf/deps objects root-shape')
-         (fn []
-           (case (:type root-shape')
-             :group (group-wrapper-factory objects)
-             :frame (frame-wrapper-factory objects))))]
+          root-shape' (get objects root-shape-id)
+          width       (* (:width root-shape') zoom)
+          height      (* (:height root-shape') zoom)
+          vbox        (format-viewbox {:width (:width root-shape' 0)
+                                       :height (:height root-shape' 0)})
+          root-shape-wrapper
+          (mf/use-memo
+           (mf/deps objects root-shape')
+           (fn []
+             (case (:type root-shape')
+               :group (group-wrapper-factory objects)
+               :frame (frame-wrapper-factory objects))))]
 
-    [:svg {:view-box vbox
-           :width (ust/format-precision width viewbox-decimal-precision)
-           :height (ust/format-precision height viewbox-decimal-precision)
-           :version "1.1"
-           :xmlns "http://www.w3.org/2000/svg"
-           :xmlnsXlink "http://www.w3.org/1999/xlink"
-           :xmlns:penpot (when include-metadata "https://penpot.app/xmlns")
-           :fill "none"}
+      [:svg {:view-box vbox
+             :width (ust/format-precision width viewbox-decimal-precision)
+             :height (ust/format-precision height viewbox-decimal-precision)
+             :version "1.1"
+             :xmlns "http://www.w3.org/2000/svg"
+             :xmlnsXlink "http://www.w3.org/1999/xlink"
+             :xmlns:penpot (when include-metadata "https://penpot.app/xmlns")
+             :fill "none"}
 
-     [:*
-      [:> shape-container {:shape root-shape'}
-       [:& (mf/provider muc/is-component?) {:value true}
-        [:& root-shape-wrapper {:shape root-shape' :view-box vbox}]]]
+       [:*
+        [:> shape-container {:shape root-shape'}
+         [:& (mf/provider muc/is-component?) {:value true}
+          [:& root-shape-wrapper {:shape root-shape' :view-box vbox}]]]
 
-      (when show-grids?
-        [:& empty-grids {:root-shape-id root-shape-id :objects objects}])]])))
+        (when show-grids?
+          [:& empty-grids {:root-shape-id root-shape-id :objects objects}])]])))
 
 (mf/defc component-svg-thumbnail
   {::mf/wrap [mf/memo #(mf/deferred % ts/idle-then-raf)]}

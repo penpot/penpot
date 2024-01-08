@@ -78,21 +78,21 @@
         selected-mode          (get state :type :color)
 
         disabled-color-accept? (and
-                                 (= selected-mode :image)
-                                 (not (:image current-color)))
+                                (= selected-mode :image)
+                                (not (:image current-color)))
 
         on-fill-image-success
         (mf/use-fn
-          (fn [image]
-            (st/emit! (dc/update-colorpicker-color {:image (select-keys image [:id :width :height :mtype :name])} (not @drag?)))))
+         (fn [image]
+           (st/emit! (dc/update-colorpicker-color {:image (select-keys image [:id :width :height :mtype :name])} (not @drag?)))))
 
         on-fill-image-click
         (mf/use-callback #(dom/click (mf/ref-val fill-image-ref)))
 
         on-fill-image-selected
         (mf/use-fn
-          (fn [file]
-            (st/emit! (dwm/upload-fill-image file on-fill-image-success))))
+         (fn [file]
+           (st/emit! (dwm/upload-fill-image file on-fill-image-success))))
 
         set-tab!
         (mf/use-fn
@@ -218,7 +218,7 @@
 
         options
         (mf/with-memo [selected-mode disable-gradient disable-image]
-         (d/concat-vec
+          (d/concat-vec
            [{:value :color :label (tr "media.solid")}]
            (when (not disable-gradient)
              [{:value :linear-gradient :label (tr "media.linear")}

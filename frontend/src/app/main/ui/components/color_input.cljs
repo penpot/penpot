@@ -114,20 +114,20 @@
 
         on-mouse-up
         (mf/use-fn
-          (fn [event]
-            (dom/prevent-default event)))
+         (fn [event]
+           (dom/prevent-default event)))
 
         handle-focus
         (mf/use-fn
-          (fn [event]
-            (let [target (dom/get-target event)]
-              (when on-focus
-                (on-focus event))
+         (fn [event]
+           (let [target (dom/get-target event)]
+             (when on-focus
+               (on-focus event))
 
-              (when select-on-focus?
-                (-> event (dom/get-target) (.select))
+             (when select-on-focus?
+               (-> event (dom/get-target) (.select))
                 ;; In webkit browsers the mouseup event will be called after the on-focus causing and unselect
-                (.addEventListener target "mouseup" on-mouse-up #js {"once" true})))))
+               (.addEventListener target "mouseup" on-mouse-up #js {"once" true})))))
 
         props (-> (obj/clone props)
                   (obj/unset! "selectOnFocus")

@@ -76,11 +76,11 @@
                                                             (or (= variant-id "remove-bold")
                                                                 (= variant-id "toggle-bold")))
                                         add-italic?      (and (not italic?)
-                                                            (or (= variant-id "add-italic")
-                                                                (= variant-id "toggle-italic")))
+                                                              (or (= variant-id "add-italic")
+                                                                  (= variant-id "toggle-italic")))
                                         remove-italic?   (and italic?
-                                                            (or (= variant-id "remove-italic")
-                                                                (= variant-id "toggle-italic")))]
+                                                              (or (= variant-id "remove-italic")
+                                                                  (= variant-id "toggle-italic")))]
                                     (cond
                                       (and add-bold? italic?) ;; it is italic, set it to bold+italic
                                       (choose-bold-italic)
@@ -127,8 +127,7 @@
        :attrs dwt/text-attrs}))))
 
 (defn- update-attrs [shape props]
-  (let [
-        text-values    (calculate-text-values shape)
+  (let [text-values    (calculate-text-values shape)
         font-size      (d/parse-double (:font-size text-values))
         line-height    (d/parse-double (:line-height text-values))
         letter-spacing (d/parse-double (:letter-spacing text-values))
@@ -166,8 +165,7 @@
         all-underline? (every? #(= (:text-decoration %) "underline") text-values)
         all-line-through? (every? #(= (:text-decoration %) "line-through") text-values)
         all-bold? (every? #(is-bold? (:font-variant-id %)) text-values)
-        all-italic? (every? #(is-italic? (:font-variant-id %)) text-values)
-        ]
+        all-italic? (every? #(is-italic? (:font-variant-id %)) text-values)]
     (cond
       (= (:text-decoration props) "toggle-underline")
       (if all-underline?
@@ -197,9 +195,9 @@
                                (blend-props text-shapes props)
                                props)]
     (when (and (not read-only?) text-shapes)
-        (st/emit! (dwu/start-undo-transaction undo-id))
-        (run! #(update-attrs % props) text-shapes)
-        (st/emit! (dwu/commit-undo-transaction undo-id)))))
+      (st/emit! (dwu/start-undo-transaction undo-id))
+      (run! #(update-attrs % props) text-shapes)
+      (st/emit! (dwu/commit-undo-transaction undo-id)))))
 
 (def shortcuts
   {:text-align-left    {:tooltip (ds/meta (ds/alt "L"))

@@ -8,16 +8,20 @@
 
 .attributes-block {
   @include flexColumn;
-  .title-spacing-svg {
-    @extend .attr-title;
-  }
 }
+
+.title-spacing-svg {
+  @extend .attr-title;
+}
+
 .svg-row {
   @extend .attr-row;
-  .button-children {
-    @extend .copy-button-children;
-  }
 }
+
+.button-children {
+  @extend .copy-button-children;
+}
+
 .attributes-subtitle {
   @include tabTitleTipography;
   display: flex;

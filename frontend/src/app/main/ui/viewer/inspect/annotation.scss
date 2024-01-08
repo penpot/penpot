@@ -10,14 +10,11 @@
   @include flexColumn;
 }
 
-.title-spacing-shadow {
+.title-spacing-annotation {
   @extend .attr-title;
 }
 
-.shadow-row {
-  @extend .attr-row;
-}
-
-.button-children {
-  @extend .copy-button-children;
+.annotation-content {
+  @include titleTipography;
+  color: var(--entry-foreground-color);
 }

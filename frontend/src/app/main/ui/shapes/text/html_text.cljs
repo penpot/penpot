@@ -121,7 +121,7 @@
      ;; `background-clip`
      (when (not code?)
        [:style ".text-node { background-clip: text;
-                             -webkit-background-clip: text; }" ])
+                             -webkit-background-clip: text; }"])
      [:& render-node {:index 0
                       :shape shape
                       :node content

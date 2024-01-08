@@ -270,7 +270,7 @@
 (defn has-destination
   [interaction]
   (#{:navigate :open-overlay :toggle-overlay :close-overlay}
-    (:action-type interaction)))
+   (:action-type interaction)))
 
 (defn destination?
   [interaction]

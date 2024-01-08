@@ -250,7 +250,7 @@
 
         width-v (-> gradient-vec
                     (gpt/normal-left)
-                    (gpt/multiply (gpt/point (* (:width gradient) (/ gradient-length (/ height 2) ))))
+                    (gpt/multiply (gpt/point (* (:width gradient) (/ gradient-length (/ height 2)))))
                     (gpt/multiply (gpt/point (/ width 2))))
 
         width-p (gpt/add from-p width-v)

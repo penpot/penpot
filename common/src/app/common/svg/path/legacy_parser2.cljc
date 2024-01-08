@@ -132,8 +132,7 @@
                                         [:c2x :number]
                                         [:c2y :number]
                                         [:x   :number]
-                                        [:y   :number]])
-        ]
+                                        [:y   :number]])]
     (for [params param-list]
       {:command :curve-to
        :relative relative
@@ -254,8 +253,7 @@
 
         dtheta (unit-vector-angle v1x v1y v2x v2y)
         dtheta (if (and (= fs 0) (> dtheta 0)) (- dtheta (* mth/PI 2)) dtheta)
-        dtheta (if (and (= fs 1) (< dtheta 0)) (+ dtheta (* mth/PI 2)) dtheta)
-        ]
+        dtheta (if (and (= fs 1) (< dtheta 0)) (+ dtheta (* mth/PI 2)) dtheta)]
 
     [cx cy theta1 dtheta]))
 
@@ -302,8 +300,7 @@
             (and (zero? rx)
                  (zero? ry)))
       []
-      (let [
-            rx       (mth/abs rx)
+      (let [rx       (mth/abs rx)
             ry       (mth/abs ry)
             lambda   (+ (/ (* x1p x1p) (* rx rx))
                         (/ (* y1p y1p) (* ry ry)))
@@ -380,7 +377,7 @@
                       (d/update-in-when [:params :y] + (:y prev-pos))
 
                       (cond->
-                          (= :line-to-horizontal (:command command))
+                       (= :line-to-horizontal (:command command))
                         (d/update-in-when [:params :value] + (:x prev-pos))
 
                         (= :line-to-vertical (:command command))

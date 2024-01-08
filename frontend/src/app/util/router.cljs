@@ -154,9 +154,9 @@
             router  (:router state)]
         (ts/schedule #(on-change router (.getToken ^js history)))
         (->> (rx/create (fn [subs]
-                           (let [key (e/listen history "navigate" (fn [o] (rx/push! subs (.-token ^js o))))]
-                             (fn []
-                               (bhistory/disable! history)
-                               (e/unlistenByKey key)))))
-              (rx/take-until stoper)
-              (rx/subs! #(on-change router %)))))))
+                          (let [key (e/listen history "navigate" (fn [o] (rx/push! subs (.-token ^js o))))]
+                            (fn []
+                              (bhistory/disable! history)
+                              (e/unlistenByKey key)))))
+             (rx/take-until stoper)
+             (rx/subs! #(on-change router %)))))))

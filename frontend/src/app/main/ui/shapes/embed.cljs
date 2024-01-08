@@ -38,9 +38,9 @@
                       (url-mapping)
                       (rx/reduce conj {})
                       (rx/subs! (fn [data]
-                                 (when-not (= data (mf/ref-val uri-data))
-                                   (mf/set-ref-val! uri-data data)
-                                   (reset! state inc)))))]
+                                  (when-not (= data (mf/ref-val uri-data))
+                                    (mf/set-ref-val! uri-data data)
+                                    (reset! state inc)))))]
          #(when sub
             (rx/dispose! sub)))))
 

@@ -22,6 +22,10 @@
   color: var(--menu-foreground-color);
   cursor: pointer;
 
+  &.icon {
+    grid-template-columns: auto 1fr auto;
+  }
+
   .current-icon {
     @include flexCenter;
     height: $s-24;

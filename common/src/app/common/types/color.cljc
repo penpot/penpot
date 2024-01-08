@@ -6,14 +6,14 @@
 
 (ns app.common.types.color
   (:require
-    [app.common.data :as d]
-    [app.common.schema :as sm]
-    [app.common.schema.openapi :as-alias oapi]
-    [app.common.text :as txt]
-    [app.common.types.color.generic :as-alias color-generic]
-    [app.common.types.color.gradient :as-alias color-gradient]
-    [app.common.types.color.gradient.stop :as-alias color-gradient-stop]
-    [clojure.test.check.generators :as tgen]))
+   [app.common.data :as d]
+   [app.common.schema :as sm]
+   [app.common.schema.openapi :as-alias oapi]
+   [app.common.text :as txt]
+   [app.common.types.color.generic :as-alias color-generic]
+   [app.common.types.color.gradient :as-alias color-gradient]
+   [app.common.types.color.gradient.stop :as-alias color-gradient-stop]
+   [clojure.test.check.generators :as tgen]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMAS

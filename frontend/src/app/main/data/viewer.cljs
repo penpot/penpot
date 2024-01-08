@@ -66,10 +66,10 @@
       (-> state
           (assoc :current-file-id file-id)
           (update :viewer-local
-            (fn [lstate]
-              (if (nil? lstate)
-                default-local-state
-                lstate)))
+                  (fn [lstate]
+                    (if (nil? lstate)
+                      default-local-state
+                      lstate)))
           (assoc-in [:viewer-local :share-id] share-id)
           (assoc-in [:viewer-local :interactions-show?] interactions-show?)))
 
@@ -202,10 +202,10 @@
                     "fill" zoom-to-fill
                     nil))
            (rx/of
-             (cond
-               (some? frame-id) (go-to-frame (uuid frame-id))
-               (some? index) (go-to-frame-by-index index)
-               :else (go-to-frame-auto)))))))))
+            (cond
+              (some? frame-id) (go-to-frame (uuid frame-id))
+              (some? index) (go-to-frame-by-index index)
+              :else (go-to-frame-auto)))))))))
 
 (defn fetch-comment-threads
   [{:keys [file-id page-id share-id] :as params}]
@@ -297,9 +297,9 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [srect     (as-> (get-in state [:route :query-params :page-id]) %
-                            (get-in state [:viewer :pages % :frames])
-                            (nth % (get-in state [:route :query-params :index]))
-                            (get % :selrect))
+                        (get-in state [:viewer :pages % :frames])
+                        (nth % (get-in state [:route :query-params :index]))
+                        (get % :selrect))
             orig-size (get-in state [:viewer-local :viewport-size])
             wdiff     (/ (:width orig-size) (:width srect))
             hdiff     (/ (:height orig-size) (:height srect))
@@ -514,9 +514,9 @@
 
            (some? animation)
            (assoc-in [:viewer-animations (:id frame)]
-                  {:kind :go-to-frame
-                   :orig-frame-id (:id frame)
-                   :animation animation}))))
+                     {:kind :go-to-frame
+                      :orig-frame-id (:id frame)
+                      :animation animation}))))
 
      ptk/WatchEvent
      (watch [_ state _]

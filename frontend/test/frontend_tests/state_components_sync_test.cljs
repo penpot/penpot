@@ -77,8 +77,7 @@
                                        (t/is (= (:name c-shape1) "Rect 1"))
                                        (t/is (= (:touched c-shape1) nil))
                                        (t/is (= (:fill-color c-shape1) clr/white))
-                                       (t/is (= (:fill-opacity c-shape1) 1))
-                                       )))]
+                                       (t/is (= (:fill-opacity c-shape1) 1)))))]
 
       (ptk/emit!
        store
@@ -90,24 +89,24 @@
 
 (t/deftest test-touched-children-add
   (t/async done
-           (let [state (-> thp/initial-state
-                           (thp/sample-page)
-                           (thp/sample-shape :shape1 :rect
-                                             {:name "Rect 1"
-                                              :fill-color clr/white
-                                              :fill-opacity 1})
-                           (thp/make-component :main1 :component1
-                                               [(thp/id :shape1)])
-                           (thp/instantiate-component :instance1
-                                                      (thp/id :component1))
-                           (thp/sample-shape :shape2 :circle
-                                             {:name "Circle 1"}))
+    (let [state (-> thp/initial-state
+                    (thp/sample-page)
+                    (thp/sample-shape :shape1 :rect
+                                      {:name "Rect 1"
+                                       :fill-color clr/white
+                                       :fill-opacity 1})
+                    (thp/make-component :main1 :component1
+                                        [(thp/id :shape1)])
+                    (thp/instantiate-component :instance1
+                                               (thp/id :component1))
+                    (thp/sample-shape :shape2 :circle
+                                      {:name "Circle 1"}))
 
-                 instance1 (thp/get-shape state :instance1)
-                 shape2    (thp/get-shape state :shape2)
+          instance1 (thp/get-shape state :instance1)
+          shape2    (thp/get-shape state :shape2)
 
-                 store (the/prepare-store state done
-                                          (fn [new-state]
+          store (the/prepare-store state done
+                                   (fn [new-state]
                                      ;; Expected shape tree:
                                      ;; [Page: Page 1]
                                      ;;   Root Frame
@@ -120,28 +119,28 @@
                                      ;; [Component: Rect 1] core.cljs:200:23
                                      ;;   --> [Page 1] Rect 1
 
-                                            (let [[[group shape1] [c-group c-shape1] _component]
-                                                  (thl/resolve-instance-and-main-allow-dangling
-                                                   new-state
-                                                   (thp/id :instance1))]
+                                     (let [[[group shape1] [c-group c-shape1] _component]
+                                           (thl/resolve-instance-and-main-allow-dangling
+                                            new-state
+                                            (thp/id :instance1))]
 
-                                              (t/is (= (:name group) "Rect 1"))
-                                              (t/is (nil? (:touched group)))
-                                              (t/is (= (:name shape1) "Rect 1"))
-                                              (t/is (= (:touched shape1) nil))
-                                              (t/is (not= (:shape-ref shape1) nil))
+                                       (t/is (= (:name group) "Rect 1"))
+                                       (t/is (nil? (:touched group)))
+                                       (t/is (= (:name shape1) "Rect 1"))
+                                       (t/is (= (:touched shape1) nil))
+                                       (t/is (not= (:shape-ref shape1) nil))
 
-                                              (t/is (= (:name c-group) "Rect 1"))
-                                              (t/is (= (:touched c-group) nil))
-                                              (t/is (= (:shape-ref c-group) nil))
-                                              (t/is (= (:name c-shape1) "Rect 1"))
-                                              (t/is (= (:touched c-shape1) nil))
-                                              (t/is (= (:shape-ref c-shape1) nil)))))]
+                                       (t/is (= (:name c-group) "Rect 1"))
+                                       (t/is (= (:touched c-group) nil))
+                                       (t/is (= (:shape-ref c-group) nil))
+                                       (t/is (= (:name c-shape1) "Rect 1"))
+                                       (t/is (= (:touched c-shape1) nil))
+                                       (t/is (= (:shape-ref c-shape1) nil)))))]
 
-             (ptk/emit!
-              store
-              (dw/relocate-shapes #{(:id shape2)} (:id instance1) 0) ;; We cant't change the structure of component copies, so this operation will do nothing
-              :the/end))))
+      (ptk/emit!
+       store
+       (dw/relocate-shapes #{(:id shape2)} (:id instance1) 0) ;; We cant't change the structure of component copies, so this operation will do nothing
+       :the/end))))
 
 (t/deftest test-touched-children-delete
   (t/async done
@@ -201,9 +200,7 @@
                                        (t/is (= (:shape-ref c-shape1) nil))
                                        (t/is (= (:name c-shape2) "Rect 2"))
                                        (t/is (= (:touched c-shape2) nil))
-                                       (t/is (= (:shape-ref c-shape2) nil))
-
-                                       )))]
+                                       (t/is (= (:shape-ref c-shape2) nil)))))]
 
       (ptk/emit!
        store
@@ -212,26 +209,26 @@
 
 (t/deftest test-touched-children-move
   (t/async done
-           (let [state (-> thp/initial-state
-                           (thp/sample-page)
-                           (thp/sample-shape :shape1 :rect
-                                             {:name "Rect 1"})
-                           (thp/sample-shape :shape2 :rect
-                                             {:name "Rect 2"})
-                           (thp/sample-shape :shape3 :rect
-                                             {:name "Rect 3"})
-                           (thp/make-component :main1 :component1
-                                               [(thp/id :shape1)
-                                                (thp/id :shape2)
-                                                (thp/id :shape3)])
-                           (thp/instantiate-component :instance1
-                                                      (thp/id :component1)))
+    (let [state (-> thp/initial-state
+                    (thp/sample-page)
+                    (thp/sample-shape :shape1 :rect
+                                      {:name "Rect 1"})
+                    (thp/sample-shape :shape2 :rect
+                                      {:name "Rect 2"})
+                    (thp/sample-shape :shape3 :rect
+                                      {:name "Rect 3"})
+                    (thp/make-component :main1 :component1
+                                        [(thp/id :shape1)
+                                         (thp/id :shape2)
+                                         (thp/id :shape3)])
+                    (thp/instantiate-component :instance1
+                                               (thp/id :component1)))
 
-                 [group1' shape1']
-                 (thl/resolve-instance state (thp/id :instance1))
+          [group1' shape1']
+          (thl/resolve-instance state (thp/id :instance1))
 
-                 store (the/prepare-store state done
-                                          (fn [new-state]
+          store (the/prepare-store state done
+                                   (fn [new-state]
                                      ;; Expected shape tree:
                                      ;; [Page: Page 1]
                                             ;;   Root Frame
@@ -249,41 +246,41 @@
                                             ;; [Component: Component 1]
                                             ;;   --> [Page 1] Component 1
 
-                                            (let [[[group shape1 shape2 shape3]
-                                                   [c-group c-shape1 c-shape2 c-shape3] _component]
-                                                  (thl/resolve-instance-and-main-allow-dangling
-                                                   new-state
-                                                   (thp/id :instance1))]
+                                     (let [[[group shape1 shape2 shape3]
+                                            [c-group c-shape1 c-shape2 c-shape3] _component]
+                                           (thl/resolve-instance-and-main-allow-dangling
+                                            new-state
+                                            (thp/id :instance1))]
 
-                                              (t/is (= (:name group) "Component 1"))
-                                              (t/is (nil? (:touched group)))
-                                              (t/is (= (:name shape1) "Rect 1"))
-                                              (t/is (= (:touched shape1) nil))
-                                              (t/is (not= (:shape-ref shape1) nil))
-                                              (t/is (= (:name shape2) "Rect 2"))
-                                              (t/is (= (:touched shape2) nil))
-                                              (t/is (not= (:shape-ref shape2) nil))
-                                              (t/is (= (:name shape3) "Rect 3"))
-                                              (t/is (= (:touched shape3) nil))
-                                              (t/is (not= (:shape-ref shape3) nil))
+                                       (t/is (= (:name group) "Component 1"))
+                                       (t/is (nil? (:touched group)))
+                                       (t/is (= (:name shape1) "Rect 1"))
+                                       (t/is (= (:touched shape1) nil))
+                                       (t/is (not= (:shape-ref shape1) nil))
+                                       (t/is (= (:name shape2) "Rect 2"))
+                                       (t/is (= (:touched shape2) nil))
+                                       (t/is (not= (:shape-ref shape2) nil))
+                                       (t/is (= (:name shape3) "Rect 3"))
+                                       (t/is (= (:touched shape3) nil))
+                                       (t/is (not= (:shape-ref shape3) nil))
 
-                                              (t/is (= (:name c-group) "Component 1"))
-                                              (t/is (= (:touched c-group) nil))
-                                              (t/is (= (:shape-ref c-group) nil))
-                                              (t/is (= (:name c-shape1) "Rect 1"))
-                                              (t/is (= (:touched c-shape1) nil))
-                                              (t/is (= (:shape-ref c-shape1) nil))
-                                              (t/is (= (:name c-shape2) "Rect 2"))
-                                              (t/is (= (:touched c-shape2) nil))
-                                              (t/is (= (:shape-ref c-shape2) nil))
-                                              (t/is (= (:name c-shape3) "Rect 3"))
-                                              (t/is (= (:touched c-shape3) nil))
-                                              (t/is (= (:shape-ref c-shape3) nil)))))]
+                                       (t/is (= (:name c-group) "Component 1"))
+                                       (t/is (= (:touched c-group) nil))
+                                       (t/is (= (:shape-ref c-group) nil))
+                                       (t/is (= (:name c-shape1) "Rect 1"))
+                                       (t/is (= (:touched c-shape1) nil))
+                                       (t/is (= (:shape-ref c-shape1) nil))
+                                       (t/is (= (:name c-shape2) "Rect 2"))
+                                       (t/is (= (:touched c-shape2) nil))
+                                       (t/is (= (:shape-ref c-shape2) nil))
+                                       (t/is (= (:name c-shape3) "Rect 3"))
+                                       (t/is (= (:touched c-shape3) nil))
+                                       (t/is (= (:shape-ref c-shape3) nil)))))]
 
-             (ptk/emit!
-              store
-              (dw/relocate-shapes #{(:id shape1')} (:id group1') 2) ;; We cant't change the structure of component copies, so this operation will do nothing
-              :the/end))))
+      (ptk/emit!
+       store
+       (dw/relocate-shapes #{(:id shape1')} (:id group1') 2) ;; We cant't change the structure of component copies, so this operation will do nothing
+       :the/end))))
 
 (t/deftest test-touched-from-lib
   (t/async
@@ -603,8 +600,7 @@
                                        (t/is (= (:fill-color c-shape1) clr/black))
                                        (t/is (= (:fill-opacity c-shape1) 0))
                                        (t/is (= (:name c-shape2) "Rect 1"))
-                                       (t/is (= (:touched c-shape2) #{:fill-group}))
-                                       )))]
+                                       (t/is (= (:touched c-shape2) #{:fill-group})))))]
 
       (ptk/emit!
        store
@@ -1504,28 +1500,28 @@
 
 (t/deftest test-update-children-add
   (t/async done
-           (let [state (-> thp/initial-state
-                           (thp/sample-page)
-                           (thp/sample-shape :shape1 :rect
-                                             {:name "Rect 1"
-                                              :fill-color clr/white
-                                              :fill-opacity 1})
-                           (thp/make-component :main1 :component1
-                                               [(thp/id :shape1)])
-                           (thp/instantiate-component :instance1
-                                                      (thp/id :component1))
-                           (thp/instantiate-component :instance2
-                                                      (thp/id :component1))
-                           (thp/sample-shape :shape2 :circle
-                                             {:name "Circle 1"}))
+    (let [state (-> thp/initial-state
+                    (thp/sample-page)
+                    (thp/sample-shape :shape1 :rect
+                                      {:name "Rect 1"
+                                       :fill-color clr/white
+                                       :fill-opacity 1})
+                    (thp/make-component :main1 :component1
+                                        [(thp/id :shape1)])
+                    (thp/instantiate-component :instance1
+                                               (thp/id :component1))
+                    (thp/instantiate-component :instance2
+                                               (thp/id :component1))
+                    (thp/sample-shape :shape2 :circle
+                                      {:name "Circle 1"}))
 
-                 file      (wsh/get-local-file state)
+          file      (wsh/get-local-file state)
 
-                 instance1 (thp/get-shape state :instance1)
-                 shape2    (thp/get-shape state :shape2)
+          instance1 (thp/get-shape state :instance1)
+          shape2    (thp/get-shape state :shape2)
 
-                 store (the/prepare-store state done
-                                          (fn [new-state]
+          store (the/prepare-store state done
+                                   (fn [new-state]
                                      ;; Expected shape tree:
                                      ;;
                                      ;; [Page: Page 1]
@@ -1543,58 +1539,58 @@
                                      ;; [Component: Rect 1]
                                      ;;   --> [Page 1] Rect 1
                                      ;;
-                                            (let [[[main1 shape1]
-                                                   [c-main1 c-shape1] component1]
-                                                  (thl/resolve-instance-and-main
-                                                   new-state
-                                                   (thp/id :main1))
+                                     (let [[[main1 shape1]
+                                            [c-main1 c-shape1] component1]
+                                           (thl/resolve-instance-and-main
+                                            new-state
+                                            (thp/id :main1))
 
-                                                  [[instance1 shape2]
-                                                   [c-instance1 c-shape2] component2]
-                                                  (thl/resolve-instance-and-main
-                                                   new-state
-                                                   (thp/id :instance1))
+                                           [[instance1 shape2]
+                                            [c-instance1 c-shape2] component2]
+                                           (thl/resolve-instance-and-main
+                                            new-state
+                                            (thp/id :instance1))
 
-                                                  [[instance2 shape3]
-                                                   [c-instance2 c-shape3] component3]
-                                                  (thl/resolve-instance-and-main
-                                                   new-state
-                                                   (thp/id :instance2))]
+                                           [[instance2 shape3]
+                                            [c-instance2 c-shape3] component3]
+                                           (thl/resolve-instance-and-main
+                                            new-state
+                                            (thp/id :instance2))]
 
-                                              (t/is (= (:name main1) "Rect 1"))
-                                              (t/is (= (:touched main1) nil))
-                                              (t/is (= (:shape-ref main1) nil))
-                                              (t/is (= (:name shape1) "Rect 1"))
-                                              (t/is (= (:touched shape1) nil))
-                                              (t/is (= (:shape-ref shape1) nil))
+                                       (t/is (= (:name main1) "Rect 1"))
+                                       (t/is (= (:touched main1) nil))
+                                       (t/is (= (:shape-ref main1) nil))
+                                       (t/is (= (:name shape1) "Rect 1"))
+                                       (t/is (= (:touched shape1) nil))
+                                       (t/is (= (:shape-ref shape1) nil))
 
-                                              (t/is (= (:name instance1) "Rect 1"))
-                                              (t/is (= (:touched instance1) nil))
-                                              (t/is (= (:shape-ref instance1) (:id c-main1)))
-                                              (t/is (= (:name shape2) "Rect 1"))
-                                              (t/is (= (:touched shape2) nil))
-                                              (t/is (= (:shape-ref shape2) (:id c-shape1)))
+                                       (t/is (= (:name instance1) "Rect 1"))
+                                       (t/is (= (:touched instance1) nil))
+                                       (t/is (= (:shape-ref instance1) (:id c-main1)))
+                                       (t/is (= (:name shape2) "Rect 1"))
+                                       (t/is (= (:touched shape2) nil))
+                                       (t/is (= (:shape-ref shape2) (:id c-shape1)))
 
-                                              (t/is (= (:name instance2) "Rect 1"))
-                                              (t/is (= (:touched instance2) nil))
-                                              (t/is (= (:shape-ref instance2) (:id c-main1)))
-                                              (t/is (= (:name shape3) "Rect 1"))
-                                              (t/is (= (:touched shape3) nil))
-                                              (t/is (= (:shape-ref shape2) (:id c-shape1)))
+                                       (t/is (= (:name instance2) "Rect 1"))
+                                       (t/is (= (:touched instance2) nil))
+                                       (t/is (= (:shape-ref instance2) (:id c-main1)))
+                                       (t/is (= (:name shape3) "Rect 1"))
+                                       (t/is (= (:touched shape3) nil))
+                                       (t/is (= (:shape-ref shape2) (:id c-shape1)))
 
-                                              (t/is (= component1 component2 component3))
-                                              (t/is (= c-main1 main1))
-                                              (t/is (= c-shape1 shape1))
-                                              (t/is (= c-instance1 c-main1))
-                                              (t/is (= c-shape2 c-shape1))
-                                              (t/is (= c-instance2 c-main1))
-                                              (t/is (= c-shape3 c-shape1)))))]
+                                       (t/is (= component1 component2 component3))
+                                       (t/is (= c-main1 main1))
+                                       (t/is (= c-shape1 shape1))
+                                       (t/is (= c-instance1 c-main1))
+                                       (t/is (= c-shape2 c-shape1))
+                                       (t/is (= c-instance2 c-main1))
+                                       (t/is (= c-shape3 c-shape1)))))]
 
-             (ptk/emit!
-              store
-              (dw/relocate-shapes #{(:id shape2)} (:id instance1) 0) ;; We cant't change the structure of component copies, so this operation will do nothing
-              (dwl/update-component-sync (:id instance1) (:id file))
-              :the/end))))
+      (ptk/emit!
+       store
+       (dw/relocate-shapes #{(:id shape2)} (:id instance1) 0) ;; We cant't change the structure of component copies, so this operation will do nothing
+       (dwl/update-component-sync (:id instance1) (:id file))
+       :the/end))))
 
 (t/deftest test-update-children-delete
   (t/async done
@@ -1709,30 +1705,30 @@
 
 (t/deftest test-update-children-move
   (t/async done
-           (let [state (-> thp/initial-state
-                           (thp/sample-page)
-                           (thp/sample-shape :shape1 :rect
-                                             {:name "Rect 1"})
-                           (thp/sample-shape :shape2 :rect
-                                             {:name "Rect 2"})
-                           (thp/sample-shape :shape3 :rect
-                                             {:name "Rect 3"})
-                           (thp/make-component :main1 :component1
-                                               [(thp/id :shape1)
-                                                (thp/id :shape2)
-                                                (thp/id :shape3)])
-                           (thp/instantiate-component :instance1
-                                                      (thp/id :component1))
-                           (thp/instantiate-component :instance2
-                                                      (thp/id :component1)))
+    (let [state (-> thp/initial-state
+                    (thp/sample-page)
+                    (thp/sample-shape :shape1 :rect
+                                      {:name "Rect 1"})
+                    (thp/sample-shape :shape2 :rect
+                                      {:name "Rect 2"})
+                    (thp/sample-shape :shape3 :rect
+                                      {:name "Rect 3"})
+                    (thp/make-component :main1 :component1
+                                        [(thp/id :shape1)
+                                         (thp/id :shape2)
+                                         (thp/id :shape3)])
+                    (thp/instantiate-component :instance1
+                                               (thp/id :component1))
+                    (thp/instantiate-component :instance2
+                                               (thp/id :component1)))
 
-                 file      (wsh/get-local-file state)
+          file      (wsh/get-local-file state)
 
-                 [instance1 shape1' _shape2' _shape3']
-                 (thl/resolve-instance state (thp/id :instance1))
+          [instance1 shape1' _shape2' _shape3']
+          (thl/resolve-instance state (thp/id :instance1))
 
-                 store (the/prepare-store state done
-                                          (fn [new-state]
+          store (the/prepare-store state done
+                                   (fn [new-state]
                                      ;; Expected shape tree:
                                      ;;
                                      ;; [Page]
@@ -1753,82 +1749,82 @@
                                      ;; [Component 1]
                                      ;;   page1 / Component 1
                                      ;;
-                                            (let [[[main1 shape1 shape2 shape3]
-                                                   [c-main1 c-shape1 c-shape2 c-shape3] component1]
-                                                  (thl/resolve-instance-and-main
-                                                   new-state
-                                                   (thp/id :main1))
+                                     (let [[[main1 shape1 shape2 shape3]
+                                            [c-main1 c-shape1 c-shape2 c-shape3] component1]
+                                           (thl/resolve-instance-and-main
+                                            new-state
+                                            (thp/id :main1))
 
-                                                  [[instance1 shape4 shape5 shape6]
-                                                   [c-instance1 c-shape4 c-shape5 c-shape6] component2]
-                                                  (thl/resolve-instance-and-main
-                                                   new-state
-                                                   (thp/id :instance1))
+                                           [[instance1 shape4 shape5 shape6]
+                                            [c-instance1 c-shape4 c-shape5 c-shape6] component2]
+                                           (thl/resolve-instance-and-main
+                                            new-state
+                                            (thp/id :instance1))
 
-                                                  [[instance2 shape7 shape8 shape9]
-                                                   [c-instance2 c-shape7 c-shape8 c-shape9] component3]
-                                                  (thl/resolve-instance-and-main
-                                                   new-state
-                                                   (thp/id :instance2))]
+                                           [[instance2 shape7 shape8 shape9]
+                                            [c-instance2 c-shape7 c-shape8 c-shape9] component3]
+                                           (thl/resolve-instance-and-main
+                                            new-state
+                                            (thp/id :instance2))]
 
-                                              (t/is (= (:name main1) "Component 1"))
-                                              (t/is (= (:touched main1) nil))
-                                              (t/is (= (:shape-ref main1) nil))
-                                              (t/is (= (:name shape1) "Rect 1"))
-                                              (t/is (= (:touched shape1) nil))
-                                              (t/is (= (:shape-ref shape1) nil))
-                                              (t/is (= (:name shape2) "Rect 2"))
-                                              (t/is (= (:touched shape2) nil))
-                                              (t/is (= (:shape-ref shape2) nil))
-                                              (t/is (= (:name shape3) "Rect 3"))
-                                              (t/is (= (:touched shape3) nil))
-                                              (t/is (= (:shape-ref shape3) nil))
+                                       (t/is (= (:name main1) "Component 1"))
+                                       (t/is (= (:touched main1) nil))
+                                       (t/is (= (:shape-ref main1) nil))
+                                       (t/is (= (:name shape1) "Rect 1"))
+                                       (t/is (= (:touched shape1) nil))
+                                       (t/is (= (:shape-ref shape1) nil))
+                                       (t/is (= (:name shape2) "Rect 2"))
+                                       (t/is (= (:touched shape2) nil))
+                                       (t/is (= (:shape-ref shape2) nil))
+                                       (t/is (= (:name shape3) "Rect 3"))
+                                       (t/is (= (:touched shape3) nil))
+                                       (t/is (= (:shape-ref shape3) nil))
 
-                                              (t/is (= (:name instance1) "Component 1"))
-                                              (t/is (= (:touched instance1) nil))
-                                              (t/is (= (:shape-ref instance1) (:id c-main1)))
-                                              (t/is (= (:name shape4) "Rect 1"))
-                                              (t/is (= (:touched shape4) nil))
-                                              (t/is (= (:shape-ref shape4) (:id c-shape1)))
-                                              (t/is (= (:name shape5) "Rect 2"))
-                                              (t/is (= (:touched shape5) nil))
-                                              (t/is (= (:shape-ref shape5) (:id c-shape2)))
-                                              (t/is (= (:name shape6) "Rect 3"))
-                                              (t/is (= (:touched shape6) nil))
-                                              (t/is (= (:shape-ref shape6) (:id c-shape3)))
+                                       (t/is (= (:name instance1) "Component 1"))
+                                       (t/is (= (:touched instance1) nil))
+                                       (t/is (= (:shape-ref instance1) (:id c-main1)))
+                                       (t/is (= (:name shape4) "Rect 1"))
+                                       (t/is (= (:touched shape4) nil))
+                                       (t/is (= (:shape-ref shape4) (:id c-shape1)))
+                                       (t/is (= (:name shape5) "Rect 2"))
+                                       (t/is (= (:touched shape5) nil))
+                                       (t/is (= (:shape-ref shape5) (:id c-shape2)))
+                                       (t/is (= (:name shape6) "Rect 3"))
+                                       (t/is (= (:touched shape6) nil))
+                                       (t/is (= (:shape-ref shape6) (:id c-shape3)))
 
-                                              (t/is (= (:name instance2) "Component 1"))
-                                              (t/is (= (:touched instance2) nil))
-                                              (t/is (= (:shape-ref instance2) (:id c-main1)))
-                                              (t/is (= (:name shape7) "Rect 1"))
-                                              (t/is (= (:touched shape7) nil))
-                                              (t/is (= (:shape-ref shape7) (:id c-shape1)))
-                                              (t/is (= (:name shape8) "Rect 2"))
-                                              (t/is (= (:touched shape8) nil))
-                                              (t/is (= (:shape-ref shape8) (:id c-shape2)))
-                                              (t/is (= (:name shape9) "Rect 3"))
-                                              (t/is (= (:touched shape9) nil))
-                                              (t/is (= (:shape-ref shape9) (:id c-shape3)))
+                                       (t/is (= (:name instance2) "Component 1"))
+                                       (t/is (= (:touched instance2) nil))
+                                       (t/is (= (:shape-ref instance2) (:id c-main1)))
+                                       (t/is (= (:name shape7) "Rect 1"))
+                                       (t/is (= (:touched shape7) nil))
+                                       (t/is (= (:shape-ref shape7) (:id c-shape1)))
+                                       (t/is (= (:name shape8) "Rect 2"))
+                                       (t/is (= (:touched shape8) nil))
+                                       (t/is (= (:shape-ref shape8) (:id c-shape2)))
+                                       (t/is (= (:name shape9) "Rect 3"))
+                                       (t/is (= (:touched shape9) nil))
+                                       (t/is (= (:shape-ref shape9) (:id c-shape3)))
 
-                                              (t/is (= component1 component2 component3))
-                                              (t/is (= c-main1 main1))
-                                              (t/is (= c-shape1 shape1))
-                                              (t/is (= c-shape2 shape2))
-                                              (t/is (= c-shape3 shape3))
-                                              (t/is (= c-instance1 c-main1))
-                                              (t/is (= c-shape4 c-shape4))
-                                              (t/is (= c-shape5 c-shape5))
-                                              (t/is (= c-shape6 c-shape6))
-                                              (t/is (= c-instance2 c-main1))
-                                              (t/is (= c-shape7 c-shape7))
-                                              (t/is (= c-shape8 c-shape8))
-                                              (t/is (= c-shape9 c-shape9)))))]
+                                       (t/is (= component1 component2 component3))
+                                       (t/is (= c-main1 main1))
+                                       (t/is (= c-shape1 shape1))
+                                       (t/is (= c-shape2 shape2))
+                                       (t/is (= c-shape3 shape3))
+                                       (t/is (= c-instance1 c-main1))
+                                       (t/is (= c-shape4 c-shape4))
+                                       (t/is (= c-shape5 c-shape5))
+                                       (t/is (= c-shape6 c-shape6))
+                                       (t/is (= c-instance2 c-main1))
+                                       (t/is (= c-shape7 c-shape7))
+                                       (t/is (= c-shape8 c-shape8))
+                                       (t/is (= c-shape9 c-shape9)))))]
 
-             (ptk/emit!
-              store
-              (dw/relocate-shapes #{(:id shape1')} (:id instance1) 2)
-              (dwl/update-component-sync (:id instance1) (:id file))
-              :the/end))))
+      (ptk/emit!
+       store
+       (dw/relocate-shapes #{(:id shape1')} (:id instance1) 2)
+       (dwl/update-component-sync (:id instance1) (:id file))
+       :the/end))))
 
 (t/deftest test-update-from-lib
   (t/async done

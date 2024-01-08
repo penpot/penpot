@@ -232,8 +232,8 @@
 
         on-double-click
         (mf/use-callback
-          (mf/deps (:id frame))
-          #(st/emit! (dwi/start-rename-flow (:id flow))))
+         (mf/deps (:id frame))
+         #(st/emit! (dwi/start-rename-flow (:id flow))))
 
         on-pointer-enter
         (mf/use-callback
@@ -253,12 +253,12 @@
                      :height 24
                      :transform (vwu/text-transform flow-pos zoom)}
      [:div {:class (stl/css-case :flow-badge true
-                                            :selected selected?)}
+                                 :selected selected?)}
       [:div {:class (stl/css :content)
-                     :on-pointer-down on-pointer-down
-                     :on-double-click on-double-click
-                     :on-pointer-enter on-pointer-enter
-                     :on-pointer-leave on-pointer-leave}
+             :on-pointer-down on-pointer-down
+             :on-double-click on-double-click
+             :on-pointer-enter on-pointer-enter
+             :on-pointer-leave on-pointer-leave}
        i/play-refactor
        [:span (:name flow)]]]]))
 
