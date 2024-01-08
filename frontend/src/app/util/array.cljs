@@ -6,7 +6,7 @@
 
 (ns app.util.array
   "A collection of helpers for work with javascript arrays."
-  (:refer-clojure :exclude [conj! conj]))
+  (:refer-clojure :exclude [conj! conj filter]))
 
 (defn conj
   "A conj like function for js arrays."
@@ -44,3 +44,8 @@
 (defn without-nils
   [^js/Array o]
   (.filter o (fn [v] (some? v))))
+
+(defn filter
+  "A specific filter for js arrays."
+  [pred ^js/Array o]
+  (.filter o pred))

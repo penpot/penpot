@@ -26,6 +26,7 @@
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
+   [app.util.array :as array]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.i18n :as i18n :refer [tr]]
@@ -120,7 +121,8 @@
     :workspace? true}])
 
 (mf/defc section-icon
-  [{:keys [section] :as props}]
+  {::mf/wrap-props false}
+  [{:keys [section]}]
   (case section
     :colors i/drop-refactor
     :components i/component-refactor
@@ -130,28 +132,42 @@
 (mf/defc asset-section
   {::mf/wrap-props false}
   [{:keys [children file-id title section assets-count open?]}]
-  (let [children       (->> (if (array? children) children [children])
-                            (filter some?))
-        get-role       #(.. % -props -role)
-        title-buttons  (filter #(= (get-role %) :title-button) children)
-        content        (filter #(= (get-role %) :content) children)]
-    [:div {:class (stl/css :asset-section)}
-     [:& title-bar {:collapsable  true
-                    :collapsed    (not open?)
-                    :all-clickable true
-                    :on-collapsed #(st/emit! (dw/set-assets-section-open file-id section (not open?)))
-                    :class        (stl/css :title-spacing)
-                    :title        (mf/html [:span {:class (stl/css :title-name)}
-                                            [:span {:class (stl/css :section-icon)}
-                                             [:& section-icon {:section section}]]
-                                            [:span {:class (stl/css :section-name)}
-                                             title]
+  (let [children    (-> (array/normalize-to-array children)
+                        (array/without-nils))
 
-                                            [:span {:class (stl/css :num-assets)}
-                                             assets-count]])}
-      title-buttons]
-     (when ^boolean open?
-       content)]))
+        is-button?  #(= :title-button (.. % -props -role))
+        is-content? #(= :content (.. % -props -role))
+
+        buttons     (array/filter is-button? children)
+        content     (array/filter is-content? children)
+
+        on-collapsed
+        (mf/use-fn
+         (mf/deps file-id section open?)
+         (fn [_]
+           (st/emit! (dw/set-assets-section-open file-id section (not open?)))))
+
+        title
+        (mf/html
+         [:span {:class (stl/css :title-name)}
+          [:span {:class (stl/css :section-icon)}
+           [:& section-icon {:section section}]]
+          [:span {:class (stl/css :section-name)}
+           title]
+
+          [:span {:class (stl/css :num-assets)}
+           assets-count]])]
+
+    [:div {:class (stl/css :asset-section)}
+     [:& title-bar
+      {:collapsable   true
+       :collapsed     (not open?)
+       :all-clickable true
+       :on-collapsed  on-collapsed
+       :class         (stl/css :title-spacing)
+       :title         title}
+      buttons]
+     (when ^boolean open? content)]))
 
 (mf/defc asset-section-block
   {::mf/wrap-props false}
