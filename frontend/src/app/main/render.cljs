@@ -208,7 +208,6 @@
   (let [objects (:objects data)
         shapes  (cfh/get-immediate-children objects)
         dim     (calculate-dimensions objects aspect-ratio)
-        _ (prn ">>DIM" dim)
         vbox    (format-viewbox dim)
         bgcolor (dm/get-in data [:options :background] default-color)
 
