@@ -224,11 +224,10 @@
                               (cfh/join-path (if (not every-same-file?)
                                                ""
                                                (find-common-path [] 0))))
-
         filters*            (mf/use-state
                              {:term ""
                               :file-id file-id
-                              :path path
+                              :path (or path "")
                               :listing-thumbs? false})
 
         filters             (deref filters*)
