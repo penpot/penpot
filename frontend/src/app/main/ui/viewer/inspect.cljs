@@ -95,11 +95,11 @@
                        :local local
                        :page page}]
      [:div#inspect-svg-wrapper {:class (stl/css :inspect-svg-wrapper)
-            :data-value (pr-str (:id frame))
-            :on-click handle-select-frame}
+                                :data-value (pr-str (:id frame))
+                                :on-click handle-select-frame}
       [:& viewer-pagination {:index index :num-frames (count (:frames page)) :left-bar true :right-bar true}]
       [:div#inspect-svg-container {:class (stl/css :inspect-svg-container)
-             :ref inspect-svg-container-ref}
+                                   :ref inspect-svg-container-ref}
        [:& render-frame-svg {:frame frame :page page :local local :size size}]]]
 
      [:div {:class (stl/css-case :sidebar-container true
