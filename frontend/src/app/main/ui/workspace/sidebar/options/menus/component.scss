@@ -213,6 +213,7 @@
 .component-list-empty {
   @include titleTipography;
   margin: 0 $s-4 0 $s-8;
+  color: $df-secondary;
 }
 
 .component-list {

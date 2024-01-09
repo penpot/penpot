@@ -825,12 +825,11 @@
                  second)
             0)))))
 
-(defn- component-swap
-  "Swaps a component with another one"
+(defn- add-component-for-swap
   [shape file-id id-new-component]
   (dm/assert! (uuid? id-new-component))
   (dm/assert! (uuid? file-id))
-  (ptk/reify ::component-swap
+  (ptk/reify ::add-component-for-swap
     ptk/WatchEvent
     (watch [it state _]
       (let [page      (wsh/lookup-page state)
@@ -856,12 +855,24 @@
 
             ;; We need to set the same index as the original shape
             changes (pcb/change-parent changes (:parent-id shape) [new-shape] index {:component-swap true})]
+
+        ;; First delete so we don't break the grid layout cells
         (rx/of (dch/commit-changes changes)
-               (ptk/data-event :layout/update [(:id new-shape)])
-               (dws/select-shape (:id new-shape) true)
-               (dwsh/delete-shapes nil (d/ordered-set (:id shape)) {:component-swap true}))))))
+               (dws/select-shape (:id new-shape) true))))))
 
-
+(defn- component-swap
+  "Swaps a component with another one"
+  [shape file-id id-new-component]
+  (dm/assert! (uuid? id-new-component))
+  (dm/assert! (uuid? file-id))
+  (ptk/reify ::component-swap
+    ptk/WatchEvent
+    (watch [_ _ _]
+      ;; First delete shapes so we have space in the layout otherwise we can have problems
+      ;; in the grid creating new rows/columns to make space
+      (rx/of (dwsh/delete-shapes nil (d/ordered-set (:id shape)) {:component-swap true})
+             (add-component-for-swap shape file-id id-new-component)
+             (ptk/data-event :layout/update [(:parent-id shape)])))))
 
 (defn component-multi-swap
   "Swaps several components with another one"
