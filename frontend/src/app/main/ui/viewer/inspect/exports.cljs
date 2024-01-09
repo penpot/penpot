@@ -136,9 +136,9 @@
                            vec))))
     [:div {:class (stl/css :element-set)}
      [:div {:class (stl/css :element-title)}
-      [:& title-bar {:collapsable? false
-                     :title        (tr "workspace.options.export")
-                     :class        (stl/css :title-spacing-export-viewer)}
+      [:& title-bar {:collapsable false
+                     :title       (tr "workspace.options.export")
+                     :class       (stl/css :title-spacing-export-viewer)}
        [:button {:class (stl/css :add-export)
                  :on-click add-export} i/add-refactor]]]
 

@@ -136,9 +136,9 @@
         title-buttons  (filter #(= (get-role %) :title-button) children)
         content        (filter #(= (get-role %) :content) children)]
     [:div {:class (stl/css :asset-section)}
-     [:& title-bar {:collapsable? true
-                    :collapsed?   (not open?)
-                    :clickable-all? true
+     [:& title-bar {:collapsable  true
+                    :collapsed    (not open?)
+                    :all-clickable true
                     :on-collapsed #(st/emit! (dw/set-assets-section-open file-id section (not open?)))
                     :class        (stl/css :title-spacing)
                     :title        (mf/html [:span {:class (stl/css :title-name)}
@@ -154,6 +154,7 @@
        content)]))
 
 (mf/defc asset-section-block
+  {::mf/wrap-props false}
   [{:keys [children]}]
   [:* children])
 
@@ -161,11 +162,11 @@
   [rename components-to-group group-name]
   (let [undo-id (js/Symbol)]
     (st/emit! (dwu/start-undo-transaction undo-id))
-    (apply st/emit!
-           (->> components-to-group
-                (map #(rename
-                       (:id %)
-                       (add-group % group-name)))))
+    (->> components-to-group
+         (map #(rename
+                (:id %)
+                (add-group % group-name)))
+         (run! st/emit!))
     (st/emit! (dwu/commit-undo-transaction undo-id))))
 
 (defn on-drop-asset

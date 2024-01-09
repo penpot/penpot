@@ -45,9 +45,9 @@
 
     (when (seq shapes)
       [:div {:class (stl/css :attributes-block)}
-       [:& title-bar {:collapsable? false
-                      :title        "Layout"
-                      :class        (stl/css :title-spacing-layout)}
+       [:& title-bar {:collapsable false
+                      :title       "Layout"
+                      :class       (stl/css :title-spacing-layout)}
 
         (when (= (count shapes) 1)
           [:& copy-button {:data (css/get-shape-properties-css objects (first shapes) properties)}])]

@@ -54,9 +54,9 @@
   (let [shapes (filter has-fill? shapes)]
     (when (seq shapes)
       [:div {:class (stl/css :attributes-block)}
-       [:& title-bar {:collapsable? false
-                      :title        (tr "inspect.attributes.fill")
-                      :class        (stl/css :title-spacing-fill)}]
+       [:& title-bar {:collapsable false
+                      :title       (tr "inspect.attributes.fill")
+                      :class       (stl/css :title-spacing-fill)}]
 
        [:div {:class (stl/css :attributes-content)}
         (for [shape shapes]

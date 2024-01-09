@@ -21,9 +21,9 @@
   (let [shapes (->> shapes (filter has-blur?))]
     (when (seq shapes)
       [:div {:class (stl/css :attributes-block)}
-       [:& title-bar {:collapsable? false
-                      :title        (tr "inspect.attributes.blur")
-                      :class        (stl/css :title-spacing-blur)}
+       [:& title-bar {:collapsable false
+                      :title       (tr "inspect.attributes.blur")
+                      :class       (stl/css :title-spacing-blur)}
         (when (= (count shapes) 1)
           [:& copy-button {:data (css/get-css-property objects (first shapes) :filter)}])]
 

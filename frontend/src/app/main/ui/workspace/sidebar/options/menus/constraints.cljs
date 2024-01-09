@@ -157,8 +157,8 @@
     (when in-frame?
       [:div {:class (stl/css :element-set)}
        [:div {:class (stl/css :element-title)}
-        [:& title-bar {:collapsable? true
-                       :collapsed?   (not open?)
+        [:& title-bar {:collapsable  true
+                       :collapsed    (not open?)
                        :on-collapsed toggle-content
                        :title        (tr "workspace.options.constraints")}]]
        (when open?

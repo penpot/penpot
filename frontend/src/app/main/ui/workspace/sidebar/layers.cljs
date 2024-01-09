@@ -374,7 +374,7 @@
                  i/tick-refactor])]])]
 
          [:div {:class (stl/css :tool-window-bar)}
-          [:& title-bar {:collapsable? false
+          [:& title-bar {:collapsable  false
                          :title        (:name page)
                          :on-btn-click toggle-search
                          :btn-children i/search-refactor}]]))]))

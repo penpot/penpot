@@ -288,8 +288,8 @@
 
     [:div {:class (stl/css :element-set)}
      [:div {:class (stl/css :element-title)}
-      [:& title-bar {:collapsable? has-shadows?
-                     :collapsed?   (not open?)
+      [:& title-bar {:collapsable  has-shadows?
+                     :collapsed    (not open?)
                      :on-collapsed toggle-content
                      :title        (case type
                                      :multiple (tr "workspace.options.shadow-options.title.multiple")

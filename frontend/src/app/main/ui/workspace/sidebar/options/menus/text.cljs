@@ -283,8 +283,8 @@
 
     [:div {:class (stl/css :element-set)}
      [:div {:class (stl/css :element-title)}
-      [:& title-bar {:collapsable? true
-                     :collapsed?   (not main-menu-open?)
+      [:& title-bar {:collapsable  true
+                     :collapsed    (not main-menu-open?)
                      :on-collapsed toggle-main-menu
                      :title        label
                      :class        (stl/css :title-spacing-text)}

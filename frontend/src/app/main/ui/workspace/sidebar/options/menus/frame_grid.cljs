@@ -294,8 +294,8 @@
         handle-create-grid  (mf/use-fn (mf/deps id) #(st/emit! (dw/add-frame-grid id)))]
 
     [:div {:class (stl/css :element-set)}
-     [:& title-bar {:collapsable? has-frame-grids?
-                    :collapsed?   (not open?)
+     [:& title-bar {:collapsable  has-frame-grids?
+                    :collapsed    (not open?)
                     :on-collapsed toggle-content
                     :class        (stl/css-case :title-spacing-board-grid (not has-frame-grids?))
                     :title        (tr "workspace.options.guides.title")}

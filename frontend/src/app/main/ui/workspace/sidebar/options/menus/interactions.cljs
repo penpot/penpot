@@ -157,9 +157,9 @@
   [{:keys [flows]}]
   (when (seq flows)
     [:div {:class (stl/css :interaction-options)}
-     [:& title-bar {:collapsable? false
-                    :title        (tr "workspace.options.flows.flow-starts")
-                    :class        (stl/css :title-spacing-layout-flow)}]
+     [:& title-bar {:collapsable false
+                    :title       (tr "workspace.options.flows.flow-starts")
+                    :class       (stl/css :title-spacing-layout-flow)}]
      (for [flow flows]
        [:& flow-item {:flow flow :key (str (:id flow))}])]))
 
@@ -170,9 +170,9 @@
           add-flow (mf/use-fn #(st/emit! (dwi/add-flow-selected-frame)))]
 
       [:div {:class (stl/css :element-set)}
-       [:& title-bar {:collapsable? false
-                      :title        (tr "workspace.options.flows.flow")
-                      :class        (stl/css :title-spacing-layout-flow)}
+       [:& title-bar {:collapsable false
+                      :title       (tr "workspace.options.flows.flow")
+                      :class       (stl/css :title-spacing-layout-flow)}
         (when (nil? flow)
           [:button {:class (stl/css :add-flow-btn)
                     :title (tr  "workspace.options.flows.add-flow-start")
@@ -712,9 +712,9 @@
      [:div {:class (stl/css :interaction-options)}
       (when (and shape (not (cfh/unframed-shape? shape)))
         [:div {:class (stl/css :element-title)}
-         [:& title-bar {:collapsable? false
-                        :title        (tr "workspace.options.interactions")
-                        :class        (stl/css :title-spacing-layout-interactions)}
+         [:& title-bar {:collapsable false
+                        :title       (tr "workspace.options.interactions")
+                        :class       (stl/css :title-spacing-layout-interactions)}
 
           [:button {:class (stl/css :add-interaction-btn)
                     :on-click add-interaction}
