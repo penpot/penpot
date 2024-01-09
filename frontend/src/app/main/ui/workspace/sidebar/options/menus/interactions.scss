@@ -27,11 +27,17 @@
 }
 
 .help-content {
-  padding: $s-20;
+  padding: $s-32 0;
+  width: $s-200;
+  margin: 0 auto;
 }
 
 .help-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   margin-bottom: $s-40;
+  gap: $s-12;
 }
 
 .interactions-help-icon {
@@ -40,7 +46,6 @@
   height: $s-48;
   border-radius: $br-circle;
   background-color: var(--pill-background-color);
-  margin: 0 auto $s-12 auto;
   svg {
     @extend .button-icon;
     stroke: var(--icon-foreground);

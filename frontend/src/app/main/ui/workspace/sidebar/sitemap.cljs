@@ -218,7 +218,7 @@
                     :class         (stl/css :title-spacing-sitemap)}
 
       (if ^boolean read-only?
-        [:di {:class  (stl/css :view-only-mode)}
+        [:div {:class  (stl/css :view-only-mode)}
          (tr "labels.view-only")]
         [:button {:class (stl/css :add-page)
                   :on-click on-create}

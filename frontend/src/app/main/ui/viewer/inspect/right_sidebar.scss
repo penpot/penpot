@@ -62,7 +62,8 @@
   @include flexColumn;
   align-items: center;
   justify-content: flex-start;
-  gap: $s-8;
+  gap: $s-12;
+  margin-right: $s-8;
 }
 
 .placeholder-icon {
