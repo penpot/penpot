@@ -357,7 +357,9 @@
           f.is_shared,
           ft.media_id
      from file as f
-     left join file_thumbnail as ft on (ft.file_id = f.id and ft.revn = f.revn)
+     left join file_thumbnail as ft on (ft.file_id = f.id
+                                        and ft.revn = f.revn
+                                        and ft.deleted_at is null)
     where f.project_id = ?
       and f.deleted_at is null
     order by f.modified_at desc")
@@ -660,7 +662,9 @@
             row_number() over w as row_num
        from file as f
       inner join project as p on (p.id = f.project_id)
-       left join file_thumbnail as ft on (ft.file_id = f.id and ft.revn = f.revn)
+       left join file_thumbnail as ft on (ft.file_id = f.id
+                                          and ft.revn = f.revn
+                                          and ft.deleted_at is null)
       where p.team_id = ?
         and p.deleted_at is null
         and f.deleted_at is null
