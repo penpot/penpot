@@ -1111,7 +1111,6 @@
 
 (defn assign-cell-positions
   [parent objects]
-  (prn ">>>>assign-cell-positions" (:name parent))
   (-> parent
       (check-deassigned-cells objects)
       (reassign-positions)
@@ -1128,7 +1127,6 @@
 ;;  - (maybe) create group/frames. This case will assigna a cell that had one of its children
 (defn assign-cells
   [parent objects]
-  (prn ">assign-cells")
   (let [parent (assign-cell-positions parent objects)
 
         shape-has-cell?
