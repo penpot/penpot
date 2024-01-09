@@ -38,10 +38,12 @@
   @include buttonStyle;
   @include flexCenter;
   @include focusPrimary;
+  @include tabTitleTipography;
   background-color: var(--button-primary-background-color-rest);
   border: $s-1 solid var(--button-primary-border-color-rest);
   color: var(--button-primary-foreground-color-rest);
   border-radius: $br-8;
+  min-height: $s-32;
   svg,
   span svg {
     stroke: var(--button-primary-foreground-color-rest);
@@ -54,6 +56,7 @@
     span svg {
       stroke: var(--button-primary-foreground-color-hover);
     }
+    text-decoration: none;
   }
   &:active {
     background-color: var(--button-primary-background-color-active);

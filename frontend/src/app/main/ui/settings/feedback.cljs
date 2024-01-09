@@ -80,6 +80,7 @@
 
      [:> fm/submit-button*
       {:label (if @loading (tr "labels.sending") (tr "labels.send"))
+       :class (stl/css :feedback-button-link)
        :disabled @loading}]
 
      [:hr]
@@ -88,7 +89,7 @@
      [:p {:class (stl/css :field-text)} (tr "feedback.discourse-subtitle1")]
 
      [:a
-      {:class (stl/css :btn-secondary :btn-large)
+      {:class (stl/css :feedback-button-link)
        :href "https://community.penpot.app"
        :target "_blank"}
       (tr "feedback.discourse-go-to")]
@@ -98,7 +99,7 @@
      [:p {:class (stl/css :field-text)} (tr "feedback.twitter-subtitle1")]
 
      [:a
-      {:class (stl/css :btn-secondary :btn-large)
+      {:class (stl/css :feedback-button-link)
        :href "https://twitter.com/penpotapp"
        :target "_blank"}
       (tr "feedback.twitter-go-to")]]))
