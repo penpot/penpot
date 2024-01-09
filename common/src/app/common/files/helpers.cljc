@@ -32,13 +32,17 @@
   ([objects id]
    (is-direct-child-of-root? (get objects id)))
   ([shape]
-   (and (some? shape) (= (dm/get-prop shape :frame-id) uuid/zero))))
+   (and (some? shape)
+        (= (dm/get-prop shape :frame-id) uuid/zero))))
 
 (defn root-frame?
   ([objects id]
-   (root-frame? (get objects id)))
+   (if (= id uuid/zero)
+     false
+     (root-frame? (get objects id))))
   ([shape]
    (and (some? shape)
+        (not= (dm/get-prop shape :id) uuid/zero)
         (= (dm/get-prop shape :type) :frame)
         (= (dm/get-prop shape :frame-id) uuid/zero))))
 
