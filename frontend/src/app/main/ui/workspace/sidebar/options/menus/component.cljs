@@ -106,46 +106,66 @@
        (fn [] (st/emit! (dw/set-annotations-id-for-create nil))))) ;; cleanup set-annotationsid-for-create on unload
 
     (when (or creating? annotation)
-      [:div.component-annotation {:class (dom/classnames :editing @editing? :creating creating?)}
-       [:div.title {:class (dom/classnames :expandeable (not (or @editing? creating?)))
-                    :on-click #(expand (not annotations-expanded?))}
-        [:div (if (or @editing? creating?)
-                (if @editing?
-                  (tr "workspace.options.component.edit-annotation")
-                  (tr "workspace.options.component.create-annotation"))
-                [:* (if annotations-expanded?
-                      [:div.expand i/arrow-down]
-                      [:div.expand i/arrow-slide])
-                 (tr "workspace.options.component.annotation")])]
-        [:div
+      [:div {:class (stl/css-case :component-annotation true
+                                  :editing @editing?
+                                  :creating creating?)}
+       [:div {:class (stl/css-case :annotation-title true
+                                   :expandeable (not (or @editing? creating?))
+                                   :expanded annotations-expanded?)
+              :on-click #(expand (not annotations-expanded?))}
+
+        (if (or @editing? creating?)
+          [:span {:class (stl/css :annotation-text)}
+           (if @editing?
+             (tr "workspace.options.component.edit-annotation")
+             (tr "workspace.options.component.create-annotation"))]
+
+          [:*
+           [:span {:class (stl/css-case :icon-arrow true
+                                        :expanded annotations-expanded?)}
+            i/arrow-refactor]
+           [:span {:class (stl/css :annotation-text)}
+            (tr "workspace.options.component.annotation")]])
+
+        [:div {:class (stl/css :icons-wrapper)}
          (when (and main-instance? annotations-expanded?)
            (if (or @editing? creating?)
              [:*
-              [:div.icon {:title (if creating? (tr "labels.create") (tr "labels.save"))
-                          :on-click save
-                          :class (dom/classnames :hidden @invalid-text?)} i/tick]
-              [:div.icon {:title (tr "labels.discard")
-                          :on-click discard} i/cross]]
-             [:*
-              [:div.icon {:title (tr "labels.edit")
-                          :on-click edit} i/pencil]
-              [:div.icon {:title (tr "labels.delete")
-                          :on-click on-delete-annotation} i/trash]]))]]
+              [:div {:title (if creating? (tr "labels.create") (tr "labels.save"))
+                     :on-click save
+                     :class (stl/css-case :icon true
+                                          :icon-tick true
+                                          :hidden @invalid-text?)}
+               i/tick-refactor]
+              [:div {:class (stl/css :icon :icon-cross)
+                     :title (tr "labels.discard")
+                     :on-click discard}
+               i/close-refactor]]
 
-       [:div {:class (dom/classnames :hidden (not annotations-expanded?))}
-        [:div.grow-wrap
-         [:div.texarea-copy]
+             [:*
+              [:div {:class (stl/css :icon :icon-edit)
+                     :title (tr "labels.edit")
+                     :on-click edit}
+               i/curve-refactor]
+              [:div {:class (stl/css :icon :icon-trash)
+                     :title (tr "labels.delete")
+                     :on-click on-delete-annotation}
+               i/delete-refactor]]))]]
+
+       [:div {:class (stl/css-case :hidden (not annotations-expanded?))}
+        [:div {:class (stl/css :grow-wrap)}
+         [:div {:class (stl/css :texarea-copy)}]
          [:textarea
           {:ref textarea-ref
            :id "annotation-textarea"
            :data-debug annotation
-           :auto-focus true
+           :auto-focus (or @editing? creating?)
            :maxLength 300
            :on-input autogrow
            :default-value annotation
            :read-only (not (or creating? @editing?))}]]
         (when (or @editing? creating?)
-          [:div.counter (str @size "/300")])]])))
+          [:div {:class (stl/css  :counter)} (str @size "/300")])]])))
 
 (mf/defc component-swap-item
   {::mf/wrap-props false}
@@ -157,22 +177,21 @@
             (st/emit! (dwl/component-multi-swap shapes file-id (:id item)))))
         item-ref       (mf/use-ref)
         visible?       (h/use-visible item-ref :once? true)]
-    [:div
-     {:ref item-ref
-      :title (if is-search (:full-name item) (:name item))
-      :class (stl/css-case :component-item (not listing-thumbs)
-                           :grid-cell listing-thumbs
-                           :selected (= (:id item) component-id)
-                           :disabled loop)
-      :key (str "swap-item-" (:id item))
-      :on-click on-select-component}
+    [:div {:ref item-ref
+           :title (if is-search (:full-name item) (:name item))
+           :class (stl/css-case :component-item (not listing-thumbs)
+                                :grid-cell listing-thumbs
+                                :selected (= (:id item) component-id)
+                                :disabled loop)
+           :key (str "swap-item-" (:id item))
+           :on-click on-select-component}
      (when visible?
        [:& cmm/component-item-thumbnail {:file-id (:file-id item)
                                          :root-shape root-shape
                                          :component item
                                          :container container}])
-     [:span
-      {:class (stl/css-case :component-name true :selected (= (:id item) component-id))}
+     [:span  {:class (stl/css-case :component-name true
+                                   :selected (= (:id item) component-id))}
       (if is-search (:full-name item) (:name item))]]))
 
 (mf/defc component-group-item
@@ -185,9 +204,11 @@
            :title group-name}
      [:div
       (when-not (str/blank? path)
-        [:span {:class (stl/css :component-group-path)} (str "\u00A0/\u00A0" path)])
-      [:span {:class (stl/css :component-group-name)} (cfh/last-path group-name)]]
-     [:span i/arrow-slide]]))
+        [:span {:class (stl/css :component-group-path)}
+         (str "\u00A0/\u00A0" path)])
+      [:span {:class (stl/css :component-group-name)}
+       (cfh/last-path group-name)]]
+     [:span i/arrow-refactor]]))
 
 (mf/defc component-swap
   [{:keys [shapes] :as props}]
@@ -328,11 +349,10 @@
                        :icon (mf/html [:span {:class (stl/css :search-icon)} i/search-refactor])}]]
 
       [:div {:class (stl/css :select-field)}
-       [:& select
-        {:class (stl/css :select-library)
-         :default-value current-library-id
-         :options libraries-options
-         :on-change on-library-change}]]
+       [:& select {:class (stl/css :select-library)
+                   :default-value current-library-id
+                   :options libraries-options
+                   :on-change on-library-change}]]
 
       [:div {:class (stl/css :library-name)} current-library-name]
 
@@ -356,7 +376,7 @@
         [:button {:class (stl/css :component-path)
                   :on-click on-go-back
                   :title (:path filters)}
-         [:span i/arrow-slide]
+         [:span i/arrow-refactor]
          [:span (:path filters)]])
 
       (when (empty? items)
@@ -462,7 +482,7 @@
         (if swap-opened?
           [:button {:class (stl/css :title-back)
                     :on-click on-component-back}
-           [:span i/arrow-slide]
+           [:span i/arrow-refactor]
            [:span (tr "workspace.options.component")]]
           [:& title-bar {:collapsable? true
                          :collapsed?   (not open?)
@@ -473,7 +493,9 @@
        (when open?
          [:div {:class (stl/css :element-content)}
           [:div {:class (stl/css :component-wrapper)}
-           [:div {:class (stl/css-case :component-name-wrapper true :with-main (and can-swap? (not multi)) :swappeable (and can-swap? (not swap-opened?)))
+           [:div {:class (stl/css-case :component-name-wrapper true
+                                       :with-main (and can-swap? (not multi))
+                                       :swappeable (and can-swap? (not swap-opened?)))
                   :on-click open-component-panel}
             [:span {:class (stl/css :component-icon)}
              (if main-instance?

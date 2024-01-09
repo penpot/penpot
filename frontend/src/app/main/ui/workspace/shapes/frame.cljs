@@ -118,12 +118,12 @@
 
             tries-ref      (mf/use-ref 0)
             imposter-ref   (mf/use-ref nil)
-            imposter-loaded-ref (mf/use-ref false)
+            imposter-loaded  (mf/use-state false)
             task-ref       (mf/use-ref nil)
 
             on-load        (mf/use-fn (fn []
                                         (mf/set-ref-val! tries-ref 0)
-                                        (mf/set-ref-val! imposter-loaded-ref true)))
+                                        (reset! imposter-loaded true)))
             on-error       (mf/use-fn
                             (fn []
                               (let [current-tries (mf/ref-val tries-ref)
@@ -158,7 +158,7 @@
            :opacity (when ^boolean hidden? 0)}
 
            ;; When there is no thumbnail, we generate a empty rect.
-          (when (and (not ^boolean content-visible?) (not (mf/ref-val imposter-loaded-ref)))
+          (when (and (not ^boolean content-visible?) (not @imposter-loaded))
             [:g.frame-placeholder
              [:rect {:x x
                      :y y

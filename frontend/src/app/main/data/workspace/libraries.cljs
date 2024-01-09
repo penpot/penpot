@@ -811,12 +811,7 @@
   (ptk/reify ::update-component-thumbnail
     ptk/WatchEvent
     (watch [_ state _]
-      (rx/of (update-component-thumbnail-sync state component-id file-id "component"))
-      #_(let [data            (get state :workspace-data)
-              component       (ctkl/get-component data component-id)
-              page-id         (:main-instance-page component)
-              root-id         (:main-instance-id component)]
-          (rx/of (dwt/request-thumbnail file-id page-id root-id "component"))))))
+      (rx/of (update-component-thumbnail-sync state component-id file-id "component")))))
 
 (defn- find-shape-index
   [objects id shape-id]

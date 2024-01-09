@@ -283,7 +283,8 @@
                (st/emit! (dv/go-to-section section))
                (open-login-dialog)))))]
 
-    [:header {:class (stl/css :viewer-header)}
+    [:header {:class (stl/css-case :viewer-header true
+                                   :fullscreen (mf/deref fullscreen-ref))}
      [:div {:class (stl/css :nav-zone)}
             ;; If the user doesn't have permission we disable the link
       [:a {:class (stl/css :home-link)
