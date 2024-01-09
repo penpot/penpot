@@ -159,7 +159,7 @@
           {:ref textarea-ref
            :id "annotation-textarea"
            :data-debug annotation
-           :auto-focus true
+           :auto-focus (or @editing? creating?)
            :maxLength 300
            :on-input autogrow
            :default-value annotation
