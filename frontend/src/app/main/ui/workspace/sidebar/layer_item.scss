@@ -51,7 +51,7 @@
     border-bottom: $s-2 solid var(--layer-row-foreground-color-hover);
   }
   &.dnd-over-top {
-    border-bottom: $s-2 solid var(--layer-row-foreground-color-hover);
+    border-top: $s-2 solid var(--layer-row-foreground-color-hover);
   }
   &.dnd-over {
     border: $s-2 solid var(--layer-row-foreground-color-hover);

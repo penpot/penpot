@@ -26,7 +26,6 @@
   @include codeTypography;
   display: flex;
   flex-direction: column;
-  flex: 1;
   height: 100%;
   min-height: 0;
   overflow: hidden;
@@ -35,7 +34,6 @@
   pre {
     border-radius: $br-8;
     padding: $s-16;
-    max-height: var(--code-height);
     overflow: auto;
     height: 100%;
   }
@@ -43,6 +41,10 @@
   // Overrides background setted in the theme
   :global(.hljs) {
     background: $db-tertiary;
+  }
+
+  &.collapsed {
+    height: initial;
   }
 }
 
