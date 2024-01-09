@@ -341,11 +341,17 @@
 
         handle-context-menu
         (mf/use-callback
+         (mf/deps (:id shape) (:id cell) selected?)
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
            (let [position (dom/get-client-position event)]
-             (st/emit! (dw/show-grid-cell-context-menu {:position position :grid-id (:id shape)})))))]
+             (if selected?
+               (st/emit! (dw/show-grid-cell-context-menu {:position position :grid-id (:id shape)}))
+
+               ;; If right-click on a non-selected cell we select the cell and then open the menu
+               (st/emit! (dwge/set-selection (:id shape) (:id cell))
+                         (dw/show-grid-cell-context-menu {:position position :grid-id (:id shape)}))))))]
 
     [:g.cell-editor
      ;; DEBUG OVERLAY
