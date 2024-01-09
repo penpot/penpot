@@ -177,7 +177,11 @@
 
          changes
          (if (ctl/grid-layout? objects (:parent-id first-shape))
-           (let [[row column] (gslg/get-drop-cell (:parent-id first-shape) objects position)]
+           (let [target-cell (-> position meta :cell)
+                 [row column]
+                 (if (some? target-cell)
+                   [(:row target-cell) (:column target-cell)]
+                   (gslg/get-drop-cell (:parent-id first-shape) objects position))]
              (-> changes
                  (pcb/update-shapes
                   [(:parent-id first-shape)]

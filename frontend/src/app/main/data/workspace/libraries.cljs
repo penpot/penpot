@@ -20,6 +20,7 @@
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+   [app.common.types.shape.layout :as ctl]
    [app.common.types.typography :as ctt]
    [app.common.uuid :as uuid]
    [app.main.data.events :as ev]
@@ -826,7 +827,7 @@
             0)))))
 
 (defn- add-component-for-swap
-  [shape file-id id-new-component]
+  [shape file-id id-new-component target-cell]
   (dm/assert! (uuid? id-new-component))
   (dm/assert! (uuid? file-id))
   (ptk/reify ::add-component-for-swap
@@ -840,6 +841,7 @@
             position  (gpt/point (:x shape) (:y shape))
             changes   (-> (pcb/empty-changes it (:id page))
                           (pcb/with-objects objects))
+            position  (-> position (with-meta {:cell target-cell}))
 
             [new-shape changes]
             (dwlh/generate-instantiate-component changes
@@ -867,12 +869,18 @@
   (dm/assert! (uuid? file-id))
   (ptk/reify ::component-swap
     ptk/WatchEvent
-    (watch [_ _ _]
+    (watch [_ state _]
       ;; First delete shapes so we have space in the layout otherwise we can have problems
       ;; in the grid creating new rows/columns to make space
-      (rx/of (dwsh/delete-shapes nil (d/ordered-set (:id shape)) {:component-swap true})
-             (add-component-for-swap shape file-id id-new-component)
-             (ptk/data-event :layout/update [(:parent-id shape)])))))
+      (let [objects (wsh/lookup-page-objects state)
+            parent (get objects (:parent-id shape))
+
+            ;; If the target parent is a grid layout we need to pass the target cell
+            target-cell (when (ctl/grid-layout? parent)
+                          (ctl/get-cell-by-shape-id parent (:id shape)))]
+        (rx/of (dwsh/delete-shapes nil (d/ordered-set (:id shape)) {:component-swap true})
+               (add-component-for-swap shape file-id id-new-component target-cell)
+               (ptk/data-event :layout/update [(:parent-id shape)]))))))
 
 (defn component-multi-swap
   "Swaps several components with another one"
