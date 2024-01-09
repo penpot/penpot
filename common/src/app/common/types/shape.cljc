@@ -375,8 +375,8 @@
   {:frame-id uuid/zero
    :fills [{:fill-color clr/white
             :fill-opacity 1}]
-   :name "Board"
    :strokes []
+   :name "Board"
    :shapes []
    :hide-fill-on-export false})
 
@@ -390,11 +390,15 @@
 (def ^:private minimal-group-attrs
   {:type :group
    :name "Group"
+   :fills []
+   :strokes []
    :shapes []})
 
 (def ^:private minimal-bool-attrs
   {:type :bool
    :name "Bool"
+   :fills []
+   :strokes []
    :shapes []})
 
 (def ^:private minimal-text-attrs
