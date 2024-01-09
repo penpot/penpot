@@ -75,6 +75,7 @@
         other-teams      (remove #(= (:id %) current-team-id) (vals @teams))
         current-projects (remove #(= (:id %) (:project-id file))
                                  (:projects current-team))
+
         on-new-tab
         (fn [_]
           (let [path-params  {:project-id (:project-id file)

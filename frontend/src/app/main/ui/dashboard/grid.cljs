@@ -215,31 +215,34 @@
 
 (mf/defc grid-item
   {:wrap [mf/memo]}
-  [{:keys [file navigate? origin library-view?] :as props}]
+  [{:keys [file origin library-view?] :as props}]
   (let [file-id         (:id file)
-        local           (mf/use-state {:menu-open false
-                                       :menu-pos nil
-                                       :edition false})
-        selected-files  (mf/deref refs/dashboard-selected-files)
+        selected-files  (if (= origin :search)
+                          (mf/deref refs/dashboard-selected-search)
+                          (mf/deref refs/dashboard-selected-files))
+
         dashboard-local (mf/deref refs/dashboard-local)
+        file-menu-open? (:menu-open dashboard-local)
+
+        selected?       (contains? selected-files file-id)
+
         node-ref        (mf/use-ref)
         menu-ref        (mf/use-ref)
 
-        selected?        (contains? selected-files file-id)
-
         on-menu-close
         (mf/use-fn
-         #(swap! local assoc :menu-open false))
+         (fn [_]
+           (st/emit! (dd/hide-file-menu))))
 
         on-select
-        (fn [event]
-          (when (and (or (not selected?) (> (count selected-files) 1))
-                     (not (:menu-open @local)))
-            (dom/stop-propagation event)
-            (let [shift? (kbd/shift? event)]
-              (when-not shift?
-                (st/emit! (dd/clear-selected-files)))
-              (st/emit! (dd/toggle-file-select file)))))
+        (mf/use-fn
+         (fn [event]
+           (when (or (not selected?) (> (count selected-files) 1))
+             (dom/stop-propagation event)
+             (let [shift? (kbd/shift? event)]
+               (when-not shift?
+                 (st/emit! (dd/clear-selected-files)))
+               (st/emit! (dd/toggle-file-select file))))))
 
         on-navigate
         (mf/use-fn
@@ -254,6 +257,7 @@
         (mf/use-fn
          (mf/deps selected-files)
          (fn [event]
+           (st/emit! (dd/hide-file-menu))
            (let [offset          (dom/get-offset-position (.-nativeEvent event))
 
                  select-current? (not (contains? selected-files (:id file)))
@@ -283,6 +287,7 @@
         (mf/use-fn
          (mf/deps file selected?)
          (fn [event]
+           (dom/stop-propagation event)
            (dom/prevent-default event)
            (when-not selected?
              (when-not (kbd/shift? event)
@@ -297,9 +302,7 @@
                                   x              (:left points)]
                               (gpt/point x y))
                             client-position)]
-             (swap! local assoc
-                    :menu-open true
-                    :menu-pos position))))
+             (st/emit! (dd/show-file-menu-with-position file-id position)))))
 
         edit
         (mf/use-fn
@@ -308,16 +311,14 @@
            (let [name (str/trim name)]
              (when (not= name "")
                (st/emit! (dd/rename-file (assoc file :name name)))))
-           (swap! local assoc :edition false)))
+           (st/emit! (dd/stop-edit-file-name))))
 
         on-edit
         (mf/use-fn
          (mf/deps file)
          (fn [event]
            (dom/stop-propagation event)
-           (swap! local assoc
-                  :edition true
-                  :menu-open false)))
+           (st/emit! (dd/start-edit-file-name file-id))))
 
         handle-key-down
         (mf/use-callback
@@ -330,10 +331,6 @@
              (when (or (kbd/down-arrow? event) (kbd/left-arrow? event) (kbd/up-arrow? event) (kbd/right-arrow? event))
                (on-select event)) ;; TODO Fix this
              )))]
-
-    (mf/with-effect [selected? local]
-      (when (and (not selected?) (:menu-open @local))
-        (swap! local assoc :menu-open false)))
 
     [:li
      {:class (stl/css-case :grid-item true :project-th true :library library-view?)}
@@ -363,13 +360,13 @@
 
       [:div {:class (stl/css :info-wrapper)}
        [:div {:class (stl/css :item-info)}
-        (if (:edition @local)
+        (if (and (= file-id (:file-id dashboard-local)) (:edition dashboard-local))
           [:& inline-edition {:content (:name file)
                               :on-end edit}]
           [:h3 (:name file)])
         [:& grid-item-metadata {:modified-at (:modified-at file)}]]
 
-       [:div {:class (stl/css-case :project-th-actions true :force-display (:menu-open @local))}
+       [:div {:class (stl/css-case :project-th-actions true :force-display (:menu-open dashboard-local))}
         [:div
          {:class (stl/css :project-th-icon :menu)
           :tab-index "0"
@@ -381,16 +378,15 @@
                            (dom/stop-propagation event)
                            (on-menu-click event)))}
          i/actions
-         (when selected?
+         (when (and selected? file-menu-open?)
            [:& file-menu {:files (vals selected-files)
-                          :show? (:menu-open @local)
-                          :left (+ 24 (:x (:menu-pos @local)))
-                          :top (:y (:menu-pos @local))
-                          :navigate? navigate?
+                          :show? (:menu-open dashboard-local)
+                          :left (+ 24 (:x (:menu-pos dashboard-local)))
+                          :top (:y (:menu-pos dashboard-local))
+                          :navigate? true
                           :on-edit on-edit
                           :on-menu-close on-menu-close
                           :origin origin
-                          :dashboard-local dashboard-local
                           :parent-id (str file-id "-action-menu")}])]]]]]))
 
 (mf/defc grid
