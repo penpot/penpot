@@ -30,9 +30,7 @@
   grid-template-columns: auto 1fr auto;
 
   .workspace-loader {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    @include flexCenter;
     grid-area: viewport;
     background-color: var(--loader-background);
     :global(svg#loader-pencil) {
