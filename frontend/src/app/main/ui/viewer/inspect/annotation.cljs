@@ -15,9 +15,9 @@
 (mf/defc annotation
   [{:keys [content] :as props}]
   [:div {:class (stl/css :attributes-block)}
-   [:& title-bar {:collapsable? false
-                  :title        (tr "workspace.options.component.annotation")
-                  :class        (stl/css :title-spacing-annotation)}
+   [:& title-bar {:collapsable false
+                  :title       (tr "workspace.options.component.annotation")
+                  :class       (stl/css :title-spacing-annotation)}
     [:& copy-button {:data content}]]
 
    [:div {:class (stl/css :annotation-content)} content]])

@@ -361,8 +361,8 @@
 
     [:div {:class (stl/css :element-set)}
      [:div {:class (stl/css :element-title)}
-      [:& title-bar {:collapsable? has-content?
-                     :collapsed?   (not open?)
+      [:& title-bar {:collapsable  has-content?
+                     :collapsed    (not open?)
                      :on-collapsed toggle-content
                      :title        title
                      :class        (stl/css-case :title-spacing-layout-element true

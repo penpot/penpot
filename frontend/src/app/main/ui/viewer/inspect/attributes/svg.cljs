@@ -47,7 +47,7 @@
   (let [shape (first shapes)]
     (when (seq (:svg-attrs shape))
       [:div {:class (stl/css :attributes-block)}
-       [:& title-bar {:collapsable? false
-                      :title        (tr "workspace.sidebar.options.svg-attrs.title")
-                      :class        (stl/css :title-spacing-svg)}]
+       [:& title-bar {:collapsable false
+                      :title       (tr "workspace.sidebar.options.svg-attrs.title")
+                      :class       (stl/css :title-spacing-svg)}]
        [:& svg-block {:shape shape}]])))

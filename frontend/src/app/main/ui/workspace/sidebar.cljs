@@ -55,7 +55,9 @@
         (mf/use-fn #(st/emit! (dw/toggle-layout-flag :collapse-left-sidebar)))
 
         on-tab-change
-        (mf/use-fn #(st/emit! (dw/go-to-layout %)))]
+        (mf/use-fn #(do
+                      (prn "on-tab-change" %)
+                      (st/emit! (dw/go-to-layout %))))]
 
     [:aside {:ref parent-ref
              :id "left-sidebar-aside"

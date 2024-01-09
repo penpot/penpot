@@ -46,9 +46,9 @@
           (mf/use-fn #(swap! menu-state cmm/close-context-menu))]
       [:div {:class (stl/css :group-title)
              :on-context-menu on-context-menu}
-       [:& title-bar {:collapsable?   true
-                      :collapsed?     (not group-open?)
-                      :clickable-all? true
+       [:& title-bar {:collapsable    true
+                      :collapsed      (not group-open?)
+                      :all-clickable  true
                       :on-collapsed   on-fold-group
                       :title          (mf/html [:* (when-not (empty? other-path)
                                                      [:span {:class (stl/css :pre-path)

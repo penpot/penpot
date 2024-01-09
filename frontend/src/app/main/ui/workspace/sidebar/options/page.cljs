@@ -28,9 +28,9 @@
         on-close  (mf/use-fn #(st/emit! (dwu/commit-undo-transaction :options)))]
     [:div {:class (stl/css :element-set)}
      [:div {:class (stl/css :element-title)}
-      [:& title-bar {:collapsable? false
-                     :title        (tr "workspace.options.canvas-background")
-                     :class        (stl/css :title-spacing-page)}]]
+      [:& title-bar {:collapsable false
+                     :title       (tr "workspace.options.canvas-background")
+                     :class       (stl/css :title-spacing-page)}]]
      [:div {:class (stl/css :element-content)}
       [:& color-row
        {:disable-gradient true

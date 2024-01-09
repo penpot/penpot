@@ -102,26 +102,26 @@
         [:h3 "Titles"]
         [:& component-wrapper
          {:title "Title"}
-         [:& title-bar {:collapsable? false
-                        :title        "Title"}]]
+         [:& title-bar {:collapsable false
+                        :title       "Title"}]]
         [:& component-wrapper
          {:title  "Title and action button"}
-         [:& title-bar {:collapsable? false
+         [:& title-bar {:collapsable  false
                         :title        "Title"
                         :on-btn-click on-btn-click
                         :btn-children i/add-refactor}]]
         [:& component-wrapper
          {:title "Collapsed title and action button"}
-         [:& title-bar {:collapsable? true
-                        :collapsed?   collapsed?
+         [:& title-bar {:collapsable  true
+                        :collapsed    collapsed?
                         :on-collapsed  toggle-collapsed
                         :title        "Title"
                         :on-btn-click on-btn-click
                         :btn-children i/add-refactor}]]
         [:& component-wrapper
          {:title "Collapsed title and children"}
-         [:& title-bar {:collapsable? true
-                        :collapsed?   collapsed?
+         [:& title-bar {:collapsable  true
+                        :collapsed    collapsed?
                         :on-collapsed  toggle-collapsed
                         :title        "Title"}
           [:& tab-container {:on-change-tab set-tab
