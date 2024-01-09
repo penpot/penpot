@@ -211,7 +211,7 @@
 
         ;; Font is currently downloading. We attach the caller to the promise
          (contains? @loading font-id)
-         (p/resolved (get @loading font-id))
+         (get @loading font-id)
 
         ;; First caller, we create the promise and then wait
          :else
@@ -220,13 +220,13 @@
                          (swap! loading dissoc font-id)
                          (resolve font-id))
 
-               load-p (->> (p/create
-                            (fn [resolve _]
-                              (-> font
-                                  (assoc ::on-loaded (partial on-load resolve))
-                                  (load-font))))
+               load-p (-> (p/create
+                           (fn [resolve _]
+                             (-> font
+                                 (assoc ::on-loaded (partial on-load resolve))
+                                 (load-font))))
                           ;; We need to wait for the font to be loaded
-                           (p/delay 120))]
+                          (p/then (partial p/delay 120)))]
 
            (swap! loading assoc font-id load-p)
            load-p))))))
