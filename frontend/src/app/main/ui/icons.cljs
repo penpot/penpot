@@ -400,7 +400,6 @@
 (def ^:icon msg-warning-refactor (icon-xref :msg-warning-refactor))
 (def ^:icon move-refactor (icon-xref :move-refactor))
 (def ^:icon open-link-refactor (icon-xref :open-link-refactor))
-(def ^:icon open-refactor (icon-xref :open-refactor))
 (def ^:icon padding-bottom-refactor (icon-xref :padding-bottom-refactor))
 (def ^:icon padding-top-refactor (icon-xref :padding-top-refactor))
 (def ^:icon padding-top-bottom-refactor (icon-xref :padding-top-bottom-refactor))
@@ -496,17 +495,19 @@
         refactor? (fn [[key]] (str/ends-with? key "Refactor"))]
     [:*
      [:section.debug-icons-preview
-      [:h2 "Classic"]
+      [:h2.subtitle-old "Classic (Deprecated)"]
       (for [[key val] (remove refactor? entries)]
-        [:div.icon-item {:key key}
+        [:div.icon-item-old {:key key
+                             :title key}
          val
          [:span key]])]
 
      [:section.debug-icons-preview
       [:h2 "Refactor"]
       (for [[key val] (filter refactor? entries)]
-        [:div.icon-item {:key key}
-         (deref val)
+        [:div.icon-item {:key key
+                         :title key}
+         val
          [:span key]])]]))
 
 (defn key->icon
