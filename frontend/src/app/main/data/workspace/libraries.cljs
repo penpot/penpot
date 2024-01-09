@@ -1060,8 +1060,10 @@
                   :links   [{:label (tr "workspace.updates.more-info")
                              :callback do-more-info}]
                   :actions [{:label (tr "workspace.updates.update")
+                             :type :primary
                              :callback do-update}
                             {:label (tr "workspace.updates.dismiss")
+                             :type :secondary
                              :callback do-dismiss}]
                   :tag :sync-dialog)))))))
 
