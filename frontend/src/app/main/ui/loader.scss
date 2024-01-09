@@ -4,8 +4,8 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "./common.scss";
+@import "refactor/common-refactor.scss";
 
-.verify-token {
+.loader-content {
   @extend .loader-base;
 }
