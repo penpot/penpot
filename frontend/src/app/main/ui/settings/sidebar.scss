@@ -49,6 +49,7 @@
     display: flex;
     flex-shrink: 0;
     padding: $s-8 $s-8 $s-8 $s-24;
+    color: $df-secondary;
 
     a {
       font-weight: $fw400;
@@ -59,14 +60,13 @@
     }
 
     svg {
-      fill: $db-secondary;
+      fill: currentColor;
       margin-right: $s-8;
       height: $s-12;
       width: $s-12;
     }
 
     span {
-      color: $df-secondary;
       font-size: $fs-14;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -119,12 +119,11 @@
 
     &.current {
       background-color: $db-cuaternary;
+      color: $da-primary;
+
       a {
         font-weight: $fw400;
-        color: $da-primary;
-      }
-      span {
-        color: $da-primary;
+        color: currentColor;
       }
 
       &::before {
