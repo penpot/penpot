@@ -16,6 +16,7 @@
   background-color: var(--bg-color);
   color: var(--fg-color);
 }
+
 .warning {
   --bg-color: var(--alert-background-color-warning);
   --fg-color: var(--alert-foreground-color-warning);
@@ -30,16 +31,18 @@
   --bg-color: var(--alert-background-color-neutral);
   --fg-color: var(--alert-foreground-color-neutral-active);
 }
+
 .banner.info .icon {
   --fg-color: var(--alert-foreground-color-neutral);
 }
+
 .banner.info:hover .icon {
   --fg-color: var(--alert-foreground-color-neutral);
 }
 
 .wrapper {
-  display: grid;
-  grid-template-columns: $s-16 1fr $s-40;
+  display: flex;
+  align-items: center;
   padding: $s-8 $s-8 $s-8 $s-16;
   gap: $s-8;
   height: 100%;
@@ -94,19 +97,45 @@
 
 .content {
   @include flexRow;
+  gap: $s-8;
+  flex-grow: 1;
 }
 
 .text {
   @include titleTipography;
+  flex-grow: 1;
+}
+
+.link {
+  @include titleTipography;
+  color: var(--modal-link-foreground-color);
+  margin: 0;
+}
+
+.actions {
+  @include flexRow;
+  gap: $s-8;
 }
 
 .action-btn {
   @extend .button-tertiary;
-  height: $s-32;
-  width: $s-32;
-  color: black;
+  @include tabTitleTipography;
+  min-height: $s-32;
+  min-width: $s-32;
   svg {
     @extend .button-icon-small;
+  }
+  &.primary {
+    @extend .button-primary;
+    padding: $s-8 $s-24;
+  }
+  &.secondary {
+    @extend .button-secondary;
+    padding: $s-8 $s-24;
+  }
+  &.danger {
+    @extend .modal-danger-btn;
+    padding: $s-8 $s-24;
   }
 }
 
@@ -116,6 +145,6 @@
   width: $s-32;
   svg {
     @extend .button-icon-small;
-    stroke: black;
+    stroke: var(--icon-foreground);
   }
 }
