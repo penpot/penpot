@@ -1030,7 +1030,8 @@
 (defn ignore-sync
   [conn {:keys [file-id date] :as params}]
   (db/update! conn :file
-              {:ignore-sync-until date}
+              {:ignore-sync-until date
+               :modified-at (dt/now)}
               {:id file-id}
               {::db/return-keys true}))
 
