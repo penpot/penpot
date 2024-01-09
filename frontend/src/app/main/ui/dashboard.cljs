@@ -30,6 +30,7 @@
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [goog.events :as events]
+   [okulary.core :as l]
    [rumext.v2 :as mf]))
 
 (defn ^boolean uuid-str?
@@ -80,6 +81,7 @@
         #(events/unlistenByKey key1)))
 
     (mf/use-effect on-resize)
+
 
     [:div {:class (stl/css :dashboard-content)
            :on-click clear-selected-fn :ref container}
@@ -137,6 +139,9 @@
 
        nil)]))
 
+(def dashboard-initialized
+  (l/derived :current-team-id st/state))
+
 (mf/defc dashboard
   [{:keys [route profile] :as props}]
   (let [section        (get-in route [:data :name])
@@ -150,7 +155,9 @@
         team           (get teams team-id)
 
         projects       (mf/deref refs/dashboard-projects)
-        project        (get projects project-id)]
+        project        (get projects project-id)
+
+        initialized?   (mf/deref dashboard-initialized)]
 
     (hooks/use-shortcuts ::dashboard sc/shortcuts)
 
@@ -177,7 +184,7 @@
             ;; team-id because we want to completely refresh all the
             ;; components on team change. Many components assumes that the
             ;; team is already set so don't put the team into mf/deps.
-      (when team
+      (when (and team initialized?)
         [:main {:class (stl/css :dashboard)
                 :key (:id team)}
          [:& sidebar
