@@ -32,9 +32,6 @@
    org.im4java.core.IMOperation
    org.im4java.core.Info))
 
-(def default-max-file-size
-  (* 1024 1024 30)) ; 30 MiB
-
 (s/def ::path fs/path?)
 (s/def ::filename string?)
 (s/def ::size integer?)
@@ -83,13 +80,14 @@
 
 (defn validate-media-size!
   [upload]
-  (when (> (:size upload) (cf/get :media-max-file-size default-max-file-size))
-    (ex/raise :type :restriction
-              :code :media-max-file-size-reached
-              :hint (str/ffmt "the uploaded file size % is greater than the maximum %"
-                              (:size upload)
-                              default-max-file-size)))
-  upload)
+  (let [max-size (cf/get :media-max-file-size)]
+    (when (> (:size upload) max-size)
+      (ex/raise :type :restriction
+                :code :media-max-file-size-reached
+                :hint (str/ffmt "the uploaded file size % is greater than the maximum %"
+                                (:size upload)
+                                max-size)))
+    upload))
 
 (defmulti process :cmd)
 (defmulti process-error class)
