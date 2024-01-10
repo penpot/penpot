@@ -23,6 +23,9 @@
         editing?          (unchecked-get props "editing")
         dbl-click?        (unchecked-get props "disable-dbl-click")
         class             (unchecked-get props "class")
+        tooltip           (unchecked-get props "tooltip")
+        display-value           (unchecked-get props "display-value")
+
 
         final-class       (dm/str class " " (stl/css :editable-label))
         input-ref         (mf/use-ref nil)
@@ -82,15 +85,21 @@
       (when (and editing? (not internal-editing?))
         (start-edition)))
 
-    [:div {:class final-class}
-     [:input
-      {:class (stl/css :editable-label-input)
-       :ref input-ref
-       :default-value value
-       :on-key-up on-key-up
-       :on-double-click on-dbl-click
-       :on-blur cancel-edition}]
+    (if ^boolean internal-editing?
+      [:div {:class final-class}
+       [:input
+        {:class (stl/css :editable-label-input)
+         :ref input-ref
+         :default-value value
+         :on-key-up on-key-up
+         :on-double-click on-dbl-click
+         :on-blur cancel-edition}]
 
-     [:span {:class (stl/css :editable-label-close)
-             :on-click cancel-edition}
-      i/delete-text-refactor]]))
+       [:span {:class (stl/css :editable-label-close)
+               :on-click cancel-edition}
+        i/delete-text-refactor]]
+
+      [:span {:class final-class
+              :title tooltip
+              :on-double-click on-dbl-click}
+       display-value])))

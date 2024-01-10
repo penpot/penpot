@@ -179,6 +179,7 @@
 
         (when visible?
           [:& cmm/component-item-thumbnail {:file-id file-id
+                                            :class (stl/css :thumbnail)
                                             :root-shape root-shape
                                             :component component
                                             :container container}])])]))
