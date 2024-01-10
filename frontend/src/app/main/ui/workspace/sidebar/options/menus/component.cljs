@@ -484,8 +484,8 @@
                     :on-click on-component-back}
            [:span i/arrow-refactor]
            [:span (tr "workspace.options.component")]]
-          [:& title-bar {:collapsable? true
-                         :collapsed?   (not open?)
+          [:& title-bar {:collapsable  true
+                         :collapsed    (not open?)
                          :on-collapsed toggle-content
                          :title        (tr "workspace.options.component")
                          :class        (stl/css :title-spacing-component)}])]

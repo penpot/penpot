@@ -189,9 +189,9 @@
   [{:keys [shapes]}]
   (when-let [shapes (seq (filter has-text? shapes))]
     [:div {:class (stl/css :attributes-block)}
-     [:& title-bar {:collapsable? false
-                    :title        (tr "inspect.attributes.typography")
-                    :class        (stl/css :title-spacing-text)}]
+     [:& title-bar {:collapsable false
+                    :title       (tr "inspect.attributes.typography")
+                    :class       (stl/css :title-spacing-text)}]
 
      (for [shape shapes]
        [:& text-block {:shape shape

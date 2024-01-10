@@ -86,8 +86,8 @@
     (when-not (empty? attrs)
       [:div {:class (stl/css :element-set)}
        [:div {:class (stl/css :element-set-title)}
-        [:& title-bar {:collapsable? has-attributes?
-                       :collapsed?   (not open?)
+        [:& title-bar {:collapsable  has-attributes?
+                       :collapsed    (not open?)
                        :on-collapsed toggle-content
                        :title        (tr "workspace.sidebar.options.svg-attrs.title")
                        :class        (stl/css-case :title-spacing-svg-attrs (not has-attributes?))}]]

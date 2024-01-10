@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.util.import.parser
+(ns app.worker.import.parser
   (:require
    [app.common.colors :as cc]
    [app.common.data :as d]

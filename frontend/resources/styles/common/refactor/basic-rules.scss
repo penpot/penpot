@@ -38,10 +38,12 @@
   @include buttonStyle;
   @include flexCenter;
   @include focusPrimary;
+  @include tabTitleTipography;
   background-color: var(--button-primary-background-color-rest);
   border: $s-1 solid var(--button-primary-border-color-rest);
   color: var(--button-primary-foreground-color-rest);
   border-radius: $br-8;
+  min-height: $s-32;
   svg,
   span svg {
     stroke: var(--button-primary-foreground-color-rest);
@@ -54,6 +56,7 @@
     span svg {
       stroke: var(--button-primary-foreground-color-hover);
     }
+    text-decoration: none;
   }
   &:active {
     background-color: var(--button-primary-background-color-active);
@@ -600,6 +603,22 @@
   color: var(--modal-button-foreground-color-error);
 }
 
+.loader-base {
+  @include flexCenter;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 100vw;
+  z-index: $z-index-alert;
+  background-color: var(--loader-background);
+  :global(svg#loader-pencil) {
+    height: $s-100;
+    width: $s-100;
+    animation: loaderColor 5s infinite ease;
+    fill: var(--icon-foreground);
+  }
+}
 // UI ELEMENTS
 .asset-element {
   @include titleTipography;

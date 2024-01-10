@@ -46,17 +46,22 @@
       content
       (for [[index link] (d/enumerate links)]
         [:* {:key (dm/str "link-" index)}
-         " " [:& lb/link-button {:class "link"
+         " " [:& lb/link-button {:class (stl/css :link)
                                  :on-click (:callback link)
                                  :value (:label link)}]])]
 
      (when (or (= controls :bottom-actions) (= controls :inline-actions))
+
        [:div  {:class (stl/css :actions)}
         (for [action actions]
           [:button {:key (uuid/next)
-                    :class (stl/css :action-bnt)
+                    :class (stl/css-case :action-btn true
+                                         :primary (= :primary (:type action))
+                                         :secondary (= :secondary (:type action))
+                                         :danger (= :danger (:type action)))
                     :on-click (:callback action)}
            (:label action)])])]
+
     (when (= controls :close)
       [:button {:class (stl/css :btn-close)
                 :on-click on-close} i/close-refactor])]])

@@ -175,8 +175,8 @@
   }
 }
 
-:global(svg#loader-pencil) {
-  fill: var(--icon-foreground);
+.loader-content {
+  @extend .loader-base;
 }
 
 /** FULLSCREEN */

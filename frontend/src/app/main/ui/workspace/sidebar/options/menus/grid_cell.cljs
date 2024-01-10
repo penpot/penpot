@@ -165,8 +165,8 @@
 
     [:div {:class (stl/css :grid-cell-menu)}
      [:div {:class (stl/css :grid-cell-menu-title)}
-      [:& title-bar {:collapsable? true
-                     :collapsed?   (not open?)
+      [:& title-bar {:collapsable  true
+                     :collapsed    (not open?)
                      :on-collapsed #(swap! state* update :open not)
                      :title        "Grid cell"}]]
 

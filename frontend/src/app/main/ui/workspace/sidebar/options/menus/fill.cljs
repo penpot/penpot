@@ -137,8 +137,8 @@
 
     [:div {:class (stl/css :element-set)}
      [:div {:class (stl/css :element-title)}
-      [:& title-bar {:collapsable? has-fills?
-                     :collapsed?   (not open?)
+      [:& title-bar {:collapsable  has-fills?
+                     :collapsed    (not open?)
                      :on-collapsed toggle-content
                      :title        label
                      :class        (stl/css-case :title-spacing-fill (not has-fills?))}

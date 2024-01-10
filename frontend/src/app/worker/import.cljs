@@ -20,12 +20,12 @@
    [app.main.repo :as rp]
    [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.import.parser :as cip]
    [app.util.json :as json]
    [app.util.sse :as sse]
    [app.util.webapi :as wapi]
    [app.util.zip :as uz]
    [app.worker.impl :as impl]
+   [app.worker.import.parser :as parser]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [tubax.core :as tubax]))
@@ -199,7 +199,8 @@
        (rx/tap #(progress! context :upload-media name))
        (rx/merge-map #(rp/cmd! :upload-file-media-object %))))
 
-(defn resolve-text-content [node context]
+(defn resolve-text-content
+  [node context]
   (let [resolve (:resolve context)]
     (->> node
          (ct/transform-nodes
@@ -258,8 +259,8 @@
 
 (defn process-import-node
   [context file node]
-  (let [type         (cip/get-type node)
-        close?       (cip/close? node)]
+  (let [type         (parser/get-type node)
+        close?       (parser/close? node)]
     (if close?
       (case type
         :frame    (fb/close-artboard file)
@@ -269,11 +270,11 @@
         #_default file)
 
       (let [resolve      (:resolve context)
-            old-id       (cip/get-id node)
-            interactions (->> (cip/parse-interactions node)
+            old-id       (parser/get-id node)
+            interactions (->> (parser/parse-interactions node)
                               (mapv #(update % :destination resolve)))
 
-            data         (-> (cip/parse-data type node)
+            data         (-> (parser/parse-data type node)
                              (resolve-data-ids type context)
                              (cond-> (some? old-id)
                                (assoc :id (resolve old-id)))
@@ -318,17 +319,17 @@
 
 (defn resolve-media
   [context file-id node]
-  (if (or (and (not (cip/close? node))
-               (cip/has-image? node))
-          (cip/has-stroke-images? node)
-          (cip/has-fill-images? node))
-    (let [name               (cip/get-image-name node)
-          has-image          (cip/has-image? node)
-          image-data         (cip/get-image-data node)
-          image-fill         (cip/get-image-fill node)
-          fill-images-data   (->> (cip/get-fill-images-data node)
+  (if (or (and (not (parser/close? node))
+               (parser/has-image? node))
+          (parser/has-stroke-images? node)
+          (parser/has-fill-images? node))
+    (let [name               (parser/get-image-name node)
+          has-image          (parser/has-image? node)
+          image-data         (parser/get-image-data node)
+          image-fill         (parser/get-image-fill node)
+          fill-images-data   (->> (parser/get-fill-images-data node)
                                   (map #(assoc % :type :fill)))
-          stroke-images-data (->> (cip/get-stroke-images-data node)
+          stroke-images-data (->> (parser/get-stroke-images-data node)
                                   (map #(assoc % :type :stroke)))
 
           images-data        (concat
@@ -366,18 +367,18 @@
          (rx/observe-on :async))))
 
 (defn media-node? [node]
-  (or (and (cip/shape? node)
-           (cip/has-image? node)
-           (not (cip/close? node)))
-      (cip/has-stroke-images? node)
-      (cip/has-fill-images? node)))
+  (or (and (parser/shape? node)
+           (parser/has-image? node)
+           (not (parser/close? node)))
+      (parser/has-stroke-images? node)
+      (parser/has-fill-images? node)))
 
 (defn import-page
   [context file [page-id page-name content]]
-  (let [nodes (->> content cip/node-seq)
+  (let [nodes (->> content parser/node-seq)
         file-id (:id file)
         resolve (:resolve context)
-        page-data (-> (cip/parse-page-data content)
+        page-data (-> (parser/parse-page-data content)
                       (assoc :name page-name)
                       (assoc :id (resolve page-id)))
         flows     (->> (get-in page-data [:options :flows])
@@ -411,32 +412,32 @@
          (rx/merge-map
           (fn  [pre-proc]
             (->> (rx/from nodes)
-                 (rx/filter cip/shape?)
+                 (rx/filter parser/shape?)
                  (rx/map (fn [node] (or (get pre-proc node) node)))
                  (rx/reduce (partial process-import-node context) file)
                  (rx/map (comp fb/close-page setup-interactions))))))))
 
 (defn import-component [context file node]
   (let [resolve            (:resolve context)
-        content            (cip/find-node node :g)
+        content            (parser/find-node node :g)
         file-id            (:id file)
-        old-id             (cip/get-id node)
+        old-id             (parser/get-id node)
         id                 (resolve old-id)
         path               (get-in node [:attrs :penpot:path] "")
-        type               (cip/get-type content)
+        type               (parser/get-type content)
         main-instance-id   (resolve (uuid (get-in node [:attrs :penpot:main-instance-id] "")))
         main-instance-page (resolve (uuid (get-in node [:attrs :penpot:main-instance-page] "")))
-        data               (-> (cip/parse-data type content)
+        data               (-> (parser/parse-data type content)
                                (assoc :path path)
                                (assoc :id id)
                                (assoc :main-instance-id main-instance-id)
                                (assoc :main-instance-page main-instance-page))
 
         file               (-> file (fb/start-component data type))
-        children           (cip/node-seq node)]
+        children           (parser/node-seq node)]
 
     (->> (rx/from children)
-         (rx/filter cip/shape?)
+         (rx/filter parser/shape?)
          (rx/skip 1)       ;; Skip the outer component and the respective closint tag
          (rx/skip-last 1)  ;; because they are handled in start-component an finish-component
          (rx/mapcat (partial resolve-media context file-id))
@@ -445,18 +446,18 @@
 
 (defn import-deleted-component [context file node]
   (let [resolve            (:resolve context)
-        content            (cip/find-node node :g)
+        content            (parser/find-node node :g)
         file-id            (:id file)
-        old-id             (cip/get-id node)
+        old-id             (parser/get-id node)
         id                 (resolve old-id)
         path               (get-in node [:attrs :penpot:path] "")
         main-instance-id   (resolve (uuid (get-in node [:attrs :penpot:main-instance-id] "")))
         main-instance-page (resolve (uuid (get-in node [:attrs :penpot:main-instance-page] "")))
         main-instance-x    (get-in node [:attrs :penpot:main-instance-x] "")
         main-instance-y    (get-in node [:attrs :penpot:main-instance-y] "")
-        type               (cip/get-type content)
+        type               (parser/get-type content)
 
-        data (-> (cip/parse-data type content)
+        data (-> (parser/parse-data type content)
                  (assoc :path path)
                  (assoc :id id)
                  (assoc :main-instance-id main-instance-id)
@@ -466,10 +467,10 @@
 
         file         (-> file (fb/start-component data))
         component-id (:current-component-id file)
-        children     (cip/node-seq node)]
+        children     (parser/node-seq node)]
 
     (->> (rx/from children)
-         (rx/filter cip/shape?)
+         (rx/filter parser/shape?)
          (rx/skip 1)
          (rx/skip-last 1)
          (rx/mapcat (partial resolve-media context file-id))
@@ -510,7 +511,7 @@
                             (assoc :id (resolve id)))]
               (fb/add-library-color file color)))]
       (->> (get-file context :colors)
-           (rx/merge-map (comp d/kebab-keys cip/string->uuid))
+           (rx/merge-map (comp d/kebab-keys parser/string->uuid))
            (rx/reduce add-color file)))
 
     (rx/of file)))
@@ -520,7 +521,7 @@
   (if (:has-typographies context)
     (let [resolve (:resolve context)]
       (->> (get-file context :typographies)
-           (rx/merge-map (comp d/kebab-keys cip/string->uuid))
+           (rx/merge-map (comp d/kebab-keys parser/string->uuid))
            (rx/map (fn [[id typography]]
                      (-> typography
                          (d/kebab-keys)
@@ -534,7 +535,7 @@
   (if (:has-media context)
     (let [resolve (:resolve context)]
       (->> (get-file context :media-list)
-           (rx/merge-map (comp d/kebab-keys cip/string->uuid))
+           (rx/merge-map (comp d/kebab-keys parser/string->uuid))
            (rx/mapcat
             (fn [[id media]]
               (let [media (assoc media :id (resolve id))]
@@ -558,7 +559,7 @@
   [context file]
   (if (:has-components context)
     (let [split-components
-          (fn [content] (->> (cip/node-seq content)
+          (fn [content] (->> (parser/node-seq content)
                              (filter #(= :symbol (:tag %)))))]
 
       (->> (get-file context :components)
@@ -570,7 +571,7 @@
   [context file]
   (if (:has-deleted-components context)
     (let [split-components
-          (fn [content] (->> (cip/node-seq content)
+          (fn [content] (->> (parser/node-seq content)
                              (filter #(= :symbol (:tag %)))))]
 
       (->> (get-file context :deleted-components)
@@ -644,7 +645,7 @@
                        (rx/filter (fn [data] (= "application/zip" (:type data))))
                        (rx/merge-map #(zip/loadAsync (:body %)))
                        (rx/merge-map #(get-file {:zip %} :manifest))
-                       (rx/map (comp d/kebab-keys cip/string->uuid))
+                       (rx/map (comp d/kebab-keys parser/string->uuid))
                        (rx/map #(hash-map :uri (:uri file) :data % :type "application/zip")))
                   (->> st
                        (rx/filter (fn [data] (= "application/octet-stream" (:type data))))

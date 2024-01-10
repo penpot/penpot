@@ -215,8 +215,8 @@
 
     [:div {:class (stl/css :element-set)}
      [:div {:class (stl/css :element-title)}
-      [:& title-bar {:collapsable? has-colors?
-                     :collapsed?   (not open?)
+      [:& title-bar {:collapsable  has-colors?
+                     :collapsed    (not open?)
                      :on-collapsed toggle-content
                      :title        (tr "workspace.options.selection-color")
                      :class        (stl/css-case :title-spacing-selected-colors (not has-colors?))}]]

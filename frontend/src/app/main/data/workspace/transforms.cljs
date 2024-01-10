@@ -28,6 +28,7 @@
    [app.main.data.workspace.collapse :as dwc]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.snap :as snap]
@@ -44,17 +45,19 @@
 ;; For each of the 8 handlers gives the multiplier for resize
 ;; for example, right will only grow in the x coordinate and left
 ;; will grow in the inverse of the x coordinate
-(def ^:private handler-multipliers
-  {:right        [1  0]
-   :bottom       [0  1]
-   :left         [-1  0]
-   :top          [0 -1]
-   :top-right    [1 -1]
-   :top-left     [-1 -1]
-   :bottom-right [1  1]
-   :bottom-left  [-1  1]})
+(defn get-handler-multiplier
+  [handler]
+  (case handler
+    :right        (gpt/point 1  0)
+    :bottom       (gpt/point 0  1)
+    :left         (gpt/point -1  0)
+    :top          (gpt/point 0 -1)
+    :top-right    (gpt/point 1 -1)
+    :top-left     (gpt/point -1 -1)
+    :bottom-right (gpt/point 1  1)
+    :bottom-left  (gpt/point -1  1)))
 
-(defn- handler-resize-origin
+(defn- get-handler-resize-origin
   "Given a handler, return the coordinate origin for resizes.
    This is the opposite of the handler so for right we want the
    left side as origin of the resize.
@@ -63,39 +66,66 @@
    mx, my => middle x/y
    ex, ey => end x/y
   "
-  [{sx :x sy :y :keys [width height]} handler]
-  (let [mx (+ sx (/ width 2))
-        my (+ sy (/ height 2))
-        ex (+ sx width)
-        ey (+ sy height)
-
-        [x y] (case handler
-                :right [sx my]
-                :bottom [mx sy]
-                :left [ex my]
-                :top [mx ey]
-                :top-right [sx ey]
-                :top-left [ex ey]
-                :bottom-right [sx sy]
-                :bottom-left [ex sy])]
-    (gpt/point x y)))
+  [selrect handler]
+  (let [sx     (dm/get-prop selrect :x)
+        sy     (dm/get-prop selrect :y)
+        width  (dm/get-prop selrect :width)
+        height (dm/get-prop selrect :height)
+        mx     (+ sx (/ width 2))
+        my     (+ sy (/ height 2))
+        ex     (+ sx width)
+        ey     (+ sy height)]
+    (case handler
+      :right (gpt/point sx my)
+      :bottom (gpt/point mx sy)
+      :left (gpt/point ex my)
+      :top (gpt/point mx ey)
+      :top-right (gpt/point sx ey)
+      :top-left (gpt/point ex ey)
+      :bottom-right (gpt/point sx sy)
+      :bottom-left (gpt/point ex sy))))
 
 (defn- fix-init-point
   "Fix the initial point so the resizes are accurate"
   [initial handler shape]
-  (let [{:keys [x y width height]} (:selrect shape)]
-    (cond-> initial
-      (contains? #{:left :top-left :bottom-left} handler)
-      (assoc :x x)
+  (let [selrect (dm/get-prop shape :selrect)
+        x       (dm/get-prop selrect :x)
+        y       (dm/get-prop selrect :y)
+        width   (dm/get-prop selrect :width)
+        height  (dm/get-prop selrect :height)]
 
-      (contains? #{:right :top-right :bottom-right} handler)
-      (assoc :x (+ x width))
+    (case handler
+      :left
+      (assoc initial :x x)
 
-      (contains? #{:top :top-right :top-left} handler)
-      (assoc :y y)
+      :top
+      (assoc initial :y y)
 
-      (contains? #{:bottom :bottom-right :bottom-left} handler)
-      (assoc :y (+ y height)))))
+      :top-left
+      (-> initial
+          (assoc :x x)
+          (assoc :y y))
+
+      :bottom-left
+      (-> initial
+          (assoc :x x)
+          (assoc :y (+ y height)))
+
+      :right
+      (assoc initial :x (+ x width))
+
+      :top-right
+      (-> initial
+          (assoc :x (+ x width))
+          (assoc :y y))
+
+      :bottom-right
+      (-> initial
+          (assoc :x (+ x width))
+          (assoc :y (+ y height)))
+
+      :bottom
+      (assoc initial :y (+ y height)))))
 
 (defn finish-transform []
   (ptk/reify ::finish-transform
@@ -103,16 +133,16 @@
     (update [_ state]
       (update state :workspace-local dissoc :transform :duplicate-move-started? false))))
 
-
 ;; -- Resize --------------------------------------------------------
 
 (defn start-resize
   "Enter mouse resize mode, until mouse button is released."
   [handler ids shape]
-  (letfn [(resize
-            [shape initial layout [point lock? center? point-snap]]
-            (let [{:keys [width height]} (:selrect shape)
-                  {:keys [rotation]} shape
+  (letfn [(resize [shape initial layout [point lock? center? point-snap]]
+            (let [selrect  (dm/get-prop shape :selrect)
+                  width    (dm/get-prop selrect :width)
+                  height   (dm/get-prop selrect :height)
+                  rotation (dm/get-prop shape :rotation)
 
                   shape-center (gsh/shape->center shape)
                   shape-transform (:transform shape)
@@ -128,78 +158,84 @@
 
                   shapev (-> (gpt/point width height))
 
-                  scale-text (:scale-text layout)
+                  scale-text (contains? layout :scale-text)
 
                   ;; Force lock if the scale text mode is active
-                  lock? (or lock? scale-text)
+                  lock? (or ^boolean lock?
+                            ^boolean scale-text)
 
-                  ;; Vector modifiers depending on the handler
-                  handler-mult (let [[x y] (handler-multipliers handler)] (gpt/point x y))
-
-                  ;; Difference between the origin point in the coordinate system of the rotation
+                  ;; Difference between the origin point in the
+                  ;; coordinate system of the rotation
                   deltav (-> (gpt/to-vec initial point)
-                             (gpt/multiply handler-mult))
+                             ;; Vector modifiers depending on the handler
+                             (gpt/multiply (get-handler-multiplier handler)))
 
                   ;; Resize vector
                   scalev (-> (gpt/divide (gpt/add shapev deltav) shapev)
                              (gpt/no-zeros))
 
-                  scalev (if lock?
+                  scalev (if ^boolean lock?
                            (let [v (cond
-                                     (#{:right :left} handler) (:x scalev)
-                                     (#{:top :bottom} handler) (:y scalev)
-                                     :else (max (:x scalev) (:y scalev)))]
-                             (gpt/point v v))
+                                     (or (= handler :right)
+                                         (= handler :left))
+                                     (dm/get-prop scalev :x)
 
+                                     (or (= handler :top)
+                                         (= handler :bottom))
+                                     (dm/get-prop scalev :y)
+
+                                     :else
+                                     (mth/max (dm/get-prop scalev :x)
+                                              (dm/get-prop scalev :y)))]
+                             (gpt/point v v))
                            scalev)
 
                   ;; Resize origin point given the selected handler
-                  handler-origin  (handler-resize-origin (:selrect shape) handler)
-
+                  selrect         (dm/get-prop shape :selrect)
+                  handler-origin  (get-handler-resize-origin selrect handler)
 
                   ;; If we want resize from center, displace the shape
                   ;; so it is still centered after resize.
-                  displacement
-                  (when center?
-                    (-> shape-center
-                        (gpt/subtract handler-origin)
-                        (gpt/multiply scalev)
-                        (gpt/add handler-origin)
-                        (gpt/subtract shape-center)
-                        (gpt/multiply (gpt/point -1 -1))
-                        (gpt/transform shape-transform)))
+                  displacement  (when ^boolean center?
+                                  (-> shape-center
+                                      (gpt/subtract handler-origin)
+                                      (gpt/multiply scalev)
+                                      (gpt/add handler-origin)
+                                      (gpt/subtract shape-center)
+                                      (gpt/multiply (gpt/point -1 -1))
+                                      (gpt/transform shape-transform)))
 
-                  resize-origin
-                  (cond-> (gmt/transform-point-center handler-origin shape-center shape-transform)
-                    (some? displacement)
-                    (gpt/add displacement))
+                  resize-origin (gmt/transform-point-center handler-origin shape-center shape-transform)
+                  resize-origin (if (some? displacement)
+                                  (gpt/add resize-origin displacement)
+                                  resize-origin)
 
                   ;; When the horizontal/vertical scale a flex children with auto/fill
                   ;; we change it too fixed
                   set-fix-width?
-                  (not (mth/close? (:x scalev) 1))
+                  (not (mth/close? (dm/get-prop scalev :x) 1))
 
                   set-fix-height?
-                  (not (mth/close? (:y scalev) 1))
+                  (not (mth/close? (dm/get-prop scalev :y) 1))
 
-                  modifiers
-                  (-> (ctm/empty)
+                  modifiers (cond-> (ctm/empty)
+                              (some? displacement)
+                              (ctm/move displacement)
 
-                      (cond-> displacement
-                        (ctm/move displacement))
+                              :always
+                              (ctm/resize scalev resize-origin shape-transform shape-transform-inverse)
 
-                      (ctm/resize scalev resize-origin shape-transform shape-transform-inverse)
+                              ^boolean set-fix-width?
+                              (ctm/change-property :layout-item-h-sizing :fix)
 
-                      (cond-> set-fix-width?
-                        (ctm/change-property :layout-item-h-sizing :fix))
+                              ^boolean set-fix-height?
+                              (ctm/change-property :layout-item-v-sizing :fix)
 
-                      (cond-> set-fix-height?
-                        (ctm/change-property :layout-item-v-sizing :fix))
-
-                      (cond-> scale-text
-                        (ctm/scale-content (:x scalev))))
+                              ^boolean scale-text
+                              (ctm/scale-content (dm/get-prop scalev :x)))
 
                   modif-tree (dwm/create-modif-tree ids modifiers)]
+
               (rx/of (dwm/set-modifiers modif-tree scale-text))))
 
           ;; Unifies the instantaneous proportion lock modifier
@@ -207,7 +243,10 @@
           ;; lock flag that can be activated on element options.
           (normalize-proportion-lock [[point shift? alt?]]
             (let [proportion-lock? (:proportion-lock shape)]
-              [point (or proportion-lock? shift?) alt?]))]
+              [point
+               (or ^boolean proportion-lock?
+                   ^boolean shift?)
+               alt?]))]
     (reify
       ptk/UpdateEvent
       (update [_ state]
@@ -217,15 +256,16 @@
       ptk/WatchEvent
       (watch [_ state stream]
         (let [initial-position @ms/mouse-position
+
               stopper (->> stream
                            (rx/filter mse/mouse-event?)
                            (rx/filter mse/mouse-up-event?))
               layout  (:workspace-layout state)
               page-id (:current-page-id state)
               focus   (:workspace-focus-selected state)
-              zoom    (get-in state [:workspace-local :zoom] 1)
+              zoom    (dm/get-in state [:workspace-local :zoom] 1)
               objects (wsh/lookup-page-objects state page-id)
-              resizing-shapes (map #(get objects %) ids)]
+              shapes  (map (d/getf objects) ids)]
 
           (rx/concat
            (->> ms/mouse-position
@@ -233,12 +273,32 @@
                 (rx/with-latest-from ms/mouse-position-shift ms/mouse-position-alt)
                 (rx/map normalize-proportion-lock)
                 (rx/switch-map (fn [[point _ _ :as current]]
-                                 (->> (snap/closest-snap-point page-id resizing-shapes objects layout zoom focus point)
+                                 (->> (snap/closest-snap-point page-id shapes objects layout zoom focus point)
                                       (rx/map #(conj current %)))))
                 (rx/mapcat (partial resize shape initial-position layout))
                 (rx/take-until stopper))
            (rx/of (dwm/apply-modifiers)
                   (finish-transform))))))))
+
+(defn trigger-bounding-box-cloaking
+  "Trigger the bounding box cloaking (with default timer of 1sec)
+
+  Used to hide bounding-box of shape after changes in sidebar->measures."
+  [ids]
+  (dm/assert!
+   "expected valid coll of uuids"
+   (every? uuid? ids))
+
+  (ptk/reify ::trigger-bounding-box-cloaking
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (rx/concat
+       (rx/of (dwsh/update-shape-flags ids {:transforming true}))
+       (->> (rx/timer 1000)
+            (rx/map (fn []
+                      (dwsh/update-shape-flags ids {:transforming false})))
+            (rx/take-until
+             (rx/filter (ptk/type? ::trigger-bounding-box-cloaking) stream)))))))
 
 (defn update-dimensions
   "Change size of shapes, from the sideber options form.

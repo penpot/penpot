@@ -916,11 +916,21 @@ function simplifyPathData(pdata) {
 export function parse(string) {
   if (!string || string.length === 0) return [];
 
-  var source = new Parser(string);
-  var result = Array.from(source);
+  try {
+    var source = new Parser(string);
+    var result = Array.from(source);
 
-  result = absolutizePathData(result);
-  result = simplifyPathData(result);
+    result = absolutizePathData(result);
+    result = simplifyPathData(result);
 
-  return result;
+    return result;
+  } catch (cause) {
+    const msg = "unexpected exception parsing path";
+    console.group(msg);
+    console.log(`string: ${string}`)
+    console.error(cause);
+    console.groupEnd(msg);
+
+    return [];
+  }
 }

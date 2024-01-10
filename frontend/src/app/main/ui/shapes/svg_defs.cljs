@@ -13,6 +13,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.svg :as csvg]
+   [app.util.object :as obj]
    [rumext.v2 :as mf]))
 
 (defn add-matrix [attrs transform-key transform-matrix]
@@ -23,7 +24,9 @@
               (str transform-matrix " " val)
               (str transform-matrix)))))
 
-(mf/defc svg-node [{:keys [type node prefix-id transform bounds]}]
+(mf/defc svg-node
+  {::mf/wrap-props false}
+  [{:keys [type node prefix-id transform bounds]}]
   (cond
     (string? node) node
 
@@ -48,7 +51,7 @@
           attrs
           (-> attrs
               (csvg/update-attr-ids prefix-id)
-              (csvg/clean-attrs)
+              (csvg/attrs->props)
               ;; This clasname will be used to change the transform on the viewport
               ;; only necessary for groups because shapes have their own transform
               (cond-> (and (or transform-gradient?
@@ -80,7 +83,7 @@
                                               :transform (str transform)}]
                                     [mf/Fragment #js {}])]
 
-      [:> (name tag) (clj->js attrs)
+      [:> (name tag) (obj/map->obj attrs)
        [:> wrapper wrapper-props
         (for [[index node] (d/enumerate content)]
           [:& svg-node {:key (dm/str "node-" index)

@@ -199,9 +199,9 @@
 
     [:*
      [:div {:class (stl/css :section)}
-      [:& title-bar {:collapsable? false
-                     :title        (tr "workspace.libraries.in-this-file")
-                     :class        (stl/css :title-spacing-lib)}]
+      [:& title-bar {:collapsable false
+                     :title       (tr "workspace.libraries.in-this-file")
+                     :class       (stl/css :title-spacing-lib)}]
       [:div {:class (stl/css :section-list)}
 
        [:div {:class (stl/css :section-list-item)}
@@ -245,9 +245,9 @@
            i/detach-refactor]])]]
 
      [:div {:class (stl/css :section)}
-      [:& title-bar {:collapsable? false
-                     :title        (tr "workspace.libraries.shared-libraries")
-                     :class        (stl/css :title-spacing-lib)}]
+      [:& title-bar {:collapsable false
+                     :title       (tr "workspace.libraries.shared-libraries")
+                     :class       (stl/css :title-spacing-lib)}]
       [:div {:class (stl/css :libraries-search)}
        [:& search-bar {:on-change change-search-term
                        :value search-term
@@ -502,7 +502,7 @@
         [:& tab-container
          {:on-change-tab on-tab-change
           :selected selected-tab
-          :collapsable? false}
+          :collapsable false}
          [:& tab-element {:id :libraries :title (tr "workspace.libraries.libraries")}
           [:div {:class (stl/css :libraries-content)}
            [:& libraries-tab {:file-id file-id

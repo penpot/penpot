@@ -607,6 +607,6 @@
     (let [props (obj/merge props #js {:data data :key (dm/str file-id)})]
       [:> viewer-content props])
 
-    [:div.loader-content.viewer-loader
+    [:div {:class (stl/css :loader-content)}
      i/loader-pencil]))
 

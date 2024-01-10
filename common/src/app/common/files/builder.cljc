@@ -15,6 +15,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.pprint :as pp]
    [app.common.schema :as sm]
+   [app.common.svg :as csvg]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
@@ -300,9 +301,13 @@
     (-> file
         (update :parent-stack pop))))
 
-(defn create-shape [file type data]
-  (let [obj (-> (cts/setup-shape (assoc data :type type))
+(defn create-shape
+  [file type data]
+  (let [obj (-> (assoc data :type type)
+                (update :svg-attrs csvg/attrs->props)
+                (cts/setup-shape)
                 (check-name file :type))]
+
     (-> file
         (commit-shape obj)
         (assoc :last-id (:id obj))

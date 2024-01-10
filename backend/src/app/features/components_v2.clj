@@ -255,6 +255,7 @@
                       (assoc shape
                              :type :frame                  ; Old groups must be converted
                              :fills (or (:fills shape) []) ; to frames and conform to spec
+                             :shapes (or (:shapes shape) [])
                              :hide-in-viewer (or (:hide-in-viewer shape) true)
                              :rx (or (:rx shape) 0)
                              :ry (or (:ry shape) 0))

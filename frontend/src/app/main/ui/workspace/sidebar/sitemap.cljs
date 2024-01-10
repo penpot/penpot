@@ -210,15 +210,15 @@
     [:div {:class (stl/css :sitemap)
            :style #js {"--height" (str size "px")}}
 
-     [:& title-bar {:collapsable?   true
-                    :collapsed?     (not show-pages?)
-                    :on-collapsed   toggle-pages
-                    :clickable-all? true
-                    :title          (tr "workspace.sidebar.sitemap")
-                    :class          (stl/css :title-spacing-sitemap)}
+     [:& title-bar {:collapsable   true
+                    :collapsed     (not show-pages?)
+                    :on-collapsed  toggle-pages
+                    :all-clickable true
+                    :title         (tr "workspace.sidebar.sitemap")
+                    :class         (stl/css :title-spacing-sitemap)}
 
       (if ^boolean read-only?
-        [:di {:class  (stl/css :view-only-mode)}
+        [:div {:class  (stl/css :view-only-mode)}
          (tr "labels.view-only")]
         [:button {:class (stl/css :add-page)
                   :on-click on-create}

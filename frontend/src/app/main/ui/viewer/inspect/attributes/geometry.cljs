@@ -31,9 +31,9 @@
 (mf/defc geometry-panel
   [{:keys [objects shapes]}]
   [:div {:class (stl/css :attributes-block)}
-   [:& title-bar {:collapsable? false
-                  :title        (tr "inspect.attributes.size")
-                  :class        (stl/css :title-spacing-geometry)}
+   [:& title-bar {:collapsable false
+                  :title       (tr "inspect.attributes.size")
+                  :class       (stl/css :title-spacing-geometry)}
 
     (when (= (count shapes) 1)
       [:& copy-button {:data (css/get-shape-properties-css objects (first shapes) properties)}])]

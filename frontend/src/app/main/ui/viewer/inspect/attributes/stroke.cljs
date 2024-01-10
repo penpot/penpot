@@ -61,9 +61,9 @@
   (let [shapes (->> shapes (filter has-stroke?))]
     (when (seq shapes)
       [:div {:class (stl/css :attributes-block)}
-       [:& title-bar {:collapsable? false
-                      :title        (tr "inspect.attributes.stroke")
-                      :class        (stl/css :title-spacing-stroke)}]
+       [:& title-bar {:collapsable false
+                      :title       (tr "inspect.attributes.stroke")
+                      :class       (stl/css :title-spacing-stroke)}]
 
        [:div {:class (stl/css :attributes-content)}
         (for [shape shapes]
