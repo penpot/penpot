@@ -154,7 +154,7 @@
 
               (dissoc file :data)))]
 
-    (db/tx-run! main/system
+    (db/tx-run! (or *system* main/system)
                 (fn [system]
                   (binding [*system* system]
                     (try
