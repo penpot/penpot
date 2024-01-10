@@ -11,7 +11,7 @@
   width: 100%;
   justify-content: center;
   align-items: center;
-  a {
+  a:not(.button-primary) {
     color: $df-secondary;
   }
 }
@@ -211,7 +211,7 @@
     text-transform: uppercase;
   }
 
-  a {
+  a:not(.button-primary) {
     &:hover {
       text-decoration: underline;
     }
