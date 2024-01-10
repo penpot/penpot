@@ -14,6 +14,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
+   [app.features.components-v2 :as feat.compv2]
    [app.features.fdata :as fdata]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
@@ -46,22 +47,26 @@
   [cfg {:keys [::rpc/profile-id project-id] :as params}]
   (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
                     (projects/check-edition-permissions! conn profile-id project-id)
-                    (let [team     (teams/get-team conn
-                                                   :profile-id profile-id
-                                                   :project-id project-id)
+                    (let [team     (teams/get-team conn :profile-id profile-id :project-id project-id)
 
                           ;; When we create files, we only need to respect the team
                           ;; features, because some features can be enabled
                           ;; globally, but the team is still not migrated properly.
-                          features (-> (cfeat/get-team-enabled-features cf/flags team)
-                                       (cfeat/check-client-features! (:features params)))
+                          input-features (:features params #{})
+
+                          ;; If the imported project doesn't contain v2 we need to remove it
+                          team-features
+                          (cond-> (cfeat/get-team-enabled-features cf/flags team)
+                            (not (contains? input-features "components/v2"))
+                            (disj "components/v2"))
+
 
                           ;; We also include all no migration features declared by
                           ;; client; that enables the ability to enable a runtime
                           ;; feature on frontend and make it permanent on file
-                          features (-> (:features params #{})
+                          features (-> input-features
                                        (set/intersection cfeat/no-migration-features)
-                                       (set/union features))
+                                       (set/union team-features))
 
                           params   (-> params
                                        (assoc :profile-id profile-id)
@@ -100,7 +105,7 @@
 ;; --- MUTATION COMMAND: persist-temp-file
 
 (defn persist-temp-file
-  [{:keys [::db/conn] :as cfg} {:keys [id] :as params}]
+  [{:keys [::db/conn] :as cfg} {:keys [id ::rpc/profile-id] :as params}]
   (let [file (files/get-file cfg id
                              :migrate? false
                              :lock-for-update? true)]
@@ -108,6 +113,7 @@
     (when (nil? (:deleted-at file))
       (ex/raise :type :validation
                 :code :cant-persist-already-persisted-file))
+
 
     (let [changes (->> (db/cursor conn
                                   (sql/select :file-change {:file-id id}
@@ -133,6 +139,19 @@
                    :revn 1
                    :data (blob/encode (:data file))}
                   {:id id})
+
+      (let [team          (teams/get-team conn :profile-id profile-id :project-id (:project-id file))
+            file-features (:features file)
+            team-features (cfeat/get-team-enabled-features cf/flags team)]
+        (when (and (contains? team-features "components/v2")
+                   (not (contains? file-features "components/v2")))
+          ;; Migrate components v2
+          (feat.compv2/migrate-file! cfg
+                                     (:id file)
+                                     :max-procs 2
+                                     :validate? true
+                                     :throw-on-validate? true)))
+
       nil)))
 
 (def ^:private schema:persist-temp-file
