@@ -502,7 +502,7 @@
         [:& tab-container
          {:on-change-tab on-tab-change
           :selected selected-tab
-          :collapsable? false}
+          :collapsable false}
          [:& tab-element {:id :libraries :title (tr "workspace.libraries.libraries")}
           [:div {:class (stl/css :libraries-content)}
            [:& libraries-tab {:file-id file-id

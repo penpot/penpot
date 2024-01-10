@@ -299,6 +299,7 @@
                       (not (cfh/is-direct-child-of-root? shape))
                       (empty? (get shape :fills)))))
 
+
              hover-shape
              (->> ids
                   (remove remove-id?)

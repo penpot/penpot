@@ -10,7 +10,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.svg :as csvg]
    [app.main.ui.context :as muc]
-   [app.main.ui.shapes.attrs :as usa]
+   [app.main.ui.shapes.attrs :as attrs]
    [app.util.object :as obj]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -41,7 +41,7 @@
 
         props       (mf/with-memo [shape render-id]
                       (-> #js {}
-                          (usa/add-fill-props! shape render-id)
+                          (attrs/add-fill-props! shape render-id)
                           (obj/unset! "transform")
                           (obj/set! "x" x)
                           (obj/set! "y" y)
@@ -79,8 +79,7 @@
         props
         (mf/with-memo [shape render-id]
           (let [element-id (dm/get-in shape [:svg-attrs :id])
-                props (-> #js {}
-                          (usa/add-fill-props! shape render-id))]
+                props      (attrs/add-fill-props! #js {} shape render-id)]
 
             (when (and (some? element-id)
                        (contains? ids-mapping element-id))
