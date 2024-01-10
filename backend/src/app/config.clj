@@ -79,6 +79,8 @@
 
    :telemetry-uri "https://telemetry.penpot.app/"
 
+   :media-max-file-size (* 1024 1024 30) ; 30MiB
+
    :ldap-user-query "(|(uid=:username)(mail=:username))"
    :ldap-attrs-username "uid"
    :ldap-attrs-email "mail"

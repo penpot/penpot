@@ -32,6 +32,10 @@ export PENPOT_FLAGS="\
        disable-soft-file-schema-validation \
        disable-soft-file-validation";
 
+
+# Setup default upload media file size to 100MiB
+export PENPOT_MEDIA_MAX_FILE_SIZE=104857600
+
 # export PENPOT_DATABASE_URI="postgresql://172.17.0.1:5432/penpot"
 # export PENPOT_DATABASE_USERNAME="penpot"
 # export PENPOT_DATABASE_PASSWORD="penpot"
