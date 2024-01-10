@@ -524,7 +524,10 @@
                    (dissoc :main-instance-y))
 
          obj   (-> (cts/setup-shape attrs)
-                   (check-name file root-type))]
+                   (check-name file root-type)
+                   ;; Components need to have nil values for frame and parent
+                   (assoc :frame-id nil)
+                   (assoc :parent-id nil))]
 
      (-> file
          (commit-change
@@ -537,10 +540,9 @@
            :shapes [obj]})
 
          (assoc :last-id (:id obj))
-         (update :parent-stack conjv (:id obj))
+         (assoc :parent-stack [(:id obj)])
          (assoc :current-component-id (:id obj))
-         (assoc :current-frame-id (when (= (:type obj) :frame)
-                                    (:id obj)))))))
+         (assoc :current-frame-id (if (= (:type obj) :frame) (:id obj) uuid/zero))))))
 
 (defn finish-component
   [file]
