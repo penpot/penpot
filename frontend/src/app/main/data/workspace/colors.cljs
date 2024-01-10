@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.schema :as sm]
+   [app.common.text :as txt]
    [app.common.types.component :as ctk]
    [app.main.broadcast :as mbc]
    [app.main.data.events :as ev]
@@ -673,7 +674,7 @@
                          (:fills (dwt/current-text-values
                                   {:editor-state (dm/get-in state [:workspace-editor-state (:id shape)])
                                    :shape shape
-                                   :attrs (conj dwt/text-fill-attrs :fills)}))
+                                   :attrs (conj txt/text-fill-attrs :fills)}))
                          (:fills shape))
             fill       (first fills)
             single?    (and (= 1 (count selected))

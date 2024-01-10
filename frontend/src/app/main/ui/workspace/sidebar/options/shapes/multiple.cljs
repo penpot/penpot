@@ -14,7 +14,6 @@
    [app.common.types.component :as ctk]
    [app.common.types.shape.attrs :refer [editable-attrs]]
    [app.common.types.shape.layout :as ctl]
-   [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-attrs blur-menu]]
@@ -163,7 +162,7 @@
    :shadow            shadow-attrs
    :blur              blur-attrs
    :stroke            stroke-attrs
-   :text              dwt/attrs
+   :text              txt/text-all-attrs
    :exports           exports-attrs
    :layout-container  layout-container-flex-attrs
    :layout-item       layout-item-attrs})
@@ -211,32 +210,41 @@
             :else                  (attrs/get-attrs-multi [v1 v2] attrs)))
 
         extract-attrs
-        (fn [[ids values] {:keys [id type content] :as shape}]
+        (fn [[ids values] {:keys [id type] :as shape}]
           (let [read-mode      (get-in type->read-mode [type attr-group])
                 editable-attrs (filter (get editable-attrs (:type shape)) attrs)]
             (case read-mode
-              :ignore   [ids values]
+              :ignore
+              [ids values]
 
-              :shape    (let [;; Get the editable attrs from the shape, ensuring that all attributes
-                              ;; are present, with value nil if they are not present in the shape.
-                              shape-values (merge
-                                            (into {} (map #(vector % nil)) editable-attrs)
-                                            (cond
-                                              (= attr-group :measure) (select-measure-keys shape)
-                                              :else (select-keys shape editable-attrs)))]
-                          [(conj ids id)
-                           (merge-attrs values shape-values)])
+              :shape
+              (let [;; Get the editable attrs from the shape, ensuring that all attributes
+                    ;; are present, with value nil if they are not present in the shape.
+                    shape-values (merge
+                                  (into {} (map #(vector % nil)) editable-attrs)
+                                  (cond
+                                    (= attr-group :measure) (select-measure-keys shape)
+                                    :else (select-keys shape editable-attrs)))]
+                [(conj ids id)
+                 (merge-attrs values shape-values)])
 
-              :text     [(conj ids id)
-                         (-> values
-                             (merge-attrs (select-keys shape attrs))
-                             (merge-attrs (merge
-                                           (select-keys txt/default-text-attrs attrs)
-                                           (attrs/get-attrs-multi (txt/node-seq content) attrs))))]
+              :text
+              (let [shape-attrs (select-keys shape attrs)
 
-              :children (let [children (->> (:shapes shape []) (map #(get objects %)))
-                              [new-ids new-values] (get-attrs* children objects attr-group)]
-                          [(d/concat-vec ids new-ids) (merge-attrs values new-values)])
+                    content-attrs
+                    (attrs/get-text-attrs-multi shape txt/default-text-attrs attrs)
+
+                    new-values
+                    (-> values
+                        (merge-attrs shape-attrs)
+                        (merge-attrs content-attrs))]
+                [(conj ids id)
+                 new-values])
+
+              :children
+              (let [children (->> (:shapes shape []) (map #(get objects %)))
+                    [new-ids new-values] (get-attrs* children objects attr-group)]
+                [(d/concat-vec ids new-ids) (merge-attrs values new-values)])
 
               [])))]
 

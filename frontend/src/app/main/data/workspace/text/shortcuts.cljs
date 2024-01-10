@@ -7,6 +7,7 @@
 (ns app.main.data.workspace.text.shortcuts
   (:require
    [app.common.data :as d]
+   [app.common.text :as txt]
    [app.main.data.shortcuts :as ds]
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.undo :as dwu]
@@ -116,15 +117,15 @@
     (d/merge
      (dwt/current-root-values
       {:shape shape
-       :attrs dwt/root-attrs})
+       :attrs txt/root-attrs})
      (dwt/current-paragraph-values
       {:editor-state editor-state
        :shape shape
-       :attrs dwt/paragraph-attrs})
+       :attrs txt/paragraph-attrs})
      (dwt/current-text-values
       {:editor-state editor-state
        :shape shape
-       :attrs dwt/text-attrs}))))
+       :attrs txt/text-node-attrs}))))
 
 (defn- update-attrs [shape props]
   (let [text-values    (calculate-text-values shape)
