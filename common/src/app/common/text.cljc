@@ -13,6 +13,67 @@
    [clojure.walk :as walk]
    [cuerdas.core :as str]))
 
+;; -- Attrs
+
+(def text-typography-attrs
+  [:typography-ref-id
+   :typography-ref-file])
+
+(def text-fill-attrs
+  [:fill-color
+   :fill-opacity
+   :fill-color-ref-id
+   :fill-color-ref-file
+   :fill-color-gradient])
+
+(def text-font-attrs
+  [:font-id
+   :font-family
+   :font-variant-id
+   :font-size
+   :font-weight
+   :font-style])
+
+(def text-align-attrs
+  [:text-align])
+
+(def text-direction-attrs
+  [:text-direction])
+
+(def text-spacing-attrs
+  [:line-height
+   :letter-spacing])
+
+(def text-valign-attrs
+  [:vertical-align])
+
+(def text-decoration-attrs
+  [:text-decoration])
+
+(def text-transform-attrs
+  [:text-transform])
+
+(def shape-attrs
+  [:grow-type])
+
+(def root-attrs
+  text-valign-attrs)
+
+(def paragraph-attrs
+  (d/concat-vec
+   text-align-attrs
+   text-direction-attrs))
+
+(def text-node-attrs
+  (d/concat-vec
+   text-typography-attrs
+   text-font-attrs
+   text-spacing-attrs
+   text-decoration-attrs
+   text-transform-attrs))
+
+(def text-all-attrs (d/concat-set shape-attrs root-attrs paragraph-attrs text-node-attrs))
+
 (def default-text-attrs
   {:typography-ref-file nil
    :typography-ref-id nil
@@ -29,8 +90,6 @@
    :text-decoration "none"
    :fills [{:fill-color clr/black
             :fill-opacity 1}]})
-
-(def text-attrs (keys default-text-attrs))
 
 (def typography-fields
   [:font-id
@@ -274,7 +333,7 @@
   [node]
   (letfn
    [(rec-style-text-map [acc node style]
-      (let [node-style (merge style (select-keys node text-attrs))
+      (let [node-style (merge style (select-keys node text-all-attrs))
             head (or (-> acc first) [{} ""])
             [head-style head-text] head
 
