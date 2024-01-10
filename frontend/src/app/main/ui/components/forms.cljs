@@ -268,7 +268,7 @@
        (let [image?   (some? image)
              value'   (encode-fn value)
              checked? (= value current-value)
-             key      (str/ffmt "%-%" name value')]
+             key      (str/ffmt "%-%" (d/name name) (d/name value'))]
          [:label {:for key
                   :key key
                   :style {:background-image (when image? (str/ffmt "url(%)" image))}
