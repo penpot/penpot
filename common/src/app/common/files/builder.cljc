@@ -508,7 +508,6 @@
                      grc/empty-rect)
          name               (:name data)
          path               (:path data)
-         component-id       (:component-id data)
          main-instance-id   (:main-instance-id data)
          main-instance-page (:main-instance-page data)
          attrs (-> data

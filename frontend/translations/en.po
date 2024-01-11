@@ -534,6 +534,9 @@ msgstr "Import Penpot files"
 msgid "dashboard.import.analyze-error"
 msgstr "Oops! We couldn't import this file"
 
+msgid "dashboard.import.analyze-error.components-v2"
+msgstr "File with components v2 activated but this team doesn't support it yet."
+
 msgid "dashboard.import.import-error"
 msgstr "There was a problem importing the file. The file wasn't imported."
 
