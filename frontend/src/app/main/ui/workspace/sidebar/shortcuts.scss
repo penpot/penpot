@@ -195,6 +195,7 @@
   }
   .not-found {
     @include titleTipography;
+    color: var(--empty-message-foreground-color);
     margin: $s-12;
   }
 }
