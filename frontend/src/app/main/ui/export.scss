@@ -126,7 +126,7 @@
     }
     .selection-title {
       @include titleTipography;
-      color: $df-primary;
+      color: var(--modal-text-foreground-color);
     }
   }
   .selection-wrapper {
