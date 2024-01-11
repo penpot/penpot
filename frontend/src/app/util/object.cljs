@@ -86,10 +86,16 @@
       obj)))
 
 (defn- props-key-fn
-  [key]
-  (if (or (= key :class) (= key :class-name))
-    "className"
-    (str/camel (name key))))
+  [k]
+  (if (or (keyword? k) (symbol? k))
+    (let [nword (name k)]
+      (cond
+        (= nword "class") "className"
+        (str/starts-with? nword "--") nword
+        (str/starts-with? nword "data-") nword
+        (str/starts-with? nword "aria-") nword
+        :else (str/camel nword)))
+    k))
 
 (defn clj->props
   [props]
