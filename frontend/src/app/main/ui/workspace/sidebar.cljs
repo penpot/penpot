@@ -59,7 +59,7 @@
 
     [:aside {:ref parent-ref
              :id "left-sidebar-aside"
-             :data-size size
+             :data-size (str size)
              :class (stl/css-case :left-settings-bar true
                                   :global/two-row   (<= size 300)
                                   :global/three-row (and (> size 300) (<= size 400))
@@ -153,7 +153,7 @@
                                   :expanded (> size 276))
 
              :id "right-sidebar-aside"
-             :data-size size
+             :data-size (str size)
              :style #js {"--width" (when can-be-expanded? (dm/str size "px"))}}
      (when can-be-expanded?
        [:div {:class (stl/css :resize-area)

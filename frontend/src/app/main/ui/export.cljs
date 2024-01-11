@@ -57,8 +57,10 @@
          (mf/deps exports)
          (fn [event]
            (let [index (-> (dom/get-current-target event)
-                           (dom/get-data "value"))]
-             (swap! exports update-in [index :enabled] not))))
+                           (dom/get-data "value")
+                           (d/parse-integer))]
+             (when (some? index)
+               (swap! exports update-in [index :enabled] not)))))
 
         change-all
         (fn [_]
@@ -104,7 +106,7 @@
                  [:div {:class (stl/css :selection-row)
                         :key (:id shape)}
                   [:button {:class (stl/css :selection-btn)
-                            :data-value index
+                            :data-value (str index)
                             :on-click on-toggle-enabled}
                    [:span {:class (stl/css :checkbox-wrapper)}
                     (if (:enabled export)

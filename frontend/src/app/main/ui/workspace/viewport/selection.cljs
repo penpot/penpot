@@ -462,7 +462,8 @@
            (when (dom/left-mouse? event)
              (dom/stop-propagation event)
              (let [target   (dom/get-current-target event)
-                   position (keyword (dom/get-data target "position"))]
+                   position (-> (dom/get-data target "position")
+                                (keyword))]
                (st/emit! (dw/start-resize position #{shape-id} shape))))))
 
         on-rotate

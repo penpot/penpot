@@ -30,7 +30,7 @@
     (for [{:keys [offset hex r g b alpha] :as value} stops]
       [:button {:class (stl/css-case :gradient-stop true
                                      :selected (= editing-stop offset))
-                :data-value offset
+                :data-value (str offset)
                 :on-click on-select-stop
                 :style {:left (dm/str (* offset 100) "%")
                         :backgroundColor hex}
