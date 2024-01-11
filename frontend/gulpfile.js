@@ -2,6 +2,9 @@ import fs from "fs";
 import l from "lodash";
 import path from "path";
 
+
+import log from 'fancy-log';
+
 import gulp from "gulp";
 import gulpConcat from "gulp-concat";
 import gulpGzip from "gulp-gzip";
@@ -25,14 +28,8 @@ import { rimraf } from "rimraf";
 
 import gettext from "gettext-parser";
 import * as marked from "marked";
-import cache from "gulp-cached";
 
 import mapStream from "map-stream";
-
-const paths = {};
-paths.resources = "./resources/";
-paths.output = "./resources/public/";
-paths.dist = "./target/dist/";
 
 /***********************************************
  * Marked Extensions
@@ -147,7 +144,7 @@ function readLocales() {
 
 function readManifest() {
   try {
-    const manifestPath = path.resolve("resources/public/js/manifest.json");
+    const manifestPath = path.resolve("./resources/public/js/manifest.json");
     const content = JSON.parse(fs.readFileSync(manifestPath, { encoding: "utf8" }));
 
     const index = {
@@ -175,16 +172,48 @@ function readManifest() {
 
 function touch() {
   return mapStream(function (file, cb) {
+    // console.log("touch", file.path);
     if (file.isNull()) {
       return cb(null, file);
+    } else {
+      // Update file modification and access time
+      return fs.utimes(file.path, new Date(), new Date(), () => {
+        // console.log("touched", file.path);
+        cb(null, file);
+      });
     }
-
-    // Update file modification and access time
-    return fs.utimes(file.path, new Date(), new Date(), () => {
-      cb(null, file);
-    });
   });
 }
+
+let cacheStore = {}
+
+function cache(name){
+  if (!cacheStore[name]) {
+    cacheStore[name] = {};
+  }
+
+  return mapStream(function(file, callback) {
+    if (file.isNull()) {
+      return callback(null, file);
+    } else if (file.isStream()) {
+      return callback(null, file);
+    } else {
+      const mtime = file.stat.mtime.getTime();
+      const existingMtime = cacheStore[name][file.path];
+
+      // hit - ignore it
+      if (existingMtime !== undefined && existingMtime === mtime) {
+        callback();
+      } else {
+        log.info(`Change detected on '${file.path}'`);
+
+        // miss - add it and pass it through
+        cacheStore[name][file.path] = mtime;
+        callback(null, file);
+      }
+    }
+  });
+};
 
 function templatePipeline(options) {
   return function () {
@@ -227,7 +256,7 @@ gulp.task("scss:modules", function () {
         .sync({ includePaths: ["./resources/styles/common/", "./resources/styles/"] })
         .on("error", gulpSass.logError),
     )
-    .pipe(cache("modules"))
+    .pipe(cache("css"))
     .pipe(
       gulpPostcss([
         modules({
@@ -247,11 +276,12 @@ gulp.task("scss:modules", function () {
         autoprefixer(),
       ]),
     )
-    .pipe(gulp.dest(paths.output + "css/"));
+    .pipe(gulp.dest("./resources/public/css/"));
 });
 
 gulp.task("scss:main", function () {
-  const sources = [`${paths.resources}styles/main-default.scss`, `${paths.resources}styles/debug.scss`];
+  const sources = ["./resources/styles/main-default.scss",
+                   "./resources/styles/debug.scss"];
 
   return gulp
     .src(sources)
@@ -261,48 +291,53 @@ gulp.task("scss:main", function () {
       }),
     )
     .pipe(gulpPostcss([autoprefixer]))
-    .pipe(gulp.dest(paths.output + "css/"));
+    .pipe(gulp.dest("./resources/public/css/"));
 });
 
 gulp.task("scss:concat", function () {
   return gulp
-    .src([paths.output + "css/main-default.css", paths.output + "css/app/**/*.css"])
+    .src(["./resources/public/css/main-default.css",
+          "./resources/public/css/app/**/*.css"])
     .pipe(gulpConcat("main.tmp.css"), { rebaseUrls: false })
-    .pipe(gulp.dest(paths.output + ".tmp/"));
+    .pipe(gulp.dest("./resources/public/.tmp/"));
 });
 
-gulp.task("scss:touch", function () {
+gulp.task("scss:touch:main", function () {
   return gulp
-    .src([paths.output + ".tmp/main.tmp.css"])
+    .src(["./resources/public/.tmp/main.tmp.css"])
     .pipe(rename("main.css"))
-    .pipe(gulp.dest(paths.output + "css/"))
+    .pipe(gulp.dest("./resources/public/css/"))
     .pipe(touch());
 });
 
-gulp.task("scss", gulp.series("scss:main", "scss:modules", "scss:concat", "scss:touch"));
+gulp.task("scss:touch:modules", function() {
+  return gulp.src("src/**/**.scss").pipe(touch());
+});
+
+gulp.task("scss", gulp.series("scss:main", "scss:modules", "scss:concat", "scss:touch:main"));
 
 gulp.task("svg:sprite:icons", function () {
   return gulp
-    .src(paths.resources + "images/icons/*.svg")
+    .src("./resources/images/icons/*.svg")
     .pipe(gulpRename({ prefix: "icon-" }))
     .pipe(svgSprite({ mode: { symbol: { inline: true, sprite: "icons.svg" } } }))
-    .pipe(gulp.dest(paths.output + "images/sprites/"));
+    .pipe(gulp.dest("./resources/public/images/sprites/"));
 });
 
 gulp.task("svg:sprite:cursors", function () {
   return gulp
-    .src(paths.resources + "images/cursors/*.svg")
+    .src("./resources/images/cursors/*.svg")
     .pipe(gulpRename({ prefix: "cursor-" }))
     .pipe(svgSprite({ mode: { symbol: { inline: true, sprite: "cursors.svg" } } }))
-    .pipe(gulp.dest(paths.output + "images/sprites/"));
+    .pipe(gulp.dest("./resources/public/images/sprites/"));
 });
 
 gulp.task(
   "template:main",
   templatePipeline({
     name: "index.html",
-    input: paths.resources + "templates/index.mustache",
-    output: paths.output,
+    input: "./resources/templates/index.mustache",
+    output: "./resources/public/",
   }),
 );
 
@@ -310,7 +345,7 @@ gulp.task(
   "template:storybook",
   templatePipeline({
     name: "preview-body.html",
-    input: paths.resources + "templates/preview-body.mustache",
+    input: "./resources/templates/preview-body.mustache",
     output: "./.storybook/",
   }),
 );
@@ -319,8 +354,8 @@ gulp.task(
   "template:render",
   templatePipeline({
     name: "render.html",
-    input: paths.resources + "templates/render.mustache",
-    output: paths.output,
+    input: "./resources/templates/render.mustache",
+    output: "./resources/public/",
   }),
 );
 
@@ -328,8 +363,8 @@ gulp.task(
   "template:rasterizer",
   templatePipeline({
     name: "rasterizer.html",
-    input: paths.resources + "templates/rasterizer.mustache",
-    output: paths.output,
+    input: "./resources/templates/rasterizer.mustache",
+    output: "./resources/public/",
   }),
 );
 
@@ -347,17 +382,17 @@ gulp.task(
 
 gulp.task("polyfills", function () {
   return gulp
-    .src(paths.resources + "polyfills/*.js")
+    .src("./resources/polyfills/*.js")
     .pipe(gulpConcat("polyfills.js"))
-    .pipe(gulp.dest(paths.output + "js/"));
+    .pipe(gulp.dest("./resources/public/js/"));
 });
 
 gulp.task("copy:assets:images", function () {
-  return gulp.src(paths.resources + "images/**/*").pipe(gulp.dest(paths.output + "images/"));
+  return gulp.src("./resources/images/**/*").pipe(gulp.dest("./resources/public/images/"));
 });
 
 gulp.task("copy:assets:fonts", function () {
-  return gulp.src(paths.resources + "fonts/**/*").pipe(gulp.dest(paths.output + "fonts/"));
+  return gulp.src("./resources/fonts/**/*").pipe(gulp.dest("./resources/public/fonts/"));
 });
 
 gulp.task("copy:assets", gulp.parallel("copy:assets:images", "copy:assets:fonts"));
@@ -369,20 +404,18 @@ gulp.task("dev:dirs", async function (next) {
 });
 
 gulp.task("watch:main", function () {
-  const watchTask = gulp.watch("src/**/**.scss", gulp.series("scss"));
-
-  gulp.watch(paths.resources + "styles/**/**.scss", gulp.series("scss"));
-  gulp.watch(paths.resources + "images/**/*", gulp.series("copy:assets:images"));
-
-  gulp.watch([paths.resources + "templates/*.mustache", "translations/*.po"], gulp.series("templates"));
+  gulp.watch("./src/**/**.scss", {delay:1000}, gulp.series("scss"));
+  gulp.watch("./resources/styles/**/**.scss", {delay: 100}, gulp.series("scss:touch:modules"));
+  gulp.watch("./resources/images/**/*", gulp.series("copy:assets:images"));
+  gulp.watch(["./resources/templates/*.mustache", "translations/*.po"], gulp.series("templates"));
 });
 
 gulp.task("clean:output", function (next) {
-  rimraf(paths.output).finally(next);
+  rimraf("./resources/public/").finally(next);
 });
 
 gulp.task("clean:dist", function (next) {
-  rimraf(paths.dist).finally(next);
+  rimraf("./target/dist/").finally(next);
 });
 
 gulp.task("build:styles", gulp.parallel("scss"));
@@ -391,5 +424,5 @@ gulp.task("build:assets", gulp.parallel("polyfills", "templates", "copy:assets")
 gulp.task("watch", gulp.series("dev:dirs", "build:styles", "build:assets", "watch:main"));
 
 gulp.task("build:copy", function () {
-  return gulp.src(paths.output + "**/*").pipe(gulp.dest(paths.dist));
+  return gulp.src("./resources/public/**/*").pipe(gulp.dest("./target/dist/"));
 });
