@@ -47,19 +47,38 @@
    [:h1 {:class (stl/css :modal-title)} (tr "questions.lets-get-started")]
    [:p {:class (stl/css :modal-text)} (tr "questions.your-feedback-will-help-us")]
    [:h3 {:class (stl/css :modal-subtitle)} (tr "questions.questions-how-are-you-planning-to-use-penpot")]
-   [:& fm/select {:options [{:label (tr "questions.select-option") :value "" :key "questions-how-are-you-planning-to-use-penpot" :disabled true}
-                            {:label (tr "questions.discover-more-about-penpot") :value "discover-more-about-penpot" :key "discover-more-about-penpot"}
-                            {:label (tr "questions.test-penpot-to-see-if-its-a-fit-for-team") :value "test-penpot-to-see-if-its-a-fit-for-team"  :key "test-penpot-to-see-if-its-a-fit-for-team"}
-                            {:label (tr "questions.start-to-work-on-my-project") :value "start-to-work-on-my-project" :key "start-to-work-on-my-project"}
-                            {:label (tr "questions.get-the-code-from-my-team-project") :value "get-the-code-from-my-team-project" :key "get-the-code-from-my-team-project"}
-                            {:label (tr "questions.leave-feedback-for-my-team-project") :value "leave-feedback-for-my-team-project" :key "leave-feedback-for-my-team-project"}
-                            {:label (tr "questions.work-in-concept-ideas") :value "work-in-concept-ideas" :key "work-in-concept-ideas"}
-                            {:label (tr "questions.try-out-before-using-penpot-on-premise") :value "try-out-before-using-penpot-on-premise" :key "try-out-before-using-penpot-on-premise"}]
-                  :default ""
-                  :name :planning}]])
+   [:& fm/select
+    {:options [{:label (tr "questions.select-option")
+                :value "" :key "questions-how-are-you-planning-to-use-penpot"
+                :disabled true}
+               {:label (tr "questions.discover-more-about-penpot")
+                :value "discover-more-about-penpot"
+                :key "discover-more-about-penpot"}
+               {:label (tr "questions.test-penpot-to-see-if-its-a-fit-for-team")
+                :value "test-penpot-to-see-if-its-a-fit-for-team"
+                :key "test-penpot-to-see-if-its-a-fit-for-team"}
+               {:label (tr "questions.start-to-work-on-my-project")
+                :value "start-to-work-on-my-project"
+                :key "start-to-work-on-my-project"}
+               {:label (tr "questions.get-the-code-from-my-team-project")
+                :value "get-the-code-from-my-team-project"
+                :key "get-the-code-from-my-team-project"}
+               {:label (tr "questions.leave-feedback-for-my-team-project")
+                :value "leave-feedback-for-my-team-project"
+                :key "leave-feedback-for-my-team-project"}
+               {:label (tr "questions.work-in-concept-ideas")
+                :value "work-in-concept-ideas"
+                :key "work-in-concept-ideas"}
+               {:label (tr "questions.try-out-before-using-penpot-on-premise")
+                :value "try-out-before-using-penpot-on-premise"
+                :key "try-out-before-using-penpot-on-premise"}]
+     :default ""
+     :name :planning}]])
 
 (s/def ::questions-form-step-2
-  (s/keys :req-un [::experience-branding-illustrations-marketing-pieces ::experience-interface-design-visual-assets-design-systems ::experience-interface-wireframes-user-journeys-flows-navigation-trees]))
+  (s/keys :req-un [::experience-branding-illustrations-marketing-pieces
+                   ::experience-interface-design-visual-assets-design-systems
+                   ::experience-interface-wireframes-user-journeys-flows-navigation-trees]))
 
 (mf/defc step-2
   [{:keys [on-next on-prev form] :as props}]

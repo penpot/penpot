@@ -212,7 +212,7 @@
          (mf/deps values)
          (fn [ids attrs]
            (st/emit! (dwt/save-font (-> (merge txt/default-text-attrs values attrs)
-                                        (select-keys dwt/text-attrs)))
+                                        (select-keys txt/text-node-attrs)))
                      (dwt/update-all-attrs ids attrs))))
 
         on-change
@@ -242,9 +242,9 @@
         (fn [_]
           (let [set-values (-> (d/without-nils values)
                                (select-keys
-                                (d/concat-vec dwt/text-font-attrs
-                                              dwt/text-spacing-attrs
-                                              dwt/text-transform-attrs)))
+                                (d/concat-vec txt/text-font-attrs
+                                              txt/text-spacing-attrs
+                                              txt/text-transform-attrs)))
                 typography (merge txt/default-typography set-values)
                 typography (dwt/generate-typography-name typography)
                 id         (uuid/next)]

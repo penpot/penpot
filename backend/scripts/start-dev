@@ -34,6 +34,9 @@ export OPTIONS="
        -J-XX:+UnlockDiagnosticVMOptions \
        -J-XX:+DebugNonSafepoints"
 
+# Setup default upload media file size to 100MiB
+export PENPOT_MEDIA_MAX_FILE_SIZE=104857600
+
 # Setup HEAP
 # export OPTIONS="$OPTIONS -J-Xms50m -J-Xmx1024m"
 # export OPTIONS="$OPTIONS -J-Xms1100m -J-Xmx1100m -J-XX:+AlwaysPreTouch"

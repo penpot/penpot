@@ -8,11 +8,13 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
-   [app.common.files.changes :as fch]
-   [app.common.spec :as us]
+   [app.common.files.changes :as cpc]
+   [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.db.sql :as sql]
+   [app.features.fdata :as fdata]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.files-create :as files.create]
@@ -21,28 +23,26 @@
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
    [app.util.blob :as blob]
+   [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [clojure.set :as set]
-   [clojure.spec.alpha :as s]))
-
+   [clojure.set :as set]))
 
 ;; --- MUTATION COMMAND: create-temp-file
 
-(s/def ::create-page ::us/boolean)
-
-(s/def ::create-temp-file
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::files/name
-                   ::files/project-id]
-          :opt-un [::files/id
-                   ::files/is-shared
-                   ::files/features
-                   ::create-page]))
+(def ^:private schema:create-temp-file
+  [:map {:title "create-temp-file"}
+   [:name :string]
+   [:project-id ::sm/uuid]
+   [:id {:optional true} ::sm/uuid]
+   [:is-shared :boolean]
+   [:features ::cfeat/features]
+   [:create-page :boolean]])
 
 (sv/defmethod ::create-temp-file
   {::doc/added "1.17"
-   ::doc/module :files}
+   ::doc/module :files
+   ::sm/params schema:create-temp-file}
   [cfg {:keys [::rpc/profile-id project-id] :as params}]
   (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
                     (projects/check-edition-permissions! conn profile-id project-id)
@@ -72,16 +72,18 @@
 
 ;; --- MUTATION COMMAND: update-temp-file
 
-(s/def ::update-temp-file
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::files.update/changes
-                   ::files.update/revn
-                   ::files.update/session-id
-                   ::files/id]))
+
+(def ^:private schema:update-temp-file
+  [:map {:title "update-temp-file"}
+   [:changes [:vector ::cpc/change]]
+   [:revn {:min 0} :int]
+   [:session-id ::sm/uuid]
+   [:id ::sm/uuid]])
 
 (sv/defmethod ::update-temp-file
   {::doc/added "1.17"
-   ::doc/module :files}
+   ::doc/module :files
+   ::sm/params schema:update-temp-file}
   [cfg {:keys [::rpc/profile-id session-id id revn changes] :as params}]
   (db/tx-run! cfg (fn [{:keys [::db/conn]}]
                     (db/insert! conn :file-change
@@ -98,37 +100,50 @@
 ;; --- MUTATION COMMAND: persist-temp-file
 
 (defn persist-temp-file
-  [conn {:keys [id] :as params}]
-  (let [file (db/get-by-id conn :file id)
-        revs (db/query conn :file-change
-                       {:file-id id}
-                       {:order-by [[:revn :asc]]})
-        revn (count revs)]
+  [{:keys [::db/conn] :as cfg} {:keys [id] :as params}]
+  (let [file (files/get-file cfg id
+                             :migrate? false
+                             :lock-for-update? true)]
 
     (when (nil? (:deleted-at file))
       (ex/raise :type :validation
                 :code :cant-persist-already-persisted-file))
 
+    (let [changes (->> (db/cursor conn
+                                  (sql/select :file-change {:file-id id}
+                                              {:order-by [[:revn :asc]]})
+                                  {:chunk-size 10})
+                       (sequence (mapcat (comp blob/decode :changes))))
 
-    (let [data
-          (->> revs
-               (mapcat #(->> % :changes blob/decode))
-               (fch/process-changes (blob/decode (:data file))))]
+          file    (update file :data cpc/process-changes changes)
+
+          file    (if (contains? (:features file) "fdata/objects-map")
+                    (fdata/enable-objects-map file)
+                    file)
+
+          file    (if (contains? (:features file) "fdata/pointer-map")
+                    (binding [pmap/*tracked* (pmap/create-tracked)]
+                      (let [file (fdata/enable-pointer-map file)]
+                        (fdata/persist-pointers! cfg id)
+                        file))
+                    file)]
+
       (db/update! conn :file
                   {:deleted-at nil
-                   :revn revn
-                   :data (blob/encode data)}
-                  {:id id}))
-    nil))
+                   :revn 1
+                   :data (blob/encode (:data file))}
+                  {:id id})
+      nil)))
 
-(s/def ::persist-temp-file
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::files/id]))
+(def ^:private schema:persist-temp-file
+  [:map {:title "persist-temp-file"}
+   [:id ::sm/uuid]])
 
 (sv/defmethod ::persist-temp-file
   {::doc/added "1.17"
-   ::doc/module :files}
+   ::doc/module :files
+   ::sm/params schema:persist-temp-file}
   [cfg {:keys [::rpc/profile-id id] :as params}]
-  (db/tx-run! cfg (fn [{:keys [::db/conn]}]
+  (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
                     (files/check-edition-permissions! conn profile-id id)
-                    (persist-temp-file conn params))))
+                    (persist-temp-file cfg params))))

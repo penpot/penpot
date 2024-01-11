@@ -240,7 +240,8 @@
   (let [params (assoc params
                       :force-media true
                       :local? false
-                      :on-image #(st/emit! (dwl/add-media %)))]
+                      :on-image #(st/emit! (dwl/add-media %))
+                      :on-svg #(st/emit! (dwl/add-media %)))]
     (process-media-objects params)))
 
 (defn upload-media-workspace
