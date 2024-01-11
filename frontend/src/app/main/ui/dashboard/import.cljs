@@ -80,12 +80,13 @@
             (assoc :deleted? true))))))
 
 (defn set-analyze-error
-  [files uri]
+  [files uri error]
   (->> files
        (mapv (fn [file]
                (cond-> file
                  (= uri (:uri file))
-                 (assoc :status :analyze-error))))))
+                 (-> (assoc :status :analyze-error)
+                     (assoc :error error)))))))
 
 (defn set-analyze-result [files uri type data]
   (let [existing-files? (into #{} (->> files (map :file-id) (filter some?)))
@@ -150,7 +151,6 @@
 
 (mf/defc import-entry
   [{:keys [state file editing? can-be-deleted?]}]
-
   (let [loading?       (or (= :analyzing (:status file))
                            (= :importing (:status file)))
         analyze-error? (= :analyze-error (:status file))
@@ -226,7 +226,9 @@
      (cond
        analyze-error?
        [:div {:class (stl/css :error-message)}
-        (tr "dashboard.import.analyze-error")]
+        (if (some? (:error file))
+          (tr (:error file))
+          (tr "dashboard.import.analyze-error"))]
 
        import-error?
        [:div {:class (stl/css :error-message)}
@@ -260,13 +262,14 @@
          (fn [files]
            (->> (uw/ask-many!
                  {:cmd :analyze-import
-                  :files files})
+                  :files files
+                  :features @features/features-ref})
                 (rx/mapcat #(rx/delay emit-delay (rx/of %)))
                 (rx/filter some?)
                 (rx/subs!
                  (fn [{:keys [uri data error type] :as msg}]
                    (if (some? error)
-                     (swap! state update :files set-analyze-error uri)
+                     (swap! state update :files set-analyze-error uri error)
                      (swap! state update :files set-analyze-result uri type data)))))))
 
         import-files

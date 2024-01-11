@@ -632,7 +632,7 @@
       "other")))
 
 (defmethod impl/handler :analyze-import
-  [{:keys [files]}]
+  [{:keys [files features]}]
 
   (->> (rx/from files)
        (rx/merge-map
@@ -653,7 +653,16 @@
                        (rx/merge-map #(zip/loadAsync (:body %)))
                        (rx/merge-map #(get-file {:zip %} :manifest))
                        (rx/map (comp d/kebab-keys parser/string->uuid))
-                       (rx/map #(hash-map :uri (:uri file) :data % :type "application/zip")))
+                       (rx/map
+                        (fn [data]
+                          ;; Checks if the file is exported with components v2 and the current team only
+                          ;; supports components v1
+                          (let [has-file-v2?
+                                (->> (:files data)
+                                     (d/seek (fn [[_ file]] (contains? (set (:features file)) "components/v2"))))]
+                            (if (and has-file-v2? (not (contains? features "components/v2")))
+                              {:uri (:uri file) :error "dashboard.import.analyze-error.components-v2"}
+                              (hash-map :uri (:uri file) :data data :type "application/zip"))))))
                   (->> st
                        (rx/filter (fn [data] (= "application/octet-stream" (:type data))))
                        (rx/map (fn [_]
