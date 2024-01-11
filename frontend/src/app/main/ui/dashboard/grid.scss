@@ -144,7 +144,8 @@ $thumbnail-default-height: $s-168; // Default width
     justify-content: center;
 
     svg {
-      fill: $db-secondary;
+      stroke: $db-secondary;
+      fill: none;
       height: $s-16;
       width: $s-16;
     }
