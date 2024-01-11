@@ -159,18 +159,22 @@
   --input-border-color-error: var(--error-color);
   --input-border-color-success: var(--color-accent-primary);
   --input-details-color: var(--color-background-primary);
+
   --input-checkbox-background-color-rest: var(--color-background-quaternary);
+  --input-checkbox-border-color-rest: var(--color-foreground-secondary);
   --input-checkbox-border-color-active: var(--color-background-quaternary);
   --input-checkbox-border-color-focus: var(--color-accent-primary);
   --input-checkbox-border-color: var(--color-background-secondary);
   --input-checkbox-border-color-hover: var(--color-accent-primary-muted);
   --input-checkbox-background-color-intermediate: var(--color-foreground-secondary);
+  --input-checkbox-border-color-intermediate: var(--color-foreground-secondary);
+  --input-checkbox-foreground-color-intermediate: var(--color-background-secondary);
 
   // Checkbox color
   --input-checkbox-inactive-background-color: var(--color-foreground-secondary);
   --input-checkbox-inactive-foreground-color: var(--color-background-primary);
-  --input-checkbox-active-background-color: var(--color-accent-primary);
-  --input-checkbox-active-foreground-color: var(--color-background-primary);
+  --input-checkbox-background-color-active: var(--color-accent-primary);
+  --input-checkbox-foreground-color-active: var(--color-background-primary);
   --input-checkbox-text-foreground-color: var(--color-foreground-secondary);
 
   --menu-background-color: var(--color-background-tertiary);
