@@ -508,6 +508,7 @@
                      grc/empty-rect)
          name               (:name data)
          path               (:path data)
+         component-id       (:component-id data)
          main-instance-id   (:main-instance-id data)
          main-instance-page (:main-instance-page data)
          attrs (-> data
@@ -547,11 +548,17 @@
 (defn finish-component
   [file]
   (let [component-id (:current-component-id file)
+        component-data (ctkl/get-component (:data file) component-id)
+
         component    (lookup-shape file component-id)
         children     (->> component :shapes (mapv #(lookup-shape file %)))
 
         file
         (cond
+          ;; Components-v2 component we skip this step
+          (and component-data (:main-instance-id component-data))
+          file
+
           (empty? children)
           (commit-change
            file

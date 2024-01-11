@@ -508,7 +508,7 @@
          (mf/deps objects)
          (fn [] (frame-wrapper-factory objects)))]
 
-    [:> "symbol" #js {:id (str root-id)
+    [:> "symbol" #js {:id (str (:id component))
                       :viewBox vbox
                       "penpot:path" path
                       "penpot:main-instance-id" main-instance-id
