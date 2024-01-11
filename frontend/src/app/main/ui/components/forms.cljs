@@ -86,10 +86,8 @@
           (when-not (get-in @form [:touched input-name])
             (swap! form assoc-in [:touched input-name] true)))
 
-
-
         props (-> props
-                  (dissoc :help-icon :form :trim :children)
+                  (dissoc :help-icon :form :trim :children :show-success?)
                   (assoc :id (name input-name)
                          :value value
                          :auto-focus auto-focus?
@@ -151,8 +149,6 @@
         [:label {:for (name input-name)}
          [:> :input props]
          children])
-
-
 
       (cond
         (and touched? (:message error))
