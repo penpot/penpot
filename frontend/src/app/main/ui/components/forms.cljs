@@ -287,13 +287,13 @@
 
 (mf/defc submit-button*
   {::mf/wrap-props false}
-  [{:keys [on-click children label form class-name name disabled] :as props}]
+  [{:keys [on-click children label form class name disabled] :as props}]
   (let [form      (or form (mf/use-ctx form-ctx))
 
         disabled? (or (and (some? form) (not (:valid @form)))
                       (true? disabled))
 
-        class     (dm/str (d/nilv class-name "btn-primary btn-large")
+        class     (dm/str (d/nilv class "btn-primary btn-large")
                           " "
                           (if disabled? (stl/css :btn-disabled) ""))
 
@@ -307,14 +307,13 @@
              (on-click event))))
 
         props
-        (-> (obj/clone props)
-            (obj/set! "children" mf/undefined)
-            (obj/set! "disabled" disabled?)
-            (obj/set! "onKeyDown" on-key-down)
-            (obj/set! "name" name)
-            (obj/set! "label" mf/undefined)
-            (obj/set! "className" class)
-            (obj/set! "type" "submit"))]
+        (mf/spread-props props {:children mf/undefined
+                                :disabled disabled?
+                                :on-key-down on-key-down
+                                :name name
+                                :labek mf/undefined
+                                :class class
+                                :type "submit"})]
 
     [:> "button" props
      (if (some? children)
