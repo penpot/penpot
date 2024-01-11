@@ -571,18 +571,22 @@
     (let [root-shape        (ctn/get-component-shape objects shape)
           component-file-id (when root-shape (:component-file root-shape))
           component-file    (when component-file-id (get libraries component-file-id nil))
-          component-shape (find-ref-shape file
-                                          {:objects objects}
-                                          libraries
-                                          shape
-                                          :include-deleted? true)]
+          component-shape   (find-ref-shape file
+                                            {:objects objects}
+                                            libraries
+                                            shape
+                                            :include-deleted? true)]
 
       (str/format " %s--> %s%s%s%s%s"
                   (cond (:component-root shape) "#"
                         (:component-id shape) "@"
                         :else "-")
 
-                  (when component-file (str/format "<%s> " (:name component-file)))
+                  (when (and (:component-file shape) component-file)
+                    (str/format "<%s> "
+                                (if (= (:id component-file) (:id file))
+                                  "local"
+                                  (:name component-file))))
 
                   (or (:name component-shape)
                       (str/format "?%s"
@@ -603,7 +607,10 @@
                                               (ctkl/get-component (:data component-file) component-id true)
                                               (ctkl/get-component (:data file) component-id true))]
                       (str/format " (%s%s)"
-                                  (when component-file (str/format "<%s> " (:name component-file)))
+                                  (when component-file (str/format "<%s> "
+                                                                   (if (= (:id component-file) (:id file))
+                                                                     "local"
+                                                                     (:name component-file))))
                                   (:name component))))
 
                   (when (and show-ids (:component-id shape))
@@ -760,12 +767,12 @@
         (if (nil? root)
           (println (str "Cannot find shape " shape-id))
           (do
-            (dump-page page file libraries (assoc flags :root-id (:id root)))
+            (dump-page page file libraries* (assoc flags :root-id (:id root)))
             (dorun (for [[library-id component-ids] libs-to-show]
                      (let [library (get libraries* library-id)]
                        (dump-library library
                                      file
-                                     libraries
+                                     libraries*
                                      (assoc flags
                                             :only component-ids
                                             :include-deleted? true))
