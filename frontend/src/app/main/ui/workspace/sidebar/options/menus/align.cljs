@@ -48,7 +48,7 @@
                                        :disabled disabled-align)
                   :disabled disabled-align
                   :title (tr "workspace.align.hleft" (sc/get-tooltip :align-left))
-                  :data-value :hleft
+                  :data-value "hleft"
                   :on-click align-objects}
          i/align-left-refactor]
 
@@ -56,7 +56,7 @@
                                        :disabled disabled-align)
                   :disabled disabled-align
                   :title (tr "workspace.align.hcenter" (sc/get-tooltip :align-hcenter))
-                  :data-value :hcenter
+                  :data-value "hcenter"
                   :on-click align-objects}
          i/align-horizontal-center-refactor]
 
@@ -64,7 +64,7 @@
                                        :disabled disabled-align)
                   :disabled disabled-align
                   :title (tr "workspace.align.hright" (sc/get-tooltip :align-right))
-                  :data-value :hright
+                  :data-value "hright"
                   :on-click align-objects}
          i/align-right-refactor]
 
@@ -72,7 +72,7 @@
                                        :disabled disabled-distribute)
                   :disabled disabled-distribute
                   :title (tr "workspace.align.hdistribute" (sc/get-tooltip :h-distribute))
-                  :data-value :horizontal
+                  :data-value "horizontal"
                   :on-click distribute-objects}
          i/distribute-horizontally-refactor]]
 
@@ -81,7 +81,7 @@
                                        :disabled disabled-align)
                   :disabled disabled-align
                   :title (tr "workspace.align.vtop" (sc/get-tooltip :align-top))
-                  :data-value :vtop
+                  :data-value "vtop"
                   :on-click  align-objects}
          i/align-top-refactor]
 
@@ -89,7 +89,7 @@
                                        :disabled disabled-align)
                   :disabled disabled-align
                   :title (tr "workspace.align.vcenter" (sc/get-tooltip :align-vcenter))
-                  :data-value :vcenter
+                  :data-value "vcenter"
                   :on-click  align-objects}
          i/align-vertical-center-refactor]
 
@@ -97,7 +97,7 @@
                                        :disabled disabled-align)
                   :disabled disabled-align
                   :title (tr "workspace.align.vbottom" (sc/get-tooltip :align-bottom))
-                  :data-value :vbottom
+                  :data-value "vbottom"
                   :on-click  align-objects}
          i/align-bottom-refactor]
 
@@ -105,7 +105,7 @@
                   :class (stl/css-case :align-button true
                                        :disabled disabled-distribute)
                   :disabled disabled-distribute
-                  :data-value :vertical
+                  :data-value "vertical"
                   :on-click distribute-objects}
          i/distribute-vertical-spacing-refactor]]])))
 

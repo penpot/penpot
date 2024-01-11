@@ -258,7 +258,7 @@
        [:li {:class (stl/css-case :dropdown-element true
                                   :selected (= interactions-mode :hide))
              :on-click select-mode
-             :data-mode :hide}
+             :data-mode "hide"}
 
         [:span {:class (stl/css :label)} (tr "viewer.header.dont-show-interactions")]
         (when (= interactions-mode :hide)
@@ -267,7 +267,7 @@
        [:li {:class (stl/css-case :dropdown-element true
                                   :selected (= interactions-mode :show))
              :on-click select-mode
-             :data-mode :show}
+             :data-mode "show"}
         [:span {:class (stl/css :label)} (tr "viewer.header.show-interactions")]
         (when (= interactions-mode :show)
           [:span {:class (stl/css :icon)}  i/tick-refactor])]
@@ -277,7 +277,7 @@
        [:li {:class (stl/css-case :dropdown-element true
                                   :selected (= interactions-mode :show-on-click))
              :on-click select-mode
-             :data-mode :show-on-click}
+             :data-mode "show-on-click"}
 
         [:span {:class (stl/css :label)} (tr "viewer.header.show-interactions-on-click")]
         (when (= interactions-mode :show-on-click)

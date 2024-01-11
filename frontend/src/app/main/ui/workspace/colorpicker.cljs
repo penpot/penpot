@@ -139,7 +139,7 @@
          (fn [event]
            (let [offset  (-> (dom/get-current-target event)
                              (dom/get-data "value")
-                             (int))]
+                             (d/parse-integer))]
              (st/emit! (dc/select-colorpicker-gradient-stop offset)))))
 
         on-select-library-color

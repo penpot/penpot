@@ -18,7 +18,7 @@
   []
   (let [on-click (mf/use-fn #(st/emit! (dw/toggle-layout-flag :collapse-left-sidebar)))]
     [:div {:id "left-sidebar-aside"
-           :data-size 0
+           :data-size "0"
            :class (stl/css :collapsed-sidebar)}
      [:div {:class (stl/css :collapsed-title)}
       [:button {:class (stl/css :collapsed-button)

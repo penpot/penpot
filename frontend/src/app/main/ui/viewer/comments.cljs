@@ -56,8 +56,7 @@
          (fn [event]
            (let [mode (-> (dom/get-target event)
                           (dom/get-data "value")
-                          (boolean))
-                 _ (prn mode)]
+                          (boolean))]
              (st/emit! (dcm/update-options {:show-sidebar? (not mode)})))))]
 
     [:div {:class (stl/css :view-options)
@@ -71,7 +70,7 @@
       [:ul {:class (stl/css :dropdown)}
        [:li {:class (stl/css-case :dropdown-element true
                                   :selected (or (= :all cmode) (nil? cmode)))
-             :data-value :all
+             :data-value "all"
              :on-click update-mode}
 
         [:span {:class (stl/css :label)} (tr "labels.show-all-comments")]
@@ -80,7 +79,7 @@
 
        [:li {:class (stl/css-case :dropdown-element true
                                   :selected (= :yours cmode))
-             :data-value :yours
+             :data-value "yours"
              :on-click update-mode}
 
         [:span {:class (stl/css :label)}
@@ -94,7 +93,7 @@
 
        [:li {:class (stl/css-case :dropdown-element true
                                   :selected (= :pending cshow))
-             :data-value (if (= :pending cshow) :all :pending)
+             :data-value (if (= :pending cshow) "all" "pending")
              :on-click update-show}
 
         [:span {:class (stl/css :label)}
@@ -107,7 +106,7 @@
 
        [:li {:class (stl/css-case :dropdown-element true
                                   :selected show-sidebar?)
-             :data-value show-sidebar?
+             :data-value (str show-sidebar?)
              :on-click update-options}
 
         [:span {:class (stl/css :label)} (tr "labels.show-comments-list")]

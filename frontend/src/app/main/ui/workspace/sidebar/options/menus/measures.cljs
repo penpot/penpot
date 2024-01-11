@@ -365,8 +365,8 @@
                  [:li {:key (:name size-preset)
                        :class (stl/css-case :dropdown-element true
                                             :match preset-match)
-                       :data-width (:width size-preset)
-                       :data-height (:height size-preset)
+                       :data-width (str (:width size-preset))
+                       :data-height (str (:height size-preset))
                        :on-click on-preset-selected}
                   [:div {:class (stl/css :name-wrapper)}
                    [:span {:class (stl/css :preset-name)} (:name size-preset)]
