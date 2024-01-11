@@ -327,6 +327,7 @@
   {::mf/wrap-props false}
   [{:keys [on-submit form children class]}]
   (let [on-submit' (mf/use-fn
+                    (mf/deps on-submit)
                     (fn [event]
                       (dom/prevent-default event)
                       (when (fn? on-submit)
