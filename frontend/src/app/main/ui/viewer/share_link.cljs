@@ -245,8 +245,8 @@
                     [:label {:for (str "page-" current-page-id)
                              :class (stl/css-case :global/checked true)}
 
-                    [:span  {:class (stl/css :checked)}
-                     i/status-tick-refactor]
+                     [:span  {:class (stl/css :checked)}
+                      i/status-tick-refactor]
 
                      (:name current-page)]
 
