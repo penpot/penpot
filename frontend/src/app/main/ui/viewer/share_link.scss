@@ -187,4 +187,12 @@
   @extend .input-checkbox;
   height: $s-32;
   padding: 0;
+  span.checked {
+    background-color: var(--input-checkbox-background-color-active);
+    border: $s-1 solid var(--input-checkbox-background-color-active);
+    svg {
+      @extend .button-icon-small;
+      stroke: var(--input-checkbox-foreground-color-active);
+    }
+  }
 }
