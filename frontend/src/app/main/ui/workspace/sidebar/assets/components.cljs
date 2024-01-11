@@ -179,7 +179,8 @@
 
         (when visible?
           [:& cmm/component-item-thumbnail {:file-id file-id
-                                            :class (stl/css :thumbnail)
+                                            :class (stl/css-case :thumbnail true
+                                                                 :asset-list-thumbnail (not listing-thumbs?))
                                             :root-shape root-shape
                                             :component component
                                             :container container}])])]))
