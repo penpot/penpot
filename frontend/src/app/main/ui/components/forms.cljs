@@ -86,10 +86,8 @@
           (when-not (get-in @form [:touched input-name])
             (swap! form assoc-in [:touched input-name] true)))
 
-
-
         props (-> props
-                  (dissoc :help-icon :form :trim :children)
+                  (dissoc :help-icon :form :trim :children :show-success?)
                   (assoc :id (name input-name)
                          :value value
                          :auto-focus auto-focus?
@@ -151,8 +149,6 @@
         [:label {:for (name input-name)}
          [:> :input props]
          children])
-
-
 
       (cond
         (and touched? (:message error))
@@ -291,20 +287,17 @@
 
 (mf/defc submit-button*
   {::mf/wrap-props false}
-  [props]
-  (let [form      (or (unchecked-get props "form")
-                      (mf/use-ctx form-ctx))
-
-        label     (unchecked-get props "label")
-        on-click  (unchecked-get props "onClick")
-        children  (unchecked-get props "children")
-
-        class     (d/nilv (unchecked-get props "className") "btn-primary btn-large")
-        name      (d/nilv (unchecked-get props "name") "submit")
+  [{:keys [on-click children label form class-name name disabled] :as props}]
+  (let [form      (or form (mf/use-ctx form-ctx))
 
         disabled? (or (and (some? form) (not (:valid @form)))
-                      (true? (unchecked-get props "disabled")))
-        new-klass (dm/str class " " (if disabled? (stl/css :btn-disabled) ""))
+                      (true? disabled))
+
+        class     (dm/str (d/nilv class-name "btn-primary btn-large")
+                          " "
+                          (if disabled? (stl/css :btn-disabled) ""))
+
+        name      (d/nilv name "submit")
 
         on-key-down
         (mf/use-fn
@@ -313,14 +306,15 @@
            (when (and (kbd/enter? event) (fn? on-click))
              (on-click event))))
 
-        props     (-> (obj/clone props)
-                      (obj/unset! "children")
-                      (obj/set! "disabled" disabled?)
-                      (obj/set! "onKeyDown" on-key-down)
-                      (obj/set! "name" name)
-                      (obj/set! "label" mf/undefined)
-                      (obj/set! "className" new-klass)
-                      (obj/set! "type" "submit"))]
+        props
+        (-> (obj/clone props)
+            (obj/set! "children" mf/undefined)
+            (obj/set! "disabled" disabled?)
+            (obj/set! "onKeyDown" on-key-down)
+            (obj/set! "name" name)
+            (obj/set! "label" mf/undefined)
+            (obj/set! "className" class)
+            (obj/set! "type" "submit"))]
 
     [:> "button" props
      (if (some? children)
@@ -331,6 +325,7 @@
   {::mf/wrap-props false}
   [{:keys [on-submit form children class]}]
   (let [on-submit' (mf/use-fn
+                    (mf/deps on-submit)
                     (fn [event]
                       (dom/prevent-default event)
                       (when (fn? on-submit)

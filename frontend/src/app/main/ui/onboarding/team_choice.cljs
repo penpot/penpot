@@ -102,8 +102,8 @@
                          :label (tr "onboarding.choice.team-up.create-team-placeholder")}]
 
            [:div {:class (stl/css :action-buttons)}
-            [:& fm/submit-button*
-             {:className (stl/css :accept-button)
+            [:> fm/submit-button*
+             {:class (stl/css :accept-button)
               :label (tr "onboarding.choice.team-up.continue-creating-team")}]]]]
          [:div {:class (stl/css :second-block)}
           [:h2 {:class (stl/css :modal-title)}
@@ -236,12 +236,11 @@
                                                                :step 2}))}
           (tr "labels.back")]
 
-         [:& fm/submit-button*
-          {:className (stl/css :accept-button)
-           :label
-           (if (> (count emails) 0)
-             (tr "onboarding.choice.team-up.create-team-and-invite")
-             (tr "onboarding.choice.team-up.create-team-without-invite"))}]]
+         [:> fm/submit-button*
+          {:class (stl/css :accept-button)
+           :label (if (> (count emails) 0)
+                    (tr "onboarding.choice.team-up.create-team-and-invite")
+                    (tr "onboarding.choice.team-up.create-team-without-invite"))}]]
         [:div {:class (stl/css :modal-hint)}
          (tr "onboarding.choice.team-up.create-team-and-send-invites-description")]]]
 
