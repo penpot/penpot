@@ -359,7 +359,7 @@
           :background-color (dm/get-in file [:data :options :background])}])
 
       (when (and (:is-shared file) (not library-view?))
-        [:div {:class (stl/css :item-badge)} i/library])
+        [:div {:class (stl/css :item-badge)} i/library-refactor])
 
       [:div {:class (stl/css :info-wrapper)}
        [:div {:class (stl/css :item-info)}
