@@ -288,8 +288,7 @@
 (mf/defc submit-button*
   {::mf/wrap-props false}
   [{:keys [on-click children label form class-name name disabled] :as props}]
-  (let [form      (or (unchecked-get props "form")
-                      (mf/use-ctx form-ctx))
+  (let [form      (or form (mf/use-ctx form-ctx))
 
         disabled? (or (and (some? form) (not (:valid @form)))
                       (true? disabled))
@@ -315,8 +314,7 @@
             (obj/set! "name" name)
             (obj/set! "label" mf/undefined)
             (obj/set! "className" class)
-            (obj/set! "type" "submit"))
-        ]
+            (obj/set! "type" "submit"))]
 
     [:> "button" props
      (if (some? children)
