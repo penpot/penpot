@@ -47,6 +47,8 @@
 .component-name {
   @include titleTipography;
   @include textEllipsis;
+  direction: rtl;
+  text-align: left;
   width: 70%;
   flex-grow: 2;
   margin-left: $s-8;
@@ -55,6 +57,9 @@
 .component-parent-name {
   @include titleTipography;
   @include textEllipsis;
+  direction: rtl;
+  text-align: left;
+  max-width: 95%;
   padding-left: $s-36;
   color: var(--title-foreground-color);
 }
@@ -224,6 +229,7 @@
   display: flex;
   align-items: center;
   margin-bottom: $s-4;
+  padding-right: $s-8;
   font-size: $s-12;
   cursor: pointer;
   width: 100%;
