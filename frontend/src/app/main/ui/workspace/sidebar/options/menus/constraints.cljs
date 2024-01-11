@@ -168,7 +168,7 @@
             [:button {:class (stl/css-case :constraint-btn true
                                            :active (or (= constraints-v :top)
                                                        (= constraints-v :topbottom)))
-                      :data-value :top
+                      :data-value "top"
                       :on-click on-constraint-button-clicked}
              [:span {:class (stl/css :resalted-area)}]]]
            [:div {:class (stl/css :constraints-left)}
@@ -176,19 +176,19 @@
                                            :constraint-btn-rotated true
                                            :active (or (= constraints-h :left)
                                                        (= constraints-h :leftright)))
-                      :data-value :left
+                      :data-value "left"
                       :on-click on-constraint-button-clicked}
              [:span {:class (stl/css :resalted-area)}]]]
            [:div {:class (stl/css :constraints-center)}
             [:button {:class (stl/css-case :constraint-btn true
                                            :active (= constraints-h :center))
-                      :data-value :centerh
+                      :data-value "centerh"
                       :on-click on-constraint-button-clicked}
              [:span {:class (stl/css :resalted-area)}]]
             [:button {:class (stl/css-case :constraint-btn-special true
                                            :constraint-btn-rotated true
                                            :active (= constraints-v :center))
-                      :data-value :centerv
+                      :data-value "centerv"
                       :on-click on-constraint-button-clicked}
              [:span {:class (stl/css :resalted-area)}]]]
            [:div {:class (stl/css :constraints-right)}
@@ -196,14 +196,14 @@
                                            :constraint-btn-rotated true
                                            :active (or (= constraints-h :right)
                                                        (= constraints-h :leftright)))
-                      :data-value :right
+                      :data-value "right"
                       :on-click on-constraint-button-clicked}
              [:span {:class (stl/css :resalted-area)}]]]
            [:div {:class (stl/css :constraints-bottom)}
             [:button {:class (stl/css-case :constraint-btn true
                                            :active (or (= constraints-v :bottom)
                                                        (= constraints-v :topbottom)))
-                      :data-value :bottom
+                      :data-value "bottom"
                       :on-click on-constraint-button-clicked}
              [:span {:class (stl/css :resalted-area)}]]]]
           [:div {:class (stl/css :contraints-selects)}

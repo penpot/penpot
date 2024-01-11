@@ -518,57 +518,57 @@
              [:button {:class (stl/css-case :direction-btn true
                                             :center-btn true
                                             :active (= overlay-pos-type :center))
-                       :data-value :center
+                       :data-value "center"
                        :on-click toggle-overlay-pos-type}
               [:span {:class (stl/css :rectangle)}]]
              [:button {:class (stl/css-case :direction-btn true
                                             :top-left-btn true
                                             :active (= overlay-pos-type :top-left))
-                       :data-value :top-left
+                       :data-value "top-left"
                        :on-click toggle-overlay-pos-type}
               [:span {:class (stl/css :rectangle)}]]
              [:button {:class (stl/css-case :direction-btn true
                                             :top-right-btn true
                                             :active (= overlay-pos-type :top-right))
-                       :data-value :top-right
+                       :data-value "top-right"
                        :on-click toggle-overlay-pos-type}
               [:span {:class (stl/css :rectangle)}]]
 
              [:button {:class (stl/css-case :direction-btn true
                                             :top-center-btn true
                                             :active (= overlay-pos-type :top-center))
-                       :data-value :top-center
+                       :data-value "top-center"
                        :on-click toggle-overlay-pos-type}
               [:span {:class (stl/css :rectangle)}]]
              [:button {:class (stl/css-case :direction-btn true
                                             :bottom-left-btn true
                                             :active (= overlay-pos-type :bottom-left))
-                       :data-value :bottom-left
+                       :data-value "bottom-left"
                        :on-click toggle-overlay-pos-type}
               [:span {:class (stl/css :rectangle)}]]
              [:button {:class (stl/css-case :direction-btn true
                                             :bottom-left-btn true
                                             :active (= overlay-pos-type :bottom-left))
-                       :data-value :bottom-left
+                       :data-value "bottom-left"
                        :on-click toggle-overlay-pos-type}
               [:span {:class (stl/css :rectangle)}]]
 
              [:button {:class (stl/css-case :direction-btn true
                                             :bottom-left-btn true
                                             :active (= overlay-pos-type :bottom-left))
-                       :data-value :bottom-left
+                       :data-value "bottom-left"
                        :on-click toggle-overlay-pos-type}
               [:span {:class (stl/css :rectangle)}]]
              [:button {:class (stl/css-case :direction-btn true
                                             :bottom-right-btn true
                                             :active (= overlay-pos-type :bottom-right))
-                       :data-value :bottom-right
+                       :data-value "bottom-right"
                        :on-click toggle-overlay-pos-type}
               [:span {:class (stl/css :rectangle)}]]
              [:button {:class (stl/css-case :direction-btn true
                                             :bottom-center-btn true
                                             :active (= overlay-pos-type :bottom-center))
-                       :data-value :bottom-center
+                       :data-value "bottom-center"
                        :on-click toggle-overlay-pos-type}
               [:span {:class (stl/css :rectangle)}]]]]
 

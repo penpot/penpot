@@ -302,7 +302,7 @@
 
      [:div {:class (stl/css :mode-zone)}
       [:button {:on-click navigate
-                :data-value :interactions
+                :data-value "interactions"
                 :class (stl/css-case :mode-zone-btn true
                                      :selected (= section :interactions))
                 :title (tr "viewer.header.interactions-section" (sc/get-tooltip :open-interactions))}
@@ -311,7 +311,7 @@
       (when (or (:can-edit permissions)
                 (= (:who-comment permissions) "all"))
         [:button {:on-click navigate
-                  :data-value :comments
+                  :data-value "comments"
                   :class (stl/css-case :mode-zone-btn true
                                        :selected (= section :comments))
                   :title (tr "viewer.header.comments-section" (sc/get-tooltip :open-comments))}

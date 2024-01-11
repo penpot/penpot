@@ -930,7 +930,7 @@
                [:button {:class (stl/css :layout-option) :on-click set-grid} "Grid layout"]]]]
 
             [:button {:class (stl/css :add-layout)
-                      :data-value :flex
+                      :data-value "flex"
                       :on-click on-set-layout}
              i/add-refactor])
           [:button {:class (stl/css :remove-layout)

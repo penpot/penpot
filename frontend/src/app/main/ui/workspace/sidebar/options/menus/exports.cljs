@@ -128,7 +128,7 @@
            (let [value   (dom/get-target-val event)
                  index   (-> (dom/get-current-target event)
                              (dom/get-data "value")
-                             (int))]
+                             (d/parse-integer))]
              (st/emit! (dch/update-shapes ids
                                           (fn [shape]
                                             (assoc-in shape [:exports index :suffix] value)))))))
@@ -216,7 +216,7 @@
                          :type "text"
                          :value (:suffix export)
                          :placeholder (tr "workspace.options.export.suffix")
-                         :data-value index
+                         :data-value (str index)
                          :on-change on-suffix-change
                          :on-key-down manage-key-down}]]]
 

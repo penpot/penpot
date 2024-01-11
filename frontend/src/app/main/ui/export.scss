@@ -126,6 +126,7 @@
     }
     .selection-title {
       @include titleTipography;
+      color: $df-primary;
     }
   }
   .selection-wrapper {

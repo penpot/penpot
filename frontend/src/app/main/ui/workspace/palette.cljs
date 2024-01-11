@@ -36,7 +36,8 @@
 
 (defn calculate-palette-padding [rulers?]
   (let [left-sidebar           (dom/get-element "left-sidebar-aside")
-        left-sidebar-size      (d/parse-integer (dom/get-data left-sidebar "size"))
+        left-sidebar-size      (-> (dom/get-data left-sidebar "size")
+                                   (d/parse-integer))
         rulers-width           (if rulers? 22 0)
         min-left-sidebar-width 275
         left-padding           4

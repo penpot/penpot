@@ -86,12 +86,12 @@
           [:div {:class (stl/css :links)}
            [:div {:class (stl/css :link-entry)}
             [:a {:on-click set-section
-                 :data-value :recovery-request}
+                 :data-value "recovery-request"}
              (tr "auth.forgot-password")]]
            [:div {:class (stl/css :link-entry)}
             [:span (tr "auth.register") " "]
             [:a {:on-click set-section
-                 :data-value :register}
+                 :data-value "register"}
              (tr "auth.register-submit")]]]]
 
          :register
@@ -101,7 +101,7 @@
            [:div {:class (stl/css :link-entry)}
             [:span (tr "auth.already-have-account") " "]
             [:a {:on-click set-section
-                 :data-value :login}
+                 :data-value "login"}
              (tr "auth.login-here")]]]]
 
          :register-validate
@@ -111,7 +111,7 @@
           [:div {:class (stl/css :links)}
            [:div {:class (stl/css :link-entry)}
             [:a {:on-click set-section
-                 :data-value :register}
+                 :data-value "register"}
              (tr "labels.go-back")]]]]
 
          :recovery-request
