@@ -281,7 +281,7 @@
 (mf/defc component-item-thumbnail
   "Component that renders the thumbnail image or the original SVG."
   {::mf/wrap-props false}
-  [{:keys [file-id root-shape component container]}]
+  [{:keys [file-id root-shape component container class]}]
   (let [retry (mf/use-state 0)
         thumbnail-uri (get-component-thumbnail-uri file-id component)
         handle-error
@@ -294,6 +294,7 @@
     (if (some? thumbnail-uri)
       [:& component-svg-thumbnail
        {:thumbnail-uri thumbnail-uri
+        :class class
         :on-error handle-error
         :root-shape root-shape
         :objects (:objects container)
@@ -301,6 +302,7 @@
 
       [:& component-svg
        {:root-shape root-shape
+        :class class
         :objects (:objects container)
         :show-grids? true}])))
 
