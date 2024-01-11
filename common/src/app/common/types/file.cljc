@@ -168,7 +168,9 @@
     (if (and components-v2 (not (:deleted component)))
       (let [component-page (get-component-page file-data component)]
         (when component-page
-          (ctn/get-shape component-page shape-id)))
+          (cfh/get-child (:objects component-page)
+                         (:main-instance-id component)
+                         shape-id)))
       (dm/get-in component [:objects shape-id]))))
 
 (defn get-ref-shape
