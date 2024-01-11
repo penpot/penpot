@@ -36,7 +36,7 @@
         encode-fn  (unchecked-get context "encode-fn")
         checked?   (= selected value)]
 
-    [:label {:for id
+    [:label {:html-for id
              :title title
              :key unique-key
              :class (stl/css-case
@@ -104,6 +104,3 @@
      [:div {:class (dm/str class " " (stl/css :radio-btn-wrapper))
             :style {:width width}}
       children]]))
-
-
-
