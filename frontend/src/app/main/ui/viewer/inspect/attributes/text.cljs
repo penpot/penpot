@@ -80,7 +80,8 @@
         [:div {:class (stl/css :global/attr-label)}
          (tr "inspect.attributes.typography")]
         [:div {:class (stl/css :global/attr-value)}
-         [:& copy-button {:data (copy-style-data typography :font-family :font-weight :font-style)}
+         [:& copy-button {:data (copy-style-data typography :font-family :font-weight :font-style)
+                          :class (stl/css :copy-btn-wrapper)}
           [:div {:class (stl/css :button-children)} (:name typography)]]]])
 
      (when (:font-id style)

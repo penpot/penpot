@@ -97,8 +97,7 @@
   color: var(--menu-foreground-color);
 }
 
-@mixin copyWrapper {
-  @include flexColumn;
+@mixin copyWrapperBase {
   position: relative;
   min-height: $s-32;
   width: $s-156;
