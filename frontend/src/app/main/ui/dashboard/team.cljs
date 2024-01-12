@@ -692,8 +692,11 @@
      [:& header {:section :dashboard-team-invitations
                  :team team}]
      [:section {:class (stl/css :dashboard-container :dashboard-team-invitations)}
-      [:& invitation-section {:team team
-                              :invitations invitations}]]]))
+      ;; TODO: We should consider adding a "loading state" here
+      ;; with an (if (nil? invitations) [:& loading-state] [:& invitations])
+      (when-not (nil? invitations)
+        [:& invitation-section {:team team
+                                :invitations invitations}])]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WEBHOOKS SECTION
