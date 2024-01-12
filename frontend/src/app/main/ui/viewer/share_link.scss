@@ -14,6 +14,7 @@
   left: calc(100vw - $s-512);
   z-index: $z-index-modal;
 }
+
 .share-link-dialog {
   @extend .modal-container-base;
   min-height: unset;
@@ -86,6 +87,7 @@
 
 .description {
   @include titleTipography;
+  color: var(--modal-text-foreground-color);
   margin-bottom: $s-24;
 }
 
@@ -141,7 +143,7 @@
 }
 
 .view-mode {
-  max-height: $s-248;
+  max-height: $s-216;
   overflow: hidden auto;
   scrollbar-gutter: stable;
 }
