@@ -46,43 +46,50 @@
   @include flexRow;
 }
 
-.action-btn {
-  @extend .button-tertiary;
-  height: $s-32;
-  width: $s-28;
-  svg {
-    @extend .button-icon;
+.element-group {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  column-gap: $s-4;
+  .action-btn {
+    @extend .button-tertiary;
+    height: $s-32;
+    width: $s-28;
+    svg {
+      @extend .button-icon;
+    }
   }
 }
 
-.element-group {
-  @include flexRow;
-}
-
 .input-wrapper {
-  @include flexRow;
+  grid-column: span 7;
+  display: grid;
+  grid-template-columns: subgrid;
 }
 
 .format-select {
-  width: $s-60;
+  grid-column: span 2;
   padding: 0;
-}
 
-.dropdown-upwards {
-  bottom: $s-36;
-  width: $s-80;
-  top: unset;
+  .dropdown-upwards {
+    bottom: $s-36;
+    width: $s-80;
+    top: unset;
+  }
 }
 
 .size-select {
-  width: $s-60;
+  grid-column: span 2;
   padding: 0;
+  .dropdown-upwards {
+    bottom: $s-36;
+    top: unset;
+    width: $s-80;
+  }
 }
 
 .suffix-input {
   @extend .input-element;
-  min-width: $s-92;
-  flex-grow: 1;
+  grid-column: span 3;
 }
 
 .export-btn {
