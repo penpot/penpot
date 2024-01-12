@@ -89,12 +89,13 @@
 
 .color-info,
 .color-row-copy-btn {
-  @include copyWrapper;
+  display: flex;
+  max-width: $s-144;
 }
 
 .first-row {
   display: grid;
-  grid-template-columns: 1fr $s-20;
+  grid-template-columns: 1fr $s-24;
   grid-template-areas: "name button";
   height: fit-content;
   width: 100%;
