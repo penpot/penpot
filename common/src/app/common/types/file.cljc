@@ -182,7 +182,7 @@
   [file page libraries shape & {:keys [include-deleted?] :or {include-deleted? false}}]
   (let [root-shape     (ctn/get-copy-root (:objects page) shape)
         component-file (when root-shape
-                         (if (= (:component-file root-shape) (:id file))
+                         (if (and (some? file) (= (:component-file root-shape) (:id file)))
                            file
                            (get libraries (:component-file root-shape))))
         component      (when component-file
@@ -193,7 +193,7 @@
     (if (some? ref-shape)  ; There is a case when we have a nested orphan copy. In this case there is no near
       ref-shape            ; component for this copy, so shape-ref points to the remote main.
       (let [head-shape     (ctn/get-head-shape (:objects page) shape)
-            head-file (if (= (:component-file head-shape) (:id file))
+            head-file (if (and (some? file) (= (:component-file head-shape) (:id file)))
                         file
                         (get libraries (:component-file head-shape)))
             head-component      (when (some? head-file)
