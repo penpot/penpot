@@ -913,9 +913,10 @@
                [:button {:class (stl/css :layout-option) :on-click set-flex} "Flex layout"]
                [:button {:class (stl/css :layout-option) :on-click set-grid} "Grid layout"]]]])
 
-          [:button {:class (stl/css :remove-layout)
-                    :on-click on-remove-layout}
-           i/remove-refactor]]
+          (when has-layout?
+            [:button {:class (stl/css :remove-layout)
+                      :on-click on-remove-layout}
+             i/remove-refactor])]
 
          [:div {:class (stl/css :title-actions)}
           (if ^boolean grid-enabled?
@@ -933,9 +934,10 @@
                       :data-value "flex"
                       :on-click on-set-layout}
              i/add-refactor])
-          [:button {:class (stl/css :remove-layout)
-                    :on-click on-remove-layout}
-           i/remove-refactor]])]]
+          (when has-layout?
+            [:button {:class (stl/css :remove-layout)
+                      :on-click on-remove-layout}
+             i/remove-refactor])])]]
 
      (when (and open? has-layout?)
        (when (not= :multiple layout-type)
