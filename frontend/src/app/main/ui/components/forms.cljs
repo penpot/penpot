@@ -31,7 +31,6 @@
         input-name   (get props :name)
         more-classes (get props :class)
         auto-focus?  (get props :auto-focus? false)
-        placeholder  (or placeholder label)
 
         form         (or form (mf/use-ctx form-ctx))
 
@@ -43,6 +42,7 @@
         is-text?     (or (= @type' "password")
                          (= @type' "text")
                          (= @type' "email"))
+        placeholder  (when is-text? (or placeholder label))
 
         touched?     (get-in @form [:touched input-name])
         error        (get-in @form [:errors input-name])
@@ -87,7 +87,7 @@
             (swap! form assoc-in [:touched input-name] true)))
 
         props (-> props
-                  (dissoc :help-icon :form :trim :children :show-success? :auto-focus?)
+                  (dissoc :help-icon :form :trim :children :show-success? :auto-focus? :label)
                   (assoc :id (name input-name)
                          :value value
                          :auto-focus auto-focus?
@@ -103,6 +103,7 @@
                                                                  "aria-describedby" (dm/str "error-" input-name)))
                   (obj/clj->props))
 
+        checked? (and is-checkbox? (= value true))
         show-valid? (and show-success? touched? (not error))
         show-invalid? (and touched? error)]
 
@@ -124,7 +125,7 @@
                  :for (name input-name)} label
 
          (when is-checkbox?
-           [:span {:class (stl/css-case :global/checked value)} i/status-tick-refactor])
+           [:span {:class (stl/css-case :global/checked checked?)} (when checked? i/status-tick-refactor)])
 
          (if is-checkbox?
            [:> :input props]
