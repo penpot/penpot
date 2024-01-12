@@ -611,7 +611,7 @@
                          :options animation-opts
                          :on-change change-animation-type}]]]
 
-                 ;; Direction
+           ;; Direction
            (when (ctsi/has-way? interaction)
              [:div {:class (stl/css :property-row)}
               [:div {:class (stl/css :inputs-wrapper)}
@@ -624,7 +624,7 @@
                 [:& radio-button {:id "animation-way-out"
                                   :value "out"}]]]])
 
-                 ;; Direction
+           ;; Direction
            (when (ctsi/has-direction? interaction)
              [:div {:class (stl/css :property-row)}
               [:div {:class (stl/css :buttons-wrapper)}
@@ -648,7 +648,7 @@
                                   :id "animation-up"
                                   :value "up"}]]]])
 
-                 ;; Duration
+           ;; Duration
            (when (ctsi/has-duration? interaction)
              [:div {:class (stl/css :property-row)}
               [:span {:class (stl/css :interaction-name)} (tr "workspace.options.interaction-duration")]
@@ -661,7 +661,7 @@
                                    :value (-> interaction :animation :duration)
                                    :title (tr "workspace.options.interaction-ms")}]]])
 
-                 ;; Easing
+           ;; Easing
            (when (ctsi/has-easing? interaction)
              [:div {:class (stl/css :property-row)}
               [:span {:class (stl/css :interaction-name)} (tr "workspace.options.interaction-easing")]
@@ -672,7 +672,7 @@
                            :options easing-options
                            :on-change change-easing}]]])
 
-                 ;; Offset effect
+           ;; Offset effect
            (when (ctsi/has-offset-effect? interaction)
              [:div {:class (stl/css :property-row)}
               [:div {:class (stl/css :checkbox-option)}
