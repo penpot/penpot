@@ -411,8 +411,7 @@
     ::migrations (ig/ref :app.migrations/migrations)}
 
    ::svgo/optimizer
-   {::wrk/executor   (ig/ref ::wrk/executor)
-    ::svgo/max-procs (cf/get :svgo-max-procs)}
+   {}
 
    ::audit.tasks/archive
    {::props              (ig/ref ::setup/props)
