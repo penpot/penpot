@@ -298,7 +298,7 @@
   [path]
   (proxy [FilterInputStream] [(io/input-stream path)]
     (close []
-      (fs/delete path)
+      (ex/ignoring (fs/delete path))
       (proxy-super close))))
 
 (defn- get-object-data
