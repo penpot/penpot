@@ -31,6 +31,7 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.db.sql :as sql]
    [app.features.fdata :as fdata]
    [app.http.sse :as sse]
    [app.media :as media]
@@ -41,6 +42,7 @@
    [app.storage.tmp :as tmp]
    [app.svgo :as svgo]
    [app.util.blob :as blob]
+   [app.util.cache :as cache]
    [app.util.pointer-map :as pmap]
    [app.util.time :as dt]
    [buddy.core.codecs :as bc]
@@ -52,18 +54,17 @@
   "A dynamic var for setting up state for collect stats globally."
   nil)
 
-(def ^:dynamic *skip-on-error*
-  "A dynamic var for setting up the default error behavior."
-  true)
+(def ^:dynamic *cache*
+  "A dynamic var for setting up a cache instance."
+  nil)
+
+(def ^:dynamic *skip-on-graphic-error*
+  "A dynamic var for setting up the default error behavior for graphics processing."
+  nil)
 
 (def ^:dynamic ^:private *system*
   "An internal var for making the current `system` available to all
   internal functions without the need to explicitly pass it top down."
-  nil)
-
-(def ^:dynamic ^:private *max-procs*
-  "A dynamic variable that can optionally indicates the maxumum number
-  of concurrent graphics migration processes."
   nil)
 
 (def ^:dynamic ^:private *file-stats*
@@ -576,37 +577,30 @@
 (defn- collect-and-persist-images
   [svg-data file-id]
   (letfn [(process-image [{:keys [href] :as item}]
-            (try
-              (let [item (if (str/starts-with? href "data:")
-                           (let [[mtype data] (parse-datauri href)
-                                 size         (alength data)
-                                 path         (tmp/tempfile :prefix "penpot.media.download.")
-                                 written      (io/write-to-file! data path :size size)]
+            (let [item (if (str/starts-with? href "data:")
+                         (let [[mtype data] (parse-datauri href)
+                               size         (alength data)
+                               path         (tmp/tempfile :prefix "penpot.media.download.")
+                               written      (io/write-to-file! data path :size size)]
 
-                             (when (not= written size)
-                               (ex/raise :type :internal
-                                         :code :mismatch-write-size
-                                         :hint "unexpected state: unable to write to file"))
+                           (when (not= written size)
+                             (ex/raise :type :internal
+                                       :code :mismatch-write-size
+                                       :hint "unexpected state: unable to write to file"))
 
-                             (-> item
-                                 (assoc :size size)
-                                 (assoc :path path)
-                                 (assoc :filename "tempfile")
-                                 (assoc :mtype mtype)))
+                           (-> item
+                               (assoc :size size)
+                               (assoc :path path)
+                               (assoc :filename "tempfile")
+                               (assoc :mtype mtype)))
 
-                           (let [result (cmd.media/download-image *system* href)]
-                             (-> (merge item result)
-                                 (assoc :name (extract-name href)))))]
+                         (let [result (cmd.media/download-image *system* href)]
+                           (-> (merge item result)
+                               (assoc :name (extract-name href)))))]
 
-                ;; The media processing adds the data to the
-                ;; input map and returns it.
-                (media/run {:cmd :info :input item}))
-
-              (catch Throwable cause
-                (l/warn :hint "unexpected exception on processing internal image shape (skiping)"
-                        :cause cause)
-                (when-not *skip-on-error*
-                  (throw cause)))))
+              ;; The media processing adds the data to the
+              ;; input map and returns it.
+              (media/run {:cmd :info :input item})))
 
           (persist-image [acc {:keys [path size width height mtype href] :as item}]
             (let [storage (::sto/storage *system*)
@@ -642,23 +636,36 @@
                                  (completing persist-image) {}))]
       (assoc svg-data :image-data images))))
 
-(defn- get-svg-content
+(defn- resolve-sobject-id
+  [id]
+  (let [fmobject (db/get *system* :file-media-object {:id id}
+                         {::db/check-deleted false
+                          ::db/remove-deleted false
+                          ::sql/columns [:media-id]})]
+    (:media-id fmobject)))
+
+(defn- get-sobject-content
   [id]
   (let [storage  (::sto/storage *system*)
-        conn     (::db/conn *system*)
-        fmobject (db/get conn :file-media-object {:id id})
-        sobject  (sto/get-object storage (:media-id fmobject))]
-
+        sobject  (sto/get-object storage id)]
     (with-open [stream (sto/get-object-data storage sobject)]
       (slurp stream))))
 
 (defn- create-shapes-for-svg
   [{:keys [id] :as mobj} file-id objects frame-id position]
-  (let [svg-text (get-svg-content id)
-        svg-text (svgo/optimize *system* svg-text)
-        svg-data (-> (csvg/parse svg-text)
-                     (assoc :name (:name mobj))
-                     (collect-and-persist-images file-id))]
+  (let [get-svg (fn [sid]
+                  (let [svg-text (get-sobject-content sid)
+                        svg-text (svgo/optimize *system* svg-text)]
+                    (-> (csvg/parse svg-text)
+                        (assoc :name (:name mobj)))))
+
+        sid      (resolve-sobject-id id)
+
+        svg-data (if (cache/cache? *cache*)
+                   (cache/get *cache* sid get-svg)
+                   (get-svg sid))
+
+        svg-data (collect-and-persist-images file-id)]
 
     (sbuilder/create-svg-shapes svg-data position objects frame-id frame-id #{} false)))
 
@@ -717,42 +724,34 @@
 
 (defn- create-media-grid
   [fdata page-id frame-id grid media-group]
-  (let [process  (fn [mobj position]
-                   (let [position (gpt/add position (gpt/point grid-gap grid-gap))
-                         tp1      (dt/tpoint)]
-                     (try
-                       (process-media-object fdata page-id frame-id mobj position)
-                       (catch Throwable cause
-                         (l/wrn :hint "unable to process file media object (skiping)"
-                                :file-id (str (:id fdata))
-                                :id (str (:id mobj))
-                                :cause cause)
-                         (if-not *skip-on-error*
-                           (throw cause)
-                           nil))
-                       (finally
-                         (l/trc :hint "graphic processed"
-                                :file-id (str (:id fdata))
-                                :media-id (str (:id mobj))
-                                :elapsed (dt/format-duration (tp1)))))))]
+  (letfn [(process [fdata mobj position]
+            (let [position (gpt/add position (gpt/point grid-gap grid-gap))
+                  tp       (dt/tpoint)]
+              (try
+                (let [changes (process-media-object fdata page-id frame-id mobj position)]
+                  (cp/process-changes fdata changes false))
+                (catch Throwable cause
+                  (if *skip-on-graphic-error*
+                    (l/wrn :hint "unable to process file media object (skiping)"
+                           :file-id (str (:id fdata))
+                           :id (str (:id mobj))
+                           :cause cause)
+                    (throw cause))
+                  nil)
+                (finally
+                  (let [elapsed (tp)]
+                    (l/trc :hint "graphic processed"
+                           :file-id (str (:id fdata))
+                           :media-id (str (:id mobj))
+                           :elapsed (dt/format-duration elapsed)))))))]
 
     (->> (d/zip media-group grid)
-         (partition-all (or *max-procs* 1))
-         (mapcat (fn [partition]
-                   (->> partition
-                        (map (fn [[mobj position]]
-                               (sse/tap {:type :migration-progress
-                                         :section :graphics
-                                         :name (:name mobj)})
-                               (p/vthread (process mobj position))))
-                        (doall)
-                        (map deref)
-                        (doall))))
-         (filter some?)
-         (reduce (fn [fdata changes]
-                   (-> (assoc-in fdata [:options :components-v2] true)
-                       (cp/process-changes changes false)))
-                 fdata))))
+         (reduce (fn [fdata [mobj position]]
+                   (sse/tap {:type :migration-progress
+                             :section :graphics
+                             :name (:name mobj)})
+                   (or (process fdata mobj position) fdata))
+                 (assoc-in fdata [:options :components-v2] true)))))
 
 (defn- migrate-graphics
   [fdata]
@@ -832,17 +831,12 @@
       (decode-row)))
 
 (defn- validate-file!
-  [file libs throw-on-validate?]
-  (try
-    (cfv/validate-file! file libs)
-    (cfv/validate-file-schema! file)
-    (catch Throwable cause
-      (if throw-on-validate?
-        (throw cause)
-        (l/wrn :hint "migrate:file:validation-error" :cause cause)))))
+  [file libs]
+  (cfv/validate-file! file libs)
+  (cfv/validate-file-schema! file))
 
 (defn- process-file
-  [{:keys [::db/conn] :as system} id & {:keys [validate? throw-on-validate?]}]
+  [{:keys [::db/conn] :as system} id & {:keys [validate?]}]
   (let [file  (get-file system id)
 
         libs  (->> (files/get-file-libraries conn id)
@@ -855,7 +849,7 @@
                   (update :features conj "components/v2"))
 
         _     (when validate?
-                (validate-file! file libs throw-on-validate?))
+                (validate-file! file libs))
 
         file (if (contains? (:features file) "fdata/objects-map")
                (fdata/enable-objects-map file)
@@ -901,10 +895,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn migrate-file!
-  [system file-id & {:keys [validate? throw-on-validate? max-procs]}]
-  (let [tpoint  (dt/tpoint)]
+  [system file-id & {:keys [validate? skip-on-graphic-error?]}]
+  (let [tpoint (dt/tpoint)]
     (binding [*file-stats* (atom {})
-              *max-procs* max-procs]
+              *skip-on-graphic-error* skip-on-graphic-error?]
       (try
         (l/dbg :hint "migrate:file:start" :file-id (str file-id))
 
@@ -913,9 +907,7 @@
                       (fn [system]
                         (binding [*system* system]
                           (fsnap/take-file-snapshot! system {:file-id file-id :label "migration/components-v2"})
-                          (process-file system file-id
-                                        :validate? validate?
-                                        :throw-on-validate? throw-on-validate?)))))
+                          (process-file system file-id :validate? validate?)))))
         (finally
           (let [elapsed    (tpoint)
                 components (get @*file-stats* :processed/components 0)
@@ -931,7 +923,7 @@
             (some-> *team-stats* (swap! update :processed/files (fnil inc 0)))))))))
 
 (defn migrate-team!
-  [system team-id & {:keys [validate? throw-on-validate? max-procs]}]
+  [system team-id & {:keys [validate? skip-on-graphic-error?]}]
 
   (l/dbg :hint "migrate:team:start"
          :team-id (dm/str team-id))
@@ -941,9 +933,8 @@
         migrate-file
         (fn [system file-id]
           (migrate-file! system file-id
-                         :max-procs max-procs
                          :validate? validate?
-                         :throw-on-validate? throw-on-validate?))
+                         :skip-on-graphics-error? skip-on-graphic-error?))
         migrate-team
         (fn [{:keys [::db/conn] :as system} {:keys [id features] :as team}]
           (let [features (-> features
