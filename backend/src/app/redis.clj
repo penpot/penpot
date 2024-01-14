@@ -91,7 +91,7 @@
 (s/def ::connect? ::us/boolean)
 (s/def ::io-threads ::us/integer)
 (s/def ::worker-threads ::us/integer)
-(s/def ::cache some?)
+(s/def ::cache cache/cache?)
 
 (s/def ::redis
   (s/keys :req [::resources
@@ -168,7 +168,7 @@
 
 (defn- shutdown-resources
   [{:keys [::resources ::cache ::timer]}]
-  (cache/invalidate-all! cache)
+  (cache/invalidate! cache)
 
   (when resources
     (.shutdown ^ClientResources resources))
@@ -211,7 +211,8 @@
 (defn get-or-connect
   [{:keys [::cache] :as state} key options]
   (us/assert! ::redis state)
-  (let [connection (cache/get cache key (fn [_] (connect* state options)))]
+  (let [create     (fn [_] (connect* state options))
+        connection (cache/get cache key create)]
     (-> state
         (dissoc ::cache)
         (assoc ::connection connection))))
