@@ -209,7 +209,6 @@
 (s/def ::telemetry-uri ::us/string)
 (s/def ::telemetry-with-taiga ::us/boolean)
 (s/def ::tenant ::us/string)
-(s/def ::svgo-max-procs ::us/integer)
 
 (s/def ::config
   (s/keys :opt-un [::secret-key
@@ -329,9 +328,7 @@
                    ::telemetry-uri
                    ::telemetry-referer
                    ::telemetry-with-taiga
-                   ::tenant
-
-                   ::svgo-max-procs]))
+                   ::tenant]))
 
 (def default-flags
   [:enable-backend-api-doc
