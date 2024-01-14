@@ -20,6 +20,7 @@
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.logging :as l]
+   [app.common.math :as mth]
    [app.common.svg :as csvg]
    [app.common.svg.shapes-builder :as sbuilder]
    [app.common.types.component :as ctk]
@@ -48,7 +49,8 @@
    [buddy.core.codecs :as bc]
    [cuerdas.core :as str]
    [datoteka.io :as io]
-   [promesa.core :as p]))
+   [promesa.exec :as px]
+   [promesa.util :as pu]))
 
 (def ^:dynamic *stats*
   "A dynamic var for setting up state for collect stats globally."
@@ -65,6 +67,10 @@
 (def ^:dynamic ^:private *system*
   "An internal var for making the current `system` available to all
   internal functions without the need to explicitly pass it top down."
+  nil)
+
+(def ^:dynamic ^:private *team-id*
+  "A dynamic var that holds the current processing team-id."
   nil)
 
 (def ^:dynamic ^:private *file-stats*
@@ -575,32 +581,40 @@
     (if (> ext-idx 0) (subs filename 0 ext-idx) filename)))
 
 (defn- collect-and-persist-images
-  [svg-data file-id]
+  [svg-data file-id media-id]
   (letfn [(process-image [{:keys [href] :as item}]
-            (let [item (if (str/starts-with? href "data:")
-                         (let [[mtype data] (parse-datauri href)
-                               size         (alength data)
-                               path         (tmp/tempfile :prefix "penpot.media.download.")
-                               written      (io/write-to-file! data path :size size)]
+            (try
+              (let [item (if (str/starts-with? href "data:")
+                           (let [[mtype data] (parse-datauri href)
+                                 size         (alength data)
+                                 path         (tmp/tempfile :prefix "penpot.media.download.")
+                                 written      (io/write-to-file! data path :size size)]
 
-                           (when (not= written size)
-                             (ex/raise :type :internal
-                                       :code :mismatch-write-size
-                                       :hint "unexpected state: unable to write to file"))
+                             (when (not= written size)
+                               (ex/raise :type :internal
+                                         :code :mismatch-write-size
+                                         :hint "unexpected state: unable to write to file"))
 
-                           (-> item
-                               (assoc :size size)
-                               (assoc :path path)
-                               (assoc :filename "tempfile")
-                               (assoc :mtype mtype)))
+                             (-> item
+                                 (assoc :size size)
+                                 (assoc :path path)
+                                 (assoc :filename "tempfile")
+                                 (assoc :mtype mtype)))
 
-                         (let [result (cmd.media/download-image *system* href)]
-                           (-> (merge item result)
-                               (assoc :name (extract-name href)))))]
+                           (let [result (cmd.media/download-image *system* href)]
+                             (-> (merge item result)
+                                 (assoc :name (extract-name href)))))]
 
-              ;; The media processing adds the data to the
-              ;; input map and returns it.
-              (media/run {:cmd :info :input item})))
+                ;; The media processing adds the data to the
+                ;; input map and returns it.
+                (media/run {:cmd :info :input item}))
+              (catch Throwable _
+                (let [team-id *team-id*]
+                  (l/wrn :hint "unable to process embedded images on svg file"
+                         :team-id (str team-id)
+                         :file-id (str file-id)
+                         :media-id (str media-id)))
+                nil)))
 
           (persist-image [acc {:keys [path size width height mtype href] :as item}]
             (let [storage (::sto/storage *system*)
@@ -639,9 +653,7 @@
 (defn- resolve-sobject-id
   [id]
   (let [fmobject (db/get *system* :file-media-object {:id id}
-                         {::db/check-deleted false
-                          ::db/remove-deleted false
-                          ::sql/columns [:media-id]})]
+                         {::sql/columns [:media-id]})]
     (:media-id fmobject)))
 
 (defn- get-sobject-content
@@ -660,12 +672,11 @@
                         (assoc :name (:name mobj)))))
 
         sid      (resolve-sobject-id id)
-
         svg-data (if (cache/cache? *cache*)
-                   (cache/get *cache* sid get-svg)
+                   (cache/get *cache* sid (px/wrap-bindings get-svg))
                    (get-svg sid))
 
-        svg-data (collect-and-persist-images file-id)]
+        svg-data (collect-and-persist-images svg-data file-id id)]
 
     (sbuilder/create-svg-shapes svg-data position objects frame-id frame-id #{} false)))
 
@@ -724,25 +735,49 @@
 
 (defn- create-media-grid
   [fdata page-id frame-id grid media-group]
-  (letfn [(process [fdata mobj position]
+  (letfn [(process-media-object [fdata mobj position]
             (let [position (gpt/add position (gpt/point grid-gap grid-gap))
-                  tp       (dt/tpoint)]
+                  tp       (dt/tpoint)
+                  err      (volatile! false)]
               (try
                 (let [changes (process-media-object fdata page-id frame-id mobj position)]
                   (cp/process-changes fdata changes false))
+
                 (catch Throwable cause
-                  (if *skip-on-graphic-error*
-                    (l/wrn :hint "unable to process file media object (skiping)"
-                           :file-id (str (:id fdata))
-                           :id (str (:id mobj))
-                           :cause cause)
-                    (throw cause))
-                  nil)
+                  (vreset! err true)
+                  (let [cause (pu/unwrap-exception cause)
+                        edata (ex-data cause)
+                        team-id *team-id*]
+                    (cond
+                      (instance? org.xml.sax.SAXParseException cause)
+                      (l/inf :hint "skip processing media object: invalid svg found"
+                             :team-id (str team-id)
+                             :file-id (str (:id fdata))
+                             :id (str (:id mobj)))
+
+                      (= (:type edata) :not-found)
+                      (l/inf :hint "skip processing media object: underlying object does not exist"
+                             :team-id (str team-id)
+                             :file-id (str (:id fdata))
+                             :id (str (:id mobj)))
+
+                      :else
+                      (let [skip? *skip-on-graphic-error*]
+                        (l/wrn :hint "unable to process file media object"
+                               :skiped skip?
+                               :team-id (str team-id)
+                               :file-id (str (:id fdata))
+                               :id (str (:id mobj))
+                               :cause cause)
+                        (when-not skip?
+                          (throw cause))))
+                    nil))
                 (finally
                   (let [elapsed (tp)]
                     (l/trc :hint "graphic processed"
                            :file-id (str (:id fdata))
                            :media-id (str (:id mobj))
+                           :error @err
                            :elapsed (dt/format-duration elapsed)))))))]
 
     (->> (d/zip media-group grid)
@@ -750,7 +785,8 @@
                    (sse/tap {:type :migration-progress
                              :section :graphics
                              :name (:name mobj)})
-                   (or (process fdata mobj position) fdata))
+                   (or (process-media-object fdata mobj position)
+                       fdata))
                  (assoc-in fdata [:options :components-v2] true)))))
 
 (defn- migrate-graphics
@@ -822,7 +858,6 @@
         (update :data fdata/process-pointers deref)
         (fmg/migrate-file))))
 
-
 (defn- get-team
   [system team-id]
   (-> (db/get system :team {:id team-id}
@@ -870,12 +905,13 @@
 
     (dissoc file :data)))
 
-
 (def ^:private sql:get-and-lock-team-files
   "SELECT f.id
      FROM file AS f
      JOIN project AS p ON (p.id = f.project_id)
     WHERE p.team_id = ?
+      AND p.deleted_at IS NULL
+      AND f.deleted_at IS NULL
       FOR UPDATE")
 
 (defn- get-and-lock-files
@@ -900,14 +936,26 @@
     (binding [*file-stats* (atom {})
               *skip-on-graphic-error* skip-on-graphic-error?]
       (try
-        (l/dbg :hint "migrate:file:start" :file-id (str file-id))
+        (l/dbg :hint "migrate:file:start"
+               :file-id (str file-id)
+               :validate validate?
+               :skip-on-graphics-error skip-on-graphic-error?)
 
         (let [system (update system ::sto/storage media/configure-assets-storage)]
           (db/tx-run! system
                       (fn [system]
-                        (binding [*system* system]
-                          (fsnap/take-file-snapshot! system {:file-id file-id :label "migration/components-v2"})
-                          (process-file system file-id :validate? validate?)))))
+                        (try
+                          (binding [*system* system]
+                            (fsnap/take-file-snapshot! system {:file-id file-id :label "migration/components-v2"})
+                            (process-file system file-id :validate? validate?))
+
+                          (catch Throwable cause
+                            (let [team-id *team-id*]
+                              (l/wrn :hint "error on processing file"
+                                     :team-id (str team-id)
+                                     :file-id (str file-id))
+                              (throw cause)))))))
+
         (finally
           (let [elapsed    (tpoint)
                 components (get @*file-stats* :processed/components 0)
@@ -917,6 +965,7 @@
                    :file-id (str file-id)
                    :graphics graphics
                    :components components
+                   :validate validate?
                    :elapsed (dt/format-duration elapsed))
 
             (some-> *stats* (swap! update :processed/files (fnil inc 0)))
@@ -929,6 +978,7 @@
          :team-id (dm/str team-id))
 
   (let [tpoint (dt/tpoint)
+        err    (volatile! false)
 
         migrate-file
         (fn [system file-id]
@@ -948,7 +998,8 @@
 
             (update-team-features! conn id features)))]
 
-    (binding [*team-stats* (atom {})]
+    (binding [*team-stats* (atom {})
+              *team-id* team-id]
       (try
         (db/tx-run! system (fn [system]
                              (db/exec-one! system ["SET idle_in_transaction_session_timeout = 0"])
@@ -956,6 +1007,10 @@
                                (if (contains? (:features team) "components/v2")
                                  (l/inf :hint "team already migrated")
                                  (migrate-team system team)))))
+        (catch Throwable cause
+          (vreset! err true)
+          (throw cause))
+
         (finally
           (let [elapsed    (tpoint)
                 components (get @*team-stats* :processed/components 0)
@@ -964,9 +1019,21 @@
 
             (some-> *stats* (swap! update :processed/teams (fnil inc 0)))
 
-            (l/dbg :hint "migrate:team:end"
-                   :team-id (dm/str team-id)
-                   :files files
-                   :components components
-                   :graphics graphics
-                   :elapsed (dt/format-duration elapsed))))))))
+            (if (cache/cache? *cache*)
+              (let [cache-stats (cache/stats *cache*)]
+                (l/dbg :hint "migrate:team:end"
+                       :team-id (dm/str team-id)
+                       :files files
+                       :components components
+                       :graphics graphics
+                       :crt (mth/to-fixed (:hit-rate cache-stats) 2)
+                       :crq (str (:req-count cache-stats))
+                       :error @err
+                       :elapsed (dt/format-duration elapsed)))
+
+              (l/dbg :hint "migrate:team:end"
+                     :team-id (dm/str team-id)
+                     :files files
+                     :components components
+                     :graphics graphics
+                     :elapsed (dt/format-duration elapsed)))))))))
