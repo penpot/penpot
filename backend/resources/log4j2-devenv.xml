@@ -30,7 +30,7 @@
     <Logger name="app.util.websocket" level="info" />
     <Logger name="app.redis" level="info" />
     <Logger name="app.rpc.rlimit" level="info" />
-    <Logger name="app.rpc.climit" level="info" />
+    <Logger name="app.rpc.climit" level="debug" />
     <Logger name="app.common.files.migrations" level="info" />
 
     <Logger name="app.loggers" level="debug" additivity="false">
