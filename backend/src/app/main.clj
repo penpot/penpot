@@ -301,7 +301,8 @@
     ::sto/storage  (ig/ref ::sto/storage)}
 
    :app.rpc/climit
-   {::mtx/metrics  (ig/ref ::mtx/metrics)}
+   {::mtx/metrics  (ig/ref ::mtx/metrics)
+    ::wrk/executor (ig/ref ::wrk/executor)}
 
    :app.rpc/rlimit
    {::wrk/executor (ig/ref ::wrk/executor)}

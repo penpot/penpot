@@ -36,24 +36,14 @@
   (-> (str id)
       (subs 1)))
 
-(defn- create-bulkhead-cache
-  [config]
-  (letfn [(load-fn [[id skey]]
-            (when-let [config (get config id)]
-              (l/trc :hint "insert into cache" :id (id->str id) :key skey)
-              (pbh/create :permits (or (:permits config) (:concurrency config))
-                          :queue (or (:queue config) (:queue-size config))
-                          :timeout (:timeout config)
-                          :type :semaphore)))
-
-          (on-remove [key _ cause]
+(defn- create-cache
+  [{:keys [::wrk/executor]}]
+  (letfn [(on-remove [key _ cause]
             (let [[id skey] key]
-              (l/trc :hint "evict from cache" :id (id->str id) :key skey :reason (str cause))))]
-
-    (cache/create :executor :same-thread
+              (l/dbg :hint "destroy limiter" :id (id->str id) :key skey :reason (str cause))))]
+    (cache/create :executor executor
                   :on-remove on-remove
-                  :keepalive "5m"
-                  :load-fn load-fn)))
+                  :keepalive "5m")))
 
 (s/def ::config/permits ::us/integer)
 (s/def ::config/queue ::us/integer)
@@ -70,7 +60,7 @@
 
 (s/def ::path ::fs/path)
 (defmethod ig/pre-init-spec ::rpc/climit [_]
-  (s/keys :req [::mtx/metrics ::path]))
+  (s/keys :req [::mtx/metrics ::wrk/executor ::path]))
 
 (defmethod ig/init-key ::rpc/climit
   [_ {:keys [::path ::mtx/metrics] :as cfg}]
@@ -78,7 +68,7 @@
     (when-let [params (some->> path slurp edn/read-string)]
       (l/inf :hint "initializing concurrency limit" :config (str path))
       (us/verify! ::config params)
-      {::cache (create-bulkhead-cache params)
+      {::cache (create-cache cfg)
        ::config params
        ::mtx/metrics metrics})))
 
@@ -89,13 +79,17 @@
 (s/def ::rpc/climit
   (s/nilable ::instance))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; PUBLIC API
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn- create-limiter
+  [config [id skey]]
+  (l/dbg :hint "create limiter" :id (id->str id) :key skey)
+  (pbh/create :permits (or (:permits config) (:concurrency config))
+              :queue (or (:queue config) (:queue-size config))
+              :timeout (:timeout config)
+              :type :semaphore))
 
-(defn invoke!
-  [cache metrics id key f]
-  (if-let [limiter (cache/get cache [id key])]
+(defn- invoke!
+  [config cache metrics id key f]
+  (if-let [limiter (cache/get cache [id key] (partial create-limiter config))]
     (let [tpoint  (dt/tpoint)
           labels  (into-array String [(id->str id)])
           wrapped (fn []
@@ -147,7 +141,7 @@
                  :queue (:queue stats)
                  :max-permits (:max-permits stats)
                  :max-queue (:max-queue stats))
-          (pbh/invoke! limiter wrapped))
+          (px/invoke! limiter wrapped))
         (catch ExceptionInfo cause
           (let [{:keys [type code]} (ex-data cause)]
             (if (= :bulkhead-error type)
@@ -160,8 +154,42 @@
           (measure! (pbh/get-stats limiter)))))
 
     (do
-      (l/wrn :hint "unable to load limiter" :id (id->str id))
+      (l/wrn :hint "no limiter found" :id (id->str id))
       (f))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; MIDDLEWARE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def noop-fn (constantly nil))
+
+(defn wrap
+  [{:keys [::rpc/climit ::mtx/metrics]} f {:keys [::id ::key-fn] :or {key-fn noop-fn} :as mdata}]
+  (if (and (some? climit) (some? id))
+    (let [cache  (::cache climit)
+          config (::config climit)]
+      (if-let [config (get config id)]
+        (do
+          (l/dbg :hint "instrumenting method"
+                 :limit (id->str id)
+                 :service-name (::sv/name mdata)
+                 :timeout (:timeout config)
+                 :permits (:permits config)
+                 :queue (:queue config)
+                 :keyed? (not= key-fn noop-fn))
+
+          (fn [cfg params]
+            (invoke! config cache metrics id (key-fn params) (partial f cfg params))))
+
+        (do
+          (l/wrn :hint "no config found for specified queue" :id (id->str id))
+          f)))
+
+    f))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; PUBLIC API
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn configure
   [{:keys [::rpc/climit]} id]
@@ -171,37 +199,14 @@
 (defn run!
   "Run a function in context of climit.
   Intended to be used in virtual threads."
-  ([{:keys [::id ::cache ::mtx/metrics]} f]
-   (if (and cache id)
-     (invoke! cache metrics id nil f)
+  ([{:keys [::id ::cache ::config ::mtx/metrics]} f]
+   (if-let [config (get config id)]
+     (invoke! config cache metrics id nil f)
      (f)))
 
-  ([{:keys [::id ::cache ::mtx/metrics]} f executor]
+  ([{:keys [::id ::cache ::config ::mtx/metrics]} f executor]
    (let [f #(p/await! (px/submit! executor f))]
-     (if (and cache id)
-       (invoke! cache metrics id nil f)
+     (if-let [config (get config id)]
+       (invoke! config cache metrics id nil f)
        (f)))))
 
-(def noop-fn (constantly nil))
-
-(defn wrap
-  [{:keys [::rpc/climit ::mtx/metrics]} f {:keys [::id ::key-fn] :or {key-fn noop-fn} :as mdata}]
-  (if (and (some? climit) (some? id))
-    (if-let [config (get-in climit [::config id])]
-      (let [cache (::cache climit)]
-        (l/dbg :hint "instrumenting method"
-               :limit (id->str id)
-               :service-name (::sv/name mdata)
-               :timeout (:timeout config)
-               :permits (:permits config)
-               :queue (:queue config)
-               :keyed? (not= key-fn noop-fn))
-
-        (fn [cfg params]
-          (invoke! cache metrics id (key-fn params) (partial f cfg params))))
-
-      (do
-        (l/wrn :hint "no config found for specified queue" :id (id->str id))
-        f))
-
-    f))
