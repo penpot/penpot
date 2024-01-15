@@ -14,7 +14,9 @@
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
+   [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
    [app.util.router :as rt]
    [beicon.v2.core :as rx]
    [cljs.spec.alpha :as s]
@@ -74,6 +76,15 @@
                              :validators [(fm/validate-not-empty :name (tr "auth.name.not-all-space"))
                                           (fm/validate-length :name fm/max-length-allowed (tr "auth.name.too-long"))]
                              :initial initial)
+        handle-keydown
+        (mf/use-callback
+         (mf/deps)
+         (fn [e]
+           (when (kbd/enter? e)
+             (dom/prevent-default e)
+             (dom/stop-propagation e)
+             (on-submit form e))))
+
         on-close #(st/emit! (modal/hide))]
 
     [:div {:class (stl/css :modal-overlay)}
@@ -97,7 +108,8 @@
                       :form form
                       :name :name
                       :placeholder "E.g. Design"
-                      :label (tr "labels.create-team.placeholder")}]]
+                      :label (tr "labels.create-team.placeholder")
+                      :on-key-down handle-keydown}]]
 
        [:div {:class (stl/css :modal-footer)}
         [:div {:class (stl/css :action-buttons)}

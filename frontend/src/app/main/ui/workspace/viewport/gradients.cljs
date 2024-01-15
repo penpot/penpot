@@ -118,7 +118,7 @@
            :on-pointer-up on-pointer-up}]])
 
 (mf/defc gradient-handler-transformed
-  [{:keys [from-p to-p width-p from-color to-color zoom editing
+  [{:keys [from-p to-p width-p from-color to-color zoom editing transform
            on-change-start on-change-finish on-change-width]}]
   (let [moving-point (mf/use-var nil)
         angle (+ 90 (gpt/angle from-p to-p))
@@ -151,7 +151,7 @@
           (reset! moving-point nil))]
 
     (mf/use-effect
-     (mf/deps @moving-point from-p to-p width-p)
+     (mf/deps @moving-point from-p to-p width-p transform)
      (fn []
        (let [subs (->> st/stream
                        (rx/filter mse/pointer-event?)
@@ -159,17 +159,18 @@
                        (rx/map mse/get-pointer-position)
                        (rx/subs!
                         (fn [pt]
-                          (case @moving-point
-                            :from-p  (when on-change-start (on-change-start pt))
-                            :to-p    (when on-change-finish (on-change-finish pt))
-                            :width-p (when on-change-width
-                                       (let [width-v (gpt/unit (gpt/to-vec from-p width-p))
-                                             distance (gpt/point-line-distance pt from-p to-p)
-                                             new-width-p (gpt/add
-                                                          from-p
-                                                          (gpt/multiply width-v (gpt/point distance)))]
-                                         (on-change-width new-width-p)))
-                            nil))))]
+                          (let [pt (gpt/transform pt transform)]
+                            (case @moving-point
+                              :from-p  (when on-change-start (on-change-start pt))
+                              :to-p    (when on-change-finish (on-change-finish pt))
+                              :width-p (when on-change-width
+                                         (let [width-v (gpt/unit (gpt/to-vec from-p width-p))
+                                               distance (gpt/point-line-distance pt from-p to-p)
+                                               new-width-p (gpt/add
+                                                            from-p
+                                                            (gpt/multiply width-v (gpt/point distance)))]
+                                           (on-change-width new-width-p)))
+                              nil)))))]
          (fn [] (rx/dispose! subs)))))
     [:g.gradient-handlers
      [:defs
@@ -295,6 +296,7 @@
       :width-p (when (= :radial (:type gradient)) width-p)
       :from-color {:value start-color :opacity start-opacity}
       :to-color {:value end-color :opacity end-opacity}
+      :transform transform
       :zoom zoom
       :on-change-start on-change-start
       :on-change-finish on-change-finish

@@ -15,6 +15,7 @@
 }
 
 .viewer-content {
+  overflow: hidden;
   grid-row: 2 / span 1;
   display: grid;
   grid-template-rows: $s-252 auto;

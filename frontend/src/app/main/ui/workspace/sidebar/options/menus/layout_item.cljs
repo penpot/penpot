@@ -407,7 +407,7 @@
           [:div {:class (stl/css :row)}
            [:& align-self-row {:is-col? is-col?
                                :align-self align-self
-                               :on-changer set-align-self}]])
+                               :on-change set-align-self}]])
 
         (when is-layout-child?
           [:div {:class (stl/css :row)}

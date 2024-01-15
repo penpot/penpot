@@ -87,7 +87,7 @@
             (swap! form assoc-in [:touched input-name] true)))
 
         props (-> props
-                  (dissoc :help-icon :form :trim :children :show-success?)
+                  (dissoc :help-icon :form :trim :children :show-success? :auto-focus?)
                   (assoc :id (name input-name)
                          :value value
                          :auto-focus auto-focus?

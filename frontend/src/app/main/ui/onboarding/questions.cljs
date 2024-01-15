@@ -114,6 +114,13 @@
   (s/keys :req-un [::experience-design-tool]
           :opt-un [::experience-design-tool-other]))
 
+(defn- step-1-form-validator
+  [errors data]
+  (let [planning (-> (:planning data) (str/trim))]
+    (cond-> errors
+      (= planning "")
+      (assoc :planning {:code "missing"}))))
+
 (defn- step-3-form-validator
   [errors data]
   (let [experience-design-tool (:experience-design-tool data)
@@ -209,6 +216,7 @@
         ;; and we want to keep the filled info
         step-1-form (fm/use-form
                      :initial {}
+                     :validators [step-1-form-validator]
                      :spec ::questions-form-step-1)
         step-2-form (fm/use-form
                      :initial {}

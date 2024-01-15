@@ -7,6 +7,7 @@
 (ns app.common.geom.shapes.bool
   (:require
    [app.common.data :as d]
+   [app.common.files.helpers :as cpf]
    [app.common.svg.path.bool :as pb]
    [app.common.svg.path.shapes-to-path :as stp]))
 
@@ -16,6 +17,7 @@
   (let [extract-content-xf
         (comp (map (d/getf objects))
               (filter (comp not :hidden))
+              (remove cpf/svg-raw-shape?)
               (map #(stp/convert-to-path % objects))
               (map :content))
 
