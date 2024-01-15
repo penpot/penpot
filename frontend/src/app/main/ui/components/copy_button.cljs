@@ -25,7 +25,7 @@
          (let [sub (timers/schedule 1000 #(reset! just-copied false))]
            ;; On unmount we dispose the timer
            #(rx/-dispose sub)))))
-    [:button {:class (dm/str class " " (stl/css-case :copy-button true
+    [:button {:class (dm/str class " " (stl/css-case :copy-button  (not (some? children))
                                                      :copy-wrapper (some? children)))
               :on-click #(when-not @just-copied
                            (reset! just-copied true)

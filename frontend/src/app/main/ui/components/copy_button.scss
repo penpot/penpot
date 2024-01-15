@@ -10,7 +10,7 @@
   @include buttonStyle;
   @include flexCenter;
   height: $s-32;
-  width: $s-28;
+  width: $s-32;
   border: $s-1 solid transparent;
   border-radius: $br-8;
   background-color: transparent;
@@ -46,32 +46,50 @@
       stroke: var(--button-tertiary-foreground-color-active);
     }
   }
+}
 
-  &.copy-wrapper {
-    @include copyWrapper;
-    height: fit-content;
-    text-align: left;
+.copy-wrapper {
+  @include buttonStyle;
+  @include copyWrapperBase;
+  display: grid;
+  grid-template-columns: 1fr $s-24;
+  grid-template-areas: "name button";
+  width: 100%;
+  height: fit-content;
+  text-align: left;
+  .icon-btn {
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    top: 0;
+    right: 0;
+    height: $s-32;
+    width: $s-32;
+    svg {
+      @extend .button-icon-small;
+      display: none;
+    }
+  }
+  &:hover {
     .icon-btn {
-      position: absolute;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      top: 0;
-      right: 0;
-      height: 32px;
-      width: 28px;
       svg {
-        @extend .button-icon-small;
-        display: none;
+        display: flex;
+        stroke: var(--button-tertiary-foreground-color-active);
       }
     }
-    &:hover {
-      .icon-btn {
-        svg {
-          display: flex;
-          stroke: var(--button-tertiary-foreground-color-active);
-        }
-      }
-    }
+  }
+
+  &:hover {
+    background-color: var(--color-background-tertiary);
+    color: var(--color-foreground-primary);
+    border: $s-1 solid var(--color-background-tertiary);
+  }
+  &:focus,
+  &:focus-visible {
+    outline: none;
+    border: $s-1 solid var(--button-tertiary-border-color-focus);
+    background-color: transparent;
+    color: var(--button-tertiary-foreground-color-focus);
   }
 }

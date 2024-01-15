@@ -56,7 +56,7 @@
 
 (sm/define! ::gradient
   [:map {:title "Gradient"}
-   [:type [::sm/one-of #{:linear :radial "linear" "radial"}]]
+   [:type [::sm/one-of #{:linear :radial}]]
    [:start-x ::sm/safe-number]
    [:start-y ::sm/safe-number]
    [:end-x ::sm/safe-number]

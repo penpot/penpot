@@ -73,6 +73,9 @@
     text-transform: uppercase;
     font-size: $fs-11;
   }
+  &.register a {
+    @extend .button-primary;
+  }
 }
 
 .forgot-password {

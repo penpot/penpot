@@ -275,10 +275,6 @@
         (mf/use-fn
          #(st/emit! (rt/nav :auth-register {} params)))
 
-        on-pass-recovery
-        (mf/use-fn
-         #(st/emit! (rt/nav :auth-recovery-request)))
-
         on-create-demo-profile
         (mf/use-fn
          #(st/emit! (du/create-demo-profile)))]
@@ -292,13 +288,6 @@
      [:& login-methods {:params params}]
 
      [:div {:class (stl/css :links)}
-      (when (or (contains? cf/flags :login)
-                (contains? cf/flags :login-with-password))
-        [:div {:class (stl/css :link-entry :register)}
-         [:& lk/link {:action on-pass-recovery
-                      :data-test "forgot-password"}
-          (tr "auth.forgot-password")]])
-
       (when (contains? cf/flags :registration)
         [:div {:class (stl/css :link-entry :register)}
          [:span (tr "auth.register") " "]

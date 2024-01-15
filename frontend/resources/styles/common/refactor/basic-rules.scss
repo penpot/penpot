@@ -769,10 +769,6 @@
   @include titleTipography;
   color: var(--color-foreground-primary);
   text-align: left;
-  display: grid;
-  grid-template-columns: 1fr 22px;
-  grid-template-areas: "name button";
-  width: 100%;
   margin: 0;
   padding: 0;
   height: fit-content;

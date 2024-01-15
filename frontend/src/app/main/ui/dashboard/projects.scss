@@ -203,7 +203,6 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-
     flex-grow: 1;
     padding: $s-20 $s-20;
   }
@@ -222,7 +221,7 @@
     a {
       color: $da-primary;
     }
-    padding-top: $s-8;
+    padding: $s-8 0;
   }
   .close {
     position: absolute;
@@ -249,8 +248,11 @@
     height: $s-200;
     overflow: hidden;
     border-radius: $br-4;
+    @media (max-width: 1200px) {
+      display: none;
+      width: 0;
+    }
   }
-
   img {
     border-radius: $br-4;
     height: $s-200;

@@ -827,7 +827,7 @@
             0)))))
 
 (defn- add-component-for-swap
-  [shape file-id id-new-component target-cell]
+  [shape file-id id-new-component index target-cell]
   (dm/assert! (uuid? id-new-component))
   (dm/assert! (uuid? file-id))
   (ptk/reify ::add-component-for-swap
@@ -837,7 +837,6 @@
             libraries (wsh/get-libraries state)
 
             objects   (:objects page)
-            index     (find-shape-index objects (:parent-id shape) (:id shape))
             position  (gpt/point (:x shape) (:y shape))
             changes   (-> (pcb/empty-changes it (:id page))
                           (pcb/with-objects objects))
@@ -877,9 +876,11 @@
 
             ;; If the target parent is a grid layout we need to pass the target cell
             target-cell (when (ctl/grid-layout? parent)
-                          (ctl/get-cell-by-shape-id parent (:id shape)))]
+                          (ctl/get-cell-by-shape-id parent (:id shape)))
+
+            index (find-shape-index objects (:parent-id shape) (:id shape))]
         (rx/of (dwsh/delete-shapes nil (d/ordered-set (:id shape)) {:component-swap true})
-               (add-component-for-swap shape file-id id-new-component target-cell)
+               (add-component-for-swap shape file-id id-new-component index target-cell)
                (ptk/data-event :layout/update [(:parent-id shape)]))))))
 
 (defn component-multi-swap

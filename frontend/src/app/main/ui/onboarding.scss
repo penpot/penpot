@@ -64,6 +64,7 @@
 
 .modal-text {
   @include titleTipography;
+  color: var(--modal-text-foreground-color);
 }
 
 .property-block {

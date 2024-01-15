@@ -362,6 +362,7 @@
   min-height: $s-32;
   border-radius: $br-8;
   padding: $s-0 $s-2;
+  color: var(--input-foreground-color);
   &:focus,
   &:focus-within {
     outline: none;

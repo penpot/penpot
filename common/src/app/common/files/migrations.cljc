@@ -671,3 +671,31 @@
 (defmethod migrate 37
   [data]
   (d/without-nils data))
+
+(defmethod migrate 38
+  [data]
+  (letfn [(fix-gradient [{:keys [type] :as gradient}]
+            (if (string? type)
+              (assoc gradient :type (keyword type))
+              gradient))
+
+          (update-fill [fill]
+            (d/update-when fill :fill-color-gradient fix-gradient))
+
+          (update-object [object]
+            (d/update-when object :fills #(mapv update-fill %)))
+
+          (update-shape [shape]
+            (let [shape (update-object shape)]
+              (if (cfh/text-shape? shape)
+                (-> shape
+                    (update :content (partial txt/transform-nodes identity update-fill))
+                    (d/update-when :position-data #(mapv update-object %)))
+                shape)))
+
+          (update-container [container]
+            (update container :objects update-vals update-shape))]
+
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))

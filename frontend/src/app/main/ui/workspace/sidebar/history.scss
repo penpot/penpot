@@ -64,7 +64,7 @@
 }
 
 .history-entries {
-  height: 100%;
+  height: calc(100vh - $s-100);
   padding: $s-12;
   overflow-x: hidden;
   overflow-y: auto;
