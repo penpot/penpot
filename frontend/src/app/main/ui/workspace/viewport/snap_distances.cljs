@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cph]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
@@ -212,9 +213,9 @@
         gt-side (if (= coord :x) :right :bottom)
 
         vbox  (deref refs/vbox)
-        areas (gsh/get-areas
-               (or (grc/clip-rect (dm/get-prop frame :selrect) vbox) vbox)
-               selrect)
+        frame-sr (when-not (cph/root? frame) (dm/get-prop frame :selrect))
+        bounds (d/nilv (grc/clip-rect frame-sr vbox) vbox)
+        areas (gsh/get-areas bounds selrect)
 
         query-side
         (fn [side]

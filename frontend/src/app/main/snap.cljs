@@ -210,8 +210,9 @@
 
 (defn search-snap-distance [selrect coord shapes-lt shapes-gt zoom]
   (->> (rx/combine-latest shapes-lt shapes-gt)
-       (rx/map (fn [[shapes-lt shapes-gt]]
-                 (calculate-snap coord selrect shapes-lt shapes-gt zoom)))))
+       (rx/map
+        (fn [[shapes-lt shapes-gt]]
+          (calculate-snap coord selrect shapes-lt shapes-gt zoom)))))
 
 (defn select-shapes-area
   [page-id frame-id selected objects area]
@@ -233,12 +234,12 @@
          (rx/merge-map
           (fn [[frame selrect]]
             (let [vbox     (deref refs/vbox)
+
                   frame-id (->> shapes first :frame-id)
+                  frame-sr (when-not (cfh/root? frame) (dm/get-prop frame :selrect))
+                  bounds (d/nilv (grc/clip-rect frame-sr vbox) vbox)
                   selected (into #{} (map :id shapes))
-                  areas (->> (gsh/get-areas
-                              (or (grc/clip-rect (dm/get-prop frame :selrect) vbox)
-                                  vbox)
-                              selrect)
+                  areas (->> (gsh/get-areas bounds selrect)
                              (d/mapm #(select-shapes-area page-id frame-id selected objects %2)))
                   snap-x (search-snap-distance selrect :x (:left areas) (:right areas) zoom)
                   snap-y (search-snap-distance selrect :y (:top areas) (:bottom areas) zoom)]
