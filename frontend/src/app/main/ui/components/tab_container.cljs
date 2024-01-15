@@ -19,7 +19,7 @@
 (mf/defc tab-element
   {::mf/wrap-props false}
   [{:keys [children]}]
-  [:div {:class (stl/css :tab-element)} children])
+  children)
 
 (mf/defc tab-container
   {::mf/wrap-props false}
@@ -41,8 +41,8 @@
                        (when (fn? on-change-tab)
                          (on-change-tab id)))))]
 
-    [:div {:class (stl/css :tab-container)}
-     [:div {:class (dm/str header-class " " (stl/css :tab-container-tabs))}
+    [:section {:class (stl/css :tab-container)}
+     [:header {:class (dm/str header-class " " (stl/css :tab-container-tabs))}
       (when ^boolean collapsable
         [:button
          {:on-click handle-collapse

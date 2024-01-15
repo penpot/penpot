@@ -41,6 +41,7 @@
 
         section        (cond (or mode-inspect? (contains? layout :layers)) :layers
                              (contains? layout :assets) :assets)
+
         shortcuts?     (contains? layout :shortcuts)
         show-debug?    (contains? layout :debug-panel)
 
@@ -65,44 +66,54 @@
                                   :global/three-row (and (> size 300) (<= size 400))
                                   :global/four-row  (> size 400))
              :style #js {"--width" (dm/str size "px")}}
-     [:& left-header {:file file :layout layout :project project :page-id page-id}]
+
+     [:& left-header {:file file :layout layout :project project :page-id page-id
+                      :class (stl/css :left-header)}]
+
      [:div {:on-pointer-down on-pointer-down
             :on-lost-pointer-capture on-lost-pointer-capture
             :on-pointer-move on-pointer-move
             :class (stl/css :resize-area)}]
-     [:div {:class (stl/css :settings-bar-inside)}
+     [:*
       (cond
         (true? shortcuts?)
-        [:& shortcuts-container]
+        [:& shortcuts-container {:class (stl/css :settings-bar-content)}]
 
         (true? show-debug?)
-        [:& debug-panel]
+        [:& debug-panel {:class (stl/css :settings-bar-content)}]
 
         :else
-        [:div  {:class (stl/css :tabs-wrapper)}
+        [:div {:class (stl/css  :settings-bar-content)}
          [:& tab-container
           {:on-change-tab on-tab-change
            :selected section
            :collapsable true
            :handle-collapse handle-collapse
            :header-class (stl/css :tab-spacing)}
-          [:& tab-element {:id :layers :title (tr "workspace.sidebar.layers")}
-           [:div {:class (stl/css :layers-tab)
-                  :style #js {"--height" (str size-pages "px")}}
+
+          [:& tab-element {:id :layers
+                           :title (tr "workspace.sidebar.layers")}
+           [:article {:class (stl/css :layers-tab)
+                      :style #js {"--height" (str size-pages "px")}}
+
             [:& sitemap {:layout layout
                          :toggle-pages toggle-pages
                          :show-pages? @show-pages?
                          :size size-pages}]
+
             (when @show-pages?
               [:div {:class (stl/css :resize-area-horiz)
                      :on-pointer-down on-pointer-down-pages
                      :on-lost-pointer-capture on-lost-pointer-capture-pages
                      :on-pointer-move on-pointer-move-pages}])
+
             [:& layers-toolbox {:size-parent size
                                 :size size-pages}]]]
 
+
           (when-not ^boolean mode-inspect?
-            [:& tab-element {:id :assets :title (tr "workspace.toolbar.assets")}
+            [:& tab-element {:id :assets
+                             :title (tr "workspace.toolbar.assets")}
              [:& assets-toolbox]])]])]]))
 
 ;; --- Right Sidebar (Component)

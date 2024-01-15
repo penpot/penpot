@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.main.data.workspace :as dw]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
@@ -16,7 +17,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc debug-panel
-  []
+  [{:keys [class] :as props}]
   (let [on-toggle-enabled
         (mf/use-fn
          (fn [event option]
@@ -30,7 +31,7 @@
          (fn []
            (st/emit! (dw/remove-layout-flag :debug-panel))))]
 
-    [:div {:class (stl/css :debug-panel)}
+    [:div {:class (dm/str class " " (stl/css :debug-panel))}
      [:div {:class (stl/css :panel-title)}
       [:span "Debugging tools"]
       [:div {:class (stl/css :close-button) :on-click handle-close}
