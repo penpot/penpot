@@ -12,7 +12,6 @@
    [app.common.files.helpers :as cfh]
    [app.common.schema :as sm]
    [app.common.text :as txt]
-   [app.common.types.component :as ctk]
    [app.main.broadcast :as mbc]
    [app.main.data.events :as ev]
    [app.main.data.modal :as md]
@@ -427,11 +426,7 @@
               (if (empty? pending)
                 result
                 (let [cur (first pending)
-                      ;; We treat frames that aren't components and with no fill the same as groups
-                      group? (or (cfh/group-shape? objects cur)
-                                 (and (cfh/frame-shape? objects cur)
-                                      (empty? (dm/get-in objects [cur :fills]))
-                                      (not (ctk/instance-head? (get objects cur)))))
+                      group? (cfh/group-shape? objects cur)
 
                       pending
                       (if group?

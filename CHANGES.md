@@ -23,8 +23,8 @@
 
 ### :bug: Bugs fixed
 
-- Fix pixelated thumbnails [Github
-  #3681](https://github.com/penpot/penpot/issues/3681) [Github #3661](https://github.com/penpot/penpot/issues/3661)
+- Fix pixelated thumbnails [Github #3681](https://github.com/penpot/penpot/issues/3681) [Github #3661](https://github.com/penpot/penpot/issues/3661)
+- Fix problem with not applying colors to boards [Github #3941](https://github.com/penpot/penpot/issues/3941)
 
 ### :arrow_up: Deps updates
 
