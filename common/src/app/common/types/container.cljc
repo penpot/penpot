@@ -301,6 +301,9 @@
                                                             (gpt/add orig-pos delta)
                                                             {:skip-components? true
                                                              :bottom-frames? true}))
+         frame           (get-shape container frame-id)
+         component-frame (get-component-shape (:objects container) frame {:allow-main? true})
+
          ids-map         (volatile! {})
 
          update-new-shape
@@ -339,7 +342,8 @@
                       :component-root true
                       :name new-name)
 
-               (some? (:parent-id original-shape)) ;; On v2 we have removed the parent-id for component roots (see above)
+               (or (some? (:parent-id original-shape)) ; On v2 we have removed the parent-id for component roots (see above)
+                   (some? component-frame))
                (dissoc :component-root))))
 
          [new-shape new-shapes _]
