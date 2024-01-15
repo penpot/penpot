@@ -74,11 +74,12 @@
 }
 
 .element-list-body {
-  display: flex;
   align-items: center;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  column-gap: $s-4;
   height: $s-32;
   width: calc(100% - (var(--depth) * var(--layer-indentation-size)));
-  padding-right: $s-12;
   cursor: pointer;
 
   &.filtered {
@@ -111,7 +112,7 @@
   width: $s-16;
   height: 100%;
   width: $s-24;
-  padding: 0 $s-8 0 $s-4;
+  padding-inline-start: $s-4;
   svg {
     @extend .button-icon-small;
     stroke: var(--icon-foreground);
@@ -169,7 +170,7 @@
   align-items: center;
   height: 100%;
   width: $s-24;
-  padding: 0 $s-4 0 $s-8;
+  padding-inline-start: $s-8;
 
   svg {
     @extend .button-icon-small;
