@@ -341,8 +341,8 @@
                                  :id          "file-menu-text-palette"}
          [:span {:class (stl/css :item-name)}
           (if (contains? layout :textpalette)
-            (tr "workspace.header.menu.hide-palette")
-            (tr "workspace.header.menu.show-palette"))]
+            (tr "workspace.header.menu.hide-textpalette")
+            (tr "workspace.header.menu.show-textpalette"))]
          [:span {:class (stl/css :shortcut)}
           (for [sc (scd/split-sc (sc/get-tooltip :toggle-textpalette))]
             [:span {:class (stl/css :shortcut-key) :key sc} sc])]]])
