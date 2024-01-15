@@ -19,7 +19,9 @@
    [clojure.spec.alpha :as s]
    [datoteka.fs :as fs]
    [integrant.core :as ig]
-   [promesa.core :as p]))
+   [promesa.core :as p])
+  (:import
+   java.io.InputStream))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Storage Module State
@@ -76,10 +78,15 @@
 
 (defn- create-database-object
   [{:keys [::backend ::db/pool-or-conn]} {:keys [::content ::expired-at ::touched-at] :as params}]
-  (let [id     (uuid/random)
+  (let [id     (or (:id params) (uuid/random))
         mdata  (cond-> (get-metadata params)
                  (satisfies? impl/IContentHash content)
-                 (assoc :hash (impl/get-hash content)))
+                 (assoc :hash (impl/get-hash content))
+
+                 :always
+                 (dissoc :id))
+
+        ;; FIXME: touch object on deduplicated put operation ??
 
         ;; NOTE: for now we don't reuse the deleted objects, but in
         ;; futute we can consider reusing deleted objects if we
@@ -175,6 +182,7 @@
 
 (defn get-object-data
   "Return an input stream instance of the object content."
+  ^InputStream
   [storage object]
   (us/assert! ::storage storage)
   (when (or (nil? (:expired-at object))
