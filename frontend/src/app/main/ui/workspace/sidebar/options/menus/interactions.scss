@@ -54,6 +54,11 @@
   }
 }
 
+.after {
+  @include titleTipography;
+  margin-top: $s-1;
+}
+
 .interactions-help {
   @include titleTipography;
   text-align: center;

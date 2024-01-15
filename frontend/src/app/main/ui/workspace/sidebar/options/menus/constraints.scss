@@ -147,7 +147,7 @@
       border-radius: $br-6;
       background-color: var(--input-checkbox-inactive-background-color);
       &.checked {
-        background-color: var(--input-checkbox-active-background-color);
+        background-color: var(--input-checkbox-background-color-active);
         svg {
           @extend .button-icon-small;
           stroke: var(--input-details-color);

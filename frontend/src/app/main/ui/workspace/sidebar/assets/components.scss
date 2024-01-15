@@ -26,14 +26,6 @@
   background-color: var(--assets-component-background-color);
   overflow: hidden;
   cursor: pointer;
-  img {
-    height: auto;
-    width: auto;
-    max-height: 100%;
-    max-width: 100%;
-    pointer-events: none;
-    border: 0;
-  }
 
   .cell-name {
     @include titleTipography;
@@ -84,6 +76,8 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
+  pointer-events: none;
+  border: 0;
 }
 
 .grid-placeholder {
@@ -96,65 +90,19 @@
 .asset-enum {
   margin: 0 $s-12;
 }
+
 .enum-item {
   position: relative;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr;
   align-items: center;
+  column-gap: $s-8;
   height: $s-36;
   margin-bottom: $s-4;
   padding: $s-2;
   border-radius: $br-8;
   background-color: var(--assets-item-background-color);
   cursor: pointer;
-
-  svg,
-  img {
-    @include flexCenter;
-    flex-shrink: 0;
-    padding: $s-2;
-    height: $s-32;
-    width: $s-32;
-    border-radius: $br-6;
-    background-color: var(--color-foreground-secondary);
-  }
-
-  .item-name {
-    @include titleTipography;
-    @include textEllipsis;
-    padding-left: $s-8;
-    color: var(--assets-item-name-foreground-color);
-    &.editing {
-      display: flex;
-      align-items: center;
-      height: $s-32;
-      border: $s-1 solid var(--input-border-color-focus);
-      border-radius: $br-8;
-      background-color: var(--input-background-color);
-      input {
-        @include textEllipsis;
-        @include titleTipography;
-        @include removeInputStyle;
-        flex-grow: 1;
-        height: $s-28;
-        max-width: calc(var(--parent-size) - (var(--depth) * var(--layer-indentation-size)));
-        padding-left: $s-6;
-        margin: 0;
-        border-radius: $br-8;
-        color: var(--input-foreground-color);
-      }
-      span {
-        @include flexCenter;
-        height: $s-28;
-        background-color: transparent;
-        border-radius: $br-8;
-        svg {
-          @extend .button-icon-small;
-          stroke: var(--input-foreground-color);
-          transform: rotate(90deg);
-        }
-      }
-    }
-  }
 
   &:hover {
     background-color: var(--assets-item-background-color-hover);
@@ -174,6 +122,45 @@
   &.selected {
     border: $s-1 solid var(--assets-item-border-color);
   }
+}
+
+.item-name {
+  @include titleTipography;
+  @include textEllipsis;
+  order: 2;
+  color: var(--assets-item-name-foreground-color);
+  input {
+    @include textEllipsis;
+    @include titleTipography;
+    @include removeInputStyle;
+    height: $s-32;
+    padding: $s-4;
+  }
+  span {
+    display: flex;
+    place-items: center;
+    padding-inline-end: $s-4;
+  }
+
+  &.editing {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    column-gap: $s-8;
+    border: $s-1 solid var(--input-border-color-focus);
+    border-radius: $br-8;
+    background-color: var(--input-background-color);
+  }
+}
+
+.asset-list-thumbnail {
+  @include flexCenter;
+  flex-shrink: 0;
+  padding: $s-2;
+  height: $s-32;
+  width: $s-32;
+  border-radius: $br-6;
+  background-color: var(--assets-component-background-color);
 }
 
 .grid-placeholder {

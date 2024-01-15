@@ -240,17 +240,21 @@
                  (tr "common.share-link.permissions-pages")]
                 [:div {:class (stl/css :items)}
                  (if (= 1 (count pages))
-
                    [:div {:class (stl/css :checkbox-wrapper)}
+
+                    [:label {:for (str "page-" current-page-id)
+                             :class (stl/css-case :global/checked true)}
+
+                     [:span  {:class (stl/css :checked)}
+                      i/status-tick-refactor]
+
+                     (:name current-page)]
+
                     [:input {:type "checkbox"
                              :id (dm/str "page-" current-page-id)
                              :data-page-id (dm/str current-page-id)
                              :on-change on-mark-checked-page
                              :checked true}]
-                    [:label {:for (str "page-" current-page-id)} (:name current-page)]
-                    [:span  {:class (stl/css-case :checkobox-tick true
-                                                  :global/checked true)}
-                     i/status-tick-refactor]
                     [:span  (str  " " (tr "common.share-link.current-tag"))]]
 
                    [:*

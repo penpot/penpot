@@ -654,7 +654,8 @@
               [:span {:class (stl/css :interaction-name)} (tr "workspace.options.interaction-duration")]
               [:div {:class (stl/css :input-element-wrapper)
                      :title (tr "workspace.options.interaction-ms")}
-               [:span.after (tr "workspace.options.interaction-ms")]
+               [:span {:class (stl/css :after)}
+                (tr "workspace.options.interaction-ms")]
                [:> numeric-input* {:ref ext-duration-ref
                                    :on-change change-duration
                                    :value (-> interaction :animation :duration)
@@ -719,22 +720,22 @@
           [:button {:class (stl/css :add-interaction-btn)
                     :on-click add-interaction}
            i/add-refactor]]])
-      [:div {:class (stl/css :help-content)}
-       (when (= (count interactions) 0)
-         [:*
-          (when (and shape (not (cfh/unframed-shape? shape)))
-            [:div {:class (stl/css :help-group)}
-             [:div {:class (stl/css :interactions-help-icon)} i/add-refactor]
-             [:div {:class (stl/css :interactions-help)}
-              (tr "workspace.options.add-interaction")]])
-          [:div {:class (stl/css :help-group)}
-           [:div {:class (stl/css :interactions-help-icon)} i/interaction-refactor]
-           [:div {:class (stl/css :interactions-help)}
-            (tr "workspace.options.select-a-shape")]]
-          [:div {:class (stl/css :help-group)}
-           [:div {:class (stl/css :interactions-help-icon)} i/play-refactor]
-           [:div {:class (stl/css :interactions-help)}
-            (tr "workspace.options.use-play-button")]]])]
+
+      (when (= (count interactions) 0)
+        [:div {:class (stl/css :help-content)}
+         (when (and shape (not (cfh/unframed-shape? shape)))
+           [:div {:class (stl/css :help-group)}
+            [:div {:class (stl/css :interactions-help-icon)} i/add-refactor]
+            [:div {:class (stl/css :interactions-help)}
+             (tr "workspace.options.add-interaction")]])
+         [:div {:class (stl/css :help-group)}
+          [:div {:class (stl/css :interactions-help-icon)} i/interaction-refactor]
+          [:div {:class (stl/css :interactions-help)}
+           (tr "workspace.options.select-a-shape")]]
+         [:div {:class (stl/css :help-group)}
+          [:div {:class (stl/css :interactions-help-icon)} i/play-refactor]
+          [:div {:class (stl/css :interactions-help)}
+           (tr "workspace.options.use-play-button")]]])
       [:div {:class (stl/css :groups)}
        (for [[index interaction] (d/enumerate interactions)]
          [:& interaction-entry {:key (dm/str (:id shape) "-" index)

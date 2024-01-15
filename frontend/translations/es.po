@@ -542,6 +542,9 @@ msgstr "Importar archivos Penpot"
 msgid "dashboard.import.analyze-error"
 msgstr "¡Vaya! No hemos podido importar el fichero"
 
+msgid "dashboard.import.analyze-error.components-v2"
+msgstr "Fichero exportado con componentes-v2 pero el equipo actual no lo soporta aún."
+
 msgid "dashboard.import.import-error"
 msgstr "Hubo un problema importando el fichero. No ha podido ser importado."
 

@@ -137,7 +137,11 @@
               :is-shared (:shared context)
               :project-id (:project-id context)
               :create-page false
-              :features features})))
+
+              ;; If the features object exists send that. Otherwise we remove the components/v2 because
+              ;; if the features attribute doesn't exist is a version < 2.0. The other features will
+              ;; be kept so the shapes are created full featured
+              :features (d/nilv (:features context) (disj features "components/v2"))})))
 
 (defn link-file-libraries
   "Create a new file on the back-end"
@@ -154,7 +158,8 @@
   [context file]
   (let [file-id    (:id file)
         session-id (uuid/next)
-        batches    (->> (fb/generate-changes file)
+        changes    (fb/generate-changes file)
+        batches    (->> changes
                         (partition change-batch-size change-batch-size nil)
                         (mapv vec))
 
@@ -538,7 +543,9 @@
            (rx/merge-map (comp d/kebab-keys parser/string->uuid))
            (rx/mapcat
             (fn [[id media]]
-              (let [media (assoc media :id (resolve id))]
+              (let [media (-> media
+                              (assoc :id (resolve id))
+                              (update :name str))]
                 (->> (get-file context :media id media)
                      (rx/map (fn [blob]
                                (let [content (.slice blob 0 (.-size blob) (:mtype media))]
@@ -625,7 +632,7 @@
       "other")))
 
 (defmethod impl/handler :analyze-import
-  [{:keys [files]}]
+  [{:keys [files features]}]
 
   (->> (rx/from files)
        (rx/merge-map
@@ -646,7 +653,16 @@
                        (rx/merge-map #(zip/loadAsync (:body %)))
                        (rx/merge-map #(get-file {:zip %} :manifest))
                        (rx/map (comp d/kebab-keys parser/string->uuid))
-                       (rx/map #(hash-map :uri (:uri file) :data % :type "application/zip")))
+                       (rx/map
+                        (fn [data]
+                          ;; Checks if the file is exported with components v2 and the current team only
+                          ;; supports components v1
+                          (let [has-file-v2?
+                                (->> (:files data)
+                                     (d/seek (fn [[_ file]] (contains? (set (:features file)) "components/v2"))))]
+                            (if (and has-file-v2? (not (contains? features "components/v2")))
+                              {:uri (:uri file) :error "dashboard.import.analyze-error.components-v2"}
+                              (hash-map :uri (:uri file) :data data :type "application/zip"))))))
                   (->> st
                        (rx/filter (fn [data] (= "application/octet-stream" (:type data))))
                        (rx/map (fn [_]

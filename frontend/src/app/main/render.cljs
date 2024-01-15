@@ -336,7 +336,7 @@
 ;; used to render thumbnails on assets panel.
 (mf/defc component-svg
   {::mf/wrap [mf/memo #(mf/deferred % ts/idle-then-raf)]}
-  [{:keys [objects root-shape show-grids? zoom] :or {zoom 1} :as props}]
+  [{:keys [objects root-shape show-grids? zoom class] :or {zoom 1} :as props}]
   (when root-shape
     (let [root-shape-id (:id root-shape)
           include-metadata (mf/use-ctx export/include-metadata-ctx)
@@ -373,6 +373,7 @@
              :width (ust/format-precision width viewbox-decimal-precision)
              :height (ust/format-precision height viewbox-decimal-precision)
              :version "1.1"
+             :class class
              :xmlns "http://www.w3.org/2000/svg"
              :xmlnsXlink "http://www.w3.org/1999/xlink"
              :xmlns:penpot (when include-metadata "https://penpot.app/xmlns")
@@ -388,7 +389,7 @@
 
 (mf/defc component-svg-thumbnail
   {::mf/wrap [mf/memo #(mf/deferred % ts/idle-then-raf)]}
-  [{:keys [thumbnail-uri on-error show-grids?
+  [{:keys [thumbnail-uri on-error show-grids? class
            objects root-shape zoom] :or {zoom 1} :as props}]
 
   (when root-shape
@@ -421,6 +422,7 @@
              :width (ust/format-precision width-zoom viewbox-decimal-precision)
              :height (ust/format-precision height-zoom viewbox-decimal-precision)
              :version "1.1"
+             :class class
              :xmlns "http://www.w3.org/2000/svg"
              :xmlnsXlink "http://www.w3.org/1999/xlink"
              :fill "none"}
@@ -506,7 +508,7 @@
          (mf/deps objects)
          (fn [] (frame-wrapper-factory objects)))]
 
-    [:> "symbol" #js {:id (str root-id)
+    [:> "symbol" #js {:id (str (:id component))
                       :viewBox vbox
                       "penpot:path" path
                       "penpot:main-instance-id" main-instance-id
