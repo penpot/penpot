@@ -433,6 +433,12 @@
   [o prop]
   (.getPropertyValue ^js o prop))
 
+(defn get-css-variable
+  ([variable element]
+   (.getPropertyValue (.getComputedStyle js/window element) variable))
+  ([variable]
+   (.getPropertyValue (.getComputedStyle js/window (.-documentElement js/document)) variable)))
+
 (defn focus!
   [^js node]
   (when (some? node)
