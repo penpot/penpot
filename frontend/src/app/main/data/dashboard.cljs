@@ -366,14 +366,14 @@
 (defn hide-file-menu
   []
   (ptk/reify ::hide-file-menu
-     ptk/UpdateEvent
-     (update [_ state]
-       (update state :dashboard-local
-               assoc :menu-open false))))
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :dashboard-local
+              assoc :menu-open false))))
 
 (defn start-edit-file-name
   [file-id]
-  (ptk/reify ::start-edit-file-name
+  (ptk/reify ::start-edit-file-menu
     ptk/UpdateEvent
     (update [_ state]
       (update state :dashboard-local
