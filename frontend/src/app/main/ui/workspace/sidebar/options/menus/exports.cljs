@@ -162,10 +162,10 @@
                       {:value "1.5" :label "1.5x"}
                       {:value "2" :label "2x"}
                       {:value "4" :label "4x"}
-                      {:value "6" :label "6"}]
+                      {:value "6" :label "6x"}]
 
         format-options [{:value "png" :label "PNG"}
-                        {:value "jpeg" :label "JPE"}
+                        {:value "jpeg" :label "JPEG"}
                         {:value "svg" :label "SVG"}
                         {:value "pdf" :label "PDF"}]]
 
