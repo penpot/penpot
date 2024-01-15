@@ -944,7 +944,7 @@
                       (let [shape                  (get objects id)
                             parent                 (get objects parent-id)
                             component-shape        (ctn/get-component-shape objects shape)
-                            component-shape-parent (ctn/get-component-shape objects parent)
+                            component-shape-parent (ctn/get-component-shape objects parent {:allow-main? true})
                             root-parent            (ctn/get-instance-root objects parent)
 
                             detach? (and (ctk/in-component-copy-not-head? shape)
