@@ -34,6 +34,14 @@
   }
 }
 
+.copy-text {
+  @include titleTipography;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  color: var(--title-foreground-color);
+}
+
 .component-icon {
   @include flexCenter;
   height: $s-24;
