@@ -465,7 +465,7 @@
               {:type :add-obj
                :id id
                :page-id page-id
-               :parent-id (:frame-id shape)
+               :parent-id (:parent-id shape)
                :frame-id (:frame-id shape)
                :index (cfh/get-position-on-parent objects id)
                :obj (cond-> shape
