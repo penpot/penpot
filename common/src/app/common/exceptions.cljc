@@ -7,10 +7,12 @@
 (ns app.common.exceptions
   "A helpers for work with exceptions."
   #?(:cljs (:require-macros [app.common.exceptions]))
+  (:refer-clojure :exclude [instance?])
   (:require
    #?(:clj [clojure.stacktrace :as strace])
    [app.common.pprint :as pp]
    [app.common.schema :as sm]
+   [clojure.core :as c]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [expound.alpha :as expound])
@@ -19,6 +21,9 @@
       clojure.lang.IPersistentMap)))
 
 #?(:clj (set! *warn-on-reflection* true))
+
+(def ^:dynamic *data-length* 8)
+(def ^:dynamic *data-level* 8)
 
 (defmacro error
   [& {:keys [type hint] :as params}]
@@ -49,20 +54,38 @@
 
 (defn ex-info?
   [v]
-  (instance? #?(:clj clojure.lang.IExceptionInfo :cljs cljs.core.ExceptionInfo) v))
+  (c/instance? #?(:clj clojure.lang.IExceptionInfo :cljs cljs.core.ExceptionInfo) v))
 
 (defn error?
   [v]
-  (instance? #?(:clj clojure.lang.IExceptionInfo :cljs cljs.core.ExceptionInfo) v))
+  (c/instance? #?(:clj clojure.lang.IExceptionInfo :cljs cljs.core.ExceptionInfo) v))
 
 (defn exception?
   [v]
-  (instance? #?(:clj java.lang.Throwable :cljs js/Error) v))
+  (c/instance? #?(:clj java.lang.Throwable :cljs js/Error) v))
 
 #?(:clj
    (defn runtime-exception?
      [v]
-     (instance? RuntimeException v)))
+     (c/instance? RuntimeException v)))
+
+#?(:clj
+   (defn instance?
+     [class cause]
+     (loop [cause cause]
+       (if (c/instance? class cause)
+         true
+         (if-let [cause (ex-cause cause)]
+           (recur cause)
+           false)))))
+
+;; NOTE: idea for a macro for error handling
+;; (pu/try-let [cause (p/await (get-object-data backend object))]
+;;   (ex/instance? NoSuchKeyException cause)
+;;   (ex/raise :type :not-found
+;;             :code :object-not-found
+;;             :hint "s3 object not found"
+;;             :cause cause))
 
 (defn explain
   [data & {:as opts}]
@@ -91,8 +114,8 @@
                                data? true
                                explain? true
                                chain? true
-                               data-length 8
-                               data-level 5}}]
+                               data-length *data-length*
+                               data-level *data-level*}}]
 
      (letfn [(print-trace-element [^StackTraceElement e]
                (let [class (.getClassName e)
