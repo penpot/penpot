@@ -958,8 +958,7 @@
                     is-other? #{:r :stroke-width}]
 
                 (if is-percent?
-                  ;; JS parseFloat removes the % symbol
-                  (let [attr-num (d/parse-double attr-val)]
+                  (let [attr-num (d/parse-double (str/rtrim attr-val "%"))]
                     (str (cond
                            (is-x? attr-key)      (fix-coord  :x :width attr-num)
                            (is-y? attr-key)      (fix-coord  :y :height attr-num)
