@@ -105,7 +105,7 @@
                  (nil? (:selrect shape))
                  (nil? (:points shape))))
     (report-error :invalid-geometry
-                  "Shape greometry is invalid"
+                  "Shape geometry is invalid"
                   shape file page)))
 
 (defn- check-parent-children
