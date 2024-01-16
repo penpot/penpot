@@ -72,13 +72,6 @@
   (and (some? shape)
        (= :bool (dm/get-prop shape :type))))
 
-(defn group-like-shape?
-  ([objects id]
-   (group-like-shape? (get objects id)))
-  ([shape]
-   (or ^boolean (group-shape? shape)
-       ^boolean (bool-shape? shape))))
-
 (defn text-shape?
   [shape]
   (and (some? shape)
@@ -122,6 +115,14 @@
    (has-children? (get objects id)))
   ([shape]
    (d/not-empty? (:shapes shape))))
+
+(defn group-like-shape?
+  ([objects id]
+   (group-like-shape? (get objects id)))
+  ([shape]
+   (or ^boolean (group-shape? shape)
+       ^boolean (bool-shape? shape)
+       ^boolean (and (svg-raw-shape? shape) (has-children? shape)))))
 
 ;; ---- ACCESSORS
 
