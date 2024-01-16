@@ -418,7 +418,7 @@
                                               frame-id)
 
         restore-component
-        #(let [restore (dwlh/prepare-restore-component changes library-data (:component-id component-root) it page delta (:id component-root) parent-id)]
+        #(let [restore (dwlh/prepare-restore-component changes library-data (:component-id component-root) it page delta (:id component-root) parent-id frame-id)]
            [(:shape restore) (:changes restore)])
 
         [_shape changes]

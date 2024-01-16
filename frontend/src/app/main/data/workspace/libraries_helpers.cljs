@@ -232,9 +232,9 @@
                           (when (some #(= (:id current-page) %) (:pages library-data)) ;; If the page doesn't belong to the library, it's not valid
                             current-page)
                           (ctpl/get-last-page library-data))]
-     (prepare-restore-component nil library-data component-id it page (gpt/point 0 0) nil nil)))
+     (prepare-restore-component nil library-data component-id it page (gpt/point 0 0) nil nil nil)))
 
-  ([changes library-data component-id it page delta old-id parent-id]
+  ([changes library-data component-id it page delta old-id parent-id frame-id]
    (let [component    (ctkl/get-deleted-component library-data component-id)
          parent       (get-in page [:objects parent-id])
          inside-component? (some? (ctn/get-instance-root (:objects page) parent))
@@ -244,9 +244,11 @@
          first-shape  (cond-> (first shapes)
                         (not (nil? parent-id))
                         (assoc :parent-id parent-id)
-                        (and parent (= :frame (:type parent)))
+                        (not (nil? frame-id))
+                        (assoc :frame-id frame-id)
+                        (and (nil? frame-id) parent (= :frame (:type parent)))
                         (assoc :frame-id parent-id)
-                        (and parent (not= :frame (:type parent)))
+                        (and (nil? frame-id) parent (not= :frame (:type parent)))
                         (assoc :frame-id (:frame-id parent))
                         inside-component?
                         (dissoc :component-root)
