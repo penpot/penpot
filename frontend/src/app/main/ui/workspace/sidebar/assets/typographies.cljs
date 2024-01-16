@@ -109,17 +109,17 @@
            :on-drop on-drop}
 
      [:& typography-entry
-      {:typography typography
+      {:file-id file-id
+       :typography typography
        :local? local?
-       :on-context-menu on-context-menu
-       :on-change handle-change
        :selected? (contains? selected typography-id)
        :on-click on-asset-click
+       :on-change handle-change
+       :on-context-menu on-context-menu
        :editing? editing?
        :renaming? renaming?
        :focus-name? rename?
-       :external-open* open*
-       :file-id file-id}]
+       :external-open* open*}]
      (when ^boolean dragging?
        [:div {:class (stl/css :dragging)}])]))
 
