@@ -316,7 +316,25 @@
                         (dissoc component :objects))
                       component))]
             (-> file-data
-                (update :components update-vals fix-component))))]
+                (update :components update-vals fix-component))))
+
+        fix-false-copies
+        (fn [file-data]
+          ;; Find component heads that are not main-instance but have not :shape-ref.
+          (letfn [(fix-container
+                    [container]
+                    (update container :objects update-vals fix-shape))
+
+                  (fix-shape
+                    [shape]
+                    (if (and (ctk/instance-head? shape)
+                             (not (ctk/main-instance? shape))
+                             (not (ctk/in-component-copy? shape)))
+                      (ctk/detach-shape shape)
+                      shape))]
+            (-> file-data
+                (update :pages-index update-vals fix-container)
+                (update :components update-vals fix-container))))]
 
     (-> file-data
         (fix-orphan-shapes)
@@ -328,7 +346,8 @@
         (transform-to-frames)
         (remap-frame-ids)
         (fix-frame-ids)
-        (fix-component-nil-objects))))
+        (fix-component-nil-objects)
+        (fix-false-copies))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; COMPONENTS MIGRATION
