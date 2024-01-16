@@ -303,6 +303,11 @@
 
         rx        (d/nilv r rx)
         ry        (d/nilv r ry)
+
+        ;; There are some svg circles in the internet that does not
+        ;; have cx and cy attrs, so we default them to 0
+        cx        (d/nilv cx 0)
+        cy        (d/nilv cy 0)
         origin    (gpt/negate (gpt/point svg-data))
 
         rect      (grc/make-rect
