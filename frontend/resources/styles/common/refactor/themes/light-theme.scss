@@ -16,7 +16,7 @@
   --color-foreground-primary: var(--black);
   --color-foreground-secondary: var(--off-black);
   --color-foreground-tertiary: var(--pink);
-  --color-foreground-disabled: var(--off-black-30);
+  --color-foreground-disabled: var(--off-black-40);
   --color-accent-primary: var(--purple);
   --color-accent-primary-muted: var(--purple-30);
   --color-accent-secondary: var(--blue);
@@ -29,7 +29,7 @@
   --error-color: var(--light-error-color);
   --canvas-color: var(--color-canvas);
 
-  --shadow-color: var(--off-black-30);
+  --shadow-color: var(--off-black-40);
   --radio-button-box-shadow: 0 0 0 1px var(--light-gray-2) inset;
 
   @include meta.load-css("hljs-light-theme");
