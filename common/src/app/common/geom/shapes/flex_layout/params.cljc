@@ -19,7 +19,9 @@
 
   ([objects shapes parent]
    (when (d/not-empty? shapes)
-     (let [points
+     (let [shapes (->> shapes (remove :hidden))
+
+           points
            (->> shapes
                 (map :id)
                 (ctt/sort-z-index objects)
