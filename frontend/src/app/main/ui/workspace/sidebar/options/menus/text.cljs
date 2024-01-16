@@ -204,8 +204,8 @@
          (mf/deps more-options-open?)
          #(swap! state* assoc-in [:more-options] (not more-options-open?)))
 
-        typography-id (:typography-ref-id values)
-        typography-file (:typography-ref-file values)
+        typography-id      (:typography-ref-id values)
+        typography-file-id (:typography-ref-file values)
 
         emit-update!
         (mf/use-fn
@@ -228,14 +228,14 @@
            (cond
              (and typography-id
                   (not= typography-id :multiple)
-                  (not= typography-file file-id))
+                  (not= typography-file-id file-id))
              (-> shared-libs
-                 (get-in [typography-file :data :typographies typography-id])
-                 (assoc :file-id typography-file))
+                 (get-in [typography-file-id :data :typographies typography-id])
+                 (assoc :file-id typography-file-id))
 
              (and typography-id
                   (not= typography-id :multiple)
-                  (= typography-file file-id))
+                  (= typography-file-id file-id))
              (get typographies typography-id))))
 
         on-convert-to-typography
@@ -297,9 +297,9 @@
        [:div {:class (stl/css :element-content)}
         (cond
           typography
-          [:& typography-entry {:typography typography
-                                :local? (= typography-file file-id)
-                                :file (get shared-libs typography-file)
+          [:& typography-entry {:file-id typography-file-id
+                                :typography typography
+                                :local? (= typography-file-id file-id)
                                 :on-detach handle-detach-typography
                                 :on-change handle-change-typography}]
 
