@@ -202,17 +202,15 @@
                          :on-change on-change)
                   (obj/clj->props))]
 
-    [:div.custom-input
-     {:class klass}
-     [:*
-      [:label label]
-      [:> :textarea props]
-      (cond
-        (and touched? (:message error))
-        [:span.error (tr (:message error))]
+    [:div {:class (dm/str klass " " (stl/css :textarea-wrapper))}
+     [:label {:class (stl/css :textarea-label)} label]
+     [:> :textarea props]
+     (cond
+       (and touched? (:message error))
+       [:span {:class (stl/css :error)} (tr (:message error))]
 
-        (string? hint)
-        [:span.hint hint])]]))
+       (string? hint)
+       [:span {:class (stl/css :hint)} hint])]))
 
 (mf/defc select
   [{:keys [options disabled form default] :as props
