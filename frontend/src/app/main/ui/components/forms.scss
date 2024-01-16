@@ -72,7 +72,6 @@
       }
     }
   }
-
   &.valid .help-icon,
   &.invalid .help-icon {
     right: $s-40;
@@ -98,6 +97,7 @@
     height: $s-16;
   }
 }
+
 .invalid-icon {
   width: $s-16;
   height: $s-16;
@@ -261,7 +261,6 @@
 }
 
 // MULTI INPUT
-
 .custom-multi-input {
   display: flex;
   flex-direction: column;
@@ -338,19 +337,9 @@
       }
     }
   }
-  &.empty {
-  }
-  &.invalid {
-  }
-
-  &.focus {
-  }
-  &.valid {
-  }
 }
 
 // RADIO BUTTONS
-
 .custom-radio {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -409,4 +398,18 @@
     outline: none;
     border: $s-1 solid var(--input-border-color-active);
   }
+}
+
+//TEXTAREA
+
+.textarea-label {
+  @include tabTitleTipography;
+  color: var(--modal-title-foreground-color);
+  text-transform: uppercase;
+  margin-bottom: $s-8;
+}
+
+.textarea-wrapper {
+  display: grid;
+  grid-template-rows: auto 1fr;
 }
