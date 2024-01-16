@@ -204,7 +204,7 @@
         sprocs    (ps/create :permits max-procs)
 
         cache     (if (int? cache)
-                    (cache/create :executor (::wrk/executor main/system)
+                    (cache/create :executor :same-thread
                                   :max-items cache)
                     nil)
 
