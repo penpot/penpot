@@ -319,18 +319,20 @@
                 (dissoc :fill-color :fill-opacity))))
 
           (update-container [{:keys [objects] :as container}]
-            (loop [objects objects
-                   shapes  (->> (vals objects)
-                                (filter cfh/image-shape?))]
-              (if-let [shape (first shapes)]
-                (let [{:keys [id frame-id] :as shape'} (process-shape shape)]
-                  (if (identical? shape shape')
-                    (recur objects (rest shapes))
-                    (recur (-> objects
-                               (assoc id shape')
-                               (d/update-when frame-id dissoc :thumbnail))
-                           (rest shapes))))
-                (assoc container :objects objects))))]
+            (if (contains? container :objects)
+              (loop [objects (:objects container)
+                     shapes  (->> (vals objects)
+                                  (filter cfh/image-shape?))]
+                (if-let [shape (first shapes)]
+                  (let [{:keys [id frame-id] :as shape'} (process-shape shape)]
+                    (if (identical? shape shape')
+                      (recur objects (rest shapes))
+                      (recur (-> objects
+                                 (assoc id shape')
+                                 (d/update-when frame-id dissoc :thumbnail))
+                             (rest shapes))))
+                  (assoc container :objects objects)))
+              container))]
 
     (-> data
         (update :pages-index update-vals update-container)
@@ -380,7 +382,7 @@
               (assign-fills)))
 
           (update-container [container]
-            (update container :objects update-vals update-object))]
+            (d/update-when container :objects update-vals update-object))]
 
     (-> data
         (update :pages-index update-vals update-container)
@@ -409,7 +411,7 @@
               (assoc :fills [])))
 
           (update-container [container]
-            (update container :objects update-vals update-object))]
+            (d/update-when container :objects update-vals update-object))]
 
     (-> data
         (update :pages-index update-vals update-container)
@@ -424,7 +426,7 @@
               (dissoc :position-data)))
 
           (update-container [container]
-            (update container :objects update-vals update-object))]
+            (d/update-when container :objects update-vals update-object))]
 
     (-> data
         (update :pages-index update-vals update-container)
@@ -440,7 +442,7 @@
               (dissoc :position-data)))
 
           (update-container [container]
-            (update container :objects update-vals update-object))]
+            (d/update-when container :objects update-vals update-object))]
 
     (-> data
         (update :pages-index update-vals update-container)
@@ -527,7 +529,7 @@
               (assoc object :frame-id calculated-frame-id)))
 
           (update-container [container]
-            (update container :objects #(update-vals % (partial update-object %))))]
+            (d/update-when container :objects #(update-vals % (partial update-object %))))]
 
     (-> data
         (update :pages-index update-vals update-container)
@@ -565,7 +567,7 @@
                 (update :content #(txt/transform-nodes invalid-node? fix-node %)))))
 
           (update-container [container]
-            (update container :objects update-vals update-object))]
+            (d/update-when container :objects update-vals update-object))]
 
     (-> data
         (update :pages-index update-vals update-container)
@@ -580,7 +582,7 @@
               object))
 
           (update-container [container]
-            (update container :objects update-vals update-object))]
+            (d/update-when container :objects update-vals update-object))]
 
     (-> data
         (update :pages-index update-vals update-container)
@@ -613,7 +615,8 @@
                 object)))
 
           (update-container [container]
-            (update container :objects update-vals update-object))]
+            (d/update-when container :objects update-vals update-object))]
+
     (-> data
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
@@ -630,7 +633,7 @@
               object))
 
           (update-container [container]
-            (update container :objects update-vals update-object))]
+            (d/update-when container :objects update-vals update-object))]
     (-> data
         (update :pages-index update-vals update-container))))
 
@@ -642,7 +645,7 @@
               (dissoc object :x :y :width :height)
               object))
           (update-container [container]
-            (update container :objects update-vals update-object))]
+            (d/update-when container :objects update-vals update-object))]
     (-> data
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
@@ -694,7 +697,23 @@
                 shape)))
 
           (update-container [container]
-            (update container :objects update-vals update-shape))]
+            (d/update-when container :objects update-vals update-shape))]
+
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
+
+
+(defmethod migrate 39
+  [data]
+  (letfn [(update-shape [shape]
+            (if (and (cfh/bool-shape? shape)
+                     (not (contains? shape :bool-content)))
+              (assoc shape :bool-content [])
+              shape))
+
+          (update-container [container]
+            (d/update-when container :objects update-vals update-shape))]
 
     (-> data
         (update :pages-index update-vals update-container)
