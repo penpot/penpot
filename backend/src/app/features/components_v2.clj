@@ -21,8 +21,10 @@
    [app.common.geom.shapes :as gsh]
    [app.common.logging :as l]
    [app.common.math :as mth]
+   [app.common.schema :as sm]
    [app.common.svg :as csvg]
    [app.common.svg.shapes-builder :as sbuilder]
+   [app.common.types.color :as ctc]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
@@ -112,6 +114,13 @@
             (when is-component?
               (vswap! detached-ids conj (:id shape)))
             (ctk/detach-shape shape)))
+
+        fix-recent-colors
+        (fn [file-data]
+          (let [valid-color? (sm/validator ::ctc/recent-color)]
+            (d/update-when file-data :recent-colors
+                           (fn [colors]
+                             (filterv valid-color? colors)))))
 
         fix-orphan-shapes
         (fn [file-data]
@@ -344,6 +353,7 @@
                 (update :components update-vals fix-container))))]
 
     (-> file-data
+        (fix-recent-colors)
         (fix-orphan-shapes)
         (remove-nested-roots)
         (add-not-nested-roots)
@@ -735,7 +745,7 @@
 
 (defn- create-media-grid
   [fdata page-id frame-id grid media-group]
-  (letfn [(process-media-object [fdata mobj position]
+  (letfn [(process [fdata mobj position]
             (let [position (gpt/add position (gpt/point grid-gap grid-gap))
                   tp       (dt/tpoint)
                   err      (volatile! false)]
@@ -785,8 +795,7 @@
                    (sse/tap {:type :migration-progress
                              :section :graphics
                              :name (:name mobj)})
-                   (or (process-media-object fdata mobj position)
-                       fdata))
+                   (or (process fdata mobj position) fdata))
                  (assoc-in fdata [:options :components-v2] true)))))
 
 (defn- migrate-graphics
