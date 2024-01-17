@@ -115,6 +115,30 @@
               (vswap! detached-ids conj (:id shape)))
             (ctk/detach-shape shape)))
 
+        fix-misc-shape-issues
+        (fn [file-data]
+          ;; Find shapes that are not listed in their parent's children list.
+          ;; Remove them, and also their children
+          (let [update-shape
+                (fn [shape]
+                  (cond-> shape
+                    ;; Some shapes has invalid value there
+                    (contains? shape :layout-gap)
+                    (d/update-in-when [:layout-gap :column-gap]
+                                      (fn [gap]
+                                        (if (or (= gap ##Inf)
+                                                (= gap ##-Inf))
+                                          0
+                                          gap)))))
+
+                update-container
+                (fn [container]
+                  (d/update-when container :objects update-vals update-shape))]
+
+            (-> file-data
+                (update :pages-index update-vals update-container)
+                (update :components update-vals update-container))))
+
         fix-recent-colors
         (fn [file-data]
           (let [valid-color? (sm/validator ::ctc/recent-color)]
@@ -353,6 +377,7 @@
                 (update :components update-vals fix-container))))]
 
     (-> file-data
+        (fix-misc-shape-issues)
         (fix-recent-colors)
         (fix-orphan-shapes)
         (remove-nested-roots)
@@ -865,6 +890,7 @@
         (decode-row)
         (update :data assoc :id id)
         (update :data fdata/process-pointers deref)
+        (update :data fdata/process-objects (partial into {}))
         (fmg/migrate-file))))
 
 (defn- get-team
