@@ -488,7 +488,11 @@
                          :collapsed    (not open?)
                          :on-collapsed toggle-content
                          :title        (tr "workspace.options.component")
-                         :class        (stl/css :title-spacing-component)}])]
+                         :class        (stl/css :title-spacing-component)}
+           [:span {:class (stl/css :copy-text)}
+            (if main-instance?
+              (tr "workspace.options.component.main")
+              (tr "workspace.options.component.copy"))]])]
 
        (when open?
          [:div {:class (stl/css :element-content)}

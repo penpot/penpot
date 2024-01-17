@@ -32,6 +32,7 @@
   cider/cider-nrepl {:mvn/version "0.44.0"}
 
   org.postgresql/postgresql {:mvn/version "42.7.1"}
+  org.xerial/sqlite-jdbc {:mvn/version "3.44.1.0"}
 
   com.zaxxer/HikariCP {:mvn/version "5.1.0"}
 

@@ -493,6 +493,10 @@
       (.createArrayOf conn ^String type (into-array Object objects))
       (.createArrayOf conn ^String type objects))))
 
+(defn encode-pgarray
+  [data conn type]
+  (create-array conn type data))
+
 (defn decode-pgpoint
   [^PGpoint v]
   (gpt/point (.-x v) (.-y v)))
@@ -518,7 +522,7 @@
      (.rollback conn)))
   ([conn ^Savepoint sp]
    (let [^Connection conn (get-connection conn)]
-     (l/trc :hint "explicit rollback requested")
+     (l/trc :hint "explicit rollback requested (savepoint)")
      (.rollback conn sp))))
 
 (defn tx-run!
@@ -538,7 +542,7 @@
           (release! conn sp)
           result)
         (catch Throwable cause
-          (rollback! conn sp)
+          (.rollback ^Connection conn ^Savepoint sp)
           (throw cause))))
 
     (::pool system)
@@ -550,7 +554,7 @@
         result))
 
     :else
-    (throw (IllegalArgumentException. "invalid arguments"))))
+    (throw (IllegalArgumentException. "invalid system/cfg provided"))))
 
 (defn run!
   [system f & params]

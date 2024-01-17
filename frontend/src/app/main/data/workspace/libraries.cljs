@@ -566,11 +566,12 @@
       (let [file      (wsh/get-local-file state)
             page-id   (get state :current-page-id)
             container (cfh/get-container file :page page-id)
+            libraries (wsh/get-libraries state)
 
             changes   (-> (pcb/empty-changes it)
                           (pcb/with-container container)
                           (pcb/with-objects (:objects container))
-                          (dwlh/generate-detach-instance container id))]
+                          (dwlh/generate-detach-instance container libraries id))]
 
         (rx/of (dch/commit-changes changes))))))
 
@@ -595,13 +596,14 @@
             objects   (wsh/lookup-page-objects state page-id)
             file      (wsh/get-local-file state)
             container (cfh/get-container file :page page-id)
+            libraries (wsh/get-libraries state)
             selected  (->> state
                            (wsh/lookup-selected)
                            (cfh/clean-loops objects))
 
             changes (reduce
                      (fn [changes id]
-                       (dwlh/generate-detach-instance changes container id))
+                       (dwlh/generate-detach-instance changes libraries container id))
                      (-> (pcb/empty-changes it)
                          (pcb/with-container container)
                          (pcb/with-objects objects))

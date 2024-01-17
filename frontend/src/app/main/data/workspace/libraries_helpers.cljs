@@ -200,30 +200,45 @@
      [new-shape changes])))
 
 (declare generate-detach-recursive)
+(declare generate-advance-nesting-level)
 
 (defn generate-detach-instance
   "Generate changes to remove the links between a shape and all its children
   with a component."
-  [changes container shape-id]
+  [changes container libraries shape-id]
   (let [shape (ctn/get-shape container shape-id)]
     (log/debug :msg "Detach instance" :shape-id shape-id :container (:id container))
-    (generate-detach-recursive changes container shape-id true (true? (:component-root shape)))))
+    (generate-detach-recursive changes container libraries shape-id true (true? (:component-root shape)))))
 
 (defn- generate-detach-recursive
-  [changes container shape-id first component-root?]
+  [changes container libraries shape-id first component-root?]
   (let [shape (ctn/get-shape container shape-id)]
     (if (and (ctk/instance-head? shape) (not first))
-      ;; Subinstances are not detached
-      (if component-root?
-        ;; if the original shape was component-root, the subinstances are converted in top instances
-        (pcb/update-shapes changes [(:id shape)] #(assoc % :component-root true))
-        changes)
+      ; Subinstances are not detached
+      (cond-> changes
+        component-root?
+        ; If the initial shape was component-root, first level subinstances are converted in top instances
+        (pcb/update-shapes [shape-id] #(assoc % :component-root true))
+
+        :always
+        ; Near shape-refs need to be advanced one level
+        (generate-advance-nesting-level nil container libraries (:id shape)))
 
       ;; Otherwise, detach the shape and all children
       (let [children-ids (:shapes shape)]
-        (reduce #(generate-detach-recursive %1 container %2 false component-root?)
+        (reduce #(generate-detach-recursive %1 container libraries %2 false component-root?)
                 (pcb/update-shapes changes [(:id shape)] ctk/detach-shape)
                 children-ids)))))
+
+(defn- generate-advance-nesting-level
+  [changes file container libraries shape-id]
+  (let [children (cfh/get-children-with-self (:objects container) shape-id)
+        skip-near (fn [changes shape]
+                    (let [ref-shape (ctf/find-ref-shape file container libraries shape {:include-deleted? true})]
+                      (if (some? (:shape-ref ref-shape))
+                        (pcb/update-shapes changes [(:id shape)] #(assoc % :shape-ref (:shape-ref ref-shape)))
+                        changes)))]
+    (reduce skip-near changes children)))
 
 (defn prepare-restore-component
   ([library-data component-id current-page it]
@@ -232,9 +247,9 @@
                           (when (some #(= (:id current-page) %) (:pages library-data)) ;; If the page doesn't belong to the library, it's not valid
                             current-page)
                           (ctpl/get-last-page library-data))]
-     (prepare-restore-component nil library-data component-id it page (gpt/point 0 0) nil nil)))
+     (prepare-restore-component nil library-data component-id it page (gpt/point 0 0) nil nil nil)))
 
-  ([changes library-data component-id it page delta old-id parent-id]
+  ([changes library-data component-id it page delta old-id parent-id frame-id]
    (let [component    (ctkl/get-deleted-component library-data component-id)
          parent       (get-in page [:objects parent-id])
          inside-component? (some? (ctn/get-instance-root (:objects page) parent))
@@ -244,9 +259,11 @@
          first-shape  (cond-> (first shapes)
                         (not (nil? parent-id))
                         (assoc :parent-id parent-id)
-                        (and parent (= :frame (:type parent)))
+                        (not (nil? frame-id))
+                        (assoc :frame-id frame-id)
+                        (and (nil? frame-id) parent (= :frame (:type parent)))
                         (assoc :frame-id parent-id)
-                        (and parent (not= :frame (:type parent)))
+                        (and (nil? frame-id) parent (not= :frame (:type parent)))
                         (assoc :frame-id (:frame-id parent))
                         inside-component?
                         (dissoc :component-root)
@@ -604,7 +621,7 @@
           ;; deleted or the library unlinked, do nothing in v2 or detach in v1.
           (if components-v2
             changes
-            (generate-detach-instance changes container shape-id))))
+            (generate-detach-instance changes libraries container shape-id))))
       changes)))
 
 (defn- find-main-container
@@ -634,7 +651,7 @@
     ;; This should not occur, but protect against it in any case
     (if components-v2
       changes
-      (generate-detach-instance changes container (:id shape-inst)))
+      (generate-detach-instance changes container {(:id library) library} (:id shape-inst)))
     (let [omit-touched?        (not reset?)
           clear-remote-synced? (and initial-root? reset?)
           set-remote-synced?   (and (not initial-root?) reset?)

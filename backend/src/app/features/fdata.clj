@@ -30,6 +30,24 @@
                             (update :components update-vals update-fn))))
         (update :features conj "fdata/objects-map"))))
 
+(defn process-objects
+  "Apply a function to all objects-map on the file. Usualy used for convert
+  the objects-map instances to plain maps"
+  [fdata update-fn]
+  (let [update-container
+        (fn [container]
+          (d/update-when container :objects
+                         (fn [objects]
+                           (if (omap/objects-map? objects)
+                             (update-fn objects)
+                             objects))))]
+    (cond-> fdata
+      (contains? fdata :pages-index)
+      (update :pages-index update-vals update-container)
+
+      (contains? fdata :components)
+      (update :components update-vals update-container))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; POINTER-MAP
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

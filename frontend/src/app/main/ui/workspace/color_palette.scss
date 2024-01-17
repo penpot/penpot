@@ -46,7 +46,7 @@
   }
   &:disabled {
     svg {
-      stroke: var(--button-background-color-disabled);
+      stroke: var(--button-foreground-color-disabled);
     }
     &::after {
       background-image: none;

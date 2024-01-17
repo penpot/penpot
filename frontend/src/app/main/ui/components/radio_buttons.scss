@@ -53,19 +53,19 @@
     cursor: default;
     background-color: transparent;
     svg {
-      stroke: var(--button-background-color-disabled);
+      stroke: var(--button-foreground-color-disabled);
     }
     .title-name {
-      color: var(--button-background-color-disabled);
+      color: var(--button-foreground-color-disabled);
     }
     &:hover {
       border: none;
       background-color: transparent;
       svg {
-        stroke: var(--button-background-color-disabled);
+        stroke: var(--button-foreground-color-disabled);
       }
       .title-name {
-        color: var(--button-background-color-disabled);
+        color: var(--button-foreground-color-disabled);
       }
     }
   }

@@ -44,7 +44,7 @@
   }
   &:disabled {
     svg {
-      stroke: var(--button-background-color-disabled);
+      stroke: var(--button-foreground-color-disabled);
     }
     &::after {
       background-image: none;
@@ -93,25 +93,28 @@
   &:first-child {
     margin-left: $s-8;
   }
+
   .typography-name {
-    @include tabTitleTipography;
     @include textEllipsis;
     height: $s-16;
     width: $s-120;
     color: var(--palette-text-color-selected);
   }
+
   .typography-font {
     @include textEllipsis;
     height: $s-16;
     width: $s-120;
     color: var(--palette-text-color);
   }
+
   .typography-data {
     @include textEllipsis;
     height: $s-16;
     width: $s-120;
     color: var(--palette-text-color);
   }
+
   &.mid-item {
     .typography-name {
       height: $s-16;
