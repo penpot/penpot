@@ -577,21 +577,6 @@
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
 
-(defmethod migrate 30
-  [data]
-  (letfn [(update-object [object]
-            (if (and (cfh/frame-shape? object)
-                     (not (:shapes object)))
-              (assoc object :shapes [])
-              object))
-
-          (update-container [container]
-            (d/update-when container :objects update-vals update-object))]
-
-    (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
-
 (defmethod migrate 31
   [data]
   (letfn [(update-object [object]
@@ -778,3 +763,22 @@
     (-> data
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
+
+(defmethod migrate 42
+  [data]
+  (letfn [(update-object [object]
+            (if (and (or (cfh/frame-shape? object)
+                         (cfh/group-shape? object)
+                         (cfh/bool-shape? object))
+                     (not (:shapes object)))
+              (assoc object :shapes [])
+              object))
+
+          (update-container [container]
+            (d/update-when container :objects update-vals update-object))]
+
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
+
+
