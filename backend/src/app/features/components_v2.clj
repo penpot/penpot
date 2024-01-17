@@ -129,7 +129,16 @@
                                         (if (or (= gap ##Inf)
                                                 (= gap ##-Inf))
                                           0
-                                          gap)))))
+                                          gap)))
+
+                    ;; Fix some broken layout related attrs, probably
+                    ;; of copypaste on flex layout betatest period
+                    (true? (:layout shape))
+                    (assoc :layout :flex)
+
+                    (number? (:layout-gap shape))
+                    (as-> shape (let [n (:layout-gap shape)]
+                                  (assoc shape :layout-gap {:row-gap n :column-gap n})))))
 
                 update-container
                 (fn [container]
