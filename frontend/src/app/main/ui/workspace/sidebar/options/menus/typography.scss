@@ -356,9 +356,11 @@
       flex-direction: column;
       position: relative;
       margin-bottom: $s-2;
+      background-color: var(--dropdown-background-color);
       .title {
         @include tabTitleTipography;
         margin: 9px 17px;
+        color: var(--title-foreground-color);
       }
     }
     .fonts-list {

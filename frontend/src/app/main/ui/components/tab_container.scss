@@ -21,6 +21,7 @@
   padding: $s-2;
   cursor: pointer;
   font-size: $fs-12;
+  height: 100%;
   .tab-container-tab-wrapper {
     @include flexCenter;
     flex-direction: row;
