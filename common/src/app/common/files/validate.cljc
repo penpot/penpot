@@ -367,64 +367,63 @@
   [shape-id file page libraries & {:keys [context] :or {context :not-component}}]
   (let [shape (ctst/get-shape page shape-id)]
     (when (some? shape)
-      (do
-        (check-geometry shape file page)
-        (check-parent-children shape file page)
-        (check-frame shape file page)
+      (check-geometry shape file page)
+      (check-parent-children shape file page)
+      (check-frame shape file page)
 
-        (if (ctk/instance-head? shape)
-          (if (not= :frame (:type shape))
-            (report-error :instance-head-not-frame
-                          "Instance head should be a frame"
+      (if (ctk/instance-head? shape)
+        (if (not= :frame (:type shape))
+          (report-error :instance-head-not-frame
+                        "Instance head should be a frame"
+                        shape file page)
+
+          (if (ctk/instance-root? shape)
+            (if (ctk/main-instance? shape)
+              (if (not= context :not-component)
+                (report-error :root-main-not-allowed
+                              "Root main component not allowed inside other component"
+                              shape file page)
+                (check-shape-main-root-top shape file page libraries))
+
+              (if (not= context :not-component)
+                (report-error :root-copy-not-allowed
+                              "Root copy component not allowed inside other component"
+                              shape file page)
+                (check-shape-copy-root-top shape file page libraries)))
+
+            (if (ctk/main-instance? shape)
+              ;; mains can't be nested into mains
+              (if (or (= context :not-component) (= context :main-top))
+                (report-error :nested-main-not-allowed
+                              "Nested main component only allowed inside other component"
+                              shape file page)
+                (check-shape-main-root-nested shape file page libraries))
+
+              (if (= context :not-component)
+                (report-error :nested-copy-not-allowed
+                              "Nested copy component only allowed inside other component"
+                              shape file page)
+                (check-shape-copy-root-nested shape file page libraries)))))
+
+        (if (ctk/in-component-copy? shape)
+          (if-not (#{:copy-top :copy-nested :copy-any} context)
+            (report-error :not-head-copy-not-allowed
+                          "Non-root copy only allowed inside a copy"
                           shape file page)
+            (check-shape-copy-not-root shape file page libraries))
 
-            (if (ctk/instance-root? shape)
-              (if (ctk/main-instance? shape)
-                (if (not= context :not-component)
-                  (report-error :root-main-not-allowed
-                                "Root main component not allowed inside other component"
-                                shape file page)
-                  (check-shape-main-root-top shape file page libraries))
-
-                (if (not= context :not-component)
-                  (report-error :root-copy-not-allowed
-                                "Root copy component not allowed inside other component"
-                                shape file page)
-                  (check-shape-copy-root-top shape file page libraries)))
-
-              (if (ctk/main-instance? shape)
-                ;; mains can't be nested into mains
-                (if (or (= context :not-component) (= context :main-top))
-                  (report-error :nested-main-not-allowed
-                                "Nested main component only allowed inside other component"
-                                shape file page)
-                  (check-shape-main-root-nested shape file page libraries))
-
-                (if (= context :not-component)
-                  (report-error :nested-copy-not-allowed
-                                "Nested copy component only allowed inside other component"
-                                shape file page)
-                  (check-shape-copy-root-nested shape file page libraries)))))
-
-          (if (ctk/in-component-copy? shape)
-            (if-not (#{:copy-top :copy-nested :copy-any} context)
-              (report-error :not-head-copy-not-allowed
-                            "Non-root copy only allowed inside a copy"
+          (if (ctn/inside-component-main? (:objects page) shape)
+            (if-not (#{:main-top :main-nested :main-any} context)
+              (report-error :not-head-main-not-allowed
+                            "Non-root main only allowed inside a main component"
                             shape file page)
-              (check-shape-copy-not-root shape file page libraries))
+              (check-shape-main-not-root shape file page libraries))
 
-            (if (ctn/inside-component-main? (:objects page) shape)
-              (if-not (#{:main-top :main-nested :main-any} context)
-                (report-error :not-head-main-not-allowed
-                              "Non-root main only allowed inside a main component"
-                              shape file page)
-                (check-shape-main-not-root shape file page libraries))
-
-              (if (#{:main-top :main-nested :main-any} context)
-                (report-error :not-component-not-allowed
-                              "Not compoments are not allowed inside a main"
-                              shape file page)
-                (check-shape-not-component shape file page libraries)))))))))
+            (if (#{:main-top :main-nested :main-any} context)
+              (report-error :not-component-not-allowed
+                            "Not compoments are not allowed inside a main"
+                            shape file page)
+              (check-shape-not-component shape file page libraries))))))))
 
 (defn- check-component
   "Validate semantic coherence of a component. Report all errors found."
