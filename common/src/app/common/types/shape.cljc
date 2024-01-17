@@ -491,7 +491,12 @@
   the shape. The props must have :x :y :width :height."
   [{:keys [type] :as props}]
   (let [shape (make-minimal-shape type)
-        shape (merge shape (d/without-nils props))
+
+        ;; The props can be custom records that does not
+        ;; work properly with without-nils, so we first make
+        ;; it plain map for proceed
+        props (d/without-nils (into {} props))
+        shape (merge shape (d/without-nils (into {} props)))
         shape (case (:type shape)
                 (:bool :path)  (setup-path shape)
                 :image (-> shape setup-rect setup-image)
