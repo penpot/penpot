@@ -31,6 +31,10 @@
 
 (defmulti migrate :version)
 
+(defn need-migration?
+  [{:keys [data]}]
+  (> cfd/version (:version data 0)))
+
 (defn migrate-data
   ([data] (migrate-data data version))
   ([data to-version]

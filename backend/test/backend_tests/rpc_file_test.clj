@@ -166,18 +166,21 @@
          :name "test"
          :id page-id}])
 
-      ;; Check the number of fragments
-      (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
-        (t/is (= 2 (count rows))))
-
-      ;; Check the number of fragments
-      (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
-        (t/is (= 2 (count rows))))
-
-      ;; The file-gc should remove unused fragments
+      ;; The file-gc should mark for remove unused fragments
       (let [res (th/run-task! :file-gc {:min-age 0})]
         (t/is (= 1 (:processed res))))
 
+      ;; Check the number of fragments
+      (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
+        (t/is (= 2 (count rows))))
+
+      ;; The objects-gc should remove unused fragments
+      (let [res (th/run-task! :objects-gc {:min-age 0})]
+        (t/is (= 0 (:processed res))))
+
+      ;; Check the number of fragments
+      (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
+        (t/is (= 2 (count rows))))
 
       ;; Add shape to page that should add a new fragment
       (update-file!
@@ -202,9 +205,13 @@
       (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
         (t/is (= 3 (count rows))))
 
-      ;; The file-gc should remove unused fragments
+      ;; The file-gc should mark for remove unused fragments
       (let [res (th/run-task! :file-gc {:min-age 0})]
         (t/is (= 1 (:processed res))))
+
+      ;; The objects-gc should remove unused fragments
+      (let [res (th/run-task! :objects-gc {:min-age 0})]
+        (t/is (= 0 (:processed res))))
 
       ;; Check the number of fragments; should be 3 because changes
       ;; are also holding pointers to fragments;
@@ -234,8 +241,6 @@
 
       (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
         (t/is (= 2 (count rows)))))))
-
-
 
 (t/deftest file-gc-task-with-thumbnails
   (letfn [(add-file-media-object [& {:keys [profile-id file-id]}]

@@ -7,7 +7,7 @@
 (ns app.common.data
   "A collection if helpers for working with data structures and other
   data resources."
-  (:refer-clojure :exclude [read-string hash-map merge name update-vals
+  (:refer-clojure :exclude [read-string hash-map merge name
                             parse-double group-by iteration concat mapcat
                             parse-uuid max min])
   #?(:cljs
