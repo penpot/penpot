@@ -43,7 +43,6 @@
    (mf/deps id blocked hidden type selected edition drawing-tool text-editing?
             node-editing? grid-editing? drawing-path? create-comment? @z? @space?
             panning workspace-read-only?)
-
    (fn [bevent]
      ;; We need to handle editor related stuff here because
      ;; handling on editor dom node does not works properly.
@@ -127,6 +126,7 @@
                   (not mod?)
                   (not shift?)
                   (not @space?))
+
          (dom/prevent-default bevent)
          (dom/stop-propagation bevent)
          (when-not (or workspace-read-only? @z?)
