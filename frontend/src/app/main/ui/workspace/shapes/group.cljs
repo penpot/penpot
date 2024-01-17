@@ -11,6 +11,7 @@
    [app.main.ui.shapes.group :as group]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.workspace.shapes.common :refer [check-shape-props]]
+   [app.main.ui.workspace.shapes.debug :as wsd]
    [rumext.v2 :as mf]))
 
 (defn group-wrapper-factory
@@ -30,5 +31,7 @@
         [:> shape-container {:shape shape}
          [:& group-shape
           {:shape shape
-           :childs childs}]]))))
+           :childs childs}]
+         (when *assert*
+           [:& wsd/shape-debug {:shape shape}])]))))
 
