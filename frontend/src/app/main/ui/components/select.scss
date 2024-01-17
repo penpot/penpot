@@ -28,7 +28,7 @@
 
   .current-icon {
     @include flexCenter;
-    height: $s-24;
+    /* height: $s-24; */
     width: $s-24;
     padding-right: $s-4;
     svg {
