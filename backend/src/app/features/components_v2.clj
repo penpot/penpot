@@ -115,6 +115,27 @@
               (vswap! detached-ids conj (:id shape)))
             (ctk/detach-shape shape)))
 
+
+        fix-missing-image-metadata
+        (fn [file-data]
+          (let [update-object
+                (fn [objects id shape]
+                  (if (and (cfh/image-shape? shape)
+                           (nil? (:metadata shape)))
+                    (-> objects
+                        (dissoc id)
+                        (d/update-in-when [(:parent-id shape) :shapes]
+                                          (fn [shapes] (filterv #(not= id %) shapes))))
+                    objects))
+
+                update-page
+                (fn [page]
+                  (d/update-when page :objects #(reduce-kv update-object % %)))]
+
+            (-> file-data
+                (update :pages-index update-vals update-page)
+                (update :components update-vals update-page))))
+
         fix-misc-shape-issues
         (fn [file-data]
           ;; Find shapes that are not listed in their parent's children list.
@@ -388,6 +409,7 @@
     (-> file-data
         (fix-misc-shape-issues)
         (fix-recent-colors)
+        (fix-missing-image-metadata)
         (fix-orphan-shapes)
         (remove-nested-roots)
         (add-not-nested-roots)
