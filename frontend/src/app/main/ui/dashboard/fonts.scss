@@ -143,7 +143,7 @@
         margin-left: $s-6;
         align-items: center;
         svg {
-          fill: transparent;
+          fill: none;
           width: $s-12;
           height: $s-12;
           transform: rotate(45deg);
@@ -186,16 +186,18 @@
       margin-left: $s-12;
       justify-content: center;
       align-items: center;
+      svg {
+        width: $s-16;
+        height: $s-16;
+        stroke: $df-secondary;
+        fill: none;
+      }
+
       &.failure {
         margin-right: $s-12;
         svg {
           stroke: var(--warning-color);
         }
-      }
-      svg {
-        width: $s-16;
-        height: $s-16;
-        stroke: $df-secondary;
       }
 
       &.close {
@@ -275,6 +277,7 @@
 
       svg {
         stroke: $df-secondary;
+        fill: none;
         height: $s-20;
         width: $s-20;
       }
@@ -312,6 +315,7 @@
 
   .icon svg {
     stroke: $df-secondary;
+    fill: none;
     width: $s-32;
     height: $s-32;
   }
