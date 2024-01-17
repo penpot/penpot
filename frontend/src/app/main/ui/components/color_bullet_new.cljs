@@ -75,6 +75,7 @@
                       :color-text (< size 72)
                       :small-text (and (>= size 64) (< size 72))
                       :big-text   (>= size 72))
+              :title name
               :on-click on-click
               :on-double-click on-double-click}
        (if (some? image)
