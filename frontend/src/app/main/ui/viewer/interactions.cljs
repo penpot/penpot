@@ -113,24 +113,27 @@
     [:& (mf/provider shapes/base-frame-ctx) {:value base}
      [:& (mf/provider shapes/frame-offset-ctx) {:value offset}
       ;; We have two different svgs for fixed and not fixed elements so we can emulate the sticky css attribute in svg
-      [:svg.not-fixed {:view-box vbox
-                       :width (:width size)
-                       :height (:height size)
-                       :version "1.1"
-                       :xmlnsXlink "http://www.w3.org/1999/xlink"
-                       :xmlns "http://www.w3.org/2000/svg"
-                       :fill "none"}
-       [:& wrapper-not-fixed {:shape frame :view-box vbox}]]
-      [:svg.fixed {:view-box vbox
-                   :width (:width size)
-                   :height (:height size)
-                   :version "1.1"
-                   :xmlnsXlink "http://www.w3.org/1999/xlink"
-                   :xmlns "http://www.w3.org/2000/svg"
-                   :fill "none"
-                   :style {:width (:width size)
-                           :height (:height size)}}
-       [:& wrapper-fixed {:shape fixed-frame :view-box vbox}]]]]))
+      [:svg {:class (stl/css :fixed)
+             :view-box vbox
+             :width (:width size)
+             :height (:height size)
+             :version "1.1"
+             :xmlnsXlink "http://www.w3.org/1999/xlink"
+             :xmlns "http://www.w3.org/2000/svg"
+             :fill "none"
+             :style {:width (:width size)
+                     :height (:height size)}}
+       [:& wrapper-fixed {:shape fixed-frame :view-box vbox}]]
+
+      [:svg {:class (stl/css :not-fixed)
+             :view-box vbox
+             :width (:width size)
+             :height (:height size)
+             :version "1.1"
+             :xmlnsXlink "http://www.w3.org/1999/xlink"
+             :xmlns "http://www.w3.org/2000/svg"
+             :fill "none"}
+       [:& wrapper-not-fixed {:shape frame :view-box vbox}]]]]))
 
 (mf/defc viewport
   {::mf/wrap [mf/memo]
