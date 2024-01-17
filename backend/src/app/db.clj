@@ -517,9 +517,11 @@
 
 (defn rollback!
   ([conn]
-   (let [^Connection conn (get-connection conn)]
-     (l/trc :hint "explicit rollback requested")
-     (.rollback conn)))
+   (if (and (map? conn) (::savepoint conn))
+     (rollback! conn (::savepoint conn))
+     (let [^Connection conn (get-connection conn)]
+       (l/trc :hint "explicit rollback requested")
+       (.rollback conn))))
   ([conn ^Savepoint sp]
    (let [^Connection conn (get-connection conn)]
      (l/trc :hint "explicit rollback requested (savepoint)")
@@ -538,8 +540,13 @@
     (let [conn (::conn system)
           sp   (savepoint conn)]
       (try
-        (let [result (apply f system params)]
-          (release! conn sp)
+        (let [system' (-> system
+                          (assoc ::savepoint sp)
+                          (dissoc ::rollback))
+              result  (apply f system' params)]
+          (if (::rollback system)
+            (rollback! conn sp)
+            (release! conn sp))
           result)
         (catch Throwable cause
           (.rollback ^Connection conn ^Savepoint sp)
@@ -547,8 +554,10 @@
 
     (::pool system)
     (with-atomic [conn (::pool system)]
-      (let [system (assoc system ::conn conn)
-            result (apply f system params)]
+      (let [system' (-> system
+                        (assoc ::conn conn)
+                        (dissoc ::rollback))
+            result  (apply f system' params)]
         (when (::rollback system)
           (rollback! conn))
         result))
