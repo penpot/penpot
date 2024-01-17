@@ -319,9 +319,9 @@
                                       (= (ptk/type %) ::start-path-edit))))
             interrupt (->> stream (rx/filter #(= % :interrupt)) (rx/take 1))]
         (rx/concat
-         (rx/of (dwc/hide-toolbar))
-         (rx/of (undo/start-path-undo))
-         (rx/of (drawing/change-edit-mode mode))
+         (rx/of (dwc/hide-toolbar)
+                (undo/start-path-undo)
+                (drawing/change-edit-mode mode))
          (->> interrupt
               (rx/map #(stop-path-edit id))
               (rx/take-until stopper)))))))
