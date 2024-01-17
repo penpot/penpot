@@ -292,9 +292,20 @@
   (let [file (update file :data (fn [data]
                                   (-> data
                                       (blob/decode)
-                                      (assoc :id (:id file))
-                                      (fmg/migrate-data)
-                                      (d/without-nils))))
+                                      (assoc :id (:id file)))))
+
+        ;; For avoid unnecesary overhead of creating multiple pointers
+        ;; and handly internally with objects map in their worst
+        ;; case (when probably all shapes and all pointers will be
+        ;; readed in any case), we just realize/resolve them before
+        ;; applying the migration to the file
+        file (if (fmg/need-migration? file)
+               (-> file
+                   (update :data feat.fdata/process-pointers deref)
+                   (update :data feat.fdata/process-objects (partial into {}))
+                   (fmg/migrate-file))
+               file)
+
 
         ;; WARNING: this ruins performance; maybe we need to find
         ;; some other way to do general validation
@@ -305,14 +316,20 @@
                     (into [file] (map (fn [{:keys [id]}]
                                         (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)
                                                   pmap/*tracked* nil]
+                                          ;; We do not resolve the objects maps here
+                                          ;; because there is a lower probability that all
+                                          ;; shapes needed to be loded into memory, so we
+                                          ;; leeave it on lazy status
                                           (-> (files/get-file cfg id :migrate? false)
                                               (update :data feat.fdata/process-pointers deref) ; ensure all pointers resolved
                                               (fmg/migrate-file))))))
                     (d/index-by :id)))
 
+
         file (-> (files/check-version! file)
                  (update :revn inc)
-                 (update :data cpc/process-changes changes))]
+                 (update :data cpc/process-changes changes)
+                 (update :data d/without-nils))]
 
     (when (contains? cf/flags :soft-file-validation)
       (soft-validate-file! file libs))
@@ -329,12 +346,10 @@
       (val/validate-file-schema! file))
 
     (cond-> file
-      (and (contains? cfeat/*current* "fdata/objects-map")
-           (not (contains? cfeat/*previous* "fdata/objects-map")))
+      (contains? cfeat/*current* "fdata/objects-map")
       (feat.fdata/enable-objects-map)
 
-      (and (contains? cfeat/*current* "fdata/pointer-map")
-           (not (contains? cfeat/*previous* "fdata/pointer-map")))
+      (contains? cfeat/*current* "fdata/pointer-map")
       (feat.fdata/enable-pointer-map)
 
       :always

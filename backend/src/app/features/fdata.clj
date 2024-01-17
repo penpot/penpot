@@ -27,7 +27,7 @@
         (update :data (fn [fdata]
                         (-> fdata
                             (update :pages-index update-vals update-fn)
-                            (update :components update-vals update-fn))))
+                            (d/update-when :components update-vals update-fn))))
         (update :features conj "fdata/objects-map"))))
 
 (defn process-objects
@@ -110,6 +110,6 @@
       (update :data (fn [fdata]
                       (-> fdata
                           (update :pages-index update-vals pmap/wrap)
-                          (update :components pmap/wrap))))
+                          (d/update-when :components pmap/wrap))))
 
       (update :features conj "fdata/pointer-map")))
