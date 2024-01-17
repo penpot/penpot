@@ -49,13 +49,9 @@
     }
     .color-name {
       @include titleTipography;
-      display: flex;
-      align-items: center;
-      height: $s-28;
-      padding-left: $s-6;
+      @include textEllipsis;
+      padding-inline: $s-6;
       border-radius: $br-8;
-      width: 100%;
-      flex-grow: 1;
       color: var(--input-foreground-color-active);
     }
     .detach-btn {
