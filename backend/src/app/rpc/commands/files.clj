@@ -226,23 +226,37 @@
   [{:keys [::db/conn] :as cfg} {:keys [id] :as file}]
   (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)
             pmap/*tracked* (pmap/create-tracked)]
-    (let [file (fmg/migrate-file file)]
+    (let [;; For avoid unnecesary overhead of creating multiple pointers and
+          ;; handly internally with objects map in their worst case (when
+          ;; probably all shapes and all pointers will be readed in any
+          ;; case), we just realize/resolve them before applying the
+          ;; migration to the file
+          file (-> file
+                   (update :data feat.fdata/process-pointers deref)
+                   (update :data feat.fdata/process-objects (partial into {}))
+                   (fmg/migrate-file))
 
-      ;; NOTE: when file is migrated, we break the rule of no perform
-      ;; mutations on get operations and update the file with all
-      ;; migrations applied
-      ;;
-      ;; NOTE: the following code will not work on read-only mode, it
-      ;; is a known issue; we keep is not implemented until we really
-      ;; need this
-      (when (fmg/migrated? file)
-        (db/update! conn :file
-                    {:data (blob/encode (:data file))
-                     :features (db/create-array conn "text" (:features file))}
-                    {:id id})
+          ;; When file is migrated, we break the rule of no perform
+          ;; mutations on get operations and update the file with all
+          ;; migrations applied
+          ;;
+          ;; WARN: he following code will not work on read-only mode,
+          ;; it is a known issue; we keep is not implemented until we
+          ;; really need this.
+          file (if (contains? (:features file) "fdata/objects-map")
+                 (feat.fdata/enable-objects-map file)
+                 file)
+          file (if (contains? (:features file) "fdata/pointer-map")
+                 (feat.fdata/enable-pointer-map file)
+                 file)]
 
-        (when (contains? (:features file) "fdata/pointer-map")
-          (feat.fdata/persist-pointers! cfg id)))
+      (db/update! conn :file
+                  {:data (blob/encode (:data file))
+                   :features (db/create-array conn "text" (:features file))}
+                  {:id id})
+
+      (when (contains? (:features file) "fdata/pointer-map")
+        (feat.fdata/persist-pointers! cfg id))
 
       file)))
 
@@ -266,7 +280,7 @@
                             ::db/remove-deleted (not include-deleted?)
                             ::sql/for-update lock-for-update?})
                    (decode-row))]
-    (if migrate?
+    (if (and migrate? (fmg/need-migration? file))
       (migrate-file cfg file)
       file)))
 

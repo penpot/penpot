@@ -166,32 +166,36 @@
 
   (assoc [this key val]
     (when-not loaded? (load! this))
-    (let [odata (assoc odata key val)
-          mdata (assoc mdata :created-at (dt/now))
-          id    (if modified? id (uuid/next))
-          pmap  (PointerMap. id
-                             mdata
-                             odata
-                             true
-                             true)]
-      (some-> *tracked* (swap! assoc id pmap))
-      pmap))
+    (let [odata' (assoc odata key val)]
+      (if (identical? odata odata')
+        this
+        (let [mdata (assoc mdata :created-at (dt/now))
+              id    (if modified? id (uuid/next))
+              pmap  (PointerMap. id
+                                 mdata
+                                 odata'
+                                 true
+                                 true)]
+          (some-> *tracked* (swap! assoc id pmap))
+          pmap))))
 
   (assocEx [_ _ _]
     (throw (UnsupportedOperationException. "method not implemented")))
 
   (without [this key]
     (when-not loaded? (load! this))
-    (let [odata (dissoc odata key)
-          mdata (assoc mdata :created-at (dt/now))
-          id    (if modified? id (uuid/next))
-          pmap  (PointerMap. id
-                             mdata
-                             odata
-                             true
-                             true)]
-      (some-> *tracked* (swap! assoc id pmap))
-      pmap))
+    (let [odata' (dissoc odata key)]
+      (if (identical? odata odata')
+        this
+        (let [mdata (assoc mdata :created-at (dt/now))
+              id    (if modified? id (uuid/next))
+              pmap  (PointerMap. id
+                                 mdata
+                                 odata'
+                                 true
+                                 true)]
+          (some-> *tracked* (swap! assoc id pmap))
+          pmap))))
 
   Counted
   (count [this]
@@ -206,6 +210,8 @@
 (defn create
   ([]
    (let [id    (uuid/next)
+
+
          mdata (assoc *metadata* :created-at (dt/now))
          pmap  (PointerMap. id mdata {} true true)]
      (some-> *tracked* (swap! assoc id pmap))
@@ -225,7 +231,15 @@
     (do
       (some-> *tracked* (swap! assoc (get-id data) data))
       data)
-    (into (create) data)))
+    (let [mdata (assoc (meta data) :created-at (dt/now))
+          id    (uuid/next)
+          pmap  (PointerMap. id
+                             mdata
+                             data
+                             true
+                             true)]
+      (some-> *tracked* (swap! assoc id pmap))
+      pmap)))
 
 (fres/add-handlers!
  {:name "penpot/pointer-map/v1"
