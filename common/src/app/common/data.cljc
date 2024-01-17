@@ -216,12 +216,19 @@
   [coll]
   (into [] (remove nil?) coll))
 
+
 (defn without-nils
   "Given a map, return a map removing key-value
   pairs when value is `nil`."
-  ([] (remove (comp nil? val)))
+  ([]
+   (remove (comp nil? val)))
   ([data]
-   (into {} (without-nils) data)))
+   (reduce-kv (fn [data k v]
+                (if (nil? v)
+                  (dissoc data k)
+                  data))
+              data
+              data)))
 
 (defn without-qualified
   ([]
