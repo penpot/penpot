@@ -318,7 +318,7 @@
                          (= "#7B7D85" fill-color)))
                 (dissoc :fill-color :fill-opacity))))
 
-          (update-container [{:keys [objects] :as container}]
+          (update-container [container]
             (if (contains? container :objects)
               (loop [objects (:objects container)
                      shapes  (->> (vals objects)
@@ -627,8 +627,8 @@
             ;; Ensure all root objects are well formed shapes.
             (if (= (:id object) uuid/zero)
               (-> object
-                  (assoc :parent-id uuid/zero
-                         :frame-id uuid/zero)
+                  (assoc :parent-id uuid/zero)
+                  (assoc :frame-id uuid/zero)
                   (cts/setup-shape))
               object))
 
@@ -703,13 +703,69 @@
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
 
-
 (defmethod migrate 39
   [data]
   (letfn [(update-shape [shape]
             (if (and (cfh/bool-shape? shape)
                      (not (contains? shape :bool-content)))
               (assoc shape :bool-content [])
+              shape))
+
+          (update-container [container]
+            (d/update-when container :objects update-vals update-shape))]
+
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
+
+(defmethod migrate 40
+  [data]
+  (letfn [(update-shape [{:keys [content shapes] :as shape}]
+            ;; Fix frame shape that in reallity is a path shape
+            (if (and (cfh/frame-shape? shape)
+                     (contains? shape :selrect)
+                     (seq content)
+                     (not (seq shapes))
+                     (contains? (first content) :command))
+              (-> shape
+                  (assoc :type :path)
+                  (assoc :x nil)
+                  (assoc :y nil)
+                  (assoc :width nil)
+                  (assoc :height nil))
+              shape))
+
+          (update-container [container]
+            (d/update-when container :objects update-vals update-shape))]
+
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
+
+(defmethod migrate 41
+  [data]
+  (letfn [(update-shape [shape]
+            (cond
+              (or (cfh/bool-shape? shape)
+                  (cfh/path-shape? shape))
+              shape
+
+              ;; Fix all shapes that has geometry broken but still
+              ;; preservers the selrect, so we recalculate the
+              ;; geometry from selrect.
+              (and (contains? shape :selrect)
+                   (or (nil? (:x shape))
+                       (nil? (:y shape))
+                       (nil? (:width shape))
+                       (nil? (:height shape))))
+              (let [selrect (:selrect shape)]
+                (-> shape
+                    (assoc :x (:x selrect))
+                    (assoc :y (:y selrect))
+                    (assoc :width (:width selrect))
+                    (assoc :height (:height selrect))))
+
+              :else
               shape))
 
           (update-container [container]
