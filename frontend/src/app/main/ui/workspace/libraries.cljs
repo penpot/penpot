@@ -481,6 +481,11 @@
         on-tab-change
         (mf/use-fn #(reset! selected-tab* %))
 
+        close-dialog-outside
+        (mf/use-fn (fn [event]
+                     (when (= (dom/get-target event) (dom/get-current-target event))
+                       (modal/hide!))))
+
         close-dialog
         (mf/use-fn (fn [_]
                      (modal/hide!)
@@ -490,7 +495,7 @@
       (when team-id
         (st/emit! (dwl/fetch-shared-files {:team-id team-id}))))
 
-    [:div {:class (stl/css :modal-overlay)}
+    [:div {:class (stl/css :modal-overlay) :on-click close-dialog-outside}
      [:div {:class (stl/css :modal-dialog)}
       [:button {:class (stl/css :close)
                 :on-click close-dialog}
