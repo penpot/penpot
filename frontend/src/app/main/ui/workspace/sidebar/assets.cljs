@@ -178,7 +178,7 @@
          :fixed? true
          :min-width? true
          :top 152
-         :left 64
+         :left 18
          :options options
          :workspace? true}]
        [:button {:class (stl/css :sort-button)
