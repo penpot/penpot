@@ -155,7 +155,7 @@
             [:use {:href "#icon-grid-layout-mode"}]
 
             main-instance?
-            [:use {:href "#icon-component"}])])
+            [:use {:href "#icon-component-refactor"}])])
 
        [:text {:x text-pos-x
                :y 0
