@@ -138,6 +138,40 @@
                 (update :pages-index update-vals update-page)
                 (update :components update-vals update-page))))
 
+        ;; At some point in time, we had a bug that generated shapes
+        ;; with huge geometries that did not validate the
+        ;; schema. Since we don't have a way to fix those shapes, we
+        ;; simply proceed to delete it. We ignore path type shapes
+        ;; because they have not been affected by the bug.
+        fix-big-invalid-shapes
+        (fn [file-data]
+          (let [update-object
+                (fn [objects id shape]
+                  (cond
+                    (or (cfh/path-shape? shape)
+                        (cfh/bool-shape? shape))
+                    objects
+
+                    (or (and (number? (:x shape)) (not (sm/valid-safe-number? (:x shape))))
+                        (and (number? (:y shape)) (not (sm/valid-safe-number? (:y shape))))
+                        (and (number? (:width shape)) (not (sm/valid-safe-number? (:width shape))))
+                        (and (number? (:height shape)) (not (sm/valid-safe-number? (:height shape)))))
+                    (-> objects
+                        (dissoc id)
+                        (d/update-in-when [(:parent-id shape) :shapes]
+                                          (fn [shapes] (filterv #(not= id %) shapes))))
+
+                    :else
+                    objects))
+
+                update-page
+                (fn [page]
+                  (d/update-when page :objects #(reduce-kv update-object % %)))]
+
+            (-> file-data
+                (update :pages-index update-vals update-page)
+                (update :components update-vals update-page))))
+
         fix-misc-shape-issues
         (fn [file-data]
           ;; Find shapes that are not listed in their parent's children list.
@@ -419,6 +453,7 @@
         (fix-misc-shape-issues)
         (fix-recent-colors)
         (fix-missing-image-metadata)
+        (fix-big-invalid-shapes)
         (fix-orphan-shapes)
         (remove-nested-roots)
         (add-not-nested-roots)

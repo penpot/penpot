@@ -658,6 +658,9 @@
 
 ;; ---- PREDICATES
 
+(def valid-safe-number?
+  (lazy-validator ::safe-number))
+
 (def check-safe-int!
   (check-fn ::safe-int))
 
