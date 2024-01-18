@@ -626,7 +626,9 @@
                           (keyword))]
              (st/emit!
               (-> (dw/toggle-layout-flag flag)
-                  (vary-meta assoc ::ev/origin "workspace-menu"))))))]
+                  (vary-meta assoc ::ev/origin "workspace-menu")))
+             (reset! show-menu* false)
+             (reset! sub-menu* nil))))]
 
 
     [:*

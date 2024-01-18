@@ -1054,8 +1054,7 @@
             ignore-until (dm/get-in state [:workspace-file :ignore-sync-until])
             libraries-need-sync (filter #(seq (assets-need-sync % file-data ignore-until))
                                         (vals (get state :workspace-libraries)))
-            do-more-info #(do (modal/show! :libraries-dialog {:starting-tab :updates})
-                              (st/emit! msg/hide))
+            do-more-info #(modal/show! :libraries-dialog {:starting-tab :updates})
             do-update #(do (apply st/emit! (map (fn [library]
                                                   (sync-file (:current-file-id state)
                                                              (:id library)))
