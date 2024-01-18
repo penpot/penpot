@@ -83,18 +83,19 @@
    :layout-grid-dir         :layout-container
    :layout-grid-rows        :layout-container
    :layout-grid-columns     :layout-container
-   :layout-grid-cells       :layout-container
+   :layout-grid-cells       :layout-container})
 
-   :layout-item-margin      :layout-item
-   :layout-item-margin-type :layout-item
-   :layout-item-h-sizing    :layout-item
-   :layout-item-v-sizing    :layout-item
-   :layout-item-max-h       :layout-item
-   :layout-item-min-h       :layout-item
-   :layout-item-max-w       :layout-item
-   :layout-item-min-w       :layout-item
-   :layout-item-align-self  :layout-item})
-
+(def swap-keep-attrs
+  [:layout-item-margin
+   :layout-item-margin-type
+   :layout-item-h-sizing
+   :layout-item-v-sizing
+   :layout-item-max-h
+   :layout-item-min-h
+   :layout-item-max-w
+   :layout-item-min-w
+   :layout-item-absolute
+   :layout-item-z-index])
 
 (defn instance-root?
   "Check if this shape is the head of a top instance."
