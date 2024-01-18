@@ -380,7 +380,6 @@
         h 510
 
         ;; Checks for overflow outside the viewport height
-        ;; overflow-fix (max 0 (+ y (- 50) h (- vh)))
         max-y (- vh h)
 
         x-pos 325]
