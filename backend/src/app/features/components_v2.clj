@@ -105,6 +105,9 @@
    or that are the result of old bugs."
   [file-data libraries]
   (let [detached-ids  (volatile! #{})
+        valid-color?  (sm/validator ::ctc/recent-color)
+        valid-fill?   (sm/validator ::cts/fill)
+        valid-stroke? (sm/validator ::cts/stroke)
 
         detach-shape
         (fn [container shape]
@@ -114,7 +117,6 @@
             (when is-component?
               (vswap! detached-ids conj (:id shape)))
             (ctk/detach-shape shape)))
-
 
         fix-missing-image-metadata
         (fn [file-data]
@@ -152,6 +154,14 @@
                                           0
                                           gap)))
 
+                    ;; Fix broken fills
+                    (seq (:fills shape))
+                    (update :fills (fn [fills] (filterv valid-fill? fills)))
+
+                    ;; Fix broken strokes
+                    (seq (:strokes shape))
+                    (update :strokes (fn [strokes] (filterv valid-stroke? strokes)))
+
                     ;; Fix some broken layout related attrs, probably
                     ;; of copypaste on flex layout betatest period
                     (true? (:layout shape))
@@ -171,10 +181,9 @@
 
         fix-recent-colors
         (fn [file-data]
-          (let [valid-color? (sm/validator ::ctc/recent-color)]
-            (d/update-when file-data :recent-colors
-                           (fn [colors]
-                             (filterv valid-color? colors)))))
+          (d/update-when file-data :recent-colors
+                         (fn [colors]
+                           (filterv valid-color? colors))))
 
         fix-orphan-shapes
         (fn [file-data]
