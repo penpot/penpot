@@ -23,8 +23,9 @@
 (def rules-background "var(--panel-background-color)")
 (def selection-area-color "var(--color-primary)")
 (def selection-area-opacity 0.3)
-(def over-number-size 50)
-(def over-number-opacity 0.7)
+(def over-number-size 100)
+(def over-number-opacity 0.8)
+(def over-number-percent 0.75)
 
 (def font-size 12)
 (def font-family "worksans")
@@ -204,7 +205,29 @@
   ;; When using the format-number callls we consider if the guide is associated to a frame and we show the position relative to it with the offset
   (let [rules-background rules-background]
     [:g.selection-area
+     [:defs
+      [:linearGradient {:id "selection-gradient-start"}
+       [:stop {:offset "0%" :stop-color rules-background :stop-opacity 0}]
+       [:stop {:offset "40%" :stop-color rules-background :stop-opacity 1}]
+       [:stop {:offset "100%" :stop-color rules-background :stop-opacity 1}]]
+
+      [:linearGradient {:id "selection-gradient-end"}
+       [:stop {:offset "0%" :stop-color rules-background :stop-opacity 1}]
+       [:stop {:offset "60%" :stop-color rules-background :stop-opacity 1}]
+       [:stop {:offset "100%" :stop-color rules-background :stop-opacity 0}]]]
      [:g
+      [:rect {:x (- (:x selection-rect) (* (* over-number-size over-number-percent) zoom-inverse))
+              :y (:y vbox)
+              :width (* over-number-size zoom-inverse)
+              :height (* rule-area-size zoom-inverse)
+              :fill "url('#selection-gradient-start')"}]
+
+      [:rect {:x (- (:x2 selection-rect) (* over-number-size (- 1 over-number-percent)))
+              :y (:y vbox)
+              :width (* over-number-size zoom-inverse)
+              :height (* rule-area-size zoom-inverse)
+              :fill "url('#selection-gradient-end')"}]
+
       [:rect {:x (:x selection-rect)
               :y (:y vbox)
               :width (:width selection-rect)
@@ -212,15 +235,8 @@
               :style {:fill selection-area-color
                       :fill-opacity selection-area-opacity}}]
 
-      [:rect {:x (- (:x selection-rect) (* over-number-size zoom-inverse))
-              :y (:y vbox)
-              :width (* over-number-size zoom-inverse)
-              :height (* rule-area-size zoom-inverse)
-              :style {:fill rules-background
-                      :fill-opacity over-number-opacity}}]
-
       [:text {:x (- (:x1 selection-rect) (* 4 zoom-inverse))
-              :y (+ (:y vbox) (* 12 zoom-inverse))
+              :y (+ (:y vbox) (* 10.6 zoom-inverse))
               :text-anchor "end"
               :dominant-baseline "middle"
               :style {:font-size (* font-size zoom-inverse)
@@ -228,15 +244,8 @@
                       :fill selection-area-color}}
        (fmt/format-number (- (:x1 selection-rect) offset-x))]
 
-      [:rect {:x (:x2 selection-rect)
-              :y (:y vbox)
-              :width (* over-number-size zoom-inverse)
-              :height (* rule-area-size zoom-inverse)
-              :style {:fill rules-background
-                      :fill-opacity over-number-opacity}}]
-
       [:text {:x (+ (:x2 selection-rect) (* 4 zoom-inverse))
-              :y (+ (:y vbox) (* 12 zoom-inverse))
+              :y (+ (:y vbox) (* 10.6 zoom-inverse))
               :text-anchor "start"
               :dominant-baseline "middle"
               :style {:font-size (* font-size zoom-inverse)
