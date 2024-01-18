@@ -1010,12 +1010,16 @@
               (rx/of (dch/commit-changes (assoc changes ;; TODO a ver qué pasa con esto
                                                 :file-id file-id))))
             (when-not (empty? updated-frames)
-              (->> (rx/from updated-frames)
-                   (rx/mapcat (fn [shape]
-                                (rx/of
-                                 (dwt/clear-thumbnail file-id (:page-id shape) (:id shape) "frame")
-                                 (when-not (= (:frame-id shape) uuid/zero)
-                                   (dwt/clear-thumbnail file-id (:page-id shape) (:frame-id shape) "frame")))))))
+              (rx/merge
+               (rx/of (ptk/data-event :layout/update (map :id updated-frames)))
+               (->> (rx/from updated-frames)
+                    (rx/mapcat
+                     (fn [shape]
+                       (rx/of
+                        (dwt/clear-thumbnail file-id (:page-id shape) (:id shape) "frame")
+                        (when-not (= (:frame-id shape) uuid/zero)
+                          (dwt/clear-thumbnail file-id (:page-id shape) (:frame-id shape) "frame"))))))))
+
             (when (not= file-id library-id)
               ;; When we have just updated the library file, give some time for the
               ;; update to finish, before marking this file as synced.

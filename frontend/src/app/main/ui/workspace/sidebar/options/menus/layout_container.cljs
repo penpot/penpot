@@ -555,7 +555,8 @@
                        :on-change #(set-justify % type)
                        :name (dm/str "grid-justify-items-" (d/name type))}
      (for [justify [:start :center :end :space-around :space-between :stretch]]
-       [:& radio-button {:value (d/name justify)
+       [:& radio-button {:key   (dm/str "justify-item-" (d/name justify))
+                         :value (d/name justify)
                          :icon  (get-layout-grid-icon-refactor :justify-items justify is-col?)
                          :title (dm/str "Justify items " (d/name justify))
                          :id    (dm/str "justify-items-" (d/name justify) "-" (d/name type))}])]))
