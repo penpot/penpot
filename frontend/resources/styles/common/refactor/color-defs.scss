@@ -10,8 +10,8 @@
   // DARK
   --dark-gray-1: #1d1f20;
   --dark-gray-2: #000000;
-  --dark-gray-2-30: rgba(0, 0, 0, 0.3);
-  --dark-gray-2-80: rgba(0, 0, 0, 0.8);
+  --dark-gray-2-30: #{color.change(#000000, $alpha: 0.3)};
+  --dark-gray-2-80: #{color.change(#000000, $alpha: 0.8)};
   --dark-gray-3: #292c2d;
   --dark-gray-4: #34393b;
   --white: #fff;
@@ -22,6 +22,7 @@
   --lilac: #bb97d8;
   --pink: #ff6fe0;
   --strong-green: #00d1b8;
+  --strong-green-10: #{color.change(#00d1b8, $alpha: 0.1)};
 
   // NOTIFICATION
   --dark-ok-color: var(--strong-green);
@@ -33,8 +34,8 @@
   // LIGHT
   --light-gray-1: #fff;
   --light-gray-2: #e8eaee;
-  --light-gray-2-30: rgba(232, 234, 238, 0.3);
-  --light-gray-2-80: rgba(232, 234, 238, 0.8);
+  --light-gray-2-30: #{color.change(#e8eaee, $alpha: 0.3)};
+  --light-gray-2-80: #{color.change(#e8eaee, $alpha: 0.8)};
   --light-gray-3: #f3f4f6;
   --light-gray-4: #eef0f2;
   --black: #000;
@@ -44,6 +45,7 @@
   --purple-30: rgba(105, 17, 212, 0.2);
   --blue: #1345aa;
   --strong-purple: #8c33eb;
+  --strong-purple-10: #{color.change(#8c33eb, $alpha: 0.1)};
 
   // NOTIFICATION WILL CHANGE
   --light-ok-color: var(--strong-green);
