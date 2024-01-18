@@ -13,11 +13,11 @@
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
-(def primary-color "var(--color-select)")
-(def secondary-color "var(--color-distance)")
-(def black-color "var(--color-black)")
-(def white-color "var(--color-white)")
-(def gray-color "var(--color-gray-20)")
+(def primary-color "var(--color-accent-tertiary)")
+(def secondary-color "var(--color-foreground-tertiary)")
+(def black-color "var(--black)")
+(def white-color "var(--white)")
+(def gray-color "var(--off-white)")
 
 (def current-edit-path-ref
   (l/derived

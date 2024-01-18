@@ -31,7 +31,7 @@
 (def resize-point-circle-radius 10)
 (def resize-point-rect-size 8)
 (def resize-side-height 8)
-(def selection-rect-color-normal "var(--color-select)")
+(def selection-rect-color-normal "var(--color-accent-tertiary)")
 (def selection-rect-color-component "var(--color-component-highlight)")
 (def selection-rect-width 1)
 (def min-selrect-side 10)
@@ -213,7 +213,7 @@
                :style {:fillOpacity "1"
                        :strokeWidth "1px"
                        :vectorEffect "non-scaling-stroke"}
-               :fill "var(--color-white)"
+               :fill "var(--white)"
                :stroke color
                :cx cx'
                :cy cy'}]
@@ -279,7 +279,7 @@
                  :style {:fillOpacity 1
                          :stroke color
                          :strokeWidth "1px"
-                         :fill "var(--color-white)"
+                         :fill "var(--white)"
                          :vectorEffect "non-scaling-stroke"}
                  :data-position (name position)
                  :cx (+ x (/ length 2))

@@ -39,16 +39,16 @@
                     (let [theme (dom/event->value event)
                           data (assoc initial :theme theme)]
                       (st/emit! (du/update-profile data))))
-        colors [:bg-primary
-                :bg-secondary
-                :bg-tertiary
-                :bg-cuaternary
-                :fg-primary
-                :fg-secondary
-                :acc
-                :acc-muted
-                :acc-secondary
-                :acc-tertiary]
+        colors ["var(--color-background-primary)"
+                "var(--color-background-secondary)"
+                "var(--color-background-tertiary)"
+                "var(--color-background-cuaternary)"
+                "var(--color-foreground-primary)"
+                "var(--color-foreground-secondary)"
+                "var(--color-accent-primary)"
+                "var(--color-accent-primary-muted)"
+                "var(--color-accent-secondary)"
+                "var(--color-accent-tertiary)"]
 
         ;; COMPONENTS FNs
         state* (mf/use-state {:collapsed? true
@@ -88,12 +88,12 @@
        [:option {:label "Penpot Dark (default)" :value "default"}]
        [:option  {:label "Penpot Light" :value "light"}]]
       [:div {:class (stl/css :wrapper)}
-       (let [css (stl/styles)]
-         (for [color colors]
-           [:div {:key color
-                  :class (dom/classnames (get css color) true
-                                         (get css :rect) true)}
-            (d/name color)]))]]
+       (for [color colors]
+         [:div {:class (stl/css :color-wrapper)}
+          [:span (d/name color)]
+          [:div {:key color
+                 :style {:background color}
+                 :class (stl/css :rect)}]])]]
 
      [:div {:class (stl/css :components-row)}
       [:h2 {:class (stl/css :title)} "Components"]

@@ -25,8 +25,8 @@
   [{:keys [session profile] :as props}]
   (let [zoom             (mf/deref refs/selected-zoom)
         point            (:point session)
-        background-color (:color session "var(--color-black)")
-        text-color       (:text-color session "var(--color-white)")
+        background-color (:color session "var(--black)")
+        text-color       (:text-color session "var(--white)")
         transform        (str/fmt "translate(%s, %s) scale(%s)" (:x point) (:y point) (/ 1 zoom))
         shown-name       (if (> (count (:fullname profile)) 16)
                            (str (str/slice (:fullname profile) 0 12) "...")

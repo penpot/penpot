@@ -131,7 +131,7 @@
      (when icon-pdata
        [:path {:fill stroke
                :stroke-width 2
-               :stroke "var(--color-white)"
+               :stroke "var(--white)"
                :d icon-pdata
                :transform (str
                            "scale(" inv-zoom ", " inv-zoom ") "
@@ -164,7 +164,7 @@
 
     (if-not selected?
       [:g {:on-pointer-down #(on-pointer-down % index orig-shape)}
-       [:path {:stroke "var(--color-gray-20)"
+       [:path {:stroke "var(--off-white)"
                :fill "none"
                :pointer-events "visible"
                :stroke-width (/ 2 zoom)
@@ -173,13 +173,13 @@
          [:& interaction-marker {:index index
                                  :x dest-x
                                  :y dest-y
-                                 :stroke "var(--color-gray-20)"
+                                 :stroke "var(--off-white)"
                                  :action-type action-type
                                  :arrow-dir arrow-dir
                                  :zoom zoom}])]
 
       [:g {:on-pointer-down #(on-pointer-down % index orig-shape)}
-       [:path {:stroke "var(--color-primary)"
+       [:path {:stroke "var(--color-accent-tertiary)"
                :fill "none"
                :pointer-events "visible"
                :stroke-width (/ 2 zoom)
@@ -188,17 +188,17 @@
        (when dest-shape
          [:& outline {:zoom zoom
                       :shape dest-shape
-                      :color "var(--color-primary)"}])
+                      :color "var(--color-accent-tertiary)"}])
 
        [:& interaction-marker {:index index
                                :x orig-x
                                :y orig-y
-                               :stroke "var(--color-primary)"
+                               :stroke "var(--color-accent-tertiary)"
                                :zoom zoom}]
        [:& interaction-marker {:index index
                                :x dest-x
                                :y dest-y
-                               :stroke "var(--color-primary)"
+                               :stroke "var(--color-accent-tertiary)"
                                :action-type action-type
                                :arrow-dir arrow-dir
                                :zoom zoom}]])))
@@ -212,7 +212,7 @@
     [:g {:on-pointer-down #(on-pointer-down % index shape)}
      [:& interaction-marker {:x handle-x
                              :y handle-y
-                             :stroke "var(--color-primary)"
+                             :stroke "var(--color-accent-tertiary)"
                              :action-type :navigate
                              :arrow-dir :right
                              :zoom zoom}]]))
@@ -256,8 +256,8 @@
           [:& (mf/provider muc/render-thumbnails) {:value true}
            [:& (mf/provider embed/context) {:value false}
             [:& shape-wrapper {:shape dest-shape}]]]]
-         [:path {:stroke "var(--color-primary)"
-                 :fill "var(--color-black)"
+         [:path {:stroke "var(--color-accent-tertiary)"
+                 :fill "var(--black)"
                  :fill-opacity 0.5
                  :stroke-width 1
                  :d (dm/str "M" marker-x " " marker-y " "
@@ -271,7 +271,7 @@
          [:circle {:cx (+ marker-x (/ width 2))
                    :cy (+ marker-y (/ height 2))
                    :r 8
-                   :fill "var(--color-primary)"}]]))))
+                   :fill "var(--color-accent-tertiary)"}]]))))
 
 (mf/defc interactions
   [{:keys [current-transform objects zoom selected hover-disabled? page-id] :as props}]

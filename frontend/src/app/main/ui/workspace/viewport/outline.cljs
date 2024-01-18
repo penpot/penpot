@@ -34,7 +34,7 @@
         objects   (deref refs/workspace-page-objects)
         color     (if (ctn/in-any-component? objects shape)
                     "var(--color-component-highlight)"
-                    "var(--color-primary)")
+                    "var(--color-accent-tertiary)")
 
         x         (dm/get-prop shape :x)
         y         (dm/get-prop shape :y)
@@ -65,7 +65,7 @@
         (obj/merge!
          #js {:fill "none"
               :stroke color
-              :strokeWidth (/ 2 zoom)
+              :strokeWidth (/ 1 zoom)
               :pointerEvents "none"
               :transform transform}
 

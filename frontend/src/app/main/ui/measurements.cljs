@@ -23,28 +23,26 @@
 (def font-size 11)
 (def selection-rect-width 1)
 
-(def select-color "var(--color-select)")
+(def select-color "var(--color-accent-tertiary)")
 (def select-guide-width 1)
 (def select-guide-dasharray 5)
 
-(def hover-color "var(--color-distance)")
-(def hover-color-text "var(--color-white)")
-(def hover-guide-width 1)
+(def hover-color "var(--color-foreground-tertiary)")
 
-(def size-display-color "var(--color-white)")
+(def size-display-color "var(--white)")
 (def size-display-opacity 0.7)
-(def size-display-text-color "var(--color-black)")
+(def size-display-text-color "var(--black)")
 (def size-display-width-min 50)
 (def size-display-width-max 75)
 (def size-display-height 16)
 
-(def distance-color "var(--color-distance)")
-(def distance-text-color "var(--color-white)")
+(def distance-color "var(--color-foreground-tertiary)")
+(def distance-text-color "var(--white)")
 (def distance-border-radius 2)
 (def distance-pill-width 50)
 (def distance-pill-height 16)
 (def distance-line-stroke 1)
-(def warning-color "var(--color-warning)")
+
 
 ;; ------------------------------------------------
 ;; HELPERS

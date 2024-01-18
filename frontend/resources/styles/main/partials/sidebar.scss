@@ -565,10 +565,10 @@ button.collapse-sidebar {
 
     &:hover {
       svg {
-        stroke: var(--color-primary);
+        stroke: $color-primary;
       }
       label {
-        color: var(--color-primary);
+        color: $color-primary;
       }
     }
   }

@@ -19,9 +19,9 @@
   "Default data for page metadata."
   {:grid-x-axis grid-x-axis
    :grid-y-axis grid-y-axis
-   :grid-color "var(--color-gray-20)"
+   :grid-color "var(--off-white)"
    :grid-alignment true
-   :background "var(--color-white)"})
+   :background "var(--white)"})
 
 (def size-presets
   [{:name "APPLE"}

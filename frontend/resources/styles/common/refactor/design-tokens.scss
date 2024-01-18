@@ -112,7 +112,7 @@
   --layer-row-foreground-color: var(--color-foreground-secondary);
   --layer-row-foreground-color-hover: var(--color-accent-primary);
   --layer-row-foreground-color-selected: var(--color-accent-primary);
-  --layer-row-foreground-color-drag: var(--color-select);
+  --layer-row-foreground-color-drag: var(--color-accent-tertiary);
   --layer-row-foreground-color-focus: var(--color-foreground-primary);
   --layer-row-border-color-focus: var(--color-accent-primary);
   --layer-child-row-background-color: var(--color-background-tertiary);
@@ -210,13 +210,13 @@
   --assets-item-name-foreground-color-disabled: var(--color-foreground-disabled);
   --assets-item-border-color: var(--color-accent-primary);
   --assets-item-background-color-drag: var(--color-accent-primary-muted);
-  --assets-item-border-color-drag: var(--color-select);
+  --assets-item-border-color-drag: var(--color-accent-tertiary);
   --assets-component-background-color: var(--white); // We don't want this color to change with palette
   --assets-component-background-color-disabled: var(
     --off-white
   ); // We don't want this color to change with palette
   --assets-component-border-color: var(--color-background-tertiary);
-  --assets-component-border-selected: var(--color-select);
+  --assets-component-border-selected: var(--color-accent-tertiary);
 
   --radio-btns-background-color: var(--color-background-tertiary);
   --radio-btn-background-color-selected: var(--color-background-quaternary);

@@ -264,8 +264,8 @@
               :y (- y 1)
               :width (+ width 2)
               :height (+ height 2)
-              :fill "var(--color-primary)"
-              :stroke "var(--color-primary)"
+              :fill "var(--color-accent-tertiary)"
+              :stroke "var(--color-accent-tertiary)"
               :stroke-width (if interactions-show? 1 0)
               :fill-opacity (if interactions-show? 0.2 0)
               :style {:pointer-events (when frame? "none")}
