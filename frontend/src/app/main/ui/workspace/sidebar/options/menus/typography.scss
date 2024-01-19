@@ -247,8 +247,10 @@
 
 .text-options {
   @include flexColumn;
-  position: relative;
   margin-bottom: $s-8;
+  &:not(.text-options-full-size) {
+    position: relative;
+  }
   .font-option {
     @include titleTipography;
     @extend .asset-element;
@@ -342,71 +344,99 @@
   position: absolute;
   top: 0;
   left: 0;
+  right: 0;
   height: 100%;
   width: 100%;
   z-index: $z-index-3;
+}
 
-  .font-selector-dropdown {
+.show-recent {
+  border-radius: $br-8 $br-8 0 0;
+  background: var(--dropdown-background-color);
+  border: $s-1 solid var(--color-background-quaternary);
+  border-block-end: none;
+}
+
+.font-selector-dropdown {
+  width: 100%;
+  &:not(.font-selector-dropdown-full-size) {
     display: flex;
     flex-direction: column;
     flex-grow: 1;
     height: 100%;
-    .header {
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      margin-bottom: $s-2;
-      background-color: var(--dropdown-background-color);
-      .title {
-        @include tabTitleTipography;
-        margin: 9px 17px;
-        color: var(--title-foreground-color);
-      }
+  }
+  .header {
+    display: grid;
+    row-gap: $s-2;
+    .title {
+      @include tabTitleTipography;
+      color: var(--title-foreground-color);
+      margin: 0;
+      padding: $s-12;
     }
-    .fonts-list {
-      @include menuShadow;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      flex: 1 1 auto;
-      min-height: 100%;
-      width: 100%;
-      height: 100%;
-      padding: $s-2;
-      border-radius: $br-8;
-      background-color: var(--dropdown-background-color);
-    }
-    .font-wrapper {
-      padding-bottom: $s-4;
-      cursor: pointer;
-      .font-item {
-        @extend .asset-element;
-        margin-bottom: $s-4;
-        border-radius: $br-8;
-        display: flex;
-        .icon {
-          @include flexCenter;
-          height: $s-28;
-          width: $s-28;
-          svg {
-            @extend .button-icon-small;
-            stroke: var(--icon-foreground);
-          }
-        }
-        &.selected {
-          color: var(--assets-item-name-foreground-color-hover);
-          .icon {
-            svg {
-              stroke: var(--assets-item-name-foreground-color-hover);
-            }
-          }
-        }
+  }
 
-        .label {
-          @include titleTipography;
-          flex-grow: 1;
+  .font-wrapper {
+    padding-bottom: $s-4;
+    cursor: pointer;
+    .font-item {
+      @extend .asset-element;
+      margin-bottom: $s-4;
+      border-radius: $br-8;
+      display: flex;
+      .icon {
+        @include flexCenter;
+        height: $s-28;
+        width: $s-28;
+        svg {
+          @extend .button-icon-small;
+          stroke: var(--icon-foreground);
         }
+      }
+      &.selected {
+        color: var(--assets-item-name-foreground-color-hover);
+        .icon {
+          svg {
+            stroke: var(--assets-item-name-foreground-color-hover);
+          }
+        }
+      }
+
+      .label {
+        @include titleTipography;
+        flex-grow: 1;
       }
     }
   }
+}
+
+.font-selector-dropdown-full-size {
+  height: calc(100vh - 48px); // TODO: ugly hack :( Find a workaround for this.
+  display: grid;
+  grid-template-rows: auto 1fr;
+  padding: $s-2 $s-12 $s-12 $s-12;
+}
+
+.fonts-list {
+  @include menuShadow;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 100%;
+  width: 100%;
+  height: 100%;
+  padding: $s-2;
+  border-radius: $br-8;
+  background-color: var(--dropdown-background-color);
+  overflow: hidden;
+  &:not(.fonts-list-full-size) {
+    margin-block-start: $s-2;
+  }
+}
+
+.fonts-list-full-size {
+  border-start-start-radius: 0;
+  border-start-end-radius: 0;
+  border: $s-1 solid var(--color-background-quaternary);
 }
