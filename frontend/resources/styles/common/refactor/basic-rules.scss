@@ -316,7 +316,7 @@
   height: $s-32;
   border-radius: $br-8;
   background-color: var(--input-background-color);
-  border: $s-1 solid var(--input-background-color);
+  border: $s-1 solid var(--input-border-color);
   color: var(--input-foreground-color);
   span,
   label {
@@ -336,14 +336,45 @@
   }
 
   &:hover {
-    border: $s-1 solid var(--input-background-color-hover);
+    border: $s-1 solid var(--input-border-color-hover);
+    background-color: var(--input-background-color-hover);
     span {
-      color: var(--input-foreground-color);
+      color: var(--input-foreground-color-hover);
+    }
+    input {
+      color: var(--input-foreground-color-hover);
+    }
+  }
+  &:active {
+    border: $s-1 solid var(--input-border-color-active);
+    background-color: var(--input-background-color-active);
+    span {
+      color: var(--input-foreground-color-active);
     }
     input {
       color: var(--input-foreground-color-active);
     }
-    background-color: var(--input-background-color-hover);
+  }
+  &:focus,
+  &:focus-within {
+    border: $s-1 solid var(--input-border-color-focus);
+    background-color: var(--input-background-color-focus);
+    span {
+      color: var(--input-foreground-color-focus);
+    }
+    input {
+      color: var(--input-foreground-color-focus);
+    }
+    &:hover {
+      border: $s-1 solid var(--input-border-color-focus);
+      background-color: var(--input-background-color-focus);
+      span {
+        color: var(--input-foreground-color-focus);
+      }
+      input {
+        color: var(--input-foreground-color-focus);
+      }
+    }
   }
 }
 
@@ -362,7 +393,7 @@
     width: 100%;
     margin: 0;
     border-radius: $br-8;
-    border: $s-1 solid var(--input-background-color);
+    border: $s-1 solid var(--input-border-color);
     color: var(--input-foreground-color-active);
     background-color: var(--input-background-color);
   }
@@ -500,7 +531,7 @@
     min-height: $s-32;
     margin-top: $s-8;
     background-color: var(--input-background-color);
-    border: $s-1 solid var(--input-background-color);
+    border: $s-1 solid var(--input-border-color);
     color: var(--input-foreground-color-active);
     &:focus-within,
     &:active {

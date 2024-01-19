@@ -85,7 +85,7 @@
     }
     &:hover {
       background-color: var(--input-background-color-hover);
-      border: $s-1 solid var(--input-background-color-hover);
+      border: $s-1 solid var(--input-border-color-hover);
       .color-bullet-wrapper,
       .color-name,
       .detach-btn,
@@ -107,14 +107,28 @@
           background-color: var(--input-background-color-active);
         }
       }
+      &:focus,
+      &:focus-within {
+        background-color: var(--input-background-color-focus);
+        border: $s-1 solid var(--input-border-color-focus);
+      }
     }
+
     &:focus,
     &:focus-within {
-      background-color: var(--input-background-color-active);
+      background-color: var(--input-background-color-focus);
+      border: $s-1 solid var(--input-border-color-focus);
+      &:hover {
+        background-color: var(--input-background-color-hover);
+        border: $s-1 solid var(--input-border-color-focus);
+      }
     }
 
     &.editing {
       background-color: var(--input-background-color-active);
+      &:hover {
+        border: $s-1 solid var(--input-border-color-active);
+      }
     }
   }
   .gradient-name-wrapper {

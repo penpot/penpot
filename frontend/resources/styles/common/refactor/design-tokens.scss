@@ -143,11 +143,19 @@
   --icon-foreground-discard: var(--error-color);
 
   // INPUTS, SELECTS, DROPDOWNS
-  --input-background-color: var(--color-background-tertiary);
-  --input-foreground-color: var(--color-foreground-secondary);
+
   --input-placeholder-color: var(--color-foreground-secondary);
+  --input-background-color: var(--color-background-tertiary); // empty state
+  --input-foreground-color: var(--color-foreground-secondary); // empty state
+  --input-border-color: var(--color-background-tertiary); // empty state
+  --input-background-color-rest: var(--color-background-tertiary);
+  --input-foreground-color-rest: var(--color-foreground-primary);
+  --input-border-color-rest: var(--color-background-tertiary);
   --input-background-color-hover: var(--color-background-quaternary);
+  --input-foreground-color-hover: var(--color-foreground-primary);
+  --input-border-color-hover: var(--color-background-quaternary);
   --input-background-color-focus: var(--color-background-tertiary);
+  --input-foreground-color-focus: var(--color-foreground-primary);
   --input-border-color-focus: var(--color-accent-primary);
   --input-background-color-active: var(--color-background-primary);
   --input-foreground-color-active: var(--color-foreground-primary);

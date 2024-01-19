@@ -67,7 +67,7 @@
       background-color: var(--input-background-color);
       color: var(--menu-foreground-color);
       box-sizing: border-box;
-      border: $s-1 solid var(--input-background-color);
+      border: $s-1 solid var(--input-border-color);
     }
   }
   .actions {

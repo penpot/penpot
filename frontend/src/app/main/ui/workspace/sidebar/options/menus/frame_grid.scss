@@ -45,7 +45,7 @@
     width: $s-28;
     border-radius: $br-8 0 0 $br-8;
     box-sizing: border-box;
-    border: $s-1 solid var(--input-background-color);
+    border: $s-1 solid var(--input-border-color);
     svg {
       @extend .button-icon;
     }
@@ -62,9 +62,9 @@
       border-radius: 0;
       height: 100%;
       box-sizing: border-box;
-      border: $s-1 solid var(--input-background-color);
+      border: $s-1 solid var(--input-border-color);
       &:hover {
-        border: $s-1 solid var(--input-background-color-hover);
+        border: $s-1 solid var(--input-border-color-hover);
       }
     }
   }
@@ -90,7 +90,7 @@
       height: $s-32;
       border-radius: 0 $br-8 $br-8 0;
       box-sizing: border-box;
-      border: $s-1 solid var(--input-background-color);
+      border: $s-1 solid var(--input-border-color);
       .numeric-input {
         @extend .input-base;
         margin: 0;

@@ -42,7 +42,7 @@
         }
       }
       &:hover {
-        border: $s-1 solid var(--input-background-color-hover);
+        border: $s-1 solid var(--input-border-color-hover);
         background-color: var(--input-background-color-hover);
         svg {
           background-color: var(--input-background-color-hover);
