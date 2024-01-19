@@ -12,6 +12,8 @@
   (:require
    [app.common.colors :as cc]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
+   [app.common.math :as mth]
    [app.util.i18n :as i18n :refer [tr]]
    [cuerdas.core :as str]))
 
@@ -82,3 +84,10 @@
       (:name color)
       (:color color)
       (gradient-type->string (:type (:gradient color)))))
+
+(defn random-color
+  []
+  (dm/fmt "rgb(%, %, %)"
+          (mth/floor (* (js/Math.random) 256))
+          (mth/floor (* (js/Math.random) 256))
+          (mth/floor (* (js/Math.random) 256))))

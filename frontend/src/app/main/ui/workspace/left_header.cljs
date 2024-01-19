@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.left-header
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -625,7 +626,9 @@
                           (keyword))]
              (st/emit!
               (-> (dw/toggle-layout-flag flag)
-                  (vary-meta assoc ::ev/origin "workspace-menu"))))))]
+                  (vary-meta assoc ::ev/origin "workspace-menu")))
+             (reset! show-menu* false)
+             (reset! sub-menu* nil))))]
 
 
     [:*
@@ -724,7 +727,7 @@
 
 (mf/defc left-header
   {::mf/wrap-props false}
-  [{:keys [file layout project page-id]}]
+  [{:keys [file layout project page-id class]}]
   (let [file-id     (:id file)
         file-name   (:name file)
         project-id  (:id project)
@@ -780,7 +783,7 @@
     (mf/with-effect [editing?]
       (when ^boolean editing?
         (dom/select-text! (mf/ref-val input-ref))))
-    [:header {:class (stl/css :workspace-header-left)}
+    [:header {:class (dm/str class " " (stl/css :workspace-header-left))}
      [:a {:on-click go-back
           :class (stl/css :main-icon)} i/logo-icon]
      [:div {:alt (tr "workspace.sitemap")

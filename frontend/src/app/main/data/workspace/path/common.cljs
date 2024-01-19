@@ -7,6 +7,7 @@
 (ns app.main.data.workspace.path.common
   (:require
    [app.common.schema :as sm]
+   [app.common.svg.path.subpath :as ups]
    [app.main.data.workspace.path.state :as st]
    [potok.v2.core :as ptk]))
 
@@ -52,10 +53,11 @@
   (dissoc state :last-point :prev-handler :drag-handler :preview))
 
 (defn finish-path
-  [_source]
+  []
   (ptk/reify ::finish-path
     ptk/UpdateEvent
     (update [_ state]
       (let [id (st/get-path-id state)]
         (-> state
-            (update-in [:workspace-local :edit-path id] clean-edit-state))))))
+            (update-in [:workspace-local :edit-path id] clean-edit-state)
+            (update-in (st/get-path-location state :content) ups/close-subpaths))))))

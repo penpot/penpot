@@ -82,15 +82,27 @@
                (dm/get-in state [:dashboard-local :selected-project]))
              st/state))
 
+(defn- dashboard-extract-selected
+  [files selected]
+  (let [get-file #(get files %)
+        sim-file #(select-keys % [:id :name :project-id :is-shared])
+        xform    (comp (map get-file)
+                       (map sim-file))]
+    (->> (into #{} xform selected)
+         (d/index-by :id))))
+
+(def dashboard-selected-search
+  (l/derived (fn [state]
+               ;; we need to this because :dashboard-search-result is a list
+               ;; of maps and we need a map of maps (using :id as key).
+               (let [files (d/index-by :id (:dashboard-search-result state))]
+                 (dashboard-extract-selected files (dm/get-in state [:dashboard-local :selected-files]))))
+             st/state))
+
 (def dashboard-selected-files
   (l/derived (fn [state]
-               (let [get-file #(dm/get-in state [:dashboard-files %])
-                     sim-file #(select-keys % [:id :name :project-id :is-shared])
-                     selected (get-in state [:dashboard-local :selected-files])
-                     xform    (comp (map get-file)
-                                    (map sim-file))]
-                 (->> (into #{} xform selected)
-                      (d/index-by :id))))
+               (dashboard-extract-selected (:dashboard-files state)
+                                           (dm/get-in state [:dashboard-local :selected-files])))
              st/state =))
 
 ;; ---- Workspace refs

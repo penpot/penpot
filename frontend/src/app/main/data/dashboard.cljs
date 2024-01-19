@@ -320,7 +320,9 @@
     (update [_ state]
       (update state :dashboard-local
               assoc :selected-files #{}
-              :selected-project nil))))
+              :selected-project nil
+              :menu-open false
+              :menu-pos nil))))
 
 (defn toggle-file-select
   [{:keys [id project-id] :as file}]
@@ -338,6 +340,53 @@
                                                    (conj % id)))
                         (assoc :selected-project project-id))))
           state)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Show grid menu
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn show-file-menu-with-position
+  [file-id pos]
+  (ptk/reify ::show-file-menu-with-position
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :dashboard-local
+              assoc :menu-open true
+              :menu-pos pos
+              :file-id file-id))))
+
+(defn show-file-menu
+  []
+  (ptk/reify ::show-file-menu
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :dashboard-local
+              assoc :menu-open true))))
+
+(defn hide-file-menu
+  []
+  (ptk/reify ::hide-file-menu
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :dashboard-local
+              assoc :menu-open false))))
+
+(defn start-edit-file-name
+  [file-id]
+  (ptk/reify ::start-edit-file-menu
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :dashboard-local
+              assoc :edition true
+              :file-id file-id))))
+
+(defn stop-edit-file-name
+  []
+  (ptk/reify ::stop-edit-file-name
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :dashboard-local
+              assoc :edition false))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Modification

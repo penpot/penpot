@@ -16,13 +16,14 @@
 
 :global(:root) {
   --s-4: 0.25rem;
-  --layer-indentation-size: calc(var(--s-4) * 5);
+  --layer-indentation-size: calc(var(--s-4) * 6);
 }
 
 .workspace {
   @extend .new-scrollbar;
   width: 100vw;
-  height: 100%;
+  height: 100vh;
+  max-height: 100vh;
   user-select: none;
   display: grid;
   grid-template-areas: "left-sidebar viewport right-sidebar";

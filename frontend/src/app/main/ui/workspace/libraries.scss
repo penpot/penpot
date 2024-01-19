@@ -15,7 +15,6 @@
   width: 100%;
   z-index: $z-index-modal;
   background-color: var(--overlay-color);
-  pointer-events: none; // This is to allow outside click that closes modal.
 
   .modal-dialog {
     position: relative;
@@ -25,7 +24,6 @@
     padding: $s-32;
     border-radius: $br-10;
     background-color: var(--modal-background-color);
-    pointer-events: all;
     .close {
       @extend .button-tertiary;
       position: absolute;
@@ -146,8 +144,10 @@
 
           .section-title {
             @include titleTipography;
+            color: var(--modal-title-foreground-color);
             margin-bottom: $s-12;
           }
+
           .libraries-search {
             margin: $s-12 0;
             .search-icon {

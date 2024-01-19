@@ -466,6 +466,15 @@
 (def ^:icon view-as-icons-refactor (icon-xref :view-as-icons-refactor))
 (def ^:icon wrap-refactor (icon-xref :wrap-refactor))
 (def ^:icon view-as-list-refactor (icon-xref :view-as-list-refactor))
+(def ^:icon cap-line-arrow (icon-xref :cap-line-arrow))
+(def ^:icon cap-triangle-arrow (icon-xref :cap-triangle-arrow))
+(def ^:icon cap-square-marker (icon-xref :cap-square-marker))
+(def ^:icon cap-circle-marker (icon-xref :cap-circle-marker))
+(def ^:icon cap-diamond-marker (icon-xref :cap-diamond-marker))
+(def ^:icon cap-round (icon-xref :cap-round))
+(def ^:icon cap-square (icon-xref :cap-square))
+
+
 (def ^:icon loader-pencil
   (mf/html
    [:svg

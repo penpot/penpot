@@ -6,7 +6,14 @@
 
 @import "refactor/common-refactor.scss";
 .tool-window {
-  margin-bottom: $s-24;
+  padding-inline-start: $s-12;
+  overflow-y: auto;
+  display: grid;
+  grid-auto-rows: max-content;
+  scrollbar-gutter: stable;
+  &:last-child {
+    margin-block-end: $s-24;
+  }
 }
 
 .file-name {
@@ -38,13 +45,7 @@
 }
 
 .library-content {
-  display: flex;
-  flex-direction: column;
-  height: calc(100% - $s-36);
   width: 100%;
-  overflow-y: hidden;
-  overflow-x: hidden;
-  margin-top: $s-4;
 }
 
 .asset-title {

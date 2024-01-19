@@ -341,7 +341,7 @@
                                  :filter-term     filter-term}]]])))
 
 (mf/defc shortcuts-container
-  []
+  [{:keys [class] :as props}]
   (let [workspace-shortcuts          app.main.data.workspace.shortcuts/shortcuts
         path-shortcuts               app.main.data.workspace.path.shortcuts/shortcuts
         all-workspace-shortcuts      (->> (d/deep-merge path-shortcuts workspace-shortcuts)
@@ -468,7 +468,7 @@
     (mf/with-effect []
       (dom/focus! (dom/get-element "shortcut-search")))
 
-    [:div {:class (stl/css :shortcuts)}
+    [:div {:class (dm/str class " " (stl/css :shortcuts))}
      [:div {:class (stl/css :shortcuts-header)}
       [:div {:class (stl/css :shortcuts-title)} (tr "shortcuts.title")]
       [:div {:class (stl/css :shortcuts-close-button)

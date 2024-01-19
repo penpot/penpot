@@ -7,33 +7,21 @@
 
 .tab-container {
   display: grid;
-  grid-template-rows: auto 1fr;
-  grid-template-columns: 100%;
+  grid-template-rows: $s-32 1fr;
   height: 100%;
-
-  .tab-container-content {
-    overflow-y: auto;
-    overflow-x: hidden;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .tab-element {
-    flex: 1;
-    height: 100%;
-  }
 }
+
 .tab-container-tabs {
   display: flex;
   align-items: center;
   flex-direction: row;
   gap: $s-2;
-  height: $s-32;
   border-radius: $br-8;
   background: var(--color-background-secondary);
   padding: $s-2;
   cursor: pointer;
   font-size: $fs-12;
+  height: 100%;
   .tab-container-tab-wrapper {
     @include flexCenter;
     flex-direction: row;
@@ -72,6 +60,7 @@
       }
     }
   }
+
   .collapse-sidebar {
     @include flexCenter;
     @include buttonStyle;
@@ -102,4 +91,11 @@
       }
     }
   }
+}
+
+.tab-container-content {
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
 }

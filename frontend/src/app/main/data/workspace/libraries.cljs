@@ -829,7 +829,7 @@
             0)))))
 
 (defn- add-component-for-swap
-  [shape file-id id-new-component index target-cell]
+  [shape file-id id-new-component index target-cell keep-props-values]
   (dm/assert! (uuid? id-new-component))
   (dm/assert! (uuid? file-id))
   (ptk/reify ::add-component-for-swap
@@ -856,8 +856,13 @@
                                                  (:parent-id shape)
                                                  (:frame-id shape))
 
-            ;; We need to set the same index as the original shape
-            changes (pcb/change-parent changes (:parent-id shape) [new-shape] index {:component-swap true})]
+            changes
+            (-> changes
+                ;; Restore the properties
+                (pcb/update-shapes [(:id new-shape)] #(d/patch-object % keep-props-values))
+
+                ;; We need to set the same index as the original shape
+                (pcb/change-parent (:parent-id shape) [new-shape] index {:component-swap true}))]
 
         ;; First delete so we don't break the grid layout cells
         (rx/of (dch/commit-changes changes)
@@ -880,9 +885,12 @@
             target-cell (when (ctl/grid-layout? parent)
                           (ctl/get-cell-by-shape-id parent (:id shape)))
 
-            index (find-shape-index objects (:parent-id shape) (:id shape))]
+            index (find-shape-index objects (:parent-id shape) (:id shape))
+
+            ;; Store the properties that need to be maintained when the component is swapped
+            keep-props-values (select-keys shape ctk/swap-keep-attrs)]
         (rx/of (dwsh/delete-shapes nil (d/ordered-set (:id shape)) {:component-swap true})
-               (add-component-for-swap shape file-id id-new-component index target-cell)
+               (add-component-for-swap shape file-id id-new-component index target-cell keep-props-values)
                (ptk/data-event :layout/update [(:parent-id shape)]))))))
 
 (defn component-multi-swap
@@ -1002,12 +1010,16 @@
               (rx/of (dch/commit-changes (assoc changes ;; TODO a ver qué pasa con esto
                                                 :file-id file-id))))
             (when-not (empty? updated-frames)
-              (->> (rx/from updated-frames)
-                   (rx/mapcat (fn [shape]
-                                (rx/of
-                                 (dwt/clear-thumbnail file-id (:page-id shape) (:id shape) "frame")
-                                 (when-not (= (:frame-id shape) uuid/zero)
-                                   (dwt/clear-thumbnail file-id (:page-id shape) (:frame-id shape) "frame")))))))
+              (rx/merge
+               (rx/of (ptk/data-event :layout/update (map :id updated-frames)))
+               (->> (rx/from updated-frames)
+                    (rx/mapcat
+                     (fn [shape]
+                       (rx/of
+                        (dwt/clear-thumbnail file-id (:page-id shape) (:id shape) "frame")
+                        (when-not (= (:frame-id shape) uuid/zero)
+                          (dwt/clear-thumbnail file-id (:page-id shape) (:frame-id shape) "frame"))))))))
+
             (when (not= file-id library-id)
               ;; When we have just updated the library file, give some time for the
               ;; update to finish, before marking this file as synced.
@@ -1054,8 +1066,7 @@
             ignore-until (dm/get-in state [:workspace-file :ignore-sync-until])
             libraries-need-sync (filter #(seq (assets-need-sync % file-data ignore-until))
                                         (vals (get state :workspace-libraries)))
-            do-more-info #(do (modal/show! :libraries-dialog {:starting-tab :updates})
-                              (st/emit! msg/hide))
+            do-more-info #(modal/show! :libraries-dialog {:starting-tab :updates})
             do-update #(do (apply st/emit! (map (fn [library]
                                                   (sync-file (:current-file-id state)
                                                              (:id library)))

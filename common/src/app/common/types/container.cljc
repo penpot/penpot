@@ -6,6 +6,7 @@
 
 (ns app.common.types.container
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
@@ -287,7 +288,8 @@
          component-shape (if components-v2
                            (-> (get-shape component-page (:main-instance-id component))
                                (assoc :parent-id nil) ;; On v2 we force parent-id to nil in order to behave like v1
-                               (assoc :frame-id uuid/zero))
+                               (assoc :frame-id uuid/zero)
+                               (d/without-keys ctk/swap-keep-attrs))
                            (get-shape component (:id component)))
 
          orig-pos        (gpt/point (:x component-shape) (:y component-shape))

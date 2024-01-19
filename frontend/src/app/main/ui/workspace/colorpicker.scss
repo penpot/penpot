@@ -8,7 +8,6 @@
 
 .colorpicker-tooltip {
   @extend .modal-background;
-  top: $s-100;
   left: calc(10 * $s-140);
   width: auto;
 }

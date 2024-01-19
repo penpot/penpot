@@ -378,17 +378,21 @@
   [{vh :height} position x y]
   (let [;; picker height in pixels
         h 510
+
         ;; Checks for overflow outside the viewport height
-        overflow-fix (max 0 (+ y (- 50) h (- vh)))
+        max-y (- vh h)
 
         x-pos 325]
     (cond
       (or (nil? x) (nil? y)) {:left "auto" :right "16rem" :top "4rem"}
-      (= position :left) {:left (str (- x x-pos) "px")
-                          :top (str (- y 50 overflow-fix) "px")}
+      (= position :left)
+      (if (> y max-y)
+        {:left (str (- x x-pos) "px")
+         :bottom "1rem"}
+        {:left (str (- x x-pos) "px")
+         :top (str (- y 70) "px")})
       :else {:left (str (+ x 80) "px")
-             :top (str (- y 70 overflow-fix) "px")})))
-
+             :top (str (- y 70) "px")})))
 
 (mf/defc colorpicker-modal
   {::mf/register modal/components

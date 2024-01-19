@@ -12,9 +12,11 @@
   others are defined using a generic wrapper implemented in
   common."
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.rect :as grc]
+   [app.common.geom.shapes :as gsh]
    [app.common.uuid :as uuid]
    [app.main.ui.context :as ctx]
    [app.main.ui.shapes.circle :as circle]
@@ -42,22 +44,34 @@
 (def image-wrapper (common/generic-wrapper-factory image/image-shape))
 (def rect-wrapper (common/generic-wrapper-factory rect/rect-shape))
 
+(defn- make-is-frame-overlap
+  [vbox objects]
+  (fn [shape]
+    (let [bounds
+          (if (dm/get-prop shape :show-content)
+            (let [children (->> (cfh/get-children-ids objects (dm/get-prop shape :id))
+                                (map (d/getf objects)))]
+              (gsh/shapes->rect (cons shape children)))
+            (dm/get-prop shape :selrect))]
+      (grc/overlaps-rects? vbox bounds))))
+
 (mf/defc root-shape
   "Draws the root shape of the viewport and recursively all the shapes"
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   [props]
-  (let [objects       (obj/get props "objects")
-        active-frames (obj/get props "active-frames")
-        shapes        (cfh/get-immediate-children objects)
-        vbox          (mf/use-ctx ctx/current-vbox)
+  (let [objects        (obj/get props "objects")
+        active-frames  (obj/get props "active-frames")
+        shapes         (cfh/get-immediate-children objects)
+        vbox           (mf/use-ctx ctx/current-vbox)
 
-        shapes        (mf/with-memo [shapes vbox]
-                        (if (some? vbox)
-                          (filter (fn [shape]
-                                    (grc/overlaps-rects? vbox (dm/get-prop shape :selrect)))
-                                  shapes)
-                          shapes))]
+        frame-overlap? (mf/with-memo [vbox objects]
+                         #(make-is-frame-overlap vbox objects))
+
+        shapes         (mf/with-memo [shapes vbox frame-overlap?]
+                         (cond->> shapes
+                           (some? vbox)
+                           (filter frame-overlap?)))]
 
     [:g {:id (dm/str "shape-" uuid/zero)}
      [:& (mf/provider ctx/active-frames) {:value active-frames}

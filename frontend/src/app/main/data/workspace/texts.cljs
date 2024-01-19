@@ -52,6 +52,14 @@
       (when-let [editor (:workspace-editor state)]
         (ts/schedule #(.focus ^js editor))))))
 
+(defn gen-name
+  [editor]
+  (when (some? editor)
+    (let [result
+          (-> (ted/get-editor-current-plain-text editor)
+              (txt/generate-shape-name))]
+      (when (not= result "") result))))
+
 (defn update-editor-state
   [{:keys [id] :as shape} editor-state]
   (ptk/reify ::update-editor-state
@@ -62,7 +70,7 @@
         (update state :workspace-editor-state dissoc id)))))
 
 (defn finalize-editor-state
-  [id]
+  [id update-name?]
   (ptk/reify ::finalize-editor-state
     ptk/WatchEvent
     (watch [_ state _]
@@ -72,8 +80,8 @@
               editor-state (get-in state [:workspace-editor-state id])
               content      (-> editor-state
                                (ted/get-editor-current-content))
-              text         (-> (ted/get-editor-current-plain-text editor-state)
-                               (txt/generate-shape-name))
+              name         (gen-name editor-state)
+
               new-shape?   (nil? (:content shape))]
           (if (ted/content-has-text? content)
             (let [content (d/merge (ted/export-content content)
@@ -93,8 +101,8 @@
                            (assoc :content content)
                            (cond-> position-data
                              (assoc :position-data position-data))
-                           (cond-> new-shape?
-                             (assoc :name text))
+                           (cond-> (and update-name? (some? name))
+                             (assoc :name name))
                            (cond-> (or (some? width) (some? height))
                              (gsh/transform-shape (ctm/change-size shape width height))))))
                    {:undo-group (when new-shape? id)})))))
@@ -104,29 +112,31 @@
                      (dwsh/delete-shapes #{id})))))))))
 
 (defn initialize-editor-state
-  [{:keys [id content] :as shape} decorator]
+  [{:keys [id name content] :as shape} decorator]
   (ptk/reify ::initialize-editor-state
     ptk/UpdateEvent
     (update [_ state]
-      (let [text-state (some->> content ted/import-content)
-            attrs (d/merge txt/default-text-attrs
-                           (get-in state [:workspace-global :default-font]))
-            editor (cond-> (ted/create-editor-state text-state decorator)
-                     (and (nil? content) (some? attrs))
-                     (ted/update-editor-current-block-data attrs))]
+      (let [text-state   (some->> content ted/import-content)
+            attrs        (d/merge txt/default-text-attrs
+                                  (get-in state [:workspace-global :default-font]))
+            editor       (cond-> (ted/create-editor-state text-state decorator)
+                           (and (nil? content) (some? attrs))
+                           (ted/update-editor-current-block-data attrs))]
         (-> state
             (assoc-in [:workspace-editor-state id] editor))))
 
     ptk/WatchEvent
-    (watch [_ _ stream]
+    (watch [_ state stream]
       ;; We need to finalize editor on two main events: (1) when user
       ;; explicitly navigates to other section or page; (2) when user
       ;; leaves the editor.
-      (->> (rx/merge
-            (rx/filter (ptk/type? ::rt/navigate) stream)
-            (rx/filter #(= ::finalize-editor-state %) stream))
-           (rx/take 1)
-           (rx/map #(finalize-editor-state id))))))
+      (let [editor (dm/get-in state [:workspace-editor-state id])
+            update-name? (or (nil? content) (= name (gen-name editor)))]
+        (->> (rx/merge
+              (rx/filter (ptk/type? ::rt/navigate) stream)
+              (rx/filter #(= ::finalize-editor-state %) stream))
+             (rx/take 1)
+             (rx/map #(finalize-editor-state id update-name?)))))))
 
 (defn select-all
   "Select all content of the current editor. When not editor found this

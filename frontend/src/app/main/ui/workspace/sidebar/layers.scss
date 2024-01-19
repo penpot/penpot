@@ -6,14 +6,6 @@
 
 @import "refactor/common-refactor.scss";
 
-.layers {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  overflow: auto;
-  box-sizing: border-box;
-}
-
 .tool-window-bar {
   display: flex;
   align-items: center;
@@ -246,7 +238,8 @@
 }
 
 .tool-window-content {
-  --calculated-height: calc($s-128 + var(--height, $s-200));
+  // TODO: sass variables are not being interpolated here, find why
+  --calculated-height: calc(128px + var(--height, 200px));
   display: flex;
   flex-direction: column;
   height: calc(100vh - var(--calculated-height));

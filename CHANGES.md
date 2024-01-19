@@ -20,11 +20,13 @@
 
 - Select through stroke only rectangle [Taiga #5484](https://tree.taiga.io/project/penpot/issue/5484)
 - Override browser Ctrl+ and Ctrl- zoom with Penpot Zoom [Taiga #3200](https://tree.taiga.io/project/penpot/us/3200)
+- Reduce handlers for the flex layout gaps and paddings
 
 ### :bug: Bugs fixed
 
-- Fix pixelated thumbnails [Github
-  #3681](https://github.com/penpot/penpot/issues/3681) [Github #3661](https://github.com/penpot/penpot/issues/3661)
+- Fix pixelated thumbnails [Github #3681](https://github.com/penpot/penpot/issues/3681) [Github #3661](https://github.com/penpot/penpot/issues/3661)
+- Fix problem with not applying colors to boards [Github #3941](https://github.com/penpot/penpot/issues/3941)
+- Fix problem with path editor undoing changes [Github #3998](https://github.com/penpot/penpot/issues/3998)
 
 ### :arrow_up: Deps updates
 

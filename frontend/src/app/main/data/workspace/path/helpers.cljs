@@ -12,7 +12,6 @@
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.svg.path.command :as upc]
-   [app.common.svg.path.subpath :as ups]
    [app.main.data.workspace.path.common :as common]
    [app.util.mouse :as mse]
    [potok.v2.core :as ptk]))
@@ -117,7 +116,6 @@
   (let [command (next-node shape position prev-point prev-handler)]
     (-> shape
         (update :content (fnil conj []) command)
-        (update :content ups/close-subpaths)
         (update-selrect))))
 
 (defn angle-points [common p1 p2]

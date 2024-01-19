@@ -106,8 +106,9 @@
        [:span {:class (stl/css :title)} title]
        (when shortcut
          [:span   {:class (stl/css :shortcut)}
-          (for [sc (scd/split-sc shortcut)]
-            [:span {:class (stl/css :shortcut-key)} sc])])
+          (for [[idx sc] (d/enumerate (scd/split-sc shortcut))]
+            [:span {:key (dm/str shortcut "-" idx)
+                    :class (stl/css :shortcut-key)} sc])])
 
        (when (> (count children) 1)
          [:span {:class (stl/css :submenu-icon)} i/arrow-refactor])

@@ -10,6 +10,7 @@
    [app.main.refs :as refs]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.shapes.svg-raw :as svg-raw]
+   [app.main.ui.workspace.shapes.debug :as wsd]
    [rumext.v2 :as mf]))
 
 (defn svg-raw-wrapper-factory
@@ -26,7 +27,9 @@
         (if (contains? csvg/svg-group-safe-tags svg-tag)
           [:> shape-container {:shape shape}
            [:& svg-raw-shape {:shape shape
-                              :childs childs}]]
+                              :childs childs}]
+           (when *assert*
+             [:& wsd/shape-debug {:shape shape}])]
 
           [:& svg-raw-shape {:shape shape
                              :childs childs}])))))

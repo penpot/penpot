@@ -234,7 +234,7 @@
   (= (ptk/type event) ::changes-persisted))
 
 (defn shapes-changes-persisted
-  [file-id {:keys [revn changes]}]
+  [file-id {:keys [revn changes] persisted-session-id :session-id}]
   (dm/assert! (uuid? file-id))
   (dm/assert! (int? revn))
   (dm/assert! (cpc/check-changes! changes))
@@ -245,24 +245,28 @@
       ;; NOTE: we don't set the file features context here because
       ;; there are no useful context for code that need to be executed
       ;; on the frontend side
-
-      (if-let [current-file-id (:current-file-id state)]
-        (if (= file-id current-file-id)
-          (let [changes (group-by :page-id changes)]
+      (let [current-file-id (:current-file-id state)
+            current-session-id (:session-id state)]
+        (if (and (some? current-file-id)
+                 ;; If the remote change is from teh current session we skip
+                 (not= persisted-session-id current-session-id))
+          (if (= file-id current-file-id)
+            (let [changes (group-by :page-id changes)]
+              (-> state
+                  (update-in [:workspace-file :revn] max revn)
+                  (update :workspace-data
+                          (fn [file]
+                            (loop [fdata file
+                                   entries (seq changes)]
+                              (if-let [[page-id changes] (first entries)]
+                                (recur (-> fdata
+                                           (cpc/process-changes changes)
+                                           (cond-> (some? page-id)
+                                             (ctst/update-object-indices page-id)))
+                                       (rest entries))
+                                fdata))))))
             (-> state
-                (update-in [:workspace-file :revn] max revn)
-                (update :workspace-data (fn [file]
-                                          (loop [fdata file
-                                                 entries (seq changes)]
-                                            (if-let [[page-id changes] (first entries)]
-                                              (recur (-> fdata
-                                                         (cpc/process-changes changes)
-                                                         (cond-> (some? page-id)
-                                                           (ctst/update-object-indices page-id)))
-                                                     (rest entries))
-                                              fdata))))))
-          (-> state
-              (update-in [:workspace-libraries file-id :revn] max revn)
-              (update-in [:workspace-libraries file-id :data] cpc/process-changes changes)))
+                (update-in [:workspace-libraries file-id :revn] max revn)
+                (update-in [:workspace-libraries file-id :data] cpc/process-changes changes)))
 
-        state))))
+          state)))))

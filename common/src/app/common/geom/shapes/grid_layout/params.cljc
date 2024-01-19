@@ -117,7 +117,8 @@
           :layout-grid-rows [ctl/default-track-value ctl/default-track-value]}
          (ctl/create-cells [1 1 2 2]))
 
-     (let [all-shapes-rect (gco/shapes->rect shapes)
+     (let [shapes (->> shapes (remove :hidden))
+           all-shapes-rect (gco/shapes->rect shapes)
            shapes+bounds
            (->> shapes
                 (map #(vector % (grc/points->rect (get % :points)))))

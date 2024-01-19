@@ -10,52 +10,49 @@ $width-settings-bar: $s-276;
 $width-settings-bar-max: $s-500;
 
 .left-settings-bar {
+  display: grid;
+  grid-template-areas:
+    "header header"
+    "content resize";
+  grid-template-rows: $s-48 1fr;
+  grid-template-columns: 1fr 0;
   position: relative;
   grid-area: left-sidebar;
   min-width: $width-settings-bar;
   max-width: $width-settings-bar-max;
   width: var(--width, $width-settings-bar);
-  height: 100%;
   background-color: var(--panel-background-color);
+  height: 100vh;
+  max-height: 100vh;
 
   .resize-area {
-    position: absolute;
-    right: calc(-1 * $s-8);
-    z-index: $z-index-3;
-    width: $s-8;
-    height: calc(100vh - $s-52);
-    cursor: ew-resize;
-  }
-  .resize-area-horiz {
-    position: absolute;
-    top: calc($s-80 + var(--height, 200px));
-    left: 0;
-    width: 100%;
-    height: $s-12;
-    border-top: $s-2 solid var(--resize-area-border-color);
-    background-color: var(--resize-area-background-color);
-    cursor: ns-resize;
-  }
-  .settings-bar-inside {
-    display: grid;
-    grid-template-columns: 100%;
-    grid-template-rows: 100%;
-    height: calc(100vh - $s-52);
-    overflow: hidden;
-    .tabs-wrapper {
-      .layers-tab {
-        display: grid;
-        grid-template-rows: auto 1fr;
-        grid-template-columns: 100%;
-        height: 100%;
-        overflow: hidden;
-      }
-    }
+    grid-area: resize;
   }
 }
+
+.left-header {
+  grid-area: header;
+}
+
+.settings-bar-content {
+  grid-area: content;
+  right: calc(-1 * $s-8);
+}
+
+.resize-area {
+  position: absolute;
+  top: 0;
+  left: unset;
+  z-index: $z-index-3;
+  width: $s-8;
+  cursor: ew-resize;
+  height: 100%;
+}
+
 .tab-spacing {
-  margin: $s-4 $s-8 0 $s-8;
+  margin-inline: $s-8;
 }
+
 .right-settings-bar {
   grid-area: right-sidebar;
   width: $width-settings-bar;
@@ -69,14 +66,24 @@ $width-settings-bar-max: $s-500;
   &.expanded {
     width: var(--width, $width-settings-bar);
   }
-  .resize-area {
-    position: absolute;
-    height: 100%;
-    width: $s-8;
-    z-index: $z-index-3;
-    cursor: ew-resize;
-  }
+
   .settings-bar-inside {
+    display: grid;
+    grid-template-columns: 100%;
+    grid-template-rows: 100%;
+
     height: calc(100vh - $s-52);
+    overflow: hidden;
   }
+}
+
+.resize-area-horiz {
+  position: absolute;
+  top: calc($s-80 + var(--height, 200px));
+  left: 0;
+  width: 100%;
+  height: $s-12;
+  border-top: $s-2 solid var(--resize-area-border-color);
+  background-color: var(--resize-area-background-color);
+  cursor: ns-resize;
 }

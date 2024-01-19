@@ -542,12 +542,11 @@
                             :index index
                             :thumbnail-data (:thumbnails file)}]
 
-      [:section {:id "viewer-section"
-                 :ref viewer-section-ref
-                 :data-viewer-section true
-                 :class (stl/css-case :viewer-section true
-                                      :fulscreen fullscreen?)
-                 :on-click click-on-screen}
+      [:section#viewer-section {:ref viewer-section-ref
+                                :data-viewer-section true
+                                :class (stl/css-case :viewer-section true
+                                                     :fulscreen fullscreen?)
+                                :on-click click-on-screen}
        (cond
          (empty? frames)
          [:section {:class (stl/css :empty-state)}

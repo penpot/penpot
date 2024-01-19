@@ -153,7 +153,7 @@
            drag-events-stream
            (rx/of (finish-drag))
            (rx/of (close-path-drag-end))))
-         (rx/of (common/finish-path "close-path")))))))
+         (rx/of (common/finish-path)))))))
 
 (defn close-path-drag-end []
   (ptk/reify ::close-path-drag-end
@@ -253,7 +253,7 @@
          (rx/of (common/init-path))
          (rx/merge mousemove-events
                    mousedown-events)
-         (rx/of (common/finish-path "after-events")))))))
+         (rx/of (common/finish-path)))))))
 
 (defn setup-frame []
   (ptk/reify ::setup-frame
@@ -362,7 +362,7 @@
           (not= content old-content) (rx/of (changes/save-path-content)
                                             (start-draw-mode))
           (= mode :draw) (rx/of :interrupt)
-          :else (rx/of (common/finish-path "changed-content")))))))
+          :else (rx/of (common/finish-path)))))))
 
 (defn change-edit-mode [mode]
   (ptk/reify ::change-edit-mode
@@ -376,7 +376,7 @@
     (watch [_ state _]
       (let [id (st/get-path-id state)]
         (cond
-          (and id (= :move mode)) (rx/of (common/finish-path "change-edit-mode"))
+          (and id (= :move mode)) (rx/of (common/finish-path))
           (and id (= :draw mode)) (rx/of (dwc/hide-toolbar)
                                          (start-draw-mode))
           :else (rx/empty))))))

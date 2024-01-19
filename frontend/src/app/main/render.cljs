@@ -44,6 +44,7 @@
    [app.main.ui.shapes.svg-raw :as svg-raw]
    [app.main.ui.shapes.text :as text]
    [app.main.ui.shapes.text.fontfaces :as ff]
+   [app.util.dom :as dom]
    [app.util.http :as http]
    [app.util.strings :as ust]
    [app.util.thumbnails :as th]
@@ -626,7 +627,7 @@
            bounds         (gsb/get-object-bounds objects shape)
 
            background     (when (str/ends-with? object-id "component")
-                            (or (:background options) "#aab5ba"))
+                            (or (:background options) (dom/get-css-variable "--assets-component-background-color") "#fff"))
 
            x              (dm/get-prop bounds :x)
            y              (dm/get-prop bounds :y)

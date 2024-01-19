@@ -153,7 +153,7 @@
                                    :option-handler on-section-filter-change
                                    :data-test      "typographies"}]))]
 
-    [:div  {:class (stl/css :assets-bar)}
+    [:article  {:class (stl/css :assets-bar)}
      [:div {:class (stl/css :assets-header)}
       (when-not ^boolean read-only?
         [:button {:class (stl/css :libraries-button)
@@ -178,7 +178,7 @@
          :fixed? true
          :min-width? true
          :top 152
-         :left 64
+         :left 18
          :options options
          :workspace? true}]
        [:button {:class (stl/css :sort-button)
@@ -190,6 +190,6 @@
      [:& (mf/provider cmm/assets-filters) {:value filters}
       [:& (mf/provider cmm/assets-toggle-ordering) {:value toggle-ordering}
        [:& (mf/provider cmm/assets-toggle-list-style) {:value toggle-list-style}
-        [:div {:class (stl/css :libraries-wrapper)}
+        [:*
          [:& assets-local-library {:filters filters}]
          [:& assets-libraries {:filters filters}]]]]]]))

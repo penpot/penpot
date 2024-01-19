@@ -11,6 +11,7 @@
    [app.main.ui.shapes.bool :as bool]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.workspace.shapes.common :refer [check-shape-props]]
+   [app.main.ui.workspace.shapes.debug :as wsd]
    [rumext.v2 :as mf]))
 
 (defn bool-wrapper-factory
@@ -38,5 +39,7 @@
 
         [:> shape-container {:shape shape}
          [:& bool-shape {:shape shape
-                         :childs childs}]]))))
+                         :childs childs}]
+         (when *assert*
+           [:& wsd/shape-debug {:shape shape}])]))))
 

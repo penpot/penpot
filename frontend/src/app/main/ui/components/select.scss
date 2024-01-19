@@ -28,7 +28,6 @@
 
   .current-icon {
     @include flexCenter;
-    height: $s-24;
     width: $s-24;
     padding-right: $s-4;
     svg {
@@ -49,6 +48,7 @@
     .separator {
       margin: 0;
       height: $s-12;
+      border-top: 1px solid $db-primary;
     }
   }
   .checked-element {

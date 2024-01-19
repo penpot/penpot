@@ -26,7 +26,9 @@
              (^function on-click color event))))]
 
     (if (uc/multiple? color)
-      [:div {:on-click on-click :class (stl/css :color-bullet :multiple)}]
+      [:div {:class (stl/css :color-bullet :multiple)
+             :on-click on-click
+             :title (:color color)}]
       ;; No multiple selection
       (let [color    (if (string? color) {:color color :opacity 1} color)
             id       (:id color)
@@ -44,7 +46,8 @@
                   :grid-area area
                   :read-only read-only?)
           :data-readonly (str read-only?)
-          :on-click on-click}
+          :on-click on-click
+          :title (:color color)}
 
          (cond
            (some? gradient)
@@ -72,6 +75,7 @@
                       :color-text (< size 72)
                       :small-text (and (>= size 64) (< size 72))
                       :big-text   (>= size 72))
+              :title name
               :on-click on-click
               :on-double-click on-double-click}
        (if (some? image)

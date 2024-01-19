@@ -414,7 +414,11 @@
                        (gco/transform-points shape-center (:transform group (gmt/matrix))))
 
         ;; Calculate the new selrect
-        new-selrect (grc/points->rect base-points)]
+        sr-transform (gmt/transform-in (gco/points->center new-points) (:transform-inverse group (gmt/matrix)))
+        new-selrect
+        (-> new-points
+            (gco/transform-points sr-transform)
+            (grc/points->rect))]
 
     ;; Updates the shape and the applytransform-rect will update the other properties
     (-> group

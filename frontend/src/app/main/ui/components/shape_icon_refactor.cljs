@@ -47,7 +47,7 @@
               :exclude      i/boolean-exclude-refactor
               :intersection i/boolean-intersection-refactor
               #_:default    i/boolean-union-refactor)
-      :svg-raw i/path-refactor
+      :svg-raw i/img-refactor
       nil)))
 
 

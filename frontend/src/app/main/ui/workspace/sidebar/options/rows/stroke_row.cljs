@@ -123,14 +123,14 @@
         stroke-caps-options
         [{:value nil :label (tr "workspace.options.stroke-cap.none")}
          :separator
-         {:value :line-arrow :label (tr "workspace.options.stroke-cap.line-arrow-short")}
-         {:value :triangle-arrow :label (tr "workspace.options.stroke-cap.triangle-arrow-short")}
-         {:value :square-marker :label (tr "workspace.options.stroke-cap.square-marker-short")}
-         {:value :circle-marker :label (tr "workspace.options.stroke-cap.circle-marker-short")}
-         {:value :diamond-marker :label (tr "workspace.options.stroke-cap.diamond-marker-short")}
+         {:value :line-arrow :label (tr "workspace.options.stroke-cap.line-arrow-short") :icon :cap-line-arrow}
+         {:value :triangle-arrow :label (tr "workspace.options.stroke-cap.triangle-arrow-short") :icon :cap-triangle-arrow}
+         {:value :square-marker :label (tr "workspace.options.stroke-cap.square-marker-short") :icon :cap-square-marker}
+         {:value :circle-marker :label (tr "workspace.options.stroke-cap.circle-marker-short") :icon :cap-circle-marker}
+         {:value :diamond-marker :label (tr "workspace.options.stroke-cap.diamond-marker-short") :icon :cap-diamond-marker}
          :separator
-         {:value :round :label (tr "workspace.options.stroke-cap.round")}
-         {:value :square :label (tr "workspace.options.stroke-cap.square")}]
+         {:value :round :label (tr "workspace.options.stroke-cap.round") :icon :cap-round}
+         {:value :square :label (tr "workspace.options.stroke-cap.square") :icon :cap-square}]
 
         on-cap-switch
         (mf/use-callback

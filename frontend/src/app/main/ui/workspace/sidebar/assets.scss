@@ -7,9 +7,11 @@
 @import "refactor/common-refactor.scss";
 
 .assets-bar {
-  position: relative;
+  display: grid;
   height: 100%;
-  overflow: hidden;
+  grid-auto-rows: max-content;
+  // TODO: ugly hack :( Fix this! we shouldn't be hardcoding this height
+  max-height: calc(100vh - $s-80);
 }
 
 .libraries-button {
@@ -106,16 +108,6 @@
 
 .section-btn {
   @include buttonStyle;
-}
-
-.libraries-wrapper {
-  overflow-x: hidden;
-  overflow-y: auto;
-  scrollbar-gutter: stable;
-  display: flex;
-  flex-direction: column;
-  padding-left: $s-8;
-  height: calc(100vh - $s-180);
 }
 
 .assets-header {

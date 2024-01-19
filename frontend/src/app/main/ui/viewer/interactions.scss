@@ -78,3 +78,12 @@
 }
 
 // breakpoint 1013px
+
+.fixed {
+  position: fixed;
+  pointer-events: none;
+
+  :global(.frame-children) g {
+    pointer-events: auto;
+  }
+}
