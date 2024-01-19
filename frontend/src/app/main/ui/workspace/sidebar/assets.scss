@@ -9,7 +9,7 @@
 .assets-bar {
   display: grid;
   height: 100%;
-  grid-template-rows: auto 1fr;
+  grid-auto-rows: max-content;
   // TODO: ugly hack :( Fix this! we shouldn't be hardcoding this height
   max-height: calc(100vh - $s-80);
 }
