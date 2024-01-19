@@ -73,6 +73,18 @@
 (def justify-items-types
   #{:start :end :center :stretch})
 
+(def layout-item-props
+  [:layout-item-margin
+   :layout-item-margin-type
+   :layout-item-h-sizing
+   :layout-item-v-sizing
+   :layout-item-max-h
+   :layout-item-min-h
+   :layout-item-max-w
+   :layout-item-min-w
+   :layout-item-absolute
+   :layout-item-z-index])
+
 (sm/def! ::layout-attrs
   [:map {:title "LayoutAttrs"}
    [:layout {:optional true} [::sm/one-of layout-types]]

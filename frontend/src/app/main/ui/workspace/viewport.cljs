@@ -16,6 +16,7 @@
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.refs :as refs]
    [app.main.ui.context :as ctx]
+   [app.main.ui.flex-controls :as mfc]
    [app.main.ui.hooks :as ui-hooks]
    [app.main.ui.measurements :as msr]
    [app.main.ui.shapes.export :as use]
@@ -232,31 +233,32 @@
 
         disabled-guides?         (or drawing-tool transform drawing-path? node-editing?)
 
-        one-selected-shape?      (= (count selected-shapes) 1)
+        single-select?           (= (count selected-shapes) 1)
 
-        show-padding? (and (nil? transform)
-                           one-selected-shape?
-                           (= (:type (first selected-shapes)) :frame)
-                           (= (:layout (first selected-shapes)) :flex)
-                           (zero? (:rotation (first selected-shapes))))
+        first-shape (first selected-shapes)
 
+        show-padding?
+        (and (nil? transform)
+             single-select?
+             (= (:type first-shape) :frame)
+             (= (:layout first-shape) :flex)
+             (zero? (:rotation first-shape)))
 
-        show-margin? (and (nil? transform)
-                          one-selected-shape?
-                          (= (:layout selected-frame) :flex)
-                          (zero? (:rotation (first selected-shapes))))
+        show-margin?
+        (and (nil? transform)
+             single-select?
+             (= (:layout selected-frame) :flex)
+             (zero? (:rotation first-shape)))
 
-        first-selected-shape (first selected-shapes)
-        selecting-first-level-frame? (and one-selected-shape?
-                                          (cfh/root-frame? first-selected-shape))
+        selecting-first-level-frame? (and single-select? (cfh/root-frame? first-shape))
 
         offset-x (if selecting-first-level-frame?
-                   (:x first-selected-shape)
+                   (:x first-shape)
                    (:x selected-frame))
 
 
         offset-y (if selecting-first-level-frame?
-                   (:y (first selected-shapes))
+                   (:y first-shape)
                    (:y selected-frame))
 
         rule-area-size (/ rules/rule-area-size zoom)]
@@ -439,24 +441,28 @@
            :zoom zoom}])
 
        (when show-padding?
-         [:*
-          [:& msr/padding
-           {:frame (first selected-shapes)
-            :hover @frame-hover
-            :zoom zoom
-            :alt? @alt?
-            :shift? @shift?}]
+         [:& mfc/padding-control
+          {:frame first-shape
+           :hover @frame-hover
+           :zoom zoom
+           :alt? @alt?
+           :shift? @shift?
+           :on-move-selected on-move-selected
+           :on-context-menu on-menu-selected}])
 
-          [:& msr/gap
-           {:frame (first selected-shapes)
-            :hover @frame-hover
-            :zoom zoom
-            :alt? @alt?
-            :shift? @shift?}]])
+       (when show-padding?
+         [:& mfc/gap-control
+          {:frame first-shape
+           :hover @frame-hover
+           :zoom zoom
+           :alt? @alt?
+           :shift? @shift?
+           :on-move-selected on-move-selected
+           :on-context-menu on-menu-selected}])
 
        (when show-margin?
-         [:& msr/margin
-          {:shape (first selected-shapes)
+         [:& mfc/margin-control
+          {:shape first-shape
            :parent selected-frame
            :hover @frame-hover
            :zoom zoom

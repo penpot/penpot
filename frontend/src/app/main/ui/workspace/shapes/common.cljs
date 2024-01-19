@@ -8,6 +8,7 @@
   (:require
    [app.common.record :as cr]
    [app.main.ui.shapes.shape :refer [shape-container]]
+   [app.main.ui.workspace.shapes.debug :as wsd]
    [rumext.v2 :as mf]))
 
 (def ^:private excluded-attrs
@@ -34,4 +35,6 @@
     [props]
     (let [shape (unchecked-get props "shape")]
       [:> shape-container {:shape shape}
-       [:& component {:shape shape}]])))
+       [:& component {:shape shape}]
+       (when *assert*
+         [:& wsd/shape-debug {:shape shape}])])))

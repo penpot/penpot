@@ -20,6 +20,7 @@
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.workspace.shapes.common :refer [check-shape-props]]
+   [app.main.ui.workspace.shapes.debug :as wsd]
    [app.main.ui.workspace.shapes.frame.dynamic-modifiers :as fdm]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
@@ -193,5 +194,8 @@
             [:g.frame-content
              {:id (dm/str "frame-content-" frame-id)
               :ref container-ref}
-             [:& frame-shape {:shape shape :ref content-ref}]])]]))))
+             [:& frame-shape {:shape shape :ref content-ref}]])]
+
+         (when *assert*
+           [:& wsd/shape-debug {:shape shape}])]))))
 

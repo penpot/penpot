@@ -24,7 +24,7 @@
            (dom/prevent-default event)
            (dom/stop-propagation event)
            (dbg/toggle! option)
-           (js* "app.main.reinit()")))
+           (js* "app.main.reinit(true)")))
 
         handle-close
         (mf/use-fn

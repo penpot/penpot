@@ -117,17 +117,17 @@
   (st/emit! (initialize)))
 
 (defn ^:export reinit
-  []
-  ;; NOTE: in cases of some strange behavior after hot-reload,
-  ;; uncomment this lines; they make a hard-rerender instead
-  ;; soft-rerender.
-  ;;
-  ;; (mf/unmount! app-root)
-  ;; (mf/unmount! modal-root)
-  ;; (set! app-root (mf/create-root (dom/get-element "app")))
-  ;; (set! modal-root (mf/create-root (dom/get-element "modal")))
-  (st/emit! (ev/initialize))
-  (init-ui))
+  ([]
+   (reinit false))
+  ([hard?]
+   ;; The hard flag will force to unmount the whole UI and will redraw every component
+   (when hard?
+     (mf/unmount! app-root)
+     (mf/unmount! modal-root)
+     (set! app-root (mf/create-root (dom/get-element "app")))
+     (set! modal-root (mf/create-root (dom/get-element "modal"))))
+   (st/emit! (ev/initialize))
+   (init-ui)))
 
 (defn ^:dev/after-load after-load
   []
