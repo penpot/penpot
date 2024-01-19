@@ -482,6 +482,9 @@
   (sm/lazy-explainer ::ctf/data))
 
 (defn validate-file-schema!
+  "Validates the file itself, without external dependencies, it
+  performs the schema checking and some semantical validation of the
+  content."
   [{:keys [id data] :as file}]
   (when-not (valid-fdata? data)
     (ex/raise :type :validation
