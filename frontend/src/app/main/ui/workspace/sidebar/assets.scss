@@ -56,29 +56,38 @@
   height: $s-32;
   width: $s-32;
   margin: 0;
-  border: 1px solid var(--color-background-tertiary);
+  border: $s-1 solid var(--input-border-color-rest);
   border-radius: $br-8 $br-2 $br-2 $br-8;
-  background-color: var(--color-background-tertiary);
+  background-color: var(--input-background-color-rest);
   svg {
     height: $s-16;
     width: $s-16;
     stroke: var(--icon-foreground);
   }
   &:focus {
-    border: 1px solid var(--input-border-color-focus);
+    border: $s-1 solid var(--input-border-color-focus);
     outline: 0;
-    background-color: var(--input-background-color-active);
-    color: var(--input-foreground-color-active);
+    background-color: var(--input-background-color-focus);
+    color: var(--input-foreground-color-focus);
     svg {
-      background-color: var(--input-background-color-active);
+      background-color: var(--input-background-color-focus);
     }
   }
   &:hover {
-    border: 1px solid var(--input-background-color-hover);
+    border: $s-1 solid var(--input-border-color-hover);
     background-color: var(--input-background-color-hover);
     svg {
       background-color: var(--input-background-color-hover);
       stroke: var(--button-foreground-hover);
+    }
+    &:focus {
+      border: $s-1 solid var(--input-border-color-focus);
+      outline: 0;
+      background-color: var(--input-background-color-focus);
+      color: var(--input-foreground-color-focus);
+      svg {
+        background-color: var(--input-background-color-focus);
+      }
     }
   }
 }
