@@ -39,6 +39,7 @@
   [it shapes objects page-id file-id components-v2 prepare-create-group prepare-create-board]
   (let [changes (pcb/empty-changes it page-id)
 
+        from-singe-frame? (and (= 1 (count shapes)) (-> shapes first cfh/frame-shape?))
         [root changes old-root-ids]
         (if (and (= (count shapes) 1)
                  (or (and (= (:type (first shapes)) :group) (not components-v2))
@@ -71,6 +72,15 @@
                                                        true))]
 
             [root changes (map :id shapes)]))
+
+        changes
+        (cond-> changes
+          (not from-singe-frame?)
+          (pcb/update-shapes
+           (:shapes root)
+           (fn [shape]
+             (-> shape
+                 (assoc :constraints-h :scale :constraints-v :scale)))))
 
         objects' (assoc objects (:id root) root)
 
