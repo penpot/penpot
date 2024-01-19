@@ -44,7 +44,9 @@
             childs     (mf/deref childs-ref)]
 
         [:& shape-container {:shape shape :ref ref :disable-shadows? (cfh/is-direct-child-of-root? shape)}
-         [:& frame-shape {:shape shape :childs childs}]]))))
+         [:& frame-shape {:shape shape :childs childs}]
+         (when *assert*
+           [:& wsd/shape-debug {:shape shape}])]))))
 
 (defn check-props
   [new-props old-props]
