@@ -1104,7 +1104,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn migrate-file!
-  [system file-id & {:keys [validate? skip-on-graphic-error?]}]
+  [system file-id & {:keys [validate? skip-on-graphic-error? label]}]
   (let [tpoint (dt/tpoint)]
     (binding [*file-stats* (atom {})
               *skip-on-graphic-error* skip-on-graphic-error?]
@@ -1119,7 +1119,9 @@
                       (fn [system]
                         (try
                           (binding [*system* system]
-                            (fsnap/take-file-snapshot! system {:file-id file-id :label "migration/components-v2"})
+                            (when (string? label)
+                              (fsnap/take-file-snapshot! system {:file-id file-id
+                                                                 :label (str "migration/" label)}))
                             (process-file system file-id :validate? validate?))
 
                           (catch Throwable cause
@@ -1145,7 +1147,7 @@
             (some-> *team-stats* (swap! update :processed/files (fnil inc 0)))))))))
 
 (defn migrate-team!
-  [system team-id & {:keys [validate? skip-on-graphic-error?]}]
+  [system team-id & {:keys [validate? skip-on-graphic-error? label]}]
 
   (l/dbg :hint "migrate:team:start"
          :team-id (dm/str team-id))
@@ -1156,30 +1158,30 @@
         migrate-file
         (fn [system file-id]
           (migrate-file! system file-id
+                         :label label
                          :validate? validate?
                          :skip-on-graphics-error? skip-on-graphic-error?))
         migrate-team
-        (fn [{:keys [::db/conn] :as system} {:keys [id features] :as team}]
-          (let [features (-> features
-                             (disj "ephimeral/v2-migration")
-                             (conj "components/v2")
-                             (conj "layout/grid")
-                             (conj "styles/v2"))]
+        (fn [{:keys [::db/conn] :as system} team-id]
+          (let [{:keys [id features]} (get-team system team-id)]
+            (if (contains? features "components/v2")
+              (l/inf :hint "team already migrated")
+              (let [features (-> features
+                                 (disj "ephimeral/v2-migration")
+                                 (conj "components/v2")
+                                 (conj "layout/grid")
+                                 (conj "styles/v2"))]
 
-            (run! (partial migrate-file system)
-                  (get-and-lock-files conn id))
+                (run! (partial migrate-file system)
+                      (get-and-lock-files conn id))
 
-            (update-team-features! conn id features)))]
+                (update-team-features! conn id features)))))]
 
     (binding [*team-stats* (atom {})
               *team-id* team-id]
       (try
-        (db/tx-run! system (fn [system]
-                             (db/exec-one! system ["SET idle_in_transaction_session_timeout = 0"])
-                             (let [team (get-team system team-id)]
-                               (if (contains? (:features team) "components/v2")
-                                 (l/inf :hint "team already migrated")
-                                 (migrate-team system team)))))
+        (db/tx-run! system migrate-team team-id)
+
         (catch Throwable cause
           (vreset! err true)
           (throw cause))
