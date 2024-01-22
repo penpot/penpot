@@ -92,9 +92,11 @@
        (= :image (dm/get-prop shape :type))))
 
 (defn svg-raw-shape?
-  [shape]
-  (and (some? shape)
-       (= :svg-raw (dm/get-prop shape :type))))
+  ([objects id]
+   (svg-raw-shape? (get objects id)))
+  ([shape]
+   (and (some? shape)
+        (= :svg-raw (dm/get-prop shape :type)))))
 
 (defn path-shape?
   ([objects id]

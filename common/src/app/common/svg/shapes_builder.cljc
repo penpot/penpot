@@ -265,19 +265,19 @@
                        (gmt/transform-in (gpt/point svg-data)))
 
         origin    (gpt/negate (gpt/point svg-data))
-        rect      (-> (parse-rect-attrs attrs)
+        vbox      (parse-rect-attrs attrs)
+        rect      (-> vbox
                       (update :x - (:x origin))
                       (update :y - (:y origin)))
 
         props     (-> (dissoc attrs :x :y :width :height :rx :ry :transform)
                       (csvg/attrs->props))]
-
     (cts/setup-shape
      (-> (calculate-rect-metadata rect transform)
          (assoc :type :rect)
          (assoc :name name)
          (assoc :frame-id frame-id)
-         (assoc :svg-viewbox rect)
+         (assoc :svg-viewbox vbox)
          (assoc :svg-attrs props)
          ;; We need to ensure fills are empty on import process
          ;; because setup-shape assings one by default.
@@ -395,9 +395,9 @@
                     (str/trim (:stroke style)))
 
         color   (cond
-                  (= stroke "currentColor") clr/black
-                  (= stroke "none")         nil
-                  :else                     (clr/parse stroke))
+                  (= stroke "currentColor")  clr/black
+                  (= stroke "none")          nil
+                  (clr/color-string? stroke) (clr/parse stroke))
 
         opacity (when (some? color)
                   (d/parse-double
@@ -415,17 +415,21 @@
                     (get style :strokeLinecap))
         linecap (some-> linecap str/trim keyword)
 
-        attrs   (-> attrs
-                    (dissoc :stroke)
-                    (dissoc :strokeWidth)
-                    (dissoc :strokeOpacity)
-                    (update :style (fn [style]
-                                     (-> style
-                                         (dissoc :stroke)
-                                         (dissoc :strokeLinecap)
-                                         (dissoc :strokeWidth)
-                                         (dissoc :strokeOpacity))))
-                    (d/without-nils))]
+        attrs
+        (-> attrs
+            (cond-> linecap
+              (dissoc :strokeLinecap))
+            (cond-> (some? color)
+              (dissoc :stroke :strokeWidth :strokeOpacity))
+            (update
+             :style
+             (fn [style]
+               (-> style
+                   (cond-> linecap
+                     (dissoc :strokeLinecap))
+                   (cond-> (some? color)
+                     (dissoc :stroke :strokeWidth :strokeOpacity)))))
+            (d/without-nils))]
 
     (cond-> (assoc shape :svg-attrs attrs)
       (some? color)
@@ -466,6 +470,16 @@
     (dm/get-in shape [:svg-attrs :style :mixBlendMode])
     (-> (update-in [:svg-attrs :style] dissoc :mixBlendMode)
         (assoc :blend-mode (-> (dm/get-in shape [:svg-attrs :style :mixBlendMode]) assert-valid-blend-mode)))))
+
+(defn setup-other [shape]
+  (cond-> shape
+    (= (dm/get-in shape [:svg-attrs :display]) "none")
+    (-> (update-in [:svg-attrs :style] dissoc :display)
+        (assoc :hidden true))
+
+    (= (dm/get-in shape [:svg-attrs :style :display]) "none")
+    (-> (update :svg-attrs dissoc :display)
+        (assoc :hidden true))))
 
 (defn tag->name
   "Given a tag returns its layer name"
@@ -525,6 +539,7 @@
                           (setup-fill)
                           (setup-stroke)
                           (setup-opacity)
+                          (setup-other)
                           (update :svg-attrs (fn [attrs]
                                                (if (empty? (:style attrs))
                                                  (dissoc attrs :style)

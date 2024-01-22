@@ -215,11 +215,15 @@
   ([stream on-subscribe]
    (use-stream stream (mf/deps) on-subscribe))
   ([stream deps on-subscribe]
+   (use-stream stream deps on-subscribe nil))
+  ([stream deps on-subscribe on-dispose]
    (mf/use-effect
     deps
     (fn []
       (let [sub (->> stream (rx/subs! on-subscribe))]
-        #(rx/dispose! sub))))))
+        #(do
+           (rx/dispose! sub)
+           (when on-dispose (on-dispose))))))))
 
 ;; https://reactjs.org/docs/hooks-faq.html#how-to-get-the-previous-props-or-state
 (defn use-previous

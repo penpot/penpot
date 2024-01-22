@@ -475,13 +475,17 @@
         shape-shadow  (get shape :shadow)
         shape-strokes (get shape :strokes)
 
+        svg-attrs     (attrs/get-svg-props shape render-id)
+
         style         (-> (obj/get props "style")
                           (obj/clone)
                           (attrs/add-layer-styles! shape))
 
-        props        #js {:id stroke-id
-                          :className "strokes"
-                          :style style}
+        props        (-> svg-attrs
+                         (obj/merge!
+                          {:id stroke-id
+                           :className "strokes"
+                           :style style}))
 
         props         (if ^boolean (cfh/frame-shape? shape)
                         props
