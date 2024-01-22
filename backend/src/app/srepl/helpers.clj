@@ -69,7 +69,8 @@
            (fn [system]
              (binding [pmap/*load-fn* (partial feat.fdata/load-pointer system id)]
                (-> (files/get-file system id :migrate? migrate?)
-                   (update :data feat.fdata/process-pointers deref))))))
+                   (update :data feat.fdata/process-pointers deref)
+                   (update :data feat.fdata/process-objects (partial into {})))))))
 
 (defn validate
   "Validate structure, referencial integrity and semantic coherence of
