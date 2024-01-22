@@ -7,6 +7,7 @@
 (ns app.http.debug
   (:refer-clojure :exclude [error-handler])
   (:require
+   [app.binfile.v1 :as bf.v1]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
@@ -17,11 +18,11 @@
    [app.http.session :as session]
    [app.main :as-alias main]
    [app.rpc.commands.auth :as auth]
-   [app.rpc.commands.binfile :as binf]
    [app.rpc.commands.files-create :refer [create-file]]
    [app.rpc.commands.profile :as profile]
    [app.srepl.helpers :as srepl]
    [app.storage :as-alias sto]
+   [app.storage.tmp :as tmp]
    [app.util.blob :as blob]
    [app.util.template :as tmpl]
    [app.util.time :as dt]
@@ -268,9 +269,10 @@
 (defn export-handler
   [{:keys [::db/pool] :as cfg} {:keys [params ::session/profile-id] :as request}]
 
-  (let [file-ids (->> (:file-ids params)
-                      (remove empty?)
-                      (mapv parse-uuid))
+  (let [file-ids (into #{}
+                       (comp (remove empty?)
+                             (map parse-uuid))
+                       (:file-ids params))
         libs?    (contains? params :includelibs)
         clone?   (contains? params :clone)
         embed?   (contains? params :embedassets)]
@@ -279,22 +281,22 @@
       (ex/raise :type :validation
                 :code :missing-arguments))
 
-    (let [path (-> cfg
-                   (assoc ::binf/file-ids file-ids)
-                   (assoc ::binf/embed-assets? embed?)
-                   (assoc ::binf/include-libraries? libs?)
-                   (binf/export-to-tmpfile!))]
+    (let [path (tmp/tempfile :prefix "penpot.export.")]
+      (with-open [output (io/output-stream path)]
+        (-> cfg
+            (assoc ::bf.v1/ids file-ids)
+            (assoc ::bf.v1/embed-assets embed?)
+            (assoc ::bf.v1/include-libraries libs?)
+            (bf.v1/export-files! output)))
+
       (if clone?
         (let [profile    (profile/get-profile pool profile-id)
-              project-id (:default-project-id profile)]
-          (binf/import!
-           (assoc cfg
-                  ::binf/input path
-                  ::binf/overwrite? false
-                  ::binf/ignore-index-errors? true
-                  ::binf/profile-id profile-id
-                  ::binf/project-id project-id))
-
+              project-id (:default-project-id profile)
+              cfg        (assoc cfg
+                                ::bf.v1/overwrite false
+                                ::bf.v1/profile-id profile-id
+                                ::bf.v1/project-id project-id)]
+          (bf.v1/import-files! cfg path)
           {::rres/status  200
            ::rres/headers {"content-type" "text/plain"}
            ::rres/body    "OK CLONED"})
@@ -303,7 +305,6 @@
          ::rres/body    (io/input-stream path)
          ::rres/headers {"content-type" "application/octet-stream"
                          "content-disposition" (str "attachmen; filename=" (first file-ids) ".penpot")}}))))
-
 
 
 (defn import-handler
@@ -316,26 +317,23 @@
   (let [profile    (profile/get-profile pool profile-id)
         project-id (:default-project-id profile)
         overwrite? (contains? params :overwrite)
-        migrate?   (contains? params :migrate)
-        ignore-index-errors? (contains? params :ignore-index-errors)]
+        migrate?   (contains? params :migrate)]
 
     (when-not project-id
       (ex/raise :type :validation
                 :code :missing-project
                 :hint "project not found"))
 
-    (binf/import!
-     (assoc cfg
-            ::binf/input (-> params :file :path)
-            ::binf/overwrite? overwrite?
-            ::binf/migrate? migrate?
-            ::binf/ignore-index-errors? ignore-index-errors?
-            ::binf/profile-id profile-id
-            ::binf/project-id project-id))
-
-    {::rres/status  200
-     ::rres/headers {"content-type" "text/plain"}
-     ::rres/body    "OK"}))
+    (let [path (-> params :file :path)
+          cfg  (assoc cfg
+                      ::bf.v1/overwrite overwrite?
+                      ::bf.v1/migrate migrate?
+                      ::bf.v1/profile-id profile-id
+                      ::bf.v1/project-id project-id)]
+      (bf.v1/import-files! cfg path)
+      {::rres/status  200
+       ::rres/headers {"content-type" "text/plain"}
+       ::rres/body    "OK"})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ACTIONS

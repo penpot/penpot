@@ -30,6 +30,9 @@
    (let [opts (merge default-opts opts)
          opts (cond-> opts
                 (::db/on-conflict-do-nothing? opts)
+                (assoc :suffix "ON CONFLICT DO NOTHING")
+
+                (::on-conflict-do-nothing opts)
                 (assoc :suffix "ON CONFLICT DO NOTHING"))]
      (sql/for-insert table key-map opts))))
 
@@ -46,7 +49,7 @@
          opts (cond-> opts
                 (::columns opts)    (assoc :columns (::columns opts))
                 (::for-update opts) (assoc :suffix "FOR UPDATE")
-                (::for-share opts)  (assoc :suffix "FOR KEY SHARE"))]
+                (::for-share opts)  (assoc :suffix "FOR SHARE"))]
      (sql/for-query table where-params opts))))
 
 (defn update

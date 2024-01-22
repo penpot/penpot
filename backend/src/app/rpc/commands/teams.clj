@@ -416,14 +416,16 @@
 ;; namespace too.
 
 (defn create-project
-  [conn {:keys [id team-id name is-default] :as params}]
+  [conn {:keys [id team-id name is-default created-at modified-at]}]
   (let [id         (or id (uuid/next))
-        is-default (if (boolean? is-default) is-default false)]
-    (db/insert! conn :project
-                {:id id
-                 :name name
-                 :team-id team-id
-                 :is-default is-default})))
+        is-default (if (boolean? is-default) is-default false)
+        params     {:id id
+                    :name name
+                    :team-id team-id
+                    :is-default is-default
+                    :created-at created-at
+                    :modified-at modified-at}]
+    (db/insert! conn :project (d/without-nils params))))
 
 (defn create-project-role
   [conn profile-id project-id role]
