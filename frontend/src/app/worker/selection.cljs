@@ -192,7 +192,10 @@
 
         overlaps?
         (fn [shape]
-          (if (and (false? using-selrect?) (empty? (:fills shape)))
+          (if (and (false? using-selrect?)
+                   (empty? (:fills shape))
+                   (not (contains? (-> shape :svg-attrs) :fill))
+                   (not (contains? (-> shape :svg-attrs :style) :fill)))
             (case  (:type shape)
               ;; If the shape has no fills the overlap depends on the stroke
               :rect (and (overlaps-outer-shape? shape) (not (overlaps-inner-shape? shape)))

@@ -876,6 +876,12 @@
   (if (map? node)
     (let [attrs (-> (format-styles attrs)
                     (add-transform (:transform group-attrs)))
+
+          ;; Don't inherit a property that is already in the style attribute
+          inherit-style     (-> (:style group-attrs) (d/without-keys (keys attrs)))
+          inheritable-props (->> inheritable-props (remove #(contains? (:styles attrs) %)))
+          group-attrs       (-> group-attrs (assoc :style inherit-style))
+
           attrs (d/deep-merge (select-keys group-attrs inheritable-props) attrs)]
       (assoc node :attrs attrs))
     node))
@@ -988,7 +994,7 @@
                               (get-in node [:attrs :patternUnits])
                               (get-in node [:attrs :clipUnits]))]
                 (cond-> node
-                  (= "objectBoundingBox" units)
+                  (or (= "objectBoundingBox" units) (nil? units))
                   (update :attrs fix-percent-attrs-numeric)
 
                   (not= "objectBoundingBox" units)

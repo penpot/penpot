@@ -299,11 +299,11 @@
                       (not (cfh/is-direct-child-of-root? shape))
                       (empty? (get shape :fills)))))
 
-
              hover-shape
              (->> ids
                   (remove remove-id?)
                   (remove (partial cfh/hidden-parent? objects))
+                  (remove (partial cfh/svg-raw-shape? objects))
                   (remove #(and mod? (no-fill-nested-frames? %)))
                   (filter #(or (empty? focus) (cpf/is-in-focus? objects focus %)))
                   (first)
@@ -315,6 +315,7 @@
                (->> ids
                     (remove #(group-empty-space? % objects ids))
                     (remove (partial cfh/hidden-parent? objects))
+                    (remove (partial cfh/svg-raw-shape? objects))
                     (remove #(and mod? (no-fill-nested-frames? %)))
                     (filter #(or (empty? focus) (cpf/is-in-focus? objects focus %)))
                     (first)

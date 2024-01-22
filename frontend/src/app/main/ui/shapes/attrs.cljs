@@ -157,7 +157,7 @@
   [shape]
   (add-layer-styles! #js {} shape))
 
-(defn- get-svg-props
+(defn get-svg-props
   [shape render-id]
   (let [attrs (get shape :svg-attrs {})
         defs  (get shape :svg-defs {})]
