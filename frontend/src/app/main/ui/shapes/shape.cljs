@@ -24,22 +24,23 @@
 ;; FIXME: revisit this:
 (defn propagate-wrapper-styles-child
   [child wrapper-props]
-  (let [child-props-childs
-        (-> (obj/get child "props")
-            (obj/clone)
-            (-> (obj/get "childs")))
+  (when (some? child)
+    (let [child-props-childs
+          (-> (obj/get child "props")
+              (obj/clone)
+              (-> (obj/get "childs")))
 
-        child-props-childs
-        (->> child-props-childs
-             (map #(assoc % :wrapper-styles (obj/get wrapper-props "style"))))
+          child-props-childs
+          (->> child-props-childs
+               (map #(assoc % :wrapper-styles (obj/get wrapper-props "style"))))
 
-        child-props
-        (-> (obj/get child "props")
-            (obj/clone)
-            (obj/set! "childs" child-props-childs))]
+          child-props
+          (-> (obj/get child "props")
+              (obj/clone)
+              (obj/set! "childs" child-props-childs))]
 
-    (-> (obj/clone child)
-        (obj/set! "props" child-props))))
+      (-> (obj/clone child)
+          (obj/set! "props" child-props)))))
 
 (defn propagate-wrapper-styles
   ([children wrapper-props]
