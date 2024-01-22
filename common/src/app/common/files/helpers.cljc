@@ -753,3 +753,15 @@
                 [frame-id (get-parent-ids objects frame-id)]))]
 
         (recur frame-id frame-parents (rest selected))))))
+
+(defn fixed?
+  [objects shape-id]
+  (let [ids-to-check
+        (concat
+         [shape-id]
+         (get-children-ids objects shape-id)
+         (->> (get-parent-ids objects shape-id)
+              (take-while #(and (not= % uuid/zero) (not (root-frame? objects %))))))]
+    (boolean
+     (->> ids-to-check
+          (d/seek (fn [id] (dm/get-in objects [id :fixed-scroll])))))))

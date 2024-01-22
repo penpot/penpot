@@ -70,6 +70,7 @@
           background-overlay         (:background-overlay interaction)
           overlays-ids               (set (map :id overlays))
           relative-to-base-frame     (find-relative-to-base-frame relative-to-shape objects overlays-ids base-frame)
+          fixed-base?                (cfh/fixed? objects relative-to-id)
           [position snap-to]         (ctsi/calc-overlay-position interaction
                                                                  shape
                                                                  objects
@@ -83,7 +84,8 @@
                                    snap-to
                                    close-click-outside
                                    background-overlay
-                                   (:animation interaction)))))
+                                   (:animation interaction)
+                                   fixed-base?))))
 
     :toggle-overlay
     (let [dest-frame-id              (:destination interaction)
@@ -96,6 +98,7 @@
           relative-to-shape          (or (get objects relative-to-id) base-frame)
           overlays-ids               (set (map :id overlays))
           relative-to-base-frame     (find-relative-to-base-frame relative-to-shape objects overlays-ids base-frame)
+          fixed-base?                (cfh/fixed? objects (:id base-frame))
           [position snap-to]         (ctsi/calc-overlay-position interaction
                                                                  shape
                                                                  objects
@@ -112,7 +115,8 @@
                                      snap-to
                                      close-click-outside
                                      background-overlay
-                                     (:animation interaction)))))
+                                     (:animation interaction)
+                                     fixed-base?))))
 
     :close-overlay
     (let [dest-frame-id (or (:destination interaction)
@@ -152,6 +156,7 @@
           relative-to-shape          (or (get objects relative-to-id) base-frame)
           overlays-ids               (set (map :id overlays))
           relative-to-base-frame     (find-relative-to-base-frame relative-to-shape objects overlays-ids base-frame)
+          fixed-base?                (cfh/fixed? objects (:id base-frame))
           [position snap-to]         (ctsi/calc-overlay-position interaction
                                                                  shape
                                                                  objects
@@ -168,7 +173,8 @@
                                      snap-to
                                      close-click-outside
                                      background-overlay
-                                     (:animation interaction)))))
+                                     (:animation interaction)
+                                     fixed-base?))))
 
 
     :close-overlay
@@ -184,6 +190,7 @@
           background-overlay         (:background-overlay interaction)
           overlays-ids               (set (map :id overlays))
           relative-to-base-frame     (find-relative-to-base-frame relative-to-shape objects overlays-ids base-frame)
+          fixed-base?                (cfh/fixed? objects (:id base-frame))
           [position snap-to]         (ctsi/calc-overlay-position interaction
                                                                  shape
                                                                  objects
@@ -197,7 +204,8 @@
                                    snap-to
                                    close-click-outside
                                    background-overlay
-                                   (:animation interaction)))))
+                                   (:animation interaction)
+                                   fixed-base?))))
     nil))
 
 (defn- on-pointer-down

@@ -39,6 +39,23 @@
          (into [frame-id])
          (reduce update-fn objects))))
 
+(defn get-fixed-ids
+  [objects]
+  (let [fixed-ids (filter :fixed-scroll (vals objects))
+
+        ;; we have to consider the children if the fixed element is a group
+        fixed-children-ids
+        (into #{} (mapcat #(cfh/get-children-ids objects (:id %)) fixed-ids))
+
+        parent-children-ids
+        (->> fixed-ids
+             (mapcat #(cons (:id %) (cfh/get-parent-ids objects (:id %))))
+             (remove #(= % uuid/zero)))
+
+        fixed-ids
+        (concat fixed-children-ids parent-children-ids)]
+    fixed-ids))
+
 (mf/defc viewport-svg
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
@@ -48,31 +65,25 @@
         base      (unchecked-get props "base")
         offset    (unchecked-get props "offset")
         size      (unchecked-get props "size")
+        fixed?    (unchecked-get props "fixed?")
         delta     (or (unchecked-get props "delta") (gpt/point 0 0))
         vbox      (:vbox size)
 
-        fixed-ids (filter :fixed-scroll (vals (:objects page)))
+        frame     (cond-> frame fixed? (assoc :fixed-scroll true))
 
-        ;; we have con consider the children if the fixed element is a group
-        fixed-children-ids
-        (into #{} (mapcat #(cfh/get-children-ids (:objects page) (:id %)) fixed-ids))
+        objects   (:objects page)
+        objects   (cond-> objects fixed? (assoc-in [(:id frame) :fixed-scroll] true))
 
-        parent-children-ids
-        (->> fixed-ids
-             (mapcat #(cons (:id %) (cfh/get-parent-ids (:objects page) (:id %))))
-             (remove #(= % uuid/zero)))
-
-        fixed-ids
-        (concat fixed-children-ids parent-children-ids)
+        fixed-ids (get-fixed-ids objects)
 
         not-fixed-ids
-        (->> (remove (set fixed-ids) (keys (:objects page)))
+        (->> (remove (set fixed-ids) (keys objects))
              (remove #(= % uuid/zero)))
 
         calculate-objects
         (fn [ids]
           (->> ids
-               (map (d/getf (:objects page)))
+               (map (d/getf objects))
                (concat [frame])
                (d/index-by :id)
                (prepare-objects frame size delta)))
@@ -112,28 +123,41 @@
 
     [:& (mf/provider shapes/base-frame-ctx) {:value base}
      [:& (mf/provider shapes/frame-offset-ctx) {:value offset}
-      ;; We have two different svgs for fixed and not fixed elements so we can emulate the sticky css attribute in svg
-      [:svg {:class (stl/css :fixed)
-             :view-box vbox
-             :width (:width size)
-             :height (:height size)
-             :version "1.1"
-             :xmlnsXlink "http://www.w3.org/1999/xlink"
-             :xmlns "http://www.w3.org/2000/svg"
-             :fill "none"
-             :style {:width (:width size)
-                     :height (:height size)}}
-       [:& wrapper-fixed {:shape fixed-frame :view-box vbox}]]
+      (if fixed?
+        [:svg {:class (stl/css :fixed)
+               :view-box vbox
+               :width (:width size)
+               :height (:height size)
+               :version "1.1"
+               :xmlnsXlink "http://www.w3.org/1999/xlink"
+               :xmlns "http://www.w3.org/2000/svg"
+               :fill "none"}
+         [:& wrapper-not-fixed {:shape frame :view-box vbox}]]
 
-      [:svg {:class (stl/css :not-fixed)
-             :view-box vbox
-             :width (:width size)
-             :height (:height size)
-             :version "1.1"
-             :xmlnsXlink "http://www.w3.org/1999/xlink"
-             :xmlns "http://www.w3.org/2000/svg"
-             :fill "none"}
-       [:& wrapper-not-fixed {:shape frame :view-box vbox}]]]]))
+        [:*
+         ;; We have two different svgs for fixed and not fixed elements so we can emulate the sticky css attribute in svg
+         [:svg {:class (stl/css :fixed)
+                :view-box vbox
+                :width (:width size)
+                :height (:height size)
+                :version "1.1"
+                :xmlnsXlink "http://www.w3.org/1999/xlink"
+                :xmlns "http://www.w3.org/2000/svg"
+                :fill "none"
+                :style {:width (:width size)
+                        :height (:height size)
+                        :z-index 1}}
+          [:& wrapper-fixed {:shape fixed-frame :view-box vbox}]]
+
+         [:svg {:class (stl/css :not-fixed)
+                :view-box vbox
+                :width (:width size)
+                :height (:height size)
+                :version "1.1"
+                :xmlnsXlink "http://www.w3.org/1999/xlink"
+                :xmlns "http://www.w3.org/2000/svg"
+                :fill "none"}
+          [:& wrapper-not-fixed {:shape frame :view-box vbox}]]])]]))
 
 (mf/defc viewport
   {::mf/wrap [mf/memo]
@@ -150,7 +174,8 @@
 
         page   (unchecked-get props "page")
         frame  (unchecked-get props "frame")
-        base   (unchecked-get props "base-frame")]
+        base   (unchecked-get props "base-frame")
+        fixed? (unchecked-get props "fixed?")]
 
     (mf/with-effect [mode]
       (let [on-click
@@ -190,7 +215,8 @@
                       :base base
                       :offset offset
                       :size size
-                      :delta delta}]))
+                      :delta delta
+                      :fixed? fixed?}]))
 
 (mf/defc flows-menu
   {::mf/wrap [mf/memo]}

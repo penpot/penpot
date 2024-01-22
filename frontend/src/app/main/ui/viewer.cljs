@@ -139,6 +139,7 @@
         background-overlay?  (:background-overlay overlay)
         overlay-frame        (:frame overlay)
         overlay-position     (:position overlay)
+        fixed-base?          (:fixed-source? overlay)
 
         size
         (mf/with-memo [page overlay zoom]
@@ -168,21 +169,42 @@
                       :top 0}
               :on-click on-click}])
 
-     [:div {:class (stl/css :viewer-overlay :viewport-container)
-            :id (dm/str "overlay-" (:id overlay-frame))
-            :style {:width (:width size)
-                    :height (:height size)
-                    :left (* (:x overlay-position) zoom)
-                    :top (* (:y overlay-position) zoom)}}
+     (if fixed-base?
+       [:div {:class (stl/css :viewport-container-wrapper)
+              :style {:position "absolute"
+                      :left (* (:x overlay-position) zoom)
+                      :top (* (:y overlay-position) zoom)
+                      :width (:width size)
+                      :height (:height size)
+                      :z-index 2}}
+        [:div {:class (stl/css :viewer-overlay :viewport-container)
+               :id (dm/str "overlay-" (:id overlay-frame))
+               :style {:width (:width size)
+                       :height (:height size)
+                       :position "fixed"}}
+         [:& interactions/viewport
+          {:frame overlay-frame
+           :base-frame frame
+           :frame-offset overlay-position
+           :size size
+           :delta delta
+           :page page
+           :interactions-mode interactions-mode}]]]
 
-      [:& interactions/viewport
-       {:frame overlay-frame
-        :base-frame frame
-        :frame-offset overlay-position
-        :size size
-        :delta delta
-        :page page
-        :interactions-mode interactions-mode}]]]))
+       [:div {:class (stl/css :viewer-overlay :viewport-container)
+              :id (dm/str "overlay-" (:id overlay-frame))
+              :style {:width (:width size)
+                      :height (:height size)
+                      :left (* (:x overlay-position) zoom)
+                      :top (* (:y overlay-position) zoom)}}
+        [:& interactions/viewport
+         {:frame overlay-frame
+          :base-frame frame
+          :frame-offset overlay-position
+          :size size
+          :delta delta
+          :page page
+          :interactions-mode interactions-mode}]])]))
 
 (mf/defc viewer-wrapper
   {::mf/wrap-props false}
