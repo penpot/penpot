@@ -558,7 +558,7 @@
 ;; --- Overlays
 
 (defn- open-overlay*
-  [state frame position snap-to close-click-outside background-overlay animation]
+  [state frame position snap-to close-click-outside background-overlay animation fixed-source?]
   (cond-> state
     :always
     (update :viewer-overlays conj
@@ -568,7 +568,8 @@
              :snap-to snap-to
              :close-click-outside close-click-outside
              :background-overlay background-overlay
-             :animation animation})
+             :animation animation
+             :fixed-source? fixed-source?})
 
     (some? animation)
     (assoc-in [:viewer-animations (:id frame)]
@@ -588,7 +589,7 @@
                :animation animation})))
 
 (defn open-overlay
-  [frame-id position snap-to close-click-outside background-overlay animation]
+  [frame-id position snap-to close-click-outside background-overlay animation fixed-source?]
   (dm/assert! (uuid? frame-id))
   (dm/assert! (gpt/point? position))
   (dm/assert! (or (nil? close-click-outside)
@@ -613,12 +614,13 @@
                          snap-to
                          close-click-outside
                          background-overlay
-                         animation)
+                         animation
+                         fixed-source?)
           state)))))
 
 
 (defn toggle-overlay
-  [frame-id position snap-to close-click-outside background-overlay animation]
+  [frame-id position snap-to close-click-outside background-overlay animation fixed-source?]
   (dm/assert! (uuid? frame-id))
   (dm/assert! (gpt/point? position))
   (dm/assert! (or (nil? close-click-outside)
@@ -644,7 +646,8 @@
                          snap-to
                          close-click-outside
                          background-overlay
-                         animation)
+                         animation
+                         fixed-source?)
           (close-overlay* state
                           (:id frame)
                           (ctsi/invert-direction animation)))))))
