@@ -13,6 +13,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
+   [app.main.ui.workspace.top-toolbar :refer [top-toolbar]]
    [app.main.ui.workspace.viewport.grid-layout-editor :refer [grid-edition-actions]]
    [app.main.ui.workspace.viewport.path-actions :refer [path-actions]]
    [app.util.i18n :as i18n :refer [tr]]
@@ -36,7 +37,7 @@
 
 (mf/defc top-bar
   {::mf/wrap [mf/memo]}
-  []
+  [{:keys [layout]}]
   (let [edition     (mf/deref refs/selected-edition)
         selected    (mf/deref refs/selected-objects)
         drawing     (mf/deref refs/workspace-drawing)
@@ -50,6 +51,7 @@
                         (not= :curve (:tool drawing)))
 
         workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
+        hide-ui?       (:hide-ui layout)
 
         path-edition? (or (and single? editing?
                                (and (not (cfh/text-shape? shape))
@@ -58,13 +60,17 @@
 
         grid-edition? (and single? editing? (ctl/grid-layout? shape))]
 
-    (cond
-      workspace-read-only?
-      [:& view-only-actions]
+    [:*
+     (when-not hide-ui?
+       [:& top-toolbar {:layout layout}])
 
-      path-edition?
-      [:div.viewport-actions
-       [:& path-actions {:shape shape}]]
+     (cond
+       workspace-read-only?
+       [:& view-only-actions]
 
-      grid-edition?
-      [:& grid-edition-actions {:shape shape}])))
+       path-edition?
+       [:div.viewport-actions
+        [:& path-actions {:shape shape}]]
+
+       grid-edition?
+       [:& grid-edition-actions {:shape shape}])]))
