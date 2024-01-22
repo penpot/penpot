@@ -46,7 +46,7 @@
          opts (cond-> opts
                 (::columns opts)    (assoc :columns (::columns opts))
                 (::for-update opts) (assoc :suffix "FOR UPDATE")
-                (::for-share opts)  (assoc :suffix "FOR KEY SHARE"))]
+                (::for-share opts)  (assoc :suffix "FOR SHARE"))]
      (sql/for-query table where-params opts))))
 
 (defn update
