@@ -91,7 +91,7 @@
   [{:keys [shape]}]
   [:*
    (when ^boolean (dbg/enabled? :bounding-boxes)
-     [:& debug-bounding-boxes])
+     [:& debug-bounding-boxes {:shape shape}])
 
    (when (and ^boolean (cfh/text-shape? shape)
               ^boolean (dbg/enabled? :text-outline)

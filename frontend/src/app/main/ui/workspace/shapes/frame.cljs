@@ -24,7 +24,9 @@
    [app.main.ui.workspace.shapes.frame.dynamic-modifiers :as fdm]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
+   [app.util.thumbnails :as th]
    [app.util.timers :as tm]
+   [promesa.core :as p]
    [rumext.v2 :as mf]))
 
 (defn frame-shape-factory
@@ -44,7 +46,9 @@
             childs     (mf/deref childs-ref)]
 
         [:& shape-container {:shape shape :ref ref :disable-shadows? (cfh/is-direct-child-of-root? shape)}
-         [:& frame-shape {:shape shape :childs childs}]]))))
+         [:& frame-shape {:shape shape :childs childs}]
+         (when *assert*
+           [:& wsd/shape-debug {:shape shape}])]))))
 
 (defn check-props
   [new-props old-props]
@@ -78,6 +82,34 @@
 
         (fdm/use-dynamic-modifiers objects (mf/ref-val node-ref) modifiers)
         [:& frame-shape {:shape shape :ref node-ref}]))))
+
+(defn image-size
+  [href]
+  (p/create
+   (fn [resolve _]
+     (let [img (js/Image.)
+           load-fn
+           (fn []
+             (let [width (.-naturalWidth img)
+                   height (.-naturalHeight img)]
+               (resolve {:width width :height height})))]
+       (set! (.-onload img) load-fn)
+       (set! (.-src img) href)))))
+
+(defn check-thumbnail-size
+  [image-node bounds file-id page-id frame-id]
+  (let [href   (dom/get-attribute image-node "href")
+        width  (dm/get-prop bounds :width)
+        height (dm/get-prop bounds :height)
+        [fixed-width fixed-height] (th/get-relative-size width height)]
+    ;; Even if looks like we're doing a new request the browser caches the image
+    ;; so really we don't. We need a different API to check the sizes
+    (-> (image-size href)
+        (p/then
+         (fn [{:keys [width height]}]
+           (when (or (not (mth/close? width fixed-width 2))
+                     (not (mth/close? height fixed-height 2)))
+             (st/emit! (dwt/request-thumbnail file-id page-id frame-id "frame"))))))))
 
 (defn root-frame-wrapper-factory
   [shape-wrapper]
@@ -123,6 +155,7 @@
             task-ref       (mf/use-ref nil)
 
             on-load        (mf/use-fn (fn []
+                                        (check-thumbnail-size (mf/ref-val imposter-ref) bounds file-id page-id frame-id)
                                         (mf/set-ref-val! tries-ref 0)
                                         (reset! imposter-loaded true)))
             on-error       (mf/use-fn
