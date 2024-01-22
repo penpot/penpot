@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-01-11 11:06+0000\n"
+"PO-Revision-Date: 2024-01-23 15:01+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
@@ -5202,3 +5202,20 @@ msgstr ""
 
 msgid "labels.share"
 msgstr "Teilen"
+
+msgid "inspect.attributes.typography.text-transform.unset"
+msgstr "Nicht gesetzt"
+
+msgid "workspace.layout_grid.editor.top-bar.locate"
+msgstr "Lokalisieren"
+
+#: src/app/main/errors.cljs
+msgid "errors.file-feature-mismatch"
+msgstr ""
+"Es scheint eine Nichtübereinstimmung zwischen den aktivierten Funktionen und "
+"den Funktionen der Datei zu geben. Die Migrationen für '%s' müssen "
+"durchgeführt werden, bevor die Datei geöffnet werden kann."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow"
+msgstr "Flow"
