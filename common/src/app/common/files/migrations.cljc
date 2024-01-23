@@ -780,5 +780,3 @@
     (-> data
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
-
-
