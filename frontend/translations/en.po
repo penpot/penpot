@@ -2976,6 +2976,9 @@ msgstr "Snap to guides"
 msgid "shortcuts.toggle-textpalette"
 msgstr "Toggle text palette"
 
+msgid "shortcuts.toggle-theme"
+msgstr "Change theme"
+
 msgid "shortcuts.toggle-visibility"
 msgstr "Show / Hide"
 

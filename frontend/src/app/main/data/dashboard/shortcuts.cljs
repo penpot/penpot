@@ -32,9 +32,10 @@
                         :subsections [:general-dashboard]
                         :fn #(st/emit! (dd/create-element))}
 
-   :toggle-light-dark    {:tooltip (ds/meta (ds/alt "Q"))
-                          :command (ds/c-mod "alt+q")
-                          :fn #(st/emit! (du/toggle-theme))}})
+   :toggle-theme    {:tooltip (ds/meta (ds/alt "M"))
+                     :command (ds/c-mod "alt+m")
+                     :subsections [:general-dashboard]
+                     :fn #(st/emit! (du/toggle-theme))}})
 
 (defn get-tooltip [shortcut]
   (assert (contains? shortcuts shortcut) (str shortcut))

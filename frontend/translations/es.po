@@ -3022,6 +3022,9 @@ msgstr "Alinear a las guias"
 msgid "shortcuts.toggle-textpalette"
 msgstr "Mostrar/ocultar paleta de textos"
 
+msgid "shortcuts.toggle-theme"
+msgstr "Cambiar tema"
+
 msgid "shortcuts.toggle-visibility"
 msgstr "Mostrar/ocultar elemento"
 
