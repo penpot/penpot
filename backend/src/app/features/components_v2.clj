@@ -118,9 +118,9 @@
               (vswap! detached-ids conj (:id shape)))
             (ctk/detach-shape shape)))
 
-        remove-missing-children
+        fix-bad-children
         (fn [file-data]
-          ;; Remove any child that does not exist.
+          ;; Remove any child that does not exist. And also remove duplicated children.
           (letfn [(fix-container
                     [container]
                     (d/update-when container :objects update-vals (partial fix-shape container)))
@@ -130,7 +130,9 @@
                     (let [objects (:objects container)]
                       (d/update-when shape :shapes
                                      (fn [shapes]
-                                       (d/removev #(nil? (get objects %)) shapes)))))]
+                                       (->> shapes
+                                            (d/removev #(nil? (get objects %)))
+                                            (into [] (distinct)))))))]
 
             (-> file-data
                 (update :pages-index update-vals fix-container)
@@ -508,7 +510,7 @@
                 (d/update-when :components update-vals fix-container))))]
 
     (-> file-data
-        (remove-missing-children)
+        (fix-bad-children)
         (fix-misc-shape-issues)
         (fix-recent-colors)
         (fix-missing-image-metadata)
