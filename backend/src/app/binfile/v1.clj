@@ -20,7 +20,6 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
-   [app.http.sse :as sse]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.media :as media]
@@ -30,6 +29,7 @@
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
    [app.tasks.file-gc]
+   [app.util.events :as events]
    [app.util.time :as dt]
    [app.worker :as-alias wrk]
    [clojure.java.io :as jio]
@@ -475,9 +475,6 @@
 
             features  (cfeat/get-team-enabled-features cf/flags team)]
 
-        (sse/tap {:type :import-progress
-                  :section :read-import})
-
         ;; Process all sections
         (run! (fn [section]
                 (l/dbg :hint "reading section" :section section ::l/sync? true)
@@ -487,8 +484,7 @@
                                   (assoc ::section section)
                                   (assoc ::input input))]
                   (binding [bfc/*options* options]
-                    (sse/tap {:type :import-progress
-                              :section section})
+                    (events/tap :progress {:op :import :section section})
                     (read-section options))))
               [:v1/metadata :v1/files :v1/rels :v1/sobjects])
 
