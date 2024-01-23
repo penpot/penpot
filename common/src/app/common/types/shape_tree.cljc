@@ -176,11 +176,11 @@
   (->> (get-root-shapes objects)
        (mapv :id)))
 
-(defn get-base
-  [objects id-a id-b]
+(defn- get-base
+  [id-a id-b id-parents]
 
-  (let [[parents-a parents-a-index] (cfh/get-parent-ids-with-index objects id-a)
-        [parents-b parents-b-index] (cfh/get-parent-ids-with-index objects id-b)
+  (let [[parents-a parents-a-index] (get id-parents id-a)
+        [parents-b parents-b-index] (get id-parents id-b)
 
         parents-a (cons id-a parents-a)
         parents-b (into #{id-b} parents-b)
@@ -194,9 +194,9 @@
     [base-id idx-a idx-b]))
 
 (defn- is-shape-over-shape?
-  [objects base-shape-id over-shape-id bottom-frames?]
+  [objects base-shape-id over-shape-id bottom-frames? id-parents]
 
-  (let [[base-id index-a index-b] (get-base objects base-shape-id over-shape-id)]
+  (let [[base-id index-a index-b] (get-base base-shape-id over-shape-id id-parents)]
     (cond
       ;; The base the base shape, so the other item is below (if not bottom-frames)
       (= base-id base-shape-id)
@@ -234,33 +234,37 @@
 
   ([objects ids {:keys [bottom-frames?] :as options
                  :or   {bottom-frames? false}}]
-   (letfn [(comp [id-a id-b]
-             (cond
-               (= id-a id-b)
-               0
+   ;; Create an index of the parents of the shapes. This will speed the sorting because we use
+   ;; this information down the line.
+   (let [id-parents (into {} (map #(vector % (cfh/get-parent-ids-with-index objects %))) ids)]
+     (letfn [(comp [id-a id-b]
+               (cond
+                 (= id-a id-b)
+                 0
 
-               (is-shape-over-shape? objects id-a id-b bottom-frames?)
-               1
+                 (is-shape-over-shape? objects id-a id-b bottom-frames? id-parents)
+                 1
 
-               :else
-               -1))]
-     (sort comp ids))))
+                 :else
+                 -1))]
+       (sort comp ids)))))
 
 (defn sort-z-index-objects
   ([objects items]
    (sort-z-index-objects objects items nil))
   ([objects items {:keys [bottom-frames?]
                    :or   {bottom-frames? false}}]
-   (d/unstable-sort
-    (fn [obj-a obj-b]
-      (let [id-a (dm/get-prop obj-a :id)
-            id-b (dm/get-prop obj-b :id)]
-        (if (= id-a id-b)
-          0
-          (if ^boolean (is-shape-over-shape? objects id-a id-b bottom-frames?)
-            1
-            -1))))
-    items)))
+   (let [id-parents (into {} (map #(vector (dm/get-prop % :id) (cfh/get-parent-ids-with-index objects (dm/get-prop % :id)))) items)]
+     (d/unstable-sort
+      (fn [obj-a obj-b]
+        (let [id-a (dm/get-prop obj-a :id)
+              id-b (dm/get-prop obj-b :id)]
+          (if (= id-a id-b)
+            0
+            (if ^boolean (is-shape-over-shape? objects id-a id-b bottom-frames? id-parents)
+              1
+              -1))))
+      items))))
 
 (defn get-frame-by-position
   ([objects position]
