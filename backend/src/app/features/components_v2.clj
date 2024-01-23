@@ -237,6 +237,29 @@
                          (fn [colors]
                            (filterv valid-color? colors))))
 
+        fix-broken-parents
+        (fn [file-data]
+          ;; Find children shapes whose parent-id is not set to the parent that contains them.
+          ;; Remove them from the parent :shapes list.
+          (letfn [(fix-container
+                    [container]
+                    (d/update-when container :objects #(reduce-kv fix-shape % %)))
+
+                  (fix-shape
+                    [objects id shape]
+                    (reduce (fn [objects child-id]
+                              (let [child (get objects child-id)]
+                                (cond-> objects
+                                  (and (some? child) (not= id (:parent-id child)))
+                                  (d/update-in-when [id :shapes]
+                                                    (fn [shapes] (filterv #(not= child-id %) shapes))))))
+                            objects
+                            (:shapes shape)))]
+
+            (-> file-data
+                (update :pages-index update-vals fix-container)
+                (d/update-when :components update-vals fix-container))))
+
         fix-orphan-shapes
         (fn [file-data]
           ;; Find shapes that are not listed in their parent's children list.
@@ -490,6 +513,7 @@
         (fix-recent-colors)
         (fix-missing-image-metadata)
         (delete-big-geometry-shapes)
+        (fix-broken-parents)
         (fix-orphan-shapes)
         (fix-orphan-copies)
         (remove-nested-roots)
