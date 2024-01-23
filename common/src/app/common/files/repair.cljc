@@ -66,6 +66,19 @@
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:parent-id shape)] repair-shape))))
 
+(defmethod repair-error :duplicated-children
+  [_ {:keys [shape page-id] :as error} file-data _]
+  (let [repair-shape
+        (fn [shape]
+          ; Remove duplicated
+          (log/debug :hint "  -> remove duplicated children")
+          (update shape :shapes distinct))]
+
+    (log/dbg :hint "repairing shape :duplicated-children" :id (:id shape) :name (:name shape) :page-id page-id)
+    (-> (pcb/empty-changes nil page-id)
+        (pcb/with-file-data file-data)
+        (pcb/update-shapes [(:id shape)] repair-shape))))
+
 (defmethod repair-error :child-not-found
   [_ {:keys [shape page-id args] :as error} file-data _]
   (let [repair-shape

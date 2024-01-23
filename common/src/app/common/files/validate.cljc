@@ -26,6 +26,7 @@
   #{:invalid-geometry
     :parent-not-found
     :child-not-in-parent
+    :duplicated-children
     :child-not-found
     :frame-not-found
     :invalid-frame
@@ -122,6 +123,11 @@
             (report-error :child-not-in-parent
                           (str/ffmt "Shape % not in parent's children list" (:id shape))
                           shape file page)))
+
+        (when-not (= (count (:shapes shape)) (count (distinct (:shapes shape))))
+          (report-error :duplicated-children
+                        (str/ffmt "Shape % has duplicated children" (:id shape))
+                        shape file page))
 
         (doseq [child-id (:shapes shape)]
           (let [child (ctst/get-shape page child-id)]
