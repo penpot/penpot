@@ -144,8 +144,7 @@
                 :width 12
                 :height 12
                 :class "workspace-frame-icon"
-                :style {:stroke-width (/ 1 zoom)
-                        :stroke color
+                :style {:stroke color
                         :fill "none"}
                 :visibility (if show-artboard-names? "visible" "hidden")}
           (cond
