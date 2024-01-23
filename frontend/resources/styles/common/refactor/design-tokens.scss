@@ -293,11 +293,11 @@
 
   // ALERTS & STATUS
   --alert-background-color-ok: var(--ok-color);
-  --alert-foreground-color-ok: var(--color-background-secondary);
+  --alert-foreground-color-ok: var(--dark-gray-2); // We don't want this color to change with theme
   --alert-background-color-warning: var(--warning-color);
-  --alert-foreground-color-warning: var(--color-foreground-primary);
+  --alert-foreground-color-warning: var(--white); // We don't want this color to change with theme
   --alert-background-color-error: var(--error-color);
-  --alert-foreground-color-error: var(--color-foreground-primary);
+  --alert-foreground-color-error: var(--white); // We don't want this color to change with theme
   --alert-background-color-neutral: var(--color-background-quaternary);
   --alert-foreground-color-neutral: var(--color-foreground-secondary);
   --alert-foreground-color-neutral-active: var(--color-foreground-primary);

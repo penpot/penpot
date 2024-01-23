@@ -46,7 +46,7 @@
     height: $s-48;
     display: flex;
     width: 100%;
-    border: $s-1 solid transparent;
+    border: $s-1 solid $db-tertiary;
     align-items: center;
 
     svg {
@@ -76,7 +76,6 @@
     padding: 0 $s-12;
     background-color: transparent;
     border: none;
-    border-right: $s-1 solid $db-primary;
   }
 
   .team-name {
@@ -114,16 +113,13 @@
   }
 
   .switch-options {
-    display: flex;
+    @include buttonStyle;
+    @include flexCenter;
     max-width: $s-24;
     min-width: $s-28;
-    border-left: $s-1 solid $df-primary;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    background-color: transparent;
-    border: none;
     height: 100%;
+    border-left: $s-1 solid $db-primary;
+    background-color: transparent;
 
     svg {
       fill: $df-secondary;
