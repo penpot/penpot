@@ -123,7 +123,7 @@
           ;; Remove any child that does not exist.
           (letfn [(fix-container
                     [container]
-                    (update container :objects update-vals (partial fix-shape container)))
+                    (d/update-when container :objects update-vals (partial fix-shape container)))
 
                   (fix-shape
                     [container shape]
@@ -134,7 +134,7 @@
 
             (-> file-data
                 (update :pages-index update-vals fix-container)
-                (update :components update-vals fix-container))))
+                (d/update-when :components update-vals fix-container))))
 
         fix-missing-image-metadata
         (fn [file-data]
@@ -154,7 +154,7 @@
 
             (-> file-data
                 (update :pages-index update-vals update-page)
-                (update :components update-vals update-page))))
+                (d/update-when :components update-vals update-page))))
 
         ;; At some point in time, we had a bug that generated shapes
         ;; with huge geometries that did not validate the
@@ -188,7 +188,7 @@
 
             (-> file-data
                 (update :pages-index update-vals update-page)
-                (update :components update-vals update-page))))
+                (d/update-when :components update-vals update-page))))
 
         fix-misc-shape-issues
         (fn [file-data]
@@ -229,7 +229,7 @@
 
             (-> file-data
                 (update :pages-index update-vals update-container)
-                (update :components update-vals update-container))))
+                (d/update-when :components update-vals update-container))))
 
         fix-recent-colors
         (fn [file-data]
@@ -258,13 +258,13 @@
 
             (-> file-data
                 (update :pages-index update-vals fix-container)
-                (update :components update-vals fix-container))))
+                (d/update-when :components update-vals fix-container))))
 
         remove-nested-roots
         (fn [file-data]
           ;; Remove :component-root in head shapes that are nested.
           (letfn [(fix-container [container]
-                    (update container :objects update-vals (partial fix-shape container)))
+                    (d/update-when container :objects update-vals (partial fix-shape container)))
 
                   (fix-shape [container shape]
                     (let [parent (ctst/get-shape container (:parent-id shape))]
@@ -275,13 +275,13 @@
 
             (-> file-data
                 (update :pages-index update-vals fix-container)
-                (update :components update-vals fix-container))))
+                (d/update-when :components update-vals fix-container))))
 
         add-not-nested-roots
         (fn [file-data]
           ;; Add :component-root in head shapes that are not nested.
           (letfn [(fix-container [container]
-                    (update container :objects update-vals (partial fix-shape container)))
+                    (d/update-when container :objects update-vals (partial fix-shape container)))
 
                   (fix-shape [container shape]
                     (let [parent (ctst/get-shape container (:parent-id shape))]
@@ -292,13 +292,13 @@
 
             (-> file-data
                 (update :pages-index update-vals fix-container)
-                (update :components update-vals fix-container))))
+                (d/update-when :components update-vals fix-container))))
 
         fix-orphan-copies
         (fn [file-data]
           ;; Detach shapes that were inside a copy (have :shape-ref) but now they aren't.
           (letfn [(fix-container [container]
-                    (update container :objects update-vals (partial fix-shape container)))
+                    (d/update-when container :objects update-vals (partial fix-shape container)))
 
                   (fix-shape [container shape]
                     (let [parent (ctst/get-shape container (:parent-id shape))]
@@ -310,7 +310,7 @@
 
             (-> file-data
                 (update :pages-index update-vals fix-container)
-                (update :components update-vals fix-container))))
+                (d/update-when :components update-vals fix-container))))
 
         remap-refs
         (fn [file-data]
@@ -354,14 +354,14 @@
 
             (-> file-data
                 (update :pages-index update-vals fix-container)
-                (update :components update-vals fix-container))))
+                (d/update-when :components update-vals fix-container))))
 
         fix-copies-of-detached
         (fn [file-data]
           ;; Find any copy that is referencing a detached shape inside a component, and
           ;; undo the nested copy, converting it into a direct copy.
           (letfn [(fix-container [container]
-                    (update container :objects update-vals fix-shape))
+                    (d/update-when container :objects update-vals fix-shape))
 
                   (fix-shape [shape]
                     (cond-> shape
@@ -372,14 +372,14 @@
                               :component-root)))]
             (-> file-data
                 (update :pages-index update-vals fix-container)
-                (update :components update-vals fix-container))))
+                (d/update-when :components update-vals fix-container))))
 
         fix-path-copies
         (fn [file-data]
           ;; If the user has created a copy and then converted into a path, detach it
           ;; because the synchronization will no longer work.
           (letfn [(fix-container [container]
-                    (update container :objects update-vals fix-shape))
+                    (d/update-when container :objects update-vals fix-shape))
 
                   (fix-shape [shape]
                     (if (and (ctk/instance-head? shape)
@@ -389,14 +389,14 @@
 
             (-> file-data
                 (update :pages-index update-vals fix-container)
-                (update :components update-vals fix-container))))
+                (d/update-when :components update-vals fix-container))))
 
         transform-to-frames
         (fn [file-data]
           ;; Transform component and copy heads to frames, and set the
           ;; frame-id of its childrens
           (letfn [(fix-container [container]
-                    (update container :objects update-vals fix-shape))
+                    (d/update-when container :objects update-vals fix-shape))
 
                   (fix-shape [shape]
                     (if (or (nil? (:parent-id shape)) (ctk/instance-head? shape))
@@ -410,7 +410,7 @@
                       shape))]
             (-> file-data
                 (update :pages-index update-vals fix-container)
-                (update :components update-vals fix-container))))
+                (d/update-when :components update-vals fix-container))))
 
         remap-frame-ids
         (fn [file-data]
@@ -418,7 +418,7 @@
           ;; to point to the head instance.
           (letfn [(fix-container
                     [container]
-                    (update container :objects update-vals (partial fix-shape container)))
+                    (d/update-when container :objects update-vals (partial fix-shape container)))
 
                   (fix-shape
                     [container shape]
@@ -428,14 +428,14 @@
                         shape)))]
             (-> file-data
                 (update :pages-index update-vals fix-container)
-                (update :components update-vals fix-container))))
+                (d/update-when :components update-vals fix-container))))
 
         fix-frame-ids
         (fn [file-data]
           ;; Ensure that frame-id of all shapes point to the parent or to the frame-id
           ;; of the parent, and that the destination is indeed a frame.
           (letfn [(fix-container [container]
-                    (update container :objects #(cfh/reduce-objects % fix-shape %)))
+                    (d/update-when container :objects #(cfh/reduce-objects % fix-shape %)))
 
                   (fix-shape [objects shape]
                     (let [parent (when (:parent-id shape)
@@ -452,7 +452,7 @@
 
             (-> file-data
                 (update :pages-index update-vals fix-container)
-                (update :components update-vals fix-container))))
+                (d/update-when :components update-vals fix-container))))
 
         fix-component-nil-objects
         (fn [file-data]
@@ -464,14 +464,14 @@
                         (dissoc component :objects))
                       component))]
             (-> file-data
-                (update :components update-vals fix-component))))
+                (d/update-when :components update-vals fix-component))))
 
         fix-false-copies
         (fn [file-data]
           ;; Find component heads that are not main-instance but have not :shape-ref.
           (letfn [(fix-container
                     [container]
-                    (update container :objects update-vals fix-shape))
+                    (d/update-when container :objects update-vals fix-shape))
 
                   (fix-shape
                     [shape]
@@ -482,7 +482,7 @@
                       shape))]
             (-> file-data
                 (update :pages-index update-vals fix-container)
-                (update :components update-vals fix-container))))]
+                (d/update-when :components update-vals fix-container))))]
 
     (-> file-data
         (remove-missing-children)
