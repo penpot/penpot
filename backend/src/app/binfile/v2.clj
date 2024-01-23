@@ -18,12 +18,12 @@
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
-   [app.http.sse :as sse]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.media :as media]
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
+   [app.util.events :as events]
    [app.util.time :as dt]
    [app.worker :as-alias wrk]
    [clojure.set :as set]
@@ -116,12 +116,14 @@
 (defn- write-team!
   [cfg team-id]
 
-  (sse/tap {:type :export-progress
-            :section :write-team
-            :id team-id})
-
   (let [team  (bfc/get-team cfg team-id)
         fonts (bfc/get-fonts cfg team-id)]
+
+    (events/tap :progress
+                {:op :export
+                 :section :write-team
+                 :id team-id
+                 :name (:name team)})
 
     (l/trc :hint "write" :obj "team"
            :id (str team-id)
@@ -138,27 +140,28 @@
 
 (defn- write-project!
   [cfg project-id]
-
-  (sse/tap {:type :export-progress
-            :section :write-project
-            :id project-id})
-
   (let [project (bfc/get-project cfg project-id)]
+    (events/tap :progress
+                {:op :export
+                 :section :write-project
+                 :id project-id
+                 :name (:name project)})
     (l/trc :hint "write" :obj "project" :id (str project-id))
     (write! cfg :project (str project-id) project)
     (vswap! bfc/*state* update :projects conj project-id)))
 
 (defn- write-file!
   [cfg file-id]
-
-  (sse/tap {:type :export-progress
-            :section :write-file
-            :id file-id})
-
   (let [file   (bfc/get-file cfg file-id)
         thumbs (bfc/get-file-object-thumbnails cfg file-id)
         media  (bfc/get-file-media cfg file)
         rels   (bfc/get-files-rels cfg #{file-id})]
+
+    (events/tap :progress
+                {:op :export
+                 :section :write-file
+                 :id file-id
+                 :name (:name file)})
 
     (vswap! bfc/*state* (fn [state]
                           (-> state
@@ -218,16 +221,18 @@
   [{:keys [::db/conn ::bfc/timestamp] :as cfg} team-id]
   (l/trc :hint "read" :obj "team" :id (str team-id))
 
-  (sse/tap {:type :import-progress
-            :section :read-team
-            :id team-id})
-
   (let [team (read-obj cfg :team team-id)
         team (-> team
                  (update :id bfc/lookup-index)
                  (update :photo-id bfc/lookup-index)
                  (assoc :created-at timestamp)
                  (assoc :modified-at timestamp))]
+
+    (events/tap :progress
+                {:op :import
+                 :section :read-team
+                 :id team-id
+                 :name (:name team)})
 
     (db/insert! conn :team
                 (update team :features db/encode-pgarray conn "text")
@@ -253,16 +258,18 @@
   [{:keys [::db/conn ::bfc/timestamp] :as cfg} project-id]
   (l/trc :hint "read" :obj "project" :id (str project-id))
 
-  (sse/tap {:type :import-progress
-            :section :read-project
-            :id project-id})
-
   (let [project (read-obj cfg :project project-id)
         project (-> project
                     (update :id bfc/lookup-index)
                     (update :team-id bfc/lookup-index)
                     (assoc :created-at timestamp)
                     (assoc :modified-at timestamp))]
+
+    (events/tap :progress
+                {:op :import
+                 :section :read-project
+                 :id project-id
+                 :name (:name project)})
 
     (db/insert! conn :project project
                 ::db/return-keys false)))
@@ -271,14 +278,16 @@
   [{:keys [::db/conn ::bfc/timestamp] :as cfg} file-id]
   (l/trc :hint "read" :obj "file" :id (str file-id))
 
-  (sse/tap {:type :import-progress
-            :section :read-file
-            :id file-id})
-
   (let [file (-> (read-obj cfg :file file-id)
                  (update :id bfc/lookup-index)
                  (update :project-id bfc/lookup-index)
                  (bfc/process-file))]
+
+    (events/tap :progress
+                {:op :import
+                 :section :read-file
+                 :id file-id
+                 :name (:name file)})
 
     ;; All features that are enabled and requires explicit migration are
     ;; added to the state for a posterior migration step.
