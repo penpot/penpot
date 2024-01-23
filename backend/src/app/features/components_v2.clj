@@ -118,6 +118,24 @@
               (vswap! detached-ids conj (:id shape)))
             (ctk/detach-shape shape)))
 
+        remove-missing-children
+        (fn [file-data]
+          ;; Remove any child that does not exist.
+          (letfn [(fix-container
+                    [container]
+                    (update container :objects update-vals (partial fix-shape container)))
+
+                  (fix-shape
+                    [container shape]
+                    (let [objects (:objects container)]
+                      (d/update-when shape :shapes
+                                     (fn [shapes]
+                                       (d/removev #(nil? (get objects %)) shapes)))))]
+
+            (-> file-data
+                (update :pages-index update-vals fix-container)
+                (update :components update-vals fix-container))))
+
         fix-missing-image-metadata
         (fn [file-data]
           (let [update-object
@@ -356,6 +374,23 @@
                 (update :pages-index update-vals fix-container)
                 (update :components update-vals fix-container))))
 
+        fix-path-copies
+        (fn [file-data]
+          ;; If the user has created a copy and then converted into a path, detach it
+          ;; because the synchronization will no longer work.
+          (letfn [(fix-container [container]
+                    (update container :objects update-vals fix-shape))
+
+                  (fix-shape [shape]
+                    (if (and (ctk/instance-head? shape)
+                             (cfh/path-shape? shape))
+                      (ctk/detach-shape shape)
+                      shape))]
+
+            (-> file-data
+                (update :pages-index update-vals fix-container)
+                (update :components update-vals fix-container))))
+
         transform-to-frames
         (fn [file-data]
           ;; Transform component and copy heads to frames, and set the
@@ -450,6 +485,7 @@
                 (update :components update-vals fix-container))))]
 
     (-> file-data
+        (remove-missing-children)
         (fix-misc-shape-issues)
         (fix-recent-colors)
         (fix-missing-image-metadata)
@@ -460,6 +496,7 @@
         (fix-orphan-copies)
         (remap-refs)
         (fix-copies-of-detached)
+        (fix-path-copies)
         (transform-to-frames)
         (remap-frame-ids)
         (fix-frame-ids)
