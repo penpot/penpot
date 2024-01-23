@@ -138,101 +138,101 @@
 
         fix-missing-image-metadata
         (fn [file-data]
-          (let [update-object
-                (fn [objects id shape]
-                  (if (and (cfh/image-shape? shape)
-                           (nil? (:metadata shape)))
-                    (-> objects
-                        (dissoc id)
-                        (d/update-in-when [(:parent-id shape) :shapes]
-                                          (fn [shapes] (filterv #(not= id %) shapes))))
-                    objects))
+          ;; Delete broken image shapes with no metadata.
+          (letfn [(fix-container
+                    [container]
+                    (d/update-when container :objects #(reduce-kv fix-shape % %)))
 
-                update-page
-                (fn [page]
-                  (d/update-when page :objects #(reduce-kv update-object % %)))]
+                  (fix-shape
+                    [objects id shape]
+                    (if (and (cfh/image-shape? shape)
+                             (nil? (:metadata shape)))
+                      (-> objects
+                          (dissoc id)
+                          (d/update-in-when [(:parent-id shape) :shapes]
+                                            (fn [shapes] (filterv #(not= id %) shapes))))
+                      objects))]
 
             (-> file-data
-                (update :pages-index update-vals update-page)
-                (d/update-when :components update-vals update-page))))
+                (update :pages-index update-vals fix-container)
+                (d/update-when :components update-vals fix-container))))
 
-        ;; At some point in time, we had a bug that generated shapes
-        ;; with huge geometries that did not validate the
-        ;; schema. Since we don't have a way to fix those shapes, we
-        ;; simply proceed to delete it. We ignore path type shapes
-        ;; because they have not been affected by the bug.
-        fix-big-invalid-shapes
+        delete-big-geometry-shapes
         (fn [file-data]
-          (let [update-object
-                (fn [objects id shape]
-                  (cond
-                    (or (cfh/path-shape? shape)
-                        (cfh/bool-shape? shape))
-                    objects
+          ;; At some point in time, we had a bug that generated shapes
+          ;; with huge geometries that did not validate the
+          ;; schema. Since we don't have a way to fix those shapes, we
+          ;; simply proceed to delete it. We ignore path type shapes
+          ;; because they have not been affected by the bug.
+          (letfn [(fix-container
+                    [container]
+                    (d/update-when container :objects #(reduce-kv fix-shape % %)))
 
-                    (or (and (number? (:x shape)) (not (sm/valid-safe-number? (:x shape))))
-                        (and (number? (:y shape)) (not (sm/valid-safe-number? (:y shape))))
-                        (and (number? (:width shape)) (not (sm/valid-safe-number? (:width shape))))
-                        (and (number? (:height shape)) (not (sm/valid-safe-number? (:height shape)))))
-                    (-> objects
-                        (dissoc id)
-                        (d/update-in-when [(:parent-id shape) :shapes]
-                                          (fn [shapes] (filterv #(not= id %) shapes))))
+                  (fix-shape
+                    [objects id shape]
+                    (cond
+                      (or (cfh/path-shape? shape)
+                          (cfh/bool-shape? shape))
+                      objects
 
-                    :else
-                    objects))
+                      (or (and (number? (:x shape)) (not (sm/valid-safe-number? (:x shape))))
+                          (and (number? (:y shape)) (not (sm/valid-safe-number? (:y shape))))
+                          (and (number? (:width shape)) (not (sm/valid-safe-number? (:width shape))))
+                          (and (number? (:height shape)) (not (sm/valid-safe-number? (:height shape)))))
+                      (-> objects
+                          (dissoc id)
+                          (d/update-in-when [(:parent-id shape) :shapes]
+                                            (fn [shapes] (filterv #(not= id %) shapes))))
 
-                update-page
-                (fn [page]
-                  (d/update-when page :objects #(reduce-kv update-object % %)))]
+                      :else
+                      objects))]
 
             (-> file-data
-                (update :pages-index update-vals update-page)
-                (d/update-when :components update-vals update-page))))
+                (update :pages-index update-vals fix-container)
+                (d/update-when :components update-vals fix-container))))
 
         fix-misc-shape-issues
         (fn [file-data]
-          ;; Find shapes that are not listed in their parent's children list.
-          ;; Remove them, and also their children
-          (let [update-shape
-                (fn [shape]
-                  (cond-> shape
-                    ;; Some shapes has invalid value there
-                    (contains? shape :layout-gap)
-                    (d/update-in-when [:layout-gap :column-gap]
-                                      (fn [gap]
-                                        (if (or (= gap ##Inf)
-                                                (= gap ##-Inf))
-                                          0
-                                          gap)))
+          (letfn [(fix-container
+                    [container]
+                    (d/update-when container :objects update-vals fix-shape))
 
-                    ;; Fix broken fills
-                    (seq (:fills shape))
-                    (update :fills (fn [fills] (filterv valid-fill? fills)))
+                  (fix-shape
+                    [shape]
+                    (cond-> shape
+                      ;; Some shapes has invalid gap value
+                      (contains? shape :layout-gap)
+                      (d/update-in-when [:layout-gap :column-gap]
+                                        (fn [gap]
+                                          (if (or (= gap ##Inf)
+                                                  (= gap ##-Inf))
+                                            0
+                                            gap)))
 
-                    ;; Fix broken strokes
-                    (seq (:strokes shape))
-                    (update :strokes (fn [strokes] (filterv valid-stroke? strokes)))
+                      ;; Fix broken fills
+                      (seq (:fills shape))
+                      (update :fills (fn [fills] (filterv valid-fill? fills)))
 
-                    ;; Fix some broken layout related attrs, probably
-                    ;; of copypaste on flex layout betatest period
-                    (true? (:layout shape))
-                    (assoc :layout :flex)
+                      ;; Fix broken strokes
+                      (seq (:strokes shape))
+                      (update :strokes (fn [strokes] (filterv valid-stroke? strokes)))
 
-                    (number? (:layout-gap shape))
-                    (as-> shape (let [n (:layout-gap shape)]
-                                  (assoc shape :layout-gap {:row-gap n :column-gap n})))))
+                      ;; Fix some broken layout related attrs, probably
+                      ;; of copypaste on flex layout betatest period
+                      (true? (:layout shape))
+                      (assoc :layout :flex)
 
-                update-container
-                (fn [container]
-                  (d/update-when container :objects update-vals update-shape))]
+                      (number? (:layout-gap shape))
+                      (as-> shape (let [n (:layout-gap shape)]
+                                    (assoc shape :layout-gap {:row-gap n :column-gap n})))))]
 
             (-> file-data
-                (update :pages-index update-vals update-container)
-                (d/update-when :components update-vals update-container))))
+                (update :pages-index update-vals fix-container)
+                (d/update-when :components update-vals fix-container))))
 
         fix-recent-colors
         (fn [file-data]
+          ;; Remove invalid colors in :recent-colors
           (d/update-when file-data :recent-colors
                          (fn [colors]
                            (filterv valid-color? colors))))
@@ -489,7 +489,7 @@
         (fix-misc-shape-issues)
         (fix-recent-colors)
         (fix-missing-image-metadata)
-        (fix-big-invalid-shapes)
+        (delete-big-geometry-shapes)
         (fix-orphan-shapes)
         (fix-orphan-copies)
         (remove-nested-roots)
