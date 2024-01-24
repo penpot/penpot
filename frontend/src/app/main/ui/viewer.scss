@@ -76,6 +76,7 @@
   top: calc(50vh - $s-32);
   z-index: $z-index-2;
   background-color: var(--viewer-controls-background-color);
+  transition: transform 400ms ease 300ms;
   svg {
     @extend .button-icon;
     stroke: var(--icon-foreground);
@@ -188,4 +189,20 @@
 
 [data-force-visible="true"] .viewer-bottom {
   transform: translateY(0);
+}
+
+[data-fullscreen="true"] .viewer-go-next {
+  transform: translateX($s-40);
+}
+
+[data-fullscreen="true"] .viewer-go-prev {
+  transform: translateX(-$s-40);
+}
+
+[data-force-visible="true"] .viewer-go-next {
+  transform: translateX(0);
+}
+
+[data-force-visible="true"] .viewer-go-prev {
+  transform: translateX(0);
 }
