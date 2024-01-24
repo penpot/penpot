@@ -29,6 +29,7 @@
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+   [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
@@ -100,15 +101,16 @@
 ;; FILE PREPARATION BEFORE MIGRATION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def valid-color?  (sm/lazy-validator ::ctc/recent-color))
+(def valid-fill?   (sm/lazy-validator ::cts/fill))
+(def valid-stroke? (sm/lazy-validator ::cts/stroke))
+(def valid-flow?   (sm/lazy-validator ::ctp/flow))
+
 (defn- prepare-file-data
   "Apply some specific migrations or fixes to things that are allowed in v1 but not in v2,
    or that are the result of old bugs."
   [file-data libraries]
   (let [detached-ids  (volatile! #{})
-        valid-color?  (sm/validator ::ctc/recent-color)
-        valid-fill?   (sm/validator ::cts/fill)
-        valid-stroke? (sm/validator ::cts/stroke)
-
         detach-shape
         (fn [container shape]
           ;; Detach a shape. If it's inside a component, add it to detached-ids, for further use.
@@ -158,6 +160,14 @@
             (-> file-data
                 (update :pages-index update-vals fix-container)
                 (d/update-when :components update-vals fix-container))))
+
+        ;; Some pages has invalid data on flows, we proceed just to
+        ;; delete them.
+        delete-invalid-flows
+        (fn [file-data]
+          (update file-data :pages-index update-vals
+                  (fn [page]
+                    (d/update-in-when page [:options :flows] #(filterv valid-flow? %)))))
 
         delete-big-geometry-shapes
         (fn [file-data]
@@ -511,6 +521,7 @@
                 (d/update-when :components update-vals fix-container))))]
 
     (-> file-data
+        (delete-invalid-flows)
         (fix-bad-children)
         (fix-misc-shape-issues)
         (fix-recent-colors)
