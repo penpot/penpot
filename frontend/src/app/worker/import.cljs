@@ -728,7 +728,10 @@
                     :method :get})
                   (rx/map :body)
                   (rx/mapcat (fn [file]
-                               (->> (rp/cmd! ::sse/import-binfile {:file file :project-id project-id})
+                               (->> (rp/cmd! ::sse/import-binfile
+                                             {:name (str/replace (:name data) #".penpot$" "")
+                                              :file file
+                                              :project-id project-id})
                                     (rx/tap (fn [event]
                                               (let [payload (sse/get-payload event)
                                                     type    (sse/get-type event)]
