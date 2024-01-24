@@ -537,21 +537,20 @@
                       :image       (create-image-shape name frame-id svg-data element)
                       #_other      (create-raw-svg name frame-id svg-data element))]
 
-
         (when (some? shape)
-          (let [shape (-> shape
-                          (assoc :svg-defs (select-keys defs references))
-                          (setup-fill)
-                          (setup-stroke)
-                          (setup-opacity)
-                          (setup-other)
-                          (update :svg-attrs (fn [attrs]
-                                               (if (empty? (:style attrs))
-                                                 (dissoc attrs :style)
-                                                 attrs))))]
-            [(cond-> shape
-               hidden (assoc :hidden true))
+          [(-> shape
+               (assoc :svg-defs (select-keys defs references))
+               (setup-fill)
+               (setup-stroke)
+               (setup-opacity)
+               (setup-other)
+               (update :svg-attrs (fn [attrs]
+                                    (if (empty? (:style attrs))
+                                      (dissoc attrs :style)
+                                      attrs)))
+               (cond-> ^boolean hidden
+                 (assoc :hidden true)))
 
-             (cond->> (:content element)
-               (contains? csvg/parent-tags tag)
-               (mapv #(csvg/inherit-attributes attrs %)))]))))))
+           (cond->> (:content element)
+             (contains? csvg/parent-tags tag)
+             (mapv (partial csvg/inherit-attributes attrs)))])))))

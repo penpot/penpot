@@ -872,17 +872,21 @@
       transform
       (update :transform append-transform))))
 
-(defn inherit-attributes [group-attrs {:keys [attrs] :as node}]
+(defn inherit-attributes
+  [group-attrs {:keys [attrs] :as node}]
   (if (map? node)
-    (let [attrs (-> (format-styles attrs)
-                    (add-transform (:transform group-attrs)))
+    (let [attrs             (-> (format-styles attrs)
+                                (add-transform (:transform group-attrs)))
+          group-attrs       (format-styles group-attrs)
 
           ;; Don't inherit a property that is already in the style attribute
           inherit-style     (-> (:style group-attrs) (d/without-keys (keys attrs)))
           inheritable-props (->> inheritable-props (remove #(contains? (:styles attrs) %)))
           group-attrs       (-> group-attrs (assoc :style inherit-style))
 
-          attrs (d/deep-merge (select-keys group-attrs inheritable-props) attrs)]
+          attrs             (-> (select-keys group-attrs inheritable-props)
+                                (d/deep-merge attrs)
+                                (d/without-nils))]
       (assoc node :attrs attrs))
     node))
 
