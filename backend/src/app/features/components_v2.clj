@@ -408,7 +408,8 @@
 
                   (fix-shape [shape]
                     (if (and (ctk/instance-head? shape)
-                             (cfh/path-shape? shape))
+                             (or (cfh/path-shape? shape)
+                                 (cfh/bool-shape? shape)))
                       (ctk/detach-shape shape)
                       shape))]
 
