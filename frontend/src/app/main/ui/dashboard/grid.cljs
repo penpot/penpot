@@ -7,6 +7,7 @@
 (ns app.main.ui.dashboard.grid
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.logging :as log]
@@ -446,8 +447,9 @@
        [:& loading-placeholder]
 
        (seq files)
-       (for [slice (partition-all limit files)]
-         [:ul {:class (stl/css :grid-row)}
+       (for [[index slice] (d/enumerate (partition-all limit files))]
+
+         [:ul {:class (stl/css :grid-row) :key (dm/str index)}
           (when @dragging?
             [:li {:class (stl/css :grid-item)}])
           (for [item slice]
