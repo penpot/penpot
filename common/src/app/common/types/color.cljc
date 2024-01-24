@@ -70,18 +70,20 @@
       [:offset ::sm/safe-number]]]]])
 
 (sm/define! ::color
-  [:map {:title "Color"}
-   [:id {:optional true} ::sm/uuid]
-   [:name {:optional true} :string]
-   [:path {:optional true} [:maybe :string]]
-   [:value {:optional true} [:maybe :string]]
-   [:color {:optional true} [:maybe ::rgb-color]]
-   [:opacity {:optional true} [:maybe ::sm/safe-number]]
-   [:modified-at {:optional true} ::sm/inst]
-   [:ref-id {:optional true} ::sm/uuid]
-   [:ref-file {:optional true} ::sm/uuid]
-   [:gradient {:optional true} [:maybe ::gradient]]
-   [:image {:optional true} [:maybe ::image-color]]])
+  [:and
+   [:map {:title "Color"}
+    [:id {:optional true} ::sm/uuid]
+    [:name {:optional true} :string]
+    [:path {:optional true} [:maybe :string]]
+    [:value {:optional true} [:maybe :string]]
+    [:color {:optional true} [:maybe ::rgb-color]]
+    [:opacity {:optional true} [:maybe ::sm/safe-number]]
+    [:modified-at {:optional true} ::sm/inst]
+    [:ref-id {:optional true} ::sm/uuid]
+    [:ref-file {:optional true} ::sm/uuid]
+    [:gradient {:optional true} [:maybe ::gradient]]
+    [:image {:optional true} [:maybe ::image-color]]]
+   [::sm/contains-any {:strict true} [:color :gradient :image]]])
 
 (sm/define! ::recent-color
   [:and
