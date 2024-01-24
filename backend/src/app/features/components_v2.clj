@@ -945,6 +945,12 @@
                              :file-id (str (:id fdata))
                              :id (str (:id mobj)))
 
+                      (instance? org.graalvm.polyglot.PolyglotException cause)
+                      (l/inf :hint "skip processing media object: invalid svg found"
+                             :team-id (str team-id)
+                             :file-id (str (:id fdata))
+                             :id (str (:id mobj)))
+
                       (= (:type edata) :not-found)
                       (l/inf :hint "skip processing media object: underlying object does not exist"
                              :team-id (str team-id)

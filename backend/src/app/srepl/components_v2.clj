@@ -287,7 +287,7 @@
         sprocs    (ps/create :permits max-procs)
 
         cache     (if (int? cache)
-                    (cache/create :executor :same-thread
+                    (cache/create :executor executor
                                   :max-items cache)
                     nil)
         migrate-team
@@ -303,14 +303,14 @@
                                                 :skip-on-graphics-error? skip-on-graphic-error?)))
 
               (when (string? label)
-                (report! main/system label team-id (tpoint) nil))
+                (report! main/system team-id label (tpoint) nil))
 
               (catch Throwable cause
                 (l/wrn :hint "unexpected error on processing team (skiping)"
                        :team-id (str team-id)
                        :cause cause)
                 (when (string? label)
-                  (report! main/system label team-id (tpoint) (ex-message cause))))
+                  (report! main/system team-id label (tpoint) (ex-message cause))))
 
               (finally
                 (ps/release! sjobs)))))
