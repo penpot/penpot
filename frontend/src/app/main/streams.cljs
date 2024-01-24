@@ -112,6 +112,20 @@
     (rx/sub! ob sub)
     sub))
 
+(defonce keyboard-shift
+  (let [sub (rx/behavior-subject nil)
+        ob  (->> keyboard
+                 (rx/filter kbd/shift-key?)
+                 (rx/map kbd/key-down-event?)
+                 ;; Fix a situation caused by using `ctrl+alt` kind of
+                 ;; shortcuts, that makes keyboard-alt stream
+                 ;; registering the key pressed but on blurring the
+                 ;; window (unfocus) the key down is never arrived.
+                 (rx/merge window-blur)
+                 (rx/pipe (rxo/distinct-contiguous)))]
+    (rx/sub! ob sub)
+    sub))
+
 (defonce keyboard-meta
   (let [sub (rx/behavior-subject nil)
         ob  (->> keyboard
