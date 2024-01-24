@@ -86,7 +86,7 @@
   [files selected]
   (let [get-file #(get files %)
         sim-file #(select-keys % [:id :name :project-id :is-shared])
-        xform    (comp (map get-file)
+        xform    (comp (keep get-file)
                        (map sim-file))]
     (->> (into #{} xform selected)
          (d/index-by :id))))
@@ -96,14 +96,15 @@
                ;; we need to this because :dashboard-search-result is a list
                ;; of maps and we need a map of maps (using :id as key).
                (let [files (d/index-by :id (:dashboard-search-result state))]
-                 (dashboard-extract-selected files (dm/get-in state [:dashboard-local :selected-files]))))
+                 (->> (dm/get-in state [:dashboard-local :selected-files])
+                      (dashboard-extract-selected files))))
              st/state))
 
 (def dashboard-selected-files
   (l/derived (fn [state]
-               (dashboard-extract-selected (:dashboard-files state)
-                                           (dm/get-in state [:dashboard-local :selected-files])))
-             st/state =))
+               (->> (dm/get-in state [:dashboard-local :selected-files])
+                    (dashboard-extract-selected (:dashboard-files state))))
+             st/state))
 
 ;; ---- Workspace refs
 
