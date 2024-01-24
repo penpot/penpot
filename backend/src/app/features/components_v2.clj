@@ -407,10 +407,10 @@
                 (update :pages-index update-vals fix-container)
                 (d/update-when :components update-vals fix-container))))
 
-        fix-path-copies
+        fix-converted-copies
         (fn [file-data]
-          ;; If the user has created a copy and then converted into a path, detach it
-          ;; because the synchronization will no longer work.
+          ;; If the user has created a copy and then converted into a path or bool,
+          ;; detach it because the synchronization will no longer work.
           (letfn [(fix-container [container]
                     (d/update-when container :objects update-vals fix-shape))
 
@@ -532,7 +532,7 @@
         (add-not-nested-roots)
         (remap-refs)
         (fix-copies-of-detached)
-        (fix-path-copies)
+        (fix-converted-copies)
         (transform-to-frames)
         (remap-frame-ids)
         (fix-frame-ids)
