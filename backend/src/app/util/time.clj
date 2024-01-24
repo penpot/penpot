@@ -123,7 +123,6 @@
   FileTime
   (inst-ms* [v] (.toMillis ^FileTime v)))
 
-
 (defmethod print-method Duration
   [mv ^java.io.Writer writer]
   (.write writer (str "#app/duration \"" (str/lower (subs (str mv) 2)) "\"")))

@@ -23,6 +23,7 @@
    [app.common.svg :as csvg]
    [app.common.text :as txt]
    [app.common.types.shape :as cts]
+   [app.common.types.shape.shadow :as ctss]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
@@ -800,6 +801,31 @@
           (update-container [container]
             (d/update-when container :objects update-vals update-object))]
 
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
+
+(def ^:private valid-shadow?
+  (sm/lazy-validator ::ctss/shadow))
+
+(defmethod migrate 44
+  [data]
+  (letfn [(fix-shadow [shadow]
+            (if (string? (:color shadow))
+              (let [color {:color (:color shadow)
+                           :opacity 1}]
+                (assoc shadow :color color))
+              shadow))
+
+          (update-object [object]
+            (d/update-when object :shadow
+                           #(into []
+                                  (comp (map fix-shadow)
+                                        (filter valid-shadow?))
+                                  %)))
+
+          (update-container [container]
+            (d/update-when container :objects update-vals update-object))]
     (-> data
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
