@@ -45,6 +45,14 @@
          0
          (if (< (inst-ms it) (inst-ms other)) -1 1)))))
 
+
+#?(:cljs
+   (extend-type DateTime
+     cljs.core/IEquiv
+     (-equiv [o other]
+       (and (instance? DateTime other)
+            (== (.valueOf o) (.valueOf other))))))
+
 #?(:cljs
    (extend-protocol cljs.core/Inst
      DateTime
