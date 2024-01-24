@@ -101,15 +101,15 @@
    ::mf/register-as :name-group-dialog}
   [{:keys [path last-path accept] :as ctx
     :or {path "" last-path ""}}]
-  (let [initial (mf/use-memo
-                 (mf/deps last-path)
-                 (constantly {:asset-name last-path}))
-        form  (fm/use-form :spec ::name-group-form
-                           :validators [(fm/validate-not-empty :name (tr "auth.name.not-all-space"))
-                                        (fm/validate-length :name fm/max-length-allowed (tr "auth.name.too-long"))]
-                           :initial initial)
+  (let [initial  (mf/use-memo
+                  (mf/deps last-path)
+                  (constantly {:asset-name last-path}))
+        form     (fm/use-form :spec ::name-group-form
+                              :validators [(fm/validate-not-empty :asset-name (tr "auth.name.not-all-space"))
+                                           (fm/validate-length :asset-name fm/max-length-allowed (tr "auth.name.too-long"))]
+                              :initial initial)
 
-        create? (empty? path)
+        create?  (empty? path)
 
         on-close (mf/use-fn #(modal/hide!))
 
@@ -122,6 +122,7 @@
                (accept asset-name)
                (accept path asset-name))
              (modal/hide!))))]
+
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-container)}
       [:div {:class (stl/css :modal-header)}

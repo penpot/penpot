@@ -275,7 +275,7 @@
   padding: 0;
   margin-right: 0;
   background-color: var(--input-background-color);
-  border: $s-1 solid var(--input-background-color);
+  border: $s-1 solid var(--input-border-color);
   color: var(--input-foreground-color);
   .start-flow-btn {
     @include buttonStyle;
@@ -315,22 +315,27 @@
 
   &:hover {
     background-color: var(--input-background-color-hover);
-    border: $s-1 solid var(--input-background-color-hover);
+    border: $s-1 solid var(--input-border-color-hover);
     &:active {
-      background-color: var(--input-background-color-active);
+      background-color: var(--input-background-color-hover);
       .flow-input-wrapper {
-        background-color: var(--input-background-color-active);
+        background-color: var(--input-background-color-hover);
       }
     }
   }
 
   &:focus,
   &:focus-within {
-    background-color: var(--input-background-color-active);
+    background-color: var(--input-background-color-focus);
+    border: $s-1 solid var(--input-border-color-focus);
+    &:hover {
+      border: $s-1 solid var(--input-border-color-focus);
+    }
   }
 
   &.editing {
     background-color: var(--input-background-color-active);
+    border: $s-1 solid var(--input-border-color-active);
   }
 }
 

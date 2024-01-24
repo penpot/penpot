@@ -10,7 +10,7 @@
   @extend .asset-element;
   margin: 0;
   padding: 0;
-  border: $s-1 solid var(--input-background-color);
+  border: $s-1 solid var(--input-border-color);
   position: relative;
   display: flex;
   height: $s-32;

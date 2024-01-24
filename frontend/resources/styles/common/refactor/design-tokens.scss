@@ -112,7 +112,7 @@
   --layer-row-foreground-color: var(--color-foreground-secondary);
   --layer-row-foreground-color-hover: var(--color-accent-primary);
   --layer-row-foreground-color-selected: var(--color-accent-primary);
-  --layer-row-foreground-color-drag: var(--color-select);
+  --layer-row-foreground-color-drag: var(--color-accent-tertiary);
   --layer-row-foreground-color-focus: var(--color-foreground-primary);
   --layer-row-border-color-focus: var(--color-accent-primary);
   --layer-child-row-background-color: var(--color-background-tertiary);
@@ -143,11 +143,19 @@
   --icon-foreground-discard: var(--error-color);
 
   // INPUTS, SELECTS, DROPDOWNS
-  --input-background-color: var(--color-background-tertiary);
-  --input-foreground-color: var(--color-foreground-secondary);
+
   --input-placeholder-color: var(--color-foreground-secondary);
+  --input-background-color: var(--color-background-tertiary); // empty state
+  --input-foreground-color: var(--color-foreground-secondary); // empty state
+  --input-border-color: var(--color-background-tertiary); // empty state
+  --input-background-color-rest: var(--color-background-tertiary);
+  --input-foreground-color-rest: var(--color-foreground-primary);
+  --input-border-color-rest: var(--color-background-tertiary);
   --input-background-color-hover: var(--color-background-quaternary);
+  --input-foreground-color-hover: var(--color-foreground-primary);
+  --input-border-color-hover: var(--color-background-quaternary);
   --input-background-color-focus: var(--color-background-tertiary);
+  --input-foreground-color-focus: var(--color-foreground-primary);
   --input-border-color-focus: var(--color-accent-primary);
   --input-background-color-active: var(--color-background-primary);
   --input-foreground-color-active: var(--color-foreground-primary);
@@ -210,13 +218,13 @@
   --assets-item-name-foreground-color-disabled: var(--color-foreground-disabled);
   --assets-item-border-color: var(--color-accent-primary);
   --assets-item-background-color-drag: var(--color-accent-primary-muted);
-  --assets-item-border-color-drag: var(--color-select);
+  --assets-item-border-color-drag: var(--color-accent-tertiary);
   --assets-component-background-color: var(--white); // We don't want this color to change with palette
   --assets-component-background-color-disabled: var(
     --off-white
   ); // We don't want this color to change with palette
   --assets-component-border-color: var(--color-background-tertiary);
-  --assets-component-border-selected: var(--color-select);
+  --assets-component-border-selected: var(--color-accent-tertiary);
 
   --radio-btns-background-color: var(--color-background-tertiary);
   --radio-btn-background-color-selected: var(--color-background-quaternary);
@@ -285,11 +293,11 @@
 
   // ALERTS & STATUS
   --alert-background-color-ok: var(--ok-color);
-  --alert-foreground-color-ok: var(--color-background-secondary);
+  --alert-foreground-color-ok: var(--dark-gray-2); // We don't want this color to change with theme
   --alert-background-color-warning: var(--warning-color);
-  --alert-foreground-color-warning: var(--color-foreground-primary);
+  --alert-foreground-color-warning: var(--white); // We don't want this color to change with theme
   --alert-background-color-error: var(--error-color);
-  --alert-foreground-color-error: var(--color-foreground-primary);
+  --alert-foreground-color-error: var(--white); // We don't want this color to change with theme
   --alert-background-color-neutral: var(--color-background-quaternary);
   --alert-foreground-color-neutral: var(--color-foreground-secondary);
   --alert-foreground-color-neutral-active: var(--color-foreground-primary);
@@ -317,8 +325,8 @@
 
   --flow-tag-background-color: var(--color-background-tertiary);
   --flow-tag-foreground-color: var(--color-foreground-secondary);
-  --flow-tag-background-color-hover: var(--color-accent-primary);
-  --flow-tag-foreground-color-hover: var(--color-background-primary);
+  --flow-tag-background-color-hover: var(--color-background-quaternary);
+  --flow-tag-foreground-color-hover: var(--color-accent-primary);
 
   // VIEWER
   --viewer-background-color: var(--color-background-secondary);

@@ -55,6 +55,9 @@
         toggle-more-options
         (mf/use-fn #(swap! state* update :show-more-options not))
 
+        close-more-options
+        (mf/use-fn #(swap! state* assoc :show-more-options false))
+
         handle-toggle-visibility
         (mf/use-fn
          (mf/deps grid)
@@ -125,10 +128,15 @@
                             (assoc-in [:color :color] color)
                             (update :color dissoc :value))]
              (when on-change
-               (on-change (assoc grid :params params))))))
+               (on-change (assoc grid :params params)))
+             (close-more-options))))
 
         handle-set-as-default
-        (mf/use-fn (mf/deps grid) #(on-save-default grid))
+        (mf/use-fn
+         (mf/deps grid)
+         (fn []
+           (on-save-default grid)
+           (close-more-options)))
 
         is-default (= (->> grid :params)
                       (->> grid :type default-grid-params))]
@@ -180,7 +188,7 @@
        [:& advanced-options {:class (stl/css :grid-advanced-options)
                              :visible? open?
                              :on-close toggle-advanced-options}
-              ;; square
+        ;; square
         (when (= :square type)
           [:div {:class (stl/css :square-row)}
            [:div {:class (stl/css :advanced-row)}
@@ -269,15 +277,14 @@
 
             [:button {:class (stl/css-case :show-more-options true
                                            :selected show-more-options?)
-                      :on-click toggle-more-options}
+                      :on-click toggle-more-options
+                      :disabled is-default}
              i/menu-refactor]
             (when show-more-options?
               [:div {:class (stl/css :more-options)}
-               [:button {:disabled is-default
-                         :class (stl/css :option-btn)
+               [:button {:class (stl/css :option-btn)
                          :on-click handle-use-default} (tr "workspace.options.grid.params.use-default")]
-               [:button {:disabled is-default
-                         :class (stl/css :option-btn)
+               [:button {:class (stl/css :option-btn)
                          :on-click handle-set-as-default} (tr "workspace.options.grid.params.set-default")]])]])])]))
 
 (mf/defc frame-grid

@@ -21,7 +21,7 @@
 (def rule-area-size 22)
 (def rule-area-half-size (/ rule-area-size 2))
 (def rules-background "var(--panel-background-color)")
-(def selection-area-color "var(--color-primary)")
+(def selection-area-color "var(--color-accent-tertiary)")
 (def selection-area-opacity 0.3)
 (def over-number-size 100)
 (def over-number-opacity 0.8)

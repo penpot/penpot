@@ -70,10 +70,8 @@
       :width (:width data)
       :height (:height data)
       :style {;; Primary with 0.1 opacity
-              :fill "rgb(49, 239, 184, 0.1)"
-
-              ;; Primary color
-              :stroke "rgb(49, 239, 184)"
+              :fill "var(--color-accent-tertiary-muted)"
+              :stroke "var(--color-accent-tertiary)"
               :stroke-width (/ 1 zoom)}}]))
 
 
@@ -86,10 +84,11 @@
         ;; Note that we don't use mf/deref to avoid a repaint dependency here
         objects (deref refs/workspace-page-objects)
 
-        color (when selected?
+        color (if selected?
                 (if (ctn/in-any-component? objects frame)
                   "var(--color-component-highlight)"
-                  "var(--color-primary-dark)"))
+                  "var(--color-accent-tertiary)")
+                "#8f9da3") ;; TODO: Set this color on the DS
 
         on-pointer-down
         (mf/use-callback
@@ -145,17 +144,18 @@
                 :width 12
                 :height 12
                 :class "workspace-frame-icon"
-                :style {:fill color}
+                :style {:stroke color
+                        :fill "none"}
                 :visibility (if show-artboard-names? "visible" "hidden")}
           (cond
             (:use-for-thumbnail frame)
-            [:use {:href "#icon-set-thumbnail"}]
+            [:use {:href "#icon-boards-thumbnail-refactor"}]
 
             grid-edition?
-            [:use {:href "#icon-grid-layout-mode"}]
+            [:use {:href "#icon-grid-refactor"}]
 
             main-instance?
-            [:use {:href "#icon-component"}])])
+            [:use {:href "#icon-component-refactor"}])])
 
        [:text {:x text-pos-x
                :y 0

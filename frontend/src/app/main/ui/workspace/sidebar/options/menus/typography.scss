@@ -278,7 +278,7 @@
       width: $s-60;
       margin: 0;
       padding: 0;
-      border: $s-1 solid var(--input-background-color);
+      border: $s-1 solid var(--input-border-color);
       position: relative;
       .font-size-select {
         @include removeInputStyle;

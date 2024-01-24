@@ -140,40 +140,41 @@
         (update :width + (* 2 h-padding))
         (update :height + (* 2 v-padding)))))
 
+(defn calculate-base-bounds
+  [shape]
+  (-> (get-shape-filter-bounds shape)
+      (add-padding (calculate-padding shape true))))
+
 (defn get-object-bounds
   [objects shape]
-  (let [calculate-base-bounds
-        (fn [shape]
-          (-> (get-shape-filter-bounds shape)
-              (add-padding (calculate-padding shape true))))
-
+  (let [base-bounds (calculate-base-bounds shape)
         bounds
         (cond
-          (empty? (:shapes shape))
-          [(calculate-base-bounds shape)]
-
-          (or (:masked-group shape) (= :bool (:type shape)))
-          [(calculate-base-bounds shape)]
-
-          (and (cfh/frame-shape? shape) (not (:show-content shape)))
-          [(calculate-base-bounds shape)]
+          (or (empty? (:shapes shape))
+              (or (:masked-group shape) (= :bool (:type shape)))
+              (and (cfh/frame-shape? shape) (not (:show-content shape))))
+          [base-bounds]
 
           :else
           (cfh/reduce-objects
            objects
 
            (fn [shape]
-             (and (d/not-empty? (:shapes shape))
+             (and (not (:hidden shape))
+                  (d/not-empty? (:shapes shape))
                   (or (not (cfh/frame-shape? shape))
                       (:show-content shape))
 
                   (or (not (cfh/group-shape? shape))
                       (not (:masked-group shape)))))
            (:id shape)
-           (fn [result child]
-             (conj result (calculate-base-bounds child)))
 
-           [(calculate-base-bounds shape)]))
+           (fn [result child]
+             (cond-> result
+               (not (:hidden child))
+               (conj (calculate-base-bounds child))))
+
+           [base-bounds]))
 
         children-bounds
         (cond->> (grc/join-rects bounds)

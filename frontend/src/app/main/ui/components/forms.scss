@@ -46,7 +46,7 @@
     input:-webkit-autofill:active {
       -webkit-text-fill-color: var(--input-foreground-color-active);
       -webkit-box-shadow: inset 0 0 20px 20px var(--input-background-color);
-      border: $s-1 solid var(--input-background-color);
+      border: $s-1 solid var(--input-border-color);
       -webkit-background-clip: text;
       transition: background-color 5000s ease-in-out 0s;
       caret-color: var(--input-foreground-color-active);
@@ -180,7 +180,7 @@
     height: $s-32;
     width: 100%;
     border-radius: $br-8;
-    border: $s-1 solid var(--input-background-color);
+    border: $s-1 solid var(--input-border-color);
     color: var(--input-foreground-color-active);
     background-color: var(--input-background-color);
     .main-content {
@@ -282,8 +282,7 @@
     margin: 0;
     border-radius: $br-8;
     background-color: var(--input-background-color);
-    border: $s-1 solid var(--input-background-color);
-    color: var(--input-foreground-color-active);
+    border: $s-1 solid var(--input-border-color-active);
     &:focus {
       outline: none;
       border: $s-1 solid var(--input-border-color-focus);

@@ -123,7 +123,7 @@
                       {:value "6" :label "6x"}]
 
         format-options [{:value "png" :label "PNG"}
-                        {:value "jpeg" :label "JPEG"}
+                        {:value "jpeg" :label "JPG"}
                         {:value "svg" :label "SVG"}
                         {:value "pdf" :label "PDF"}]]
 

@@ -253,6 +253,7 @@
           [:& fm/input {:name :accept-terms-and-privacy
                         :class "check-primary"
                         :type "checkbox"
+                        :default-checked false
                         :label terms-label}]]))
 
      [:> fm/submit-button*

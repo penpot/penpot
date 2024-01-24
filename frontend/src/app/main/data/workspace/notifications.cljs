@@ -145,7 +145,7 @@
                               (remove nil?))
                   used  (into #{} xfm presence)
                   avail (set/difference presence-palette used)]
-              (or (first avail) "var(--color-black)")))
+              (or (first avail) "var(--black)")))
 
           (update-color [color presence]
             (if (some? color)
