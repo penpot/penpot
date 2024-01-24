@@ -113,7 +113,8 @@
   (let [detached-ids  (volatile! #{})
         detach-shape
         (fn [container shape]
-          ;; Detach a shape. If it's inside a component, add it to detached-ids, for further use.
+          ;; Detach a shape. If it's inside a component, add it to detached-ids. This list
+          ;; is used later to process any other copy that was referencing a detached copy.
           (let [is-component? (let [root-shape (ctst/get-shape container (:id container))]
                                 (and (some? root-shape) (nil? (:parent-id root-shape))))]
             (when is-component?
@@ -389,36 +390,18 @@
                 (update :pages-index update-vals fix-container)
                 (d/update-when :components update-vals fix-container))))
 
-        fix-copies-of-detached
-        (fn [file-data]
-          ;; Find any copy that is referencing a detached shape inside a component, and
-          ;; undo the nested copy, converting it into a direct copy.
-          (letfn [(fix-container [container]
-                    (d/update-when container :objects update-vals fix-shape))
-
-                  (fix-shape [shape]
-                    (cond-> shape
-                      (@detached-ids (:shape-ref shape))
-                      (dissoc shape
-                              :component-id
-                              :component-file
-                              :component-root)))]
-            (-> file-data
-                (update :pages-index update-vals fix-container)
-                (d/update-when :components update-vals fix-container))))
-
         fix-converted-copies
         (fn [file-data]
           ;; If the user has created a copy and then converted into a path or bool,
           ;; detach it because the synchronization will no longer work.
           (letfn [(fix-container [container]
-                    (d/update-when container :objects update-vals fix-shape))
+                    (d/update-when container :objects update-vals (partial fix-shape container)))
 
-                  (fix-shape [shape]
+                  (fix-shape [container shape]
                     (if (and (ctk/instance-head? shape)
                              (or (cfh/path-shape? shape)
                                  (cfh/bool-shape? shape)))
-                      (ctk/detach-shape shape)
+                      (detach-shape container shape)
                       shape))]
 
             (-> file-data
@@ -505,15 +488,36 @@
           ;; Find component heads that are not main-instance but have not :shape-ref.
           (letfn [(fix-container
                     [container]
-                    (d/update-when container :objects update-vals fix-shape))
+                    (d/update-when container :objects update-vals (partial fix-shape container)))
 
                   (fix-shape
-                    [shape]
+                    [container shape]
                     (if (and (ctk/instance-head? shape)
                              (not (ctk/main-instance? shape))
                              (not (ctk/in-component-copy? shape)))
-                      (ctk/detach-shape shape)
+                      (detach-shape container shape)
                       shape))]
+            (-> file-data
+                (update :pages-index update-vals fix-container)
+                (d/update-when :components update-vals fix-container))))
+
+        fix-copies-of-detached
+        (fn [file-data]
+          ;; Find any copy that is referencing a  shape inside a component that have
+          ;; been detached in a previous fix. If so, undo the nested copy, converting
+          ;; it into a direct copy.
+          ;; 
+          ;; WARNING: THIS SHOULD BE CALLED AT THE END OF THE PROCESS.
+          (letfn [(fix-container [container]
+                    (d/update-when container :objects update-vals fix-shape))
+
+                  (fix-shape [shape]
+                    (cond-> shape
+                      (@detached-ids (:shape-ref shape))
+                      (dissoc shape
+                              :component-id
+                              :component-file
+                              :component-root)))]
             (-> file-data
                 (update :pages-index update-vals fix-container)
                 (d/update-when :components update-vals fix-container))))]
@@ -531,13 +535,13 @@
         (remove-nested-roots)
         (add-not-nested-roots)
         (remap-refs)
-        (fix-copies-of-detached)
         (fix-converted-copies)
         (transform-to-frames)
         (remap-frame-ids)
         (fix-frame-ids)
         (fix-component-nil-objects)
-        (fix-false-copies))))
+        (fix-false-copies)
+        (fix-copies-of-detached))))  ; <- Do not add fixes after this one
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; COMPONENTS MIGRATION
