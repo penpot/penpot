@@ -127,7 +127,7 @@
         match-criteria?
         (fn [shape]
           (and (not (:hidden shape))
-               (or (= :frame (:type shape)) ;; We return frames even if blocked
+               (or (cfh/frame-shape? shape) ;; We return frames even if blocked
                    (not (:blocked shape)))
                (or (not frame-id) (= frame-id (:frame-id shape)))
                (case (:type shape)
@@ -135,8 +135,11 @@
                  (:bool :group) (not ignore-groups?)
                  true)
 
+               ;; This condition controls when to check for overlapping. Otherwise the
+               ;; shape needs to be fully contained.
                (or (not full-frame?)
-                   (not= :frame (:type shape))
+                   (and (not ignore-groups?) (contains? shape :component-id))
+                   (and (not ignore-groups?) (not (cfh/root-frame? shape)))
                    (and (d/not-empty? (:shapes shape))
                         (gsh/rect-contains-shape? rect shape))
                    (and (empty? (:shapes shape))

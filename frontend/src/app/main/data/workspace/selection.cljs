@@ -59,7 +59,7 @@
       (assoc-in state [:workspace-local :selrect] selrect))))
 
 (defn handle-area-selection
-  [preserve? ignore-groups?]
+  [preserve?]
   (ptk/reify ::handle-area-selection
     ptk/WatchEvent
     (watch [_ state stream]
@@ -114,7 +114,20 @@
                (rx/buffer-time 100)
                (rx/map last)
                (rx/pipe (rxo/distinct-contiguous))
-               (rx/map #(select-shapes-by-current-selrect preserve? ignore-groups?))))
+               (rx/with-latest-from ms/keyboard-mod ms/keyboard-shift)
+               (rx/map
+                (fn [[_ mod? shift?]]
+                  (select-shapes-by-current-selrect shift? mod?))))
+
+          ;; The last "tick" from the mouse cannot be buffered so we are sure
+          ;; a selection is returned. Without this we can have empty selections on
+          ;; very fast movement
+          (->> selrect-stream
+               (rx/last)
+               (rx/with-latest-from ms/keyboard-mod ms/keyboard-shift)
+               (rx/map
+                (fn [[_ mod? shift?]]
+                  (select-shapes-by-current-selrect shift? mod? false)))))
 
          (->> (rx/of (update-selrect nil))
               ;; We need the async so the current event finishes before updating the selrect
@@ -307,34 +320,39 @@
 ;; --- Select Shapes (By selrect)
 
 (defn select-shapes-by-current-selrect
-  [preserve? ignore-groups?]
-  (ptk/reify ::select-shapes-by-current-selrect
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [page-id     (:current-page-id state)
-            objects     (wsh/lookup-page-objects state)
-            selected    (wsh/lookup-selected state)
-            initial-set (if preserve?
-                          selected
-                          lks/empty-linked-set)
-            selrect     (dm/get-in state [:workspace-local :selrect])
-            blocked?    (fn [id] (dm/get-in objects [id :blocked] false))]
+  ([preserve? ignore-groups?]
+   (select-shapes-by-current-selrect preserve? ignore-groups? true))
+  ([preserve? ignore-groups? buffered?]
+   (ptk/reify ::select-shapes-by-current-selrect
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [page-id     (:current-page-id state)
+             objects     (wsh/lookup-page-objects state)
+             selected    (wsh/lookup-selected state)
+             initial-set (if preserve?
+                           selected
+                           lks/empty-linked-set)
+             selrect     (dm/get-in state [:workspace-local :selrect])
+             blocked?    (fn [id] (dm/get-in objects [id :blocked] false))
 
-        (when selrect
-          (rx/empty)
-          (->> (uw/ask-buffered!
-                {:cmd :selection/query
-                 :page-id page-id
-                 :rect selrect
-                 :include-frames? true
-                 :ignore-groups? ignore-groups?
-                 :full-frame? true
-                 :using-selrect? true})
-               (rx/map #(cfh/clean-loops objects %))
-               (rx/map #(into initial-set (comp
-                                           (filter (complement blocked?))
-                                           (remove (partial cfh/hidden-parent? objects))) %))
-               (rx/map select-shapes)))))))
+             ask-worker (if buffered? uw/ask-buffered! uw/ask!)]
+
+         (if (some? selrect)
+           (->> (ask-worker
+                 {:cmd :selection/query
+                  :page-id page-id
+                  :rect selrect
+                  :include-frames? true
+                  :ignore-groups? ignore-groups?
+                  :full-frame? true
+                  :using-selrect? true})
+                (rx/filter some?)
+                (rx/map #(cfh/clean-loops objects %))
+                (rx/map #(into initial-set (comp
+                                            (filter (complement blocked?))
+                                            (remove (partial cfh/hidden-parent? objects))) %))
+                (rx/map select-shapes))
+           (rx/empty)))))))
 
 (defn select-inside-group
   [group-id position]

@@ -106,7 +106,7 @@
                      (st/emit! (dd/start-drawing drawing-tool)))
 
                    (or (not id) mod?)
-                   (st/emit! (dw/handle-area-selection shift? mod?))
+                   (st/emit! (dw/handle-area-selection shift?))
 
                    (not drawing-tool)
                    (when-not workspace-read-only?
