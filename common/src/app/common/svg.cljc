@@ -980,7 +980,7 @@
             (fix-percent-attr-numeric [_ attr-val]
               (let [is-percent? (str/ends-with? attr-val "%")]
                 (if is-percent?
-                  (str (let [attr-num (d/parse-double attr-val)]
+                  (str (let [attr-num (d/parse-double (str/rtrim attr-val "%"))]
                          (/ attr-num 100)))
                   attr-val)))
 
