@@ -205,12 +205,10 @@
 
         fix-misc-shape-issues
         (fn [file-data]
-          (letfn [(fix-container
-                    [container]
+          (letfn [(fix-container [container]
                     (d/update-when container :objects update-vals fix-shape))
 
-                  (fix-shape
-                    [shape]
+                  (fix-shape [shape]
                     (cond-> shape
                       ;; Some shapes has invalid gap value
                       (contains? shape :layout-gap)
