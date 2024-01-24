@@ -23,6 +23,15 @@
   background-color: var(--viewer-background-color);
 }
 
+.empty-state {
+  @include titleTipography;
+  color: var(--empty-message-foreground-color);
+  display: grid;
+  place-items: center;
+  height: 100%;
+  width: 100%;
+}
+
 .viewer-header {
   grid-row: 1 / span 1;
 }
@@ -58,6 +67,7 @@
   flex-flow: wrap;
   overflow: auto;
 }
+
 .inspect-layout .viewer-section {
   flex-wrap: nowrap;
   margin-top: 0;
