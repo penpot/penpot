@@ -486,15 +486,18 @@
         fix-false-copies
         (fn [file-data]
           ;; Find component heads that are not main-instance but have not :shape-ref.
+          ;; Also shapes that have :shape-ref but are not in a copy.
           (letfn [(fix-container
                     [container]
                     (d/update-when container :objects update-vals (partial fix-shape container)))
 
                   (fix-shape
                     [container shape]
-                    (if (and (ctk/instance-head? shape)
-                             (not (ctk/main-instance? shape))
-                             (not (ctk/in-component-copy? shape)))
+                    (if (or (and (ctk/instance-head? shape)
+                                 (not (ctk/main-instance? shape))
+                                 (not (ctk/in-component-copy? shape)))
+                            (and (ctk/in-component-copy? shape)
+                                 (nil? (ctn/get-head-shape (:objects container) shape {:allow-main? true}))))
                       (detach-shape container shape)
                       shape))]
             (-> file-data
