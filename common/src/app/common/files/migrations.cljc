@@ -19,6 +19,7 @@
    [app.common.geom.shapes.text :as gsht]
    [app.common.logging :as l]
    [app.common.math :as mth]
+   [app.common.schema :as sm]
    [app.common.svg :as csvg]
    [app.common.text :as txt]
    [app.common.types.shape :as cts]
@@ -772,6 +773,28 @@
                          (cfh/bool-shape? object))
                      (not (:shapes object)))
               (assoc object :shapes [])
+              object))
+
+          (update-container [container]
+            (d/update-when container :objects update-vals update-object))]
+
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
+
+(def ^:private valid-fill?
+  (sm/lazy-validator ::cts/fill))
+
+(defmethod migrate 43
+  [data]
+  (letfn [(update-text-node [node]
+            (-> node
+                (d/update-when :fills #(filterv valid-fill? %))
+                (d/without-nils)))
+
+          (update-object [object]
+            (if (cfh/text-shape? object)
+              (update object :content #(txt/transform-nodes identity update-text-node %))
               object))
 
           (update-container [container]
