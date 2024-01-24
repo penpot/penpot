@@ -218,6 +218,9 @@
   {:wrap [mf/memo]}
   [{:keys [file origin library-view?] :as props}]
   (let [file-id         (:id file)
+
+        ;; FIXME: this breaks react hooks rule, hooks should never to
+        ;; be in a conditional code
         selected-files  (if (= origin :search)
                           (mf/deref refs/dashboard-selected-search)
                           (mf/deref refs/dashboard-selected-files))
