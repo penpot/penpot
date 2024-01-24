@@ -18,19 +18,19 @@
   (mf/fnc bool-shape
     {::mf/wrap-props false}
     [props]
-    (let [shape     (unchecked-get props "shape")
-          children  (unchecked-get props "childs")
-          children  (h/use-equal-memo children)
+    (let [shape       (unchecked-get props "shape")
+          child-objs  (unchecked-get props "childs")
+          child-objs  (h/use-equal-memo child-objs)
 
           metadata? (mf/use-ctx use/include-metadata-ctx)
-          content   (mf/with-memo [shape children]
+          content   (mf/with-memo [shape child-objs]
                       (let [content (:bool-content shape)]
                         (cond
                           (some? content)
                           content
 
-                          (some? children)
-                          (gsh/calc-bool-content shape children))))
+                          (some? child-objs)
+                          (gsh/calc-bool-content shape child-objs))))
 
           shape     (mf/with-memo [shape content]
                       (assoc shape :content content))]
@@ -40,9 +40,8 @@
          [:& path-shape {:shape shape}])
 
        (when metadata?
-         ;; FIXME: get children looks wrong
          [:> "penpot:bool" {}
-          (for [item (map #(get children %) (:shapes shape))]
+          (for [item (map #(get child-objs %) (:shapes shape))]
             [:& shape-wrapper
              {:shape item
               :key (dm/str (dm/get-prop item :id))}])])])))

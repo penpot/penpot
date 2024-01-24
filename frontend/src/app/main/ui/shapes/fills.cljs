@@ -58,7 +58,7 @@
                          :width width
                          :height height}
 
-        pat-props   (if (= :path type)
+        pat-props   (if (or (= :path type) (= :bool type))
                       (obj/set! pat-props "patternTransform" transform)
                       pat-props)]
 
