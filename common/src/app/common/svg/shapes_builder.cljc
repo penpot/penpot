@@ -63,8 +63,7 @@
         viewbox (or (:viewBox attrs)
                     (dm/str "0 0 " width " " height))
 
-        [x y width height] (->> (str/split viewbox #"[\s,]+")
-                                (map d/parse-double))
+        [x y width height] (csvg/parse-numbers viewbox)
 
         width   (if (= width 0) 1 width)
         height  (if (= height 0) 1 height)]
