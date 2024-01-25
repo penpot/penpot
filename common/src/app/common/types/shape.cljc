@@ -25,6 +25,7 @@
    [app.common.types.shape.export :as ctse]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.layout :as ctsl]
+   [app.common.types.shape.path :as ctsp]
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.shape.text :as ctsx]
    [app.common.uuid :as uuid]
@@ -256,16 +257,7 @@
 (sm/define! ::path-attrs
   [:map {:title "PathAttrs"}
    [:type [:= :path]]
-   [:x {:optional true} [:maybe ::sm/safe-number]]
-   [:y {:optional true} [:maybe ::sm/safe-number]]
-   [:width {:optional true} [:maybe ::sm/safe-number]]
-   [:height {:optional true} [:maybe ::sm/safe-number]]
-   [:content
-    {:optional true}
-    [:vector
-     [:map
-      [:command :keyword]
-      [:params {:optional true} [:maybe :map]]]]]])
+   [:content ::ctsp/content]])
 
 (sm/define! ::text-attrs
   [:map {:title "TextAttrs"}

@@ -19,6 +19,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.path :as gshp]
    [app.common.logging :as l]
    [app.common.math :as mth]
    [app.common.schema :as sm]
@@ -33,6 +34,7 @@
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.shape.path :as ctsp]
    [app.common.types.shape.text :as ctsx]
    [app.common.uuid :as uuid]
    [app.db :as db]
@@ -109,6 +111,12 @@
 
 (def valid-text-content?
   (sm/lazy-validator ::ctsx/content))
+
+(def valid-path-content?
+  (sm/lazy-validator ::ctsp/content))
+
+(def valid-path-segment?
+  (sm/lazy-validator ::ctsp/segment))
 
 (defn- prepare-file-data
   "Apply some specific migrations or fixes to things that are allowed in v1 but not in v2,
@@ -267,6 +275,35 @@
                             (assoc :height (:height selrect))
                             (assoc :type :text)))
                       shape))]
+            (-> file-data
+                (update :pages-index update-vals fix-container)
+                (d/update-when :components update-vals fix-container))))
+
+        fix-broken-paths
+        (fn [file-data]
+          (letfn [(fix-container [container]
+                    (d/update-when container :objects update-vals fix-shape))
+
+                  (fix-shape [shape]
+                    (if (and (cfh/path-shape? shape)
+                             (seq (:content shape))
+                             (not (valid-path-content? (:content shape))))
+                      (let [shape   (update shape :content fix-path-content)
+                            [points selrect] (gshp/content->points+selrect shape (:content shape))]
+                        (-> shape
+                            (dissoc :bool-content)
+                            (dissoc :bool-type)
+                            (assoc :points points)
+                            (assoc :selrect selrect)))
+                      shape))
+
+                  (fix-path-content [content]
+                    (let [[seg1 :as content] (filterv valid-path-segment? content)]
+                      (if (and seg1 (not= :move-to (:command seg1)))
+                        (let [params (select-keys (:params seg1) [:x :y])]
+                          (into [{:command :move-to :params params}] content))
+                        content)))]
+
             (-> file-data
                 (update :pages-index update-vals fix-container)
                 (d/update-when :components update-vals fix-container))))
@@ -562,6 +599,7 @@
         (fix-recent-colors)
         (fix-missing-image-metadata)
         (fix-text-shapes-converted-to-path)
+        (fix-broken-paths)
         (delete-big-geometry-shapes)
         (fix-broken-parents)
         (fix-orphan-shapes)
