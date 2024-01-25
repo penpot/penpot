@@ -243,13 +243,20 @@
         fix-completly-broken-shapes
         (fn [file-data]
           (letfn [(update-object [objects id shape]
-                    (if (nil? (:type shape))
+                    (cond
+                      (nil? (:type shape))
                       (let [ids (cfh/get-children-ids objects id)]
                         (-> objects
                             (dissoc id)
                             (as-> $ (reduce dissoc $ ids))
                             (d/update-in-when [(:parent-id shape) :shapes]
                                               (fn [shapes] (filterv #(not= id %) shapes)))))
+
+                      (and (cfh/text-shape? shape)
+                           (not (seq (:content shape))))
+                      (dissoc objects id)
+
+                      :else
                       objects))
 
                   (update-container [container]
