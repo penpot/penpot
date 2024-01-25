@@ -507,8 +507,16 @@
         att-refs     (csvg/find-attr-references attrs)
         defs         (get svg-data :defs)
         references   (csvg/find-def-references defs att-refs)
-        href-id      (-> (or (:href attrs) (:xlink:href attrs) " ") (subs 1))
-        use-tag?     (and (= :use tag) (contains? defs href-id))]
+
+        href-id      (or (:href attrs) (:xlink:href attrs) " ")
+        href-id      (if (and (string? href-id)
+                              (pos? (count href-id)))
+                       (subs href-id 1)
+                       href-id)
+
+        use-tag?     (and (= :use tag)
+                          (some? href-id)
+                          (contains? defs href-id))]
 
     (if use-tag?
       (let [;; Merge the data of the use definition with the properties passed as attributes
