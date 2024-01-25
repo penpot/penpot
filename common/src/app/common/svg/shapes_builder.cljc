@@ -57,13 +57,15 @@
     clean-value))
 
 (defn- svg-dimensions
-  [data]
-  (let [width   (dm/get-in data [:attrs :width] 100)
-        height  (dm/get-in data [:attrs :height] 100)
-        viewbox (or (dm/get-in data [:attrs :viewBox])
+  [{:keys [attrs] :as data}]
+  (let [width   (:width attrs 100)
+        height  (:height attrs 100)
+        viewbox (or (:viewBox attrs)
                     (dm/str "0 0 " width " " height))
-        [x y width height] (->> (str/split viewbox #"\s+")
+
+        [x y width height] (->> (str/split viewbox #"[\s,]+")
                                 (map d/parse-double))
+
         width   (if (= width 0) 1 width)
         height  (if (= height 0) 1 height)]
 
