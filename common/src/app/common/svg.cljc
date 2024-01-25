@@ -31,7 +31,7 @@
 (def xml-id-regex #"#([:A-Z_a-z\xC0-\xD6\xD8-\xF6\xF8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD\u10000-\uEFFFF][\.\-\:0-9\xB7A-Z_a-z\xC0-\xD6\xD8-\xF6\xF8-\u02FF\u0300-\u036F\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u203F-\u2040\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD\u10000-\uEFFFF]*)")
 
 (def matrices-regex #"(matrix|translate|scale|rotate|skewX|skewY)\(([^\)]*)\)")
-(def number-regex #"[+-]?\d*(\.\d+)?(e[+-]?\d+)?")
+(def number-regex #"[+-]?\d*(\.\d+)?([eE][+-]?\d+)?")
 
 (def tags-to-remove #{:linearGradient :radialGradient :metadata :mask :clipPath :filter :title})
 
@@ -759,40 +759,39 @@
 ;; Transforms spec:
 ;; https://www.w3.org/TR/SVG11/single-page.html#coords-TransformAttribute
 
-(defn format-translate-params
+(defn- format-translate-params
   [params]
   (assert (or (= (count params) 1) (= (count params) 2)))
   (if (= (count params) 1)
     [(gpt/point (nth params 0) 0)]
     [(gpt/point (nth params 0) (nth params 1))]))
 
-(defn format-scale-params
+(defn- format-scale-params
   [params]
   (assert (or (= (count params) 1) (= (count params) 2)))
   (if (= (count params) 1)
     [(gpt/point (nth params 0))]
     [(gpt/point (nth params 0) (nth params 1))]))
 
-(defn format-rotate-params
+(defn- format-rotate-params
   [params]
   (assert (or (= (count params) 1) (= (count params) 3)) (str "??" (count params)))
   (if (= (count params) 1)
     [(nth params 0) (gpt/point 0 0)]
     [(nth params 0) (gpt/point (nth params 1) (nth params 2))]))
 
-(defn format-skew-x-params
+(defn- format-skew-x-params
   [params]
   (assert (= (count params) 1))
   [(nth params 0) 0])
 
-(defn format-skew-y-params
+(defn- format-skew-y-params
   [params]
   (assert (= (count params) 1))
   [0 (nth params 0)])
 
-(defn to-matrix
-  [{:keys [type params]}]
-  (assert (#{"matrix" "translate" "scale" "rotate" "skewX" "skewY"} type))
+(defn- to-matrix
+  [type params]
   (case type
     "matrix"    (apply gmt/matrix params)
     "translate" (apply gmt/translate-matrix (format-translate-params params))
@@ -802,19 +801,17 @@
     "skewY"     (apply gmt/skew-matrix (format-skew-y-params params))))
 
 (defn parse-transform
-  [transform-attr]
-  (if transform-attr
-    (let [process-matrix
-          (fn [[_ type params]]
-            (let [params (->> (re-seq number-regex params)
-                              (filter #(-> % first seq))
-                              (map (comp d/parse-double first)))]
-              {:type type :params params}))
+  [transform]
+  (if (string? transform)
+    (->> (re-seq matrices-regex transform)
+         (map (fn [[_ type params]]
+                (let [params (->> (re-seq number-regex params)
+                                  (map first)
+                                  (keep not-empty)
+                                  (map d/parse-double))]
+                  (to-matrix type params))))
+         (reduce gmt/multiply (gmt/matrix)))
 
-          matrices (->> (re-seq matrices-regex transform-attr)
-                        (map process-matrix)
-                        (map to-matrix))]
-      (reduce gmt/multiply (gmt/matrix) matrices))
     (gmt/matrix)))
 
 (defn format-move [[x y]] (str "M" x " " y))
