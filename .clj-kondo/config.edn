@@ -5,6 +5,7 @@
   promesa.exec.csp/go-loop clojure.core/loop
   rumext.v2/defc clojure.core/defn
   promesa.util/with-open clojure.core/with-open
+  app.common.schema.generators/let clojure.core/let
   app.common.data/export clojure.core/def
   app.common.data.macros/get-in clojure.core/get-in
   app.common.data.macros/with-open clojure.core/with-open

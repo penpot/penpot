@@ -14,6 +14,7 @@
    [app.common.schema.generators :as sg]
    [app.common.schema.openapi :as-alias oapi]
    [app.common.schema.registry :as sr]
+   [app.common.time :as tm]
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [clojure.core :as c]
@@ -625,7 +626,8 @@
    {:title "inst"
     :description "Satisfies Inst protocol"
     :error/message "expected to be number in safe range"
-    :gen/gen (sg/small-int)
+    :gen/gen (->> (sg/small-int)
+                  (sg/fmap (fn [v] (tm/instant v))))
     ::oapi/type "number"
     ::oapi/format "int64"}})
 
@@ -657,6 +659,9 @@
     ::oapi/decode (comp u/uri str/trim)}})
 
 ;; ---- PREDICATES
+
+(def valid-safe-number?
+  (lazy-validator ::safe-number))
 
 (def check-safe-int!
   (check-fn ::safe-int))

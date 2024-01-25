@@ -981,6 +981,7 @@
         selrect (-> points
                     (gco/transform-points points-center transform-inverse)
                     (grc/points->rect))]
+
     [points selrect]))
 
 (defn open-path?

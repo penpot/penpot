@@ -18,14 +18,12 @@
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc :as-alias rpc]
-   [app.rpc.commands.files :as files]
    [app.rpc.commands.projects :as projects]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
    [app.rpc.permissions :as perms]
    [app.rpc.quotes :as quotes]
    [app.util.blob :as blob]
-   [app.util.objects-map :as omap]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [app.util.time :as dt]
@@ -50,47 +48,52 @@
    "expected a valid connection"
    (db/connection? conn))
 
-  (let [id       (or id (uuid/next))
+  (binding [pmap/*tracked* (pmap/create-tracked)
+            cfeat/*current* features]
+    (let [id       (or id (uuid/next))
 
-        pointers (pmap/create-tracked)
-        pmap?    (contains? features "fdata/pointer-map")
-        omap?    (contains? features "fdata/objects-map")
-
-        data     (binding [pmap/*tracked* pointers
-                           cfeat/*current* features
-                           cfeat/*wrap-with-objects-map-fn* (if omap? omap/wrap identity)
-                           cfeat/*wrap-with-pointer-map-fn* (if pmap? pmap/wrap identity)]
-                   (if create-page
+          data     (if create-page
                      (ctf/make-file-data id)
-                     (ctf/make-file-data id nil)))
+                     (ctf/make-file-data id nil))
 
-        features (->> (set/difference features cfeat/frontend-only-features)
-                      (db/create-array conn "text"))
+          file     {:id id
+                    :project-id project-id
+                    :name name
+                    :revn revn
+                    :is-shared is-shared
+                    :data data
+                    :features features
+                    :ignore-sync-until ignore-sync-until
+                    :modified-at modified-at
+                    :deleted-at deleted-at}
 
-        file     (db/insert! conn :file
-                             (d/without-nils
-                              {:id id
-                               :project-id project-id
-                               :name name
-                               :revn revn
-                               :is-shared is-shared
-                               :data (blob/encode data)
-                               :features features
-                               :ignore-sync-until ignore-sync-until
-                               :modified-at modified-at
-                               :deleted-at deleted-at}))]
+          file     (if (contains? features "fdata/objects-map")
+                     (feat.fdata/enable-objects-map file)
+                     file)
 
-    (binding [pmap/*tracked* pointers]
-      (feat.fdata/persist-pointers! cfg id))
+          file     (if (contains? features "fdata/pointer-map")
+                     (feat.fdata/enable-pointer-map file)
+                     file)
 
-    (->> (assoc params :file-id id :role :owner)
-         (create-file-role! conn))
+          file     (d/without-nils file)]
 
-    (db/update! conn :project
-                {:modified-at (dt/now)}
-                {:id project-id})
+      (db/insert! conn :file
+                  (-> file
+                      (update :data blob/encode)
+                      (update :features db/encode-pgarray conn "text"))
+                  {::db/return-keys false})
 
-    (files/decode-row file)))
+      (when (contains? features "fdata/pointer-map")
+        (feat.fdata/persist-pointers! cfg id))
+
+      (->> (assoc params :file-id id :role :owner)
+           (create-file-role! conn))
+
+      (db/update! conn :project
+                  {:modified-at (dt/now)}
+                  {:id project-id})
+
+      file)))
 
 (def ^:private schema:create-file
   [:map {:title "create-file"}

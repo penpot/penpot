@@ -51,6 +51,7 @@
    software.amazon.awssdk.services.s3.model.DeleteObjectsRequest
    software.amazon.awssdk.services.s3.model.DeleteObjectsResponse
    software.amazon.awssdk.services.s3.model.GetObjectRequest
+   software.amazon.awssdk.services.s3.model.NoSuchKeyException
    software.amazon.awssdk.services.s3.model.ObjectIdentifier
    software.amazon.awssdk.services.s3.model.PutObjectRequest
    software.amazon.awssdk.services.s3.model.S3Error
@@ -126,17 +127,19 @@
 (defmethod impl/get-object-data :s3
   [backend object]
   (us/assert! ::backend backend)
-  (letfn [(no-such-key? [cause]
-            (instance? software.amazon.awssdk.services.s3.model.NoSuchKeyException cause))
-          (handle-not-found [cause]
-            (ex/raise :type :not-found
-                      :code :object-not-found
-                      :hint "s3 object not found"
-                      :cause cause))]
 
-    (-> (get-object-data backend object)
-        (p/catch no-such-key? handle-not-found)
-        (p/await!))))
+  (let [result (p/await (get-object-data backend object))]
+    (if (ex/exception? result)
+      (cond
+        (ex/instance? NoSuchKeyException result)
+        (ex/raise :type :not-found
+                  :code :object-not-found
+                  :hint "s3 object not found"
+                  :cause result)
+        :else
+        (throw result))
+
+      result)))
 
 (defmethod impl/get-object-bytes :s3
   [backend object]
@@ -298,7 +301,7 @@
   [path]
   (proxy [FilterInputStream] [(io/input-stream path)]
     (close []
-      (fs/delete path)
+      (ex/ignoring (fs/delete path))
       (proxy-super close))))
 
 (defn- get-object-data

@@ -7,7 +7,7 @@
 (ns app.common.data
   "A collection if helpers for working with data structures and other
   data resources."
-  (:refer-clojure :exclude [read-string hash-map merge name update-vals
+  (:refer-clojure :exclude [read-string hash-map merge name
                             parse-double group-by iteration concat mapcat
                             parse-uuid max min])
   #?(:cljs
@@ -216,12 +216,19 @@
   [coll]
   (into [] (remove nil?) coll))
 
+
 (defn without-nils
   "Given a map, return a map removing key-value
   pairs when value is `nil`."
-  ([] (remove (comp nil? val)))
+  ([]
+   (remove (comp nil? val)))
   ([data]
-   (into {} (without-nils) data)))
+   (reduce-kv (fn [data k v]
+                (if (nil? v)
+                  (dissoc data k)
+                  data))
+              data
+              data)))
 
 (defn without-qualified
   ([]

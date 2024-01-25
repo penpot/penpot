@@ -75,3 +75,12 @@
      with base62. It is only safe to use with uuid v4 and penpot custom v8"
      [id]
      (impl/short-v8 (dm/str id))))
+
+#?(:clj
+   (defn hash-int
+     [id]
+     (let [a (.getMostSignificantBits ^UUID id)
+           b (.getLeastSignificantBits ^UUID id)]
+       (+ (clojure.lang.Murmur3/hashLong a)
+          (clojure.lang.Murmur3/hashLong b)))))
+

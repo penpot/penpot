@@ -25,6 +25,7 @@
    [app.common.types.shape.export :as ctse]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.layout :as ctsl]
+   [app.common.types.shape.path :as ctsp]
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.shape.text :as ctsx]
    [app.common.uuid :as uuid]
@@ -46,6 +47,7 @@
     :bool
     :rect
     :path
+    :text
     :circle
     :svg-raw
     :image})
@@ -126,21 +128,24 @@
    [:stroke-color-gradient {:optional true} ::ctc/gradient]
    [:stroke-image {:optional true} ::ctc/image-color]])
 
-(sm/define! ::minimal-shape-attrs
+(sm/define! ::shape-base-attrs
   [:map {:title "ShapeMinimalRecord"}
-   [:id {:optional false} ::sm/uuid]
-   [:name {:optional false} :string]
-   [:type {:optional false} [::sm/one-of shape-types]]
-   [:x {:optional false} [:maybe ::sm/safe-number]]
-   [:y {:optional false} [:maybe ::sm/safe-number]]
-   [:width {:optional false} [:maybe ::sm/safe-number]]
-   [:height {:optional false} [:maybe ::sm/safe-number]]
-   [:selrect {:optional false} ::selrect]
-   [:points {:optional false} ::points]
-   [:transform {:optional false} ::gmt/matrix]
-   [:transform-inverse {:optional false} ::gmt/matrix]
-   [:parent-id {:optional false} ::sm/uuid]
-   [:frame-id {:optional false} ::sm/uuid]])
+   [:id ::sm/uuid]
+   [:name :string]
+   [:type [::sm/one-of shape-types]]
+   [:selrect ::selrect]
+   [:points ::points]
+   [:transform ::gmt/matrix]
+   [:transform-inverse ::gmt/matrix]
+   [:parent-id ::sm/uuid]
+   [:frame-id ::sm/uuid]])
+
+(sm/define! ::shape-geom-attrs
+  [:map {:title "ShapeGeometryAttrs"}
+   [:x ::sm/safe-number]
+   [:y ::sm/safe-number]
+   [:width ::sm/safe-number]
+   [:height ::sm/safe-number]])
 
 (sm/define! ::shape-attrs
   [:map {:title "ShapeAttrs"}
@@ -199,7 +204,7 @@
 (sm/define! ::group-attrs
   [:map {:title "GroupAttrs"}
    [:type [:= :group]]
-   [:shapes {:optional true} [:maybe [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]]])
+   [:shapes [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]])
 
 (sm/define! ::frame-attrs
   [:map {:title "FrameAttrs"}
@@ -212,7 +217,7 @@
 (sm/define! ::bool-attrs
   [:map {:title "BoolAttrs"}
    [:type [:= :bool]]
-   [:shapes {:optional true} [:maybe [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]]
+   [:shapes [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]
 
    ;; FIXME: improve this schema
    [:bool-type :keyword]
@@ -252,16 +257,7 @@
 (sm/define! ::path-attrs
   [:map {:title "PathAttrs"}
    [:type [:= :path]]
-   [:x {:optional true} [:maybe ::sm/safe-number]]
-   [:y {:optional true} [:maybe ::sm/safe-number]]
-   [:width {:optional true} [:maybe ::sm/safe-number]]
-   [:height {:optional true} [:maybe ::sm/safe-number]]
-   [:content
-    {:optional true}
-    [:vector
-     [:map
-      [:command :keyword]
-      [:params {:optional true} [:maybe :map]]]]]])
+   [:content ::ctsp/content]])
 
 (sm/define! ::text-attrs
   [:map {:title "TextAttrs"}
@@ -271,72 +267,96 @@
 (sm/define! ::shape-map
   [:multi {:dispatch :type :title "Shape"}
    [:group
-    [:merge {:title "GroupShape"}
+    [:and {:title "GroupShape"}
+     ::shape-base-attrs
+     ::shape-geom-attrs
      ::shape-attrs
-     ::minimal-shape-attrs
      ::group-attrs
      ::ctsl/layout-child-attrs]]
 
    [:frame
-    [:merge {:title "FrameShape"}
-     ::minimal-shape-attrs
+    [:and {:title "FrameShape"}
+     ::shape-base-attrs
+     ::shape-geom-attrs
      ::frame-attrs
      ::ctsl/layout-attrs
      ::ctsl/layout-child-attrs]]
 
    [:bool
-    [:merge {:title "BoolShape"}
+    [:and {:title "BoolShape"}
+     ::shape-base-attrs
      ::shape-attrs
-     ::minimal-shape-attrs
      ::bool-attrs
      ::ctsl/layout-child-attrs]]
 
    [:rect
-    [:merge {:title "RectShape"}
+    [:and {:title "RectShape"}
+     ::shape-base-attrs
+     ::shape-geom-attrs
      ::shape-attrs
-     ::minimal-shape-attrs
      ::rect-attrs
      ::ctsl/layout-child-attrs]]
 
    [:circle
-    [:merge {:title "CircleShape"}
+    [:and {:title "CircleShape"}
+     ::shape-base-attrs
+     ::shape-geom-attrs
      ::shape-attrs
-     ::minimal-shape-attrs
      ::circle-attrs
      ::ctsl/layout-child-attrs]]
 
    [:image
-    [:merge {:title "ImageShape"}
+    [:and {:title "ImageShape"}
+     ::shape-base-attrs
+     ::shape-geom-attrs
      ::shape-attrs
-     ::minimal-shape-attrs
      ::image-attrs
      ::ctsl/layout-child-attrs]]
 
    [:svg-raw
-    [:merge {:title "SvgRawShape"}
+    [:and {:title "SvgRawShape"}
+     ::shape-base-attrs
+     ::shape-geom-attrs
      ::shape-attrs
-     ::minimal-shape-attrs
      ::svg-raw-attrs
      ::ctsl/layout-child-attrs]]
 
    [:path
-    [:merge {:title "PathShape"}
+    [:and {:title "PathShape"}
+     ::shape-base-attrs
      ::shape-attrs
-     ::minimal-shape-attrs
      ::path-attrs
      ::ctsl/layout-child-attrs]]
 
    [:text
-    [:merge {:title "TextShape"}
+    [:and {:title "TextShape"}
+     ::shape-base-attrs
+     ::shape-geom-attrs
      ::shape-attrs
-     ::minimal-shape-attrs
      ::text-attrs
      ::ctsl/layout-child-attrs]]])
 
 (sm/define! ::shape
   [:and
    {:title "Shape"
-    :gen/gen (->> (sg/generator ::shape-map)
+    :gen/gen (->> (sg/generator ::shape-base-attrs)
+                  (sg/mcat (fn [{:keys [type] :as shape}]
+                             (sg/let [attrs1 (sg/generator ::shape-attrs)
+                                      attrs2 (sg/generator ::shape-geom-attrs)
+                                      attrs3 (case type
+                                               :text    (sg/generator ::text-attrs)
+                                               :path    (sg/generator ::path-attrs)
+                                               :svg-raw (sg/generator ::svg-raw-attrs)
+                                               :image   (sg/generator ::image-attrs)
+                                               :circle  (sg/generator ::circle-attrs)
+                                               :rect    (sg/generator ::rect-attrs)
+                                               :bool    (sg/generator ::bool-attrs)
+                                               :group   (sg/generator ::group-attrs)
+                                               :frame   (sg/generator ::frame-attrs))]
+                               (if (or (= type :path)
+                                       (= type :bool))
+                                 (merge attrs1 shape attrs3)
+                                 (merge attrs1 shape attrs2 attrs3)))))
                   (sg/fmap map->Shape))}
    ::shape-map
    [:fn shape?]])
@@ -491,7 +511,12 @@
   the shape. The props must have :x :y :width :height."
   [{:keys [type] :as props}]
   (let [shape (make-minimal-shape type)
-        shape (merge shape (d/without-nils props))
+
+        ;; The props can be custom records that does not
+        ;; work properly with without-nils, so we first make
+        ;; it plain map for proceed
+        props (d/without-nils (into {} props))
+        shape (merge shape (d/without-nils (into {} props)))
         shape (case (:type shape)
                 (:bool :path)  (setup-path shape)
                 :image (-> shape setup-rect setup-image)
