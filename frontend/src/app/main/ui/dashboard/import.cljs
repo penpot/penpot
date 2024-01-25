@@ -216,7 +216,9 @@
 
         [:div {:class (stl/css :file-name-label)}
          (:name file)
-         (when is-shared? i/library-refactor)])
+         (when is-shared?
+           [:span {:class (stl/css :icon)}
+            i/library-refactor])])
 
       [:div {:class (stl/css :edit-entry-buttons)}
        (when (= "application/zip" (:type file))
@@ -242,9 +244,10 @@
         (let [library-data (->> @state :files (d/seek #(= library-id (:file-id %))))
               error? (or (:deleted? library-data) (:import-error library-data))]
           (when (some? library-data)
-            [:div  {:class (stl/css-case :linked-library-tag true
-                                         :error error?)}
-             i/detach-refactor (:name library-data)])))]]))
+            [:div {:class (stl/css :linked-library)}
+             (:name library-data)
+             [:span {:class (stl/css-case :linked-library-tag true
+                                          :error error?)} i/detach-refactor]])))]]))
 
 (mf/defc import-dialog
   {::mf/register modal/components
