@@ -235,7 +235,7 @@
             (feat/migrate-team! team-id
                                 :label label
                                 :validate? validate?
-                                :skip-on-graphics-error? skip-on-graphic-error?))
+                                :skip-on-graphic-error? skip-on-graphic-error?))
         (print-stats!
          (-> (deref feat/*stats*)
              (assoc :elapsed (dt/format-duration (tpoint)))))
@@ -266,6 +266,7 @@
       :or {validate? false
            rollback? true
            max-jobs 1
+           current-partition 1
            skip-on-graphic-error? true
            max-items Long/MAX_VALUE}}]
 
@@ -300,7 +301,7 @@
                             (feat/migrate-team! system team-id
                                                 :label label
                                                 :validate? validate?
-                                                :skip-on-graphics-error? skip-on-graphic-error?)))
+                                                :skip-on-graphic-error? skip-on-graphic-error?)))
 
               (when (string? label)
                 (report! main/system team-id label (tpoint) nil))
@@ -333,9 +334,7 @@
            :label label
            :rollback rollback?
            :max-jobs max-jobs
-           :max-items max-items
-           :partitions partitions
-           :current-partition current-partition)
+           :max-items max-items)
 
     (add-watch stats :progress-report (report-progress-teams tpoint on-progress))
 
@@ -359,9 +358,10 @@
                             (->> (get-teams conn query pred)
                                  (take max-items)
                                  (filter (fn [team-id]
-                                           (if (and (int? current-partition) (int? partitions))
-                                             (let [partition (mod (uuid/hash-int team-id) partitions)]
-                                               (= (dec current-partition) partition))
+                                           (if (int? partitions)
+                                             (= current-partition (-> (uuid/hash-int team-id)
+                                                                      (mod partitions)
+                                                                      (inc)))
                                              true)))))
 
                       ;; Close and await tasks

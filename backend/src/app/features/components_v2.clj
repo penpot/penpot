@@ -1135,7 +1135,7 @@
         (l/dbg :hint "migrate:file:start"
                :file-id (str file-id)
                :validate validate?
-               :skip-on-graphics-error skip-on-graphic-error?)
+               :skip-on-graphic-error skip-on-graphic-error?)
 
         (let [system (update system ::sto/storage media/configure-assets-storage)]
           (db/tx-run! system
@@ -1183,7 +1183,7 @@
           (migrate-file! system file-id
                          :label label
                          :validate? validate?
-                         :skip-on-graphics-error? skip-on-graphic-error?))
+                         :skip-on-graphic-error? skip-on-graphic-error?))
         migrate-team
         (fn [{:keys [::db/conn] :as system} team-id]
           (let [{:keys [id features]} (get-team system team-id)]
