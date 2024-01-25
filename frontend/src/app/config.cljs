@@ -22,7 +22,7 @@
 ;; --- Auxiliar Functions
 
 (def valid-browsers
-  #{:chrome :firefox :safari :edge :other})
+  #{:chrome :firefox :safari :safari-16 :safari-17 :edge :other})
 
 (def valid-platforms
   #{:windows :linux :macos :other})
@@ -33,13 +33,17 @@
         check-chrome? (fn [] (str/includes? user-agent "chrom"))
         check-firefox? (fn [] (str/includes? user-agent "firefox"))
         check-edge? (fn [] (str/includes? user-agent "edg"))
-        check-safari? (fn [] (str/includes? user-agent "safari"))]
+        check-safari? (fn [] (str/includes? user-agent "safari"))
+        check-safari-16? (fn [] (and (check-safari?) (str/includes? user-agent "version/16")))
+        check-safari-17? (fn [] (and (check-safari?) (str/includes? user-agent "version/17")))]
     (cond
-      (check-edge?)    :edge
-      (check-chrome?)  :chrome
-      (check-firefox?) :firefox
-      (check-safari?)  :safari
-      :else            :other)))
+      (check-edge?)      :edge
+      (check-chrome?)    :chrome
+      (check-firefox?)   :firefox
+      (check-safari-16?) :safari-16
+      (check-safari-17?) :safari-17
+      (check-safari?)    :safari
+      :else              :other)))
 
 (defn- parse-platform
   []
@@ -130,7 +134,9 @@
 
 (defn ^boolean check-browser? [candidate]
   (dm/assert! (contains? valid-browsers candidate))
-  (= candidate browser))
+  (if (= candidate :safari)
+    (contains? #{:safari :safari-16 :safari-17} browser)
+    (= candidate browser)))
 
 (defn ^boolean check-platform? [candidate]
   (dm/assert! (contains? valid-platforms candidate))

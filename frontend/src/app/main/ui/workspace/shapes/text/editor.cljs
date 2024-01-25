@@ -281,7 +281,7 @@
         ;; NOTE: this teoretically breaks hooks rules, but in practice
         ;; it is imposible to really break it
         maybe-zoom
-        (when (cf/check-browser? :safari)
+        (when (cf/check-browser? :safari-16)
           (mf/deref refs/selected-zoom))
 
         shape (cond-> shape
@@ -300,26 +300,27 @@
         width  (mth/max (dm/get-prop bounds :width)
                         (dm/get-prop shape :width))
         height (mth/max (dm/get-prop bounds :height)
-                        (dm/get-prop shape :height))]
+                        (dm/get-prop shape :height))
+
+        style
+        (cond-> #js {:pointer-events "all"}
+          (cf/check-browser? :safari-16)
+          (obj/merge!
+           #js {:position "fixed"
+                :left 0
+                :top  (- (dm/get-prop shape :y) y)
+                :transform-origin "top left"
+                :transform (when (some? maybe-zoom)
+                             (dm/fmt "scale(%)" maybe-zoom))}))]
 
     [:g.text-editor {:clip-path (dm/fmt "url(#%)" clip-id)
                      :transform (dm/str (gsh/transform-matrix shape))}
      [:defs
       [:clipPath {:id clip-id}
-       [:rect {:x x
-               :y y
-               :width width
-               :height height
-               :fill "red"}]]]
+       [:rect {:x x :y y :width width :height height}]]]
 
      [:foreignObject {:x x :y y :width width :height height}
-      [:div {:style {:position "fixed"
-                     :left 0
-                     :top  (- (dm/get-prop shape :y) y)
-                     :pointer-events "all"
-                     :transform-origin "top left"
-                     :transform (when (some? maybe-zoom)
-                                  (dm/fmt "scale(%)" maybe-zoom))}}
+      [:div {:style style}
        [:& text-shape-edit-html
         {:shape shape
          :key (dm/str shape-id)}]]]]))
