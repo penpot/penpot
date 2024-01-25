@@ -328,8 +328,7 @@
    ::mf/register-as :export
    ::mf/wrap-props false}
   [{:keys [team-id files has-libraries? binary? features]}]
-  (let [_ (println "-a-a-a-a")
-        state*          (mf/use-state
+  (let [state*          (mf/use-state
                          #(let [files (mapv (fn [file] (assoc file :loading? true)) files)]
                             {:status :prepare
                              :selected :all
