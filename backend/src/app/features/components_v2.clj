@@ -198,6 +198,15 @@
 
             (update file-data :pages-index update-vals update-page)))
 
+        ;; Sometimes we found that the file has issues in the internal
+        ;; data structure of the local library; this function tries to
+        ;; fix that issues.
+        fix-file-data
+        (fn [file-data]
+          (-> file-data
+              (d/update-when :colors dissoc nil)
+              (d/update-when :typographies dissoc nil)))
+
         delete-big-geometry-shapes
         (fn [file-data]
           ;; At some point in time, we had a bug that generated shapes
@@ -205,12 +214,10 @@
           ;; schema. Since we don't have a way to fix those shapes, we
           ;; simply proceed to delete it. We ignore path type shapes
           ;; because they have not been affected by the bug.
-          (letfn [(fix-container
-                    [container]
+          (letfn [(fix-container [container]
                     (d/update-when container :objects #(reduce-kv fix-shape % %)))
 
-                  (fix-shape
-                    [objects id shape]
+                  (fix-shape [objects id shape]
                     (cond
                       (or (cfh/path-shape? shape)
                           (cfh/bool-shape? shape))
@@ -649,6 +656,7 @@
                 (update :pages-index update-vals fix-container))))]
 
     (-> file-data
+        (fix-file-data)
         (fix-page-invalid-options)
         (fix-bad-children)
         (fix-misc-shape-issues)
