@@ -1052,6 +1052,10 @@
         (update :data assoc :id id)
         (update :data fdata/process-pointers deref)
         (update :data fdata/process-objects (partial into {}))
+        (update :data (fn [data]
+                        (if (> (:version data) 22)
+                          (assoc data :version 22)
+                          data)))
         (fmg/migrate-file))))
 
 (defn- get-team
