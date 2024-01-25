@@ -239,6 +239,26 @@
                 (update :pages-index update-vals fix-container)
                 (d/update-when :components update-vals fix-container))))
 
+        ;; Some files has totally broken shapes, we just remove them
+        fix-completly-broken-shapes
+        (fn [file-data]
+          (letfn [(update-object [objects id shape]
+                    (if (nil? (:type shape))
+                      (let [ids (cfh/get-children-ids objects id)]
+                        (-> objects
+                            (dissoc id)
+                            (as-> $ (reduce dissoc $ ids))
+                            (d/update-in-when [(:parent-id shape) :shapes]
+                                              (fn [shapes] (filterv #(not= id %) shapes)))))
+                      objects))
+
+                  (update-container [container]
+                    (d/update-when container :objects #(reduce-kv update-object % %)))]
+
+            (-> file-data
+                (update :pages-index update-vals update-container)
+                (update :components update-vals update-container))))
+
         fix-misc-shape-issues
         (fn [file-data]
           (letfn [(fix-container [container]
@@ -658,6 +678,7 @@
     (-> file-data
         (fix-file-data)
         (fix-page-invalid-options)
+        (fix-completly-broken-shapes)
         (fix-bad-children)
         (fix-misc-shape-issues)
         (fix-recent-colors)
