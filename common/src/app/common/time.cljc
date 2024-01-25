@@ -4,16 +4,16 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-;; Here we put the time functions that are common between frontend and backend.
-;; In the future we may create an unified API for both.
-
 (ns app.common.time
+  "A new cross-platform date and time API. It should be prefered over
+  a platform specific implementation found on `app.util.time`."
   #?(:cljs
      (:require
       ["luxon" :as lxn])
      :clj
      (:import
-      java.time.Instant)))
+      java.time.Instant
+      java.time.Duration)))
 
 #?(:cljs
    (def DateTime lxn/DateTime))
@@ -25,3 +25,46 @@
   []
   #?(:clj (Instant/now)
      :cljs (.local ^js DateTime)))
+
+(defn instant
+  [s]
+  #?(:clj  (Instant/ofEpochMilli s)
+     :cljs (.fromMillis ^js DateTime s #js {:zone "local" :setZone false})))
+
+#?(:cljs
+   (extend-protocol IComparable
+     DateTime
+     (-compare [it other]
+       (if ^boolean (.equals it other)
+         0
+         (if (< (inst-ms it) (inst-ms other)) -1 1)))
+
+     Duration
+     (-compare [it other]
+       (if ^boolean (.equals it other)
+         0
+         (if (< (inst-ms it) (inst-ms other)) -1 1)))))
+
+
+#?(:cljs
+   (extend-type DateTime
+     cljs.core/IEquiv
+     (-equiv [o other]
+       (and (instance? DateTime other)
+            (== (.valueOf o) (.valueOf other))))))
+
+#?(:cljs
+   (extend-protocol cljs.core/Inst
+     DateTime
+     (inst-ms* [inst] (.toMillis ^js inst))
+
+     Duration
+     (inst-ms* [inst] (.toMillis ^js inst)))
+
+   :clj
+   (extend-protocol clojure.core/Inst
+     Duration
+     (inst-ms* [v] (.toMillis ^Duration v))
+
+     Instant
+     (inst-ms* [v] (.toEpochMilli ^Instant v))))

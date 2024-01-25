@@ -664,9 +664,7 @@
           (case feature
             "components/v2"
             (feat.compv2/migrate-file! options file-id
-                                       :max-procs 2
-                                       :validate? validate?
-                                       :throw-on-validate? true)
+                                       :validate? validate?)
 
             "fdata/shape-data-type"
             nil

@@ -31,7 +31,7 @@
         suffix   (if (some? index) (dm/str "-" index) "")
         clip-id  (dm/str "inner-stroke-" render-id "-" shape-id suffix)
         href     (dm/str "#stroke-shape-" render-id "-" shape-id suffix)]
-    [:> "clipPath" #js {:id clip-id}
+    [:> "clipPath" {:id clip-id}
      [:use {:href href}]]))
 
 (mf/defc outer-stroke-mask
@@ -473,28 +473,30 @@
         shape-blur    (get shape :blur)
         shape-fills   (get shape :fills)
         shape-shadow  (get shape :shadow)
-        shape-strokes (get shape :strokes)
+        shape-strokes (not-empty (get shape :strokes))
+
+        svg-attrs     (attrs/get-svg-props shape render-id)
 
         style         (-> (obj/get props "style")
                           (obj/clone)
                           (attrs/add-layer-styles! shape))
 
-        props        #js {:id stroke-id
-                          :className "strokes"
-                          :style style}
+        props        (mf/spread-props svg-attrs
+                                      {:id stroke-id
+                                       :className "strokes"
+                                       :style style})]
 
-        props         (if ^boolean (cfh/frame-shape? shape)
-                        props
-                        (cond-> props
-                          (and (some? shape-blur)
-                               (not ^boolean (:hidden shape-blur)))
-                          (obj/set! "filter" (dm/fmt "url(#filter-blur-%)" render-id))
 
-                          (and (empty? shape-fills)
-                               (some? (->> shape-shadow (remove :hidden) seq)))
-                          (obj/set! "filter" (dm/fmt "url(#filter-%)" render-id))))]
+    (when-not ^boolean (cfh/frame-shape? shape)
+      (when (and (some? shape-blur)
+                 (not ^boolean (:hidden shape-blur)))
+        (obj/set! props "filter" (dm/fmt "url(#filter-blur-%)" render-id)))
 
-    (when (d/not-empty? shape-strokes)
+      (when (and (empty? shape-fills)
+                 (some? (->> shape-shadow (remove :hidden) not-empty)))
+        (obj/set! props "filter" (dm/fmt "url(#filter-%)" render-id))))
+
+    (when (some? shape-strokes)
       [:> :g props
        (for [[index value] (reverse (d/enumerate shape-strokes))]
          [:& shape-custom-stroke {:shape shape

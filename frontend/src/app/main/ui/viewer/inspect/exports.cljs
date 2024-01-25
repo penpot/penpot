@@ -86,27 +86,26 @@
         (mf/use-callback
          (mf/deps shapes)
          (fn [index event]
-           (let [target  (dom/get-target event)
-                 value   (dom/get-value target)
-                 value   (d/parse-double value)]
-             (swap! exports assoc-in [index :scale] value))))
+           (let [scale (d/parse-double event)]
+             (swap! exports assoc-in [index :scale] scale))))
 
         on-suffix-change
         (mf/use-callback
          (mf/deps shapes)
-         (fn [index event]
-           (let [target  (dom/get-target event)
-                 value   (dom/get-value target)]
+         (fn [event]
+           (let [value (dom/get-target-val event)
+                 index (-> (dom/get-current-target event)
+                           (dom/get-data "value")
+                           (d/parse-integer))]
              (swap! exports assoc-in [index :suffix] value))))
 
         on-type-change
         (mf/use-callback
          (mf/deps shapes)
          (fn [index event]
-           (let [target  (dom/get-target event)
-                 value   (dom/get-value target)
-                 value   (keyword value)]
-             (swap! exports assoc-in [index :type] value))))
+           (let [type (keyword event)]
+             (swap! exports assoc-in [index :type] type))))
+
         manage-key-down
         (mf/use-callback
          (fn [event]
@@ -177,7 +176,7 @@
                       :type "text"
                       :value (:suffix export)
                       :placeholder (tr "workspace.options.export.suffix")
-                      :data-value index
+                      :data-value (str index)
                       :on-change on-suffix-change
                       :on-key-down manage-key-down}]]]
 

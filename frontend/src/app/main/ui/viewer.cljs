@@ -139,6 +139,7 @@
         background-overlay?  (:background-overlay overlay)
         overlay-frame        (:frame overlay)
         overlay-position     (:position overlay)
+        fixed-base?          (:fixed-source? overlay)
 
         size
         (mf/with-memo [page overlay zoom]
@@ -168,21 +169,42 @@
                       :top 0}
               :on-click on-click}])
 
-     [:div {:class (stl/css :viewer-overlay :viewport-container)
-            :id (dm/str "overlay-" (:id overlay-frame))
-            :style {:width (:width size)
-                    :height (:height size)
-                    :left (* (:x overlay-position) zoom)
-                    :top (* (:y overlay-position) zoom)}}
+     (if fixed-base?
+       [:div {:class (stl/css :viewport-container-wrapper)
+              :style {:position "absolute"
+                      :left (* (:x overlay-position) zoom)
+                      :top (* (:y overlay-position) zoom)
+                      :width (:width size)
+                      :height (:height size)
+                      :z-index 2}}
+        [:div {:class (stl/css :viewer-overlay :viewport-container)
+               :id (dm/str "overlay-" (:id overlay-frame))
+               :style {:width (:width size)
+                       :height (:height size)
+                       :position "fixed"}}
+         [:& interactions/viewport
+          {:frame overlay-frame
+           :base-frame frame
+           :frame-offset overlay-position
+           :size size
+           :delta delta
+           :page page
+           :interactions-mode interactions-mode}]]]
 
-      [:& interactions/viewport
-       {:frame overlay-frame
-        :base-frame frame
-        :frame-offset overlay-position
-        :size size
-        :delta delta
-        :page page
-        :interactions-mode interactions-mode}]]]))
+       [:div {:class (stl/css :viewer-overlay :viewport-container)
+              :id (dm/str "overlay-" (:id overlay-frame))
+              :style {:width (:width size)
+                      :height (:height size)
+                      :left (* (:x overlay-position) zoom)
+                      :top (* (:y overlay-position) zoom)}}
+        [:& interactions/viewport
+         {:frame overlay-frame
+          :base-frame frame
+          :frame-offset overlay-position
+          :size size
+          :delta delta
+          :page page
+          :interactions-mode interactions-mode}]])]))
 
 (mf/defc viewer-wrapper
   {::mf/wrap-props false}
@@ -354,7 +376,6 @@
                  wrapper (dom/get-element "inspect-svg-wrapper")
                  section (dom/get-element "inspect-svg-container")
                  target (.-target event)]
-             ;; TODO: Reemplazar el dom/class? por un data-attribute
              (when (or (dom/child? target wrapper) (dom/id? target "inspect-svg-container"))
                (let [norm-event ^js (nw/normalize-wheel event)
                      mod? (kbd/mod? event)
@@ -436,7 +457,9 @@
              fullscreen-dom? (dom/fullscreen?)]
          (when (not= fullscreen? fullscreen-dom?)
            (if fullscreen?
-             (wapi/request-fullscreen wrapper)
+             (let [layout (dom/get-element "viewer-layout")]
+               (dom/set-data! layout "force-visible" false)
+               (wapi/request-fullscreen wrapper))
              (wapi/exit-fullscreen))))))
 
     (mf/use-effect
@@ -521,16 +544,9 @@
       :data-fullscreen fullscreen?
       :data-force-visible (:show-thumbnails local)}
 
+
      [:div {:class (stl/css :viewer-content)}
-      [:& header/header {:project project
-                         :index index
-                         :file file
-                         :page page
-                         :frame frame
-                         :permissions permissions
-                         :zoom zoom
-                         :section section
-                         :interactions-mode interactions-mode}]
+
 
       [:button {:on-click on-thumbnails-close
                 :class (stl/css-case :thumbnails-close true
@@ -587,7 +603,17 @@
               :overlays overlays
               :zoom zoom
               :section section
-              :index index}]]))]]]))
+              :index index}]]))]]
+
+     [:& header/header {:project project
+                        :index index
+                        :file file
+                        :page page
+                        :frame frame
+                        :permissions permissions
+                        :zoom zoom
+                        :section section
+                        :interactions-mode interactions-mode}]]))
 
 ;; --- Component: Viewer
 

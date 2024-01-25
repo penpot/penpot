@@ -152,8 +152,9 @@
      :library-colors library-colors}))
 
 (mf/defc color-selection-menu
-  {::mf/wrap [#(mf/memo' % (mf/check-props ["shapes"]))]}
-  [{:keys [shapes file-id shared-libs] :as props}]
+  {::mf/wrap [#(mf/memo' % (mf/check-props ["shapes"]))]
+   ::mf/wrap-props false}
+  [{:keys [shapes file-id shared-libs]}]
   (let [{:keys [grouped-colors library-colors colors]} (mf/with-memo [shapes file-id shared-libs]
                                                          (prepare-colors shapes file-id shared-libs))
 
@@ -175,7 +176,9 @@
          (fn [new-color old-color from-picker?]
            (let [old-color       (-> old-color (dissoc :name :path) d/without-nils)
 
-                 ;; When dragging on the color picker sometimes all the shapes hasn't updated the color to the prev value so we need this extra calculation
+                 ;; When dragging on the color picker sometimes all
+                 ;; the shapes hasn't updated the color to the prev
+                 ;; value so we need this extra calculation
                  shapes-by-old-color  (get @grouped-colors* old-color)
                  prev-color           (d/seek #(get @grouped-colors* %) @prev-colors*)
                  shapes-by-prev-color (get @grouped-colors* prev-color)
@@ -225,7 +228,7 @@
        [:div {:class (stl/css :element-content)}
         [:div {:class (stl/css :selected-color-group)}
          (for [[index color] (d/enumerate (take 3 library-colors))]
-           [:& color-row {:key (dm/str "library-color-" (:color color))
+           [:& color-row {:key (dm/str "library-color-" index)
                           :color color
                           :index index
                           :on-detach on-detach
@@ -239,7 +242,7 @@
             (tr "workspace.options.more-lib-colors")])
          (when @expand-lib-color
            (for [[index color] (d/enumerate (drop 3 library-colors))]
-             [:& color-row {:key (dm/str "library-color-" (:color color))
+             [:& color-row {:key (dm/str "library-color-" index)
                             :color color
                             :index index
                             :on-detach on-detach

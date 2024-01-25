@@ -54,12 +54,14 @@
           projects))
 
 (mf/defc file-menu
-  [{:keys [files show? on-edit on-menu-close top left navigate? origin parent-id] :as props}]
+  {::mf/wrap-props false}
+  [{:keys [files show? on-edit on-menu-close top left navigate? origin parent-id]}]
   (assert (seq files) "missing `files` prop")
   (assert (boolean? show?) "missing `show?` prop")
   (assert (fn? on-edit) "missing `on-edit` prop")
   (assert (fn? on-menu-close) "missing `on-menu-close` prop")
   (assert (boolean? navigate?) "missing `navigate?` prop")
+
   (let [is-lib-page?     (= :libraries origin)
         is-search-page?  (= :search origin)
         top              (or top 0)
@@ -88,15 +90,15 @@
           (apply st/emit! (map dd/duplicate-file files))
           (st/emit! (dm/success (tr "dashboard.success-duplicate-file" (i18n/c (count files))))))
 
-        delete-fn
+        on-delete-accept
         (fn [_]
           (apply st/emit! (map dd/delete-file files))
-          (st/emit! (dm/success (tr "dashboard.success-delete-file" (i18n/c (count files))))))
+          (st/emit! (dm/success (tr "dashboard.success-delete-file" (i18n/c (count files))))
+                    (dd/clear-selected-files)))
 
         on-delete
         (fn [event]
           (dom/stop-propagation event)
-
           (let [num-shared (filter #(:is-shared %) files)]
 
             (if (< 0 (count num-shared))
@@ -104,7 +106,7 @@
                          {:type :delete-shared-libraries
                           :origin :delete
                           :ids (into #{} (map :id) files)
-                          :on-accept delete-fn
+                          :on-accept on-delete-accept
                           :count-libraries (count num-shared)}))
 
               (if multi?
@@ -113,13 +115,13 @@
                             :title (tr "modals.delete-file-multi-confirm.title" file-count)
                             :message (tr "modals.delete-file-multi-confirm.message" file-count)
                             :accept-label (tr "modals.delete-file-multi-confirm.accept" file-count)
-                            :on-accept delete-fn}))
+                            :on-accept on-delete-accept}))
                 (st/emit! (modal/show
                            {:type :confirm
                             :title (tr "modals.delete-file-confirm.title")
                             :message (tr "modals.delete-file-confirm.message")
                             :accept-label (tr "modals.delete-file-confirm.accept")
-                            :on-accept delete-fn}))))))
+                            :on-accept on-delete-accept}))))))
 
         on-move-success
         (fn [team-id project-id]

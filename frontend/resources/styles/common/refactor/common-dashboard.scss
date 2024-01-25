@@ -33,13 +33,6 @@
     }
   }
 
-  svg {
-    fill: $db-secondary;
-    height: $s-12;
-    margin-right: $s-4;
-    width: $s-12;
-  }
-
   nav {
     display: flex;
     align-items: flex-end;
@@ -98,7 +91,6 @@
     display: flex;
     align-items: center;
     cursor: pointer;
-    margin-left: $s-8;
 
     svg {
       fill: $df-secondary;
@@ -119,22 +111,9 @@
 
   .dashboard-header-actions {
     display: flex;
+    column-gap: $s-16;
   }
 
-  .pin-icon {
-    margin: 0 $s-8 0 $s-24;
-    background-color: transparent;
-    border: none;
-    svg {
-      fill: $df-secondary;
-    }
-
-    &.active {
-      svg {
-        fill: $db-cuaternary;
-      }
-    }
-  }
   .dashboard-header-options {
     li {
       a {

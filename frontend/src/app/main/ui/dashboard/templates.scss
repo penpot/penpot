@@ -157,7 +157,8 @@
         svg {
           width: $s-16;
           height: $s-16;
-          fill: $df-secondary;
+          fill: none;
+          stroke: currentColor;
         }
         span {
           font-weight: $fw500;

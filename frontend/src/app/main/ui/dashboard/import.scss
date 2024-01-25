@@ -107,7 +107,19 @@
     }
     .file-name-label {
       @include titleTipography;
+      display: flex;
+      align-items: center;
+      gap: $s-12;
       flex-grow: 1;
+      .icon {
+        @include flexCenter;
+        height: $s-16;
+        width: $s-16;
+        svg {
+          @extend .button-icon-small;
+          stroke: var(--icon-foreground);
+        }
+      }
     }
     .edit-entry-buttons {
       @include flexRow;
@@ -128,18 +140,22 @@
     color: var(--modal-text-foreground-color);
   }
 
-  .linked-libraries {
+  .linked-library {
+    display: flex;
+    align-items: center;
+    gap: $s-12;
+    color: var(--modal-text-foreground-color);
     .linked-library-tag {
       @include flexCenter;
       height: $s-24;
-      width: $s-16;
+      width: $s-24;
       svg {
         @extend .button-icon;
         stroke: var(--icon-foreground);
       }
       &.error {
         svg {
-          stroke: var(--error-color);
+          stroke: var(--status-error-color);
         }
       }
     }
@@ -147,46 +163,46 @@
 
   &.loading {
     .file-name {
-      color: var(--pending-color);
+      color: var(--status-pending-color);
       .file-icon {
         :global(#loader-pencil) {
-          color: var(--pending-color);
-          stroke: var(--pending-color);
-          fill: var(--pending-color);
+          color: var(--status-pending-color);
+          stroke: var(--status-pending-color);
+          fill: var(--status-pending-color);
         }
       }
     }
   }
   &.warning {
     .file-name {
-      color: var(--warning-color);
+      color: var(--status-warning-color);
       .file-icon svg {
-        stroke: var(--warning-color);
+        stroke: var(--status-warning-color);
       }
       .file-icon.icon-fill svg {
-        fill: var(--warning-color);
+        fill: var(--status-warning-color);
       }
     }
   }
   &.success {
     .file-name {
-      color: var(--ok-color);
+      color: var(--status-success-color);
       .file-icon svg {
-        stroke: var(--ok-color);
+        stroke: var(--status-success-color);
       }
       .file-icon.icon-fill svg {
-        fill: var(--ok-color);
+        fill: var(--status-success-color);
       }
     }
   }
   &.error {
     .file-name {
-      color: var(--error-color);
+      color: var(--status-error-color);
       .file-icon svg {
-        stroke: var(--error-color);
+        stroke: var(--status-error-color);
       }
       .file-icon.icon-fill svg {
-        fill: var(--error-color);
+        fill: var(--status-error-color);
       }
     }
   }

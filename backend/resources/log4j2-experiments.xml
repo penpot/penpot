@@ -14,6 +14,15 @@
       </Policies>
       <DefaultRolloverStrategy max="9"/>
     </RollingFile>
+
+    <RollingFile name="reports" fileName="logs/reports.log" filePattern="logs/reports-%i.log">
+      <PatternLayout pattern="[%d{YYYY-MM-dd HH:mm:ss.SSS}] %level{length=1} %logger{36} - %msg%n"
+                     alwaysWriteExceptions="true" />
+      <Policies>
+        <SizeBasedTriggeringPolicy size="100M"/>
+      </Policies>
+      <DefaultRolloverStrategy max="9"/>
+    </RollingFile>
   </Appenders>
 
   <Loggers>
@@ -35,6 +44,16 @@
 
     <Logger name="app.loggers" level="debug" additivity="false">
       <AppenderRef ref="main" level="debug" />
+    </Logger>
+
+    <Logger name="app.features" level="all" additivity="true">
+      <AppenderRef ref="reports" level="warn" />
+      <!-- <AppenderRef ref="main" level="debug" /> -->
+    </Logger>
+
+    <Logger name="app.srepl" level="all" additivity="true">
+      <AppenderRef ref="reports" level="warn" />
+      <!-- <AppenderRef ref="main" level="trace" /> -->
     </Logger>
 
     <Logger name="app" level="all" additivity="false">

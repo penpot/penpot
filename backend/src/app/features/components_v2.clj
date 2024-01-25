@@ -16,21 +16,30 @@
    [app.common.files.migrations :as fmg]
    [app.common.files.shapes-helpers :as cfsh]
    [app.common.files.validate :as cfv]
+   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.path :as gshp]
    [app.common.logging :as l]
+   [app.common.math :as mth]
+   [app.common.schema :as sm]
    [app.common.svg :as csvg]
    [app.common.svg.shapes-builder :as sbuilder]
+   [app.common.types.color :as ctc]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+   [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.shape.path :as ctsp]
+   [app.common.types.shape.text :as ctsx]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.db.sql :as sql]
    [app.features.fdata :as fdata]
    [app.http.sse :as sse]
    [app.media :as media]
@@ -41,29 +50,34 @@
    [app.storage.tmp :as tmp]
    [app.svgo :as svgo]
    [app.util.blob :as blob]
+   [app.util.cache :as cache]
    [app.util.pointer-map :as pmap]
    [app.util.time :as dt]
    [buddy.core.codecs :as bc]
    [cuerdas.core :as str]
    [datoteka.io :as io]
-   [promesa.core :as p]))
+   [promesa.exec :as px]
+   [promesa.util :as pu]))
 
 (def ^:dynamic *stats*
   "A dynamic var for setting up state for collect stats globally."
   nil)
 
-(def ^:dynamic *skip-on-error*
-  "A dynamic var for setting up the default error behavior."
-  true)
+(def ^:dynamic *cache*
+  "A dynamic var for setting up a cache instance."
+  nil)
+
+(def ^:dynamic *skip-on-graphic-error*
+  "A dynamic var for setting up the default error behavior for graphics processing."
+  nil)
 
 (def ^:dynamic ^:private *system*
   "An internal var for making the current `system` available to all
   internal functions without the need to explicitly pass it top down."
   nil)
 
-(def ^:dynamic ^:private *max-procs*
-  "A dynamic variable that can optionally indicates the maxumum number
-  of concurrent graphics migration processes."
+(def ^:dynamic ^:private *team-id*
+  "A dynamic var that holds the current processing team-id."
   nil)
 
 (def ^:dynamic ^:private *file-stats*
@@ -91,20 +105,315 @@
 ;; FILE PREPARATION BEFORE MIGRATION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def valid-color?  (sm/lazy-validator ::ctc/recent-color))
+(def valid-fill?   (sm/lazy-validator ::cts/fill))
+(def valid-stroke? (sm/lazy-validator ::cts/stroke))
+(def valid-flow?   (sm/lazy-validator ::ctp/flow))
+
+(def valid-text-content?
+  (sm/lazy-validator ::ctsx/content))
+
+(def valid-path-content?
+  (sm/lazy-validator ::ctsp/content))
+
+(def valid-path-segment?
+  (sm/lazy-validator ::ctsp/segment))
+
+(def valid-rgb-color-string?
+  (sm/lazy-validator ::ctc/rgb-color))
+
 (defn- prepare-file-data
   "Apply some specific migrations or fixes to things that are allowed in v1 but not in v2,
    or that are the result of old bugs."
   [file-data libraries]
   (let [detached-ids  (volatile! #{})
-
         detach-shape
         (fn [container shape]
-          ;; Detach a shape. If it's inside a component, add it to detached-ids, for further use.
+          ;; Detach a shape. If it's inside a component, add it to detached-ids. This list
+          ;; is used later to process any other copy that was referencing a detached copy.
           (let [is-component? (let [root-shape (ctst/get-shape container (:id container))]
                                 (and (some? root-shape) (nil? (:parent-id root-shape))))]
             (when is-component?
               (vswap! detached-ids conj (:id shape)))
             (ctk/detach-shape shape)))
+
+        fix-bad-children
+        (fn [file-data]
+          ;; Remove any child that does not exist. And also remove duplicated children.
+          (letfn [(fix-container
+                    [container]
+                    (d/update-when container :objects update-vals (partial fix-shape container)))
+
+                  (fix-shape
+                    [container shape]
+                    (let [objects (:objects container)]
+                      (d/update-when shape :shapes
+                                     (fn [shapes]
+                                       (->> shapes
+                                            (d/removev #(nil? (get objects %)))
+                                            (into [] (distinct)))))))]
+
+            (-> file-data
+                (update :pages-index update-vals fix-container)
+                (d/update-when :components update-vals fix-container))))
+
+        fix-missing-image-metadata
+        (fn [file-data]
+          ;; Delete broken image shapes with no metadata.
+          (letfn [(fix-container
+                    [container]
+                    (d/update-when container :objects #(reduce-kv fix-shape % %)))
+
+                  (fix-shape
+                    [objects id shape]
+                    (if (and (cfh/image-shape? shape)
+                             (nil? (:metadata shape)))
+                      (-> objects
+                          (dissoc id)
+                          (d/update-in-when [(:parent-id shape) :shapes]
+                                            (fn [shapes] (filterv #(not= id %) shapes))))
+                      objects))]
+
+            (-> file-data
+                (update :pages-index update-vals fix-container)
+                (d/update-when :components update-vals fix-container))))
+
+        fix-page-invalid-options
+        (fn [file-data]
+          (letfn [(update-page [page]
+                    (update page :options fix-options))
+
+                  (fix-background [options]
+                    (if (and (contains? options :background)
+                             (not (valid-rgb-color-string? (:background options))))
+                      (dissoc options :background)
+                      options))
+
+                  (fix-options [options]
+                    (-> options
+                        ;; Some pages has invalid data on flows, we proceed just to
+                        ;; delete them.
+                        (d/update-when :flows #(filterv valid-flow? %))
+                        (fix-background)))]
+
+            (update file-data :pages-index update-vals update-page)))
+
+        ;; Sometimes we found that the file has issues in the internal
+        ;; data structure of the local library; this function tries to
+        ;; fix that issues.
+        fix-file-data
+        (fn [file-data]
+          (-> file-data
+              (d/update-when :colors dissoc nil)
+              (d/update-when :typographies dissoc nil)))
+
+        delete-big-geometry-shapes
+        (fn [file-data]
+          ;; At some point in time, we had a bug that generated shapes
+          ;; with huge geometries that did not validate the
+          ;; schema. Since we don't have a way to fix those shapes, we
+          ;; simply proceed to delete it. We ignore path type shapes
+          ;; because they have not been affected by the bug.
+          (letfn [(fix-container [container]
+                    (d/update-when container :objects #(reduce-kv fix-shape % %)))
+
+                  (fix-shape [objects id shape]
+                    (cond
+                      (or (cfh/path-shape? shape)
+                          (cfh/bool-shape? shape))
+                      objects
+
+                      (or (and (number? (:x shape)) (not (sm/valid-safe-number? (:x shape))))
+                          (and (number? (:y shape)) (not (sm/valid-safe-number? (:y shape))))
+                          (and (number? (:width shape)) (not (sm/valid-safe-number? (:width shape))))
+                          (and (number? (:height shape)) (not (sm/valid-safe-number? (:height shape)))))
+                      (-> objects
+                          (dissoc id)
+                          (d/update-in-when [(:parent-id shape) :shapes]
+                                            (fn [shapes] (filterv #(not= id %) shapes))))
+
+                      :else
+                      objects))]
+
+            (-> file-data
+                (update :pages-index update-vals fix-container)
+                (d/update-when :components update-vals fix-container))))
+
+        ;; Some files has totally broken shapes, we just remove them
+        fix-completly-broken-shapes
+        (fn [file-data]
+          (letfn [(update-object [objects id shape]
+                    (cond
+                      (nil? (:type shape))
+                      (let [ids (cfh/get-children-ids objects id)]
+                        (-> objects
+                            (dissoc id)
+                            (as-> $ (reduce dissoc $ ids))
+                            (d/update-in-when [(:parent-id shape) :shapes]
+                                              (fn [shapes] (filterv #(not= id %) shapes)))))
+
+                      (and (cfh/text-shape? shape)
+                           (not (seq (:content shape))))
+                      (dissoc objects id)
+
+                      :else
+                      objects))
+
+                  (update-container [container]
+                    (d/update-when container :objects #(reduce-kv update-object % %)))]
+
+            (-> file-data
+                (update :pages-index update-vals update-container)
+                (update :components update-vals update-container))))
+
+        fix-misc-shape-issues
+        (fn [file-data]
+          (letfn [(fix-container [container]
+                    (d/update-when container :objects update-vals fix-shape))
+
+                  (fix-shape [shape]
+                    (cond-> shape
+                      ;; Some shapes has invalid gap value
+                      (contains? shape :layout-gap)
+                      (d/update-in-when [:layout-gap :column-gap]
+                                        (fn [gap]
+                                          (if (or (= gap ##Inf)
+                                                  (= gap ##-Inf))
+                                            0
+                                            gap)))
+
+                      (nil? (:name shape))
+                      (assoc :name (d/name (:type shape)))
+
+                      ;; Fix broken fills
+                      (seq (:fills shape))
+                      (update :fills (fn [fills] (filterv valid-fill? fills)))
+
+                      ;; Fix broken strokes
+                      (seq (:strokes shape))
+                      (update :strokes (fn [strokes] (filterv valid-stroke? strokes)))
+
+                      ;; Fix some broken layout related attrs, probably
+                      ;; of copypaste on flex layout betatest period
+                      (true? (:layout shape))
+                      (assoc :layout :flex)
+
+                      (number? (:layout-gap shape))
+                      (as-> shape (let [n (:layout-gap shape)]
+                                    (assoc shape :layout-gap {:row-gap n :column-gap n})))))]
+
+            (-> file-data
+                (update :pages-index update-vals fix-container)
+                (d/update-when :components update-vals fix-container))))
+
+        ;; There are some bugs in the past that allows convert text to
+        ;; path and this fix tries to identify this cases and fix them converting
+        ;; the shape back to text shape
+
+        fix-text-shapes-converted-to-path
+        (fn [file-data]
+          (letfn [(fix-container [container]
+                    (d/update-when container :objects update-vals fix-shape))
+
+                  (fix-shape [shape]
+                    (if (and (cfh/path-shape? shape)
+                             (contains? shape :content)
+                             (some? (:selrect shape))
+                             (valid-text-content? (:content shape)))
+                      (let [selrect (:selrect shape)]
+                        (-> shape
+                            (assoc :x (:x selrect))
+                            (assoc :y (:y selrect))
+                            (assoc :width (:width selrect))
+                            (assoc :height (:height selrect))
+                            (assoc :type :text)))
+                      shape))]
+            (-> file-data
+                (update :pages-index update-vals fix-container)
+                (d/update-when :components update-vals fix-container))))
+
+        fix-broken-paths
+        (fn [file-data]
+          (letfn [(fix-container [container]
+                    (d/update-when container :objects update-vals fix-shape))
+
+                  (fix-shape [shape]
+                    (cond
+                      (and (cfh/path-shape? shape)
+                           (seq (:content shape))
+                           (not (valid-path-content? (:content shape))))
+                      (let [shape   (update shape :content fix-path-content)
+                            [points selrect] (gshp/content->points+selrect shape (:content shape))]
+                        (-> shape
+                            (dissoc :bool-content)
+                            (dissoc :bool-type)
+                            (assoc :points points)
+                            (assoc :selrect selrect)))
+
+                      ;; When we fount a bool shape with no content,
+                      ;; we convert it to a simple rect
+                      (and (cfh/bool-shape? shape)
+                           (not (seq (:bool-content shape))))
+                      (let [selrect (or (:selrect shape)
+                                        (grc/make-rect))
+                            points  (grc/rect->points selrect)]
+                        (-> shape
+                            (assoc :x (:x selrect))
+                            (assoc :y (:y selrect))
+                            (assoc :width (:height selrect))
+                            (assoc :height (:height selrect))
+                            (assoc :selrect selrect)
+                            (assoc :points points)
+                            (assoc :type :rect)
+                            (assoc :transform (gmt/matrix))
+                            (assoc :transform-inverse (gmt/matrix))
+                            (dissoc :bool-content)
+                            (dissoc :shapes)
+                            (dissoc :content)))
+
+                      :else
+                      shape))
+
+                  (fix-path-content [content]
+                    (let [[seg1 :as content] (filterv valid-path-segment? content)]
+                      (if (and seg1 (not= :move-to (:command seg1)))
+                        (let [params (select-keys (:params seg1) [:x :y])]
+                          (into [{:command :move-to :params params}] content))
+                        content)))]
+
+            (-> file-data
+                (update :pages-index update-vals fix-container)
+                (d/update-when :components update-vals fix-container))))
+
+        fix-recent-colors
+        (fn [file-data]
+          ;; Remove invalid colors in :recent-colors
+          (d/update-when file-data :recent-colors
+                         (fn [colors]
+                           (filterv valid-color? colors))))
+
+        fix-broken-parents
+        (fn [file-data]
+          ;; Find children shapes whose parent-id is not set to the parent that contains them.
+          ;; Remove them from the parent :shapes list.
+          (letfn [(fix-container
+                    [container]
+                    (d/update-when container :objects #(reduce-kv fix-shape % %)))
+
+                  (fix-shape
+                    [objects id shape]
+                    (reduce (fn [objects child-id]
+                              (let [child (get objects child-id)]
+                                (cond-> objects
+                                  (and (some? child) (not= id (:parent-id child)))
+                                  (d/update-in-when [id :shapes]
+                                                    (fn [shapes] (filterv #(not= child-id %) shapes))))))
+                            objects
+                            (:shapes shape)))]
+
+            (-> file-data
+                (update :pages-index update-vals fix-container)
+                (d/update-when :components update-vals fix-container))))
 
         fix-orphan-shapes
         (fn [file-data]
@@ -127,13 +436,13 @@
 
             (-> file-data
                 (update :pages-index update-vals fix-container)
-                (update :components update-vals fix-container))))
+                (d/update-when :components update-vals fix-container))))
 
         remove-nested-roots
         (fn [file-data]
           ;; Remove :component-root in head shapes that are nested.
           (letfn [(fix-container [container]
-                    (update container :objects update-vals (partial fix-shape container)))
+                    (d/update-when container :objects update-vals (partial fix-shape container)))
 
                   (fix-shape [container shape]
                     (let [parent (ctst/get-shape container (:parent-id shape))]
@@ -144,13 +453,13 @@
 
             (-> file-data
                 (update :pages-index update-vals fix-container)
-                (update :components update-vals fix-container))))
+                (d/update-when :components update-vals fix-container))))
 
         add-not-nested-roots
         (fn [file-data]
           ;; Add :component-root in head shapes that are not nested.
           (letfn [(fix-container [container]
-                    (update container :objects update-vals (partial fix-shape container)))
+                    (d/update-when container :objects update-vals (partial fix-shape container)))
 
                   (fix-shape [container shape]
                     (let [parent (ctst/get-shape container (:parent-id shape))]
@@ -161,13 +470,13 @@
 
             (-> file-data
                 (update :pages-index update-vals fix-container)
-                (update :components update-vals fix-container))))
+                (d/update-when :components update-vals fix-container))))
 
         fix-orphan-copies
         (fn [file-data]
           ;; Detach shapes that were inside a copy (have :shape-ref) but now they aren't.
           (letfn [(fix-container [container]
-                    (update container :objects update-vals (partial fix-shape container)))
+                    (d/update-when container :objects update-vals (partial fix-shape container)))
 
                   (fix-shape [container shape]
                     (let [parent (ctst/get-shape container (:parent-id shape))]
@@ -179,7 +488,7 @@
 
             (-> file-data
                 (update :pages-index update-vals fix-container)
-                (update :components update-vals fix-container))))
+                (d/update-when :components update-vals fix-container))))
 
         remap-refs
         (fn [file-data]
@@ -223,32 +532,32 @@
 
             (-> file-data
                 (update :pages-index update-vals fix-container)
-                (update :components update-vals fix-container))))
+                (d/update-when :components update-vals fix-container))))
 
-        fix-copies-of-detached
+        fix-converted-copies
         (fn [file-data]
-          ;; Find any copy that is referencing a detached shape inside a component, and
-          ;; undo the nested copy, converting it into a direct copy.
+          ;; If the user has created a copy and then converted into a path or bool,
+          ;; detach it because the synchronization will no longer work.
           (letfn [(fix-container [container]
-                    (update container :objects update-vals fix-shape))
+                    (d/update-when container :objects update-vals (partial fix-shape container)))
 
-                  (fix-shape [shape]
-                    (cond-> shape
-                      (@detached-ids (:shape-ref shape))
-                      (dissoc shape
-                              :component-id
-                              :component-file
-                              :component-root)))]
+                  (fix-shape [container shape]
+                    (if (and (ctk/instance-head? shape)
+                             (or (cfh/path-shape? shape)
+                                 (cfh/bool-shape? shape)))
+                      (detach-shape container shape)
+                      shape))]
+
             (-> file-data
                 (update :pages-index update-vals fix-container)
-                (update :components update-vals fix-container))))
+                (d/update-when :components update-vals fix-container))))
 
         transform-to-frames
         (fn [file-data]
           ;; Transform component and copy heads to frames, and set the
           ;; frame-id of its childrens
           (letfn [(fix-container [container]
-                    (update container :objects update-vals fix-shape))
+                    (d/update-when container :objects update-vals fix-shape))
 
                   (fix-shape [shape]
                     (if (or (nil? (:parent-id shape)) (ctk/instance-head? shape))
@@ -262,7 +571,7 @@
                       shape))]
             (-> file-data
                 (update :pages-index update-vals fix-container)
-                (update :components update-vals fix-container))))
+                (d/update-when :components update-vals fix-container))))
 
         remap-frame-ids
         (fn [file-data]
@@ -270,7 +579,7 @@
           ;; to point to the head instance.
           (letfn [(fix-container
                     [container]
-                    (update container :objects update-vals (partial fix-shape container)))
+                    (d/update-when container :objects update-vals (partial fix-shape container)))
 
                   (fix-shape
                     [container shape]
@@ -280,14 +589,14 @@
                         shape)))]
             (-> file-data
                 (update :pages-index update-vals fix-container)
-                (update :components update-vals fix-container))))
+                (d/update-when :components update-vals fix-container))))
 
         fix-frame-ids
         (fn [file-data]
           ;; Ensure that frame-id of all shapes point to the parent or to the frame-id
           ;; of the parent, and that the destination is indeed a frame.
           (letfn [(fix-container [container]
-                    (update container :objects #(cfh/reduce-objects % fix-shape %)))
+                    (d/update-when container :objects #(cfh/reduce-objects % fix-shape %)))
 
                   (fix-shape [objects shape]
                     (let [parent (when (:parent-id shape)
@@ -304,7 +613,7 @@
 
             (-> file-data
                 (update :pages-index update-vals fix-container)
-                (update :components update-vals fix-container))))
+                (d/update-when :components update-vals fix-container))))
 
         fix-component-nil-objects
         (fn [file-data]
@@ -316,38 +625,91 @@
                         (dissoc component :objects))
                       component))]
             (-> file-data
-                (update :components update-vals fix-component))))
+                (d/update-when :components update-vals fix-component))))
 
         fix-false-copies
         (fn [file-data]
           ;; Find component heads that are not main-instance but have not :shape-ref.
+          ;; Also shapes that have :shape-ref but are not in a copy.
           (letfn [(fix-container
                     [container]
-                    (update container :objects update-vals fix-shape))
+                    (d/update-when container :objects update-vals (partial fix-shape container)))
 
                   (fix-shape
-                    [shape]
-                    (if (and (ctk/instance-head? shape)
-                             (not (ctk/main-instance? shape))
-                             (not (ctk/in-component-copy? shape)))
-                      (ctk/detach-shape shape)
+                    [container shape]
+                    (if (or (and (ctk/instance-head? shape)
+                                 (not (ctk/main-instance? shape))
+                                 (not (ctk/in-component-copy? shape)))
+                            (and (ctk/in-component-copy? shape)
+                                 (nil? (ctn/get-head-shape (:objects container) shape {:allow-main? true}))))
+                      (detach-shape container shape)
                       shape))]
             (-> file-data
                 (update :pages-index update-vals fix-container)
-                (update :components update-vals fix-container))))]
+                (d/update-when :components update-vals fix-container))))
+
+        fix-copies-of-detached
+        (fn [file-data]
+          ;; Find any copy that is referencing a  shape inside a component that have
+          ;; been detached in a previous fix. If so, undo the nested copy, converting
+          ;; it into a direct copy.
+          ;;
+          ;; WARNING: THIS SHOULD BE CALLED AT THE END OF THE PROCESS.
+          (letfn [(fix-container [container]
+                    (d/update-when container :objects update-vals fix-shape))
+
+                  (fix-shape [shape]
+                    (cond-> shape
+                      (@detached-ids (:shape-ref shape))
+                      (dissoc shape
+                              :component-id
+                              :component-file
+                              :component-root)))]
+            (-> file-data
+                (update :pages-index update-vals fix-container)
+                (d/update-when :components update-vals fix-container))))
+
+        fix-shape-nil-parent-id
+        (fn [file-data]
+          ;; Ensure that parent-id and frame-id are not nil
+          (letfn [(fix-container [container]
+                    (d/update-when container :objects update-vals fix-shape))
+
+                  (fix-shape [shape]
+                    (let [frame-id  (or (:frame-id shape)
+                                        uuid/zero)
+                          parent-id (or (:parent-id shape)
+                                        frame-id)]
+                      (assoc shape :frame-id frame-id
+                             :parent-id parent-id)))]
+            (-> file-data
+                (update :pages-index update-vals fix-container))))]
 
     (-> file-data
+        (fix-file-data)
+        (fix-page-invalid-options)
+        (fix-completly-broken-shapes)
+        (fix-bad-children)
+        (fix-misc-shape-issues)
+        (fix-recent-colors)
+        (fix-missing-image-metadata)
+        (fix-text-shapes-converted-to-path)
+        (fix-broken-paths)
+        (delete-big-geometry-shapes)
+        (fix-broken-parents)
         (fix-orphan-shapes)
+        (fix-orphan-copies)
         (remove-nested-roots)
         (add-not-nested-roots)
-        (fix-orphan-copies)
         (remap-refs)
-        (fix-copies-of-detached)
+        (fix-converted-copies)
         (transform-to-frames)
         (remap-frame-ids)
         (fix-frame-ids)
         (fix-component-nil-objects)
-        (fix-false-copies))))
+        (fix-false-copies)
+        (fix-shape-nil-parent-id)
+        (fix-copies-of-detached))))  ; <- Do not add fixes after this one
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; COMPONENTS MIGRATION
@@ -574,7 +936,7 @@
     (if (> ext-idx 0) (subs filename 0 ext-idx) filename)))
 
 (defn- collect-and-persist-images
-  [svg-data file-id]
+  [svg-data file-id media-id]
   (letfn [(process-image [{:keys [href] :as item}]
             (try
               (let [item (if (str/starts-with? href "data:")
@@ -601,12 +963,13 @@
                 ;; The media processing adds the data to the
                 ;; input map and returns it.
                 (media/run {:cmd :info :input item}))
-
-              (catch Throwable cause
-                (l/warn :hint "unexpected exception on processing internal image shape (skiping)"
-                        :cause cause)
-                (when-not *skip-on-error*
-                  (throw cause)))))
+              (catch Throwable _
+                (let [team-id *team-id*]
+                  (l/wrn :hint "unable to process embedded images on svg file"
+                         :team-id (str team-id)
+                         :file-id (str file-id)
+                         :media-id (str media-id)))
+                nil)))
 
           (persist-image [acc {:keys [path size width height mtype href] :as item}]
             (let [storage (::sto/storage *system*)
@@ -642,23 +1005,33 @@
                                  (completing persist-image) {}))]
       (assoc svg-data :image-data images))))
 
-(defn- get-svg-content
+(defn- resolve-sobject-id
+  [id]
+  (let [fmobject (db/get *system* :file-media-object {:id id}
+                         {::sql/columns [:media-id]})]
+    (:media-id fmobject)))
+
+(defn- get-sobject-content
   [id]
   (let [storage  (::sto/storage *system*)
-        conn     (::db/conn *system*)
-        fmobject (db/get conn :file-media-object {:id id})
-        sobject  (sto/get-object storage (:media-id fmobject))]
-
+        sobject  (sto/get-object storage id)]
     (with-open [stream (sto/get-object-data storage sobject)]
       (slurp stream))))
 
 (defn- create-shapes-for-svg
   [{:keys [id] :as mobj} file-id objects frame-id position]
-  (let [svg-text (get-svg-content id)
-        svg-text (svgo/optimize *system* svg-text)
-        svg-data (-> (csvg/parse svg-text)
-                     (assoc :name (:name mobj))
-                     (collect-and-persist-images file-id))]
+  (let [get-svg (fn [sid]
+                  (let [svg-text (get-sobject-content sid)
+                        svg-text (svgo/optimize *system* svg-text)]
+                    (-> (csvg/parse svg-text)
+                        (assoc :name (:name mobj)))))
+
+        sid      (resolve-sobject-id id)
+        svg-data (if (cache/cache? *cache*)
+                   (cache/get *cache* sid (px/wrap-bindings get-svg))
+                   (get-svg sid))
+
+        svg-data (collect-and-persist-images svg-data file-id id)]
 
     (sbuilder/create-svg-shapes svg-data position objects frame-id frame-id #{} false)))
 
@@ -717,42 +1090,64 @@
 
 (defn- create-media-grid
   [fdata page-id frame-id grid media-group]
-  (let [process  (fn [mobj position]
-                   (let [position (gpt/add position (gpt/point grid-gap grid-gap))
-                         tp1      (dt/tpoint)]
-                     (try
-                       (process-media-object fdata page-id frame-id mobj position)
-                       (catch Throwable cause
-                         (l/wrn :hint "unable to process file media object (skiping)"
-                                :file-id (str (:id fdata))
-                                :id (str (:id mobj))
-                                :cause cause)
-                         (if-not *skip-on-error*
-                           (throw cause)
-                           nil))
-                       (finally
-                         (l/trc :hint "graphic processed"
-                                :file-id (str (:id fdata))
-                                :media-id (str (:id mobj))
-                                :elapsed (dt/format-duration (tp1)))))))]
+  (letfn [(process [fdata mobj position]
+            (let [position (gpt/add position (gpt/point grid-gap grid-gap))
+                  tp       (dt/tpoint)
+                  err      (volatile! false)]
+              (try
+                (let [changes (process-media-object fdata page-id frame-id mobj position)]
+                  (cp/process-changes fdata changes false))
+
+                (catch Throwable cause
+                  (vreset! err true)
+                  (let [cause (pu/unwrap-exception cause)
+                        edata (ex-data cause)
+                        team-id *team-id*]
+                    (cond
+                      (instance? org.xml.sax.SAXParseException cause)
+                      (l/inf :hint "skip processing media object: invalid svg found"
+                             :team-id (str team-id)
+                             :file-id (str (:id fdata))
+                             :id (str (:id mobj)))
+
+                      (instance? org.graalvm.polyglot.PolyglotException cause)
+                      (l/inf :hint "skip processing media object: invalid svg found"
+                             :team-id (str team-id)
+                             :file-id (str (:id fdata))
+                             :id (str (:id mobj)))
+
+                      (= (:type edata) :not-found)
+                      (l/inf :hint "skip processing media object: underlying object does not exist"
+                             :team-id (str team-id)
+                             :file-id (str (:id fdata))
+                             :id (str (:id mobj)))
+
+                      :else
+                      (let [skip? *skip-on-graphic-error*]
+                        (l/wrn :hint "unable to process file media object"
+                               :skiped skip?
+                               :team-id (str team-id)
+                               :file-id (str (:id fdata))
+                               :id (str (:id mobj))
+                               :cause cause)
+                        (when-not skip?
+                          (throw cause))))
+                    nil))
+                (finally
+                  (let [elapsed (tp)]
+                    (l/trc :hint "graphic processed"
+                           :file-id (str (:id fdata))
+                           :media-id (str (:id mobj))
+                           :error @err
+                           :elapsed (dt/format-duration elapsed)))))))]
 
     (->> (d/zip media-group grid)
-         (partition-all (or *max-procs* 1))
-         (mapcat (fn [partition]
-                   (->> partition
-                        (map (fn [[mobj position]]
-                               (sse/tap {:type :migration-progress
-                                         :section :graphics
-                                         :name (:name mobj)})
-                               (p/vthread (process mobj position))))
-                        (doall)
-                        (map deref)
-                        (doall))))
-         (filter some?)
-         (reduce (fn [fdata changes]
-                   (-> (assoc-in fdata [:options :components-v2] true)
-                       (cp/process-changes changes false)))
-                 fdata))))
+         (reduce (fn [fdata [mobj position]]
+                   (sse/tap {:type :migration-progress
+                             :section :graphics
+                             :name (:name mobj)})
+                   (or (process fdata mobj position) fdata))
+                 (assoc-in fdata [:options :components-v2] true)))))
 
 (defn- migrate-graphics
   [fdata]
@@ -821,8 +1216,12 @@
         (decode-row)
         (update :data assoc :id id)
         (update :data fdata/process-pointers deref)
+        (update :data fdata/process-objects (partial into {}))
+        (update :data (fn [data]
+                        (if (> (:version data) 22)
+                          (assoc data :version 22)
+                          data)))
         (fmg/migrate-file))))
-
 
 (defn- get-team
   [system team-id]
@@ -832,17 +1231,12 @@
       (decode-row)))
 
 (defn- validate-file!
-  [file libs throw-on-validate?]
-  (try
-    (cfv/validate-file! file libs)
-    (cfv/validate-file-schema! file)
-    (catch Throwable cause
-      (if throw-on-validate?
-        (throw cause)
-        (l/wrn :hint "migrate:file:validation-error" :cause cause)))))
+  [file libs]
+  (cfv/validate-file! file libs)
+  (cfv/validate-file-schema! file))
 
 (defn- process-file
-  [{:keys [::db/conn] :as system} id & {:keys [validate? throw-on-validate?]}]
+  [{:keys [::db/conn] :as system} id & {:keys [validate?]}]
   (let [file  (get-file system id)
 
         libs  (->> (files/get-file-libraries conn id)
@@ -855,7 +1249,7 @@
                   (update :features conj "components/v2"))
 
         _     (when validate?
-                (validate-file! file libs throw-on-validate?))
+                (validate-file! file libs))
 
         file (if (contains? (:features file) "fdata/objects-map")
                (fdata/enable-objects-map file)
@@ -876,12 +1270,13 @@
 
     (dissoc file :data)))
 
-
 (def ^:private sql:get-and-lock-team-files
   "SELECT f.id
      FROM file AS f
      JOIN project AS p ON (p.id = f.project_id)
     WHERE p.team_id = ?
+      AND p.deleted_at IS NULL
+      AND f.deleted_at IS NULL
       FOR UPDATE")
 
 (defn- get-and-lock-files
@@ -901,21 +1296,33 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn migrate-file!
-  [system file-id & {:keys [validate? throw-on-validate? max-procs]}]
-  (let [tpoint  (dt/tpoint)]
+  [system file-id & {:keys [validate? skip-on-graphic-error? label]}]
+  (let [tpoint (dt/tpoint)]
     (binding [*file-stats* (atom {})
-              *max-procs* max-procs]
+              *skip-on-graphic-error* skip-on-graphic-error?]
       (try
-        (l/dbg :hint "migrate:file:start" :file-id (str file-id))
+        (l/dbg :hint "migrate:file:start"
+               :file-id (str file-id)
+               :validate validate?
+               :skip-on-graphic-error skip-on-graphic-error?)
 
         (let [system (update system ::sto/storage media/configure-assets-storage)]
           (db/tx-run! system
                       (fn [system]
-                        (binding [*system* system]
-                          (fsnap/take-file-snapshot! system {:file-id file-id :label "migration/components-v2"})
-                          (process-file system file-id
-                                        :validate? validate?
-                                        :throw-on-validate? throw-on-validate?)))))
+                        (try
+                          (binding [*system* system]
+                            (when (string? label)
+                              (fsnap/take-file-snapshot! system {:file-id file-id
+                                                                 :label (str "migration/" label)}))
+                            (process-file system file-id :validate? validate?))
+
+                          (catch Throwable cause
+                            (let [team-id *team-id*]
+                              (l/wrn :hint "error on processing file"
+                                     :team-id (str team-id)
+                                     :file-id (str file-id))
+                              (throw cause)))))))
+
         (finally
           (let [elapsed    (tpoint)
                 components (get @*file-stats* :processed/components 0)
@@ -925,46 +1332,52 @@
                    :file-id (str file-id)
                    :graphics graphics
                    :components components
+                   :validate validate?
                    :elapsed (dt/format-duration elapsed))
 
             (some-> *stats* (swap! update :processed/files (fnil inc 0)))
             (some-> *team-stats* (swap! update :processed/files (fnil inc 0)))))))))
 
 (defn migrate-team!
-  [system team-id & {:keys [validate? throw-on-validate? max-procs]}]
+  [system team-id & {:keys [validate? skip-on-graphic-error? label]}]
 
   (l/dbg :hint "migrate:team:start"
          :team-id (dm/str team-id))
 
   (let [tpoint (dt/tpoint)
+        err    (volatile! false)
 
         migrate-file
         (fn [system file-id]
           (migrate-file! system file-id
-                         :max-procs max-procs
+                         :label label
                          :validate? validate?
-                         :throw-on-validate? throw-on-validate?))
+                         :skip-on-graphic-error? skip-on-graphic-error?))
         migrate-team
-        (fn [{:keys [::db/conn] :as system} {:keys [id features] :as team}]
-          (let [features (-> features
-                             (disj "ephimeral/v2-migration")
-                             (conj "components/v2")
-                             (conj "layout/grid")
-                             (conj "styles/v2"))]
+        (fn [{:keys [::db/conn] :as system} team-id]
+          (let [{:keys [id features]} (get-team system team-id)]
+            (if (contains? features "components/v2")
+              (l/inf :hint "team already migrated")
+              (let [features (-> features
+                                 (disj "ephimeral/v2-migration")
+                                 (conj "components/v2")
+                                 (conj "layout/grid")
+                                 (conj "styles/v2"))]
 
-            (run! (partial migrate-file system)
-                  (get-and-lock-files conn id))
+                (run! (partial migrate-file system)
+                      (get-and-lock-files conn id))
 
-            (update-team-features! conn id features)))]
+                (update-team-features! conn id features)))))]
 
-    (binding [*team-stats* (atom {})]
+    (binding [*team-stats* (atom {})
+              *team-id* team-id]
       (try
-        (db/tx-run! system (fn [system]
-                             (db/exec-one! system ["SET idle_in_transaction_session_timeout = 0"])
-                             (let [team (get-team system team-id)]
-                               (if (contains? (:features team) "components/v2")
-                                 (l/inf :hint "team already migrated")
-                                 (migrate-team system team)))))
+        (db/tx-run! system migrate-team team-id)
+
+        (catch Throwable cause
+          (vreset! err true)
+          (throw cause))
+
         (finally
           (let [elapsed    (tpoint)
                 components (get @*team-stats* :processed/components 0)
@@ -973,9 +1386,21 @@
 
             (some-> *stats* (swap! update :processed/teams (fnil inc 0)))
 
-            (l/dbg :hint "migrate:team:end"
-                   :team-id (dm/str team-id)
-                   :files files
-                   :components components
-                   :graphics graphics
-                   :elapsed (dt/format-duration elapsed))))))))
+            (if (cache/cache? *cache*)
+              (let [cache-stats (cache/stats *cache*)]
+                (l/dbg :hint "migrate:team:end"
+                       :team-id (dm/str team-id)
+                       :files files
+                       :components components
+                       :graphics graphics
+                       :crt (mth/to-fixed (:hit-rate cache-stats) 2)
+                       :crq (str (:req-count cache-stats))
+                       :error @err
+                       :elapsed (dt/format-duration elapsed)))
+
+              (l/dbg :hint "migrate:team:end"
+                     :team-id (dm/str team-id)
+                     :files files
+                     :components components
+                     :graphics graphics
+                     :elapsed (dt/format-duration elapsed)))))))))

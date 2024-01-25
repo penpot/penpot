@@ -12,6 +12,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.tab-container :refer [tab-container tab-element]]
+   [app.main.ui.context :as muc]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.workspace.comments :refer [comments-sidebar]]
    [app.main.ui.workspace.left-header :refer [left-header]]
@@ -58,23 +59,23 @@
         on-tab-change
         (mf/use-fn #(st/emit! (dw/go-to-layout %)))]
 
-    [:aside {:ref parent-ref
-             :id "left-sidebar-aside"
-             :data-size (str size)
-             :class (stl/css-case :left-settings-bar true
-                                  :global/two-row   (<= size 300)
-                                  :global/three-row (and (> size 300) (<= size 400))
-                                  :global/four-row  (> size 400))
-             :style #js {"--width" (dm/str size "px")}}
+    [:& (mf/provider muc/sidebar) {:value :left}
+     [:aside {:ref parent-ref
+              :id "left-sidebar-aside"
+              :data-size (str size)
+              :class (stl/css-case :left-settings-bar true
+                                   :global/two-row    (<= size 300)
+                                   :global/three-row  (and (> size 300) (<= size 400))
+                                   :global/four-row  (> size 400))
+              :style #js {"--width" (dm/str size "px")}}
 
-     [:& left-header {:file file :layout layout :project project :page-id page-id
-                      :class (stl/css :left-header)}]
+      [:& left-header {:file file :layout layout :project project :page-id page-id
+                       :class (stl/css :left-header)}]
 
-     [:div {:on-pointer-down on-pointer-down
-            :on-lost-pointer-capture on-lost-pointer-capture
-            :on-pointer-move on-pointer-move
-            :class (stl/css :resize-area)}]
-     [:*
+      [:div {:on-pointer-down on-pointer-down
+             :on-lost-pointer-capture on-lost-pointer-capture
+             :on-pointer-move on-pointer-move
+             :class (stl/css :resize-area)}]
       (cond
         (true? shortcuts?)
         [:& shortcuts-container {:class (stl/css :settings-bar-content)}]
@@ -109,7 +110,6 @@
 
             [:& layers-toolbox {:size-parent size
                                 :size size-pages}]]]
-
 
           (when-not ^boolean mode-inspect?
             [:& tab-element {:id :assets
@@ -159,27 +159,28 @@
             (obj/set! "on-change-section" handle-change-section)
             (obj/set! "on-expand" handle-expand))]
 
-    [:aside {:class (stl/css-case :right-settings-bar true
-                                  :not-expand (not can-be-expanded?)
-                                  :expanded (> size 276))
+    [:& (mf/provider muc/sidebar) {:value :right}
+     [:aside {:class (stl/css-case :right-settings-bar true
+                                   :not-expand (not can-be-expanded?)
+                                   :expanded (> size 276))
 
-             :id "right-sidebar-aside"
-             :data-size (str size)
-             :style #js {"--width" (when can-be-expanded? (dm/str size "px"))}}
-     (when can-be-expanded?
-       [:div {:class (stl/css :resize-area)
-              :on-pointer-down on-pointer-down
-              :on-lost-pointer-capture on-lost-pointer-capture
-              :on-pointer-move on-pointer-move}])
-     [:& right-header {:file file :layout layout :page-id page-id}]
+              :id "right-sidebar-aside"
+              :data-size (str size)
+              :style #js {"--width" (when can-be-expanded? (dm/str size "px"))}}
+      (when can-be-expanded?
+        [:div {:class (stl/css :resize-area)
+               :on-pointer-down on-pointer-down
+               :on-lost-pointer-capture on-lost-pointer-capture
+               :on-pointer-move on-pointer-move}])
+      [:& right-header {:file file :layout layout :page-id page-id}]
 
-     [:div {:class (stl/css :settings-bar-inside)}
-      (cond
-        (true? is-comments?)
-        [:& comments-sidebar]
+      [:div {:class (stl/css :settings-bar-inside)}
+       (cond
+         (true? is-comments?)
+         [:& comments-sidebar]
 
-        (true? is-history?)
-        [:& history-toolbox]
+         (true? is-history?)
+         [:& history-toolbox]
 
-        :else
-        [:> options-toolbox props])]]))
+         :else
+         [:> options-toolbox props])]]]))

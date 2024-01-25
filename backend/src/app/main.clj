@@ -301,7 +301,8 @@
     ::sto/storage  (ig/ref ::sto/storage)}
 
    :app.rpc/climit
-   {::mtx/metrics  (ig/ref ::mtx/metrics)}
+   {::mtx/metrics  (ig/ref ::mtx/metrics)
+    ::wrk/executor (ig/ref ::wrk/executor)}
 
    :app.rpc/rlimit
    {::wrk/executor (ig/ref ::wrk/executor)}
@@ -410,8 +411,7 @@
     ::migrations (ig/ref :app.migrations/migrations)}
 
    ::svgo/optimizer
-   {::wrk/executor   (ig/ref ::wrk/executor)
-    ::svgo/max-procs (cf/get :svgo-max-procs)}
+   {}
 
    ::audit.tasks/archive
    {::props              (ig/ref ::setup/props)

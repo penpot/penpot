@@ -333,7 +333,9 @@
 (defn register-profile
   [{:keys [::db/conn] :as cfg} {:keys [token fullname] :as params}]
   (let [claims     (tokens/verify (::main/props cfg) {:token token :iss :prepared-register})
-        params     (assoc claims :fullname fullname)
+        params     (-> claims
+                       (into params)
+                       (assoc :fullname fullname))
 
         is-active  (or (:is-active params)
                        (not (contains? cf/flags :email-verification)))

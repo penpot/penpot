@@ -13,6 +13,7 @@
    [app.main.store :as st]
    [app.main.ui.dashboard.grid :refer [grid]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
+   [app.main.ui.dashboard.pin-button :refer [pin-button*]]
    [app.main.ui.dashboard.project-menu :refer [project-menu]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
@@ -92,7 +93,7 @@
 
      [:div {:class (stl/css :dashboard-header-actions)}
       [:a
-       {:class (stl/css :btn-secondary :btn-small)
+       {:class (stl/css :btn-secondary :btn-small :new-file)
         :tab-index "0"
         :on-click on-create-click
         :data-test "new-file"
@@ -102,21 +103,11 @@
        (tr "dashboard.new-file")]
 
       (when-not (:is-default project)
-        [:button
-         {:class (stl/css-case :icon true
-                               :pin-icon true
-                               :tooltip true
-                               :tooltip-bottom true
-                               :active (:is-pinned project))
-          :tab-index "0"
+        [:> pin-button*
+         {:tab-index 0
+          :is-pinned (:is-pinned project)
           :on-click toggle-pin
-          :alt (tr "dashboard.pin-unpin")
-          :on-key-down (fn [event]
-                         (when (kbd/enter? event)
-                           (toggle-pin event)))}
-         (if (:is-pinned project)
-           i/pin-fill
-           i/pin)])
+          :on-key-down (fn [event] (when (kbd/enter? event) (toggle-pin event)))}])
 
       [:div
        {:class (stl/css :icon :tooltip :tooltip-bottom-left)

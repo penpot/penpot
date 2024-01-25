@@ -104,7 +104,7 @@
        (when (contains? cf/flags :user-feedback)
          [:li {:class (when feedback? (stl/css :current))
                :on-click go-settings-feedback}
-          i/msg-info
+          i/feedback-refactor
           [:span {:class (stl/css :element-title)} (tr "labels.give-feedback")]])]]]))
 
 (mf/defc sidebar

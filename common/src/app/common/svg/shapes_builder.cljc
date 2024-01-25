@@ -57,13 +57,14 @@
     clean-value))
 
 (defn- svg-dimensions
-  [data]
-  (let [width   (dm/get-in data [:attrs :width] 100)
-        height  (dm/get-in data [:attrs :height] 100)
-        viewbox (or (dm/get-in data [:attrs :viewBox])
+  [{:keys [attrs] :as data}]
+  (let [width   (:width attrs 100)
+        height  (:height attrs 100)
+        viewbox (or (:viewBox attrs)
                     (dm/str "0 0 " width " " height))
-        [x y width height] (->> (str/split viewbox #"\s+")
-                                (map d/parse-double))
+
+        [x y width height] (csvg/parse-numbers viewbox)
+
         width   (if (= width 0) 1 width)
         height  (if (= height 0) 1 height)]
 
@@ -265,19 +266,19 @@
                        (gmt/transform-in (gpt/point svg-data)))
 
         origin    (gpt/negate (gpt/point svg-data))
-        rect      (-> (parse-rect-attrs attrs)
+        vbox      (parse-rect-attrs attrs)
+        rect      (-> vbox
                       (update :x - (:x origin))
                       (update :y - (:y origin)))
 
         props     (-> (dissoc attrs :x :y :width :height :rx :ry :transform)
                       (csvg/attrs->props))]
-
     (cts/setup-shape
      (-> (calculate-rect-metadata rect transform)
          (assoc :type :rect)
          (assoc :name name)
          (assoc :frame-id frame-id)
-         (assoc :svg-viewbox rect)
+         (assoc :svg-viewbox vbox)
          (assoc :svg-attrs props)
          ;; We need to ensure fills are empty on import process
          ;; because setup-shape assings one by default.
@@ -303,6 +304,11 @@
 
         rx        (d/nilv r rx)
         ry        (d/nilv r ry)
+
+        ;; There are some svg circles in the internet that does not
+        ;; have cx and cy attrs, so we default them to 0
+        cx        (d/nilv cx 0)
+        cy        (d/nilv cy 0)
         origin    (gpt/negate (gpt/point svg-data))
 
         rect      (grc/make-rect
@@ -395,9 +401,9 @@
                     (str/trim (:stroke style)))
 
         color   (cond
-                  (= stroke "currentColor") clr/black
-                  (= stroke "none")         nil
-                  :else                     (clr/parse stroke))
+                  (= stroke "currentColor")  clr/black
+                  (= stroke "none")          nil
+                  (clr/color-string? stroke) (clr/parse stroke))
 
         opacity (when (some? color)
                   (d/parse-double
@@ -415,17 +421,21 @@
                     (get style :strokeLinecap))
         linecap (some-> linecap str/trim keyword)
 
-        attrs   (-> attrs
-                    (dissoc :stroke)
-                    (dissoc :strokeWidth)
-                    (dissoc :strokeOpacity)
-                    (update :style (fn [style]
-                                     (-> style
-                                         (dissoc :stroke)
-                                         (dissoc :strokeLinecap)
-                                         (dissoc :strokeWidth)
-                                         (dissoc :strokeOpacity))))
-                    (d/without-nils))]
+        attrs
+        (-> attrs
+            (cond-> linecap
+              (dissoc :strokeLinecap))
+            (cond-> (some? color)
+              (dissoc :stroke :strokeWidth :strokeOpacity))
+            (update
+             :style
+             (fn [style]
+               (-> style
+                   (cond-> linecap
+                     (dissoc :strokeLinecap))
+                   (cond-> (some? color)
+                     (dissoc :stroke :strokeWidth :strokeOpacity)))))
+            (d/without-nils))]
 
     (cond-> (assoc shape :svg-attrs attrs)
       (some? color)
@@ -467,6 +477,16 @@
     (-> (update-in [:svg-attrs :style] dissoc :mixBlendMode)
         (assoc :blend-mode (-> (dm/get-in shape [:svg-attrs :style :mixBlendMode]) assert-valid-blend-mode)))))
 
+(defn setup-other [shape]
+  (cond-> shape
+    (= (dm/get-in shape [:svg-attrs :display]) "none")
+    (-> (update-in [:svg-attrs :style] dissoc :display)
+        (assoc :hidden true))
+
+    (= (dm/get-in shape [:svg-attrs :style :display]) "none")
+    (-> (update :svg-attrs dissoc :display)
+        (assoc :hidden true))))
+
 (defn tag->name
   "Given a tag returns its layer name"
   [tag]
@@ -488,8 +508,16 @@
         att-refs     (csvg/find-attr-references attrs)
         defs         (get svg-data :defs)
         references   (csvg/find-def-references defs att-refs)
-        href-id      (-> (or (:href attrs) (:xlink:href attrs) " ") (subs 1))
-        use-tag?     (and (= :use tag) (contains? defs href-id))]
+
+        href-id      (or (:href attrs) (:xlink:href attrs) " ")
+        href-id      (if (and (string? href-id)
+                              (pos? (count href-id)))
+                       (subs href-id 1)
+                       href-id)
+
+        use-tag?     (and (= :use tag)
+                          (some? href-id)
+                          (contains? defs href-id))]
 
     (if use-tag?
       (let [;; Merge the data of the use definition with the properties passed as attributes
@@ -518,20 +546,20 @@
                       :image       (create-image-shape name frame-id svg-data element)
                       #_other      (create-raw-svg name frame-id svg-data element))]
 
-
         (when (some? shape)
-          (let [shape (-> shape
-                          (assoc :svg-defs (select-keys defs references))
-                          (setup-fill)
-                          (setup-stroke)
-                          (setup-opacity)
-                          (update :svg-attrs (fn [attrs]
-                                               (if (empty? (:style attrs))
-                                                 (dissoc attrs :style)
-                                                 attrs))))]
-            [(cond-> shape
-               hidden (assoc :hidden true))
+          [(-> shape
+               (assoc :svg-defs (select-keys defs references))
+               (setup-fill)
+               (setup-stroke)
+               (setup-opacity)
+               (setup-other)
+               (update :svg-attrs (fn [attrs]
+                                    (if (empty? (:style attrs))
+                                      (dissoc attrs :style)
+                                      attrs)))
+               (cond-> ^boolean hidden
+                 (assoc :hidden true)))
 
-             (cond->> (:content element)
-               (contains? csvg/parent-tags tag)
-               (mapv #(csvg/inherit-attributes attrs %)))]))))))
+           (cond->> (:content element)
+             (contains? csvg/parent-tags tag)
+             (mapv (partial csvg/inherit-attributes attrs)))])))))

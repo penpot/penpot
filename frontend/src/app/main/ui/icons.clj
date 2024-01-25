@@ -11,9 +11,9 @@
    [rumext.v2]))
 
 (defmacro icon-xref
-  [id]
+  [id & [class]]
   (let [href (str "#icon-" (name id))
-        class (str "icon-" (name id))]
+        class (or class (str "icon-" (name id)))]
     `(rumext.v2/html
       [:svg {:width 500 :height 500 :class ~class}
        [:use {:href ~href}]])))

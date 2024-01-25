@@ -7,8 +7,7 @@
 (ns app.common.types.shape.shadow
   (:require
    [app.common.schema :as sm]
-   [app.common.types.color :as ctc]
-   [app.common.types.shape.shadow.color :as-alias shadow-color]))
+   [app.common.types.color :as ctc]))
 
 (def styles #{:drop-shadow :inner-shadow})
 
@@ -21,11 +20,4 @@
    [:blur ::sm/safe-number]
    [:spread ::sm/safe-number]
    [:hidden :boolean]
-    ;;FIXME: reuse color?
-   [:color
-    [:map
-     [:color {:optional true} :string]
-     [:opacity {:optional true} ::sm/safe-number]
-     [:gradient {:optional true} [:maybe ::ctc/gradient]]
-     [:file-id {:optional true} [:maybe ::sm/uuid]]
-     [:id {:optional true} [:maybe ::sm/uuid]]]]])
+   [:color ::ctc/color]])

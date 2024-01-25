@@ -276,7 +276,8 @@
                          (cond-> (some? drop-index)
                            (with-meta {:index drop-index})))))))))
 
-(defn handle-new-shape-result [shape-id]
+(defn handle-new-shape-result
+  [shape-id]
   (ptk/reify ::handle-new-shape-result
     ptk/UpdateEvent
     (update [_ state]
@@ -293,7 +294,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [content (get-in state [:workspace-drawing :object :content] [])]
-        (if (seq content)
+        (if (and (seq content) (> (count content) 1))
           (rx/of (setup-frame)
                  (dwdc/handle-finish-drawing)
                  (dwe/start-edition-mode shape-id)

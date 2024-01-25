@@ -551,9 +551,10 @@
 
 
    ;; THEME
-   :toggle-light-dark    {:tooltip (ds/meta (ds/alt "Q"))
-                          :command (ds/c-mod "alt+q")
-                          :fn #(st/emit! (du/toggle-theme))}})
+   :toggle-theme    {:tooltip (ds/meta (ds/alt "M"))
+                     :command (ds/c-mod "alt+m")
+                     :subsections [:basics]
+                     :fn #(st/emit! (du/toggle-theme))}})
 
 (def opacity-shortcuts
   (into {} (->>

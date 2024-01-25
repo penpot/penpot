@@ -113,7 +113,7 @@
               :alt (:name item)}]]
       [:div {:class (stl/css :card-name)}
        [:span (:name item)]
-       [:span {:class (stl/css :icon)} i/download]]]]))
+       [:span {:class (stl/css :icon)} i/download-refactor]]]]))
 
 (mf/defc card-item-link
   {::mf/wrap-props false}

@@ -698,7 +698,7 @@
              :team-id (:id team)
              :selected? (= (:id item) (:id project))}])]
         [:div {:class (stl/css :sidebar-empty-placeholder)}
-         [:span {:class (stl/css :icon)} i/pin]
+         [:span {:class (stl/css :icon)} i/pin-refactor]
          [:span {:class (stl/css :text)} (tr "dashboard.no-projects-placeholder")]])]]))
 
 (mf/defc profile-section

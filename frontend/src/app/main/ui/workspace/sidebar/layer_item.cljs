@@ -10,7 +10,6 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
-   [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
@@ -261,7 +260,7 @@
 
         on-drop
         (mf/use-fn
-         (mf/deps id index objects expanded?)
+         (mf/deps id index objects expanded? selected)
          (fn [side _data]
            (let [shape (get objects id)
 
@@ -276,6 +275,8 @@
                    :else
                    (cfh/get-parent-id objects id))
 
+                 [parent-id _] (ctn/find-valid-parent-and-frame-ids parent-id objects (map #(get objects %) selected))
+
                  parent    (get objects parent-id)
 
                  to-index  (cond
@@ -283,9 +284,7 @@
                              (and expanded? (= side :bot) (d/not-empty? (:shapes shape))) (count (:shapes parent))
                              (= side :top) (inc index)
                              :else index)]
-
-             (when-not (ctk/in-component-copy? parent) ;; We don't want to change the structure of component copies
-               (st/emit! (dw/relocate-selected-shapes parent-id to-index))))))
+             (st/emit! (dw/relocate-selected-shapes parent-id to-index)))))
 
         on-hold
         (mf/use-fn

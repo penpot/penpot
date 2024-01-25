@@ -19,9 +19,11 @@
    [app.common.geom.shapes.text :as gsht]
    [app.common.logging :as l]
    [app.common.math :as mth]
+   [app.common.schema :as sm]
    [app.common.svg :as csvg]
    [app.common.text :as txt]
    [app.common.types.shape :as cts]
+   [app.common.types.shape.shadow :as ctss]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
@@ -30,6 +32,10 @@
 (def version cfd/version)
 
 (defmulti migrate :version)
+
+(defn need-migration?
+  [{:keys [data]}]
+  (> cfd/version (:version data 0)))
 
 (defn migrate-data
   ([data] (migrate-data data version))
@@ -318,19 +324,21 @@
                          (= "#7B7D85" fill-color)))
                 (dissoc :fill-color :fill-opacity))))
 
-          (update-container [{:keys [objects] :as container}]
-            (loop [objects objects
-                   shapes  (->> (vals objects)
-                                (filter cfh/image-shape?))]
-              (if-let [shape (first shapes)]
-                (let [{:keys [id frame-id] :as shape'} (process-shape shape)]
-                  (if (identical? shape shape')
-                    (recur objects (rest shapes))
-                    (recur (-> objects
-                               (assoc id shape')
-                               (d/update-when frame-id dissoc :thumbnail))
-                           (rest shapes))))
-                (assoc container :objects objects))))]
+          (update-container [container]
+            (if (contains? container :objects)
+              (loop [objects (:objects container)
+                     shapes  (->> (vals objects)
+                                  (filter cfh/image-shape?))]
+                (if-let [shape (first shapes)]
+                  (let [{:keys [id frame-id] :as shape'} (process-shape shape)]
+                    (if (identical? shape shape')
+                      (recur objects (rest shapes))
+                      (recur (-> objects
+                                 (assoc id shape')
+                                 (d/update-when frame-id dissoc :thumbnail))
+                             (rest shapes))))
+                  (assoc container :objects objects)))
+              container))]
 
     (-> data
         (update :pages-index update-vals update-container)
@@ -380,7 +388,7 @@
               (assign-fills)))
 
           (update-container [container]
-            (update container :objects update-vals update-object))]
+            (d/update-when container :objects update-vals update-object))]
 
     (-> data
         (update :pages-index update-vals update-container)
@@ -409,7 +417,7 @@
               (assoc :fills [])))
 
           (update-container [container]
-            (update container :objects update-vals update-object))]
+            (d/update-when container :objects update-vals update-object))]
 
     (-> data
         (update :pages-index update-vals update-container)
@@ -424,7 +432,7 @@
               (dissoc :position-data)))
 
           (update-container [container]
-            (update container :objects update-vals update-object))]
+            (d/update-when container :objects update-vals update-object))]
 
     (-> data
         (update :pages-index update-vals update-container)
@@ -440,7 +448,7 @@
               (dissoc :position-data)))
 
           (update-container [container]
-            (update container :objects update-vals update-object))]
+            (d/update-when container :objects update-vals update-object))]
 
     (-> data
         (update :pages-index update-vals update-container)
@@ -527,7 +535,7 @@
               (assoc object :frame-id calculated-frame-id)))
 
           (update-container [container]
-            (update container :objects #(update-vals % (partial update-object %))))]
+            (d/update-when container :objects #(update-vals % (partial update-object %))))]
 
     (-> data
         (update :pages-index update-vals update-container)
@@ -565,22 +573,7 @@
                 (update :content #(txt/transform-nodes invalid-node? fix-node %)))))
 
           (update-container [container]
-            (update container :objects update-vals update-object))]
-
-    (-> data
-        (update :pages-index update-vals update-container)
-        (update :components update-vals update-container))))
-
-(defmethod migrate 30
-  [data]
-  (letfn [(update-object [object]
-            (if (and (cfh/frame-shape? object)
-                     (not (:shapes object)))
-              (assoc object :shapes [])
-              object))
-
-          (update-container [container]
-            (update container :objects update-vals update-object))]
+            (d/update-when container :objects update-vals update-object))]
 
     (-> data
         (update :pages-index update-vals update-container)
@@ -613,7 +606,8 @@
                 object)))
 
           (update-container [container]
-            (update container :objects update-vals update-object))]
+            (d/update-when container :objects update-vals update-object))]
+
     (-> data
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
@@ -624,13 +618,13 @@
             ;; Ensure all root objects are well formed shapes.
             (if (= (:id object) uuid/zero)
               (-> object
-                  (assoc :parent-id uuid/zero
-                         :frame-id uuid/zero)
+                  (assoc :parent-id uuid/zero)
+                  (assoc :frame-id uuid/zero)
                   (cts/setup-shape))
               object))
 
           (update-container [container]
-            (update container :objects update-vals update-object))]
+            (d/update-when container :objects update-vals update-object))]
     (-> data
         (update :pages-index update-vals update-container))))
 
@@ -642,7 +636,7 @@
               (dissoc object :x :y :width :height)
               object))
           (update-container [container]
-            (update container :objects update-vals update-object))]
+            (d/update-when container :objects update-vals update-object))]
     (-> data
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
@@ -694,8 +688,158 @@
                 shape)))
 
           (update-container [container]
-            (update container :objects update-vals update-shape))]
+            (d/update-when container :objects update-vals update-shape))]
 
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
+
+(defmethod migrate 39
+  [data]
+  (letfn [(update-shape [shape]
+            (cond
+              (and (cfh/bool-shape? shape)
+                   (not (contains? shape :bool-content)))
+              (assoc shape :bool-content [])
+
+              (and (cfh/path-shape? shape)
+                   (not (contains? shape :content)))
+              (assoc shape :content [])
+
+              :else
+              shape))
+
+          (update-container [container]
+            (d/update-when container :objects update-vals update-shape))]
+
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
+
+(defmethod migrate 40
+  [data]
+  (letfn [(update-shape [{:keys [content shapes] :as shape}]
+            ;; Fix frame shape that in reallity is a path shape
+            (if (and (cfh/frame-shape? shape)
+                     (contains? shape :selrect)
+                     (seq content)
+                     (not (seq shapes))
+                     (contains? (first content) :command))
+              (-> shape
+                  (assoc :type :path)
+                  (assoc :x nil)
+                  (assoc :y nil)
+                  (assoc :width nil)
+                  (assoc :height nil))
+              shape))
+
+          (update-container [container]
+            (d/update-when container :objects update-vals update-shape))]
+
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
+
+(defmethod migrate 41
+  [data]
+  (letfn [(update-shape [shape]
+            (cond
+              (or (cfh/bool-shape? shape)
+                  (cfh/path-shape? shape))
+              shape
+
+              ;; Fix all shapes that has geometry broken but still
+              ;; preservers the selrect, so we recalculate the
+              ;; geometry from selrect.
+              (and (contains? shape :selrect)
+                   (or (nil? (:x shape))
+                       (nil? (:y shape))
+                       (nil? (:width shape))
+                       (nil? (:height shape))))
+              (let [selrect (:selrect shape)]
+                (-> shape
+                    (assoc :x (:x selrect))
+                    (assoc :y (:y selrect))
+                    (assoc :width (:width selrect))
+                    (assoc :height (:height selrect))))
+
+              :else
+              shape))
+
+          (update-container [container]
+            (d/update-when container :objects update-vals update-shape))]
+
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
+
+(defmethod migrate 42
+  [data]
+  (letfn [(update-object [object]
+            (if (and (or (cfh/frame-shape? object)
+                         (cfh/group-shape? object)
+                         (cfh/bool-shape? object))
+                     (not (:shapes object)))
+              (assoc object :shapes [])
+              object))
+
+          (update-container [container]
+            (d/update-when container :objects update-vals update-object))]
+
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
+
+(def ^:private valid-fill?
+  (sm/lazy-validator ::cts/fill))
+
+(defmethod migrate 43
+  [data]
+  (letfn [(number->string [v]
+            (if (number? v)
+              (str v)
+              v))
+
+          (update-text-node [node]
+            (-> node
+                (d/update-when :fills #(filterv valid-fill? %))
+                (d/update-when :font-size number->string)
+                (d/update-when :font-weight number->string)
+                (d/without-nils)))
+
+          (update-object [object]
+            (if (cfh/text-shape? object)
+              (update object :content #(txt/transform-nodes identity update-text-node %))
+              object))
+
+          (update-container [container]
+            (d/update-when container :objects update-vals update-object))]
+
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
+
+(def ^:private valid-shadow?
+  (sm/lazy-validator ::ctss/shadow))
+
+(defmethod migrate 44
+  [data]
+  (letfn [(fix-shadow [shadow]
+            (if (string? (:color shadow))
+              (let [color {:color (:color shadow)
+                           :opacity 1}]
+                (assoc shadow :color color))
+              shadow))
+
+          (update-object [object]
+            (d/update-when object :shadow
+                           #(into []
+                                  (comp (map fix-shadow)
+                                        (filter valid-shadow?))
+                                  %)))
+
+          (update-container [container]
+            (d/update-when container :objects update-vals update-object))]
     (-> data
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))

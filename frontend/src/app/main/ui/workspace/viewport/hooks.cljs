@@ -159,7 +159,6 @@
   [group-id objects hover-ids]
 
   (and (contains? #{:group :bool} (get-in objects [group-id :type]))
-
        ;; If there are no children in the hover-ids we're in the empty side
        (->> hover-ids
             (remove #(contains? #{:group :bool} (get-in objects [% :type])))
@@ -253,76 +252,98 @@
      (fn [_]
        (reset! hover-top-frame-id (ctt/top-nested-frame objects (deref last-point-ref)))))
 
-    (hooks/use-stream
-     over-shapes-stream
-     (mf/deps page-id objects show-measures?)
-     (fn [ids]
-       (let [selected (mf/ref-val selected-ref)
-             focus    (mf/ref-val focus-ref)
-             mod?     (mf/ref-val mod-ref)
+    ;; This ref is a cache of sorted ids. Sorting is expensive so we save the list
+    (let [sorted-ids-cache (mf/use-ref {})]
+      (hooks/use-stream
+       over-shapes-stream
+       (mf/deps page-id objects show-measures?)
+       (fn [ids]
+         (let [selected   (mf/ref-val selected-ref)
+               focus      (mf/ref-val focus-ref)
+               mod?       (mf/ref-val mod-ref)
+               cached-ids (mf/ref-val sorted-ids-cache)
 
-             ids      (into (d/ordered-set)
-                            (remove #(dm/get-in objects [% :blocked]))
-                            (ctt/sort-z-index objects ids {:bottom-frames? mod?}))
+               make-sorted-ids
+               (fn [mod? ids]
+                 (let [sorted-ids
+                       (into (d/ordered-set)
+                             (comp (remove #(dm/get-in objects [% :blocked]))
+                                   (remove (partial cfh/svg-raw-shape? objects)))
+                             (ctt/sort-z-index objects ids {:bottom-frames? mod?}))]
+                   (mf/set-ref-val! sorted-ids-cache (assoc cached-ids [mod? ids] sorted-ids))
+                   sorted-ids))
 
-             grouped? (fn [id]
-                        (and (cfh/group-shape? objects id)
-                             (not (cfh/mask-shape? objects id))))
+               ids (or (get cached-ids [mod? ids]) (make-sorted-ids mod? ids))
 
-             selected-with-parents
-             (into #{} (mapcat #(cfh/get-parent-ids objects %)) selected)
+               grouped?
+               (fn [id]
+                 (and (cfh/group-shape? objects id)
+                      (not (cfh/mask-shape? objects id))))
 
-             root-frame-with-data?
-             #(as-> (get objects %) obj
-                (and (cfh/root-frame? obj)
-                     (d/not-empty? (:shapes obj))
-                     (not (ctk/instance-head? obj))
-                     (not (ctk/main-instance? obj))))
+               selected-with-parents
+               (into #{} (mapcat #(cfh/get-parent-ids objects %)) selected)
 
-             ;; Set with the elements to remove from the hover list
-             remove-id-xf
-             (cond
-               mod?
-               (filter grouped?)
+               root-frame-with-data?
+               #(as-> (get objects %) obj
+                  (and (cfh/root-frame? obj)
+                       (d/not-empty? (:shapes obj))
+                       (not (ctk/instance-head? obj))
+                       (not (ctk/main-instance? obj))))
 
-               (not mod?)
-               (filter #(or (root-frame-with-data? %)
-                            (group-empty-space? % objects ids))))
+               ;; Set with the elements to remove from the hover list
+               remove-id-xf
+               (cond
+                 mod?
+                 (filter grouped?)
 
-             remove-id?
-             (into selected-with-parents remove-id-xf ids)
+                 (not mod?)
+                 (let [child-parent?
+                       (into #{}
+                             (comp (remove #(cfh/group-like-shape? objects %))
+                                   (mapcat #(cfh/get-parent-ids objects %)))
+                             ids)]
+                   (filter #(or (root-frame-with-data? %)
+                                (and (contains? #{:group :bool} (dm/get-in objects [% :type]))
+                                     (not (contains? child-parent? %)))))))
 
-             no-fill-nested-frames?
-             (fn [id]
-               (let [shape (get objects id)]
-                 (and (cfh/frame-shape? shape)
-                      (not (cfh/is-direct-child-of-root? shape))
-                      (empty? (get shape :fills)))))
+               remove-id?
+               (into selected-with-parents remove-id-xf ids)
 
+               no-fill-nested-frames?
+               (fn [id]
+                 (let [shape (get objects id)]
+                   (and (cfh/frame-shape? shape)
+                        (not (cfh/is-direct-child-of-root? shape))
+                        (empty? (get shape :fills)))))
 
-             hover-shape
-             (->> ids
-                  (remove remove-id?)
-                  (remove (partial cfh/hidden-parent? objects))
-                  (remove #(and mod? (no-fill-nested-frames? %)))
-                  (filter #(or (empty? focus) (cpf/is-in-focus? objects focus %)))
-                  (first)
-                  (get objects))
-
-             ;; We keep track of a diferent shape for measures
-             measure-hover-shape
-             (when show-measures?
+               hover-shape
                (->> ids
-                    (remove #(group-empty-space? % objects ids))
+                    (remove remove-id?)
                     (remove (partial cfh/hidden-parent? objects))
                     (remove #(and mod? (no-fill-nested-frames? %)))
                     (filter #(or (empty? focus) (cpf/is-in-focus? objects focus %)))
                     (first)
-                    (get objects)))]
+                    (get objects))
 
-         (reset! hover hover-shape)
-         (reset! measure-hover measure-hover-shape)
-         (reset! hover-ids ids))))))
+               ;; We keep track of a diferent shape for measures
+               measure-hover-shape
+               (when show-measures?
+                 (->> ids
+                      (remove #(group-empty-space? % objects ids))
+                      (remove (partial cfh/hidden-parent? objects))
+                      (remove #(and mod? (no-fill-nested-frames? %)))
+                      (filter #(or (empty? focus) (cpf/is-in-focus? objects focus %)))
+                      (first)
+                      (get objects)))]
+
+
+           (reset! hover hover-shape)
+           (reset! measure-hover measure-hover-shape)
+           (reset! hover-ids ids)))
+
+       (fn []
+         ;; Clean the cache
+         (mf/set-ref-val! sorted-ids-cache {}))))))
 
 (defn setup-viewport-modifiers
   [modifiers objects]

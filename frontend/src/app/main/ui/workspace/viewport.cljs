@@ -274,6 +274,7 @@
     (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform vbox)
 
     [:div.viewport {:style #js {"--zoom" zoom}}
+     [:& top-bar/top-bar {:layout layout}]
      [:div.viewport-overlays
       ;; The behaviour inside a foreign object is a bit different that in plain HTML so we wrap
       ;; inside a foreign object "dummy" so this awkward behaviour is take into account
@@ -302,9 +303,7 @@
                                          :vbox vbox
                                          :options options
                                          :layout layout
-                                         :viewport-ref viewport-ref}])
-
-      [:& top-bar/top-bar]]
+                                         :viewport-ref viewport-ref}])]
 
      [:svg.render-shapes
       {:id "render"

@@ -93,7 +93,7 @@
     (into [] xform fonts)))
 
 (mf/defc font-selector
-  [{:keys [on-select on-close current-font show-recent] :as props}]
+  [{:keys [on-select on-close current-font show-recent full-size] :as props}]
   (let [selected       (mf/use-state current-font)
         state          (mf/use-state {:term "" :backends #{}})
 
@@ -102,6 +102,8 @@
 
         fonts          (mf/use-memo (mf/deps @state) #(filter-fonts @state @fonts/fonts))
         recent-fonts   (mf/deref refs/workspace-recent-fonts)
+
+        full-size? (boolean (and full-size recent-fonts show-recent))
 
         select-next
         (mf/use-fn
@@ -170,13 +172,13 @@
             (.scrollToPosition ^js inst offset)))))
 
     [:div {:class (stl/css :font-selector)}
-     [:div {:class (stl/css :font-selector-dropdown)}
+     [:div {:class (stl/css-case :font-selector-dropdown true :font-selector-dropdown-full-size full-size?)}
       [:div {:class (stl/css :header)}
        [:& search-bar {:on-change on-filter-change
                        :value (:term @state)
                        :placeholder (tr "workspace.options.search-font")}]
        (when (and recent-fonts show-recent)
-         [*
+         [:section {:class (stl/css :show-recent)}
           [:p {:class (stl/css :title)} (tr "workspace.options.recent-fonts")]
           (for [[idx font] (d/enumerate recent-fonts)]
             [:& font-item {:key (dm/str "font-" idx)
@@ -185,7 +187,8 @@
                            :on-click on-select-and-close
                            :current? (= (:id font) (:id @selected))}])])]
 
-      [:div {:class (stl/css :fonts-list)}
+      [:div {:class (stl/css-case :fonts-list true
+                                  :fonts-list-full-size full-size?)}
        [:> rvt/AutoSizer {}
         (fn [props]
           (let [width  (unchecked-get props "width")
@@ -214,7 +217,7 @@
 
 (mf/defc font-options
   {::mf/wrap-props false}
-  [{:keys [values on-change on-blur show-recent]}]
+  [{:keys [values on-change on-blur show-recent full-size-selector]}]
   (let [{:keys [font-id font-size font-variant-id]} values
 
         font-id         (or font-id (:font-id txt/default-text-attrs))
@@ -285,6 +288,7 @@
         {:current-font font
          :on-close on-font-selector-close
          :on-select on-font-select
+         :full-size full-size-selector
          :show-recent show-recent}])
 
      [:div {:class (stl/css :font-option)
@@ -416,14 +420,16 @@
 (mf/defc text-options
   {::mf/wrap-props false}
   [{:keys [ids editor values on-change on-blur show-recent]}]
-  (let [opts #js {:editor editor
+  (let [full-size-selector? (and show-recent (= (mf/use-ctx ctx/sidebar) :right))
+        opts #js {:editor editor
                   :ids ids
                   :values values
                   :on-change on-change
                   :on-blur on-blur
-                  :show-recent show-recent}]
-
-    [:div {:class (stl/css :text-options)}
+                  :show-recent show-recent
+                  :full-size-selector full-size-selector?}]
+    [:div {:class (stl/css-case :text-options true
+                                :text-options-full-size full-size-selector?)}
      [:> font-options opts]
      [:div {:class (stl/css :typography-variations)}
       [:> spacing-options opts]

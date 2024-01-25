@@ -387,3 +387,49 @@
       (if (ctk/in-component-copy? parent)
         true
         (has-any-copy-parent? objects (:parent-id shape))))))
+
+(defn has-any-main?
+  "Check if the shape has any children or parent that is a main component."
+  [objects shape]
+  (let [children (cfh/get-children-with-self objects (:id shape))
+        parents  (cfh/get-parents objects (:id shape))]
+    (or
+     (some ctk/main-instance? children)
+     (some ctk/main-instance? parents))))
+
+(defn valid-shape-for-component?
+  "Check if a main component can be generated from this shape in terms of nested components:
+  - A main can't be the ancestor of another main
+  - A main can't be nested in copies"
+  [objects shape]
+  (and
+   (not (has-any-main? objects shape))
+   (not (has-any-copy-parent? objects shape))))
+
+(defn- invalid-structure-for-component?
+  "Check if the structure generated nesting children in parent is invalid in terms of nested components"
+  [objects parent children]
+  (let [selected-main-instance? (some true? (map #(has-any-main? objects %) children))
+        parent-in-component?    (in-any-component? objects parent)
+        comps-nesting-loop?     (not (->> children
+                                          (map #(cfh/components-nesting-loop? objects (:id %) (:id parent)))
+                                          (every? nil?)))]
+    (or
+      ;;We don't want to change the structure of component copies
+     (ctk/in-component-copy? parent)
+      ;; If we are moving something containing a main instance the container can't be part of a component (neither main nor copy)
+     (and selected-main-instance? parent-in-component?)
+      ;; Avoid placing a shape as a direct or indirect child of itself,
+      ;; or inside its main component if it's in a copy.
+     comps-nesting-loop?)))
+
+(defn find-valid-parent-and-frame-ids
+  "Navigate trough the ancestors until find one that is valid"
+  [parent-id objects children]
+  (let [parent (get objects parent-id)]
+    (if (invalid-structure-for-component? objects parent children)
+      (find-valid-parent-and-frame-ids (:parent-id parent) objects children)
+      [parent-id
+       (if (= :frame (:type parent))
+         parent-id
+         (:frame-id parent))])))
