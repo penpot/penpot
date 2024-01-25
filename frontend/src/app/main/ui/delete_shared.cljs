@@ -26,7 +26,7 @@
    ::mf/register-as :delete-shared-libraries
    ::mf/wrap-props false}
   [{:keys [ids on-accept on-cancel accept-style origin count-libraries]}]
-  (let [references*  (mf/use-state {})
+  (let [references*  (mf/use-state nil)
         references   (deref references*)
 
         on-accept    (or on-accept noop)
@@ -78,8 +78,8 @@
 
     (mf/with-effect [ids]
       (->> (rx/from ids)
-           (rx/map #(array-map :file-id %))
-           (rx/mapcat #(rp/cmd! :get-library-file-references %))
+           (rx/filter some?)
+           (rx/mapcat #(rp/cmd! :get-library-file-references {:file-id %}))
            (rx/mapcat identity)
            (rx/map (juxt :id :name))
            (rx/reduce conj [])
