@@ -27,17 +27,17 @@
 (def select-guide-width 1)
 (def select-guide-dasharray 5)
 
-(def hover-color "var(--color-foreground-tertiary)")
+(def hover-color "var(--color-accent-quaternary)")
 
-(def size-display-color "var(--white)")
+(def size-display-color "var(--app-white)")
 (def size-display-opacity 0.7)
-(def size-display-text-color "var(--black)")
+(def size-display-text-color "var(--app-black)")
 (def size-display-width-min 50)
 (def size-display-width-max 75)
 (def size-display-height 16)
 
-(def distance-color "var(--color-foreground-tertiary)")
-(def distance-text-color "var(--white)")
+(def distance-color "var(--color-accent-quaternary)")
+(def distance-text-color "var(--app-white)")
 (def distance-border-radius 2)
 (def distance-pill-width 50)
 (def distance-pill-height 16)

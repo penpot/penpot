@@ -8,7 +8,7 @@
 
 .auth-section {
   align-items: center;
-  background: $db-primary;
+  background: var(--panel-background-color);
   display: grid;
   gap: $s-32;
   grid-template-columns: repeat(5, 1fr);

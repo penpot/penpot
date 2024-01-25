@@ -85,7 +85,7 @@
     .content {
       padding: $s-2 $s-6;
       &.expired {
-        background-color: var(--warning-color);
+        background-color: var(--status-color-warning-500);
         border-radius: $br-4;
         color: $db-secondary;
       }
@@ -149,7 +149,7 @@
 .access-tokens-empty {
   align-items: center;
   border-radius: $br-8;
-  border: $s-1 solid $db-cuaternary;
+  border: $s-1 solid $db-quaternary;
   color: $df-secondary;
   display: flex;
   flex-direction: column;

@@ -22,13 +22,13 @@
    [rumext.v2 :as mf]))
 
 (def gradient-line-stroke-width 2)
-(def gradient-line-stroke-color "var(--white)")
+(def gradient-line-stroke-color "var(--app-white)")
 (def gradient-square-width 15)
 (def gradient-square-radius 2)
 (def gradient-square-stroke-width 2)
 (def gradient-width-handler-radius 5)
-(def gradient-width-handler-color "var(--white)")
-(def gradient-square-stroke-color "var(--white)")
+(def gradient-width-handler-color "var(--app-white)")
+(def gradient-square-stroke-color "var(--app-white)")
 (def gradient-square-stroke-color-selected "var(--color-accent-tertiary)")
 
 (mf/defc shadow [{:keys [id x y width height offset]}]
@@ -109,7 +109,7 @@
            :rx (/ gradient-square-radius zoom)
            :width (/ gradient-square-width zoom)
            :height (/ gradient-square-width zoom)
-           :stroke (if selected "var(--color-accent-tertiary)" "var(--white)")
+           :stroke (if selected "var(--color-accent-tertiary)" "var(--app-white)")
            :stroke-width (/ gradient-square-stroke-width zoom)
            :fill (:value color)
            :fill-opacity (:opacity color)

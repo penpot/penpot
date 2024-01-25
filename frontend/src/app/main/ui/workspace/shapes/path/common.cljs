@@ -14,10 +14,10 @@
    [rumext.v2 :as mf]))
 
 (def primary-color "var(--color-accent-tertiary)")
-(def secondary-color "var(--color-foreground-tertiary)")
-(def black-color "var(--black)")
-(def white-color "var(--white)")
-(def gray-color "var(--off-white)")
+(def secondary-color "var(--color-accent-quaternary)")
+(def black-color "var(--app-black)")
+(def white-color "var(--app-white)")
+(def gray-color "var(--df-secondary)")
 
 (def current-edit-path-ref
   (l/derived

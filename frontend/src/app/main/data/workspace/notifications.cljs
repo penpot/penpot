@@ -124,17 +124,15 @@
 ;; --- Handle: Presence
 
 (def ^:private presence-palette
-  #{"#82e590" ; green
-    "#7ad7c5" ; blue-green
+  #{"#f49ef7" ; pink
     "#75cafc" ; blue
-    "#a9bdfa" ; blue-purple
+    "#fdcf79" ; gold
+    "#a9bdfa" ; indigo
+    "#faa6b7" ; red
     "#cbaaff" ; purple
-    "#f49ef7" ; pink
-    "#faa6b7" ; salmon
     "#f9b489" ; orange
-    "#fdcd79" ; soft-orange
     "#dee563" ; yellow -> default presence color
-    "#b1e96f" ; yellow-green
+    "#b1e96f" ; lemon
     })
 
 (defn handle-presence
@@ -145,7 +143,7 @@
                               (remove nil?))
                   used  (into #{} xfm presence)
                   avail (set/difference presence-palette used)]
-              (or (first avail) "var(--black)")))
+              (or (first avail) "var(--app-black)")))
 
           (update-color [color presence]
             (if (some? color)

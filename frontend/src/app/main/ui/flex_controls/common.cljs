@@ -8,9 +8,9 @@
 ;; ------------------------------------------------
 
 (def font-size 11)
-(def distance-color "var(--color-distance)")
-(def distance-text-color "var(--color-white)")
-(def warning-color "var(--color-warning)")
+(def distance-color "var(--da-quaternary)")
+(def distance-text-color "var(--app-white)")
+(def warning-color "var(--status-color-warning-500)")
 (def flex-display-pill-width 40)
 (def flex-display-pill-height 20)
 (def flex-display-pill-border-radius 4)

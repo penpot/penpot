@@ -8,7 +8,7 @@
 @use "common/refactor/common-dashboard";
 
 .dashboard-fonts {
-  border-top: $s-1 solid $db-cuaternary;
+  border-top: $s-1 solid $db-quaternary;
   display: flex;
   flex-direction: column;
   padding-left: $s-120;
@@ -161,7 +161,7 @@
   .table-field {
     color: $df-primary;
     .variant {
-      background-color: $db-cuaternary;
+      background-color: $db-quaternary;
       border-radius: $br-8;
       margin-right: $s-4;
       padding-right: $s-4;
@@ -196,7 +196,7 @@
       &.failure {
         margin-right: $s-12;
         svg {
-          stroke: var(--warning-color);
+          stroke: var(--element-foreground-warning);
         }
       }
 
@@ -262,7 +262,7 @@
 
     background-color: $db-primary;
     border-radius: $br-12;
-    border: $s-1 solid $db-cuaternary;
+    border: $s-1 solid $db-quaternary;
     color: $df-primary;
     font-size: $fs-12;
 
@@ -289,9 +289,9 @@
       }
     }
     &.warning {
-      background-color: $db-cuaternary;
+      background-color: $db-quaternary;
       .icon svg {
-        stroke: var(--warning-color);
+        stroke: var(--element-foreground-warning);
       }
     }
   }
@@ -304,7 +304,7 @@
 .fonts-placeholder {
   align-items: center;
   border-radius: $br-8;
-  border: $s-1 solid $db-cuaternary;
+  border: $s-1 solid $db-quaternary;
   display: flex;
   flex-direction: column;
   height: $s-160;

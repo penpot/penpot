@@ -42,7 +42,7 @@
         colors ["var(--color-background-primary)"
                 "var(--color-background-secondary)"
                 "var(--color-background-tertiary)"
-                "var(--color-background-cuaternary)"
+                "var(--color-background-quaternary)"
                 "var(--color-foreground-primary)"
                 "var(--color-foreground-secondary)"
                 "var(--color-accent-primary)"

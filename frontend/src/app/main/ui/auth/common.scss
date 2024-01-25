@@ -19,7 +19,7 @@
 }
 
 .separator {
-  border-color: $db-cuaternary;
+  border-color: $db-quaternary;
   margin: $s-24 0;
 }
 
@@ -60,7 +60,7 @@
   flex-direction: column;
   gap: $s-12;
   padding: $s-24 0;
-  border-top: $s-1 solid $db-cuaternary;
+  border-top: $s-1 solid $db-quaternary;
 
   span {
     text-align: center;
@@ -111,7 +111,7 @@
   }
 
   &:hover {
-    color: var(--white);
+    color: var(--app-white);
   }
 }
 

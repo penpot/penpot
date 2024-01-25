@@ -7,8 +7,8 @@
 @use "common/refactor/common-refactor.scss" as *;
 
 .dashboard-sidebar {
-  background-color: $db-primary;
-  border-right: $s-1 solid $db-cuaternary;
+  background-color: var(--panel-background-color);
+  border-right: $s-1 solid $db-quaternary;
   display: flex;
   flex-direction: column;
   grid-column: 1 / span 2;
@@ -112,14 +112,14 @@
     }
 
     &:hover {
-      background-color: $db-cuaternary;
+      background-color: $db-quaternary;
       &::before {
         background-color: $df-primary;
       }
     }
 
     &.current {
-      background-color: $db-cuaternary;
+      background-color: $db-quaternary;
       color: $da-primary;
 
       a {

@@ -131,7 +131,7 @@
      (when icon-pdata
        [:path {:fill stroke
                :stroke-width 2
-               :stroke "var(--white)"
+               :stroke "var(--app-white)"
                :d icon-pdata
                :transform (str
                            "scale(" inv-zoom ", " inv-zoom ") "
@@ -164,7 +164,7 @@
 
     (if-not selected?
       [:g {:on-pointer-down #(on-pointer-down % index orig-shape)}
-       [:path {:stroke "var(--off-white)"
+       [:path {:stroke "var(--df-secondary)"
                :fill "none"
                :pointer-events "visible"
                :stroke-width (/ 2 zoom)
@@ -173,7 +173,7 @@
          [:& interaction-marker {:index index
                                  :x dest-x
                                  :y dest-y
-                                 :stroke "var(--off-white)"
+                                 :stroke "var(--df-secondary)"
                                  :action-type action-type
                                  :arrow-dir arrow-dir
                                  :zoom zoom}])]
@@ -257,7 +257,7 @@
            [:& (mf/provider embed/context) {:value false}
             [:& shape-wrapper {:shape dest-shape}]]]]
          [:path {:stroke "var(--color-accent-tertiary)"
-                 :fill "var(--black)"
+                 :fill "var(--app-black)"
                  :fill-opacity 0.5
                  :stroke-width 1
                  :d (dm/str "M" marker-x " " marker-y " "
