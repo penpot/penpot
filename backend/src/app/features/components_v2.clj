@@ -33,6 +33,7 @@
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.shape.text :as ctsx]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.db.sql :as sql]
@@ -105,6 +106,9 @@
 (def valid-fill?   (sm/lazy-validator ::cts/fill))
 (def valid-stroke? (sm/lazy-validator ::cts/stroke))
 (def valid-flow?   (sm/lazy-validator ::ctp/flow))
+
+(def valid-text-content?
+  (sm/lazy-validator ::ctsx/content))
 
 (defn- prepare-file-data
   "Apply some specific migrations or fixes to things that are allowed in v1 but not in v2,
@@ -237,6 +241,32 @@
                       (as-> shape (let [n (:layout-gap shape)]
                                     (assoc shape :layout-gap {:row-gap n :column-gap n})))))]
 
+            (-> file-data
+                (update :pages-index update-vals fix-container)
+                (d/update-when :components update-vals fix-container))))
+
+        ;; There are some bugs in the past that allows convert text to
+        ;; path and this fix tries to identify this cases and fix them converting
+        ;; the shape back to text shape
+
+        fix-text-shapes-converted-to-path
+        (fn [file-data]
+          (letfn [(fix-container [container]
+                    (d/update-when container :objects update-vals fix-shape))
+
+                  (fix-shape [shape]
+                    (if (and (cfh/path-shape? shape)
+                             (contains? shape :content)
+                             (some? (:selrect shape))
+                             (valid-text-content? (:content shape)))
+                      (let [selrect (:selrect shape)]
+                        (-> shape
+                            (assoc :x (:x selrect))
+                            (assoc :y (:y selrect))
+                            (assoc :width (:width selrect))
+                            (assoc :height (:height selrect))
+                            (assoc :type :text)))
+                      shape))]
             (-> file-data
                 (update :pages-index update-vals fix-container)
                 (d/update-when :components update-vals fix-container))))
@@ -509,7 +539,7 @@
           ;; Find any copy that is referencing a  shape inside a component that have
           ;; been detached in a previous fix. If so, undo the nested copy, converting
           ;; it into a direct copy.
-          ;; 
+          ;;
           ;; WARNING: THIS SHOULD BE CALLED AT THE END OF THE PROCESS.
           (letfn [(fix-container [container]
                     (d/update-when container :objects update-vals fix-shape))
@@ -531,6 +561,7 @@
         (fix-misc-shape-issues)
         (fix-recent-colors)
         (fix-missing-image-metadata)
+        (fix-text-shapes-converted-to-path)
         (delete-big-geometry-shapes)
         (fix-broken-parents)
         (fix-orphan-shapes)
