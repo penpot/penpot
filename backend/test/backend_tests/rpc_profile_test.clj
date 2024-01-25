@@ -11,6 +11,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.rpc :as-alias rpc]
+   [app.rpc.commands.profile :as profile]
    [app.tokens :as tokens]
    [app.util.time :as dt]
    [backend-tests.helpers :as th]
@@ -185,40 +186,12 @@
         token (get-in out [:result :token])]
     (t/is (string? token))
 
-
     ;; try register without token
     (let [data  {::th/type :register-profile
                  :fullname "foobar"
                  :accept-terms-and-privacy true}
           out   (th/command! data)]
-      (let [error (:error out)]
-        (t/is (th/ex-info? error))
-        (t/is (th/ex-of-type? error :validation))
-        (t/is (th/ex-of-code? error :spec-validation))))
-
-    ;; try correct register
-    (let [data  {::th/type :register-profile
-                 :token token
-                 :fullname "foobar"
-                 :accept-terms-and-privacy true
-                 :accept-newsletter-subscription true}]
-      (let [{:keys [result error]} (th/command! data)]
-        (t/is (nil? error))))))
-
-(t/deftest prepare-register-and-register-profile-1
-  (let [data  {::th/type :prepare-register-profile
-               :email "user@example.com"
-               :password "foobar"}
-        out   (th/command! data)
-        token (get-in out [:result :token])]
-    (t/is (string? token))
-
-
-    ;; try register without token
-    (let [data  {::th/type :register-profile
-                 :fullname "foobar"
-                 :accept-terms-and-privacy true}
-          out   (th/command! data)]
+      ;; (th/print-result! out)
       (let [error (:error out)]
         (t/is (th/ex-info? error))
         (t/is (th/ex-of-type? error :validation))
@@ -228,11 +201,24 @@
     (let [data  {::th/type :register-profile
                  :token token
                  :fullname "foobar"
+                 :utm_campaign "utma"
+                 :mtm_campaign "mtma"
                  :accept-terms-and-privacy true
                  :accept-newsletter-subscription true}]
-      (let [{:keys [result error] :as out} (th/command! data)]
-        ;; (th/print-result! out)
-        (t/is (nil? error))))))
+      (let [{:keys [result error]} (th/command! data)]
+        (t/is (nil? error))))
+
+    (let [profile (some-> (th/db-get :profile {:email "user@example.com"})
+                          (profile/decode-row))]
+      (t/is (= "penpot" (:auth-backend profile)))
+      (t/is (= "foobar" (:fullname profile)))
+      (t/is (false? (:is-active profile)))
+      (t/is (uuid? (:default-team-id profile)))
+      (t/is (uuid? (:default-project-id profile)))
+
+      (let [props (:props profile)]
+        (t/is (= "utma" (:penpot/utm-campaign props)))
+        (t/is (= "mtma" (:penpot/mtm-campaign props)))))))
 
 (t/deftest prepare-register-and-register-profile-2
   (with-redefs [app.rpc.commands.auth/register-retry-threshold (dt/duration 500)]
