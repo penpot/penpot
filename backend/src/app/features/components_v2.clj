@@ -119,6 +119,9 @@
 (def valid-path-segment?
   (sm/lazy-validator ::ctsp/segment))
 
+(def valid-rgb-color-string?
+  (sm/lazy-validator ::ctc/rgb-color))
+
 (defn- prepare-file-data
   "Apply some specific migrations or fixes to things that are allowed in v1 but not in v2,
    or that are the result of old bugs."
@@ -175,13 +178,25 @@
                 (update :pages-index update-vals fix-container)
                 (d/update-when :components update-vals fix-container))))
 
-        ;; Some pages has invalid data on flows, we proceed just to
-        ;; delete them.
-        delete-invalid-flows
+        fix-page-invalid-options
         (fn [file-data]
-          (update file-data :pages-index update-vals
-                  (fn [page]
-                    (d/update-in-when page [:options :flows] #(filterv valid-flow? %)))))
+          (letfn [(update-page [page]
+                    (update page :options fix-options))
+
+                  (fix-background [options]
+                    (if (and (contains? options :background)
+                             (not (valid-rgb-color-string? (:background options))))
+                      (dissoc options :background)
+                      options))
+
+                  (fix-options [options]
+                    (-> options
+                        ;; Some pages has invalid data on flows, we proceed just to
+                        ;; delete them.
+                        (d/update-when :flows #(filterv valid-flow? %))
+                        (fix-background)))]
+
+            (update file-data :pages-index update-vals update-page)))
 
         delete-big-geometry-shapes
         (fn [file-data]
@@ -634,7 +649,7 @@
                 (update :pages-index update-vals fix-container))))]
 
     (-> file-data
-        (delete-invalid-flows)
+        (fix-page-invalid-options)
         (fix-bad-children)
         (fix-misc-shape-issues)
         (fix-recent-colors)
