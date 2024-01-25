@@ -16,6 +16,7 @@
    [app.common.files.migrations :as fmg]
    [app.common.files.shapes-helpers :as cfsh]
    [app.common.files.validate :as cfv]
+   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
@@ -285,9 +286,10 @@
                     (d/update-when container :objects update-vals fix-shape))
 
                   (fix-shape [shape]
-                    (if (and (cfh/path-shape? shape)
-                             (seq (:content shape))
-                             (not (valid-path-content? (:content shape))))
+                    (cond
+                      (and (cfh/path-shape? shape)
+                           (seq (:content shape))
+                           (not (valid-path-content? (:content shape))))
                       (let [shape   (update shape :content fix-path-content)
                             [points selrect] (gshp/content->points+selrect shape (:content shape))]
                         (-> shape
@@ -295,6 +297,29 @@
                             (dissoc :bool-type)
                             (assoc :points points)
                             (assoc :selrect selrect)))
+
+                      ;; When we fount a bool shape with no content,
+                      ;; we convert it to a simple rect
+                      (and (cfh/bool-shape? shape)
+                           (not (seq (:bool-content shape))))
+                      (let [selrect (or (:selrect shape)
+                                        (grc/make-rect))
+                            points  (grc/rect->points selrect)]
+                        (-> shape
+                            (assoc :x (:x selrect))
+                            (assoc :y (:y selrect))
+                            (assoc :width (:height selrect))
+                            (assoc :height (:height selrect))
+                            (assoc :selrect selrect)
+                            (assoc :points points)
+                            (assoc :type :rect)
+                            (assoc :transform (gmt/matrix))
+                            (assoc :transform-inverse (gmt/matrix))
+                            (dissoc :bool-content)
+                            (dissoc :shapes)
+                            (dissoc :content)))
+
+                      :else
                       shape))
 
                   (fix-path-content [content]
