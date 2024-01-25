@@ -275,6 +275,9 @@
                                             0
                                             gap)))
 
+                      (nil? (:name shape))
+                      (assoc :name (d/name (:type shape)))
+
                       ;; Fix broken fills
                       (seq (:fills shape))
                       (update :fills (fn [fills] (filterv valid-fill? fills)))
