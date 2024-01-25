@@ -39,7 +39,7 @@
       color: $df-primary;
       &:hover {
         color: $da-primary;
-        background-color: $db-cuaternary;
+        background-color: $db-quaternary;
       }
     }
     hr {
@@ -110,8 +110,8 @@
     }
     &.disabled {
       input {
-        background-color: $db-primary;
-        border-color: $db-cuaternary;
+        background-color: var(--input-background-color-disabled);
+        border-color: $db-quaternary;
         color: $df-secondary;
       }
     }

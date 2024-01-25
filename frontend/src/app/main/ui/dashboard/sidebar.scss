@@ -11,8 +11,8 @@
   grid-row: 1 / span 2;
   grid-column: 1 / span 2;
 
-  background-color: $db-primary;
-  border-right: $s-1 solid $db-cuaternary;
+  background-color: var(--panel-background-color);
+  border-right: $s-1 solid $db-quaternary;
   margin: 0 $s-16 0 0;
   padding: $s-16 0 0 0;
 
@@ -141,7 +141,7 @@
   position: absolute;
   z-index: $z-index-4;
   background-color: $db-tertiary;
-  border: $s-1 solid $db-cuaternary;
+  border: $s-1 solid $db-quaternary;
   border-radius: $br-8;
 
   .separator {
@@ -161,11 +161,11 @@
     padding: $s-6 $s-16;
 
     .warning {
-      color: var(--dark-warning-color);
+      color: var(--element-foreground-warning);
     }
 
     &:hover {
-      background-color: $db-cuaternary;
+      background-color: $db-quaternary;
     }
     svg {
       height: $s-12;
@@ -182,7 +182,7 @@
     li {
       color: $df-primary;
       &.warning {
-        color: var(--dark-warning-color);
+        color: var(--element-foreground-warning);
       }
     }
   }
@@ -191,7 +191,7 @@
 .teams-dropdown {
   background-color: $db-tertiary;
   border-radius: $br-8;
-  border: $s-1 solid $db-cuaternary;
+  border: $s-1 solid $db-quaternary;
   min-width: $s-248;
 
   left: 0;
@@ -212,7 +212,7 @@
     }
 
     &:hover {
-      background-color: $db-cuaternary;
+      background-color: $db-quaternary;
       .team-icon {
         &.new-team {
           background-color: $da-primary;
@@ -233,7 +233,7 @@
     }
 
     .new-team {
-      background-color: $db-cuaternary;
+      background-color: $db-quaternary;
     }
 
     &.action {
@@ -425,7 +425,7 @@
     }
 
     &.current {
-      background-color: $db-cuaternary;
+      background-color: $db-quaternary;
       .element-title {
         color: $da-primary;
       }
@@ -441,7 +441,7 @@
   position: relative;
 
   background-color: $db-tertiary;
-  border-top: $s-1 solid $db-cuaternary;
+  border-top: $s-1 solid $db-quaternary;
 
   .profile {
     align-items: center;
@@ -474,8 +474,7 @@
   .dropdown {
     left: $s-16;
     bottom: $s-44;
-
-    background-color: $db-primary;
+    background-color: var(--profile-drowpdown-background-color);
     border: $s-1 solid $db-tertiary;
     border-radius: $br-8;
     min-width: $s-252;

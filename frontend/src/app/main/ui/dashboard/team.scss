@@ -12,7 +12,7 @@
   margin-right: $s-16;
   overflow-y: auto;
   width: 100%;
-  border-top: $s-1 solid $db-cuaternary;
+  border-top: $s-1 solid $db-quaternary;
 
   &.dashboard-projects {
     user-select: none;
@@ -41,7 +41,7 @@
   align-items: center;
   background-color: transparent;
   border-radius: $br-8;
-  border: $s-1 solid $db-cuaternary;
+  border: $s-1 solid $db-quaternary;
   color: $df-secondary;
   display: flex;
   flex-direction: column;
@@ -110,7 +110,7 @@
 .dropdown {
   background-color: $db-tertiary;
   border-radius: $br-8;
-  border: $s-1 solid $db-cuaternary;
+  border: $s-1 solid $db-quaternary;
   box-shadow: 0 $s-2 $s-8 rgba(0, 0, 0, 0.25);
   left: calc(-1 * $s-144);
   max-height: $s-480;
@@ -138,7 +138,7 @@
     color: $df-primary;
 
     &:hover {
-      background-color: $db-cuaternary;
+      background-color: $db-quaternary;
     }
 
     &.title {
@@ -156,7 +156,7 @@
     li {
       color: $df-primary;
       &.warning {
-        color: var(--warning-color);
+        color: var(--element-foreground-warning);
       }
     }
   }
@@ -237,7 +237,7 @@
         align-items: center;
         padding: $s-4 $s-8;
         font-size: $fs-14;
-        background-color: $db-cuaternary;
+        background-color: $db-quaternary;
         border-color: transparent;
         border-radius: $br-8;
       }
@@ -271,7 +271,7 @@
         text-transform: uppercase;
 
         &.pending {
-          background-color: var(--warning-color);
+          background-color: var(--status-color-warning-500);
         }
 
         &.expired {
@@ -303,7 +303,7 @@
         height: $s-16;
       }
       .failure svg {
-        fill: var(--warning-color);
+        fill: var(--element-foreground-warning);
         width: $s-16;
         height: $s-16;
       }
@@ -422,7 +422,7 @@
   align-items: center;
   flex-direction: column;
   margin-top: $s-16;
-  border: $s-1 solid $db-cuaternary;
+  border: $s-1 solid $db-quaternary;
   border-radius: $br-8;
   color: $df-secondary;
 }

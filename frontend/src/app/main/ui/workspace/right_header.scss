@@ -188,16 +188,16 @@
     @extend .button-icon;
     height: $s-12;
     width: $s-12;
-    stroke: var(--status-icon-foreground-color);
+    stroke: var(--status-widget-icon-foreground-color);
   }
 }
 
 .pending-status {
-  background-color: var(--status-warning-background-color);
+  background-color: var(--status-widget-background-color-warning);
 }
 
 .saving-status {
-  background-color: var(--status-pending-background-color);
+  background-color: var(--status-widget-background-color-pending);
   svg {
     animation: spin-animation 1s infinite;
     animation-timing-function: linear;
@@ -205,11 +205,11 @@
 }
 
 .saved-status {
-  background-color: var(--status-ok-background-color);
+  background-color: var(--status-widget-background-color-success);
 }
 
 .error-status {
-  background-color: var(--status-error-background-color);
+  background-color: var(--status-widget-background-color-error);
 }
 
 .viewer-btn {

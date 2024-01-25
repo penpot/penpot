@@ -14,7 +14,7 @@
   padding: $s-8 $s-16;
 
   &:hover {
-    background: $db-primary;
+    background: var(--comment-thread-background-color-hover);
   }
 }
 

@@ -16,7 +16,7 @@
    [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
-(def ^:private line-color "var(--color-foreground-tertiary)")
+(def ^:private line-color "var(--color-accent-quaternary)")
 (def ^:private line-opacity 0.6)
 (def ^:private line-width 1)
 

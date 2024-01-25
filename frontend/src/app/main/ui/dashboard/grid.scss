@@ -280,7 +280,7 @@ $thumbnail-default-height: $s-168; // Default width
   }
 
   :global(svg#loader-pencil) {
-    stroke: $db-cuaternary;
+    stroke: $db-quaternary;
     width: calc(var(--th-width, #{$thumbnail-default-width}) * 0.25);
   }
 }
@@ -345,7 +345,7 @@ $thumbnail-default-height: $s-168; // Default width
     }
 
     svg {
-      background-color: var(--canvas-color);
+      background-color: var(--color-canvas);
       border-radius: $br-4;
       border: $s-2 solid transparent;
       height: $s-24;

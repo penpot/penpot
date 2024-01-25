@@ -15,7 +15,7 @@
 }
 
 input.element-title {
-  background-color: $db-primary;
+  background-color: var(--input-background-color-active);
   border-radius: $br-8;
   color: $df-primary;
   font-size: $fs-16;
@@ -47,7 +47,7 @@ input.element-title {
   }
   &:hover {
     svg {
-      fill: var(--warning-color);
+      fill: var(--element-foreground-warning);
     }
   }
 }

@@ -13,7 +13,7 @@
   margin-right: $s-16;
   overflow-y: auto;
   width: 100%;
-  border-top: $s-1 solid $db-cuaternary;
+  border-top: $s-1 solid $db-quaternary;
 
   &.dashboard-projects {
     user-select: none;
@@ -35,7 +35,7 @@
   flex-direction: column;
   height: $s-200;
   background: transparent;
-  border: $s-1 solid $db-cuaternary;
+  border: $s-1 solid $db-quaternary;
   border-radius: $br-8;
 
   .text {

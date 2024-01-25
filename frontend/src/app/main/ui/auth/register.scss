@@ -20,7 +20,7 @@
 }
 
 .notification-icon {
-  fill: $df-primary;
+  fill: var(--main-icon-foreground);
   display: flex;
   justify-content: center;
   margin-bottom: $s-32;
@@ -33,6 +33,6 @@
 .notification-text-email,
 .notification-text {
   font-size: $fs-16;
-  color: $df-secondary;
+  color: var(--notification-foreground-color-default);
   margin-bottom: $s-16;
 }
