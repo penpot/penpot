@@ -60,7 +60,8 @@
     }
 
     svg {
-      fill: currentColor;
+      stroke: currentColor;
+      fill: none;
       margin-right: $s-8;
       height: $s-12;
       width: $s-12;

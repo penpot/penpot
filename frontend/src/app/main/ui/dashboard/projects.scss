@@ -125,26 +125,6 @@
         }
       }
     }
-
-    .pin-icon {
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      margin-right: $s-16;
-      background-color: transparent;
-      border: none;
-      svg {
-        width: $s-16;
-        height: $s-16;
-        fill: $df-secondary;
-      }
-
-      &.active {
-        svg {
-          fill: $da-primary;
-        }
-      }
-    }
   }
 
   .grid-container {

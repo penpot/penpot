@@ -248,7 +248,6 @@
          {:title "Button tertiary with icon"}
          [:button  {:class (stl/css :button-tertiary)}
           i/add-refactor]]]
-
        [:div {:class (stl/css :components-group)}
         [:h3 "Inputs"]
         [:& component-wrapper

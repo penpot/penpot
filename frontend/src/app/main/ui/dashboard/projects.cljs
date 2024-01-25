@@ -20,6 +20,7 @@
    [app.main.store :as st]
    [app.main.ui.dashboard.grid :refer [line-grid]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
+   [app.main.ui.dashboard.pin-button :refer [pin-button*]]
    [app.main.ui.dashboard.project-menu :refer [project-menu]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
@@ -304,18 +305,7 @@
 
        [:div {:class (stl/css :project-actions)}
         (when-not (:is-default project)
-          [:button
-           {:class (stl/css-case :pin-icon true
-                                 :tooltip true
-                                 :tooltip-bottom true
-                                 :active (:is-pinned project))
-            :on-click toggle-pin
-            :alt (tr "dashboard.pin-unpin")
-            :aria-label (tr "dashboard.pin-unpin")
-            :tab-index "0"}
-           (if (:is-pinned project)
-             i/pin-fill
-             i/pin)])
+          [:> pin-button* {:is-pinned (:is-pinned project) :on-click toggle-pin :tab-index 0}])
 
         [:button
          {:class (stl/css :btn-secondary :btn-small :tooltip :tooltip-bottom)

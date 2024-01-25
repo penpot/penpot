@@ -258,12 +258,13 @@
   padding: $s-12;
   color: $df-secondary;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
 
   .icon {
     padding: 0 $s-12;
     svg {
-      fill: $df-secondary;
+      fill: none;
+      stroke: currentColor;
       width: $s-12;
       height: $s-12;
     }
