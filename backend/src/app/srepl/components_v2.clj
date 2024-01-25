@@ -356,13 +356,13 @@
 
                       (run! process-team
                             (->> (get-teams conn query pred)
-                                 (take max-items)
                                  (filter (fn [team-id]
                                            (if (int? partitions)
                                              (= current-partition (-> (uuid/hash-int team-id)
                                                                       (mod partitions)
                                                                       (inc)))
-                                             true)))))
+                                             true)))
+                                 (take max-items)))
 
                       ;; Close and await tasks
                       (pu/close! executor)))
