@@ -697,9 +697,16 @@
 (defmethod migrate 39
   [data]
   (letfn [(update-shape [shape]
-            (if (and (cfh/bool-shape? shape)
-                     (not (contains? shape :bool-content)))
+            (cond
+              (and (cfh/bool-shape? shape)
+                   (not (contains? shape :bool-content)))
               (assoc shape :bool-content [])
+
+              (and (cfh/path-shape? shape)
+                   (not (contains? shape :content)))
+              (assoc shape :content [])
+
+              :else
               shape))
 
           (update-container [container]
