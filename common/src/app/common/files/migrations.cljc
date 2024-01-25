@@ -795,9 +795,16 @@
 
 (defmethod migrate 43
   [data]
-  (letfn [(update-text-node [node]
+  (letfn [(number->string [v]
+            (if (number? v)
+              (str v)
+              v))
+
+          (update-text-node [node]
             (-> node
                 (d/update-when :fills #(filterv valid-fill? %))
+                (d/update-when :font-size number->string)
+                (d/update-when :font-weight number->string)
                 (d/without-nils)))
 
           (update-object [object]
