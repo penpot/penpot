@@ -553,7 +553,23 @@
                               :component-root)))]
             (-> file-data
                 (update :pages-index update-vals fix-container)
-                (d/update-when :components update-vals fix-container))))]
+                (d/update-when :components update-vals fix-container))))
+
+        fix-shape-nil-parent-id
+        (fn [file-data]
+          ;; Ensure that parent-id and frame-id are not nil
+          (letfn [(fix-container [container]
+                    (d/update-when container :objects update-vals fix-shape))
+
+                  (fix-shape [shape]
+                    (let [frame-id  (or (:frame-id shape)
+                                        uuid/zero)
+                          parent-id (or (:parent-id shape)
+                                        frame-id)]
+                      (assoc shape :frame-id frame-id
+                             :parent-id parent-id)))]
+            (-> file-data
+                (update :pages-index update-vals fix-container))))]
 
     (-> file-data
         (delete-invalid-flows)
@@ -575,6 +591,7 @@
         (fix-frame-ids)
         (fix-component-nil-objects)
         (fix-false-copies)
+        (fix-shape-nil-parent-id)
         (fix-copies-of-detached))))  ; <- Do not add fixes after this one
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
