@@ -29,7 +29,6 @@
    [app.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
    [app.main.ui.workspace.sidebar.collapsable-button :refer [collapsed-button]]
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox]]
-   [app.main.ui.workspace.top-toolbar :refer [top-toolbar]]
    [app.main.ui.workspace.viewport :refer [viewport]]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
@@ -110,7 +109,6 @@
 
      (when-not hide-ui?
        [:*
-        [:& top-toolbar {:layout layout}]
         (if (:collapse-left-sidebar layout)
           [:& collapsed-button]
           [:& left-sidebar {:layout layout

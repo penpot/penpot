@@ -303,10 +303,20 @@
 }
 
 /** FULLSCREEN */
+[data-fullscreen="true"] .viewer-header::after {
+  content: " ";
+  position: absolute;
+  width: 100%;
+  height: $s-48;
+  left: 0;
+  top: $s-48;
+}
+
 [data-fullscreen="true"] .viewer-header {
   transform: translateY(-$s-48);
 }
 
-[data-force-visible="true"] .viewer-header {
+[data-force-visible="true"] .viewer-header,
+[data-fullscreen="true"] .viewer-header:hover {
   transform: translateY(0);
 }
