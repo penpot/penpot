@@ -800,15 +800,24 @@
     "skewX"     (apply gmt/skew-matrix (format-skew-x-params params))
     "skewY"     (apply gmt/skew-matrix (format-skew-y-params params))))
 
+(def ^:private
+  xf-parse-numbers
+  (comp
+   (map first)
+   (keep not-empty)
+   (map d/parse-double)))
+
+(defn parse-numbers
+  [data]
+  (->> (re-seq number-regex data)
+       (into [] xf-parse-numbers)))
+
 (defn parse-transform
   [transform]
   (if (string? transform)
     (->> (re-seq matrices-regex transform)
          (map (fn [[_ type params]]
-                (let [params (->> (re-seq number-regex params)
-                                  (map first)
-                                  (keep not-empty)
-                                  (map d/parse-double))]
+                (let [params (parse-numbers params)]
                   (to-matrix type params))))
          (reduce gmt/multiply (gmt/matrix)))
 

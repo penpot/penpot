@@ -697,9 +697,16 @@
 (defmethod migrate 39
   [data]
   (letfn [(update-shape [shape]
-            (if (and (cfh/bool-shape? shape)
-                     (not (contains? shape :bool-content)))
+            (cond
+              (and (cfh/bool-shape? shape)
+                   (not (contains? shape :bool-content)))
               (assoc shape :bool-content [])
+
+              (and (cfh/path-shape? shape)
+                   (not (contains? shape :content)))
+              (assoc shape :content [])
+
+              :else
               shape))
 
           (update-container [container]
@@ -788,9 +795,16 @@
 
 (defmethod migrate 43
   [data]
-  (letfn [(update-text-node [node]
+  (letfn [(number->string [v]
+            (if (number? v)
+              (str v)
+              v))
+
+          (update-text-node [node]
             (-> node
                 (d/update-when :fills #(filterv valid-fill? %))
+                (d/update-when :font-size number->string)
+                (d/update-when :font-weight number->string)
                 (d/without-nils)))
 
           (update-object [object]
