@@ -6,6 +6,7 @@
 
 (ns app.main.data.workspace.media
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.files.builder :as fb]
@@ -308,9 +309,37 @@
 
         process-svg
         (fn [svg-data]
-          (let [[shape children]
-                (csvg.shapes-builder/create-svg-shapes svg-data pos objects uuid/zero nil #{} false)]
-            [shape children]))]
+          (let [[root-svg-shape children]
+                (csvg.shapes-builder/create-svg-shapes svg-data pos objects uuid/zero nil #{} false)
+
+                frame-shape
+                (cts/setup-shape
+                 {:type :frame
+                  :x (:x pos)
+                  :y (:y pos)
+                  :width (-> root-svg-shape :selrect :width)
+                  :height (-> root-svg-shape :selrect :height)
+                  :name (:name root-svg-shape)
+                  :frame-id uuid/zero
+                  :parent-id uuid/zero
+                  :fills []})
+
+                root-svg-shape
+                (-> root-svg-shape
+                    (assoc :frame-id (:id frame-shape) :parent-id (:id frame-shape)))
+
+                shapes
+                (->> children
+                     (filter #(= (:parent-id %) (:id root-svg-shape)))
+                     (mapv :id))
+
+                root-svg-shape
+                (assoc root-svg-shape :shapes shapes)
+
+                children (->> children (mapv #(assoc % :frame-id (:id frame-shape))))
+                children (d/concat-vec [root-svg-shape] children)]
+
+            [frame-shape children]))]
 
     (->> (upload-images svg-data)
          (rx/map process-svg))))
@@ -427,4 +456,3 @@
               (rx/tap on-success)
               (rx/catch on-error)
               (rx/finalize #(st/emit! (msg/hide-tag :media-loading)))))))))
-

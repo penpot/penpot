@@ -377,8 +377,8 @@
        [:clipPath {:id "clip-handlers"}
         [:rect {:x (+ (:x vbox) rule-area-size)
                 :y (+ (:y vbox) rule-area-size)
-                :width (max 0 (- (:width vbox) (* rule-area-size 2)))
-                :height (max 0 (- (:height vbox) (* rule-area-size 2)))}]]]
+                :width (max 0 (- (:width vbox) rule-area-size))
+                :height (max 0 (- (:height vbox) rule-area-size))}]]]
 
       [:g {:style {:pointer-events (if disable-events? "none" "auto")}}
        (when show-text-editor?
@@ -539,12 +539,6 @@
          [:& presence/active-cursors
           {:page-id page-id}])
 
-       [:& scroll-bars/viewport-scrollbars
-        {:objects base-objects
-         :zoom zoom
-         :vbox vbox
-         :bottom-padding (when palete-size (+ palete-size 8))}]
-
        (when-not hide-ui?
          [:& rules/rules
           {:zoom zoom
@@ -637,4 +631,10 @@
               :objects base-objects
               :modifiers modifiers
               :shape frame
-              :view-only true}]))]]]]))
+              :view-only true}]))
+
+        [:& scroll-bars/viewport-scrollbars
+         {:objects base-objects
+          :zoom zoom
+          :vbox vbox
+          :bottom-padding (when palete-size (+ palete-size 8))}]]]]]))

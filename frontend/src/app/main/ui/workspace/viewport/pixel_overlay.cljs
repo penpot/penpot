@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.viewport.pixel-overlay
   (:require
    [app.common.math :as mth]
+   [app.config :as cfg]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.colors :as dwc]
    [app.main.data.workspace.undo :as dwu]
@@ -99,7 +100,9 @@
                      ;; I don't know why, but the zoom view is offset by 24px
                      ;; instead of 25.
                      sx (- x 32)
-                     sy (- y 17)
+
+                     ;; Safari has a different offset fro the y coord
+                     sy (if (cfg/check-browser? :safari) y (- y 17))
                      sw 65
                      sh 35
                      dx 0
