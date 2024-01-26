@@ -11,6 +11,7 @@
   position: absolute;
   top: $s-44;
   left: 50%;
+  z-index: $z-index-20;
 
   .viewport-actions-container {
     @include flexRow;
