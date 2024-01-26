@@ -13,6 +13,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.tree-seq :as gsts]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.text :as ct]
@@ -175,6 +176,13 @@
   [file-data component shape]
   (when (:shape-ref shape)
     (get-component-shape file-data component (:shape-ref shape))))
+
+(defn get-shape-in-copy
+  "Given a shape in the main component and the root of the copy component returns the equivalent
+  shape inside the root copy that matches the main-shape"
+  [file-data main-shape root-copy]
+  (->> (gsts/get-children-seq (:id root-copy) (:objects file-data))
+       (d/seek #(= (:shape-ref %) (:id main-shape)))))
 
 (defn find-ref-shape
   "Locate the near component in the local file or libraries, and retrieve the shape
