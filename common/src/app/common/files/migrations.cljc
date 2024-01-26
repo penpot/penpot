@@ -843,3 +843,18 @@
     (-> data
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
+
+(defmethod migrate 45
+  [data]
+  (letfn [(fix-shape [shape]
+            (let [frame-id  (or (:frame-id shape)
+                                uuid/zero)
+                  parent-id (or (:parent-id shape)
+                                frame-id)]
+              (assoc shape :frame-id frame-id
+                     :parent-id parent-id)))
+
+          (update-container [container]
+            (d/update-when container :objects update-vals fix-shape))]
+    (-> data
+        (update :pages-index update-vals update-container))))
