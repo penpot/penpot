@@ -551,7 +551,7 @@
                                   (map :component-id))
 
         changes (reduce (fn [changes component-id]
-                          (pcb/delete-component changes component-id))
+                          (pcb/delete-component changes component-id (:id page)))
                         changes
                         components-to-delete)]
     changes))
