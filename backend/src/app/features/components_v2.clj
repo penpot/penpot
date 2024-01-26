@@ -127,15 +127,35 @@
    or that are the result of old bugs."
   [file-data libraries]
   (let [detached-ids  (volatile! #{})
+
         detach-shape
         (fn [container shape]
-          ;; Detach a shape. If it's inside a component, add it to detached-ids. This list
-          ;; is used later to process any other copy that was referencing a detached copy.
+          ;; Detach a shape and make necessary adjustments.
           (let [is-component? (let [root-shape (ctst/get-shape container (:id container))]
-                                (and (some? root-shape) (nil? (:parent-id root-shape))))]
-            (when is-component?
-              (vswap! detached-ids conj (:id shape)))
-            (ctk/detach-shape shape)))
+                                (and (some? root-shape) (nil? (:parent-id root-shape))))
+                parent        (ctst/get-shape container (:parent-id shape))
+                in-copy?      (ctn/in-any-component? (:objects container) parent)]
+
+            (letfn [(detach-recursive [container shape first?]
+
+                      ;; If the shape is inside a component, add it to detached-ids. This list is used
+                      ;; later to process other copies that was referencing a detached nested copy.
+                      (when is-component?
+                        (vswap! detached-ids conj (:id shape)))
+
+                      ;; Detach the shape and all children until we find a subinstance.
+                      (if (or first? in-copy? (not (ctk/instance-head? shape)))
+                        (as-> container $
+                          (ctn/update-shape $ (:id shape) ctk/detach-shape)
+                          (reduce #(detach-recursive %1 %2 false)
+                                  $
+                                  (map (d/getf (:objects container)) (:shapes shape))))
+
+                        ;; If this is a subinstance head and the initial shape whas not itself a
+                        ;; nested copy, stop detaching and promote it to root.
+                        (ctn/update-shape container (:id shape) #(assoc % :component-root true))))]
+
+              (detach-recursive container shape true))))
 
         fix-bad-children
         (fn [file-data]
@@ -476,15 +496,16 @@
         (fn [file-data]
           ;; Detach shapes that were inside a copy (have :shape-ref) but now they aren't.
           (letfn [(fix-container [container]
-                    (d/update-when container :objects update-vals (partial fix-shape container)))
+                    (reduce fix-shape container (ctn/shapes-seq container)))
 
                   (fix-shape [container shape]
-                    (let [parent (ctst/get-shape container (:parent-id shape))]
+                    (let [shape  (ctst/get-shape container (:id shape)) ; Get the possibly updated shape
+                          parent (ctst/get-shape container (:parent-id shape))]
                       (if (and (ctk/in-component-copy? shape)
                                (not (ctk/instance-head? shape))
                                (not (ctk/in-component-copy? parent)))
                         (detach-shape container shape)
-                        shape)))]
+                        container)))]
 
             (-> file-data
                 (update :pages-index update-vals fix-container)
@@ -523,11 +544,9 @@
                                 (if (some? direct-shape-2)
                                   ;; If it exists, there is nothing else to do.
                                   container
-                                  ;; If not found, detach shape and all children (stopping if a nested instance is reached)
-                                  (let [children (ctn/get-children-in-instance (:objects container) (:id shape))]
-                                    (reduce #(ctn/update-shape %1 (:id %2) (partial detach-shape %1))
-                                            container
-                                            children))))))))
+                                  ;; If not found, detach shape and all children.
+                                  ;; container
+                                  (detach-shape container shape)))))))
                       container))]
 
             (-> file-data
@@ -539,14 +558,14 @@
           ;; If the user has created a copy and then converted into a path or bool,
           ;; detach it because the synchronization will no longer work.
           (letfn [(fix-container [container]
-                    (d/update-when container :objects update-vals (partial fix-shape container)))
+                    (reduce fix-shape container (ctn/shapes-seq container)))
 
                   (fix-shape [container shape]
                     (if (and (ctk/instance-head? shape)
                              (or (cfh/path-shape? shape)
                                  (cfh/bool-shape? shape)))
                       (detach-shape container shape)
-                      shape))]
+                      container))]
 
             (-> file-data
                 (update :pages-index update-vals fix-container)
@@ -631,9 +650,8 @@
         (fn [file-data]
           ;; Find component heads that are not main-instance but have not :shape-ref.
           ;; Also shapes that have :shape-ref but are not in a copy.
-          (letfn [(fix-container
-                    [container]
-                    (d/update-when container :objects update-vals (partial fix-shape container)))
+          (letfn [(fix-container [container]
+                    (reduce fix-shape container (ctn/shapes-seq container)))
 
                   (fix-shape
                     [container shape]
@@ -643,7 +661,8 @@
                             (and (ctk/in-component-copy? shape)
                                  (nil? (ctn/get-head-shape (:objects container) shape {:allow-main? true}))))
                       (detach-shape container shape)
-                      shape))]
+                      container))]
+
             (-> file-data
                 (update :pages-index update-vals fix-container)
                 (d/update-when :components update-vals fix-container))))
