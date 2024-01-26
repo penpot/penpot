@@ -395,6 +395,13 @@
 
     media))
 
+(def ^:private
+  schema:create-file-thumbnail
+  [:map {:title "create-file-thumbnail"}
+   [:file-id ::sm/uuid]
+   [:revn :int]
+   [:media ::media/upload]])
+
 (sv/defmethod ::create-file-thumbnail
   "Creates or updates the file thumbnail. Mainly used for paint the
   grid thumbnails."
@@ -405,10 +412,7 @@
    ::climit/key-fn ::rpc/profile-id
    ::rtry/enabled true
    ::rtry/when rtry/conflict-exception?
-   ::sm/params [:map {:title "create-file-thumbnail"}
-                [:file-id ::sm/uuid]
-                [:revn :int]
-                [:media ::media/upload]]}
+   ::sm/params schema:create-file-thumbnail}
 
   [cfg {:keys [::rpc/profile-id file-id] :as params}]
   (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
