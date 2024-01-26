@@ -74,10 +74,9 @@
      [class cause]
      (loop [cause cause]
        (if (c/instance? class cause)
-         true
-         (if-let [cause (ex-cause cause)]
-           (recur cause)
-           false)))))
+         cause
+         (when-let [cause (ex-cause cause)]
+           (recur cause))))))
 
 ;; NOTE: idea for a macro for error handling
 ;; (pu/try-let [cause (p/await (get-object-data backend object))]
