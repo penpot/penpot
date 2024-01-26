@@ -7,8 +7,10 @@
 (ns app.rpc.quotes
   "Penpot resource usage quotes."
   (:require
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.common.spec :as us]
    [app.config :as cf]
    [app.db :as db]
@@ -23,21 +25,15 @@
 ;; PUBLIC API
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::conn ::db/pool-or-conn)
-(s/def ::file-id ::us/uuid)
-(s/def ::team-id ::us/uuid)
-(s/def ::project-id ::us/uuid)
-(s/def ::profile-id ::us/uuid)
-(s/def ::incr (s/and int? pos?))
-(s/def ::target ::us/string)
-
-(s/def ::quote
-  (s/keys :req [::id ::profile-id]
-          :opt [::conn
-                ::team-id
-                ::project-id
-                ::file-id
-                ::incr]))
+(def ^:private schema:quote
+  (sm/define
+    [:map {:title "Quote"}
+     [::team-id {:optional true} ::sm/uuid]
+     [::project-id {:optional true} ::sm/uuid]
+     [::file-id {:optional true} ::sm/uuid]
+     [::incr {:optional true} [:int {:min 0}]]
+     [::id :keyword]
+     [::profile-id ::sm/uuid]]))
 
 (def ^:private enabled (volatile! true))
 
@@ -52,15 +48,22 @@
   (vswap! enabled (constantly false)))
 
 (defn check-quote!
-  [conn quote]
-  (us/assert! ::db/pool-or-conn conn)
-  (us/assert! ::quote quote)
+  [ds quote]
+  (dm/assert!
+   "expected valid quote map"
+   (sm/validate schema:quote quote))
+
   (when (contains? cf/flags :quotes)
     (when @enabled
-      (check-quote (assoc quote ::conn conn ::target (name (::id quote)))))))
+      ;; This approach add flexibility on how and where the
+      ;; check-quote! can be called (in or out of transaction)
+      (db/run! ds (fn [cfg]
+                    (-> (merge cfg quote)
+                        (assoc ::target (name (::id quote)))
+                        (check-quote)))))))
 
 (defn- send-notification!
-  [{:keys [::conn] :as params}]
+  [{:keys [::db/conn] :as params}]
   (l/warn :hint "max quote reached"
           :target (::target params)
           :profile-id (some-> params ::profile-id str)
@@ -93,7 +96,7 @@
                             :content content}]}))))
 
 (defn- generic-check!
-  [{:keys [::conn ::incr ::quote-sql ::count-sql ::default ::target] :or {incr 1} :as params}]
+  [{:keys [::db/conn ::incr ::quote-sql ::count-sql ::default ::target] :or {incr 1} :as params}]
   (let [quote (->> (db/exec! conn quote-sql)
                    (map :quote)
                    (reduce max (- Integer/MAX_VALUE)))
@@ -346,7 +349,6 @@
                           profile-id team-id profile-id profile-id])
       (assoc ::count-sql [sql:get-comments-per-file file-id])
       (generic-check!)))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; QUOTE: DEFAULT
