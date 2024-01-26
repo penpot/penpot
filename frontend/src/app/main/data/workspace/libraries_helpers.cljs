@@ -51,6 +51,8 @@
 (declare change-touched)
 (declare change-remote-synced)
 (declare update-attrs)
+(declare update-grid-main-attrs)
+(declare update-grid-copy-attrs)
 (declare reposition-shape)
 (declare make-change)
 
@@ -665,6 +667,13 @@
                                   container
                                   omit-touched?)
 
+                    (ctl/grid-layout? shape-main)
+                    (update-grid-copy-attrs shape-main
+                                            shape-inst
+                                            library
+                                            component
+                                            container)
+
                     reset?
                     (change-touched shape-inst
                                     shape-main
@@ -836,6 +845,12 @@
                                         component-container
                                         {:copy-touched? true}))
 
+                    (ctl/grid-layout? shape-main)
+                    (update-grid-main-attrs shape-main
+                                            shape-inst
+                                            component-container
+                                            container)
+
                     clear-remote-synced?
                     (change-remote-synced shape-inst container nil)
 
@@ -957,12 +972,12 @@
                 (recur (next children-inst)
                        (remove #(= (:id %) (:id child-main')) children-main)
                        (-> changes
-                           (both-cb child-inst' child-main)
+                           (both-cb child-inst child-main')
                            (moved-cb child-inst child-main')))
                 (recur (remove #(= (:id %) (:id child-inst')) children-inst)
                        (next children-main)
                        (-> changes
-                           (both-cb child-inst child-main')
+                           (both-cb child-inst' child-main)
                            (moved-cb child-inst' child-main)))))))))))
 
 (defn- add-shape-to-instance
@@ -1286,7 +1301,9 @@
         origin-shape (reposition-shape origin-shape origin-root dest-root)
         touched      (get dest-shape :touched #{})]
 
-    (loop [attrs (seq (keys ctk/sync-attrs))
+    (loop [attrs (->> (seq (keys ctk/sync-attrs))
+                      ;; We don't do automatic update of the `layout-grid-cells` property.
+                      (remove #(= :layout-grid-cells %)))
            roperations []
            uoperations '()]
 
@@ -1334,6 +1351,50 @@
               (recur (next attrs)
                      (conj roperations roperation)
                      (conj uoperations uoperation)))))))))
+
+(defn- update-grid-copy-attrs
+  "Synchronizes the `layout-grid-cells` property from the main shape to the copies"
+  [changes shape-main shape-copy main-container main-component copy-container]
+  (let [ids-map
+        (into {}
+              (comp
+               (map #(dm/get-in copy-container [:objects %]))
+               (keep
+                (fn [copy-shape]
+                  (let [main-shape (ctf/get-ref-shape main-container main-component copy-shape)]
+                    [(:id main-shape) (:id copy-shape)]))))
+              (:shapes shape-copy))]
+
+    (-> changes
+        (pcb/with-container copy-container)
+        (pcb/update-shapes
+         [(:id shape-copy)]
+         (fn [shape-copy]
+           ;; Take cells from main and remap the shapes to assign it to the copy
+           (let [new-cells (-> (ctl/remap-grid-cells shape-main ids-map) :layout-grid-cells)]
+             (assoc shape-copy :layout-grid-cells new-cells)))))))
+
+(defn- update-grid-main-attrs
+  "Synchronizes the `layout-grid-cells` property from the copy to the main shape"
+  [changes shape-main shape-copy main-container copy-container]
+  (let [ids-map
+        (into {}
+              (comp
+               (map #(dm/get-in main-container [:objects %]))
+               (keep
+                (fn [main-shape]
+                  (let [copy-shape (ctf/get-shape-in-copy copy-container main-shape shape-copy)]
+                    [(:id copy-shape) (:id main-shape)]))))
+              (:shapes shape-main))]
+    (-> changes
+        (pcb/with-page main-container)
+        (pcb/with-objects (:objects main-container))
+        (pcb/update-shapes
+         [(:id shape-main)]
+         (fn [shape-main]
+           ;; Take cells from copy and remap the shapes to assign it to the copy
+           (let [new-cells (-> (ctl/remap-grid-cells shape-copy ids-map) :layout-grid-cells)]
+             (assoc shape-main :layout-grid-cells new-cells)))))))
 
 (defn- reposition-shape
   [shape origin-root dest-root]
