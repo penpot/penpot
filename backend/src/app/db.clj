@@ -237,8 +237,7 @@
     (jdbc/get-connection system-or-pool)
     (if (map? system-or-pool)
       (open (::pool system-or-pool))
-      (ex/raise :type :internal
-                :code :unable-resolve-pool))))
+      (throw (IllegalArgumentException. "unable to resolve connection pool")))))
 
 (defn get-update-count
   [result]
@@ -250,9 +249,7 @@
     cfg-or-conn
     (if (map? cfg-or-conn)
       (get-connection (::conn cfg-or-conn))
-      (ex/raise :type :internal
-                :code :unable-resolve-connection
-                :hint "expected conn or system map"))))
+      (throw (IllegalArgumentException. "unable to resolve connection")))))
 
 (defn connection-map?
   "Check if the provided value is a map like data structure that
@@ -260,15 +257,15 @@
   [o]
   (and (map? o) (connection? (::conn o))))
 
-(defn- get-connectable
+(defn get-connectable
+  "Resolve to a connection or connection pool instance; if it is not
+  possible, raises an exception"
   [o]
   (cond
     (connection? o) o
     (pool? o)       o
     (map? o)        (get-connectable (or (::conn o) (::pool o)))
-    :else           (ex/raise :type :internal
-                              :code :unable-resolve-connectable
-                              :hint "expected conn, pool or system")))
+    :else           (throw (IllegalArgumentException. "unable to resolve connectable"))))
 
 (def ^:private params-mapping
   {::return-keys? :return-keys
