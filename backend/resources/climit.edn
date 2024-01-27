@@ -3,15 +3,26 @@
 ;; Optional: queue, ommited means Integer/MAX_VALUE
 ;; Optional: timeout, ommited means no timeout
 ;; Note: queue and timeout are excluding
-{:update-file/by-profile
+{:update-file/global {:permits 20}
+ :update-file/by-profile
  {:permits 1 :queue 5}
 
- :update-file/global {:permits 20}
+ :process-font/global {:permits 4}
+ :process-font/by-profile {:permits 1}
 
- :derive-password/global {:permits 8}
- :process-font/global  {:permits 4}
  :process-image/global {:permits 8}
+ :process-image/by-profile {:permits 1}
 
+ :auth/global {:permits 8}
+
+ :root/global
+ {:permits 40}
+
+ :root/by-profile
+ {:permits 10}
+
+ :file-thumbnail-ops/global
+ {:permits 20}
  :file-thumbnail-ops/by-profile
  {:permits 2}
 

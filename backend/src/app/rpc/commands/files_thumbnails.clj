@@ -285,12 +285,10 @@
 (sv/defmethod ::create-file-object-thumbnail
   {::doc/added "1.19"
    ::doc/module :files
-   ::climit/id :file-thumbnail-ops/by-profile
-   ::climit/key-fn ::rpc/profile-id
-
+   ::climit/id [[:file-thumbnail-ops/by-profile ::rpc/profile-id]
+                [:file-thumbnail-ops/global]]
    ::rtry/enabled true
    ::rtry/when rtry/conflict-exception?
-
    ::audit/skip true
    ::sm/params schema:create-file-object-thumbnail}
 
@@ -332,8 +330,8 @@
   {::doc/added "1.19"
    ::doc/module :files
    ::doc/deprecated "1.20"
-   ::climit/id :file-thumbnail-ops
-   ::climit/key-fn ::rpc/profile-id
+   ::climit/id [[:file-thumbnail-ops/by-profile ::rpc/profile-id]
+                [:file-thumbnail-ops/global]]
    ::audit/skip true}
   [cfg {:keys [::rpc/profile-id file-id object-id]}]
   (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
@@ -408,8 +406,8 @@
   {::doc/added "1.19"
    ::doc/module :files
    ::audit/skip true
-   ::climit/id :file-thumbnail-ops
-   ::climit/key-fn ::rpc/profile-id
+   ::climit/id [[:file-thumbnail-ops/by-profile ::rpc/profile-id]
+                [:file-thumbnail-ops/global]]
    ::rtry/enabled true
    ::rtry/when rtry/conflict-exception?
    ::sm/params schema:create-file-thumbnail}

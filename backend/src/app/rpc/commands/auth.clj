@@ -21,6 +21,7 @@
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
    [app.rpc :as-alias rpc]
+   [app.rpc.climit :as-alias climit]
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
@@ -110,6 +111,7 @@
   "Performs authentication using penpot password."
   {::rpc/auth false
    ::doc/added "1.15"
+   ::climit/id :auth/global
    ::sm/params schema:login-with-password}
   [cfg params]
   (login-with-password cfg params))
@@ -149,7 +151,8 @@
 (sv/defmethod ::recover-profile
   {::rpc/auth false
    ::doc/added "1.15"
-   ::sm/params schema:recover-profile}
+   ::sm/params schema:recover-profile
+   ::climit/id :auth/global}
   [cfg params]
   (recover-profile cfg params))
 
@@ -360,7 +363,6 @@
                      {::audit/type "fact"
                       ::audit/name "register-profile-retry"
                       ::audit/profile-id id}))
-
     (cond
       ;; If invitation token comes in params, this is because the
       ;; user comes from team-invitation process; in this case,
@@ -402,7 +404,6 @@
           {::audit/replace-props (audit/profile->props profile)
            ::audit/profile-id (:id profile)})))))
 
-
 (def schema:register-profile
   [:map {:title "register-profile"}
    [:token schema:token]
@@ -411,7 +412,8 @@
 (sv/defmethod ::register-profile
   {::rpc/auth false
    ::doc/added "1.15"
-   ::sm/params schema:register-profile}
+   ::sm/params schema:register-profile
+   ::climit/id :auth/global}
   [{:keys [::db/pool] :as cfg} params]
   (db/with-atomic [conn pool]
     (-> (assoc cfg ::db/conn conn)

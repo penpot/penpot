@@ -28,7 +28,8 @@
    [app.util.services :as sv]
    [app.util.time :as dt]
    [app.worker :as-alias wrk]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [promesa.exec :as px]))
 
 (declare check-profile-existence!)
 (declare decode-row)
@@ -137,25 +138,24 @@
      [:old-password {:optional true} [:maybe [::sm/word-string {:max 500}]]]]))
 
 (sv/defmethod ::update-profile-password
-  {:doc/added "1.0"
+  {::doc/added "1.0"
    ::sm/params schema:update-profile-password
-   ::sm/result :nil}
+   ::climit/id :auth/global}
+  [cfg {:keys [::rpc/profile-id password] :as params}]
 
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id password] :as params}]
-  (db/with-atomic [conn pool]
-    (let [cfg        (assoc cfg ::db/conn conn)
-          profile    (validate-password! cfg (assoc params :profile-id profile-id))
-          session-id (::session/id params)]
+  (db/tx-run! cfg (fn [cfg]
+                    (let [profile    (validate-password! cfg (assoc params :profile-id profile-id))
+                          session-id (::session/id params)]
 
-      (when (= (str/lower (:email profile))
-               (str/lower (:password params)))
-        (ex/raise :type :validation
-                  :code :email-as-password
-                  :hint "you can't use your email as password"))
+                      (when (= (str/lower (:email profile))
+                               (str/lower (:password params)))
+                        (ex/raise :type :validation
+                                  :code :email-as-password
+                                  :hint "you can't use your email as password"))
 
-      (update-profile-password! conn (assoc profile :password password))
-      (invalidate-profile-session! cfg profile-id session-id)
-      nil)))
+                      (update-profile-password! cfg (assoc profile :password password))
+                      (invalidate-profile-session! cfg profile-id session-id)
+                      nil))))
 
 (defn- invalidate-profile-session!
   "Removes all sessions except the current one."
@@ -173,10 +173,10 @@
     profile))
 
 (defn update-profile-password!
-  [conn {:keys [id password] :as profile}]
+  [{:keys [::db/conn] :as cfg} {:keys [id password] :as profile}]
   (when-not (db/read-only? conn)
     (db/update! conn :profile
-                {:password (auth/derive-password password)}
+                {:password (derive-password cfg password)}
                 {:id id})
     nil))
 
@@ -203,6 +203,7 @@
 
 (defn update-profile-photo
   [{:keys [::db/pool ::sto/storage] :as cfg} {:keys [profile-id file] :as params}]
+
   (let [photo   (upload-photo cfg params)
         profile (db/get-by-id pool :profile profile-id ::sql/for-update true)]
 
@@ -241,8 +242,11 @@
 
 (defn upload-photo
   [{:keys [::sto/storage ::wrk/executor] :as cfg} {:keys [file]}]
-  (let [params (-> (climit/configure cfg :process-image/global)
-                   (climit/run! (partial generate-thumbnail! file) executor))]
+  (let [params (-> cfg
+                   (assoc ::climit/id :process-image/global)
+                   (assoc ::climit/label "upload-photo")
+                   (assoc ::climit/executor executor)
+                   (climit/invoke! generate-thumbnail! file))]
     (sto/put-object! storage params)))
 
 
@@ -438,17 +442,13 @@
   (into {} (filter (fn [[k _]] (simple-ident? k))) props))
 
 (defn derive-password
-  [cfg password]
+  [{:keys [::wrk/executor]} password]
   (when password
-    (-> (climit/configure cfg :derive-password/global)
-        (climit/run! (partial auth/derive-password password)
-                     (::wrk/executor cfg)))))
+    (px/invoke! executor (partial auth/derive-password password))))
 
 (defn verify-password
-  [cfg password password-data]
-  (-> (climit/configure cfg :derive-password/global)
-      (climit/run! (partial auth/verify-password password password-data)
-                   (::wrk/executor cfg))))
+  [{:keys [::wrk/executor]} password password-data]
+  (px/invoke! executor (partial auth/verify-password password password-data)))
 
 (defn decode-row
   [{:keys [props] :as row}]
