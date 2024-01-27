@@ -57,6 +57,14 @@
   #?(:cljs (instance? lkm/LinkedMap o)
      :clj (instance? LinkedMap o)))
 
+(defn vec2
+  "Creates a optimized vector compatible type of length 2 backed
+  internally with MapEntry impl because it has faster access method
+  for its fields."
+  [o1 o2]
+  #?(:clj (clojure.lang.MapEntry. o1 o2)
+     :cljs (cljs.core/->MapEntry o1 o2 nil)))
+
 #?(:clj
    (defmethod print-method clojure.lang.PersistentQueue [q, w]
      ;; Overload the printer for queues so they look like fish
