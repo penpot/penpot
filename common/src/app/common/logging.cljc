@@ -319,6 +319,12 @@
          ::message (delay ~message)})
        nil)))
 
+(defmacro log
+  [level & params]
+  `(do
+     (log! ::logger ~(str *ns*) ::level ~level ~@params)
+     nil))
+
 (defmacro info
   [& params]
   `(do

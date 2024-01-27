@@ -27,7 +27,8 @@
    [app.worker :as-alias wrk]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
-   [datoteka.io :as io]))
+   [datoteka.io :as io]
+   [promesa.exec :as px]))
 
 (def default-max-file-size
   (* 1024 1024 10)) ; 10 MiB
@@ -56,20 +57,25 @@
           :opt-un [::id]))
 
 (sv/defmethod ::upload-file-media-object
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::climit/id [[:process-image/by-profile ::rpc/profile-id]
+                [:process-image/global]]}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id content] :as params}]
   (let [cfg (update cfg ::sto/storage media/configure-assets-storage)]
+
     (files/check-edition-permissions! pool profile-id file-id)
     (media/validate-media-type! content)
     (media/validate-media-size! content)
-    (let [object (db/run! cfg #(create-file-media-object % params))
-          props  {:name (:name params)
-                  :file-id file-id
-                  :is-local (:is-local params)
-                  :size (:size content)
-                  :mtype (:mtype content)}]
-      (with-meta object
-        {::audit/replace-props props}))))
+
+    (db/run! cfg (fn [cfg]
+                   (let [object (create-file-media-object cfg params)
+                         props  {:name (:name params)
+                                 :file-id file-id
+                                 :is-local (:is-local params)
+                                 :size (:size content)
+                                 :mtype (:mtype content)}]
+                     (with-meta object
+                       {::audit/replace-props props}))))))
 
 (defn- big-enough-for-thumbnail?
   "Checks if the provided image info is big enough for
@@ -144,12 +150,10 @@
       (assoc ::image (process-main-image info)))))
 
 (defn create-file-media-object
-  [{:keys [::sto/storage ::db/conn ::wrk/executor] :as cfg}
+  [{:keys [::sto/storage ::db/conn ::wrk/executor]}
    {:keys [id file-id is-local name content]}]
 
-  (let [result (-> (climit/configure cfg :process-image/global)
-                   (climit/run! (partial process-image content) executor))
-
+  (let [result (px/invoke! executor (partial process-image content))
         image  (sto/put-object! storage (::image result))
         thumb  (when-let [params (::thumb result)]
                  (sto/put-object! storage params))]
@@ -183,7 +187,7 @@
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (let [cfg (update cfg ::sto/storage media/configure-assets-storage)]
     (files/check-edition-permissions! pool profile-id file-id)
-    (db/run! cfg #(create-file-media-object-from-url % params))))
+    (create-file-media-object-from-url cfg (assoc params :profile-id profile-id))))
 
 (defn download-image
   [{:keys [::http/client]} uri]
@@ -235,7 +239,16 @@
         params  (-> params
                     (assoc :content content)
                     (assoc :name (or name (:filename content))))]
-    (create-file-media-object cfg params)))
+
+    ;; NOTE: we use the climit here in a dynamic invocation because we
+    ;; don't want saturate the process-image limit with IO (download
+    ;; of external image)
+    (-> cfg
+        (assoc ::climit/id [[:process-image/by-profile (:profile-id params)]
+                            [:process-image/global]])
+        (assoc ::climit/profile-id (:profile-id params))
+        (assoc ::climit/label "create-file-media-object-from-url")
+        (climit/invoke! db/run! cfg create-file-media-object params))))
 
 ;; --- Clone File Media object (Upload and create from url)
 

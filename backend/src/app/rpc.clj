@@ -240,8 +240,7 @@
                 ::mtx/metrics
                 ::main/props]
           :opt [::climit
-                ::rlimit]
-          :req-un [::db/pool]))
+                ::rlimit]))
 
 (defmethod ig/init-key ::methods
   [_ cfg]

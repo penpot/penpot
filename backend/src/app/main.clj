@@ -322,9 +322,7 @@
     ::rpc/climit         (ig/ref ::rpc/climit)
     ::rpc/rlimit         (ig/ref ::rpc/rlimit)
     ::setup/templates    (ig/ref ::setup/templates)
-    ::props              (ig/ref ::setup/props)
-
-    :pool                (ig/ref ::db/pool)}
+    ::props              (ig/ref ::setup/props)}
 
    :app.rpc.doc/routes
    {:methods (ig/ref :app.rpc/methods)}
