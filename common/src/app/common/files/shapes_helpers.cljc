@@ -39,16 +39,17 @@
 
 (defn prepare-move-shapes-into-frame
   [changes frame-id shapes objects]
-  (let [ordered-indexes (cfh/order-by-indexed-shapes objects shapes)
-        parent-id (get-in objects [frame-id :parent-id])
-        ordered-indexes (->> ordered-indexes (remove #(= % parent-id)))
-        to-move-shapes (map (d/getf objects) ordered-indexes)]
-    (if (d/not-empty? to-move-shapes)
+  (let [parent-id  (dm/get-in objects [frame-id :parent-id])
+        shapes     (remove #(= % parent-id) shapes)
+        to-move    (->> shapes
+                        (map (d/getf objects))
+                        (not-empty))]
+    (if to-move
       (-> changes
           (cond-> (not (ctl/any-layout? objects frame-id))
-            (pcb/update-shapes ordered-indexes ctl/remove-layout-item-data))
-          (pcb/update-shapes ordered-indexes #(cond-> % (cfh/frame-shape? %) (assoc :hide-in-viewer true)))
-          (pcb/change-parent frame-id to-move-shapes 0)
+            (pcb/update-shapes shapes ctl/remove-layout-item-data))
+          (pcb/update-shapes shapes #(cond-> % (cfh/frame-shape? %) (assoc :hide-in-viewer true)))
+          (pcb/change-parent frame-id to-move 0)
           (cond-> (ctl/grid-layout? objects frame-id)
             (-> (pcb/update-shapes [frame-id] ctl/assign-cells {:with-objects? true})
                 (pcb/reorder-grid-children [frame-id]))))
@@ -60,90 +61,102 @@
     changes id parent-id objects selected index frame-name without-fill? nil))
 
   ([changes id parent-id objects selected index frame-name without-fill? target-cell-id]
-   (let [selected-objs (map #(get objects %) selected)
-         new-index (or index
-                       (cfh/get-index-replacement selected objects))]
-     (when (d/not-empty? selected)
-       (let [srect       (gsh/shapes->rect selected-objs)
-             selected-id (first selected)
+   (when-let [selected-objs (->> selected
+                                 (map (d/getf objects))
+                                 (not-empty))]
 
-             frame-id    (dm/get-in objects [selected-id :frame-id])
-             parent-id   (or parent-id (dm/get-in objects [selected-id :parent-id]))
-             base-parent (get objects parent-id)
+     (let [;; We calculate here the ordered selection because it is used
+           ;; multiple times and this avoid the need of creating the index
+           ;; manytimes for single operation.
+           selected'  (cfh/order-by-indexed-shapes objects selected)
+           new-index  (or index
+                          (->> (first selected')
+                               (cfh/get-position-on-parent objects)
+                               (inc)))
 
-             layout-props
-             (when (and (= 1 (count selected))
-                        (ctl/any-layout? base-parent))
-               (let [shape (get objects selected-id)]
-                 (select-keys shape ctl/layout-item-props)))
+           srect        (gsh/shapes->rect selected-objs)
+           selected-id  (first selected)
+           selected-obj (get objects selected-id)
 
-             target-cell-id
-             (if (and (nil? target-cell-id)
-                      (ctl/grid-layout? objects parent-id))
-               ;; Find the top-left grid cell of the selected elements
-               (let [ncols (count (:layout-grid-columns base-parent))]
-                 (->> selected
-                      (map #(ctl/get-cell-by-shape-id base-parent %))
-                      (apply min-key (fn [{:keys [row column]}] (+ (* ncols row) column)))
-                      :id))
-               target-cell-id)
+           frame-id     (get selected-obj :frame-id)
+           parent-id    (or parent-id (get selected-obj :parent-id))
+           base-parent  (get objects parent-id)
 
-             attrs       {:type :frame
-                          :x (:x srect)
-                          :y (:y srect)
-                          :width (:width srect)
-                          :height (:height srect)}
+           layout-props
+           (when (and (= 1 (count selected))
+                      (ctl/any-layout? base-parent))
+             (select-keys selected-obj ctl/layout-item-props))
 
-             shape     (cts/setup-shape
-                        (cond-> attrs
-                          (some? id)
-                          (assoc :id id)
+           target-cell-id
+           (if (and (nil? target-cell-id)
+                    (ctl/grid-layout? objects parent-id))
+             ;; Find the top-left grid cell of the selected elements
+             (let [ncols (count (:layout-grid-columns base-parent))]
+               (->> selected
+                    (map #(ctl/get-cell-by-shape-id base-parent %))
+                    (apply min-key (fn [{:keys [row column]}] (+ (* ncols row) column)))
+                    :id))
+             target-cell-id)
 
-                          (some? frame-name)
-                          (assoc :name frame-name)
+           attrs
+           {:type :frame
+            :x (:x srect)
+            :y (:y srect)
+            :width (:width srect)
+            :height (:height srect)}
 
-                          :always
-                          (assoc :frame-id frame-id
-                                 :parent-id parent-id
-                                 :shapes (into [] selected))
+           shape
+           (cts/setup-shape
+            (cond-> attrs
+              (some? id)
+              (assoc :id id)
 
-                          (some? layout-props)
-                          (d/patch-object layout-props)
+              (some? frame-name)
+              (assoc :name frame-name)
 
-                          (or (not= frame-id uuid/zero) without-fill?)
-                          (assoc :fills [] :hide-in-viewer true)))
+              :always
+              (assoc :frame-id frame-id
+                     :parent-id parent-id
+                     :shapes (into [] selected))
 
-             shape     (with-meta shape {:index new-index})
+              (some? layout-props)
+              (d/patch-object layout-props)
 
-             [shape changes]
-             (prepare-add-shape changes shape objects)
+              (or (not= frame-id uuid/zero) without-fill?)
+              (assoc :fills [] :hide-in-viewer true)))
 
-             changes
-             (prepare-move-shapes-into-frame changes (:id shape) selected objects)
+           shape
+           (with-meta shape {:index new-index})
 
-             changes
-             (cond-> changes
-               (ctl/grid-layout? objects (:parent-id shape))
-               (-> (pcb/update-shapes
-                    [(:parent-id shape)]
-                    (fn [parent objects]
-                      ;; This restores the grid layout before adding and moving the shapes
-                      ;; this is done because the add+move could have altered the layout and we
-                      ;; want to do it after both operations are completed. Also here we could
-                      ;; asign the new element to a target-cell
-                      (-> parent
-                          (assoc :layout-grid-cells (:layout-grid-cells base-parent))
-                          (assoc :layout-grid-rows (:layout-grid-rows base-parent))
-                          (assoc :layout-grid-columns (:layout-grid-columns base-parent))
+           [shape changes]
+           (prepare-add-shape changes shape objects)
 
-                          (cond-> (some? target-cell-id)
-                            (assoc-in [:layout-grid-cells target-cell-id :shapes] [(:id shape)]))
-                          (ctl/assign-cells objects)))
-                    {:with-objects? true})
+           changes
+           (prepare-move-shapes-into-frame changes (:id shape) selected' objects)
 
-                   (pcb/reorder-grid-children [(:parent-id shape)])))]
+           changes
+           (cond-> changes
+             (ctl/grid-layout? objects (:parent-id shape))
+             (-> (pcb/update-shapes
+                  [(:parent-id shape)]
+                  (fn [parent objects]
+                    ;; This restores the grid layout before adding and moving the shapes
+                    ;; this is done because the add+move could have altered the layout and we
+                    ;; want to do it after both operations are completed. Also here we could
+                    ;; asign the new element to a target-cell
+                    (-> parent
+                        (assoc :layout-grid-cells (:layout-grid-cells base-parent))
+                        (assoc :layout-grid-rows (:layout-grid-rows base-parent))
+                        (assoc :layout-grid-columns (:layout-grid-columns base-parent))
 
-         [shape changes])))))
+                        (cond-> (some? target-cell-id)
+                          (assoc-in [:layout-grid-cells target-cell-id :shapes] [(:id shape)]))
+                        (ctl/assign-cells objects)))
+                  {:with-objects? true})
+
+                 (pcb/reorder-grid-children [(:parent-id shape)])))]
+
+       [shape changes]))))
 
 
 (defn prepare-create-empty-artboard
