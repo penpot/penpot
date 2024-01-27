@@ -484,7 +484,7 @@
   (letfn [(red-fn [cur-idx id]
             (let [[prev-idx _] (first cur-idx)
                   prev-idx (or prev-idx 0)
-                  cur-idx (conj cur-idx [(inc prev-idx) id])]
+                  cur-idx (conj cur-idx (d/vec2 (inc prev-idx) id))]
               (rec-index cur-idx id)))
           (rec-index [cur-idx id]
             (let [object (get objects id)]
@@ -509,10 +509,11 @@
 
 (defn order-by-indexed-shapes
   [objects ids]
-  (->> (indexed-shapes objects)
-       (sort-by first)
-       (filter (comp (into #{} ids) second))
-       (map second)))
+  (let [ids (if (set? ids) ids (set ids))]
+    (->> (indexed-shapes objects)
+         (filter (fn [o] (contains? ids (val o))))
+         (sort-by key)
+         (map val))))
 
 (defn get-index-replacement
   "Given a collection of shapes, calculate their positions
