@@ -19,11 +19,13 @@
    [app.main.ui.workspace.right-header :refer [right-header]]
    [app.main.ui.workspace.sidebar.assets :refer [assets-toolbox]]
    [app.main.ui.workspace.sidebar.debug :refer [debug-panel]]
+   [app.main.ui.workspace.sidebar.debug-shape-info :refer [debug-shape-info]]
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox]]
    [app.main.ui.workspace.sidebar.layers :refer [layers-toolbox]]
    [app.main.ui.workspace.sidebar.options :refer [options-toolbox]]
    [app.main.ui.workspace.sidebar.shortcuts :refer [shortcuts-container]]
    [app.main.ui.workspace.sidebar.sitemap :refer [sitemap]]
+   [app.util.debug :as dbg]
    [app.util.i18n :refer [tr]]
    [app.util.object :as obj]
    [rumext.v2 :as mf]))
@@ -134,10 +136,11 @@
         current-section* (mf/use-state :info)
         current-section  (deref current-section*)
 
-        can-be-expanded? (and (not is-comments?)
-                              (not is-history?)
-                              is-inspect?
-                              (= current-section :code))
+        can-be-expanded? (or (dbg/enabled? :shape-panel)
+                             (and (not is-comments?)
+                                  (not is-history?)
+                                  is-inspect?
+                                  (= current-section :code)))
 
         {:keys [on-pointer-down on-lost-pointer-capture on-pointer-move set-size size]}
         (use-resize-hook :code 276 276 768 :x true :right)
@@ -176,6 +179,9 @@
 
       [:div {:class (stl/css :settings-bar-inside)}
        (cond
+         (dbg/enabled? :shape-panel)
+         [:& debug-shape-info]
+
          (true? is-comments?)
          [:& comments-sidebar]
 
