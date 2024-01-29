@@ -517,10 +517,6 @@
     :text
     :view})
 
-;; Props not supported by react we need to keep them lowercase
-(def non-react-props
-  #{:mask-type})
-
 ;; Defaults for some tags per spec https://www.w3.org/TR/SVG11/single-page.html
 ;; they are basically the defaults that can be percents and we need to replace because
 ;; otherwise won't work as expected in the workspace
@@ -622,10 +618,9 @@
                         res))
 
                     :else
-                    (let [k (if (contains? non-react-props k)
-                              k
-                              (-> k d/name camelize keyword))]
+                    (let [k (-> k d/name camelize keyword)]
                       (assoc res k v)))
+
                   res))
               {}
               attrs)))
