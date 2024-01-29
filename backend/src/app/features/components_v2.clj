@@ -302,8 +302,14 @@
                                             0
                                             gap)))
 
+                      ;; Fix name if missing
                       (nil? (:name shape))
                       (assoc :name (d/name (:type shape)))
+
+                      ;; Remove v2 info from components that have been copied and pasted
+                      ;; from a v2 file
+                      (some? (:main-instance shape))
+                      (dissoc shape :main-instance)
 
                       ;; Fix broken fills
                       (seq (:fills shape))
