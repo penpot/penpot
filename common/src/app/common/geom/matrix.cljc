@@ -67,7 +67,8 @@
   ([a b c d e f]
    (pos->Matrix a b c d e f)))
 
-(def number-regex #"[+-]?\d*(\.\d+)?(e[+-]?\d+)?")
+(def number-regex
+  #"[+-]?\d*(\.\d+)?([eE][+-]?\d+)?")
 
 (defn str->matrix
   [matrix-str]
@@ -76,14 +77,18 @@
                     (map (comp d/parse-double first)))]
     (apply matrix params)))
 
-(sm/def! ::matrix-map
-  [:map {:title "MatrixMap"}
+(def ^:private schema:matrix-attrs
+  [:map {:title "MatrixAttrs"}
    [:a ::sm/safe-double]
    [:b ::sm/safe-double]
    [:c ::sm/safe-double]
    [:d ::sm/safe-double]
    [:e ::sm/safe-double]
    [:f ::sm/safe-double]])
+
+(def valid-matrix?
+  (sm/lazy-validator
+   [:and [:fn matrix?] schema:matrix-attrs]))
 
 (sm/def! ::matrix
   (letfn [(decode [o]
@@ -101,7 +106,7 @@
                     (dm/get-prop o :f) ","))]
 
     {:type ::matrix
-     :pred matrix?
+     :pred valid-matrix?
      :type-properties
      {:title "matrix"
       :description "Matrix instance"
