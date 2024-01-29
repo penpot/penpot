@@ -701,7 +701,25 @@
                               :component-root)))]
             (-> file-data
                 (update :pages-index update-vals fix-container)
-                (d/update-when :components update-vals fix-container))))]
+                (d/update-when :components update-vals fix-container))))
+
+        fix-component-root-without-component
+        (fn [file-data]
+          ;; Ensure that parent-id and frame-id are not nil
+          (letfn [(fix-container [container]
+                    (d/update-when container :objects update-vals fix-shape))
+
+                  (fix-shape [shape]
+                    (cond-> shape
+                      (and (ctk/instance-root? shape)
+                           (or (not (ctk/instance-head? shape))
+                               (not (some? (:component-file shape)))))
+                      (dissoc shape
+                              :component-id
+                              :component-file
+                              :component-root)))]
+            (-> file-data
+                (update :pages-index update-vals fix-container))))]
 
     (-> file-data
         (fix-file-data)
@@ -726,6 +744,7 @@
         (fix-frame-ids)
         (fix-component-nil-objects)
         (fix-false-copies)
+        (fix-component-root-without-component)
         (fix-copies-of-detached))))  ; <- Do not add fixes after this one
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
