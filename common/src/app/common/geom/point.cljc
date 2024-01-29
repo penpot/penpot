@@ -41,12 +41,6 @@
   [v]
   (instance? Point v))
 
-(sm/def! ::point-map
-  [:map {:title "PointMap"}
-   [:x ::sm/safe-number]
-   [:y ::sm/safe-number]])
-
-
 ;; FIXME: deprecated
 (s/def ::x ::us/safe-number)
 (s/def ::y ::us/safe-number)
@@ -56,6 +50,16 @@
 
 (s/def ::point
   (s/and ::point-attrs point?))
+
+
+(def ^:private schema:point-attrs
+  [:map {:title "PointAttrs"}
+   [:x ::sm/safe-number]
+   [:y ::sm/safe-number]])
+
+(def valid-point?
+  (sm/lazy-validator
+   [:and [:fn point?] schema:point-attrs]))
 
 (sm/def! ::point
   (letfn [(decode [p]
@@ -71,7 +75,7 @@
                     (dm/get-prop p :y)))]
 
     {:type ::point
-     :pred point?
+     :pred valid-point?
      :type-properties
      {:title "point"
       :description "Point"
