@@ -284,7 +284,7 @@
                                               (fn [shapes] (filterv #(not= id %) shapes)))))
 
                       (and (cfh/text-shape? shape)
-                           (not (seq (:content shape))))
+                           (not (valid-text-content? (:content shape))))
                       (dissoc objects id)
 
                       :else
