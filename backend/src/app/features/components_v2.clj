@@ -185,12 +185,10 @@
         fix-missing-image-metadata
         (fn [file-data]
           ;; Delete broken image shapes with no metadata.
-          (letfn [(fix-container
-                    [container]
+          (letfn [(fix-container [container]
                     (d/update-when container :objects #(reduce-kv fix-shape % %)))
 
-                  (fix-shape
-                    [objects id shape]
+                  (fix-shape [objects id shape]
                     (if (and (cfh/image-shape? shape)
                              (nil? (:metadata shape)))
                       (-> objects
@@ -435,12 +433,10 @@
         (fn [file-data]
           ;; Find children shapes whose parent-id is not set to the parent that contains them.
           ;; Remove them from the parent :shapes list.
-          (letfn [(fix-container
-                    [container]
+          (letfn [(fix-container [container]
                     (d/update-when container :objects #(reduce-kv fix-shape % %)))
 
-                  (fix-shape
-                    [objects id shape]
+                  (fix-shape [objects id shape]
                     (reduce (fn [objects child-id]
                               (let [child (get objects child-id)]
                                 (cond-> objects
