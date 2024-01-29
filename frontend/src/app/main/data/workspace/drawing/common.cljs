@@ -81,7 +81,8 @@
                                 :page-id page-id
                                 :rect (:selrect shape)
                                 :include-frames? true
-                                :full-frame? true})
+                                :full-frame? true
+                                :using-selrect? true})
                       (rx/map #(cfh/clean-loops objects %))
                       (rx/map #(dwsh/move-shapes-into-frame (:id shape) %)))
                  (rx/of (dwu/commit-undo-transaction (:id shape))))
