@@ -98,7 +98,8 @@
 (defn- check-geometry
   "Validate that the shape has valid coordinates, selrect and points."
   [shape file page]
-  (when (and (not (#{:path :bool} (:type shape)))
+  (when (and (not (or (cfh/path-shape? shape)
+                      (cfh/bool-shape? shape)))
              (or (nil? (:x shape))       ; This may occur in root shape (uuid/zero) in old files
                  (nil? (:y shape))
                  (nil? (:width shape))
@@ -112,61 +113,64 @@
 (defn- check-parent-children
   "Validate parent and children exists, and the link is bidirectional."
   [shape file page]
-  (let [parent (ctst/get-shape page (:parent-id shape))]
+  (let [parent   (ctst/get-shape page (:parent-id shape))
+        shape-id (:id shape)
+        shapes   (:shapes shape)]
+
     (if (nil? parent)
       (report-error :parent-not-found
                     (str/ffmt "Parent % not found" (:parent-id shape))
                     shape file page)
       (do
         (when-not (cfh/root? shape)
-          (when-not (some #{(:id shape)} (:shapes parent))
+          (when-not (some #(= shape-id %) (:shapes parent))
             (report-error :child-not-in-parent
-                          (str/ffmt "Shape % not in parent's children list" (:id shape))
+                          (str/ffmt "Shape % not in parent's children list" shape-id)
                           shape file page)))
 
-        (when-not (= (count (:shapes shape)) (count (distinct (:shapes shape))))
+        (when-not (= (count shapes) (count (distinct shapes)))
           (report-error :duplicated-children
-                        (str/ffmt "Shape % has duplicated children" (:id shape))
+                        (str/ffmt "Shape % has duplicated children" shape-id)
                         shape file page))
 
-        (doseq [child-id (:shapes shape)]
+        (doseq [child-id shapes]
           (let [child (ctst/get-shape page child-id)]
             (if (nil? child)
               (report-error :child-not-found
-                            (str/ffmt "Child % not found in parent %"  child-id (:id shape))
+                            (str/ffmt "Child % not found in parent %"  child-id shape-id)
                             shape file page
-                            :parent-id (:id shape)
+                            :parent-id shape-id
                             :child-id child-id)
-              (when (not= (:parent-id child) (:id shape))
+              (when (not= (:parent-id child) shape-id)
                 (report-error :invalid-parent
-                              (str/ffmt "Child % has invalid parent %" child-id (:id shape))
+                              (str/ffmt "Child % has invalid parent %" child-id shape-id)
                               child file page
-                              :parent-id (:id shape))))))))))
+                              :parent-id shape-id)))))))))
 
 (defn- check-frame
   "Validate that the frame-id shape exists and is indeed a frame. Also
   it must point to the parent shape (if this is a frame) or to the
   frame-id of the parent (if not)."
-  [shape file page]
-  (let [frame (ctst/get-shape page (:frame-id shape))]
+  [{:keys [frame-id] :as shape} file page]
+  (let [frame (ctst/get-shape page frame-id)]
     (if (nil? frame)
       (report-error :frame-not-found
-                    (str/ffmt "Frame % not found" (:frame-id shape))
+                    (str/ffmt "Frame % not found" frame-id)
                     shape file page)
       (if (not= (:type frame) :frame)
         (report-error :invalid-frame
-                      (str/ffmt "Frame % is not actually a frame" (:frame-id shape))
+                      (str/ffmt "Frame % is not actually a frame" frame-id)
                       shape file page)
         (let [parent (ctst/get-shape page (:parent-id shape))]
           (when (some? parent)
             (if (= (:type parent) :frame)
-              (when-not (= (:frame-id shape) (:id parent))
+              (when-not (= frame-id (:id parent))
                 (report-error :invalid-frame
                               (str/ffmt "Frame-id should point to parent %" (:id parent))
                               shape file page))
-              (when-not (= (:frame-id shape) (:frame-id parent))
+              (when-not (= frame-id (:frame-id parent))
                 (report-error :invalid-frame
-                              (str/ffmt "Frame-id should point to parent frame %" (:frame-id parent))
+                              (str/ffmt "Frame-id should point to parent frame %" frame-id)
                               shape file page)))))))))
 
 (defn- check-component-main-head
@@ -289,8 +293,7 @@
   (check-component-main-head shape file page libraries)
   (check-component-root shape file page)
   (check-component-not-ref shape file page)
-  (doseq [child-id (:shapes shape)]
-    (check-shape child-id file page libraries :context :main-top)))
+  (run! #(check-shape % file page libraries :context :main-top) (:shapes shape)))
 
 (defn- check-shape-main-root-nested
   "Root shape of a nested main instance
@@ -301,8 +304,7 @@
   (check-component-main-head shape file page libraries)
   (check-component-not-root shape file page)
   (check-component-not-ref shape file page)
-  (doseq [child-id (:shapes shape)]
-    (check-shape child-id file page libraries :context :main-nested)))
+  (run! #(check-shape % file page libraries :context :main-nested) (:shapes shape)))
 
 (defn- check-shape-copy-root-top
   "Root shape of a top copy instance
@@ -314,8 +316,7 @@
   (check-component-not-main-head shape file page libraries)
   (check-component-root shape file page)
   (check-component-ref shape file page libraries)
-  (doseq [child-id (:shapes shape)]
-    (check-shape child-id file page libraries :context :copy-top)))
+  (run! #(check-shape % file page libraries :context :copy-top) (:shapes shape)))
 
 (defn- check-shape-copy-root-nested
   "Root shape of a nested copy instance
@@ -326,8 +327,7 @@
   (check-component-not-main-head shape file page libraries)
   (check-component-not-root shape file page)
   (check-component-ref shape file page libraries)
-  (doseq [child-id (:shapes shape)]
-    (check-shape child-id file page libraries :context :copy-nested)))
+  (run! #(check-shape % file page libraries :context :copy-nested) (:shapes shape)))
 
 (defn- check-shape-main-not-root
   "Not-root shape of a main instance (not any attribute)"
@@ -335,8 +335,7 @@
   (check-component-not-main-not-head shape file page)
   (check-component-not-root shape file page)
   (check-component-not-ref shape file page)
-  (doseq [child-id (:shapes shape)]
-    (check-shape child-id file page libraries :context :main-any)))
+  (run! #(check-shape % file page libraries :context :main-any) (:shapes shape)))
 
 (defn- check-shape-copy-not-root
   "Not-root shape of a copy instance :shape-ref"
@@ -344,8 +343,7 @@
   (check-component-not-main-not-head shape file page)
   (check-component-not-root shape file page)
   (check-component-ref shape file page libraries)
-  (doseq [child-id (:shapes shape)]
-    (check-shape child-id file page libraries :context :copy-any)))
+  (run! #(check-shape % file page libraries :context :copy-any) (:shapes shape)))
 
 (defn- check-shape-not-component
   "Shape is not in a component or is a fostered children (not any
@@ -354,8 +352,7 @@
   (check-component-not-main-not-head shape file page)
   (check-component-not-root shape file page)
   (check-component-not-ref shape file page)
-  (doseq [child-id (:shapes shape)]
-    (check-shape child-id file page libraries :context :not-component)))
+  (run! #(check-shape % file page libraries :context :not-component) (:shapes shape)))
 
 (defn- check-shape
   "Validate referential integrity and semantic coherence of
@@ -439,6 +436,11 @@
                   "Objects list cannot be nil"
                   component file nil)))
 
+(defn- get-orphan-shapes
+  [{:keys [objects] :as page}]
+  (let [xf (comp (map #(contains? objects (:parent-id %)))
+                 (map :id))]
+    (into [] xf (vals objects))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PUBLIC API: VALIDATION FUNCTIONS
@@ -451,18 +453,14 @@
   [{:keys [data features] :as file} libraries]
   (when (contains? features "components/v2")
     (binding [*errors* (volatile! [])]
-      (doseq [page (filter :id (ctpl/pages-seq data))]
-        (let [orphans (->> page
-                           :objects
-                           vals
-                           (filter #(not (contains? (:objects page) (:parent-id %))))
-                           (map :id))]
-          (check-shape uuid/zero file page libraries)
-          (doseq [shape-id orphans]
-            (check-shape shape-id file page libraries))))
 
-      (doseq [component (vals (:components data))]
-        (check-component component file))
+      (doseq [page (filter :id (ctpl/pages-seq data))]
+        (check-shape uuid/zero file page libraries)
+        (->> (get-orphan-shapes page)
+             (run! #(check-shape % file page libraries))))
+
+      (->> (vals (:components data))
+           (run! #(check-component % file)))
 
       (-> *errors* deref not-empty))))
 
