@@ -332,6 +332,47 @@
                       (some? (:main-instance shape))
                       (dissoc shape :main-instance)
 
+                      (and (cfh/text-shape? shape)
+                           (valid-text-content? (:content shape))
+                           (not (valid-shape-points? (:points shape)))
+                           (seq (:position-data shape)))
+                      (as-> shape
+                            (let [selrect (->> (:position-data shape)
+                                               (map (juxt :x :y :width :height))
+                                               (map #(apply grc/make-rect %))
+                                               (grc/join-rects))
+                                  points  (grc/rect->points selrect)]
+
+                              (assoc shape
+                                     :x (:x selrect)
+                                     :y (:y selrect)
+                                     :width (:width selrect)
+                                     :height (:height selrect)
+                                     :selrect selrect
+                                     :points points)))
+
+                      (and (or (cfh/rect-shape? shape)
+                               (cfh/svg-raw-shape? shape))
+                           (not (valid-shape-points? (:points shape)))
+                           (grc/valid-rect? (:selrect shape)))
+                      (as-> shape
+                            (let [selrect (if (grc/valid-rect? (:svg-viewbox shape))
+                                            (:svg-viewbox shape)
+                                            (:selrect shape))
+                                  points  (grc/rect->points selrect)]
+                              (assoc shape
+                                     :x (:x selrect)
+                                     :y (:y selrect)
+                                     :width (:width selrect)
+                                     :height (:height selrect)
+                                     :selrect selrect
+                                     :points points)))
+
+                      (and (cfh/group-shape? shape)
+                           (grc/valid-rect? (:selrect shape))
+                           (not (valid-shape-points? (:points shape))))
+                      (assoc :points (grc/rect->points (:selrect shape)))
+
                       ;; Fix broken fills
                       (seq (:fills shape))
                       (update :fills (fn [fills] (filterv valid-fill? fills)))
@@ -736,7 +777,6 @@
     (-> file-data
         (fix-file-data)
         (fix-page-invalid-options)
-        (fix-completly-broken-shapes)
         (fix-bad-children)
         (fix-misc-shape-issues)
         (fix-recent-colors)
@@ -744,6 +784,7 @@
         (fix-text-shapes-converted-to-path)
         (fix-broken-paths)
         (delete-big-geometry-shapes)
+        (fix-completly-broken-shapes)
         (fix-broken-parents)
         (fix-orphan-shapes)
         (fix-orphan-copies)
