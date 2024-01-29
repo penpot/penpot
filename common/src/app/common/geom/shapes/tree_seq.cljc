@@ -17,7 +17,11 @@
   [id objects]
   (->> (tree-seq
         #(d/not-empty? (dm/get-in objects [% :shapes]))
-        #(dm/get-in objects [% :shapes])
+        (fn [id]
+          (let [shape (get objects id)]
+            (cond->> (:shapes shape)
+              (and (ctl/flex-layout? shape) (ctl/reverse? shape))
+              (reverse))))
         id)
        (map #(get objects %))))
 
