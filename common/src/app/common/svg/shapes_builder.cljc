@@ -193,7 +193,8 @@
 (defn create-group
   [name frame-id {:keys [x y width height offset-x offset-y] :as svg-data} {:keys [attrs]}]
   (let [transform (csvg/parse-transform (:transform attrs))
-        attrs     (-> (d/without-keys attrs csvg/inheritable-props)
+        attrs     (-> attrs
+                      (d/without-keys csvg/inheritable-props)
                       (csvg/attrs->props))
         vbox      (grc/make-rect offset-x offset-y width height)]
     (cts/setup-shape
