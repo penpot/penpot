@@ -109,11 +109,14 @@
                     (assoc :points (grc/rect->points selrect))))))
 
           (fix-empty-points [shape]
-            (let [shape (cond-> shape
-                          (empty? (:selrect shape)) (cts/setup-rect))]
-              (cond-> shape
-                (empty? (:points shape))
-                (assoc :points (grc/rect->points (:selrect shape))))))
+            (if (empty? (:points shape))
+              (-> shape
+                  (update :selrect (fn [selrect]
+                                     (if (map? selrect)
+                                       (grc/make-rect selrect)
+                                       selrect)))
+                  (cts/setup-shape))
+              shape))
 
           (update-object [object]
             (cond-> object
