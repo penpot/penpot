@@ -108,10 +108,7 @@
       opacity: 1;
       margin-left: $s-32;
 
-      svg {
-        fill: $df-primary;
-      }
-      .btn-small {
+      .btn-small:not(.pin-button) {
         height: $s-32;
         margin: 0 $s-8;
         width: $s-32;
@@ -120,6 +117,7 @@
           background: transparent;
         }
         svg {
+          fill: $df-primary;
           height: $s-16;
           width: $s-16;
         }
