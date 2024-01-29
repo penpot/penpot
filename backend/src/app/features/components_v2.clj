@@ -127,6 +127,9 @@
 (def valid-rgb-color-string?
   (sm/lazy-validator ::ctc/rgb-color))
 
+(def valid-shape-points?
+  (sm/lazy-validator ::cts/points))
+
 (defn- prepare-file-data
   "Apply some specific migrations or fixes to things that are allowed in v1 but not in v2,
    or that are the result of old bugs."
@@ -287,6 +290,13 @@
                            (not (valid-text-content? (:content shape))))
                       (dissoc objects id)
 
+                      (and (cfh/path-shape? shape)
+                           (not (valid-path-content? (:content shape))))
+                      (-> objects
+                          (dissoc id)
+                          (d/update-in-when [(:parent-id shape) :shapes]
+                                            (fn [shapes] (filterv #(not= id %) shapes))))
+
                       :else
                       objects))
 
@@ -379,13 +389,15 @@
                       (and (cfh/path-shape? shape)
                            (seq (:content shape))
                            (not (valid-path-content? (:content shape))))
-                      (let [shape   (update shape :content fix-path-content)
-                            [points selrect] (gshp/content->points+selrect shape (:content shape))]
-                        (-> shape
-                            (dissoc :bool-content)
-                            (dissoc :bool-type)
-                            (assoc :points points)
-                            (assoc :selrect selrect)))
+                      (let [shape (update shape :content fix-path-content)]
+                        (if (not (valid-path-content? (:content shape)))
+                          shape
+                          (let [[points selrect] (gshp/content->points+selrect shape (:content shape))]
+                            (-> shape
+                                (dissoc :bool-content)
+                                (dissoc :bool-type)
+                                (assoc :points points)
+                                (assoc :selrect selrect)))))
 
                       ;; When we fount a bool shape with no content,
                       ;; we convert it to a simple rect
