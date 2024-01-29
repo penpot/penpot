@@ -105,7 +105,12 @@
 ;; FILE PREPARATION BEFORE MIGRATION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def valid-color?  (sm/lazy-validator ::ctc/recent-color))
+(def valid-recent-color?
+  (sm/lazy-validator ::ctc/recent-color))
+
+(def valid-color?
+  (sm/lazy-validator ::ctc/color))
+
 (def valid-fill?   (sm/lazy-validator ::cts/fill))
 (def valid-stroke? (sm/lazy-validator ::cts/stroke))
 (def valid-flow?   (sm/lazy-validator ::ctp/flow))
@@ -223,9 +228,17 @@
         ;; fix that issues.
         fix-file-data
         (fn [file-data]
-          (-> file-data
-              (d/update-when :colors dissoc nil)
-              (d/update-when :typographies dissoc nil)))
+          (letfn [(fix-colors-library [colors]
+                    (let [colors (dissoc colors nil)]
+                      (reduce-kv (fn [colors id color]
+                                   (if (valid-color? color)
+                                     colors
+                                     (dissoc colors id)))
+                                 colors
+                                 colors)))]
+            (-> file-data
+                (d/update-when :colors fix-colors-library)
+                (d/update-when :typographies dissoc nil))))
 
         delete-big-geometry-shapes
         (fn [file-data]
@@ -416,7 +429,7 @@
           ;; Remove invalid colors in :recent-colors
           (d/update-when file-data :recent-colors
                          (fn [colors]
-                           (filterv valid-color? colors))))
+                           (filterv valid-recent-color? colors))))
 
         fix-broken-parents
         (fn [file-data]
