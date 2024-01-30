@@ -54,10 +54,7 @@
           stroke: var(--icon-foreground);
         }
         &.selected {
-          background-color: var(--button-tertiary-background-color-hover);
-          svg {
-            stroke: var(--button-tertiary-foreground-color-active);
-          }
+          @extend .button-icon-selected;
         }
       }
     }
@@ -138,10 +135,7 @@
       stroke: var(--icon-foreground);
     }
     &.selected {
-      background-color: var(--button-tertiary-background-color-hover);
-      svg {
-        stroke: var(--button-tertiary-foreground-color-active);
-      }
+      @extend .button-icon-selected;
     }
   }
 }

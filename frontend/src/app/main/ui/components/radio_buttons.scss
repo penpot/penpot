@@ -12,13 +12,16 @@
   height: $s-32;
   background-color: var(--input-background-color);
 }
+
 .radio-icon {
-  @extend .button-radio;
+  @include buttonStyle;
+  @include flexCenter;
+  @include focusRadio;
   height: $s-32;
   flex-grow: 1;
   border-radius: $s-8;
-  box-sizing: content-box;
-  border: none;
+  box-sizing: border-box;
+  border: $s-2 solid var(--radio-btn-border-color);
   input {
     display: none;
   }
@@ -31,16 +34,14 @@
     color: var(--radio-btn-foreground-color);
   }
   &:hover {
-    border: none;
     svg {
-      color: var(--radio-btn-foreground-color-selected);
+      stroke: var(--radio-btn-foreground-color-selected);
     }
   }
 
   &.checked {
-    border: none;
     background-color: var(--radio-btn-background-color-selected);
-    box-shadow: var(--radio-button-box-shadow);
+    border-color: var(--radio-btn-border-color-selected);
     svg {
       stroke: var(--radio-btn-foreground-color-selected);
     }
@@ -52,6 +53,7 @@
   &.disabled {
     cursor: default;
     background-color: transparent;
+    border: $s-2 solid transparent;
     svg {
       stroke: var(--button-foreground-color-disabled);
     }
@@ -59,8 +61,8 @@
       color: var(--button-foreground-color-disabled);
     }
     &:hover {
-      border: none;
       background-color: transparent;
+      border: $s-2 solid transparent;
       svg {
         stroke: var(--button-foreground-color-disabled);
       }

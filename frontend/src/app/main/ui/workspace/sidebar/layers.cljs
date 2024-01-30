@@ -239,6 +239,7 @@
             [:button {:on-click toggle-filters
                       :class (stl/css-case
                               :filter-button true
+                              :opened show-menu?
                               :active active?)}
              i/filter-refactor]]
 

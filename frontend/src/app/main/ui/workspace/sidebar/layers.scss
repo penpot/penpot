@@ -49,6 +49,9 @@
           stroke: var(--button-foreground-hover);
         }
       }
+      &.opened {
+        @extend .button-icon-selected;
+      }
     }
     .close-search {
       @extend .button-tertiary;
