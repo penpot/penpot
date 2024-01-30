@@ -991,15 +991,7 @@
             (fix-percent-attr-numeric [attrs key val]
               (cond
                 (= key :style)
-                (let [val (->> (str/split val ";")
-                               (map (fn [val]
-                                      (if (str/ends-with? val "%")
-                                        (let [[k v] (str/split val ":" 2)
-                                              v (fix-percent-attr-numeric-val v)]
-                                          (str k ":" v))
-                                        val)))
-                               (str/join ";"))]
-                  (assoc attrs key val))
+                attrs
 
                 (str/ends-with? val "%")
                 (assoc attrs key (fix-percent-attr-numeric-val val))
