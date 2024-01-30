@@ -508,7 +508,7 @@
 
             [:div {:class (stl/css :component-name)} (if multi
                                                        (tr "settings.multiple")
-                                                       shape-name)]
+                                                       (cfh/last-path shape-name))]
             (when show-menu?
               [:div {:class (stl/css :component-actions)}
                [:button {:class (stl/css :menu-btn)

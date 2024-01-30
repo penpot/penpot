@@ -13,6 +13,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.tree-seq :as gsts]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.text :as ct]
@@ -175,6 +176,13 @@
   [file-data component shape]
   (when (:shape-ref shape)
     (get-component-shape file-data component (:shape-ref shape))))
+
+(defn get-shape-in-copy
+  "Given a shape in the main component and the root of the copy component returns the equivalent
+  shape inside the root copy that matches the main-shape"
+  [file-data main-shape root-copy]
+  (->> (gsts/get-children-seq (:id root-copy) (:objects file-data))
+       (d/seek #(= (:shape-ref %) (:id main-shape)))))
 
 (defn find-ref-shape
   "Locate the near component in the local file or libraries, and retrieve the shape
@@ -351,10 +359,10 @@
     (mapcat used-assets-container (containers-seq file-data))))
 
 (defn get-or-add-library-page
-  "If exists a page named 'Library backup', get the id and calculate the position to start
+  "If exists a page named 'Main components', get the id and calculate the position to start
   adding new components. If not, create it and start at (0, 0)."
   [file-data grid-gap]
-  (let [library-page (d/seek #(= (:name %) "Library backup") (ctpl/pages-seq file-data))]
+  (let [library-page (d/seek #(= (:name %) "Main components") (ctpl/pages-seq file-data))]
     (if (some? library-page)
       (let [compare-pos (fn [pos shape]
                           (let [bounds (gsh/bounding-box shape)]
@@ -366,7 +374,7 @@
                              (gpt/point 0 0)
                              (ctn/shapes-seq library-page))]
         [file-data (:id library-page) position])
-      (let [library-page (ctp/make-empty-page (uuid/next) "Library backup")]
+      (let [library-page (ctp/make-empty-page (uuid/next) "Main components")]
         [(ctpl/add-page file-data library-page) (:id library-page) (gpt/point 0 0)]))))
 
 (defn- absorb-components

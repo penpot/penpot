@@ -728,10 +728,11 @@
 
 
 (defmethod read-section :v1/files
-  [{:keys [::db/conn ::input ::project-id ::enabled-features ::timestamp ::overwrite?] :as system}]
+  [{:keys [::db/conn ::input ::project-id ::enabled-features ::timestamp ::overwrite? ::name] :as system}]
 
-  (doseq [expected-file-id (-> *state* deref :files)]
+  (doseq [[idx expected-file-id] (d/enumerate (-> *state* deref :files))]
     (let [file       (read-obj! input)
+
           media      (read-obj! input)
 
           file-id    (:id file)
@@ -770,6 +771,8 @@
 
       (let [file (-> file
                      (assoc :id file-id')
+                     (cond-> (and (= idx 0) (some? name))
+                       (assoc :name name))
                      (process-file))
 
             ;; All features that are enabled and requires explicit migration are
@@ -1105,6 +1108,7 @@
   schema:import-binfile
   (sm/define
     [:map {:title "import-binfile"}
+     [:name :string]
      [:project-id ::sm/uuid]
      [:file ::media/upload]]))
 
@@ -1116,12 +1120,13 @@
    ::webhooks/event? true
    ::sse/stream? true
    ::sm/params schema:import-binfile}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id file] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id name project-id file] :as params}]
   (projects/check-read-permissions! pool profile-id project-id)
   (let [params (-> cfg
                    (assoc ::input (:path file))
                    (assoc ::project-id project-id)
                    (assoc ::profile-id profile-id)
+                   (assoc ::name name)
                    (assoc ::ignore-index-errors? true))]
     (with-meta
       (sse/response #(import-binfile params))

@@ -483,9 +483,10 @@
             (rx/of
              (dwt/clear-thumbnail (:current-file-id state) page-id root-id "component")
              (dwsh/delete-shapes page-id #{root-id}))) ;; Deleting main root triggers component delete
-          (let [changes (-> (pcb/empty-changes it)
+          (let [page-id (:current-page-id state)
+                changes (-> (pcb/empty-changes it)
                             (pcb/with-library-data data)
-                            (pcb/delete-component id))]
+                            (pcb/delete-component id page-id))]
             (rx/of (dch/commit-changes changes))))))))
 
 

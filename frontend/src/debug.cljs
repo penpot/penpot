@@ -57,14 +57,14 @@
     :app.main.data.websocket/send-message
     :app.main.data.workspace.selection/change-hover-state})
 
-(defn- enable!
+(defn enable!
   [option]
   (dbg/enable! option)
   (when (= :events option)
     (set! st/*debug-events* true))
   (js* "app.main.reinit()"))
 
-(defn- disable!
+(defn disable!
   [option]
   (dbg/disable! option)
   (when (= :events option)

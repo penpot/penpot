@@ -129,6 +129,9 @@
 
                (->> ms/mouse-position
                     (rx/filter #(> (gpt/distance % initial) (/ 2 zoom)))
+                    ;; Take until before the snap calculation otherwise we could cancel the snap in the worker
+                    ;; and its a problem for fast moving drawing
+                    (rx/take-until stoper)
                     (rx/with-latest-from ms/mouse-position-shift ms/mouse-position-mod)
                     (rx/switch-map
                      (fn [[point :as current]]
@@ -136,8 +139,7 @@
                             (rx/map (partial array/conj current)))))
                     (rx/map
                      (fn [[_ shift? mod? point]]
-                       #(update-drawing % initial (cond-> point snap-pixel? (gpt/round-step snap-prec)) shift? mod?)))))
-              (rx/take-until stoper))
+                       #(update-drawing % initial (cond-> point snap-pixel? (gpt/round-step snap-prec)) shift? mod?))))))
 
          (->> (rx/of (common/handle-finish-drawing))
               (rx/delay 100)))))))

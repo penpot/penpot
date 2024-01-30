@@ -742,13 +742,14 @@
       changes)))
 
 (defn delete-component
-  [changes id]
+  [changes id page-id]
   (assert-library! changes)
   (-> changes
       (update :redo-changes conj {:type :del-component
                                   :id id})
       (update :undo-changes conj {:type :restore-component
-                                  :id id})))
+                                  :id id
+                                  :page-id page-id})))
 
 (defn restore-component
   ([changes id]

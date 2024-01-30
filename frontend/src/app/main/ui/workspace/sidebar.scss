@@ -60,6 +60,7 @@ $width-settings-bar-max: $s-500;
   height: 100%;
   display: flex;
   flex-direction: column;
+  z-index: 0;
   &.not-expand {
     max-width: $width-settings-bar;
   }

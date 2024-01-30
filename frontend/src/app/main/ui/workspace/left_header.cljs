@@ -179,7 +179,7 @@
                               :on-key-down (fn [event]
                                              (when (kbd/enter? event)
                                                (toggle-flag event)))
-                              :data-test   "scale.-text"
+                              :data-test   "scale-text"
                               :id          "file-menu-scale-text"}
       [:span {:class (stl/css :item-name)}
        (if (contains? layout :scale-text)

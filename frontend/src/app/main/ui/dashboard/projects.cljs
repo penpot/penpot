@@ -305,7 +305,7 @@
 
        [:div {:class (stl/css :project-actions)}
         (when-not (:is-default project)
-          [:> pin-button* {:is-pinned (:is-pinned project) :on-click toggle-pin :tab-index 0}])
+          [:> pin-button* {:class (stl/css :pin-button) :is-pinned (:is-pinned project) :on-click toggle-pin :tab-index 0}])
 
         [:button
          {:class (stl/css :btn-secondary :btn-small :tooltip :tooltip-bottom)
