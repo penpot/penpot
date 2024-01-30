@@ -123,11 +123,12 @@
 
         shared-libraries
         (mf/with-memo [shared-libraries linked-libraries file-id search-term]
-          (->> shared-libraries
-               (remove #(= (:id %) file-id))
-               (remove #(contains? linked-libraries (:id %)))
-               (filter #(matches-search (:name %) search-term))
-               (sort-by (comp str/lower :name))))
+          (when shared-libraries
+            (->> shared-libraries
+                 (remove #(= (:id %) file-id))
+                 (remove #(contains? linked-libraries (:id %)))
+                 (filter #(matches-search (:name %) search-term))
+                 (sort-by (comp str/lower :name)))))
 
         linked-libraries
         (mf/with-memo [linked-libraries]
@@ -275,12 +276,17 @@
                       :on-click link-library}
              i/add-refactor]])]
 
-        [:div {:class (stl/css :section-list-empty)}
-         (if (nil? shared-libraries)
-           i/loader-pencil
-           (if (str/empty? search-term)
+        (when (empty? shared-libraries)
+          [:div {:class (stl/css :section-list-empty)}
+           (cond
+             (nil? shared-libraries)
+             (tr "workspace.libraries.loading")
+
+             (str/empty? search-term)
              (tr "workspace.libraries.no-shared-libraries-available")
-             (tr "workspace.libraries.no-matches-for" search-term)))])]]))
+
+             :else
+             (tr "workspace.libraries.no-matches-for" search-term))]))]]))
 
 (defn- extract-assets
   [file-data library summary?]
@@ -519,4 +525,3 @@
            [:& updates-tab {:file-id file-id
                             :file-data file-data
                             :libraries libraries}]]]]]]]]))
-
