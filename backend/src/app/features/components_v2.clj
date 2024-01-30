@@ -746,10 +746,7 @@
                   (fix-shape [shape]
                     (cond-> shape
                       (@detached-ids (:shape-ref shape))
-                      (dissoc shape
-                              :component-id
-                              :component-file
-                              :component-root)))]
+                      (ctk/detach-shape)))]
             (-> file-data
                 (update :pages-index update-vals fix-container)
                 (d/update-when :components update-vals fix-container))))
