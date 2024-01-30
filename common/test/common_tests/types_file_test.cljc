@@ -102,7 +102,7 @@
 
       (t/is (= (count pages) 2))
       (t/is (= (:name (first pages)) "Page 1"))
-      (t/is (= (:name (second pages)) "Library backup"))
+      (t/is (= (:name (second pages)) "Main components"))
 
       (t/is (= (count components) 1))
 
