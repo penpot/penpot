@@ -328,7 +328,7 @@
                       ;; Remove v2 info from components that have been copied and pasted
                       ;; from a v2 file
                       (some? (:main-instance shape))
-                      (dissoc shape :main-instance)
+                      (dissoc :main-instance)
 
                       (and (cfh/text-shape? shape)
                            (valid-text-content? (:content shape))
@@ -733,13 +733,31 @@
                 (update :pages-index update-vals fix-container)
                 (d/update-when :components update-vals fix-container))))
 
+
+        fix-component-root-without-component
+        (fn [file-data]
+          ;; Ensure that if component-root is set component-file and component-id are set too
+          (letfn [(fix-container [container]
+                    (d/update-when container :objects update-vals fix-shape))
+
+                  (fix-shape [shape]
+                    (cond-> shape
+                      (and (ctk/instance-root? shape)
+                           (or (not (ctk/instance-head? shape))
+                               (not (some? (:component-file shape)))))
+                      (dissoc :component-id
+                              :component-file
+                              :component-root)))]
+            (-> file-data
+                (update :pages-index update-vals fix-container))))
+
         fix-copies-of-detached
         (fn [file-data]
-          ;; Find any copy that is referencing a  shape inside a component that have
-          ;; been detached in a previous fix. If so, undo the nested copy, converting
-          ;; it into a direct copy.
-          ;;
-          ;; WARNING: THIS SHOULD BE CALLED AT THE END OF THE PROCESS.
+                  ;; Find any copy that is referencing a  shape inside a component that have
+                  ;; been detached in a previous fix. If so, undo the nested copy, converting
+                  ;; it into a direct copy.
+                  ;;
+                  ;; WARNING: THIS SHOULD BE CALLED AT THE END OF THE PROCESS.
           (letfn [(fix-container [container]
                     (d/update-when container :objects update-vals fix-shape))
 
@@ -749,25 +767,7 @@
                       (ctk/detach-shape)))]
             (-> file-data
                 (update :pages-index update-vals fix-container)
-                (d/update-when :components update-vals fix-container))))
-
-        fix-component-root-without-component
-        (fn [file-data]
-          ;; Ensure that parent-id and frame-id are not nil
-          (letfn [(fix-container [container]
-                    (d/update-when container :objects update-vals fix-shape))
-
-                  (fix-shape [shape]
-                    (cond-> shape
-                      (and (ctk/instance-root? shape)
-                           (or (not (ctk/instance-head? shape))
-                               (not (some? (:component-file shape)))))
-                      (dissoc shape
-                              :component-id
-                              :component-file
-                              :component-root)))]
-            (-> file-data
-                (update :pages-index update-vals fix-container))))]
+                (d/update-when :components update-vals fix-container))))]
 
     (-> file-data
         (fix-file-data)
