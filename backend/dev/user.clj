@@ -7,6 +7,7 @@
 (ns user
   (:require
    [app.common.data :as d]
+   [app.common.debug :as debug]
    [app.common.exceptions :as ex]
    [app.common.files.helpers :as cfh]
    [app.common.fressian :as fres]
@@ -55,7 +56,11 @@
    [promesa.exec :as px]))
 
 (repl/disable-reload! (find-ns 'integrant.core))
+(repl/disable-reload! (find-ns 'app.common.debug))
+
 (set! *warn-on-reflection* true)
+
+(add-tap #'debug/tap-handler)
 
 ;; --- Benchmarking Tools
 
@@ -131,12 +136,6 @@
 ;;        :v5 v5
 ;;        :v6 v6
 ;;        }])))
-
-(defonce debug-tap
-  (do
-    (add-tap #(locking debug-tap
-                (prn "tap debug:" %)))
-    1))
 
 
 (defn calculate-frames
