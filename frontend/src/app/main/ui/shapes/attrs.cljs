@@ -24,7 +24,7 @@
         w+10 (+ 10 width)]
     (case style
       :mixed  (str/concat "" w+5 "," w+5 "," w+1 "," w+5)
-      :dotted (str/concat "" (- (* width 2)) "," w+5)
+      :dotted (str/concat "0," w+5)
       :dashed (str/concat "" w+10 "," w+10)
       "")))
 
