@@ -8,7 +8,7 @@
   (:require
    [beicon.v2.core :as rx]))
 
-(defn- throttle-fn
+(defn throttle-fn
   [delay f]
   (let [state
         #js {:lastExecTime 0

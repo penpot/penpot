@@ -36,6 +36,7 @@
    [app.main.data.workspace.specialized-panel :as dwsp]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.thumbnails :as dwt]
+   [app.main.data.workspace.transforms :as dwtr]
    [app.main.data.workspace.undo :as dwu]
    [app.main.features :as features]
    [app.main.features.pointer-map :as fpmap]
@@ -534,34 +535,38 @@
 (defn instantiate-component
   "Create a new shape in the current page, from the component with the given id
   in the given file library. Then selects the newly created instance."
-  [file-id component-id position]
-  (dm/assert! (uuid? file-id))
-  (dm/assert! (uuid? component-id))
-  (dm/assert! (gpt/point? position))
-  (ptk/reify ::instantiate-component
-    ptk/WatchEvent
-    (watch [it state _]
-      (let [page      (wsh/lookup-page state)
-            libraries (wsh/get-libraries state)
+  ([file-id component-id position]
+   (instantiate-component file-id component-id position nil))
+  ([file-id component-id position {:keys [start-move? initial-point]}]
+   (dm/assert! (uuid? file-id))
+   (dm/assert! (uuid? component-id))
+   (dm/assert! (gpt/point? position))
+   (ptk/reify ::instantiate-component
+     ptk/WatchEvent
+     (watch [it state _]
+       (let [page      (wsh/lookup-page state)
+             libraries (wsh/get-libraries state)
 
-            objects   (:objects page)
-            changes   (-> (pcb/empty-changes it (:id page))
-                          (pcb/with-objects objects))
+             objects   (:objects page)
+             changes   (-> (pcb/empty-changes it (:id page))
+                           (pcb/with-objects objects))
 
-            [new-shape changes]
-            (dwlh/generate-instantiate-component changes
-                                                 objects
-                                                 file-id
-                                                 component-id
-                                                 position
-                                                 page
-                                                 libraries)
-            undo-id (js/Symbol)]
-        (rx/of (dwu/start-undo-transaction undo-id)
-               (dch/commit-changes changes)
-               (ptk/data-event :layout/update [(:id new-shape)])
-               (dws/select-shapes (d/ordered-set (:id new-shape)))
-               (dwu/commit-undo-transaction undo-id))))))
+             [new-shape changes]
+             (dwlh/generate-instantiate-component changes
+                                                  objects
+                                                  file-id
+                                                  component-id
+                                                  position
+                                                  page
+                                                  libraries)
+             undo-id (js/Symbol)]
+         (rx/of (dwu/start-undo-transaction undo-id)
+                (dch/commit-changes changes)
+                (ptk/data-event :layout/update [(:id new-shape)])
+                (dws/select-shapes (d/ordered-set (:id new-shape)))
+                (when start-move?
+                  (dwtr/start-move initial-point #{(:id new-shape)}))
+                (dwu/commit-undo-transaction undo-id)))))))
 
 (defn detach-component
   "Remove all references to components in the shape with the given id,
