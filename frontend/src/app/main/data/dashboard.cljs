@@ -1013,7 +1013,7 @@
              (rx/tap (fn [event]
                        (let [payload (sse/get-payload event)
                              type    (sse/get-type event)]
-                         (if (= type "event")
+                         (if (= type "progress")
                            (log/dbg :hint "clone-template: progress" :section (:section payload) :name (:name payload))
                            (log/dbg :hint "clone-template: end")))))
 

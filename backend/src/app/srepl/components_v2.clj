@@ -8,13 +8,13 @@
   (:require
    [app.common.data :as d]
    [app.common.logging :as l]
-   [app.common.pprint :as pp]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.features.components-v2 :as feat]
    [app.main :as main]
    [app.svgo :as svgo]
    [app.util.cache :as cache]
+   [app.util.events :as events]
    [app.util.time :as dt]
    [app.worker :as-alias wrk]
    [cuerdas.core :as str]
@@ -29,32 +29,30 @@
 ;; PRIVATE HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- print-stats!
-  [stats]
-  (->> stats
-       (into (sorted-map))
-       (pp/pprint)))
-
 (defn- report-progress-files
   [tpoint]
   (fn [_ _ oldv newv]
-    (when (not= (:processed/files oldv)
-                (:processed/files newv))
+    (when (not= (:processed-files oldv)
+                (:processed-files newv))
       (let [elapsed (tpoint)]
         (l/dbg :hint "progress"
-               :completed (:processed/files newv)
+               :completed (:processed-files newv)
                :elapsed   (dt/format-duration elapsed))))))
 
 (defn- report-progress-teams
-  [tpoint on-progress]
+  [tpoint]
   (fn [_ _ oldv newv]
-    (when (not= (:processed/teams oldv)
-                (:processed/teams newv))
-      (let [completed (:processed/teams newv)
+    (when (or (not= (:processed-teams oldv)
+                    (:processed-teams newv))
+              (not= (:errors oldv)
+                    (:errors newv)))
+      (let [completed (:processed-teams newv 0)
+            errors    (:errors newv 0)
             elapsed   (dt/format-duration (tpoint))]
-        (when (fn? on-progress)
-          (on-progress {:elapsed elapsed
-                        :completed completed}))
+        (events/tap :progress-report
+                    {:elapsed elapsed
+                     :completed completed
+                     :errors errors})
         (l/dbg :hint "progress"
                :completed completed
                :elapsed elapsed)))))
@@ -235,10 +233,10 @@
             (feat/migrate-team! team-id
                                 :label label
                                 :validate? validate?
-                                :skip-on-graphic-error? skip-on-graphic-error?))
-        (print-stats!
-         (-> (deref feat/*stats*)
-             (assoc :elapsed (dt/format-duration (tpoint)))))
+                                :skip-on-graphics-error? skip-on-graphic-error?))
+
+        (-> (deref feat/*stats*)
+            (assoc :elapsed (dt/format-duration (tpoint))))
 
         (catch Throwable cause
           (l/dbg :hint "migrate:error" :cause cause))
@@ -261,8 +259,8 @@
   a correct `:label`. That label is also used for persist a file
   snaphot before continue with the migration."
   [& {:keys [max-jobs max-items max-time rollback? validate? query
-             pred max-procs cache on-start on-progress on-error on-end
-             skip-on-graphic-error? label partitions current-partition]
+             pred max-procs cache skip-on-graphic-error?
+             label partitions current-partition]
       :or {validate? false
            rollback? true
            max-jobs 1
@@ -310,6 +308,14 @@
                 (l/wrn :hint "unexpected error on processing team (skiping)"
                        :team-id (str team-id)
                        :cause cause)
+
+                (events/tap :error
+                            (ex-info "unexpected error on processing team (skiping)"
+                                     {:team-id team-id}
+                                     cause))
+
+                (swap! stats update :errors (fnil inc 0))
+
                 (when (string? label)
                   (report! main/system team-id label (tpoint) (ex-message cause))))
 
@@ -336,15 +342,12 @@
            :max-jobs max-jobs
            :max-items max-items)
 
-    (add-watch stats :progress-report (report-progress-teams tpoint on-progress))
+    (add-watch stats :progress-report (report-progress-teams tpoint))
 
     (binding [feat/*stats* stats
               feat/*cache* cache
               svgo/*semaphore* sprocs]
       (try
-        (when (fn? on-start)
-          (on-start {:rollback rollback?}))
-
         (when (string? label)
           (create-report-table! main/system)
           (clean-reports! main/system label))
@@ -367,20 +370,12 @@
                       ;; Close and await tasks
                       (pu/close! executor)))
 
-        (if (fn? on-end)
-          (-> (deref stats)
-              (assoc :elapsed/total (tpoint))
-              (on-end))
-          (-> (deref stats)
-              (assoc :elapsed/total (tpoint))
-              (update :elapsed/total dt/format-duration)
-              (dissoc :total/teams)
-              (print-stats!)))
+        (-> (deref stats)
+            (assoc :elapsed (dt/format-duration (tpoint))))
 
         (catch Throwable cause
           (l/dbg :hint "migrate:error" :cause cause)
-          (when (fn? on-error)
-            (on-error cause)))
+          (events/tap :error cause))
 
         (finally
           (let [elapsed (dt/format-duration (tpoint))]
