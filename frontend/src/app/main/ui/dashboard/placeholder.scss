@@ -34,7 +34,7 @@
       85% top;
     background-repeat: no-repeat;
     align-items: center;
-    border: $s-1 solid $db-cuaternary;
+    border: $s-1 solid $db-quaternary;
     border-radius: $br-4;
     display: flex;
     flex-direction: column;
@@ -75,7 +75,7 @@
 
     &:hover {
       border: $s-2 solid $da-tertiary;
-      background-color: $db-cuaternary;
+      background-color: $db-quaternary;
       color: $da-primary;
 
       svg {

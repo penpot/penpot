@@ -7,7 +7,7 @@
 @use "common/refactor/common-refactor.scss" as *;
 
 .settings-bar-left {
-  background-color: $db-primary;
+  background-color: var(--panel-background-color);
   height: 100%;
   width: $s-256;
 }

@@ -10,6 +10,7 @@
   file is eligible to be garbage collected after some period of
   inactivity (the default threshold is 72h)."
   (:require
+   [app.binfile.common :as bfc]
    [app.common.files.migrations :as pmg]
    [app.common.logging :as l]
    [app.common.thumbnails :as thc]
@@ -99,35 +100,6 @@
       (->> (db/cursor conn [sql:get-candidates min-age] {:chunk-size 1})
            (map #(update % :features db/decode-pgarray #{}))))))
 
-(defn collect-used-media
-  "Given a fdata (file data), returns all media references."
-  [data]
-  (let [xform (comp
-               (map :objects)
-               (mapcat vals)
-               (mapcat (fn [obj]
-                         ;; NOTE: because of some bug, we ended with
-                         ;; many shape types having the ability to
-                         ;; have fill-image attribute (which initially
-                         ;; designed for :path shapes).
-                         (sequence
-                          (keep :id)
-                          (concat [(:fill-image obj)
-                                   (:metadata obj)]
-                                  (map :fill-image (:fills obj))
-                                  (map :stroke-image (:strokes obj))
-                                  (->> (:content obj)
-                                       (tree-seq map? :children)
-                                       (mapcat :fills)
-                                       (map :fill-image)))))))
-        pages (concat
-               (vals (:pages-index data))
-               (vals (:components data)))]
-    (-> #{}
-        (into xform pages)
-        (into (keys (:media data))))))
-
-
 (def ^:private sql:mark-file-media-object-deleted
   "UPDATE file_media_object
       SET deleted_at = now()
@@ -137,7 +109,7 @@
 (defn- clean-file-media!
   "Performs the garbage collection of file media objects."
   [conn file-id data]
-  (let [used   (collect-used-media data)
+  (let [used   (bfc/collect-used-media data)
         ids    (db/create-array conn "uuid" used)
         unused (->> (db/exec! conn [sql:mark-file-media-object-deleted file-id ids])
                     (into #{} (map :id)))]

@@ -8,68 +8,86 @@
 
 :root {
   // DARK
-  --dark-gray-1: #1d1f20;
-  --dark-gray-2: #000000;
-  --dark-gray-2-30: #{color.change(#000000, $alpha: 0.3)};
-  --dark-gray-2-80: #{color.change(#000000, $alpha: 0.8)};
-  --dark-gray-3: #292c2d;
-  --dark-gray-4: #34393b;
-  --white: #fff;
-  --off-white: #aab5ba;
-  --off-white-40: #{color.change(#aab5ba, $alpha: 0.4)};
-  --green: #91fadb;
-  --green-30: rgba(145, 250, 219, 0.3);
-  --lilac: #bb97d8;
-  --pink: #ff6fe0;
-  --strong-green: #00d1b8;
-  --strong-green-10: #{color.change(#00d1b8, $alpha: 0.1)};
+  // Dark background
+  --db-primary: #18181a;
+  --db-secondary: #000000;
+  --db-secondary-30: #{color.change(#000000, $alpha: 0.3)};
+  --db-secondary-80: #{color.change(#000000, $alpha: 0.8)};
+  --db-tertiary: #212426;
+  --db-quaternary: #2e3434;
 
-  // NOTIFICATION
-  --dark-ok-color: var(--strong-green);
-  --dark-warning-color: #ff6432;
-  --dark-pending-color: var(--lilac);
-  --dark-error-color: #ff3277;
-  --default-presence-color: #dee563;
+  //Dark foreground
+  --df-primary: #ffffff;
+  --df-secondary: #8f9da3;
+  --df-secondary-40: #{color.change(#8f9da3, $alpha: 0.4)}; // TODO: Check if needed
+
+  //Dark accent
+  --da-primary: #7efff5;
+  --da-primary-muted: #426158;
+  --da-secondary: #bb97d8;
+  --da-tertiary: #00d1b8;
+  --da-tertiary-10: #{color.change(#00d1b8, $alpha: 0.1)};
+  --da-quaternary: #ff6fe0;
 
   // LIGHT
-  --light-gray-1: #fff;
-  --light-gray-2: #e8eaee;
-  --light-gray-2-30: #{color.change(#e8eaee, $alpha: 0.3)};
-  --light-gray-2-80: #{color.change(#e8eaee, $alpha: 0.8)};
-  --light-gray-3: #f3f4f6;
-  --light-gray-4: #eef0f2;
-  --black: #000;
-  --off-black: #495e74;
-  --off-black-40: #{color.change(#495e74, $alpha: 0.4)};
-  --purple: #6911d4;
-  --purple-30: rgba(105, 17, 212, 0.2);
-  --blue: #1345aa;
-  --strong-purple: #8c33eb;
-  --strong-purple-10: #{color.change(#8c33eb, $alpha: 0.1)};
+  // Light background
+  --lb-primary: #ffffff;
+  --lb-secondary: #e8eaee;
+  --lb-secondary-30: #{color.change(#e8eaee, $alpha: 0.3)};
+  --lb-secondary-80: #{color.change(#e8eaee, $alpha: 0.8)};
+  --lb-tertiary: #f3f4f6;
+  --lb-quaternary: #eef0f2;
 
-  // NOTIFICATION WILL CHANGE
-  --light-ok-color: var(--strong-green);
-  --light-warning-color: #ff9b49;
-  --light-pending-color: var(--lilac);
-  --light-error-color: #ff4986;
+  //Light foreground
+  --lf-primary: #000;
+  --lf-secondary: #495e74;
+  --lf-secondary-40: #{color.change(#495e74, $alpha: 0.4)};
+  --lf-secondary-50: #{color.change(#495e74, $alpha: 0.5)};
+
+  //Light accent
+  --la-primary: #6911d4;
+  --la-primary-muted: #e1d2f5;
+  --la-secondary: #1345aa;
+  --la-tertiary: #8c33eb;
+  --la-tertiary-10: #{color.change(#8c33eb, $alpha: 0.1)};
+  --la-quaternary: #ff6fe0;
+
+  // STATUS COLOR
+  --status-color-success-50: #f0f8ff;
+  --status-color-success-500: #2d9f8f;
+  --status-color-success-950: #0a2927;
+  --status-color-warning-50: #fff4ed;
+  --status-color-warning-500: #fe4811;
+  --status-color-warning-950: #440806;
+  --status-color-error-50: #fff0f3;
+  --status-color-error-500: #ff3277;
+  --status-color-error-950: #500124;
+  --status-color-info-50: #f0f8ff;
+  --status-color-info-500: #0e9be9;
+  --status-color-info-950: #082c49;
+  // Status color default will change with theme and will be defined on theme files
 
   //GENERIC
   --color-canvas: #e8e9ea;
 
+  // APP COLORS
+  --app-white: #ffffff;
+  --app-black: #000;
+
   // SOCIAL LOGIN BUTTONS
   --google-login-background: #4285f4;
   --google-login-background-hover: #{color.adjust(#4285f4, $lightness: -15%)};
-  --google-login-foreground: var(--white);
+  --google-login-foreground: var(--df-primary);
 
   --github-login-background: #4c4c4c;
   --github-login-background-hover: #{color.adjust(#4c4c4c, $lightness: -15%)};
-  --github-login-foreground: var(--white);
+  --github-login-foreground: var(--app-white);
 
   --oidc-login-background: #b3b3b3;
   --oidc-login-background-hover: #{color.adjust(#b3b3b3, $lightness: -15%)};
-  --oidc-login-foreground: var(--white);
+  --oidc-login-foreground: var(--app-white);
 
   --gitlab-login-background: #fc6d26;
   --gitlab-login-background-hover: #{color.adjust(#fc6d26, $lightness: -15%)};
-  --gitlab-login-foreground: var(--white);
+  --gitlab-login-foreground: var(--app-white);
 }

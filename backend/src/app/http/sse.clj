@@ -9,11 +9,10 @@
   (:refer-clojure :exclude [tap])
   (:require
    [app.common.data :as d]
-   [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.transit :as t]
    [app.http.errors :as errors]
-   [promesa.core :as p]
+   [app.util.events :as events]
    [promesa.exec :as px]
    [promesa.exec.csp :as sp]
    [promesa.util :as pu]
@@ -21,25 +20,11 @@
   (:import
    java.io.OutputStream))
 
-(def ^:dynamic *channel* nil)
-
 (defn- write!
-  [^OutputStream output ^bytes  data]
+  [^OutputStream output ^bytes data]
   (l/trc :hint "writting data" :data data :length (alength data))
   (.write output data)
   (.flush output))
-
-(defn- create-writer-loop
-  [^OutputStream output]
-  (try
-    (loop []
-      (when-let [event (sp/take! *channel*)]
-        (let [result (ex/try! (write! output event))]
-          (if (ex/exception? result)
-            (l/wrn :hint "unexpected exception on sse writer" :cause result)
-            (recur)))))
-    (finally
-      (pu/close! output))))
 
 (defn- encode
   [[name data]]
@@ -61,13 +46,6 @@
    "Cache-Control" "no-cache, no-store, max-age=0, must-revalidate"
    "Pragma" "no-cache"})
 
-(defn tap
-  ([data] (tap "event" data))
-  ([name data]
-   (when-let [channel *channel*]
-     (sp/put! channel [name data])
-     nil)))
-
 (defn response
   [handler & {:keys [buf] :or {buf 32} :as opts}]
   (fn [request]
@@ -75,15 +53,18 @@
      ::rres/status 200
      ::rres/body (reify rres/StreamableResponseBody
                    (-write-body-to-stream [_ _ output]
-                     (binding [*channel* (sp/chan :buf buf :xf (keep encode))]
-                       (let [writer (px/run! :virtual (partial create-writer-loop output))]
+                     (binding [events/*channel* (sp/chan :buf buf :xf (keep encode))]
+                       (let [listener (events/start-listener
+                                       (partial write! output)
+                                       (partial pu/close! output))]
                          (try
-                           (tap "end" (handler))
+                           (let [result (handler)]
+                             (events/tap :end result))
                            (catch Throwable cause
                              (binding [l/*context* (errors/request->context request)]
                                (l/err :hint "unexpected error process streaming response"
                                       :cause cause))
-                             (tap "error" (errors/handle' cause request)))
+                             (events/tap :error (errors/handle' cause request)))
                            (finally
-                             (sp/close! *channel*)
-                             (p/await! writer)))))))}))
+                             (sp/close! events/*channel*)
+                             (px/await! listener)))))))}))

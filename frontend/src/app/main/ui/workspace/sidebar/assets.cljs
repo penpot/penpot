@@ -168,7 +168,8 @@
                        :placeholder (tr "workspace.assets.search")}
         [:button
          {:on-click on-open-menu
-          :class (stl/css :section-button)}
+          :class (stl/css-case :section-button true
+                               :opened menu-open?)}
          i/filter-refactor]]
        [:& context-menu-a11y
         {:on-close on-menu-close

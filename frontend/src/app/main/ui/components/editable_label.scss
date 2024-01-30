@@ -15,9 +15,9 @@
   max-width: calc(var(--parent-size) - (var(--depth) * var(--layer-indentation-size)));
   margin: 0;
   padding-left: $s-6;
-  border-radius: $br-8;
-  border: $s-1 solid var(--input-border-color-focus);
-  color: var(--layer-row-foreground-color);
+  border-radius: $br-4;
+  border: $s-1 solid var(--input-border-color-active);
+  color: var(--input-foreground-color-active);
 }
 
 .editable-label {

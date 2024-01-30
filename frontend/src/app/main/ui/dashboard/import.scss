@@ -39,8 +39,8 @@
   width: 100%;
   margin-bottom: $s-24;
   border-radius: $br-8;
-  background-color: var(--alert-background-color-ok);
-  color: var(--alert-foreground-color-ok);
+  background-color: var(--alert-background-color-success);
+  color: var(--alert-foreground-color-success);
 
   .icon {
     @include flexCenter;
@@ -48,7 +48,7 @@
     width: $s-24;
     svg {
       @extend .button-icon;
-      stroke: var(--alert-foreground-color-ok);
+      stroke: var(--alert-foreground-color-success);
     }
   }
   .message {
@@ -155,7 +155,7 @@
       }
       &.error {
         svg {
-          stroke: var(--status-error-color);
+          stroke: var(--element-foreground-error);
         }
       }
     }
@@ -163,57 +163,57 @@
 
   &.loading {
     .file-name {
-      color: var(--status-pending-color);
+      color: var(--modal-text-foreground-color);
       .file-icon {
         :global(#loader-pencil) {
-          color: var(--status-pending-color);
-          stroke: var(--status-pending-color);
-          fill: var(--status-pending-color);
+          color: var(--modal-text-foreground-color);
+          stroke: var(--modal-text-foreground-color);
+          fill: var(--modal-text-foreground-color);
         }
       }
     }
   }
   &.warning {
     .file-name {
-      color: var(--status-warning-color);
+      color: var(--element-foreground-warning);
       .file-icon svg {
-        stroke: var(--status-warning-color);
+        stroke: var(--element-foreground-warning);
       }
       .file-icon.icon-fill svg {
-        fill: var(--status-warning-color);
+        fill: var(--element-foreground-warning);
       }
     }
   }
   &.success {
     .file-name {
-      color: var(--status-success-color);
+      color: var(--modal-text-foreground-color);
       .file-icon svg {
-        stroke: var(--status-success-color);
+        stroke: var(--modal-text-foreground-color);
       }
       .file-icon.icon-fill svg {
-        fill: var(--status-success-color);
+        fill: var(--modal-text-foreground-color);
       }
     }
   }
   &.error {
     .file-name {
-      color: var(--status-error-color);
+      color: var(--modal-text-foreground-color);
       .file-icon svg {
-        stroke: var(--status-error-color);
+        stroke: var(--modal-text-foreground-color);
       }
       .file-icon.icon-fill svg {
-        fill: var(--status-error-color);
+        fill: var(--modal-text-foreground-color);
       }
     }
   }
   &.editable {
     .file-name {
-      color: var(--icon-foreground);
+      color: var(--modal-text-foreground-color);
       .file-icon svg {
-        stroke: var(--icon-foreground);
+        stroke: var(--modal-text-foreground-color);
       }
       .file-icon.icon-fill svg {
-        fill: var(--icon-foreground);
+        fill: var(--modal-text-foreground-color);
       }
     }
   }

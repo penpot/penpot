@@ -9,14 +9,13 @@
 .default {
   // BASE COLORS
   --canvas-background-color: var(--color-background-primary);
-  --canvas-fill-color: var(--canvas-color);
+  --canvas-fill-color: var(--color-canvas);
 
   --scrollbar-background-color: var(--color-foreground-secondary);
   --panel-background-color: var(--color-background-primary);
   --app-background: var(--color-background-primary);
   --loader-background: var(--color-background-primary);
   --panel-title-background-color: var(--color-background-secondary);
-  --presence-color: var(--default-presence-color);
 
   // BUTTONS
   --button-foreground-hover: var(--color-accent-primary);
@@ -64,6 +63,12 @@
   --button-tertiary-border-color-focus: var(--color-accent-primary);
   --button-tertiary-foreground-color-focus: var(--color-foreground-primary);
 
+  --button-icon-foreground-color: var(--color-foreground-secondary);
+  --button-icon-foreground-color-hover: var(--color-foreground-secondary);
+  --button-icon-background-color-selected: var(--color-background-quaternary);
+  --button-icon-foreground-color-selected: var(--color-accent-primary);
+  --button-icon-border-color-selected: var(--color-background-quaternary);
+
   --button-radio-background-color-rest: var(--color-background-tertiary);
   --button-radio-border-color-rest: var(--color-background-tertiary);
   --button-radio-foreground-color-rest: var(--color-foreground-secondary);
@@ -76,8 +81,8 @@
   --button-radio-border-color-focus: var(--color-accent-primary);
   --button-radio-foreground-color-focus: var(--color-foreground-secondary);
 
-  --button-warning-background-color-rest: var(--warning-color);
-  --button-warning-border-color-rest: var(--warning-color);
+  --button-warning-background-color-rest: var(--status-color-warning-500);
+  --button-warning-border-color-rest: var(--status-color-warning-500);
   --button-warning-foreground-color-rest: var(--color-background-secondary);
 
   --button-disabled-background-color-rest: var(--color-background-disabled);
@@ -93,11 +98,14 @@
   --constraint-center-area-background-color: var(--color-background-primary);
 
   // TABS
+  --tabs-background-color: var(--color-background-secondary);
   --tab-background-color-hover: var(--color-background-primary);
   --tab-background-color-selected: var(--color-background-quaternary);
   --tab-foreground-color: var(--color-foreground-secondary);
   --tab-foreground-color-hover: var(--color-foreground-primary);
   --tab-foreground-color-selected: var(--color-accent-primary);
+  --tab-border-color: var(--color-background-secondary);
+  --tab-border-color-selected: var(--color-background-secondary);
 
   // SECTION TITLE
   --title-background-color: var(--color-background-primary);
@@ -132,15 +140,16 @@
   --palette-button-shadow-final: transparent;
   --palette-handler-background-color: var(--color-background-quaternary);
 
-  --color-bullet-background-color: var(--white); // We don't want this color to change with palette
+  --color-bullet-background-color: var(--app-white); // We don't want this color to change with palette
   --color-bullet-border-color: var(--color-background-quaternary);
   --color-bullet-border-color-selected: var(--color-accent-primary);
 
   // ICONS
   --icon-foreground: var(--color-foreground-secondary);
+  --main-icon-foreground: var(--color-foreground-primary);
   --icon-foreground-hover: var(--color-foreground-primary);
-  --icon-foreground-accept: var(--ok-color);
-  --icon-foreground-discard: var(--error-color);
+  --icon-foreground-accept: var(--status-color-success-500);
+  --icon-foreground-discard: var(--status-color-error-500);
 
   // INPUTS, SELECTS, DROPDOWNS
 
@@ -164,7 +173,7 @@
   --input-background-color-disabled: var(--color-background-primary);
   --input-foreground-color-disabled: var(--color-foreground-secondary);
   --input-border-color-disabled: var(--color-background-quaternary);
-  --input-border-color-error: var(--error-color);
+  --input-border-color-error: var(--status-color-error-500);
   --input-border-color-success: var(--color-accent-primary);
   --input-details-color: var(--color-background-primary);
 
@@ -212,17 +221,15 @@
   --assets-title-background-color: var(--color-background-primary);
   --assets-item-background-color: var(--color-background-tertiary);
   --assets-item-background-color-hover: var(--color-background-quaternary);
-  --assets-item-name-background-color: var(--dark-gray-2-80); // TODO: penpot file has a non-existing token
-  --assets-item-name-foreground-color: var(--color-foreground-secondary);
+  --assets-item-name-background-color: var(--db-secondary-80); // TODO: penpot file has a non-existing token
+  --assets-item-name-foreground-color: var(--color-foreground-primary);
   --assets-item-name-foreground-color-hover: var(--color-foreground-primary);
   --assets-item-name-foreground-color-disabled: var(--color-foreground-disabled);
   --assets-item-border-color: var(--color-accent-primary);
-  --assets-item-background-color-drag: var(--color-accent-primary-muted);
-  --assets-item-border-color-drag: var(--color-accent-tertiary);
-  --assets-component-background-color: var(--white); // We don't want this color to change with palette
-  --assets-component-background-color-disabled: var(
-    --off-white
-  ); // We don't want this color to change with palette
+  --assets-item-background-color-drag: transparent;
+  --assets-item-border-color-drag: var(--color-accent-primary-muted);
+  --assets-component-background-color: var(--app-white); // TODO: review this token
+  --assets-component-background-color-disabled: var(--df-secondary;);
   --assets-component-border-color: var(--color-background-tertiary);
   --assets-component-border-selected: var(--color-accent-tertiary);
 
@@ -230,12 +237,15 @@
   --radio-btn-background-color-selected: var(--color-background-quaternary);
   --radio-btn-foreground-color: var(--color-foreground-secondary);
   --radio-btn-foreground-color-selected: var(--color-accent-primary);
+  --radio-btn-border-color: var(--color-background-tertiary);
   --radio-btn-border-color-selected: var(--color-background-quaternary);
 
   --library-name-foreground-color: var(--color-foreground-primary);
   --library-content-foreground-color: var(--color-foreground-secondary);
 
   --dropdown-background-color: var(--color-background-tertiary);
+  --dropdown-separator-color: var(--color-background-primary);
+  --profile-drowpdown-background-color: var(--color-background-primary);
 
   --not-found-background-color: var(--color-background-tertiary);
   --not-found-foreground-color: var(--color-foreground-secondary);
@@ -271,42 +281,53 @@
   --comment-bullet-foreground-color-resolved: var(--color-foreground-secondary);
   --comment-bullet-border-color-resolved: var(--color-background-quaternary);
   --comment-modal-background-color: var(--color-background-primary);
+  --comment-thread-background-color-hover: var(--color-background-primary);
 
   // GRID LAYOUT
-  --grid-editor-marker-color: var(--color-foreground-tertiary);
-  --grid-editor-marker-text: var(--color-foreground-tertiary);
-  --grid-editor-area-background: var(--color-foreground-tertiary);
-  --grid-editor-area-text: var(--color-foreground-tertiary);
-  --grid-editor-line-color: var(--color-foreground-tertiary);
-  --grid-editor-plus-btn-foreground: var(--white);
-  --grid-editor-plus-btn-background: var(--color-foreground-tertiary);
+  --grid-editor-marker-color: var(--color-accent-quaternary);
+  --grid-editor-marker-text: var(--color-accent-quaternary);
+  --grid-editor-area-background: var(--color-accent-quaternary);
+  --grid-editor-area-text: var(--color-accent-quaternary);
+  --grid-editor-line-color: var(--color-accent-quaternary);
+  --grid-editor-plus-btn-foreground: var(--app-white);
+  --grid-editor-plus-btn-background: var(--color-accent-quaternary);
 
   // MODALS
   --modal-background-color: var(--color-background-primary);
   --modal-title-foreground-color: var(--color-foreground-primary);
   --modal-text-foreground-color: var(--color-foreground-secondary);
   --modal-hint-border-color: var(--color-background-quaternary);
-  --modal-button-background-color-error: var(--error-color);
+  --modal-button-background-color-error: var(--status-color-error-500);
   --modal-button-foreground-color-error: var(--color-foreground-primary);
   --modal-link-foreground-color: var(--color-accent-primary);
   --modal-border-color: var(--color-background-quaternary);
 
-  // ALERTS & STATUS
-  --alert-background-color-ok: var(--ok-color);
-  --alert-foreground-color-ok: var(--dark-gray-2); // We don't want this color to change with theme
-  --alert-background-color-warning: var(--warning-color);
-  --alert-foreground-color-warning: var(--white); // We don't want this color to change with theme
-  --alert-background-color-error: var(--error-color);
-  --alert-foreground-color-error: var(--white); // We don't want this color to change with theme
+  // ALERTS NOTIFICATION TOAST & STATUS WIDGET
+  --alert-background-color-success: var(--status-color-success-500);
+  --alert-foreground-color-success: var(--db-secondary); // We don't want this color to change with theme
+  --alert-background-color-warning: var(--status-color-warning-500);
+  --alert-foreground-color-warning: var(--app-white); // We don't want this color to change with theme
+  --alert-background-color-error: var(--status-color-error-500);
+  --alert-foreground-color-error: var(--app-white); // We don't want this color to change with theme
   --alert-background-color-neutral: var(--color-background-quaternary);
   --alert-foreground-color-neutral: var(--color-foreground-secondary);
   --alert-foreground-color-neutral-active: var(--color-foreground-primary);
 
-  --status-ok-background-color: var(--ok-color);
-  --status-warning-background-color: var(--warning-color);
-  --status-pending-background-color: var(--pending-color);
-  --status-error-background-color: var(--error-color);
-  --status-icon-foreground-color: var(--color-background-primary);
+  --notification-background-color-success: var();
+  --notification-foreground-color-success: var();
+  --notification-border-color-success: var();
+  --notification-foreground-color-default: var(--color-foreground-secondary);
+
+  --status-widget-background-color-success: var(--status-color-success-500);
+  --status-widget-background-color-warning: var(--status-color-warning-500);
+  --status-widget-background-color-pending: var(--status-color-pending-500);
+  --status-widget-background-color-error: var(--status-color-error-500);
+  --status-widget-icon-foreground-color: var(--color-background-primary); // TODO review
+
+  --element-foreground-success: var(--status-color-success-500);
+  --element-foreground-warning: var(--status-color-warning-500);
+  --element-foreground-pending: var(--status-color-info-500);
+  --element-foreground-error: var(--status-color-error-500);
 
   // INTERFACE ELEMENTS
   --search-bar-background-color: var(--color-background-primary);
@@ -340,4 +361,26 @@
 
 #app {
   background-color: var(--app-background);
+}
+
+.light {
+  --assets-component-background-color: var(--color-background-secondary);
+
+  --tabs-background-color: var(--color-background-tertiary);
+  --tab-background-color-selected: var(--color-background-primary);
+  --tab-border-color: var(--color-background-tertiary);
+  --tab-border-color-selected: var(--color-background-secondary);
+
+  --radio-btns-background-color: var(--color-background-tertiary);
+  --radio-btn-background-color-selected: var(--color-background-primary);
+  --radio-btn-foreground-color: var(--color-foreground-secondary);
+  --radio-btn-foreground-color-selected: var(--color-accent-primary);
+  --radio-btn-border-color: var(--color-background-tertiary);
+  --radio-btn-border-color-selected: var(--color-background-secondary);
+
+  --button-icon-background-color-selected: var(--color-background-primary);
+  --button-icon-border-color-selected: var(--color-background-secondary);
+
+  --assets-item-name-background-color: var(--color-background-primary);
+  --assets-item-name-foreground-color: var(--color-foreground-primary);
 }

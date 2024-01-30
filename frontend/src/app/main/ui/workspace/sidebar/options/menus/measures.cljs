@@ -546,7 +546,7 @@
             [:span {:class (stl/css :icon)}
              i/clip-content-refactor]]])
         (when (options :show-in-viewer)
-          [:div {:class (stl/css :clip-content)}
+          [:div {:class (stl/css :show-in-viewer)}
            [:input {:type "checkbox"
                     :id "show-in-viewer"
                     :ref show-in-viewer-ref

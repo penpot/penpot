@@ -9,6 +9,7 @@
   #_:clj-kondo/ignore
   (:require
    [app.auth :refer [derive-password]]
+   [app.binfile.common :as bfc]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.features :as cfeat]
@@ -336,4 +337,5 @@
     (db/tx-run! main/system
                 (fn [cfg]
                   (db/exec-one! cfg ["SET CONSTRAINTS ALL DEFERRED"])
-                  (mgmt/duplicate-team cfg :team-id team-id :name name)))))
+                  (-> (assoc cfg ::bfc/timestamp (dt/now))
+                      (mgmt/duplicate-team :team-id team-id :name name))))))

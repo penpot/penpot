@@ -11,7 +11,7 @@
     fill: var(--grid-editor-marker-color);
   }
   .marker-text {
-    fill: var(--white);
+    fill: var(--app-white);
     font-size: calc($s-12 / var(--zoom));
     font-family: worksans;
   }

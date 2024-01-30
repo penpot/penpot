@@ -7,32 +7,26 @@
 @use "sass:meta";
 
 .light {
-  --color-background-primary: var(--light-gray-1);
-  --color-background-secondary: var(--light-gray-2);
-  --color-background-tertiary: var(--light-gray-3);
-  --color-background-quaternary: var(--light-gray-4);
-  --color-background-subtle: var(--light-gray-2-30); //Whatch this¡¡
-  --color-background-disabled: var(--light-gray-4);
-  --color-foreground-primary: var(--black);
-  --color-foreground-secondary: var(--off-black);
-  --color-foreground-tertiary: var(--pink);
-  --color-foreground-disabled: var(--off-black-40);
-  --color-accent-primary: var(--purple);
-  --color-accent-primary-muted: var(--purple-30);
-  --color-accent-secondary: var(--blue);
-  --color-accent-tertiary: var(--strong-purple);
-  --color-accent-tertiary-muted: var(--strong-purple-10);
-  --color-component-highlight: var(--blue);
+  --color-background-primary: var(--lb-primary);
+  --color-background-secondary: var(--lb-secondary);
+  --color-background-tertiary: var(--lb-tertiary);
+  --color-background-quaternary: var(--lb-quaternary);
+  --color-background-subtle: var(--lb-secondary-30); //Whatch this¡¡
+  --color-background-disabled: var(--lb-quaternary);
+  --color-foreground-primary: var(--lf-primary);
+  --color-foreground-secondary: var(--lf-secondary);
+  --color-foreground-disabled: var(--lf-secondary-40);
+  --color-accent-primary: var(--la-primary);
+  --color-accent-primary-muted: var(--la-primary-muted);
+  --color-accent-secondary: var(--la-secondary);
+  --color-accent-tertiary: var(--la-tertiary);
+  --color-accent-tertiary-muted: var(--la-tertiary-10);
+  --color-accent-quaternary: var(--la-quaternary);
+  --color-component-highlight: var(--la-secondary);
 
-  --overlay-color: rgba(255, 255, 255, 0.4);
-  --ok-color: var(--light-ok-color);
-  --warning-color: var(--light-warning-color);
-  --pending-color: var(--light-pending-color);
-  --error-color: var(--light-error-color);
-  --canvas-color: var(--color-canvas);
-
-  --shadow-color: var(--off-black-40);
-  --radio-button-box-shadow: 0 0 0 1px var(--light-gray-2) inset;
+  --overlay-color: var(--lf-secondary-50);
+  --shadow-color: var(--lf-secondary-40);
+  --radio-button-box-shadow: 0 0 0 1px var(--lb-secondary) inset;
 
   @include meta.load-css("hljs-light-theme");
 }

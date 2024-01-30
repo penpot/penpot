@@ -8,7 +8,7 @@
 @use "common/refactor/common-dashboard";
 
 .dashboard {
-  background-color: $db-primary;
+  background-color: var(--app-background);
   display: grid;
   grid-template-rows: $s-48 1fr;
   grid-template-columns: $s-40 $s-256 1fr;
@@ -28,7 +28,7 @@
   margin-right: $s-16;
   overflow-y: auto;
   width: 100%;
-  border-top: $s-1 solid $db-cuaternary;
+  border-top: $s-1 solid $db-quaternary;
 
   &.dashboard-projects {
     user-select: none;
@@ -107,8 +107,8 @@
       }
       &.disabled {
         input {
-          background-color: $db-primary;
-          border-color: $db-cuaternary;
+          background-color: var(--input-background-color-disabled);
+          border-color: $db-quaternary;
           color: $df-secondary;
         }
       }
@@ -161,7 +161,7 @@
       color: $df-primary;
       &:hover {
         color: $da-primary;
-        background-color: $db-cuaternary;
+        background-color: $db-quaternary;
       }
     }
     hr {

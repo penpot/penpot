@@ -38,11 +38,11 @@
              :y area-y
              :width area-width
              :height area-height
-             :style {:fill "var(--color-foreground-tertiary)"
+             :style {:fill "var(--color-accent-quaternary)"
                      :fill-opacity 0.3}}]
      [:text {:x area-text-x
              :y area-text-y
-             :style {:fill "var(--color-foreground-tertiary)"
+             :style {:fill "var(--color-accent-quaternary)"
                      :font-family "worksans"
                      :font-weight 600
                      :font-size 14
@@ -71,7 +71,7 @@
        :y (:y cell-origin)
        :width cell-width
        :height cell-height
-       :style {:stroke "var(--color-foreground-tertiary)"
+       :style {:stroke "var(--color-accent-quaternary)"
                :stroke-width 1.5
                :fill "none"}}]
 

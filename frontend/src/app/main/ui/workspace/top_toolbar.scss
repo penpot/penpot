@@ -39,7 +39,6 @@
       height: $s-36;
       width: $s-36;
       flex-shrink: 0;
-      background-color: transparent;
       border-radius: $s-8;
       border: none;
       margin: 0 $s-2;
@@ -48,11 +47,9 @@
         @extend .button-icon;
         stroke: var(--color-foreground-secondary);
       }
+
       &.selected {
-        background-color: var(--button-radio-background-color-active);
-        svg {
-          stroke: var(--button-radio-foreground-color-active);
-        }
+        @extend .button-icon-selected;
       }
     }
   }

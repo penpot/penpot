@@ -325,7 +325,7 @@
           }
         }
         &.invalid {
-          background-color: var(--status-error-background-color);
+          background-color: var(--status-widget-background-color-error);
           .text {
             color: var(--alert-foreground-color-error);
           }

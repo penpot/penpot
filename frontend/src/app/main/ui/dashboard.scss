@@ -7,7 +7,7 @@
 @use "refactor/common-refactor.scss" as *;
 
 .dashboard {
-  background-color: $db-primary;
+  background-color: var(--app-background);
   display: grid;
   grid-template-columns: $s-40 $s-256 1fr;
   grid-template-rows: $s-52 1fr;

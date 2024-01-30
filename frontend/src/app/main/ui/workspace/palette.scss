@@ -59,6 +59,7 @@
     margin: $s-0;
     list-style: none;
     z-index: $z-index-2;
+    gap: $s-2;
     &.mid-palette,
     &.small-palette {
       display: flex;
@@ -73,7 +74,6 @@
         height: $s-32;
         width: $s-32;
         border-radius: $br-8;
-        border: $s-2 solid transparent;
         background-clip: padding-box;
         padding: 0;
         svg {
@@ -83,12 +83,10 @@
         &.selected {
           @extend .button-icon-selected;
         }
-        &:hover {
-          border: $s-2 solid transparent;
-        }
       }
     }
   }
+
   .palette-actions {
     @extend .button-tertiary;
     grid-area: actions;

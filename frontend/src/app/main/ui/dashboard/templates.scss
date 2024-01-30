@@ -41,7 +41,7 @@
       margin-right: $s-32;
       position: relative;
       z-index: 1;
-      background-color: $db-cuaternary;
+      background-color: $db-quaternary;
 
       span {
         display: inline-block;
@@ -107,7 +107,7 @@
     margin-left: $s-6;
     position: absolute;
     border-top-left-radius: $s-8;
-    background-color: $db-cuaternary;
+    background-color: $db-quaternary;
 
     .card-container {
       width: $s-276;

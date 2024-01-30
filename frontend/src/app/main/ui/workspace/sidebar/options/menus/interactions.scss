@@ -229,10 +229,7 @@
         @extend .button-icon;
       }
       &.extended {
-        background-color: var(--button-radio-background-color-active);
-        svg {
-          stroke: var(--button-radio-foreground-color-active);
-        }
+        @extend .button-icon-selected;
       }
     }
 

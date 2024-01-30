@@ -735,7 +735,7 @@
                                     (rx/tap (fn [event]
                                               (let [payload (sse/get-payload event)
                                                     type    (sse/get-type event)]
-                                                (if (= type "event")
+                                                (if (= type "progress")
                                                   (log/dbg :hint "import-binfile: progress" :section (:section payload) :name (:name payload))
                                                   (log/dbg :hint "import-binfile: end")))))
                                     (rx/filter sse/end-of-stream?)

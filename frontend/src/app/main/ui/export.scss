@@ -202,7 +202,7 @@
         height: 100%;
         min-height: $s-32;
         min-width: $s-32;
-        background-color: var(--white);
+        background-color: var(--app-white);
         border-radius: $br-6;
         margin: auto 0;
         img,
@@ -276,28 +276,27 @@
   }
   &.loading {
     .file-name {
-      color: var(--pending-color);
+      color: var(--modal-text-foreground-color);
       .file-icon svg:global(#loader-pencil) {
-        color: var(--pending-color);
-        stroke: var(--pending-color);
-        fill: var(--pending-color);
+        color: var(--modal-text-foreground-color);
+        stroke: var(--modal-text-foreground-color);
+        fill: var(--modal-text-foreground-color);
       }
     }
   }
   &.error {
     .file-name {
-      color: var(--error-color);
+      color: var(--modal-text-foreground-color);
       .file-icon svg {
-        stroke: var(--error-color);
+        stroke: var(--modal-text-foreground-color);
       }
     }
   }
-
   &.success {
     .file-name {
-      color: var(--ok-color);
+      color: var(--modal-text-foreground-color);
       .file-icon svg {
-        stroke: var(--ok-color);
+        stroke: var(--modal-text-foreground-color);
       }
     }
   }

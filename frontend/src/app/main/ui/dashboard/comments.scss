@@ -67,8 +67,8 @@
   width: $s-32;
 
   svg {
-    min-width: $s-16;
-    min-height: $s-16;
+    width: $s-16;
+    height: $s-16;
     stroke: $df-secondary;
     fill: none;
   }
@@ -79,7 +79,7 @@
   }
 
   &:hover {
-    background-color: $db-cuaternary;
+    background-color: $db-quaternary;
 
     svg {
       stroke: $da-primary;

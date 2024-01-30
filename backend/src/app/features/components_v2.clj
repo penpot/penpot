@@ -41,7 +41,6 @@
    [app.db :as db]
    [app.db.sql :as sql]
    [app.features.fdata :as fdata]
-   [app.http.sse :as sse]
    [app.media :as media]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.files-snapshot :as fsnap]
@@ -51,6 +50,7 @@
    [app.svgo :as svgo]
    [app.util.blob :as blob]
    [app.util.cache :as cache]
+   [app.util.events :as events]
    [app.util.pointer-map :as pmap]
    [app.util.time :as dt]
    [buddy.core.codecs :as bc]
@@ -767,8 +767,6 @@
   backup', generate main instances for all components there and remove
   shapes from library components. Mark the file with the :components-v2 option."
   [file-data libraries]
-  (sse/tap {:type :migration-progress
-            :section :components})
   (let [file-data  (prepare-file-data file-data libraries)
         components (ctkl/components-seq file-data)]
     (if (empty? components)
@@ -843,9 +841,9 @@
             add-instance-grid
             (fn [fdata frame-id grid assets]
               (reduce (fn [result [component position]]
-                        (sse/tap {:type :migration-progress
-                                  :section :components
-                                  :name (:name component)})
+                        (events/tap :progress {:op :migrate-component
+                                               :id (:id component)
+                                               :name (:name component)})
                         (add-main-instance result component frame-id (gpt/add position
                                                                               (gpt/point grid-gap grid-gap))))
                       fdata
@@ -881,9 +879,9 @@
                              (gpt/add position (gpt/point 0 (+ height (* 2 grid-gap) frame-gap)))))))))]
 
         (let [total (count components)]
-          (some-> *stats* (swap! update :processed/components (fnil + 0) total))
-          (some-> *team-stats* (swap! update :processed/components (fnil + 0) total))
-          (some-> *file-stats* (swap! assoc :processed/components total)))
+          (some-> *stats* (swap! update :processed-components (fnil + 0) total))
+          (some-> *team-stats* (swap! update :processed-components (fnil + 0) total))
+          (some-> *file-stats* (swap! assoc :processed-components total)))
 
         (add-instance-grids file-data)))))
 
@@ -1143,16 +1141,14 @@
 
     (->> (d/zip media-group grid)
          (reduce (fn [fdata [mobj position]]
-                   (sse/tap {:type :migration-progress
-                             :section :graphics
-                             :name (:name mobj)})
+                   (events/tap :progress {:op :migrate-graphic
+                                          :id (:id mobj)
+                                          :name (:name mobj)})
                    (or (process fdata mobj position) fdata))
                  (assoc-in fdata [:options :components-v2] true)))))
 
 (defn- migrate-graphics
   [fdata]
-  (sse/tap {:type :migration-progress
-            :section :graphics})
   (if (empty? (:media fdata))
     fdata
     (let [[fdata page-id start-pos]
@@ -1167,9 +1163,9 @@
           groups (get-asset-groups media "Graphics")]
 
       (let [total (count media)]
-        (some-> *stats* (swap! update :processed/graphics (fnil + 0) total))
-        (some-> *team-stats* (swap! update :processed/graphics (fnil + 0) total))
-        (some-> *file-stats* (swap! assoc :processed/graphics total)))
+        (some-> *stats* (swap! update :processed-graphics (fnil + 0) total))
+        (some-> *team-stats* (swap! update :processed-graphics (fnil + 0) total))
+        (some-> *file-stats* (swap! assoc :processed-graphics total)))
 
       (loop [groups (seq groups)
              fdata fdata
@@ -1236,10 +1232,8 @@
   (cfv/validate-file-schema! file))
 
 (defn- process-file
-  [{:keys [::db/conn] :as system} id & {:keys [validate?]}]
-  (let [file  (get-file system id)
-
-        libs  (->> (files/get-file-libraries conn id)
+  [{:keys [::db/conn] :as system} {:keys [id] :as file} & {:keys [validate?]}]
+  (let [libs  (->> (files/get-file-libraries conn id)
                    (into [file] (comp (map :id)
                                       (map (partial get-file system))))
                    (d/index-by :id))
@@ -1314,7 +1308,13 @@
                             (when (string? label)
                               (fsnap/take-file-snapshot! system {:file-id file-id
                                                                  :label (str "migration/" label)}))
-                            (process-file system file-id :validate? validate?))
+                            (let [file (get-file system file-id)]
+                              (events/tap :progress
+                                          {:op :migrate-file
+                                           :name (:name file)
+                                           :id (:id file)})
+
+                              (process-file system file :validate? validate?)))
 
                           (catch Throwable cause
                             (let [team-id *team-id*]
@@ -1325,8 +1325,8 @@
 
         (finally
           (let [elapsed    (tpoint)
-                components (get @*file-stats* :processed/components 0)
-                graphics   (get @*file-stats* :processed/graphics 0)]
+                components (get @*file-stats* :processed-components 0)
+                graphics   (get @*file-stats* :processed-graphics 0)]
 
             (l/dbg :hint "migrate:file:end"
                    :file-id (str file-id)
@@ -1335,8 +1335,8 @@
                    :validate validate?
                    :elapsed (dt/format-duration elapsed))
 
-            (some-> *stats* (swap! update :processed/files (fnil inc 0)))
-            (some-> *team-stats* (swap! update :processed/files (fnil inc 0)))))))))
+            (some-> *stats* (swap! update :processed-files (fnil inc 0)))
+            (some-> *team-stats* (swap! update :processed-files (fnil inc 0)))))))))
 
 (defn migrate-team!
   [system team-id & {:keys [validate? skip-on-graphic-error? label]}]
@@ -1355,7 +1355,7 @@
                          :skip-on-graphic-error? skip-on-graphic-error?))
         migrate-team
         (fn [{:keys [::db/conn] :as system} team-id]
-          (let [{:keys [id features]} (get-team system team-id)]
+          (let [{:keys [id features name]} (get-team system team-id)]
             (if (contains? features "components/v2")
               (l/inf :hint "team already migrated")
               (let [features (-> features
@@ -1363,6 +1363,11 @@
                                  (conj "components/v2")
                                  (conj "layout/grid")
                                  (conj "styles/v2"))]
+
+                (events/tap :progress
+                            {:op :migrate-team
+                             :name name
+                             :id id})
 
                 (run! (partial migrate-file system)
                       (get-and-lock-files conn id))
@@ -1380,11 +1385,12 @@
 
         (finally
           (let [elapsed    (tpoint)
-                components (get @*team-stats* :processed/components 0)
-                graphics   (get @*team-stats* :processed/graphics 0)
-                files      (get @*team-stats* :processed/files 0)]
+                components (get @*team-stats* :processed-components 0)
+                graphics   (get @*team-stats* :processed-graphics 0)
+                files      (get @*team-stats* :processed-files 0)]
 
-            (some-> *stats* (swap! update :processed/teams (fnil inc 0)))
+            (when-not @err
+              (some-> *stats* (swap! update :processed-teams (fnil inc 0))))
 
             (if (cache/cache? *cache*)
               (let [cache-stats (cache/stats *cache*)]

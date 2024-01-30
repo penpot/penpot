@@ -30,6 +30,10 @@ $width-settings-bar-max: $s-500;
   }
 }
 
+.layers-tab {
+  padding-top: $s-4;
+}
+
 .left-header {
   grid-area: header;
 }
@@ -85,6 +89,5 @@ $width-settings-bar-max: $s-500;
   width: 100%;
   height: $s-12;
   border-top: $s-2 solid var(--resize-area-border-color);
-  background-color: var(--resize-area-background-color);
   cursor: ns-resize;
 }

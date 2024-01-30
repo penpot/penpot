@@ -213,7 +213,7 @@
                :style {:fillOpacity "1"
                        :strokeWidth "1px"
                        :vectorEffect "non-scaling-stroke"}
-               :fill "var(--white)"
+               :fill "var(--app-white)"
                :stroke color
                :cx cx'
                :cy cy'}]
@@ -279,7 +279,7 @@
                  :style {:fillOpacity 1
                          :stroke color
                          :strokeWidth "1px"
-                         :fill "var(--white)"
+                         :fill "var(--app-white)"
                          :vectorEffect "non-scaling-stroke"}
                  :data-position (name position)
                  :cx (+ x (/ length 2))
