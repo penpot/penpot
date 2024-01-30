@@ -601,6 +601,16 @@
       (d/update-in-when [:layout-padding :p3] * scale)
       (d/update-in-when [:layout-padding :p4] * scale)))
 
+(defn update-grid-scale
+  [shape scale]
+  (letfn [(scale-track [track]
+            (cond-> track
+              (= (:type track) :fixed)
+              (update :value * scale)))]
+    (-> shape
+        (update :layout-grid-columns #(mapv scale-track %))
+        (update :layout-grid-rows #(mapv scale-track %)))))
+
 (defn update-flex-child
   [shape scale]
   (-> shape
