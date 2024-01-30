@@ -305,6 +305,8 @@
 
         rx        (d/nilv r rx)
         ry        (d/nilv r ry)
+        rx        (d/nilv rx 0)
+        ry        (d/nilv ry 0)
 
         ;; There are some svg circles in the internet that does not
         ;; have cx and cy attrs, so we default them to 0
