@@ -47,7 +47,6 @@
    [app.rpc.commands.media :as cmd.media]
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
-   [app.svgo :as svgo]
    [app.util.blob :as blob]
    [app.util.cache :as cache]
    [app.util.events :as events]
@@ -1103,8 +1102,7 @@
 (defn- create-shapes-for-svg
   [{:keys [id] :as mobj} file-id objects frame-id position]
   (let [get-svg (fn [sid]
-                  (let [svg-text (get-sobject-content sid)
-                        svg-text (svgo/optimize *system* svg-text)]
+                  (let [svg-text (get-sobject-content sid)]
                     (-> (csvg/parse svg-text)
                         (assoc :name (:name mobj)))))
 
