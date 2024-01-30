@@ -17,8 +17,7 @@
   flex-direction: row;
   gap: $s-2;
   border-radius: $br-8;
-  background: var(--color-background-secondary);
-  padding: $s-2;
+  background: var(--tabs-background-color);
   cursor: pointer;
   font-size: $fs-12;
   height: 100%;
@@ -27,7 +26,6 @@
     flex-direction: row;
     height: 100%;
     width: 100%;
-    gap: $s-2;
     .tab-container-tab-title {
       @include flexCenter;
       @include tabTitleTipography;
@@ -35,10 +33,11 @@
       width: 100%;
       padding: 0 $s-8;
       margin: 0;
-      border-radius: $br-5;
+      border-radius: $br-8;
       background-color: transparent;
       color: var(--tab-foreground-color);
       white-space: nowrap;
+      border: $s-2 solid var(--tab-border-color);
       svg {
         @extend .button-icon;
         stroke: var(--tab-foreground-color);
@@ -47,6 +46,7 @@
       &.current,
       &.current:hover {
         background: var(--tab-background-color-selected);
+        border-color: var(--tab-border-color-selected);
         color: var(--tab-foreground-color-selected);
         svg {
           stroke: var(--tab-foreground-color-selected);

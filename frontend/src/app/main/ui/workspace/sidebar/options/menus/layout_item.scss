@@ -83,11 +83,7 @@
     @extend .button-icon;
   }
   &.selected {
-    background-color: var(--button-tertiary-background-color-active);
-    color: var(--button-tertiary-foreground-color-active);
-    svg {
-      stroke: var(--button-tertiary-foreground-color-active);
-    }
+    @extend .button-icon-selected;
   }
 }
 

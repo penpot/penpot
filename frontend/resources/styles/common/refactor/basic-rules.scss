@@ -127,7 +127,7 @@
   border-radius: $br-8;
   color: var(--button-tertiary-foreground-color-rest);
   background-color: transparent;
-  border: $s-1 solid transparent;
+  border: $s-2 solid transparent;
   svg,
   span svg {
     stroke: var(--button-tertiary-foreground-color-rest);
@@ -135,7 +135,7 @@
   &:hover {
     background-color: var(--button-tertiary-background-color-hover);
     color: var(--button-tertiary-foreground-color-hover);
-    border: $s-1 solid var(--button-secondary-border-color-hover);
+    border: $s-2 solid var(--button-secondary-border-color-hover);
     svg,
     span svg {
       stroke: var(--button-tertiary-foreground-color-hover);
@@ -143,7 +143,7 @@
   }
   &:active {
     outline: none;
-    border: $s-1 solid transparent;
+    border: $s-2 solid transparent;
     background-color: var(--button-tertiary-background-color-active);
     color: var(--button-tertiary-foreground-color-active);
     svg,
@@ -168,11 +168,11 @@
 
 .button-icon-selected {
   outline: none;
-  border: $s-1 solid transparent;
-  background-color: var(--button-tertiary-background-color-hover);
-  color: var(--button-tertiary-foreground-color-active);
+  border: $s-2 solid var(--button-icon-border-color-selected);
+  background-color: var(--button-icon-background-color-selected);
+  color: var(--button-icon-foreground-color-selected);
   svg {
-    stroke: var(--button-tertiary-foreground-color-active);
+    stroke: var(--button-icon-foreground-color-selected);
   }
 }
 

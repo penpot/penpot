@@ -63,6 +63,12 @@
   --button-tertiary-border-color-focus: var(--color-accent-primary);
   --button-tertiary-foreground-color-focus: var(--color-foreground-primary);
 
+  --button-icon-foreground-color: var(--color-foreground-secondary);
+  --button-icon-foreground-color-hover: var(--color-foreground-secondary);
+  --button-icon-background-color-selected: var(--color-background-quaternary);
+  --button-icon-foreground-color-selected: var(--color-accent-primary);
+  --button-icon-border-color-selected: var(--color-background-quaternary);
+
   --button-radio-background-color-rest: var(--color-background-tertiary);
   --button-radio-border-color-rest: var(--color-background-tertiary);
   --button-radio-foreground-color-rest: var(--color-foreground-secondary);
@@ -92,11 +98,14 @@
   --constraint-center-area-background-color: var(--color-background-primary);
 
   // TABS
+  --tabs-background-color: var(--color-background-secondary);
   --tab-background-color-hover: var(--color-background-primary);
   --tab-background-color-selected: var(--color-background-quaternary);
   --tab-foreground-color: var(--color-foreground-secondary);
   --tab-foreground-color-hover: var(--color-foreground-primary);
   --tab-foreground-color-selected: var(--color-accent-primary);
+  --tab-border-color: var(--color-background-secondary);
+  --tab-border-color-selected: var(--color-background-secondary);
 
   // SECTION TITLE
   --title-background-color: var(--color-background-primary);
@@ -213,16 +222,14 @@
   --assets-item-background-color: var(--color-background-tertiary);
   --assets-item-background-color-hover: var(--color-background-quaternary);
   --assets-item-name-background-color: var(--db-secondary-80); // TODO: penpot file has a non-existing token
-  --assets-item-name-foreground-color: var(--color-foreground-secondary);
+  --assets-item-name-foreground-color: var(--color-foreground-primary);
   --assets-item-name-foreground-color-hover: var(--color-foreground-primary);
   --assets-item-name-foreground-color-disabled: var(--color-foreground-disabled);
   --assets-item-border-color: var(--color-accent-primary);
-  --assets-item-background-color-drag: var(--color-accent-primary-muted);
-  --assets-item-border-color-drag: var(--color-accent-tertiary);
-  --assets-component-background-color: var(--app-white); // We don't want this color to change with palette
-  --assets-component-background-color-disabled: var(
-    --df-secondary;
-  ); // We don't want this color to change with palette
+  --assets-item-background-color-drag: transparent;
+  --assets-item-border-color-drag: var(--color-accent-primary-muted);
+  --assets-component-background-color: var(--app-white); // TODO: review this token
+  --assets-component-background-color-disabled: var(--df-secondary;);
   --assets-component-border-color: var(--color-background-tertiary);
   --assets-component-border-selected: var(--color-accent-tertiary);
 
@@ -230,6 +237,7 @@
   --radio-btn-background-color-selected: var(--color-background-quaternary);
   --radio-btn-foreground-color: var(--color-foreground-secondary);
   --radio-btn-foreground-color-selected: var(--color-accent-primary);
+  --radio-btn-border-color: var(--color-background-tertiary);
   --radio-btn-border-color-selected: var(--color-background-quaternary);
 
   --library-name-foreground-color: var(--color-foreground-primary);
@@ -353,4 +361,26 @@
 
 #app {
   background-color: var(--app-background);
+}
+
+.light {
+  --assets-component-background-color: var(--color-background-secondary);
+
+  --tabs-background-color: var(--color-background-tertiary);
+  --tab-background-color-selected: var(--color-background-primary);
+  --tab-border-color: var(--color-background-tertiary);
+  --tab-border-color-selected: var(--color-background-secondary);
+
+  --radio-btns-background-color: var(--color-background-tertiary);
+  --radio-btn-background-color-selected: var(--color-background-primary);
+  --radio-btn-foreground-color: var(--color-foreground-secondary);
+  --radio-btn-foreground-color-selected: var(--color-accent-primary);
+  --radio-btn-border-color: var(--color-background-tertiary);
+  --radio-btn-border-color-selected: var(--color-background-secondary);
+
+  --button-icon-background-color-selected: var(--color-background-primary);
+  --button-icon-border-color-selected: var(--color-background-secondary);
+
+  --assets-item-name-background-color: var(--color-background-primary);
+  --assets-item-name-foreground-color: var(--color-foreground-primary);
 }

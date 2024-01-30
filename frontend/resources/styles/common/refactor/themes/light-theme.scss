@@ -24,8 +24,7 @@
   --color-accent-quaternary: var(--la-quaternary);
   --color-component-highlight: var(--la-secondary);
 
-  --overlay-color: rgba(255, 255, 255, 0.4);
-
+  --overlay-color: var(--lf-secondary-50);
   --shadow-color: var(--lf-secondary-40);
   --radio-button-box-shadow: 0 0 0 1px var(--lb-secondary) inset;
 

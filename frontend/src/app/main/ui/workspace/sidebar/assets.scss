@@ -90,6 +90,10 @@
       }
     }
   }
+
+  &.opened {
+    @extend .button-icon-selected;
+  }
 }
 
 .sections-container {

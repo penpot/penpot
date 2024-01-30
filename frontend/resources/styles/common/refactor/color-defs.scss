@@ -42,6 +42,7 @@
   --lf-primary: #000;
   --lf-secondary: #495e74;
   --lf-secondary-40: #{color.change(#495e74, $alpha: 0.4)};
+  --lf-secondary-50: #{color.change(#495e74, $alpha: 0.5)};
 
   //Light accent
   --la-primary: #6911d4;

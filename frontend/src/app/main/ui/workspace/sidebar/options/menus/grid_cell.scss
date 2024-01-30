@@ -52,5 +52,5 @@
 .coord-input {
   @extend .input-element;
   border-radius: 0 $br-8 $br-8 0;
-  border-left: 1px solid var(--panel-background-color);
+  border-left: $s-1 solid var(--panel-background-color);
 }

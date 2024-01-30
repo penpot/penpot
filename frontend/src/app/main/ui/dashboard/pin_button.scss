@@ -7,13 +7,14 @@
 @use "common/refactor/common-refactor.scss" as *;
 
 .button {
-  --pin-button-icon-color: #{$df-secondary};
+  --pin-button-icon-color: var(--button-icon-foreground-color);
   --pin-button-bg-color: none;
+  --pin-button-border-color: none;
 
   width: $s-32;
   height: $s-32;
   background: var(--pin-button-bg-color);
-  border: none;
+  border: $s-2 solid var(--pin-button-border-color);
   border-radius: $br-8;
   display: grid;
   place-content: center;
@@ -21,8 +22,9 @@
 }
 
 .button-active {
-  --pin-button-icon-color: #{$da-primary};
-  --pin-button-bg-color: #{$db-cuaternary};
+  --pin-button-icon-color: var(--button-icon-foreground-color-selected);
+  --pin-button-bg-color: var(--button-icon-background-color-selected);
+  --pin-button-border-color: var(--button-icon-border-color-selected);
 }
 
 .icon {

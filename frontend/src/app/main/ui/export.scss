@@ -276,27 +276,27 @@
   }
   &.loading {
     .file-name {
-      color: var(--element-foreground-pending);
+      color: var(--modal-text-foreground-color);
       .file-icon svg:global(#loader-pencil) {
-        color: var(--element-foreground-pending);
-        stroke: var(--element-foreground-pending);
-        fill: var(--element-foreground-pending);
+        color: var(--modal-text-foreground-color);
+        stroke: var(--modal-text-foreground-color);
+        fill: var(--modal-text-foreground-color);
       }
     }
   }
   &.error {
     .file-name {
-      color: var(--element-foreground-error);
+      color: var(--modal-text-foreground-color);
       .file-icon svg {
-        stroke: var(--element-foreground-error);
+        stroke: var(--modal-text-foreground-color);
       }
     }
   }
   &.success {
     .file-name {
-      color: var(--element-foreground-success);
+      color: var(--modal-text-foreground-color);
       .file-icon svg {
-        stroke: var(--element-foreground-success);
+        stroke: var(--modal-text-foreground-color);
       }
     }
   }
