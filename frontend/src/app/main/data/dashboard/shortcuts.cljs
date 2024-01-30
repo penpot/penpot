@@ -32,8 +32,8 @@
                         :subsections [:general-dashboard]
                         :fn #(st/emit! (dd/create-element))}
 
-   :toggle-theme    {:tooltip (ds/meta (ds/alt "M"))
-                     :command (ds/c-mod "alt+m")
+   :toggle-theme    {:tooltip (ds/alt "M")
+                     :command (ds/a-mod "m")
                      :subsections [:general-dashboard]
                      :fn #(st/emit! (du/toggle-theme))}})
 

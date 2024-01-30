@@ -551,8 +551,8 @@
 
 
    ;; THEME
-   :toggle-theme    {:tooltip (ds/meta (ds/alt "M"))
-                     :command (ds/c-mod "alt+m")
+   :toggle-theme    {:tooltip (ds/alt "M")
+                     :command (ds/a-mod "m")
                      :subsections [:basics]
                      :fn #(st/emit! (du/toggle-theme))}})
 
