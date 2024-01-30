@@ -168,12 +168,10 @@
         fix-bad-children
         (fn [file-data]
           ;; Remove any child that does not exist. And also remove duplicated children.
-          (letfn [(fix-container
-                    [container]
+          (letfn [(fix-container [container]
                     (d/update-when container :objects update-vals (partial fix-shape container)))
 
-                  (fix-shape
-                    [container shape]
+                  (fix-shape [container shape]
                     (let [objects (:objects container)]
                       (d/update-when shape :shapes
                                      (fn [shapes]
@@ -241,7 +239,7 @@
                 (d/update-when :colors fix-colors-library)
                 (d/update-when :typographies dissoc nil))))
 
-        delete-big-geometry-shapes
+        fix-big-geometry-shapes
         (fn [file-data]
           ;; At some point in time, we had a bug that generated shapes
           ;; with huge geometries that did not validate the
@@ -777,14 +775,14 @@
     (-> file-data
         (fix-file-data)
         (fix-page-invalid-options)
-        (fix-bad-children)
         (fix-misc-shape-issues)
         (fix-recent-colors)
         (fix-missing-image-metadata)
         (fix-text-shapes-converted-to-path)
         (fix-broken-paths)
-        (delete-big-geometry-shapes)
+        (fix-big-geometry-shapes)
         (fix-completly-broken-shapes)
+        (fix-bad-children)
         (fix-broken-parents)
         (fix-orphan-shapes)
         (fix-orphan-copies)
