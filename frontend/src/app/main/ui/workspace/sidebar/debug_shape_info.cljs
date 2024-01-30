@@ -17,11 +17,41 @@
    [debug :as dbg]
    [rumext.v2 :as mf]))
 
+(def display-attrs
+  [:type
+   :id
+   :parent-id
+   :frame-id
+   :shapes
+   :component-id
+   :component-file
+   :component-root
+   :main-instance
+   :shape-ref
+   :x
+   :y
+   :width
+   :height
+   :selrect
+   :points
+   :transform
+   :transform-inverse])
+
 (def remove-attrs
-  #{:id :name})
+  #{:name, :remote-synced})
 
 (def vertical-layout-attrs
   #{})
+
+(defn get-attrs
+  [shape]
+  (let [shape-attrs (->> (keys shape)
+                         (remove (set display-attrs))
+                         (remove remove-attrs)
+                         (sort-by name))]
+    (as-> display-attrs $
+      (d/removev #(nil? (get shape %)) $)
+      (into $ shape-attrs))))
 
 (def custom-renderer
   {:parent-id :shape-link
@@ -87,10 +117,7 @@
            [:button {:on-click #(debug/dump-subtree (dm/str (:id current)) true)} "tree"]]
 
           [:div {:class (stl/css :shape-attrs)}
-           (let [attrs (->> (keys current)
-                            (remove remove-attrs))
-                 attrs (concat [:frame-id :parent-id :shapes]
-                               (->> attrs (remove #{:frame-id :parent-id :shapes})))]
+           (let [attrs (get-attrs current)]
              (for [attr attrs]
                (when-let [value (get current attr)]
                  [:div {:class (stl/css-case :attrs-container-attr true
