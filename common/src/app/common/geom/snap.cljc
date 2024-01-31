@@ -15,15 +15,16 @@
 
 (defn rect->snap-points
   [rect]
-  (let [x (dm/get-prop rect :x)
-        y (dm/get-prop rect :y)
-        w (dm/get-prop rect :width)
-        h (dm/get-prop rect :height)]
-    #{(gpt/point x y)
-      (gpt/point (+ x w) y)
-      (gpt/point (+ x w) (+ y h))
-      (gpt/point x (+ y h))
-      (grc/rect->center rect)}))
+  (when (some? rect)
+    (let [x (dm/get-prop rect :x)
+          y (dm/get-prop rect :y)
+          w (dm/get-prop rect :width)
+          h (dm/get-prop rect :height)]
+      #{(gpt/point x y)
+        (gpt/point (+ x w) y)
+        (gpt/point (+ x w) (+ y h))
+        (gpt/point x (+ y h))
+        (grc/rect->center rect)})))
 
 (defn- frame->snap-points
   [frame]
