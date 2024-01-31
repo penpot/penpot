@@ -8,6 +8,7 @@
   (:refer-clojure :exclude [assert])
   (:require
    [app.binfile.v1 :as bf.v1]
+   [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.db :as db]
    [app.http.sse :as sse]
@@ -50,11 +51,16 @@
      ::rres/headers {"content-type" "application/octet-stream"}
      ::rres/body (reify rres/StreamableResponseBody
                    (-write-body-to-stream [_ _ output-stream]
-                     (-> cfg
-                         (assoc ::bf.v1/ids #{file-id})
-                         (assoc ::bf.v1/embed-assets embed-assets)
-                         (assoc ::bf.v1/include-libraries include-libraries)
-                         (bf.v1/export-files! output-stream))))}))
+                     (try
+                       (-> cfg
+                           (assoc ::bf.v1/ids #{file-id})
+                           (assoc ::bf.v1/embed-assets embed-assets)
+                           (assoc ::bf.v1/include-libraries include-libraries)
+                           (bf.v1/export-files! output-stream))
+                       (catch Throwable cause
+                         (l/err :hint "exception on exporting file"
+                                :file-id (str file-id)
+                                :cause cause)))))}))
 
 ;; --- Command: import-binfile
 
