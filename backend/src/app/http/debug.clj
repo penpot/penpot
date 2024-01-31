@@ -100,11 +100,11 @@
         (let [profile    (profile/get-profile pool profile-id)
               project-id (:default-project-id profile)]
 
-          (db/run! pool (fn [{:keys [::db/conn]}]
-                          (create-file conn {:id file-id
-                                             :name (str "Cloned file: " filename)
-                                             :project-id project-id
-                                             :profile-id profile-id})
+          (db/run! pool (fn [{:keys [::db/conn] :as cfg}]
+                          (create-file cfg {:id file-id
+                                            :name (str "Cloned file: " filename)
+                                            :project-id project-id
+                                            :profile-id profile-id})
                           (db/update! conn :file
                                       {:data data}
                                       {:id file-id})
@@ -141,11 +141,11 @@
             {::rres/status 200
              ::rres/body "OK UPDATED"})
 
-          (db/run! pool (fn [{:keys [::db/conn]}]
-                          (create-file conn {:id file-id
-                                             :name fname
-                                             :project-id project-id
-                                             :profile-id profile-id})
+          (db/run! pool (fn [{:keys [::db/conn] :as cfg}]
+                          (create-file cfg {:id file-id
+                                            :name fname
+                                            :project-id project-id
+                                            :profile-id profile-id})
                           (db/update! conn :file
                                       {:data data}
                                       {:id file-id})
