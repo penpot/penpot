@@ -129,6 +129,9 @@
            :id (str team-id)
            :fonts (count fonts))
 
+    (when-let [photo-id (:photo-id team)]
+      (vswap! bfc/*state* update :storage-objects conj photo-id))
+
     (vswap! bfc/*state* update :teams conj team-id)
     (vswap! bfc/*state* bfc/collect-storage-objects fonts)
 
