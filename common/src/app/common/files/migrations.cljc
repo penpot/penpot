@@ -623,6 +623,10 @@
               (-> object
                   (assoc :parent-id uuid/zero)
                   (assoc :frame-id uuid/zero)
+                  ;; We explicitly dissoc them and let the shape-setup
+                  ;; to regenerate it with valid values.
+                  (dissoc :selrect)
+                  (dissoc :points)
                   (cts/setup-shape))
               object))
 
