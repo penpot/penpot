@@ -304,7 +304,7 @@
         sprocs    (ps/create :permits max-procs)
 
         cache     (if (int? cache)
-                    (cache/create :executor executor
+                    (cache/create :executor (::wrk/executor main/system)
                                   :max-items cache)
                     nil)
         migrate-team
