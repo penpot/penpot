@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.logging :as l]
-   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.features.components-v2 :as feat]
@@ -18,7 +17,6 @@
    [app.util.events :as events]
    [app.util.time :as dt]
    [app.worker :as-alias wrk]
-   [clojure.set :as set]
    [cuerdas.core :as str]
    [promesa.exec :as px]
    [promesa.exec.semaphore :as ps]
@@ -407,30 +405,10 @@
 
 (defn delete-broken-files
   [{:keys [id data] :as file}]
-  (let [xform  (comp
-                (map val)
-                (map :objects)
-                (mapcat vals)
-                (map :type))
-        stypes (-> (into #{} xform (:pages-index data))
-                   (set/difference cts/shape-types))]
-
-    (cond
-      (seq stypes)
-      (do
-        (l/wrn :hint "found shapes with unknown types"
-               :file-id (str id)
-               :file-name (:name file)
-               :types stypes)
-        (assoc file :deleted-at (dt/now)))
-
-      (-> data :options :components-v2 true?)
-      (do
-        (l/wrn :hint "found old components-v2 format"
-               :file-id (str id)
-               :file-name (:name file))
-
-        (assoc file :deleted-at (dt/now)))
-
-      :else
-      file)))
+  (if (-> data :options :components-v2 true?)
+    (do
+      (l/wrn :hint "found old components-v2 format"
+             :file-id (str id)
+             :file-name (:name file))
+      (assoc file :deleted-at (dt/now)))
+    file))
