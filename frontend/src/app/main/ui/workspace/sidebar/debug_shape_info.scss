@@ -10,7 +10,7 @@
   display: flex;
   flex-direction: column;
   background-color: var(--panel-background-color);
-  color: white;
+  color: $df-primary;
   font-size: $fs-12;
   user-select: text;
 }
@@ -96,4 +96,9 @@
 .point-list {
   display: flex;
   gap: $s-8;
+}
+
+.cell-container {
+  display: grid;
+  grid-template-columns: 100px 1fr;
 }

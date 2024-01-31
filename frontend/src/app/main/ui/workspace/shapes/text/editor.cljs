@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.shapes.text.editor
   (:require
    ["draft-js" :as draft]
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
@@ -48,7 +49,7 @@
   (let [children (obj/get props "children")]
     [:span {:style {:background "#ccc" :display "inline-block"}} children]))
 
-(defn render-block
+(defn- render-block
   [block shape]
   (let [type (ted/get-editor-block-type block)]
     (case type
@@ -59,7 +60,7 @@
                        :shape shape}}
       nil)))
 
-(defn styles-fn [shape styles content]
+(defn- styles-fn [shape styles content]
   (let [data (if (= (.getText content) "")
                (-> (.getData content)
                    (.toJS)
@@ -73,18 +74,26 @@
 (def empty-editor-state
   (ted/create-editor-state nil default-decorator))
 
-(defn get-blocks-to-setup [block-changes]
+(defn- get-blocks-to-setup [block-changes]
   (->> block-changes
        (filter (fn [[_ v]]
                  (nil? (:old v))))
        (mapv first)))
 
-(defn get-blocks-to-add-styles
+(defn- get-blocks-to-add-styles
   [block-changes]
   (->> block-changes
        (filter (fn [[_ v]]
                  (and (not= (:old v) (:new v)) (= (:old v) ""))))
        (mapv first)))
+
+(defn- shape->justify
+  [{:keys [content]}]
+  (case (d/nilv (:vertical-align content) "top")
+    "center" "center"
+    "top"    "flex-start"
+    "bottom" "flex-end"
+    nil))
 
 (mf/defc text-shape-edit-html
   {::mf/wrap [mf/memo]
@@ -247,7 +256,8 @@
        :custom-style-fn (partial styles-fn shape)
        :block-renderer-fn #(render-block % shape)
        :ref on-editor
-       :editor-state state}]]))
+       :editor-state state
+       :style #js {:border "1px solid red"}}]]))
 
 (defn translate-point-from-viewport
   "Translate a point in the viewport into client coordinates"
@@ -303,7 +313,19 @@
                         (dm/get-prop shape :height))
 
         style
-        (cond-> #js {:pointer-events "all"}
+        (cond-> #js {:pointerEvents "all"}
+
+          (not (cf/check-browser? :safari))
+          (obj/merge!
+           #js {:transform (dm/fmt "translate(%px, %px)" (- (dm/get-prop shape :x) x) (- (dm/get-prop shape :y) y))})
+
+          (cf/check-browser? :safari-17)
+          (obj/merge!
+           #js {:height "100%"
+                :display "flex"
+                :flexDirection "column"
+                :justifyContent (shape->justify shape)})
+
           (cf/check-browser? :safari-16)
           (obj/merge!
            #js {:position "fixed"

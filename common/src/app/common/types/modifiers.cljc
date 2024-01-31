@@ -756,6 +756,9 @@
               (ctl/flex-layout? shape)
               (ctl/update-flex-scale value)
 
+              (ctl/grid-layout? shape)
+              (ctl/update-grid-scale value)
+
               :always
               (ctl/update-flex-child value)))]
 

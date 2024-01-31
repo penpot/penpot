@@ -1013,20 +1013,21 @@
                       (d/ordered-set)))]
             (rx/of (dws/select-shapes shapes-to-select)))
 
-          (let [{:keys [id type shapes]} (get objects (first selected))]
-            (case type
-              :text
-              (rx/of (dwe/start-edition-mode id))
+          (when (d/not-empty? selected)
+            (let [{:keys [id type shapes]} (get objects (first selected))]
+              (case type
+                :text
+                (rx/of (dwe/start-edition-mode id))
 
-              (:group :bool :frame)
-              (let [shapes-ids (into (d/ordered-set) shapes)]
-                (rx/of (dws/select-shapes shapes-ids)))
+                (:group :bool :frame)
+                (let [shapes-ids (into (d/ordered-set) shapes)]
+                  (rx/of (dws/select-shapes shapes-ids)))
 
-              :svg-raw
-              nil
+                :svg-raw
+                nil
 
-              (rx/of (dwe/start-edition-mode id)
-                     (dwdp/start-path-edit id)))))))))
+                (rx/of (dwe/start-edition-mode id)
+                       (dwdp/start-path-edit id))))))))))
 
 (defn select-parent-layer
   []
