@@ -111,9 +111,14 @@
 (def valid-color?
   (sm/lazy-validator ::ctc/color))
 
-(def valid-fill?   (sm/lazy-validator ::cts/fill))
-(def valid-stroke? (sm/lazy-validator ::cts/stroke))
-(def valid-flow?   (sm/lazy-validator ::ctp/flow))
+(def valid-fill?
+  (sm/lazy-validator ::cts/fill))
+
+(def valid-stroke?
+  (sm/lazy-validator ::cts/stroke))
+
+(def valid-flow?
+  (sm/lazy-validator ::ctp/flow))
 
 (def valid-text-content?
   (sm/lazy-validator ::ctsx/content))
@@ -129,6 +134,9 @@
 
 (def valid-shape-points?
   (sm/lazy-validator ::cts/points))
+
+(def valid-image-attrs?
+  (sm/lazy-validator ::cts/image-attrs))
 
 (defn- prepare-file-data
   "Apply some specific migrations or fixes to things that are allowed in v1 but not in v2,
@@ -329,6 +337,23 @@
                       ;; from a v2 file
                       (some? (:main-instance shape))
                       (dissoc :main-instance)
+
+                      (and (cfh/image-shape? shape)
+                           (valid-image-attrs? shape)
+                           (grc/valid-rect? (:selrect shape))
+                           (not (valid-shape-points? (:points shape))))
+                      (as-> shape
+                            (let [selrect  (:selrect shape)
+                                  metadata (:metadata shape)
+                                  selrect  (grc/make-rect
+                                            (:x selrect)
+                                            (:y selrect)
+                                            (:width metadata)
+                                            (:height metadata))
+                                  points   (grc/rect->points selrect)]
+                              (assoc shape
+                                     :selrect selrect
+                                     :points points)))
 
                       (and (cfh/text-shape? shape)
                            (valid-text-content? (:content shape))
