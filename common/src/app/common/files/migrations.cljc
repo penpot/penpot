@@ -865,3 +865,14 @@
             (d/update-when container :objects update-vals fix-shape))]
     (-> data
         (update :pages-index update-vals update-container))))
+
+(defmethod migrate 46
+  [data]
+  (letfn [(update-object [object]
+            (dissoc object :thumbnail))
+
+          (update-container [container]
+            (d/update-when container :objects update-vals update-object))]
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
