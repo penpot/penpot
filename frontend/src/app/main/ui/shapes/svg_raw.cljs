@@ -104,7 +104,7 @@
           svg-root?  (and (map? content) (= tag :svg))
           svg-tag?   (map? content)
           svg-leaf?  (string? content)
-          valid-tag? (contains? csvg/svg-tags-list tag)]
+          valid-tag? (contains? csvg/svg-tags tag)]
 
       (cond
         ^boolean svg-root?
