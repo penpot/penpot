@@ -316,9 +316,12 @@
 (defn mapm
   "Map over the values of a map"
   ([mfn]
-   (map (fn [[key val]] [key (mfn key val)])))
+   (map (fn [[key val]] (vec2 key (mfn key val)))))
   ([mfn coll]
-   (into {} (mapm mfn) coll)))
+   (reduce-kv (fn [coll k v]
+                (assoc coll k (mfn k v)))
+              coll
+              coll)))
 
 (defn removev
   "Returns a vector of the items in coll for which (fn item) returns logical false"
