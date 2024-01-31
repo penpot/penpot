@@ -418,12 +418,18 @@
     (cond
       (seq stypes)
       (do
-        (l/wrn :hint "found shapes with unknown types" :file-id (str id) :types stypes)
+        (l/wrn :hint "found shapes with unknown types"
+               :file-id (str id)
+               :file-name (:name file)
+               :types stypes)
         (assoc file :deleted-at (dt/now)))
 
       (-> data :options :components-v2 true?)
       (do
-        (l/wrn :hint "found old components-v2 format" :file-id (str id))
+        (l/wrn :hint "found old components-v2 format"
+               :file-id (str id)
+               :file-name (:name file))
+
         (assoc file :deleted-at (dt/now)))
 
       :else
