@@ -313,21 +313,96 @@
                 (update :pages-index update-vals update-container)
                 (update :components update-vals update-container))))
 
-        fix-misc-shape-issues
+        fix-shape-geometry
         (fn [file-data]
           (letfn [(fix-container [container]
                     (d/update-when container :objects update-vals fix-shape))
 
                   (fix-shape [shape]
+                    (cond
+                      (and (cfh/image-shape? shape)
+                           (valid-image-attrs? shape)
+                           (grc/valid-rect? (:selrect shape))
+                           (not (valid-shape-points? (:points shape))))
+                      (let [selrect  (:selrect shape)
+                            metadata (:metadata shape)
+                            selrect  (grc/make-rect
+                                      (:x selrect)
+                                      (:y selrect)
+                                      (:width metadata)
+                                      (:height metadata))
+                            points   (grc/rect->points selrect)]
+                        (assoc shape
+                               :selrect selrect
+                               :points points))
+
+                      (and (cfh/text-shape? shape)
+                           (valid-text-content? (:content shape))
+                           (not (valid-shape-points? (:points shape)))
+                           (seq (:position-data shape)))
+                      (let [selrect (->> (:position-data shape)
+                                         (map (juxt :x :y :width :height))
+                                         (map #(apply grc/make-rect %))
+                                         (grc/join-rects))
+                            points  (grc/rect->points selrect)]
+
+                        (assoc shape
+                               :x (:x selrect)
+                               :y (:y selrect)
+                               :width (:width selrect)
+                               :height (:height selrect)
+                               :selrect selrect
+                               :points points))
+
+                      (and (or (cfh/rect-shape? shape)
+                               (cfh/svg-raw-shape? shape))
+                           (not (valid-shape-points? (:points shape)))
+                           (grc/valid-rect? (:selrect shape)))
+                      (let [selrect (if (grc/valid-rect? (:svg-viewbox shape))
+                                      (:svg-viewbox shape)
+                                      (:selrect shape))
+                            points  (grc/rect->points selrect)]
+                        (assoc shape
+                               :x (:x selrect)
+                               :y (:y selrect)
+                               :width (:width selrect)
+                               :height (:height selrect)
+                               :selrect selrect
+                               :points points))
+
+                      (and (cfh/group-shape? shape)
+                           (grc/valid-rect? (:selrect shape))
+                           (not (valid-shape-points? (:points shape))))
+                      (assoc shape :points (grc/rect->points (:selrect shape)))
+
+                      :else
+                      shape))]
+
+            (-> file-data
+                (update :pages-index update-vals fix-container)
+                (d/update-when :components update-vals fix-container))))
+
+        fix-misc-shape-issues
+        (fn [file-data]
+          (letfn [(fix-container [container]
+                    (d/update-when container :objects update-vals fix-shape))
+
+                  (fix-gap-value [gap]
+                    (if (or (= gap ##Inf)
+                            (= gap ##-Inf))
+                      0
+                      gap))
+
+                  (fix-shape [shape]
                     (cond-> shape
                       ;; Some shapes has invalid gap value
                       (contains? shape :layout-gap)
-                      (d/update-in-when [:layout-gap :column-gap]
-                                        (fn [gap]
-                                          (if (or (= gap ##Inf)
-                                                  (= gap ##-Inf))
-                                            0
-                                            gap)))
+                      (update :layout-gap (fn [layout-gap]
+                                            (if (number? layout-gap)
+                                              {:row-gap layout-gap :column-gap layout-gap}
+                                              (-> layout-gap
+                                                  (d/update-when :column-gap fix-gap-value)
+                                                  (d/update-when :row-gap fix-gap-value)))))
 
                       ;; Fix name if missing
                       (nil? (:name shape))
@@ -337,64 +412,6 @@
                       ;; from a v2 file
                       (some? (:main-instance shape))
                       (dissoc :main-instance)
-
-                      (and (cfh/image-shape? shape)
-                           (valid-image-attrs? shape)
-                           (grc/valid-rect? (:selrect shape))
-                           (not (valid-shape-points? (:points shape))))
-                      (as-> shape
-                            (let [selrect  (:selrect shape)
-                                  metadata (:metadata shape)
-                                  selrect  (grc/make-rect
-                                            (:x selrect)
-                                            (:y selrect)
-                                            (:width metadata)
-                                            (:height metadata))
-                                  points   (grc/rect->points selrect)]
-                              (assoc shape
-                                     :selrect selrect
-                                     :points points)))
-
-                      (and (cfh/text-shape? shape)
-                           (valid-text-content? (:content shape))
-                           (not (valid-shape-points? (:points shape)))
-                           (seq (:position-data shape)))
-                      (as-> shape
-                            (let [selrect (->> (:position-data shape)
-                                               (map (juxt :x :y :width :height))
-                                               (map #(apply grc/make-rect %))
-                                               (grc/join-rects))
-                                  points  (grc/rect->points selrect)]
-
-                              (assoc shape
-                                     :x (:x selrect)
-                                     :y (:y selrect)
-                                     :width (:width selrect)
-                                     :height (:height selrect)
-                                     :selrect selrect
-                                     :points points)))
-
-                      (and (or (cfh/rect-shape? shape)
-                               (cfh/svg-raw-shape? shape))
-                           (not (valid-shape-points? (:points shape)))
-                           (grc/valid-rect? (:selrect shape)))
-                      (as-> shape
-                            (let [selrect (if (grc/valid-rect? (:svg-viewbox shape))
-                                            (:svg-viewbox shape)
-                                            (:selrect shape))
-                                  points  (grc/rect->points selrect)]
-                              (assoc shape
-                                     :x (:x selrect)
-                                     :y (:y selrect)
-                                     :width (:width selrect)
-                                     :height (:height selrect)
-                                     :selrect selrect
-                                     :points points)))
-
-                      (and (cfh/group-shape? shape)
-                           (grc/valid-rect? (:selrect shape))
-                           (not (valid-shape-points? (:points shape))))
-                      (assoc :points (grc/rect->points (:selrect shape)))
 
                       ;; Fix broken fills
                       (seq (:fills shape))
@@ -407,11 +424,7 @@
                       ;; Fix some broken layout related attrs, probably
                       ;; of copypaste on flex layout betatest period
                       (true? (:layout shape))
-                      (assoc :layout :flex)
-
-                      (number? (:layout-gap shape))
-                      (as-> shape (let [n (:layout-gap shape)]
-                                    (assoc shape :layout-gap {:row-gap n :column-gap n})))))]
+                      (assoc :layout :flex)))]
 
             (-> file-data
                 (update :pages-index update-vals fix-container)
@@ -814,6 +827,7 @@
         (fix-text-shapes-converted-to-path)
         (fix-broken-paths)
         (fix-big-geometry-shapes)
+        (fix-shape-geometry)
         (fix-completly-broken-shapes)
         (fix-bad-children)
         (fix-broken-parents)
