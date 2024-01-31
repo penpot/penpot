@@ -993,6 +993,9 @@
                 (= key :style)
                 attrs
 
+                (str/starts-with? (d/name key) "data-")
+                attrs
+
                 (str/ends-with? val "%")
                 (assoc attrs key (fix-percent-attr-numeric-val val))
 
