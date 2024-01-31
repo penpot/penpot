@@ -602,6 +602,17 @@
                 (update :pages-index update-vals fix-container)
                 (d/update-when :components update-vals fix-container))))
 
+        fix-components-without-id
+        (fn [file-data]
+          ;; We have detected some components that have no :id attribute.
+          ;; Regenerate it from the components map.
+          (letfn [(fix-component [id component]
+                    (if (some? (:id component))
+                      component
+                      (assoc component :id id)))]
+            (-> file-data
+                (d/update-when :components #(d/mapm fix-component %)))))
+
         remap-refs
         (fn [file-data]
           ;; Remap shape-refs so that they point to the near main.
@@ -810,6 +821,7 @@
         (fix-orphan-copies)
         (remove-nested-roots)
         (add-not-nested-roots)
+        (fix-components-without-id)
         (remap-refs)
         (fix-converted-copies)
         (transform-to-frames)
