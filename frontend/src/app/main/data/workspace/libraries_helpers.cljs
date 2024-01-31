@@ -254,6 +254,7 @@
   ([changes library-data component-id it page delta old-id parent-id frame-id]
    (let [component    (ctkl/get-deleted-component library-data component-id)
          parent       (get-in page [:objects parent-id])
+         main-inst    (get-in component [:objects (:main-instance-id component)])
          inside-component? (some? (ctn/get-instance-root (:objects page) parent))
 
          shapes       (cfh/get-children-with-self (:objects component) (:main-instance-id component))
@@ -281,7 +282,7 @@
          changes      (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
                               changes
                               (rest shapes))]
-     {:changes (pcb/restore-component changes component-id (:id page))
+     {:changes (pcb/restore-component changes component-id (:id page) main-inst)
       :shape (first shapes)})))
 
 ;; ---- General library synchronization functions ----

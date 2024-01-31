@@ -205,6 +205,7 @@
      [:map {:title "DelComponentChange"}
       [:type [:= :del-component]]
       [:id ::sm/uuid]
+      [:main-instance {:optional true} :any]
       [:skip-undelete? {:optional true} :boolean]]]
 
     [:restore-component
@@ -642,8 +643,8 @@
   (ctkl/mod-component data params))
 
 (defmethod process-change :del-component
-  [data {:keys [id skip-undelete?]}]
-  (ctf/delete-component data id skip-undelete?))
+  [data {:keys [id skip-undelete? main-instance]}]
+  (ctf/delete-component data id skip-undelete? main-instance))
 
 (defmethod process-change :restore-component
   [data {:keys [id page-id]}]

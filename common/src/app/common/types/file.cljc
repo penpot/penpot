@@ -258,16 +258,18 @@
 (defn delete-component
   "Mark a component as deleted and store the main instance shapes iside it, to
   be able to be recovered later."
-  ([file-data component-id]
-   (delete-component file-data component-id false))
-
-  ([file-data component-id skip-undelete?]
-   (let [components-v2 (dm/get-in file-data [:options :components-v2])]
-     (if (or (not components-v2) skip-undelete?)
-       (ctkl/delete-component file-data component-id)
-       (-> file-data
-           (ctkl/update-component component-id (partial load-component-objects file-data))
-           (ctkl/mark-component-deleted component-id))))))
+  [file-data component-id skip-undelete? main-instance]
+  (let [components-v2 (dm/get-in file-data [:options :components-v2])]
+    (if (or (not components-v2) skip-undelete?)
+      (ctkl/delete-component file-data component-id)
+      (let [set-main-instance ;; If there is a saved main-instance, restore it. This happens on the restore-component action
+            #(if main-instance
+               (assoc-in % [:objects (:main-instance-id %)] main-instance)
+               %)]
+        (-> file-data
+            (ctkl/update-component component-id (partial load-component-objects file-data))
+            (ctkl/update-component component-id set-main-instance)
+            (ctkl/mark-component-deleted component-id))))))
 
 (defn restore-component
   "Recover a deleted component and all its shapes and put all this again in place."
