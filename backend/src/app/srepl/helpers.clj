@@ -261,6 +261,7 @@
              validate?
              rollback?]
       :or {max-jobs 1
+           max-items Long/MAX_VALUE
            validate? true
            rollback? true}}]
 
@@ -332,7 +333,7 @@
                                 (ps/acquire! sjobs)
                                 (px/run! executor (partial process-file file-id idx (dt/tpoint)))
                                 (inc idx))
-                              1
+                              0
                               (->> (db/cursor conn [sql:get-file-ids (or start-at (dt/now))])
                                    (take max-items)
                                    (map :id)))
