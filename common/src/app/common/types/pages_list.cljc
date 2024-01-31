@@ -34,7 +34,7 @@
 
 (defn pages-seq
   [fdata]
-  (vals (:pages-index fdata)))
+  (-> fdata :pages-index vals seq))
 
 (defn update-page
   [file-data page-id f]
