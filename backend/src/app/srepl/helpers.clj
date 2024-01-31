@@ -258,8 +258,10 @@
              max-jobs
              start-at
              on-file
+             validate?
              rollback?]
       :or {max-jobs 1
+           validate? true
            rollback? true}}]
 
   (l/dbg :hint "process:start"
@@ -282,10 +284,10 @@
                                 file  (binding [*system* system]
                                         (on-file file'))]
 
-                            (when (and (some? file)
-                                       (not (identical? file file')))
+                            (when (and (some? file) (not (identical? file file')))
 
-                              (cfv/validate-file-schema! file)
+                              (when validate?
+                                (cfv/validate-file-schema! file))
 
                               (let [file (if (contains? (:features file) "fdata/objects-map")
                                            (feat.fdata/enable-objects-map file)
@@ -300,6 +302,9 @@
 
                                 (db/update! conn :file
                                             {:data (blob/encode (:data file))
+                                             :deleted-at (:deleted-at file)
+                                             :created-at (:created-at file)
+                                             :modified-at (:modified-at file)
                                              :features (db/create-array conn "text" (:features file))
                                              :revn (:revn file)}
                                             {:id file-id}))))))
@@ -313,7 +318,6 @@
                 (l/trc :hint "process:file:end"
                        :file-id (str file-id)
                        :elapsed elapsed)))))]
-
 
     (try
       (db/tx-run! main/system
