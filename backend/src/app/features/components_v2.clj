@@ -370,6 +370,16 @@
                                :selrect selrect
                                :points points))
 
+                      (and (= :icon (:type shape))
+                           (grc/valid-rect? (:selrect shape))
+                           (valid-shape-points? (:points shape)))
+                      (-> shape
+                          (assoc :type :rect)
+                          (dissoc :content)
+                          (dissoc :metadata)
+                          (dissoc :segments)
+                          (dissoc :x1 :y1 :x2 :y2))
+
                       (and (cfh/group-shape? shape)
                            (grc/valid-rect? (:selrect shape))
                            (not (valid-shape-points? (:points shape))))
