@@ -61,13 +61,33 @@
    :transform :matrix-render
    :transform-inverse :matrix-render
    :selrect :rect-render
-   :points :points-render})
+   :points :points-render
+   :layout-grid-cells :cells-render})
 
 (mf/defc shape-link
   [{:keys [id objects]}]
   [:a {:class (stl/css :shape-link)
        :on-click #(st/emit! (dw/select-shape id))}
    (dm/str (dm/get-in objects [id :name]) " #" id)])
+
+(mf/defc cells-render
+  [{:keys [cells objects]}]
+  [:div {:class (stl/css :cells-render)}
+   (for [[id cell] cells]
+
+     [:div {:key (dm/str "cell-" id)
+            :class (stl/css :cell-container)}
+      [:div {:class (stl/css :cell-position)}
+       (dm/fmt "(%, %) -> (%, %)"
+               (:row cell)
+               (:column cell)
+               (+ (:row cell) (dec (:row-span cell)))
+               (+ (:column cell) (dec (:column-span cell))))]
+
+      [:div {:class (stl/css :cell-shape)}
+       (if (empty? (:shapes cell))
+         [:div "<empty>"]
+         [:& shape-link {:id (first (:shapes cell)) :objects objects}])]])])
 
 (mf/defc debug-shape-attr
   [{:keys [attr value objects]}]
@@ -79,7 +99,8 @@
     :shape-list
     [:div {:class (stl/css :shape-list)}
      (for [id value]
-       [:& shape-link {:id id :objects objects}])]
+       [:& shape-link {:key (dm/str "child-" id)
+                       :id id :objects objects}])]
 
     :matrix-render
     [:div (dm/str (gmt/format-precision value 2))]
@@ -89,8 +110,11 @@
 
     :points-render
     [:div {:class (stl/css :point-list)}
-     (for [point value]
-       [:div (dm/fmt "(%, %)" (:x point) (:y point))])]
+     (for [[idx point] (d/enumerate value)]
+       [:div {:key (dm/str "point-" idx)} (dm/fmt "(%, %)" (:x point) (:y point))])]
+
+    :cells-render
+    [:& cells-render {:cells value :objects objects}]
 
     [:div {:class (stl/css :attrs-container-value)} (str value)]))
 

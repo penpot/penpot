@@ -97,3 +97,8 @@
   display: flex;
   gap: $s-8;
 }
+
+.cell-container {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+}
