@@ -3504,6 +3504,12 @@ msgstr "Mostrar paleta de textos"
 msgid "workspace.header.menu.undo"
 msgstr "Deshacer"
 
+msgid "workspace.header.menu.toggle-light-theme"
+msgstr "Cambiar a tema claro"
+
+msgid "workspace.header.menu.toggle-dark-theme"
+msgstr "Cambiar a tema oscuro"
+
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.reset-zoom"
 msgstr "Restablecer"

@@ -1,0 +1,101 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.menu-btn {
+  @extend .button-tertiary;
+  height: $s-32;
+  width: calc($s-24 + $s-4);
+  padding: 0;
+  border-radius: $br-8;
+  svg {
+    @extend .button-icon;
+    stroke: var(--icon-foreground);
+  }
+}
+
+.menu {
+  @extend .menu-dropdown;
+  top: $s-48;
+  left: calc(var(--width, $s-256) - $s-16);
+  width: $s-192;
+  margin: 0;
+}
+
+.menu-item {
+  @extend .menu-item-base;
+  cursor: pointer;
+  .open-arrow {
+    @include flexCenter;
+    svg {
+      @extend .button-icon;
+      stroke: var(--icon-foreground);
+    }
+  }
+  &:hover {
+    color: var(--menu-foreground-color-hover);
+    .open-arrow {
+      svg {
+        stroke: var(--menu-foreground-color-hover);
+      }
+    }
+    .shortcut-key {
+      color: var(--menu-shortcut-foreground-color-hover);
+    }
+  }
+}
+
+.separator {
+  margin-top: $s-8;
+  height: $s-4;
+  border-top: $s-1 solid $db-secondary;
+}
+
+.shortcut {
+  @extend .shortcut-base;
+}
+.shortcut-key {
+  @extend .shortcut-key-base;
+}
+
+.sub-menu {
+  @extend .menu-dropdown;
+  left: calc(var(--width, $s-256) + $s-180);
+  width: $s-192;
+  min-width: calc($s-272 - $s-2);
+  width: 110%;
+
+  .submenu-item {
+    @extend .menu-item-base;
+    &:hover {
+      color: var(--menu-foreground-color-hover);
+      .shortcut-key {
+        color: var(--menu-shortcut-foreground-color-hover);
+      }
+    }
+  }
+
+  &.file {
+    top: $s-48;
+  }
+
+  &.edit {
+    top: $s-76;
+  }
+
+  &.view {
+    top: $s-116;
+  }
+
+  &.preferences {
+    top: $s-148;
+  }
+
+  &.help-info {
+    top: $s-196;
+  }
+}

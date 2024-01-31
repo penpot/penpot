@@ -351,21 +351,32 @@
 
                   [from-p move-p command-pts]
                   (case (:command command)
-                    :move-to    [to-p   to-p   [to-p]]
-                    :close-path [move-p move-p [move-p]]
-                    :line-to    [to-p   move-p [from-p to-p]]
+                    :move-to    [to-p   to-p   (when to-p [to-p])]
+                    :close-path [move-p move-p (when move-p [move-p])]
+                    :line-to    [to-p   move-p (when (and from-p to-p) [from-p to-p])]
                     :curve-to   [to-p   move-p
                                  (let [c1 (command->point command :c1)
                                        c2 (command->point command :c2)
                                        curve [from-p to-p c1 c2]]
-                                   (into [from-p to-p]
-                                         (->> (curve-extremities curve)
-                                              (map #(curve-values curve %)))))]
+                                   (when (and from-p to-p c1 c2)
+                                     (into [from-p to-p]
+                                           (->> (curve-extremities curve)
+                                                (map #(curve-values curve %))))))]
                     [to-p move-p []])]
 
               (recur (apply conj points command-pts) from-p move-p (next content)))
-            points))]
-    (grc/points->rect extremities)))
+            points))
+
+        ;; We haven't found any extremes so we turn the commands to points
+        extremities
+        (if (empty? extremities)
+          (->> content (keep command->point))
+          extremities)]
+
+    ;; If no points are returned we return an empty rect.
+    (if (d/not-empty? extremities)
+      (grc/points->rect extremities)
+      (grc/make-rect))))
 
 (defn move-content [content move-vec]
   (let [dx (:x move-vec)
