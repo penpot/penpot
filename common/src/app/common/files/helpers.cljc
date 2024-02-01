@@ -543,6 +543,11 @@
   [path-vec]
   (str/join " / " path-vec))
 
+(defn join-path-with-dot
+  "Regenerate a path as a string, from a vector."
+  [path-vec]
+  (str/join "\u00A0\u2022\u00A0" path-vec))
+
 (defn clean-path
   "Remove empty items from the path."
   [path]
@@ -607,6 +612,14 @@
     (if (= 1 (count split))
       ""
       (join-path (butlast split)))))
+
+(defn butlast-path-with-dots
+  "Remove the last item of the path."
+  [path]
+  (let [split (split-path path)]
+    (if (= 1 (count split))
+      ""
+      (join-path-with-dot (butlast split)))))
 
 (defn last-path
   "Returns the last item of the path."

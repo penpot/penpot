@@ -176,20 +176,6 @@
   align-items: center;
 }
 
-.listing-option-btn {
-  @include flexCenter;
-  cursor: pointer;
-  background-color: var(--button-radio-background-color-rest);
-
-  &.first {
-    margin-left: auto;
-  }
-
-  svg {
-    @extend .button-icon;
-  }
-}
-
 .add-component {
   @extend .button-tertiary;
   height: $s-32;

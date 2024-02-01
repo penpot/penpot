@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.menus.component
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
@@ -28,6 +29,7 @@
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.timers :as tm]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -197,18 +199,21 @@
 (mf/defc component-group-item
   [{:keys [item on-enter-group] :as props}]
   (let [group-name (:name item)
-        path (cfh/butlast-path group-name)
+        path (cfh/butlast-path-with-dots group-name)
         on-group-click #(on-enter-group group-name)]
     [:div {:class (stl/css :component-group)
            :key (uuid/next) :on-click on-group-click
            :title group-name}
-     [:div
+
+     [:div {:class (stl/css :path-wrapper)}
       (when-not (str/blank? path)
         [:span {:class (stl/css :component-group-path)}
-         (str "\u00A0/\u00A0" path)])
+         (str "\u00A0\u2022\u00A0" path)])
       [:span {:class (stl/css :component-group-name)}
        (cfh/last-path group-name)]]
-     [:span i/arrow-refactor]]))
+
+     [:span {:class (stl/css :arrow-icon)}
+      i/arrow-refactor]]))
 
 (mf/defc component-swap
   [{:keys [shapes] :as props}]
@@ -228,7 +233,9 @@
         file-id             (if every-same-file?
                               (:component-file shape)
                               current-file-id)
+
         orig-components     (map #(ctf/get-component libraries (:component-file %) (:component-id %)) shapes)
+
         paths                (->> orig-components
                                   (map :path)
                                   (map cfh/split-path))
@@ -245,6 +252,7 @@
                               (cfh/join-path (if (not every-same-file?)
                                                ""
                                                (find-common-path [] 0))))
+
         filters*            (mf/use-state
                              {:term ""
                               :file-id file-id
@@ -252,7 +260,9 @@
                               :listing-thumbs? false})
 
         filters             (deref filters*)
+
         is-search?          (not (str/blank? (:term filters)))
+
         current-library-id    (if (contains? libraries (:file-id filters))
                                 (:file-id filters)
                                 current-file-id)
@@ -264,7 +274,7 @@
         components          (->> (get-in libraries [current-library-id :data :components])
                                  vals
                                  (remove #(true? (:deleted %)))
-                                 (map #(assoc % :full-name (cfh/merge-path-item (:path %) (:name %)))))
+                                 (map #(assoc % :full-name (cfh/merge-path-item-with-dot (:path %) (:name %)))))
 
         get-subgroups       (fn [path]
                               (let [split-path (cfh/split-path path)]
@@ -335,89 +345,99 @@
         toggle-list-style
         (mf/use-fn
          (fn [style]
-           (swap! filters* assoc :listing-thumbs? (= style "grid"))))]
+           (swap! filters* assoc :listing-thumbs? (= style "grid"))))
+
+        filters-but-last (cfh/butlast-path (:path filters))
+        last-filters     (cfh/last-path (:path filters))
+        filter-path-with-dots (->> filters-but-last (cfh/split-path) (cfh/join-path-with-dot))]
 
     [:div {:class (stl/css :component-swap)}
      [:div {:class (stl/css :element-set-title)}
       [:span (tr "workspace.options.component.swap")]]
      [:div {:class (stl/css :component-swap-content)}
-      [:div {:class (stl/css :search-field)}
-       [:& search-bar {:on-change on-search-term-change
-                       :clear-action on-search-clear-click
-                       :value (:term filters)
-                       :placeholder (str (tr "labels.search") " " (get-in libraries [current-library-id :name]))
-                       :icon (mf/html [:span {:class (stl/css :search-icon)} i/search-refactor])}]]
+      [:div {:class (stl/css :fields-wrapper)}
+       [:div {:class (stl/css :search-field)}
+        [:& search-bar {:on-change on-search-term-change
+                        :clear-action on-search-clear-click
+                        :class (stl/css :search-wrapper)
+                        :id "swap-component-search-filter"
+                        :value (:term filters)
+                        :placeholder (str (tr "labels.search") " " (get-in libraries [current-library-id :name]))
+                        :icon (mf/html [:span {:class (stl/css :search-icon)} i/search-refactor])}]]
 
-      [:div {:class (stl/css :select-field)}
        [:& select {:class (stl/css :select-library)
                    :default-value current-library-id
                    :options libraries-options
                    :on-change on-library-change}]]
 
-      [:div {:class (stl/css :library-name)} current-library-name]
+      [:div  {:class (stl/css :swap-wrapper)}
+       [:div {:class (stl/css :library-name-wrapper)}
+        [:div {:class (stl/css :library-name)} current-library-name]
 
-      [:div {:class (stl/css :listing-options-wrapper)}
-       [:& radio-buttons {:class (stl/css :listing-options)
-                          :selected (if (:listing-thumbs? filters) "grid" "list")
-                          :on-change toggle-list-style
-                          :name "swap-listing-style"}
-        [:& radio-button {:icon i/view-as-list-refactor
-                          :icon-class (stl/css :radio-button)
-                          :value "list"
-                          :id "swap-opt-list"}]
-        [:& radio-button {:icon i/flex-grid-refactor
-                          :icon-class (stl/css :radio-button)
-                          :value "grid"
-                          :id "swap-opt-grid"}]]]
+        [:div {:class (stl/css :listing-options-wrapper)}
+         [:& radio-buttons {:class (stl/css :listing-options)
+                            :selected (if (:listing-thumbs? filters) "grid" "list")
+                            :on-change toggle-list-style
+                            :name "swap-listing-style"}
+          [:& radio-button {:icon i/view-as-list-refactor
+                            :value "list"
+                            :id "swap-opt-list"}]
+          [:& radio-button {:icon i/flex-grid-refactor
+                            :value "grid"
+                            :id "swap-opt-grid"}]]]]
 
+       (when-not (or is-search? (str/empty? (:path filters)))
+         [:button {:class (stl/css :component-path)
+                   :on-click on-go-back
+                   :title filter-path-with-dots}
+          [:span {:class (stl/css :back-arrow)} i/arrow-refactor]
+          (when-not (= "" filter-path-with-dots)
+            [:span {:class (stl/css :path-name)}
+             (dm/str "\u00A0\u2022\u00A0" filter-path-with-dots)])
+          [:span {:class (stl/css :path-name-last)} last-filters]])
 
-      (if (or is-search? (str/empty? (:path filters)))
-        [:div {:class (stl/css :component-path-empty)}]
-        [:button {:class (stl/css :component-path)
-                  :on-click on-go-back
-                  :title (:path filters)}
-         [:span i/arrow-refactor]
-         [:span (:path filters)]])
+       (when (empty? items)
+         [:div {:class (stl/css :component-list-empty)}
+          (tr "workspace.options.component.swap.empty")]) ;;TODO review this empty space
 
-      (when (empty? items)
-        [:div {:class (stl/css :component-list-empty)}
-         (tr "workspace.options.component.swap.empty")])
+       (when (:listing-thumbs? filters)
+         [:div {:class (stl/css :component-list)}
+          (for [item groups]
+            [:& component-group-item {:item item :on-enter-group on-enter-group}])])
 
-      (when (:listing-thumbs? filters)
-        [:div {:class (stl/css :component-list)}
-         (for [item groups]
-           [:& component-group-item {:item item :on-enter-group on-enter-group}])])
-
-      [:div {:class (stl/css-case :component-grid (:listing-thumbs? filters)
-                                  :component-list (not (:listing-thumbs? filters)))}
-       (for [item items]
-         (if (:id item)
-           (let [data       (get-in libraries [current-library-id :data])
-                 container  (ctf/get-component-page data item)
-                 root-shape (ctf/get-component-root data item)
-                 loop?      (or (contains? parent-components (:main-instance-id item))
-                                (contains? parent-components (:id item)))]
-             [:& component-swap-item {:key (:id item)
-                                      :item item
-                                      :loop loop?
-                                      :shapes shapes
-                                      :file-id current-library-id
-                                      :root-shape root-shape
-                                      :container container
-                                      :component-id current-comp-id
-                                      :is-search is-search?
-                                      :listing-thumbs (:listing-thumbs? filters)}])
-           [:& component-group-item {:item item :on-enter-group on-enter-group}]))]]]))
+       [:div {:class (stl/css-case :component-grid (:listing-thumbs? filters)
+                                   :component-list (not (:listing-thumbs? filters)))}
+        (for [item items]
+          (if (:id item)
+            (let [data       (get-in libraries [current-library-id :data])
+                  container  (ctf/get-component-page data item)
+                  root-shape (ctf/get-component-root data item)
+                  loop?      (or (contains? parent-components (:main-instance-id item))
+                                 (contains? parent-components (:id item)))]
+              [:& component-swap-item {:key (:id item)
+                                       :item item
+                                       :loop loop?
+                                       :shapes shapes
+                                       :file-id current-library-id
+                                       :root-shape root-shape
+                                       :container container
+                                       :component-id current-comp-id
+                                       :is-search is-search?
+                                       :listing-thumbs (:listing-thumbs? filters)}])
+            [:& component-group-item {:item item
+                                      :key (:id item)
+                                      :on-enter-group on-enter-group}]))]]]]))
 
 (mf/defc component-ctx-menu
-  [{:keys [menu-entries on-close show] :as props}]
+  [{:keys [menu-entries on-close show main-instance] :as props}]
   (let [do-action
         (fn [action event]
           (dom/stop-propagation event)
           (action)
           (on-close))]
     [:& dropdown {:show show :on-close on-close}
-     [:ul {:class (stl/css :custom-select-dropdown)}
+     [:ul {:class (stl/css-case :custom-select-dropdown true
+                                :not-main (not main-instance))}
       (for [entry menu-entries :when (not (nil? entry))]
         [:li {:key (uuid/next)
               :class (stl/css :dropdown-element)
@@ -471,10 +491,14 @@
         open-component-panel
         (mf/use-fn
          (mf/deps can-swap? shapes)
-         #(when can-swap? (st/emit! (dwsp/open-specialized-panel :component-swap))))
+         (fn []
+           (let [search-id "swap-component-search-filter"]
+             (when can-swap? (st/emit! (dwsp/open-specialized-panel :component-swap)))
+             (tm/schedule-on-idle #(dom/focus! (dom/get-element search-id))))))
 
         menu-entries         (cmm/generate-components-menu-entries shapes components-v2)
-        show-menu?           (seq menu-entries)]
+        show-menu?           (seq menu-entries)
+        path (->> component (:path) (cfh/split-path) (cfh/join-path-with-dot))]
 
     (when (seq shapes)
       [:div {:class (stl/css :element-set)}
@@ -482,8 +506,9 @@
         (if swap-opened?
           [:button {:class (stl/css :title-back)
                     :on-click on-component-back}
-           [:span i/arrow-refactor]
+           [:span {:class (stl/css :icon-back)} i/arrow-refactor]
            [:span (tr "workspace.options.component")]]
+
           [:& title-bar {:collapsable  true
                          :collapsed    (not open?)
                          :on-collapsed toggle-content
@@ -496,31 +521,40 @@
 
        (when open?
          [:div {:class (stl/css :element-content)}
-          [:div {:class (stl/css :component-wrapper)}
-           [:div {:class (stl/css-case :component-name-wrapper true
-                                       :with-main (and can-swap? (not multi))
-                                       :swappeable (and can-swap? (not swap-opened?)))
-                  :on-click open-component-panel}
+          [:div {:class (stl/css-case :component-wrapper true
+                                      :with-actions show-menu?)}
+           [:button {:class (stl/css-case :component-name-wrapper true
+                                          :with-main (and can-swap? (not multi))
+                                          :swappeable (and can-swap? (not swap-opened?)))
+                     :on-click open-component-panel}
+
             [:span {:class (stl/css :component-icon)}
              (if main-instance?
                i/component-refactor
                i/copy-refactor)]
 
-            [:div {:class (stl/css :component-name)} (if multi
-                                                       (tr "settings.multiple")
-                                                       (cfh/last-path shape-name))]
-            (when show-menu?
-              [:div {:class (stl/css :component-actions)}
-               [:button {:class (stl/css :menu-btn)
-                         :on-click on-menu-click}
-                i/menu-refactor]
+            [:div {:class (stl/css :name-wrapper)}
+             [:div {:class (stl/css :component-name)}
+              (if multi
+                (tr "settings.multiple")
+                (cfh/last-path shape-name))]
 
-               [:& component-ctx-menu {:show menu-open?
-                                       :on-close on-menu-close
-                                       :menu-entries menu-entries}]])
-            (when (and can-swap? (not multi))
-              [:div {:class (stl/css :component-parent-name)}
-               (cfh/merge-path-item (:path component) (:name component))])]]
+             (when (and can-swap? (not multi))
+               [:div {:class (stl/css :component-parent-name)}
+                (cfh/merge-path-item-with-dot path (:name component))])]]
+
+           (when show-menu?
+             [:div {:class (stl/css :component-actions)}
+              [:button {:class (stl/css-case :menu-btn true
+                                             :selected menu-open?)
+                        :on-click on-menu-click}
+               i/menu-refactor]
+
+              [:& component-ctx-menu {:show menu-open?
+                                      :on-close on-menu-close
+                                      :menu-entries menu-entries
+                                      :main-instance main-instance?}]])]
+
           (when swap-opened?
             [:& component-swap {:shapes copies}])
 
