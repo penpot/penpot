@@ -941,8 +941,9 @@
         (fix-component-nil-objects)
         (fix-false-copies)
         (fix-component-root-without-component)
-        (fix-copies-of-detached))))  ; <- Do not add fixes after this one
-
+        (fix-copies-of-detached); <- Do not add fixes after this and fix-orphan-copies call
+        ; This extra call to fix-orphan-copies after fix-copies-of-detached because we can have detached subtrees with invalid shape-ref attributes
+        (fix-orphan-copies))))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; COMPONENTS MIGRATION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
