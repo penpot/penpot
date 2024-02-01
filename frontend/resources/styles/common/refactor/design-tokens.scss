@@ -361,6 +361,10 @@
   // TEXT SELECTION
   --text-editor-selection-background-color: var(--da-tertiary-70);
   --text-editor-selection-foreground-color: var(--app-white);
+
+  // NEW TEAM BUTTON
+  // TODO: we should not put these functional tokens here, but rather in the components they belong to
+  --new-team-button-background-color: var(--color-background-primary);
 }
 
 #app {

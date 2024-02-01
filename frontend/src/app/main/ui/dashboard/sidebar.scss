@@ -232,13 +232,10 @@
       width: $s-168;
     }
 
-    .new-team {
-      background-color: $db-quaternary;
-    }
-
     &.action {
       .team-icon {
         background-color: #2e3434;
+        background-color: var(--new-team-button-background-color);
         border-radius: 50%;
         height: $s-24;
         margin-right: $s-12;
