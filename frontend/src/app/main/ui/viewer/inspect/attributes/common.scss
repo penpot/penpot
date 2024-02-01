@@ -58,6 +58,11 @@
   }
 }
 
+.name-opacity {
+  display: flex;
+  align-items: baseline;
+}
+
 .color-name-wrapper {
   @include titleTipography;
   @include flexColumn;
@@ -113,8 +118,11 @@
 .color-value-wrapper {
   @include inspectValue;
   text-transform: uppercase;
-  max-width: $s-124;
+  max-width: $s-80;
   padding-right: $s-8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   &.gradient-name {
     text-transform: none;
   }

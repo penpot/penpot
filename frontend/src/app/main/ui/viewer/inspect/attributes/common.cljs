@@ -79,11 +79,9 @@
             [:span {:class (stl/css-case :color-value-wrapper true
                                          :gradient-name (:gradient color))}
              (if (:gradient color)
-               [:& cbn/color-name {:color color
-                                   :size 80}]
+               [:& cbn/color-name {:color color :size 80}]
                (case format
-                 :hex [:& cbn/color-name {:color color
-                                          :size 80}]
+                 :hex [:& cbn/color-name {:color color}]
                  :rgba (let [[r g b a] (cc/hex->rgba (:color color) (:opacity color))]
                          [:* (str/fmt "%s, %s, %s, %s" r g b a)])
                  :hsla (let [[h s l a] (cc/hex->hsla (:color color) (:opacity color))
@@ -105,8 +103,7 @@
            [:span {:class (stl/css-case :color-value-wrapper true
                                         :gradient-name (:gradient color))}
             (if (:gradient color)
-              [:& cbn/color-name {:color color
-                                  :size 80}]
+              [:& cbn/color-name {:color color}]
               (case format
                 :hex [:& cbn/color-name {:color color
                                          :size 80}]

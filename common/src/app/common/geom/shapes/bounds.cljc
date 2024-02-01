@@ -111,6 +111,7 @@
 
          shadow-width
          (->> (:shadow shape)
+              (remove :hidden)
               (map #(case (:style % :drop-shadow)
                       :drop-shadow (+ (mth/abs (:offset-x %)) (* (:spread %) 2) (* (:blur %) 2) 10)
                       0))
@@ -118,6 +119,7 @@
 
          shadow-height
          (->> (:shadow shape)
+              (remove :hidden)
               (map #(case (:style % :drop-shadow)
                       :drop-shadow (+ (mth/abs (:offset-y %)) (* (:spread %) 2) (* (:blur %) 2) 10)
                       0))

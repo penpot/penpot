@@ -8,7 +8,10 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
+   [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.text :as gst]
    [app.config :as cf]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.gradients :as grad]
@@ -28,7 +31,12 @@
         fills      (get shape :fills [])
 
         selrect    (dm/get-prop shape :selrect)
+
+        bounds     (when (cfh/text-shape? shape)
+                     (gst/shape->rect shape))
+
         metadata   (get shape :metadata)
+
         x          (dm/get-prop selrect :x)
         y          (dm/get-prop selrect :y)
         width      (dm/get-prop selrect :width)
@@ -62,32 +70,50 @@
                       (obj/set! pat-props "patternTransform" transform)
                       pat-props)]
 
-    (for [[shape-index shape] (d/enumerate (or (:position-data shape) [shape]))]
-      [:* {:key (dm/str shape-index)}
-       (for [[fill-index value] (reverse (d/enumerate (get shape :fills [])))]
+    (for [[obj-index obj] (d/enumerate (or (:position-data shape) [shape]))]
+      [:* {:key (dm/str obj-index)}
+       (for [[fill-index value] (reverse (d/enumerate (get obj :fills [])))]
          (when (some? (:fill-color-gradient value))
            (let [gradient  (:fill-color-gradient value)
+
+                 from-p (-> (gpt/point (+ x (* width (:start-x gradient)))
+                                       (+ y (* height (:start-y gradient)))))
+                 to-p   (-> (gpt/point (+ x (* width (:end-x gradient)))
+                                       (+ y (* height (:end-y gradient)))))
+
+                 gradient
+                 (cond-> gradient
+                   (some? bounds)
+                   (assoc
+                    :start-x (/ (- (:x from-p) (:x bounds)) (:width bounds))
+                    :start-y (/ (- (:y from-p) (:y bounds)) (:height bounds))
+                    :end-x   (/ (- (:x to-p) (:x bounds)) (:width bounds))
+                    :end-y   (/ (- (:y to-p) (:y bounds)) (:height bounds))))
+
                  props #js {:id (dm/str "fill-color-gradient-" render-id "-" fill-index)
                             :key (dm/str fill-index)
                             :gradient gradient
-                            :shape shape}]
-             (case (:type gradient)
-               :linear [:> grad/linear-gradient props]
-               :radial [:> grad/radial-gradient props]))))
+                            :shape obj}]
+             (case (d/name (:type gradient))
+               "linear" [:> grad/linear-gradient props]
+               "radial" [:> grad/radial-gradient props]))))
 
 
-       (let [fill-id (dm/str "fill-" shape-index "-" render-id)]
+       (let [fill-id (dm/str "fill-" obj-index "-" render-id)]
          [:> :pattern (-> (obj/clone pat-props)
                           (obj/set! "id" fill-id)
-                          (cond-> has-image?
+                          (cond-> (and has-image? (nil? bounds))
                             (-> (obj/set! "width" (* width no-repeat-padding))
-                                (obj/set! "height" (* height no-repeat-padding)))))
+                                (obj/set! "height" (* height no-repeat-padding))))
+                          (cond-> (some? bounds)
+                            (-> (obj/set! "width" (:width bounds))
+                                (obj/set! "height" (:height bounds)))))
           [:g
-           (for [[fill-index value] (reverse (d/enumerate (get shape :fills [])))]
+           (for [[fill-index value] (reverse (d/enumerate (get obj :fills [])))]
              (let [style (attrs/get-fill-style value fill-index render-id type)
                    props #js {:key (dm/str fill-index)
-                              :width width
-                              :height height
+                              :width (d/nilv (:width bounds) width)
+                              :height (d/nilv (:height bounds) height)
                               :style style}]
                (if (:fill-image value)
                  (let [uri (cf/resolve-file-media (:fill-image value))
