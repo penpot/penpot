@@ -8,7 +8,6 @@
 (ns app.main.ui.workspace.sidebar.assets.common
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.spec :as us]
    [app.common.thumbnails :as thc]
@@ -263,39 +262,32 @@
           (:id target-asset)
           (cfh/merge-path-item prefix (:name target-asset))))))))
 
-
-(defn- get-component-thumbnail-uri
-  "Returns the component thumbnail uri"
-  [file-id component]
-  (let [page-id   (:main-instance-page component)
-        root-id   (:main-instance-id component)
-        object-id (thc/fmt-object-id file-id page-id root-id "component")
-        current-file? (= file-id (:id @refs/workspace-file))]
-
-    (if current-file?
-      (mf/deref (refs/workspace-thumbnail-by-id object-id))
-      (let [libraries  @refs/workspace-libraries
-            thumbnail (dm/get-in libraries [file-id :thumbnails object-id])]
-        thumbnail))))
-
 (mf/defc component-item-thumbnail
   "Component that renders the thumbnail image or the original SVG."
   {::mf/wrap-props false}
   [{:keys [file-id root-shape component container class]}]
-  (let [retry (mf/use-state 0)
-        thumbnail-uri (get-component-thumbnail-uri file-id component)
-        handle-error
+  (let [page-id   (:main-instance-page component)
+        root-id   (:main-instance-id component)
+
+        retry (mf/use-state 0)
+
+        thumbnail-uri* (mf/with-memo [file-id page-id root-id]
+                         (let [object-id (thc/fmt-object-id file-id page-id root-id "component")]
+                           (refs/workspace-thumbnail-by-id object-id)))
+        thumbnail-uri  (mf/deref thumbnail-uri*)
+
+        on-error
         (mf/use-fn
          (mf/deps @retry)
          (fn []
-           (when (@retry < 3)
+           (when (< @retry 3)
              (inc retry))))]
 
     (if (some? thumbnail-uri)
       [:& component-svg-thumbnail
        {:thumbnail-uri thumbnail-uri
         :class class
-        :on-error handle-error
+        :on-error on-error
         :root-shape root-shape
         :objects (:objects container)
         :show-grids? true}]

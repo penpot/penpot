@@ -640,6 +640,21 @@
                                     :path-params path-params
                                     :query-params query-params}))))))
 
+(defn library-thumbnails-fetched
+  [thumbnails]
+  (ptk/reify ::library-thumbnails-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-thumbnails merge thumbnails))))
+
+(defn fetch-library-thumbnails
+  [library-id]
+  (ptk/reify ::fetch-library-thumbnails
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rp/cmd! :get-file-object-thumbnails {:file-id library-id :tag "component"})
+           (rx/map library-thumbnails-fetched)))))
+
 (defn ext-library-changed
   [library-id modified-at revn changes]
   (dm/assert! (uuid? library-id))
@@ -654,11 +669,15 @@
                             ch/process-changes changes)))
 
     ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (rp/cmd! :get-file-object-thumbnails {:file-id library-id :tag "component"})
-           (rx/map (fn [thumbnails]
-                     (fn [state]
-                       (assoc-in state [:workspace-libraries library-id :thumbnails] thumbnails))))))))
+    (watch [_ _ stream]
+      (let [stopper-s (rx/filter (ptk/type? ::ext-library-changed) stream)]
+        (->>
+         (rx/merge
+          (->> (rx/of library-id)
+               (rx/delay 5000)
+               (rx/map fetch-library-thumbnails)))
+
+         (rx/take-until stopper-s))))))
 
 (defn reset-component
   "Cancels all modifications in the shape with the given id, and all its children, in
@@ -1261,7 +1280,7 @@
          (->> (rp/cmd! :get-file-object-thumbnails {:file-id library-id :tag "component"})
               (rx/map (fn [thumbnails]
                         (fn [state]
-                          (assoc-in state [:workspace-libraries library-id :thumbnails] thumbnails))))))))))
+                          (update state :workspace-thumbnails merge thumbnails))))))))))
 
 (defn unlink-file-from-library
   [file-id library-id]

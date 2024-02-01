@@ -490,6 +490,9 @@
                (dm/get-in state [:viewer-local :zoom-type]))
              st/state))
 
+(def workspace-thumbnails
+  (l/derived :workspace-thumbnails st/state))
+
 (defn workspace-thumbnail-by-id
   [object-id]
   (l/derived
