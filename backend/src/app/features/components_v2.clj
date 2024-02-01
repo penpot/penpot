@@ -667,6 +667,7 @@
                     (if (some? (:id component))
                       component
                       (assoc component :id id)))]
+
             (-> file-data
                 (d/update-when :components #(d/mapm fix-component %)))))
 
@@ -730,9 +731,59 @@
                 (update :pages-index update-vals fix-container)
                 (d/update-when :components update-vals fix-container))))
 
+        wrap-non-group-component-roots
+        (fn [file-data]
+          ;; Some components have a root that is not a group nor a frame
+          ;; (e.g. a path or a svg-raw). We need to wrap them in a frame
+          ;; for this one to became the root.
+          (letfn [(fix-component [component]
+                    (let [root-shape (ctst/get-shape component (:id component))]
+                      (if (or (cfh/group-shape? root-shape)
+                              (cfh/frame-shape? root-shape))
+                        component
+                        (let [new-id      (uuid/next)
+                              frame       (-> (cts/setup-shape
+                                               {:type :frame
+                                                :id (:id component)
+                                                :x (:x (:selrect root-shape))
+                                                :y (:y (:selrect root-shape))
+                                                :width (:width (:selrect root-shape))
+                                                :height (:height (:selrect root-shape))
+                                                :name (:name component)
+                                                :shapes [new-id]})
+                                              (assoc :frame-id nil
+                                                     :parent-id nil))
+                              root-shape' (assoc root-shape
+                                                 :id new-id
+                                                 :parent-id (:id frame)
+                                                 :frame-id (:id frame))]
+                          (update component :objects assoc
+                                  (:id frame) frame
+                                  (:id root-shape') root-shape')))))]
+
+            (-> file-data
+                (d/update-when :components update-vals fix-component))))
+
+        detach-non-group-instance-roots
+        (fn [file-data]
+          ;; If there is a copy instance whose root is not a frame or a group, it cannot
+          ;; be easily repaired, and anyway it's not working in production, so detach it.
+          (letfn [(fix-container [container]
+                    (reduce fix-shape container (ctn/shapes-seq container)))
+
+                  (fix-shape [container shape]
+                    (if (and (ctk/instance-head? shape)
+                             (not (#{:group :frame} (:type shape))))
+                      (detach-shape container shape)
+                      container))]
+
+            (-> file-data
+                (update :pages-index update-vals fix-container)
+                (d/update-when :components update-vals fix-container))))
+
         transform-to-frames
         (fn [file-data]
-          ;; Transform component and copy heads to frames, and set the
+          ;; Transform component and copy heads fron group to frames, and set the
           ;; frame-id of its childrens
           (letfn [(fix-container [container]
                     (d/update-when container :objects update-vals fix-shape))
@@ -882,6 +933,8 @@
         (fix-components-without-id)
         (remap-refs)
         (fix-converted-copies)
+        (wrap-non-group-component-roots)
+        (detach-non-group-instance-roots)
         (transform-to-frames)
         (remap-frame-ids)
         (fix-frame-ids)
