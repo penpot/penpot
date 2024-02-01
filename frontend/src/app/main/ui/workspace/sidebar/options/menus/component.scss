@@ -7,31 +7,130 @@
 @import "refactor/common-refactor.scss";
 .element-set {
   margin: 0;
+  padding-top: $s-8;
 }
 
 .element-content {
   @include flexColumn;
-  margin-bottom: $s-8;
+}
+
+.title-back {
+  @include tabTitleTipography;
+  display: flex;
+  align-items: center;
+  gap: $s-4;
+  width: 100%;
+  height: $s-32;
+  padding: 0;
+  border: 0;
+  border-radius: $br-8;
+  background-color: var(--title-background-color);
+  color: var(--title-foreground-color);
+  cursor: pointer;
+}
+
+.icon-back {
+  @include flexCenter;
+  width: $s-12;
+  height: 100%;
+  svg {
+    height: $s-12;
+    width: $s-12;
+    stroke: var(--icon-foreground);
+    transform: rotate(180deg);
+  }
 }
 
 .component-wrapper {
-  display: flex;
-  margin: 0 $s-4 0 $s-8;
+  width: 100%;
+  min-height: $s-32;
+  border-radius: $br-8;
+
+  &.with-actions {
+    display: grid;
+    grid-template-columns: 1fr $s-28;
+    gap: $s-2;
+  }
 }
 
 .component-name-wrapper {
-  @extend .asset-element;
-  @include flexRow;
-  flex-grow: 1;
-  height: 100%;
-  width: 100%;
-  flex-wrap: wrap;
-  padding: 0 0 0 $s-12;
-  margin-top: $s-8;
-
-  &.with-main {
-    padding-bottom: $s-12;
+  @include buttonStyle;
+  cursor: default;
+  display: grid;
+  grid-template-columns: $s-12 1fr;
+  gap: $s-4;
+  padding: 0 $s-8;
+  border-radius: $br-8 0 0 $br-8;
+  background-color: var(--assets-item-background-color);
+  color: var(--assets-item-name-foreground-color-hover);
+  &:hover {
+    background-color: var(--assets-item-background-color-hover);
+    color: var(--assets-item-name-foreground-color-hover);
   }
+}
+
+.component-icon {
+  @include flexCenter;
+  height: $s-32;
+  width: $s-12;
+  svg {
+    @extend .button-icon-small;
+    stroke: var(--icon-foreground);
+  }
+}
+
+.name-wrapper {
+  @include flexColumn;
+  min-height: $s-32;
+  padding: $s-8 0 $s-8 $s-2;
+  border-radius: $br-8 0 0 $br-8;
+}
+
+.component-name {
+  @include titleTipography;
+  @include textEllipsis;
+  direction: rtl;
+  text-align: left;
+  min-height: $s-16;
+}
+
+.component-parent-name {
+  @include titleTipography;
+  @include textEllipsis;
+  direction: rtl;
+  text-align: left;
+  min-height: $s-16;
+  max-width: $s-184;
+  color: var(--title-foreground-color);
+}
+
+.component-actions {
+  position: relative;
+}
+
+.menu-btn {
+  @extend .button-tertiary;
+  height: 100%;
+  width: $s-28;
+  border-radius: 0 $br-8 $br-8 0;
+  background-color: var(--assets-item-background-color);
+  color: var(--assets-item-name-foreground-color-hover);
+  svg {
+    @extend .button-icon;
+    min-height: $s-16;
+    min-width: $s-16;
+  }
+  &:hover {
+    background-color: var(--assets-item-background-color-hover);
+    color: var(--assets-item-name-foreground-color-hover);
+    &.selected {
+      @extend .button-icon-selected;
+    }
+  }
+}
+
+.menu-btn.selected {
+  @extend .button-icon-selected;
 }
 
 .copy-text {
@@ -43,50 +142,8 @@
   margin-right: $s-8;
 }
 
-.component-icon {
-  @include flexCenter;
-  height: $s-24;
-  width: $s-24;
-  svg {
-    @extend .button-icon;
-    stroke: var(--icon-foreground);
-  }
-}
-
-.component-name {
-  @include titleTipography;
-  @include textEllipsis;
-  direction: rtl;
-  text-align: left;
-  width: 70%;
-  flex-grow: 2;
-  margin-left: $s-8;
-}
-
-.component-parent-name {
-  @include titleTipography;
-  @include textEllipsis;
-  text-align: left;
-  max-width: 95%;
-  padding-left: $s-36;
-  color: var(--title-foreground-color);
-}
-
 .swappeable {
   cursor: pointer;
-}
-
-.component-actions {
-  position: relative;
-}
-
-.menu-btn {
-  @extend .button-tertiary;
-  height: $s-32;
-  width: $s-28;
-  svg {
-    @extend .button-icon;
-  }
 }
 
 .custom-select-dropdown {
@@ -96,42 +153,12 @@
   width: $s-252;
 }
 
+.not-main {
+  top: $s-56;
+}
+
 .dropdown-element {
   @extend .dropdown-element-base;
-}
-
-.title-back {
-  @include tabTitleTipography;
-  cursor: pointer;
-  width: 100%;
-  background-color: var(--title-background-color);
-  color: var(--title-foreground-color);
-  text-align: left;
-  border: 0;
-  margin-bottom: $s-16;
-  svg {
-    height: $s-8;
-    width: $s-8;
-    stroke: var(--icon-foreground);
-    margin-right: $s-16;
-    transform: rotate(180deg);
-  }
-}
-
-.search-field {
-  display: flex;
-  align-items: center;
-  height: $s-32;
-  margin: $s-16 $s-4 $s-4 $s-12;
-  border-radius: $br-8;
-  font-family: "worksans", sans-serif;
-  background-color: var(--input-background-color);
-}
-
-.search-box {
-  align-items: center;
-  display: flex;
-  width: 100%;
 }
 
 .icon-wrapper {
@@ -175,62 +202,58 @@
 
 .search-icon {
   @include flexCenter;
-  width: $s-28;
+  width: $s-12;
+  margin-left: $s-8;
   svg {
     @extend .button-icon-small;
     stroke: var(--icon-foreground);
   }
 }
 
-.select-field {
-  margin: $s-8 $s-4 0 $s-12;
-}
-
-.select-library {
-  padding-left: $s-20;
-}
-
-.listing-options-wrapper {
-  width: 100%;
-}
-
-.listing-options {
-  margin-left: auto;
-  margin-right: $s-4;
-}
-
 .component-path {
-  @include titleTipography;
-  @include textEllipsis;
-  text-align: left;
-  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: $s-4;
   width: 100%;
+  height: $s-32;
+  padding: 0;
+  border: 0;
   background-color: var(--title-background-color);
   color: var(--title-foreground-color);
-  border: 0;
-  margin: $s-16 0 $s-12 0;
-  padding: 0 $s-16 0 $s-24;
+  cursor: pointer;
+}
+
+.back-arrow {
+  @include flexCenter;
+  height: $s-32;
   svg {
-    height: $s-8;
-    width: $s-8;
+    height: $s-12;
+    width: $s-12;
     stroke: var(--icon-foreground);
-    margin-right: $s-16;
     transform: rotate(180deg);
   }
 }
 
-.component-path-empty {
-  height: $s-16;
+.path-name {
+  @include titleTipography;
+  @include textEllipsis;
+  direction: rtl;
+  height: $s-32;
+  padding: $s-8 0 $s-8 $s-2;
+}
+
+.path-name-last {
+  @include titleTipography;
+  @include textEllipsis;
+  height: $s-32;
+  padding: $s-8 0 $s-8 $s-2;
+  color: white;
 }
 
 .component-list-empty {
   @include titleTipography;
   margin: 0 $s-4 0 $s-8;
   color: $df-secondary;
-}
-
-.component-list {
-  margin: 0 $s-4 0 $s-8;
 }
 
 .component-item {
@@ -276,40 +299,6 @@
 
     svg {
       cursor: auto;
-    }
-  }
-}
-
-.component-group {
-  @include titleTipography;
-  text-align: left;
-  display: flex;
-  align-items: center;
-  margin: 0 $s-16 $s-8 $s-8;
-  justify-content: space-between;
-  cursor: pointer;
-  height: $s-24;
-  svg {
-    height: $s-8;
-    width: $s-8;
-  }
-  div {
-    display: flex;
-    width: 90%;
-  }
-  span {
-    @include textEllipsis;
-  }
-  .component-group-path {
-    direction: rtl;
-  }
-  .component-group-name {
-    color: var(--assets-item-name-foreground-color);
-  }
-  &:hover {
-    color: var(--assets-item-name-foreground-color-hover);
-    .component-group-name {
-      color: var(--assets-item-name-foreground-color-hover);
     }
   }
 }
@@ -393,28 +382,105 @@
   }
 }
 
+.element-set-title {
+  @include tabTitleTipography;
+  display: flex;
+  align-items: center;
+  height: $s-32;
+  padding-left: $s-2;
+  color: var(--title-foreground-color);
+}
+
+// Component swap
+
+.component-swap {
+  padding-top: $s-12;
+}
+
+.component-swap-content {
+  @include flexColumn;
+  gap: $s-16;
+}
+
+.fields-wrapper {
+  @include flexColumn;
+  gap: $s-4;
+}
+
+.search-field {
+  display: flex;
+  align-items: center;
+  height: $s-32;
+  border-radius: $br-8;
+  font-family: "worksans", sans-serif;
+  background-color: var(--input-background-color);
+}
+
+.library-name-wrapper {
+  display: grid;
+  grid-template-columns: 1fr auto;
+}
+
 .library-name {
   @include titleTipography;
   @include textEllipsis;
-  margin: $s-20 $s-4 0 $s-12;
   color: var(--title-foreground-color);
+  padding: $s-8 0 $s-8 $s-2;
 }
 
-.element-set-title {
+.swap-wrapper {
+  @include flexColumn;
+  gap: $s-4;
+}
+
+.listing-options-wrapper {
+  width: 100%;
+}
+
+.listing-options {
+  display: flex;
+  align-items: center;
+}
+
+.component-group {
   @include titleTipography;
-  text-transform: uppercase;
-  margin: $s-16 $s-4 0 $s-12;
-  color: var(--title-foreground-color);
+  display: grid;
+  grid-template-columns: 1fr $s-12;
+  height: $s-32;
+  cursor: pointer;
+
+  .component-group-name {
+    @include textEllipsis;
+    color: var(--assets-item-name-foreground-color);
+  }
+  &:hover {
+    color: var(--assets-item-name-foreground-color-hover);
+    .component-group-name {
+      color: var(--assets-item-name-foreground-color-hover);
+    }
+  }
 }
 
-.radio-button {
+.arrow-icon {
+  @include flexCenter;
+  height: $s-32;
   svg {
-    stroke: var(--icon-foreground);
-    fill: var(--icon-foreground);
     height: $s-12;
     width: $s-12;
-    cursor: pointer;
+    stroke: var(--icon-foreground);
   }
+}
+
+.path-wrapper {
+  display: flex;
+  max-width: $s-232;
+  padding: $s-8 0 $s-8 $s-2;
+}
+
+.component-group-path {
+  @include textEllipsis;
+  direction: rtl;
+  color: var(--assets-item-name-foreground-color-rest);
 }
 
 // Component annotation

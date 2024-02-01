@@ -563,7 +563,7 @@
   padding: $s-12;
   border-radius: $br-8;
   z-index: $z-index-10;
-  color: var(--color-foreground-primary);
+  color: var(--modal-title-foreground-color);
   background-color: var(--modal-background-color);
 }
 
@@ -575,7 +575,7 @@
   height: 100%;
   width: 100%;
   z-index: $z-index-modal;
-  background-color: var(--color-background-subtle);
+  background-color: var(--overlay-color);
 }
 
 .modal-container-base {
