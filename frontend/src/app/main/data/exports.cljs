@@ -10,6 +10,7 @@
    [app.main.data.modal :as modal]
    [app.main.data.workspace.persistence :as dwp]
    [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.dom :as dom]
@@ -166,6 +167,13 @@
                         :wait true}]
         (rx/concat
          (rx/of ::dwp/force-persist)
+
+         ;; Wait the persist to be succesfull
+         (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
+              (rx/filter #(or (nil? %) (= :saved %)))
+              (rx/first)
+              (rx/timeout 400 (rx/empty)))
+
          (->> (rp/cmd! :export params)
               (rx/mapcat (fn [{:keys [id filename]}]
                            (->> (rp/cmd! :export {:cmd :get-resource :blob? true :id id})
