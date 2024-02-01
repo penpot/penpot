@@ -449,6 +449,14 @@
                       (some? (:main-instance shape))
                       (dissoc :main-instance)
 
+                      (and (contains? shape :transform)
+                           (not (gmt/valid-matrix? (:transform shape))))
+                      (assoc :transform (gmt/matrix))
+
+                      (and (contains? shape :transform-inverse)
+                           (not (gmt/valid-matrix? (:transform-inverse shape))))
+                      (assoc :transform-inverse (gmt/matrix))
+
                       ;; Fix broken fills
                       (seq (:fills shape))
                       (update :fills (fn [fills] (filterv valid-fill? fills)))
