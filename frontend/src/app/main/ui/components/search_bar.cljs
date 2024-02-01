@@ -21,6 +21,7 @@
         on-clear    (unchecked-get props "clear-action")
         placeholder (unchecked-get props "placeholder")
         icon        (unchecked-get props "icon")
+        autofocus   (unchecked-get props "auto-focus")
 
         handle-change
         (mf/use-fn
@@ -52,6 +53,7 @@
       icon
       [:input {:on-change handle-change
                :value value
+               :auto-focus autofocus
                :placeholder placeholder
                :on-key-down handle-key-down}]
       (when (not= "" value)

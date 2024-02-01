@@ -176,6 +176,7 @@
       [:div {:class (stl/css :header)}
        [:& search-bar {:on-change on-filter-change
                        :value (:term @state)
+                       :auto-focus true
                        :placeholder (tr "workspace.options.search-font")}]
        (when (and recent-fonts show-recent)
          [:section {:class (stl/css :show-recent)}
