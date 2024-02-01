@@ -355,7 +355,8 @@
                                :points points))
 
                       (and (or (cfh/rect-shape? shape)
-                               (cfh/svg-raw-shape? shape))
+                               (cfh/svg-raw-shape? shape)
+                               (cfh/circle-shape? shape))
                            (not (valid-shape-points? (:points shape)))
                            (grc/valid-rect? (:selrect shape)))
                       (let [selrect (if (grc/valid-rect? (:svg-viewbox shape))
