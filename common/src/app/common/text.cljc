@@ -244,6 +244,21 @@
              (run! #(.appendCodePoint sb (int %)) (subvec cpoints start end))
              (.toString sb))))
 
+(defn- fix-gradients
+  "Conversion from draft doesn't convert correctly the fills gradient types. This
+  function change the type from string to keyword of the gradient type"
+  [data]
+  (letfn [(fix-type [type]
+            (cond-> type
+              (string? type) keyword))
+
+          (update-fill [fill]
+            (d/update-in-when fill [:fill-color-gradient :type] fix-type))
+
+          (update-all-fills [fills]
+            (mapv update-fill fills))]
+    (d/update-when data :fills update-all-fills)))
+
 (defn convert-from-draft
   [content]
   (letfn [(extract-text [cpoints part]
@@ -251,7 +266,9 @@
                   end   (inc (first (last part)))
                   text  (code-points->text cpoints start end)
                   attrs (second (first part))]
-              (assoc attrs :text text)))
+              (-> attrs
+                  (fix-gradients)
+                  (assoc :text text))))
 
           (split-texts [text styles]
             (let [cpoints  (text->code-points text)
@@ -268,7 +285,8 @@
             (let [key    (get block :key)
                   text   (get block :text)
                   styles (get block :inlineStyleRanges)
-                  data   (get block :data)]
+                  data   (->> (get block :data)
+                              fix-gradients)]
               (-> data
                   (assoc :key key)
                   (assoc :type "paragraph")

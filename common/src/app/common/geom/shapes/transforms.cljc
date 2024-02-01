@@ -140,6 +140,28 @@
 
        (gmt/translate (gpt/negate shape-center)))))
 
+(defn inverse-transform-matrix
+  ([shape]
+   (inverse-transform-matrix shape nil))
+
+  ([shape params]
+   (inverse-transform-matrix shape params (or (gco/shape->center shape) (gpt/point 0 0))))
+
+  ([{:keys [flip-x flip-y transform-inverse] :as shape} {:keys [no-flip]} shape-center]
+   (-> (gmt/matrix)
+       (gmt/translate shape-center)
+
+       (cond-> (and flip-x no-flip)
+         (gmt/scale (gpt/point -1 1)))
+
+       (cond-> (and flip-y no-flip)
+         (gmt/scale (gpt/point 1 -1)))
+
+       (cond-> (some? transform-inverse)
+         (gmt/multiply transform-inverse))
+
+       (gmt/translate (gpt/negate shape-center)))))
+
 (defn transform-str
   ([shape]
    (transform-str shape nil))
@@ -151,21 +173,6 @@
                 (and no-flip flip-y)))
      (dm/str (transform-matrix shape params))
      "")))
-
-;; FIXME: performance
-(defn inverse-transform-matrix
-  ([shape]
-   (let [shape-center (or (gco/shape->center shape)
-                          (gpt/point 0 0))]
-     (inverse-transform-matrix shape shape-center)))
-  ([{:keys [flip-x flip-y] :as shape} center]
-   (-> (gmt/matrix)
-       (gmt/translate center)
-       (cond->
-        flip-x (gmt/scale (gpt/point -1 1))
-        flip-y (gmt/scale (gpt/point 1 -1)))
-       (gmt/multiply (:transform-inverse shape (gmt/matrix)))
-       (gmt/translate (gpt/negate center)))))
 
 ;; FIXME: move to geom rect?
 (defn transform-rect
