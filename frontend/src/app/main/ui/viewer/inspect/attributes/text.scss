@@ -30,7 +30,6 @@
 }
 
 .attributes-content-row {
-  width: $s-252;
   max-width: $s-252;
   min-height: calc($s-2 + $s-32);
   border-radius: $br-8;
@@ -39,7 +38,7 @@
   .content {
     @include titleTipography;
     width: 100%;
-    padding: 0;
+    padding: $s-4 0;
     color: var(--color-foreground-secondary);
   }
 

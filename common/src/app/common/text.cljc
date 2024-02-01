@@ -53,6 +53,9 @@
 (def text-transform-attrs
   [:text-transform])
 
+(def text-fills
+  [:fills])
+
 (def shape-attrs
   [:grow-type])
 
@@ -70,7 +73,8 @@
    text-font-attrs
    text-spacing-attrs
    text-decoration-attrs
-   text-transform-attrs))
+   text-transform-attrs
+   text-fills))
 
 (def text-all-attrs (d/concat-set shape-attrs root-attrs paragraph-attrs text-node-attrs))
 

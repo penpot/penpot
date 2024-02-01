@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.main.ui.components.copy-button :refer [copy-button]]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.util.code-gen.style-css :as css]
@@ -19,9 +20,10 @@
 (mf/defc geometry-block
   [{:keys [objects shape]}]
   [:*
-   (for [property properties]
+   (for [[idx property] (d/enumerate properties)]
      (when-let [value (css/get-css-value objects shape property)]
-       [:div {:class (stl/css :geometry-row)}
+       [:div {:key (dm/str "block-" idx "-" (d/name property))
+              :class (stl/css :geometry-row)}
         [:div {:class (stl/css :global/attr-label)} (d/name property)]
         [:div {:class (stl/css :global/attr-value)}
          [:& copy-button {:data (css/get-css-property objects shape property)}
