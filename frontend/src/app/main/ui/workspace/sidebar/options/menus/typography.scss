@@ -247,14 +247,13 @@
 
 .text-options {
   @include flexColumn;
-  margin-bottom: $s-8;
   &:not(.text-options-full-size) {
     position: relative;
   }
   .font-option {
     @include titleTipography;
     @extend .asset-element;
-    padding-right: 0;
+    padding: $s-8 0 $s-8 $s-8;
     cursor: pointer;
     .name {
       flex-grow: 1;
@@ -292,6 +291,7 @@
         padding: 0;
         .numeric-input {
           @extend .input-base;
+          padding-inline-start: $s-8;
         }
       }
 
