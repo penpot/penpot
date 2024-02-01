@@ -31,6 +31,7 @@
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+   [app.common.types.grid :as ctg]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
@@ -138,6 +139,13 @@
 (def valid-image-attrs?
   (sm/lazy-validator ::cts/image-attrs))
 
+(def valid-column-grid-params?
+  (sm/lazy-validator ::ctg/column-params))
+
+(def valid-square-grid-params?
+  (sm/lazy-validator ::ctg/square-params))
+
+
 (defn- prepare-file-data
   "Apply some specific migrations or fixes to things that are allowed in v1 but not in v2,
    or that are the result of old bugs."
@@ -221,11 +229,28 @@
                       (dissoc options :background)
                       options))
 
+                  (fix-saved-grids [options]
+                    (d/update-when options :saved-grids
+                                   (fn [grids]
+                                     (cond-> grids
+                                       (and (contains? grids :column)
+                                            (not (valid-column-grid-params? (:column grids))))
+                                       (dissoc :column)
+
+                                       (and (contains? grids :row)
+                                            (not (valid-column-grid-params? (:row grids))))
+                                       (dissoc :row)
+
+                                       (and (contains? grids :square)
+                                            (not (valid-square-grid-params? (:square grids))))
+                                       (dissoc :square)))))
+
                   (fix-options [options]
                     (-> options
                         ;; Some pages has invalid data on flows, we proceed just to
                         ;; delete them.
                         (d/update-when :flows #(filterv valid-flow? %))
+                        (fix-saved-grids)
                         (fix-background)))]
 
             (update file-data :pages-index update-vals update-page)))
