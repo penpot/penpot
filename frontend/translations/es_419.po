@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-01-25 12:01+0000\n"
+"PO-Revision-Date: 2024-02-02 13:01+0000\n"
 "Last-Translator: Yessenia Villarte Vaca <yesseniavillarte@gmail.com>\n"
 "Language-Team: Spanish (Latin America) <https://hosted.weblate.org/projects/"
 "penpot/frontend/es_419/>\n"
@@ -412,3 +412,152 @@ msgstr "(copiar)"
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.create-new-team"
 msgstr "Crear nuevo equipo"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to-link"
+msgstr "Información sobre cómo configurar las exportaciones en Penpot."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.no-elements"
+msgstr "No hay elementos con configuración de exportación."
+
+msgid "dashboard.export-frames"
+msgstr "Exportar tableros como PDF"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-frames.title"
+msgstr "Exportar como PDF"
+
+msgid "dashboard.export-multi"
+msgstr "Exportar %s archivos de Penpot"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-multiple.selected"
+msgstr "%s de %s elementos seleccionados"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "dashboard.export-shapes"
+msgstr "Exportar"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to"
+msgstr ""
+"Puede agregar configuraciones de exportación a elementos desde las "
+"propiedades de diseño (en la parte inferior de la barra lateral derecha)."
+
+msgid "dashboard.export-standard-multi"
+msgstr "Descargar %s archivos estándar (.svg + .json)"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.title"
+msgstr "Selección de exportación"
+
+msgid "dashboard.export.detail"
+msgstr "* Puede incluir componentes, gráficos, colores y/o tipografías."
+
+msgid "dashboard.export.explain"
+msgstr ""
+"Uno o más archivos que desea exportar utilizan bibliotecas compartidas. ¿Qué "
+"quiere hacer con sus activos*?"
+
+msgid "dashboard.export.options.all.message"
+msgstr ""
+"Los archivos con bibliotecas compartidas se incluirán en la exportación, "
+"manteniendo su vinculación."
+
+msgid "dashboard.export.options.all.title"
+msgstr "Exportar bibliotecas compartidas"
+
+msgid "dashboard.export.options.detach.message"
+msgstr ""
+"Las bibliotecas compartidas no se incluirán en la exportación y no se "
+"agregarán activos a la biblioteca. "
+
+msgid "dashboard.export.options.detach.title"
+msgstr "Trate los activos de biblioteca compartidos como objetos básicos"
+
+msgid "dashboard.export.options.merge.message"
+msgstr ""
+"Su archivo se exportará con todos los activos externos combinados en la "
+"biblioteca de archivos."
+
+msgid "dashboard.export.options.merge.title"
+msgstr "Incluir recursos de biblioteca compartidos en bibliotecas de archivos"
+
+msgid "dashboard.import.progress.process-typographies"
+msgstr "Procesamiento de tipografías"
+
+msgid "dashboard.import.progress.upload-data"
+msgstr "Subiendo datos al servidor (%s/%s)"
+
+msgid "dashboard.import.progress.upload-media"
+msgstr "Subiendo archivo: %s"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.invite-profile"
+msgstr "Invitar a la gente"
+
+#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.leave-team"
+msgstr "dejar el equipo"
+
+msgid "dashboard.libraries-and-templates"
+msgstr "Bibliotecas y plantillas"
+
+#: src/app/main/ui/dashboard/libraries.cljs
+msgid "dashboard.libraries-title"
+msgstr "Bibliotecas"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.loading-files"
+msgstr "cargando tus archivos…"
+
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "Explore más de ellos y sepa cómo contribuir"
+
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr ""
+"Hubo un problema al importar la plantilla. La plantilla no fue importada."
+
+msgid "dashboard.loading-fonts"
+msgstr "cargando tus fuentes…"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to"
+msgstr "Mover a"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-multi"
+msgstr "Mover %s archivos a"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-other-team"
+msgstr "Pasar a otro equipo"
+
+#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/files.cljs
+msgid "dashboard.new-file"
+msgstr "+ Nuevo archivo"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-file-prefix"
+msgstr "Archivo nuevo"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dashboard.new-project"
+msgstr "+ Nuevo proyecto"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-project-prefix"
+msgstr "Nuevo proyecto"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.no-matches-for"
+msgstr "No se encontraron coincidencias para \"%s\""
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.no-projects-placeholder"
+msgstr "Los proyectos fijados aparecerán aquí"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "dashboard.notifications.email-changed-successfully"
+msgstr "Su dirección de correo electrónico se ha actualizado correctamente"
