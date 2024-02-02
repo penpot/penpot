@@ -200,22 +200,15 @@
       ;; NOTE: this operation may cause primary key conflicts on inserts
       ;; because of the timestamp precission (two concurrent requests), in
       ;; this case we just retry the operation.
-      (let [cfg    (-> cfg
-                       (assoc ::rtry/when rtry/conflict-exception?)
-                       (assoc ::rtry/max-retries 6)
-                       (assoc ::rtry/label "persist-audit-log"))
+      (let [tnow   (dt/now)
             params (-> params
+                       (assoc :created-at tnow)
+                       (assoc :tracked-at tnow)
                        (update :props db/tjson)
                        (update :context db/tjson)
                        (update :ip-addr db/inet)
                        (assoc :source "backend"))]
-
-        (rtry/invoke cfg (fn [cfg]
-                           (let [tnow   (dt/now)
-                                 params (-> params
-                                            (assoc :created-at tnow)
-                                            (assoc :tracked-at tnow))]
-                             (db/insert! cfg :audit-log params))))))
+        (db/insert! cfg :audit-log params)))
 
     (when (and (contains? cf/flags :webhooks)
                (::webhooks/event? event))
@@ -246,9 +239,13 @@
   "Submit audit event to the collector."
   [cfg params]
   (try
-    (let [event (d/without-nils params)]
+    (let [event (d/without-nils params)
+          cfg   (-> cfg
+                    (assoc ::rtry/when rtry/conflict-exception?)
+                    (assoc ::rtry/max-retries 6)
+                    (assoc ::rtry/label "persist-audit-log"))]
       (us/verify! ::event event)
-      (db/tx-run! cfg handle-event! event))
+      (rtry/invoke! cfg db/tx-run! handle-event! event))
     (catch Throwable cause
       (l/error :hint "unexpected error processing event" :cause cause))))
 
