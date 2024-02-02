@@ -23,6 +23,11 @@
     {{/isDebug}}
 
     <link rel="icon" href="images/favicon.png" />
+    <script type="importmap">
+      {"imports": {"plugins-runtime": "http://localhost:4200/index.mjs"}}
+    </script>
+
+    <script type="module" src="http://localhost:4200/index.mjs"></script>
 
     <script>
       window.penpotTranslations = JSON.parse({{& translations}});
@@ -32,8 +37,8 @@
 
     {{# manifest}}
     <script>window.penpotWorkerURI="{{& worker}}"</script>
-    <script src="{{& config}}"></script>
-    <script src="{{& polyfills}}"></script>
+    <script defer src="{{& config}}"></script>
+    <script defer src="{{& polyfills}}"></script>
     {{/manifest}}
 
     <!--cookie-consent-->
@@ -44,8 +49,19 @@
     <div id="app"></div>
     <section id="modal"></section>
     {{# manifest}}
-    <script src="{{& shared}}"></script>
-    <script src="{{& main}}"></script>
+
+    <script defer src="{{& shared}}"></script>
+    <script defer src="{{& main}}"></script>
+
+    <penpot-plugins />
     {{/manifest}}
+
+    <script type="module">
+      import * as runtime from "plugins-runtime";
+
+      // console.log(globalThis.app.plugins);
+      runtime.initialize(globalThis.app.plugins);
+    </script>
+
   </body>
 </html>
