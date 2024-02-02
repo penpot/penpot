@@ -84,7 +84,7 @@
                                     (dom/focus! textarea))))
         on-delete-annotation
         (mf/use-callback
-         (mf/deps shape)
+         (mf/deps (:id shape))
          (fn [event]
            (dom/stop-propagation event)
            (st/emit! (modal/show
@@ -98,7 +98,7 @@
                                      (dw/update-component-annotation component-id nil)))}))))]
 
     (mf/use-effect
-     (mf/deps shape)
+     (mf/deps (:id shape))
      (fn []
        (initialize)
        (when (and (not creating?) (:id-for-create workspace-annotations)) ;; cleanup set-annotations-id-for-create if we aren't on the marked component

@@ -50,13 +50,6 @@
      (fn []
        (st/emit! (dsc/pop-shortcuts key))))))
 
-(defn invisible-image
-  []
-  (let [img (js/Image.)
-        imd "data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs="]
-    (set! (.-src img) imd)
-    img))
-
 (defn- set-timer
   [state ms func]
   (assoc state :timer (ts/schedule ms func)))
@@ -128,7 +121,7 @@
             (do
               (dom/stop-propagation event)
               (dnd/set-data! event data-type data)
-              (dnd/set-drag-image! event (invisible-image))
+              (dnd/set-drag-image! event (dnd/invisible-image))
               (dnd/set-allowed-effect! event "move")
               (when (fn? on-drag)
                 (on-drag data)))))

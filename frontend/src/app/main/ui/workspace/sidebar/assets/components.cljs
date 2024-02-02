@@ -472,13 +472,26 @@
         (mf/use-fn
          (mf/deps file-id)
          (fn [component event]
-           ;; dnd api only allow to acces to the dataTransfer data on on-drop (https://html.spec.whatwg.org/dev/dnd.html#concept-dnd-p)
-           ;; We need to know if the dragged element is from the local library on on-drag-enter, so we need to keep the info elsewhere
-           (set-drag-data! {:local? local?})
 
-           (dnd/set-data! event "penpot/component" {:file-id file-id
-                                                    :component component})
-           (dnd/set-allowed-effect! event "move")))
+           (let [file-data
+                 (d/nilv (dm/get-in @refs/workspace-libraries [file-id :data]) @refs/workspace-data)
+
+                 shape-main
+                 (ctf/get-component-root file-data component)]
+
+             ;; dnd api only allow to acces to the dataTransfer data on on-drop (https://html.spec.whatwg.org/dev/dnd.html#concept-dnd-p)
+             ;; We need to know if the dragged element is from the local library on on-drag-enter, so we need to keep the info elsewhere
+             (set-drag-data! {:file-id file-id
+                              :component component
+                              :shape shape-main
+                              :local? local?})
+
+             (dnd/set-data! event "penpot/component" true)
+
+             ;; Remove the ghost image for componentes because we're going to instantiate it on the viewport
+             (dnd/set-drag-image! event (dnd/invisible-image))
+
+             (dnd/set-allowed-effect! event "move"))))
 
         on-show-main
         (mf/use-fn
@@ -569,4 +582,3 @@
                     {:option-name   (tr "workspace.shape.menu.show-main")
                      :id             "assets-show-main-component"
                      :option-handler on-show-main})]}]]]))
-
