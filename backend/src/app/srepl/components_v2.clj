@@ -188,17 +188,27 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn migrate-file!
-  [file-id & {:keys [rollback? validate? label] :or {rollback? true validate? false}}]
+  [file-id & {:keys [rollback? validate? label cache skip-on-graphic-error?]
+              :or {rollback? true
+                   validate? false
+                   skip-on-graphic-error? true}}]
   (l/dbg :hint "migrate:start" :rollback rollback?)
-  (let [tpoint (dt/tpoint)
+  (let [tpoint  (dt/tpoint)
         file-id (if (string? file-id)
                   (parse-uuid file-id)
-                  file-id)]
-    (binding [feat/*stats* (atom {})]
+                  file-id)
+        cache   (if (int? cache)
+                  (cache/create :executor (::wrk/executor main/system)
+                                :max-items cache)
+                  nil)]
+
+    (binding [feat/*stats* (atom {})
+              feat/*cache* cache]
       (try
         (-> (assoc main/system ::db/rollback rollback?)
             (feat/migrate-file! file-id
                                 :validate? validate?
+                                :skip-on-graphic-error? skip-on-graphic-error?
                                 :label label))
 
         (-> (deref feat/*stats*)
@@ -212,22 +222,28 @@
             (l/dbg :hint "migrate:end" :rollback rollback? :elapsed elapsed)))))))
 
 (defn migrate-team!
-  [team-id & {:keys [rollback? skip-on-graphic-error? validate? label]
+  [team-id & {:keys [rollback? skip-on-graphic-error? validate? label cache]
               :or {rollback? true
                    validate? true
-                   skip-on-graphic-error? false}}]
+                   skip-on-graphic-error? true}}]
 
   (l/dbg :hint "migrate:start" :rollback rollback?)
 
-  (let [team-id   (if (string? team-id)
-                    (parse-uuid team-id)
-                    team-id)
-        stats     (atom {})
-        tpoint    (dt/tpoint)]
+  (let [team-id (if (string? team-id)
+                  (parse-uuid team-id)
+                  team-id)
+        stats   (atom {})
+        tpoint  (dt/tpoint)
+
+        cache   (if (int? cache)
+                  (cache/create :executor (::wrk/executor main/system)
+                                :max-items cache)
+                  nil)]
 
     (add-watch stats :progress-report (report-progress-files tpoint))
 
-    (binding [feat/*stats* stats]
+    (binding [feat/*stats* stats
+              feat/*cache* cache]
       (try
         (-> (assoc main/system ::db/rollback rollback?)
             (feat/migrate-team! team-id
@@ -286,7 +302,7 @@
         sprocs    (ps/create :permits max-procs)
 
         cache     (if (int? cache)
-                    (cache/create :executor executor
+                    (cache/create :executor (::wrk/executor main/system)
                                   :max-items cache)
                     nil)
         migrate-team
@@ -382,3 +398,17 @@
             (l/dbg :hint "migrate:end"
                    :rollback rollback?
                    :elapsed elapsed)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; FILE PROCESS HELPERS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn delete-broken-files
+  [{:keys [id data] :as file}]
+  (if (-> data :options :components-v2 true?)
+    (do
+      (l/wrn :hint "found old components-v2 format"
+             :file-id (str id)
+             :file-name (:name file))
+      (assoc file :deleted-at (dt/now)))
+    file))

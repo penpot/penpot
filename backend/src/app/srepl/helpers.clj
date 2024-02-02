@@ -258,8 +258,11 @@
              max-jobs
              start-at
              on-file
+             validate?
              rollback?]
       :or {max-jobs 1
+           max-items Long/MAX_VALUE
+           validate? true
            rollback? true}}]
 
   (l/dbg :hint "process:start"
@@ -273,19 +276,19 @@
         sjobs     (ps/create :permits max-jobs)
 
         process-file
-        (fn [file-id tpoint]
+        (fn [file-id idx tpoint]
           (try
-            (l/trc :hint "process:file:start" :file-id (str file-id))
+            (l/trc :hint "process:file:start" :file-id (str file-id) :index idx)
             (db/tx-run! (assoc main/system ::db/rollback rollback?)
                         (fn [{:keys [::db/conn] :as system}]
                           (let [file' (get-file* system file-id)
                                 file  (binding [*system* system]
                                         (on-file file'))]
 
-                            (when (and (some? file)
-                                       (not (identical? file file')))
+                            (when (and (some? file) (not (identical? file file')))
 
-                              (cfv/validate-file-schema! file)
+                              (when validate?
+                                (cfv/validate-file-schema! file))
 
                               (let [file (if (contains? (:features file) "fdata/objects-map")
                                            (feat.fdata/enable-objects-map file)
@@ -300,20 +303,24 @@
 
                                 (db/update! conn :file
                                             {:data (blob/encode (:data file))
+                                             :deleted-at (:deleted-at file)
+                                             :created-at (:created-at file)
+                                             :modified-at (:modified-at file)
                                              :features (db/create-array conn "text" (:features file))
                                              :revn (:revn file)}
                                             {:id file-id}))))))
             (catch Throwable cause
               (l/wrn :hint "unexpected error on processing file (skiping)"
                      :file-id (str file-id)
+                     :index idx
                      :cause cause))
             (finally
               (ps/release! sjobs)
               (let [elapsed (dt/format-duration (tpoint))]
                 (l/trc :hint "process:file:end"
                        :file-id (str file-id)
+                       :index idx
                        :elapsed elapsed)))))]
-
 
     (try
       (db/tx-run! main/system
@@ -321,15 +328,18 @@
                     (db/exec! conn ["SET statement_timeout = 0"])
                     (db/exec! conn ["SET idle_in_transaction_session_timeout = 0"])
 
-                    (run! (fn [file-id]
-                            (ps/acquire! sjobs)
-                            (px/run! executor (partial process-file file-id (dt/tpoint))))
-                          (->> (db/cursor conn [sql:get-file-ids (or start-at (dt/now))])
-                               (take max-items)
-                               (map :id)))
-
-                    ;; Close and await tasks
-                    (pu/close! executor)))
+                    (try
+                      (reduce (fn [idx file-id]
+                                (ps/acquire! sjobs)
+                                (px/run! executor (partial process-file file-id idx (dt/tpoint)))
+                                (inc idx))
+                              0
+                              (->> (db/cursor conn [sql:get-file-ids (or start-at (dt/now))])
+                                   (take max-items)
+                                   (map :id)))
+                      (finally
+                        ;; Close and await tasks
+                        (pu/close! executor)))))
 
       (catch Throwable cause
         (l/dbg :hint "process:error" :cause cause))

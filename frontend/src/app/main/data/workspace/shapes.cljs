@@ -72,13 +72,15 @@
     (watch [it state _]
       (let [page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
-            shapes (->> shapes (remove #(dm/get-in objects [% :blocked])))
+            shapes  (->> shapes
+                         (remove #(dm/get-in objects [% :blocked]))
+                         (cfh/order-by-indexed-shapes objects))
+
             changes (-> (pcb/empty-changes it page-id)
                         (pcb/with-objects objects))
-            changes (cfsh/prepare-move-shapes-into-frame changes
-                                                         frame-id
-                                                         shapes
-                                                         objects)]
+
+            changes (cfsh/prepare-move-shapes-into-frame changes frame-id shapes objects)]
+
         (if (some? changes)
           (rx/of (dch/commit-changes changes))
           (rx/empty))))))

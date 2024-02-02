@@ -895,9 +895,10 @@
 
 (defn map-nodes [mapfn node]
   (let [update-content
-        (fn [content] (cond->> content
-                        (vector? content)
-                        (mapv (partial map-nodes mapfn))))]
+        (fn [content]
+          (cond->> content
+            (vector? content)
+            (mapv (partial map-nodes mapfn))))]
 
     (cond-> node
       (map? node)
@@ -922,7 +923,8 @@
       value)))
 
 (defn fix-default-values
-  "Gives values to some SVG elements which defaults won't work when imported into the platform"
+  "Gives values to some SVG elements which defaults won't work when
+  imported into the platform"
   [svg-data]
   (let [add-defaults
         (fn [{:keys [tag attrs] :as node}]
@@ -984,29 +986,38 @@
             (fix-percent-attrs-viewbox [attrs]
               (d/mapm fix-percent-attr-viewbox attrs))
 
-            (fix-percent-attr-numeric [_ attr-val]
-              (let [is-percent? (str/ends-with? attr-val "%")]
-                (if is-percent?
-                  (str (let [attr-num (d/parse-double (str/rtrim attr-val "%"))]
-                         (/ attr-num 100)))
-                  attr-val)))
+            (fix-percent-attr-numeric-val [val]
+              (let [val (d/parse-double (str/rtrim val "%"))]
+                (str (/ val 100))))
 
-            (fix-percent-attrs-numeric [attrs]
-              (d/mapm fix-percent-attr-numeric attrs))
+            (fix-percent-attr-numeric [attrs key val]
+              (cond
+                (= key :style)
+                attrs
+
+                (str/starts-with? (d/name key) "data-")
+                attrs
+
+                (str/ends-with? val "%")
+                (assoc attrs key (fix-percent-attr-numeric-val val))
+
+                :else
+                attrs))
 
             (fix-percent-values [node]
               (let [units (or (get-in node [:attrs :filterUnits])
                               (get-in node [:attrs :gradientUnits])
                               (get-in node [:attrs :patternUnits])
                               (get-in node [:attrs :clipUnits]))]
+
                 (cond-> node
                   (or (= "objectBoundingBox" units) (nil? units))
-                  (update :attrs fix-percent-attrs-numeric)
+                  (update :attrs #(reduce-kv fix-percent-attr-numeric % %))
 
                   (not= "objectBoundingBox" units)
                   (update :attrs fix-percent-attrs-viewbox))))]
 
-      (->> svg-data (map-nodes fix-percent-values)))))
+      (map-nodes fix-percent-values svg-data))))
 
 (defn collect-images [svg-data]
   (let [redfn (fn [acc {:keys [tag attrs]}]

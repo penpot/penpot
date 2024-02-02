@@ -31,6 +31,7 @@
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+   [app.common.types.grid :as ctg]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
@@ -105,10 +106,20 @@
 ;; FILE PREPARATION BEFORE MIGRATION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def valid-color?  (sm/lazy-validator ::ctc/recent-color))
-(def valid-fill?   (sm/lazy-validator ::cts/fill))
-(def valid-stroke? (sm/lazy-validator ::cts/stroke))
-(def valid-flow?   (sm/lazy-validator ::ctp/flow))
+(def valid-recent-color?
+  (sm/lazy-validator ::ctc/recent-color))
+
+(def valid-color?
+  (sm/lazy-validator ::ctc/color))
+
+(def valid-fill?
+  (sm/lazy-validator ::cts/fill))
+
+(def valid-stroke?
+  (sm/lazy-validator ::cts/stroke))
+
+(def valid-flow?
+  (sm/lazy-validator ::ctp/flow))
 
 (def valid-text-content?
   (sm/lazy-validator ::ctsx/content))
@@ -122,30 +133,61 @@
 (def valid-rgb-color-string?
   (sm/lazy-validator ::ctc/rgb-color))
 
+(def valid-shape-points?
+  (sm/lazy-validator ::cts/points))
+
+(def valid-image-attrs?
+  (sm/lazy-validator ::cts/image-attrs))
+
+(def valid-column-grid-params?
+  (sm/lazy-validator ::ctg/column-params))
+
+(def valid-square-grid-params?
+  (sm/lazy-validator ::ctg/square-params))
+
+
 (defn- prepare-file-data
   "Apply some specific migrations or fixes to things that are allowed in v1 but not in v2,
    or that are the result of old bugs."
   [file-data libraries]
   (let [detached-ids  (volatile! #{})
+
         detach-shape
         (fn [container shape]
-          ;; Detach a shape. If it's inside a component, add it to detached-ids. This list
-          ;; is used later to process any other copy that was referencing a detached copy.
+          ;; Detach a shape and make necessary adjustments.
           (let [is-component? (let [root-shape (ctst/get-shape container (:id container))]
-                                (and (some? root-shape) (nil? (:parent-id root-shape))))]
-            (when is-component?
-              (vswap! detached-ids conj (:id shape)))
-            (ctk/detach-shape shape)))
+                                (and (some? root-shape) (nil? (:parent-id root-shape))))
+                parent        (ctst/get-shape container (:parent-id shape))
+                in-copy?      (ctn/in-any-component? (:objects container) parent)]
+
+            (letfn [(detach-recursive [container shape first?]
+
+                      ;; If the shape is inside a component, add it to detached-ids. This list is used
+                      ;; later to process other copies that was referencing a detached nested copy.
+                      (when is-component?
+                        (vswap! detached-ids conj (:id shape)))
+
+                      ;; Detach the shape and all children until we find a subinstance.
+                      (if (or first? in-copy? (not (ctk/instance-head? shape)))
+                        (as-> container $
+                          (ctn/update-shape $ (:id shape) ctk/detach-shape)
+                          (reduce #(detach-recursive %1 %2 false)
+                                  $
+                                  (map (d/getf (:objects container)) (:shapes shape))))
+
+                        ;; If this is a subinstance head and the initial shape whas not itself a
+                        ;; nested copy, stop detaching and promote it to root.
+                        (ctn/update-shape container (:id shape) #(assoc % :component-root true))))]
+
+              (detach-recursive container shape true))))
 
         fix-bad-children
         (fn [file-data]
           ;; Remove any child that does not exist. And also remove duplicated children.
-          (letfn [(fix-container
-                    [container]
+          (letfn [(fix-container [container]
                     (d/update-when container :objects update-vals (partial fix-shape container)))
 
-                  (fix-shape
-                    [container shape]
+                  (fix-shape [container shape]
                     (let [objects (:objects container)]
                       (d/update-when shape :shapes
                                      (fn [shapes]
@@ -160,12 +202,10 @@
         fix-missing-image-metadata
         (fn [file-data]
           ;; Delete broken image shapes with no metadata.
-          (letfn [(fix-container
-                    [container]
+          (letfn [(fix-container [container]
                     (d/update-when container :objects #(reduce-kv fix-shape % %)))
 
-                  (fix-shape
-                    [objects id shape]
+                  (fix-shape [objects id shape]
                     (if (and (cfh/image-shape? shape)
                              (nil? (:metadata shape)))
                       (-> objects
@@ -189,11 +229,28 @@
                       (dissoc options :background)
                       options))
 
+                  (fix-saved-grids [options]
+                    (d/update-when options :saved-grids
+                                   (fn [grids]
+                                     (cond-> grids
+                                       (and (contains? grids :column)
+                                            (not (valid-column-grid-params? (:column grids))))
+                                       (dissoc :column)
+
+                                       (and (contains? grids :row)
+                                            (not (valid-column-grid-params? (:row grids))))
+                                       (dissoc :row)
+
+                                       (and (contains? grids :square)
+                                            (not (valid-square-grid-params? (:square grids))))
+                                       (dissoc :square)))))
+
                   (fix-options [options]
                     (-> options
                         ;; Some pages has invalid data on flows, we proceed just to
                         ;; delete them.
                         (d/update-when :flows #(filterv valid-flow? %))
+                        (fix-saved-grids)
                         (fix-background)))]
 
             (update file-data :pages-index update-vals update-page)))
@@ -203,11 +260,19 @@
         ;; fix that issues.
         fix-file-data
         (fn [file-data]
-          (-> file-data
-              (d/update-when :colors dissoc nil)
-              (d/update-when :typographies dissoc nil)))
+          (letfn [(fix-colors-library [colors]
+                    (let [colors (dissoc colors nil)]
+                      (reduce-kv (fn [colors id color]
+                                   (if (valid-color? color)
+                                     colors
+                                     (dissoc colors id)))
+                                 colors
+                                 colors)))]
+            (-> file-data
+                (d/update-when :colors fix-colors-library)
+                (d/update-when :typographies dissoc nil))))
 
-        delete-big-geometry-shapes
+        fix-big-geometry-shapes
         (fn [file-data]
           ;; At some point in time, we had a bug that generated shapes
           ;; with huge geometries that did not validate the
@@ -253,8 +318,15 @@
                                               (fn [shapes] (filterv #(not= id %) shapes)))))
 
                       (and (cfh/text-shape? shape)
-                           (not (seq (:content shape))))
+                           (not (valid-text-content? (:content shape))))
                       (dissoc objects id)
+
+                      (and (cfh/path-shape? shape)
+                           (not (valid-path-content? (:content shape))))
+                      (-> objects
+                          (dissoc id)
+                          (d/update-in-when [(:parent-id shape) :shapes]
+                                            (fn [shapes] (filterv #(not= id %) shapes))))
 
                       :else
                       objects))
@@ -266,24 +338,124 @@
                 (update :pages-index update-vals update-container)
                 (update :components update-vals update-container))))
 
-        fix-misc-shape-issues
+        fix-shape-geometry
         (fn [file-data]
           (letfn [(fix-container [container]
                     (d/update-when container :objects update-vals fix-shape))
 
                   (fix-shape [shape]
+                    (cond
+                      (and (cfh/image-shape? shape)
+                           (valid-image-attrs? shape)
+                           (grc/valid-rect? (:selrect shape))
+                           (not (valid-shape-points? (:points shape))))
+                      (let [selrect  (:selrect shape)
+                            metadata (:metadata shape)
+                            selrect  (grc/make-rect
+                                      (:x selrect)
+                                      (:y selrect)
+                                      (:width metadata)
+                                      (:height metadata))
+                            points   (grc/rect->points selrect)]
+                        (assoc shape
+                               :selrect selrect
+                               :points points))
+
+                      (and (cfh/text-shape? shape)
+                           (valid-text-content? (:content shape))
+                           (not (valid-shape-points? (:points shape)))
+                           (seq (:position-data shape)))
+                      (let [selrect (->> (:position-data shape)
+                                         (map (juxt :x :y :width :height))
+                                         (map #(apply grc/make-rect %))
+                                         (grc/join-rects))
+                            points  (grc/rect->points selrect)]
+
+                        (assoc shape
+                               :x (:x selrect)
+                               :y (:y selrect)
+                               :width (:width selrect)
+                               :height (:height selrect)
+                               :selrect selrect
+                               :points points))
+
+                      (and (or (cfh/rect-shape? shape)
+                               (cfh/svg-raw-shape? shape)
+                               (cfh/circle-shape? shape))
+                           (not (valid-shape-points? (:points shape)))
+                           (grc/valid-rect? (:selrect shape)))
+                      (let [selrect (if (grc/valid-rect? (:svg-viewbox shape))
+                                      (:svg-viewbox shape)
+                                      (:selrect shape))
+                            points  (grc/rect->points selrect)]
+                        (assoc shape
+                               :x (:x selrect)
+                               :y (:y selrect)
+                               :width (:width selrect)
+                               :height (:height selrect)
+                               :selrect selrect
+                               :points points))
+
+                      (and (= :icon (:type shape))
+                           (grc/valid-rect? (:selrect shape))
+                           (valid-shape-points? (:points shape)))
+                      (-> shape
+                          (assoc :type :rect)
+                          (dissoc :content)
+                          (dissoc :metadata)
+                          (dissoc :segments)
+                          (dissoc :x1 :y1 :x2 :y2))
+
+                      (and (cfh/group-shape? shape)
+                           (grc/valid-rect? (:selrect shape))
+                           (not (valid-shape-points? (:points shape))))
+                      (assoc shape :points (grc/rect->points (:selrect shape)))
+
+                      :else
+                      shape))]
+
+            (-> file-data
+                (update :pages-index update-vals fix-container)
+                (d/update-when :components update-vals fix-container))))
+
+        fix-misc-shape-issues
+        (fn [file-data]
+          (letfn [(fix-container [container]
+                    (d/update-when container :objects update-vals fix-shape))
+
+                  (fix-gap-value [gap]
+                    (if (or (= gap ##Inf)
+                            (= gap ##-Inf))
+                      0
+                      gap))
+
+                  (fix-shape [shape]
                     (cond-> shape
                       ;; Some shapes has invalid gap value
                       (contains? shape :layout-gap)
-                      (d/update-in-when [:layout-gap :column-gap]
-                                        (fn [gap]
-                                          (if (or (= gap ##Inf)
-                                                  (= gap ##-Inf))
-                                            0
-                                            gap)))
+                      (update :layout-gap (fn [layout-gap]
+                                            (if (number? layout-gap)
+                                              {:row-gap layout-gap :column-gap layout-gap}
+                                              (-> layout-gap
+                                                  (d/update-when :column-gap fix-gap-value)
+                                                  (d/update-when :row-gap fix-gap-value)))))
 
+                      ;; Fix name if missing
                       (nil? (:name shape))
                       (assoc :name (d/name (:type shape)))
+
+                      ;; Remove v2 info from components that have been copied and pasted
+                      ;; from a v2 file
+                      (some? (:main-instance shape))
+                      (dissoc :main-instance)
+
+                      (and (contains? shape :transform)
+                           (not (gmt/valid-matrix? (:transform shape))))
+                      (assoc :transform (gmt/matrix))
+
+                      (and (contains? shape :transform-inverse)
+                           (not (gmt/valid-matrix? (:transform-inverse shape))))
+                      (assoc :transform-inverse (gmt/matrix))
 
                       ;; Fix broken fills
                       (seq (:fills shape))
@@ -296,11 +468,7 @@
                       ;; Fix some broken layout related attrs, probably
                       ;; of copypaste on flex layout betatest period
                       (true? (:layout shape))
-                      (assoc :layout :flex)
-
-                      (number? (:layout-gap shape))
-                      (as-> shape (let [n (:layout-gap shape)]
-                                    (assoc shape :layout-gap {:row-gap n :column-gap n})))))]
+                      (assoc :layout :flex)))]
 
             (-> file-data
                 (update :pages-index update-vals fix-container)
@@ -342,13 +510,15 @@
                       (and (cfh/path-shape? shape)
                            (seq (:content shape))
                            (not (valid-path-content? (:content shape))))
-                      (let [shape   (update shape :content fix-path-content)
-                            [points selrect] (gshp/content->points+selrect shape (:content shape))]
-                        (-> shape
-                            (dissoc :bool-content)
-                            (dissoc :bool-type)
-                            (assoc :points points)
-                            (assoc :selrect selrect)))
+                      (let [shape (update shape :content fix-path-content)]
+                        (if (not (valid-path-content? (:content shape)))
+                          shape
+                          (let [[points selrect] (gshp/content->points+selrect shape (:content shape))]
+                            (-> shape
+                                (dissoc :bool-content)
+                                (dissoc :bool-type)
+                                (assoc :points points)
+                                (assoc :selrect selrect)))))
 
                       ;; When we fount a bool shape with no content,
                       ;; we convert it to a simple rect
@@ -390,18 +560,16 @@
           ;; Remove invalid colors in :recent-colors
           (d/update-when file-data :recent-colors
                          (fn [colors]
-                           (filterv valid-color? colors))))
+                           (filterv valid-recent-color? colors))))
 
         fix-broken-parents
         (fn [file-data]
           ;; Find children shapes whose parent-id is not set to the parent that contains them.
           ;; Remove them from the parent :shapes list.
-          (letfn [(fix-container
-                    [container]
+          (letfn [(fix-container [container]
                     (d/update-when container :objects #(reduce-kv fix-shape % %)))
 
-                  (fix-shape
-                    [objects id shape]
+                  (fix-shape [objects id shape]
                     (reduce (fn [objects child-id]
                               (let [child (get objects child-id)]
                                 (cond-> objects
@@ -476,19 +644,32 @@
         (fn [file-data]
           ;; Detach shapes that were inside a copy (have :shape-ref) but now they aren't.
           (letfn [(fix-container [container]
-                    (d/update-when container :objects update-vals (partial fix-shape container)))
+                    (reduce fix-shape container (ctn/shapes-seq container)))
 
                   (fix-shape [container shape]
-                    (let [parent (ctst/get-shape container (:parent-id shape))]
+                    (let [shape  (ctst/get-shape container (:id shape)) ; Get the possibly updated shape
+                          parent (ctst/get-shape container (:parent-id shape))]
                       (if (and (ctk/in-component-copy? shape)
                                (not (ctk/instance-head? shape))
                                (not (ctk/in-component-copy? parent)))
                         (detach-shape container shape)
-                        shape)))]
+                        container)))]
 
             (-> file-data
                 (update :pages-index update-vals fix-container)
                 (d/update-when :components update-vals fix-container))))
+
+        fix-components-without-id
+        (fn [file-data]
+          ;; We have detected some components that have no :id attribute.
+          ;; Regenerate it from the components map.
+          (letfn [(fix-component [id component]
+                    (if (some? (:id component))
+                      component
+                      (assoc component :id id)))]
+
+            (-> file-data
+                (d/update-when :components #(d/mapm fix-component %)))))
 
         remap-refs
         (fn [file-data]
@@ -523,11 +704,9 @@
                                 (if (some? direct-shape-2)
                                   ;; If it exists, there is nothing else to do.
                                   container
-                                  ;; If not found, detach shape and all children (stopping if a nested instance is reached)
-                                  (let [children (ctn/get-children-in-instance (:objects container) (:id shape))]
-                                    (reduce #(ctn/update-shape %1 (:id %2) (partial detach-shape %1))
-                                            container
-                                            children))))))))
+                                  ;; If not found, detach shape and all children.
+                                  ;; container
+                                  (detach-shape container shape)))))))
                       container))]
 
             (-> file-data
@@ -539,14 +718,64 @@
           ;; If the user has created a copy and then converted into a path or bool,
           ;; detach it because the synchronization will no longer work.
           (letfn [(fix-container [container]
-                    (d/update-when container :objects update-vals (partial fix-shape container)))
+                    (reduce fix-shape container (ctn/shapes-seq container)))
 
                   (fix-shape [container shape]
                     (if (and (ctk/instance-head? shape)
                              (or (cfh/path-shape? shape)
                                  (cfh/bool-shape? shape)))
                       (detach-shape container shape)
-                      shape))]
+                      container))]
+
+            (-> file-data
+                (update :pages-index update-vals fix-container)
+                (d/update-when :components update-vals fix-container))))
+
+        wrap-non-group-component-roots
+        (fn [file-data]
+          ;; Some components have a root that is not a group nor a frame
+          ;; (e.g. a path or a svg-raw). We need to wrap them in a frame
+          ;; for this one to became the root.
+          (letfn [(fix-component [component]
+                    (let [root-shape (ctst/get-shape component (:id component))]
+                      (if (or (cfh/group-shape? root-shape)
+                              (cfh/frame-shape? root-shape))
+                        component
+                        (let [new-id      (uuid/next)
+                              frame       (-> (cts/setup-shape
+                                               {:type :frame
+                                                :id (:id component)
+                                                :x (:x (:selrect root-shape))
+                                                :y (:y (:selrect root-shape))
+                                                :width (:width (:selrect root-shape))
+                                                :height (:height (:selrect root-shape))
+                                                :name (:name component)
+                                                :shapes [new-id]})
+                                              (assoc :frame-id nil
+                                                     :parent-id nil))
+                              root-shape' (assoc root-shape
+                                                 :id new-id
+                                                 :parent-id (:id frame)
+                                                 :frame-id (:id frame))]
+                          (update component :objects assoc
+                                  (:id frame) frame
+                                  (:id root-shape') root-shape')))))]
+
+            (-> file-data
+                (d/update-when :components update-vals fix-component))))
+
+        detach-non-group-instance-roots
+        (fn [file-data]
+          ;; If there is a copy instance whose root is not a frame or a group, it cannot
+          ;; be easily repaired, and anyway it's not working in production, so detach it.
+          (letfn [(fix-container [container]
+                    (reduce fix-shape container (ctn/shapes-seq container)))
+
+                  (fix-shape [container shape]
+                    (if (and (ctk/instance-head? shape)
+                             (not (#{:group :frame} (:type shape))))
+                      (detach-shape container shape)
+                      container))]
 
             (-> file-data
                 (update :pages-index update-vals fix-container)
@@ -554,7 +783,7 @@
 
         transform-to-frames
         (fn [file-data]
-          ;; Transform component and copy heads to frames, and set the
+          ;; Transform component and copy heads fron group to frames, and set the
           ;; frame-id of its childrens
           (letfn [(fix-container [container]
                     (d/update-when container :objects update-vals fix-shape))
@@ -631,9 +860,8 @@
         (fn [file-data]
           ;; Find component heads that are not main-instance but have not :shape-ref.
           ;; Also shapes that have :shape-ref but are not in a copy.
-          (letfn [(fix-container
-                    [container]
-                    (d/update-when container :objects update-vals (partial fix-shape container)))
+          (letfn [(fix-container [container]
+                    (reduce fix-shape container (ctn/shapes-seq container)))
 
                   (fix-shape
                     [container shape]
@@ -643,74 +871,79 @@
                             (and (ctk/in-component-copy? shape)
                                  (nil? (ctn/get-head-shape (:objects container) shape {:allow-main? true}))))
                       (detach-shape container shape)
-                      shape))]
+                      container))]
+
             (-> file-data
                 (update :pages-index update-vals fix-container)
                 (d/update-when :components update-vals fix-container))))
 
+
+        fix-component-root-without-component
+        (fn [file-data]
+          ;; Ensure that if component-root is set component-file and component-id are set too
+          (letfn [(fix-container [container]
+                    (d/update-when container :objects update-vals fix-shape))
+
+                  (fix-shape [shape]
+                    (cond-> shape
+                      (and (ctk/instance-root? shape)
+                           (or (not (ctk/instance-head? shape))
+                               (not (some? (:component-file shape)))))
+                      (dissoc :component-id
+                              :component-file
+                              :component-root)))]
+            (-> file-data
+                (update :pages-index update-vals fix-container))))
+
         fix-copies-of-detached
         (fn [file-data]
-          ;; Find any copy that is referencing a  shape inside a component that have
-          ;; been detached in a previous fix. If so, undo the nested copy, converting
-          ;; it into a direct copy.
-          ;;
-          ;; WARNING: THIS SHOULD BE CALLED AT THE END OF THE PROCESS.
+                  ;; Find any copy that is referencing a  shape inside a component that have
+                  ;; been detached in a previous fix. If so, undo the nested copy, converting
+                  ;; it into a direct copy.
+                  ;;
+                  ;; WARNING: THIS SHOULD BE CALLED AT THE END OF THE PROCESS.
           (letfn [(fix-container [container]
                     (d/update-when container :objects update-vals fix-shape))
 
                   (fix-shape [shape]
                     (cond-> shape
                       (@detached-ids (:shape-ref shape))
-                      (dissoc shape
-                              :component-id
-                              :component-file
-                              :component-root)))]
+                      (ctk/detach-shape)))]
             (-> file-data
                 (update :pages-index update-vals fix-container)
-                (d/update-when :components update-vals fix-container))))
-
-        fix-shape-nil-parent-id
-        (fn [file-data]
-          ;; Ensure that parent-id and frame-id are not nil
-          (letfn [(fix-container [container]
-                    (d/update-when container :objects update-vals fix-shape))
-
-                  (fix-shape [shape]
-                    (let [frame-id  (or (:frame-id shape)
-                                        uuid/zero)
-                          parent-id (or (:parent-id shape)
-                                        frame-id)]
-                      (assoc shape :frame-id frame-id
-                             :parent-id parent-id)))]
-            (-> file-data
-                (update :pages-index update-vals fix-container))))]
+                (d/update-when :components update-vals fix-container))))]
 
     (-> file-data
         (fix-file-data)
         (fix-page-invalid-options)
-        (fix-completly-broken-shapes)
-        (fix-bad-children)
         (fix-misc-shape-issues)
         (fix-recent-colors)
         (fix-missing-image-metadata)
         (fix-text-shapes-converted-to-path)
         (fix-broken-paths)
-        (delete-big-geometry-shapes)
+        (fix-big-geometry-shapes)
+        (fix-shape-geometry)
+        (fix-completly-broken-shapes)
+        (fix-bad-children)
         (fix-broken-parents)
         (fix-orphan-shapes)
         (fix-orphan-copies)
         (remove-nested-roots)
         (add-not-nested-roots)
+        (fix-components-without-id)
         (remap-refs)
         (fix-converted-copies)
+        (wrap-non-group-component-roots)
+        (detach-non-group-instance-roots)
         (transform-to-frames)
         (remap-frame-ids)
         (fix-frame-ids)
         (fix-component-nil-objects)
         (fix-false-copies)
-        (fix-shape-nil-parent-id)
-        (fix-copies-of-detached))))  ; <- Do not add fixes after this one
-
+        (fix-component-root-without-component)
+        (fix-copies-of-detached); <- Do not add fixes after this and fix-orphan-copies call
+        ; This extra call to fix-orphan-copies after fix-copies-of-detached because we can have detached subtrees with invalid shape-ref attributes
+        (fix-orphan-copies))))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; COMPONENTS MIGRATION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

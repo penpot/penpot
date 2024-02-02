@@ -12,6 +12,8 @@
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]
    [app.common.record :as rc]
+   [app.common.schema :as sm]
+   [app.common.schema.generators :as sg]
    [app.common.transit :as t]))
 
 (rc/defrecord Rect [x y width height x1 y1 x2 y2])
@@ -65,6 +67,31 @@
      (let [w (mth/max width 0.01)
            h (mth/max height 0.01)]
        (pos->Rect x y w h x y (+ x w) (+ y h))))))
+
+(def ^:private schema:rect-attrs
+  [:map {:title "RectAttrs"}
+   [:x ::sm/safe-number]
+   [:y ::sm/safe-number]
+   [:width ::sm/safe-number]
+   [:height ::sm/safe-number]
+   [:x1 ::sm/safe-number]
+   [:y1 ::sm/safe-number]
+   [:x2 ::sm/safe-number]
+   [:y2 ::sm/safe-number]])
+
+(sm/define! ::rect
+  [:and
+   {:gen/gen (->> (sg/tuple (sg/small-double)
+                            (sg/small-double)
+                            (sg/small-double)
+                            (sg/small-double))
+                  (sg/fmap #(apply make-rect %)))}
+   [:fn rect?]
+   schema:rect-attrs])
+
+(def valid-rect?
+  (sm/lazy-validator
+   [:and [:fn rect?] schema:rect-attrs]))
 
 (def empty-rect
   (make-rect 0 0 0.01 0.01))
