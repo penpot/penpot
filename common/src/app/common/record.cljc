@@ -430,15 +430,18 @@
 
 (defmacro define-properties!
   [rsym & properties]
-  (let [rsym (with-meta rsym {:tag 'js})]
+  (let [rsym       (with-meta rsym {:tag 'js})
+        self-sym   (gensym "self-")
+        get-fn-sym (gensym "get-fn-")
+        set-fn-sym (gensym "set-fn-")
+        params-sym (gensym "params-")
+        args-sym   (gensym "args-")]
     `(do
        ~@(for [params properties
                :let [pname  (get params :name)
                      get-fn (get params :get)
                      set-fn (get params :set)]]
-           `(.defineProperty js/Object
-                             (.-prototype ~rsym)
-                             ~pname
+           `(.defineProperty js/Object (.-prototype ~rsym) ~pname
                              (cljs.core/js-obj
                               "enumerable" true
                               "configurable" true
@@ -447,4 +450,3 @@
                                    ["get" get-fn])
                                  (when set-fn
                                    ["set" set-fn]))))))))
-

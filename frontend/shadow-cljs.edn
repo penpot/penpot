@@ -18,7 +18,7 @@
     {:entries []}
 
     :main
-    {:entries [app.main]
+    {:entries [app.main app.plugins]
      :depends-on #{:shared}
      :init-fn app.main/init}
 
