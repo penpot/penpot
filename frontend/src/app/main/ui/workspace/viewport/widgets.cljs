@@ -130,7 +130,11 @@
            (on-frame-leave (:id frame))))
 
         main-instance? (ctk/main-instance? frame)
-        text-pos-x (if (or (:use-for-thumbnail frame) grid-edition? main-instance?) 15 0)]
+
+        text-width (* (:width frame) zoom)
+        show-icon? (and (or (:use-for-thumbnail frame) grid-edition? main-instance?)
+                        (not (<= text-width 15)))
+        text-pos-x (if show-icon? 15 0)]
 
     (when (not (:hidden frame))
       [:g.frame-title {:id (dm/str "frame-title-" (:id frame))
@@ -138,7 +142,7 @@
                        :transform (vwu/title-transform frame zoom grid-edition?)
                        :pointer-events (when (:blocked frame) "none")}
        (cond
-         (or (:use-for-thumbnail frame) grid-edition? main-instance?)
+         show-icon?
          [:svg {:x 0
                 :y -9
                 :width 12
@@ -157,21 +161,24 @@
             main-instance?
             [:use {:href "#icon-component-refactor"}])])
 
-       [:text {:x text-pos-x
-               :y 0
-               :width (:width frame)
-               :height 20
-               :class "workspace-frame-label"
-               :style {:fill color}
-               :visibility (if show-artboard-names? "visible" "hidden")
-               :on-pointer-down on-pointer-down
-               :on-double-click on-double-click
-               :on-context-menu on-context-menu
-               :on-pointer-enter on-pointer-enter
-               :on-pointer-leave on-pointer-leave}
-        (if show-id?
-          (dm/str (dm/str (:id frame)) " - " (:name frame))
-          (:name frame))]])))
+
+       [:foreignObject {:x text-pos-x
+                        :y -11
+                        :width (max 0 (- text-width text-pos-x))
+                        :height 20
+                        :class "workspace-frame-label"
+                        :style {:fill color}
+                        :visibility (if show-artboard-names? "visible" "hidden")
+                        :on-pointer-down on-pointer-down
+                        :on-double-click on-double-click
+                        :on-context-menu on-context-menu
+                        :on-pointer-enter on-pointer-enter
+                        :on-pointer-leave on-pointer-leave}
+        [:div {:class (stl/css :workspace-frame-label)
+               :style {:color color}}
+         (if show-id?
+           (dm/str (dm/str (:id frame)) " - " (:name frame))
+           (:name frame))]]])))
 
 (mf/defc frame-titles
   {::mf/wrap-props false
