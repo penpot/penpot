@@ -411,7 +411,7 @@
    :name "Path"
    :fills []
    :strokes [{:stroke-style :solid
-              :stroke-alignment :center
+              :stroke-alignment :inner
               :stroke-width 2
               :stroke-color clr/black
               :stroke-opacity 1}]})
