@@ -31,6 +31,7 @@
   padding: $s-0 $s-0 $s-8 $s-8;
   border-radius: $br-8;
   background-color: var(--palette-background-color);
+  border: $s-2 solid var(--panel-border-color);
   transition:
     right 0.3s,
     opacity 0.2s,

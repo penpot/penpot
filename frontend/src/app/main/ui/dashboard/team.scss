@@ -588,7 +588,6 @@
   width: $s-400;
   padding: $s-32;
   background-color: var(--modal-background-color);
-  border: $s-1 solid var(--modal-border-color);
   &.hero {
     top: $s-216;
     right: $s-32;
@@ -676,7 +675,6 @@
 
 .modal-container {
   @extend .modal-container-base;
-  border: $s-1 solid var(--modal-border-color);
 }
 
 .modal-header {

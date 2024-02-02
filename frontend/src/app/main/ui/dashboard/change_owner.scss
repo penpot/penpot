@@ -12,7 +12,6 @@
 
 .modal-container {
   @extend .modal-container-base;
-  border: $s-1 solid var(--modal-border-color);
 }
 
 .modal-header {

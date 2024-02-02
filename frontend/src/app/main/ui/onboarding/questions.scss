@@ -14,7 +14,6 @@
   @extend .modal-container-base;
   min-width: $s-512;
   position: relative;
-  border: $s-1 solid var(--modal-border-color);
 }
 
 // STEP CONTAINER

@@ -583,6 +583,7 @@
   padding: $s-32;
   border-radius: $br-8;
   background-color: var(--modal-background-color);
+  border: $s-2 solid var(--modal-border-color);
   min-width: $s-364;
   min-height: $s-192;
   max-width: $s-512;
@@ -843,6 +844,7 @@
   z-index: $z-index-10;
   color: var(--title-foreground-color-hover);
   background-color: var(--menu-background-color);
+  border: $s-2 solid var(--panel-border-color);
 }
 
 .menu-item-base {
@@ -904,6 +906,7 @@
   overflow-x: hidden;
   background-color: var(--menu-background-color);
   color: var(--menu-foreground-color);
+  border: $s-2 solid var(--panel-border-color);
 }
 
 .select-wrapper {
