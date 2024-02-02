@@ -20,7 +20,7 @@
     :document-history
     :colorpalette
     :element-options
-    :rules
+    :rulers
     :display-grid
     :snap-grid
     :scale-text
@@ -50,7 +50,7 @@
   #{:sitemap
     :layers
     :element-options
-    :rules
+    :rulers
     :display-grid
     :snap-grid
     :dynamic-alignment

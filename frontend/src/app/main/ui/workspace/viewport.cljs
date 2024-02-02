@@ -37,7 +37,7 @@
    [app.main.ui.workspace.viewport.outline :as outline]
    [app.main.ui.workspace.viewport.pixel-overlay :as pixel-overlay]
    [app.main.ui.workspace.viewport.presence :as presence]
-   [app.main.ui.workspace.viewport.rules :as rules]
+   [app.main.ui.workspace.viewport.rulers :as rulers]
    [app.main.ui.workspace.viewport.scroll-bars :as scroll-bars]
    [app.main.ui.workspace.viewport.selection :as selection]
    [app.main.ui.workspace.viewport.snap-distances :as snap-distances]
@@ -231,7 +231,7 @@
                                       (or show-distances? mode-inspect?))
         show-artboard-names?     (contains? layout :display-artboard-names)
         hide-ui?                 (contains? layout :hide-ui)
-        show-rules?              (and (contains? layout :rules) (not hide-ui?))
+        show-rulers?             (and (contains? layout :rulers) (not hide-ui?))
 
 
         disabled-guides?         (or drawing-tool transform drawing-path? node-editing?)
@@ -264,7 +264,7 @@
                    (:y first-shape)
                    (:y selected-frame))
 
-        rule-area-size (/ rules/rule-area-size zoom)]
+        rule-area-size (/ rulers/ruler-area-size zoom)]
 
     (hooks/setup-dom-events zoom disable-paste in-viewport? workspace-read-only?)
     (hooks/setup-viewport-size vport viewport-ref)
@@ -377,7 +377,7 @@
        :on-pointer-up    on-pointer-up}
 
       [:defs
-       ;; This clip is so the handlers are not over the rules
+       ;; This clip is so the handlers are not over the rulers
        [:clipPath {:id "clip-handlers"}
         [:rect {:x (+ (:x vbox) rule-area-size)
                 :y (+ (:y vbox) rule-area-size)
@@ -544,16 +544,16 @@
           {:page-id page-id}])
 
        (when-not hide-ui?
-         [:& rules/rules
+         [:& rulers/rulers
           {:zoom zoom
            :zoom-inverse zoom-inverse
            :vbox vbox
            :selected-shapes selected-shapes
            :offset-x offset-x
            :offset-y offset-y
-           :show-rules? show-rules?}])
+           :show-rulers? show-rulers?}])
 
-       (when show-rules?
+       (when show-rulers?
          [:& guides/viewport-guides
           {:zoom zoom
            :vbox vbox

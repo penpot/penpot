@@ -46,7 +46,7 @@
                (not (contains? focus id))))
 
       (= type :guide)
-      (or (not (contains? layout :rules))
+      (or (not (contains? layout :rulers))
           (not (contains? layout :snap-guides))
           (and (d/not-empty? focus)
                (not (contains? focus frame-id))))

@@ -71,7 +71,7 @@
 
         read-only?           (mf/use-ctx ctx/workspace-read-only?)
 
-        rulers?              (mf/deref refs/rules?)
+        rulers?              (mf/deref refs/rulers?)
         hide-toolbar?        (mf/deref refs/toolbar-visibility)
 
         interrupt
