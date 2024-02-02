@@ -147,7 +147,8 @@
                                                :stroke-cap-end stroke-cap-start} index)))))
         on-add-stroke
         (fn [_]
-          (st/emit! (dc/add-stroke ids {:stroke-style :solid
+          (st/emit! (dc/add-stroke ids {:stroke-alignment :inner
+                                        :stroke-style :solid
                                         :stroke-color clr/black
                                         :stroke-opacity 1
                                         :stroke-width 1}))
