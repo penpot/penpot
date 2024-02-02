@@ -60,7 +60,7 @@
         selected-text*       (mf/use-state :file)
         selected-text        (deref selected-text*)
         on-select            (mf/use-fn #(reset! selected %))
-        rulers?              (mf/deref refs/rules?)
+        rulers?              (mf/deref refs/rulers?)
         {:keys [on-pointer-down on-lost-pointer-capture on-pointer-move parent-ref size]}
         (r/use-resize-hook :palette 72 54 80 :y true :bottom on-change-palette-size)
 
