@@ -30,6 +30,7 @@
     background-color: var(--input-background-color);
     font-size: $fs-12;
     color: var(--input-foreground-color);
+    border-radius: $br-8;
     &:focus {
       outline: none;
     }

@@ -247,14 +247,13 @@
 
 .text-options {
   @include flexColumn;
-  margin-bottom: $s-8;
   &:not(.text-options-full-size) {
     position: relative;
   }
   .font-option {
     @include titleTipography;
     @extend .asset-element;
-    padding-right: 0;
+    padding: $s-8 0 $s-8 $s-8;
     cursor: pointer;
     .name {
       flex-grow: 1;
@@ -292,6 +291,7 @@
         padding: 0;
         .numeric-input {
           @extend .input-base;
+          padding-inline-start: $s-8;
         }
       }
 
@@ -375,38 +375,39 @@
       padding: $s-12;
     }
   }
+}
 
-  .font-wrapper {
-    padding-bottom: $s-4;
-    cursor: pointer;
-    .font-item {
-      @extend .asset-element;
-      margin-bottom: $s-4;
-      border-radius: $br-8;
-      display: flex;
-      .icon {
-        @include flexCenter;
-        height: $s-28;
-        width: $s-28;
-        svg {
-          @extend .button-icon-small;
-          stroke: var(--icon-foreground);
-        }
-      }
-      &.selected {
-        color: var(--assets-item-name-foreground-color-hover);
-        .icon {
-          svg {
-            stroke: var(--assets-item-name-foreground-color-hover);
-          }
-        }
-      }
+.font-wrapper {
+  padding-bottom: $s-4;
+  cursor: pointer;
+}
 
-      .label {
-        @include titleTipography;
-        flex-grow: 1;
+.font-item {
+  @extend .asset-element;
+  margin-bottom: $s-4;
+  border-radius: $br-8;
+  display: flex;
+  .icon {
+    @include flexCenter;
+    height: $s-28;
+    width: $s-28;
+    svg {
+      @extend .button-icon-small;
+      stroke: var(--icon-foreground);
+    }
+  }
+  &.selected {
+    color: var(--assets-item-name-foreground-color-hover);
+    .icon {
+      svg {
+        stroke: var(--assets-item-name-foreground-color-hover);
       }
     }
+  }
+
+  .label {
+    @include titleTipography;
+    flex-grow: 1;
   }
 }
 
@@ -418,7 +419,6 @@
 }
 
 .fonts-list {
-  @include menuShadow;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -439,4 +439,10 @@
   border-start-start-radius: 0;
   border-start-end-radius: 0;
   border: $s-1 solid var(--color-background-quaternary);
+
+  // TODO: this should belong to typography-entry , but atm we don't have a clear
+  // way of accessing whether we are in fullsize mode or not
+  .selected {
+    padding-inline-end: 0;
+  }
 }
