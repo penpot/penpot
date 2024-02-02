@@ -35,8 +35,18 @@
 
 (def tags-to-remove #{:linearGradient :radialGradient :metadata :mask :clipPath :filter :title})
 
+(defn- camelize
+  [s]
+  (when (string? s)
+    (let [vendor? (str/starts-with? s "-")
+          result  #?(:cljs (js* "~{}.replace(\":\", \"-\").replace(/-./g, x=>x[1].toUpperCase())", s)
+                     :clj  (str/camel s))]
+      (if ^boolean vendor?
+        (str/capital result)
+        result))))
+
 ;; https://www.w3.org/TR/SVG11/eltindex.html
-(def svg-tags-list
+(def svg-tags
   #{:a
     :altGlyph
     :altGlyphDef
@@ -118,7 +128,7 @@
     :vkern})
 
 ;; https://www.w3.org/TR/SVG11/attindex.html
-(def svg-attr-list
+(def svg-attrs
   #{:accent-height
     :accumulate
     :additive
@@ -212,26 +222,6 @@
     :name
     :numOctaves
     :offset
-    ;; We don't support events
-    ;;:onabort
-    ;;:onactivate
-    ;;:onbegin
-    ;;:onclick
-    ;;:onend
-    ;;:onerror
-    ;;:onfocusin
-    ;;:onfocusout
-    ;;:onload
-    ;;:onmousedown
-    ;;:onmousemove
-    ;;:onmouseout
-    ;;:onmouseover
-    ;;:onmouseup
-    ;;:onrepeat
-    ;;:onresize
-    ;;:onscroll
-    ;;:onunload
-    ;;:onzoom
     :operator
     :order
     :orient
@@ -336,7 +326,8 @@
     :z
     :zoomAndPan})
 
-(def svg-present-list
+(def svg-presentation-attrs
+  "A set of presentation SVG attributes as per SVG spec."
   #{:alignment-baseline
     :baseline-shift
     :clip-path
@@ -399,52 +390,52 @@
     :mask-type})
 
 (def inheritable-props
-  [:style
-   :clip-rule
-   :color
-   :color-interpolation
-   :color-interpolation-filters
-   :color-profile
-   :color-rendering
-   :cursor
-   :direction
-   :dominant-baseline
-   :fill
-   :fill-opacity
-   :fill-rule
-   :font
-   :font-family
-   :font-size
-   :font-size-adjust
-   :font-stretch
-   :font-style
-   :font-variant
-   :font-weight
-   :glyph-orientation-horizontal
-   :glyph-orientation-vertical
-   :image-rendering
-   :letter-spacing
-   :marker
-   :marker-end
-   :marker-mid
-   :marker-start
-   :paint-order
-   :pointer-events
-   :shape-rendering
-   :stroke
-   :stroke-dasharray
-   :stroke-dashoffset
-   :stroke-linecap
-   :stroke-linejoin
-   :stroke-miterlimit
-   :stroke-opacity
-   :stroke-width
-   :text-anchor
-   :text-rendering
-   :transform
-   :visibility
-   :word-spacing
-   :writing-mode])
+  #{:style
+    :clip-rule
+    :color
+    :color-interpolation
+    :color-interpolation-filters
+    :color-profile
+    :color-rendering
+    :cursor
+    :direction
+    :dominant-baseline
+    :fill
+    :fill-opacity
+    :fill-rule
+    :font
+    :font-family
+    :font-size
+    :font-size-adjust
+    :font-stretch
+    :font-style
+    :font-variant
+    :font-weight
+    :glyph-orientation-horizontal
+    :glyph-orientation-vertical
+    :image-rendering
+    :letter-spacing
+    :marker
+    :marker-end
+    :marker-mid
+    :marker-start
+    :paint-order
+    :pointer-events
+    :shape-rendering
+    :stroke
+    :stroke-dasharray
+    :stroke-dashoffset
+    :stroke-linecap
+    :stroke-linejoin
+    :stroke-miterlimit
+    :stroke-opacity
+    :stroke-width
+    :text-anchor
+    :text-rendering
+    :transform
+    :visibility
+    :word-spacing
+    :writing-mode})
 
 (def gradient-tags
   #{:linearGradient
@@ -517,9 +508,28 @@
     :text
     :view})
 
-;; Props not supported by react we need to keep them lowercase
-(def non-react-props
-  #{:mask-type})
+(defn prop-key
+  "Convert an attr key to a react compatible prop key. Returns nil if key is empty or invalid"
+  [k]
+  (let [kn (cond
+             (string? k)  k
+             (keyword? k) (name k))]
+    (case kn
+      ("" nil) nil
+      "class"  :className
+      "for"    :htmlFor
+      (let [kn1 (subs kn 0 1)]
+        (if (= kn1 (str/upper kn1))
+          (-> kn camelize str/capital keyword)
+          (-> kn camelize keyword))))))
+
+(def svg-props
+  "A set of all attrs (including the presentation) converted to
+  camelCase for make it React compatible."
+  (let [xf (map prop-key)]
+    (-> #{}
+        (into xf svg-attrs)
+        (into xf svg-presentation-attrs))))
 
 ;; Defaults for some tags per spec https://www.w3.org/TR/SVG11/single-page.html
 ;; they are basically the defaults that can be percents and we need to replace because
@@ -564,16 +574,6 @@
     :else
     num-str))
 
-(defn- camelize
-  [s]
-  (when (string? s)
-    (let [vendor? (str/starts-with? s "-")
-          result  #?(:cljs (js* "~{}.replace(\":\", \"-\").replace(/-./g, x=>x[1].toUpperCase())", s)
-                     :clj  (str/camel s))]
-      (if ^boolean vendor?
-        (str/capital result)
-        result))))
-
 (defn parse-style
   [style]
   (reduce (fn [res item]
@@ -604,15 +604,13 @@
 
   ([attrs whitelist?]
    (reduce-kv (fn [res k v]
-                (if (or (not whitelist?)
-                        (contains? svg-attr-list k)
-                        (contains? svg-present-list k))
+                (let [k (prop-key k)]
                   (cond
-                    (nil? v)
+                    (nil? k)
                     res
 
-                    (= k :class)
-                    (assoc res :className v)
+                    (nil? v)
+                    res
 
                     (= k :style)
                     (let [v (if (string? v) (parse-style v) v)
@@ -622,11 +620,10 @@
                         res))
 
                     :else
-                    (let [k (if (contains? non-react-props k)
-                              k
-                              (-> k d/name camelize keyword))]
-                      (assoc res k v)))
-                  res))
+                    (if (or (not whitelist?) (contains? svg-props k))
+                      (let [v (if (string? v) (str/trim v) v)]
+                        (assoc res k v))
+                      res))))
               {}
               attrs)))
 
@@ -674,7 +671,7 @@
 
     (let [remove-node? (fn [{:keys [tag]}] (and (some? tag)
                                                 (or (contains? tags-to-remove tag)
-                                                    (not (contains? svg-tags-list tag)))))
+                                                    (not (contains? svg-tags tag)))))
           rec-result (->> (:content node) (map extract-defs))
           node (assoc node :content (->> rec-result (map second) (filterv (comp not remove-node?))))
 

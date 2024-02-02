@@ -285,26 +285,27 @@
 (sv/defmethod ::create-file-object-thumbnail
   {::doc/added "1.19"
    ::doc/module :files
-   ::climit/id :file-thumbnail-ops
-   ::climit/key-fn ::rpc/profile-id
+   ::climit/id [[:file-thumbnail-ops/by-profile ::rpc/profile-id]
+                [:file-thumbnail-ops/global]]
+   ::rtry/enabled true
+   ::rtry/when rtry/conflict-exception?
    ::audit/skip true
    ::sm/params schema:create-file-object-thumbnail}
 
   [cfg {:keys [::rpc/profile-id file-id object-id media tag]}]
+  (media/validate-media-type! media)
+  (media/validate-media-size! media)
+
   (db/tx-run! cfg
               (fn [{:keys [::db/conn] :as cfg}]
                 (files/check-edition-permissions! conn profile-id file-id)
-                (media/validate-media-type! media)
-                (media/validate-media-size! media)
-
                 (when-not (db/read-only? conn)
                   (let [cfg (-> cfg
                                 (update ::sto/storage media/configure-assets-storage)
                                 (assoc ::rtry/when rtry/conflict-exception?)
                                 (assoc ::rtry/max-retries 5)
                                 (assoc ::rtry/label "create-file-object-thumbnail"))]
-                    (rtry/invoke cfg create-file-object-thumbnail!
-                                 file-id object-id media (or tag "frame")))))))
+                    (create-file-object-thumbnail! cfg file-id object-id media (or tag "frame")))))))
 
 ;; --- MUTATION COMMAND: delete-file-object-thumbnail
 
@@ -329,8 +330,8 @@
   {::doc/added "1.19"
    ::doc/module :files
    ::doc/deprecated "1.20"
-   ::climit/id :file-thumbnail-ops
-   ::climit/key-fn ::rpc/profile-id
+   ::climit/id [[:file-thumbnail-ops/by-profile ::rpc/profile-id]
+                [:file-thumbnail-ops/global]]
    ::audit/skip true}
   [cfg {:keys [::rpc/profile-id file-id object-id]}]
   (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
@@ -392,27 +393,29 @@
 
     media))
 
+(def ^:private
+  schema:create-file-thumbnail
+  [:map {:title "create-file-thumbnail"}
+   [:file-id ::sm/uuid]
+   [:revn :int]
+   [:media ::media/upload]])
+
 (sv/defmethod ::create-file-thumbnail
   "Creates or updates the file thumbnail. Mainly used for paint the
   grid thumbnails."
   {::doc/added "1.19"
    ::doc/module :files
    ::audit/skip true
-   ::climit/id :file-thumbnail-ops
-   ::climit/key-fn ::rpc/profile-id
-   ::sm/params [:map {:title "create-file-thumbnail"}
-                [:file-id ::sm/uuid]
-                [:revn :int]
-                [:media ::media/upload]]}
+   ::climit/id [[:file-thumbnail-ops/by-profile ::rpc/profile-id]
+                [:file-thumbnail-ops/global]]
+   ::rtry/enabled true
+   ::rtry/when rtry/conflict-exception?
+   ::sm/params schema:create-file-thumbnail}
 
   [cfg {:keys [::rpc/profile-id file-id] :as params}]
   (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
                     (files/check-edition-permissions! conn profile-id file-id)
                     (when-not (db/read-only? conn)
-                      (let [cfg   (-> cfg
-                                      (update ::sto/storage media/configure-assets-storage)
-                                      (assoc ::rtry/when rtry/conflict-exception?)
-                                      (assoc ::rtry/max-retries 5)
-                                      (assoc ::rtry/label "create-thumbnail"))
-                            media (rtry/invoke cfg create-file-thumbnail! params)]
+                      (let [cfg   (update cfg ::sto/storage media/configure-assets-storage)
+                            media (create-file-thumbnail! cfg params)]
                         {:uri (files/resolve-public-uri (:id media))})))))

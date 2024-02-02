@@ -65,10 +65,6 @@
 
      [:& component-menu {:shapes [shape]}]
 
-     (when (or (not ^boolean is-layout-child?) ^boolean is-layout-child-absolute?)
-       [:& constraints-menu {:ids ids
-                             :values constraint-values}])
-
      [:& layout-container-menu
       {:type type
        :ids [(:id shape)]
@@ -91,6 +87,9 @@
          :is-layout-container? is-layout-container?
          :shape shape}])
 
+     (when (or (not ^boolean is-layout-child?) ^boolean is-layout-child-absolute?)
+       [:& constraints-menu {:ids ids
+                             :values constraint-values}])
 
      [:& fill-menu {:ids ids
                     :type type

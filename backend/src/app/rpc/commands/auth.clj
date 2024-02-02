@@ -21,6 +21,7 @@
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
    [app.rpc :as-alias rpc]
+   [app.rpc.climit :as-alias climit]
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
@@ -39,7 +40,7 @@
 ;; ---- COMMAND: login with password
 
 (defn login-with-password
-  [{:keys [::db/pool] :as cfg} {:keys [email password] :as params}]
+  [cfg {:keys [email password] :as params}]
 
   (when-not (or (contains? cf/flags :login)
                 (contains? cf/flags :login-with-password))
@@ -47,7 +48,7 @@
               :code :login-disabled
               :hint "login is disabled in this instance"))
 
-  (letfn [(check-password [conn profile password]
+  (letfn [(check-password [cfg profile password]
             (if (= (:password profile) "!")
               (ex/raise :type :validation
                         :code :account-without-password
@@ -57,10 +58,10 @@
                   (l/trc :hint "updating profile password"
                          :id (str (:id profile))
                          :email (:email profile))
-                  (profile/update-profile-password! conn (assoc profile :password password)))
+                  (profile/update-profile-password! cfg (assoc profile :password password)))
                 (:valid result))))
 
-          (validate-profile [conn profile]
+          (validate-profile [cfg profile]
             (when-not profile
               (ex/raise :type :validation
                         :code :wrong-credentials))
@@ -70,7 +71,7 @@
             (when (:is-blocked profile)
               (ex/raise :type :restriction
                         :code :profile-blocked))
-            (when-not (check-password conn profile password)
+            (when-not (check-password cfg profile password)
               (ex/raise :type :validation
                         :code :wrong-credentials))
             (when-let [deleted-at (:deleted-at profile)]
@@ -78,27 +79,29 @@
                 (ex/raise :type :validation
                           :code :wrong-credentials)))
 
-            profile)]
+            profile)
 
-    (db/with-atomic [conn pool]
-      (let [profile    (->> (profile/get-profile-by-email conn email)
-                            (validate-profile conn)
-                            (profile/strip-private-attrs))
+          (login [{:keys [::db/conn] :as cfg}]
+            (let [profile    (->> (profile/get-profile-by-email conn email)
+                                  (validate-profile cfg)
+                                  (profile/strip-private-attrs))
 
-            invitation (when-let [token (:invitation-token params)]
-                         (tokens/verify (::main/props cfg) {:token token :iss :team-invitation}))
+                  invitation (when-let [token (:invitation-token params)]
+                               (tokens/verify (::main/props cfg) {:token token :iss :team-invitation}))
 
-            ;; If invitation member-id does not matches the profile-id, we just proceed to ignore the
-            ;; invitation because invitations matches exactly; and user can't login with other email and
-            ;; accept invitation with other email
-            response   (if (and (some? invitation) (= (:id profile) (:member-id invitation)))
-                         {:invitation-token (:invitation-token params)}
-                         (assoc profile :is-admin (let [admins (cf/get :admins)]
-                                                    (contains? admins (:email profile)))))]
-        (-> response
-            (rph/with-transform (session/create-fn cfg (:id profile)))
-            (rph/with-meta {::audit/props (audit/profile->props profile)
-                            ::audit/profile-id (:id profile)}))))))
+                  ;; If invitation member-id does not matches the profile-id, we just proceed to ignore the
+                  ;; invitation because invitations matches exactly; and user can't login with other email and
+                  ;; accept invitation with other email
+                  response   (if (and (some? invitation) (= (:id profile) (:member-id invitation)))
+                               {:invitation-token (:invitation-token params)}
+                               (assoc profile :is-admin (let [admins (cf/get :admins)]
+                                                          (contains? admins (:email profile)))))]
+              (-> response
+                  (rph/with-transform (session/create-fn cfg (:id profile)))
+                  (rph/with-meta {::audit/props (audit/profile->props profile)
+                                  ::audit/profile-id (:id profile)}))))]
+
+    (db/tx-run! cfg login)))
 
 (def schema:login-with-password
   [:map {:title "login-with-password"}
@@ -110,6 +113,7 @@
   "Performs authentication using penpot password."
   {::rpc/auth false
    ::doc/added "1.15"
+   ::climit/id :auth/global
    ::sm/params schema:login-with-password}
   [cfg params]
   (login-with-password cfg params))
@@ -149,7 +153,8 @@
 (sv/defmethod ::recover-profile
   {::rpc/auth false
    ::doc/added "1.15"
-   ::sm/params schema:recover-profile}
+   ::sm/params schema:recover-profile
+   ::climit/id :auth/global}
   [cfg params]
   (recover-profile cfg params))
 
@@ -360,7 +365,6 @@
                      {::audit/type "fact"
                       ::audit/name "register-profile-retry"
                       ::audit/profile-id id}))
-
     (cond
       ;; If invitation token comes in params, this is because the
       ;; user comes from team-invitation process; in this case,
@@ -402,7 +406,6 @@
           {::audit/replace-props (audit/profile->props profile)
            ::audit/profile-id (:id profile)})))))
 
-
 (def schema:register-profile
   [:map {:title "register-profile"}
    [:token schema:token]
@@ -411,7 +414,8 @@
 (sv/defmethod ::register-profile
   {::rpc/auth false
    ::doc/added "1.15"
-   ::sm/params schema:register-profile}
+   ::sm/params schema:register-profile
+   ::climit/id :auth/global}
   [{:keys [::db/pool] :as cfg} params]
   (db/with-atomic [conn pool]
     (-> (assoc cfg ::db/conn conn)

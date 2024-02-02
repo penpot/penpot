@@ -139,15 +139,10 @@
         (f cfg (us/conform spec params)))
       f)))
 
-;; TODO: integrate with sm/define
-
 (defn- wrap-params-validation
   [_ f mdata]
   (if-let [schema (::sm/params mdata)]
-    (let [schema   (if (sm/lazy-schema? schema)
-                     schema
-                     (sm/define schema))
-          validate (sm/validator schema)
+    (let [validate (sm/validator schema)
           explain  (sm/explainer schema)
           decode   (sm/decoder schema)]
       (fn [cfg params]
@@ -245,8 +240,7 @@
                 ::mtx/metrics
                 ::main/props]
           :opt [::climit
-                ::rlimit]
-          :req-un [::db/pool]))
+                ::rlimit]))
 
 (defmethod ig/init-key ::methods
   [_ cfg]

@@ -62,6 +62,13 @@
        (.setData dt data-type data))
      e)))
 
+(defn invisible-image
+  []
+  (let [img (js/Image.)
+        imd "data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs="]
+    (set! (.-src img) imd)
+    img))
+
 (defn set-drag-image!
   ([e image]
    (set-drag-image! e image 0 0))
@@ -108,11 +115,13 @@
   ([e]
    (get-data e "penpot/data"))
   ([e data-type]
-   (let [dt (.-dataTransfer e)]
-     (if (or (str/starts-with? data-type "penpot")
-             (= data-type "application/json"))
-       (t/decode-str (.getData dt data-type))
-       (.getData dt data-type)))))
+   (let [dt (.-dataTransfer e)
+         data (.getData dt data-type)]
+     (cond-> data
+       (and (some? data) (not= data "")
+            (or (str/starts-with? data-type "penpot")
+                (= data-type "application/json")))
+       (t/decode-str)))))
 
 (defn get-files
   [e]

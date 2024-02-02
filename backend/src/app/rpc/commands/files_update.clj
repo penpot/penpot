@@ -35,7 +35,8 @@
    [app.util.services :as sv]
    [app.util.time :as dt]
    [app.worker :as-alias wrk]
-   [clojure.set :as set]))
+   [clojure.set :as set]
+   [promesa.exec :as px]))
 
 ;; --- SCHEMA
 
@@ -132,8 +133,8 @@
 ;; database.
 
 (sv/defmethod ::update-file
-  {::climit/id :update-file/by-profile
-   ::climit/key-fn ::rpc/profile-id
+  {::climit/id [[:update-file/by-profile ::rpc/profile-id]
+                [:update-file/global]]
    ::webhooks/event? true
    ::webhooks/batch-timeout (dt/duration "2m")
    ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
@@ -232,13 +233,9 @@
 (defn- update-file*
   [{:keys [::db/conn ::wrk/executor] :as cfg}
    {:keys [profile-id file changes session-id ::created-at skip-validate] :as params}]
-  (let [;; Process the file data in the CLIMIT context; scheduling it
-        ;; to be executed on a separated executor for avoid to do the
-        ;; CPU intensive operation on vthread.
-
-        update-fdata-fn (partial update-file-data cfg file changes skip-validate)
-        file            (-> (climit/configure cfg :update-file/global)
-                            (climit/run! update-fdata-fn executor))]
+  (let [;; Process the file data on separated thread for avoid to do
+        ;; the CPU intensive operation on vthread.
+        file (px/invoke! executor (partial update-file-data cfg file changes skip-validate))]
 
     (db/insert! conn :file-change
                 {:id (uuid/next)
@@ -305,7 +302,6 @@
                    (update :data feat.fdata/process-objects (partial into {}))
                    (fmg/migrate-file))
                file)
-
 
         ;; WARNING: this ruins performance; maybe we need to find
         ;; some other way to do general validation

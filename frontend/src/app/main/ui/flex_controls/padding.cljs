@@ -77,7 +77,6 @@
        :y (:y rect-data)
        :width (max 0 (:width rect-data))
        :height (max 0 (:height rect-data))
-
        :on-pointer-enter on-pointer-enter
        :on-pointer-leave on-pointer-leave
        :on-pointer-move on-pointer-move
@@ -115,9 +114,9 @@
   [{:keys [frame zoom alt? shift? on-move-selected on-context-menu]}]
   (let [frame-id                           (:id frame)
         paddings-selected                  (mf/deref refs/workspace-paddings-selected)
-        hover-value                        (mf/use-var 0)
-        mouse-pos                          (mf/use-var nil)
-        hover                              (mf/use-var nil)
+        hover-value                        (mf/use-state 0)
+        mouse-pos                          (mf/use-state nil)
+        hover                              (mf/use-state nil)
         hover-all?                         (and (not (nil? @hover)) alt?)
         hover-v?                           (and (or (= @hover :p1) (= @hover :p3)) shift?)
         hover-h?                           (and (or (= @hover :p2) (= @hover :p4)) shift?)

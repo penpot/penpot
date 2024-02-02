@@ -27,6 +27,7 @@
   --da-secondary: #bb97d8;
   --da-tertiary: #00d1b8;
   --da-tertiary-10: #{color.change(#00d1b8, $alpha: 0.1)};
+  --da-tertiary-70: #{color.change(#00d1b8, $alpha: 0.7)};
   --da-quaternary: #ff6fe0;
 
   // LIGHT
@@ -50,6 +51,7 @@
   --la-secondary: #1345aa;
   --la-tertiary: #8c33eb;
   --la-tertiary-10: #{color.change(#8c33eb, $alpha: 0.1)};
+  --la-tertiary-70: #{color.change(#8c33eb, $alpha: 0.7)};
   --la-quaternary: #ff6fe0;
 
   // STATUS COLOR

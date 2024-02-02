@@ -364,9 +364,6 @@
      (when-not (empty? components)
        [:& component-menu {:shapes components}])
 
-     (when-not (or (empty? constraint-ids) ^boolean is-layout-child?)
-       [:& constraints-menu {:ids constraint-ids :values constraint-values}])
-
      [:& layout-container-menu
       {:type type
        :ids layout-container-ids
@@ -382,6 +379,9 @@
          :is-flex-parent? is-flex-parent?
          :is-grid-parent? is-grid-parent?
          :values layout-item-values}])
+
+     (when-not (or (empty? constraint-ids) ^boolean is-layout-child?)
+       [:& constraints-menu {:ids constraint-ids :values constraint-values}])
 
      (when-not (empty? text-ids)
        [:& ot/text-menu {:type type :ids text-ids :values text-values}])

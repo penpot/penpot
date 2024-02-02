@@ -56,10 +56,6 @@
                         :values measure-values
                         :shape shape}]
 
-     (when (or (not ^boolean is-layout-child?) ^boolean is-layout-child-absolute?)
-       [:& constraints-menu {:ids ids
-                             :values constraint-values}])
-
      [:& layout-container-menu
       {:type type
        :ids [(:id shape)]
@@ -80,6 +76,10 @@
          :is-flex-parent? is-flex-parent?
          :is-grid-parent? is-grid-parent?
          :shape shape}])
+
+     (when (or (not ^boolean is-layout-child?) ^boolean is-layout-child-absolute?)
+       [:& constraints-menu {:ids ids
+                             :values constraint-values}])
 
      [:& fill-menu {:ids ids
                     :type type

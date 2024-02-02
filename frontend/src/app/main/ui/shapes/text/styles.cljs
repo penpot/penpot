@@ -93,7 +93,7 @@
                               :textTransform text-transform
                               :color (if (and show-text? (not gradient?)) text-color "transparent")
                               :background (when (and show-text? gradient?) text-color)
-                              :caretColor (or text-color "black")
+                              :caretColor (if (and (not gradient?) text-color) text-color "black")
                               :overflowWrap "initial"
                               :lineBreak "auto"
                               :whiteSpace "break-spaces"

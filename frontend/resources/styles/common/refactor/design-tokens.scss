@@ -357,6 +357,14 @@
   --viewer-thumbnails-control-foreground-color: var(--color-foreground-secondary);
   --viewer-thumbnail-border-color: var(--color-accent-primary);
   --viewer-thumbnail-background-color-selected: var(--color-accent-primary-muted);
+
+  // TEXT SELECTION
+  --text-editor-selection-background-color: var(--da-tertiary-70);
+  --text-editor-selection-foreground-color: var(--app-white);
+
+  // NEW TEAM BUTTON
+  // TODO: we should not put these functional tokens here, but rather in the components they belong to
+  --new-team-button-background-color: var(--color-background-primary);
 }
 
 #app {
@@ -383,4 +391,6 @@
 
   --assets-item-name-background-color: var(--color-background-primary);
   --assets-item-name-foreground-color: var(--color-foreground-primary);
+
+  --text-editor-selection-background-color: var(--la-tertiary-70);
 }

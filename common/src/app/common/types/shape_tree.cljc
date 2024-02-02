@@ -400,8 +400,20 @@
                                  :parent-id parent-id
                                  :frame-id frame-id)
 
+                          :always
+                          ;; Store in the meta the old id so we can do a remap afterwards
+                          ;; in the parent
+                          (with-meta {::old-id (:id shape)})
+
                           (some? (:shapes shape))
                           (assoc :shapes (mapv :id new-direct-children)))
+
+              ;; For a GRID layout remap the cells shapes' old-id to the new id given in the clone
+              new-shape
+              (if (ctl/grid-layout? new-shape)
+                (let [ids-map (into {} (map #(vector (-> % meta ::old-id) (:id %))) new-children)]
+                  (ctl/remap-grid-cells new-shape ids-map))
+                new-shape)
 
               new-shape  (update-new-shape new-shape shape)
               new-shapes (into [new-shape] new-children)

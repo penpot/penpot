@@ -3442,6 +3442,12 @@ msgstr "Show fonts palette"
 msgid "workspace.header.menu.undo"
 msgstr "Undo"
 
+msgid "workspace.header.menu.toggle-light-theme"
+msgstr "Switch to light theme"
+
+msgid "workspace.header.menu.toggle-dark-theme"
+msgstr "Switch to dark theme"
+
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.reset-zoom"
 msgstr "Reset"
@@ -3592,6 +3598,10 @@ msgstr "Search shared libraries"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.shared-libraries"
 msgstr "SHARED LIBRARIES"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.loading"
+msgstr "Loading…"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.libraries.text.multiple-typography"

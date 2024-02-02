@@ -496,7 +496,7 @@
       (when-let [node (dom/get-element-by-class "ghost-outline")]
         (dom/set-property! node "transform" (gmt/translate-matrix move-vector))))))
 
-(defn- start-move
+(defn start-move
   ([from-position] (start-move from-position nil))
   ([from-position ids]
    (ptk/reify ::start-move

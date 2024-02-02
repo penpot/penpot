@@ -11,7 +11,7 @@
 }
 .asset-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax($s-112, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax($s-96, 1fr));
   grid-auto-rows: $s-112;
   max-width: 100%;
   gap: $s-4;

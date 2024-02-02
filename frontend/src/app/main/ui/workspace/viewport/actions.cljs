@@ -21,6 +21,7 @@
    [app.main.data.workspace.specialized-panel :as-alias dwsp]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.workspace.sidebar.assets.components :as wsac]
    [app.main.ui.workspace.viewport.viewport-ref :as uwvv]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
@@ -28,7 +29,8 @@
    [app.util.keyboard :as kbd]
    [app.util.mouse :as mse]
    [app.util.object :as obj]
-   [app.util.timers :as timers]
+   [app.util.rxops :refer [throttle-fn]]
+   [app.util.timers :as ts]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -216,7 +218,7 @@
          (st/emit! (mse/->MouseEvent :double-click ctrl? shift? alt? meta?))
 
          ;; Emit asynchronously so the double click to exit shapes won't break
-         (timers/schedule
+         (ts/schedule
           (fn []
             (when (and (not drawing-path?) shape)
               (cond
@@ -244,7 +246,7 @@
                  workspace-read-only?)
          (let [position (dom/get-client-position event)]
            ;; Delayed callback because we need to wait to the previous context menu to be closed
-           (timers/schedule
+           (ts/schedule
             #(st/emit!
               (if (some? @hover)
                 (dw/show-shape-context-menu {:position position
@@ -290,7 +292,7 @@
 
          ;; We store this so in Firefox the middle button won't do a paste of the content
          (reset! disable-paste true)
-         (timers/schedule #(reset! disable-paste false)))
+         (ts/schedule #(reset! disable-paste false)))
 
        (st/emit! (dw/finish-panning)
                  (dw/finish-zooming))))))
@@ -400,9 +402,28 @@
                (st/emit! (dw/update-viewport-position {:x #(+ % (/ delta-x zoom))
                                                        :y #(+ % (/ delta-y zoom))}))))))))))
 
-(defn on-drag-enter []
+(defn on-drag-enter
+  [comp-inst-ref]
   (mf/use-callback
    (fn [e]
+     (let [component-inst? (mf/ref-val comp-inst-ref)]
+       (when (and (dnd/has-type? e "penpot/component")
+                  (dom/class? (dom/get-target e) "viewport-controls")
+                  (not component-inst?))
+         (let [point (gpt/point (.-clientX e) (.-clientY e))
+               viewport-coord (uwvv/point->viewport point)
+               {:keys [component file-id shape]} @wsac/drag-data*
+
+               ;; shape (get-in component [:objects (:id component)])
+               final-x (- (:x viewport-coord) (/ (:width shape) 2))
+               final-y (- (:y viewport-coord) (/ (:height shape) 2))]
+
+           (mf/set-ref-val! comp-inst-ref true)
+           (st/emit! (dwl/instantiate-component
+                      file-id
+                      (:id component)
+                      (gpt/point final-x final-y)
+                      {:start-move? true :initial-point viewport-coord})))))
      (when (or (dnd/has-type? e "penpot/shape")
                (dnd/has-type? e "penpot/component")
                (dnd/has-type? e "Files")
@@ -410,8 +431,19 @@
                (dnd/has-type? e "text/asset-id"))
        (dom/prevent-default e)))))
 
+(defn on-drag-end
+  [comp-inst-ref]
+  (mf/use-callback
+   (fn []
+     (mf/set-ref-val! comp-inst-ref false))))
+
 (defn on-drag-over [move-stream]
-  (let [on-pointer-move (on-pointer-move move-stream)]
+  (let [on-pointer-move (on-pointer-move move-stream)
+
+        ;; Drag-over is not the same as pointer-move. Drag over is fired less frequently so we need
+        ;; to create a throttle so the events that cannot be processed at a certain path are
+        ;; discarded.
+        on-pointer-move (throttle-fn 50 (fn [e] (ts/raf #(on-pointer-move e))))]
     (mf/use-callback
      (fn [e]
        (when (or (dnd/has-type? e "penpot/shape")
@@ -423,7 +455,7 @@
          (dom/prevent-default e))))))
 
 (defn on-drop
-  [file]
+  [file comp-inst-ref]
   (mf/use-fn
    (fn [event]
      (dom/prevent-default event)
@@ -443,13 +475,13 @@
                                        (assoc :y final-y)))))
 
          (dnd/has-type? event "penpot/component")
-         (let [{:keys [component file-id]} (dnd/get-data event "penpot/component")
-               shape (get-in component [:objects (:id component)])
-               final-x (- (:x viewport-coord) (/ (:width shape) 2))
-               final-y (- (:y viewport-coord) (/ (:height shape) 2))]
-           (st/emit! (dwl/instantiate-component file-id
-                                                (:id component)
-                                                (gpt/point final-x final-y))))
+         (let [event (.-nativeEvent event)
+               ctrl? (kbd/ctrl? event)
+               shift? (kbd/shift? event)
+               alt? (kbd/alt? event)
+               meta? (kbd/meta? event)]
+           (st/emit! (mse/->MouseEvent :up ctrl? shift? alt? meta?))
+           (mf/set-ref-val! comp-inst-ref false))
 
          ;; Will trigger when the user drags an image from a browser
          ;; to the viewport (firefox and chrome do it a bit different
@@ -517,4 +549,3 @@
                   (not @disable-paste)
                   (not workspace-read-only?))
          (st/emit! (dw/paste-from-event event @in-viewport?)))))))
-

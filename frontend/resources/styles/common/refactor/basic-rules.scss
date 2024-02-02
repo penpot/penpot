@@ -29,7 +29,8 @@
   }
 
   ::selection {
-    background-color: var(--color-accent-primary-muted);
+    background: var(--text-editor-selection-background-color);
+    color: var(--text-editor-selection-foreground-color);
   }
 }
 

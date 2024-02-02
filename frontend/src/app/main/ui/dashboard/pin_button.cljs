@@ -12,15 +12,21 @@
   (:require
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.object :as obj]
    [rumext.v2 :as mf]))
 
-(def pin-icon (icon-xref :pin-refactor (stl/css :icon)))
+(def ^:private pin-icon
+  (icon-xref :pin-refactor (stl/css :icon)))
 
 (mf/defc pin-button*
   {::mf/props :obj}
   [{:keys [aria-label is-pinned class] :as props}]
   (let [aria-label (or aria-label (tr "dashboard.pin-unpin"))
         class (dm/str (or class "") " " (stl/css-case :button true :button-active is-pinned))
-        props (mf/spread-props props {:class class
-                                      :aria-label aria-label})]
+
+        props (-> (obj/clone props)
+                  (obj/unset! "isPinned")
+                  (obj/set! "className" class)
+                  (obj/set! "aria-label" aria-label))]
+
     [:> "button" props pin-icon]))

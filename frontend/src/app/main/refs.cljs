@@ -591,3 +591,6 @@
 
 (def updating-library
   (l/derived :updating-library st/state))
+
+(def persistence-state
+  (l/derived (comp :status :workspace-persistence) st/state))

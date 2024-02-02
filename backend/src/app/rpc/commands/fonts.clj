@@ -16,7 +16,7 @@
    [app.loggers.webhooks :as-alias webhooks]
    [app.media :as media]
    [app.rpc :as-alias rpc]
-   [app.rpc.climit :as climit]
+   [app.rpc.climit :as-alias climit]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.projects :as projects]
    [app.rpc.commands.teams :as teams]
@@ -26,7 +26,8 @@
    [app.storage :as sto]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [app.worker :as-alias wrk]))
+   [app.worker :as-alias wrk]
+   [promesa.exec :as px]))
 
 (def valid-weight #{100 200 300 400 500 600 700 800 900 950})
 (def valid-style #{"normal" "italic"})
@@ -87,6 +88,8 @@
 
 (sv/defmethod ::create-font-variant
   {::doc/added "1.18"
+   ::climit/id [[:process-font/by-profile ::rpc/profile-id]
+                [:process-font/global]]
    ::webhooks/event? true
    ::sm/params schema:create-font-variant}
   [cfg {:keys [::rpc/profile-id team-id] :as params}]
@@ -100,7 +103,7 @@
                   (create-font-variant cfg (assoc params :profile-id profile-id))))))
 
 (defn create-font-variant
-  [{:keys [::sto/storage ::db/conn] :as cfg} {:keys [data] :as params}]
+  [{:keys [::sto/storage ::db/conn ::wrk/executor]} {:keys [data] :as params}]
   (letfn [(generate-missing! [data]
             (let [data (media/run {:cmd :generate-fonts :input data})]
               (when (and (not (contains? data "font/otf"))
@@ -152,9 +155,7 @@
                          :otf-file-id (:id otf)
                          :ttf-file-id (:id ttf)}))]
 
-    (let [data   (-> (climit/configure cfg :process-font/global)
-                     (climit/run! (partial generate-missing! data)
-                                  (::wrk/executor cfg)))
+    (let [data   (px/invoke! executor (partial generate-missing! data))
           assets (persist-fonts-files! data)
           result (insert-font-variant! assets)]
       (vary-meta result assoc ::audit/replace-props (update params :data (comp vec keys))))))
