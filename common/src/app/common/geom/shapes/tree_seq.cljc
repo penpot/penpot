@@ -92,5 +92,11 @@
 (defn resolve-subtree
   "Resolves the subtree but only partialy from-to the parameters"
   [from-id to-id objects]
-  (->> (get-children-seq from-id objects)
-       (d/take-until #(= (:id %) to-id))))
+  (concat
+   (->> (get-children-seq from-id objects)
+        (d/take-until #(= (:id %) to-id)))
+
+   ;; Add the children of `to-id` to the subtree. Rest is to remove the
+   ;; to-id element that is already on the previous sequence
+   (->> (get-children-seq to-id objects)
+        rest)))
