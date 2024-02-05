@@ -347,7 +347,6 @@
           (mark-as-archived [conn rows]
             (db/exec-one! conn ["update audit_log set archived_at=now() where id = ANY(?)"
                                 (->> (map :id rows)
-                                     (into-array java.util.UUID)
                                      (db/create-array conn "uuid"))]))]
 
     (db/with-atomic [conn pool]
