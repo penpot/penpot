@@ -58,6 +58,10 @@
         ;; We need to store the handle-blur ref so we can call it on unmount
         dirty-ref   (mf/use-ref false)
 
+        ;; Last value input by the user we need to store to save on unmount
+
+        last-value*  (mf/use-var nil)
+
         parse-value
         (mf/use-fn
          (mf/deps min-value max-value value nillable? default)
@@ -102,7 +106,20 @@
         (mf/use-fn
          (mf/deps wrap-value? min-value max-value parse-value apply-value)
          (fn [event up? down?]
-           (let [current-value (parse-value)]
+           (let [current-value (parse-value)
+                 current-value
+                 (cond
+                   (and (not current-value) down? max-value)
+                   max-value
+
+                   (and (not current-value) up? min-value)
+                   min-value
+
+                   (not current-value)
+                   (d/nilv default 0)
+
+                   :else
+                   current-value)]
              (when current-value
                (let [increment (cond
                                  (kbd/shift? event)
@@ -152,6 +169,13 @@
                (update-input value-str)
                (dom/blur! node)))))
 
+        handle-key-up
+        (mf/use-fn
+         (mf/deps parse-value)
+         (fn []
+           ;; Store the last value inputed
+           (reset! last-value* (parse-value))))
+
         handle-mouse-wheel
         (mf/use-fn
          (mf/deps set-delta)
@@ -167,7 +191,7 @@
         (mf/use-fn
          (mf/deps parse-value apply-value update-input on-blur)
          (fn [event]
-           (let [new-value (or (parse-value) default)]
+           (let [new-value (or @last-value* default)]
              (if (or nillable? new-value)
                (apply-value event new-value)
                (update-input new-value)))
@@ -208,6 +232,7 @@
                   (obj/set! "defaultValue" (fmt/format-number value))
                   (obj/set! "title" title)
                   (obj/set! "onKeyDown" handle-key-down)
+                  (obj/set! "onKeyUp" handle-key-up)
                   (obj/set! "onBlur" handle-blur)
                   (obj/set! "onFocus" handle-focus))]
 
