@@ -255,6 +255,7 @@
                              :on-focus on-focus
                              :on-blur on-blur
                              :on-change handle-opacity-change
+                             :default 100
                              :min 0
                              :max 100}]])]
 
