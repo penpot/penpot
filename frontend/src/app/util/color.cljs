@@ -37,14 +37,19 @@
 
 ;; TODO: REMOVE `VALUE` WHEN COLOR IS INTEGRATED
 (defn color->background [{:keys [color opacity gradient value]}]
-  (let [color (or color value)
+  (let [color (d/nilv color value)
         opacity (or opacity 1)]
+
     (cond
       (and gradient (not= :multiple gradient))
       (gradient->css gradient)
 
-      (not= color :multiple)
-      (let [[r g b] (cc/hex->rgb (or color value))]
+      (and (some? color) (not= color :multiple))
+      (let [color
+            (-> (str/replace color "#" "")
+                (cc/expand-hex)
+                (cc/prepend-hash))
+            [r g b] (cc/hex->rgb color)]
         (str/fmt "rgba(%s, %s, %s, %s)" r g b opacity))
 
       :else "transparent")))
