@@ -393,6 +393,9 @@
          unames         (volatile! (cfh/get-used-names (:objects page)))
          update-unames! (fn [new-name] (vswap! unames conj new-name))
          all-ids        (reduce #(into %1 (cons %2 (cfh/get-children-ids all-objects %2))) (d/ordered-set) ids)
+
+         ;; We need ids-map for remapping the grid layout. But when duplicating the guides
+         ;; we calculate a new one because the components will have created new shapes.
          ids-map        (into {} (map #(vector % (uuid/next))) all-ids)
 
          changes
@@ -409,7 +412,15 @@
                                                        library-data
                                                        it
                                                        file-id)
-                      init-changes))]
+                      init-changes))
+
+         ;; We need to check the changes to get the ids-map
+         ids-map
+         (into {}
+               (comp
+                (filter #(= :add-obj (:type %)))
+                (map #(vector (:old-id %) (-> % :obj :id))))
+               (:redo-changes changes))]
 
      (-> changes
          (prepare-duplicate-flows shapes page ids-map)
@@ -578,27 +589,29 @@
 (defn- prepare-duplicate-guides
   [changes shapes page ids-map delta]
   (let [guides (get-in page [:options :guides])
-        frames (->> shapes
-                    (filter #(= (:type %) :frame)))
-        new-guides (reduce
-                    (fn [g frame]
-                      (let [new-id     (ids-map (:id frame))
-                            new-frame  (-> frame
-                                           (gsh/move delta))
-                            new-guides (->> guides
-                                            (vals)
-                                            (filter #(= (:frame-id %) (:id frame)))
-                                            (map #(-> %
-                                                      (assoc :id (uuid/next))
-                                                      (assoc :frame-id new-id)
-                                                      (assoc :position (if (= (:axis %) :x)
-                                                                         (+ (:position %) (- (:x new-frame) (:x frame)))
-                                                                         (+ (:position %) (- (:y new-frame) (:y frame))))))))]
-                        (cond-> g
-                          (not-empty new-guides)
-                          (conj (into {} (map (juxt :id identity) new-guides))))))
-                    guides
-                    frames)]
+        frames (->> shapes (filter cfh/frame-shape?))
+
+        new-guides
+        (reduce
+         (fn [g frame]
+           (let [new-id     (ids-map (:id frame))
+                 new-frame  (-> frame (gsh/move delta))
+
+                 new-guides
+                 (->> guides
+                      (vals)
+                      (filter #(= (:frame-id %) (:id frame)))
+                      (map #(-> %
+                                (assoc :id (uuid/next))
+                                (assoc :frame-id new-id)
+                                (assoc :position (if (= (:axis %) :x)
+                                                   (+ (:position %) (- (:x new-frame) (:x frame)))
+                                                   (+ (:position %) (- (:y new-frame) (:y frame))))))))]
+             (cond-> g
+               (not-empty new-guides)
+               (conj (into {} (map (juxt :id identity) new-guides))))))
+         guides
+         frames)]
     (-> (pcb/with-page changes page)
         (pcb/set-page-option :guides new-guides))))
 

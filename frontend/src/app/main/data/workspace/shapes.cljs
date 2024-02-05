@@ -178,12 +178,16 @@
                            interactions)))
                  (vals objects))
 
-        ;; If any of the deleted shapes is a frame with guides
-         guides (into {}
-                      (comp (map second)
-                            (remove #(contains? ids (:frame-id %)))
-                            (map (juxt :id identity)))
-                      (dm/get-in page [:options :guides]))
+         ids-set (set ids)
+         guides-to-remove
+         (->> (dm/get-in page [:options :guides])
+              (vals)
+              (filter #(contains? ids-set (:frame-id %)))
+              (map :id))
+
+         guides
+         (->> guides-to-remove
+              (reduce dissoc (dm/get-in page [:options :guides])))
 
          starting-flows
          (filter (fn [flow]
