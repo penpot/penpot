@@ -22,7 +22,7 @@
 }
 
 .modal-title {
-  @include tabTitleTipography;
+  @include headlineMediumTypography;
   color: var(--modal-title-foreground-color);
 }
 
@@ -31,7 +31,7 @@
 }
 
 .modal-content {
-  @include titleTipography;
+  @include bodyLargeTypography;
   margin-bottom: $s-24;
 }
 
@@ -49,7 +49,7 @@
   }
 }
 .modal-component-name {
-  @include titleTipography;
+  @include bodyLargeTypography;
 }
 
 .modal-hint {
@@ -74,7 +74,6 @@
 .modal-scd-msg,
 .modal-subtitle,
 .modal-msg {
-  @include titleTipography;
+  @include bodyLargeTypography;
   color: var(--modal-text-foreground-color);
-  line-height: 1.5;
 }

@@ -138,8 +138,8 @@
                     (cond-> (:name shape) suffix (str suffix))]
                    (when (:scale export)
                      [:div {:class (stl/css :selection-scale)}
-                      (dm/str (ust/format-precision (* width (:scale export)) 2) "px"
-                              (ust/format-precision (* height (:scale export)) 2) "px")])
+                      (dm/str (ust/format-precision (* width (:scale export)) 2) "x"
+                              (ust/format-precision (* height (:scale export)) 2))])
 
                    (when (:type export)
                      [:div {:class (stl/css :selection-extension)}

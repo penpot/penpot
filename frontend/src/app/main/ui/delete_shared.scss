@@ -22,7 +22,7 @@
 }
 
 .modal-title {
-  @include tabTitleTipography;
+  @include headlineMediumTypography;
   color: var(--modal-title-foreground-color);
 }
 
@@ -40,10 +40,8 @@
 }
 
 .element-list {
-  @include titleTipography;
-  .list-item {
-    @include titleTipography;
-  }
+  @include bodyLargeTypography;
+  color: var(--modal-text-foreground-color);
 }
 
 .action-buttons {
@@ -64,7 +62,7 @@
 .modal-scd-msg,
 .modal-subtitle,
 .modal-msg {
-  @include titleTipography;
+  @include bodyLargeTypography;
   color: var(--modal-text-foreground-color);
   line-height: 1.5;
 }
