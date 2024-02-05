@@ -41,14 +41,14 @@
 
 .title-text {
   @include flexCenter;
-  @include titleTipography;
+  @include bodyLargeTypography;
   padding: 0;
   margin: 0;
   color: var(--modal-title-foreground-color);
   padding-left: $s-4;
 }
 .progress {
-  @include titleTipography;
+  @include bodyLargeTypography;
   padding-left: $s-8;
   margin: 0;
   color: var(--modal-text-foreground-color);
@@ -86,7 +86,7 @@
 }
 
 .modal-title {
-  @include tabTitleTipography;
+  @include headlineMediumTypography;
   color: var(--modal-title-foreground-color);
 }
 
@@ -125,7 +125,7 @@
       }
     }
     .selection-title {
-      @include titleTipography;
+      @include bodyLargeTypography;
       color: var(--modal-text-foreground-color);
     }
   }
@@ -160,7 +160,9 @@
       border-radius: $br-8;
       .selection-btn {
         @include buttonStyle;
-        @include flexRow;
+        display: grid;
+        grid-template-columns: min-content auto 1fr auto auto;
+        align-items: center;
         width: 100%;
         height: 10%;
         gap: $s-8;
@@ -176,21 +178,21 @@
           }
         }
         .selection-name {
-          @include titleTipography;
+          @include bodyLargeTypography;
           @include textEllipsis;
           flex-grow: 1;
           color: var(--modal-text-foreground-color);
           text-align: start;
         }
         .selection-scale {
-          @include titleTipography;
+          @include bodyLargeTypography;
           @include textEllipsis;
           min-width: $s-108;
           padding: $s-12;
           color: var(--modal-text-foreground-color);
         }
         .selection-extension {
-          @include titleTipography;
+          @include bodyLargeTypography;
           @include textEllipsis;
           min-width: $s-72;
           padding: $s-12;
@@ -199,7 +201,6 @@
       }
       .image-wrapper {
         @include flexCenter;
-        height: 100%;
         min-height: $s-32;
         min-width: $s-32;
         background-color: var(--app-white);
@@ -231,9 +232,8 @@
 .modal-scd-msg,
 .modal-subtitle,
 .modal-msg {
-  @include titleTipography;
+  @include bodyLargeTypography;
   color: var(--modal-text-foreground-color);
-  line-height: 1.5;
 }
 
 .export-option {
@@ -243,7 +243,8 @@
   label {
     align-items: flex-start;
     .modal-subtitle {
-      @include tabTitleTipography;
+      // @include tabTitleTipography;
+      @include bodyLargeTypography;
       color: var(--modal-title-foreground-color);
     }
   }
@@ -254,7 +255,7 @@
 
 .option-content {
   @include flexColumn;
-  @include titleTipography;
+  @include bodyLargeTypography;
 }
 
 .file-entry {
@@ -271,7 +272,7 @@
       }
     }
     .file-name-label {
-      @include titleTipography;
+      @include bodyLargeTypography;
     }
   }
   &.loading {

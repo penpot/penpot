@@ -70,36 +70,22 @@
 
 (mf/defc describe-library-blocks
   [{:keys [components-count graphics-count colors-count typography-count] :as props}]
+  [:*
+   (when (pos? components-count)
+     [:li {:class (stl/css :element-count)}
+      (tr "workspace.libraries.components" components-count)])
 
-  (let [last-one (cond
-                   (> colors-count 0) :color
-                   (> graphics-count 0) :graphics
-                   (> components-count 0) :components)]
-    [:*
-     (when (pos? components-count)
-       [:*
-        [:span {:class (stl/css :element-count)}
-         (tr "workspace.libraries.components" components-count)]
-        (when (not= last-one :components)
-          [:span " · "])])
+   (when (pos? graphics-count)
+     [:li {:class (stl/css :element-count)}
+      (tr "workspace.libraries.graphics" graphics-count)])
 
-     (when (pos? graphics-count)
-       [:*
-        [:span {:class (stl/css :element-count)}
-         (tr "workspace.libraries.graphics" graphics-count)]
-        (when (not= last-one :graphics)
-          [:span "  · "])])
+   (when (pos? colors-count)
+     [:li {:class (stl/css :element-count)}
+      (tr "workspace.libraries.colors" colors-count)])
 
-     (when (pos? colors-count)
-       [:*
-        [:span {:class (stl/css :element-count)}
-         (tr "workspace.libraries.colors" colors-count)]
-        (when (not= last-one :colors)
-          [:span "  · "])])
-
-     (when (pos? typography-count)
-       [:span {:class (stl/css :element-count)}
-        (tr "workspace.libraries.typography" typography-count)])]))
+   (when (pos? typography-count)
+     [:li {:class (stl/css :element-count)}
+      (tr "workspace.libraries.typography" typography-count)])])
 
 
 (mf/defc libraries-tab
@@ -208,7 +194,7 @@
        [:div {:class (stl/css :section-list-item)}
         [:div
          [:div {:class (stl/css :item-name)} (tr "workspace.libraries.file-library")]
-         [:div {:class (stl/css :item-contents)}
+         [:ul {:class (stl/css :item-contents)}
           [:& describe-library-blocks {:components-count (count components)
                                        :graphics-count (count media)
                                        :colors-count (count colors)
@@ -229,7 +215,7 @@
                 :key (dm/str id)}
           [:div
            [:div {:class (stl/css :item-name)} name]
-           [:div {:class (stl/css :item-contents)}
+           [:ul {:class (stl/css :item-contents)}
             (let [components-count (count (or (ctkl/components-seq (:data library)) []))
                   graphics-count   (count (dm/get-in library [:data :media] []))
                   colors-count     (count (dm/get-in library [:data :colors] []))
@@ -262,7 +248,7 @@
                   :key (dm/str id)}
             [:div
              [:div {:class (stl/css :item-name)} name]
-             [:div {:class (stl/css :item-contents)}
+             [:ul {:class (stl/css :item-contents)}
               (let [components-count (dm/get-in library [:library-summary :components :count] 0)
                     graphics-count   (dm/get-in library [:library-summary :media :count] 0)
                     colors-count     (dm/get-in library [:library-summary :colors :count] 0)
@@ -376,11 +362,11 @@
                   :key (dm/str id)}
             [:div
              [:div {:class (stl/css :item-name)} name]
-             [:div {:class (stl/css :item-contents)} (describe-library
-                                                      (count components)
-                                                      0
-                                                      (count colors)
-                                                      (count typographies))]]
+             [:ul {:class (stl/css :item-contents)} (describe-library
+                                                     (count components)
+                                                     0
+                                                     (count colors)
+                                                     (count typographies))]]
             [:input {:type "button"
                      :class (stl/css-case :item-update true
                                           :disabled updating?)

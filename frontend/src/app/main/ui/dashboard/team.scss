@@ -593,7 +593,7 @@
     right: $s-32;
   }
   .modal-title {
-    @include tabTitleTipography;
+    @include headlineMediumTypography;
     height: $s-32;
     color: var(--modal-title-foreground-color);
   }
@@ -643,8 +643,9 @@
 
   .role-select {
     @include flexColumn;
+    row-gap: $s-8;
     .role-title {
-      @include titleTipography;
+      @include bodyLargeTypography;
       margin: 0;
       color: var(--modal-title-foreground-color);
     }
