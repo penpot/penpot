@@ -370,7 +370,10 @@
     :fn (mg/resource "app/migrations/sql/0116-mod-file-table.sql")}
 
    {:name "0117-mod-file-object-thumbnail-table"
-    :fn (mg/resource "app/migrations/sql/0117-mod-file-object-thumbnail-table.sql")}])
+    :fn (mg/resource "app/migrations/sql/0117-mod-file-object-thumbnail-table.sql")}
+
+   {:name "0118-mod-task-table"
+    :fn (mg/resource "app/migrations/sql/0118-mod-task-table.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]
