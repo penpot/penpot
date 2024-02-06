@@ -13,7 +13,6 @@
 .modal-container {
   @extend .modal-container-base;
   min-width: $s-408;
-  border: $s-1 solid var(--modal-border-color);
 }
 
 .modal-header {
@@ -21,7 +20,7 @@
 }
 
 .modal-title {
-  @include tabTitleTipography;
+  @include headlineMediumTypography;
   color: var(--modal-title-foreground-color);
 }
 .modal-close-btn {
@@ -31,7 +30,7 @@
 .modal-content {
   @include flexColumn;
   gap: $s-24;
-  @include titleTipography;
+  @include bodyLargeTypography;
   margin-bottom: $s-24;
 }
 
@@ -43,7 +42,7 @@
 }
 
 .modal-msg {
-  @include titleTipography;
+  @include bodyLargeTypography;
   color: var(--modal-text-foreground-color);
   line-height: 1.5;
 }

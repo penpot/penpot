@@ -212,8 +212,8 @@
 (def snap-pixel?
   (l/derived #(contains? % :snap-pixel-grid) workspace-layout))
 
-(def rules?
-  (l/derived #(contains? % :rules) workspace-layout))
+(def rulers?
+  (l/derived #(contains? % :rulers) workspace-layout))
 
 (def workspace-file
   "A ref to a striped vision of file (without data)."
@@ -489,6 +489,9 @@
   (l/derived (fn [state]
                (dm/get-in state [:viewer-local :zoom-type]))
              st/state))
+
+(def workspace-thumbnails
+  (l/derived :workspace-thumbnails st/state))
 
 (defn workspace-thumbnail-by-id
   [object-id]

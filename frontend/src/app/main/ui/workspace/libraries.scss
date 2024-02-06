@@ -39,7 +39,7 @@
     }
 
     .modal-title {
-      @include tabTitleTipography;
+      @include headlineMediumTypography;
       margin-bottom: $s-16;
       color: var(--modal-title-foreground-color);
     }
@@ -70,24 +70,18 @@
             max-height: $s-320;
             margin-top: $s-12;
             overflow: auto;
-            padding-right: $s-8;
             .section-list-item {
               display: grid;
               grid-template-columns: 1fr auto;
+              column-gap: $s-12;
               margin-bottom: $s-24;
               &:last-child {
                 margin-bottom: $s-8;
               }
-
               .item-name {
-                @include titleTipography;
+                @include bodyLargeTypography;
                 color: var(--library-name-foreground-color);
               }
-              .item-contents {
-                @include titleTipography;
-                color: var(--library-content-foreground-color);
-              }
-
               .item-publish,
               .item-unpublish {
                 @extend .button-primary;
@@ -99,7 +93,7 @@
               }
               .item-update {
                 @extend .button-warning;
-                @include tabTitleTipography;
+                @include headlineMediumTypography;
                 height: $s-32;
                 min-width: $s-92;
                 padding: $s-8 $s-24;
@@ -143,7 +137,7 @@
           }
 
           .section-title {
-            @include titleTipography;
+            @include bodyLargeTypography;
             color: var(--modal-title-foreground-color);
             margin-bottom: $s-12;
           }
@@ -161,7 +155,7 @@
             }
           }
           .section-list-empty {
-            @include titleTipography;
+            @include bodyLargeTypography;
             @include flexCenter;
             color: var(--empty-message-foreground-color);
 
@@ -236,6 +230,18 @@
   }
 }
 
+.item-contents {
+  @include bodyLargeTypography;
+  color: var(--library-content-foreground-color);
+  display: flex;
+  flex-wrap: wrap;
+}
+
 .element-count {
   white-space: nowrap;
+
+  &:not(:last-child)::after {
+    content: "·";
+    margin-inline: $s-4;
+  }
 }

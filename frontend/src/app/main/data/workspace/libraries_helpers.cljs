@@ -1081,7 +1081,10 @@
                           (:id component-parent-shape)
                           (get page :objects)
                           :update-new-shape update-new-shape
-                          :update-original-shape update-original-shape)
+                          :update-original-shape update-original-shape
+                          :frame-id (if (cfh/frame-shape? component-parent-shape)
+                                      (:id component-parent-shape)
+                                      (:frame-id component-parent-shape)))
 
         add-obj-change (fn [changes shape']
                          (update changes :redo-changes conj
@@ -1090,14 +1093,10 @@
                                           {:type :add-obj
                                            :id (:id shape')
                                            :parent-id (:parent-id shape')
+                                           :frame-id (:frame-id shape')
                                            :index index
                                            :ignore-touched true
-                                           :obj shape'})
-
-                                   (ctn/page? component-container)
-                                   (assoc :frame-id (if (= (:type shape') :frame)
-                                                      (:id shape')
-                                                      (:frame-id shape'))))))
+                                           :obj shape'}))))
 
         mod-obj-change (fn [changes shape']
                          (update changes :redo-changes conj

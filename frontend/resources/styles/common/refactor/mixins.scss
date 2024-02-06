@@ -70,6 +70,21 @@
   line-height: 1.2;
 }
 
+@mixin headlineMediumTypography {
+  font-family: "worksans", sans-serif;
+  font-size: $fs-16;
+  line-height: 1.4;
+  text-transform: uppercase;
+  font-weight: normal;
+}
+
+@mixin bodyLargeTypography {
+  font-family: "worksans", sans-serif;
+  font-size: $fs-16;
+  line-height: 1.5;
+  font-weight: normal;
+}
+
 @mixin textEllipsis {
   max-width: 99%;
   overflow: hidden;

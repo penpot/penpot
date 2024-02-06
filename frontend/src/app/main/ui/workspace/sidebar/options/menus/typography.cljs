@@ -103,7 +103,7 @@
         fonts          (mf/use-memo (mf/deps @state) #(filter-fonts @state @fonts/fonts))
         recent-fonts   (mf/deref refs/workspace-recent-fonts)
 
-        full-size? (boolean (and full-size recent-fonts show-recent))
+        full-size? (boolean (and full-size show-recent))
 
         select-next
         (mf/use-fn

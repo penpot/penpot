@@ -305,14 +305,14 @@
                               :on-key-down (fn [event]
                                              (when (kbd/enter? event)
                                                (toggle-flag event)))
-                              :data-test   "rules"
-                              :id          "file-menu-rules"}
+                              :data-test   "rulers"
+                              :id          "file-menu-rulers"}
       [:span {:class (stl/css :item-name)}
-       (if (contains? layout :rules)
+       (if (contains? layout :rulers)
          (tr "workspace.header.menu.hide-rules")
          (tr "workspace.header.menu.show-rules"))]
       [:span {:class (stl/css :shortcut)}
-       (for [sc (scd/split-sc (sc/get-tooltip :toggle-rules))]
+       (for [sc (scd/split-sc (sc/get-tooltip :toggle-rulers))]
          [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
 
 

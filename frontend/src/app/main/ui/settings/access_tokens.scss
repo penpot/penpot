@@ -175,7 +175,6 @@
 .modal-container {
   @extend .modal-container-base;
   min-width: $s-408;
-  border: $s-1 solid var(--modal-border-color);
 }
 
 .modal-header {

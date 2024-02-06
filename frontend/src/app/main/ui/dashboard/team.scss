@@ -588,13 +588,12 @@
   width: $s-400;
   padding: $s-32;
   background-color: var(--modal-background-color);
-  border: $s-1 solid var(--modal-border-color);
   &.hero {
     top: $s-216;
     right: $s-32;
   }
   .modal-title {
-    @include tabTitleTipography;
+    @include headlineMediumTypography;
     height: $s-32;
     color: var(--modal-title-foreground-color);
   }
@@ -644,8 +643,9 @@
 
   .role-select {
     @include flexColumn;
+    row-gap: $s-8;
     .role-title {
-      @include titleTipography;
+      @include bodyLargeTypography;
       margin: 0;
       color: var(--modal-title-foreground-color);
     }
@@ -676,7 +676,6 @@
 
 .modal-container {
   @extend .modal-container-base;
-  border: $s-1 solid var(--modal-border-color);
 }
 
 .modal-header {
@@ -724,4 +723,8 @@
   .cancel-button {
     @extend .modal-cancel-btn;
   }
+}
+
+.email-input {
+  @extend .input-base;
 }

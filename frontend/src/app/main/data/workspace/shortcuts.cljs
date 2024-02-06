@@ -351,10 +351,10 @@
 
    ;; MAIN MENU
 
-   :toggle-rules         {:tooltip (ds/meta-shift "R")
+   :toggle-rulers        {:tooltip (ds/meta-shift "R")
                           :command (ds/c-mod "shift+r")
                           :subsections [:main-menu]
-                          :fn #(st/emit! (toggle-layout-flag :rules))}
+                          :fn #(st/emit! (toggle-layout-flag :rulers))}
 
    :select-all           {:tooltip (ds/meta "A")
                           :command (ds/c-mod "a")
