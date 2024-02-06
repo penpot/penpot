@@ -723,3 +723,7 @@
     @extend .modal-cancel-btn;
   }
 }
+
+.email-input {
+  @extend .input-base;
+}
