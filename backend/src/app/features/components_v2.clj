@@ -1442,7 +1442,7 @@
                           data)))
         (fmg/migrate-file))))
 
-(defn- get-team
+(defn get-team
   [system team-id]
   (-> (db/get system :team {:id team-id}
               {::db/remove-deleted false
@@ -1496,17 +1496,19 @@
       AND f.deleted_at IS NULL
       FOR UPDATE")
 
-(defn- get-and-lock-files
+(defn get-and-lock-files
   [conn team-id]
   (->> (db/cursor conn [sql:get-and-lock-team-files team-id])
        (map :id)))
 
-(defn- update-team-features!
-  [conn team-id features]
-  (let [features (db/create-array conn "text" features)]
+(defn update-team!
+  [conn team]
+  (let [params (-> team
+                   (update :features db/encode-pgarray conn "text")
+                   (dissoc :id))]
     (db/update! conn :team
-                {:features features}
-                {:id team-id})))
+                params
+                {:id (:id team)})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PUBLIC API
@@ -1590,7 +1592,7 @@
                          :skip-on-graphic-error? skip-on-graphic-error?))
         migrate-team
         (fn [{:keys [::db/conn] :as system} team-id]
-          (let [{:keys [id features name]} (get-team system team-id)]
+          (let [{:keys [id features] :as team} (get-team system team-id)]
             (if (contains? features "components/v2")
               (l/inf :hint "team already migrated")
               (let [features (-> features
@@ -1601,13 +1603,14 @@
 
                 (events/tap :progress
                             {:op :migrate-team
-                             :name name
+                             :name (:name team)
                              :id id})
 
                 (run! (partial migrate-file system)
                       (get-and-lock-files conn id))
 
-                (update-team-features! conn id features)))))]
+                (->> (assoc team :features features)
+                     (update-team! conn))))))]
 
     (binding [*team-stats* (atom {})]
       (try
