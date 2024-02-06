@@ -22,6 +22,8 @@
         placeholder (unchecked-get props "placeholder")
         icon        (unchecked-get props "icon")
         autofocus   (unchecked-get props "auto-focus")
+        id          (unchecked-get props "id")
+
 
         handle-change
         (mf/use-fn
@@ -51,7 +53,8 @@
      children
      [:div {:class (stl/css :search-input-wrapper)}
       icon
-      [:input {:on-change handle-change
+      [:input {:id id
+               :on-change handle-change
                :value value
                :auto-focus autofocus
                :placeholder placeholder

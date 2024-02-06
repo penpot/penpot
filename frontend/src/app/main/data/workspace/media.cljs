@@ -39,18 +39,7 @@
 
 (def ^:private svgo-config
   {:multipass false
-   :plugins
-   [{:name "safePreset"
-     :params {:overrides
-              {:convertColors
-               {:names2hex true
-                :shorthex false
-                :shortname false}
-               :convertTransform
-               {:matrixToTransform false
-                :convertToShorts false
-                :transformPrecision 4
-                :leadingZero false}}}}]})
+   :plugins ["safeAndFastPreset"]})
 
 (defn svg->clj
   [[name text]]

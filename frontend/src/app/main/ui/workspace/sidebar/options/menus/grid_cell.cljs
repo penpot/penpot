@@ -221,7 +221,7 @@
         (when (and (not multiple?) (or (= :manual cell-mode) (= :area cell-mode)))
           [:div {:class (stl/css :row)}
            [:div {:class (stl/css :grid-coord-group)}
-            [:span {:class (stl/css :icon)} i/layout-rows]
+            [:span {:class (stl/css :icon)} i/flex-vertical-refactor]
             [:div {:class (stl/css :coord-input)}
              [:> numeric-input*
               {:placeholder "--"
@@ -236,7 +236,7 @@
                :value column-end}]]]
 
            [:div {:class (stl/css :grid-coord-group)}
-            [:span {:class (stl/css :icon)} i/layout-columns]
+            [:span {:class (stl/css :icon)} i/flex-horizontal-refactor]
             [:div {:class (stl/css :coord-input :double)}
              [:> numeric-input*
               {:placeholder "--"

@@ -131,8 +131,8 @@
 (defn- invoke
   [limiter metrics limit-id limit-key limit-label profile-id f params]
   (let [tpoint    (dt/tpoint)
+        mlabels   (into-array String [(id->str limit-id)])
         limit-id  (id->str limit-id limit-key)
-        mlabels   (into-array String [limit-id])
         stats     (pbh/get-stats limiter)
         id        (.incrementAndGet ^AtomicLong idseq)]
 

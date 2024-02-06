@@ -193,7 +193,8 @@
 (defn create-group
   [name frame-id {:keys [x y width height offset-x offset-y] :as svg-data} {:keys [attrs]}]
   (let [transform (csvg/parse-transform (:transform attrs))
-        attrs     (-> (d/without-keys attrs csvg/inheritable-props)
+        attrs     (-> attrs
+                      (d/without-keys csvg/inheritable-props)
                       (csvg/attrs->props))
         vbox      (grc/make-rect offset-x offset-y width height)]
     (cts/setup-shape
@@ -304,6 +305,8 @@
 
         rx        (d/nilv r rx)
         ry        (d/nilv r ry)
+        rx        (d/nilv rx 0)
+        ry        (d/nilv ry 0)
 
         ;; There are some svg circles in the internet that does not
         ;; have cx and cy attrs, so we default them to 0

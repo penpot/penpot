@@ -32,8 +32,7 @@
                                      :selected (= editing-stop offset))
                 :data-value (str offset)
                 :on-click on-select-stop
-                :style {:left (dm/str (* offset 100) "%")
-                        :backgroundColor hex}
+                :style {:left (dm/str (* offset 100) "%")}
                 :key (dm/str offset)}
 
        [:div {:class (stl/css :gradient-stop-color)

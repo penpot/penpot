@@ -6,6 +6,7 @@
 
 (ns app.common.files.libraries-helpers
   (:require
+   [app.common.data :as d]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.types.component :as ctk]
@@ -37,41 +38,50 @@
   use it as root. Otherwise, create a frame (v2) or group (v1) that contains all ids. Then, make a
   component with it, and link all shapes to their corresponding one in the component."
   [it shapes objects page-id file-id components-v2 prepare-create-group prepare-create-board]
-  (let [changes (pcb/empty-changes it page-id)
 
-        from-singe-frame? (and (= 1 (count shapes)) (-> shapes first cfh/frame-shape?))
+  (let [changes      (pcb/empty-changes it page-id)
+        shapes-count (count shapes)
+        first-shape  (first shapes)
+
+        from-singe-frame?
+        (and (= 1 shapes-count)
+             (cfh/frame-shape? first-shape))
+
         [root changes old-root-ids]
-        (if (and (= (count shapes) 1)
-                 (or (and (= (:type (first shapes)) :group) (not components-v2))
-                     (= (:type (first shapes)) :frame))
-                 (not (ctk/instance-head? (first shapes))))
-
-          [(first shapes)
+        (if (and (= shapes-count 1)
+                 (or (and (cfh/group-shape? first-shape)
+                          (not components-v2))
+                     (cfh/frame-shape? first-shape))
+                 (not (ctk/instance-head? first-shape)))
+          [first-shape
            (-> (pcb/empty-changes it page-id)
                (pcb/with-objects objects))
-           (:shapes (first shapes))]
+           (:shapes first-shape)]
 
-          (let [root-name (if (= 1 (count shapes))
-                            (:name (first shapes))
+          (let [root-name (if (= 1 shapes-count)
+                            (:name first-shape)
                             "Component 1")
 
-                [root changes] (if-not components-v2
-                                 (prepare-create-group it            ; These functions needs to be passed as argument
-                                                       objects       ; to avoid a circular dependence
-                                                       page-id
-                                                       shapes
-                                                       root-name
-                                                       (not (ctk/instance-head? (first shapes))))
-                                 (prepare-create-board changes
-                                                       (uuid/next)
-                                                       (:parent-id (first shapes))
-                                                       objects
-                                                       (map :id shapes)
-                                                       nil
-                                                       root-name
-                                                       true))]
+                shape-ids (into (d/ordered-set) (map :id) shapes)
 
-            [root changes (map :id shapes)]))
+                [root changes]
+                (if-not components-v2
+                  (prepare-create-group it            ; These functions needs to be passed as argument
+                                        objects       ; to avoid a circular dependence
+                                        page-id
+                                        shapes
+                                        root-name
+                                        (not (ctk/instance-head? first-shape)))
+                  (prepare-create-board changes
+                                        (uuid/next)
+                                        (:parent-id first-shape)
+                                        objects
+                                        shape-ids
+                                        nil
+                                        root-name
+                                        true))]
+
+            [root changes shape-ids]))
 
         changes
         (cond-> changes
@@ -79,8 +89,7 @@
           (pcb/update-shapes
            (:shapes root)
            (fn [shape]
-             (-> shape
-                 (assoc :constraints-h :scale :constraints-v :scale)))))
+             (assoc shape :constraints-h :scale :constraints-v :scale))))
 
         objects' (assoc objects (:id root) root)
 

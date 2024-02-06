@@ -79,25 +79,6 @@
 (def text-align-types
   #{"left" "right" "center" "justify"})
 
-(sm/define! ::selrect
-  [:and
-   {:title "Selrect"
-    :gen/gen (->> (sg/tuple (sg/small-double)
-                            (sg/small-double)
-                            (sg/small-double)
-                            (sg/small-double))
-                  (sg/fmap #(apply grc/make-rect %)))}
-   [:fn grc/rect?]
-   [:map
-    [:x ::sm/safe-number]
-    [:y ::sm/safe-number]
-    [:x1 ::sm/safe-number]
-    [:x2 ::sm/safe-number]
-    [:y1 ::sm/safe-number]
-    [:y2 ::sm/safe-number]
-    [:width ::sm/safe-number]
-    [:height ::sm/safe-number]]])
-
 (sm/define! ::points
   [:vector {:gen/max 4 :gen/min 4} ::gpt/point])
 
@@ -133,7 +114,7 @@
    [:id ::sm/uuid]
    [:name :string]
    [:type [::sm/one-of shape-types]]
-   [:selrect ::selrect]
+   [:selrect ::grc/rect]
    [:points ::points]
    [:transform ::gmt/matrix]
    [:transform-inverse ::gmt/matrix]
@@ -156,7 +137,7 @@
    [:main-instance {:optional true} :boolean]
    [:remote-synced {:optional true} :boolean]
    [:shape-ref {:optional true} ::sm/uuid]
-   [:selrect {:optional true} ::selrect]
+   [:selrect {:optional true} ::grc/rect]
    [:points {:optional true} ::points]
    [:blocked {:optional true} :boolean]
    [:collapsed {:optional true} :boolean]
@@ -430,7 +411,7 @@
    :name "Path"
    :fills []
    :strokes [{:stroke-style :solid
-              :stroke-alignment :center
+              :stroke-alignment :inner
               :stroke-width 2
               :stroke-color clr/black
               :stroke-opacity 1}]})

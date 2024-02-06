@@ -484,7 +484,7 @@
   (letfn [(red-fn [cur-idx id]
             (let [[prev-idx _] (first cur-idx)
                   prev-idx (or prev-idx 0)
-                  cur-idx (conj cur-idx [(inc prev-idx) id])]
+                  cur-idx (conj cur-idx (d/vec2 (inc prev-idx) id))]
               (rec-index cur-idx id)))
           (rec-index [cur-idx id]
             (let [object (get objects id)]
@@ -509,10 +509,11 @@
 
 (defn order-by-indexed-shapes
   [objects ids]
-  (->> (indexed-shapes objects)
-       (sort-by first)
-       (filter (comp (into #{} ids) second))
-       (map second)))
+  (let [ids (if (set? ids) ids (set ids))]
+    (->> (indexed-shapes objects)
+         (filter (fn [o] (contains? ids (val o))))
+         (sort-by key)
+         (map val))))
 
 (defn get-index-replacement
   "Given a collection of shapes, calculate their positions
@@ -541,6 +542,11 @@
   "Regenerate a path as a string, from a vector."
   [path-vec]
   (str/join " / " path-vec))
+
+(defn join-path-with-dot
+  "Regenerate a path as a string, from a vector."
+  [path-vec]
+  (str/join "\u00A0\u2022\u00A0" path-vec))
 
 (defn clean-path
   "Remove empty items from the path."
@@ -606,6 +612,14 @@
     (if (= 1 (count split))
       ""
       (join-path (butlast split)))))
+
+(defn butlast-path-with-dots
+  "Remove the last item of the path."
+  [path]
+  (let [split (split-path path)]
+    (if (= 1 (count split))
+      ""
+      (join-path-with-dot (butlast split)))))
 
 (defn last-path
   "Returns the last item of the path."

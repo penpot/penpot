@@ -109,11 +109,14 @@
                     (assoc :points (grc/rect->points selrect))))))
 
           (fix-empty-points [shape]
-            (let [shape (cond-> shape
-                          (empty? (:selrect shape)) (cts/setup-rect))]
-              (cond-> shape
-                (empty? (:points shape))
-                (assoc :points (grc/rect->points (:selrect shape))))))
+            (if (empty? (:points shape))
+              (-> shape
+                  (update :selrect (fn [selrect]
+                                     (if (map? selrect)
+                                       (grc/make-rect selrect)
+                                       selrect)))
+                  (cts/setup-shape))
+              shape))
 
           (update-object [object]
             (cond-> object
@@ -620,6 +623,10 @@
               (-> object
                   (assoc :parent-id uuid/zero)
                   (assoc :frame-id uuid/zero)
+                  ;; We explicitly dissoc them and let the shape-setup
+                  ;; to regenerate it with valid values.
+                  (dissoc :selrect)
+                  (dissoc :points)
                   (cts/setup-shape))
               object))
 
@@ -837,6 +844,32 @@
                                   (comp (map fix-shadow)
                                         (filter valid-shadow?))
                                   %)))
+
+          (update-container [container]
+            (d/update-when container :objects update-vals update-object))]
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
+
+(defmethod migrate 45
+  [data]
+  (letfn [(fix-shape [shape]
+            (let [frame-id  (or (:frame-id shape)
+                                uuid/zero)
+                  parent-id (or (:parent-id shape)
+                                frame-id)]
+              (assoc shape :frame-id frame-id
+                     :parent-id parent-id)))
+
+          (update-container [container]
+            (d/update-when container :objects update-vals fix-shape))]
+    (-> data
+        (update :pages-index update-vals update-container))))
+
+(defmethod migrate 46
+  [data]
+  (letfn [(update-object [object]
+            (dissoc object :thumbnail))
 
           (update-container [container]
             (d/update-when container :objects update-vals update-object))]
