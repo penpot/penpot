@@ -178,6 +178,7 @@
 
       [:div {:class (stl/css :invitation-row)}
        [:& fm/multi-input {:type "email"
+                           :class (stl/css :email-input)
                            :name :emails
                            :auto-focus? true
                            :trim true
