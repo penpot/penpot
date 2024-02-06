@@ -777,14 +777,19 @@
 
                 :add-children
                 (let [value (dm/get-prop operation :value)
-                      index (dm/get-prop operation :index)]
-                  (if (some? index)
-                    (update shape :shapes
-                            (fn [shapes]
-                              (if (vector? shapes)
-                                (d/insert-at-index shapes index value)
-                                (d/concat-vec shapes value))))
-                    (update shape :shapes d/concat-vec value)))
+                      index (dm/get-prop operation :index)
+
+                      shape
+                      (if (some? index)
+                        (update shape :shapes
+                                (fn [shapes]
+                                  (if (vector? shapes)
+                                    (d/insert-at-index shapes index value)
+                                    (d/concat-vec shapes value))))
+                        (update shape :shapes d/concat-vec value))]
+
+                  ;; Remove duplication
+                  (update shape :shapes #(into [] (apply d/ordered-set %))))
 
                 :remove-children
                 (let [value (dm/get-prop operation :value)]
