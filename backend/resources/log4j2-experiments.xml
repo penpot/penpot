@@ -48,12 +48,6 @@
 
     <Logger name="app.features" level="all" additivity="true">
       <AppenderRef ref="reports" level="warn" />
-      <!-- <AppenderRef ref="main" level="debug" /> -->
-    </Logger>
-
-    <Logger name="app.srepl" level="all" additivity="true">
-      <AppenderRef ref="reports" level="warn" />
-      <!-- <AppenderRef ref="main" level="trace" /> -->
     </Logger>
 
     <Logger name="app" level="all" additivity="false">

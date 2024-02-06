@@ -70,8 +70,8 @@
                (some? (:data snapshot)))
 
       (l/debug :hint "snapshot found"
-               :snapshot-id (:id snapshot)
-               :file-id file-id)
+               :snapshot-id (str (:id snapshot))
+               :file-id (str file-id))
 
       (db/update! conn :file
                   {:data (:data snapshot)}
@@ -112,7 +112,9 @@
   (when-let [file (db/get* conn :file {:id file-id})]
     (let [id    (uuid/next)
           label (or label (str "Snapshot at " (dt/format-instant (dt/now) :rfc1123)))]
-      (l/debug :hint "persisting file snapshot" :file-id file-id :label label)
+      (l/debug :hint "persisting file snapshot"
+               :file-id (str file-id)
+               :label label)
       (db/insert! conn :file-change
                   {:id id
                    :revn (:revn file)
