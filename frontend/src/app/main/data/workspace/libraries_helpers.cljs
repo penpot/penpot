@@ -53,6 +53,8 @@
 (declare update-attrs)
 (declare update-grid-main-attrs)
 (declare update-grid-copy-attrs)
+(declare update-flex-child-main-attrs)
+(declare update-flex-child-copy-attrs)
 (declare reposition-shape)
 (declare make-change)
 
@@ -670,12 +672,21 @@
                                   container
                                   omit-touched?)
 
+                    (ctl/flex-layout? shape-main)
+                    (update-flex-child-copy-attrs shape-main
+                                                  shape-inst
+                                                  library
+                                                  component
+                                                  container
+                                                  omit-touched?)
+
                     (ctl/grid-layout? shape-main)
                     (update-grid-copy-attrs shape-main
                                             shape-inst
                                             library
                                             component
-                                            container)
+                                            container
+                                            omit-touched?)
 
                     reset?
                     (change-touched shape-inst
@@ -848,11 +859,19 @@
                                         component-container
                                         {:copy-touched? true}))
 
+                    (ctl/flex-layout? shape-main)
+                    (update-flex-child-main-attrs shape-main
+                                                  shape-inst
+                                                  component-container
+                                                  container
+                                                  omit-touched?)
+
                     (ctl/grid-layout? shape-main)
                     (update-grid-main-attrs shape-main
                                             shape-inst
                                             component-container
-                                            container)
+                                            container
+                                            omit-touched?)
 
                     clear-remote-synced?
                     (change-remote-synced shape-inst container nil)
@@ -1304,6 +1323,9 @@
         touched      (get dest-shape :touched #{})]
 
     (loop [attrs (->> (seq (keys ctk/sync-attrs))
+                      ;; We don't update the flex-child attrs
+                      (remove ctk/swap-keep-attrs)
+
                       ;; We don't do automatic update of the `layout-grid-cells` property.
                       (remove #(= :layout-grid-cells %)))
            roperations []
@@ -1345,6 +1367,9 @@
 
                 attr-group (get ctk/sync-attrs attr)]
 
+            (and (not= (get origin-shape attr) (get dest-shape attr))
+                 (or (not (touched attr-group)) (not omit-touched?)))
+
             (if (or (= (get origin-shape attr) (get dest-shape attr))
                     (and (touched attr-group) omit-touched?))
               (recur (next attrs)
@@ -1354,9 +1379,51 @@
                      (conj roperations roperation)
                      (conj uoperations uoperation)))))))))
 
+(defn- propagate-attrs
+  "Helper that puts the src-shape attributes (attrs) into tgt-shape but only if
+  not touched the group or if omit-touched? flag is true"
+  [tgt-shape src-shape attrs omit-touched?]
+  (let [touched (get tgt-shape :touched #{})]
+    (->> attrs
+         (reduce
+          (fn [tgt-shape attr]
+            (let [attr-group (get ctk/sync-attrs attr)]
+              (cond-> tgt-shape
+                (or (not (touched attr-group)) (not omit-touched?))
+                (assoc attr (get src-shape attr)))))
+          tgt-shape))))
+
+(defn- update-flex-child-copy-attrs
+  "Synchronizes the attributes inside the flex-child items (main->copy)"
+  [changes shape-main shape-copy main-container main-component copy-container omit-touched?]
+  (-> changes
+      (pcb/with-container copy-container)
+      (pcb/with-objects (:objects copy-container))
+      (pcb/update-shapes
+       (:shapes shape-copy)
+       (fn [child-copy]
+         (let [child-main (ctf/get-ref-shape main-container main-component child-copy)]
+           (-> child-copy
+               (propagate-attrs child-main ctk/swap-keep-attrs omit-touched?))))
+       {:ignore-touched true})))
+
+(defn- update-flex-child-main-attrs
+  "Synchronizes the attributes inside the flex-child items (copy->main)"
+  [changes shape-main shape-copy main-container copy-container omit-touched?]
+  (-> changes
+      (pcb/with-page main-container)
+      (pcb/with-objects (:objects main-container))
+      (pcb/update-shapes
+       (:shapes shape-main)
+       (fn [child-main]
+         (let [child-copy (ctf/get-shape-in-copy copy-container child-main shape-copy)]
+           (-> child-main
+               (propagate-attrs child-copy ctk/swap-keep-attrs omit-touched?))))
+       {:ignore-touched true})))
+
 (defn- update-grid-copy-attrs
   "Synchronizes the `layout-grid-cells` property from the main shape to the copies"
-  [changes shape-main shape-copy main-container main-component copy-container]
+  [changes shape-main shape-copy main-container main-component copy-container omit-touched?]
   (let [ids-map
         (into {}
               (comp
@@ -1369,16 +1436,19 @@
 
     (-> changes
         (pcb/with-container copy-container)
+        (pcb/with-objects (:objects copy-container))
         (pcb/update-shapes
          [(:id shape-copy)]
          (fn [shape-copy]
            ;; Take cells from main and remap the shapes to assign it to the copy
-           (let [new-cells (-> (ctl/remap-grid-cells shape-main ids-map) :layout-grid-cells)]
-             (assoc shape-copy :layout-grid-cells new-cells)))))))
+           (let [copy-cells (:layout-grid-cells shape-copy)
+                 main-cells (-> (ctl/remap-grid-cells shape-main ids-map) :layout-grid-cells)]
+             (assoc shape-copy :layout-grid-cells (ctl/merge-cells copy-cells main-cells omit-touched?))))
+         {:ignore-touched true}))))
 
 (defn- update-grid-main-attrs
   "Synchronizes the `layout-grid-cells` property from the copy to the main shape"
-  [changes shape-main shape-copy main-container copy-container]
+  [changes shape-main shape-copy main-container copy-container omit-touched?]
   (let [ids-map
         (into {}
               (comp
@@ -1396,7 +1466,8 @@
          (fn [shape-main]
            ;; Take cells from copy and remap the shapes to assign it to the copy
            (let [new-cells (-> (ctl/remap-grid-cells shape-copy ids-map) :layout-grid-cells)]
-             (assoc shape-main :layout-grid-cells new-cells)))))))
+             (assoc shape-main :layout-grid-cells new-cells)))
+         {:ignore-touched true}))))
 
 (defn- reposition-shape
   [shape origin-root dest-root]
