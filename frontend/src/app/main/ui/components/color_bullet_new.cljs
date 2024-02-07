@@ -13,6 +13,37 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
+(defn- color-title
+  [color-item]
+  (let [name (:name color-item)
+        gradient (:gradient color-item)
+        image (:image color-item)
+        color (:color color-item)]
+
+    (if (some? name)
+      (cond
+        (some? color)
+        (str/ffmt "% (%)" name color)
+
+        (some? gradient)
+        (str/ffmt "% (%)" name (uc/gradient-type->string (:type gradient)))
+
+        (some? image)
+        (str/ffmt "% (%)" name (tr "media.image"))
+
+        :else
+        name)
+
+      (cond
+        (some? color)
+        color
+
+        (some? gradient)
+        (uc/gradient-type->string (:type gradient))
+
+        (some? image)
+        (tr "media.image")))))
+
 (mf/defc color-bullet
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
@@ -28,7 +59,7 @@
     (if (uc/multiple? color)
       [:div {:class (stl/css :color-bullet :multiple)
              :on-click on-click
-             :title (:color color)}]
+             :title (color-title color)}]
       ;; No multiple selection
       (let [color    (if (string? color) {:color color :opacity 1} color)
             id       (:id color)
@@ -47,7 +78,7 @@
                   :read-only read-only?)
           :data-readonly (str read-only?)
           :on-click on-click
-          :title (:color color)}
+          :title (color-title color)}
 
          (cond
            (some? gradient)
