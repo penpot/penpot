@@ -1395,7 +1395,7 @@
 
 (defn- update-flex-child-copy-attrs
   "Synchronizes the attributes inside the flex-child items (main->copy)"
-  [changes shape-main shape-copy main-container main-component copy-container omit-touched?]
+  [changes _shape-main shape-copy main-container main-component copy-container omit-touched?]
   (-> changes
       (pcb/with-container copy-container)
       (pcb/with-objects (:objects copy-container))
@@ -1448,7 +1448,7 @@
 
 (defn- update-grid-main-attrs
   "Synchronizes the `layout-grid-cells` property from the copy to the main shape"
-  [changes shape-main shape-copy main-container copy-container omit-touched?]
+  [changes shape-main shape-copy main-container copy-container _omit-touched?]
   (let [ids-map
         (into {}
               (comp

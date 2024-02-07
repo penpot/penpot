@@ -1599,13 +1599,13 @@
             (into #{}
                   (filter #(and
                             (not (contains? deleted-cells %))
-                            (not= (dissoc (get source-cells %) :shapes :row :column :row-span :column-span)
-                                  (dissoc (get target-cells %) :shapes :row :column :row-span :column-span))))
+                            (not= (get-data source-cells %)
+                                  (get-data target-cells %))))
                   (keys target-cells))]
 
         (->> touched-cells
              (reduce
               (fn [cells id]
                 (-> cells
-                    (d/update-when id d/patch-object (dissoc (get target-cells id) :shapes :row :column :row-span :column-span))))
+                    (d/update-when id d/patch-object (get-data target-cells id))))
               source-cells))))))

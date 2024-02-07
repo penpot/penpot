@@ -224,8 +224,18 @@
                       (remove ctl/position-absolute?)
                       (remove gco/invalid-geometry?))
 
+        auto?        (or (ctl/auto? parent)
+                         (and (ctl/grid-layout? objects (:parent-id parent))
+                              (ctl/fill? parent)))
+        auto-width?  (or (ctl/auto-width? parent)
+                         (and (ctl/grid-layout? objects (:parent-id parent))
+                              (ctl/fill-width? parent)))
+        auto-height? (or (ctl/auto-height? parent)
+                         (and (ctl/grid-layout? objects (:parent-id parent))
+                              (ctl/fill-height? parent)))
+
         content-bounds
-        (when (and (d/not-empty? children) (ctl/auto? parent))
+        (when (and (d/not-empty? children) auto?)
           (cond
             (ctl/flex-layout? parent)
             (gcfl/layout-content-bounds bounds parent children objects)
@@ -238,12 +248,11 @@
 
         auto-width (when content-bounds (gpo/width-points content-bounds))
         auto-height (when content-bounds (gpo/height-points content-bounds))]
-
     (cond-> (ctm/empty)
-      (and (some? auto-width) (ctl/auto-width? parent))
+      (and (some? auto-width) auto-width?)
       (set-parent-auto-width auto-width)
 
-      (and (some? auto-height) (ctl/auto-height? parent))
+      (and (some? auto-height) auto-height?)
       (set-parent-auto-height auto-height))))
 
 (defn find-auto-layouts

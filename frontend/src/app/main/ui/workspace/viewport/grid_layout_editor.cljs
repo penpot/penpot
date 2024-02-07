@@ -27,7 +27,6 @@
    [app.main.store :as st]
    [app.main.ui.css-cursors :as cur]
    [app.main.ui.formats :as fmt]
-   [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.viewport.viewport-ref :as uwvv]
    [app.util.debug :as dbg]
@@ -937,34 +936,27 @@
              (map (fn [[_ idx]] idx))
              (into #{}))
 
-        children
-        (mf/use-memo
-         (mf/deps objects shape modifiers)
-         (fn []
-           (let [ids (cfh/get-children-ids objects (:id shape))
-                 objects (-> objects
-                             (gsh/apply-objects-modifiers (select-keys modifiers ids))
-                             (gsh/update-shapes-geometry (reverse ids)))]
-             (->> (cfh/get-immediate-children objects (:id shape))
-                  (keep (fn [child]
-                          (when-not (:hidden child)
-                            [(gpo/parent-coords-bounds (:points child) (:points shape)) child])))))))
-
-        children (hooks/use-equal-memo children)
-
         bounds (:points shape)
         hv     #(gpo/start-hv bounds %)
         vv     #(gpo/start-vv bounds %)
         origin (gpo/origin bounds)
 
-        all-bounds (d/lazy-map (keys objects) #(gsh/shape->points (get objects %)))
-
-        {:keys [row-tracks column-tracks
-                column-total-size column-total-gap
-                row-total-size row-total-gap] :as layout-data}
+        layout-data
         (mf/use-memo
-         (mf/deps shape children)
-         #(gsg/calc-layout-data shape bounds children all-bounds objects))
+         (mf/deps shape modifiers)
+         (fn []
+           (let [objects (gsh/apply-objects-modifiers objects modifiers)
+                 ids     (cfh/get-children-ids objects (:id shape))
+                 objects (gsh/update-shapes-geometry objects (reverse ids))
+
+                 children
+                 (->> (cfh/get-immediate-children objects (:id shape) {:remove-hidden true})
+                      (map #(vector (gpo/parent-coords-bounds (:points %) (:points shape)) %)))
+
+                 children-bounds (d/lazy-map ids #(gsh/shape->points (get objects %)))]
+             (gsg/calc-layout-data shape bounds children children-bounds objects))))
+
+        {:keys [row-tracks column-tracks column-total-size column-total-gap row-total-size row-total-gap]} layout-data
 
         width  (max (gpo/width-points bounds) (+ column-total-size column-total-gap (ctl/h-padding shape)))
         height (max (gpo/height-points bounds) (+ row-total-size row-total-gap (ctl/v-padding shape)))
