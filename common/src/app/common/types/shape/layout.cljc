@@ -1580,3 +1580,32 @@
         (-> shape
             (update :layout-grid-cells update-vals do-remap-cells))]
     shape))
+
+(defn merge-cells
+  "Given target cells update with source cells while trying to keep target as
+  untouched as possible"
+  [target-cells source-cells omit-touched?]
+  (if (not omit-touched?)
+    source-cells
+
+    (letfn [(get-data [cells id]
+              (dissoc (get cells id) :shapes :row :column :row-span :column-span))]
+      (let [deleted-cells
+            (into #{}
+                  (filter #(not (contains? source-cells %)))
+                  (keys target-cells))
+
+            touched-cells
+            (into #{}
+                  (filter #(and
+                            (not (contains? deleted-cells %))
+                            (not= (dissoc (get source-cells %) :shapes :row :column :row-span :column-span)
+                                  (dissoc (get target-cells %) :shapes :row :column :row-span :column-span))))
+                  (keys target-cells))]
+
+        (->> touched-cells
+             (reduce
+              (fn [cells id]
+                (-> cells
+                    (d/update-when id d/patch-object (dissoc (get target-cells id) :shapes :row :column :row-span :column-span))))
+              source-cells))))))

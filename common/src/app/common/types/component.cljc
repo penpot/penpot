@@ -68,34 +68,45 @@
    :grids                   :grids-group
 
    :layout                  :layout-container
-   :layout-align-content    :layout-container
-   :layout-align-items      :layout-container
-   :layout-flex-dir         :layout-container
-   :layout-gap              :layout-container
-   :layout-gap-type         :layout-container
-   :layout-justify-content  :layout-container
-   :layout-justify-items    :layout-container
-   :layout-wrap-type        :layout-container
-   :layout-padding-type     :layout-container
-   :layout-padding          :layout-container
-   :layout-h-orientation    :layout-container
-   :layout-v-orientation    :layout-container
-   :layout-grid-dir         :layout-container
-   :layout-grid-rows        :layout-container
-   :layout-grid-columns     :layout-container
-   :layout-grid-cells       :layout-container})
+
+   :layout-align-content    :layout-align-content
+   :layout-align-items      :layout-align-items
+   :layout-flex-dir         :layout-flex-dir
+   :layout-gap              :layout-gap
+   :layout-gap-type         :layout-gap
+   :layout-justify-content  :layout-justify-content
+   :layout-justify-items    :layout-justify-items
+   :layout-wrap-type        :layout-wrap-type
+   :layout-padding-type     :layout-padding
+   :layout-padding          :layout-padding
+
+   :layout-grid-dir         :layout-grid-dir
+   :layout-grid-rows        :layout-grid-rows
+   :layout-grid-columns     :layout-grid-columns
+   :layout-grid-cells       :layout-grid-cells
+
+   :layout-item-margin      :layout-item-margin
+   :layout-item-margin-type :layout-item-margin
+   :layout-item-h-sizing    :layout-item-h-sizing
+   :layout-item-v-sizing    :layout-item-v-sizing
+   :layout-item-max-h       :layout-item-max-h
+   :layout-item-min-h       :layout-item-min-h
+   :layout-item-max-w       :layout-item-max-w
+   :layout-item-min-w       :layout-item-min-w
+   :layout-item-absolute    :layout-item-absolute
+   :layout-item-z-index     :layout-item-z-index})
 
 (def swap-keep-attrs
-  [:layout-item-margin
-   :layout-item-margin-type
-   :layout-item-h-sizing
-   :layout-item-v-sizing
-   :layout-item-max-h
-   :layout-item-min-h
-   :layout-item-max-w
-   :layout-item-min-w
-   :layout-item-absolute
-   :layout-item-z-index])
+  #{:layout-item-margin
+    :layout-item-margin-type
+    :layout-item-h-sizing
+    :layout-item-v-sizing
+    :layout-item-max-h
+    :layout-item-min-h
+    :layout-item-max-w
+    :layout-item-min-w
+    :layout-item-absolute
+    :layout-item-z-index})
 
 (defn instance-root?
   "Check if this shape is the head of a top instance."
