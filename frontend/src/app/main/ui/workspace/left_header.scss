@@ -9,13 +9,15 @@
 .workspace-header-left {
   display: flex;
   align-items: center;
-  padding: $s-8 $s-8 $s-4 $s-8;
+  padding: $s-12 $s-12 $s-8 $s-12;
+  min-height: $s-52;
 }
 
 .main-icon {
   @include flexCenter;
   width: $s-32;
   height: $s-32;
+  min-height: $s-32;
   margin-right: $s-4;
   svg {
     min-height: $s-32;
@@ -27,6 +29,8 @@
 .project-tree {
   position: relative;
   flex-grow: 1;
+  height: $s-32;
+  min-height: $s-32;
   max-width: calc(100% - $s-64);
 }
 

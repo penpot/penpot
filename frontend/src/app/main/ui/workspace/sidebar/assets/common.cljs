@@ -144,7 +144,8 @@
         (mf/use-fn
          (mf/deps file-id section open?)
          (fn [_]
-           (st/emit! (dw/set-assets-section-open file-id section (not open?)))))
+           (when (< 0 assets-count)
+             (st/emit! (dw/set-assets-section-open file-id section (not open?))))))
 
         title
         (mf/html
@@ -157,13 +158,15 @@
           [:span {:class (stl/css :num-assets)}
            assets-count]])]
 
-    [:div {:class (stl/css :asset-section)}
+    [:div {:class (stl/css-case :asset-section true
+                                :opened (and (< 0 assets-count)
+                                             open?))}
      [:& title-bar
-      {:collapsable   true
+      {:collapsable   (< 0 assets-count)
        :collapsed     (not open?)
        :all-clickable true
        :on-collapsed  on-collapsed
-       :class         (stl/css :title-spacing)
+       :class         (stl/css-case :title-spacing open?)
        :title         title}
       buttons]
      (when ^boolean open? content)]))

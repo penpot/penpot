@@ -74,13 +74,13 @@
   overflow: hidden;
   .default-name-only,
   .name {
-    color: var(--assets-item-name-foreground-color-hover);
+    color: var(--assets-item-name-foreground-color);
     margin-right: $s-6;
     @include textEllipsis;
   }
   .default-name {
     min-width: 0;
-    color: var(--assets-item-name-foreground-color);
+    color: var(--assets-item-name-foreground-color-rest);
   }
 }
 

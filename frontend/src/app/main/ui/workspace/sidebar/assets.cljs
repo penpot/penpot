@@ -67,7 +67,7 @@
 (mf/defc assets-toolbox
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
-  []
+  [{:keys [size]}]
   (let [components-v2  (mf/use-ctx ctx/components-v2)
         read-only?     (mf/use-ctx ctx/workspace-read-only?)
         filters*       (mf/use-state
@@ -178,7 +178,8 @@
          :show menu-open?
          :fixed? true
          :min-width? true
-         :top 152
+         :width size
+         :top 158
          :left 18
          :options options
          :workspace? true}]
