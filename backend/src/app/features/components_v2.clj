@@ -442,6 +442,26 @@
             (-> file-data
                 (update :components update-vals fix-container))))
 
+        fix-non-existing-component-ids
+        (fn [file-data]
+          (let [libraries (assoc-in libraries [(:id file-data) :data] file-data)]
+            (letfn [(fix-container [container]
+                      (d/update-when container :objects update-vals fix-shape))
+
+                    (fix-shape [shape]
+                      (let [component-id   (:component-id shape)
+                            component-file (:component-file shape)
+                            library        (get libraries component-file)]
+
+                        (cond-> shape
+                          (and (some? component-id) (nil? (ctkl/get-component (:data library) component-id)))
+                          (dissoc :component-id
+                                  :component-file))))]
+
+              (-> file-data
+                  (update :pages-index update-vals fix-container)
+                  (d/update-when :components update-vals fix-container)))))
+
         fix-misc-shape-issues
         (fn [file-data]
           (letfn [(fix-container [container]
@@ -949,6 +969,7 @@
         (fix-shape-geometry)
         (fix-empty-components)
         (fix-components-with-component-root)
+        (fix-non-existing-component-ids)
         (fix-completly-broken-shapes)
         (fix-bad-children)
         (fix-broken-parents)
