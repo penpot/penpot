@@ -377,12 +377,14 @@
   "Calculates the style properties for the given coordinates and position"
   [{vh :height} position x y]
   (let [;; picker height in pixels
-        h 510
+        h        510
 
         ;; Checks for overflow outside the viewport height
-        max-y (- vh h)
+        max-y   (- vh h)
+        rulers? (mf/deref refs/rulers?)
+        left-offset (if rulers? 40 18)
 
-        x-pos 325]
+        x-pos   400]
     (cond
       (or (nil? x) (nil? y)) {:left "auto" :right "16rem" :top "4rem"}
       (= position :left)
@@ -391,8 +393,11 @@
          :bottom "1rem"}
         {:left (str (- x x-pos) "px")
          :top (str (- y 70) "px")})
-      :else {:left (str (+ x 80) "px")
-             :top (str (- y 70) "px")})))
+      :else (if (> y max-y)
+              {:left (str (+ x left-offset) "px")
+               :bottom "1rem"}
+              {:left (str (+ x left-offset) "px")
+               :top (str (- y 70) "px")}))))
 
 (mf/defc colorpicker-modal
   {::mf/register modal/components
@@ -401,7 +406,9 @@
            disable-gradient
            disable-opacity
            disable-image
-           on-change on-close on-accept] :as props}]
+           on-change
+           on-close
+           on-accept] :as props}]
   (let [vport (mf/deref viewport)
         dirty? (mf/use-var false)
         last-change (mf/use-var nil)

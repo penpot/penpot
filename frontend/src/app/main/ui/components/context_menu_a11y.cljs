@@ -71,6 +71,8 @@
         local          (mf/use-state {:offset-y 0
                                       :offset-x 0
                                       :levels nil})
+        width          (gobj/get props "width" "initial")
+
 
         on-local-close
         (mf/use-callback
@@ -204,6 +206,7 @@
           (let [level (-> @local :levels peek)]
             [:ul {:class (stl/css-case :min-width min-width?
                                        :context-menu-items true)
+                  :style {:width width}
                   :role "menu"
                   :ref check-menu-offscreen}
              (when-let [parent-option (:parent-option level)]

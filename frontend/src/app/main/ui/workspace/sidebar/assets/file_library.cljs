@@ -51,7 +51,8 @@
          (mf/deps file-id open?)
          (fn []
            (st/emit! (dw/set-assets-section-open file-id :library (not open?)))))]
-    [:div  {:class (stl/css :library-title)}
+    [:div  {:class (stl/css-case :library-title true
+                                 :open open?)}
      [:& title-bar {:collapsable    true
                     :collapsed      (not open?)
                     :all-clickable  true

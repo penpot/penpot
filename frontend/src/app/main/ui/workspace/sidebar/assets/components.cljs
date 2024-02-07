@@ -238,7 +238,7 @@
 
      (when group-open?
        [:*
-        (let [components (get groups "" [])]
+        (when-let [components (not-empty (get groups "" []))]
           [:div {:class-name (stl/css-case :asset-grid listing-thumbs?
                                            :asset-enum (not listing-thumbs?)
                                            :drop-space (and
@@ -512,27 +512,26 @@
                            :assets-count (count components)
                            :open? open?}
      [:& cmm/asset-section-block {:role :title-button}
-      [:*
-       (when open?
-         [:div {:class (stl/css :listing-options)}
-          [:& radio-buttons {:selected (if listing-thumbs? "grid" "list")
-                             :on-change toggle-list-style
-                             :name "listing-style"}
-           [:& radio-button {:icon i/view-as-list-refactor
-                             :value "list"
-                             :id "opt-list"}]
-           [:& radio-button {:icon i/flex-grid-refactor
-                             :value "grid"
-                             :id "opt-grid"}]]])
+      (when ^boolean open?
+        [:div {:class (stl/css :listing-options)}
+         [:& radio-buttons {:selected (if listing-thumbs? "grid" "list")
+                            :on-change toggle-list-style
+                            :name "listing-style"}
+          [:& radio-button {:icon i/view-as-list-refactor
+                            :value "list"
+                            :id "opt-list"}]
+          [:& radio-button {:icon i/flex-grid-refactor
+                            :value "grid"
+                            :id "opt-grid"}]]])
 
-       (when (and components-v2 (not read-only?) local?)
-         [:div {:on-click add-component
-                :class (stl/css :add-component)}
-          i/add-refactor
-          [:& file-uploader {:accept cm/str-image-types
-                             :multi true
-                             :ref input-ref
-                             :on-selected on-file-selected}]])]]
+      (when (and components-v2 (not read-only?) local?)
+        [:div {:on-click add-component
+               :class (stl/css :add-component)}
+         i/add-refactor
+         [:& file-uploader {:accept cm/str-image-types
+                            :multi true
+                            :ref input-ref
+                            :on-selected on-file-selected}]])]
 
      [:& cmm/asset-section-block {:role :content}
       (when ^boolean open?

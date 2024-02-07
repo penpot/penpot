@@ -12,16 +12,19 @@
   grid-auto-rows: max-content;
   // TODO: ugly hack :( Fix this! we shouldn't be hardcoding this height
   max-height: calc(100vh - $s-80);
+  scrollbar-gutter: stable;
+  overflow-y: auto;
+  padding-top: $s-8;
 }
 
 .libraries-button {
-  @include tabTitleTipography;
   @extend .button-secondary;
+  @include tabTitleTipography;
   gap: $s-2;
   height: $s-32;
   width: 100%;
-  border-radius: $s-8;
   margin-bottom: $s-4;
+  border-radius: $s-8;
   .libraries-icon {
     @include flexCenter;
     width: $s-24;
@@ -124,7 +127,7 @@
 }
 
 .assets-header {
-  padding: $s-8 $s-12 $s-12 $s-12;
+  padding: 0 0 $s-24 $s-12;
 }
 
 .search-wrapper {
@@ -133,7 +136,7 @@
 }
 
 .sort-button {
-  @extend .button-secondary;
+  @extend .button-tertiary;
   width: $s-32;
   border-radius: $br-8;
   svg {
