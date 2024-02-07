@@ -49,6 +49,8 @@
         is-grid-parent? (mf/deref is-grid-parent-ref)
 
         is-layout-container? (ctl/any-layout? shape)
+        is-flex-layout? (ctl/flex-layout? shape)
+        is-grid-layout? (ctl/grid-layout? shape)
         is-layout-child-absolute? (ctl/item-absolute? shape)
 
         ids (hooks/use-equal-memo ids)
@@ -83,6 +85,8 @@
          :values layout-item-values
          :is-flex-parent? is-flex-parent?
          :is-grid-parent? is-grid-parent?
+         :is-flex-layout? is-flex-layout?
+         :is-grid-layout? is-grid-layout?
          :is-layout-child? is-layout-child?
          :is-layout-container? is-layout-container?
          :shape shape}])
