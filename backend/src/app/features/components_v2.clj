@@ -418,6 +418,16 @@
                 (update :pages-index update-vals fix-container)
                 (d/update-when :components update-vals fix-container))))
 
+        fix-empty-components
+        (fn [file-data]
+          (letfn [(fix-component [components id component]
+                    (if (empty? (:objects component))
+                      (dissoc components id)
+                      components))]
+
+            (-> file-data
+                (d/update-when :components #(reduce-kv fix-component % %)))))
+
         fix-misc-shape-issues
         (fn [file-data]
           (letfn [(fix-container [container]
@@ -923,6 +933,7 @@
         (fix-broken-paths)
         (fix-big-geometry-shapes)
         (fix-shape-geometry)
+        (fix-empty-components)
         (fix-completly-broken-shapes)
         (fix-bad-children)
         (fix-broken-parents)
