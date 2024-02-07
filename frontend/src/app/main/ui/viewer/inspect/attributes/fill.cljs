@@ -35,7 +35,6 @@
   [{:keys [objects shape]}]
   (let [format*   (mf/use-state :hex)
         format    (deref format*)
-
         color     (shape->color shape)
         on-change
         (mf/use-fn
@@ -55,6 +54,7 @@
     (when (seq shapes)
       [:div {:class (stl/css :attributes-block)}
        [:& title-bar {:collapsable false
+                      :origin      :inspect
                       :title       (tr "inspect.attributes.fill")
                       :class       (stl/css :title-spacing-fill)}]
 

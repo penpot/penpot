@@ -9,7 +9,7 @@
   (:require
    [app.config :as cfg]
    [app.util.color :as uc]
-   [app.util.i18n :as i18n :refer [tr]]
+   [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -99,16 +99,16 @@
 
 (mf/defc color-name
   {::mf/wrap-props false}
-  [{:keys [color size on-click on-double-click]}]
-  (let [{:keys [name color gradient image]} (if (string? color) {:color color :opacity 1} color)]
+  [{:keys [color size on-click on-double-click origin]}]
+  (let [{:keys [name color gradient]} (if (string? color) {:color color :opacity 1} color)]
     (when (or (not size) (> size 64))
       [:span {:class (stl/css-case
-                      :color-text (< size 72)
-                      :small-text (and (>= size 64) (< size 72))
-                      :big-text   (>= size 72))
+                      :color-text (and (= origin :palette) (< size 72))
+                      :small-text (and (= origin :palette) (>= size 64) (< size 72))
+                      :big-text   (and (= origin :palette) (>= size 72))
+                      :gradient   (some? gradient)
+                      :color-row-name (not=  origin :palette))
               :title name
               :on-click on-click
               :on-double-click on-double-click}
-       (if (some? image)
-         (or name (tr "media.image"))
-         (or name color (uc/gradient-type->string (:type gradient))))])))
+       (or name color (uc/gradient-type->string (:type gradient)))])))

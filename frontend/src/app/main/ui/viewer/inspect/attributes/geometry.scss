@@ -21,3 +21,7 @@
 .button-children {
   @extend .copy-button-children;
 }
+
+.copy-btn-title {
+  max-width: $s-28;
+}

@@ -8,9 +8,8 @@
 
 .copy-button {
   @include buttonStyle;
-  @include flexCenter;
+  width: 100%;
   height: $s-32;
-  width: $s-32;
   border: $s-1 solid transparent;
   border-radius: $br-8;
   background-color: transparent;
@@ -51,41 +50,32 @@
 .copy-wrapper {
   @include buttonStyle;
   @include copyWrapperBase;
-  display: grid;
-  grid-template-columns: 1fr $s-24;
-  grid-template-areas: "name button";
   width: 100%;
   height: fit-content;
   text-align: left;
-  border: 1px solid transparent;
+  border: $s-1 solid transparent;
   .icon-btn {
+    @include flexCenter;
     position: absolute;
-    display: flex;
-    justify-content: center;
-    align-items: center;
     top: 0;
     right: 0;
     height: $s-32;
-    width: $s-32;
+    width: $s-28;
     svg {
       @extend .button-icon-small;
+      stroke: var(--button-tertiary-foreground-color-focus);
       display: none;
     }
   }
   &:hover {
-    .icon-btn {
-      svg {
-        display: flex;
-        stroke: var(--button-tertiary-foreground-color-active);
-      }
+    background-color: var(--button-tertiary-background-color-focus);
+    color: var(--button-tertiary-foreground-color-focus);
+    border: $s-1 solid var(--button-tertiary-background-color-focus);
+    .icon-btn svg {
+      display: flex;
     }
   }
 
-  &:hover {
-    background-color: var(--color-background-tertiary);
-    color: var(--color-foreground-primary);
-    border: $s-1 solid var(--color-background-tertiary);
-  }
   &:focus,
   &:focus-visible {
     outline: none;
