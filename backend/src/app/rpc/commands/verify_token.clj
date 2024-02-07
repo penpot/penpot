@@ -44,18 +44,19 @@
 
 (defmethod process-token :change-email
   [{:keys [conn] :as cfg} _params {:keys [profile-id email] :as claims}]
-  (when (profile/get-profile-by-email conn email)
-    (ex/raise :type :validation
-              :code :email-already-exists))
+  (let [email (profile/clean-email email)]
+    (when (profile/get-profile-by-email conn email)
+      (ex/raise :type :validation
+                :code :email-already-exists))
 
-  (db/update! conn :profile
-              {:email email}
-              {:id profile-id})
+    (db/update! conn :profile
+                {:email email}
+                {:id profile-id})
 
-  (rph/with-meta claims
-    {::audit/name "update-profile-email"
-     ::audit/props {:email email}
-     ::audit/profile-id profile-id}))
+    (rph/with-meta claims
+      {::audit/name "update-profile-email"
+       ::audit/props {:email email}
+       ::audit/profile-id profile-id})))
 
 (defmethod process-token :verify-email
   [{:keys [conn] :as cfg} _ {:keys [profile-id] :as claims}]

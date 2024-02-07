@@ -709,7 +709,8 @@
 
 (defn- create-invitation
   [{:keys [::db/conn] :as cfg} {:keys [team profile role email] :as params}]
-  (let [member (profile/get-profile-by-email conn email)]
+  (let [email  (profile/clean-email email)
+        member (profile/get-profile-by-email conn email)]
 
     (when (and member (not (eml/allow-send-emails? conn member)))
       (ex/raise :type :validation
@@ -803,7 +804,8 @@
   (db/with-atomic [conn pool]
     (let [perms    (get-permissions conn profile-id team-id)
           profile  (db/get-by-id conn :profile profile-id)
-          team     (db/get-by-id conn :team team-id)]
+          team     (db/get-by-id conn :team team-id)
+          emails   (into #{} (map profile/clean-email) emails)]
 
       (run! (partial quotes/check-quote! conn)
             (list {::quotes/id ::quotes/invitations-per-team
@@ -834,7 +836,7 @@
                                ;;  We don't re-send inviation to already existing members
                                (remove (partial contains? members))
                                (map (fn [email]
-                                      {:email (str/lower email)
+                                      {:email email
                                        :team team
                                        :profile profile
                                        :role role}))
@@ -869,14 +871,15 @@
     (let [params   (assoc params :profile-id profile-id)
           cfg      (assoc cfg ::db/conn conn)
           team     (create-team cfg params)
-          profile  (db/get-by-id conn :profile profile-id)]
+          profile  (db/get-by-id conn :profile profile-id)
+          emails   (into #{} (map profile/clean-email) emails)]
 
       ;; Create invitations for all provided emails.
       (->> emails
            (map (fn [email]
                   {:team team
                    :profile profile
-                   :email (str/lower email)
+                   :email email
                    :role role}))
            (run! (partial create-invitation cfg)))
 
@@ -913,17 +916,20 @@
   {::doc/added "1.17"}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id email] :as params}]
   (check-read-permissions! pool profile-id team-id)
-  (let [invit (-> (db/get pool :team-invitation
+  (let [email (profile/clean-email email)
+        invit (-> (db/get pool :team-invitation
                           {:team-id team-id
-                           :email-to (str/lower email)})
+                           :email-to email})
                   (update :role keyword))
+
         member (profile/get-profile-by-email pool (:email-to invit))
         token  (create-invitation-token cfg {:team-id (:team-id invit)
                                              :profile-id profile-id
                                              :valid-until (:valid-until invit)
                                              :role (:role invit)
                                              :member-id (:id member)
-                                             :member-email (or (:email member) (:email-to invit))})]
+                                             :member-email (or (:email member)
+                                                               (profile/clean-email (:email-to invit)))})]
     {:token token}))
 
 ;; --- Mutation: Update invitation role
@@ -944,7 +950,7 @@
 
       (db/update! conn :team-invitation
                   {:role (name role) :updated-at (dt/now)}
-                  {:team-id team-id :email-to (str/lower email)})
+                  {:team-id team-id :email-to (profile/clean-email email)})
       nil)))
 
 ;; --- Mutation: Delete invitation
@@ -965,6 +971,6 @@
 
       (let [invitation (db/delete! conn :team-invitation
                                    {:team-id team-id
-                                    :email-to (str/lower email)}
+                                    :email-to (profile/clean-email email)}
                                    {::db/return-keys true})]
         (rph/wrap nil {::audit/props {:invitation-id (:id invitation)}})))))

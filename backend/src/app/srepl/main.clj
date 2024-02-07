@@ -78,6 +78,7 @@
   [email]
   (let [sprops  (:app.setup/props main/system)
         pool    (:app.db/pool main/system)
+        email   (profile/clean-email email)
         profile (profile/get-profile-by-email pool email)]
 
     (auth/send-email-verification! pool sprops profile)
