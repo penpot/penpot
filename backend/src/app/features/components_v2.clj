@@ -424,6 +424,18 @@
             (-> file-data
                 (d/update-when :components #(reduce-kv fix-component % %)))))
 
+        fix-components-with-component-root
+        ;;In v1 no components in the library should have component-root
+        (fn [file-data]
+          (letfn [(fix-container [container]
+                    (d/update-when container :objects update-vals fix-shape))
+
+                  (fix-shape [shape]
+                    (dissoc shape :component-root))]
+
+            (-> file-data
+                (update :components update-vals fix-container))))
+
         fix-misc-shape-issues
         (fn [file-data]
           (letfn [(fix-container [container]
@@ -930,6 +942,7 @@
         (fix-big-geometry-shapes)
         (fix-shape-geometry)
         (fix-empty-components)
+        (fix-components-with-component-root)
         (fix-completly-broken-shapes)
         (fix-bad-children)
         (fix-broken-parents)
