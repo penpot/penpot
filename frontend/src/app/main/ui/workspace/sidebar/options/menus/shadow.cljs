@@ -112,7 +112,7 @@
          (fn [color]
            (st/emit! (dch/update-shapes
                       ids
-                      #(assoc-in % [:shadow index :color] color)))))
+                      #(assoc-in % [:shadow index :color] (d/without-nils color))))))
 
         detach-color
         (mf/use-fn

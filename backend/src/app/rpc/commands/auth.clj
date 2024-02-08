@@ -82,7 +82,8 @@
             profile)
 
           (login [{:keys [::db/conn] :as cfg}]
-            (let [profile    (->> (profile/get-profile-by-email conn email)
+            (let [profile    (->> (profile/clean-email email)
+                                  (profile/get-profile-by-email conn)
                                   (validate-profile cfg)
                                   (profile/strip-private-attrs))
 
@@ -202,11 +203,12 @@
     (pos? (compare elapsed register-retry-threshold))))
 
 (defn prepare-register
-  [{:keys [::db/pool] :as cfg} params]
+  [{:keys [::db/pool] :as cfg} {:keys [email] :as params}]
 
   (validate-register-attempt! cfg params)
 
-  (let [profile (when-let [profile (profile/get-profile-by-email pool (:email params))]
+  (let [email   (profile/clean-email email)
+        profile (when-let [profile (profile/get-profile-by-email pool email)]
                   (cond
                     (:is-blocked profile)
                     (ex/raise :type :restriction
@@ -221,7 +223,7 @@
                               :code :email-already-exists
                               :hint "profile already exists")))
 
-        params  {:email (:email params)
+        params  {:email email
                  :password (:password params)
                  :invitation-token (:invitation-token params)
                  :backend "penpot"
@@ -447,7 +449,8 @@
               nil))]
 
     (db/with-atomic [conn pool]
-      (when-let [profile (profile/get-profile-by-email conn email)]
+      (when-let [profile (->> (profile/clean-email email)
+                              (profile/get-profile-by-email conn))]
         (when-not (eml/allow-send-emails? conn profile)
           (ex/raise :type :validation
                     :code :profile-is-muted

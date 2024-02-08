@@ -191,15 +191,15 @@
         (mf/use-fn
          (mf/deps parse-value apply-value update-input on-blur)
          (fn [event]
-           (let [new-value (or @last-value* default)]
-             (if (or nillable? new-value)
-               (apply-value event new-value)
-               (update-input new-value)))
-           (when (fn? on-blur)
-             (on-blur event))))
+           (when (mf/ref-val dirty-ref)
+             (let [new-value (or @last-value* default)]
+               (if (or nillable? new-value)
+                 (apply-value event new-value)
+                 (update-input new-value)))
+             (when (fn? on-blur)
+               (on-blur event)))))
 
-        handle-unmount
-        (h/use-ref-callback handle-blur)
+        handle-unmount (h/use-ref-callback handle-blur)
 
         on-click
         (mf/use-fn
@@ -240,10 +240,7 @@
       (when-let [input-node (mf/ref-val ref)]
         (dom/set-value! input-node (fmt/format-number value))))
 
-    (mf/with-effect []
-      (fn []
-        (when (mf/ref-val dirty-ref)
-          (handle-unmount))))
+    (mf/with-effect [handle-unmount] handle-unmount)
 
     (mf/with-layout-effect []
       (let [keys [(events/listen globals/window "pointerdown" on-click)

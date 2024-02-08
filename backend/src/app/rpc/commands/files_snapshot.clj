@@ -63,34 +63,38 @@
   [{:keys [::db/conn ::sto/storage] :as cfg} {:keys [file-id id]}]
   (let [storage  (media/configure-assets-storage storage conn)
         params   {:id id :file-id file-id}
-        options  {:columns [:id :data :revn]}
+        options  {:columns [:id :data :revn :features]}
         snapshot (db/get* conn :file-change params options)]
 
     (when (and (some? snapshot)
                (some? (:data snapshot)))
 
-      (l/debug :hint "snapshot found"
-               :snapshot-id (:id snapshot)
-               :file-id file-id)
+      (l/dbg :hint "restoring snapshot"
+             :file-id (str file-id)
+             :snapshot-id (str (:id snapshot)))
 
       (db/update! conn :file
-                  {:data (:data snapshot)}
+                  {:data (:data snapshot)
+                   :revn (:revn snapshot)
+                   :features (:features snapshot)}
                   {:id file-id})
 
       ;; clean object thumbnails
-      (let [sql (str "delete from file_object_thumbnail "
+      (let [sql (str "update file_tagged_object_thumbnail "
+                     "   set deleted_at = now() "
                      " where file_id=? returning media_id")
             res (db/exec! conn [sql file-id])]
 
         (doseq [media-id (into #{} (keep :media-id) res)]
-          (sto/del-object! storage media-id)))
+          (sto/touch-object! storage media-id)))
 
       ;; clean object thumbnails
-      (let [sql (str "delete from file_thumbnail "
+      (let [sql (str "update file_thumbnail "
+                     "   set deleted_at = now() "
                      " where file_id=? returning media_id")
             res (db/exec! conn [sql file-id])]
         (doseq [media-id (into #{} (keep :media-id) res)]
-          (sto/del-object! storage media-id)))
+          (sto/touch-object! storage media-id)))
 
       {:id (:id snapshot)})))
 
@@ -112,7 +116,9 @@
   (when-let [file (db/get* conn :file {:id file-id})]
     (let [id    (uuid/next)
           label (or label (str "Snapshot at " (dt/format-instant (dt/now) :rfc1123)))]
-      (l/debug :hint "persisting file snapshot" :file-id file-id :label label)
+      (l/debug :hint "persisting file snapshot"
+               :file-id (str file-id)
+               :label label)
       (db/insert! conn :file-change
                   {:id id
                    :revn (:revn file)

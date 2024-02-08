@@ -90,7 +90,7 @@
     attrs))
 
 (defn add-stroke!
-  [attrs data render-id index]
+  [attrs data render-id index open-path?]
   (let [style (:stroke-style data :solid)]
     (when-not (= style :none)
       (let [width       (:stroke-width data 1)
@@ -122,16 +122,18 @@
           (cond
             (and (contains? stroke-caps-line caps-start)
                  (= caps-start caps-end)
-                 (not= :inner alignment)
-                 (not= :outer alignment)
+                 (or open-path?
+                     (and (not= :inner alignment)
+                          (not= :outer alignment)))
                  (not= :dotted style))
             (obj/set! attrs "strokeLinecap" (name caps-start))
 
             (= :dotted style)
             (obj/set! attrs "strokeLinecap" "round"))
 
-          (when (and (not= :inner alignment)
-                     (not= :outer alignment))
+          (when (or open-path?
+                    (and (not= :inner alignment)
+                         (not= :outer alignment)))
 
             ;; For other cap types we use markers.
             (when (or (contains? stroke-caps-marker caps-start)

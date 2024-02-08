@@ -45,7 +45,7 @@
   [{:keys [::wrk/executor]}]
   (letfn [(on-remove [key _ cause]
             (let [[id skey] key]
-              (l/dbg :hint "disposed" :id (id->str id skey) :reason (str cause))))]
+              (l/trc :hint "disposed" :id (id->str id skey) :reason (str cause))))]
     (cache/create :executor executor
                   :on-remove on-remove
                   :keepalive "5m")))
@@ -86,7 +86,7 @@
 
 (defn- create-limiter
   [config [id skey]]
-  (l/dbg :hint "created" :id (id->str id skey))
+  (l/trc :hint "created" :id (id->str id skey))
   (pbh/create :permits (or (:permits config) (:concurrency config))
               :queue (or (:queue config) (:queue-size config))
               :timeout (:timeout config)

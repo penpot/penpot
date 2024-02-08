@@ -420,7 +420,7 @@
     (mf/html [:> type props])))
 
 (defn- build-stroke-element
-  [child value position render-id]
+  [child value position render-id open-path?]
   (let [props (obj/get child "props")
         type  (obj/get child "type")
 
@@ -428,7 +428,7 @@
                   (obj/clone)
                   (obj/set! "fill" "none")
                   (obj/set! "fillOpacity" "none")
-                  (attrs/add-stroke! value render-id position))
+                  (attrs/add-stroke! value render-id position open-path?))
 
         style (if (:stroke-image value)
                 (obj/set! style "stroke" (dm/fmt "url(#stroke-fill-%-%)" render-id position))
@@ -484,9 +484,10 @@
         props        (mf/spread-props svg-attrs
                                       {:id stroke-id
                                        :className "strokes"
-                                       :style style})]
+                                       :style style})
 
-
+        open-path?    (and ^boolean (cfh/path-shape? shape)
+                           ^boolean (gsh/open-path? shape))]
     (when-not ^boolean (cfh/frame-shape? shape)
       (when (and (some? shape-blur)
                  (not ^boolean (:hidden shape-blur)))
@@ -503,7 +504,7 @@
                                   :stroke value
                                   :index index
                                   :key (dm/str index "-" stroke-id)}
-          (build-stroke-element child value index render-id)])])))
+          (build-stroke-element child value index render-id open-path?)])])))
 
 (mf/defc shape-custom-strokes
   {::mf/wrap-props false}

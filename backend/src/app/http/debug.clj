@@ -347,7 +347,10 @@
               :code :missing-force
               :hint "missing force checkbox"))
 
-  (let [profile  (some->> params :email (profile/get-profile-by-email pool))]
+  (let [profile (some->> params
+                         :email
+                         (profile/clean-email)
+                         (profile/get-profile-by-email pool))]
 
     (when-not profile
       (ex/raise :type :validation

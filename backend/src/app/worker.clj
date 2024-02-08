@@ -643,8 +643,12 @@
 
 (def ^:private
   sql:remove-not-started-tasks
-  "delete from task
-    where name=? and queue=? and label=? and status = 'new' and scheduled_at > now()")
+  "DELETE FROM task
+    WHERE name=?
+      AND queue=?
+      AND label=?
+      AND status = 'new'
+      AND scheduled_at > now()")
 
 (s/def ::label string?)
 (s/def ::task (s/or :kw keyword? :str string?))

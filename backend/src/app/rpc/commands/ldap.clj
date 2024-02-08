@@ -82,8 +82,8 @@
   (db/tx-run! cfg
               (fn [{:keys [::db/conn] :as cfg}]
                 (or (some->> (:email info)
-                             (profile/get-profile-by-email conn)
-                             (profile/decode-row))
+                             (profile/clean-email)
+                             (profile/get-profile-by-email conn))
                     (->> (assoc info :is-active true :is-demo false)
                          (auth/create-profile! conn)
                          (auth/create-profile-rels! conn)
