@@ -65,7 +65,7 @@
                         :id     (dm/str "align-self-end-" type)}]
 
       [:& radio-button {:value "stretch"
-                        :icon  (if is-col? i/align-self-row-strech i/align-self-column-strech)
+                        :icon  (if is-col? i/align-self-row-stretch-refactor i/align-self-column-stretch-refactor)
                         :title "Align self stretch"
                         :id     (dm/str "align-self-stretch-" type)}]]]))
 
