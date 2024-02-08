@@ -59,8 +59,7 @@
         dirty-ref   (mf/use-ref false)
 
         ;; Last value input by the user we need to store to save on unmount
-
-        last-value*  (mf/use-var nil)
+        last-value*  (mf/use-var value)
 
         parse-value
         (mf/use-fn
