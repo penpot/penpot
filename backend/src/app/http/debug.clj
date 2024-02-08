@@ -414,12 +414,12 @@
                 :hint "provided invalid version"))
 
     (binding [srepl/*system* cfg]
-      (srepl/update-file! :id file-id
-                          :update-fn (fn [file]
-                                       (update file :data assoc :version version))
-                          :migrate? false
-                          :inc-revn? false
-                          :save? true))
+      (srepl/process-file! :id file-id
+                           :update-fn (fn [file]
+                                        (update file :data assoc :version version))
+                           :migrate? false
+                           :inc-revn? false
+                           :save? true))
     {::rres/status  200
      ::rres/headers {"content-type" "text/plain"}
      ::rres/body    "OK"}))

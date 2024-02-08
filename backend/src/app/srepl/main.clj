@@ -19,7 +19,8 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
-   [app.features.fdata :as features.fdata]
+   [app.features.components-v2 :as feat.comp-v2]
+   [app.features.fdata :as feat.fdata]
    [app.main :as main]
    [app.msgbus :as mbus]
    [app.rpc.commands.auth :as auth]
@@ -38,7 +39,11 @@
    [clojure.tools.namespace.repl :as repl]
    [cuerdas.core :as str]))
 
-(defn print-available-tasks
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TASKS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn print-tasks
   []
   (let [tasks (:app.worker/registry main/system)]
     (p/pprint (keys tasks) :level 200)))
@@ -84,6 +89,10 @@
     (auth/send-email-verification! pool sprops profile)
     :email-sent))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; PROFILES MANAGEMENT
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn mark-profile-as-active!
   "Mark the profile blocked and removes all the http sessiones
   associated with the profile-id."
@@ -121,19 +130,28 @@
         (let [email (str/lower email)]
           (db/exec! conn ["update profile set password=? where email=?" password email]))))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; FEATURES
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn enable-objects-map-feature-on-file!
   [& {:keys [save? id]}]
-  (h/update-file! main/system
-                  :id id
-                  :update-fn features.fdata/enable-objects-map
-                  :save? save?))
+  (h/process-file! main/system
+                   :id id
+                   :update-fn feat.fdata/enable-objects-map
+                   :save? save?))
 
 (defn enable-pointer-map-feature-on-file!
   [& {:keys [save? id]}]
-  (h/update-file! main/system
-                  :id id
-                  :update-fn features.fdata/enable-pointer-map
-                  :save? save?))
+  (h/process-file! main/system
+                   :id id
+                   :update-fn feat.fdata/enable-pointer-map
+                   :save? save?))
+
+(defn enable-storage-features-on-file!
+  [& {:as params}]
+  (enable-objects-map-feature-on-file! main/system params)
+  (enable-pointer-map-feature-on-file! main/system params))
 
 (defn enable-team-feature!
   [team-id feature]
@@ -171,57 +189,10 @@
                                   {:id team-id})
                       :disabled))))))
 
-(defn enable-storage-features-on-file!
-  [& {:as params}]
-  (enable-objects-map-feature-on-file! main/system params)
-  (enable-pointer-map-feature-on-file! main/system params))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; NOTIFICATIONS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn instrument-var
-  [var]
-  (alter-var-root var (fn [f]
-                        (let [mf (meta f)]
-                          (if (::original mf)
-                            f
-                            (with-meta
-                              (fn [& params]
-                                (tap> params)
-                                (let [result (apply f params)]
-                                  (tap> result)
-                                  result))
-                              {::original f}))))))
-
-(defn uninstrument-var
-  [var]
-  (alter-var-root var (fn [f]
-                        (or (::original (meta f)) f))))
-
-(defn take-file-snapshot!
-  "An internal helper that persist the file snapshot using non-gc
-  collectable file-changes entry."
-  [& {:keys [file-id label]}]
-  (let [file-id (h/parse-uuid file-id)]
-    (db/tx-run! main/system fsnap/take-file-snapshot! {:file-id file-id :label label})))
-
-(defn restore-file-snapshot!
-  [& {:keys [file-id id]}]
-  (db/tx-run! main/system
-              (fn [cfg]
-                (let [file-id (h/parse-uuid file-id)
-                      id      (h/parse-uuid id)]
-
-                  (if (and (uuid? id) (uuid? file-id))
-                    (fsnap/restore-file-snapshot! cfg {:id id :file-id file-id})
-                    (println "=> invalid parameters"))))))
-
-
-(defn list-file-snapshots!
-  [& {:keys [file-id limit]}]
-  (db/tx-run! main/system
-              (fn [system]
-                (let [params {:file-id (h/parse-uuid file-id)
-                              :limit limit}]
-                  (->> (fsnap/get-file-snapshots system (d/without-nils params))
-                       (print-table [:id :revn :created-at :label]))))))
 
 (defn notify!
   [{:keys [::mbus/msgbus ::db/pool]} & {:keys [dest code message level]
@@ -321,6 +292,121 @@
          (into #{})
          (run! send))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SNAPSHOTS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn take-file-snapshot!
+  "An internal helper that persist the file snapshot using non-gc
+  collectable file-changes entry."
+  [& {:keys [file-id label]}]
+  (let [file-id (h/parse-uuid file-id)]
+    (db/tx-run! main/system fsnap/take-file-snapshot! {:file-id file-id :label label})))
+
+(defn restore-file-snapshot!
+  [& {:keys [file-id id]}]
+  (db/tx-run! main/system
+              (fn [cfg]
+                (let [file-id (h/parse-uuid file-id)
+                      id      (h/parse-uuid id)]
+                  (if (and (uuid? id) (uuid? file-id))
+                    (fsnap/restore-file-snapshot! cfg {:id id :file-id file-id})
+                    (println "=> invalid parameters"))))))
+
+
+(defn list-file-snapshots!
+  [& {:keys [file-id limit]}]
+  (db/tx-run! main/system
+              (fn [system]
+                (let [params {:file-id (h/parse-uuid file-id)
+                              :limit limit}]
+                  (->> (fsnap/get-file-snapshots system (d/without-nils params))
+                       (print-table [:id :revn :created-at :label]))))))
+
+(defn take-team-snapshot!
+  [& {:keys [team-id label rollback?]
+      :or {rollback? true}}]
+  (let [team-id (h/parse-uuid team-id)
+        label   (or label (fsnap/generate-snapshot-label))
+
+        take-snapshot
+        (fn [{:keys [::db/conn] :as system}]
+          (->> (feat.comp-v2/get-and-lock-team-files conn team-id)
+               (map (fn [file-id]
+                      {:file-id file-id
+                       :label label}))
+               (run! (partial fsnap/take-file-snapshot! system))))]
+
+    (-> (assoc main/system ::db/rollback rollback?)
+        (db/tx-run! take-snapshot))))
+
+(def ^:private sql:snapshots-with-file
+  "WITH files AS (
+     SELECT f.id AS file_id,
+            (SELECT fc.id
+               FROM file_change AS fc
+              WHERE fc.label = ?
+                AND fc.file_id = f.id
+              ORDER BY fc.created_at DESC
+              LIMIT 1) AS id
+       FROM file AS f
+   ) SELECT * FROM files
+      WHERE file_id = ANY(?)
+        AND id IS NOT NULL")
+
+(defn restore-team-snapshot!
+  "Restore a snapshot on all files of the team. The snapshot should
+  exists for all files; if is not the case, an exception is raised."
+  [& {:keys [team-id label rollback?] :or {rollback? true}}]
+  (let [team-id (h/parse-uuid team-id)
+
+        get-file-snapshots
+        (fn [conn ids]
+          (db/exec! conn [sql:snapshots-with-file label
+                          (db/create-array conn "uuid" ids)]))
+
+        restore-snapshot
+        (fn [{:keys [::db/conn] :as system}]
+          (let [ids  (->> (feat.comp-v2/get-and-lock-team-files conn team-id)
+                          (into #{}))
+                snap (get-file-snapshots conn ids)
+                ids' (into #{} (map :file-id) snap)
+                team (-> (feat.comp-v2/get-team conn team-id)
+                         (update :features disj "components/v2"))]
+
+            (when (not= ids ids')
+              (throw (RuntimeException. "no uniform snapshot available")))
+
+            (feat.comp-v2/update-team! conn team)
+            (run! (partial fsnap/restore-file-snapshot! system) snap)))]
+
+    (-> (assoc main/system ::db/rollback rollback?)
+        (db/tx-run! restore-snapshot))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; MISC
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn instrument-var
+  [var]
+  (alter-var-root var (fn [f]
+                        (let [mf (meta f)]
+                          (if (::original mf)
+                            f
+                            (with-meta
+                              (fn [& params]
+                                (tap> params)
+                                (let [result (apply f params)]
+                                  (tap> result)
+                                  result))
+                              {::original f}))))))
+
+(defn uninstrument-var
+  [var]
+  (alter-var-root var (fn [f]
+                        (or (::original (meta f)) f))))
+
+
 (defn duplicate-team
   [team-id & {:keys [name]}]
   (let [team-id (h/parse-uuid team-id)]
@@ -337,4 +423,3 @@
                                        (assoc :team-id (:id team)))]
                         (db/insert! conn :team-profile-rel params
                                     {::db/return-keys false}))))))))
-

@@ -1497,7 +1497,7 @@
   (-> (db/get system :team {:id team-id}
               {::db/remove-deleted false
                ::db/check-deleted false})
-      (decode-row)))
+      (update :features db/decode-pgarray #{})))
 
 (defn- validate-file!
   [file libs]
@@ -1546,19 +1546,21 @@
       AND f.deleted_at IS NULL
       FOR UPDATE")
 
-(defn get-and-lock-files
+(defn get-and-lock-team-files
   [conn team-id]
   (->> (db/cursor conn [sql:get-and-lock-team-files team-id])
        (map :id)))
 
 (defn update-team!
-  [conn team]
-  (let [params (-> team
+  [system {:keys [id] :as team}]
+  (let [conn   (db/get-connection system)
+        params (-> team
                    (update :features db/encode-pgarray conn "text")
                    (dissoc :id))]
     (db/update! conn :team
                 params
-                {:id (:id team)})))
+                {:id id})
+    team))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PUBLIC API
@@ -1657,7 +1659,7 @@
                              :id id})
 
                 (run! (partial migrate-file system)
-                      (get-and-lock-files conn id))
+                      (get-and-lock-team-files conn id))
 
                 (->> (assoc team :features features)
                      (update-team! conn))))))]
