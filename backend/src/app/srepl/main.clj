@@ -141,9 +141,7 @@
    "feature should be supported"
    (contains? cfeat/supported-features feature))
 
-  (let [team-id (if (string? team-id)
-                  (parse-uuid team-id)
-                  team-id)]
+  (let [team-id (h/parse-uuid team-id)]
     (db/tx-run! main/system
                 (fn [{:keys [::db/conn]}]
                   (let [team     (-> (db/get conn :team {:id team-id})
@@ -161,9 +159,7 @@
    "feature should be supported"
    (contains? cfeat/supported-features feature))
 
-  (let [team-id (if (string? team-id)
-                  (parse-uuid team-id)
-                  team-id)]
+  (let [team-id (h/parse-uuid team-id)]
     (db/tx-run! main/system
                 (fn [{:keys [::db/conn]}]
                   (let [team     (-> (db/get conn :team {:id team-id})
@@ -262,18 +258,13 @@
                            {:columns [:profile-id]})
                  (map :profile-id)))
 
-          (parse-uuid [v]
-            (if (uuid? v)
-              v
-              (d/parse-uuid v)))
-
           (resolve-dest [dest]
             (cond
               (uuid? dest)
               [dest]
 
               (string? dest)
-              (some-> dest parse-uuid resolve-dest)
+              (some-> dest h/parse-uuid resolve-dest)
 
               (nil? dest)
               (resolve-dest uuid/zero)
@@ -311,18 +302,18 @@
                     (coll? param)
                     (sequence (comp
                                (mapcat resolve-team)
-                               (keep parse-uuid))
+                               (keep h/parse-uuid))
                               param)
 
                     (uuid? param)
                     (resolve-team param)
 
                     (string? param)
-                    (some-> param parse-uuid resolve-team))
+                    (some-> param h/parse-uuid resolve-team))
 
                   (= op :profile-id)
                   (if (coll? param)
-                    (sequence (keep parse-uuid) param)
+                    (sequence (keep h/parse-uuid) param)
                     (resolve-dest param))))))]
 
     (->> (resolve-dest dest)
@@ -332,7 +323,7 @@
 
 (defn duplicate-team
   [team-id & {:keys [name]}]
-  (let [team-id (if (string? team-id) (parse-uuid team-id) team-id)]
+  (let [team-id (h/parse-uuid team-id)]
     (db/tx-run! main/system
                 (fn [{:keys [::db/conn] :as cfg}]
                   (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])

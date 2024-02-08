@@ -52,9 +52,9 @@
 
 (defn parse-uuid
   [v]
-  (if (uuid? v)
-    v
-    (d/parse-uuid v)))
+  (if (string? v)
+    (d/parse-uuid v)
+    v))
 
 (defn reset-file-data!
   "Hardcode replace of the data of one file."
