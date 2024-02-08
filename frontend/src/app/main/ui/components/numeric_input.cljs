@@ -53,7 +53,7 @@
 
         ;; This `value` represents the previous value and is used as
         ;; initil value for the simple math expression evaluation.
-        value       (d/parse-double value-str default)
+        value       (when (not= :multiple value-str) (d/parse-double value-str default))
 
         ;; We need to store the handle-blur ref so we can call it on unmount
         dirty-ref   (mf/use-ref false)
