@@ -13,6 +13,7 @@
    [app.features.components-v2 :as feat]
    [app.main :as main]
    [app.rpc.commands.files-snapshot :as rpc]
+   [app.srepl.helpers :as h]
    [app.svgo :as svgo]
    [app.util.cache :as cache]
    [app.util.events :as events]
@@ -280,9 +281,7 @@
                    skip-on-graphic-error? true}}]
   (l/dbg :hint "migrate:start" :rollback rollback?)
   (let [tpoint  (dt/tpoint)
-        file-id (if (string? file-id)
-                  (parse-uuid file-id)
-                  file-id)
+        file-id (h/parse-uuid file-id)
         cache   (if (int? cache)
                   (cache/create :executor (::wrk/executor main/system)
                                 :max-items cache)
@@ -315,9 +314,7 @@
 
   (l/dbg :hint "migrate:start" :rollback rollback?)
 
-  (let [team-id (if (string? team-id)
-                  (parse-uuid team-id)
-                  team-id)
+  (let [team-id (h/parse-uuid team-id)
         stats   (atom {})
         tpoint  (dt/tpoint)
 
@@ -651,9 +648,7 @@
 
 (defn restore-team!
   [team-id label & {:keys [rollback?] :or {rollback? true}}]
-  (let [team-id (if (string? team-id)
-                  (parse-uuid team-id)
-                  team-id)
+  (let [team-id (h/parse-uuid team-id)
 
         get-file-snapshots
         (fn [conn ids]
