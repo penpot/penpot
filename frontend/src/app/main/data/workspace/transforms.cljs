@@ -511,7 +511,11 @@
              objects (wsh/lookup-page-objects state page-id)
              selected (wsh/lookup-selected state {:omit-blocked? true})
              ids     (if (nil? ids) selected ids)
-             shapes  (mapv #(get objects %) ids)
+             shapes  (into []
+                           (comp (map (d/getf objects))
+                                 (remove ctk/in-component-copy-not-head?))
+                           ids)
+
              duplicate-move-started? (get-in state [:workspace-local :duplicate-move-started?] false)
 
              stopper (->> stream
@@ -670,6 +674,7 @@
 
                     {:keys [layout-grid-cells]}
                     (->> children
+                         (remove #(ctk/in-component-copy-not-head? (get objects %)))
                          (keep #(ctl/get-cell-by-shape-id parent %))
                          (sort-by key-prop key-comp)
                          (reduce (fn [parent {:keys [id row column row-span column-span]}]

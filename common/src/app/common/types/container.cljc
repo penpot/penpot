@@ -428,12 +428,14 @@
      comps-nesting-loop?)))
 
 (defn find-valid-parent-and-frame-ids
-  "Navigate trough the ancestors until find one that is valid"
+  "Navigate trough the ancestors until find one that is valid. Returns [ parent-id frame-id ]"
   [parent-id objects children]
-  (let [parent (get objects parent-id)]
-    (if (invalid-structure-for-component? objects parent children)
-      (find-valid-parent-and-frame-ids (:parent-id parent) objects children)
-      [parent-id
-       (if (= :frame (:type parent))
-         parent-id
-         (:frame-id parent))])))
+  (letfn [(get-frame [parent-id]
+            (if (cfh/frame-shape? objects parent-id) parent-id (get-in objects [parent-id :frame-id])))]
+    (let [parent (get objects parent-id)
+          ;; We can always move the children to the parent they already have
+          no-changes?
+          (->> children (every? #(= parent-id (:parent-id %))))]
+      (if (or no-changes? (not (invalid-structure-for-component? objects parent children)))
+        [parent-id (get-frame parent-id)]
+        (recur (:parent-id parent) objects children)))))
