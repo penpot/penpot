@@ -24,6 +24,9 @@
       .layout-options {
         width: $s-92;
       }
+      .layout-option {
+        white-space: nowrap;
+      }
       .remove-layout,
       .add-layout {
         @extend .button-tertiary;

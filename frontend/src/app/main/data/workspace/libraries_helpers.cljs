@@ -1367,9 +1367,6 @@
 
                 attr-group (get ctk/sync-attrs attr)]
 
-            (and (not= (get origin-shape attr) (get dest-shape attr))
-                 (or (not (touched attr-group)) (not omit-touched?)))
-
             (if (or (= (get origin-shape attr) (get dest-shape attr))
                     (and (touched attr-group) omit-touched?))
               (recur (next attrs)
@@ -1380,18 +1377,18 @@
                      (conj uoperations uoperation)))))))))
 
 (defn- propagate-attrs
-  "Helper that puts the src-shape attributes (attrs) into tgt-shape but only if
+  "Helper that puts the origin attributes (attrs) into dest but only if
   not touched the group or if omit-touched? flag is true"
-  [tgt-shape src-shape attrs omit-touched?]
-  (let [touched (get tgt-shape :touched #{})]
+  [dest origin attrs omit-touched?]
+  (let [touched (get dest :touched #{})]
     (->> attrs
          (reduce
-          (fn [tgt-shape attr]
+          (fn [dest attr]
             (let [attr-group (get ctk/sync-attrs attr)]
-              (cond-> tgt-shape
+              (cond-> dest
                 (or (not (touched attr-group)) (not omit-touched?))
-                (assoc attr (get src-shape attr)))))
-          tgt-shape))))
+                (assoc attr (get origin attr)))))
+          dest))))
 
 (defn- update-flex-child-copy-attrs
   "Synchronizes the attributes inside the flex-child items (main->copy)"
