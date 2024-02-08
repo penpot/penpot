@@ -474,6 +474,7 @@
   [{:keys [::db/pool] :as cfg} info]
   (dm/with-open [conn (db/open pool)]
     (some->> (:email info)
+             (profile/clean-email)
              (profile/get-profile-by-email conn))))
 
 (defn- redirect-response

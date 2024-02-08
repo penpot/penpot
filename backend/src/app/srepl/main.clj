@@ -78,6 +78,7 @@
   [email]
   (let [sprops  (:app.setup/props main/system)
         pool    (:app.db/pool main/system)
+        email   (profile/clean-email email)
         profile (profile/get-profile-by-email pool email)]
 
     (auth/send-email-verification! pool sprops profile)
@@ -331,11 +332,18 @@
 
 (defn duplicate-team
   [team-id & {:keys [name]}]
-  (let [team-id (if (string? team-id) (parse-uuid team-id) team-id)
-        name    (or name (fn [prev-name]
-                           (str/ffmt "Cloned: % (%)" prev-name (dt/format-instant (dt/now)))))]
+  (let [team-id (if (string? team-id) (parse-uuid team-id) team-id)]
     (db/tx-run! main/system
-                (fn [cfg]
-                  (db/exec-one! cfg ["SET CONSTRAINTS ALL DEFERRED"])
-                  (-> (assoc cfg ::bfc/timestamp (dt/now))
-                      (mgmt/duplicate-team :team-id team-id :name name))))))
+                (fn [{:keys [::db/conn] :as cfg}]
+                  (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
+                  (let [team (-> (assoc cfg ::bfc/timestamp (dt/now))
+                                 (mgmt/duplicate-team :team-id team-id :name name))
+                        rels (db/query conn :team-profile-rel {:team-id team-id})]
+
+                    (doseq [rel rels]
+                      (let [params (-> rel
+                                       (assoc :id (uuid/next))
+                                       (assoc :team-id (:id team)))]
+                        (db/insert! conn :team-profile-rel params
+                                    {::db/return-keys false}))))))))
+

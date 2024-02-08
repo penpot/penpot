@@ -77,10 +77,6 @@
   internal functions without the need to explicitly pass it top down."
   nil)
 
-(def ^:dynamic ^:private *team-id*
-  "A dynamic var that holds the current processing team-id."
-  nil)
-
 (def ^:dynamic ^:private *file-stats*
   "An internal dynamic var for collect stats by file."
   nil)
@@ -1194,12 +1190,11 @@
                 ;; The media processing adds the data to the
                 ;; input map and returns it.
                 (media/run {:cmd :info :input item}))
+
               (catch Throwable _
-                (let [team-id *team-id*]
-                  (l/wrn :hint "unable to process embedded images on svg file"
-                         :team-id (str team-id)
-                         :file-id (str file-id)
-                         :media-id (str media-id)))
+                (l/wrn :hint "unable to process embedded images on svg file"
+                       :file-id (str file-id)
+                       :media-id (str media-id))
                 nil)))
 
           (persist-image [acc {:keys [path size width height mtype href] :as item}]
@@ -1332,24 +1327,20 @@
                 (catch Throwable cause
                   (vreset! err true)
                   (let [cause (pu/unwrap-exception cause)
-                        edata (ex-data cause)
-                        team-id *team-id*]
+                        edata (ex-data cause)]
                     (cond
                       (instance? org.xml.sax.SAXParseException cause)
                       (l/inf :hint "skip processing media object: invalid svg found"
-                             :team-id (str team-id)
                              :file-id (str (:id fdata))
                              :id (str (:id mobj)))
 
                       (instance? org.graalvm.polyglot.PolyglotException cause)
                       (l/inf :hint "skip processing media object: invalid svg found"
-                             :team-id (str team-id)
                              :file-id (str (:id fdata))
                              :id (str (:id mobj)))
 
                       (= (:type edata) :not-found)
                       (l/inf :hint "skip processing media object: underlying object does not exist"
-                             :team-id (str team-id)
                              :file-id (str (:id fdata))
                              :id (str (:id mobj)))
 
@@ -1357,7 +1348,6 @@
                       (let [skip? *skip-on-graphic-error*]
                         (l/wrn :hint "unable to process file media object"
                                :skiped skip?
-                               :team-id (str team-id)
                                :file-id (str (:id fdata))
                                :id (str (:id mobj))
                                :cause cause)
@@ -1452,7 +1442,7 @@
                           data)))
         (fmg/migrate-file))))
 
-(defn- get-team
+(defn get-team
   [system team-id]
   (-> (db/get system :team {:id team-id}
               {::db/remove-deleted false
@@ -1506,17 +1496,19 @@
       AND f.deleted_at IS NULL
       FOR UPDATE")
 
-(defn- get-and-lock-files
+(defn get-and-lock-files
   [conn team-id]
   (->> (db/cursor conn [sql:get-and-lock-team-files team-id])
        (map :id)))
 
-(defn- update-team-features!
-  [conn team-id features]
-  (let [features (db/create-array conn "text" features)]
+(defn update-team!
+  [conn team]
+  (let [params (-> team
+                   (update :features db/encode-pgarray conn "text")
+                   (dissoc :id))]
     (db/update! conn :team
-                {:features features}
-                {:id team-id})))
+                params
+                {:id (:id team)})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PUBLIC API
@@ -1524,7 +1516,9 @@
 
 (defn migrate-file!
   [system file-id & {:keys [validate? skip-on-graphic-error? label]}]
-  (let [tpoint (dt/tpoint)]
+  (let [tpoint (dt/tpoint)
+        err    (volatile! false)]
+
     (binding [*file-stats* (atom {})
               *skip-on-graphic-error* skip-on-graphic-error?]
       (try
@@ -1533,40 +1527,50 @@
                :validate validate?
                :skip-on-graphic-error skip-on-graphic-error?)
 
-        (let [system (update system ::sto/storage media/configure-assets-storage)]
-          (db/tx-run! system
-                      (fn [system]
-                        (try
-                          (binding [*system* system]
-                            (when (string? label)
-                              (fsnap/take-file-snapshot! system {:file-id file-id
-                                                                 :label (str "migration/" label)}))
-                            (let [file (get-file system file-id)]
-                              (events/tap :progress
-                                          {:op :migrate-file
-                                           :name (:name file)
-                                           :id (:id file)})
+        (db/tx-run! (update system ::sto/storage media/configure-assets-storage)
+                    (fn [system]
+                      (binding [*system* system]
+                        (when (string? label)
+                          (fsnap/take-file-snapshot! system {:file-id file-id
+                                                             :label (str "migration/" label)}))
+                        (let [file (get-file system file-id)]
+                          (events/tap :progress
+                                      {:op :migrate-file
+                                       :name (:name file)
+                                       :id (:id file)})
 
-                              (process-file system file :validate? validate?)))
+                          (process-file system file :validate? validate?)))))
 
-                          (catch Throwable cause
-                            (let [team-id *team-id*]
-                              (l/wrn :hint "error on processing file"
-                                     :team-id (str team-id)
-                                     :file-id (str file-id))
-                              (throw cause)))))))
+        (catch Throwable cause
+          (vreset! err true)
+          (l/wrn :hint "error on processing file"
+                 :file-id (str file-id)
+                 :cause cause)
+          (throw cause))
 
         (finally
           (let [elapsed    (tpoint)
                 components (get @*file-stats* :processed-components 0)
                 graphics   (get @*file-stats* :processed-graphics 0)]
 
-            (l/dbg :hint "migrate:file:end"
-                   :file-id (str file-id)
-                   :graphics graphics
-                   :components components
-                   :validate validate?
-                   :elapsed (dt/format-duration elapsed))
+            (if (cache/cache? *cache*)
+              (let [cache-stats (cache/stats *cache*)]
+                (l/dbg :hint "migrate:file:end"
+                       :file-id (str file-id)
+                       :graphics graphics
+                       :components components
+                       :validate validate?
+                       :crt (mth/to-fixed (:hit-rate cache-stats) 2)
+                       :crq (str (:req-count cache-stats))
+                       :error @err
+                       :elapsed (dt/format-duration elapsed)))
+              (l/dbg :hint "migrate:file:end"
+                     :file-id (str file-id)
+                     :graphics graphics
+                     :components components
+                     :validate validate?
+                     :error @err
+                     :elapsed (dt/format-duration elapsed)))
 
             (some-> *stats* (swap! update :processed-files (fnil inc 0)))
             (some-> *team-stats* (swap! update :processed-files (fnil inc 0)))))))))
@@ -1588,7 +1592,7 @@
                          :skip-on-graphic-error? skip-on-graphic-error?))
         migrate-team
         (fn [{:keys [::db/conn] :as system} team-id]
-          (let [{:keys [id features name]} (get-team system team-id)]
+          (let [{:keys [id features] :as team} (get-team system team-id)]
             (if (contains? features "components/v2")
               (l/inf :hint "team already migrated")
               (let [features (-> features
@@ -1599,21 +1603,24 @@
 
                 (events/tap :progress
                             {:op :migrate-team
-                             :name name
+                             :name (:name team)
                              :id id})
 
                 (run! (partial migrate-file system)
                       (get-and-lock-files conn id))
 
-                (update-team-features! conn id features)))))]
+                (->> (assoc team :features features)
+                     (update-team! conn))))))]
 
-    (binding [*team-stats* (atom {})
-              *team-id* team-id]
+    (binding [*team-stats* (atom {})]
       (try
         (db/tx-run! system migrate-team team-id)
 
         (catch Throwable cause
           (vreset! err true)
+          (l/wrn :hint "error on processing team"
+                 :team-id (str team-id)
+                 :cause cause)
           (throw cause))
 
         (finally

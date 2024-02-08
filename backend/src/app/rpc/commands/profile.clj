@@ -39,6 +39,15 @@
 (declare strip-private-attrs)
 (declare verify-password)
 
+(defn clean-email
+  "Clean and normalizes email address string"
+  [email]
+  (let [email (str/lower email)
+        email (if (str/starts-with? email "mailto:")
+                (subs email 7)
+                email)]
+    email))
+
 (def ^:private
   schema:profile
   (sm/define
@@ -147,8 +156,7 @@
                     (let [profile    (validate-password! cfg (assoc params :profile-id profile-id))
                           session-id (::session/id params)]
 
-                      (when (= (str/lower (:email profile))
-                               (str/lower (:password params)))
+                      (when (= (:email profile) (str/lower (:password params)))
                         (ex/raise :type :validation
                                   :code :email-as-password
                                   :hint "you can't use your email as password"))
@@ -270,7 +278,7 @@
           cfg     (assoc cfg ::conn conn)
           params  (assoc params
                          :profile profile
-                         :email (str/lower email))]
+                         :email (clean-email email))]
       (if (contains? cf/flags :smtp)
         (request-email-change! cfg params)
         (change-email-immediately! cfg params)))))
@@ -409,10 +417,9 @@
                    where email = ?
                      and deleted_at is null) as val")
 
-(defn check-profile-existence!
+(defn- check-profile-existence!
   [conn {:keys [email] :as params}]
-  (let [email  (str/lower email)
-        result (db/exec-one! conn [sql:profile-existence email])]
+  (let [result (db/exec-one! conn [sql:profile-existence email])]
     (when (:val result)
       (ex/raise :type :validation
                 :code :email-already-exists))
@@ -427,7 +434,7 @@
 (defn get-profile-by-email
   "Returns a profile looked up by email or `nil` if not match found."
   [conn email]
-  (->> (db/exec! conn [sql:profile-by-email (str/lower email)])
+  (->> (db/exec! conn [sql:profile-by-email (clean-email email)])
        (map decode-row)
        (first)))
 
