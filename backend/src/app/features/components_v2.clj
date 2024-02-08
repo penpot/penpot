@@ -944,12 +944,12 @@
                   ;;
                   ;; WARNING: THIS SHOULD BE CALLED AT THE END OF THE PROCESS.
           (letfn [(fix-container [container]
-                    (d/update-when container :objects update-vals fix-shape))
-
-                  (fix-shape [shape]
-                    (cond-> shape
+                    (reduce fix-shape container (ctn/shapes-seq container)))
+                  (fix-shape [container shape]
+                    (cond-> container
                       (@detached-ids (:shape-ref shape))
-                      (ctk/detach-shape)))]
+                      (detach-shape shape)))]
+
             (-> file-data
                 (update :pages-index update-vals fix-container)
                 (d/update-when :components update-vals fix-container))))]
@@ -986,8 +986,7 @@
         (fix-false-copies)
         (fix-component-root-without-component)
         (fix-copies-of-detached); <- Do not add fixes after this and fix-orphan-copies call
-        ; This extra call to fix-orphan-copies after fix-copies-of-detached because we can have detached subtrees with invalid shape-ref attributes
-        (fix-orphan-copies))))
+        )))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; COMPONENTS MIGRATION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
