@@ -55,6 +55,7 @@
    [app.util.pointer-map :as pmap]
    [app.util.time :as dt]
    [buddy.core.codecs :as bc]
+   [clojure.set :refer [rename-keys]]
    [cuerdas.core :as str]
    [datoteka.io :as io]
    [promesa.exec :as px]
@@ -995,6 +996,9 @@
   [assets generic-name]
   (let [;; Group by first element of the path.
         groups (d/group-by #(first (cfh/split-path (:path %))) assets)
+        ;; If there is a group called as the generic-name we have to preserve it
+        unames (into #{} (keep str) (keys groups))
+        groups (rename-keys groups {generic-name (cfh/generate-unique-name unames generic-name)})
 
         ;; Split large groups in chunks of max-group-size elements
         groups (loop [groups (seq groups)
