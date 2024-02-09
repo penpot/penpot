@@ -254,36 +254,39 @@
      (prepare-restore-component nil library-data component-id it page (gpt/point 0 0) nil nil nil)))
 
   ([changes library-data component-id it page delta old-id parent-id frame-id]
-   (let [component    (ctkl/get-deleted-component library-data component-id)
-         parent       (get-in page [:objects parent-id])
-         main-inst    (get-in component [:objects (:main-instance-id component)])
+   (let [component         (ctkl/get-deleted-component library-data component-id)
+         parent            (get-in page [:objects parent-id])
+         main-inst         (get-in component [:objects (:main-instance-id component)])
          inside-component? (some? (ctn/get-instance-root (:objects page) parent))
+         origin-frame      (get-in page [:objects (:frame-id main-inst)])
+         ;; We are using a deleted component andit's coordenates are absolute, we must adjust them to its containing frame to adjust the delta
+         delta             (gpt/subtract delta (-> origin-frame :selrect gpt/point))
+         shapes            (cfh/get-children-with-self (:objects component) (:main-instance-id component))
+         shapes            (map #(gsh/move % delta) shapes)
 
-         shapes       (cfh/get-children-with-self (:objects component) (:main-instance-id component))
-         shapes       (map #(gsh/move % delta) shapes)
-         first-shape  (cond-> (first shapes)
-                        (not (nil? parent-id))
-                        (assoc :parent-id parent-id)
-                        (not (nil? frame-id))
-                        (assoc :frame-id frame-id)
-                        (and (nil? frame-id) parent (= :frame (:type parent)))
-                        (assoc :frame-id parent-id)
-                        (and (nil? frame-id) parent (not= :frame (:type parent)))
-                        (assoc :frame-id (:frame-id parent))
-                        inside-component?
-                        (dissoc :component-root)
-                        (not inside-component?)
-                        (assoc :component-root true))
+         first-shape       (cond-> (first shapes)
+                             (not (nil? parent-id))
+                             (assoc :parent-id parent-id)
+                             (not (nil? frame-id))
+                             (assoc :frame-id frame-id)
+                             (and (nil? frame-id) parent (= :frame (:type parent)))
+                             (assoc :frame-id parent-id)
+                             (and (nil? frame-id) parent (not= :frame (:type parent)))
+                             (assoc :frame-id (:frame-id parent))
+                             inside-component?
+                             (dissoc :component-root)
+                             (not inside-component?)
+                             (assoc :component-root true))
 
-         changes      (-> (or changes (pcb/empty-changes it))
-                          (pcb/with-page page)
-                          (pcb/with-objects (:objects page))
-                          (pcb/with-library-data library-data))
-         changes      (cond-> (pcb/add-object changes first-shape {:ignore-touched true})
-                        (some? old-id) (pcb/amend-last-change #(assoc % :old-id old-id))) ; on copy/paste old id is used later to reorder the paster layers
-         changes      (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
-                              changes
-                              (rest shapes))]
+         changes           (-> (or changes (pcb/empty-changes it))
+                               (pcb/with-page page)
+                               (pcb/with-objects (:objects page))
+                               (pcb/with-library-data library-data))
+         changes           (cond-> (pcb/add-object changes first-shape {:ignore-touched true})
+                             (some? old-id) (pcb/amend-last-change #(assoc % :old-id old-id))) ; on copy/paste old id is used later to reorder the paster layers
+         changes           (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
+                                   changes
+                                   (rest shapes))]
      {:changes (pcb/restore-component changes component-id (:id page) main-inst)
       :shape (first shapes)})))
 
