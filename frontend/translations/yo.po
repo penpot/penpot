@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-02-14 08:02+0000\n"
-"Last-Translator: Alejandro Alonso <alejandro.alonso@kaleidos.net>\n"
+"PO-Revision-Date: 2024-04-24 13:04+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Yoruba "
 "<https://hosted.weblate.org/projects/penpot/frontend/yo/>\n"
 "Language: yo\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.4-dev\n"
+"X-Generator: Weblate 5.5.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.check-your-email"
@@ -54,10 +54,6 @@ msgstr "wọlé síbí"
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
 msgstr "wọlé"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "ó dára láti rí ẹ lẹ́ẹ̀kan sí i!"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
@@ -893,6 +889,7 @@ msgstr "Àsìṣe nínú ètò ìsopọ̀, kò lè dé ibi URL"
 msgid "errors.webhooks.invalid-uri"
 msgstr "URL kò páásì ìfọwọ́sí."
 
+#, fuzzy
 msgid "errors.webhooks.last-delivery"
 msgstr "Èyí tí a fijíṣẹ́ kẹ́yìn kò dára."
 
@@ -950,6 +947,7 @@ msgid "feedback.title"
 msgstr "Ímeèlì"
 
 #: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
 msgid "feedback.twitter-go-to"
 msgstr "Lọ sí Tíwítà"
 
@@ -958,6 +956,7 @@ msgid "feedback.twitter-subtitle1"
 msgstr "A wà níbí láti ṣe ìrànlọ́wọ́ fún àwọn ìbéèrè tó bá wà lórí iṣẹ́ ọnà."
 
 #: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
 msgid "feedback.twitter-title"
 msgstr "Àkáùnti àtìlẹ́yìn fún Tíwítà"
 
@@ -2211,10 +2210,6 @@ msgid "questions.more-than-50"
 msgstr "Ju àádọ́ta lọ"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.never-used-a-tool"
-msgstr "N kò tí lo irin iṣẹ́ eto ọnà tẹ́lẹ̀ rí"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.next"
 msgstr "Èyí tó kàn"
 
@@ -2686,9 +2681,6 @@ msgstr "Yi ipo idojukọ pada"
 msgid "shortcuts.toggle-fullscreen"
 msgstr "Yi kuro ni fulscrin"
 
-msgid "shortcuts.toggle-grid"
-msgstr "Fihan / Tọju ilana"
-
 msgid "shortcuts.toggle-layers"
 msgstr "Yi awon pelebe yii pada"
 
@@ -2697,15 +2689,6 @@ msgstr "Tiipa / Siilẹ"
 
 msgid "shortcuts.toggle-lock-size"
 msgstr "títìipa lápàkàn"
-
-msgid "shortcuts.toggle-rules"
-msgstr "Fifihan / Titọju ólórì"
-
-msgid "shortcuts.toggle-scale-text"
-msgstr "Yipada asekale ọrọ"
-
-msgid "shortcuts.toggle-snap-guide"
-msgstr "Pín si awọ́n ítọ̀nisọ́nà"
 
 msgid "shortcuts.toggle-textpalette"
 msgstr "Yíípàda ọrọ paleti"
@@ -3024,10 +3007,6 @@ msgstr "Pa asèkalẹ̀ iwọnbà"
 msgid "workspace.header.menu.disable-scale-text"
 msgstr "Pa ọrọ iwọnba"
 
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.disable-snap-grid"
-msgstr "Pa yipada si ilana"
-
 msgid "workspace.header.menu.disable-snap-pixel-grid"
 msgstr "Pa yipada si piseli"
 
@@ -3043,19 +3022,11 @@ msgid "workspace.header.menu.enable-scale-text"
 msgstr "Tan iwọnbà ọrọ"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.enable-snap-grid"
-msgstr "Yipada si ilana"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-snap-guides"
 msgstr "Yipada si itọ̀nìsọna"
 
 msgid "workspace.header.menu.enable-snap-pixel-grid"
 msgstr "Tan Yipada si piseli"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-grid"
-msgstr "Tọ̀jú ilana"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -3098,10 +3069,6 @@ msgstr "Tun ṣe"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.select-all"
 msgstr "Sa gbogbo rẹ"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-grid"
-msgstr "ifihan akoj"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"

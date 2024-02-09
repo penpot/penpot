@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-01-24 14:27+0000\n"
-"Last-Translator: Ahmad HosseinBor <123hozeifeh@gmail.com>\n"
+"PO-Revision-Date: 2024-04-24 12:55+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Persian "
 "<https://hosted.weblate.org/projects/penpot/frontend/fa/>\n"
 "Language: fa\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 4.16-dev\n"
+"X-Generator: Weblate 5.5.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -59,10 +59,6 @@ msgstr "ورود از اینجا"
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
 msgstr "ورود"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "خوشحالم که دوباره شما را می‌بینم!"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
@@ -860,6 +856,7 @@ msgid "feedback.title"
 msgstr "ایمیل"
 
 #: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
 msgid "feedback.twitter-go-to"
 msgstr "به توییتر بروید"
 
@@ -1875,9 +1872,6 @@ msgstr "انتقال"
 
 msgid "shortcuts.paste"
 msgstr "چسباندن"
-
-msgid "shortcuts.toggle-rules"
-msgstr "نمایش/پنهان کردن خط‌کش‌ها"
 
 msgid "shortcuts.undo"
 msgstr "واگرد"

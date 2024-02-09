@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-10-10 10:01+0000\n"
-"Last-Translator: AlexTECPlayz <alextec70@outlook.com>\n"
+"PO-Revision-Date: 2024-04-24 12:55+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Romanian "
 "<https://hosted.weblate.org/projects/penpot/frontend/ro/>\n"
 "Language: ro\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n==1 ? 0 : (n==0 || (n%100 > 0 && n%100 < "
 "20)) ? 1 : 2;\n"
-"X-Generator: Weblate 5.1-dev\n"
+"X-Generator: Weblate 5.5.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -60,10 +60,6 @@ msgstr "Conectează-te"
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
 msgstr "Intră în cont"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Mă bucur să te văd din nou!"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
@@ -1004,6 +1000,7 @@ msgstr "Eroare de conexiune, URL-ul nu poate fi accesat"
 msgid "errors.webhooks.invalid-uri"
 msgstr "URL-ul nu a trecut validarea."
 
+#, fuzzy
 msgid "errors.webhooks.last-delivery"
 msgstr "Ultima livrare nu a avut succes."
 
@@ -2974,9 +2971,6 @@ msgstr "Blocați selecția"
 msgid "shortcuts.toggle-lock-size"
 msgstr "Blocați proporțiile"
 
-msgid "shortcuts.toggle-rules"
-msgstr "Afișați/ascundeți rigle"
-
 msgid "shortcuts.toggle-textpalette"
 msgstr "Comutați paleta de text"
 
@@ -3138,6 +3132,7 @@ msgstr "Afişează interacţiunile la click"
 msgid "viewer.header.sitemap"
 msgstr "Harta site-ului"
 
+#, fuzzy
 msgid "webhooks.last-delivery.success"
 msgstr "Ultima livrare a fost cu succes."
 

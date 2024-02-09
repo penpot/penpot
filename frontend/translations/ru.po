@@ -58,10 +58,6 @@ msgstr "Войти здесь"
 msgid "auth.login-submit"
 msgstr "Вход"
 
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Рады видеть Вас снова!"
-
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
@@ -1998,9 +1994,6 @@ msgstr "Переключить историю"
 
 msgid "shortcuts.toggle-layers"
 msgstr "Переключить слои"
-
-msgid "shortcuts.toggle-rules"
-msgstr "Показать/скрыть линейки"
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"

@@ -56,10 +56,6 @@ msgid "auth.login-submit"
 msgstr "ログイン"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "またお会いしましたね！"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
 

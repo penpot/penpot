@@ -62,10 +62,6 @@ msgid "auth.login-submit"
 msgstr "Prisijungti"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Malonu Jus vėl matyti!"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
 

@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-02-14 08:02+0000\n"
-"Last-Translator: Alejandro Alonso <alejandro.alonso@kaleidos.net>\n"
+"PO-Revision-Date: 2024-04-24 12:55+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Igbo "
 "<https://hosted.weblate.org/projects/penpot/frontend/ig/>\n"
 "Language: ig\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.4-dev\n"
+"X-Generator: Weblate 5.5.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.check-your-email"
@@ -52,10 +52,6 @@ msgstr "Banye ebe a"
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
 msgstr "Banye"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Ihe ịtụnanya ịhụ gị !"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
@@ -875,6 +871,7 @@ msgid "feedback.title"
 msgstr "Ozi- n"
 
 #: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
 msgid "feedback.twitter-go-to"
 msgstr "Gaa na Twita"
 
@@ -1979,10 +1976,6 @@ msgstr "Ịzụ ahịa"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.more-than-50"
 msgstr "Karịrị iri ise"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.never-used-a-tool"
-msgstr "E jibeghị m ngwa ọrụ nse rụọ ọrụ mbụ"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.next"

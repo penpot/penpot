@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-02-17 14:02+0000\n"
+"PO-Revision-Date: 2024-04-25 13:07+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew "
 "<https://hosted.weblate.org/projects/penpot/frontend/he/>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
 "n % 10 == 0) ? 2 : 3));\n"
-"X-Generator: Weblate 5.4\n"
+"X-Generator: Weblate 5.5.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -49,6 +49,10 @@ msgstr "שכחת סיסמה?"
 msgid "auth.fullname"
 msgstr "שם מלא"
 
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-account-title"
+msgstr "כניסה לחשבון שלי"
+
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.login-here"
 msgstr "כניסה מכאן"
@@ -58,8 +62,8 @@ msgid "auth.login-submit"
 msgstr "כניסה"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "שמחים לראות אותך שוב!"
+msgid "auth.login-tagline"
+msgstr "Penpot הוא כלי בקוד פתוח לשיתוף עיצוב וקוד"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
@@ -835,6 +839,10 @@ msgstr "אישור"
 msgid "ds.confirm-title"
 msgstr "להמשיך?"
 
+#: src/app/main/data/users.cljs
+msgid "errors.auth-provider-not-allowed"
+msgstr "ספק האימות לא מורשה לפרופיל הזה"
+
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.auth-provider-not-configured"
 msgstr "לא מוגדר ספק אימות."
@@ -866,6 +874,10 @@ msgstr "כתובת הדוא״ל כבר אומתה."
 
 msgid "errors.email-as-password"
 msgstr "אין לך אפשרות להשתמש בכתובת הדוא״ל שלך כסיסמה"
+
+#: src/app/main/data/users.cljs
+msgid "errors.email-domain-not-allowed"
+msgstr "שם התחום לא מורשה"
 
 #: src/app/main/ui/auth/register.cljs,
 #: src/app/main/ui/auth/recovery_request.cljs,
@@ -1057,7 +1069,7 @@ msgstr "דוא״ל"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-go-to"
-msgstr "מעבר לטוויטר"
+msgstr "מעבר ל־X"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-subtitle1"
@@ -1065,7 +1077,7 @@ msgstr "כאן כדי לסייע בסוגיות טכניות."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-title"
-msgstr "חשבון תמיכה בטוויטר"
+msgstr "חשבון תמיכה ב־X"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
@@ -2087,6 +2099,20 @@ msgstr "לעזוב את הצוות הזה?"
 msgid "modals.leave-confirm.title"
 msgstr "עזיבת הצוות"
 
+msgid "modals.move-shared-confirm.message"
+msgid_plural "modals.move-shared-confirm.message"
+msgstr[0] "להעביר את הספרייה הזאת?"
+msgstr[1] "להעביר את הספריות האלו?"
+msgstr[2] "להעביר את הספריות האלו?"
+msgstr[3] "להעביר את הספריות האלו?"
+
+msgid "modals.move-shared-confirm.title"
+msgid_plural "modals.move-shared-confirm.title"
+msgstr[0] "העברת ספרייה"
+msgstr[1] "העברת ספריות"
+msgstr[2] "העברת ספריות"
+msgstr[3] "העברת ספריות"
+
 #: src/app/main/ui/workspace/nudge.cljs
 msgid "modals.nudge-title"
 msgstr "כמות ההינד"
@@ -2366,6 +2392,9 @@ msgstr "ללא הגבלת משתמשים"
 msgid "onboarding.team-modal.create-team-feature-5"
 msgstr "100% בחינם!"
 
+msgid "onboarding.team-modal.team-definition"
+msgstr "מה זה צוות?"
+
 msgid "onboarding.templates.subtitle"
 msgstr "הנה כמה תבניות."
 
@@ -2468,6 +2497,10 @@ msgid "questions.more-than-50"
 msgstr "גדול מ־50"
 
 #: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.never-used-one"
+msgstr "אין"
+
+#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.next"
 msgstr "הבאה"
 
@@ -2557,6 +2590,10 @@ msgstr "ניתוק"
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "settings.multiple"
 msgstr "מעורב"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs
+msgid "settings.select-this-color"
+msgstr "בחירת פריטים שמשתמשים בסגנון הזה"
 
 # SECTIONS
 msgid "shortcut-section.basics"
@@ -2911,6 +2948,9 @@ msgstr "ביצוע חוזר"
 msgid "shortcuts.reset-zoom"
 msgstr "איפוס תקריב"
 
+msgid "shortcuts.scale"
+msgstr "התאמת גודל"
+
 msgid "shortcuts.search-placeholder"
 msgstr "חיפוש בקיצורי הדרך"
 
@@ -2984,6 +3024,9 @@ msgstr "החלפת מצב מיקוד"
 msgid "shortcuts.toggle-fullscreen"
 msgstr "החלפת מילוי מסך"
 
+msgid "shortcuts.toggle-guides"
+msgstr "הצגת / הסתרת קווים מנחים"
+
 msgid "shortcuts.toggle-history"
 msgstr "החלפת הצגת היסטוריה"
 
@@ -2993,14 +3036,23 @@ msgstr "החלפת הצגת שכבות"
 msgid "shortcuts.toggle-layout-flex"
 msgstr "הוספת/הסרת פריסת flex"
 
+msgid "shortcuts.toggle-layout-grid"
+msgstr "הוספת/הסרת פריסת רשת"
+
 msgid "shortcuts.toggle-lock"
 msgstr "נעילת הנבחרים"
 
 msgid "shortcuts.toggle-lock-size"
 msgstr "נעילת יחס"
 
-msgid "shortcuts.toggle-rules"
-msgstr "הצגת/הסתרת סרגלים"
+msgid "shortcuts.toggle-rulers"
+msgstr "הצגת / הסתרת סרגלים"
+
+msgid "shortcuts.toggle-snap-guides"
+msgstr "הצמדה לקווים מנחים"
+
+msgid "shortcuts.toggle-snap-ruler-guide"
+msgstr "הצמדה לקווים מנחים סרגלים"
 
 msgid "shortcuts.toggle-textpalette"
 msgstr "החלפת לוח טקסט"
@@ -3298,6 +3350,10 @@ msgstr[3] "%s פריטים נבחרו"
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.shared-library"
 msgstr "ספרייה משותפת"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.sort"
+msgstr "מיון"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs

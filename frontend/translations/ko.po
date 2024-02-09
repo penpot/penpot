@@ -44,10 +44,6 @@ msgid "auth.login-submit"
 msgstr "로그인"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "다시 만나서 반가워요!"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
 

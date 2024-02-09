@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-01-02 16:16+0000\n"
-"Last-Translator: Alejandro Alonso <alejandro.alonso@kaleidos.net>\n"
+"PO-Revision-Date: 2024-04-24 12:55+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Arabic "
 "<https://hosted.weblate.org/projects/penpot/frontend/ar/>\n"
 "Language: ar\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
 "&& n%100<=10 ? 3 : n%100>=11 ? 4 : 5;\n"
-"X-Generator: Weblate 5.4-dev\n"
+"X-Generator: Weblate 5.5.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -56,10 +56,6 @@ msgstr "تسجيل الدخول هنا"
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
 msgstr "تسجيل الدخول"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "سعيد برؤيتك مجددا!"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
@@ -858,6 +854,7 @@ msgstr "رمز غير معروف"
 msgid "errors.webhooks.connection"
 msgstr "خطأ في الاتصال ، عنوان إلكتروني لا يمكن الوصول إليه"
 
+#, fuzzy
 msgid "errors.webhooks.last-delivery"
 msgstr "آخر تسليم لم يكن ناجحًا."
 
@@ -917,6 +914,7 @@ msgid "feedback.twitter-subtitle1"
 msgstr "هنا للمساعدة في استفساراتك التقنية."
 
 #: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
 msgid "feedback.twitter-title"
 msgstr "رد عنوان تويتر"
 
@@ -2434,6 +2432,7 @@ msgstr "أطهر التفاعلات بالنقر"
 msgid "viewer.header.sitemap"
 msgstr "خريطة الموقع"
 
+#, fuzzy
 msgid "webhooks.last-delivery.success"
 msgstr "محاذاة المركز الأفقي"
 
