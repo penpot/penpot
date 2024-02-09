@@ -51,6 +51,12 @@
       border-top: $s-1 solid var(--dropdown-separator-color);
     }
   }
+
+  .custom-select-dropdown[data-direction="up"] {
+    bottom: $s-32;
+    top: auto;
+  }
+
   .checked-element {
     @extend .dropdown-element-base;
     .icon {
