@@ -24,6 +24,7 @@
   cljs.core/IDeref
   (-deref [it] (.getBrowserEvent it)))
 
+(declare get-window-size)
 
 (defn browser-event?
   [o]
@@ -410,6 +411,19 @@
      :bottom (.-bottom ^js rect)
      :width (.-width ^js rect)
      :height (.-height ^js rect)}))
+
+(defn is-bounding-rect-outside?
+  [rect]
+  (let [{:keys [left top right bottom]} rect
+        {:keys [width height]} (get-window-size)]
+    (or (< left 0)
+        (< top 0)
+        (> right width)
+        (> bottom height))))
+
+(defn is-element-outside?
+  [element]
+  (is-bounding-rect-outside? (get-bounding-rect element)))
 
 (defn bounding-rect->rect
   [rect]
