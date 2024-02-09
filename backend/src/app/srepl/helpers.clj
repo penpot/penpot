@@ -15,9 +15,7 @@
    [app.common.features :as cfeat]
    [app.common.files.changes :as cpc]
    [app.common.files.migrations :as fmg]
-   [app.common.files.repair :as repair]
    [app.common.files.validate :as cfv]
-   [app.common.files.validate :as validate]
    [app.common.logging :as l]
    [app.common.pprint :refer [pprint]]
    [app.common.spec :as us]
@@ -133,69 +131,6 @@
                 (db/update! system :file
                             {:data data}
                             {:id id}))))
-
-(defn validate-file
-  "Validate structure, referencial integrity and semantic coherence of
-  all contents of a file. Returns a list of errors."
-  [id]
-  (db/tx-run! main/system
-              (fn [{:keys [::db/conn] :as system}]
-                (let [id   (if (string? id) (parse-uuid id) id)
-                      file (get-file system id)
-                      libs (->> (files/get-file-libraries conn id)
-                                (into [file] (map (fn [{:keys [id]}]
-                                                    (get-file system id))))
-                                (d/index-by :id))]
-                  (validate/validate-file file libs)))))
-
-(defn repair-file*
-  "Internal helper for validate and repair the file. The operation is
-  applied multiple times untile file is fixed or max iteration counter
-  is reached (default 10)"
-  [system id & {:keys [max-iterations] :or {max-iterations 10}}]
-  (let [id (parse-uuid id)
-
-        validate-and-repair
-        (fn [file libs iteration]
-          (when-let [errors (not-empty (validate/validate-file file libs))]
-            (l/trc :hint "repairing file"
-                   :file-id (str id)
-                   :iteration iteration
-                   :errors (count errors))
-            (let [changes (repair/repair-file file libs errors)]
-              (-> file
-                  (update :revn inc)
-                  (update :data cpc/process-changes changes)))))
-
-        process-file
-        (fn [file libs]
-          (loop [file      file
-                 iteration 0]
-            (if (> iteration max-iterations)
-              (do
-                (l/wrn :hint "max retry num reached on repairing file"
-                       :file-id (str id)
-                       :iteration iteration)
-                file)
-              (if-let [file (validate-and-repair file libs iteration)]
-                (recur file (inc iteration))
-                file))))]
-
-    (db/tx-run! system
-                (fn [{:keys [::db/conn] :as system}]
-                  (let [file (get-file system id)
-                        libs (->> (files/get-file-libraries conn id)
-                                  (into [file] (map (fn [{:keys [id]}]
-                                                      (get-file system id))))
-                                  (d/index-by :id))
-                        file (process-file file libs)]
-                    (update-file! system file))))))
-
-(defn repair-file!
-  "Repair the list of errors detected by validation."
-  [id & {:keys [rollback?] :or {rollback? true} :as opts}]
-  (let [system (or *system* (assoc main/system ::db/rollback rollback?))]
-    (repair-file* system id (dissoc opts :rollback?))))
 
 (defn process-file*
   [system file-id update-fn]
