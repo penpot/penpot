@@ -41,7 +41,9 @@
    (let [changes (empty-changes origin)]
      (with-meta changes
        {::page-id page-id})))
-
+  ([]
+   {:redo-changes []
+    :undo-changes '()})
   ([origin]
    {:redo-changes []
     :undo-changes '()
@@ -109,13 +111,9 @@
 
 (defn concat-changes
   [changes1 changes2]
-  {:redo-changes (d/concat-vec (:redo-changes changes1)
-                               (:redo-changes changes2))
-   :undo-changes (concat (:undo-changes changes1)
-                         (:undo-changes changes2))
-   :origin (:origin changes1)
-   :undo-group (:undo-group changes1)
-   :tags (:tags changes1)})
+  (-> changes1
+      (update :redo-changes d/concat-vec (:redo-changes changes2))
+      (update :undo-changes d/concat-vec (:undo-changes changes2))))
 
 ; TODO: remove this when not needed
 (defn- assert-page-id!

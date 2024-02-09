@@ -1393,30 +1393,35 @@
 (defn- update-flex-child-copy-attrs
   "Synchronizes the attributes inside the flex-child items (main->copy)"
   [changes _shape-main shape-copy main-container main-component copy-container omit-touched?]
-  (-> changes
-      (pcb/with-container copy-container)
-      (pcb/with-objects (:objects copy-container))
-      (pcb/update-shapes
-       (:shapes shape-copy)
-       (fn [child-copy]
-         (let [child-main (ctf/get-ref-shape main-container main-component child-copy)]
-           (-> child-copy
-               (propagate-attrs child-main ctk/swap-keep-attrs omit-touched?))))
-       {:ignore-touched true})))
+  (let [do-changes
+        (fn [cc]
+          (-> cc
+              (pcb/with-container copy-container)
+              (pcb/with-objects (:objects copy-container))
+              (pcb/update-shapes
+               (:shapes shape-copy)
+               (fn [child-copy]
+                 (let [child-main (ctf/get-ref-shape main-container main-component child-copy)]
+                   (-> child-copy
+                       (propagate-attrs child-main ctk/swap-keep-attrs omit-touched?))))
+               {:ignore-touched true})))]
+    (pcb/concat-changes changes (do-changes (pcb/empty-changes)))))
 
 (defn- update-flex-child-main-attrs
   "Synchronizes the attributes inside the flex-child items (copy->main)"
   [changes shape-main shape-copy main-container copy-container omit-touched?]
-  (-> changes
-      (pcb/with-page main-container)
-      (pcb/with-objects (:objects main-container))
-      (pcb/update-shapes
-       (:shapes shape-main)
-       (fn [child-main]
-         (let [child-copy (ctf/get-shape-in-copy copy-container child-main shape-copy)]
-           (-> child-main
-               (propagate-attrs child-copy ctk/swap-keep-attrs omit-touched?))))
-       {:ignore-touched true})))
+  (let [new-changes
+        (-> (pcb/empty-changes)
+            (pcb/with-page main-container)
+            (pcb/with-objects (:objects main-container))
+            (pcb/update-shapes
+             (:shapes shape-main)
+             (fn [child-main]
+               (let [child-copy (ctf/get-shape-in-copy copy-container child-main shape-copy)]
+                 (-> child-main
+                     (propagate-attrs child-copy ctk/swap-keep-attrs omit-touched?))))
+             {:ignore-touched true}))]
+    (pcb/concat-changes changes new-changes)))
 
 (defn- update-grid-copy-attrs
   "Synchronizes the `layout-grid-cells` property from the main shape to the copies"
@@ -1429,19 +1434,21 @@
                 (fn [copy-shape]
                   (let [main-shape (ctf/get-ref-shape main-container main-component copy-shape)]
                     [(:id main-shape) (:id copy-shape)]))))
-              (:shapes shape-copy))]
+              (:shapes shape-copy))
 
-    (-> changes
-        (pcb/with-container copy-container)
-        (pcb/with-objects (:objects copy-container))
-        (pcb/update-shapes
-         [(:id shape-copy)]
-         (fn [shape-copy]
-           ;; Take cells from main and remap the shapes to assign it to the copy
-           (let [copy-cells (:layout-grid-cells shape-copy)
-                 main-cells (-> (ctl/remap-grid-cells shape-main ids-map) :layout-grid-cells)]
-             (assoc shape-copy :layout-grid-cells (ctl/merge-cells copy-cells main-cells omit-touched?))))
-         {:ignore-touched true}))))
+        new-changes
+        (-> (pcb/empty-changes)
+            (pcb/with-container copy-container)
+            (pcb/with-objects (:objects copy-container))
+            (pcb/update-shapes
+             [(:id shape-copy)]
+             (fn [shape-copy]
+               ;; Take cells from main and remap the shapes to assign it to the copy
+               (let [copy-cells (:layout-grid-cells shape-copy)
+                     main-cells (-> (ctl/remap-grid-cells shape-main ids-map) :layout-grid-cells)]
+                 (assoc shape-copy :layout-grid-cells (ctl/merge-cells copy-cells main-cells omit-touched?))))
+             {:ignore-touched true}))]
+    (pcb/concat-changes changes new-changes)))
 
 (defn- update-grid-main-attrs
   "Synchronizes the `layout-grid-cells` property from the copy to the main shape"
@@ -1454,17 +1461,20 @@
                 (fn [main-shape]
                   (let [copy-shape (ctf/get-shape-in-copy copy-container main-shape shape-copy)]
                     [(:id copy-shape) (:id main-shape)]))))
-              (:shapes shape-main))]
-    (-> changes
-        (pcb/with-page main-container)
-        (pcb/with-objects (:objects main-container))
-        (pcb/update-shapes
-         [(:id shape-main)]
-         (fn [shape-main]
-           ;; Take cells from copy and remap the shapes to assign it to the copy
-           (let [new-cells (-> (ctl/remap-grid-cells shape-copy ids-map) :layout-grid-cells)]
-             (assoc shape-main :layout-grid-cells new-cells)))
-         {:ignore-touched true}))))
+              (:shapes shape-main))
+
+        new-changes
+        (-> (pcb/empty-changes)
+            (pcb/with-page main-container)
+            (pcb/with-objects (:objects main-container))
+            (pcb/update-shapes
+             [(:id shape-main)]
+             (fn [shape-main]
+               ;; Take cells from copy and remap the shapes to assign it to the copy
+               (let [new-cells (-> (ctl/remap-grid-cells shape-copy ids-map) :layout-grid-cells)]
+                 (assoc shape-main :layout-grid-cells new-cells)))
+             {:ignore-touched true}))]
+    (pcb/concat-changes changes new-changes)))
 
 (defn- reposition-shape
   [shape origin-root dest-root]
