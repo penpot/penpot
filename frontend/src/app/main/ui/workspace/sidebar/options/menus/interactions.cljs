@@ -573,7 +573,9 @@
               [:span {:class (stl/css :rectangle)}]]]]
 
                  ;; Overlay click outside
-           [:div {:class (stl/css :property-row)}
+
+          [:ul {:class (stl/css :property-list)}
+           [:li {:class (stl/css :property-row)}
             [:div {:class (stl/css :checkbox-option)}
              [:label {:for (str "close-" index)
                       :class (stl/css-case  :global/checked close-click-outside?)}
@@ -587,7 +589,7 @@
                        :on-change change-close-click-outside}]]]]
 
                 ;; Overlay background
-           [:div {:class (stl/css :property-row)}
+           [:li {:class (stl/css :property-row)}
             [:div {:class (stl/css :checkbox-option)}
              [:label {:for (str "background-" index)
                       :class (stl/css-case  :global/checked background-overlay?)}
@@ -598,7 +600,7 @@
               [:input {:type "checkbox"
                        :id (str "background-" index)
                        :checked background-overlay?
-                       :on-change change-background-overlay}]]]]])
+                       :on-change change-background-overlay}]]]]]])
 
         (when (ctsi/has-animation? interaction)
           [:*
