@@ -403,10 +403,10 @@
 
 
     [:div {:class (stl/css-case  :element-set-options-group true
-                                 :open extended-open?)}
+                                 :element-set-options-group-open extended-open?)}
           ; Summary
      [:div {:class (stl/css :interactions-summary)}
-      [:div {:class (stl/css-case :extend-btn true
+      [:button {:class (stl/css-case :extend-btn true
                                   :extended extended-open?)
              :on-click toggle-extended}
        i/menu-refactor]
