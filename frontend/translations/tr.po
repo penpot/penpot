@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-01-28 11:01+0000\n"
+"PO-Revision-Date: 2024-02-10 15:02+0000\n"
 "Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
 "Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
 "tr/>\n"
@@ -5237,3 +5237,60 @@ msgid "workspace.options.export-object"
 msgid_plural "workspace.options.export-object"
 msgstr[0] "1 ögeyi dışa aktar"
 msgstr[1] "%s ögeyi dışa aktar"
+
+msgid "shortcuts.toggle-theme"
+msgstr "Temayı değiştir"
+
+msgid "workspace.header.menu.toggle-light-theme"
+msgstr "Açık temaya geç"
+
+msgid "workspace.header.menu.toggle-dark-theme"
+msgstr "Koyu temaya geç"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.loading"
+msgstr "Yükleniyor…"
+
+msgid "workspace.context-menu.grid-track.column.add-before"
+msgstr "Sola 1 sütun ekle"
+
+msgid "workspace.context-menu.grid-track.column.add-after"
+msgstr "Sağa 1 sütun ekle"
+
+msgid "workspace.context-menu.grid-track.column.delete"
+msgstr "Sütunu sil"
+
+msgid "workspace.context-menu.grid-track.column.delete-shapes"
+msgstr "Sütun ve şekilleri sil"
+
+msgid "workspace.context-menu.grid-track.row.duplicate"
+msgstr "Yinelenen satır"
+
+msgid "workspace.context-menu.grid-track.row.delete"
+msgstr "Satırı sil"
+
+msgid "workspace.context-menu.grid-cells.merge"
+msgstr "Hücreleri birleştir"
+
+msgid "workspace.context-menu.grid-cells.area"
+msgstr "Alan oluştur"
+
+msgid "workspace.context-menu.grid-cells.create-board"
+msgstr "Çalışma yüzeyi oluştur"
+
+msgid "dashboard.import.analyze-error.components-v2"
+msgstr ""
+"Bileşenler v2 ile dosya etkinleştirildi ancak bu takım henüz bunu "
+"desteklemiyor."
+
+msgid "workspace.context-menu.grid-track.column.duplicate"
+msgstr "Yinelenen sütun"
+
+msgid "workspace.context-menu.grid-track.row.add-before"
+msgstr "Yukarıya 1 satır ekle"
+
+msgid "workspace.context-menu.grid-track.row.add-after"
+msgstr "Aşağıya 1 satır ekle"
+
+msgid "workspace.context-menu.grid-track.row.delete-shapes"
+msgstr "Satır ve şekilleri sil"
