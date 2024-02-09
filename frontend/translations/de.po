@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-01-23 15:01+0000\n"
+"PO-Revision-Date: 2024-03-22 16:01+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
-"Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
-"de/>\n"
+"Language-Team: German "
+"<https://hosted.weblate.org/projects/penpot/frontend/de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.4-dev\n"
+"X-Generator: Weblate 5.5-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -179,8 +179,19 @@ msgstr ""
 "und Datenschutzrichtlinien zu."
 
 #: src/app/main/ui/auth/register.cljs
+#, markdown
+msgid "auth.terms-privacy-agreement-md"
+msgstr ""
+"Wenn Sie ein neues Konto erstellen, stimmen Sie unseren "
+"[Nutzungsbedingungen](%s) und [Datenschutzrichtlinien](%s) zu."
+
+#: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
 msgstr "Wir haben eine Bestätigungs-E-Mail gesendet an"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "branding-illustrations-marketing-pieces"
+msgstr "...Branding, Illustrationen, Marketingmaterialien, usw."
 
 msgid "common.publish"
 msgstr "Veröffentlichen"
@@ -535,6 +546,11 @@ msgstr "Dateien importieren"
 
 msgid "dashboard.import.analyze-error"
 msgstr "Huch! Wir konnten diese Datei nicht importieren"
+
+msgid "dashboard.import.analyze-error.components-v2"
+msgstr ""
+"Datei mit Komponenten v2 aktiviert, aber dieses Team unterstützt es noch "
+"nicht."
 
 msgid "dashboard.import.import-error"
 msgstr ""
@@ -911,6 +927,13 @@ msgstr ""
 msgid "errors.feature-not-supported"
 msgstr "Die Funktion '%s' wird nicht unterstützt."
 
+#: src/app/main/errors.cljs
+msgid "errors.file-feature-mismatch"
+msgstr ""
+"Es scheint eine Nichtübereinstimmung zwischen den aktivierten Funktionen "
+"und den Funktionen der Datei zu geben. Die Migrationen für '%s' müssen "
+"durchgeführt werden, bevor die Datei geöffnet werden kann."
+
 #: src/app/main/ui/auth/verify_token.cljs,
 #: src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.generic"
@@ -963,6 +986,9 @@ msgstr "Bestätigungspasswort muss übereinstimmen"
 msgid "errors.password-too-short"
 msgstr "Das Passwort sollte mindestens 8 Zeichen lang sein"
 
+msgid "errors.paste-data-validation"
+msgstr "Ungültige Daten in der Zwischenablage"
+
 msgid "errors.profile-blocked"
 msgstr "Das Profil ist gesperrt"
 
@@ -977,6 +1003,10 @@ msgstr ""
 #: src/app/main/ui/auth/register.cljs
 msgid "errors.registration-disabled"
 msgstr "Die Registrierung ist derzeit deaktiviert."
+
+#: src/app/main/errors.cljs
+msgid "errors.team-feature-mismatch"
+msgstr "Inkompatible Funktion '%s' erkannt"
 
 msgid "errors.team-leave.insufficient-members"
 msgstr ""
@@ -1000,6 +1030,13 @@ msgstr "Ein unerwarteter Fehler ist aufgetreten."
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "errors.unexpected-token"
 msgstr "Unbekannter Token"
+
+msgid "errors.validation"
+msgstr "Validierungsfehler"
+
+#: src/app/main/errors.cljs
+msgid "errors.version-not-supported"
+msgstr "Die Datei hat eine inkompatible Versionsnummer"
 
 msgid "errors.webhooks.connection"
 msgstr "Verbindungsfehler, URL ist nicht erreichbar"
@@ -1234,6 +1271,9 @@ msgstr "Keine"
 
 msgid "inspect.attributes.typography.text-transform.titlecase"
 msgstr "Kapitälchen"
+
+msgid "inspect.attributes.typography.text-transform.unset"
+msgstr "Nicht gesetzt"
 
 msgid "inspect.attributes.typography.text-transform.uppercase"
 msgstr "Großbuchstaben"
@@ -1646,6 +1686,9 @@ msgstr "Rolle"
 msgid "labels.save"
 msgstr "Speichern"
 
+msgid "labels.search"
+msgstr "Suchen"
+
 msgid "labels.search-font"
 msgstr "Schriftart suchen"
 
@@ -1669,6 +1712,9 @@ msgstr "Service nicht verfügbar"
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.settings"
 msgstr "Einstellungen"
+
+msgid "labels.share"
+msgstr "Teilen"
 
 #: src/app/main/ui/viewer/header.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.share-prototype"
@@ -1740,9 +1786,33 @@ msgstr "(Sie)"
 msgid "labels.your-account"
 msgstr "Ihr Konto"
 
+msgid "media.choose-image"
+msgstr "Bild auswählen"
+
+msgid "media.gradient"
+msgstr "Verlauf"
+
+msgid "media.image"
+msgstr "Bild"
+
+msgid "media.linear"
+msgstr "Linear"
+
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "media.loading"
 msgstr "Bild laden…"
+
+msgid "media.radial"
+msgstr "Radial"
+
+msgid "media.solid"
+msgstr "Einfarbig"
+
+msgid "modals.add-shared-confirm-empty.hint"
+msgstr ""
+"Ihre Bibliothek ist leer. Sobald es als Geteilte Bibliothek hinzugefügt "
+"wurde, können die von Ihnen erstellten Assets in den übrigen Dateien "
+"verwendet werden. Sind Sie sicher, dass Sie es veröffentlichen möchten?"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -1941,6 +2011,12 @@ msgstr[0] "Datei löschen"
 msgstr[1] "Dateien löschen"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.activated.no-files-message"
+msgid_plural "modals.delete-shared-confirm.activated.no-files-message"
+msgstr[0] "Es ist in keiner Datei aktiviert."
+msgstr[1] "Sie sind in keiner Datei aktiviert."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.activated.scd-message"
 msgid_plural "modals.delete-shared-confirm.activated.scd-message"
 msgstr[0] "Diese Bibliothek ist hier aktiviert: "
@@ -1985,6 +2061,16 @@ msgstr "Sind Sie sicher, dass Sie dieses Mitglied aus dem Team löschen möchten
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.delete-team-member-confirm.title"
 msgstr "Teammitglied löschen"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-unpublish-shared-confirm.activated.hint"
+msgid_plural "modals.delete-unpublish-shared-confirm.activated.hint"
+msgstr[0] ""
+"Assets, die bereits in dieser Datei verwendet wurden, bleiben dort erhalten "
+"(das Design bleibt erhalten)."
+msgstr[1] ""
+"Assets, die bereits in diesen Dateien verwendet wurden, bleiben dort "
+"erhalten (das Design bleibt erhalten)."
 
 msgid "modals.delete-webhook.accept"
 msgstr "Webhook löschen"
@@ -2258,7 +2344,7 @@ msgstr ""
 "Gegenwart und Zukunft mit der gesamten Community und dem Penpot-Kernteam."
 
 msgid "onboarding-v2.welcome.desc2.title"
-msgstr "In der Community mitmachen"
+msgstr "Mitwirkung in der Community"
 
 msgid "onboarding-v2.welcome.desc3"
 msgstr ""
@@ -2271,11 +2357,32 @@ msgstr "Leitfaden für Mitwirkende"
 msgid "onboarding-v2.welcome.title"
 msgstr "Willkommen bei Penpot!"
 
+msgid "onboarding.choice.team-up.continue-creating-team"
+msgstr "Mit der Erstellung eines Teams fortsetzen"
+
+msgid "onboarding.choice.team-up.continue-without-a-team"
+msgstr "Ohne Team fortsetzen"
+
+msgid "onboarding.choice.team-up.create-team-and-invite"
+msgstr "Team erstellen & einladen"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites"
+msgstr "Team erstellen und Einladungen versenden"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites-description"
+msgstr "Sie können später einladen"
+
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "Nach der Bennenung Ihres Teams, können Sie andere Personen einladen."
 
 msgid "onboarding.choice.team-up.create-team-placeholder"
 msgstr "Geben Sie den Namen des Teams ein"
+
+msgid "onboarding.choice.team-up.create-team-without-invite"
+msgstr "Team erstellen"
+
+msgid "onboarding.choice.team-up.create-team-without-inviting"
+msgstr "Team ohne Einladungen erstellen"
 
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "Mitglieder einladen"
@@ -2287,6 +2394,12 @@ msgstr ""
 
 msgid "onboarding.choice.team-up.roles"
 msgstr "Einladen mit der Rolle:"
+
+msgid "onboarding.choice.team-up.start-without-a-team"
+msgstr "Ohne Team starten"
+
+msgid "onboarding.choice.team-up.start-without-a-team-description"
+msgstr "Sie können später ein Team erstellen."
 
 msgid "onboarding.newsletter.accept"
 msgstr "Ja, abonnieren"
@@ -2339,8 +2452,175 @@ msgid "profile.recovery.go-to-login"
 msgstr "Zur Anmeldung"
 
 #: src/app/main/ui/onboarding/questions.cljs
+msgid "question.design-tool-more-experienced-with"
+msgstr "Mit welchem Design-Tool haben Sie mehr Erfahrung?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.11-30"
+msgstr "11-30"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.2-10"
+msgstr "2-10"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.31-50"
+msgstr "31-50"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.a-lot"
+msgstr "Viel"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.adobe-xd"
+msgstr "Adobe XD"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.canva"
+msgstr "Canva"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.describe-your-experience-working-on"
+msgstr "Wie würden Sie Ihre Erfahrungen bei der Arbeit an … am besten beschreiben?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.designer"
+msgstr "Designer"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.developer"
+msgstr "Developer"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.discover-more-about-penpot"
+msgstr "Mehr über Penpot erfahren"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.figma"
+msgstr "Figma"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.founder"
+msgstr "Gründer/VP"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.freelancer"
+msgstr "Ich bin ein Freelancer"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.get-the-code-from-my-team-project"
+msgstr "Code aus meinem Teamprojekt erhalten "
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.interface-design-visual-assets-design-systems"
+msgstr "... Interface-Design, visuelle Assets, Designsysteme usw."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.invision"
+msgstr "InVision"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.leave-feedback-for-my-team-project"
+msgstr "Feedback für mein Team-Projekt hinterlassen"
+
+#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.lets-get-started"
 msgstr "Los geht's!"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.manager"
+msgstr "Produkt- oder Projektmanager"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.marketing"
+msgstr "Marketing"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.more-than-50"
+msgstr "Mehr als 50"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.next"
+msgstr "Weiter"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.none"
+msgstr "Keine"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.other"
+msgstr "Sonstiges (bitte angeben)"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.personal-project"
+msgstr "Ich arbeite an einem persönlichen Projekt"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.previous"
+msgstr "Zurück"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.questions-how-are-you-planning-to-use-penpot"
+msgstr "Wie wollen Sie Penpot nutzen?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.role"
+msgstr "Was ist Ihre Rolle?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.select-option"
+msgstr "Wählen Sie eine Option"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.sketch"
+msgstr "Sketch"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.some"
+msgstr "Einige"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.start"
+msgstr "Start"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.start-to-work-on-my-project"
+msgstr "Mit der Arbeit an meinem Projekt beginnen"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.student-teacher"
+msgstr "Schüler oder Lehrer"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.team-size"
+msgstr "Wie groß ist Ihr Team?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.test-penpot-to-see-if-its-a-fit-for-team"
+msgstr "Testen Sie Penpot, um zu sehen, ob es für das Team geeignet ist "
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.try-out-before-using-penpot-on-premise"
+msgstr "Testen Sie Penpot, bevor Sie es auf einem eigenen Server verwenden"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.wireframes-user-journeys-flows-navigation-trees"
+msgstr "... Wireframes, User Journeys & Flows, Navigationsbäume usw."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.work-in-concept-ideas"
+msgstr "Arbeiten an Konzeptideen"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.your-feedback-will-help-us"
+msgstr ""
+"Ihr Feedback wird uns helfen, Ihre Gewohnheiten und Vorlieben zu verstehen, "
+"damit wir Penpot weiterhin zu einem nützlichen und angenehmen Werkzeug "
+"machen können."
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
+msgid "settings.detach"
+msgstr "Trennen"
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs,
@@ -2798,6 +3078,9 @@ msgstr "Lineale ein-/ausblenden"
 msgid "shortcuts.toggle-textpalette"
 msgstr "Textpalette ein-/ausblenden"
 
+msgid "shortcuts.toggle-theme"
+msgstr "Theme ändern"
+
 msgid "shortcuts.toggle-visibility"
 msgstr "Elemente ein-/ausblenden"
 
@@ -3085,6 +3368,10 @@ msgid_plural "workspace.assets.selected-count"
 msgstr[0] "%s Element ausgewählt"
 msgstr[1] "%s Elemente ausgewählt"
 
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.shared-library"
+msgstr "Geteilte Bibliothek"
+
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.typography"
@@ -3130,6 +3417,45 @@ msgstr "Texttransformation"
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.ungroup"
 msgstr "Gruppierung aufheben"
+
+msgid "workspace.context-menu.grid-cells.area"
+msgstr "Bereich erstellen"
+
+msgid "workspace.context-menu.grid-cells.create-board"
+msgstr "Board erstellen"
+
+msgid "workspace.context-menu.grid-cells.merge"
+msgstr "Zellen zusammenführen"
+
+msgid "workspace.context-menu.grid-track.column.add-after"
+msgstr "1 Spalte rechts einfügen"
+
+msgid "workspace.context-menu.grid-track.column.add-before"
+msgstr "1 Spalte links einfügen"
+
+msgid "workspace.context-menu.grid-track.column.delete"
+msgstr "Spalte löschen"
+
+msgid "workspace.context-menu.grid-track.column.delete-shapes"
+msgstr "Spalte und Formen löschen"
+
+msgid "workspace.context-menu.grid-track.column.duplicate"
+msgstr "Spalte duplizieren"
+
+msgid "workspace.context-menu.grid-track.row.add-after"
+msgstr "1 Zeile unterhalb einfügen"
+
+msgid "workspace.context-menu.grid-track.row.add-before"
+msgstr "1 Zeile oberhalb einfügen"
+
+msgid "workspace.context-menu.grid-track.row.delete"
+msgstr "Zeile löschen"
+
+msgid "workspace.context-menu.grid-track.row.delete-shapes"
+msgstr "Zeile und Formen löschen"
+
+msgid "workspace.context-menu.grid-track.row.duplicate"
+msgstr "Zeile duplizieren"
 
 msgid "workspace.focus.focus-mode"
 msgstr "Fokus-Modus"
@@ -3254,6 +3580,12 @@ msgstr "Lineale einblenden"
 msgid "workspace.header.menu.show-textpalette"
 msgstr "Schriftartenpalette anzeigen"
 
+msgid "workspace.header.menu.toggle-dark-theme"
+msgstr "Zum dunklen Theme wechseln"
+
+msgid "workspace.header.menu.toggle-light-theme"
+msgstr "Zum hellen Theme wechseln"
+
 msgid "workspace.header.menu.undo"
 msgstr "Rückgängig"
 
@@ -3304,6 +3636,21 @@ msgstr "Vollbild"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.zoom-selected"
 msgstr "Zur Auswahl zoomen"
+
+msgid "workspace.layout_grid.editor.options.edit-grid"
+msgstr "Grid bearbeiten"
+
+msgid "workspace.layout_grid.editor.options.exit"
+msgstr "Beenden"
+
+msgid "workspace.layout_grid.editor.title"
+msgstr "Raster bearbeiten"
+
+msgid "workspace.layout_grid.editor.top-bar.done"
+msgstr "Fertig"
+
+msgid "workspace.layout_grid.editor.top-bar.locate"
+msgstr "Lokalisieren"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.add"
@@ -3374,6 +3721,10 @@ msgstr "BIBLIOTHEK"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.library-updates"
 msgstr "AKTUALISIERUNGEN DER BIBLIOTHEK"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.loading"
+msgstr "Laden…"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.no-libraries-need-sync"
@@ -3451,11 +3802,23 @@ msgstr "Komponente"
 msgid "workspace.options.component.annotation"
 msgstr "Anmerkung"
 
+msgid "workspace.options.component.copy"
+msgstr "Kopie"
+
 msgid "workspace.options.component.create-annotation"
 msgstr "Eine Anmerkung erstellen"
 
 msgid "workspace.options.component.edit-annotation"
 msgstr "Eine Anmerkung bearbeiten"
+
+msgid "workspace.options.component.main"
+msgstr "Hauptkomponente"
+
+msgid "workspace.options.component.swap"
+msgstr "Komponente austauschen"
+
+msgid "workspace.options.component.swap.empty"
+msgstr "Es gibt noch keine Assets in dieser Bibliothek"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints"
@@ -3549,6 +3912,10 @@ msgstr "Fläche"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.flows.add-flow-start"
 msgstr "Flow-Startpunkt hinzufügen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow"
+msgstr "Flow"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.flows.flow-start"
@@ -3652,6 +4019,9 @@ msgstr "Gruppe füllen"
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.group-stroke"
 msgstr "Gruppe einrahmen"
+
+msgid "workspace.options.guides.title"
+msgstr "Hilfslinien"
 
 msgid "workspace.options.height"
 msgstr "Höhe"
@@ -4202,11 +4572,23 @@ msgid "workspace.options.stroke-cap.circle-marker"
 msgstr "Punkt"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.circle-marker-short"
+msgstr "Kreis"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.diamond-marker"
 msgstr "Diamant-Marker"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.diamond-marker-short"
+msgstr "Diamant"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.line-arrow"
+msgstr "Pfeil"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.line-arrow-short"
 msgstr "Pfeil"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
@@ -4226,8 +4608,16 @@ msgid "workspace.options.stroke-cap.square-marker"
 msgstr "Quadrat"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square-marker-short"
+msgstr "Rechteck"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.triangle-arrow"
 msgstr "Dreieckiger Pfeil"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.triangle-arrow-short"
+msgstr "Dreieck"
 
 msgid "workspace.options.stroke-color"
 msgstr "Konturfarbe"
@@ -4701,6 +5091,13 @@ msgstr "Text (%s)"
 msgid "workspace.toolbar.text-palette"
 msgstr "Typografien (%s)"
 
+#, markdown
+msgid "workspace.top-bar.read-only"
+msgstr "**Inspektionsmodus** (nur Ansicht)"
+
+msgid "workspace.top-bar.read-only.done"
+msgstr "Fertig"
+
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.empty"
 msgstr "Es gibt bisher keine Änderungen im Verlauf"
@@ -4834,344 +5231,3 @@ msgstr "Aktualisieren"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klicken Sie, um den Pfad zu schließen"
-
-msgid "workspace.options.component.copy"
-msgstr "Kopieren"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.developer"
-msgstr "Developer"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.manager"
-msgstr "Produkt- oder Projektmanager"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.marketing"
-msgstr "Marketing"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.personal-project"
-msgstr "Ich arbeite an einem persönlichen Projekt"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.square-marker-short"
-msgstr "Rechteck"
-
-msgid "workspace.options.component.main"
-msgstr "Main"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.freelancer"
-msgstr "Ich bin ein Freelancer"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.figma"
-msgstr "Figma"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "branding-illustrations-marketing-pieces"
-msgstr "...Branding, Illustrationen, Marketingmaterialien, usw."
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.some"
-msgstr "Einige"
-
-msgid "workspace.layout_grid.editor.title"
-msgstr "Raster bearbeiten"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.more-than-50"
-msgstr "Mehr als 50"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.next"
-msgstr "Weiter"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.team-size"
-msgstr "Wie groß ist Ihr Team?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.wireframes-user-journeys-flows-navigation-trees"
-msgstr "... Wireframes, User Journeys & Flows, Navigationsbäume usw."
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.a-lot"
-msgstr "Viel"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.start"
-msgstr "Start"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.diamond-marker-short"
-msgstr "Diamant"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.questions-how-are-you-planning-to-use-penpot"
-msgstr "Wie wollen Sie Penpot nutzen?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.select-option"
-msgstr "Wählen Sie eine Option"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.designer"
-msgstr "Designer"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.none"
-msgstr "Keine"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.adobe-xd"
-msgstr "Adobe XD"
-
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
-msgid "settings.detach"
-msgstr "Trennen"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.sketch"
-msgstr "Sketch"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.triangle-arrow-short"
-msgstr "Dreieck"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.activated.no-files-message"
-msgid_plural "modals.delete-shared-confirm.activated.no-files-message"
-msgstr[0] "Es ist in keiner Datei aktiviert."
-msgstr[1] "Sie sind in keiner Datei aktiviert."
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.other"
-msgstr "Sonstiges (bitte angeben)"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.test-penpot-to-see-if-its-a-fit-for-team"
-msgstr "Testen Sie Penpot, um zu sehen, ob es für das Team geeignet ist "
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.student-teacher"
-msgstr "Schüler oder Lehrer"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.2-10"
-msgstr "2-10"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.leave-feedback-for-my-team-project"
-msgstr "Feedback für mein Team-Projekt hinterlassen"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.31-50"
-msgstr "31-50"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.invision"
-msgstr "InVision"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.canva"
-msgstr "Canva"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.discover-more-about-penpot"
-msgstr "Mehr über Penpot erfahren"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.previous"
-msgstr "Zurück"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.start-to-work-on-my-project"
-msgstr "Mit der Arbeit an meinem Projekt beginnen"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.line-arrow-short"
-msgstr "Pfeil"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "question.design-tool-more-experienced-with"
-msgstr "Mit welchem Design-Tool haben Sie mehr Erfahrung?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.role"
-msgstr "Was ist Ihre Rolle?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.founder"
-msgstr "Gründer/VP"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.circle-marker-short"
-msgstr "Kreis"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.11-30"
-msgstr "11-30"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.interface-design-visual-assets-design-systems"
-msgstr "... Interface-Design, visuelle Assets, Designsysteme usw."
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.work-in-concept-ideas"
-msgstr "Arbeiten an Konzeptideen"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.your-feedback-will-help-us"
-msgstr ""
-"Ihr Feedback wird uns helfen, Ihre Gewohnheiten und Vorlieben zu verstehen, "
-"damit wir Penpot weiterhin zu einem nützlichen und angenehmen Werkzeug "
-"machen können."
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.describe-your-experience-working-on"
-msgstr ""
-"Wie würden Sie Ihre Erfahrungen bei der Arbeit an … am besten beschreiben?"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.shared-library"
-msgstr "Geteilte Bibliothek"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.try-out-before-using-penpot-on-premise"
-msgstr "Testen Sie Penpot, bevor Sie es auf einem eigenen Server verwenden"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.get-the-code-from-my-team-project"
-msgstr "Code aus meinem Teamprojekt erhalten "
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-unpublish-shared-confirm.activated.hint"
-msgid_plural "modals.delete-unpublish-shared-confirm.activated.hint"
-msgstr[0] ""
-"Assets, die bereits in dieser Datei verwendet wurden, bleiben dort erhalten ("
-"das Design bleibt erhalten)."
-msgstr[1] ""
-"Assets, die bereits in diesen Dateien verwendet wurden, bleiben dort "
-"erhalten (das Design bleibt erhalten)."
-
-msgid "modals.add-shared-confirm-empty.hint"
-msgstr ""
-"Ihre Bibliothek ist leer. Sobald es als Geteilte Bibliothek hinzugefügt "
-"wurde, können die von Ihnen erstellten Assets in den übrigen Dateien "
-"verwendet werden. Sind Sie sicher, dass Sie es veröffentlichen möchten?"
-
-msgid "media.radial"
-msgstr "Radial"
-
-msgid "workspace.top-bar.read-only.done"
-msgstr "Fertig"
-
-msgid "media.image"
-msgstr "Bild"
-
-msgid "media.linear"
-msgstr "Linear"
-
-msgid "media.gradient"
-msgstr "Verlauf"
-
-msgid "media.solid"
-msgstr "Einfarbig"
-
-msgid "media.choose-image"
-msgstr "Bild auswählen"
-
-msgid "workspace.options.guides.title"
-msgstr "Hilfslinien"
-
-#, markdown
-msgid "workspace.top-bar.read-only"
-msgstr "**Inspektionsmodus** (nur Ansicht)"
-
-#: src/app/main/errors.cljs
-msgid "errors.version-not-supported"
-msgstr "Die Datei hat eine inkompatible Versionsnummer"
-
-#: src/app/main/errors.cljs
-msgid "errors.team-feature-mismatch"
-msgstr "Inkompatible Funktion '%s' erkannt"
-
-msgid "errors.validation"
-msgstr "Validierungsfehler"
-
-msgid "errors.paste-data-validation"
-msgstr "Ungültige Daten in der Zwischenablage"
-
-msgid "labels.search"
-msgstr "Suchen"
-
-msgid "onboarding.choice.team-up.start-without-a-team"
-msgstr "Ohne Team starten"
-
-msgid "onboarding.choice.team-up.start-without-a-team-description"
-msgstr "Sie können später ein Team erstellen."
-
-msgid "onboarding.choice.team-up.continue-without-a-team"
-msgstr "Ohne Team fortsetzen"
-
-msgid "onboarding.choice.team-up.create-team-and-send-invites"
-msgstr "Team erstellen und Einladungen versenden"
-
-msgid "onboarding.choice.team-up.continue-creating-team"
-msgstr "Mit der Erstellung eines Teams fortsetzen"
-
-msgid "onboarding.choice.team-up.create-team-without-inviting"
-msgstr "Team ohne Einladungen erstellen"
-
-msgid "onboarding.choice.team-up.create-team-and-invite"
-msgstr "Team erstellen & einladen"
-
-msgid "onboarding.choice.team-up.create-team-without-invite"
-msgstr "Team erstellen"
-
-msgid "onboarding.choice.team-up.create-team-and-send-invites-description"
-msgstr "Sie können später einladen"
-
-msgid "workspace.layout_grid.editor.top-bar.done"
-msgstr "Fertig"
-
-msgid "workspace.layout_grid.editor.options.exit"
-msgstr "Beenden"
-
-msgid "workspace.layout_grid.editor.options.edit-grid"
-msgstr "Grid bearbeiten"
-
-msgid "workspace.options.component.swap"
-msgstr "Komponente austauschen"
-
-msgid "workspace.options.component.swap.empty"
-msgstr "Es gibt noch keine Assets in dieser Bibliothek"
-
-#: src/app/main/ui/auth/register.cljs
-#, markdown
-msgid "auth.terms-privacy-agreement-md"
-msgstr ""
-"Wenn Sie ein neues Konto erstellen, stimmen Sie unseren "
-"[Nutzungsbedingungen](%s) und [Datenschutzrichtlinien](%s) zu."
-
-msgid "labels.share"
-msgstr "Teilen"
-
-msgid "inspect.attributes.typography.text-transform.unset"
-msgstr "Nicht gesetzt"
-
-msgid "workspace.layout_grid.editor.top-bar.locate"
-msgstr "Lokalisieren"
-
-#: src/app/main/errors.cljs
-msgid "errors.file-feature-mismatch"
-msgstr ""
-"Es scheint eine Nichtübereinstimmung zwischen den aktivierten Funktionen und "
-"den Funktionen der Datei zu geben. Die Migrationen für '%s' müssen "
-"durchgeführt werden, bevor die Datei geöffnet werden kann."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.flows.flow"
-msgstr "Flow"

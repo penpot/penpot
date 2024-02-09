@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-12-29 21:08+0000\n"
+"PO-Revision-Date: 2024-02-12 19:02+0000\n"
 "Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
-"Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
-">\n"
+"Language-Team: Dutch "
+"<https://hosted.weblate.org/projects/penpot/frontend/nl/>\n"
 "Language: nl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -118,8 +118,7 @@ msgstr "Wachtwoord succesvol gewijzigd"
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.profile-not-verified"
-msgstr ""
-"Profiel is niet geverifieerd. Verifieer het profiel voordat je verder gaat."
+msgstr "Profiel is niet geverifieerd. Verifieer het profiel voordat je verder gaat."
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.recovery-token-sent"
@@ -188,6 +187,13 @@ msgid "auth.terms-privacy-agreement"
 msgstr ""
 "Met het aanmaken van een nieuw account ga je akkoord met onze "
 "gebruiksvoorwaarden en ons privacybeleid."
+
+#: src/app/main/ui/auth/register.cljs
+#, markdown
+msgid "auth.terms-privacy-agreement-md"
+msgstr ""
+"Met het aanmaken van een nieuw account ga je akkoord met onze "
+"[servicevoorwaarden] (%s) en [privacybeleid] (%s)."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
@@ -285,8 +291,7 @@ msgstr "Praktische introductie"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.walkthrough-hero.info"
-msgstr ""
-"Maak een rondleiding door Penpot en leer de belangrijkste functies kennen."
+msgstr "Maak een rondleiding door Penpot en leer de belangrijkste functies kennen."
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.walkthrough-hero.start"
@@ -310,8 +315,7 @@ msgstr "Toegangsbewijs is succesvol aangemaakt."
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.add-one"
-msgstr ""
-"Klik op de knop \"Nieuw toegangsbewijs aanmaken\" om er een aan te maken."
+msgstr "Klik op de knop \"Nieuw toegangsbewijs aanmaken\" om er een aan te maken."
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.no-access-tokens"
@@ -360,9 +364,9 @@ msgstr "Persoonlijke toegangsbewijzen"
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.personal.description"
 msgstr ""
-"Persoonlijke toegangsbewijzen functioneren als alternatief voor ons login/"
-"wachtwoord-authenticatiesysteem en kunnen worden gebruikt om een applicatie "
-"toegang te geven tot de interne Penpot API"
+"Persoonlijke toegangsbewijzen functioneren als alternatief voor ons "
+"login/wachtwoord-authenticatiesysteem en kunnen worden gebruikt om een "
+"applicatie toegang te geven tot de interne Penpot API"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.token-will-expire"
@@ -523,9 +527,9 @@ msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Je mag alleen lettertypen uploaden waarvan je de eigenaar bent of waarvoor "
 "je een licentie hebt om te gebruiken in Penpot. Lees meer in de sectie "
-"Inhoudsrechten van [Penpot's Servicevoorwaarden](https://penpot.app/terms."
-"html). Misschien wil je ook meer lezen over [lettertypelicenties](https://"
-"www.typography.com/faq)."
+"Inhoudsrechten van [Penpot's "
+"Servicevoorwaarden](https://penpot.app/terms.html). Misschien wil je ook "
+"meer lezen over [lettertypelicenties](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.upload-all"
@@ -545,6 +549,11 @@ msgstr "Importeer Penpot-bestanden"
 
 msgid "dashboard.import.analyze-error"
 msgstr "Oeps! We konden dit bestand niet importeren"
+
+msgid "dashboard.import.analyze-error.components-v2"
+msgstr ""
+"Bestand met componenten v2 geactiveerd, maar dit team ondersteunt dit nog "
+"niet."
 
 msgid "dashboard.import.import-error"
 msgstr ""
@@ -788,8 +797,7 @@ msgid "dashboard.webhooks.active"
 msgstr "Is actief"
 
 msgid "dashboard.webhooks.active.explain"
-msgstr ""
-"Wanneer deze hook wordt getriggerd, worden gebeurtenisdetails afgeleverd"
+msgstr "Wanneer deze hook wordt getriggerd, worden gebeurtenisdetails afgeleverd"
 
 msgid "dashboard.webhooks.content-type"
 msgstr "Contenttype"
@@ -865,7 +873,8 @@ msgstr "Authenticatie-provider niet geconfigureerd."
 
 msgid "errors.auth.unable-to-login"
 msgstr ""
-"Het lijkt erop dat je niet geauthentiseerd bent of dat de sessie is verlopen."
+"Het lijkt erop dat je niet geauthentiseerd bent of dat de sessie is "
+"verlopen."
 
 msgid "errors.bad-font"
 msgstr "Het lettertype %s kon niet geladen worden"
@@ -922,6 +931,14 @@ msgstr ""
 msgid "errors.feature-not-supported"
 msgstr "Functie '%s' wordt niet ondersteund."
 
+#: src/app/main/errors.cljs
+msgid "errors.file-feature-mismatch"
+msgstr ""
+"Het lijkt erop dat er een discrepantie bestaat tussen de ingeschakelde "
+"functies en de functies van het bestand dat je probeert te openen. Er "
+"moeten migraties voor '%s' worden toegepast voordat het bestand kan worden "
+"geopend."
+
 #: src/app/main/ui/auth/verify_token.cljs,
 #: src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.generic"
@@ -974,6 +991,9 @@ msgstr "Bevestigingswachtwoord moet overeenkomen"
 msgid "errors.password-too-short"
 msgstr "Wachtwoord moet minimaal 8 tekens lang zijn"
 
+msgid "errors.paste-data-validation"
+msgstr "Ongeldige gegevens op klembord"
+
 msgid "errors.profile-blocked"
 msgstr "Het profiel is geblokkeerd"
 
@@ -986,6 +1006,10 @@ msgstr "Je profiel heeft e-mails gedempt (spammeldingen of hoge bounces)."
 #: src/app/main/ui/auth/register.cljs
 msgid "errors.registration-disabled"
 msgstr "De registratie is momenteel uitgeschakeld."
+
+#: src/app/main/errors.cljs
+msgid "errors.team-feature-mismatch"
+msgstr "Incompatibele functie '%s' gedetecteerd"
 
 msgid "errors.team-leave.insufficient-members"
 msgstr ""
@@ -1009,6 +1033,13 @@ msgstr "Er is een onverwachte fout opgetreden."
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "errors.unexpected-token"
 msgstr "Onbekend bewijsstuk"
+
+msgid "errors.validation"
+msgstr "Validatiefout"
+
+#: src/app/main/errors.cljs
+msgid "errors.version-not-supported"
+msgstr "Bestand heeft een incompatibel versienummer"
 
 msgid "errors.webhooks.connection"
 msgstr "Verbindingsfout, URL niet bereikbaar"
@@ -1243,6 +1274,9 @@ msgstr "Geen"
 msgid "inspect.attributes.typography.text-transform.titlecase"
 msgstr "Beginhoofdletters"
 
+msgid "inspect.attributes.typography.text-transform.unset"
+msgstr "Uitschakelen"
+
 msgid "inspect.attributes.typography.text-transform.uppercase"
 msgstr "HOOFDLETTERS"
 
@@ -1256,7 +1290,8 @@ msgstr "Meer info over inspecteren"
 
 msgid "inspect.empty.select"
 msgstr ""
-"Selecteer een vorm, bord of groep om hun eigenschappen en code te inspecteren"
+"Selecteer een vorm, bord of groep om hun eigenschappen en code te "
+"inspecteren"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs
 msgid "inspect.tabs.code"
@@ -1546,7 +1581,8 @@ msgstr "Geen openstaande uitnodigingen."
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations-hint"
 msgstr ""
-"Klik op de knop **Mensen uitnodigen** om mensen uit te nodigen voor dit team."
+"Klik op de knop **Mensen uitnodigen** om mensen uit te nodigen voor dit "
+"team."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.desc-message"
@@ -1647,6 +1683,9 @@ msgstr "Rol"
 msgid "labels.save"
 msgstr "Opslaan"
 
+msgid "labels.search"
+msgstr "Zoeken"
+
 msgid "labels.search-font"
 msgstr "Lettertype zoeken"
 
@@ -1670,6 +1709,9 @@ msgstr "Service niet beschikbaar"
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.settings"
 msgstr "Instellingen"
+
+msgid "labels.share"
+msgstr "Delen"
 
 msgid "labels.share-prototype"
 msgstr "Prototype delen"
@@ -1740,9 +1782,33 @@ msgstr "(jij)"
 msgid "labels.your-account"
 msgstr "Jouw account"
 
+msgid "media.choose-image"
+msgstr "Afbeelding kiezen"
+
+msgid "media.gradient"
+msgstr "Verloop"
+
+msgid "media.image"
+msgstr "Afbeelding"
+
+msgid "media.linear"
+msgstr "Lineair"
+
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "media.loading"
 msgstr "Afbeelding laden…"
+
+msgid "media.radial"
+msgstr "Radiaal"
+
+msgid "media.solid"
+msgstr "Solide"
+
+msgid "modals.add-shared-confirm-empty.hint"
+msgstr ""
+"Je bibliotheek is leeg. Eenmaal toegevoegd als Gedeelde Bibliotheek, zijn "
+"de assets die je aanmaakt beschikbaar voor gebruik in de rest van je "
+"bestanden. Weet je zeker dat je dit wilt publiceren??"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -1754,7 +1820,8 @@ msgstr "Toevoegen als gedeelde bibliotheek"
 msgid "modals.add-shared-confirm.hint"
 msgstr ""
 "Eenmaal toegevoegd als gedeelde bibliotheek, zijn de assets van deze "
-"bestandsbibliotheek beschikbaar voor gebruik tussen de rest van je bestanden."
+"bestandsbibliotheek beschikbaar voor gebruik tussen de rest van je "
+"bestanden."
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -2029,8 +2096,8 @@ msgstr "E-mailadressen, kommagescheiden"
 
 msgid "modals.invite-member.repeated-invitation"
 msgstr ""
-"Sommige e-mailadressen zijn van bestaande teamleden. Zij krijgen geen nieuwe "
-"uitnodigingen."
+"Sommige e-mailadressen zijn van bestaande teamleden. Zij krijgen geen "
+"nieuwe uitnodigingen."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.invite-team-member.title"
@@ -2147,10 +2214,10 @@ msgstr[1] "Publicaties ongedaan maken"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
-msgstr[0] ""
-"Weet je zeker dat je de publicatie van deze bibliotheek ongedaan wilt maken?"
+msgstr[0] "Weet je zeker dat je de publicatie van deze bibliotheek ongedaan wilt maken?"
 msgstr[1] ""
-"Weet je zeker dat je de publicatie van deze bibliotheken ongedaan wilt maken?"
+"Weet je zeker dat je de publicatie van deze bibliotheken ongedaan wilt "
+"maken?"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -2249,16 +2316,15 @@ msgstr ""
 "voortgang van de productontwikkeling en nieuws."
 
 msgid "onboarding-v2.newsletter.news"
-msgstr ""
-"Stuur mij nieuws over Penpot (blogposts, video-introducties, streamings…)."
+msgstr "Stuur mij nieuws over Penpot (blogposts, video-introducties, streamings…)."
 
 msgid "onboarding-v2.newsletter.privacy1"
 msgstr "Wij geven om privacy, lees hier onze "
 
 msgid "onboarding-v2.newsletter.privacy2"
 msgstr ""
-"We sturen je alleen relevante e-mails. Je kunt je op elk moment afmelden via "
-"de afmeldlink in al onze nieuwsbrieven."
+"We sturen je alleen relevante e-mails. Je kunt je op elk moment afmelden "
+"via de afmeldlink in al onze nieuwsbrieven."
 
 msgid "onboarding-v2.newsletter.updates"
 msgstr "Stuur mij productnieuws (nieuwe functies, releases, correcties…)."
@@ -2287,6 +2353,21 @@ msgstr "Bijdragen"
 msgid "onboarding-v2.welcome.title"
 msgstr "Welkom bij Penpot!"
 
+msgid "onboarding.choice.team-up.continue-creating-team"
+msgstr "Doorgaan met team aanmaken"
+
+msgid "onboarding.choice.team-up.continue-without-a-team"
+msgstr "Doorgaan zonder team"
+
+msgid "onboarding.choice.team-up.create-team-and-invite"
+msgstr "Team aanmaken & uitnodigen"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites"
+msgstr "Team aanmaken en uitnodigingen versturen"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites-description"
+msgstr "Je kunt later uitnodigen"
+
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr ""
 "Nadat je je team een naam hebt gegeven, kun je mensen uitnodigen om lid te "
@@ -2294,6 +2375,12 @@ msgstr ""
 
 msgid "onboarding.choice.team-up.create-team-placeholder"
 msgstr "Voer de naam van het team in"
+
+msgid "onboarding.choice.team-up.create-team-without-invite"
+msgstr "Team aanmaken"
+
+msgid "onboarding.choice.team-up.create-team-without-inviting"
+msgstr "Team aanmaken zonder uitnodigingen"
 
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "Leden uitnodigen"
@@ -2305,6 +2392,12 @@ msgstr ""
 
 msgid "onboarding.choice.team-up.roles"
 msgstr "Uitnodigen met rol:"
+
+msgid "onboarding.choice.team-up.start-without-a-team"
+msgstr "Zonder team beginnen"
+
+msgid "onboarding.choice.team-up.start-without-a-team-description"
+msgstr "Je kunt later een team samenstellen."
 
 msgid "onboarding.newsletter.accept"
 msgstr "Ja, abonneren"
@@ -2523,6 +2616,10 @@ msgid "questions.your-feedback-will-help-us"
 msgstr ""
 "Jouw feedback helpt ons te begrijpen wat je gewoonten en voorkeuren zijn, "
 "zodat we van Penpot een nuttig en plezierig hulpmiddel kunnen blijven maken."
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
+msgid "settings.detach"
+msgstr "Ontkoppelen"
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs,
@@ -2980,6 +3077,9 @@ msgstr "Linialen tonen/verbergen"
 msgid "shortcuts.toggle-textpalette"
 msgstr "Tekstpalet in/uitschakelen"
 
+msgid "shortcuts.toggle-theme"
+msgstr "Thema veranderen"
+
 msgid "shortcuts.toggle-visibility"
 msgstr "Tonen/verbergen"
 
@@ -3315,6 +3415,45 @@ msgstr "Tekst transformeren"
 msgid "workspace.assets.ungroup"
 msgstr "Groep opheffen"
 
+msgid "workspace.context-menu.grid-cells.area"
+msgstr "Gebied aanmaken"
+
+msgid "workspace.context-menu.grid-cells.create-board"
+msgstr "Bord aanmaken"
+
+msgid "workspace.context-menu.grid-cells.merge"
+msgstr "Cellen samenvoegen"
+
+msgid "workspace.context-menu.grid-track.column.add-after"
+msgstr "Rechts 1 kolom toevoegen"
+
+msgid "workspace.context-menu.grid-track.column.add-before"
+msgstr "Links 1 kolom toevoegen"
+
+msgid "workspace.context-menu.grid-track.column.delete"
+msgstr "Kolom verwijderen"
+
+msgid "workspace.context-menu.grid-track.column.delete-shapes"
+msgstr "Kolom en vormen verwijderen"
+
+msgid "workspace.context-menu.grid-track.column.duplicate"
+msgstr "Kolom dupliceren"
+
+msgid "workspace.context-menu.grid-track.row.add-after"
+msgstr "Onder 1 rij toevoegen"
+
+msgid "workspace.context-menu.grid-track.row.add-before"
+msgstr "Boven 1 rij toevoegen"
+
+msgid "workspace.context-menu.grid-track.row.delete"
+msgstr "Rij verwijderen"
+
+msgid "workspace.context-menu.grid-track.row.delete-shapes"
+msgstr "Rij en vormen verwijderen"
+
+msgid "workspace.context-menu.grid-track.row.duplicate"
+msgstr "Rij dupliceren"
+
 msgid "workspace.focus.focus-mode"
 msgstr "Focusmodus"
 
@@ -3438,6 +3577,12 @@ msgstr "Linialen tonen"
 msgid "workspace.header.menu.show-textpalette"
 msgstr "Lettertype-palet tonen"
 
+msgid "workspace.header.menu.toggle-dark-theme"
+msgstr "Donker thema inschakelen"
+
+msgid "workspace.header.menu.toggle-light-theme"
+msgstr "Licht thema inschakelen"
+
 msgid "workspace.header.menu.undo"
 msgstr "Ongedaan maken"
 
@@ -3489,8 +3634,20 @@ msgstr "Volledig scherm"
 msgid "workspace.header.zoom-selected"
 msgstr "Naar selectie zoomen"
 
+msgid "workspace.layout_grid.editor.options.edit-grid"
+msgstr "Raster bewerken"
+
+msgid "workspace.layout_grid.editor.options.exit"
+msgstr "Sluiten"
+
 msgid "workspace.layout_grid.editor.title"
 msgstr "Raster bewerken"
+
+msgid "workspace.layout_grid.editor.top-bar.done"
+msgstr "Klaar"
+
+msgid "workspace.layout_grid.editor.top-bar.locate"
+msgstr "Lokaliseren"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.add"
@@ -3561,6 +3718,10 @@ msgstr "BIBLIOTHEEK"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.library-updates"
 msgstr "BIBLIOTHEEK-UPDATES"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.loading"
+msgstr "Laden…"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.no-libraries-need-sync"
@@ -3636,11 +3797,23 @@ msgstr "Component"
 msgid "workspace.options.component.annotation"
 msgstr "Aantekening"
 
+msgid "workspace.options.component.copy"
+msgstr "Kopiëren"
+
 msgid "workspace.options.component.create-annotation"
 msgstr "Aantekening maken"
 
 msgid "workspace.options.component.edit-annotation"
 msgstr "Aantekening bewerken"
+
+msgid "workspace.options.component.main"
+msgstr "Hoofd"
+
+msgid "workspace.options.component.swap"
+msgstr "Component uitwisselen"
+
+msgid "workspace.options.component.swap.empty"
+msgstr "Er zijn nog geen assets in deze bibliotheek"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints"
@@ -3734,6 +3907,10 @@ msgstr "Vullen"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.flows.add-flow-start"
 msgstr "Stroomdiagram-startpunt toevoegen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow"
+msgstr "Stroomdiagram"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.flows.flow-start"
@@ -3837,6 +4014,9 @@ msgstr "Groep vullen"
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.group-stroke"
 msgstr "Groep-streek"
+
+msgid "workspace.options.guides.title"
+msgstr "Hulplijnen"
 
 msgid "workspace.options.height"
 msgstr "Hoogte"
@@ -4387,12 +4567,24 @@ msgid "workspace.options.stroke-cap.circle-marker"
 msgstr "Cirkelmarkering"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.circle-marker-short"
+msgstr "Cirkel"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.diamond-marker"
 msgstr "Ruitmarkering"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.diamond-marker-short"
+msgstr "Ruit"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.line-arrow"
 msgstr "Lijn-pijl"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.line-arrow-short"
+msgstr "Pijl"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.none"
@@ -4411,8 +4603,16 @@ msgid "workspace.options.stroke-cap.square-marker"
 msgstr "Vierkantmarkering"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square-marker-short"
+msgstr "Rechthoek"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.triangle-arrow"
 msgstr "Driehoek-pijl"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.triangle-arrow-short"
+msgstr "Driehoek"
 
 msgid "workspace.options.stroke-color"
 msgstr "Streekkleur"
@@ -4543,8 +4743,7 @@ msgstr "HOOFDLETTERS"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.use-play-button"
-msgstr ""
-"Gebruik de afspeelknop in de koptekst om de prototypeweergave uit te voeren."
+msgstr "Gebruik de afspeelknop in de koptekst om de prototypeweergave uit te voeren."
 
 msgid "workspace.options.width"
 msgstr "Breedte"
@@ -4885,6 +5084,13 @@ msgstr "Tekst (%s)"
 msgid "workspace.toolbar.text-palette"
 msgstr "Typografie (%s)"
 
+#, markdown
+msgid "workspace.top-bar.read-only"
+msgstr "** Inspectiemodus ** (alleen bekijken)"
+
+msgid "workspace.top-bar.read-only.done"
+msgstr "Klaar"
+
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.empty"
 msgstr "Er zijn tot nu toe geen wijzigingen in de geschiedenis"
@@ -5018,153 +5224,3 @@ msgstr "Bijwerken"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klik om het pad te sluiten"
-
-msgid "workspace.options.component.copy"
-msgstr "Kopiëren"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.square-marker-short"
-msgstr "Rechthoek"
-
-msgid "workspace.options.component.main"
-msgstr "Hoofd"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.diamond-marker-short"
-msgstr "Ruit"
-
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
-msgid "settings.detach"
-msgstr "Ontkoppelen"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.triangle-arrow-short"
-msgstr "Driehoek"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.line-arrow-short"
-msgstr "Pijl"
-
-msgid "modals.add-shared-confirm-empty.hint"
-msgstr ""
-"Je bibliotheek is leeg. Eenmaal toegevoegd als Gedeelde Bibliotheek, zijn de "
-"assets die je aanmaakt beschikbaar voor gebruik in de rest van je bestanden. "
-"Weet je zeker dat je dit wilt publiceren??"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.circle-marker-short"
-msgstr "Cirkel"
-
-msgid "onboarding.choice.team-up.continue-creating-team"
-msgstr "Doorgaan met team aanmaken"
-
-msgid "workspace.options.guides.title"
-msgstr "Hulplijnen"
-
-msgid "media.choose-image"
-msgstr "Afbeelding kiezen"
-
-#: src/app/main/ui/auth/register.cljs
-#, markdown
-msgid "auth.terms-privacy-agreement-md"
-msgstr ""
-"Met het aanmaken van een nieuw account ga je akkoord met onze "
-"[servicevoorwaarden] (%s) en [privacybeleid] (%s)."
-
-msgid "workspace.options.component.swap.empty"
-msgstr "Er zijn nog geen assets in deze bibliotheek"
-
-msgid "media.solid"
-msgstr "Solide"
-
-msgid "workspace.top-bar.read-only.done"
-msgstr "Klaar"
-
-msgid "onboarding.choice.team-up.create-team-and-invite"
-msgstr "Team aanmaken & uitnodigen"
-
-msgid "workspace.layout_grid.editor.top-bar.done"
-msgstr "Klaar"
-
-msgid "onboarding.choice.team-up.continue-without-a-team"
-msgstr "Doorgaan zonder team"
-
-msgid "inspect.attributes.typography.text-transform.unset"
-msgstr "Uitschakelen"
-
-msgid "errors.validation"
-msgstr "Validatiefout"
-
-msgid "workspace.layout_grid.editor.options.exit"
-msgstr "Sluiten"
-
-#: src/app/main/errors.cljs
-msgid "errors.version-not-supported"
-msgstr "Bestand heeft een incompatibel versienummer"
-
-msgid "workspace.options.component.swap"
-msgstr "Component uitwisselen"
-
-msgid "onboarding.choice.team-up.create-team-without-inviting"
-msgstr "Team aanmaken zonder uitnodigingen"
-
-#: src/app/main/errors.cljs
-msgid "errors.file-feature-mismatch"
-msgstr ""
-"Het lijkt erop dat er een discrepantie bestaat tussen de ingeschakelde "
-"functies en de functies van het bestand dat je probeert te openen. Er moeten "
-"migraties voor '%s' worden toegepast voordat het bestand kan worden geopend."
-
-msgid "onboarding.choice.team-up.create-team-without-invite"
-msgstr "Team aanmaken"
-
-msgid "media.linear"
-msgstr "Lineair"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.flows.flow"
-msgstr "Stroomdiagram"
-
-msgid "labels.search"
-msgstr "Zoeken"
-
-msgid "media.image"
-msgstr "Afbeelding"
-
-msgid "onboarding.choice.team-up.start-without-a-team-description"
-msgstr "Je kunt later een team samenstellen."
-
-msgid "onboarding.choice.team-up.create-team-and-send-invites"
-msgstr "Team aanmaken en uitnodigingen versturen"
-
-msgid "workspace.layout_grid.editor.top-bar.locate"
-msgstr "Lokaliseren"
-
-msgid "media.gradient"
-msgstr "Verloop"
-
-msgid "labels.share"
-msgstr "Delen"
-
-msgid "workspace.layout_grid.editor.options.edit-grid"
-msgstr "Raster bewerken"
-
-msgid "onboarding.choice.team-up.start-without-a-team"
-msgstr "Zonder team beginnen"
-
-msgid "onboarding.choice.team-up.create-team-and-send-invites-description"
-msgstr "Je kunt later uitnodigen"
-
-msgid "media.radial"
-msgstr "Radiaal"
-
-msgid "errors.paste-data-validation"
-msgstr "Ongeldige gegevens op klembord"
-
-#: src/app/main/errors.cljs
-msgid "errors.team-feature-mismatch"
-msgstr "Incompatibele functie '%s' gedetecteerd"
-
-#, markdown
-msgid "workspace.top-bar.read-only"
-msgstr "** Inspectiemodus ** (alleen bekijken)"

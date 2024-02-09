@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-10-07 12:12+0000\n"
+"PO-Revision-Date: 2024-04-08 15:01+0000\n"
 "Last-Translator: Linerly <linerly@proton.me>\n"
-"Language-Team: Indonesian <https://hosted.weblate.org/projects/penpot/"
-"frontend/id/>\n"
+"Language-Team: Indonesian "
+"<https://hosted.weblate.org/projects/penpot/frontend/id/>\n"
 "Language: id\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.1-dev\n"
+"X-Generator: Weblate 5.5-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -175,6 +175,13 @@ msgid "auth.terms-privacy-agreement"
 msgstr ""
 "Ketika membuat akun baru, Anda menyetujui kebijakan layanan dan kebijakan "
 "privasi kami."
+
+#: src/app/main/ui/auth/register.cljs
+#, markdown
+msgid "auth.terms-privacy-agreement-md"
+msgstr ""
+"Ketika membuat akun baru, Anda menyetujui [persyaratan layanan](%s) dan "
+"[kebijakan privasi](%s) kami."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
@@ -527,6 +534,9 @@ msgstr "Impor berkas Penpot"
 
 msgid "dashboard.import.analyze-error"
 msgstr "Aduh! Kami tidak dapat mengimpor berkas ini"
+
+msgid "dashboard.import.analyze-error.components-v2"
+msgstr "Berkas dengan komponen v2 diaktifkan tetapi tim ini belum mendukungnya."
 
 msgid "dashboard.import.import-error"
 msgstr "Terdapat masalah saat mengimpor berkas. Berkasnya tidak terimpor."
@@ -894,6 +904,13 @@ msgstr ""
 msgid "errors.feature-not-supported"
 msgstr "Fitur '%s' tidak didukung."
 
+#: src/app/main/errors.cljs
+msgid "errors.file-feature-mismatch"
+msgstr ""
+"Sepertinya ada ketidakcocokan antara fitur yang diaktifkan dengan fitur "
+"berkas yang sedang Anda buka. Migrasi untuk '%s' harus diterapkan sebelum "
+"berkasnya dapat dibuka."
+
 #: src/app/main/ui/auth/verify_token.cljs,
 #: src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.generic"
@@ -944,6 +961,9 @@ msgstr "Kata sandi konfirmasi harus cocok"
 msgid "errors.password-too-short"
 msgstr "Kata sandi setidaknya 8 karakter"
 
+msgid "errors.paste-data-validation"
+msgstr "Data tidak valid dalam papan klip"
+
 msgid "errors.profile-blocked"
 msgstr "Profil diblokir"
 
@@ -956,6 +976,10 @@ msgstr "Profil Anda membisukan surel (laporan spam atau lompatan tinggi)."
 #: src/app/main/ui/auth/register.cljs
 msgid "errors.registration-disabled"
 msgstr "Pendaftaran saat ini dinonaktifkan."
+
+#: src/app/main/errors.cljs
+msgid "errors.team-feature-mismatch"
+msgstr "Fitur '%s' tidak kompatibel terdeteksi"
 
 msgid "errors.team-leave.insufficient-members"
 msgstr ""
@@ -979,6 +1003,13 @@ msgstr "Sebuah kesalahan tidak terduga terjadi."
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "errors.unexpected-token"
 msgstr "Token tidak diketahui"
+
+msgid "errors.validation"
+msgstr "Kesalahan Validasi"
+
+#: src/app/main/errors.cljs
+msgid "errors.version-not-supported"
+msgstr "Berkas memiliki nomor versi tidak kompatibel"
 
 msgid "errors.webhooks.connection"
 msgstr "Kesalahan koneksi, URL tidak dapat diraih"
@@ -1213,6 +1244,9 @@ msgstr "Tidak ada"
 
 msgid "inspect.attributes.typography.text-transform.titlecase"
 msgstr "Huruf Judul"
+
+msgid "inspect.attributes.typography.text-transform.unset"
+msgstr "Tidak ditetapkan"
 
 msgid "inspect.attributes.typography.text-transform.uppercase"
 msgstr "Huruf Besar"
@@ -1615,6 +1649,9 @@ msgstr "Peran"
 msgid "labels.save"
 msgstr "Simpan"
 
+msgid "labels.search"
+msgstr "Cari"
+
 msgid "labels.search-font"
 msgstr "Cari fon"
 
@@ -1638,6 +1675,9 @@ msgstr "Layanan Tidak Tersedia"
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.settings"
 msgstr "Pengaturan"
+
+msgid "labels.share"
+msgstr "Bagikan"
 
 msgid "labels.share-prototype"
 msgstr "Bagikan prototipe"
@@ -1708,9 +1748,33 @@ msgstr "(Anda)"
 msgid "labels.your-account"
 msgstr "Akun Anda"
 
+msgid "media.choose-image"
+msgstr "Pilih gambar"
+
+msgid "media.gradient"
+msgstr "Gradien"
+
+msgid "media.image"
+msgstr "Gambar"
+
+msgid "media.linear"
+msgstr "Linear"
+
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "media.loading"
 msgstr "Memuat gambar…"
+
+msgid "media.radial"
+msgstr "Radial"
+
+msgid "media.solid"
+msgstr "Padat"
+
+msgid "modals.add-shared-confirm-empty.hint"
+msgstr ""
+"Pustaka Anda saat ini kosong. Ketika ditambahkan sebagai Pustaka Terbagi, "
+"aset yang Anda buat akan tersedia untuk digunakan bersama dengan berkas "
+"Anda. Apakah Anda yakin ingin menerbitkannya?"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -2240,6 +2304,21 @@ msgstr "Panduan berkontribusi"
 msgid "onboarding-v2.welcome.title"
 msgstr "Selamat datang di Penpot!"
 
+msgid "onboarding.choice.team-up.continue-creating-team"
+msgstr "Lanjutkan membuat tim"
+
+msgid "onboarding.choice.team-up.continue-without-a-team"
+msgstr "Lanjutkan tanpa tim"
+
+msgid "onboarding.choice.team-up.create-team-and-invite"
+msgstr "Buat tim & undang"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites"
+msgstr "Buat tim dan kirim undangan"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites-description"
+msgstr "Anda nanti akan dapat mengundang"
+
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr ""
 "Setelah memberi nama tim, Anda akan dapat mengundang orang-orang untuk "
@@ -2247,6 +2326,12 @@ msgstr ""
 
 msgid "onboarding.choice.team-up.create-team-placeholder"
 msgstr "Masukkan nama tim"
+
+msgid "onboarding.choice.team-up.create-team-without-invite"
+msgstr "Buat tim"
+
+msgid "onboarding.choice.team-up.create-team-without-inviting"
+msgstr "Buat tim tanpa mengundang"
 
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "Undang anggota"
@@ -2258,6 +2343,12 @@ msgstr ""
 
 msgid "onboarding.choice.team-up.roles"
 msgstr "Undang dengan peran:"
+
+msgid "onboarding.choice.team-up.start-without-a-team"
+msgstr "Mulai tanpa tim"
+
+msgid "onboarding.choice.team-up.start-without-a-team-description"
+msgstr "Anda nanti akan dapat membuat tim."
 
 msgid "onboarding.newsletter.accept"
 msgstr "Ya, berlangganan"
@@ -2474,6 +2565,10 @@ msgid "questions.your-feedback-will-help-us"
 msgstr ""
 "Masukan Anda akan membantu kami mengerti kebiasaan dan preferensi Anda "
 "supaya kami dapat membuat Penpot sebuah alat yang berguna dan nyaman."
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
+msgid "settings.detach"
+msgstr "Copot"
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs,
@@ -2931,6 +3026,9 @@ msgstr "Tampilkan/sembunyikan penggaris"
 msgid "shortcuts.toggle-textpalette"
 msgstr "Alih palet teks"
 
+msgid "shortcuts.toggle-theme"
+msgstr "Ubah tema"
+
 msgid "shortcuts.toggle-visibility"
 msgstr "Alih keterlihatan"
 
@@ -3265,6 +3363,45 @@ msgstr "Transformasi Teks"
 msgid "workspace.assets.ungroup"
 msgstr "Lepas kelompok"
 
+msgid "workspace.context-menu.grid-cells.area"
+msgstr "Buat area"
+
+msgid "workspace.context-menu.grid-cells.create-board"
+msgstr "Buat papan"
+
+msgid "workspace.context-menu.grid-cells.merge"
+msgstr "Gabungkan sel"
+
+msgid "workspace.context-menu.grid-track.column.add-after"
+msgstr "Tambah 1 kolom ke kanan"
+
+msgid "workspace.context-menu.grid-track.column.add-before"
+msgstr "Tambah 1 kolom ke kiri"
+
+msgid "workspace.context-menu.grid-track.column.delete"
+msgstr "Hapus kolom"
+
+msgid "workspace.context-menu.grid-track.column.delete-shapes"
+msgstr "Hapus kolom dan bentuk"
+
+msgid "workspace.context-menu.grid-track.column.duplicate"
+msgstr "Gandakan kolom"
+
+msgid "workspace.context-menu.grid-track.row.add-after"
+msgstr "Tambah 1 baris di bawah"
+
+msgid "workspace.context-menu.grid-track.row.add-before"
+msgstr "Tambah 1 baris di atas"
+
+msgid "workspace.context-menu.grid-track.row.delete"
+msgstr "Hapus baris"
+
+msgid "workspace.context-menu.grid-track.row.delete-shapes"
+msgstr "Hapus baris dan bentuk"
+
+msgid "workspace.context-menu.grid-track.row.duplicate"
+msgstr "Gandakan baris"
+
 msgid "workspace.focus.focus-mode"
 msgstr "Mode fokus"
 
@@ -3388,6 +3525,12 @@ msgstr "Tampilkan penggaris"
 msgid "workspace.header.menu.show-textpalette"
 msgstr "Tampilkan palet fon"
 
+msgid "workspace.header.menu.toggle-dark-theme"
+msgstr "Ubah ke tema gelap"
+
+msgid "workspace.header.menu.toggle-light-theme"
+msgstr "Ubah ke tema terang"
+
 msgid "workspace.header.menu.undo"
 msgstr "Urungkan"
 
@@ -3439,8 +3582,20 @@ msgstr "Layar penuh"
 msgid "workspace.header.zoom-selected"
 msgstr "Zum ke terpilih"
 
+msgid "workspace.layout_grid.editor.options.edit-grid"
+msgstr "Sunting kisi"
+
+msgid "workspace.layout_grid.editor.options.exit"
+msgstr "Keluar"
+
 msgid "workspace.layout_grid.editor.title"
 msgstr "Kisi penyuntingan"
+
+msgid "workspace.layout_grid.editor.top-bar.done"
+msgstr "Selesai"
+
+msgid "workspace.layout_grid.editor.top-bar.locate"
+msgstr "Cari lokasi"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.add"
@@ -3511,6 +3666,10 @@ msgstr "PUSTAKA"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.library-updates"
 msgstr "PEMBARUAN PUSTAKA"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.loading"
+msgstr "Memuat…"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.no-libraries-need-sync"
@@ -3586,11 +3745,23 @@ msgstr "Komponen"
 msgid "workspace.options.component.annotation"
 msgstr "Anotasi"
 
+msgid "workspace.options.component.copy"
+msgstr "Salin"
+
 msgid "workspace.options.component.create-annotation"
 msgstr "Buat anotasi"
 
 msgid "workspace.options.component.edit-annotation"
 msgstr "Sunting anotasi"
+
+msgid "workspace.options.component.main"
+msgstr "Utama"
+
+msgid "workspace.options.component.swap"
+msgstr "Ganti komponen"
+
+msgid "workspace.options.component.swap.empty"
+msgstr "Belum ada aset dalam pustaka ini"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints"
@@ -3683,6 +3854,10 @@ msgstr "Isian"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.flows.add-flow-start"
 msgstr "Tambahkan awalan alur"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow"
+msgstr "Alur"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.flows.flow-start"
@@ -3786,6 +3961,9 @@ msgstr "Isian kelompok"
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.group-stroke"
 msgstr "Sapuan kelompok"
+
+msgid "workspace.options.guides.title"
+msgstr "Panduan"
 
 msgid "workspace.options.height"
 msgstr "Tinggi"
@@ -4334,12 +4512,24 @@ msgid "workspace.options.stroke-cap.circle-marker"
 msgstr "Penanda lingkaran"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.circle-marker-short"
+msgstr "Lingkaran"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.diamond-marker"
 msgstr "Penanda berlian"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.diamond-marker-short"
+msgstr "Berlian"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.line-arrow"
 msgstr "Panah garis"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.line-arrow-short"
+msgstr "Tanda panah"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.none"
@@ -4358,8 +4548,16 @@ msgid "workspace.options.stroke-cap.square-marker"
 msgstr "Penanda kotak"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square-marker-short"
+msgstr "Persegi panjang"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.triangle-arrow"
 msgstr "Panah segi tiga"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.triangle-arrow-short"
+msgstr "Segitiga"
 
 msgid "workspace.options.stroke-color"
 msgstr "Warna sapuan"
@@ -4831,6 +5029,13 @@ msgstr "Teks (%s)"
 msgid "workspace.toolbar.text-palette"
 msgstr "Tipografi (%s)"
 
+#, markdown
+msgid "workspace.top-bar.read-only"
+msgstr "**Mode inspeksi** (Hanya Tampilan)"
+
+msgid "workspace.top-bar.read-only.done"
+msgstr "Selesai"
+
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.empty"
 msgstr "Tidak ada riwayat perubahan sejauh ini"
@@ -4964,39 +5169,3 @@ msgstr "Perbarui"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klik untuk menutup jalur"
-
-msgid "workspace.options.component.copy"
-msgstr "Salin"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.square-marker-short"
-msgstr "Persegi panjang"
-
-msgid "workspace.options.component.main"
-msgstr "Utama"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.diamond-marker-short"
-msgstr "Berlian"
-
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
-msgid "settings.detach"
-msgstr "Copot"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.triangle-arrow-short"
-msgstr "Segitiga"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.line-arrow-short"
-msgstr "Tanda panah"
-
-msgid "modals.add-shared-confirm-empty.hint"
-msgstr ""
-"Pustaka Anda saat ini kosong. Ketika ditambahkan sebagai Pustaka Terbagi, "
-"aset yang Anda buat akan tersedia untuk digunakan bersama dengan berkas "
-"Anda. Apakah Anda yakin ingin menerbitkannya?"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.circle-marker-short"
-msgstr "Lingkaran"

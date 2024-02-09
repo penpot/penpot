@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-12-29 21:08+0000\n"
+"PO-Revision-Date: 2024-04-20 23:07+0000\n"
 "Last-Translator: TheScientistPT <joao.ed.reis.gomes@gmail.com>\n"
-"Language-Team: Portuguese (Portugal) <https://hosted.weblate.org/projects/"
-"penpot/frontend/pt_PT/>\n"
+"Language-Team: Portuguese (Portugal) "
+"<https://hosted.weblate.org/projects/penpot/frontend/pt_PT/>\n"
 "Language: pt_PT\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.4-dev\n"
+"X-Generator: Weblate 5.5-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -175,6 +175,13 @@ msgid "auth.terms-privacy-agreement"
 msgstr ""
 "Ao criar uma nova conta, concordas com os nossos termos de serviço e "
 "política de privacidade."
+
+#: src/app/main/ui/auth/register.cljs
+#, markdown
+msgid "auth.terms-privacy-agreement-md"
+msgstr ""
+"Ao criar uma nova conta, concordas com os nossos [termos de serviço](%s) e "
+"[política de privacidade](%s)."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
@@ -343,9 +350,9 @@ msgstr "Tokens de acesso pessoais"
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.personal.description"
 msgstr ""
-"Os tokens de acesso pessoais funcionam como uma alternativa ao nosso sistema "
-"de autenticação de login/palavra-passe e podem ser usados para permitir que "
-"uma aplicação tenha acesso à API interna do Penpot"
+"Os tokens de acesso pessoais funcionam como uma alternativa ao nosso "
+"sistema de autenticação de login/palavra-passe e podem ser usados para "
+"permitir que uma aplicação tenha acesso à API interna do Penpot"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.token-will-expire"
@@ -398,9 +405,9 @@ msgstr "Duplicar %s ficheiros"
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
-"Oh não! Ainda não tens ficheiros! Se quiseres experimentar podes começar "
-"com os nossos templates em [Libraries & "
-"templates](https://penpot.app/libraries-templates.html)."
+"Os ficheiros adicionados às Bibliotecas irão aparecer aqui. Experimenta "
+"adicionar os teus ficheiros ou experimenta algumas das nossas [Bibliotecas "
+"e templates](https://penpot.app/libraries-templates.html)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Descarrega %s ficheiros Penpot (.penpot)"
@@ -529,8 +536,18 @@ msgstr "Importar ficheiros Penpot"
 msgid "dashboard.import.analyze-error"
 msgstr "Oops! Não conseguimos importar este ficheiro"
 
+msgid "dashboard.import.analyze-error.components-v2"
+msgstr ""
+"Ficheiro exportado com componentes v2 mas a equipa atual ainda não os "
+"suporta."
+
 msgid "dashboard.import.import-error"
 msgstr "Ocorreu um problema na importação do ficheiro. O ficheiro não foi importado."
+
+msgid "dashboard.import.import-message"
+msgid_plural "dashboard.import.import-message"
+msgstr[0] "1 ficheiro foi importado com sucesso."
+msgstr[1] "%s ficheiros foram importados com sucesso."
 
 msgid "dashboard.import.import-warning"
 msgstr "Alguns ficheiros continham objetos inválidos que foram removidos."
@@ -693,9 +710,21 @@ msgstr "Selecionar tema"
 msgid "dashboard.show-all-files"
 msgstr "Mostrar todos os ficheiros"
 
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-delete-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "O teu ficheiro foi apagado com sucesso"
+msgstr[1] "Os teus ficheiros foram apagados com sucesso"
+
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-delete-project"
 msgstr "O teu projeto foi eliminado com sucesso"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-duplicate-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "O teu ficheiro foi duplicado com sucesso"
+msgstr[1] "Os teus ficheiros foram duplicados com sucesso"
 
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-duplicate-project"
@@ -882,6 +911,13 @@ msgstr ""
 msgid "errors.feature-not-supported"
 msgstr "A funcionalidade '%s' não é suportada."
 
+#: src/app/main/errors.cljs
+msgid "errors.file-feature-mismatch"
+msgstr ""
+"Parece que existem discrepâncias entre as funcionalidades ativadas e as "
+"funcionalidades do ficheiro que estás a tentar abrir. Será necessário "
+"aplicar migrações para '%s' antes de poder abrir o ficheiro."
+
 #: src/app/main/ui/auth/verify_token.cljs,
 #: src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.generic"
@@ -932,6 +968,9 @@ msgstr "A palavra-passe de confirmação tem de corresponder"
 msgid "errors.password-too-short"
 msgstr "A palavra-passe deverá conter no mínimo 8 caracteres"
 
+msgid "errors.paste-data-validation"
+msgstr "Dados inválidos na área de transferência"
+
 msgid "errors.profile-blocked"
 msgstr "O perfil está bloqueado"
 
@@ -946,6 +985,10 @@ msgstr ""
 #: src/app/main/ui/auth/register.cljs
 msgid "errors.registration-disabled"
 msgstr "A criação de contas está atualmente desativada."
+
+#: src/app/main/errors.cljs
+msgid "errors.team-feature-mismatch"
+msgstr "Funcionalidade incompatível '%s' detetada"
 
 msgid "errors.team-leave.insufficient-members"
 msgstr "Membros insuficientes para deixar a equipa, provavelmente queres eliminá-la."
@@ -967,6 +1010,13 @@ msgstr "Ocorreu um erro inesperado."
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "errors.unexpected-token"
 msgstr "Token desconhecido"
+
+msgid "errors.validation"
+msgstr "Erro de validação"
+
+#: src/app/main/errors.cljs
+msgid "errors.version-not-supported"
+msgstr "O ficheiro tem um número de versão incompatível"
 
 msgid "errors.webhooks.connection"
 msgstr "Erro de conexão, não foi possível alcançar o URL"
@@ -1201,6 +1251,9 @@ msgstr "Nenhum"
 
 msgid "inspect.attributes.typography.text-transform.titlecase"
 msgstr "Capitalização de Título"
+
+msgid "inspect.attributes.typography.text-transform.unset"
+msgstr "Sem atribuição"
 
 msgid "inspect.attributes.typography.text-transform.uppercase"
 msgstr "Maiúsculas"
@@ -1606,6 +1659,9 @@ msgstr "Cargo"
 msgid "labels.save"
 msgstr "Salvar"
 
+msgid "labels.search"
+msgstr "Pesquisar"
+
 msgid "labels.search-font"
 msgstr "Pesquisar font"
 
@@ -1629,6 +1685,9 @@ msgstr "Serviço Indisponível"
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.settings"
 msgstr "Definições"
+
+msgid "labels.share"
+msgstr "Partilhar"
 
 msgid "labels.share-prototype"
 msgstr "Partilhar protótipo"
@@ -1699,9 +1758,34 @@ msgstr "(tu)"
 msgid "labels.your-account"
 msgstr "A tua conta"
 
+msgid "media.choose-image"
+msgstr "Escolher imagem"
+
+msgid "media.gradient"
+msgstr "Gradiente"
+
+msgid "media.image"
+msgstr "Imagem"
+
+msgid "media.linear"
+msgstr "Linear"
+
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "media.loading"
 msgstr "A carregar imagem…"
+
+msgid "media.radial"
+msgstr "Radial"
+
+msgid "media.solid"
+msgstr "Sólido"
+
+msgid "modals.add-shared-confirm-empty.hint"
+msgstr ""
+"A tua biblioteca está vazia. Assim que ela seja adicionada como uma "
+"biblioteca partilhada, os recursos que criares nela estarão disponíveis "
+"para serem usados nos teus outros ficheiros. Tens a certeza que queres "
+"publicá-la?"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -2090,6 +2174,12 @@ msgstr "Remover \"%s\" como Biblioteca Partilhada"
 msgid "modals.small-nudge"
 msgstr "Pequeno deslocamento"
 
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgid_plural "modals.unpublish-shared-confirm.accept"
+msgstr[0] "Cancelar publicação"
+msgstr[1] "Cancelar publicações"
+
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
@@ -2234,11 +2324,32 @@ msgstr "Guia de Contribuição"
 msgid "onboarding-v2.welcome.title"
 msgstr "Bem-vindo ao Penpot!"
 
+msgid "onboarding.choice.team-up.continue-creating-team"
+msgstr "Continuar criação de equipa"
+
+msgid "onboarding.choice.team-up.continue-without-a-team"
+msgstr "Continuar sem equipa"
+
+msgid "onboarding.choice.team-up.create-team-and-invite"
+msgstr "Criar equipa e convidar"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites"
+msgstr "Criar equipa e enviar convites"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites-description"
+msgstr "Poderás enviar convites mais tarde"
+
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "Depois de nomeares a tua equipa, poderás convidar pessoas para entrar."
 
 msgid "onboarding.choice.team-up.create-team-placeholder"
 msgstr "Escreve o nome da equipa"
+
+msgid "onboarding.choice.team-up.create-team-without-invite"
+msgstr "Criar equipa"
+
+msgid "onboarding.choice.team-up.create-team-without-inviting"
+msgstr "Criar equipa sem convidar"
 
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "Convida membros"
@@ -2250,6 +2361,12 @@ msgstr ""
 
 msgid "onboarding.choice.team-up.roles"
 msgstr "Convidar com a função:"
+
+msgid "onboarding.choice.team-up.start-without-a-team"
+msgstr "Começar sem equipa"
+
+msgid "onboarding.choice.team-up.start-without-a-team-description"
+msgstr "Poderás criar uma equipa mais tarde."
 
 msgid "onboarding.newsletter.accept"
 msgstr "Sim, subscreve"
@@ -2467,6 +2584,10 @@ msgstr ""
 "Os teus comentários ajudar-nos-ão a compreender os teus hábitos e "
 "preferências para que possamos continuar a tornar o Penpot numa ferramenta "
 "fácil e divertida de usar."
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
+msgid "settings.detach"
+msgstr "Desacoplar"
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs,
@@ -2924,6 +3045,9 @@ msgstr "Mostrar/ocultar regras"
 msgid "shortcuts.toggle-textpalette"
 msgstr "Alternar paleta de texto"
 
+msgid "shortcuts.toggle-theme"
+msgstr "Mudar tema"
+
 msgid "shortcuts.toggle-visibility"
 msgstr "Mostrar / Ocultar"
 
@@ -3261,6 +3385,45 @@ msgstr "Transformar Texto"
 msgid "workspace.assets.ungroup"
 msgstr "Desagrupar"
 
+msgid "workspace.context-menu.grid-cells.area"
+msgstr "Criar área"
+
+msgid "workspace.context-menu.grid-cells.create-board"
+msgstr "Criar prancheta"
+
+msgid "workspace.context-menu.grid-cells.merge"
+msgstr "Unir células"
+
+msgid "workspace.context-menu.grid-track.column.add-after"
+msgstr "Adicionar 1 coluna à direita"
+
+msgid "workspace.context-menu.grid-track.column.add-before"
+msgstr "Adicionar 1 coluna à esquerda"
+
+msgid "workspace.context-menu.grid-track.column.delete"
+msgstr "Eliminar coluna"
+
+msgid "workspace.context-menu.grid-track.column.delete-shapes"
+msgstr "Apagar coluna e conteúdos"
+
+msgid "workspace.context-menu.grid-track.column.duplicate"
+msgstr "Duplicar coluna"
+
+msgid "workspace.context-menu.grid-track.row.add-after"
+msgstr "Adicionar 1 fila abaixo"
+
+msgid "workspace.context-menu.grid-track.row.add-before"
+msgstr "Adicionar 1 fila acima"
+
+msgid "workspace.context-menu.grid-track.row.delete"
+msgstr "Apagar fila"
+
+msgid "workspace.context-menu.grid-track.row.delete-shapes"
+msgstr "Apagar fila e conteúdos"
+
+msgid "workspace.context-menu.grid-track.row.duplicate"
+msgstr "Duplicar fila"
+
 msgid "workspace.focus.focus-mode"
 msgstr "Modo de foco"
 
@@ -3384,6 +3547,12 @@ msgstr "Mostrar regras"
 msgid "workspace.header.menu.show-textpalette"
 msgstr "Mostrar paleta de texto"
 
+msgid "workspace.header.menu.toggle-dark-theme"
+msgstr "Alterar para tema escuro"
+
+msgid "workspace.header.menu.toggle-light-theme"
+msgstr "Mudar para tema claro"
+
 msgid "workspace.header.menu.undo"
 msgstr "Desfazer"
 
@@ -3435,8 +3604,20 @@ msgstr "Tela cheia"
 msgid "workspace.header.zoom-selected"
 msgstr "Aumentar para seleção"
 
+msgid "workspace.layout_grid.editor.options.edit-grid"
+msgstr "Editar grelha"
+
+msgid "workspace.layout_grid.editor.options.exit"
+msgstr "Sair"
+
 msgid "workspace.layout_grid.editor.title"
 msgstr "A editar grelha"
+
+msgid "workspace.layout_grid.editor.top-bar.done"
+msgstr "Feito"
+
+msgid "workspace.layout_grid.editor.top-bar.locate"
+msgstr "Localizar"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.add"
@@ -3507,6 +3688,10 @@ msgstr "BIBLIOTECA"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.library-updates"
 msgstr "ATUALIZAÇÕES DE BIBLIOTECAS"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.loading"
+msgstr "A carregar…"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.no-libraries-need-sync"
@@ -3582,11 +3767,23 @@ msgstr "Componente"
 msgid "workspace.options.component.annotation"
 msgstr "Nota"
 
+msgid "workspace.options.component.copy"
+msgstr "Cópia"
+
 msgid "workspace.options.component.create-annotation"
 msgstr "Criar uma nota"
 
 msgid "workspace.options.component.edit-annotation"
 msgstr "Editar uma nota"
+
+msgid "workspace.options.component.main"
+msgstr "Principal"
+
+msgid "workspace.options.component.swap"
+msgstr "Trocar de componente"
+
+msgid "workspace.options.component.swap.empty"
+msgstr "Ainda não existem recursos nesta biblioteca"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints"
@@ -3680,6 +3877,10 @@ msgstr "Preenchimento"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.flows.add-flow-start"
 msgstr "Adicionar início de fluxo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow"
+msgstr "Fluxo"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.flows.flow-start"
@@ -3783,6 +3984,9 @@ msgstr "Preenchimento de grupo"
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.group-stroke"
 msgstr "Traço de grupo"
+
+msgid "workspace.options.guides.title"
+msgstr "Guias"
 
 msgid "workspace.options.height"
 msgstr "Altura"
@@ -4333,12 +4537,24 @@ msgid "workspace.options.stroke-cap.circle-marker"
 msgstr "Marcador circular"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.circle-marker-short"
+msgstr "Círculo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.diamond-marker"
 msgstr "Marcador em diamante"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.diamond-marker-short"
+msgstr "Diamante"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.line-arrow"
 msgstr "Seta de linha"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.line-arrow-short"
+msgstr "Seta"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.none"
@@ -4357,8 +4573,16 @@ msgid "workspace.options.stroke-cap.square-marker"
 msgstr "Marcador quadrado"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square-marker-short"
+msgstr "Retângulo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.triangle-arrow"
 msgstr "Seta triangular"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.triangle-arrow-short"
+msgstr "Triângulo"
 
 msgid "workspace.options.stroke-color"
 msgstr "Cor do traço"
@@ -4832,6 +5056,13 @@ msgstr "Texto (%s)"
 msgid "workspace.toolbar.text-palette"
 msgstr "Tipografias (%s)"
 
+#, markdown
+msgid "workspace.top-bar.read-only"
+msgstr "**Modo de inspeção** (Somente leitura)"
+
+msgid "workspace.top-bar.read-only.done"
+msgstr "Feito"
+
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.empty"
 msgstr "Não há histórico de mudanças até agora"
@@ -5014,176 +5245,3 @@ msgstr "Clica para fechar o caminho"
 
 #~ msgid "workspace.options.layout.direction.left"
 #~ msgstr "Linha"
-
-msgid "workspace.options.component.copy"
-msgstr "Cópia"
-
-msgid "dashboard.import.import-message"
-msgid_plural "dashboard.import.import-message"
-msgstr[0] "1 ficheiro foi importado com sucesso."
-msgstr[1] "%s ficheiros foram importados com sucesso."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.accept"
-msgid_plural "modals.unpublish-shared-confirm.accept"
-msgstr[0] "Cancelar publicação"
-msgstr[1] "Cancelar publicações"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.square-marker-short"
-msgstr "Retângulo"
-
-msgid "workspace.options.component.main"
-msgstr "Principal"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.diamond-marker-short"
-msgstr "Diamante"
-
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
-msgid "settings.detach"
-msgstr "Desacoplar"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.triangle-arrow-short"
-msgstr "Triângulo"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.line-arrow-short"
-msgstr "Seta"
-
-msgid "modals.add-shared-confirm-empty.hint"
-msgstr ""
-"A tua biblioteca está vazia. Assim que ela seja adicionada como uma "
-"biblioteca partilhada, os recursos que criares nela estarão disponíveis para "
-"serem usados nos teus outros ficheiros. Tens a certeza que queres publicá-la?"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.circle-marker-short"
-msgstr "Círculo"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.success-delete-file"
-msgid_plural "dashboard.success-delete-file"
-msgstr[0] "O teu ficheiro foi apagado com sucesso"
-msgstr[1] "Os teus ficheiros foram apagados com sucesso"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.success-duplicate-file"
-msgid_plural "dashboard.success-delete-file"
-msgstr[0] "O teu ficheiro foi duplicado com sucesso"
-msgstr[1] "Os teus ficheiros foram duplicados com sucesso"
-
-msgid "onboarding.choice.team-up.continue-creating-team"
-msgstr "Continuar criação de equipa"
-
-msgid "workspace.options.guides.title"
-msgstr "Guias"
-
-msgid "media.choose-image"
-msgstr "Escolher imagem"
-
-#: src/app/main/ui/auth/register.cljs
-#, markdown
-msgid "auth.terms-privacy-agreement-md"
-msgstr ""
-"Ao criar uma nova conta, concordas com os nossos [termos de serviço](%s) e ["
-"política de privacidade](%s)."
-
-msgid "workspace.options.component.swap.empty"
-msgstr "Ainda não existem recursos nesta biblioteca"
-
-msgid "media.solid"
-msgstr "Sólido"
-
-msgid "workspace.top-bar.read-only.done"
-msgstr "Feito"
-
-msgid "onboarding.choice.team-up.create-team-and-invite"
-msgstr "Criar equipa e convidar"
-
-msgid "workspace.layout_grid.editor.top-bar.done"
-msgstr "Feito"
-
-msgid "onboarding.choice.team-up.continue-without-a-team"
-msgstr "Continuar sem equipa"
-
-msgid "inspect.attributes.typography.text-transform.unset"
-msgstr "Sem atribuição"
-
-msgid "errors.validation"
-msgstr "Erro de validação"
-
-msgid "workspace.layout_grid.editor.options.exit"
-msgstr "Sair"
-
-#: src/app/main/errors.cljs
-msgid "errors.version-not-supported"
-msgstr "O ficheiro tem um número de versão incompatível"
-
-msgid "workspace.options.component.swap"
-msgstr "Trocar de componente"
-
-msgid "onboarding.choice.team-up.create-team-without-inviting"
-msgstr "Criar equipa sem convidar"
-
-#: src/app/main/errors.cljs
-msgid "errors.file-feature-mismatch"
-msgstr ""
-"Parece que existem discrepâncias entre as funcionalidades ativadas e as "
-"funcionalidades do ficheiro que estás a tentar abrir. Será necessário "
-"aplicar migrações para '%s' antes de poder abrir o ficheiro."
-
-msgid "onboarding.choice.team-up.create-team-without-invite"
-msgstr "Criar equipa"
-
-msgid "media.linear"
-msgstr "Linear"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.flows.flow"
-msgstr "Fluxo"
-
-msgid "labels.search"
-msgstr "Pesquisar"
-
-msgid "media.image"
-msgstr "Imagem"
-
-msgid "onboarding.choice.team-up.start-without-a-team-description"
-msgstr "Poderás criar uma equipa mais tarde."
-
-msgid "onboarding.choice.team-up.create-team-and-send-invites"
-msgstr "Criar equipa e enviar convites"
-
-msgid "workspace.layout_grid.editor.top-bar.locate"
-msgstr "Localizar"
-
-msgid "media.gradient"
-msgstr "Gradiente"
-
-msgid "labels.share"
-msgstr "Partilhar"
-
-msgid "workspace.layout_grid.editor.options.edit-grid"
-msgstr "Editar grelha"
-
-msgid "onboarding.choice.team-up.start-without-a-team"
-msgstr "Começar sem equipa"
-
-msgid "onboarding.choice.team-up.create-team-and-send-invites-description"
-msgstr "Poderás enviar convites mais tarde"
-
-msgid "media.radial"
-msgstr "Radial"
-
-msgid "errors.paste-data-validation"
-msgstr "Dados inválidos na área de transferência"
-
-#: src/app/main/errors.cljs
-msgid "errors.team-feature-mismatch"
-msgstr "Funcionalidade incompatível '%s' detetada"
-
-#, markdown
-msgid "workspace.top-bar.read-only"
-msgstr "**Modo de inspeção** (Somente leitura)"
