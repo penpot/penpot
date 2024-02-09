@@ -55,6 +55,7 @@
    [app.util.pointer-map :as pmap]
    [app.util.time :as dt]
    [buddy.core.codecs :as bc]
+   [clojure.set :refer [rename-keys]]
    [cuerdas.core :as str]
    [datoteka.io :as io]
    [promesa.exec :as px]
@@ -375,6 +376,19 @@
                                :selrect selrect
                                :points points))
 
+                      (and (cfh/text-shape? shape)
+                           (valid-text-content? (:content shape))
+                           (not (valid-shape-points? (:points shape)))
+                           (grc/valid-rect? (:selrect shape)))
+                      (let [selrect (:selrect shape)
+                            points  (grc/rect->points selrect)]
+                        (assoc shape
+                               :x (:x selrect)
+                               :y (:y selrect)
+                               :width (:width selrect)
+                               :height (:height selrect)
+                               :points points))
+
                       (and (or (cfh/rect-shape? shape)
                                (cfh/svg-raw-shape? shape)
                                (cfh/circle-shape? shape))
@@ -413,6 +427,50 @@
             (-> file-data
                 (update :pages-index update-vals fix-container)
                 (d/update-when :components update-vals fix-container))))
+
+        fix-empty-components
+        (fn [file-data]
+          (letfn [(fix-component [components id component]
+                    (if (empty? (:objects component))
+                      (dissoc components id)
+                      components))]
+
+            (-> file-data
+                (d/update-when :components #(reduce-kv fix-component % %)))))
+
+        fix-components-with-component-root
+        ;;In v1 no components in the library should have component-root
+        (fn [file-data]
+          (letfn [(fix-container [container]
+                    (d/update-when container :objects update-vals fix-shape))
+
+                  (fix-shape [shape]
+                    (dissoc shape :component-root))]
+
+            (-> file-data
+                (update :components update-vals fix-container))))
+
+        fix-non-existing-component-ids
+        ;; Check component ids have valid values.
+        (fn [file-data]
+          (let [libraries (assoc-in libraries [(:id file-data) :data] file-data)]
+            (letfn [(fix-container [container]
+                      (d/update-when container :objects update-vals fix-shape))
+
+                    (fix-shape [shape]
+                      (let [component-id   (:component-id shape)
+                            component-file (:component-file shape)
+                            library        (get libraries component-file)]
+
+                        (cond-> shape
+                          (and (some? component-id)
+                               (some? library)
+                               (nil? (ctkl/get-component (:data library) component-id)))
+                          (ctk/detach-shape))))]
+
+              (-> file-data
+                  (update :pages-index update-vals fix-container)
+                  (d/update-when :components update-vals fix-container)))))
 
         fix-misc-shape-issues
         (fn [file-data]
@@ -899,12 +957,12 @@
                   ;;
                   ;; WARNING: THIS SHOULD BE CALLED AT THE END OF THE PROCESS.
           (letfn [(fix-container [container]
-                    (d/update-when container :objects update-vals fix-shape))
-
-                  (fix-shape [shape]
-                    (cond-> shape
+                    (reduce fix-shape container (ctn/shapes-seq container)))
+                  (fix-shape [container shape]
+                    (cond-> container
                       (@detached-ids (:shape-ref shape))
-                      (ctk/detach-shape)))]
+                      (detach-shape shape)))]
+
             (-> file-data
                 (update :pages-index update-vals fix-container)
                 (d/update-when :components update-vals fix-container))))]
@@ -919,6 +977,9 @@
         (fix-broken-paths)
         (fix-big-geometry-shapes)
         (fix-shape-geometry)
+        (fix-empty-components)
+        (fix-components-with-component-root)
+        (fix-non-existing-component-ids)
         (fix-completly-broken-shapes)
         (fix-bad-children)
         (fix-broken-parents)
@@ -938,8 +999,7 @@
         (fix-false-copies)
         (fix-component-root-without-component)
         (fix-copies-of-detached); <- Do not add fixes after this and fix-orphan-copies call
-        ; This extra call to fix-orphan-copies after fix-copies-of-detached because we can have detached subtrees with invalid shape-ref attributes
-        (fix-orphan-copies))))
+        )))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; COMPONENTS MIGRATION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -948,6 +1008,9 @@
   [assets generic-name]
   (let [;; Group by first element of the path.
         groups (d/group-by #(first (cfh/split-path (:path %))) assets)
+        ;; If there is a group called as the generic-name we have to preserve it
+        unames (into #{} (keep str) (keys groups))
+        groups (rename-keys groups {generic-name (cfh/generate-unique-name unames generic-name)})
 
         ;; Split large groups in chunks of max-group-size elements
         groups (loop [groups (seq groups)
@@ -1447,7 +1510,7 @@
   (-> (db/get system :team {:id team-id}
               {::db/remove-deleted false
                ::db/check-deleted false})
-      (decode-row)))
+      (update :features db/decode-pgarray #{})))
 
 (defn- validate-file!
   [file libs]
@@ -1496,19 +1559,21 @@
       AND f.deleted_at IS NULL
       FOR UPDATE")
 
-(defn get-and-lock-files
+(defn get-and-lock-team-files
   [conn team-id]
   (->> (db/cursor conn [sql:get-and-lock-team-files team-id])
        (map :id)))
 
 (defn update-team!
-  [conn team]
-  (let [params (-> team
+  [system {:keys [id] :as team}]
+  (let [conn   (db/get-connection system)
+        params (-> team
                    (update :features db/encode-pgarray conn "text")
                    (dissoc :id))]
     (db/update! conn :team
                 params
-                {:id (:id team)})))
+                {:id id})
+    team))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PUBLIC API
@@ -1607,7 +1672,7 @@
                              :id id})
 
                 (run! (partial migrate-file system)
-                      (get-and-lock-files conn id))
+                      (get-and-lock-team-files conn id))
 
                 (->> (assoc team :features features)
                      (update-team! conn))))))]

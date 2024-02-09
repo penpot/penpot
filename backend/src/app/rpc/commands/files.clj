@@ -285,8 +285,9 @@
       file)))
 
 (defn get-minimal-file
-  [{:keys [::db/pool] :as cfg} id]
-  (db/get pool :file {:id id} {:columns [:id :modified-at :revn]}))
+  [cfg id & {:as opts}]
+  (let [opts (assoc opts ::sql/columns [:id :modified-at :revn])]
+    (db/get cfg :file {:id id} opts)))
 
 (defn get-file-etag
   [{:keys [::rpc/profile-id]} {:keys [modified-at revn]}]

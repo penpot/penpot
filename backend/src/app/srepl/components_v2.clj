@@ -12,7 +12,7 @@
    [app.db :as db]
    [app.features.components-v2 :as feat]
    [app.main :as main]
-   [app.rpc.commands.files-snapshot :as rpc]
+   [app.srepl.helpers :as h]
    [app.svgo :as svgo]
    [app.util.cache :as cache]
    [app.util.events :as events]
@@ -280,9 +280,7 @@
                    skip-on-graphic-error? true}}]
   (l/dbg :hint "migrate:start" :rollback rollback?)
   (let [tpoint  (dt/tpoint)
-        file-id (if (string? file-id)
-                  (parse-uuid file-id)
-                  file-id)
+        file-id (h/parse-uuid file-id)
         cache   (if (int? cache)
                   (cache/create :executor (::wrk/executor main/system)
                                 :max-items cache)
@@ -315,9 +313,7 @@
 
   (l/dbg :hint "migrate:start" :rollback rollback?)
 
-  (let [team-id (if (string? team-id)
-                  (parse-uuid team-id)
-                  team-id)
+  (let [team-id (h/parse-uuid team-id)
         stats   (atom {})
         tpoint  (dt/tpoint)
 
@@ -637,44 +633,3 @@
              :file-name (:name file))
       (assoc file :deleted-at (dt/now)))
     file))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; RESTORE SNAPSHOT
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def ^:private sql:snapshots-with-file
-  "SELECT f.id AS file_id,
-          fc.id AS id
-     FROM file AS f
-     JOIN file_change AS fc ON (fc.file_id = f.id)
-    WHERE fc.label = ? AND f.id = ANY(?)")
-
-(defn restore-team!
-  [team-id label & {:keys [rollback?] :or {rollback? true}}]
-  (let [team-id (if (string? team-id)
-                  (parse-uuid team-id)
-                  team-id)
-
-        get-file-snapshots
-        (fn [conn ids]
-          (let [label  (str "migration/" label)]
-            (db/exec! conn [sql:snapshots-with-file label
-                            (db/create-array conn "uuid" ids)])))
-
-        restore-snapshot
-        (fn [{:keys [::db/conn] :as system}]
-          (let [ids  (into #{} (feat/get-and-lock-files conn team-id))
-                snap (get-file-snapshots conn ids)
-                ids' (into #{} (map :file-id) snap)
-                team (-> (feat/get-team conn team-id)
-                         (update :features disj "components/v2"))]
-
-            (when (not= ids ids')
-              (throw (RuntimeException. "no uniform snapshot available")))
-
-            (feat/update-team! conn team)
-            (run! (partial rpc/restore-file-snapshot! system) snap)))]
-
-
-    (-> (assoc main/system ::db/rollback rollback?)
-        (db/tx-run! restore-snapshot))))

@@ -15,9 +15,7 @@
    [app.common.features :as cfeat]
    [app.common.files.changes :as cpc]
    [app.common.files.migrations :as fmg]
-   [app.common.files.repair :as repair]
    [app.common.files.validate :as cfv]
-   [app.common.files.validate :as validate]
    [app.common.logging :as l]
    [app.common.pprint :refer [pprint]]
    [app.common.spec :as us]
@@ -52,9 +50,78 @@
 
 (defn parse-uuid
   [v]
-  (if (uuid? v)
-    v
-    (d/parse-uuid v)))
+  (if (string? v)
+    (d/parse-uuid v)
+    v))
+
+;; (def ^:private sql:get-and-lock-team-files
+;;   "SELECT f.id
+;;      FROM file AS f
+;;      JOIN project AS p ON (p.id = f.project_id)
+;;     WHERE p.team_id = ?
+;;       FOR UPDATE")
+
+;; (defn get-and-lock-team-files
+;;   [conn team-id]
+;;   (->> (db/exec! conn [sql:get-and-lock-team-files team-id])
+;;        (into #{} (map :id))))
+
+;; (defn get-team
+;;   [system team-id]
+;;   (-> (db/get system :team {:id team-id}
+;;               {::db/remove-deleted false
+;;                ::db/check-deleted false})
+;;       (update :features db/decode-pgarray #{})))
+
+(defn get-file
+  "Get the migrated data of one file."
+  ([id] (get-file (or *system* main/system) id))
+  ([system id]
+   (db/run! system
+            (fn [system]
+              (binding [pmap/*load-fn* (partial feat.fdata/load-pointer system id)]
+                (-> (files/get-file system id :migrate? false)
+                    (update :data feat.fdata/process-pointers deref)
+                    (update :data feat.fdata/process-objects (partial into {}))
+                    (fmg/migrate-file)))))))
+
+(defn update-file!
+  [system {:keys [id] :as file}]
+  (let [conn (db/get-connection system)
+        file (if (contains? (:features file) "fdata/objects-map")
+               (feat.fdata/enable-objects-map file)
+               file)
+
+        file (if (contains? (:features file) "fdata/pointer-map")
+               (binding [pmap/*tracked* (pmap/create-tracked)]
+                 (let [file (feat.fdata/enable-pointer-map file)]
+                   (feat.fdata/persist-pointers! system id)
+                   file))
+               file)
+
+        file (-> file
+                 (update :features db/encode-pgarray conn "text")
+                 (update :data blob/encode))]
+
+    (db/update! conn :file
+                {:revn (:revn file)
+                 :data (:data file)
+                 :features (:features file)
+                 :data-backend nil
+                 :modified-at (dt/now)
+                 :has-media-trimmed false}
+                {:id (:id file)})))
+
+(defn update-team!
+  [system {:keys [id] :as team}]
+  (let [conn   (db/get-connection system)
+        params (-> team
+                   (update :features db/encode-pgarray conn "text")
+                   (dissoc :id))]
+    (db/update! conn :team
+                params
+                {:id id})
+    team))
 
 (defn reset-file-data!
   "Hardcode replace of the data of one file."
@@ -65,111 +132,27 @@
                             {:data data}
                             {:id id}))))
 
-(defn- get-file*
-  "Get the migrated data of one file."
-  [system id]
-  (db/run! system
-           (fn [system]
-             (binding [pmap/*load-fn* (partial feat.fdata/load-pointer system id)]
-               (-> (files/get-file system id :migrate? false)
-                   (update :data feat.fdata/process-pointers deref)
-                   (update :data feat.fdata/process-objects (partial into {}))
-                   (fmg/migrate-file))))))
+(defn process-file*
+  [system file-id update-fn]
+  (let [file (get-file system file-id)
+        file (-> (update-fn file)
+                 (update :revn inc))]
 
-(defn get-file
-  "Get the migrated data of one file."
-  [id]
-  (get-file* main/system id))
+    (cfv/validate-file-schema! file)
+    (update-file! system file)
+    (dissoc file :data)))
 
-(defn validate
-  "Validate structure, referencial integrity and semantic coherence of
-  all contents of a file. Returns a list of errors."
-  [id]
-  (db/tx-run! main/system
-              (fn [{:keys [::db/conn] :as system}]
-                (let [id   (if (string? id) (parse-uuid id) id)
-                      file (get-file* system id)
-                      libs (->> (files/get-file-libraries conn id)
-                                (into [file] (map (fn [{:keys [id]}]
-                                                    (get-file* system id))))
-                                (d/index-by :id))]
-                  (validate/validate-file file libs)))))
-
-(defn repair!
-  "Repair the list of errors detected by validation."
-  [id]
-  (db/tx-run! main/system
-              (fn [{:keys [::db/conn] :as system}]
-                (let [id      (if (string? id) (parse-uuid id) id)
-                      file    (get-file* system id)
-                      libs    (->> (files/get-file-libraries conn id)
-                                   (into [file] (map (fn [{:keys [id]}]
-                                                       (get-file* system id))))
-                                   (d/index-by :id))
-                      errors  (validate/validate-file file libs)
-                      changes (repair/repair-file file libs errors)
-
-                      file    (-> file
-                                  (update :revn inc)
-                                  (update :data cpc/process-changes changes))
-
-                      file (if (contains? (:features file) "fdata/objects-map")
-                             (feat.fdata/enable-objects-map file)
-                             file)
-
-                      file (if (contains? (:features file) "fdata/pointer-map")
-                             (binding [pmap/*tracked* (pmap/create-tracked)]
-                               (let [file (feat.fdata/enable-pointer-map file)]
-                                 (feat.fdata/persist-pointers! system id)
-                                 file))
-                             file)]
-
-                  (db/update! conn :file
-                              {:revn (:revn file)
-                               :data (blob/encode (:data file))
-                               :data-backend nil
-                               :modified-at (dt/now)
-                               :has-media-trimmed false}
-                              {:id (:id file)})
-
-                  :repaired))))
-
-
-(defn update-file!
+(defn process-file!
   "Apply a function to the data of one file. Optionally save the changes or not.
   The function receives the decoded and migrated file data."
-  [& {:keys [update-fn id rollback? inc-revn?]
-      :or {rollback? true inc-revn? true}}]
-  (letfn [(process-file [{:keys [::db/conn] :as system} file-id]
-            (let [file (get-file* system file-id)
-                  file (cond-> (update-fn file)
-                         inc-revn? (update :revn inc))
+  [& {:keys [update-fn id rollback?]
+      :or {rollback? true}}]
 
-                  _    (cfv/validate-file-schema! file)
-
-                  file (if (contains? (:features file) "fdata/objects-map")
-                         (feat.fdata/enable-objects-map file)
-                         file)
-
-                  file (if (contains? (:features file) "fdata/pointer-map")
-                         (binding [pmap/*tracked* (pmap/create-tracked)]
-                           (let [file (feat.fdata/enable-pointer-map file)]
-                             (feat.fdata/persist-pointers! system id)
-                             file))
-                         file)]
-
-              (db/update! conn :file
-                          {:data (blob/encode (:data file))
-                           :features (db/create-array conn "text" (:features file))
-                           :revn (:revn file)}
-                          {:id (:id file)})
-
-              (dissoc file :data)))]
-
-    (db/tx-run! (or *system* (assoc main/system ::db/rollback rollback?))
+  (let [system (or *system* (assoc main/system ::db/rollback rollback?))]
+    (db/tx-run! system
                 (fn [system]
                   (binding [*system* system]
-                    (process-file system id))))))
+                    (process-file* system id update-fn))))))
 
 
 (def ^:private sql:get-file-ids
@@ -196,11 +179,11 @@
             (strace/print-stack-trace cause))
 
           (process-file [{:keys [::db/conn] :as system} file-id]
-            (let [file (get-file* system file-id)
+            (let [file (get-file system file-id)
                   libs (when with-libraries?
                          (->> (files/get-file-libraries conn file-id)
                               (into [file] (map (fn [{:keys [id]}]
-                                                  (get-file* system id))))
+                                                  (get-file system id))))
                               (d/index-by :id)))]
               (try
                 (if with-libraries?
@@ -219,38 +202,6 @@
                     (finally
                       (when (fn? on-end)
                         (ex/ignoring (on-end)))))))))
-
-(defn repair-file-media
-  [{:keys [id data] :as file}]
-  (let [conn  (db/get-connection *system*)
-        used  (bfc/collect-used-media data)
-        ids   (db/create-array conn "uuid" used)
-        sql   (str "SELECT * FROM file_media_object WHERE id = ANY(?)")
-        rows  (db/exec! conn [sql ids])
-        index (reduce (fn [index media]
-                        (if (not= (:file-id media) id)
-                          (let [media-id (uuid/next)]
-                            (l/wrn :hint "found not referenced media"
-                                   :file-id (str id)
-                                   :media-id (str (:id media)))
-
-                            (db/insert! *system* :file-media-object
-                                        (-> media
-                                            (assoc :file-id id)
-                                            (assoc :id media-id)))
-                            (assoc index (:id media) media-id))
-                          index))
-                      {}
-                      rows)]
-
-    (when (seq index)
-      (binding [bfc/*state* (atom {:index index})]
-        (update file :data (fn [fdata]
-                             (-> fdata
-                                 (update :pages-index #'bfc/relink-shapes)
-                                 (update :components #'bfc/relink-shapes)
-                                 (update :media #'bfc/relink-media)
-                                 (d/without-nils))))))))
 
 (defn process-files!
   "Apply a function to all files in the database"
@@ -281,7 +232,7 @@
             (l/trc :hint "process:file:start" :file-id (str file-id) :index idx)
             (db/tx-run! (assoc main/system ::db/rollback rollback?)
                         (fn [{:keys [::db/conn] :as system}]
-                          (let [file' (get-file* system file-id)
+                          (let [file' (get-file system file-id)
                                 file  (binding [*system* system]
                                         (on-file file'))]
 
@@ -350,3 +301,37 @@
                  :rollback rollback?
                  :elapsed elapsed))))))
 
+
+(defn repair-file-media
+  "A helper intended to be used with `process-files!` that fixes all
+  not propertly referenced file-media-object for a file"
+  [{:keys [id data] :as file}]
+  (let [conn  (db/get-connection *system*)
+        used  (bfc/collect-used-media data)
+        ids   (db/create-array conn "uuid" used)
+        sql   (str "SELECT * FROM file_media_object WHERE id = ANY(?)")
+        rows  (db/exec! conn [sql ids])
+        index (reduce (fn [index media]
+                        (if (not= (:file-id media) id)
+                          (let [media-id (uuid/next)]
+                            (l/wrn :hint "found not referenced media"
+                                   :file-id (str id)
+                                   :media-id (str (:id media)))
+
+                            (db/insert! *system* :file-media-object
+                                        (-> media
+                                            (assoc :file-id id)
+                                            (assoc :id media-id)))
+                            (assoc index (:id media) media-id))
+                          index))
+                      {}
+                      rows)]
+
+    (when (seq index)
+      (binding [bfc/*state* (atom {:index index})]
+        (update file :data (fn [fdata]
+                             (-> fdata
+                                 (update :pages-index #'bfc/relink-shapes)
+                                 (update :components #'bfc/relink-shapes)
+                                 (update :media #'bfc/relink-media)
+                                 (d/without-nils))))))))

@@ -269,16 +269,34 @@
 
 (defmethod repair-error :ref-shape-not-found
   [_ {:keys [shape page-id] :as error} file-data libraries]
-  (let [matching-shape (let [page           (ctpl/get-page file-data page-id)
-                             root-shape     (ctn/get-component-shape (:objects page) shape)
-                             component-file (if (= (:component-file root-shape) (:id file-data))
-                                              file-data
-                                              (-> (get libraries (:component-file root-shape)) :data))
-                             component      (when component-file
-                                              (ctkl/get-component (:data component-file) (:component-id root-shape) true))
-                             shapes         (ctf/get-component-shapes file-data component)]
-                         (d/seek #(= (:shape-ref %) (:shape-ref shape)) shapes))
+  (let [matching-shape (let [page              (ctpl/get-page file-data page-id)
+                             root-shape        (ctn/get-component-shape (:objects page) shape)
+                             component-file    (if (= (:component-file root-shape) (:id file-data))
+                                                 file-data
+                                                 (-> (get libraries (:component-file root-shape)) :data))
+                             component         (when component-file
+                                                 (ctkl/get-component component-file (:component-id root-shape) true))
+                             component-shapes  (ctf/get-component-shapes file-data component)]
 
+                         ;; Check if the shape points to the remote main. If so, reassign to the near main.
+                         (if-let [near-shape-1 (d/seek #(= (:shape-ref %) (:shape-ref shape)) component-shapes)]
+                           near-shape-1
+                           ;; Check if it points to any random shape in the page. If so, try to find a matchng
+                           ;; shape in the near main component.
+                           (when-let [random-shape (ctn/get-shape page (:shape-ref shape))]
+                             (if-let [near-shape-2 (d/seek #(= (:id %) (:shape-ref random-shape)) component-shapes)]
+                               near-shape-2
+                               ;; If not, check if it's a fostered copy and find a direct main.
+                               (let [head-shape        (ctn/get-head-shape (:objects page) shape)
+                                     component-file    (if (= (:component-file head-shape) (:id file-data))
+                                                         file-data
+                                                         (-> (get libraries (:component-file head-shape)) :data))
+                                     component         (when component-file
+                                                         (ctkl/get-component component-file (:component-id head-shape) true))
+                                     component-shapes  (ctf/get-component-shapes file-data component)]
+                                 (if-let [near-shape-3 (d/seek #(= (:id %) (:shape-ref random-shape)) component-shapes)]
+                                   near-shape-3
+                                   nil))))))
         reassign-shape
         (fn [shape]
           (log/debug :hint "  -> reassign shape-ref to" :shape-ref (:id matching-shape))

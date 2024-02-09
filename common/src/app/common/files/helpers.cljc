@@ -148,6 +148,15 @@
   [objects id]
   (mapv (d/getf objects) (get-children-ids-with-self objects id)))
 
+(defn get-child
+  "Return the child of the given object with the given id (allow that the
+   id may point to the object itself)."
+  [objects id child-id]
+  (let [shape (get objects id)]
+    (if (= id child-id)
+      shape
+      (some #(get-child objects % child-id) (:shapes shape)))))
+
 (defn get-parent
   "Retrieve the parent for the shape-id (if exists)"
   [objects id]

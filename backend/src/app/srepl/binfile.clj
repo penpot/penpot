@@ -9,13 +9,12 @@
    [app.binfile.v2 :as binfile.v2]
    [app.db :as db]
    [app.main :as main]
+   [app.srepl.helpers :as h]
    [cuerdas.core :as str]))
 
 (defn export-team!
   [team-id]
-  (let [team-id (if (string? team-id)
-                  (parse-uuid team-id)
-                  team-id)]
+  (let [team-id (h/parse-uuid team-id)]
     (binfile.v2/export-team! main/system team-id)))
 
 (defn import-team!
