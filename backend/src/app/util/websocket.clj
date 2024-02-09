@@ -15,6 +15,7 @@
    [app.util.time :as dt]
    [promesa.exec :as px]
    [promesa.exec.csp :as sp]
+   [promesa.util :as pu]
    [ring.request :as rreq]
    [ring.websocket :as rws]
    [yetti.websocket :as yws])
@@ -185,17 +186,18 @@
               (rws/send channel message)
               (recur i))))))
 
-    (catch java.nio.channels.ClosedChannelException _)
-    (catch java.net.SocketException _)
-    (catch java.io.IOException _)
-
     (catch InterruptedException _cause
       (l/dbg :hint "websocket thread interrumpted" :conn-id id))
 
     (catch Throwable cause
-      (l/err :hint "unhandled exception on websocket thread"
-             :conn-id id
-             :cause cause))
+      (let [cause (pu/unwrap-exception cause)]
+        (if (or (instance? java.nio.channels.ClosedChannelException cause)
+                (instance? java.net.SocketException cause)
+                (instance? java.io.IOException cause))
+          nil
+          (l/err :hint "unhandled exception on websocket thread"
+                 :conn-id id
+                 :cause cause))))
     (finally
       (try
         (handler wsp {:type :close})
