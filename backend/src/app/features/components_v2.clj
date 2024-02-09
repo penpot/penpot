@@ -376,6 +376,19 @@
                                :selrect selrect
                                :points points))
 
+                      (and (cfh/text-shape? shape)
+                           (valid-text-content? (:content shape))
+                           (not (valid-shape-points? (:points shape)))
+                           (grc/valid-rect? (:selrect shape)))
+                      (let [selrect (:selrect shape)
+                            points  (grc/rect->points selrect)]
+                        (assoc shape
+                               :x (:x selrect)
+                               :y (:y selrect)
+                               :width (:width selrect)
+                               :height (:height selrect)
+                               :points points))
+
                       (and (or (cfh/rect-shape? shape)
                                (cfh/svg-raw-shape? shape)
                                (cfh/circle-shape? shape))
