@@ -104,8 +104,17 @@
   @include flexColumn;
 }
 
+.property-list {
+  list-style: none;
+  margin: 0;
+  display: grid;
+  row-gap: $s-16;
+  margin-block: calc(#{$s-16} - #{$s-4});
+}
+
 .property-row {
   @extend .attr-row;
+  height: auto;
   &.big-row {
     height: 100%;
   }
@@ -136,10 +145,7 @@
     @extend .input-element;
     grid-area: content;
   }
-  .checkbox-option {
-    @extend .input-checkbox;
-    grid-area: content;
-  }
+
   .position-btns-wrapper {
     grid-area: content;
     display: grid;
@@ -214,6 +220,14 @@
     .radio-btn {
       @extend .input-checkbox;
     }
+  }
+}
+.checkbox-option {
+  @extend .input-checkbox;
+  grid-area: content;
+  line-height: 1.2;
+  label {
+    align-items: start;
   }
 }
 
