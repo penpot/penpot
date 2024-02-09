@@ -125,7 +125,7 @@
   @include buttonStyle;
   @include flexCenter;
   @include focusTertiary;
-  --button-tertiary-border-width: $s-2;
+  --button-tertiary-border-width: #{$s-2};
   border-radius: $br-8;
   color: var(--button-tertiary-foreground-color-rest);
   background-color: transparent;

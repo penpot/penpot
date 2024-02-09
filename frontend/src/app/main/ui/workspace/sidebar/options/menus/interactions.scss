@@ -145,63 +145,6 @@
     @extend .input-element;
     grid-area: content;
   }
-
-  .position-btns-wrapper {
-    grid-area: content;
-    display: grid;
-    grid-template-areas:
-      "topleft top topright"
-      "left center right"
-      "bottomleft bottom bottomright";
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(3, 1fr);
-    width: $s-84;
-    height: $s-84;
-    border-radius: $br-8;
-    background-color: var(--color-background-tertiary);
-    .direction-btn {
-      @extend .button-tertiary;
-      height: $s-28;
-      width: $s-28;
-      .rectangle {
-        height: $s-8;
-        width: $s-8;
-        background-color: var(--color-background-quaternary);
-      }
-      &:hover {
-        .rectangle {
-          background-color: var(--color-accent-primary);
-        }
-      }
-      &.active {
-        background-color: var(--color-background-quaternary);
-        .rectangle {
-          background-color: var(--color-accent-primary);
-        }
-      }
-    }
-    .center-btn {
-      grid-area: center;
-    }
-    .top-left-btn {
-      grid-area: topleft;
-    }
-    .top-right-btn {
-      grid-area: topright;
-    }
-    .top-center-btn {
-      grid-area: top;
-    }
-    .bottom-left-btn {
-      grid-area: bottomleft;
-    }
-    .bottom-right-btn {
-      grid-area: bottomright;
-    }
-    .bottom-center-btn {
-      grid-area: bottom;
-    }
-  }
   .buttons-wrapper {
     grid-area: content;
     .right svg {
@@ -222,6 +165,53 @@
     }
   }
 }
+
+.position-btns-wrapper {
+  grid-area: content;
+  display: grid;
+  grid-template-areas:
+    "topleft top topright"
+    "left center right"
+    "bottomleft bottom bottomright";
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  width: $s-84;
+  height: $s-84;
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+  .center-btn {
+    grid-area: center;
+  }
+  .top-left-btn {
+    grid-area: topleft;
+  }
+  .top-right-btn {
+    grid-area: topright;
+  }
+  .top-center-btn {
+    grid-area: top;
+  }
+  .bottom-left-btn {
+    grid-area: bottomleft;
+  }
+  .bottom-right-btn {
+    grid-area: bottomright;
+  }
+  .bottom-center-btn {
+    grid-area: bottom;
+  }
+}
+
+.direction-btn {
+  @extend .button-tertiary;
+  height: $s-28;
+  width: $s-28;
+
+  &.active {
+    @extend .button-icon-selected;
+  }
+}
+
 .checkbox-option {
   @extend .input-checkbox;
   grid-area: content;
@@ -272,6 +262,13 @@
     @extend .button-icon-selected;
     --button-tertiary-border-width: var(--expand-button-icon-border-width-selected);
   }
+}
+
+.corner-icon {
+  fill: none;
+  stroke: currentColor;
+  width: $s-12;
+  height: $s-12;
 }
 
 .flow-element {
