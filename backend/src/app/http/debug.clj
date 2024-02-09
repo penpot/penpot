@@ -413,13 +413,8 @@
                 :code :invalid-version
                 :hint "provided invalid version"))
 
-    (binding [srepl/*system* cfg]
-      (srepl/process-file! :id file-id
-                           :update-fn (fn [file]
-                                        (update file :data assoc :version version))
-                           :migrate? false
-                           :inc-revn? false
-                           :save? true))
+    (db/tx-run! cfg srepl/process-file! file-id #(update % :data assoc :version version))
+
     {::rres/status  200
      ::rres/headers {"content-type" "text/plain"}
      ::rres/body    "OK"}))
