@@ -1,0 +1,418 @@
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2024-02-09 13:58+0000\n"
+"Last-Translator: Revenant <mohdmuizz22@yahoo.com>\n"
+"Language-Team: Malay <https://hosted.weblate.org/projects/penpot/frontend/ms/"
+">\n"
+"Language: ms\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Weblate 5.4-dev\n"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-account"
+msgstr "Cipta akaun demo"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-profile"
+msgstr "Hanya ingin mencubanya?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.demo-warning"
+msgstr ""
+"Ini adalah perkhidmatan DEMO, JANGAN GUNAKAN untuk kerja sebenar, projek "
+"akan dipadam secara berkala."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.email"
+msgstr "E-mel"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.forgot-password"
+msgstr "Lupa kata laluan?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.fullname"
+msgstr "Nama penuh"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.login-here"
+msgstr "Log masuk disini"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-submit"
+msgstr "Log masuk"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-title"
+msgstr "Gembira dapat berjumpa lagi!"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-github-submit"
+msgstr "Github"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-gitlab-submit"
+msgstr "GitLab"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "Google"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-ldap-submit"
+msgstr "LDAP"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-oidc-submit"
+msgstr "OpenID Connect"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.invalid-token-error"
+msgstr "Token pemulihan adalah tidak sah."
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.password-changed-successfully"
+msgstr "Kata laluan berjaya ditukar"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.profile-not-verified"
+msgstr "Profil tidak disahkan, sila sahkan profil sebelum meneruskan."
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.recovery-token-sent"
+msgstr "Pautan pemulihan kata laluan dihantar ke peti masuk anda."
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "auth.notifications.team-invitation-accepted"
+msgstr "Berjaya menyertai pasukan"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.password"
+msgstr "Kata laluan"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-length-hint"
+msgstr "Sekurang-kurangnya 8 aksara"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-not-empty"
+msgstr "Kata laluan mesti mengandungi beberapa aksara selain daripada ruang."
+
+msgid "auth.privacy-policy"
+msgstr "Dasar privasi"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-submit"
+msgstr "Pulihkan Kata Laluan"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-subtitle"
+msgstr "Kami akan menghantar e-mel kepada anda dengan arahan"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-title"
+msgstr "Lupa kata laluan?"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.recovery-submit"
+msgstr "Tukar kata laluan anda"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register"
+msgstr "Tiada akaun lagi?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-subtitle"
+msgstr "Ia percuma dan Sumber Terbuka"
+
+#: src/app/main/ui/auth.cljs
+msgid "auth.sidebar-tagline"
+msgstr "Penyelesaian sumber terbuka untuk reka bentuk dan prototaip."
+
+msgid "auth.terms-of-service"
+msgstr "Syarat perkhidmatan"
+
+#: src/app/main/ui/auth/register.cljs
+#, markdown
+msgid "auth.terms-privacy-agreement-md"
+msgstr ""
+"Apabila membuat akaun baharu, anda bersetuju menerima [syarat "
+"perkhidmatan](%s) dan [dasar privasi](%s) kami."
+
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"Apabila membuat akaun baharu, anda bersetuju menerima syarat perkhidmatan "
+"dan dasar privasi kami."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "branding-illustrations-marketing-pieces"
+msgstr "... penjenamaan, ilustrasi, bahagian pemasaran, dll."
+
+msgid "common.publish"
+msgstr "Terbitkan"
+
+msgid "common.share-link.all-users"
+msgstr "Semua pengguna Penpot"
+
+msgid "common.share-link.current-tag"
+msgstr "(semasa)"
+
+msgid "common.share-link.destroy-link"
+msgstr "Musnahkan pautan"
+
+msgid "common.share-link.get-link"
+msgstr "Dapatkan pautan"
+
+msgid "common.share-link.link-copied-success"
+msgstr "Pautan berjaya disalin"
+
+msgid "common.share-link.manage-ops"
+msgstr "Urus kebenaran"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "%s halaman dikongsi"
+
+msgid "common.share-link.permissions-can-comment"
+msgstr "Boleh komen"
+
+msgid "common.share-link.permissions-hint"
+msgstr "Sesiapa yang mempunyai pautan akan mendapat akses"
+
+msgid "common.share-link.permissions-pages"
+msgstr "Halaman dikongsi"
+
+msgid "common.share-link.placeholder"
+msgstr "Pautan boleh kongsi akan dipaparkan di sini"
+
+msgid "common.share-link.team-members"
+msgstr "Hanya ahli pasukan"
+
+msgid "common.share-link.title"
+msgstr "Kongsi prototaip"
+
+msgid "common.share-link.view-all"
+msgstr "Pilih semua"
+
+msgid "common.unpublish"
+msgstr "Nyahterbitkan"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "Pengurusan pasukan"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr ""
+"Penpot dibuat untuk pasukan. Jemput ahli untuk bekerjasama dalam projek dan "
+"fail"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "Berganding bahu!"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr ""
+"Pelajari asas-asas di Penpot sambil berseronok dengan tutorial guna tangan "
+"ini."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.title"
+msgstr "Tutorial guna tangan"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr "Terokai Penpot untuk mengetahui lebih lanjut tentang ciri utamanya."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "Mulakan jelajah"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.title"
+msgstr "Panduan Antara Muka"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.copied-success"
+msgstr "Token disalin"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create"
+msgstr "Jana token baru"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.add-one"
+msgstr "Tekan butang \"Jana token baharu\" untuk menjana token."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-180-days"
+msgstr "180 hari"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-30-days"
+msgstr "30 hari"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-60-days"
+msgstr "60 hari"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-90-days"
+msgstr "90 hari"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-never"
+msgstr "Tidak pernah"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expired-on"
+msgstr "Luput pada %s"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expires-on"
+msgstr "Tamat tempoh pada %s"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.no-expiration"
+msgstr "Tiada tarikh tamat tempoh"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal"
+msgstr "Token capaian peribadi"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.token-will-expire"
+msgstr "Token akan luput pada %s"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.token-will-not-expire"
+msgstr "Token tidak mempunyai tarikh luput"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.add-shared"
+msgstr "Tambahkan sebagai Perpustakaan kongsi"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.change-email"
+msgstr "tukar e-mel"
+
+#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
+msgid "dashboard.copy-suffix"
+msgstr "(salin)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.create-new-team"
+msgstr "Buat pasukan baharu"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.default-team-name"
+msgstr "Penpot anda"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.delete-team"
+msgstr "Padam pasukan"
+
+msgid "dashboard.download-binary-file"
+msgstr "Muat turun fail Penpot (.penpot)"
+
+msgid "dashboard.download-standard-file"
+msgstr "Muat turun fail standard (.svg + .json)"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate"
+msgstr "Pendua"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate-multi"
+msgstr "Pendua %s fail"
+
+#: src/app/main/ui/dashboard/grid.cljs
+#, markdown
+msgid "dashboard.empty-placeholder-drafts"
+msgstr ""
+"Fail yang ditambahkan pada Perpustakaan akan dipaparkan di sini. Cuba kongsi "
+"fail anda atau tambahkan daripada [Perpustakaan & templat](https://penpot."
+"app/libraries-templates.html) kami."
+
+msgid "dashboard.export-binary-multi"
+msgstr "Muat turun %s fail Penpot (.penpot)"
+
+msgid "dashboard.export-frames"
+msgstr "Eksport papan sebagai PDF"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.already-have-account"
+msgstr "Sudah mempunyai akaun?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-your-email"
+msgstr ""
+"Semak e-mel anda dan klik pada pautan untuk mengesahkan dan mula menggunakan "
+"Penpot."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-title"
+msgstr "Cipta akaun"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.confirm-password"
+msgstr "Mengesahkan kata laluan"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.verification-email-sent"
+msgstr "Kami telah menghantar e-mel pengesahan kepada"
+
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr ""
+"Adakah anda pasti untuk mengalih keluar pautan ini? Jika anda melakukannya, "
+"ia tidak lagi tersedia untuk sesiapa sahaja"
+
+msgid "common.share-link.permissions-can-inspect"
+msgstr "Boleh memeriksa kod"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "Mulakan tutorial"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create.success"
+msgstr "Token capaian berjaya dihasilkan."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal.description"
+msgstr ""
+"Token capaian peribadi berfungsi seperti alternatif kepada sistem pengesahan "
+"log masuk/kata laluan kami dan boleh digunakan untuk membenarkan aplikasi "
+"mengakses API dalaman Penpot"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.no-access-tokens"
+msgstr "Anda tidak mempunyai token setakat ini."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.errors-required-name"
+msgstr "Nama diperlukan"
+
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.not-all-space"
+msgstr "Nama mesti mengandungi beberapa aksara selain ruang."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.too-long"
+msgstr "Nama mesti mengandungi paling banyak 250 aksara."
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.new-password"
+msgstr "Taip kata laluan baharu"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.register-submit"
+msgstr "Cipta akaun"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-frames.title"
+msgstr "Eksport sebagai PDF"
