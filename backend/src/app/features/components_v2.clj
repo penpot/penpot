@@ -431,9 +431,11 @@
         fix-empty-components
         (fn [file-data]
           (letfn [(fix-component [components id component]
-                    (if (empty? (:objects component))
-                      (dissoc components id)
-                      components))]
+                    (let [root-shape (ctst/get-shape component (:id component))]
+                      (if (or (empty? (:objects component))
+                              (nil? root-shape))
+                        (dissoc components id)
+                        components)))]
 
             (-> file-data
                 (d/update-when :components #(reduce-kv fix-component % %)))))
