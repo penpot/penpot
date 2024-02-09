@@ -386,17 +386,23 @@
         (mf/use-fn
          (mf/deps file-id)
          (fn [event]
-           (st/emit! (dw/set-assets-section-open file-id :colors true)
-                     (ptk/event ::ev/event {::ev/name "add-asset-to-library"
-                                            :asset-type "color"}))
-           ;; FIXME: replace interop with dom helpers
-           (modal/show! :colorpicker
-                        {:x (.-clientX event)
-                         :y (.-clientY event)
-                         :on-accept add-color
-                         :data {:color "#406280"
-                                :opacity 1}
-                         :position :right})))
+           (let [bounding-rect (-> event
+                                   (dom/get-current-target)
+                                   (dom/get-bounding-rect))
+                 x-position (:right bounding-rect)
+                 y-position  (:top bounding-rect)]
+
+             (st/emit! (dw/set-assets-section-open file-id :colors true)
+                       (ptk/event ::ev/event {::ev/name "add-asset-to-library"
+                                              :asset-type "color"}))
+             ;; FIXME: replace interop with dom helpers
+             (modal/show! :colorpicker
+                          {:x x-position
+                           :y y-position
+                           :on-accept add-color
+                           :data {:color "#406280"
+                                  :opacity 1}
+                           :position :right}))))
 
         create-group
         (mf/use-fn

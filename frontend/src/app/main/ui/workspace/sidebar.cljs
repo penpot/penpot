@@ -116,7 +116,7 @@
           (when-not ^boolean mode-inspect?
             [:& tab-element {:id :assets
                              :title (tr "workspace.toolbar.assets")}
-             [:& assets-toolbox]])]])]]))
+             [:& assets-toolbox {:size (- size 58)}]])]])]]))
 
 ;; --- Right Sidebar (Component)
 

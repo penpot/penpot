@@ -391,7 +391,7 @@
          [:span {:class (stl/css :icon-text)} "W"]
          [:> numeric-input* {:min 0.01
                              :no-validate true
-                             :placeholder "--"
+                             :placeholder (if (= :multiple (:width values)) (tr "settings.multiple") "--")
                              :on-change on-width-change
                              :disabled disabled-width-sizing?
                              :className (stl/css :numeric-input)
@@ -402,7 +402,7 @@
          [:span {:class (stl/css :icon-text)} "H"]
          [:> numeric-input* {:min 0.01
                              :no-validate true
-                             :placeholder "--"
+                             :placeholder (if (= :multiple (:height values)) (tr "settings.multiple") "--")
                              :on-change on-height-change
                              :disabled disabled-height-sizing?
                              :className (stl/css :numeric-input)
@@ -422,7 +422,7 @@
                :title (tr "workspace.options.x")}
          [:span {:class (stl/css :icon-text)} "X"]
          [:> numeric-input* {:no-validate true
-                             :placeholder "--"
+                             :placeholder (if (= :multiple (:x values)) (tr "settings.multiple") "--")
                              :on-change on-pos-x-change
                              :disabled disabled-position-x?
                              :className (stl/css :numeric-input)
@@ -433,7 +433,7 @@
                :title (tr "workspace.options.y")}
          [:span {:class (stl/css :icon-text)} "Y"]
          [:> numeric-input* {:no-validate true
-                             :placeholder "--"
+                             :placeholder (if (= :multiple (:y values)) (tr "settings.multiple") "--")
                              :disabled disabled-position-y?
                              :on-change on-pos-y-change
                              :className (stl/css :numeric-input)
@@ -450,7 +450,7 @@
              :min 0
              :max 359
              :data-wrap true
-             :placeholder "--"
+             :placeholder (if (= :multiple (:rotation values)) (tr "settings.multiple") "--")
              :on-change on-rotation-change
              :className (stl/css :numeric-input)
              :value (:rotation values)}]])
@@ -464,7 +464,7 @@
                      :title (tr "workspace.options.radius")}
                [:span {:class (stl/css :icon)}  i/corner-radius-refactor]
                [:> numeric-input*
-                {:placeholder "Mixed"
+                {:placeholder (if (= :multiple (:rx values)) (tr "settings.multiple") "--")
                  :ref radius-input-ref
                  :min 0
                  :on-change on-radius-1-change

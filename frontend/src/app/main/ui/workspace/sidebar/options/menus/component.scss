@@ -264,7 +264,7 @@
   font-size: $s-12;
   cursor: pointer;
   width: 100%;
-  height: $s-36;
+  height: $s-44;
   border-radius: $br-8;
   background-color: var(--assets-item-background-color);
   color: var(--assets-item-name-foreground-color);
@@ -278,8 +278,8 @@
   img {
     background-color: var(--assets-component-background-color);
     border-radius: $br-8;
-    height: $s-32;
-    width: $s-32;
+    height: $s-36;
+    width: $s-36;
     margin: $s-2 $s-8 $s-2 $s-2;
   }
 

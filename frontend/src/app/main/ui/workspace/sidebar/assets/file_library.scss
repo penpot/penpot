@@ -6,14 +6,10 @@
 
 @import "refactor/common-refactor.scss";
 .tool-window {
-  padding-inline-start: $s-12;
-  overflow-y: auto;
+  padding: 0 0 $s-24 $s-12;
   display: grid;
   grid-auto-rows: max-content;
-  scrollbar-gutter: stable;
-  &:last-child {
-    margin-block-end: $s-24;
-  }
+  gap: $s-4;
   height: 100%;
 }
 
@@ -47,6 +43,9 @@
 
 .library-content {
   width: 100%;
+  display: grid;
+  grid-auto-rows: max-content;
+  gap: $s-4;
 }
 
 .asset-title {

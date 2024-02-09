@@ -14,8 +14,9 @@ $width-settings-bar-max: $s-500;
   grid-template-areas:
     "header header"
     "content resize";
-  grid-template-rows: $s-48 1fr;
+  grid-template-rows: $s-52 1fr;
   grid-template-columns: 1fr 0;
+  gap: $s-8 0;
   position: relative;
   grid-area: left-sidebar;
   min-width: $width-settings-bar;
@@ -54,7 +55,7 @@ $width-settings-bar-max: $s-500;
 }
 
 .tab-spacing {
-  margin-inline: $s-8;
+  margin-inline: $s-12;
 }
 
 .right-settings-bar {

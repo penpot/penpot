@@ -9,10 +9,10 @@
 .drop-space {
   height: $s-12;
 }
+
 .asset-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax($s-96, 1fr));
-  grid-auto-rows: $s-112;
   max-width: 100%;
   gap: $s-4;
   margin-inline: $s-8;
@@ -21,6 +21,7 @@
 .grid-cell {
   @include flexCenter;
   position: relative;
+  aspect-ratio: 1 / 1;
   padding: $s-8;
   border-radius: $br-8;
   background-color: var(--assets-component-background-color);
@@ -63,7 +64,6 @@
   }
 
   &:hover {
-    background-color: var(--assets-item-background-color-hover);
     .cell-name {
       display: block;
     }
@@ -72,6 +72,12 @@
   &.selected {
     border: $s-1 solid var(--assets-item-border-color);
   }
+}
+
+.component-group {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $s-4;
 }
 
 .thumbnail {
@@ -89,23 +95,22 @@
   border: $s-2 solid var(--assets-item-border-color-drag);
 }
 
-.asset-enum {
-  margin: 0 $s-12;
-}
-
 .enum-item {
   position: relative;
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
   column-gap: $s-8;
-  height: $s-36;
-  margin-bottom: $s-4;
+  height: $s-44;
+
   padding: $s-2;
   border-radius: $br-8;
   background-color: var(--assets-item-background-color);
   cursor: pointer;
 
+  &:not(:last-child) {
+    margin-bottom: $s-4;
+  }
   &:hover {
     background-color: var(--assets-item-background-color-hover);
     .item-name {
@@ -159,8 +164,8 @@
   @include flexCenter;
   flex-shrink: 0;
   padding: $s-2;
-  height: $s-32;
-  width: $s-32;
+  height: $s-36;
+  width: $s-36;
   border-radius: $br-6;
   background-color: var(--assets-component-background-color);
 }
