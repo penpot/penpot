@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-11-28 09:04+0000\n"
+"PO-Revision-Date: 2024-01-23 15:01+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.3-dev\n"
+"X-Generator: Weblate 5.4-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -904,8 +904,8 @@ msgstr "Die E-Mail \"%s\" wurde als Spam oder dauerhaft abgelehnt gemeldet."
 msgid "errors.feature-mismatch"
 msgstr ""
 "Es scheint als würden Sie eine Datei öffnen, bei der die Funktion '%s' "
-"aktiviert ist. Ihr Penpot-Frontend unterstützt es aber nicht oder hat die "
-"Funktion deaktiviert."
+"aktiviert ist. Ihr aktuelle Version von Penpot unterstützt es aber nicht "
+"oder hat die Funktion deaktiviert."
 
 #: src/app/main/errors.cljs
 msgid "errors.feature-not-supported"
@@ -5105,3 +5105,117 @@ msgstr ""
 "Ihre Bibliothek ist leer. Sobald es als Geteilte Bibliothek hinzugefügt "
 "wurde, können die von Ihnen erstellten Assets in den übrigen Dateien "
 "verwendet werden. Sind Sie sicher, dass Sie es veröffentlichen möchten?"
+
+msgid "media.radial"
+msgstr "Radial"
+
+msgid "workspace.top-bar.read-only.done"
+msgstr "Fertig"
+
+msgid "media.image"
+msgstr "Bild"
+
+msgid "media.linear"
+msgstr "Linear"
+
+msgid "media.gradient"
+msgstr "Verlauf"
+
+msgid "media.solid"
+msgstr "Einfarbig"
+
+msgid "media.choose-image"
+msgstr "Bild auswählen"
+
+msgid "workspace.options.guides.title"
+msgstr "Hilfslinien"
+
+#, markdown
+msgid "workspace.top-bar.read-only"
+msgstr "**Inspektionsmodus** (nur Ansicht)"
+
+#: src/app/main/errors.cljs
+msgid "errors.version-not-supported"
+msgstr "Die Datei hat eine inkompatible Versionsnummer"
+
+#: src/app/main/errors.cljs
+msgid "errors.team-feature-mismatch"
+msgstr "Inkompatible Funktion '%s' erkannt"
+
+msgid "errors.validation"
+msgstr "Validierungsfehler"
+
+msgid "errors.paste-data-validation"
+msgstr "Ungültige Daten in der Zwischenablage"
+
+msgid "labels.search"
+msgstr "Suchen"
+
+msgid "onboarding.choice.team-up.start-without-a-team"
+msgstr "Ohne Team starten"
+
+msgid "onboarding.choice.team-up.start-without-a-team-description"
+msgstr "Sie können später ein Team erstellen."
+
+msgid "onboarding.choice.team-up.continue-without-a-team"
+msgstr "Ohne Team fortsetzen"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites"
+msgstr "Team erstellen und Einladungen versenden"
+
+msgid "onboarding.choice.team-up.continue-creating-team"
+msgstr "Mit der Erstellung eines Teams fortsetzen"
+
+msgid "onboarding.choice.team-up.create-team-without-inviting"
+msgstr "Team ohne Einladungen erstellen"
+
+msgid "onboarding.choice.team-up.create-team-and-invite"
+msgstr "Team erstellen & einladen"
+
+msgid "onboarding.choice.team-up.create-team-without-invite"
+msgstr "Team erstellen"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites-description"
+msgstr "Sie können später einladen"
+
+msgid "workspace.layout_grid.editor.top-bar.done"
+msgstr "Fertig"
+
+msgid "workspace.layout_grid.editor.options.exit"
+msgstr "Beenden"
+
+msgid "workspace.layout_grid.editor.options.edit-grid"
+msgstr "Grid bearbeiten"
+
+msgid "workspace.options.component.swap"
+msgstr "Komponente austauschen"
+
+msgid "workspace.options.component.swap.empty"
+msgstr "Es gibt noch keine Assets in dieser Bibliothek"
+
+#: src/app/main/ui/auth/register.cljs
+#, markdown
+msgid "auth.terms-privacy-agreement-md"
+msgstr ""
+"Wenn Sie ein neues Konto erstellen, stimmen Sie unseren "
+"[Nutzungsbedingungen](%s) und [Datenschutzrichtlinien](%s) zu."
+
+msgid "labels.share"
+msgstr "Teilen"
+
+msgid "inspect.attributes.typography.text-transform.unset"
+msgstr "Nicht gesetzt"
+
+msgid "workspace.layout_grid.editor.top-bar.locate"
+msgstr "Lokalisieren"
+
+#: src/app/main/errors.cljs
+msgid "errors.file-feature-mismatch"
+msgstr ""
+"Es scheint eine Nichtübereinstimmung zwischen den aktivierten Funktionen und "
+"den Funktionen der Datei zu geben. Die Migrationen für '%s' müssen "
+"durchgeführt werden, bevor die Datei geöffnet werden kann."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow"
+msgstr "Flow"

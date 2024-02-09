@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-11-06 18:34+0000\n"
+"PO-Revision-Date: 2024-01-28 11:01+0000\n"
 "Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
 "Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
 "tr/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.2-dev\n"
+"X-Generator: Weblate 5.4-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -777,7 +777,7 @@ msgstr "«%s» e-postasının spam veya kalıcı olarak geri döndüğü bildiri
 msgid "errors.feature-mismatch"
 msgstr ""
 "Görünüşe göre '%s' özelliğinin etkin olduğu bir dosyayı açıyorsunuz, ancak "
-"penpot ön ucunuz bunu desteklemiyor veya devre dışı bırakıldı."
+"şu anki penpot sürümü bunu desteklemiyor veya devre dışı bırakıldı."
 
 #: src/app/main/errors.cljs
 msgid "errors.feature-not-supported"
@@ -5094,3 +5094,146 @@ msgstr "Belirteci kopyala"
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "title.settings.access-tokens"
 msgstr "Profil - Erişim belirteçleri"
+
+#: src/app/main/ui/auth/register.cljs
+#, markdown
+msgid "auth.terms-privacy-agreement-md"
+msgstr ""
+"Bir hesap oluştururken, [koşullarımızı](%s) ve [gizlilik politikamızı](%s) "
+"kabul etmiş sayılırsınız."
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-delete-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Dosyanız başarıyla silindi"
+msgstr[1] "Dosyalarınız başarıyla silindi"
+
+#: src/app/main/errors.cljs
+msgid "errors.version-not-supported"
+msgstr "Dosyanın uyumsuz bir sürüm numarası var"
+
+#: src/app/main/errors.cljs
+msgid "errors.file-feature-mismatch"
+msgstr ""
+"Etkinleştirilen özellikler ile açmaya çalıştığınız dosyanın özellikleri "
+"arasında bir uyumsuzluk var gibi görünüyor. Dosyanın açılabilmesi için önce "
+"'%s' için geçişlerin uygulanması gerekiyor."
+
+msgid "errors.validation"
+msgstr "Doğrulama Hatası"
+
+msgid "errors.paste-data-validation"
+msgstr "Panoda geçersiz veri"
+
+msgid "inspect.attributes.typography.text-transform.unset"
+msgstr "Ayarlanmadı"
+
+msgid "labels.share"
+msgstr "Paylaş"
+
+msgid "labels.search"
+msgstr "Ara"
+
+msgid "onboarding.choice.team-up.start-without-a-team"
+msgstr "Takım olmadan başlayın"
+
+msgid "onboarding.choice.team-up.continue-creating-team"
+msgstr "Takım oluşturmaya devam edin"
+
+msgid "onboarding.choice.team-up.start-without-a-team-description"
+msgstr "Daha sonra bir takım oluşturabileceksiniz."
+
+msgid "onboarding.choice.team-up.continue-without-a-team"
+msgstr "Takım olmadan devam edin"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites"
+msgstr "Takım oluşturun ve davet gönderin"
+
+msgid "onboarding.choice.team-up.create-team-without-inviting"
+msgstr "Davet etmeden takım oluşturun"
+
+msgid "onboarding.choice.team-up.create-team-and-invite"
+msgstr "Takım oluşturun ve davet edin"
+
+msgid "onboarding.choice.team-up.create-team-without-invite"
+msgstr "Takım oluşturun"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites-description"
+msgstr "Daha sonra davet edebileceksiniz"
+
+msgid "workspace.layout_grid.editor.top-bar.locate"
+msgstr "Bul"
+
+msgid "workspace.layout_grid.editor.top-bar.done"
+msgstr "Bitti"
+
+msgid "workspace.layout_grid.editor.options.edit-grid"
+msgstr "Izgarayı düzenle"
+
+msgid "workspace.layout_grid.editor.options.exit"
+msgstr "Çıkış"
+
+msgid "workspace.options.component.swap"
+msgstr "Bileşeni değiştir"
+
+msgid "workspace.options.component.swap.empty"
+msgstr "Bu kütüphanede henüz varlık yok"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow"
+msgstr "Akış"
+
+#, markdown
+msgid "workspace.top-bar.read-only"
+msgstr "**İnceleme modu** (Yalnızca görüntüle)"
+
+msgid "workspace.top-bar.read-only.done"
+msgstr "Bitti"
+
+msgid "media.image"
+msgstr "Görsel"
+
+msgid "media.solid"
+msgstr "Katı"
+
+msgid "media.linear"
+msgstr "Doğrusal"
+
+msgid "media.radial"
+msgstr "Işınsal"
+
+msgid "media.gradient"
+msgstr "Değişim"
+
+msgid "media.choose-image"
+msgstr "Görsel seç"
+
+msgid "workspace.options.guides.title"
+msgstr "Kılavuzlar"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgid_plural "modals.unpublish-shared-confirm.accept"
+msgstr[0] "Yayından kaldır"
+msgstr[1] "Yayından kaldır"
+
+msgid "dashboard.import.import-message"
+msgid_plural "dashboard.import.import-message"
+msgstr[0] "1 dosya başarıyla içeri aktarıldı."
+msgstr[1] "%s dosya başarıyla içeri aktarıldı."
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-duplicate-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Dosyanız başarıyla kopyalandı"
+msgstr[1] "Dosyalarınız başarıyla kopyalandı"
+
+#: src/app/main/errors.cljs
+msgid "errors.team-feature-mismatch"
+msgstr "Uyumsuz '%s' özelliği algılandı"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
+msgid "workspace.options.export-object"
+msgid_plural "workspace.options.export-object"
+msgstr[0] "1 ögeyi dışa aktar"
+msgstr[1] "%s ögeyi dışa aktar"

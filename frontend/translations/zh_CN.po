@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-06-09 01:52+0000\n"
-"Last-Translator: 王世阳 <wangshiyangchina@gmail.com>\n"
-"Language-Team: Chinese (Simplified) "
-"<https://hosted.weblate.org/projects/penpot/frontend/zh_Hans/>\n"
+"PO-Revision-Date: 2024-01-12 23:06+0000\n"
+"Last-Translator: Geek Squirrel <geeksquirrel@qq.com>\n"
+"Language-Team: Chinese (Simplified) <https://hosted.weblate.org/projects/"
+"penpot/frontend/zh_Hans/>\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Weblate 4.18-dev\n"
+"X-Generator: Weblate 5.4-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -646,7 +646,7 @@ msgid "dashboard.webhooks.active"
 msgstr "处于活跃状态"
 
 msgid "dashboard.webhooks.active.explain"
-msgstr "当这个钩子被触发时事件的细节将被传递"
+msgstr "当这个webhook被触发时，事件细节将被传递"
 
 msgid "dashboard.webhooks.content-type"
 msgstr "内容类型"
@@ -763,7 +763,8 @@ msgstr "此邮箱[%s]已被标记为垃圾邮件或已被永久拉黑。"
 
 #: src/app/main/errors.cljs
 msgid "errors.feature-mismatch"
-msgstr "看起来你正在打开一个启用了'%s'功能的文件，但你的penpot前台不支持它或禁用它。"
+msgstr "看起来你正在打开一个启用了'%s'功能的文件，但当前penpot版本并不支持该功能或已"
+"将其禁用。"
 
 #: src/app/main/errors.cljs
 msgid "errors.feature-not-supported"
@@ -1662,7 +1663,7 @@ msgstr "删除文件"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-file-multi-confirm.message"
-msgstr "你确定要删除这%s个文件吗？"
+msgstr "你确定要删除这%s个文件？"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-file-multi-confirm.title"
@@ -2125,10 +2126,10 @@ msgid "shortcuts.align-justify"
 msgstr "两端对齐"
 
 msgid "shortcuts.align-left"
-msgstr "左对齐"
+msgstr "靠左对齐"
 
 msgid "shortcuts.align-right"
-msgstr "右对齐"
+msgstr "靠右对齐"
 
 msgid "shortcuts.align-top"
 msgstr "顶部对齐"
@@ -3927,7 +3928,7 @@ msgstr "底部对齐"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
-msgstr "居中对齐"
+msgstr "垂直居中"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-top"
@@ -3976,11 +3977,11 @@ msgstr "删除线 (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.text-align-center"
-msgstr "居中对齐 (%s)"
+msgstr "水平居中 (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.text-align-justify"
-msgstr "整理 (%s)"
+msgstr "两端对齐 (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.text-align-left"
@@ -4477,3 +4478,528 @@ msgstr "更新"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "单击以闭合路径"
+
+msgid "workspace.layout_grid.editor.top-bar.locate"
+msgstr "定位"
+
+msgid "workspace.layout_grid.editor.top-bar.done"
+msgstr "完成"
+
+msgid "workspace.layout_grid.editor.options.edit-grid"
+msgstr "编辑网格"
+
+msgid "workspace.layout_grid.editor.options.exit"
+msgstr "退出"
+
+#: src/app/main/ui/workspace/textpalette.cljs
+msgid "workspace.libraries.colors.empty-typography-palette"
+msgstr "你的库中还没有排版风格"
+
+msgid "workspace.options.component.swap.empty"
+msgstr "你的库中还没有素材"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow"
+msgstr "流程"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.diamond-marker-short"
+msgstr "钻石"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.line-arrow-short"
+msgstr "箭头"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square-marker-short"
+msgstr "矩形"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.triangle-arrow-short"
+msgstr "三角形"
+
+#, markdown
+msgid "workspace.top-bar.read-only"
+msgstr "**检查模式**（不可编辑）"
+
+msgid "workspace.top-bar.read-only.done"
+msgstr "完成"
+
+msgid "media.solid"
+msgstr "纯色"
+
+msgid "media.linear"
+msgstr "线性"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.no-access-tokens"
+msgstr "你目前还没有令牌。"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.errors-required-name"
+msgstr "名称是必填项"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-180-days"
+msgstr "180天"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-30-days"
+msgstr "30天"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-60-days"
+msgstr "60天"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-90-days"
+msgstr "90天"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-never"
+msgstr "从不"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expired-on"
+msgstr "已经于%s到期"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal"
+msgstr "个人访问令牌"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.token-will-expire"
+msgstr "令牌将于%s到期"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expires-on"
+msgstr "将于%s到期"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.no-expiration"
+msgstr "无到期时限"
+
+#: src/app/main/errors.cljs
+msgid "errors.version-not-supported"
+msgstr "文件具有不兼容的版本号"
+
+#: src/app/main/errors.cljs
+msgid "errors.file-feature-mismatch"
+msgstr "看起来当前启用的功能，与正在打开的文件所依赖的功能不匹配。在打开文件前，需要"
+"应用对“%s”修改。"
+
+#: src/app/main/errors.cljs
+msgid "errors.team-feature-mismatch"
+msgstr "检测到不兼容功能“%s”"
+
+msgid "errors.validation"
+msgstr "验证错误"
+
+msgid "errors.paste-data-validation"
+msgstr "剪切板中为无效数据"
+
+msgid "inspect.attributes.typography.text-transform.unset"
+msgstr "取消设置"
+
+msgid "labels.share"
+msgstr "分享"
+
+msgid "labels.search"
+msgstr "搜索"
+
+msgid "modals.add-shared-confirm-empty.hint"
+msgstr "你的库是空白的。一旦添加为共享库，此文档库中的素材就可被用于你的其他文档中。"
+"你确定要发布它吗？"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.copy-token"
+msgstr "复制令牌"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.expiration-date.label"
+msgstr "到期时间"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.name.label"
+msgstr "名称"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.name.placeholder"
+msgstr "名称可以帮你记住令牌的用途"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.submit-label"
+msgstr "创建令牌"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.title"
+msgstr "生成访问令牌"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.title"
+msgstr "删除令牌"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.message"
+msgstr "你确定想要删除这个令牌吗？"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.activated.scd-message"
+msgid_plural "modals.delete-shared-confirm.activated.scd-message"
+msgstr[0] "该库被以下文档使用： "
+msgstr[1] "这些库被以下文档使用： "
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.activated.no-files-message"
+msgid_plural "modals.delete-shared-confirm.activated.no-files-message"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "modals.publish-empty-library.accept"
+msgstr "发布"
+
+msgid "modals.publish-empty-library.message"
+msgstr "你的库是空白的。你确定想要发布它？"
+
+msgid "modals.publish-empty-library.title"
+msgstr "发布空白库"
+
+#: src/app/main/data/common.cljs
+msgid "notifications.by-code.upgrade-version"
+msgstr "有新版本可用，请刷新页面"
+
+msgid "onboarding.choice.team-up.continue-creating-team"
+msgstr "继续创建团队"
+
+msgid "onboarding.choice.team-up.start-without-a-team-description"
+msgstr "你可以稍后再创建团队。"
+
+msgid "onboarding.choice.team-up.start-without-a-team"
+msgstr "以个人身份开始"
+
+msgid "onboarding.choice.team-up.continue-without-a-team"
+msgstr "以个人身份继续"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites"
+msgstr "创建团队并发送邀请"
+
+msgid "onboarding.choice.team-up.create-team-without-inviting"
+msgstr "创建团队但暂不邀请"
+
+msgid "onboarding.choice.team-up.create-team-and-invite"
+msgstr "创建团队 & 邀请"
+
+msgid "onboarding.choice.team-up.create-team-without-invite"
+msgstr "创建团队"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites-description"
+msgstr "你可以稍后再邀请成员"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.interface-design-visual-assets-design-systems"
+msgstr "...界面设计，视觉素材，设计系统等。"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.none"
+msgstr "无"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.other"
+msgstr "其他（请注明）"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.personal-project"
+msgstr "我在做个人项目"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.previous"
+msgstr "前一项"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.questions-how-are-you-planning-to-use-penpot"
+msgstr "你计划用Penpot做什么？"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.sketch"
+msgstr "Sketch"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.start-to-work-on-my-project"
+msgstr "开始着手我的项目"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.student-teacher"
+msgstr "学生/教师"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.start"
+msgstr "开始"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.test-penpot-to-see-if-its-a-fit-for-team"
+msgstr "试用Penpot，来看它是否适合团队 "
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.try-out-before-using-penpot-on-premise"
+msgstr "在本地部署Penpot前进行试用"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.work-in-concept-ideas"
+msgstr "从事概念构想的工作"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "team.webhooks.max-length"
+msgstr "Webhook的名称最多包含2048个字符。"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "title.settings.access-tokens"
+msgstr "个人资料 — 访问令牌"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.token-will-not-expire"
+msgstr "令牌无到期时限"
+
+msgid "workspace.shape.menu.add-grid"
+msgstr "添加网格布局"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.leave-feedback-for-my-team-project"
+msgstr "给我的团队项目做反馈"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "branding-illustrations-marketing-pieces"
+msgstr "品牌设计、插图、营销物料等。"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.a-lot"
+msgstr "非常多"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.wireframes-user-journeys-flows-navigation-trees"
+msgstr "...线框图，用户轨迹和用户流程，导航树等。"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "question.design-tool-more-experienced-with"
+msgstr "你最熟悉哪个设计工具？"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.invision"
+msgstr "InVision"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.never-used-a-tool"
+msgstr "我之前从未用过设计工具"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.31-50"
+msgstr "31-50"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.more-than-50"
+msgstr "50以上"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.freelancer"
+msgstr "我是一名自由职业者"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.2-10"
+msgstr "2-10"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.copied-success"
+msgstr "已复制令牌"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create"
+msgstr "生成新令牌"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.add-one"
+msgstr "点击“生成新令牌”按钮来生成一个。"
+
+msgid "labels.discard"
+msgstr "丢弃"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.founder"
+msgstr "创始人/副总裁"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.figma"
+msgstr "Figma"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.get-the-code-from-my-team-project"
+msgstr "从我的团队项目获得邀请码 "
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.lets-get-started"
+msgstr "让我们开始吧！"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.marketing"
+msgstr "市场营销"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.next"
+msgstr "下一项"
+
+msgid "shortcuts.text-align-center"
+msgstr "水平居中"
+
+msgid "shortcuts.text-align-left"
+msgstr "靠左对齐"
+
+msgid "shortcuts.text-align-justify"
+msgstr "两端对齐"
+
+msgid "workspace.options.component.annotation"
+msgstr "注释"
+
+msgid "workspace.options.component.copy"
+msgstr "复制"
+
+msgid "workspace.options.component.create-annotation"
+msgstr "创建注释"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.circle-marker-short"
+msgstr "圆形"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.more-info"
+msgstr "更多信息"
+
+msgid "modals.delete-component-annotation.message"
+msgstr "你确定想要删除这个注释？"
+
+msgid "workspace.shape.menu.create-annotation"
+msgstr "创建注释"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.adobe-xd"
+msgstr "Adobe XD"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.canva"
+msgstr "Canva"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.accept"
+msgstr "删除令牌"
+
+msgid "modals.delete-component-annotation.title"
+msgstr "删除注释"
+
+#: src/app/main/ui/workspace/colorpalette.cljs
+msgid "workspace.libraries.colors.empty-palette"
+msgstr "你的库中还没有颜色风格"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.11-30"
+msgstr "11-30"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.designer"
+msgstr "设计师"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.developer"
+msgstr "开发者"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.discover-more-about-penpot"
+msgstr "深入了解Penpot的精彩之处"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.manager"
+msgstr "产品经理/项目经理"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.role"
+msgstr "你是哪种身份？"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.team-size"
+msgstr "你的团队有多少人？"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.your-feedback-will-help-us"
+msgstr "你的反馈将帮助我们更好地理解你的习惯和偏好，以便我们不断改进Penpot，使其成为"
+"一个有用且好用的工具。"
+
+msgid "shortcuts.select-parent-layer"
+msgstr "选择上级图层"
+
+msgid "shortcuts.text-align-right"
+msgstr "靠右对齐"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.libraries.update.see-all-changes"
+msgstr "查看所有修改"
+
+msgid "workspace.assets.open-library"
+msgstr "打开库文档"
+
+msgid "workspace.options.component.edit-annotation"
+msgstr "编辑注释"
+
+msgid "workspace.shape.menu.create-multiple-components"
+msgstr "创建多个组件"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.shared-library"
+msgstr "共享库"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom"
+msgstr "缩放"
+
+msgid "workspace.layout_grid.editor.title"
+msgstr "编辑网格"
+
+msgid "media.radial"
+msgstr "径向"
+
+msgid "media.gradient"
+msgstr "渐变"
+
+msgid "media.choose-image"
+msgstr "选择图片"
+
+msgid "media.image"
+msgstr "图片"
+
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.not-all-space"
+msgstr "姓名必须包含一些空格以外的字符。"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.too-long"
+msgstr "姓名最多包含250个字符。"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-not-empty"
+msgstr "密码必须包含一些空格以外的字符。"
+
+#: src/app/main/ui/auth/register.cljs
+#, markdown
+msgid "auth.terms-privacy-agreement-md"
+msgstr "创建新账号，即代表你同意我们的[服务条例](%s)和[隐私政策](%s)。"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create.success"
+msgstr "成功创建访问令牌。"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal.description"
+msgstr "个人访问令牌可被理解为密码认证的代替选项，常用于允许（第三方）应用访问Penpot"
+"内部API"
+
+msgid "errors.cannot-upload"
+msgstr "无法上传该媒体文件。"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.access-tokens"
+msgstr "访问令牌"
