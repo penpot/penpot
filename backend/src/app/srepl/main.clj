@@ -13,6 +13,9 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.features :as cfeat]
+   [app.common.files.changes :as cpc]
+   [app.common.files.repair :as cfr]
+   [app.common.files.validate :as cfv]
    [app.common.logging :as l]
    [app.common.pprint :as p]
    [app.common.spec :as us]
@@ -24,6 +27,7 @@
    [app.main :as main]
    [app.msgbus :as mbus]
    [app.rpc.commands.auth :as auth]
+   [app.rpc.commands.files :as files]
    [app.rpc.commands.files-snapshot :as fsnap]
    [app.rpc.commands.management :as mgmt]
    [app.rpc.commands.profile :as profile]
@@ -382,6 +386,73 @@
 
     (-> (assoc main/system ::db/rollback rollback?)
         (db/tx-run! restore-snapshot))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; FILE VALIDATION & REPAIR
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn validate-file
+  "Validate structure, referencial integrity and semantic coherence of
+  all contents of a file. Returns a list of errors."
+  [id]
+  (db/tx-run! main/system
+              (fn [{:keys [::db/conn] :as system}]
+                (let [id   (if (string? id) (parse-uuid id) id)
+                      file (h/get-file system id)
+                      libs (->> (files/get-file-libraries conn id)
+                                (into [file] (map (fn [{:keys [id]}]
+                                                    (h/get-file system id))))
+                                (d/index-by :id))]
+                  (cfv/validate-file file libs)))))
+
+(defn repair-file*
+  "Internal helper for validate and repair the file. The operation is
+  applied multiple times untile file is fixed or max iteration counter
+  is reached (default 10)"
+  [system id & {:keys [max-iterations] :or {max-iterations 10}}]
+  (let [id (parse-uuid id)
+
+        validate-and-repair
+        (fn [file libs iteration]
+          (when-let [errors (not-empty (cfv/validate-file file libs))]
+            (l/trc :hint "repairing file"
+                   :file-id (str id)
+                   :iteration iteration
+                   :errors (count errors))
+            (let [changes (cfr/repair-file file libs errors)]
+              (-> file
+                  (update :revn inc)
+                  (update :data cpc/process-changes changes)))))
+
+        process-file
+        (fn [file libs]
+          (loop [file      file
+                 iteration 0]
+            (if (< iteration max-iterations)
+              (if-let [file (validate-and-repair file libs iteration)]
+                (recur file (inc iteration))
+                file)
+              (do
+                (l/wrn :hint "max retry num reached on repairing file"
+                       :file-id (str id)
+                       :iteration iteration)
+                file))))]
+
+    (db/tx-run! system
+                (fn [{:keys [::db/conn] :as system}]
+                  (let [file (h/get-file system id)
+                        libs (->> (files/get-file-libraries conn id)
+                                  (into [file] (map (fn [{:keys [id]}]
+                                                      (h/get-file system id))))
+                                  (d/index-by :id))
+                        file (process-file file libs)]
+                    (h/update-file! system file))))))
+
+(defn repair-file!
+  "Repair the list of errors detected by validation."
+  [file-id & {:keys [rollback?] :or {rollback? true} :as opts}]
+  (let [system (assoc main/system ::db/rollback rollback?)]
+    (repair-file* system file-id (dissoc opts :rollback?))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MISC
