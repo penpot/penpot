@@ -405,11 +405,11 @@
                                 (d/index-by :id))]
                   (cfv/validate-file file libs)))))
 
-(defn repair-file*
+(defn- repair-file*
   "Internal helper for validate and repair the file. The operation is
   applied multiple times untile file is fixed or max iteration counter
   is reached (default 10)"
-  [system id & {:keys [max-iterations] :or {max-iterations 10}}]
+  [system id & {:keys [max-iterations label] :or {max-iterations 10}}]
   (let [id (parse-uuid id)
 
         validate-and-repair
@@ -440,6 +440,9 @@
 
     (db/tx-run! system
                 (fn [{:keys [::db/conn] :as system}]
+                  (when (string? label)
+                    (fsnap/take-file-snapshot! system {:file-id id :label label}))
+
                   (let [file (h/get-file system id)
                         libs (->> (files/get-file-libraries conn id)
                                   (into [file] (map (fn [{:keys [id]}]
