@@ -31,7 +31,7 @@
     width: $s-24;
     padding-right: $s-4;
     svg {
-      @extend .button-icon;
+      @extend .button-icon-small;
       stroke: var(--icon-foreground);
     }
   }
