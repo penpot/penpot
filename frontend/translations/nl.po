@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-04-25 13:07+0000\n"
+"PO-Revision-Date: 2024-02-12 19:02+0000\n"
 "Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
 "Language-Team: Dutch "
 "<https://hosted.weblate.org/projects/penpot/frontend/nl/>\n"
@@ -5337,3 +5337,210 @@ msgstr "Bijwerken"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klik om het pad te sluiten"
+
+msgid "workspace.options.component.copy"
+msgstr "Kopiëren"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square-marker-short"
+msgstr "Rechthoek"
+
+msgid "workspace.options.component.main"
+msgstr "Hoofd"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.diamond-marker-short"
+msgstr "Ruit"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
+msgid "settings.detach"
+msgstr "Ontkoppelen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.triangle-arrow-short"
+msgstr "Driehoek"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.line-arrow-short"
+msgstr "Pijl"
+
+msgid "modals.add-shared-confirm-empty.hint"
+msgstr ""
+"Je bibliotheek is leeg. Eenmaal toegevoegd als Gedeelde Bibliotheek, zijn de "
+"assets die je aanmaakt beschikbaar voor gebruik in de rest van je bestanden. "
+"Weet je zeker dat je dit wilt publiceren??"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.circle-marker-short"
+msgstr "Cirkel"
+
+msgid "onboarding.choice.team-up.continue-creating-team"
+msgstr "Doorgaan met team aanmaken"
+
+msgid "workspace.options.guides.title"
+msgstr "Hulplijnen"
+
+msgid "media.choose-image"
+msgstr "Afbeelding kiezen"
+
+#: src/app/main/ui/auth/register.cljs
+#, markdown
+msgid "auth.terms-privacy-agreement-md"
+msgstr ""
+"Met het aanmaken van een nieuw account ga je akkoord met onze "
+"[servicevoorwaarden] (%s) en [privacybeleid] (%s)."
+
+msgid "workspace.options.component.swap.empty"
+msgstr "Er zijn nog geen assets in deze bibliotheek"
+
+msgid "media.solid"
+msgstr "Solide"
+
+msgid "workspace.top-bar.read-only.done"
+msgstr "Klaar"
+
+msgid "onboarding.choice.team-up.create-team-and-invite"
+msgstr "Team aanmaken & uitnodigen"
+
+msgid "workspace.layout_grid.editor.top-bar.done"
+msgstr "Klaar"
+
+msgid "onboarding.choice.team-up.continue-without-a-team"
+msgstr "Doorgaan zonder team"
+
+msgid "inspect.attributes.typography.text-transform.unset"
+msgstr "Uitschakelen"
+
+msgid "errors.validation"
+msgstr "Validatiefout"
+
+msgid "workspace.layout_grid.editor.options.exit"
+msgstr "Sluiten"
+
+#: src/app/main/errors.cljs
+msgid "errors.version-not-supported"
+msgstr "Bestand heeft een incompatibel versienummer"
+
+msgid "workspace.options.component.swap"
+msgstr "Component uitwisselen"
+
+msgid "onboarding.choice.team-up.create-team-without-inviting"
+msgstr "Team aanmaken zonder uitnodigingen"
+
+#: src/app/main/errors.cljs
+msgid "errors.file-feature-mismatch"
+msgstr ""
+"Het lijkt erop dat er een discrepantie bestaat tussen de ingeschakelde "
+"functies en de functies van het bestand dat je probeert te openen. Er moeten "
+"migraties voor '%s' worden toegepast voordat het bestand kan worden geopend."
+
+msgid "onboarding.choice.team-up.create-team-without-invite"
+msgstr "Team aanmaken"
+
+msgid "media.linear"
+msgstr "Lineair"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow"
+msgstr "Stroomdiagram"
+
+msgid "labels.search"
+msgstr "Zoeken"
+
+msgid "media.image"
+msgstr "Afbeelding"
+
+msgid "onboarding.choice.team-up.start-without-a-team-description"
+msgstr "Je kunt later een team samenstellen."
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites"
+msgstr "Team aanmaken en uitnodigingen versturen"
+
+msgid "workspace.layout_grid.editor.top-bar.locate"
+msgstr "Lokaliseren"
+
+msgid "media.gradient"
+msgstr "Verloop"
+
+msgid "labels.share"
+msgstr "Delen"
+
+msgid "workspace.layout_grid.editor.options.edit-grid"
+msgstr "Raster bewerken"
+
+msgid "onboarding.choice.team-up.start-without-a-team"
+msgstr "Zonder team beginnen"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites-description"
+msgstr "Je kunt later uitnodigen"
+
+msgid "media.radial"
+msgstr "Radiaal"
+
+msgid "errors.paste-data-validation"
+msgstr "Ongeldige gegevens op klembord"
+
+#: src/app/main/errors.cljs
+msgid "errors.team-feature-mismatch"
+msgstr "Incompatibele functie '%s' gedetecteerd"
+
+#, markdown
+msgid "workspace.top-bar.read-only"
+msgstr "** Inspectiemodus ** (alleen bekijken)"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.loading"
+msgstr "Laden…"
+
+msgid "workspace.context-menu.grid-track.column.add-before"
+msgstr "Links 1 kolom toevoegen"
+
+msgid "workspace.context-menu.grid-track.row.duplicate"
+msgstr "Rij dupliceren"
+
+msgid "workspace.context-menu.grid-track.row.add-before"
+msgstr "Boven 1 rij toevoegen"
+
+msgid "workspace.context-menu.grid-track.row.add-after"
+msgstr "Onder 1 rij toevoegen"
+
+msgid "workspace.context-menu.grid-track.row.delete"
+msgstr "Rij verwijderen"
+
+msgid "workspace.context-menu.grid-track.row.delete-shapes"
+msgstr "Rij en vormen verwijderen"
+
+msgid "workspace.context-menu.grid-cells.merge"
+msgstr "Cellen samenvoegen"
+
+msgid "workspace.context-menu.grid-cells.area"
+msgstr "Gebied aanmaken"
+
+msgid "workspace.context-menu.grid-cells.create-board"
+msgstr "Bord aanmaken"
+
+msgid "workspace.context-menu.grid-track.column.add-after"
+msgstr "Rechts 1 kolom toevoegen"
+
+msgid "workspace.context-menu.grid-track.column.delete"
+msgstr "Kolom verwijderen"
+
+msgid "workspace.context-menu.grid-track.column.delete-shapes"
+msgstr "Kolom en vormen verwijderen"
+
+msgid "dashboard.import.analyze-error.components-v2"
+msgstr ""
+"Bestand met componenten v2 geactiveerd, maar dit team ondersteunt dit nog "
+"niet."
+
+msgid "shortcuts.toggle-theme"
+msgstr "Thema veranderen"
+
+msgid "workspace.header.menu.toggle-light-theme"
+msgstr "Licht thema inschakelen"
+
+msgid "workspace.header.menu.toggle-dark-theme"
+msgstr "Donker thema inschakelen"
+
+msgid "workspace.context-menu.grid-track.column.duplicate"
+msgstr "Kolom dupliceren"
