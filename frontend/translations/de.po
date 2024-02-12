@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-01-23 15:01+0000\n"
+"PO-Revision-Date: 2024-02-12 19:01+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
@@ -5219,3 +5219,60 @@ msgstr ""
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.flows.flow"
 msgstr "Flow"
+
+msgid "workspace.header.menu.toggle-dark-theme"
+msgstr "Zum dunklen Theme wechseln"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.loading"
+msgstr "Laden…"
+
+msgid "workspace.context-menu.grid-track.column.delete"
+msgstr "Spalte löschen"
+
+msgid "workspace.context-menu.grid-track.column.delete-shapes"
+msgstr "Spalte und Formen löschen"
+
+msgid "workspace.context-menu.grid-track.row.duplicate"
+msgstr "Zeile duplizieren"
+
+msgid "workspace.context-menu.grid-track.row.delete"
+msgstr "Zeile löschen"
+
+msgid "workspace.context-menu.grid-track.row.delete-shapes"
+msgstr "Zeile und Formen löschen"
+
+msgid "workspace.context-menu.grid-cells.merge"
+msgstr "Zellen zusammenführen"
+
+msgid "workspace.context-menu.grid-cells.area"
+msgstr "Bereich erstellen"
+
+msgid "workspace.context-menu.grid-cells.create-board"
+msgstr "Board erstellen"
+
+msgid "workspace.context-menu.grid-track.column.add-before"
+msgstr "1 Spalte links einfügen"
+
+msgid "shortcuts.toggle-theme"
+msgstr "Theme ändern"
+
+msgid "workspace.header.menu.toggle-light-theme"
+msgstr "Zum hellen Theme wechseln"
+
+msgid "workspace.context-menu.grid-track.column.duplicate"
+msgstr "Spalte duplizieren"
+
+msgid "workspace.context-menu.grid-track.row.add-after"
+msgstr "1 Zeile unterhalb einfügen"
+
+msgid "workspace.context-menu.grid-track.row.add-before"
+msgstr "1 Zeile oberhalb einfügen"
+
+msgid "dashboard.import.analyze-error.components-v2"
+msgstr ""
+"Datei mit Komponenten v2 aktiviert, aber dieses Team unterstützt es noch "
+"nicht."
+
+msgid "workspace.context-menu.grid-track.column.add-after"
+msgstr "1 Spalte rechts einfügen"
