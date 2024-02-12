@@ -262,7 +262,8 @@
                       (merge (:props params))
                       (merge {:viewed-tutorial? false
                               :viewed-walkthrough? false
-                              :nudge {:big 10 :small 1}})
+                              :nudge {:big 10 :small 1}
+                              :v2-info-shown true})
                       (db/tjson))
 
         password  (or (:password params) "!")
