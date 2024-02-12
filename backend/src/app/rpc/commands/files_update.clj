@@ -42,30 +42,28 @@
 
 (def ^:private
   schema:update-file
-  (sm/define
-    [:map {:title "update-file"}
-     [:id ::sm/uuid]
-     [:session-id ::sm/uuid]
-     [:revn {:min 0} :int]
-     [:features {:optional true} ::cfeat/features]
-     [:changes {:optional true} [:vector ::cpc/change]]
-     [:changes-with-metadata {:optional true}
-      [:vector [:map
-                [:changes [:vector ::cpc/change]]
-                [:hint-origin {:optional true} :keyword]
-                [:hint-events {:optional true} [:vector :string]]]]]
-     [:skip-validate {:optional true} :boolean]]))
+  [:map {:title "update-file"}
+   [:id ::sm/uuid]
+   [:session-id ::sm/uuid]
+   [:revn {:min 0} :int]
+   [:features {:optional true} ::cfeat/features]
+   [:changes {:optional true} [:vector ::cpc/change]]
+   [:changes-with-metadata {:optional true}
+    [:vector [:map
+              [:changes [:vector ::cpc/change]]
+              [:hint-origin {:optional true} :keyword]
+              [:hint-events {:optional true} [:vector :string]]]]]
+   [:skip-validate {:optional true} :boolean]])
 
 (def ^:private
   schema:update-file-result
-  (sm/define
-    [:vector {:title "update-file-result"}
-     [:map
-      [:changes [:vector ::cpc/change]]
-      [:file-id ::sm/uuid]
-      [:id ::sm/uuid]
-      [:revn {:min 0} :int]
-      [:session-id ::sm/uuid]]]))
+  [:vector {:title "update-file-result"}
+   [:map
+    [:changes [:vector ::cpc/change]]
+    [:file-id ::sm/uuid]
+    [:id ::sm/uuid]
+    [:revn {:min 0} :int]
+    [:session-id ::sm/uuid]]])
 
 ;; --- HELPERS
 
@@ -73,14 +71,26 @@
 ;; to all clients using it.
 
 (def ^:private library-change-types
-  #{:add-color :mod-color :del-color
-    :add-media :mod-media :del-media
-    :add-component :mod-component :del-component :restore-component
-    :add-typography :mod-typography :del-typography})
+  #{:add-color
+    :mod-color
+    :del-color
+    :add-media
+    :mod-media
+    :del-media
+    :add-component
+    :mod-component
+    :del-component
+    :restore-component
+    :add-typography
+    :mod-typography
+    :del-typography})
 
 (def ^:private file-change-types
-  #{:add-obj :mod-obj :del-obj
-    :reg-objects :mov-objects})
+  #{:add-obj
+    :mod-obj
+    :del-obj
+    :reg-objects
+    :mov-objects})
 
 (defn- library-change?
   [{:keys [type] :as change}]

@@ -128,11 +128,10 @@
              {:keys [file-id]} path-params]
          [:? {}
           (if (:token query-params)
-            [:> static/static-header {}
+            [:> static/error-container {}
              [:div.image i/unchain]
              [:div.main-message (tr "viewer.breaking-change.message")]
              [:div.desc-message (tr "viewer.breaking-change.description")]]
-
 
             [:& viewer-page
              {:page-id page-id

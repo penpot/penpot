@@ -58,6 +58,7 @@
     "application/zip"    ".zip"
     "application/penpot" ".penpot"
     "application/pdf"    ".pdf"
+    "text/plain"         ".txt"
     nil))
 
 (s/def ::id uuid?)

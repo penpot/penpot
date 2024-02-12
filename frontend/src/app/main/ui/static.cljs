@@ -7,19 +7,21 @@
 (ns app.main.ui.static
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
+   [app.common.pprint :as pp]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
+   [app.util.dom :as dom]
    [app.util.globals :as globals]
    [app.util.i18n :refer [tr]]
-   [app.util.object :as obj]
    [app.util.router :as rt]
+   [app.util.webapi :as wapi]
    [rumext.v2 :as mf]))
 
-(mf/defc static-header
+(mf/defc error-container
   {::mf/wrap-props false}
-  [props]
-  (let [children (obj/get props "children")
-        on-click (mf/use-callback #(set! (.-href globals/location) "/"))]
+  [{:keys [children]}]
+  (let [on-click (mf/use-callback #(set! (.-href globals/location) "/"))]
     [:section {:class (stl/css :exception-layout)}
      [:button
       {:class (stl/css :exception-header)
@@ -34,13 +36,13 @@
 
 (mf/defc invalid-token
   []
-  [:> static-header {}
+  [:> error-container {}
    [:div {:class (stl/css :main-message)} (tr "errors.invite-invalid")]
    [:div {:class (stl/css :desc-message)} (tr "errors.invite-invalid.info")]])
 
 (mf/defc not-found
   []
-  [:> static-header {}
+  [:> error-container {}
    [:div {:class (stl/css :main-message)} (tr "labels.not-found.main-message")]
    [:div {:class (stl/css :desc-message)} (tr "labels.not-found.desc-message")]])
 
@@ -49,7 +51,7 @@
   (let [handle-retry
         (mf/use-callback
          (fn [] (st/emit! (rt/assign-exception nil))))]
-    [:> static-header {}
+    [:> error-container {}
      [:div {:class (stl/css :main-message)} (tr "labels.bad-gateway.main-message")]
      [:div {:class (stl/css :desc-message)} (tr "labels.bad-gateway.desc-message")]
      [:div {:class (stl/css :sign-info)}
@@ -57,27 +59,88 @@
 
 (mf/defc service-unavailable
   []
-  (let [handle-retry
-        (mf/use-callback
-         (fn [] (st/emit! (rt/assign-exception nil))))]
-    [:> static-header {}
+  (let [on-click (mf/use-fn #(st/emit! (rt/assign-exception nil)))]
+    [:> error-container {}
      [:div {:class (stl/css :main-message)} (tr "labels.service-unavailable.main-message")]
      [:div {:class (stl/css :desc-message)} (tr "labels.service-unavailable.desc-message")]
      [:div {:class (stl/css :sign-info)}
-      [:button {:on-click handle-retry} (tr "labels.retry")]]]))
+      [:button {:on-click on-click} (tr "labels.retry")]]]))
+
+
+(defn generate-report
+  [data]
+  (let [team-id    (:current-team-id @st/state)
+        profile-id (:profile-id @st/state)
+
+        trace      (:app.main.errors/trace data)
+        instance   (:app.main.errors/instance data)
+        content    (with-out-str
+                     (println "Hint:   " (or (:hint data) (ex-message instance) "--"))
+                     (println "Prof ID:" (str (or profile-id "--")))
+                     (println "Team ID:" (str (or team-id "--")))
+
+                     (when-let [file-id (:file-id data)]
+                       (println "File ID:" (str file-id)))
+
+                     (println)
+
+                     (println "Data:")
+                     (loop [data data]
+                       (-> (d/without-qualified data)
+                           (dissoc :explain)
+                           (d/update-when :data (constantly "(...)"))
+                           (pp/pprint {:level 8 :length 10}))
+
+                       (println)
+
+                       (when-let [explain (:explain data)]
+                         (print explain))
+
+                       (when (and (= :server-error (:type data))
+                                  (contains? data :data))
+                         (recur (:data data))))
+
+                     (println "Trace:")
+                     (println trace)
+                     (println)
+
+                     (println "Last events:")
+                     (pp/pprint @st/last-events {:length 200})
+
+                     (println))]
+
+    (wapi/create-blob content "text/plain")))
+
 
 (mf/defc internal-error
-  []
-  (let [handle-retry
-        (mf/use-callback
-         (fn [] (st/emit! (rt/assign-exception nil))))]
-    [:> static-header {}
+  {::mf/props :obj}
+  [{:keys [data]}]
+  (let [on-click   (mf/use-fn #(st/emit! (rt/assign-exception nil)))
+        report-uri (mf/use-ref nil)
+
+        on-download
+        (mf/use-fn
+         (fn [event]
+           (dom/prevent-default event)
+           (when-let [uri (mf/ref-val report-uri)]
+             (dom/trigger-download-uri "report" "text/plain" uri))))]
+
+    (mf/with-effect [data]
+      (let [report (generate-report data)
+            uri    (wapi/create-uri report)]
+        (mf/set-ref-val! report-uri uri)
+        (fn []
+          (wapi/revoke-uri uri))))
+
+    [:> error-container {}
      [:div {:class (stl/css :main-message)} (tr "labels.internal-error.main-message")]
      [:div {:class (stl/css :desc-message)} (tr "labels.internal-error.desc-message")]
+     [:a {:on-click on-download} "Download report.txt"]
      [:div {:class (stl/css :sign-info)}
-      [:button {:on-click handle-retry} (tr "labels.retry")]]]))
+      [:button {:on-click on-click} (tr "labels.retry")]]]))
 
 (mf/defc exception-page
+  {::mf/props :obj}
   [{:keys [data] :as props}]
   (case (:type data)
     :not-found
@@ -89,4 +152,4 @@
     :service-unavailable
     [:& service-unavailable]
 
-    [:& internal-error]))
+    [:> internal-error props]))
