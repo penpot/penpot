@@ -15,6 +15,7 @@
    [app.common.types.typographies-list :as ctyl]
    [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]
+   [app.main.data.users :as du]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.refs :as refs]
    [app.main.render :refer [component-svg]]
@@ -511,3 +512,58 @@
            [:& updates-tab {:file-id file-id
                             :file-data file-data
                             :libraries libraries}]]]]]]]]))
+
+(mf/defc v2-info-dialog
+  {::mf/register modal/components
+   ::mf/register-as :v2-info}
+  []
+  (let [handle-gotit-click
+        (mf/use-fn
+         (fn []
+           (modal/hide!)
+           (st/emit! (du/update-profile-props {:v2-info-shown true}))))]
+
+    [:div {:class (stl/css :modal-overlay)}
+     [:div {:class (stl/css :modal-dialog :modal-v2-info)}
+      [:div {:class (stl/css :modal-title)} "IMPORTANT INFORMATION ABOUT NEW COMPONENTS"]
+      [:div  {:class (stl/css :modal-content)}
+       [:div {:class (stl/css :info-content)}
+        [:div {:class (stl/css :info-block)}
+         [:div {:class (stl/css :info-icon)} i/v2-icon-1]
+         [:div {:class (stl/css :info-block-title)}
+          "One physical source of truth"]
+         [:div {:class (stl/css :info-block-content)}
+          "Main components are now found at the design space. They act as a single source "
+          "of truth and can be worked on with their copies. This ensures consistency and "
+          "allows better control and synchronization."]]
+
+        [:div {:class (stl/css :info-block)}
+         [:div {:class (stl/css :info-icon)} i/v2-icon-2]
+         [:div {:class (stl/css :info-block-title)}
+          "Swap components"]
+         [:div {:class (stl/css :info-block-content)}
+          "Now, you can replace one component copy with another within your libraries. "
+          "The swap components functionality streamlines making changes, testing "
+          "variations, or updating elements without extensive manual adjustments."]]
+
+        [:div {:class (stl/css :info-block)}
+         [:div {:class (stl/css :info-icon)} i/v2-icon-3]
+         [:div {:class (stl/css :info-block-title)}
+          "Graphic assets no longer exist"]
+         [:div {:class (stl/css :info-block-content)}
+          "Graphic assets now disappear, so that all graphic assets become components. "
+          "This way, swapping between them is possible, and we avoid confusion about "
+          "what should go in each typology."]]
+
+        [:div {:class (stl/css :info-block)}
+         [:div {:class (stl/css :info-icon)} i/v2-icon-4]
+         [:div {:class (stl/css :info-block-title)}
+          "Main components page"]
+         [:div {:class (stl/css :info-block-content)}
+          "You might find that a new page called 'Main components' has appeared in "
+          "your file. On that page, you'll find all the main components that were "
+          "created in your files previously to this new version."]]]
+
+       [:div {:class (stl/css :info-bottom)}
+        [:button {:class (stl/css :primary-button)
+                  :on-click handle-gotit-click} "I GOT IT"]]]]]))

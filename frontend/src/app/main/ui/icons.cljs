@@ -479,6 +479,11 @@
 (def ^:icon cap-round (icon-xref :cap-round))
 (def ^:icon cap-square (icon-xref :cap-square))
 
+(def ^:icon v2-icon-1 (icon-xref :v2-icon-1))
+(def ^:icon v2-icon-2 (icon-xref :v2-icon-2))
+(def ^:icon v2-icon-3 (icon-xref :v2-icon-3))
+(def ^:icon v2-icon-4 (icon-xref :v2-icon-4))
+
 
 (def ^:icon loader-pencil
   (mf/html

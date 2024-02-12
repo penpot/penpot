@@ -50,3 +50,7 @@
     @extend .modal-danger-btn;
   }
 }
+
+.modal-msg {
+  color: var(--modal-text-foreground-color);
+}

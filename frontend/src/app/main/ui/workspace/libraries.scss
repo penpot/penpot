@@ -228,6 +228,15 @@
       }
     }
   }
+
+  .modal-v2-info {
+    width: $s-664;
+    height: fit-content;
+
+    .modal-title {
+      font-size: $fs-18;
+    }
+  }
 }
 
 .item-contents {
@@ -243,5 +252,63 @@
   &:not(:last-child)::after {
     content: "·";
     margin-inline: $s-4;
+  }
+}
+
+.info-content {
+  margin-top: $s-32;
+  display: flex;
+  flex-direction: column;
+  gap: $s-24;
+
+  .info-block {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: $s-20;
+    grid-template:
+      "icon title"
+      "icon content";
+  }
+
+  .info-icon {
+    grid-area: icon;
+    width: $s-52;
+    height: $s-52;
+    margin-top: $s-8;
+    border-radius: $br-circle;
+    background: $db-quaternary;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    svg {
+      width: $s-32;
+      height: $s-32;
+      fill: $da-primary;
+    }
+  }
+  .info-block-title {
+    grid-area: title;
+    font-size: $fs-16;
+    color: $df-primary;
+  }
+  .info-block-content {
+    grid-area: content;
+    font-size: $fs-14;
+    color: $df-secondary;
+    line-height: 1.2;
+  }
+}
+
+.info-bottom {
+  margin-top: $s-24;
+  margin-right: $s-8;
+  display: flex;
+  justify-content: flex-end;
+  .primary-button {
+    @extend .button-primary;
+    @include tabTitleTipography;
+    padding: $s-0 $s-16;
   }
 }
