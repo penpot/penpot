@@ -58,22 +58,22 @@
 
 (defonce last-events
   (let [buffer  (atom [])
-        allowed #{:app.main.data.workspace/initialize-page
-                  :app.main.data.workspace/finalize-page
-                  :app.main.data.workspace/initialize-file
-                  :app.main.data.workspace/finalize-file}]
+        omitset #{:potok.v2.core/undefined
+                  :app.main.data.workspace.persistence/update-persistence-status
+                  :app.main.data.websocket/send-message
+                  :app.main.data.workspace.notifications/handle-pointer-send
+                  :app.util.router/assign-exception}]
     (->> (rx/merge
           (->> stream
                (rx/filter (ptk/type? :app.main.data.workspace.changes/commit-changes))
-               (rx/map #(-> % deref :hint-origin str))
-               (rx/pipe (rxo/distinct-contiguous)))
-          (->> stream
-               (rx/map ptk/type)
-               (rx/filter #(contains? allowed %))
-               (rx/map str)))
+               (rx/map #(-> % deref :hint-origin)))
+          (rx/map ptk/type stream))
+         (rx/filter #(not (contains? omitset %)))
+         (rx/map str)
+         (rx/pipe (rxo/distinct-contiguous))
          (rx/scan (fn [buffer event]
                     (cond-> (conj buffer event)
-                      (> (count buffer) 20)
+                      (> (count buffer) 50)
                       (pop)))
                   #queue [])
          (rx/subs! #(reset! buffer (vec %))))

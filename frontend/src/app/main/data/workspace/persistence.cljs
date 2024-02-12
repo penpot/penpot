@@ -16,7 +16,6 @@
    [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.store :as st]
-   [app.util.router :as rt]
    [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [okulary.core :as l]
@@ -177,19 +176,11 @@
 
                              (rx/of (shapes-changes-persisted-finished))))))
              (rx/catch (fn [cause]
-                         (cond
-                           (= :authentication (:type cause))
-                           (rx/throw cause)
-
-                           (instance? js/TypeError cause)
+                         (if (instance? js/TypeError cause)
                            (->> (rx/timer 2000)
                                 (rx/map (fn [_]
                                           (persist-changes file-id file-revn changes pending-commits))))
-
-                           :else
-                           (rx/concat
-                            (rx/of (rt/assign-exception cause))
-                            (rx/throw cause))))))))))
+                           (rx/throw cause)))))))))
 
 ;; Event to be thrown after the changes have been persisted
 (defn shapes-changes-persisted-finished
