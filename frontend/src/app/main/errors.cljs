@@ -116,7 +116,6 @@
 
 (defmethod ptk/handle-error :validation
   [{:keys [code] :as error}]
-
   (print-group! "Validation Error"
                 (fn []
                   (print-data! error)

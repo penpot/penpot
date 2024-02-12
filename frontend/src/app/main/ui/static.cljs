@@ -11,15 +11,13 @@
    [app.main.ui.icons :as i]
    [app.util.globals :as globals]
    [app.util.i18n :refer [tr]]
-   [app.util.object :as obj]
    [app.util.router :as rt]
    [rumext.v2 :as mf]))
 
-(mf/defc static-header
+(mf/defc error-container
   {::mf/wrap-props false}
-  [props]
-  (let [children (obj/get props "children")
-        on-click (mf/use-callback #(set! (.-href globals/location) "/"))]
+  [{:keys [children]}]
+  (let [on-click (mf/use-callback #(set! (.-href globals/location) "/"))]
     [:section {:class (stl/css :exception-layout)}
      [:button
       {:class (stl/css :exception-header)
@@ -34,13 +32,13 @@
 
 (mf/defc invalid-token
   []
-  [:> static-header {}
+  [:> error-container {}
    [:div {:class (stl/css :main-message)} (tr "errors.invite-invalid")]
    [:div {:class (stl/css :desc-message)} (tr "errors.invite-invalid.info")]])
 
 (mf/defc not-found
   []
-  [:> static-header {}
+  [:> error-container {}
    [:div {:class (stl/css :main-message)} (tr "labels.not-found.main-message")]
    [:div {:class (stl/css :desc-message)} (tr "labels.not-found.desc-message")]])
 
@@ -49,7 +47,7 @@
   (let [handle-retry
         (mf/use-callback
          (fn [] (st/emit! (rt/assign-exception nil))))]
-    [:> static-header {}
+    [:> error-container {}
      [:div {:class (stl/css :main-message)} (tr "labels.bad-gateway.main-message")]
      [:div {:class (stl/css :desc-message)} (tr "labels.bad-gateway.desc-message")]
      [:div {:class (stl/css :sign-info)}
@@ -57,25 +55,21 @@
 
 (mf/defc service-unavailable
   []
-  (let [handle-retry
-        (mf/use-callback
-         (fn [] (st/emit! (rt/assign-exception nil))))]
-    [:> static-header {}
+  (let [on-click (mf/use-fn #(st/emit! (rt/assign-exception nil)))]
+    [:> error-container {}
      [:div {:class (stl/css :main-message)} (tr "labels.service-unavailable.main-message")]
      [:div {:class (stl/css :desc-message)} (tr "labels.service-unavailable.desc-message")]
      [:div {:class (stl/css :sign-info)}
-      [:button {:on-click handle-retry} (tr "labels.retry")]]]))
+      [:button {:on-click on-click} (tr "labels.retry")]]]))
 
 (mf/defc internal-error
   []
-  (let [handle-retry
-        (mf/use-callback
-         (fn [] (st/emit! (rt/assign-exception nil))))]
-    [:> static-header {}
+  (let [on-click (mf/use-fn #(st/emit! (rt/assign-exception nil)))]
+    [:> error-container {}
      [:div {:class (stl/css :main-message)} (tr "labels.internal-error.main-message")]
      [:div {:class (stl/css :desc-message)} (tr "labels.internal-error.desc-message")]
      [:div {:class (stl/css :sign-info)}
-      [:button {:on-click handle-retry} (tr "labels.retry")]]]))
+      [:button {:on-click on-click} (tr "labels.retry")]]]))
 
 (mf/defc exception-page
   [{:keys [data] :as props}]
