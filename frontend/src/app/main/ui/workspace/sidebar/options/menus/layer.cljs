@@ -23,11 +23,11 @@
 
 (defn opacity->string
   [opacity]
-  (if (= opacity :multiple)
-    ""
+  (if (not= opacity :multiple)
     (dm/str (-> opacity
                 (d/coalesce 1)
-                (* 100)))))
+                (* 100)))
+    :multiple))
 
 (mf/defc layer-menu
   {::mf/wrap-props false}
@@ -39,7 +39,7 @@
         blocked?           (:blocked values)
 
         current-blend-mode (or (:blend-mode values) :normal)
-        current-opacity    (:opacity values)
+        current-opacity    (opacity->string (:opacity values))
 
         state*             (mf/use-state
                             {:selected-blend-mode current-blend-mode
@@ -161,8 +161,8 @@
              :title (tr "workspace.options.opacity")}
        [:span {:class (stl/css :icon)} "%"]
        [:> numeric-input*
-        {:value (opacity->string current-opacity)
-         :placeholder (tr "settings.multiple")
+        {:value current-opacity
+         :placeholder "--"
          :on-change handle-opacity-change
          :min 0
          :max 100
