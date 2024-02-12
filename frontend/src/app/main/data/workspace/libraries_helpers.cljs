@@ -161,9 +161,7 @@
                                       component
                                       (:data library)
                                       position
-                                      components-v2
-                                      ;; The position can generate a frame calculation inside the base component so we force the frame-id
-                                      {:force-frame-id frame-id})
+                                      components-v2)
 
          first-shape (cond-> (first new-shapes)
                        (not (nil? parent-id))
