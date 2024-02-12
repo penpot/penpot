@@ -147,8 +147,9 @@
                       (restore-file-snapshot! cfg params)))))
 
 (defn take-file-snapshot!
-  [{:keys [::db/conn]} {:keys [file-id label]}]
-  (let [file  (db/get conn :file {:id file-id})
+  [cfg {:keys [file-id label]}]
+  (let [conn  (db/get-connection cfg)
+        file  (db/get conn :file {:id file-id})
         id    (uuid/next)]
 
     (l/debug :hint "creating file snapshot"

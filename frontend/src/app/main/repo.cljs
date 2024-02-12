@@ -23,28 +23,31 @@
     (rx/of nil)
 
     (= 502 status)
-    (rx/throw {:type :bad-gateway})
+    (rx/throw (ex-info "http error" {:type :bad-gateway}))
 
     (= 503 status)
-    (rx/throw {:type :service-unavailable})
+    (rx/throw (ex-info "http error" {:type :service-unavailable}))
 
     (= 0 (:status response))
-    (rx/throw {:type :offline})
+    (rx/throw (ex-info "http error" {:type :offline}))
 
     (= 200 status)
     (rx/of body)
 
     (= 413 status)
-    (rx/throw {:type :validation
-               :code :request-body-too-large})
+    (rx/throw (ex-info "http error"
+                       {:type :validation
+                        :code :request-body-too-large}))
 
     (and (>= status 400) (map? body))
-    (rx/throw body)
+    (rx/throw (ex-info "http error" body))
 
     :else
-    (rx/throw {:type :unexpected-error
+    (rx/throw
+     (ex-info "http error"
+              {:type :unexpected-error
                :status status
-               :data body})))
+               :data body}))))
 
 (def default-options
   {:update-file {:query-params [:id]}

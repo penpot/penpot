@@ -12,9 +12,8 @@
    [app.binfile.common :as bfc]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
-   [app.common.files.changes :as cpc]
-   [app.common.files.repair :as cfr]
    [app.common.files.validate :as cfv]
    [app.common.logging :as l]
    [app.common.pprint :as p]
@@ -31,17 +30,19 @@
    [app.rpc.commands.files-snapshot :as fsnap]
    [app.rpc.commands.management :as mgmt]
    [app.rpc.commands.profile :as profile]
-   [app.srepl.cli :as cli]
+   [app.srepl.fixes :as fixes]
    [app.srepl.helpers :as h]
-   [app.storage :as sto]
    [app.util.blob :as blob]
-   [app.util.objects-map :as omap]
    [app.util.pointer-map :as pmap]
    [app.util.time :as dt]
    [app.worker :as wrk]
-   [clojure.pprint :refer [pprint print-table]]
+   [clojure.pprint :refer [print-table]]
+   [clojure.stacktrace :as strace]
    [clojure.tools.namespace.repl :as repl]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [promesa.exec :as px]
+   [promesa.exec.semaphore :as ps]
+   [promesa.util :as pu]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TASKS
@@ -138,24 +139,20 @@
 ;; FEATURES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(declare process-file!)
+
 (defn enable-objects-map-feature-on-file!
-  [& {:keys [save? id]}]
-  (h/process-file! main/system
-                   :id id
-                   :update-fn feat.fdata/enable-objects-map
-                   :save? save?))
+  [file-id & {:as opts}]
+  (process-file! file-id feat.fdata/enable-objects-map opts))
 
 (defn enable-pointer-map-feature-on-file!
-  [& {:keys [save? id]}]
-  (h/process-file! main/system
-                   :id id
-                   :update-fn feat.fdata/enable-pointer-map
-                   :save? save?))
+  [file-id & {:as opts}]
+  (process-file! file-id feat.fdata/enable-pointer-map opts))
 
 (defn enable-storage-features-on-file!
-  [& {:as params}]
-  (enable-objects-map-feature-on-file! main/system params)
-  (enable-pointer-map-feature-on-file! main/system params))
+  [file-id & {:as opts}]
+  (enable-objects-map-feature-on-file! file-id opts)
+  (enable-pointer-map-feature-on-file! file-id opts))
 
 (defn enable-team-feature!
   [team-id feature]
@@ -308,84 +305,40 @@
     (db/tx-run! main/system fsnap/take-file-snapshot! {:file-id file-id :label label})))
 
 (defn restore-file-snapshot!
-  [& {:keys [file-id id]}]
-  (db/tx-run! main/system
-              (fn [cfg]
-                (let [file-id (h/parse-uuid file-id)
-                      id      (h/parse-uuid id)]
-                  (if (and (uuid? id) (uuid? file-id))
-                    (fsnap/restore-file-snapshot! cfg {:id id :file-id file-id})
-                    (println "=> invalid parameters"))))))
-
+  [file-id label]
+  (let [file-id (h/parse-uuid file-id)]
+    (db/tx-run! main/system
+                (fn [{:keys [::db/conn] :as system}]
+                  (when-let [snapshot (->> (h/get-file-snapshots conn label #{file-id})
+                                           (map :id)
+                                           (first))]
+                    (fsnap/restore-file-snapshot! system
+                                                  {:id (:id snapshot)
+                                                   :file-id file-id}))))))
 
 (defn list-file-snapshots!
-  [& {:keys [file-id limit]}]
-  (db/tx-run! main/system
-              (fn [system]
-                (let [params {:file-id (h/parse-uuid file-id)
-                              :limit limit}]
-                  (->> (fsnap/get-file-snapshots system (d/without-nils params))
-                       (print-table [:id :revn :created-at :label]))))))
+  [file-id & {:keys [limit]}]
+  (let [file-id (h/parse-uuid file-id)]
+    (db/tx-run! main/system
+                (fn [system]
+                  (let [params {:file-id file-id :limit limit}]
+                    (->> (fsnap/get-file-snapshots system (d/without-nils params))
+                         (print-table [:label :id :revn :created-at])))))))
 
 (defn take-team-snapshot!
-  [& {:keys [team-id label rollback?]
-      :or {rollback? true}}]
+  [team-id & {:keys [label rollback?] :or {rollback? true}}]
   (let [team-id (h/parse-uuid team-id)
-        label   (or label (fsnap/generate-snapshot-label))
-
-        take-snapshot
-        (fn [{:keys [::db/conn] :as system}]
-          (->> (feat.comp-v2/get-and-lock-team-files conn team-id)
-               (map (fn [file-id]
-                      {:file-id file-id
-                       :label label}))
-               (run! (partial fsnap/take-file-snapshot! system))))]
-
+        label   (or label (fsnap/generate-snapshot-label))]
     (-> (assoc main/system ::db/rollback rollback?)
-        (db/tx-run! take-snapshot))))
-
-(def ^:private sql:snapshots-with-file
-  "WITH files AS (
-     SELECT f.id AS file_id,
-            (SELECT fc.id
-               FROM file_change AS fc
-              WHERE fc.label = ?
-                AND fc.file_id = f.id
-              ORDER BY fc.created_at DESC
-              LIMIT 1) AS id
-       FROM file AS f
-   ) SELECT * FROM files
-      WHERE file_id = ANY(?)
-        AND id IS NOT NULL")
+        (db/tx-run! h/take-team-snapshot! team-id label))))
 
 (defn restore-team-snapshot!
   "Restore a snapshot on all files of the team. The snapshot should
   exists for all files; if is not the case, an exception is raised."
-  [& {:keys [team-id label rollback?] :or {rollback? true}}]
-  (let [team-id (h/parse-uuid team-id)
-
-        get-file-snapshots
-        (fn [conn ids]
-          (db/exec! conn [sql:snapshots-with-file label
-                          (db/create-array conn "uuid" ids)]))
-
-        restore-snapshot
-        (fn [{:keys [::db/conn] :as system}]
-          (let [ids  (->> (feat.comp-v2/get-and-lock-team-files conn team-id)
-                          (into #{}))
-                snap (get-file-snapshots conn ids)
-                ids' (into #{} (map :file-id) snap)
-                team (-> (feat.comp-v2/get-team conn team-id)
-                         (update :features disj "components/v2"))]
-
-            (when (not= ids ids')
-              (throw (RuntimeException. "no uniform snapshot available")))
-
-            (feat.comp-v2/update-team! conn team)
-            (run! (partial fsnap/restore-file-snapshot! system) snap)))]
-
+  [team-id label & {:keys [rollback?] :or {rollback? true}}]
+  (let [team-id (h/parse-uuid team-id)]
     (-> (assoc main/system ::db/rollback rollback?)
-        (db/tx-run! restore-snapshot))))
+        (db/tx-run! h/restore-team-snapshot! team-id label))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FILE VALIDATION & REPAIR
@@ -394,68 +347,163 @@
 (defn validate-file
   "Validate structure, referencial integrity and semantic coherence of
   all contents of a file. Returns a list of errors."
-  [id]
-  (db/tx-run! main/system
-              (fn [{:keys [::db/conn] :as system}]
-                (let [id   (if (string? id) (parse-uuid id) id)
-                      file (h/get-file system id)
-                      libs (->> (files/get-file-libraries conn id)
-                                (into [file] (map (fn [{:keys [id]}]
-                                                    (h/get-file system id))))
-                                (d/index-by :id))]
-                  (cfv/validate-file file libs)))))
-
-(defn- repair-file*
-  "Internal helper for validate and repair the file. The operation is
-  applied multiple times untile file is fixed or max iteration counter
-  is reached (default 10)"
-  [system id & {:keys [max-iterations label] :or {max-iterations 10}}]
-  (let [id (parse-uuid id)
-
-        validate-and-repair
-        (fn [file libs iteration]
-          (when-let [errors (not-empty (cfv/validate-file file libs))]
-            (l/trc :hint "repairing file"
-                   :file-id (str id)
-                   :iteration iteration
-                   :errors (count errors))
-            (let [changes (cfr/repair-file file libs errors)]
-              (-> file
-                  (update :revn inc)
-                  (update :data cpc/process-changes changes)))))
-
-        process-file
-        (fn [file libs]
-          (loop [file      file
-                 iteration 0]
-            (if (< iteration max-iterations)
-              (if-let [file (validate-and-repair file libs iteration)]
-                (recur file (inc iteration))
-                file)
-              (do
-                (l/wrn :hint "max retry num reached on repairing file"
-                       :file-id (str id)
-                       :iteration iteration)
-                file))))]
-
-    (db/tx-run! system
+  [file-id]
+  (let [file-id (h/parse-uuid file-id)]
+    (db/tx-run! (assoc main/system ::db/rollback true)
                 (fn [{:keys [::db/conn] :as system}]
-                  (when (string? label)
-                    (fsnap/take-file-snapshot! system {:file-id id :label label}))
-
-                  (let [file (h/get-file system id)
-                        libs (->> (files/get-file-libraries conn id)
+                  (let [file (h/get-file system file-id)
+                        libs (->> (files/get-file-libraries conn file-id)
                                   (into [file] (map (fn [{:keys [id]}]
                                                       (h/get-file system id))))
-                                  (d/index-by :id))
-                        file (process-file file libs)]
-                    (h/update-file! system file))))))
+                                  (d/index-by :id))]
+                    (cfv/validate-file file libs))))))
 
 (defn repair-file!
   "Repair the list of errors detected by validation."
   [file-id & {:keys [rollback?] :or {rollback? true} :as opts}]
-  (let [system (assoc main/system ::db/rollback rollback?)]
-    (repair-file* system file-id (dissoc opts :rollback?))))
+  (let [system  (assoc main/system ::db/rollback rollback?)
+        file-id (h/parse-uuid file-id)
+        opts    (assoc opts :with-libraries? true)]
+    (db/tx-run! system h/process-file! file-id fixes/repair-file opts)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; PROCESSING
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private
+  sql:get-file-ids
+  "SELECT id FROM file
+    WHERE created_at < ? AND deleted_at is NULL
+    ORDER BY created_at DESC")
+
+(defn analyze-files
+  "Apply a function to all files in the database, reading them in
+  batches. Do not change data.
+
+  The `on-file` parameter should be a function that receives the file
+  and the previous state and returns the new state.
+
+  Emits rollback at the end of operation."
+  [on-file & {:keys [max-items start-at with-libraries?]}]
+  (letfn [(get-candidates [conn]
+            (cond->> (db/cursor conn [sql:get-file-ids (or start-at (dt/now))])
+              (some? max-items)
+              (take max-items)))
+
+          (process-file [{:keys [::db/conn] :as system} file-id]
+            (let [file (h/get-file system file-id)
+                  libs (when with-libraries?
+                         (->> (files/get-file-libraries conn file-id)
+                              (into [file] (map (fn [{:keys [id]}]
+                                                  (h/get-file system id))))
+                              (d/index-by :id)))]
+              (if with-libraries?
+                (on-file file libs)
+                (on-file file))))]
+
+    (db/tx-run! (assoc main/system ::db/rollback true)
+                (fn [{:keys [::db/conn] :as system}]
+                  (binding [h/*system* system]
+                    (run! (partial process-file system)
+                          (get-candidates conn)))))))
+
+(defn process-file!
+  "Apply a function to the file. Optionally save the changes or not.
+  The function receives the decoded and migrated file data."
+  [file-id update-fn & {:keys [rollback?] :or {rollback? true}}]
+  (db/tx-run! (assoc main/system ::db/rollback rollback?)
+              (fn [system]
+                (binding [h/*system* system]
+                  (h/process-file! system file-id update-fn)))))
+
+(defn process-team-files!
+  "Apply a function to each file of the specified team."
+  [team-id update-fn & {:keys [rollback? label] :or {rollback? true} :as opts}]
+  (let [team-id (h/parse-uuid team-id)
+        opts    (dissoc opts :label)]
+    (db/tx-run! (assoc main/system ::db/rollback rollback?)
+                (fn [{:keys [::db/conn] :as system}]
+                  (when (string? label)
+                    (h/take-team-snapshot! system team-id label))
+
+                  (binding [h/*system* system]
+                    (->> (feat.comp-v2/get-and-lock-team-files conn team-id)
+                         (reduce (fn [result file-id]
+                                   (if (h/process-file! system file-id update-fn opts)
+                                     (inc result)
+                                     result))
+                                 0)))))))
+
+(defn process-files!
+  "Apply a function to all files in the database"
+  [update-fn & {:keys [max-items
+                       max-jobs
+                       start-at
+                       rollback?]
+                :or {max-jobs 1
+                     max-items Long/MAX_VALUE
+                     rollback? true}
+                :as opts}]
+
+  (l/dbg :hint "process:start"
+         :rollback rollback?
+         :max-jobs max-jobs
+         :max-items max-items)
+
+  (let [tpoint    (dt/tpoint)
+        factory   (px/thread-factory :virtual false :prefix "penpot/file-process/")
+        executor  (px/cached-executor :factory factory)
+        sjobs     (ps/create :permits max-jobs)
+
+        process-file
+        (fn [file-id idx tpoint]
+          (try
+            (l/trc :hint "process:file:start" :file-id (str file-id) :index idx)
+            (let [system (assoc main/system ::db/rollback rollback?)]
+              (db/tx-run! system h/process-file! file-id update-fn opts))
+
+            (catch Throwable cause
+              (l/wrn :hint "unexpected error on processing file (skiping)"
+                     :file-id (str file-id)
+                     :index idx
+                     :cause cause))
+            (finally
+              (ps/release! sjobs)
+              (let [elapsed (dt/format-duration (tpoint))]
+                (l/trc :hint "process:file:end"
+                       :file-id (str file-id)
+                       :index idx
+                       :elapsed elapsed)))))
+
+        process-files
+        (fn [{:keys [::db/conn] :as system}]
+          (db/exec! conn ["SET statement_timeout = 0"])
+          (db/exec! conn ["SET idle_in_transaction_session_timeout = 0"])
+
+          (try
+            (reduce (fn [idx file-id]
+                      (ps/acquire! sjobs)
+                      (px/run! executor (partial process-file file-id idx (dt/tpoint)))
+                      (inc idx))
+                    0
+                    (->> (db/cursor conn [sql:get-file-ids (or start-at (dt/now))])
+                         (take max-items)
+                         (map :id)))
+            (finally
+              ;; Close and await tasks
+              (pu/close! executor))))]
+
+    (try
+      (db/tx-run! main/system process-files)
+
+      (catch Throwable cause
+        (l/dbg :hint "process:error" :cause cause))
+
+      (finally
+        (let [elapsed (dt/format-duration (tpoint))]
+          (l/dbg :hint "process:end"
+                 :rollback rollback?
+                 :elapsed elapsed))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MISC

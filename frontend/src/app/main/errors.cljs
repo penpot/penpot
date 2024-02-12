@@ -116,7 +116,6 @@
 
 (defmethod ptk/handle-error :validation
   [{:keys [code] :as error}]
-
   (print-group! "Validation Error"
                 (fn []
                   (print-data! error)
@@ -130,12 +129,7 @@
                   :timeout 3000})))
 
     :else
-    (let [message (tr "errors.generic-validation")]
-      (st/async-emit!
-       (msg/show {:content message
-                  :type :error
-                  :timeout 3000})))))
-
+    (st/async-emit! (rt/assign-exception error))))
 
 
 ;; This is a pure frontend error that can be caused by an active
@@ -256,12 +250,7 @@
 
 (defmethod ptk/handle-error :server-error
   [error]
-  (ts/schedule
-   #(st/emit!
-     (msg/show {:content "Something wrong has happened (on backend)."
-                :type :error
-                :timeout 3000})))
-
+  (st/async-emit! (rt/assign-exception error))
   (print-group! "Server Error"
                 (fn []
                   (print-data! (dissoc error :data))

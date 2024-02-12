@@ -16,8 +16,7 @@
 
 (def ^:private
   sql:delete-completed-tasks
-  "delete from task_completed
-    where scheduled_at < now() - ?::interval")
+  "DELETE FROM task WHERE scheduled_at < now() - ?::interval")
 
 (defmethod ig/pre-init-spec ::handler [_]
   (s/keys :req [::db/pool]))

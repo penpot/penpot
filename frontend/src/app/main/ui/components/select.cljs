@@ -15,6 +15,7 @@
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
+
 (defn- as-key-value
   [item]
   (if (map? item)
@@ -36,6 +37,10 @@
         current-value  (get state :current-value)
         current-label  (get label-index current-value)
         is-open?       (:is-open? state)
+
+        dropdown-element* (mf/use-ref nil)
+        dropdown-direction* (mf/use-state "down")
+        dropdown-direction-change* (mf/use-ref 0)
 
         open-dropdown
         (mf/use-fn
@@ -81,6 +86,13 @@
     (mf/with-effect [default-value]
       (swap! state* assoc :current-value default-value))
 
+    (mf/with-effect [is-open? dropdown-element*]
+      (let [dropdown-element (mf/ref-val dropdown-element*)]
+        (when (and (= 0 (mf/ref-val dropdown-direction-change*)) dropdown-element)
+          (let [is-outside? (dom/is-element-outside? dropdown-element)]
+            (reset! dropdown-direction* (if is-outside? "up" "down"))
+            (mf/set-ref-val! dropdown-direction-change* (inc (mf/ref-val dropdown-direction-change*)))))))
+
     (let [selected-option (first (filter #(= (:value %) default-value) options))
           current-icon (:icon selected-option)
           current-icon-ref (i/key->icon current-icon)]
@@ -93,7 +105,7 @@
        [:span {:class (stl/css :current-label)} current-label]
        [:span {:class (stl/css :dropdown-button)} i/arrow-refactor]
        [:& dropdown {:show is-open? :on-close close-dropdown}
-        [:ul {:class (dm/str dropdown-class " " (stl/css :custom-select-dropdown))}
+        [:ul {:ref dropdown-element* :data-direction @dropdown-direction* :class (dm/str dropdown-class " " (stl/css :custom-select-dropdown))}
          (for [[index item] (d/enumerate options)]
            (if (= :separator item)
              [:li {:class (dom/classnames (stl/css :separator) true)

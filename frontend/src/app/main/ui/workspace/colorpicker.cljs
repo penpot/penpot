@@ -144,50 +144,8 @@
 
         on-select-library-color
         (mf/use-fn
-         (fn [state color]
-           (let [type-origin selected-mode
-                 editig-stop-origin (:editing-stop state)
-                 is-gradient? (some? (:gradient color))
-                 change-to (fn [new-color]
-                             (st/emit! (dc/update-colorpicker new-color))
-                             (on-change new-color))
-                 clean-stop (fn [stops index color]
-                              (-> (nth stops index)
-                                  (merge color)
-                                  (assoc :offset index)
-                                  (dissoc :r)
-                                  (dissoc :g)
-                                  (dissoc :b)
-                                  (dissoc :alpha)
-                                  (dissoc :s)
-                                  (dissoc :h)
-                                  (dissoc :v)
-                                  (dissoc :hex)))
-                 set-new-gradient (fn [state color index]
-                                    (let [old-stops (:stops state)
-                                          old-gradient (:gradient state)
-                                          new-gradient (-> old-gradient
-                                                           (cond-> (= index 0) (assoc  :stops [(clean-stop old-stops 0 color) (nth old-stops 1)]))
-                                                           (cond-> (= index 1) (assoc  :stops [(nth old-stops 0) (clean-stop old-stops 1 color)]))
-                                                           (dissoc :shape-id))]
-                                      (change-to {:gradient new-gradient})))
-                 new-mode (cond
-                            (:image color) :image
-                            (:color color) :color
-                            (= :linear (get-in color [:gradient :type])) :linear-gradient
-                            (= :radial (get-in color [:gradient :type])) :radial-gradient)]
-             ;; If we have any kind of gradient and:
-             ;; Click on a solid color -> This color is applied to the selected offset
-             ;; Click on a color with transparency -> The same to solid color will happend
-             ;; Click on any kind of gradient -> The color changes completly to new gradient
-
-             ;; If we have a non gradient color the new color is applied without any change
-             (if (or (= :radial-gradient type-origin) (= :linear-gradient type-origin))
-               (if is-gradient?
-                 (change-to color)
-                 (set-new-gradient state color editig-stop-origin))
-               (change-to color))
-             (handle-change-mode new-mode))))
+         (fn [_ color]
+           (st/emit! (dc/apply-color-from-colorpicker color))))
 
         on-add-library-color
         (mf/use-fn
@@ -384,20 +342,27 @@
         rulers? (mf/deref refs/rulers?)
         left-offset (if rulers? 40 18)
 
-        x-pos   400]
+        x-pos 400]
+
     (cond
-      (or (nil? x) (nil? y)) {:left "auto" :right "16rem" :top "4rem"}
+      (or (nil? x) (nil? y)) #js {:left "auto" :right "16rem" :top "4rem"}
       (= position :left)
       (if (> y max-y)
-        {:left (str (- x x-pos) "px")
-         :bottom "1rem"}
-        {:left (str (- x x-pos) "px")
-         :top (str (- y 70) "px")})
+        #js {:left (str (- x x-pos) "px")
+             :bottom "1rem"}
+        #js {:left (str (- x x-pos) "px")
+             :top (str (- y 70) "px")})
+      (= position :right)
+      (if (> y max-y)
+        #js {:left (str (+ x 80) "px")
+             :bottom "1rem"}
+        #js {:left (str (+ x 80) "px")
+             :top (str (- y 70) "px")})
       :else (if (> y max-y)
-              {:left (str (+ x left-offset) "px")
-               :bottom "1rem"}
-              {:left (str (+ x left-offset) "px")
-               :top (str (- y 70) "px")}))))
+              #js {:left (str (+ x left-offset) "px")
+                   :bottom "1rem"}
+              #js {:left (str (+ x left-offset) "px")
+                   :top (str (- y 70) "px")}))))
 
 (mf/defc colorpicker-modal
   {::mf/register modal/components
@@ -428,7 +393,7 @@
           (on-close @last-change))))
 
     [:div {:class (stl/css :colorpicker-tooltip)
-           :style (clj->js style)}
+           :style style}
      [:& colorpicker {:data data
                       :disable-gradient disable-gradient
                       :disable-opacity disable-opacity

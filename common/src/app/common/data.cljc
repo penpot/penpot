@@ -242,7 +242,12 @@
   ([]
    (remove (comp qualified-keyword? key)))
   ([data]
-   (into {} (without-qualified) data)))
+   (reduce-kv (fn [data k _]
+                (if (qualified-keyword? k)
+                  (dissoc data k)
+                  data))
+              data
+              data)))
 
 (defn without-keys
   "Return a map without the keys provided

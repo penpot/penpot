@@ -439,6 +439,23 @@
           (rx/of (change-stroke ids (merge uc/empty-color color) 0))
           (rx/of (change-fill ids (merge uc/empty-color color) 0)))))))
 
+(declare activate-colorpicker-color)
+(declare activate-colorpicker-gradient)
+(declare activate-colorpicker-image)
+
+(defn apply-color-from-colorpicker
+  [color]
+  (ptk/reify ::apply-color-from-colorpicker
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of
+       (cond
+         (:image color) (activate-colorpicker-image)
+         (:color color) (activate-colorpicker-color)
+         (= :linear (get-in color [:gradient :type])) (activate-colorpicker-gradient :linear-gradient)
+         (= :radial (get-in color [:gradient :type])) (activate-colorpicker-gradient :radial-gradient))
+       (apply-color-from-palette color false)))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; COLORPICKER STATE MANAGEMENT

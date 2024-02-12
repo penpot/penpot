@@ -176,7 +176,7 @@
                      :value (tr "labels.cancel")
                      :on-click #(modal/hide!)}]
             [:> fm/submit-button*
-             {:label (tr "modals.create-access-token.submit-label")}]])]]]]]))
+             {:large? false :label (tr "modals.create-access-token.submit-label")}]])]]]]]))
 
 (mf/defc access-tokens-hero
   []

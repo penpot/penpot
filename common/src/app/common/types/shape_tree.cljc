@@ -276,9 +276,12 @@
     (gpt/point? position))
 
    (let [frames    (get-frames objects options)
-         frames    (sort-z-index-objects objects frames options)]
+         frames    (sort-z-index-objects objects frames options)
+         ;; Validator is a callback to add extra conditions to the suggested frame
+         validator (or (get options :validator) #(-> true))]
      (or (d/seek #(and ^boolean (some? position)
-                       ^boolean (gsh/has-point? % position))
+                       ^boolean (gsh/has-point? % position)
+                       ^boolean (validator %))
                  frames)
          (get objects uuid/zero)))))
 

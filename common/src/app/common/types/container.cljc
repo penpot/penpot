@@ -302,13 +302,19 @@
          objects         (:objects container)
          unames          (volatile! (cfh/get-used-names objects))
 
+         component-children
+         (d/index-by :id (cfh/get-children-with-self objects (:id component-shape)))
+
          frame-id        (or force-frame-id
                              (ctst/get-frame-id-by-position objects
                                                             (gpt/add orig-pos delta)
                                                             {:skip-components? true
-                                                             :bottom-frames? true}))
+                                                             :bottom-frames? true
+                                                             ;; We must avoid that destiny frame is inside the component frame
+                                                             :validator #(nil? (get component-children (:id %)))}))
+
          frame           (get-shape container frame-id)
-         component-frame (get-component-shape (:objects container) frame {:allow-main? true})
+         component-frame (get-component-shape objects frame {:allow-main? true})
 
          ids-map         (volatile! {})
 
