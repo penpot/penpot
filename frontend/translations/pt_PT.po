@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-12-29 21:08+0000\n"
+"PO-Revision-Date: 2024-02-12 19:02+0000\n"
 "Last-Translator: TheScientistPT <joao.ed.reis.gomes@gmail.com>\n"
 "Language-Team: Portuguese (Portugal) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_PT/>\n"
@@ -5231,3 +5231,60 @@ msgstr "Funcionalidade incompatível '%s' detetada"
 #, markdown
 msgid "workspace.top-bar.read-only"
 msgstr "**Modo de inspeção** (Somente leitura)"
+
+msgid "shortcuts.toggle-theme"
+msgstr "Mudar tema"
+
+msgid "workspace.header.menu.toggle-light-theme"
+msgstr "Mudar para tema claro"
+
+msgid "workspace.context-menu.grid-track.column.duplicate"
+msgstr "Duplicar coluna"
+
+msgid "workspace.context-menu.grid-track.column.add-before"
+msgstr "Adicionar 1 coluna à esquerda"
+
+msgid "workspace.context-menu.grid-track.column.add-after"
+msgstr "Adicionar 1 coluna à direita"
+
+msgid "workspace.context-menu.grid-track.column.delete"
+msgstr "Eliminar coluna"
+
+msgid "workspace.context-menu.grid-cells.area"
+msgstr "Criar área"
+
+msgid "workspace.context-menu.grid-track.column.delete-shapes"
+msgstr "Apagar coluna e conteúdos"
+
+msgid "workspace.context-menu.grid-track.row.duplicate"
+msgstr "Duplicar fila"
+
+msgid "workspace.context-menu.grid-track.row.add-before"
+msgstr "Adicionar 1 fila acima"
+
+msgid "workspace.context-menu.grid-track.row.delete"
+msgstr "Apagar fila"
+
+msgid "workspace.context-menu.grid-track.row.delete-shapes"
+msgstr "Apagar fila e conteúdos"
+
+msgid "workspace.context-menu.grid-cells.merge"
+msgstr "Unir células"
+
+msgid "workspace.context-menu.grid-cells.create-board"
+msgstr "Criar prancheta"
+
+msgid "workspace.header.menu.toggle-dark-theme"
+msgstr "Alterar para tema escuro"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.loading"
+msgstr "A carregar…"
+
+msgid "dashboard.import.analyze-error.components-v2"
+msgstr ""
+"Ficheiro exportado com componentes v2 mas a equipa atual ainda não os "
+"suporta."
+
+msgid "workspace.context-menu.grid-track.row.add-after"
+msgstr "Adicionar 1 fila abaixo"
