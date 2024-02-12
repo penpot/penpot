@@ -14,7 +14,7 @@
 
 (def conjv (fnil conj []))
 
-;; Setted in app.common.geom.shapes.common-layout
+;; Setted in app.common.geom.shapes.min-size-layout
 ;; We do it this way because circular dependencies
 (def -child-min-width nil)
 

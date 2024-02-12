@@ -246,7 +246,7 @@
 
 (mf/defc layout-item-menu
   {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type" "is-layout-child?" "is-grid-parent?" "is-flex-parent?"]))]}
-  [{:keys [ids values is-layout-child? is-layout-container? is-grid-parent? is-flex-parent?] :as props}]
+  [{:keys [ids values is-layout-child? is-layout-container? is-grid-parent? is-flex-parent? is-flex-layout? is-grid-layout?] :as props}]
 
   (let [selection-parents-ref (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))
         selection-parents     (mf/deref selection-parents-ref)
@@ -268,8 +268,14 @@
 
         title
         (cond
-          (and is-layout-container? (not is-layout-child?))
+          (and is-layout-container? (not is-layout-child?) is-flex-layout?)
           "Flex board"
+
+          (and is-layout-container? (not is-layout-child?) is-grid-layout?)
+          "Grid board"
+
+          (and is-layout-container? (not is-layout-child?))
+          "Layout board"
 
           is-flex-parent?
           "Flex element"

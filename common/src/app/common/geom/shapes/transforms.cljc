@@ -517,7 +517,6 @@
           ids (seq ids)]
      (if (empty? ids)
        objects
-
        (let [id (first ids)
              modifier (dm/get-in modifiers [id :modifiers])]
          (recur (d/update-when objects id transform-shape modifier)

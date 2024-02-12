@@ -300,6 +300,8 @@
 (def ^:icon align-self-row-center-refactor (icon-xref :align-self-row-center-refactor))
 (def ^:icon align-self-row-left-refactor (icon-xref :align-self-row-left-refactor))
 (def ^:icon align-self-row-right-refactor (icon-xref :align-self-row-right-refactor))
+(def ^:icon align-self-column-stretch-refactor (icon-xref :align-self-column-stretch-refactor))
+(def ^:icon align-self-row-stretch-refactor (icon-xref :align-self-row-stretch-refactor))
 (def ^:icon board-refactor (icon-xref :board-refactor))
 (def ^:icon boards-thumbnail-refactor (icon-xref :boards-thumbnail-refactor))
 (def ^:icon boolean-difference-refactor (icon-xref :boolean-difference-refactor))
