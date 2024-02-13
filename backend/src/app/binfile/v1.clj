@@ -40,6 +40,7 @@
    [promesa.util :as pu]
    [yetti.adapter :as yt])
   (:import
+   com.github.luben.zstd.ZstdIOException
    com.github.luben.zstd.ZstdInputStream
    com.github.luben.zstd.ZstdOutputStream
    java.io.DataInputStream
@@ -755,6 +756,12 @@
       (binding [*position* (atom 0)]
         (pu/with-open [input (io/input-stream input)]
           (read-import! (assoc cfg ::input input))))
+
+      (catch ZstdIOException cause
+        (ex/raise :type :validation
+                  :code :invalid-penpot-file
+                  :hint "invalid penpot file received: probably truncated"
+                  :cause cause))
 
       (catch Throwable cause
         (vreset! cs cause)
