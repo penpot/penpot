@@ -409,14 +409,14 @@
                         :type "checkbox"
                         :value "uppercase"
                         :id "text-transform-uppercase"}]
-      [:& radio-button {:icon i/text-lowercase-refactor
-                        :type "checkbox"
-                        :value "lowercase"
-                        :id "text-transform-lowercase"}]
       [:& radio-button {:icon i/text-mixed-refactor
                         :type "checkbox"
                         :value "capitalize"
-                        :id "text-transform-capitalize"}]]]))
+                        :id "text-transform-capitalize"}]
+      [:& radio-button {:icon i/text-lowercase-refactor
+                        :type "checkbox"
+                        :value "lowercase"
+                        :id "text-transform-lowercase"}]]]))
 
 (mf/defc text-options
   {::mf/wrap-props false}
