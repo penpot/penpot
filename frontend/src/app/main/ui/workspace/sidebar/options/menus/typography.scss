@@ -284,19 +284,6 @@
       padding: 0;
       border: $s-1 solid var(--input-border-color);
       position: relative;
-      .font-size-select {
-        @include removeInputStyle;
-        @include titleTipography;
-        height: $s-32;
-        height: 100%;
-        width: 100%;
-        margin: 0;
-        padding: 0;
-        .numeric-input {
-          @extend .input-base;
-          padding-inline-start: $s-8;
-        }
-      }
 
       .icon {
         @include flexCenter;
@@ -339,6 +326,20 @@
         background-color: var(--radio-btns-background-color);
       }
     }
+  }
+}
+
+.font-size-select {
+  @include removeInputStyle;
+  @include titleTipography;
+  height: $s-32;
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: $s-8;
+  .numeric-input {
+    @extend .input-base;
+    padding: 0;
   }
 }
 
