@@ -51,6 +51,7 @@
     "animate.css": "^4.1.1",
     "autoprefixer": "^10.4.16",
     "concurrently": "^8.2.2",
+    "draft-js": "git+https://github.com/penpot/draft-js.git",
     "fancy-log": "^2.0.0",
     "gettext-parser": "^7.0.1",
     "gulp": "4.0.2",
@@ -82,7 +83,6 @@
   },
   "dependencies": {
     "date-fns": "^2.30.0",
-    "draft-js": "^0.11.7",
     "eventsource-parser": "^1.1.1",
     "highlight.js": "^11.9.0",
     "js-beautify": "^1.14.11",

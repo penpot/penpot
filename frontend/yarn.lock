@@ -6053,13 +6053,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"core-js@npm:^3.6.4":
-  version: 3.33.3
-  resolution: "core-js@npm:3.33.3"
-  checksum: 08abdc9470c8228b9d09f61e62ab312738681202c4c34e9638889125b304b235f34c4fe22e9d41c20906ac0fcc807dca57c5ff7d6b90021bf64e8fe23461d9ab
-  languageName: node
-  linkType: hard
-
 "core-util-is@npm:~1.0.0":
   version: 1.0.3
   resolution: "core-util-is@npm:1.0.3"
@@ -6104,7 +6097,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cross-fetch@npm:^3.0.4":
+"cross-fetch@npm:^3.1.5":
   version: 3.1.8
   resolution: "cross-fetch@npm:3.1.8"
   dependencies:
@@ -6693,17 +6686,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"draft-js@npm:^0.11.7":
+"draft-js@git+https://github.com/penpot/draft-js.git":
   version: 0.11.7
-  resolution: "draft-js@npm:0.11.7"
+  resolution: "draft-js@https://github.com/penpot/draft-js.git#commit=3119afbfa3efb80da6a7b232b0ae873a31e7acc0"
   dependencies:
-    fbjs: "npm:^2.0.0"
+    fbjs: "npm:^3.0.4"
     immutable: "npm:~3.7.4"
     object-assign: "npm:^4.1.1"
   peerDependencies:
     react: ">=0.14.0"
     react-dom: ">=0.14.0"
-  checksum: 25943c73cbacf7e00e3ee6bef3496feffe14f09c436cec9233a4fc1bb2b4302f2bcf5fc66f4a5f8e3a9135808d20783aff75e42659da3b21d50f63185bedf557
+  checksum: 46f3dd133b174feeefe2f8cbd7b943385448727c375d0d75dc49651979cfd89d2a64347283749bc75dd789b095ce6747122c5822328f4ea15ba02ca5663ffb4b
   languageName: node
   linkType: hard
 
@@ -7568,19 +7561,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fbjs@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "fbjs@npm:2.0.0"
+"fbjs@npm:^3.0.4":
+  version: 3.0.5
+  resolution: "fbjs@npm:3.0.5"
   dependencies:
-    core-js: "npm:^3.6.4"
-    cross-fetch: "npm:^3.0.4"
+    cross-fetch: "npm:^3.1.5"
     fbjs-css-vars: "npm:^1.0.0"
     loose-envify: "npm:^1.0.0"
     object-assign: "npm:^4.1.0"
     promise: "npm:^7.1.1"
     setimmediate: "npm:^1.0.5"
-    ua-parser-js: "npm:^0.7.18"
-  checksum: 543544198ec6db0be64d0be80cc6386cdc015cf9b9fe3af54f2a861026fe75db1fae38fb6a7b2f1047d733f47ee68d11ecad6d0fbb67b200e56d265d967c4467
+    ua-parser-js: "npm:^1.0.35"
+  checksum: 66d0a2fc9a774f9066e35ac2ac4bf1245931d27f3ac287c7d47e6aa1fc152b243c2109743eb8f65341e025621fb51a12038fadb9fd8fda2e3ddae04ebab06f91
   languageName: node
   linkType: hard
 
@@ -7891,7 +7883,7 @@ __metadata:
     autoprefixer: "npm:^10.4.16"
     concurrently: "npm:^8.2.2"
     date-fns: "npm:^2.30.0"
-    draft-js: "npm:^0.11.7"
+    draft-js: "git+https://github.com/penpot/draft-js.git"
     eventsource-parser: "npm:^1.1.1"
     fancy-log: "npm:^2.0.0"
     gettext-parser: "npm:^7.0.1"
@@ -14602,14 +14594,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ua-parser-js@npm:^0.7.18":
-  version: 0.7.37
-  resolution: "ua-parser-js@npm:0.7.37"
-  checksum: 38295744f1771896a9158f427b10a6971e82e30bdcedb98bf871eb29987a517722ed1185a00e54b1dea5480920d131e374b92574851f29e3a753173b9c0f24d2
-  languageName: node
-  linkType: hard
-
-"ua-parser-js@npm:^1.0.37":
+"ua-parser-js@npm:^1.0.35, ua-parser-js@npm:^1.0.37":
   version: 1.0.37
   resolution: "ua-parser-js@npm:1.0.37"
   checksum: dac8cf82a55b2e097bd2286954e01454c4cfcf23c9d9b56961ce94bda3cec5a38ca536e6e84c20a4000a9d4b4a4abcbd98ec634ccebe21be36595ea3069126e4
