@@ -380,9 +380,6 @@
   "Apply a function to all files in the database, reading them in
   batches. Do not change data.
 
-  The `on-file` parameter should be a function that receives the file
-  and the previous state and returns the new state.
-
   Emits rollback at the end of operation."
   [on-file & {:keys [max-items start-at with-libraries?]}]
   (letfn [(get-candidates [conn]

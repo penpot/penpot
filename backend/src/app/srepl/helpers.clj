@@ -168,7 +168,7 @@
                 (update-fn file libs opts)
                 (update-fn file opts))]
 
-    (when (and (some? file)
+    (when (and (some? file')
                (not (identical? file file')))
       (when validate? (cfv/validate-file-schema! file'))
       (let [file' (update file' :revn inc)]
