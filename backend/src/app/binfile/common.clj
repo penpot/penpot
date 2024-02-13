@@ -141,8 +141,6 @@
                                 " WHERE flr.file_id = ANY(?) AND l.deleted_at IS NULL")]
                    (db/exec! conn [sql ids])))))
 
-
-;; NOTE: Will be used in future, commented for satisfy linter
 (def ^:private sql:get-libraries
   "WITH RECURSIVE libs AS (
      SELECT fl.id
@@ -408,7 +406,6 @@
                           (update :media relink-media)
                           (update :colors relink-colors)
                           (d/without-nils))))))
-
 
 (defn- upsert-file!
   [conn file]

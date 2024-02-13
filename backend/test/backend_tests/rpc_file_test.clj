@@ -154,7 +154,7 @@
 
       ;; Check the number of fragments before adding the page
       (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
-        (t/is (= 1 (count rows))))
+        (t/is (= 2 (count rows))))
 
       ;; Add page
       (update-file!
@@ -172,15 +172,15 @@
 
       ;; Check the number of fragments
       (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
-        (t/is (= 2 (count rows))))
+        (t/is (= 5 (count rows))))
 
       ;; The objects-gc should remove unused fragments
       (let [res (th/run-task! :objects-gc {:min-age 0})]
-        (t/is (= 0 (:processed res))))
+        (t/is (= 1 (:processed res))))
 
       ;; Check the number of fragments
       (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
-        (t/is (= 2 (count rows))))
+        (t/is (= 4 (count rows))))
 
       ;; Add shape to page that should add a new fragment
       (update-file!
@@ -203,7 +203,7 @@
 
       ;; Check the number of fragments
       (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
-        (t/is (= 3 (count rows))))
+        (t/is (= 5 (count rows))))
 
       ;; The file-gc should mark for remove unused fragments
       (let [res (th/run-task! :file-gc {:min-age 0})]
@@ -211,19 +211,19 @@
 
       ;; The objects-gc should remove unused fragments
       (let [res (th/run-task! :objects-gc {:min-age 0})]
-        (t/is (= 0 (:processed res))))
+        (t/is (= 1 (:processed res))))
 
       ;; Check the number of fragments; should be 3 because changes
       ;; are also holding pointers to fragments;
-      (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
-        (t/is (= 3 (count rows))))
+      (let [rows (th/db-query :file-data-fragment {:file-id (:id file)
+                                                   :deleted-at nil})]
+        (t/is (= 6 (count rows))))
 
       ;; Lets proceed to delete all changes
       (th/db-delete! :file-change {:file-id (:id file)})
       (th/db-update! :file
                      {:has-media-trimmed false}
                      {:id (:id file)})
-
 
       ;; The file-gc should remove fragments related to changes
       ;; snapshots previously deleted.
@@ -233,11 +233,11 @@
       ;; Check the number of fragments;
       (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
         ;; (pp/pprint rows)
-        (t/is (= 3 (count rows)))
+        (t/is (= 8 (count rows)))
         (t/is (= 2 (count (remove (comp some? :deleted-at) rows)))))
 
       (let [res (th/run-task! :objects-gc {:min-age 0})]
-        (t/is (= 1 (:processed res))))
+        (t/is (= 6 (:processed res))))
 
       (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
         (t/is (= 2 (count rows)))))))
@@ -367,7 +367,7 @@
         (t/is (= 1 (:processed res))))
 
       (let [res (th/run-task! :objects-gc {:min-age 0})]
-        (t/is (= 1 (:processed res))))
+        (t/is (= 2 (:processed res))))
 
       ;; Now that file-gc have deleted the file-media-object usage,
       ;; lets execute the touched-gc task, we should see that two of
@@ -432,6 +432,11 @@
 
           page-id (first (get-in file [:data :pages]))]
 
+
+      (let [rows (th/db-query :file-data-fragment {:file-id (:id file)
+                                                   :deleted-at nil})]
+        (t/is (= (count rows) 1)))
+
       ;; Update file inserting a new image object
       (update-file!
        :file-id (:id file)
@@ -491,6 +496,10 @@
       (let [res (th/run-task! :objects-gc {:min-age 0})]
         (t/is (= 1 (:processed res))))
 
+      (let [rows (th/db-query :file-data-fragment {:file-id (:id file)
+                                                   :deleted-at nil})]
+        (t/is (= (count rows) 2)))
+
       ;; retrieve file and check trimmed attribute
       (let [row (th/db-get :file {:id (:id file)})]
         (t/is (true? (:has-media-trimmed row))))
@@ -521,11 +530,16 @@
       ;; Now, we have deleted the usage of pointers to the
       ;; file-media-objects, if we paste file-gc, they should be marked
       ;; as deleted.
+
       (let [res (th/run-task! :file-gc {:min-age 0})]
         (t/is (= 1 (:processed res))))
 
       (let [res (th/run-task! :objects-gc {:min-age 0})]
-        (t/is (= 5 (:processed res))))
+        (t/is (= 6 (:processed res))))
+
+      (let [rows (th/db-query :file-data-fragment {:file-id (:id file)
+                                                   :deleted-at nil})]
+        (t/is (= (count rows) 3)))
 
       ;; Now that file-gc have deleted the file-media-object usage,
       ;; lets execute the touched-gc task, we should see that two of
@@ -681,7 +695,6 @@
       (let [rows (th/db-query :file-tagged-object-thumbnail {:file-id file-id})]
         (t/is (= 2 (count rows)))
         (t/is (= 1 (count (remove (comp some? :deleted-at) rows))))
-
         (t/is (= (thc/fmt-object-id file-id page-id frame-id-1 "frame")
                  (-> rows first :object-id))))
 
@@ -689,7 +702,7 @@
       ;; thumbnail lets execute the objects-gc task which remove
       ;; the rows and mark as touched the storage object rows
       (let [res (th/run-task! :objects-gc {:min-age 0})]
-        (t/is (= 2 (:processed res))))
+        (t/is (= 3 (:processed res))))
 
       ;; Now that objects-gc have deleted the object thumbnail lets
       ;; execute the touched-gc task
@@ -719,7 +732,7 @@
 
       (let [res (th/run-task! :objects-gc {:min-age 0})]
         ;; (pp/pprint res)
-        (t/is (= 1 (:processed res))))
+        (t/is (= 2 (:processed res))))
 
       ;; We still have th storage objects in the table
       (let [rows (th/db-query :storage-object {:deleted-at nil})]
@@ -735,6 +748,7 @@
       (let [rows (th/db-query :storage-object {:deleted-at nil})]
         ;; (pp/pprint rows)
         (t/is (= 0 (count rows)))))))
+
 
 (t/deftest permissions-checks-creating-file
   (let [profile1 (th/create-profile* 1)
@@ -1147,7 +1161,7 @@
         (t/is (= 1 (count (remove (comp some? :deleted-at) rows)))))
 
       (let [res (th/run-task! :objects-gc {:min-age 0})]
-        (t/is (= 2 (:processed res))))
+        (t/is (= 3 (:processed res))))
 
       (let [rows (th/db-query :file-tagged-object-thumbnail {:file-id (:id file)})]
         (t/is (= 1 (count rows)))))))
@@ -1203,7 +1217,7 @@
         (t/is (= 1 (count (remove (comp some? :deleted-at) rows)))))
 
       (let [res (th/run-task! :objects-gc {:min-age 0})]
-        (t/is (= 1 (:processed res))))
+        (t/is (= 2 (:processed res))))
 
       (let [rows (th/db-query :file-thumbnail {:file-id (:id file)})]
         (t/is (= 1 (count rows)))))))

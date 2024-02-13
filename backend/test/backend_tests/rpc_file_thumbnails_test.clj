@@ -222,7 +222,7 @@
         (t/is (= 1 (:processed result))))
 
       (let [result (th/run-task! :objects-gc {:min-age 0})]
-        (t/is (= 1 (:processed result))))
+        (t/is (= 2 (:processed result))))
 
       ;; check if row1 related thumbnail row still exists
       (let [[row :as rows] (th/db-query :file-thumbnail
