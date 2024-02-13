@@ -78,7 +78,7 @@
 }
 
 .modal-link {
-  @include titleTipography;
+  @include bodyLargeTypography;
   color: var(--modal-link-foreground-color);
   margin: 0;
 }
