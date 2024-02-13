@@ -29,6 +29,13 @@
         (update :data feat.fdata/process-objects (partial into {}))
         (update :features disj "fdata/pointer-map" "fdata/objects-map"))))
 
+(def sql:get-fdata-files
+  "SELECT id FROM file
+    WHERE deleted_at is NULL
+      AND (features @> '{fdata/pointer-map}' OR
+           features @> '{fdata/objects-map}')
+    ORDER BY created_at DESC")
+
 (defn find-fdata-pointers
   [{:keys [id features data] :as file} _]
   (when (contains? features "fdata/pointer-map")
