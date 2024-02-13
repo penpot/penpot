@@ -1187,15 +1187,18 @@
   "Convert a media object that contains a bitmap image into shapes,
   one shape of type :image and one group that contains it."
   [{:keys [name width height id mtype]} frame-id position]
-  (let [frame-shape (cts/setup-shape
-                     {:type :frame
-                      :x (:x position)
-                      :y (:y position)
-                      :width width
-                      :height height
-                      :name name
-                      :frame-id frame-id
-                      :parent-id frame-id})
+  (let [frame-shape (-> (cts/setup-shape
+                         {:type :frame
+                          :x (:x position)
+                          :y (:y position)
+                          :width width
+                          :height height
+                          :name name
+                          :frame-id frame-id
+                          :parent-id frame-id})
+                        (assoc
+                         :proportion (/ width height)
+                         :proportion-lock true))
 
         img-shape   (cts/setup-shape
                      {:type :image
@@ -1209,7 +1212,9 @@
                                  :mtype mtype}
                       :name name
                       :frame-id (:id frame-shape)
-                      :parent-id (:id frame-shape)})]
+                      :parent-id (:id frame-shape)
+                      :constraints-h :scale
+                      :constraints-v :scale})]
     [frame-shape [img-shape]]))
 
 (defn- parse-datauri
