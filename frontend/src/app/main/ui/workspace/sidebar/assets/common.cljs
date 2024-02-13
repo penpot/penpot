@@ -166,6 +166,7 @@
        :collapsed     (not open?)
        :all-clickable true
        :on-collapsed  on-collapsed
+       :add-icon-gap  (= 0 assets-count)
        :class         (stl/css-case :title-spacing open?)
        :title         title}
       buttons]
