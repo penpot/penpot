@@ -326,7 +326,9 @@
            (some? index)
            (assoc :index index)
            (:component-swap options)
-           (assoc :component-swap true))
+           (assoc :component-swap true)
+           (:ignore-touched options)
+           (assoc :ignore-touched true))
 
          mk-undo-change
          (fn [undo-changes shape]
@@ -450,10 +452,11 @@
          add-redo-change
          (fn [change-set id]
            (conj change-set
-                 {:type :del-obj
-                  :page-id page-id
-                  :ignore-touched ignore-touched
-                  :id id}))
+                 (cond-> {:type :del-obj
+                          :page-id page-id
+                          :id id}
+                   ignore-touched
+                   (assoc :ignore-touched true))))
 
          add-undo-change-shape
          (fn [change-set id]
