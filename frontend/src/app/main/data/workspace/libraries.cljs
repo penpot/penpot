@@ -77,7 +77,11 @@
                 extract (cond-> {:type (:type change)
                                  :raw-change change}
                           shape
-                          (assoc :shape (str prefix (:name shape)))
+                          (assoc :shape (str prefix (:name shape))
+                                 :shape-id (str (:id shape)))
+                          (:obj change)
+                          (assoc :obj (:name (:obj change))
+                                 :obj-id (:id (:obj change)))
                           (:operations change)
                           (assoc :operations (:operations change)))]
             extract))]

@@ -166,13 +166,6 @@
     :else
     (get-instance-root objects (get objects (:parent-id shape)))))
 
-(defn get-copy-root
-  "Get the top shape of the copy."
-  [objects shape]
-  (when (:shape-ref shape)
-    (let [parent (cfh/get-parent objects (:id shape))]
-      (or (get-copy-root objects parent) shape))))
-
 (defn inside-component-main?
   "Check if the shape is a component main instance or is inside one."
   [objects shape]
