@@ -22,12 +22,21 @@
 
 (defn enable-objects-map
   [file]
-  (let [update-fn #(d/update-when % :objects omap/wrap)]
+  (let [update-container
+        (fn [container]
+          (if (and (pmap/pointer-map? container)
+                   (not (pmap/loaded? container)))
+            container
+            (d/update-when container :objects omap/wrap)))
+
+        update-data
+        (fn [fdata]
+          (-> fdata
+              (update :pages-index d/update-vals update-container)
+              (d/update-when :components d/update-vals update-container)))]
+
     (-> file
-        (update :data (fn [fdata]
-                        (-> fdata
-                            (update :pages-index update-vals update-fn)
-                            (d/update-when :components update-vals update-fn))))
+        (update :data update-data)
         (update :features conj "fdata/objects-map"))))
 
 (defn process-objects
