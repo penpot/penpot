@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-02-12 19:01+0000\n"
+"PO-Revision-Date: 2024-02-15 15:01+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
@@ -2258,7 +2258,7 @@ msgstr ""
 "Gegenwart und Zukunft mit der gesamten Community und dem Penpot-Kernteam."
 
 msgid "onboarding-v2.welcome.desc2.title"
-msgstr "In der Community mitmachen"
+msgstr "Mitwirkung in der Community"
 
 msgid "onboarding-v2.welcome.desc3"
 msgstr ""
