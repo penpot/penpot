@@ -81,14 +81,15 @@
   "Given a database connection and the final file-id, persist all
   pointers to the underlying storage (the database)."
   [system file-id]
-  (doseq [[id item] @pmap/*tracked*]
-    (when (pmap/modified? item)
-      (l/trc :hint "persist pointer" :file-id (str file-id) :id (str id))
-      (let [content (-> item deref blob/encode)]
-        (db/insert! system :file-data-fragment
-                    {:id id
-                     :file-id file-id
-                     :content content})))))
+  (let [conn (db/get-connection system)]
+    (doseq [[id item] @pmap/*tracked*]
+      (when (pmap/modified? item)
+        (l/trc :hint "persist pointer" :file-id (str file-id) :id (str id))
+        (let [content (-> item deref blob/encode)]
+          (db/insert! conn :file-data-fragment
+                      {:id id
+                       :file-id file-id
+                       :content content}))))))
 
 (defn process-pointers
   "Apply a function to all pointers on the file. Usuly used for
