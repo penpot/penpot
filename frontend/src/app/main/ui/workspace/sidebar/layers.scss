@@ -241,8 +241,7 @@
 }
 
 .tool-window-content {
-  // TODO: sass variables are not being interpolated here, find why
-  --calculated-height: calc(128px + var(--height, 200px));
+  --calculated-height: calc(#{$s-136} + var(--height, #{$s-200}));
   display: flex;
   flex-direction: column;
   height: calc(100vh - var(--calculated-height));

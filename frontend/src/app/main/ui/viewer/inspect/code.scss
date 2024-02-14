@@ -48,8 +48,8 @@
 }
 
 .code-row-lang {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: $s-12 1fr $s-60;
   gap: $s-4;
   width: 100%;
 }
@@ -61,13 +61,14 @@
 }
 
 .action-btns {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: $s-4;
-  flex: 1;
-  justify-content: end;
 }
 
-.expand-button {
+.expand-button,
+.css-copy-btn,
+.html-copy-btn {
   @extend .button-tertiary;
   height: $s-32;
   width: $s-28;
@@ -77,11 +78,21 @@
   }
 }
 
+.code-lang-options {
+  max-width: $s-108;
+}
 .code-lang-select {
   @include tabTitleTipography;
   width: $s-72;
   border: $s-1 solid transparent;
   background-color: transparent;
+  color: var(--menu-foreground-color-disabled);
+}
+.code-lang-option {
+  @include tabTitleTipography;
+  width: $s-72;
+  height: $s-32;
+  padding: $s-8;
   color: var(--menu-foreground-color-disabled);
 }
 

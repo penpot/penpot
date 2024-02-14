@@ -97,15 +97,17 @@
           current-icon (:icon selected-option)
           current-icon-ref (i/key->icon current-icon)]
       [:div {:on-click open-dropdown
-             :class (dm/str class " " (stl/css-case :custom-select true
-                                                    :disabled disabled
-                                                    :icon (some? current-icon-ref)))}
+             :class (dm/str (stl/css-case :custom-select true
+                                          :disabled disabled
+                                          :icon (some? current-icon-ref))
+                            " " class)}
        (when (and current-icon current-icon-ref)
          [:span {:class (stl/css :current-icon)} current-icon-ref])
        [:span {:class (stl/css :current-label)} current-label]
        [:span {:class (stl/css :dropdown-button)} i/arrow-refactor]
        [:& dropdown {:show is-open? :on-close close-dropdown}
-        [:ul {:ref dropdown-element* :data-direction @dropdown-direction* :class (dm/str dropdown-class " " (stl/css :custom-select-dropdown))}
+        [:ul {:ref dropdown-element* :data-direction @dropdown-direction*
+              :class (dm/str (stl/css :custom-select-dropdown) " " dropdown-class)}
          (for [[index item] (d/enumerate options)]
            (if (= :separator item)
              [:li {:class (dom/classnames (stl/css :separator) true)

@@ -6,9 +6,13 @@
 
 @import "refactor/common-refactor.scss";
 
+.attributes-image-as-color-row {
+  max-width: $s-240;
+}
+
 .attributes-color-row {
   display: grid;
-  grid-template-columns: $s-16 $s-72 $s-156;
+  grid-template-columns: $s-16 $s-72 $s-144;
   gap: $s-4;
 }
 
@@ -22,14 +26,19 @@
   height: $s-32;
 }
 
+.image-format {
+  @include tabTitleTipography;
+  height: $s-32;
+  padding: $s-8 0;
+  color: var(--menu-foreground-color-rest);
+}
+
 .select-format-wrapper {
   width: 100%;
-  div {
-    background-color: transparent;
-    border: none;
-    padding-left: $s-2;
-    color: var(--menu-foreground-color-rest);
-  }
+  padding: $s-8 $s-2;
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--menu-foreground-color-rest);
 }
 
 .format-info {
@@ -43,12 +52,16 @@
   color: var(--menu-foreground-color-rest);
 }
 
+.color-row-copy-btn {
+  max-width: $s-144;
+}
+
 .color-info {
   display: flex;
   align-items: flex-start;
   gap: $s-4;
   flex-grow: 1;
-
+  max-width: $s-144;
   button {
     visibility: hidden;
     min-width: $s-28;
@@ -57,19 +70,22 @@
     visibility: visible;
   }
 }
-
-.name-opacity {
-  display: flex;
-  align-items: baseline;
+.one-line {
+  max-height: $s-32;
 }
-
+.two-line {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+}
 .color-name-wrapper {
   @include titleTipography;
   @include flexColumn;
   padding: $s-8 $s-4 $s-8 $s-8;
   height: $s-32;
   max-width: $s-80;
+
   &.gradient-color {
+    color: var(--menu-foreground-color);
     max-width: $s-124;
   }
   .color-name-library {
@@ -92,16 +108,9 @@
   padding: $s-8 0;
 }
 
-.color-info,
-.color-row-copy-btn {
-  display: flex;
-  max-width: $s-144;
-}
-
 .first-row {
   display: grid;
-  grid-template-columns: 1fr $s-24;
-  grid-template-areas: "name button";
+  grid-template-columns: 1fr $s-28;
   height: fit-content;
   width: 100%;
   padding: 0;
@@ -109,27 +118,26 @@
 }
 
 .name-opacity {
-  grid-area: name;
   height: fit-content;
-  max-width: $s-124;
+  width: 100%;
   line-height: $s-16;
+  display: grid;
+  grid-template-columns: 1fr auto;
 }
 
 .color-value-wrapper {
+  @include textEllipsis;
   @include inspectValue;
   text-transform: uppercase;
-  max-width: $s-80;
-  padding-right: $s-8;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   &.gradient-name {
     text-transform: none;
   }
 }
+
 .opacity-info {
   @include inspectValue;
   text-transform: uppercase;
+  width: 100%;
 }
 
 .second-row {
@@ -146,9 +154,32 @@
   color: var(--menu-foreground-color-rest);
 }
 
+.image-download {
+  grid-column: 1 / 4;
+}
+
 .download-button {
   @extend .button-secondary;
   @include tabTitleTipography;
   height: $s-32;
+  width: 100%;
   margin-top: $s-4;
+}
+
+.image-wrapper {
+  background-color: var(--menu-background-color);
+  position: relative;
+  @include flexCenter;
+  width: $s-240;
+  height: $s-160;
+  max-height: $s-160;
+  max-width: $s-248;
+  margin: $s-8 0;
+  border-radius: $br-8;
+
+  img {
+    height: 100%;
+    width: 100%;
+    object-fit: contain;
+  }
 }

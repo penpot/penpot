@@ -31,7 +31,7 @@
            :title (uc/get-color-name color)
            :on-click select-color}
      [:& cb/color-bullet {:color color}]
-     [:& cb/color-name {:color color :size size}]]))
+     [:& cb/color-name {:color color :size size :origin :palette}]]))
 
 
 (mf/defc palette

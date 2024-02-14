@@ -5140,6 +5140,9 @@ msgstr "Hecho"
 msgid "media.image"
 msgstr "Imagen"
 
+msgid "media.image.short"
+msgstr "img"
+
 msgid "media.solid"
 msgstr "Sólido"
 

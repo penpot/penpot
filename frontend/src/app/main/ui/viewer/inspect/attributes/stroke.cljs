@@ -62,6 +62,7 @@
     (when (seq shapes)
       [:div {:class (stl/css :attributes-block)}
        [:& title-bar {:collapsable false
+                      :origin      :inspect
                       :title       (tr "inspect.attributes.stroke")
                       :class       (stl/css :title-spacing-stroke)}]
 

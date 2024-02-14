@@ -23,7 +23,7 @@
   [{:keys [objects shapes]}]
   (for [shape (filter cfh/image-shape? shapes)]
     [:div {:class (stl/css :attributes-block)
-           :key (str "image-" (:id shape))}
+           :key   (str "image-" (:id shape))}
      [:div {:class (stl/css :image-wrapper)}
       [:img {:src (cf/resolve-file-media (-> shape :metadata))}]]
 

@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.main.ui.components.copy-button :refer [copy-button]]
    [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.viewer.inspect.attributes.common :as cmm]
    [app.util.code-gen.style-css :as css]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -22,12 +23,14 @@
   [:*
    (for [[idx property] (d/enumerate properties)]
      (when-let [value (css/get-css-value objects shape property)]
-       [:div {:key (dm/str "block-" idx "-" (d/name property))
-              :class (stl/css :geometry-row)}
-        [:div {:class (stl/css :global/attr-label)} (d/name property)]
-        [:div {:class (stl/css :global/attr-value)}
-         [:& copy-button {:data (css/get-css-property objects shape property)}
-          [:div {:class (stl/css :button-children)} value]]]]))])
+       (let [property-name (cmm/get-css-rule-humanized property)]
+         [:div {:key (dm/str "block-" idx "-" (d/name property))
+                :title property-name
+                :class (stl/css :geometry-row)}
+          [:div {:class (stl/css :global/attr-label)} property-name]
+          [:div {:class (stl/css :global/attr-value)}
+           [:& copy-button {:data (css/get-css-property objects shape property)}
+            [:div {:class (stl/css :button-children)} value]]]])))])
 
 
 (mf/defc geometry-panel
@@ -35,10 +38,12 @@
   [:div {:class (stl/css :attributes-block)}
    [:& title-bar {:collapsable false
                   :title       (tr "inspect.attributes.size")
+                  :origin      :inspect
                   :class       (stl/css :title-spacing-geometry)}
 
     (when (= (count shapes) 1)
-      [:& copy-button {:data (css/get-shape-properties-css objects (first shapes) properties)}])]
+      [:& copy-button {:data (css/get-shape-properties-css objects (first shapes) properties)
+                       :class (stl/css :copy-btn-title)}])]
 
    (for [shape shapes]
      [:& geometry-block {:shape shape

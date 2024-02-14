@@ -5056,6 +5056,9 @@ msgstr "Done"
 msgid "media.image"
 msgstr "Image"
 
+msgid "media.image.short"
+msgstr "img"
+
 msgid "media.solid"
 msgstr "Solid"
 

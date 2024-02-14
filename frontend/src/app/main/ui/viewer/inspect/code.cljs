@@ -19,7 +19,7 @@
    [app.main.store :as st]
    [app.main.ui.components.code-block :refer [code-block]]
    [app.main.ui.components.copy-button :refer [copy-button]]
-   [app.main.ui.components.select :refer [select]]
+   [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.icons :as i]
@@ -177,10 +177,10 @@
          style-size :size}
         (use-resize-hook :code 400 100 800 :y false :bottom)
 
-        set-style
-        (mf/use-callback
-         (fn [value]
-           (reset! style-type* value)))
+        ;; set-style
+        ;; (mf/use-callback
+        ;;  (fn [value]
+        ;;    (reset! style-type* value)))
 
         set-markup
         (mf/use-callback
@@ -251,10 +251,13 @@
                         :rotated collapsed-css?)}
          i/arrow-refactor]]
 
-       [:& select {:default-value style-type
-                   :class (stl/css :code-lang-select)
-                   :on-change set-style
-                   :options [{:label "CSS" :value "css"}]}]
+       [:div {:class (stl/css :code-lang-option)}
+        "CSS"]
+      ;; We will have a select when we have more than one option
+      ;;  [:& select {:default-value style-type
+      ;;              :class (stl/css :code-lang-select)
+      ;;              :on-change set-style
+      ;;              :options [{:label "CSS" :value "css"}]}]
 
        [:div {:class (stl/css :action-btns)}
         [:button {:class (stl/css :expand-button)
@@ -262,6 +265,7 @@
          i/code-refactor]
 
         [:& copy-button {:data #(replace-map style-code images-data)
+                         :class (stl/css :css-copy-btn)
                          :on-copied on-style-copied}]]]
 
       (when-not collapsed-css?
@@ -285,11 +289,16 @@
                         :collapsabled-icon true
                         :rotated collapsed-markup?)}
          i/arrow-refactor]]
-       [:& select {:default-value markup-type
-                   :class (stl/css :code-lang-select)
-                   :options [{:label "HTML" :value "html"}
-                             {:label "SVG" :value "svg"}]
-                   :on-change set-markup}]
+
+       [:& radio-buttons {:selected markup-type
+                          :on-change set-markup
+                          :class (stl/css :code-lang-options)
+                          :wide true
+                          :name "listing-style"}
+        [:& radio-button {:value "html"
+                          :id :html}]
+        [:& radio-button {:value "svg"
+                          :id :svg}]]
 
        [:div {:class (stl/css :action-btns)}
         [:button {:class (stl/css :expand-button)
@@ -297,6 +306,7 @@
          i/code-refactor]
 
         [:& copy-button {:data #(replace-map markup-code images-data)
+                         :class (stl/css :html-copy-btn)
                          :on-copied on-markup-copied}]]]
 
       (when-not collapsed-markup?

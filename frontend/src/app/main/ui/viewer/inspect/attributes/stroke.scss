@@ -25,3 +25,8 @@
 .button-children {
   @extend .copy-button-children;
 }
+
+.attributes-content {
+  display: grid;
+  gap: $s-4;
+}

@@ -54,6 +54,7 @@
     (when (and (seq shapes) (> (count shapes) 0))
       [:div {:class (stl/css :attributes-block)}
        [:& title-bar {:collapsable false
+                      :origin      :inspect
                       :title       (tr "inspect.attributes.shadow")
                       :class       (stl/css :title-spacing-shadow)}]
 
@@ -61,4 +62,5 @@
         (for [shape shapes]
           (for [shadow (:shadow shape)]
             [:& shadow-block {:shape shape
+                              :key   (dm/str "block-" (:id shape) "-shadow")
                               :shadow shadow}]))]])))

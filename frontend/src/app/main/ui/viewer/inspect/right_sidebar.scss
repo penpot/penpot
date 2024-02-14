@@ -14,8 +14,6 @@
   left: unset;
   right: unset;
   grid-area: right-sidebar;
-  padding-top: $s-8;
-  padding-left: $s-12;
   overflow: hidden;
   &.viewer-code {
     height: calc(100vh - $s-48);
@@ -26,18 +24,20 @@
   height: 100%;
   display: flex;
   flex-direction: column;
+  gap: $s-8;
 }
 
 .shape-row {
   display: flex;
   gap: $s-8;
   align-items: center;
-  margin-bottom: $s-16;
+  height: $s-32;
 }
 
 .layers-icon,
 .shape-icon {
   @include flexCenter;
+  height: $s-32;
   svg {
     @extend .button-icon-small;
     stroke: var(--icon-foreground);
@@ -46,7 +46,9 @@
 
 .layer-title {
   @include titleTipography;
-  color: $df-primary;
+  height: $s-32;
+  padding: $s-8 0;
+  color: var(--assets-item-name-foreground-color-rest);
 }
 
 .empty {
