@@ -268,16 +268,17 @@
            (when (:image current-color)
              [:img {:src uri}])]
 
-          [:div {:class (stl/css :checkbox-option)}
-           [:label {:for "keep-aspect-ratio"
-                    :class (stl/css-case  :global/checked keep-aspect-ratio?)}
-            [:span {:class (stl/css-case :global/checked keep-aspect-ratio?)}
-             (when keep-aspect-ratio? i/status-tick-refactor)]
-            (tr "media.keep-aspect-ratio")
-            [:input {:type "checkbox"
-                     :id "keep-aspect-ratio"
-                     :checked keep-aspect-ratio?
-                     :on-change handle-change-keep-aspect-ratio}]]]
+          (when (some? (:image current-color))
+            [:div {:class (stl/css :checkbox-option)}
+             [:label {:for "keep-aspect-ratio"
+                      :class (stl/css-case  :global/checked keep-aspect-ratio?)}
+              [:span {:class (stl/css-case :global/checked keep-aspect-ratio?)}
+               (when keep-aspect-ratio? i/status-tick-refactor)]
+              (tr "media.keep-aspect-ratio")
+              [:input {:type "checkbox"
+                       :id "keep-aspect-ratio"
+                       :checked keep-aspect-ratio?
+                       :on-change handle-change-keep-aspect-ratio}]]])
           [:button
            {:class (stl/css :choose-image)
             :title (tr "media.choose-image")
