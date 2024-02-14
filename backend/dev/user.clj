@@ -44,7 +44,7 @@
    [clojure.walk :refer [macroexpand-all]]
    [criterium.core  :as crit]
    [cuerdas.core :as str]
-   [datoteka.core]
+   [datoteka.fs :as fs]
    [integrant.core :as ig]
    [malli.core :as m]
    [malli.dev.pretty :as mdp]

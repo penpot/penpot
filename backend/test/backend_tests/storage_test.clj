@@ -15,7 +15,7 @@
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [cuerdas.core :as str]
-   [datoteka.core :as fs]
+   [datoteka.fs :as fs]
    [datoteka.io :as io]
    [mockery.core :refer [with-mocks]]))
 

@@ -14,7 +14,7 @@
    [app.rpc.quotes :as-alias quotes]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
-   [datoteka.core :as fs]
+   [datoteka.fs :as fs]
    [mockery.core :refer [with-mocks]]))
 
 (t/use-fixtures :once th/state-init)
