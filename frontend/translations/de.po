@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-02-12 19:01+0000\n"
+"PO-Revision-Date: 2024-02-15 15:01+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German "
 "<https://hosted.weblate.org/projects/penpot/frontend/de/>\n"
