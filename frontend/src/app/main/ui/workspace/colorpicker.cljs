@@ -145,7 +145,8 @@
         on-select-library-color
         (mf/use-fn
          (fn [_ color]
-           (st/emit! (dc/apply-color-from-colorpicker color))))
+           (st/emit! (dc/apply-color-from-colorpicker color))
+           (on-change color)))
 
         on-add-library-color
         (mf/use-fn
