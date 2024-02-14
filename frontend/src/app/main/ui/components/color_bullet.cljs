@@ -57,5 +57,5 @@
         :on-double-click on-double-click
         :title name}
        (if (some? image)
-         (tr "media.image")
+         (tr "media.image.short")
          (or name color (uc/gradient-type->string (:type gradient))))])))

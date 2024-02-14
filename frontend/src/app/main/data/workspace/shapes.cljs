@@ -142,17 +142,17 @@
          (rx/concat
           (rx/of (dwu/start-undo-transaction undo-id)
                  (update-shape-flags ids-to-hide {:hidden true}))
-          (real-delete-shapes file page objects ids-to-delete it components-v2)
+          (real-delete-shapes file page objects ids-to-delete it components-v2 (:component-swap options))
           (rx/of (dwu/commit-undo-transaction undo-id))))))))
 
 (defn- real-delete-shapes-changes
-  ([file page objects ids it components-v2]
+  ([file page objects ids it components-v2 ignore-touched]
    (let [changes (-> (pcb/empty-changes it (:id page))
                      (pcb/with-page page)
                      (pcb/with-objects objects)
                      (pcb/with-library-data file))]
-     (real-delete-shapes-changes changes file page objects ids it components-v2)))
-  ([changes file page objects ids _it components-v2]
+     (real-delete-shapes-changes changes file page objects ids it components-v2 ignore-touched)))
+  ([changes file page objects ids _it components-v2 ignore-touched]
    (let [lookup  (d/getf objects)
          groups-to-unmask
          (reduce (fn [group-ids id]
@@ -252,7 +252,7 @@
 
          changes (-> changes
                      (pcb/remove-objects all-children {:ignore-touched true})
-                     (pcb/remove-objects ids)
+                     (pcb/remove-objects ids {:ignore-touched ignore-touched})
                      (pcb/remove-objects empty-parents)
                      (pcb/resize-parents all-parents)
                      (pcb/update-shapes groups-to-unmask
@@ -274,20 +274,19 @@
 
 
 (defn delete-shapes-changes
-  [changes file page objects ids it components-v2]
-  (let [[changes _all-parents] (real-delete-shapes-changes changes file page objects ids it components-v2)]
+  [changes file page objects ids it components-v2 ignore-touched]
+  (let [[changes _all-parents] (real-delete-shapes-changes changes file page objects ids it components-v2 ignore-touched)]
     changes))
 
 (defn- real-delete-shapes
-  [file page objects ids it components-v2]
-  (let [[changes all-parents] (real-delete-shapes-changes file page objects ids it components-v2)
+  [file page objects ids it components-v2 ignore-touched]
+  (let [[changes all-parents] (real-delete-shapes-changes file page objects ids it components-v2 ignore-touched)
         undo-id (js/Symbol)]
     (rx/of (dwu/start-undo-transaction undo-id)
            (dc/detach-comment-thread ids)
            (dch/commit-changes changes)
            (ptk/data-event :layout/update all-parents)
            (dwu/commit-undo-transaction undo-id))))
-
 
 (defn create-and-add-shape
   [type frame-x frame-y {:keys [width height] :as attrs}]

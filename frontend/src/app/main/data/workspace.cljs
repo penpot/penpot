@@ -35,6 +35,7 @@
    [app.main.data.events :as ev]
    [app.main.data.fonts :as df]
    [app.main.data.messages :as msg]
+   [app.main.data.modal :as modal]
    [app.main.data.users :as du]
    [app.main.data.workspace.bool :as dwb]
    [app.main.data.workspace.changes :as dch]
@@ -119,10 +120,14 @@
           (assoc :workspace-ready? true)))
 
     ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (fbc/fix-bool-contents)
-             (fdf/fix-deleted-fonts)
-             (fbs/fix-broken-shapes)))))
+    (watch [_ state _]
+      (rx/of
+       (when (and (not (boolean (-> state :profile :props :v2-info-shown)))
+                  (features/active-feature? state "components/v2"))
+         (modal/show :v2-info {}))
+       (fbc/fix-bool-contents)
+       (fdf/fix-deleted-fonts)
+       (fbs/fix-broken-shapes)))))
 
 (defn- workspace-data-loaded
   [data]

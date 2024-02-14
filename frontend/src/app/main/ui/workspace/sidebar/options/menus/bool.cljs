@@ -17,6 +17,9 @@
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
+(def ^:private flatten-icon
+  (i/icon-xref :boolean-flatten-refactor (stl/css :flatten-icon)))
+
 (mf/defc bool-options
   []
   (let [selected               (mf/deref refs/selected-objects)
@@ -86,9 +89,9 @@
         [:button
          {:title (tr "workspace.shape.menu.flatten")
           :class (stl/css-case
-                  :flatten true
+                  :flatten-button true
                   :disabled disabled-flatten)
           :disabled disabled-flatten
           :on-click flatten-objects}
-         i/boolean-flatten-refactor]]])))
+         flatten-icon]]])))
 

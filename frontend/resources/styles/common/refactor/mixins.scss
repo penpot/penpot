@@ -115,8 +115,8 @@
 @mixin copyWrapperBase {
   position: relative;
   min-height: $s-32;
-  width: $s-156;
-  max-width: $s-156;
+  width: $s-144;
+  max-width: $s-144;
   padding: calc($s-8 - $s-1) 0 calc($s-8 - $s-1) calc($s-8 - $s-1);
   border-radius: $s-8;
   box-sizing: border-box;

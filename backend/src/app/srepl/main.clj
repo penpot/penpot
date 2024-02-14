@@ -370,42 +370,10 @@
 ;; PROCESSING
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private
-  sql:get-file-ids
+(def sql:get-files
   "SELECT id FROM file
-    WHERE created_at < ? AND deleted_at is NULL
+    WHERE deleted_at is NULL
     ORDER BY created_at DESC")
-
-(defn analyze-files
-  "Apply a function to all files in the database, reading them in
-  batches. Do not change data.
-
-  The `on-file` parameter should be a function that receives the file
-  and the previous state and returns the new state.
-
-  Emits rollback at the end of operation."
-  [on-file & {:keys [max-items start-at with-libraries?]}]
-  (letfn [(get-candidates [conn]
-            (cond->> (db/cursor conn [sql:get-file-ids (or start-at (dt/now))])
-              (some? max-items)
-              (take max-items)))
-
-          (process-file [{:keys [::db/conn] :as system} file-id]
-            (let [file (h/get-file system file-id)
-                  libs (when with-libraries?
-                         (->> (files/get-file-libraries conn file-id)
-                              (into [file] (map (fn [{:keys [id]}]
-                                                  (h/get-file system id))))
-                              (d/index-by :id)))]
-              (if with-libraries?
-                (on-file file libs)
-                (on-file file))))]
-
-    (db/tx-run! (assoc main/system ::db/rollback true)
-                (fn [{:keys [::db/conn] :as system}]
-                  (binding [h/*system* system]
-                    (run! (partial process-file system)
-                          (get-candidates conn)))))))
 
 (defn process-file!
   "Apply a function to the file. Optionally save the changes or not.
@@ -438,11 +406,12 @@
   "Apply a function to all files in the database"
   [update-fn & {:keys [max-items
                        max-jobs
-                       start-at
-                       rollback?]
+                       rollback?
+                       query]
                 :or {max-jobs 1
                      max-items Long/MAX_VALUE
-                     rollback? true}
+                     rollback? true
+                     query sql:get-files}
                 :as opts}]
 
   (l/dbg :hint "process:start"
@@ -486,7 +455,7 @@
                       (px/run! executor (partial process-file file-id idx (dt/tpoint)))
                       (inc idx))
                     0
-                    (->> (db/cursor conn [sql:get-file-ids (or start-at (dt/now))])
+                    (->> (db/cursor conn [query] {:chunk-size 1})
                          (take max-items)
                          (map :id)))
             (finally

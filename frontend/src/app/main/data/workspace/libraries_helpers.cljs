@@ -886,7 +886,6 @@
                           (map #(redirect-shaperef %) children-inst)
                           children-inst)
 
-
           only-inst (fn [changes child-inst]
                       (add-shape-to-main changes
                                          child-inst
@@ -1088,10 +1087,8 @@
                                              root-main))
 
         update-original-shape (fn [original-shape new-shape]
-                                (if-not (:shape-ref original-shape)
-                                  (assoc original-shape
-                                         :shape-ref (:id new-shape))
-                                  original-shape))
+                                (assoc original-shape
+                                       :shape-ref (:id new-shape)))
 
         [_new-shape new-shapes updated-shapes]
         (ctst/clone-shape shape
@@ -1116,25 +1113,46 @@
                                            :obj shape'}))))
 
         mod-obj-change (fn [changes shape']
-                         (update changes :redo-changes conj
-                                 {:type :mod-obj
-                                  :page-id (:id page)
-                                  :id (:id shape')
-                                  :operations [{:type :set
-                                                :attr :component-id
-                                                :val (:component-id shape')}
-                                               {:type :set
-                                                :attr :component-file
-                                                :val (:component-file shape')}
-                                               {:type :set
-                                                :attr :component-root
-                                                :val (:component-root shape')}
-                                               {:type :set
-                                                :attr :shape-ref
-                                                :val (:shape-ref shape')}
-                                               {:type :set
-                                                :attr :touched
-                                                :val (:touched shape')}]}))
+                         (let [shape-original (ctn/get-shape page (:id shape'))]
+                           (-> changes
+                               (update :redo-changes conj
+                                       {:type :mod-obj
+                                        :page-id (:id page)
+                                        :id (:id shape')
+                                        :operations [{:type :set
+                                                      :attr :component-id
+                                                      :val (:component-id shape')}
+                                                     {:type :set
+                                                      :attr :component-file
+                                                      :val (:component-file shape')}
+                                                     {:type :set
+                                                      :attr :component-root
+                                                      :val (:component-root shape')}
+                                                     {:type :set
+                                                      :attr :shape-ref
+                                                      :val (:shape-ref shape')}
+                                                     {:type :set
+                                                      :attr :touched
+                                                      :val (:touched shape')}]})
+                               (update :undo-changes conj
+                                       {:type :mod-obj
+                                        :page-id (:id page)
+                                        :id (:id shape-original)
+                                        :operations [{:type :set
+                                                      :attr :component-id
+                                                      :val (:component-id shape-original)}
+                                                     {:type :set
+                                                      :attr :component-file
+                                                      :val (:component-file shape-original)}
+                                                     {:type :set
+                                                      :attr :component-root
+                                                      :val (:component-root shape-original)}
+                                                     {:type :set
+                                                      :attr :shape-ref
+                                                      :val (:shape-ref shape-original)}
+                                                     {:type :set
+                                                      :attr :touched
+                                                      :val (:touched shape-original)}]}))))
 
         del-obj-change (fn [changes shape']
                          (update changes :undo-changes conj
@@ -1161,7 +1179,8 @@
         parents    (cfh/get-parent-ids objects (:id shape))
         parent     (first parents)
         children   (cfh/get-children-ids objects (:id shape))
-        ids        (into [(:id shape)] children)
+        ids        (-> (into [(:id shape)] children)
+                       (reverse)) ;; Remove from bottom to top
 
         add-redo-change (fn [changes id]
                           (update changes :redo-changes conj
@@ -1190,12 +1209,11 @@
                      (update :redo-changes conj (make-change
                                                  container
                                                  {:type :reg-objects
-                                                  :shapes (vec parents)}))
-                     (add-undo-change (:id shape)))
+                                                  :shapes (vec parents)})))
 
         changes' (reduce add-undo-change
                          changes'
-                         children)]
+                         ids)]
 
     (if (and (cfh/touched-group? parent :shapes-group) omit-touched?)
       changes

@@ -103,7 +103,7 @@
     color: var(--modal-text-foreground-color);
   }
   .modal-link {
-    @include titleTipography;
+    @include bodyLargeTypography;
     text-decoration: none;
     cursor: pointer;
     color: var(--modal-link-foreground-color);

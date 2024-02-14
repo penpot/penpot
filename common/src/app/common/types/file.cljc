@@ -190,7 +190,7 @@
   "Locate the near component in the local file or libraries, and retrieve the shape
    referenced by the instance shape."
   [file page libraries shape & {:keys [include-deleted?] :or {include-deleted? false}}]
-  (let [root-shape     (ctn/get-copy-root (:objects page) shape)
+  (let [root-shape     (ctn/get-component-shape (:objects page) shape)
         component-file (when root-shape
                          (if (and (some? file) (= (:component-file root-shape) (:id file)))
                            file
@@ -218,10 +218,23 @@
         component-file      (get-in libraries [(:component-file top-instance) :data])
         component           (ctkl/get-component component-file (:component-id top-instance) true)
         remote-shape        (get-ref-shape component-file component shape)
-        component-container (get-component-container component-file component)]
+        component-container (get-component-container component-file component)
+        [remote-shape component-container]
+        (if (some? remote-shape)
+          [remote-shape component-container]
+          ;; If not found, try the case of this being a fostered or swapped children
+          (let [head-instance       (ctn/get-head-shape (:objects container) shape)
+                component-file      (get-in libraries [(:component-file head-instance) :data])
+                head-component      (ctkl/get-component component-file (:component-id head-instance) true)
+                remote-shape'       (get-ref-shape component-file head-component shape)
+                component-container (get-component-container component-file component)]
+            [remote-shape' component-container]))]
+
     (if (nil? remote-shape)
-      shape
-      (find-remote-shape component-container libraries remote-shape))))
+      nil
+      (if (nil? (:shape-ref remote-shape))
+        remote-shape
+        (find-remote-shape component-container libraries remote-shape)))))
 
 (defn get-component-shapes
   "Retrieve all shapes of the component"

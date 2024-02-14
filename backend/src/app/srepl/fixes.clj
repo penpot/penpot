@@ -16,7 +16,32 @@
    [app.common.logging :as l]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.features.fdata :as feat.fdata]
    [app.srepl.helpers :as h]))
+
+(defn disable-fdata-features
+  [{:keys [id features] :as file} _]
+  (when (or (contains? features "fdata/pointer-map")
+            (contains? features "fdata/objects-map"))
+    (l/warn :hint "disable fdata features" :file-id (str id))
+    (-> file
+        (update :data feat.fdata/process-pointers deref)
+        (update :data feat.fdata/process-objects (partial into {}))
+        (update :features disj "fdata/pointer-map" "fdata/objects-map"))))
+
+(def sql:get-fdata-files
+  "SELECT id FROM file
+    WHERE deleted_at is NULL
+      AND (features @> '{fdata/pointer-map}' OR
+           features @> '{fdata/objects-map}')
+    ORDER BY created_at DESC")
+
+(defn find-fdata-pointers
+  [{:keys [id features data] :as file} _]
+  (when (contains? features "fdata/pointer-map")
+    (let [pointers (feat.fdata/get-used-pointer-ids data)]
+      (l/warn :hint "found pointers" :file-id (str id) :pointers pointers)
+      nil)))
 
 (defn repair-file-media
   "A helper intended to be used with `srepl.main/process-files!` that

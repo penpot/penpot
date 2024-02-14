@@ -61,9 +61,6 @@
                            (let [result (handler)]
                              (events/tap :end result))
                            (catch Throwable cause
-                             (binding [l/*context* (errors/request->context request)]
-                               (l/err :hint "unexpected error process streaming response"
-                                      :cause cause))
                              (events/tap :error (errors/handle' cause request)))
                            (finally
                              (sp/close! events/*channel*)

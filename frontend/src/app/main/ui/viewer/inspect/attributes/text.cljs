@@ -99,7 +99,7 @@
         [:div {:class (stl/css :global/attr-value)}
          [:& copy-button {:data (copy-style-data style :font-style)}
           [:div {:class (stl/css :button-children)}
-           (str (:font-style style))]]]])
+           (dm/str (:font-style style))]]]])
 
      (when (:font-size style)
        [:div {:class (stl/css :text-row)}
@@ -117,7 +117,7 @@
         [:div {:class (stl/css :global/attr-value)}
          [:& copy-button {:data (copy-style-data style :font-weight)}
           [:div {:class (stl/css :button-children)}
-           (str (:font-weight style))]]]])
+           (dm/str (:font-weight style))]]]])
 
      (when (:line-height style)
        [:div {:class (stl/css :text-row)}
@@ -191,9 +191,10 @@
   (when-let [shapes (seq (filter has-text? shapes))]
     [:div {:class (stl/css :attributes-block)}
      [:& title-bar {:collapsable false
+                    :origin      :inspect
                     :title       (tr "inspect.attributes.typography")
                     :class       (stl/css :title-spacing-text)}]
 
      (for [shape shapes]
        [:& text-block {:shape shape
-                       :key (str "text-block" (:id shape))}])]))
+                       :key (dm/str "text-block" (:id shape))}])]))

@@ -65,6 +65,9 @@
   --button-tertiary-border-color-focus: var(--color-accent-primary);
   --button-tertiary-foreground-color-focus: var(--color-foreground-primary);
 
+  --expand-button-icon-border-width: 0;
+  --expand-button-icon-border-width-selected: 0;
+
   --button-icon-foreground-color: var(--color-foreground-secondary);
   --button-icon-foreground-color-hover: var(--color-foreground-secondary);
   --button-icon-background-color-selected: var(--color-background-quaternary);
@@ -396,4 +399,5 @@
   --assets-item-name-foreground-color: var(--color-foreground-primary);
 
   --text-editor-selection-background-color: var(--la-tertiary-70);
+  --expand-button-icon-border-width-selected: 2px;
 }

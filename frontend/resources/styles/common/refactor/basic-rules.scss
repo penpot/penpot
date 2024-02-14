@@ -125,10 +125,11 @@
   @include buttonStyle;
   @include flexCenter;
   @include focusTertiary;
+  --button-tertiary-border-width: #{$s-2};
   border-radius: $br-8;
   color: var(--button-tertiary-foreground-color-rest);
   background-color: transparent;
-  border: $s-2 solid transparent;
+  border: var(--button-tertiary-border-width) solid transparent;
   svg,
   span svg {
     stroke: var(--button-tertiary-foreground-color-rest);
@@ -136,7 +137,7 @@
   &:hover {
     background-color: var(--button-tertiary-background-color-hover);
     color: var(--button-tertiary-foreground-color-hover);
-    border: $s-2 solid var(--button-secondary-border-color-hover);
+    border-color: var(--button-secondary-border-color-hover);
     svg,
     span svg {
       stroke: var(--button-tertiary-foreground-color-hover);
@@ -144,7 +145,7 @@
   }
   &:active {
     outline: none;
-    border: $s-2 solid transparent;
+    border-color: transparent;
     background-color: var(--button-tertiary-background-color-active);
     color: var(--button-tertiary-foreground-color-active);
     svg,
@@ -169,7 +170,7 @@
 
 .button-icon-selected {
   outline: none;
-  border: $s-2 solid var(--button-icon-border-color-selected);
+  border-color: var(--button-icon-border-color-selected);
   background-color: var(--button-icon-background-color-selected);
   color: var(--button-icon-foreground-color-selected);
   svg {
@@ -183,7 +184,7 @@
   @include focusRadio;
   border-radius: $br-8;
   color: var(--button-radio-foreground-color-rest);
-  border: $s-1 solid var(--button-radio-background-color-rest);
+  border-color: $s-1 solid var(--button-radio-background-color-rest);
   svg,
   span svg {
     stroke: var(--button-radio-foreground-color-rest);

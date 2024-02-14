@@ -77,7 +77,11 @@
                 extract (cond-> {:type (:type change)
                                  :raw-change change}
                           shape
-                          (assoc :shape (str prefix (:name shape)))
+                          (assoc :shape (str prefix (:name shape))
+                                 :shape-id (str (:id shape)))
+                          (:obj change)
+                          (assoc :obj (:name (:obj change))
+                                 :obj-id (:id (:obj change)))
                           (:operations change)
                           (assoc :operations (:operations change)))]
             extract))]
@@ -894,7 +898,8 @@
                 (pcb/update-shapes [(:id new-shape)] #(d/patch-object % keep-props-values))
 
                 ;; We need to set the same index as the original shape
-                (pcb/change-parent (:parent-id shape) [new-shape] index {:component-swap true}))]
+                (pcb/change-parent (:parent-id shape) [new-shape] index {:component-swap true
+                                                                         :ignore-touched true}))]
 
         ;; First delete so we don't break the grid layout cells
         (rx/of (dch/commit-changes changes)

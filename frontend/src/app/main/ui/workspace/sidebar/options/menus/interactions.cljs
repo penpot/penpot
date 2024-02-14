@@ -182,6 +182,21 @@
        (when flow
          [:& flow-item {:flow flow :key (str (:id flow))}])])))
 
+(def ^:private corner-center-icon
+  (i/icon-xref :corner-center-refactor (stl/css :corner-icon)))
+(def ^:private corner-bottom-icon
+  (i/icon-xref :corner-bottom-refactor (stl/css :corner-icon)))
+(def ^:private corner-bottomleft-icon
+  (i/icon-xref :corner-bottomleft-refactor (stl/css :corner-icon)))
+(def ^:private corner-bottomright-icon
+  (i/icon-xref :corner-bottomright-refactor (stl/css :corner-icon)))
+(def ^:private corner-top-icon
+  (i/icon-xref :corner-top-refactor (stl/css :corner-icon)))
+(def ^:private corner-topleft-icon
+  (i/icon-xref :corner-topleft-refactor (stl/css :corner-icon)))
+(def ^:private corner-topright-icon
+  (i/icon-xref :corner-topright-refactor (stl/css :corner-icon)))
+
 (mf/defc interaction-entry
   [{:keys [index shape interaction update-interaction remove-interaction]}]
   (let [objects              (deref refs/workspace-page-objects)
@@ -403,12 +418,12 @@
 
 
     [:div {:class (stl/css-case  :element-set-options-group true
-                                 :open extended-open?)}
+                                 :element-set-options-group-open extended-open?)}
           ; Summary
      [:div {:class (stl/css :interactions-summary)}
-      [:div {:class (stl/css-case :extend-btn true
-                                  :extended extended-open?)
-             :on-click toggle-extended}
+      [:button {:class (stl/css-case :extend-btn true
+                                     :extended extended-open?)
+                :on-click toggle-extended}
        i/menu-refactor]
 
       [:div {:class (stl/css :interactions-info)
@@ -520,85 +535,75 @@
                                             :active (= overlay-pos-type :center))
                        :data-value "center"
                        :on-click toggle-overlay-pos-type}
-              [:span {:class (stl/css :rectangle)}]]
+              corner-center-icon]
              [:button {:class (stl/css-case :direction-btn true
                                             :top-left-btn true
                                             :active (= overlay-pos-type :top-left))
                        :data-value "top-left"
                        :on-click toggle-overlay-pos-type}
-              [:span {:class (stl/css :rectangle)}]]
+              corner-topleft-icon]
              [:button {:class (stl/css-case :direction-btn true
                                             :top-right-btn true
                                             :active (= overlay-pos-type :top-right))
                        :data-value "top-right"
                        :on-click toggle-overlay-pos-type}
-              [:span {:class (stl/css :rectangle)}]]
+              corner-topright-icon]
 
              [:button {:class (stl/css-case :direction-btn true
                                             :top-center-btn true
                                             :active (= overlay-pos-type :top-center))
                        :data-value "top-center"
                        :on-click toggle-overlay-pos-type}
-              [:span {:class (stl/css :rectangle)}]]
-             [:button {:class (stl/css-case :direction-btn true
-                                            :bottom-left-btn true
-                                            :active (= overlay-pos-type :bottom-left))
-                       :data-value "bottom-left"
-                       :on-click toggle-overlay-pos-type}
-              [:span {:class (stl/css :rectangle)}]]
-             [:button {:class (stl/css-case :direction-btn true
-                                            :bottom-left-btn true
-                                            :active (= overlay-pos-type :bottom-left))
-                       :data-value "bottom-left"
-                       :on-click toggle-overlay-pos-type}
-              [:span {:class (stl/css :rectangle)}]]
+              corner-top-icon]
 
              [:button {:class (stl/css-case :direction-btn true
                                             :bottom-left-btn true
                                             :active (= overlay-pos-type :bottom-left))
                        :data-value "bottom-left"
                        :on-click toggle-overlay-pos-type}
-              [:span {:class (stl/css :rectangle)}]]
+              corner-bottomleft-icon]
              [:button {:class (stl/css-case :direction-btn true
                                             :bottom-right-btn true
                                             :active (= overlay-pos-type :bottom-right))
                        :data-value "bottom-right"
                        :on-click toggle-overlay-pos-type}
-              [:span {:class (stl/css :rectangle)}]]
+              corner-bottomright-icon]
              [:button {:class (stl/css-case :direction-btn true
                                             :bottom-center-btn true
                                             :active (= overlay-pos-type :bottom-center))
                        :data-value "bottom-center"
                        :on-click toggle-overlay-pos-type}
-              [:span {:class (stl/css :rectangle)}]]]]
+              corner-bottom-icon]]]
 
                  ;; Overlay click outside
-           [:div {:class (stl/css :property-row)}
-            [:div {:class (stl/css :checkbox-option)}
-             [:label {:for (str "close-" index)
-                      :class (stl/css-case  :global/checked close-click-outside?)}
-              [:span {:class (stl/css-case :global/checked close-click-outside?)}
-               (when close-click-outside?
-                 i/status-tick-refactor)]
-              (tr "workspace.options.interaction-close-outside")
-              [:input {:type "checkbox"
-                       :id (str "close-" index)
-                       :checked close-click-outside?
-                       :on-change change-close-click-outside}]]]]
+
+           [:ul {:class (stl/css :property-list)}
+            [:li {:class (stl/css :property-row)}
+             [:div {:class (stl/css :checkbox-option)}
+              [:label {:for (str "close-" index)
+                       :class (stl/css-case  :global/checked close-click-outside?)}
+               [:span {:class (stl/css-case :global/checked close-click-outside?)}
+                (when close-click-outside?
+                  i/status-tick-refactor)]
+               (tr "workspace.options.interaction-close-outside")
+               [:input {:type "checkbox"
+                        :id (str "close-" index)
+                        :checked close-click-outside?
+                        :on-change change-close-click-outside}]]]]
 
                 ;; Overlay background
-           [:div {:class (stl/css :property-row)}
-            [:div {:class (stl/css :checkbox-option)}
-             [:label {:for (str "background-" index)
-                      :class (stl/css-case  :global/checked background-overlay?)}
-              [:span {:class (stl/css-case :global/checked background-overlay?)}
-               (when background-overlay?
-                 i/status-tick-refactor)]
-              (tr "workspace.options.interaction-background")
-              [:input {:type "checkbox"
-                       :id (str "background-" index)
-                       :checked background-overlay?
-                       :on-change change-background-overlay}]]]]])
+            [:li {:class (stl/css :property-row)}
+             [:div {:class (stl/css :checkbox-option)}
+              [:label {:for (str "background-" index)
+                       :class (stl/css-case  :global/checked background-overlay?)}
+               [:span {:class (stl/css-case :global/checked background-overlay?)}
+                (when background-overlay?
+                  i/status-tick-refactor)]
+               (tr "workspace.options.interaction-background")
+               [:input {:type "checkbox"
+                        :id (str "background-" index)
+                        :checked background-overlay?
+                        :on-change change-background-overlay}]]]]]])
 
         (when (ctsi/has-animation? interaction)
           [:*

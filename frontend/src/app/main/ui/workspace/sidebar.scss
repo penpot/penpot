@@ -16,7 +16,6 @@ $width-settings-bar-max: $s-500;
     "content resize";
   grid-template-rows: $s-52 1fr;
   grid-template-columns: 1fr 0;
-  gap: $s-8 0;
   position: relative;
   grid-area: left-sidebar;
   min-width: $width-settings-bar;
@@ -85,10 +84,10 @@ $width-settings-bar-max: $s-500;
 
 .resize-area-horiz {
   position: absolute;
-  top: calc($s-80 + var(--height, 200px));
+  // top: calc($s-88 + var(--height, 200px));
   left: 0;
   width: 100%;
-  height: $s-12;
-  border-top: $s-2 solid var(--resize-area-border-color);
+  // height: $s-8;
+  border-bottom: $s-2 solid var(--resize-area-border-color);
   cursor: ns-resize;
 }

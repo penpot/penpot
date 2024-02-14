@@ -13,3 +13,8 @@
 .title-spacing-fill {
   @extend .attr-title;
 }
+
+.attributes-content {
+  display: grid;
+  gap: $s-4;
+}

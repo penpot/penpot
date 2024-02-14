@@ -322,6 +322,13 @@
 (def ^:icon column-reverse-refactor (icon-xref :column-reverse-refactor))
 (def ^:icon constraint-horizontal-refactor (icon-xref :constraint-horizontal-refactor))
 (def ^:icon constraint-vertical-refactor (icon-xref :constraint-vertical-refactor))
+(def ^:icon corner-bottom-refactor (icon-xref :corner-bottom-refactor))
+(def ^:icon corner-bottomleft-refactor (icon-xref :corner-bottomleft-refactor))
+(def ^:icon corner-bottomright-refactor (icon-xref :corner-bottom-refactor))
+(def ^:icon corner-center-refactor (icon-xref :corner-center-refactor))
+(def ^:icon corner-top-refactor (icon-xref :corner-top-refactor))
+(def ^:icon corner-topleft-refactor (icon-xref :corner-topleft-refactor))
+(def ^:icon corner-topright-refactor (icon-xref :corner-topright-refactor))
 (def ^:icon corner-radius-refactor (icon-xref :corner-radius-refactor))
 (def ^:icon curve-refactor (icon-xref :curve-refactor))
 (def ^:icon distribute-vertical-spacing-refactor (icon-xref :distribute-vertical-spacing-refactor))
@@ -478,6 +485,11 @@
 (def ^:icon cap-diamond-marker (icon-xref :cap-diamond-marker))
 (def ^:icon cap-round (icon-xref :cap-round))
 (def ^:icon cap-square (icon-xref :cap-square))
+
+(def ^:icon v2-icon-1 (icon-xref :v2-icon-1))
+(def ^:icon v2-icon-2 (icon-xref :v2-icon-2))
+(def ^:icon v2-icon-3 (icon-xref :v2-icon-3))
+(def ^:icon v2-icon-4 (icon-xref :v2-icon-4))
 
 
 (def ^:icon loader-pencil

@@ -442,6 +442,7 @@
 (declare activate-colorpicker-color)
 (declare activate-colorpicker-gradient)
 (declare activate-colorpicker-image)
+(declare update-colorpicker)
 
 (defn apply-color-from-colorpicker
   [color]
@@ -453,8 +454,7 @@
          (:image color) (activate-colorpicker-image)
          (:color color) (activate-colorpicker-color)
          (= :linear (get-in color [:gradient :type])) (activate-colorpicker-gradient :linear-gradient)
-         (= :radial (get-in color [:gradient :type])) (activate-colorpicker-gradient :radial-gradient))
-       (apply-color-from-palette color false)))))
+         (= :radial (get-in color [:gradient :type])) (activate-colorpicker-gradient :radial-gradient))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

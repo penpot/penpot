@@ -13,7 +13,7 @@
 
 (mf/defc title-bar
   {::mf/wrap-props false}
-  [{:keys [collapsable collapsed on-collapsed title children on-btn-click btn-children class all-clickable]}]
+  [{:keys [collapsable collapsed on-collapsed title children on-btn-click btn-children class all-clickable add-icon-gap origin]}]
   (let [klass (dm/str (stl/css :title-bar) " " class)]
     [:div {:class klass}
      (if ^boolean collapsable
@@ -33,7 +33,10 @@
                      :on-click on-collapsed}
             i/arrow-refactor]
            [:div {:class (stl/css :title)} title]])]
-       [:div {:class (stl/css :title-only)} title])
+       [:div {:class (stl/css-case :title-only true
+                                   :title-only-icon-gap add-icon-gap
+                                   :title-only (not= :inspect origin)
+                                   :inspect-title (= :inspect origin))} title])
      children
      (when (some? on-btn-click)
        [:button {:class (stl/css :title-button)
