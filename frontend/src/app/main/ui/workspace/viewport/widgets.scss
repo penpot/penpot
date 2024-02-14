@@ -63,10 +63,16 @@
   }
 }
 
+.workspace-frame-label-wrapper {
+  pointer-events: none;
+}
+
 .workspace-frame-label {
   font-size: $fs-12;
   color: black;
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
+  max-width: fit-content;
+  pointer-events: all;
 }

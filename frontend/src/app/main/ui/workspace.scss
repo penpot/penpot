@@ -29,6 +29,7 @@
   grid-template-areas: "left-sidebar viewport right-sidebar";
   grid-template-rows: 1fr;
   grid-template-columns: auto 1fr auto;
+  overflow: hidden;
 
   .workspace-loader {
     @include flexCenter;

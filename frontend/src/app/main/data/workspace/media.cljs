@@ -72,7 +72,8 @@
                                          :width width
                                          :height height
                                          :mtype mtype
-                                         :id id}}]}]
+                                         :id id
+                                         :keep-aspect-ratio true}}]}]
         (rx/of (dwsh/create-and-add-shape :rect x y shape))))))
 
 (defn svg-uploaded
@@ -358,7 +359,8 @@
                                             :id id
                                             :width width
                                             :height height
-                                            :mtype mtype}}]
+                                            :mtype mtype
+                                            :keep-aspect-ratio true}}]
                       :name name
                       :frame-id (:id frame-shape)
                       :parent-id (:id frame-shape)})]

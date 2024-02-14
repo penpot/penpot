@@ -166,3 +166,8 @@
   margin-top: $s-12;
   height: $s-32;
 }
+
+.checkbox-option {
+  @extend .input-checkbox;
+  margin: $s-16 0 0 0;
+}

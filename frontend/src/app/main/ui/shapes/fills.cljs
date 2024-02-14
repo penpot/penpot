@@ -117,9 +117,10 @@
                               :style style}]
                (if (:fill-image value)
                  (let [uri (cf/resolve-file-media (:fill-image value))
+                       keep-ar? (-> value :fill-image :keep-aspect-ratio)
                        image-props #js {:id (dm/str "fill-image-" render-id "-" fill-index)
                                         :href (get uris uri uri)
-                                        :preserveAspectRatio "xMidYMid slice"
+                                        :preserveAspectRatio (if keep-ar? "xMidYMid slice" "none")
                                         :width width
                                         :height height
                                         :key (dm/str fill-index)
