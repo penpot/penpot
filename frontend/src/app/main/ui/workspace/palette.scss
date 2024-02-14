@@ -39,10 +39,7 @@
   &.wide {
     width: 100%;
   }
-  &.mid-palette,
-  &.small-palette {
-    grid-template-columns: $s-64 auto 1fr;
-  }
+
   .resize-area {
     grid-area: resize;
     height: $s-8;
@@ -108,56 +105,62 @@
     width: 100%;
     min-width: 0;
   }
-  .handler {
-    @include buttonStyle;
-    @include flexCenter;
-    width: $s-12;
+}
+
+.handler {
+  @include buttonStyle;
+  @include flexCenter;
+  width: $s-12;
+  height: 100%;
+  .handler-btn {
+    width: $s-4;
     height: 100%;
-    .handler-btn {
-      width: $s-4;
-      height: 100%;
-      max-height: $s-40;
-      margin: $s-8 $s-4;
-      padding: 0;
-      border-radius: $s-4;
-      background-color: var(--palette-handler-background-color);
-    }
-  }
-  &.hidden-bts {
-    right: 10px;
-    z-index: 1;
-    width: 22px;
-    grid-template-columns: $s-8 auto 1fr;
+    max-height: $s-40;
+    margin: $s-8 $s-4;
     padding: 0;
-    &.small-palette,
-    &.mid-palette {
-      right: 10px;
-    }
-    .palette-btn-list {
+    border-radius: $s-4;
+    background-color: var(--palette-handler-background-color);
+  }
+}
+
+.mid-palette,
+.small-palette {
+  grid-template-columns: $s-64 auto 1fr;
+}
+
+.hidden-bts {
+  right: $s-2;
+  z-index: $z-index-1;
+  width: 22px;
+  grid-template-columns: $s-8 auto 1fr;
+  padding: 0;
+  border-inline-start: 0;
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+  .palette-btn-list {
+    opacity: $op-0;
+    visibility: hidden;
+    width: 0;
+    .palette-item {
       opacity: $op-0;
       visibility: hidden;
-      width: 0;
-      .palette-item {
-        opacity: $op-0;
-        visibility: hidden;
-        z-index: 0;
-      }
-    }
-    .resize-area {
-      visibility: hidden;
-      z-index: 0;
-      width: 0;
-    }
-    .palette-actions {
-      visibility: hidden;
       z-index: 0;
     }
-    .palette {
-      visibility: hidden;
-      z-index: 0;
-    }
-    .handler {
-      padding-bottom: $s-8;
-    }
+  }
+  .resize-area {
+    visibility: hidden;
+    z-index: 0;
+    width: 0;
+  }
+  .palette-actions {
+    visibility: hidden;
+    z-index: 0;
+  }
+  .palette {
+    visibility: hidden;
+    z-index: 0;
+  }
+  .handler {
+    padding-bottom: $s-8;
   }
 }
