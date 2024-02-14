@@ -30,7 +30,6 @@
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
    [app.util.blob :as blob]
-   [app.util.objects-map :as omap]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [app.util.time :as dt]
@@ -119,17 +118,10 @@
   [f]
   (fn [cfg {:keys [id] :as file}]
     (binding [pmap/*tracked* (pmap/create-tracked)
-              pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)
-              cfeat/*wrap-with-pointer-map-fn* pmap/wrap]
+              pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
       (let [result (f cfg file)]
         (feat.fdata/persist-pointers! cfg id)
         result))))
-
-(defn- wrap-with-objects-map-context
-  [f]
-  (fn [cfg file]
-    (binding [cfeat/*wrap-with-objects-map-fn* omap/wrap]
-      (f cfg file))))
 
 (declare get-lagged-changes)
 (declare send-notifications!)
@@ -199,10 +191,7 @@
 
         update-fn (cond-> update-file*
                     (contains? features "fdata/pointer-map")
-                    (wrap-with-pointer-map-context)
-
-                    (contains? features "fdata/objects-map")
-                    (wrap-with-objects-map-context))
+                    (wrap-with-pointer-map-context))
 
         changes   (if changes-with-metadata
                     (->> changes-with-metadata (mapcat :changes) vec)
@@ -328,6 +317,7 @@
                                           ;; leeave it on lazy status
                                           (-> (files/get-file cfg id :migrate? false)
                                               (update :data feat.fdata/process-pointers deref) ; ensure all pointers resolved
+                                              (update :data feat.fdata/process-objects (partial into {}))
                                               (fmg/migrate-file))))))
                     (d/index-by :id)))
 
