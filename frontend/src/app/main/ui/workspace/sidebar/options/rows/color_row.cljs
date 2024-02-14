@@ -27,6 +27,10 @@
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
+
+(def ^:private detach-icon
+  (i/icon-xref :detach-refactor (stl/css :detach-icon)))
+
 (defn opacity->string
   [opacity]
   (if (= opacity :multiple)
@@ -218,7 +222,7 @@
               :on-pointer-enter #(reset! hover-detach true)
               :on-pointer-leave #(reset! hover-detach false)
               :on-click detach-value}
-             i/detach-refactor])]
+             detach-icon])]
 
               ;; Rendering a gradient
          gradient-color?
