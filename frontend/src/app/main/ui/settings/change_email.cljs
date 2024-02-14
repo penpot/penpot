@@ -110,7 +110,7 @@
                   :on-click on-close} i/close-refactor]]
 
        [:div {:class (stl/css :modal-content)}
-        [:& msgs/inline-banner
+        [:& msgs/inline-notification
          {:type :info
           :content (tr "modals.change-email.info" (:email profile))}]
 

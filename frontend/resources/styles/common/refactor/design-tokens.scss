@@ -311,15 +311,30 @@
   --modal-separator-backogrund-color: var(--color-background-quaternary);
 
   // ALERTS NOTIFICATION TOAST & STATUS WIDGET
-  --alert-background-color-success: var(--status-color-success-500);
-  --alert-foreground-color-success: var(--db-secondary); // We don't want this color to change with theme
-  --alert-background-color-warning: var(--status-color-warning-500);
-  --alert-foreground-color-warning: var(--app-white); // We don't want this color to change with theme
-  --alert-background-color-error: var(--status-color-error-500);
-  --alert-foreground-color-error: var(--app-white); // We don't want this color to change with theme
-  --alert-background-color-neutral: var(--color-background-quaternary);
-  --alert-foreground-color-neutral: var(--color-foreground-secondary);
-  --alert-foreground-color-neutral-active: var(--color-foreground-primary);
+  --alert-background-color-success: var(--color-success-background);
+  --alert-text-foreground-color-success: var(--color-foreground-primary);
+  --alert-icon-foreground-color-success: var(--color-success-foreground);
+  --alert-border-color-success: var(--color-success-foreground);
+
+  --alert-background-color-warning: var(--color-warning-background);
+  --alert-text-foreground-color-warning: var(--color-foreground-primary);
+  --alert-icon-foreground-color-warning: var(--color-warning-foreground);
+  --alert-border-color-warning: var(--color-warning-foreground);
+
+  --alert-background-color-error: var(--color-error-background);
+  --alert-text-foreground-color-error: var(--color-foreground-primary);
+  --alert-icon-foreground-color-error: var(--color-error-foreground);
+  --alert-border-color-error: var(--color-error-foreground);
+
+  --alert-background-color-info: var(--color-info-background);
+  --alert-text-foreground-color-info: var(--color-foreground-primary);
+  --alert-icon-foreground-color-info: var(--color-info-foreground);
+  --alert-border-color-info: var(--color-info-foreground);
+
+  --alert-background-color-default: var(--color-background-primary);
+  --alert-text-foreground-color-default: var(--color-foreground-primary);
+  --alert-icon-foreground-color-default: var(--color-foreground-primary);
+  --alert-border-color-default: var(--color-background-quaternary);
 
   --notification-background-color-success: var();
   --notification-foreground-color-success: var();

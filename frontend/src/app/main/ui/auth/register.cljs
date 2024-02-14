@@ -28,7 +28,7 @@
 (mf/defc demo-warning
   [_]
   [:div {:class (stl/css :banner)}
-   [:& msgs/inline-banner
+   [:& msgs/inline-notification
     {:type :warning
      :content (tr "auth.demo-warning")}]])
 

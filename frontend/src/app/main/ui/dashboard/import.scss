@@ -39,7 +39,7 @@
   margin-bottom: $s-24;
   border-radius: $br-8;
   background-color: var(--alert-background-color-success);
-  color: var(--alert-foreground-color-success);
+  color: var(--alert-text-foreground-color-success);
 
   .icon {
     @include flexCenter;
@@ -47,7 +47,7 @@
     width: $s-24;
     svg {
       @extend .button-icon;
-      stroke: var(--alert-foreground-color-success);
+      stroke: var(--alert-icon-foreground-color-success);
     }
   }
   .message {
@@ -55,9 +55,9 @@
   }
   &.warning {
     background-color: var(--alert-background-color-warning);
-    color: var(--alert-foreground-color-warning);
+    color: var(--alert-text-foreground-color-warning);
     .icon svg {
-      stroke: var(--alert-foreground-color-warning);
+      stroke: var(--alert-icon-foreground-color-warning);
     }
   }
 }

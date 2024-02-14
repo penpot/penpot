@@ -57,16 +57,19 @@
   --la-quaternary: #ff6fe0;
 
   // STATUS COLOR
-  --status-color-success-50: #f0f8ff;
+  --status-color-success-200: #a7e8d9;
   --status-color-success-500: #2d9f8f;
   --status-color-success-950: #0a2927;
-  --status-color-warning-50: #fff4ed;
+
+  --status-color-warning-200: #ffc8a8;
   --status-color-warning-500: #fe4811;
   --status-color-warning-950: #440806;
-  --status-color-error-50: #fff0f3;
+
+  --status-color-error-200: #ffcada;
   --status-color-error-500: #ff3277;
   --status-color-error-950: #500124;
-  --status-color-info-50: #f0f8ff;
+
+  --status-color-info-200: #bae3fd;
   --status-color-info-500: #0e9be9;
   --status-color-info-950: #082c49;
   // Status color default will change with theme and will be defined on theme files

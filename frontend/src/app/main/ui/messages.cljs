@@ -31,11 +31,11 @@
    [:div {:class (stl/css :wrapper)}
     [:div {:class (stl/css :icon)}
      (case type
-       :warning i/msg-warning-refactor
-       :error i/msg-error-refactor
-       :success i/msg-success-refactor
-       :info i/msg-neutral-refactor
-       i/msg-error-refactor)]
+       :warning i/msg-neutral-refactor
+       :error i/delete-text-refactor
+       :success i/status-tick-refactor
+       :info i/help-refactor
+       i/delete-text-refactor)]
 
     [:div {:class (stl/css-case :content  true
                                 :inline-actions (= controls :inline-actions)
@@ -69,7 +69,8 @@
 (mf/defc notifications
   []
   (let [message  (mf/deref refs/message)
-        on-close #(st/emit! dmsg/hide)]
+        on-close #(st/emit! dmsg/hide)
+        _ (prn "message" message)]
     (when message
       [:& banner (assoc message
                         :position (or (:position message) :fixed)
@@ -78,7 +79,7 @@
                                     :close)
                         :on-close on-close)])))
 
-(mf/defc inline-banner
+(mf/defc inline-notification
   {::mf/wrap [mf/memo]}
   [{:keys [type content on-close actions data-test role] :as props}]
   [:& banner {:type type
@@ -95,3 +96,37 @@
               :data-test data-test
               :role role}])
 
+
+(mf/defc context-notification
+  {::mf/wrap [mf/memo]}
+  [{:keys [type content on-close actions data-test role] :as props}]
+  [:& banner {:type type
+              :position :inline
+              :status :visible
+              :controls (if (some? on-close)
+                          :close
+                          (if (some? actions)
+                            :bottom-actions
+                            :none))
+              :content content
+              :on-close on-close
+              :actions actions
+              :data-test data-test
+              :role role}])
+
+(mf/defc toast-notification
+  {::mf/wrap [mf/memo]}
+  [{:keys [type content on-close actions data-test role] :as props}]
+  [:& banner {:type type
+              :position :floating
+              :status :visible
+              :controls (if (some? on-close)
+                          :close
+                          (if (some? actions)
+                            :bottom-actions
+                            :none))
+              :content content
+              :on-close on-close
+              :actions actions
+              :data-test data-test
+              :role role}])
