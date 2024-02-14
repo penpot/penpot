@@ -329,10 +329,10 @@
         &.invalid {
           background-color: var(--status-widget-background-color-error);
           .text {
-            color: var(--alert-foreground-color-error);
+            color: var(--alert-text-foreground-color-error);
           }
           .icon svg {
-            stroke: var(--alert-foreground-color-error);
+            stroke: var(--alert-icon-foreground-color-error);
           }
         }
       }

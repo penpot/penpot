@@ -608,7 +608,7 @@
       height: $s-24;
       svg {
         @extend .button-icon;
-        stroke: var(--alert-foreground-color-error);
+        stroke: var(--alert-icon-foreground-color-error);
       }
     }
     .message {
@@ -632,7 +632,7 @@
       height: $s-24;
       svg {
         @extend .button-icon;
-        stroke: var(--alert-foreground-color-warning);
+        stroke: var(--alert-icon-foreground-color-warning);
       }
     }
     .message {

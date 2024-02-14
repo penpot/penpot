@@ -8,19 +8,23 @@
 
 .auth-form {
   width: 100%;
-  padding-bottom: $s-16;
+  padding-block-end: $s-16;
 
   form {
     display: flex;
     flex-direction: column;
     gap: $s-12;
-    margin-bottom: $s-24;
+    margin-block-end: $s-24;
   }
 }
 
 .separator {
   border-color: $db-quaternary;
   margin: $s-24 0;
+}
+
+.error-wrapper {
+  padding-block-end: $s-8;
 }
 
 .auth-title {

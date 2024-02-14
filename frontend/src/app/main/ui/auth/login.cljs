@@ -157,12 +157,13 @@
 
     [:*
      (when-let [message @error]
-       [:& msgs/inline-banner
-        {:type :warning
-         :content message
-         :on-close #(reset! error nil)
-         :data-test "login-banner"
-         :role "alert"}])
+       [:div {:class (stl/css :error-wrapper)}
+        [:& msgs/inline-notification
+         {:type :warning
+          :content message
+          :on-close #(reset! error nil)
+          :data-test "login-banner"
+          :role "alert"}]])
 
      [:& fm/form {:on-submit on-submit :form form}
       [:div {:class (stl/css :fields-row)}
