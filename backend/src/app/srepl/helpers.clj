@@ -85,6 +85,14 @@
                 {:id id})
     team))
 
+(defn get-raw-file
+  "Get the migrated data of one file."
+  ([id] (get-raw-file (or *system* main/system) id))
+  ([system id]
+   (db/run! system
+            (fn [system]
+              (files/get-file system id :migrate? false)))))
+
 (defn reset-file-data!
   "Hardcode replace of the data of one file."
   [system id data]
