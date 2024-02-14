@@ -62,6 +62,8 @@
 
     (db/update! conn :file
                 {:has-media-trimmed true
+                 :features (:features file)
+                 :version (:version file)
                  :data (:data file)}
                 {:id id})))
 
@@ -82,6 +84,7 @@
   "SELECT f.id,
           f.data,
           f.revn,
+          f.version,
           f.features,
           f.modified_at
      FROM file AS f
@@ -175,7 +178,7 @@
 
 
 (def ^:private sql:get-files-for-library
-  "SELECT f.id, f.data, f.modified_at, f.features
+  "SELECT f.id, f.data, f.modified_at, f.features, f.version
      FROM file AS f
      LEFT JOIN file_library_rel AS fl ON (fl.file_id = f.id)
     WHERE fl.library_file_id = ?

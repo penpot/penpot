@@ -1496,6 +1496,13 @@
             fdata (migrate-graphics fdata)]
         (update fdata :options assoc :components-v2 true)))))
 
+(defn- fix-version
+  [file]
+  (let [file (fmg/fix-version file)]
+    (if (> (:version file) 22)
+      (assoc file :version 22)
+      file)))
+
 (defn- get-file
   [system id]
   (binding [pmap/*load-fn* (partial fdata/load-pointer system id)]
@@ -1506,10 +1513,7 @@
         (update :data assoc :id id)
         (update :data fdata/process-pointers deref)
         (update :data fdata/process-objects (partial into {}))
-        (update :data (fn [data]
-                        (if (> (:version data) 22)
-                          (assoc data :version 22)
-                          data)))
+        (fix-version)
         (fmg/migrate-file))))
 
 (defn get-team

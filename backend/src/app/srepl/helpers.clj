@@ -66,6 +66,7 @@
     (db/update! conn :file
                 {:revn (:revn file)
                  :data (:data file)
+                 :version (:version file)
                  :features (:features file)
                  :deleted-at (:deleted-at file)
                  :created-at (:created-at file)

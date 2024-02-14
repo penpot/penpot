@@ -9,7 +9,6 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.features :as cfeat]
-   [app.common.files.defaults :refer [version]]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
@@ -70,8 +69,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def empty-file-data
-  {:version version
-   :pages []
+  {:pages []
    :pages-index {}})
 
 (defn make-file-data
@@ -82,7 +80,7 @@
    (let [page (when (some? page-id)
                 (ctp/make-empty-page page-id "Page 1"))]
 
-     (cond-> (assoc empty-file-data :id file-id :version version)
+     (cond-> (assoc empty-file-data :id file-id)
        (some? page-id)
        (ctpl/add-page page)
 

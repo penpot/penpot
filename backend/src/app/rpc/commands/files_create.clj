@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.features :as cfeat]
+   [app.common.files.defaults :refer [version]]
    [app.common.schema :as sm]
    [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
@@ -61,6 +62,7 @@
                     :name name
                     :revn revn
                     :is-shared is-shared
+                    :version version
                     :data data
                     :features features
                     :ignore-sync-until ignore-sync-until
