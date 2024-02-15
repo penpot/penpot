@@ -28,6 +28,7 @@
   height: $s-32;
   width: 100%;
   flex-grow: 1;
+  min-width: 0;
 
   &:hover {
     --detach-icon-foreground-color: var(--input-foreground-color-active);
@@ -55,6 +56,8 @@
     padding: 0 $s-2 0 $s-8;
     border-radius: $br-8 0 0 $br-8;
     background-color: transparent;
+    display: flex;
+    align-items: center;
     &:hover {
       background-color: transparent;
     }

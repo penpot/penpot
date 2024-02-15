@@ -193,14 +193,14 @@
                    :dnd-over-top (= (:over dprops) :top)
                    :dnd-over-bot (= (:over dprops) :bot))
            :ref dref}
-     [:span {:class (stl/css :color-info)}
-      [:span {:class (stl/css-case :color-name-wrapper true
-                                   :no-opacity (or disable-opacity
-                                                   (not opacity?))
-                                   :library-name-wrapper library-color?
-                                   :editing editing-text?
-                                   :gradient-name-wrapper gradient-color?)}
-       [:span {:class (stl/css :color-bullet-wrapper)}
+     [:div {:class (stl/css :color-info)}
+      [:div {:class (stl/css-case :color-name-wrapper true
+                                  :no-opacity (or disable-opacity
+                                                  (not opacity?))
+                                  :library-name-wrapper library-color?
+                                  :editing editing-text?
+                                  :gradient-name-wrapper gradient-color?)}
+       [:div {:class (stl/css :color-bullet-wrapper)}
         [:& cbn/color-bullet {:color (cond-> color
                                        (nil? color-name) (assoc
                                                           :id nil
