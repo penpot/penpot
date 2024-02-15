@@ -88,8 +88,8 @@
            parent-selrect (:selrect parent)
 
            padding (when (and (not (nil? parent)) (> (count shapes) 0))
-                     {:p1 (min (- min-y (:y1 parent-selrect)) (- (:y2 parent-selrect) max-y))
-                      :p2 (min (- min-x (:x1 parent-selrect)) (- (:x2 parent-selrect) max-x))})]
+                     {:p1 (- min-y (:y1 parent-selrect))
+                      :p2 (- min-x (:x1 parent-selrect))})]
 
        (cond-> {:layout-flex-dir direction :layout-gap layout-gap}
          (not (nil? padding))

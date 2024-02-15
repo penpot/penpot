@@ -17,9 +17,9 @@
   (mf/create-context nil))
 
 (mf/defc radio-button
-  {::mf/wrap-props false}
+  {::mf/props :obj}
   [props]
-  (let [context   (mf/use-ctx context)
+  (let [context    (mf/use-ctx context)
         icon       (unchecked-get props "icon")
         id         (unchecked-get props "id")
         value      (unchecked-get props "value")
@@ -27,7 +27,10 @@
         title      (unchecked-get props "title")
         unique-key (unchecked-get props "unique-key")
         icon-class (unchecked-get props "icon-class")
-        type       (or (unchecked-get props "type") "radio")
+        type       (or (unchecked-get props "type")
+                       (if (unchecked-get context "allow-empty")
+                         "checkbox"
+                         "radio"))
 
         on-change  (unchecked-get context "on-change")
         selected   (unchecked-get context "selected")
@@ -59,14 +62,15 @@
               :checked checked?}]]))
 
 (mf/defc radio-buttons
-  {::mf/wrap-props false}
+  {::mf/props :obj}
   [props]
-  (let [children  (unchecked-get props "children")
-        on-change (unchecked-get props "on-change")
-        selected  (unchecked-get props "selected")
-        name      (unchecked-get props "name")
-        class     (unchecked-get props "class")
-        wide      (unchecked-get props "wide")
+  (let [children     (unchecked-get props "children")
+        on-change    (unchecked-get props "on-change")
+        selected     (unchecked-get props "selected")
+        name         (unchecked-get props "name")
+        class        (unchecked-get props "class")
+        wide         (unchecked-get props "wide")
+        allow-empty? (unchecked-get props "allow-empty")
 
         encode-fn (d/nilv (unchecked-get props "encode-fn") identity)
         decode-fn (d/nilv (unchecked-get props "encode-fn") identity)
@@ -87,7 +91,8 @@
          (mf/deps on-change)
          (fn [event]
            (let [input-node (dom/get-target event)
-                 value (dom/get-target-val event)]
+                 value (dom/get-target-val event)
+                 value (when (not= value selected) value)]
              (when (fn? on-change)
                (do (on-change (decode-fn value) event)
                    (dom/blur! input-node))))))
@@ -98,7 +103,8 @@
                :on-change on-change'
                :name name
                :encode-fn encode-fn
-               :decode-fn decode-fn})]
+               :decode-fn decode-fn
+               :allow-empty allow-empty?})]
 
     [:& (mf/provider context) {:value context-value}
      [:div {:class (dm/str class " " (stl/css :radio-btn-wrapper))
