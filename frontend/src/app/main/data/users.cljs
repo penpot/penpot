@@ -227,9 +227,14 @@
   (ptk/reify ::login-from-token
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (logged-in
-              (with-meta profile
-                {::ev/source "login-with-token"}))))))
+      (->> (rx/of (logged-in (with-meta profile {::ev/source "login-with-token"})))
+           ;; NOTE: we need this to be asynchronous because the effect
+           ;; should be called before proceed with the login process
+           (rx/observe-on :async)))
+
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (set-current-team! nil))))
 
 (defn login-from-register
   "Event used mainly for mark current session as logged-in in after the
@@ -274,6 +279,7 @@
      (effect [_ _ _]
        ;; We prefer to keek some stuff in the storage like the current-team-id and the profile
        (swap! storage dissoc :redirect-url)
+       (set-current-team! nil)
        (i18n/reset-locale)))))
 
 (defn logout

@@ -25,7 +25,7 @@
 (defmethod handle-token :verify-email
   [data]
   (let [msg (tr "dashboard.notifications.email-verified-successfully")]
-    (ts/schedule 100 #(st/emit! (dm/success msg)))
+    (ts/schedule 1000 #(st/emit! (dm/success msg)))
     (st/emit! (du/login-from-token data))))
 
 (defmethod handle-token :change-email
