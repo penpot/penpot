@@ -10,14 +10,16 @@
   @include flexRow;
 
   &.dnd-over-top {
-    border-top: $s-1 solid var(--layer-row-foreground-color-drag);
+    border-block-start: $s-1 solid var(--layer-row-foreground-color-drag);
   }
   &.dnd-over-bot {
-    border-bottom: $s-1 solid var(--layer-row-foreground-color-drag);
+    border-block-end: $s-1 solid var(--layer-row-foreground-color-drag);
   }
 }
 
 .color-info {
+  --detach-icon-foreground-color: none;
+
   display: flex;
   align-items: center;
   gap: $s-2;
@@ -26,146 +28,152 @@
   height: $s-32;
   width: 100%;
   flex-grow: 1;
+  min-width: 0;
 
-  .color-name-wrapper {
-    @extend .input-element;
-    flex-grow: 1;
-    width: 100%;
-    border-radius: $br-8 0 0 $br-8;
-    padding: 0;
-    margin-right: 0;
-    gap: $s-4;
-    input {
-      padding: 0;
-    }
-    .color-bullet-wrapper {
-      height: $s-28;
-      padding: 0 $s-2 0 $s-8;
-      border-radius: $br-8 0 0 $br-8;
+  &:hover {
+    --detach-icon-foreground-color: var(--input-foreground-color-active);
+
+    .detach-btn,
+    .select-btn {
       background-color: transparent;
-      &:hover {
-        background-color: transparent;
-      }
     }
-    .color-name {
-      @include titleTipography;
-      @include textEllipsis;
-      padding-inline: $s-6;
+  }
+}
+
+.color-name-wrapper {
+  @extend .input-element;
+  flex-grow: 1;
+  width: 100%;
+  border-radius: $br-8 0 0 $br-8;
+  padding: 0;
+  margin-inline-end: 0;
+  gap: $s-4;
+  input {
+    padding: 0;
+  }
+  .color-bullet-wrapper {
+    height: $s-28;
+    padding: 0 $s-2 0 $s-8;
+    border-radius: $br-8 0 0 $br-8;
+    background-color: transparent;
+    display: flex;
+    align-items: center;
+    &:hover {
+      background-color: transparent;
+    }
+  }
+  .color-name {
+    @include titleTipography;
+    @include textEllipsis;
+    padding-inline: $s-6;
+    border-radius: $br-8;
+    color: var(--input-foreground-color-active);
+  }
+  .detach-btn {
+    @extend .button-tertiary;
+    height: $s-28;
+    width: $s-28;
+    margin-inline-start: auto;
+    border-radius: 0 $br-8 $br-8 0;
+    display: none;
+  }
+  .detach-icon {
+    @extend .button-icon;
+    stroke: var(--detach-icon-foreground-color);
+  }
+  .color-input-wrapper {
+    @include titleTipography;
+    display: flex;
+    align-items: center;
+    height: $s-28;
+    padding: 0 $s-0;
+    width: 100%;
+    margin: 0;
+    flex-grow: 1;
+    background-color: var(--input-background-color);
+    color: var(--input-foreground-color);
+    border-radius: $br-0;
+  }
+  &.no-opacity {
+    border-radius: $br-8;
+    .color-input-wrapper {
       border-radius: $br-8;
-      color: var(--input-foreground-color-active);
+    }
+  }
+  &:hover {
+    --detach-icon-foreground-color: var(--input-foreground-color-active);
+
+    background-color: var(--input-background-color-hover);
+    border: $s-1 solid var(--input-border-color-hover);
+    .color-bullet-wrapper,
+    .color-name,
+    .detach-btn,
+    .color-input-wrapper {
+      background-color: var(--input-background-color-hover);
     }
     .detach-btn {
-      @extend .button-tertiary;
-      height: $s-28;
-      width: $s-28;
-      border-radius: 0 $br-8 $br-8 0;
-      display: none;
-      svg {
-        @extend .button-icon;
-      }
-    }
-    .color-input-wrapper {
-      @include titleTipography;
       display: flex;
-      align-items: center;
-      height: $s-28;
-      padding: 0 $s-0;
-      width: 100%;
-      margin: 0;
-      flex-grow: 1;
-      background-color: var(--input-background-color);
-      color: var(--input-foreground-color);
-      border-radius: $br-0;
     }
-    &.no-opacity {
-      border-radius: $br-8;
-      .color-input-wrapper {
-        border-radius: $br-8;
-      }
-    }
-    &:hover {
-      background-color: var(--input-background-color-hover);
-      border: $s-1 solid var(--input-border-color-hover);
+    &.editing {
+      background-color: var(--input-background-color-active);
       .color-bullet-wrapper,
       .color-name,
       .detach-btn,
       .color-input-wrapper {
-        background-color: var(--input-background-color-hover);
-      }
-      .detach-btn {
-        display: flex;
-        svg {
-          stroke: var(--input-foreground-color-active);
-        }
-      }
-      &.editing {
         background-color: var(--input-background-color-active);
-        .color-bullet-wrapper,
-        .color-name,
-        .detach-btn,
-        .color-input-wrapper {
-          background-color: var(--input-background-color-active);
-        }
-      }
-      &:focus,
-      &:focus-within {
-        background-color: var(--input-background-color-focus);
-        border: $s-1 solid var(--input-border-color-focus);
       }
     }
-
     &:focus,
     &:focus-within {
       background-color: var(--input-background-color-focus);
       border: $s-1 solid var(--input-border-color-focus);
-      &:hover {
-        background-color: var(--input-background-color-hover);
-        border: $s-1 solid var(--input-border-color-focus);
-      }
-    }
-
-    &.editing {
-      background-color: var(--input-background-color-active);
-      &:hover {
-        border: $s-1 solid var(--input-border-color-active);
-      }
-    }
-  }
-  .gradient-name-wrapper {
-    border-radius: 0 $br-8 $br-8 0;
-    .color-name {
-      @include flexRow;
-      border-radius: 0 $br-8 $br-8 0;
-    }
-  }
-  .library-name-wrapper {
-    border-radius: $br-8;
-  }
-  .opacity-element-wrapper {
-    @extend .input-element;
-    width: $s-60;
-    border-radius: 0 $br-8 $br-8 0;
-    .opacity-input {
-      padding: 0;
-      border-radius: 0 $br-8 $br-8 0;
-      min-width: $s-28;
-    }
-    .icon-text {
-      @include flexCenter;
-      height: $s-32;
-      margin-right: $s-4;
-      padding-top: $s-2;
     }
   }
 
-  &:hover {
-    .detach-btn,
-    .select-btn {
-      background-color: transparent;
-      svg {
-        stroke: var(--input-foreground-color-active);
-      }
+  &:focus,
+  &:focus-within {
+    background-color: var(--input-background-color-focus);
+    border: $s-1 solid var(--input-border-color-focus);
+    &:hover {
+      background-color: var(--input-background-color-hover);
+      border: $s-1 solid var(--input-border-color-focus);
     }
+  }
+
+  &.editing {
+    background-color: var(--input-background-color-active);
+    &:hover {
+      border: $s-1 solid var(--input-border-color-active);
+    }
+  }
+}
+
+.gradient-name-wrapper {
+  border-radius: 0 $br-8 $br-8 0;
+  .color-name {
+    @include flexRow;
+    border-radius: 0 $br-8 $br-8 0;
+  }
+}
+
+.library-name-wrapper {
+  border-radius: $br-8;
+}
+
+.opacity-element-wrapper {
+  @extend .input-element;
+  width: $s-60;
+  border-radius: 0 $br-8 $br-8 0;
+  .opacity-input {
+    padding: 0;
+    border-radius: 0 $br-8 $br-8 0;
+    min-width: $s-28;
+  }
+  .icon-text {
+    @include flexCenter;
+    height: $s-32;
+    margin-inline-end: $s-4;
+    margin-block-start: $s-2;
   }
 }
 
