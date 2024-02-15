@@ -208,7 +208,10 @@
         from-frame-id (if (cfh/frame-shape? from-shape)
                         from-id (:frame-id from-shape))
 
-        target-frame (ctst/get-frame-by-position objects position)]
+        target-frame
+        (->> (ctst/get-frames-by-position objects position)
+             (remove :hide-in-viewer)
+             (last))]
 
     (when (and (not= (:id target-frame) uuid/zero)
                (not= (:id target-frame) from-frame-id))
