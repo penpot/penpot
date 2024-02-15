@@ -35,12 +35,6 @@
     {:entries [app.main.ui.viewer]
      :depends-on #{:main :main-auth}}
 
-    :main-onboarding
-    {:entries [app.main.ui.onboarding
-               app.main.ui.onboarding.questions
-               app.main.ui.releases]
-     :depends-on #{:main}}
-
     :main-workspace
     {:entries [app.main.ui.workspace]
      :depends-on #{:main}}
