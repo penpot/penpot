@@ -11,25 +11,36 @@
 }
 
 .modal-container {
-  @extend .modal-container-base;
-  min-width: $s-512;
-  position: relative;
+
+  max-width: $s-744;
+  max-height: $s-580;
+  width: $s-744;
+  height: $s-580;
+  padding-inline: $s-100;
+  padding-block-start: $s-40;
+  padding-block-start: $s-72;
+  border-radius: $br-8;
+  border: $s-2 solid var(--modal-border-color);
+  background-color: var(--modal-background-color);
+}
+
+.form-wrapper {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: $s-20 auto auto auto auto auto;
+  gap: $s-24;
 }
 
 // STEP CONTAINER
 .paginator {
-  @include titleTipography;
-  position: absolute;
-  top: $s-8;
-  right: $s-8;
-  padding: $s-4;
-  border-radius: $br-6;
-  color: var(--color-foreground-secondary);
+  @include medTitleTipography;
+  height: $s-20;
+  text-align: right;
+  color: var(--modal-text-foreground-color);
 }
 
 .action-buttons {
   @extend .modal-action-btns;
-  margin-top: $s-32;
 }
 .next-button {
   @extend .modal-accept-btn;
@@ -42,28 +53,31 @@
 // STEP 1
 
 .header-image {
-  height: auto;
-  width: $s-200;
+  height: $s-112;
+  width: auto;
+  margin-inline-start: auto;
 }
 
 .modal-title {
   @include bigTitleTipography;
+  height: $s-36;
+  margin-block: auto;
   color: var(--modal-title-foreground-color);
-  margin: $s-32 0 $s-8 0;
 }
 
 .modal-subtitle {
-  @include titleTipography;
+  @include bodyLargeTypography;
   color: var(--modal-title-foreground-color);
+  margin: 0;
 }
 
-// STEP-2
-
 .modal-text {
-  @include titleTipography;
+  @include bodyLargeTypography;
   color: var(--modal-text-foreground-color);
   margin: 0;
 }
+
+// STEP-2
 
 .modal-question {
   @include flexColumn;

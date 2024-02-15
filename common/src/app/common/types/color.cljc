@@ -52,7 +52,8 @@
    [:width :int]
    [:height :int]
    [:mtype {:optional true} [:maybe :string]]
-   [:id ::sm/uuid]])
+   [:id ::sm/uuid]
+   [:keep-aspect-ratio {:optional true} :boolean]])
 
 (sm/define! ::gradient
   [:map {:title "Gradient"}

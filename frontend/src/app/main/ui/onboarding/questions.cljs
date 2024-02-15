@@ -21,7 +21,7 @@
 (mf/defc step-container
   [{:keys [form step on-next on-prev children] :as props}]
 
-  [:& fm/form {:form form :on-submit on-next}
+  [:& fm/form {:form form :on-submit on-next :class (stl/css :form-wrapper)}
    [:div {:class (stl/css :paginator)} (str/ffmt "%/4" step)]
 
    children

@@ -347,7 +347,12 @@
                         (->> (upload-media-files context file-id name (:href image-data))
                              (rx/catch #(do (.error js/console "Error uploading media: " name)
                                             (rx/of node)))
-                             (rx/map #(vector (:id image-data) %)))))
+                             (rx/map (fn [data]
+                                       (let [data
+                                             (cond-> data
+                                               (some? (:keep-aspect-ratio image-data))
+                                               (assoc :keep-aspect-ratio (:keep-aspect-ratio image-data)))]
+                                         [(:id image-data) data]))))))
            (rx/reduce (fn [acc [id data]] (assoc acc id data)) {})
            (rx/map
             (fn [images]
@@ -360,7 +365,8 @@
                        (assoc-in [:attrs :penpot:media-width]  (:width media))
                        (assoc-in [:attrs :penpot:media-height] (:height media))
                        (assoc-in [:attrs :penpot:media-mtype]  (:mtype media))
-
+                       (cond-> (some? (:keep-aspect-ratio media))
+                         (assoc-in [:attrs :penpot:media-keep-aspect-ratio] (:keep-aspect-ratio media)))
                        (assoc-in [:attrs :penpot:fill-color]           (:fill image-fill))
                        (assoc-in [:attrs :penpot:fill-color-ref-file]  (:fill-color-ref-file image-fill))
                        (assoc-in [:attrs :penpot:fill-color-ref-id]    (:fill-color-ref-id image-fill))

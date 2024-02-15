@@ -5158,6 +5158,9 @@ msgstr "Gradiente"
 msgid "media.choose-image"
 msgstr "Elegir imagen"
 
+msgid "media.keep-aspect-ratio"
+msgstr "Mantener la proporción"
+
 msgid "workspace.options.guides.title"
 msgstr "Guías"
 
