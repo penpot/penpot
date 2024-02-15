@@ -9,7 +9,6 @@
 .main-toolbar {
   cursor: initial;
   position: absolute;
-  top: $s-28;
   left: calc(50% - $s-160);
   display: flex;
   align-items: center;
@@ -24,6 +23,20 @@
     top 0.3s,
     height 0.3s,
     opacity 0.3s;
+  &:not(.main-toolbar-hidden) {
+    top: $s-28;
+  }
+}
+
+.main-toolbar-hidden {
+  top: $s-24;
+  height: $s-16;
+  z-index: $z-index-1;
+  border-radius: 0 0 $s-8 $s-8;
+  border-block-start: 0;
+  .main-toolbar-options {
+    opacity: $op-0;
+  }
 }
 
 .main-toolbar-options {
@@ -73,16 +86,6 @@
     padding: 0;
     border-radius: $s-4;
     background-color: var(--palette-handler-background-color);
-  }
-}
-
-.main-toolbar.hidden-toolbar {
-  top: $s-20;
-  height: $s-16;
-  z-index: $z-index-1;
-  border-radius: 0 0 $s-8 $s-8;
-  .main-toolbar-options {
-    opacity: $op-0;
   }
 }
 
