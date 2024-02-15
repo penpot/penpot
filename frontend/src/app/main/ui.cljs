@@ -15,6 +15,9 @@
    [app.main.ui.frame-preview :as frame-preview]
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
+   [app.main.ui.onboarding :refer [onboarding-modal]]
+   [app.main.ui.onboarding.questions :refer [questions-modal]]
+   [app.main.ui.releases :refer [release-notes-modal]]
    [app.main.ui.static :as static]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -39,15 +42,6 @@
 (def workspace-page
   (mf/lazy-component app.main.ui.workspace/workspace))
 
-(def questions-modal
-  (mf/lazy-component app.main.ui.onboarding.questions/questions))
-
-(def onboarding-modal
-  (mf/lazy-component app.main.ui.onboarding/onboarding-modal))
-
-(def release-modal
-  (mf/lazy-component app.main.ui.releases/release-notes-modal))
-
 (mf/defc on-main-error
   [{:keys [error] :as props}]
   (mf/with-effect
@@ -55,7 +49,8 @@
   [:span "Internal application error"])
 
 (mf/defc main-page
-  {::mf/wrap [#(mf/catch % {:fallback on-main-error})]}
+  {::mf/wrap [#(mf/catch % {:fallback on-main-error})]
+   ::mf/props :obj}
   [{:keys [route profile]}]
   (let [{:keys [data params]} route]
     [:& (mf/provider ctx/current-route) {:value route}
@@ -116,7 +111,7 @@
                  (:onboarding-viewed props)
                  (not= (:release-notes-viewed props) (:main cf/version))
                  (not= "0.0" (:main cf/version)))
-            [:& release-modal {:version (:main cf/version)}]))
+            [:& release-notes-modal {:version (:main cf/version)}]))
 
         (when profile
           [:& dashboard-page {:route route :profile profile}])]

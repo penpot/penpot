@@ -33,7 +33,7 @@
 ;;; --- RELEASE NOTES MODAL
 
 (mf/defc release-notes
-  {::mf/wrap-props false}
+  {::mf/props :obj}
   [{:keys [version]}]
   (let [slide* (mf/use-state :start)
         slide  (deref slide*)
@@ -90,4 +90,4 @@
 
 (defmethod rc/render-release-notes "0.0"
   [params]
-  (rc/render-release-notes (assoc params :version "1.18")))
+  (rc/render-release-notes (assoc params :version "1.19")))

@@ -133,7 +133,6 @@
                  :data-test "onboarding-next-btn"}
         (tr "labels.continue")]]]]))
 
-
 (mf/defc onboarding-modal
   {::mf/register modal/components
    ::mf/register-as :onboarding}

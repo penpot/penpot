@@ -206,8 +206,11 @@
                      :default ""
                      :name :team-size}]]]))
 
-(mf/defc questions
-  [{:keys []}]
+;; NOTE: we don't register it on registry modal because we reference
+;; this modal directly on the ui namespace.
+
+(mf/defc questions-modal
+  []
   (let [container   (mf/use-ref)
         step        (mf/use-state 1)
         clean-data  (mf/use-state {})

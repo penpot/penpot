@@ -20,52 +20,44 @@
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
+(def ^:private go-settings-profile
+  #(st/emit! (rt/nav :settings-profile)))
+
+(def ^:private go-settings-feedback
+  #(st/emit! (rt/nav :settings-feedback)))
+
+(def ^:private go-settings-password
+  #(st/emit! (rt/nav :settings-password)))
+
+(def ^:private go-settings-options
+  #(st/emit! (rt/nav :settings-options)))
+
+(def ^:private go-settings-access-tokens
+  #(st/emit! (rt/nav :settings-access-tokens)))
+
+(defn- show-release-notes
+  [event]
+  (let [version (:main cf/version)]
+    (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes" :version version}))
+
+    (if (and (kbd/alt? event) (kbd/mod? event))
+      (st/emit! (modal/show {:type :onboarding}))
+      (st/emit! (modal/show {:type :release-notes :version version})))))
+
 (mf/defc sidebar-content
-  [{:keys [profile section] :as props}]
+  {::mf/props :obj}
+  [{:keys [profile section]}]
   (let [profile?       (= section :settings-profile)
         password?      (= section :settings-password)
         options?       (= section :settings-options)
         feedback?      (= section :settings-feedback)
         access-tokens? (= section :settings-access-tokens)
+        team-id        (du/get-current-team-id profile)
 
         go-dashboard
-        (mf/use-callback
-         (mf/deps profile)
-         #(st/emit! (rt/nav :dashboard-projects {:team-id (du/get-current-team-id profile)})))
-
-        go-settings-profile
-        (mf/use-callback
-         (mf/deps profile)
-         #(st/emit! (rt/nav :settings-profile)))
-
-        go-settings-feedback
-        (mf/use-callback
-         (mf/deps profile)
-         #(st/emit! (rt/nav :settings-feedback)))
-
-        go-settings-password
-        (mf/use-callback
-         (mf/deps profile)
-         #(st/emit! (rt/nav :settings-password)))
-
-        go-settings-options
-        (mf/use-callback
-         (mf/deps profile)
-         #(st/emit! (rt/nav :settings-options)))
-
-        go-settings-access-tokens
-        (mf/use-callback
-         (mf/deps profile)
-         #(st/emit! (rt/nav :settings-access-tokens)))
-
-        show-release-notes
-        (mf/use-callback
-         (fn [event]
-           (let [version (:main cf/version)]
-             (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes" :version version}))
-             (if (and (kbd/alt? event) (kbd/mod? event))
-               (st/emit! (modal/show {:type :onboarding}))
-               (st/emit! (modal/show {:type :release-notes :version version}))))))]
+        (mf/use-fn
+         (mf/deps team-id)
+         #(st/emit! (rt/nav :dashboard-projects {:team-id team-id})))]
 
     [:div {:class (stl/css :sidebar-content)}
      [:div {:class (stl/css :sidebar-content-section)}
@@ -73,6 +65,7 @@
              :on-click go-dashboard}
        [:span {:class (stl/css :icon)} i/arrow-down]
        [:span {:class (stl/css :text)} (tr "labels.dashboard")]]]
+
      [:hr]
 
      [:div {:class (stl/css :sidebar-content-section)}
@@ -108,7 +101,8 @@
           [:span {:class (stl/css :element-title)} (tr "labels.give-feedback")]])]]]))
 
 (mf/defc sidebar
-  {::mf/wrap [mf/memo]}
+  {::mf/wrap [mf/memo]
+   ::mf/props :obj}
   [{:keys [profile locale section]}]
   [:div {:class (stl/css :dashboard-sidebar :settings)}
    [:& sidebar-content {:profile profile
