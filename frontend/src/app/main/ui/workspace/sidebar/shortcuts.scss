@@ -77,7 +77,7 @@
 
 .shortcuts-header {
   @include flexCenter;
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   position: relative;
   height: $s-32;
   padding: $s-2 $s-2 $s-2 0;
@@ -112,7 +112,7 @@
 }
 
 .not-found {
-  @include titleTipography;
+  @include bodyMedTipography;
   color: var(--empty-message-foreground-color);
   margin: $s-12;
 }
@@ -128,7 +128,7 @@
 
   .section-title,
   .subsection-title {
-    @include tabTitleTipography;
+    @include uppercaseTitleTipography;
     display: flex;
     align-items: center;
     margin: 0;
@@ -181,7 +181,7 @@
       background-color: var(--pill-background-color);
 
       .command-name {
-        @include titleTipography;
+        @include bodyMedTipography;
         margin-left: $s-2;
         color: var(--pill-foreground-color);
       }
@@ -191,7 +191,7 @@
         color: var(--pill-foreground-color);
 
         .key {
-          @include titleTipography;
+          @include bodyMedTipography;
           @include flexCenter;
           text-transform: capitalize;
           height: $s-20;

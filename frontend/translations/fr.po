@@ -4909,10 +4909,6 @@ msgstr "Sortie de la souris"
 msgid "workspace.assets.typography.text-styles"
 msgstr "Styles de texte"
 
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.never-used-a-tool"
-msgstr "Je n'ai jamais utilisé d'outil de design avant"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.circle-marker"
 msgstr "Marqueur cercle"

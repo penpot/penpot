@@ -16,7 +16,7 @@
 
 .download-button {
   @extend .button-secondary;
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   height: $s-32;
   width: 100%;
   margin: $s-8 0;
@@ -55,7 +55,7 @@
 }
 
 .code-lang {
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   display: flex;
   align-items: center;
 }
@@ -82,14 +82,14 @@
   max-width: $s-108;
 }
 .code-lang-select {
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   width: $s-72;
   border: $s-1 solid transparent;
   background-color: transparent;
   color: var(--menu-foreground-color-disabled);
 }
 .code-lang-option {
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   width: $s-72;
   height: $s-32;
   padding: $s-8;

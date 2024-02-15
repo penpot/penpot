@@ -15,9 +15,9 @@
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
-(mf/defc onboarding-newsletter-modal
+(mf/defc onboarding-newsletter
   {::mf/register modal/components
-   ::mf/register-as :onboarding-newsletter-modal}
+   ::mf/register-as :onboarding-newsletter}
   []
   (let [message (tr "onboarding.newsletter.acceptance-message")
         newsletter-updates   (mf/use-state false)
@@ -39,13 +39,18 @@
 
     [:div {:class (stl/css :modal-overlay)}
      [:div.animated.fadeInDown {:class (stl/css :modal-container)}
-      [:div {:class (stl/css :modal-header)}
+      [:div {:class (stl/css :modal-left)}
+       [:img {:src "images/deco-newsletter.png"
+              :border "0"}]]
+
+      [:div {:class (stl/css :modal-right)}
        [:h2 {:class (stl/css :modal-title)
              :data-test "onboarding-newsletter-title"}
         (tr "onboarding.newsletter.title")]
        [:p {:class (stl/css :modal-text)}
-        (tr "onboarding-v2.newsletter.desc")]]
-      [:div {:class (stl/css :modal-content)}
+        (tr "onboarding-v2.newsletter.desc")]
+
+
        [:div {:class (stl/css :newsletter-options)}
         [:div {:class (stl/css :input-wrapper)}
          [:label {:for "newsletter-updates"}
@@ -67,19 +72,14 @@
                    :id "newsletter-news"
                    :on-change #(toggle newsletter-news)}]]]]
 
-       [:div {:class (stl/css :modal-info)}
-        [:p {:class (stl/css :modal-text)}
-         (tr "onboarding-v2.newsletter.privacy1")
-         [:a {:class (stl/css :modal-link)
-              :target "_blank"
-              :href "https://penpot.app/privacy"}
-          (tr "onboarding.newsletter.policy")]]
-        [:p {:class (stl/css :modal-text)}
-         (tr "onboarding-v2.newsletter.privacy2")]]]
+       [:p {:class (stl/css :modal-text)}
+        (tr "onboarding-v2.newsletter.privacy1")
+        [:a {:class (stl/css :modal-link)
+             :target "_blank"
+             :href "https://penpot.app/privacy"}
+         (tr "onboarding.newsletter.policy")]]
+       [:p {:class (stl/css :modal-text)}
+        (tr "onboarding-v2.newsletter.privacy2")]
 
-      [:div {:class (stl/css :modal-footer)}
-       [:button {:on-click accept} (tr "labels.continue")]]
-
-      [:img {:class (stl/css-case :deco true
-                                  :top true)
-             :src "images/deco-newsletter.png" :border "0"}]]]))
+       [:button {:on-click accept
+                 :class (stl/css :accept-btn)} (tr "labels.continue")]]]]))

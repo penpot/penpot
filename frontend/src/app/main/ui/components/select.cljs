@@ -107,7 +107,7 @@
        [:span {:class (stl/css :dropdown-button)} i/arrow-refactor]
        [:& dropdown {:show is-open? :on-close close-dropdown}
         [:ul {:ref dropdown-element* :data-direction @dropdown-direction*
-              :class (dm/str (stl/css :custom-select-dropdown) " " dropdown-class)}
+              :class (dm/str dropdown-class " " (stl/css :custom-select-dropdown))}
          (for [[index item] (d/enumerate options)]
            (if (= :separator item)
              [:li {:class (dom/classnames (stl/css :separator) true)
@@ -116,9 +116,10 @@
                    icon-ref (i/key->icon icon)]
                [:li
                 {:key (dm/str current-id "-" index)
-                 :class (dom/classnames
-                         (stl/css :checked-element) true
-                         (stl/css :is-selected) (= value current-value))
+                 :class (stl/css-case
+                         :checked-element true
+                         :disabled (:disabled item)
+                         :is-selected (= value current-value))
                  :data-value (pr-str value)
                  :on-pointer-enter highlight-item
                  :on-pointer-leave unhighlight-item

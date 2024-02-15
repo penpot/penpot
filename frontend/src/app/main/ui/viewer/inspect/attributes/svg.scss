@@ -23,7 +23,7 @@
 }
 
 .attributes-subtitle {
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   display: flex;
   justify-content: space-between;
   height: $s-32;

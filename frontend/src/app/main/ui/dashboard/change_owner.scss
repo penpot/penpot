@@ -19,7 +19,7 @@
 }
 
 .modal-title {
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   color: var(--modal-title-foreground-color);
 }
 
@@ -28,7 +28,7 @@
 }
 
 .modal-content {
-  @include titleTipography;
+  @include bodyMedTipography;
   margin-bottom: $s-24;
 }
 

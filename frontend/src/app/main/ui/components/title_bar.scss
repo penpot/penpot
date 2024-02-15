@@ -19,7 +19,7 @@
 .title,
 .title-only,
 .inspect-title {
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   display: flex;
   align-items: center;
   flex-grow: 1;
@@ -119,7 +119,7 @@
 
 .title,
 .title-only {
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   display: flex;
   align-items: center;
   flex-grow: 1;

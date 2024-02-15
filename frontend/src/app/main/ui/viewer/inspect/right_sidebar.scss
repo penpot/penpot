@@ -46,7 +46,7 @@
 }
 
 .layer-title {
-  @include titleTipography;
+  @include bodyMedTipography;
   @include text-ellipsis;
   height: $s-32;
   padding: $s-8 0;
@@ -75,7 +75,7 @@
 }
 
 .placeholder-label {
-  @include titleTipography;
+  @include bodyMedTipography;
   text-align: center;
   width: $s-200;
   color: var(--empty-message-foreground-color);
@@ -83,7 +83,7 @@
 
 .more-info-btn {
   @extend .button-secondary;
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   height: $s-32;
   padding: $s-8 $s-24;
 }

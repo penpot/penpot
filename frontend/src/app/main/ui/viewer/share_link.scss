@@ -25,7 +25,7 @@
 }
 
 .share-link-title {
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   color: var(--modal-title-foreground-color);
 }
 
@@ -34,7 +34,7 @@
 }
 
 .modal-content {
-  @include titleTipography;
+  @include bodyMedTipography;
   @include flexColumn;
   gap: $s-24;
 }
@@ -86,7 +86,7 @@
 }
 
 .description {
-  @include titleTipography;
+  @include bodyMedTipography;
   color: var(--modal-text-foreground-color);
   margin-bottom: $s-24;
 }
@@ -115,7 +115,7 @@
 
 .manage-permissions {
   @include buttonStyle;
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   color: var(--menu-foreground-color-rest);
   height: $s-32;
   display: flex;
@@ -181,7 +181,7 @@
 }
 .count-pages,
 .current-tag {
-  @include titleTipography;
+  @include bodyMedTipography;
   color: var(--input-foreground-color);
 }
 

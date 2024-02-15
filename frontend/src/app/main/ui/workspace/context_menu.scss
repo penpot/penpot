@@ -37,7 +37,7 @@
   cursor: pointer;
 
   .title {
-    @include titleTipography;
+    @include bodyMedTipography;
     color: var(--menu-foreground-color);
   }
   .shortcut {
@@ -45,7 +45,7 @@
     gap: $s-2;
     color: var(--menu-shortcut-foreground-color);
     .shortcut-key {
-      @include titleTipography;
+      @include bodyMedTipography;
       @include flexCenter;
       height: $s-20;
       padding: $s-2 $s-6;

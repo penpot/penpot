@@ -39,7 +39,7 @@
 
 .download-button {
   @extend .button-secondary;
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   height: $s-32;
   margin-top: $s-4;
 }

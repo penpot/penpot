@@ -180,7 +180,7 @@
 .modal-header {
   margin-bottom: $s-24;
   .modal-title {
-    @include tabTitleTipography;
+    @include uppercaseTitleTipography;
     color: var(--modal-title-foreground-color);
   }
   .modal-close-btn {
@@ -191,7 +191,7 @@
 .modal-content {
   @include flexColumn;
   gap: $s-24;
-  @include titleTipography;
+  @include bodyMedTipography;
   margin-bottom: $s-24;
 }
 
@@ -200,7 +200,7 @@
 }
 
 .select-title {
-  @include titleTipography;
+  @include bodyMedTipography;
   color: var(--modal-title-foreground-color);
 }
 
@@ -223,7 +223,7 @@
 
 .token-value {
   @include textEllipsis;
-  @include titleTipography;
+  @include bodyMedTipography;
   flex-grow: 1;
 }
 

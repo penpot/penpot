@@ -10,18 +10,21 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.config :as cf]
+   [app.main.data.modal :as modal]
    [app.main.data.users :as du]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
+   [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [tr]]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (mf/defc step-container
-  [{:keys [form step on-next on-prev children] :as props}]
+  [{:keys [form step on-next on-prev children class] :as props}]
 
-  [:& fm/form {:form form :on-submit on-next}
+  [:& fm/form {:form form :on-submit on-next :class (dm/str class " " (stl/css :form-wrapper))}
    [:div {:class (stl/css :paginator)} (str/ffmt "%/4" step)]
 
    children
@@ -41,39 +44,42 @@
 
 (mf/defc step-1
   [{:keys [on-next form] :as props}]
-  [:& step-container {:form form :step 1 :on-next on-next}
+  [:& step-container {:form form :step 1 :on-next on-next :class (stl/css :step-1)}
    [:img {:class (stl/css :header-image)
           :src "images/form/use-for-1.png" :alt (tr "questions.lets-get-started")}]
    [:h1 {:class (stl/css :modal-title)} (tr "questions.lets-get-started")]
    [:p {:class (stl/css :modal-text)} (tr "questions.your-feedback-will-help-us")]
-   [:h3 {:class (stl/css :modal-subtitle)} (tr "questions.questions-how-are-you-planning-to-use-penpot")]
-   [:& fm/select
-    {:options [{:label (tr "questions.select-option")
-                :value "" :key "questions-how-are-you-planning-to-use-penpot"
-                :disabled true}
-               {:label (tr "questions.discover-more-about-penpot")
-                :value "discover-more-about-penpot"
-                :key "discover-more-about-penpot"}
-               {:label (tr "questions.test-penpot-to-see-if-its-a-fit-for-team")
-                :value "test-penpot-to-see-if-its-a-fit-for-team"
-                :key "test-penpot-to-see-if-its-a-fit-for-team"}
-               {:label (tr "questions.start-to-work-on-my-project")
-                :value "start-to-work-on-my-project"
-                :key "start-to-work-on-my-project"}
-               {:label (tr "questions.get-the-code-from-my-team-project")
-                :value "get-the-code-from-my-team-project"
-                :key "get-the-code-from-my-team-project"}
-               {:label (tr "questions.leave-feedback-for-my-team-project")
-                :value "leave-feedback-for-my-team-project"
-                :key "leave-feedback-for-my-team-project"}
-               {:label (tr "questions.work-in-concept-ideas")
-                :value "work-in-concept-ideas"
-                :key "work-in-concept-ideas"}
-               {:label (tr "questions.try-out-before-using-penpot-on-premise")
-                :value "try-out-before-using-penpot-on-premise"
-                :key "try-out-before-using-penpot-on-premise"}]
-     :default ""
-     :name :planning}]])
+
+   [:div {:class (stl/css :modal-question)}
+    [:h3 {:class (stl/css :modal-subtitle)} (tr "questions.questions-how-are-you-planning-to-use-penpot")]
+    [:& fm/select
+     {:options [{:label (tr "questions.select-option")
+                 :value "" :key "questions-how-are-you-planning-to-use-penpot"
+                 :disabled true}
+                {:label (tr "questions.discover-more-about-penpot")
+                 :value "discover-more-about-penpot"
+                 :key "discover-more-about-penpot"}
+                {:label (tr "questions.test-penpot-to-see-if-its-a-fit-for-team")
+                 :value "test-penpot-to-see-if-its-a-fit-for-team"
+                 :key "test-penpot-to-see-if-its-a-fit-for-team"}
+                {:label (tr "questions.start-to-work-on-my-project")
+                 :value "start-to-work-on-my-project"
+                 :key "start-to-work-on-my-project"}
+                {:label (tr "questions.get-the-code-from-my-team-project")
+                 :value "get-the-code-from-my-team-project"
+                 :key "get-the-code-from-my-team-project"}
+                {:label (tr "questions.leave-feedback-for-my-team-project")
+                 :value "leave-feedback-for-my-team-project"
+                 :key "leave-feedback-for-my-team-project"}
+                {:label (tr "questions.work-in-concept-ideas")
+                 :value "work-in-concept-ideas"
+                 :key "work-in-concept-ideas"}
+                {:label (tr "questions.try-out-before-using-penpot-on-premise")
+                 :value "try-out-before-using-penpot-on-premise"
+                 :key "try-out-before-using-penpot-on-premise"}]
+      :default ""
+      :name :planning
+      :dropdown-class (stl/css :question-dropdown)}]]])
 
 (s/def ::questions-form-step-2
   (s/keys :req-un [::experience-branding-illustrations-marketing-pieces
@@ -82,33 +88,42 @@
 
 (mf/defc step-2
   [{:keys [on-next on-prev form] :as props}]
-  [:& step-container {:form form :step 2 :on-next on-next :on-prev on-prev}
-   [:h3 {:class (stl/css :modal-subtitle)}
+  [:& step-container {:form form :step 2 :on-next on-next :on-prev on-prev :class (stl/css :step-2)}
+   [:h1 {:class (stl/css :modal-title)}
     (tr "questions.describe-your-experience-working-on")]
 
-   [:div {:class (stl/css :modal-question)}
-    [:div {:class (stl/css :modal-text)}
+   [:div {:class (stl/css-case :modal-question true
+                               :question-centered true)}
+    [:div {:class (stl/css-case :modal-subtitle true
+                                :centered true)}
      (tr "branding-illustrations-marketing-pieces")]
     [:& fm/radio-buttons {:options [{:label (tr "questions.none") :value "none"}
                                     {:label (tr "questions.some") :value "some"}
                                     {:label (tr "questions.a-lot") :value "a-lot"}]
-                          :name :experience-branding-illustrations-marketing-pieces}]]
+                          :name :experience-branding-illustrations-marketing-pieces
+                          :class (stl/css :radio-btns)}]]
 
-   [:div {:class (stl/css :modal-question)}
-    [:div {:class (stl/css :modal-text)}
+   [:div {:class (stl/css-case :modal-question true
+                               :question-centered true)}
+    [:div {:class (stl/css-case :modal-subtitle true
+                                :centered true)}
      (tr "questions.interface-design-visual-assets-design-systems")]
     [:& fm/radio-buttons {:options [{:label (tr "questions.none") :value "none"}
                                     {:label (tr "questions.some") :value "some"}
                                     {:label (tr "questions.a-lot") :value "a-lot"}]
-                          :name :experience-interface-design-visual-assets-design-systems}]]
+                          :name :experience-interface-design-visual-assets-design-systems
+                          :class (stl/css :radio-btns)}]]
 
-   [:div {:class (stl/css :modal-question)}
-    [:div {:class (stl/css :modal-text)}
+   [:div {:class (stl/css-case :modal-question true
+                               :question-centered true)}
+    [:div {:class (stl/css-case :modal-subtitle true
+                                :centered true)}
      (tr "questions.wireframes-user-journeys-flows-navigation-trees")]
     [:& fm/radio-buttons {:options [{:label (tr "questions.none") :value "none"}
                                     {:label (tr "questions.some") :value "some"}
                                     {:label (tr "questions.a-lot") :value "a-lot"}]
-                          :name :experience-interface-wireframes-user-journeys-flows-navigation-trees}]]])
+                          :name :experience-interface-wireframes-user-journeys-flows-navigation-trees
+                          :class (stl/css :radio-btns)}]]])
 
 (s/def ::questions-form-step-3
   (s/keys :req-un [::experience-design-tool]
@@ -140,23 +155,26 @@
                 (swap! form d/dissoc-in [:data :experience-design-tool-other])
                 (swap! form d/dissoc-in [:errors :experience-design-tool-other])))))]
 
-    [:& step-container {:form form :step 3 :on-next on-next :on-prev on-prev}
-     [:h3 {:class (stl/css :modal-subtitle)}
+    [:& step-container {:form form :step 3 :on-next on-next :on-prev on-prev :class (stl/css :step-3)}
+     [:h1 {:class (stl/css :modal-title)}
       (tr "question.design-tool-more-experienced-with")]
-     [:& fm/radio-buttons {:options [{:label (tr "questions.figma") :value "figma" :image "images/form/figma.png"}
-                                     {:label (tr "questions.sketch") :value "sketch" :image "images/form/sketch.png"}
-                                     {:label (tr "questions.adobe-xd") :value "adobe-xd" :image "images/form/adobe-xd.png"}
-                                     {:label (tr "questions.canva") :value "canva" :image "images/form/canva.png"}
-                                     {:label (tr "questions.invision") :value "invision" :image "images/form/invision.png"}
-                                     {:label (tr "questions.never-used-a-tool") :value "never-used-a-tool" :image "images/form/never-used.png"}
-                                     {:label (tr "questions.other") :value "other"}]
-                           :name :experience-design-tool
-                           :on-change on-design-tool-change}]
+     [:div {:class (stl/css :radio-wrapper)}
+      [:& fm/radio-buttons {:options [{:label (tr "questions.figma") :value "figma" :image "images/form/figma.png" :area "image1"}
+                                      {:label (tr "questions.sketch") :value "sketch" :image "images/form/sketch.png" :area "image2"}
+                                      {:label (tr "questions.adobe-xd") :value "adobe-xd" :image "images/form/adobe-xd.png" :area "image3"}
+                                      {:label (tr "questions.canva") :value "canva" :image "images/form/canva.png" :area "image4"}
+                                      {:label (tr "questions.invision") :value "invision" :image "images/form/invision.png" :area "image5"}
+                                      {:label (tr "questions.never-used-one")  :area "image6" :value "never-used-a-tool" :icon i/curve-refactor}
+                                      {:label (tr "questions.other") :value "other" :area "other"}]
+                            :name :experience-design-tool
+                            :class (stl/css :image-radio)
+                            :on-change on-design-tool-change}]
 
-     [:& fm/input {:name :experience-design-tool-other
-                   :placeholder (tr "questions.other")
-                   :label ""
-                   :disabled (not= experience-design-tool "other")}]]))
+      [:& fm/input {:name :experience-design-tool-other
+                    :class (stl/css :input-spacing)
+                    :placeholder (tr "questions.other")
+                    :label ""
+                    :disabled (not= experience-design-tool "other")}]]]))
 
 (s/def ::questions-form-step-4
   (s/keys :req-un [::team-size ::role]
@@ -181,18 +199,23 @@
                 (swap! form d/dissoc-in [:data :role-other])
                 (swap! form d/dissoc-in [:errors :role-other])))))]
 
-    [:& step-container {:form form :step 4 :on-next on-next :on-prev on-prev}
-     [:h3 {:class (stl/css :modal-subtitle)} (tr "questions.role")]
-     [:& fm/radio-buttons {:options [{:label (tr "questions.designer") :value "designer"}
-                                     {:label (tr "questions.developer") :value "developer"}
-                                     {:label (tr "questions.manager") :value "manager"}
-                                     {:label (tr "questions.founder") :value "founder"}
-                                     {:label (tr "questions.marketing") :value "marketing"}
-                                     {:label (tr "questions.student-teacher") :value "student-teacher"}
-                                     {:label (tr "questions.other") :value "other"}]
-                           :name :role
-                           :on-change on-role-change}]
-     [:& fm/input {:name :role-other :label "" :placeholder (tr "questions.other") :disabled (not= role "other")}]
+    [:& step-container {:form form :step 4 :on-next on-next :on-prev on-prev :class (stl/css :step-4)}
+     [:h1 {:class (stl/css :modal-title)} (tr "questions.role")]
+     [:div {:class (stl/css :radio-wrapper)}
+      [:& fm/radio-buttons {:options [{:label (tr "questions.designer") :value "designer"}
+                                      {:label (tr "questions.developer") :value "developer"}
+                                      {:label (tr "questions.manager") :value "manager"}
+                                      {:label (tr "questions.founder") :value "founder"}
+                                      {:label (tr "questions.marketing") :value "marketing"}
+                                      {:label (tr "questions.student-teacher") :value "student-teacher"}
+                                      {:label (tr "questions.other") :value "other"}]
+                            :name :role
+                            :on-change on-role-change}]
+      [:& fm/input {:name :role-other
+                    :class (stl/css :input-spacing)
+                    :label ""
+                    :placeholder (tr "questions.other")
+                    :disabled (not= role "other")}]]
 
      [:div {:class (stl/css :modal-question)}
       [:h3 {:class (stl/css :modal-subtitle)} (tr "questions.team-size")]
@@ -210,6 +233,8 @@
 ;; this modal directly on the ui namespace.
 
 (mf/defc questions-modal
+  {::mf/register modal/components
+   ::mf/register-as :onboarding-questions}
   []
   (let [container   (mf/use-ref)
         step        (mf/use-state 1)
@@ -251,7 +276,17 @@
          (fn [form]
            (let [questionnaire (merge @clean-data (:clean-data @form))]
              (reset! clean-data questionnaire)
-             (st/emit! (du/mark-questions-as-answered questionnaire)))))]
+             (st/emit! (du/mark-questions-as-answered questionnaire))
+
+             (cond
+               (contains? cf/flags :onboarding-newsletter)
+               (modal/show! {:type :onboarding-newsletter})
+
+               (contains? cf/flags :onboarding-team)
+               (modal/show! {:type :onboarding-team})
+
+               :else
+               (modal/hide!)))))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-container)

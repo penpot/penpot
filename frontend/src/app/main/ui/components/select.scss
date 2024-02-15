@@ -7,7 +7,12 @@
 @import "refactor/common-refactor.scss";
 
 .custom-select {
-  @include titleTipography;
+  --border-color: var(--menu-background-color);
+  --bg-color: var(--menu-background-color);
+  --icon-color: var(--icon-foreground);
+  --text-color: var(--menu-foreground-color);
+  @extend .new-scrollbar;
+  @include bodyMedTipography;
   position: relative;
   display: grid;
   grid-template-columns: 1fr auto;
@@ -17,104 +22,105 @@
   margin: 0;
   padding: $s-8;
   border-radius: $br-8;
-  background-color: var(--menu-background-color);
-  border: $s-1 solid var(--menu-background-color);
-  color: var(--menu-foreground-color);
+  background-color: var(--bg-color);
+  border: $s-1 solid var(--border-color);
+  color: var(--text-color);
   cursor: pointer;
 
   &.icon {
     grid-template-columns: auto 1fr auto;
   }
 
-  .current-icon {
+  &:hover {
+    --bg-color: var(--menu-background-color-hover);
+    --border-color: var(--menu-background-color);
+    --icon-color: var(--menu-foreground-color-hover);
+  }
+
+  &:focus {
+    --bg-color: var(--menu-background-color-focus);
+    --border-color: var(--menu-background-focus);
+  }
+}
+
+.disabled {
+  --bg-color: var(--menu-background-color-disabled);
+  --border-color: var(--menu-border-color-disabled);
+  --icon-color: var(--menu-foreground-color-disabled);
+  --text-color: var(--menu-foreground-color-disabled);
+  pointer-events: none;
+  cursor: default;
+}
+
+.dropdown-button {
+  @include flexCenter;
+  svg {
+    @extend .button-icon-small;
+    transform: rotate(90deg);
+    stroke: var(--icon-color);
+  }
+}
+
+.current-icon {
+  @include flexCenter;
+  width: $s-24;
+  padding-right: $s-4;
+  svg {
+    @extend .button-icon-small;
+    stroke: var(--icon-foreground);
+  }
+}
+
+.custom-select-dropdown {
+  @extend .dropdown-wrapper;
+  .separator {
+    margin: 0;
+    height: $s-12;
+    border-block-start: $s-1 solid var(--dropdown-separator-color);
+  }
+}
+
+.custom-select-dropdown[data-direction="up"] {
+  bottom: $s-32;
+  top: auto;
+}
+
+.checked-element {
+  @extend .dropdown-element-base;
+  .icon {
     @include flexCenter;
+    height: $s-24;
     width: $s-24;
     padding-right: $s-4;
     svg {
-      @extend .button-icon-small;
+      @extend .button-icon;
       stroke: var(--icon-foreground);
     }
   }
-  .dropdown-button {
+
+  .label {
+    flex-grow: 1;
+    width: 100%;
+  }
+
+  .check-icon {
     @include flexCenter;
     svg {
       @extend .button-icon-small;
-      transform: rotate(90deg);
+      visibility: hidden;
       stroke: var(--icon-foreground);
     }
   }
-  .custom-select-dropdown {
-    @extend .dropdown-wrapper;
-    .separator {
-      margin: 0;
-      height: $s-12;
-      border-top: $s-1 solid var(--dropdown-separator-color);
-    }
-  }
 
-  .custom-select-dropdown[data-direction="up"] {
-    bottom: $s-32;
-    top: auto;
-  }
-
-  .checked-element {
-    @extend .dropdown-element-base;
-    .icon {
-      @include flexCenter;
-      height: $s-24;
-      width: $s-24;
-      padding-right: $s-4;
-      svg {
-        @extend .button-icon;
-        stroke: var(--icon-foreground);
-      }
+  &.is-selected {
+    color: var(--menu-foreground-color);
+    .check-icon svg {
+      stroke: var(--menu-foreground-color);
+      visibility: visible;
     }
-
-    .label {
-      flex-grow: 1;
-      width: 100%;
-    }
-
-    .check-icon {
-      @include flexCenter;
-      svg {
-        @extend .button-icon-small;
-        visibility: hidden;
-        stroke: var(--icon-foreground);
-      }
-    }
-
-    &.is-selected {
-      color: var(--menu-foreground-color);
-      .check-icon svg {
-        stroke: var(--menu-foreground-color);
-        visibility: visible;
-      }
-    }
-  }
-
-  &:hover {
-    background-color: var(--menu-background-color-hover);
-    border: $s-1 solid var(--menu-background-color-hover);
-    .dropdown-button {
-      svg {
-        stroke: var(--menu-foreground-color-hover);
-      }
-    }
-  }
-  &:focus {
-    background-color: var(--menu-background-color-focus);
-    border: $s-1 solid var(--menu-border-color-focus);
   }
   &.disabled {
-    background-color: var(--menu-background-color-disabled);
-    color: var(--menu-foreground-color-disabled);
-    border: $s-1 solid var(--menu-border-color-disabled);
-    pointer-events: none;
-    cursor: default;
-    .dropdown-button svg {
-      stroke: var(--menu-foreground-color-disabled);
-    }
+    display: none;
   }
 }
 

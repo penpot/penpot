@@ -94,7 +94,7 @@
 
 .export-btn {
   @extend .button-secondary;
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   height: $s-32;
   width: $s-252;
 }

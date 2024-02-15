@@ -34,26 +34,12 @@
   outline: none;
 }
 
-@mixin tabTitleTipography {
+@mixin uppercaseTitleTipography {
   font-family: "worksans", sans-serif;
   font-size: $fs-11;
   font-weight: $fw500;
   line-height: 1.2;
   text-transform: uppercase;
-}
-
-@mixin titleTipography {
-  font-family: "worksans", sans-serif;
-  font-size: $fs-12;
-  font-weight: $fw400;
-  line-height: 1.2;
-}
-
-@mixin medTitleTipography {
-  font-family: "worksans", sans-serif;
-  font-size: $fs-14;
-  font-weight: $fw400;
-  line-height: 1.2;
 }
 
 @mixin bigTitleTipography {
@@ -63,9 +49,16 @@
   line-height: 1.2;
 }
 
-@mixin codeTypography {
-  font-family: "robotomono", monospace;
-  font-size: $fs-12;
+@mixin medTitleTipography {
+  font-family: "worksans", sans-serif;
+  font-size: $fs-20;
+  font-weight: $fw400;
+  line-height: 1.2;
+}
+
+@mixin smallTitleTipography {
+  font-family: "worksans", sans-serif;
+  font-size: $fs-14;
   font-weight: $fw400;
   line-height: 1.2;
 }
@@ -83,6 +76,20 @@
   font-size: $fs-16;
   line-height: 1.5;
   font-weight: normal;
+}
+
+@mixin bodyMedTipography {
+  font-family: "worksans", sans-serif;
+  font-size: $fs-12;
+  font-weight: $fw400;
+  line-height: 1.2;
+}
+
+@mixin codeTypography {
+  font-family: "robotomono", monospace;
+  font-size: $fs-12;
+  font-weight: $fw400;
+  line-height: 1.2;
 }
 
 @mixin textEllipsis {
@@ -103,7 +110,7 @@
 }
 
 @mixin inspectValue {
-  @include titleTipography;
+  @include bodyMedTipography;
   display: inline-block;
   width: fit-content;
   padding: 0;

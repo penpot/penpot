@@ -69,7 +69,7 @@
 }
 
 .page-name {
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   padding: 0 $s-12;
   color: var(--title-foreground-color);
 }
@@ -108,7 +108,7 @@
 }
 
 .focus-name {
-  @include titleTipography;
+  @include bodyMedTipography;
   display: flex;
   align-items: center;
   height: 100%;
@@ -124,7 +124,7 @@
 
 .focus-mode-tag {
   @include flexCenter;
-  @include titleTipography;
+  @include bodyMedTipography;
   height: $s-20;
   padding: $s-4 $s-6;
   border: $s-1 solid var(--tag-background-color);
@@ -160,7 +160,7 @@
 
 .layer-filter-name {
   @include flexCenter;
-  @include titleTipography;
+  @include bodyMedTipography;
   color: var(--pill-foreground-color);
 }
 
@@ -170,7 +170,7 @@
   left: $s-12;
   width: $s-192;
   .filter-menu-item {
-    @include titleTipography;
+    @include bodyMedTipography;
     display: flex;
     align-items: center;
     justify-content: space-between;
