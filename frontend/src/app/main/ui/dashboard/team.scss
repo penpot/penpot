@@ -612,7 +612,7 @@
       }
     }
     .message {
-      @include titleTipography;
+      @include bodyMedTipography;
       color: var(--alert-foreground-color-error);
     }
   }
@@ -636,7 +636,7 @@
       }
     }
     .message {
-      @include titleTipography;
+      @include bodyMedTipography;
       color: var(--alert-foreground-color-warning);
     }
   }
@@ -683,7 +683,7 @@
 }
 
 .modal-title {
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   color: var(--modal-title-foreground-color);
 }
 
@@ -694,7 +694,7 @@
 .modal-content {
   @include flexColumn;
   gap: $s-24;
-  @include titleTipography;
+  @include bodyMedTipography;
   margin-bottom: $s-24;
 }
 
@@ -703,7 +703,7 @@
 }
 
 .select-title {
-  @include titleTipography;
+  @include bodyMedTipography;
   color: var(--modal-title-foreground-color);
 }
 

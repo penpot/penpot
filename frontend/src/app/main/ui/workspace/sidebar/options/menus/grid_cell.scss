@@ -26,7 +26,7 @@
 
 .edit-grid-btn {
   @extend .button-secondary;
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   width: 100%;
   padding: $s-8;
 }

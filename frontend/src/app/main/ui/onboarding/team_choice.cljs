@@ -7,6 +7,7 @@
 (ns app.main.ui.onboarding.team-choice
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data.macros :as dmc]
    [app.common.spec :as us]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
@@ -27,33 +28,36 @@
 (s/def ::team-form
   (s/keys :req-un [::name]))
 
-(mf/defc team-modal-right
+(mf/defc team-modal-left
   []
-  [:div {:class (stl/css :modal-right)}
+  [:div {:class (stl/css :modal-left)}
+   [:h1 {:class (stl/css :modal-title)}
+    (tr "onboarding-v2.welcome.title")]
+
    [:h2 {:class (stl/css :modal-subtitle)}
-    (tr "onboarding.team-modal.create-team")]
+    (tr "onboarding.team-modal.team-definition")]
    [:p {:class (stl/css :modal-text)}
     (tr "onboarding.team-modal.create-team-desc")]
    [:ul {:class (stl/css :team-features)}
     [:li {:class (stl/css :feature)}
      [:span {:class (stl/css :icon)} i/document-refactor]
-     [:p {:class (stl/css :modal-text)}
+     [:p {:class (stl/css :modal-desc)}
       (tr "onboarding.team-modal.create-team-feature-1")]]
     [:li {:class (stl/css :feature)}
      [:span {:class (stl/css :icon)}  i/move-refactor]
-     [:p {:class (stl/css :modal-text)}
+     [:p {:class (stl/css :modal-desc)}
       (tr "onboarding.team-modal.create-team-feature-2")]]
     [:li {:class (stl/css :feature)}
      [:span {:class (stl/css :icon)}  i/tree-refactor]
-     [:p {:class (stl/css :modal-text)}
+     [:p {:class (stl/css :modal-desc)}
       (tr "onboarding.team-modal.create-team-feature-3")]]
     [:li {:class (stl/css :feature)}
      [:span {:class (stl/css :icon)}  i/user-refactor]
-     [:p {:class (stl/css :modal-text)}
+     [:p {:class (stl/css :modal-desc)}
       (tr "onboarding.team-modal.create-team-feature-4")]]
     [:li {:class (stl/css :feature)}
      [:span {:class (stl/css :icon)}  i/tick-refactor]
-     [:p {:class (stl/css :modal-text)}
+     [:p {:class (stl/css :modal-desc)}
       (tr "onboarding.team-modal.create-team-feature-5")]]]])
 
 (mf/defc onboarding-team-modal
@@ -65,7 +69,7 @@
                            :validators [(fm/validate-not-empty :name (tr "auth.name.not-all-space"))
                                         (fm/validate-length :name fm/max-length-allowed (tr "auth.name.too-long"))])
         on-submit
-        (mf/use-callback
+        (mf/use-fn
          (fn [form _]
            (let [tname (get-in @form [:clean-data :name])]
              (st/emit! (modal/show {:type :onboarding-team-invitations :name tname})
@@ -82,12 +86,18 @@
 
         teams (mf/deref refs/teams)]
 
-    (if (< (count teams) 2)
+    (mf/with-effect [teams]
+      (when (> (count teams) 1)
+        (st/emit! (modal/hide))))
+
+    (when (< (count teams) 2)
       [:div {:class (stl/css :modal-overlay)}
        [:div.animated.fadeIn {:class (stl/css :modal-container)}
-        [:div {:class (stl/css :modal-left)}
+        [:& team-modal-left]
+        [:div {:class (stl/css :separator)}]
+        [:div {:class (stl/css :modal-right)}
          [:div {:class (stl/css :first-block)}
-          [:h2 {:class (stl/css :modal-title)}
+          [:h2 {:class (stl/css :modal-subtitle)}
            (tr "onboarding.team-modal.create-team")]
           [:p {:class (stl/css :modal-text)}
            (tr "onboarding.choice.team-up.create-team-desc")]
@@ -106,7 +116,7 @@
              {:class (stl/css :accept-button)
               :label (tr "onboarding.choice.team-up.continue-creating-team")}]]]]
          [:div {:class (stl/css :second-block)}
-          [:h2 {:class (stl/css :modal-title)}
+          [:h2 {:class (stl/css :modal-subtitle)}
            (tr "onboarding.choice.team-up.start-without-a-team")]
           [:p {:class (stl/css :modal-text)}
            (tr "onboarding.choice.team-up.start-without-a-team-description")]
@@ -115,10 +125,8 @@
            [:button {:class (stl/css :accept-button)
                      :on-click on-skip}
             (tr "onboarding.choice.team-up.continue-without-a-team")]]]]
-        [:& team-modal-right]
-        [:div {:class (stl/css :paginator)} "1/2"]]]
 
-      (st/emit! (modal/hide)))))
+        [:div {:class (stl/css :paginator)} "1/2"]]])))
 
 (defn get-available-roles
   []
@@ -135,8 +143,9 @@
 
 (mf/defc onboarding-team-invitations-modal
   {::mf/register modal/components
-   ::mf/register-as :onboarding-team-invitations}
-  [{:keys [name] :as props}]
+   ::mf/register-as :onboarding-team-invitations
+   ::mf/props :obj}
+  [{:keys [name]}]
   (let [initial (mf/use-memo (constantly
                               {:role "editor"
                                :name name}))
@@ -148,7 +157,7 @@
         roles   (mf/use-memo #(get-available-roles))
 
         on-success
-        (mf/use-callback
+        (mf/use-fn
          (fn [_form response]
            (let [team-id    (:id response)]
              (st/emit!
@@ -158,13 +167,13 @@
                                 (modal/hide))))))
 
         on-error
-        (mf/use-callback
+        (mf/use-fn
          (fn [_form _response]
            (st/emit! (dm/error "Error on creating team."))))
 
         ;; The SKIP branch only creates the team, without invitations
         on-invite-later
-        (mf/use-callback
+        (mf/use-fn
          (fn [_]
            (let [mdata  {:on-success (partial on-success form)
                          :on-error   (partial on-error form)}
@@ -177,8 +186,8 @@
 
         ;; The SUBMIT branch creates the team with the invitations
         on-invite-now
-        (mf/use-callback
-         (fn [_]
+        (mf/use-fn
+         (fn [form]
            (let [mdata  {:on-success (partial on-success form)
                          :on-error   (partial on-error form)}
                  params (:clean-data @form)
@@ -196,36 +205,39 @@
                                               :step 2})))))
 
         on-submit
-        (mf/use-callback
-         (fn [_]
+        (mf/use-fn
+         (fn [form]
            (let [params (:clean-data @form)
                  emails (:emails params)]
              (if (> (count emails) 0)
                (on-invite-now form)
-               (on-invite-later form)))))]
+               (on-invite-later form))
+             (modal/hide!))))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div.animated.fadeIn {:class (stl/css :modal-container)}
-      [:div {:class (stl/css :modal-left)}
-       [:h2 {:class (stl/css :modal-title)} (tr "onboarding.choice.team-up.invite-members")]
+      [:& team-modal-left]
+
+      [:div {:class (stl/css :separator)}]
+      [:div {:class (stl/css :modal-right-invitations)}
+       [:h2 {:class (stl/css :modal-subtitle)} (tr "onboarding.choice.team-up.invite-members")]
        [:p {:class (stl/css :modal-text)} (tr "onboarding.choice.team-up.invite-members-info")]
+       [:& fm/form {:form form
+                    :class (stl/css :modal-form-invitations)
+                    :on-submit on-submit}
+        [:div {:class (stl/css :role-select)}
+         [:p {:class (stl/css :role-title)} (tr "onboarding.choice.team-up.roles")]
+         [:& fm/select {:name :role :options roles}]]
 
-       [:div {:class (stl/css :modal-form)}
-        [:& fm/form {:form form
-                     :on-submit on-submit}
-         [:div {:class (stl/css :role-select)}
-          [:p {:class (stl/css :role-title)} (tr "onboarding.choice.team-up.roles")]
-          [:& fm/select {:name :role :options roles}]]
-
-         [:div {:class (stl/css :invitation-row)}
-          [:& fm/multi-input {:type "email"
-                              :name :emails
-                              :auto-focus? true
-                              :trim true
-                              :valid-item-fn us/parse-email
-                              :caution-item-fn #{}
-                              :label (tr "modals.invite-member.emails")
-                              :on-submit  on-submit}]]]
+        [:div {:class (stl/css :invitation-row)}
+         [:& fm/multi-input {:type "email"
+                             :name :emails
+                             :auto-focus? true
+                             :trim true
+                             :valid-item-fn us/parse-email
+                             :caution-item-fn #{}
+                             :label (tr "modals.invite-member.emails")
+                             :on-submit  on-submit}]]
 
         [:div {:class (stl/css :action-buttons)}
          [:button {:class (stl/css :back-button)
@@ -242,9 +254,9 @@
                     (tr "onboarding.choice.team-up.create-team-and-invite")
                     (tr "onboarding.choice.team-up.create-team-without-invite"))}]]
         [:div {:class (stl/css :modal-hint)}
-         (tr "onboarding.choice.team-up.create-team-and-send-invites-description")]]]
+         (dmc/str "(" (tr "onboarding.choice.team-up.create-team-and-send-invites-description") ")")]]]
 
-      [:& team-modal-right]
+
       [:div {:class (stl/css :paginator)} "2/2"]]]))
 
 

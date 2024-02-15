@@ -85,7 +85,7 @@
               .item-publish,
               .item-unpublish {
                 @extend .button-primary;
-                @include tabTitleTipography;
+                @include uppercaseTitleTipography;
                 height: $s-32;
                 min-width: $s-92;
                 padding: $s-8 $s-24;
@@ -308,7 +308,7 @@
   justify-content: flex-end;
   .primary-button {
     @extend .button-primary;
-    @include tabTitleTipography;
+    @include uppercaseTitleTipography;
     padding: $s-0 $s-16;
   }
 }

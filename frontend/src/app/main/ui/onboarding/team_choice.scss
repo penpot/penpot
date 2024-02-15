@@ -11,32 +11,38 @@
 }
 
 .modal-container {
-  @extend .modal-container-base;
-  padding: 0;
-  display: flex;
   position: relative;
-  min-width: $s-712;
+  display: grid;
+  grid-template-columns: 1fr $s-32 1fr;
+  gap: $s-24;
+  width: $s-908;
+  height: $s-632;
+  padding-inline: $s-100;
+  padding-block-start: $s-40;
+  padding-block-end: $s-72;
+  border-radius: $br-8;
+  background-color: var(--modal-background-color);
+  border: $s-2 solid var(--modal-border-color);
 }
 
+.paginator {
+  @include bodyMedTipography;
+  position: absolute;
+  top: $s-40;
+  right: $s-100;
+  padding: $s-4;
+  border-radius: $br-6;
+  color: var(--color-foreground-secondary);
+}
+
+// MODAL LEFT
 .modal-left {
-  width: $s-356;
-  padding: $s-48 $s-28 $s-48 $s-48;
-}
-
-.first-block,
-.second-block {
-  @include flexColumn;
-  width: 100%;
-}
-
-.first-block {
-  margin-bottom: $s-72;
-}
-
-.modal-right {
-  width: $s-356;
-  padding: $s-48;
-  background-color: var(--color-background-tertiary);
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: $s-32 auto auto 1fr;
+  gap: $s-16;
+  max-height: $s-512;
+  padding-block-start: $s-44;
 }
 
 .modal-title {
@@ -46,70 +52,48 @@
 }
 
 .modal-subtitle {
-  @include tabTitleTipography;
+  @include medTitleTipography;
   color: var(--modal-title-foreground-color);
-  margin-bottom: $s-8;
 }
 
-.modal-text,
-.modal-hint {
-  @include titleTipography;
+.modal-text {
+  @include bodyLargeTypography;
   color: var(--modal-text-foreground-color);
   margin: 0;
 }
-.modal-hint {
-  margin-top: $s-24;
-}
-.modal-form {
-  margin: $s-24 0;
-}
 
-.team-name-input {
-  @extend .input-element-label;
-  label {
-    @include flexColumn;
-    @include titleTipography;
-    align-items: flex-start;
-    width: 100%;
-    border: none;
-    background-color: transparent;
-    height: 100%;
-
-    input {
-      @include titleTipography;
-      margin-top: $s-8;
-    }
-  }
+.modal-desc {
+  @include smallTitleTipography;
+  margin: 0;
+  color: var(--modal-title-foreground-color);
 }
 
-.role-select {
+.team-features {
   @include flexColumn;
-  .role-title {
-    @include titleTipography;
-    margin: 0;
-    color: var(--modal-title-foreground-color);
+  gap: $s-16;
+  margin: 0;
+}
+
+.feature {
+  @include flexRow;
+  gap: $s-16;
+}
+
+.icon {
+  @include flexCenter;
+  height: $s-32;
+  width: $s-32;
+  border-radius: $br-circle;
+  border: $s-1 solid var(--color-accent-primary);
+  svg {
+    @extend .button-icon;
+    stroke: var(--color-accent-primary);
   }
-}
-
-.invitation-row {
-  margin-top: $s-8;
-  margin-bottom: $s-24;
-}
-
-.paginator {
-  @include titleTipography;
-  position: absolute;
-  top: $s-8;
-  right: $s-8;
-  padding: $s-4;
-  border-radius: $br-6;
-  color: var(--color-foreground-secondary);
 }
 
 .action-buttons {
   @extend .modal-action-btns;
-  justify-content: flex-start;
-  margin-top: $s-24;
+  justify-content: flex-end;
 }
 
 .accept-button {
@@ -120,25 +104,88 @@
   @extend .modal-cancel-btn;
 }
 
-.team-features {
-  @include flexColumn;
-  gap: $s-24;
-  margin-top: $s-24;
+// SEPARATOR
+.separator {
+  width: $s-8;
+  height: $s-420;
+  border-radius: $br-8;
+  margin-block-start: $s-92;
+  opacity: 42%;
+  background-color: var(--modal-separator-backogrund-color);
 }
 
-.feature {
-  @include flexRow;
+// MODAL RIGHT TEAM
+.modal-right {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr auto;
+  gap: $s-24;
+  max-height: $s-512;
+  margin-block-start: $s-92;
+}
+
+.first-block,
+.second-block {
+  @include flexColumn;
+  gap: $s-16;
+}
+
+.modal-form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $s-16;
+}
+
+.team-name-input {
+  @extend .input-element-label;
+  label {
+    @include flexColumn;
+    @include bodyMedTipography;
+    align-items: flex-start;
+    width: 100%;
+    border: none;
+    background-color: transparent;
+    height: 100%;
+
+    input {
+      @include bodyMedTipography;
+      margin-top: $s-8;
+    }
+  }
+}
+
+// MODAL RIGHT INVITATIONS
+
+.modal-right-invitations {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto auto 1fr;
+  gap: $s-16;
+  max-height: $s-512;
+  margin-block-start: $s-92;
+}
+
+.modal-form-invitations {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr auto auto;
+  margin-block-end: $s-72;
   gap: $s-8;
 }
 
-.icon {
-  @include flexCenter;
-  height: $s-32;
-  width: $s-32;
-  border-radius: $br-circle;
-  background-color: var(--color-accent-primary);
-  svg {
-    @extend .button-icon;
-    stroke: var(--color-background-tertiary);
-  }
+.role-title {
+  @include uppercaseTitleTipography;
+  margin-block-end: $s-8;
+  color: var(--modal-title-foreground-color);
+}
+
+.invitation-row {
+  margin: 0;
+  color: var(--modal-title-foreground-color);
+}
+
+.modal-hint {
+  @include bodyMedTipography;
+  color: var(--modal-text-foreground-color);
+  text-align: right;
 }

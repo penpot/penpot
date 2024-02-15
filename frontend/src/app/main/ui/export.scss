@@ -55,7 +55,7 @@
 }
 .retry-btn {
   @extend .button-tertiary;
-  @include titleTipography;
+  @include bodyMedTipography;
 }
 
 .modal-close-button {
@@ -96,10 +96,10 @@
 
 .modal-content,
 .no-selection {
-  @include titleTipography;
+  @include bodyMedTipography;
   margin-bottom: $s-24;
   .modal-hint {
-    @include titleTipography;
+    @include bodyMedTipography;
     color: var(--modal-text-foreground-color);
   }
   .modal-link {
@@ -243,7 +243,6 @@
   label {
     align-items: flex-start;
     .modal-subtitle {
-      // @include tabTitleTipography;
       @include bodyLargeTypography;
       color: var(--modal-title-foreground-color);
     }

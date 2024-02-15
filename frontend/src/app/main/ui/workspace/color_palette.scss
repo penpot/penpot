@@ -97,6 +97,6 @@
 }
 
 .color-palette-empty {
-  @include titleTipography;
+  @include bodyMedTipography;
   color: var(--palette-text-color);
 }

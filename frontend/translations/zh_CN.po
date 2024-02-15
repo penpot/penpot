@@ -4787,10 +4787,6 @@ msgid "questions.invision"
 msgstr "InVision"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.never-used-a-tool"
-msgstr "我之前从未用过设计工具"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.31-50"
 msgstr "31-50"
 

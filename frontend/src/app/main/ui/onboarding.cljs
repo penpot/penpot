@@ -38,48 +38,39 @@
           (next))]
     [:div {:class (stl/css :modal-container)}
      [:div {:class (stl/css :modal-left)}
-      [:img {:src "images/onboarding-welcome.png"
+      [:img {:src "images/welcomeilustration.svg"
              :border "0"
              :alt (tr "onboarding.welcome.alt")}]]
      [:div {:class (stl/css :modal-right)}
       [:div {:class (stl/css :release)}
        "Version " (:main cf/version)]
-      [:div {:class (stl/css :modal-content)}
-       [:div {:class (stl/css :modal-header)}
-        [:h2 {:class (stl/css :modal-title)
-              :data-test "onboarding-welcome"}
-         (tr "onboarding-v2.welcome.title")]]
+      [:h1 {:class (stl/css :modal-title)
+            :data-test "onboarding-welcome"}
+       (tr "onboarding-v2.welcome.title")]
+      [:p {:class (stl/css :modal-text)}
+       (tr "onboarding-v2.welcome.desc1")]
 
-       [:div {:class (stl/css :modal-info)}
-        [:p {:class (stl/css :modal-text)}
-         (tr "onboarding-v2.welcome.desc1")]
-        [:div {:class (stl/css :property-block)}
-         [:img {:src "images/community.svg"
-                :border "0"}]
-         [:div {:class (stl/css :text-wrapper)}
-          [:div {:class (stl/css :property-title)}
-           [:a {:href "https://community.penpot.app/"
-                :target "_blank"
-                :on-click #(send-event "onboarding-community-link")}
-            (tr "onboarding-v2.welcome.desc2.title")]]
-          [:div {:class (stl/css :property-description)}
-           (tr "onboarding-v2.welcome.desc2")]]]
+      [:div {:class (stl/css :text-wrapper)}
+       [:div {:class (stl/css :property-title)}
+        [:a {:href "https://community.penpot.app/"
+             :target "_blank"
+             :on-click #(send-event "onboarding-community-link")}
+         (tr "onboarding-v2.welcome.desc2.title")]]
+       [:div {:class (stl/css :property-description)}
+        (tr "onboarding-v2.welcome.desc2")]]
 
-        [:div {:class (stl/css :property-block)}
-         [:img {:src "images/contributing.svg"
-                :border "0"}]
-         [:div {:class (stl/css :text-wrapper)}
-          [:div {:class (stl/css :property-title)}
-           [:a {:href "https://help.penpot.app/contributing-guide/"
-                :target "_blank" :on-click #(send-event "onboarding-contributing-link")}
-            (tr "onboarding-v2.welcome.desc3.title")]]
-          [:div {:class (stl/css :property-description)}
-           (tr "onboarding-v2.welcome.desc3")]]]]]
+      [:div {:class (stl/css :text-wrapper)}
+       [:div {:class (stl/css :property-title)}
+        [:a {:href "https://help.penpot.app/contributing-guide/"
+             :target "_blank" :on-click #(send-event "onboarding-contributing-link")}
+         (tr "onboarding-v2.welcome.desc3.title")]]
+       [:div {:class (stl/css :property-description)}
+        (tr "onboarding-v2.welcome.desc3")]]
 
-      [:div {:class (stl/css :modal-footer)}
-       [:button {:on-click go-next
-                 :data-test "onboarding-next-btn"}
-        (tr "labels.continue")]]]]))
+      [:button {:on-click go-next
+                :class (stl/css :accept-btn)
+                :data-test "onboarding-next-btn"}
+       (tr "labels.continue")]]]))
 
 (mf/defc onboarding-before-start
   [{:keys [next] :as props}]
@@ -89,49 +80,44 @@
           (next))]
     [:div {:class (stl/css :modal-container)}
      [:div {:class (stl/css :modal-left)}
-      [:img {:src "images/onboarding-people.png"
+      [:img {:src "images/beforeyoustartilustration.svg"
              :border "0"
              :alt (tr "onboarding.welcome.alt")}]]
      [:div {:class (stl/css :modal-right)}
       [:div  {:class (stl/css :release)}
        "Version " (:main cf/version)]
-      [:div {:class (stl/css :modal-content)}
-       [:div {:class (stl/css :modal-header)}
-        [:h2 {:class (stl/css :modal-title)
-              :data-test "onboarding-welcome"}
-         (tr "onboarding-v2.before-start.title")]]
 
-       [:div {:class (stl/css :modal-info)}
-        [:p {:class (stl/css :modal-text)}
-         (tr "onboarding-v2.before-start.desc1")]
-        [:div {:class (stl/css :property-block)}
-         [:img {:src "images/user-guide.svg" :border "0"}]
-         [:div {:class (stl/css :text-wrapper)}
-          [:div {:class (stl/css :property-title)}
-           [:a {:class (stl/css :modal-link)
-                :href "https://help.penpot.app/user-guide/"
-                :target "_blank"
-                :on-click #(send-event "onboarding-user-guide-link")}
-            (tr "onboarding-v2.before-start.desc2.title")]]
-          [:div {:class (stl/css :property-description)}
-           (tr "onboarding-v2.before-start.desc2")]]]
+      [:h1 {:class (stl/css :modal-title)
+            :data-test "onboarding-welcome"}
+       (tr "onboarding-v2.before-start.title")]
+      [:p {:class (stl/css :modal-text)}
+       (tr "onboarding-v2.before-start.desc1")]
 
-        [:div {:class (stl/css :property-block)}
-         [:img {:src "images/video-tutorials.svg" :border "0"}]
-         [:div {:class (stl/css :text-wrapper)}
-          [:div {:class (stl/css :property-title)}
-           [:a {:class (stl/css :modal-link)
-                :href "https://www.youtube.com/c/Penpot"
-                :target "_blank"
-                :on-click #(send-event "onboarding-video-tutorials-link")}
-            (tr "onboarding-v2.before-start.desc3.title")]]
-          [:div {:class (stl/css :property-description)}
-           (tr "onboarding-v2.before-start.desc3")]]]]]
+      [:div {:class (stl/css :text-wrapper)}
+       [:div {:class (stl/css :property-title)}
+        [:a {:class (stl/css :modal-link)
+             :href "https://help.penpot.app/user-guide/"
+             :target "_blank"
+             :on-click #(send-event "onboarding-user-guide-link")}
+         (tr "onboarding-v2.before-start.desc2.title")]]
+       [:div {:class (stl/css :property-description)}
+        (tr "onboarding-v2.before-start.desc2")]]
 
-      [:div {:class (stl/css :modal-footer)}
-       [:button {:on-click go-next
-                 :data-test "onboarding-next-btn"}
-        (tr "labels.continue")]]]]))
+      [:div {:class (stl/css :text-wrapper)}
+       [:div {:class (stl/css :property-title)}
+        [:a {:class (stl/css :modal-link)
+             :href "https://www.youtube.com/c/Penpot"
+             :target "_blank"
+             :on-click #(send-event "onboarding-video-tutorials-link")}
+         (tr "onboarding-v2.before-start.desc3.title")]]
+       [:div {:class (stl/css :property-description)}
+        (tr "onboarding-v2.before-start.desc3")]]
+
+
+      [:button {:on-click go-next
+                :class (stl/css :accept-btn)
+                :data-test "onboarding-next-btn"}
+       (tr "labels.continue")]]]))
 
 (mf/defc onboarding-modal
   {::mf/register modal/components
@@ -149,8 +135,11 @@
            (st/emit! (modal/hide)
                      (du/mark-onboarding-as-viewed))
            (cond
+             (contains? cf/flags :onboarding-questions)
+             (modal/show! {:type :onboarding-questions})
+
              (contains? cf/flags :onboarding-newsletter)
-             (modal/show! {:type :onboarding-newsletter-modal})
+             (modal/show! {:type :onboarding-newsletter})
 
              (contains? cf/flags :onboarding-team)
              (modal/show! {:type :onboarding-team}))))]

@@ -36,7 +36,7 @@
 
 .project-name,
 .file-name {
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   @include textEllipsis;
   height: $s-16;
   width: 100%;
@@ -47,7 +47,7 @@
 }
 
 .file-name {
-  @include medTitleTipography;
+  @include smallTitleTipography;
   text-transform: none;
   color: var(--title-foreground-color-hover);
 }

@@ -19,7 +19,7 @@
 
 .libraries-button {
   @extend .button-secondary;
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   gap: $s-2;
   height: $s-32;
   width: 100%;
@@ -113,7 +113,7 @@
 }
 
 .section-item {
-  @include titleTipography;
+  @include bodyMedTipography;
   display: flex;
   align-items: center;
   justify-content: space-between;

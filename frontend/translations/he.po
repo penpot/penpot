@@ -2316,10 +2316,6 @@ msgid "questions.more-than-50"
 msgstr "גדול מ־50"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.never-used-a-tool"
-msgstr "מעולם לא השתמשתי בכלי עיצוב בעבר"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.next"
 msgstr "הבאה"
 

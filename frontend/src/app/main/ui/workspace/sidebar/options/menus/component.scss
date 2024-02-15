@@ -15,7 +15,7 @@
 }
 
 .title-back {
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   display: flex;
   align-items: center;
   gap: $s-4;
@@ -87,7 +87,7 @@
 }
 
 .component-name {
-  @include titleTipography;
+  @include bodyMedTipography;
   @include textEllipsis;
   direction: rtl;
   text-align: left;
@@ -95,7 +95,7 @@
 }
 
 .component-parent-name {
-  @include titleTipography;
+  @include bodyMedTipography;
   @include textEllipsis;
   direction: rtl;
   text-align: left;
@@ -134,7 +134,7 @@
 }
 
 .copy-text {
-  @include titleTipography;
+  @include bodyMedTipography;
   height: 100%;
   display: flex;
   align-items: center;
@@ -235,7 +235,7 @@
 }
 
 .path-name {
-  @include titleTipography;
+  @include bodyMedTipography;
   @include textEllipsis;
   direction: rtl;
   height: $s-32;
@@ -243,7 +243,7 @@
 }
 
 .path-name-last {
-  @include titleTipography;
+  @include bodyMedTipography;
   @include textEllipsis;
   height: $s-32;
   padding: $s-8 0 $s-8 $s-2;
@@ -251,7 +251,7 @@
 }
 
 .component-list-empty {
-  @include titleTipography;
+  @include bodyMedTipography;
   margin: 0 $s-4 0 $s-8;
   color: $df-secondary;
 }
@@ -337,7 +337,7 @@
     object-fit: contain;
   }
   .component-name {
-    @include titleTipography;
+    @include bodyMedTipography;
     @include textEllipsis;
     display: none;
     position: absolute;
@@ -383,7 +383,7 @@
 }
 
 .element-set-title {
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   display: flex;
   align-items: center;
   height: $s-32;
@@ -422,7 +422,7 @@
 }
 
 .library-name {
-  @include titleTipography;
+  @include bodyMedTipography;
   @include textEllipsis;
   color: var(--title-foreground-color);
   padding: $s-8 0 $s-8 $s-2;
@@ -443,7 +443,7 @@
 }
 
 .component-group {
-  @include titleTipography;
+  @include bodyMedTipography;
   display: grid;
   grid-template-columns: 1fr $s-12;
   height: $s-32;
@@ -486,7 +486,7 @@
 // Component annotation
 
 .component-annotation {
-  @include titleTipography;
+  @include bodyMedTipography;
   color: var(--entry-foreground-color);
   border-radius: $br-8;
 
@@ -604,7 +604,7 @@
   }
 
   .counter {
-    @include titleTipography;
+    @include bodyMedTipography;
     text-align: right;
     color: var(--entry-foreground-color);
     margin: 0 $s-8 $s-8 0;

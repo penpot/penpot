@@ -30,7 +30,7 @@
     stroke: var(--radio-btn-foreground-color);
   }
   .title-name {
-    @include tabTitleTipography;
+    @include uppercaseTitleTipography;
     color: var(--radio-btn-foreground-color);
   }
   &:hover {

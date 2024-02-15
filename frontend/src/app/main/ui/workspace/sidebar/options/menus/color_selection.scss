@@ -35,6 +35,6 @@
 
 .more-colors-btn {
   @extend .button-secondary;
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   height: $s-32;
 }

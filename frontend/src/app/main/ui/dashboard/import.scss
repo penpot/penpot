@@ -19,7 +19,7 @@
 }
 
 .modal-title {
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   color: var(--modal-title-foreground-color);
 }
 
@@ -28,7 +28,7 @@
 }
 
 .modal-content {
-  @include titleTipography;
+  @include bodyMedTipography;
   margin-bottom: $s-24;
 }
 
@@ -51,7 +51,7 @@
     }
   }
   .message {
-    @include titleTipography;
+    @include bodyMedTipography;
   }
   &.warning {
     background-color: var(--alert-background-color-warning);
@@ -79,7 +79,7 @@
 .modal-scd-msg,
 .modal-subtitle,
 .modal-msg {
-  @include titleTipography;
+  @include bodyMedTipography;
   color: var(--modal-text-foreground-color);
   line-height: 1.5;
 }
@@ -105,7 +105,7 @@
       flex-grow: 1;
     }
     .file-name-label {
-      @include titleTipography;
+      @include bodyMedTipography;
       display: flex;
       align-items: center;
       gap: $s-12;

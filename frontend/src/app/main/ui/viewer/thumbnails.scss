@@ -33,7 +33,7 @@
 }
 
 .counter {
-  @include titleTipography;
+  @include bodyMedTipography;
   color: var(--viewer-thumbnails-control-foreground-color);
 }
 
@@ -142,7 +142,7 @@
 }
 
 .thumbnail-info {
-  @include titleTipography;
+  @include bodyMedTipography;
   @include textEllipsis;
   text-align: center;
   color: var(--viewer-thumbnails-control-foreground-color);

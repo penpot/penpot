@@ -13,43 +13,44 @@
 .modal-container {
   @extend .modal-container-base;
   position: relative;
-  display: flex;
-  padding: 0;
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: $s-32;
+  padding-inline: $s-100;
+  padding-block-start: $s-100;
+  padding-block-end: $s-72;
   margin: 0;
-  min-width: $s-712;
+  width: $s-960;
+  height: $s-632;
+  max-width: $s-960;
+  max-height: $s-632;
 }
 
 .modal-left {
-  width: $s-284;
+  width: $s-240;
+  margin-block-end: $s-64;
   img {
-    width: $s-284;
+    width: $s-240;
     height: 100%;
     border-radius: $br-8 0 0 $br-8;
   }
 }
 
 .modal-right {
-  @include flexColumn;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: $s-40 auto auto auto $s-32;
+  gap: $s-24;
   position: relative;
-  flex-grow: 1;
-  padding: $s-32;
 }
 
 .release {
-  @include titleTipography;
+  @include bodyMedTipography;
   position: absolute;
-  top: 0;
+  top: calc(-1 * $s-28);
   right: 0;
   padding: $s-8;
   color: var(--modal-text-foreground-color);
-}
-
-.modal-content {
-  @include flexColumn;
-  @include titleTipography;
-  gap: $s-24;
-  flex-grow: 1;
-  margin-bottom: $s-24;
 }
 
 .modal-title {
@@ -57,24 +58,11 @@
   color: var(--modal-title-foreground-color);
 }
 
-.modal-info {
-  @include flexColumn;
-}
-
-.modal-text {
-  @include titleTipography;
+.modal-text,
+.property-description {
+  @include bodyLargeTypography;
+  margin: 0;
   color: var(--modal-text-foreground-color);
-}
-
-.property-block {
-  @include flexRow;
-  gap: $s-16;
-  margin-bottom: $s-24;
-  img {
-    @include flexCenter;
-    height: $s-40;
-    width: $s-40;
-  }
 }
 
 .modal-link {
@@ -88,19 +76,11 @@
 }
 
 .property-title a {
-  @include titleTipography;
+  @include medTitleTipography;
   color: var(--modal-title-foreground-color);
 }
 
-.property-description {
-  @include titleTipography;
-  color: var(--modal-text-foreground-color);
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  button {
-    @extend .modal-accept-btn;
-  }
+.accept-btn {
+  @extend .modal-accept-btn;
+  justify-self: flex-end;
 }

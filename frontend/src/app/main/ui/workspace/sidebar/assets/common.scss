@@ -7,7 +7,7 @@
 @import "refactor/common-refactor.scss";
 
 .title-name {
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   display: flex;
   align-items: center;
   flex-grow: 1;

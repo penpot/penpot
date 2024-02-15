@@ -2442,10 +2442,6 @@ msgid "questions.more-than-50"
 msgstr "Mai mult de 50"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.never-used-a-tool"
-msgstr "Nu am folosit o unealtă de design până acum"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.next"
 msgstr "Următor"
 

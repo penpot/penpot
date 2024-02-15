@@ -14,7 +14,7 @@
 
 .panel-title {
   @include flexCenter;
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   position: relative;
   height: $s-32;
   min-height: $s-32;

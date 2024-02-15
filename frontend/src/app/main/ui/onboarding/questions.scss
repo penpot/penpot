@@ -11,25 +11,33 @@
 }
 
 .modal-container {
-  @extend .modal-container-base;
-  min-width: $s-512;
-  position: relative;
+  max-width: $s-744;
+  max-height: fit-content;
+  width: $s-744;
+  padding-inline: $s-100;
+  padding-block-start: $s-40;
+  padding-block-end: $s-72;
+  border-radius: $br-8;
+  border: $s-2 solid var(--modal-border-color);
+  background-color: var(--modal-background-color);
+}
+
+.form-wrapper {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $s-24;
 }
 
 // STEP CONTAINER
 .paginator {
-  @include titleTipography;
-  position: absolute;
-  top: $s-8;
-  right: $s-8;
-  padding: $s-4;
-  border-radius: $br-6;
-  color: var(--color-foreground-secondary);
+  @include smallTitleTipography;
+  height: $s-20;
+  text-align: right;
+  color: var(--modal-text-foreground-color);
 }
 
 .action-buttons {
   @extend .modal-action-btns;
-  margin-top: $s-32;
 }
 .next-button {
   @extend .modal-accept-btn;
@@ -41,31 +49,89 @@
 
 // STEP 1
 
+// .step-1 {
+//   max-height: $s-468;
+//   height: $s-468;
+// }
+
 .header-image {
-  height: auto;
-  width: $s-200;
+  height: $s-112;
+  width: auto;
+  margin-inline-start: auto;
 }
 
 .modal-title {
   @include bigTitleTipography;
   color: var(--modal-title-foreground-color);
-  margin: $s-32 0 $s-8 0;
+  min-height: $s-32;
+  margin-block: auto;
 }
 
 .modal-subtitle {
-  @include titleTipography;
+  @include bodyLargeTypography;
   color: var(--modal-title-foreground-color);
+  margin: 0;
+  padding: 0;
 }
 
-// STEP-2
-
 .modal-text {
-  @include titleTipography;
+  @include bodyLargeTypography;
   color: var(--modal-text-foreground-color);
   margin: 0;
 }
 
+// STEP-2
+
+.step-2 {
+  grid-template-rows: $s-20 auto auto auto auto $s-32;
+}
+
 .modal-question {
-  @include flexColumn;
-  margin-top: $s-32;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: $s-16 $s-32;
+  gap: $s-16;
+  height: fit-content;
+}
+
+.question-centered {
+  width: $s-424;
+  grid-template-rows: auto $s-32;
+  margin: 0 auto;
+}
+
+.radio-wrapper {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $s-8;
+}
+
+// STEP-3
+.step-3 {
+  grid-template-rows: $s-20 auto auto $s-32;
+}
+
+.image-radio {
+  display: grid;
+  grid-template-rows: 1fr 1fr $s-32;
+  grid-template-columns: $s-88 $s-92 $s-92 $s-92 $s-88;
+  grid-template-areas:
+    ". image1 image2 image3 ."
+    ". image4 image5 image6 ."
+    "other other other other other";
+  row-gap: $s-16;
+  column-gap: $s-24;
+}
+
+.input-spacing {
+  height: $s-32;
+  width: calc(100% - $s-24);
+  margin-inline-start: $s-24;
+}
+
+// STEP-4
+
+.step-4 {
+  grid-template-rows: $s-20 auto auto auto $s-32;
+  row-gap: $s-16;
 }

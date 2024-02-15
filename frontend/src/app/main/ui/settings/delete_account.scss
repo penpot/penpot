@@ -20,7 +20,7 @@
 }
 
 .modal-title {
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   color: var(--modal-title-foreground-color);
 }
 
@@ -30,7 +30,7 @@
 
 .modal-content {
   @include flexColumn;
-  @include titleTipography;
+  @include bodyMedTipography;
   gap: $s-24;
   margin-bottom: $s-24;
 }
@@ -40,7 +40,7 @@
 }
 
 .select-title {
-  @include titleTipography;
+  @include bodyMedTipography;
   color: var(--modal-title-foreground-color);
 }
 
