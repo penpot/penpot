@@ -195,15 +195,22 @@
          (d/deep-mapm
           (fn [pair] (->> pair (mapv convert)))))))
 
-(def search-data-node? #{:rect :image :path :circle})
+(def search-data-node? #{:rect :path :circle})
 
 (defn get-svg-data
   [type node]
-
   (let [node-attrs (add-attrs {} (:attrs node))]
     (cond
       (search-data-node? type)
-      (let [data-tags #{:ellipse :rect :path :text :foreignObject :image}]
+      (let [data-tags #{:ellipse :rect :path :text :foreignObject}]
+        (->> node
+             (node-seq)
+             (filter #(contains? data-tags (:tag %)))
+             (map #(:attrs %))
+             (reduce add-attrs node-attrs)))
+
+      (= type :image)
+      (let [data-tags #{:rect :image}]
         (->> node
              (node-seq)
              (filter #(contains? data-tags (:tag %)))
@@ -523,7 +530,8 @@
   (let [metadata {:id     (get-meta node :media-id)
                   :width  (get-meta node :media-width)
                   :height (get-meta node :media-height)
-                  :mtype  (get-meta node :media-mtype)}]
+                  :mtype  (get-meta node :media-mtype)
+                  :keep-aspect-ratio  (get-meta node :media-keep-aspect-ratio str->bool)}]
     (cond-> props
       (= type :image)
       (assoc :metadata metadata)
@@ -881,7 +889,8 @@
                  (let [id (get-in fill-node [:attrs :penpot:fill-image-id])
                        image-node (->> node (node-seq) (find-node-by-id id))]
                    {:id id
-                    :href (get-in image-node [:attrs :href])})))
+                    :href (get-in image-node [:attrs :href])
+                    :keep-aspect-ratio (not= (get-in image-node [:attrs :preserveAspectRatio]) "none")})))
          (filterv #(some? (:id %))))))
 
 (defn has-fill-images?

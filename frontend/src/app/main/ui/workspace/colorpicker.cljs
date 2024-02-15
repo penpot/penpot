@@ -84,7 +84,10 @@
         on-fill-image-success
         (mf/use-fn
          (fn [image]
-           (st/emit! (dc/update-colorpicker-color {:image (select-keys image [:id :width :height :mtype :name])} (not @drag?)))))
+           (st/emit! (dc/update-colorpicker-color
+                      {:image (-> (select-keys image [:id :width :height :mtype :name])
+                                  (assoc :keep-aspect-ratio true))}
+                      (not @drag?)))))
 
         on-fill-image-click
         (mf/use-callback #(dom/click (mf/ref-val fill-image-ref)))
@@ -93,6 +96,16 @@
         (mf/use-fn
          (fn [file]
            (st/emit! (dwm/upload-fill-image file on-fill-image-success))))
+
+        handle-change-keep-aspect-ratio
+        (mf/use-fn
+         (mf/deps current-color)
+         (fn []
+           (let [keep-aspect-ratio? (-> current-color :image :keep-aspect-ratio not)]
+             (st/emit! (dc/update-colorpicker-color
+                        {:image (-> (:image current-color)
+                                    (assoc :keep-aspect-ratio keep-aspect-ratio?))}
+                        true)))))
 
         set-tab!
         (mf/use-fn
@@ -248,11 +261,24 @@
          :on-select-stop handle-change-stop}])
 
      (if (= selected-mode :image)
-       (let [uri (cfg/resolve-file-media (:image current-color))]
+       (let [uri (cfg/resolve-file-media (:image current-color))
+             keep-aspect-ratio? (-> current-color :image :keep-aspect-ratio)]
          [:div {:class (stl/css :select-image)}
           [:div {:class (stl/css :content)}
            (when (:image current-color)
              [:img {:src uri}])]
+
+          (when (some? (:image current-color))
+            [:div {:class (stl/css :checkbox-option)}
+             [:label {:for "keep-aspect-ratio"
+                      :class (stl/css-case  :global/checked keep-aspect-ratio?)}
+              [:span {:class (stl/css-case :global/checked keep-aspect-ratio?)}
+               (when keep-aspect-ratio? i/status-tick-refactor)]
+              (tr "media.keep-aspect-ratio")
+              [:input {:type "checkbox"
+                       :id "keep-aspect-ratio"
+                       :checked keep-aspect-ratio?
+                       :on-change handle-change-keep-aspect-ratio}]]])
           [:button
            {:class (stl/css :choose-image)
             :title (tr "media.choose-image")

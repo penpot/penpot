@@ -166,16 +166,16 @@
                         :y -11
                         :width (max 0 (- text-width text-pos-x))
                         :height 20
-                        :class "workspace-frame-label"
+                        :class (stl/css :workspace-frame-label-wrapper)
                         :style {:fill color}
-                        :visibility (if show-artboard-names? "visible" "hidden")
-                        :on-pointer-down on-pointer-down
-                        :on-double-click on-double-click
-                        :on-context-menu on-context-menu
-                        :on-pointer-enter on-pointer-enter
-                        :on-pointer-leave on-pointer-leave}
+                        :visibility (if show-artboard-names? "visible" "hidden")}
         [:div {:class (stl/css :workspace-frame-label)
-               :style {:color color}}
+               :style {:color color}
+               :on-pointer-down on-pointer-down
+               :on-double-click on-double-click
+               :on-context-menu on-context-menu
+               :on-pointer-enter on-pointer-enter
+               :on-pointer-leave on-pointer-leave}
          (if show-id?
            (dm/str (dm/str (:id frame)) " - " (:name frame))
            (:name frame))]]])))

@@ -5074,6 +5074,9 @@ msgstr "Gradient"
 msgid "media.choose-image"
 msgstr "Choose image"
 
+msgid "media.keep-aspect-ratio"
+msgstr "Keep aspect ratio"
+
 msgid "workspace.options.guides.title"
 msgstr "Guides"
 
