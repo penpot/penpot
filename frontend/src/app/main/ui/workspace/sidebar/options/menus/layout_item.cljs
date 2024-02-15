@@ -8,7 +8,6 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.shape-layout :as dwsl]
@@ -36,123 +35,188 @@
    :layout-item-absolute
    :layout-item-z-index])
 
+(defn- select-margins
+  [m1? m2? m3? m4?]
+  (st/emit! (udw/set-margins-selected {:m1 m1? :m2 m2? :m3 m3? :m4 m4?})))
+
+(defn- select-margin
+  [prop]
+  (select-margins (= prop :m1) (= prop :m2) (= prop :m3) (= prop :m4)))
+
+(mf/defc margin-simple
+  {::mf/props :obj}
+  [{:keys [values on-change on-blur]}]
+  (let [m1 (:m1 values)
+        m2 (:m2 values)
+        m3 (:m3 values)
+        m4 (:m4 values)
+
+        m1 (when (and (not= values :multiple) (= m1 m3)) m1)
+        m2 (when (and (not= values :multiple) (= m2 m4)) m2)
+
+        on-focus
+        (mf/use-fn
+         (fn [event]
+           (let [attr (-> (dom/get-current-target event)
+                          (dom/get-data "name")
+                          (keyword))]
+             (case attr
+               :m1 (select-margins true false true false)
+               :m2 (select-margins false true false true))
+
+             (dom/select-target event))))
+
+        on-change'
+        (mf/use-fn
+         (mf/deps on-change)
+         (fn [value event]
+           (let [attr (-> (dom/get-current-target event)
+                          (dom/get-data "name")
+                          (keyword))]
+             (on-change :simple attr value))))]
+
+
+    [:div {:class (stl/css :margin-simple)}
+     [:div {:class (stl/css :vertical-margin)
+            :title "Vertical margin"}
+      [:span {:class (stl/css :icon)}
+       i/margin-top-bottom-refactor]
+      [:> numeric-input* {:class (stl/css :numeric-input)
+                          :placeholder "--"
+                          :data-name "m1"
+                          :on-focus on-focus
+                          :on-change on-change'
+                          :on-blur on-blur
+                          :nillable true
+                          :value m1}]]
+
+     [:div {:class (stl/css :horizontal-margin)
+            :title "Horizontal margin"}
+      [:span {:class (stl/css :icon)}
+       i/margin-left-right-refactor]
+      [:> numeric-input* {:class (stl/css :numeric-input)
+                          :placeholder "--"
+                          :data-name "m2"
+                          :on-focus on-focus
+                          :on-change on-change'
+                          :on-blur on-blur
+                          :nillable true
+                          :value m2}]]]))
+
+(mf/defc margin-multiple
+  {::mf/props :obj}
+  [{:keys [values on-change on-blur]}]
+  (let [margin (:layout-item-margin values)
+        m1     (:m1 margin)
+        m2     (:m2 margin)
+        m3     (:m3 margin)
+        m4     (:m4 margin)
+
+        on-focus
+        (mf/use-fn
+         (fn [event]
+           (let [attr (-> (dom/get-current-target event)
+                          (dom/get-data "name")
+                          (keyword))]
+             (select-margin attr)
+             (dom/select-target event))))
+
+        on-change'
+        (mf/use-fn
+         (mf/deps on-change)
+         (fn [value event]
+           (let [attr (-> (dom/get-current-target event)
+                          (dom/get-data "name")
+                          (keyword))]
+             (on-change :multiple attr value))))]
+
+    [:div {:class (stl/css :margin-multiple)}
+     [:div {:class (stl/css :top-margin)
+            :title "Top margin"}
+      [:span {:class (stl/css :icon)}
+       i/margin-top-refactor]
+      [:> numeric-input* {:class (stl/css :numeric-input)
+                          :placeholder "--"
+                          :data-name "m1"
+                          :on-focus on-focus
+                          :on-change on-change'
+                          :on-blur on-blur
+                          :nillable true
+                          :value m1}]]
+     [:div {:class (stl/css :right-margin)
+            :title "Right margin"}
+      [:span {:class (stl/css :icon)}
+       i/margin-right-refactor]
+      [:> numeric-input* {:class (stl/css :numeric-input)
+                          :placeholder "--"
+                          :data-name "m2"
+                          :on-focus on-focus
+                          :on-change on-change'
+                          :on-blur on-blur
+                          :nillable true
+                          :value m2}]]
+
+     [:div {:class (stl/css :bottom-margin)
+            :title "Bottom margin"}
+      [:span {:class (stl/css :icon)}
+       i/margin-bottom-refactor]
+      [:> numeric-input* {:class (stl/css :numeric-input)
+                          :placeholder "--"
+                          :data-name "m3"
+                          :on-focus on-focus
+                          :on-change on-change'
+                          :on-blur on-blur
+                          :nillable true
+                          :value m3}]]
+
+     [:div {:class (stl/css :left-margin)
+            :title "Left margin"}
+      [:span {:class (stl/css :icon)}
+       i/margin-left-refactor]
+      [:> numeric-input* {:class (stl/css :numeric-input)
+                          :placeholder "--"
+                          :data-name "m4"
+                          :on-focus on-focus
+                          :on-change on-change'
+                          :on-blur on-blur
+                          :nillable true
+                          :value m4}]]]))
+
+
 (mf/defc margin-section
-  [{:keys [values change-margin-style on-margin-change] :as props}]
+  {::mf/props :obj
+   ::mf/private true
+   ::mf/expected-props #{:values :type :on-type-change :on-change}}
+  [{:keys [type on-type-change] :as props}]
+  (let [type       (d/nilv type :simple)
+        on-blur    (mf/use-fn #(select-margins false false false false))
+        props      (mf/spread-obj props {:on-blur on-blur})
 
-  (let [margin-type    (or (:layout-item-margin-type values) :simple)
-        m1             (when (and (not (= :multiple (:layout-item-margin values)))
-                                  (= (dm/get-in values [:layout-item-margin :m1])
-                                     (dm/get-in values [:layout-item-margin :m3])))
-                         (dm/get-in values [:layout-item-margin :m1]))
+        on-type-change'
+        (mf/use-fn
+         (mf/deps type on-type-change)
+         (fn [_]
+           (if (= type :multiple)
+             (on-type-change :simple)
+             (on-type-change :multiple))))]
 
-        m2             (when (and (not (= :multiple (:layout-item-margin values)))
-                                  (= (dm/get-in values [:layout-item-margin :m2])
-                                     (dm/get-in values [:layout-item-margin :m4])))
-                         (dm/get-in values [:layout-item-margin :m2]))
-        select-margins
-        (fn [m1? m2? m3? m4?]
-          (st/emit! (udw/set-margins-selected {:m1 m1? :m2 m2? :m3 m3? :m4 m4?})))
-
-        select-margin #(select-margins (= % :m1) (= % :m2) (= % :m3) (= % :m4))]
-
-    (mf/use-effect
-     (fn []
-       (fn []
-         ;;on destroy component
-         (select-margins false false false false))))
+    (mf/with-effect []
+      (fn [] (on-blur)))
 
     [:div {:class (stl/css :margin-row)}
      [:div {:class (stl/css :inputs-wrapper)}
       (cond
-        (= margin-type :simple)
-        [:div {:class (stl/css :margin-simple)}
-         [:div {:class (stl/css :vertical-margin)
-                :title "Vertical margin"}
-          [:span {:class (stl/css :icon)}
-           i/margin-top-bottom-refactor]
-          [:> numeric-input* {:className (stl/css :numeric-input)
-                              :placeholder "--"
-                              :nillable true
-                              :value m1
-                              :on-focus (fn [event]
-                                          (select-margins true false true false)
-                                          (dom/select-target event))
-                              :on-change  (partial on-margin-change :simple :m1)
-                              :on-blur #(select-margins false false false false)}]]
+        (= type :simple)
+        [:> margin-simple props]
 
-         [:div {:class (stl/css :horizontal-margin)
-                :title "Horizontal margin"}
-          [:span {:class (stl/css :icon)}
-           i/margin-left-right-refactor]
-          [:> numeric-input* {:className (stl/css :numeric-input)
-                              :placeholder "--"
-                              :on-focus (fn [event]
-                                          (select-margins false true false true)
-                                          (dom/select-target event))
-                              :on-change (partial on-margin-change :simple :m2)
-                              :on-blur #(select-margins false false false false)
-                              :nillable true
-                              :value m2}]]]
+        (= type :multiple)
+        [:> margin-multiple props])]
 
-        (= margin-type :multiple)
-        [:div {:class (stl/css :margin-multiple)}
-         [:div {:class (stl/css :top-margin)
-                :title "Top margin"}
-          [:span {:class (stl/css :icon)}
-           i/margin-top-refactor]
-          [:> numeric-input* {:className (stl/css :numeric-input)
-                              :placeholder "--"
-                              :on-focus (fn [event]
-                                          (select-margin :m1)
-                                          (dom/select-target event))
-                              :on-change (partial on-margin-change :multiple :m1)
-                              :on-blur #(select-margins false false false false)
-                              :nillable true
-                              :value (:m1 (:layout-item-margin values))}]]
-         [:div {:class (stl/css :right-margin)
-                :title "Right margin"}
-          [:span {:class (stl/css :icon)}
-           i/margin-right-refactor]
-          [:> numeric-input* {:className (stl/css :numeric-input)
-                              :placeholder "--"
-                              :on-focus (fn [event]
-                                          (select-margin :m2)
-                                          (dom/select-target event))
-                              :on-change (partial on-margin-change :multiple :m2)
-                              :on-blur #(select-margins false false false false)
-                              :nillable true
-                              :value (:m2 (:layout-item-margin values))}]]
-
-         [:div {:class (stl/css :bottom-margin)
-                :title "Bottom margin"}
-          [:span {:class (stl/css :icon)}
-           i/margin-bottom-refactor]
-          [:> numeric-input* {:className (stl/css :numeric-input)
-                              :placeholder "--"
-                              :on-focus (fn [event]
-                                          (select-margin :m3)
-                                          (dom/select-target event))
-                              :on-change (partial on-margin-change :multiple :m3)
-                              :on-blur #(select-margins false false false false)
-                              :nillable true
-                              :value (:m3 (:layout-item-margin values))}]]
-         [:div {:class (stl/css :left-margin)
-                :title "Left margin"}
-          [:span {:class (stl/css :icon)}
-           i/margin-left-refactor]
-          [:> numeric-input* {:className (stl/css :numeric-input)
-                              :placeholder "--"
-                              :on-focus (fn [event]
-                                          (select-margin :m4)
-                                          (dom/select-target event))
-                              :on-change (partial on-margin-change :multiple :m4)
-                              :on-blur #(select-margins false false false false)
-                              :nillable true
-                              :value (:m4 (:layout-item-margin values))}]]])]
-     [:button {:class (stl/css-case :margin-mode true
-                                    :selected (= margin-type :multiple))
+     [:button {:class (stl/css-case
+                       :margin-mode true
+                       :selected (= type :multiple))
                :title "Margin - multiple"
-               :on-click #(change-margin-style (if (= margin-type :multiple) :simple :multiple))}
+               :on-click on-type-change'}
       i/margin-refactor]]))
 
 (mf/defc element-behaviour-horizontal
@@ -297,7 +361,7 @@
 
         ;; Margin
 
-        change-margin-style
+        on-change-margin-type
         (fn [type]
           (st/emit! (dwsl/update-layout-child ids {:layout-item-margin-type type})))
 
@@ -418,9 +482,10 @@
 
         (when is-layout-child?
           [:div {:class (stl/css :row)}
-           [:& margin-section {:values values
-                               :change-margin-style change-margin-style
-                               :on-margin-change on-margin-change}]])
+           [:& margin-section {:values (:layout-item-margin values)
+                               :type (:layout-item-margin-type values)
+                               :on-type-change on-change-margin-type
+                               :on-change on-margin-change}]])
 
         (when (or (= (:layout-item-h-sizing values) :fill)
                   (= (:layout-item-v-sizing values) :fill))
@@ -446,8 +511,7 @@
 
                [:div {:class (stl/css :layout-item-max-w)
                       :title (tr "workspace.options.layout-item.layout-item-max-w")}
-                [:span {:class (stl/css :icon-text)}
-                 "MAX W"]
+                [:span {:class (stl/css :icon-text)} "MAX W"]
                 [:> numeric-input*
                  {:className (stl/css :numeric-input)
                   :no-validate true
