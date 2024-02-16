@@ -221,76 +221,94 @@
 
 (mf/defc element-behaviour-horizontal
   {::mf/props :obj}
-  [{:keys [^boolean auto ^boolean fill layout-item-sizing on-change]}]
+  [{:keys [^boolean is-auto ^boolean has-fill item-sizing on-change]}]
   [:div {:class (stl/css-case :horizontal-behaviour true
-                              :one-element (and (not fill) (not auto))
-                              :two-element (or fill auto)
-                              :three-element (and fill auto))}
-   [:& radio-buttons {:selected  (d/name layout-item-sizing)
-                      :on-change on-change
-                      :wide      true
-                      :name      "flex-behaviour-h"}
-    [:& radio-button {:value "fix"
-                      :icon  i/fixed-width-refactor
-                      :title "Fix width"
-                      :id    "behaviour-h-fix"}]
-    (when fill
-      [:& radio-button {:value "fill"
-                        :icon  i/fill-content-refactor
-                        :title "Width 100%"
-                        :id    "behaviour-h-fill"}])
-    (when auto
-      [:& radio-button {:value "auto"
-                        :icon  i/hug-content-refactor
-                        :title "Fit content"
-                        :id    "behaviour-h-auto"}])]])
+                              :one-element (and (not has-fill) (not is-auto))
+                              :two-element (or has-fill is-auto)
+                              :three-element (and has-fill is-auto))}
+   [:& radio-buttons
+    {:selected  (d/name item-sizing)
+     :on-change on-change
+     :wide      true
+     :name      "flex-behaviour-h"}
+
+    [:& radio-button
+     {:value "fix"
+      :icon  i/fixed-width-refactor
+      :title "Fix width"
+      :id    "behaviour-h-fix"}]
+
+    (when has-fill
+      [:& radio-button
+       {:value "fill"
+        :icon  i/fill-content-refactor
+        :title "Width 100%"
+        :id    "behaviour-h-fill"}])
+    (when is-auto
+      [:& radio-button
+       {:value "auto"
+        :icon  i/hug-content-refactor
+        :title "Fit content"
+        :id    "behaviour-h-auto"}])]])
 
 (mf/defc element-behaviour-vertical
   {::mf/props :obj}
-  [{:keys [^boolean auto ^boolean fill layout-item-sizing on-change]}]
+  [{:keys [^boolean is-auto ^boolean has-fill item-sizing on-change]}]
   [:div {:class (stl/css-case :vertical-behaviour true
-                              :one-element (and (not fill) (not auto))
-                              :two-element (or fill auto)
-                              :three-element (and fill auto))}
-   [:& radio-buttons {:selected  (d/name layout-item-sizing)
-                      :on-change on-change
-                      :wide      true
-                      :name      "flex-behaviour-v"}
-    [:& radio-button {:value      "fix"
-                      :icon       i/fixed-width-refactor
-                      :icon-class (stl/css :rotated)
-                      :title      "Fix height"
-                      :id         "behaviour-v-fix"}]
-    (when fill
-      [:& radio-button {:value      "fill"
-                        :icon       i/fill-content-refactor
-                        :icon-class (stl/css :rotated)
-                        :title      "Height 100%"
-                        :id         "behaviour-v-fill"}])
-    (when auto
-      [:& radio-button {:value      "auto"
-                        :icon       i/hug-content-refactor
-                        :icon-class (stl/css :rotated)
-                        :title      "Fit content"
-                        :id         "behaviour-v-auto"}])]])
+                              :one-element (and (not has-fill) (not is-auto))
+                              :two-element (or has-fill is-auto)
+                              :three-element (and has-fill is-auto))}
+   [:& radio-buttons
+    {:selected  (d/name item-sizing)
+     :on-change on-change
+     :wide      true
+     :name      "flex-behaviour-v"}
+
+    [:& radio-button
+     {:value      "fix"
+      :icon       i/fixed-width-refactor
+      :icon-class (stl/css :rotated)
+      :title      "Fix height"
+      :id         "behaviour-v-fix"}]
+
+    (when has-fill
+      [:& radio-button
+       {:value      "fill"
+        :icon       i/fill-content-refactor
+        :icon-class (stl/css :rotated)
+        :title      "Height 100%"
+        :id         "behaviour-v-fill"}])
+    (when is-auto
+      [:& radio-button
+       {:value      "auto"
+        :icon       i/hug-content-refactor
+        :icon-class (stl/css :rotated)
+        :title      "Fit content"
+        :id         "behaviour-v-auto"}])]])
 
 (mf/defc element-behaviour
-  {::mf/props :obj}
-  [{:keys [^boolean auto ^boolean fill
-           layout-item-h-sizing
-           layout-item-v-sizing
-           on-change-behaviour-h-refactor
-           on-change-behaviour-v-refactor]}]
-  [:div {:class (stl/css-case :behaviour-menu true
-                              :wrap (and fill auto))}
-   [:& element-behaviour-horizontal {:auto auto
-                                     :fill fill
-                                     :layout-item-sizing layout-item-h-sizing
-                                     :on-change on-change-behaviour-h-refactor}]
-   [:& element-behaviour-vertical {:auto auto
-                                   :fill fill
-                                   :layout-item-sizing layout-item-v-sizing
-                                   :on-change on-change-behaviour-v-refactor}]])
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [^boolean is-auto
+           ^boolean has-fill
+           item-h-sizing
+           item-v-sizing
+           on-h-change
+           on-v-change]}]
+  [:div {:class (stl/css-case
+                 :behaviour-menu true
+                 :wrap (and has-fill is-auto))}
+
+   [:& element-behaviour-horizontal
+    {:is-auto is-auto
+     :has-fill has-fill
+     :item-sizing item-h-sizing
+     :on-change on-h-change}]
+   [:& element-behaviour-vertical
+    {:is-auto is-auto
+     :has-fill has-fill
+     :item-sizing item-v-sizing
+     :on-change on-v-change}]])
 
 (mf/defc align-self-row
   {::mf/props :obj}
@@ -323,27 +341,29 @@
            ^boolean is-flex-layout?
            ^boolean is-grid-layout?]}]
 
-  (let [selection-parents-ref (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))
-        selection-parents     (mf/deref selection-parents-ref)
+  (let [selection-parents* (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))
+        selection-parents  (mf/deref selection-parents*)
 
-        is-absolute?          (:layout-item-absolute values)
+        ^boolean
+        is-absolute?       (:layout-item-absolute values)
 
-        is-col?               (every? ctl/col? selection-parents)
+        ^boolean
+        is-col?            (every? ctl/col? selection-parents)
 
-        is-layout-child?      (and is-layout-child? (not is-absolute?))
+        ^boolean
+        is-layout-child?   (and is-layout-child? (not is-absolute?))
 
-        state*                (mf/use-state true)
-        open?                 (deref state*)
+        state*             (mf/use-state true)
+        open?              (deref state*)
 
-        toggle-content        (mf/use-fn #(swap! state* not))
-        has-content?          (or ^boolean is-layout-child?
-                                  ^boolean is-flex-parent?
-                                  ^boolean is-grid-parent?
-                                  ^boolean is-layout-container?)
+        toggle-content     (mf/use-fn #(swap! state* not))
+        has-content?       (or is-layout-child?
+                               is-flex-parent?
+                               is-grid-parent?
+                               is-layout-container?)
 
         ;; Align self
-
-        align-self           (:layout-item-align-self values)
+        align-self         (:layout-item-align-self values)
 
         title
         (cond
@@ -401,21 +421,6 @@
              (st/emit! (dwsl/update-layout-child ids {:layout-item-margin {prop val}})))))
 
         ;; Behaviour
-
-        on-change-behaviour
-        (mf/use-fn
-         (mf/deps ids)
-         (fn [event]
-           (let [value (-> (dom/get-current-target event)
-                           (dom/get-data "value")
-                           (keyword))
-                 dir (-> (dom/get-current-target event)
-                         (dom/get-data "direction")
-                         (keyword))]
-             (if (= dir :h)
-               (st/emit! (dwsl/update-layout-child ids {:layout-item-h-sizing value}))
-               (st/emit! (dwsl/update-layout-child ids {:layout-item-v-sizing value}))))))
-
         on-change-behaviour-h
         (mf/use-fn
          (mf/deps ids)
@@ -481,7 +486,7 @@
             [:span {:class (stl/css :icon-text)}
              "Z"]
             [:> numeric-input*
-             {:className (stl/css :numeric-input)
+             {:class (stl/css :numeric-input)
               :placeholder "--"
               :on-focus #(dom/select-target %)
               :on-change #(on-change-z-index %)
@@ -489,13 +494,12 @@
               :value (:layout-item-z-index values)}]]])
 
         [:div {:class (stl/css :row)}
-         [:& element-behaviour {:fill is-layout-child?
-                                :auto is-layout-container?
-                                :layout-item-v-sizing (or (:layout-item-v-sizing values) :fix)
-                                :layout-item-h-sizing (or (:layout-item-h-sizing values) :fix)
-                                :on-change-behaviour-h-refactor on-change-behaviour-h
-                                :on-change-behaviour-v-refactor on-change-behaviour-v
-                                :on-change on-change-behaviour}]]
+         [:& element-behaviour {:has-fill is-layout-child?
+                                :is-auto is-layout-container?
+                                :item-v-sizing (:layout-item-v-sizing values)
+                                :item-h-sizing (:layout-item-h-sizing values)
+                                :on-h-change on-change-behaviour-h
+                                :on-v-change on-change-behaviour-v}]]
 
         (when (and is-layout-child? is-flex-parent?)
           [:div {:class (stl/css :row)}
@@ -519,10 +523,9 @@
                [:div {:class (stl/css :layout-item-min-w)
                       :title (tr "workspace.options.layout-item.layout-item-min-w")}
 
-                [:span {:class (stl/css :icon-text)}
-                 "MIN W"]
+                [:span {:class (stl/css :icon-text)} "MIN W"]
                 [:> numeric-input*
-                 {:className (stl/css :numeric-input)
+                 {:class (stl/css :numeric-input)
                   :no-validate true
                   :min 0
                   :data-wrap true
@@ -536,7 +539,7 @@
                       :title (tr "workspace.options.layout-item.layout-item-max-w")}
                 [:span {:class (stl/css :icon-text)} "MAX W"]
                 [:> numeric-input*
-                 {:className (stl/css :numeric-input)
+                 {:class (stl/css :numeric-input)
                   :no-validate true
                   :min 0
                   :data-wrap true
@@ -550,10 +553,9 @@
                [:div {:class (stl/css :layout-item-min-h)
                       :title (tr "workspace.options.layout-item.layout-item-min-h")}
 
-                [:span {:class (stl/css :icon-text)}
-                 "MIN H"]
+                [:span {:class (stl/css :icon-text)} "MIN H"]
                 [:> numeric-input*
-                 {:className (stl/css :numeric-input)
+                 {:class (stl/css :numeric-input)
                   :no-validate true
                   :min 0
                   :data-wrap true
@@ -566,10 +568,9 @@
                [:div {:class (stl/css :layout-item-max-h)
                       :title (tr "workspace.options.layout-item.layout-item-max-h")}
 
-                [:span {:class (stl/css :icon-text)}
-                 "MAX H"]
+                [:span {:class (stl/css :icon-text)} "MAX H"]
                 [:> numeric-input*
-                 {:className (stl/css :numeric-input)
+                 {:class (stl/css :numeric-input)
                   :no-validate true
                   :min 0
                   :data-wrap true
