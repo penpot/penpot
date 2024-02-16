@@ -293,21 +293,22 @@
                                    :on-change on-change-behaviour-v-refactor}]])
 
 (mf/defc align-self-row
-  [{:keys [is-col? align-self on-change] :as props}]
+  {::mf/props :obj}
+  [{:keys [^boolean is-col align-self on-change]}]
   [:& radio-buttons {:selected (d/name align-self)
                      :on-change on-change
                      :name "flex-align-self"
                      :allow-empty true}
    [:& radio-button {:value "start"
-                     :icon  (get-layout-flex-icon :align-self :start is-col?)
+                     :icon  (get-layout-flex-icon :align-self :start is-col)
                      :title "Align self start"
                      :id     "align-self-start"}]
    [:& radio-button {:value "center"
-                     :icon  (get-layout-flex-icon :align-self :center is-col?)
+                     :icon  (get-layout-flex-icon :align-self :center is-col)
                      :title "Align self center"
                      :id    "align-self-center"}]
    [:& radio-button {:value "end"
-                     :icon  (get-layout-flex-icon :align-self :end is-col?)
+                     :icon  (get-layout-flex-icon :align-self :end is-col)
                      :title "Align self end"
                      :id    "align-self-end"}]])
 
@@ -478,7 +479,7 @@
 
         (when (and is-layout-child? is-flex-parent?)
           [:div {:class (stl/css :row)}
-           [:& align-self-row {:is-col? is-col?
+           [:& align-self-row {:is-col is-col?
                                :align-self align-self
                                :on-change set-align-self}]])
 
