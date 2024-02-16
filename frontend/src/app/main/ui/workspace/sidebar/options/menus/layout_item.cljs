@@ -230,7 +230,8 @@
   [{:keys [is-col? align-self on-change] :as props}]
   [:& radio-buttons {:selected (d/name align-self)
                      :on-change on-change
-                     :name "flex-align-self"}
+                     :name "flex-align-self"
+                     :allow-empty true}
    [:& radio-button {:value "start"
                      :icon  (get-layout-flex-icon :align-self :start is-col?)
                      :title "Align self start"

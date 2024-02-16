@@ -68,6 +68,7 @@
   (get-id [_])
   (load! [_])
   (modified? [_])
+  (loaded? [_])
   (clone [_]))
 
 (deftype PointerMap [id mdata
@@ -90,6 +91,7 @@
     (or odata {}))
 
   (modified? [_] modified?)
+  (loaded? [_] loaded?)
   (get-id [_] id)
 
   (clone [this]
@@ -210,8 +212,6 @@
 (defn create
   ([]
    (let [id    (uuid/next)
-
-
          mdata (assoc *metadata* :created-at (dt/now))
          pmap  (PointerMap. id mdata {} true true)]
      (some-> *tracked* (swap! assoc id pmap))

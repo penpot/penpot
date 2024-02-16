@@ -27,6 +27,10 @@
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
+
+(def ^:private detach-icon
+  (i/icon-xref :detach-refactor (stl/css :detach-icon)))
+
 (defn opacity->string
   [opacity]
   (if (= opacity :multiple)
@@ -189,14 +193,14 @@
                    :dnd-over-top (= (:over dprops) :top)
                    :dnd-over-bot (= (:over dprops) :bot))
            :ref dref}
-     [:span {:class (stl/css :color-info)}
-      [:span {:class (stl/css-case :color-name-wrapper true
-                                   :no-opacity (or disable-opacity
-                                                   (not opacity?))
-                                   :library-name-wrapper library-color?
-                                   :editing editing-text?
-                                   :gradient-name-wrapper gradient-color?)}
-       [:span {:class (stl/css :color-bullet-wrapper)}
+     [:div {:class (stl/css :color-info)}
+      [:div {:class (stl/css-case :color-name-wrapper true
+                                  :no-opacity (or disable-opacity
+                                                  (not opacity?))
+                                  :library-name-wrapper library-color?
+                                  :editing editing-text?
+                                  :gradient-name-wrapper gradient-color?)}
+       [:div {:class (stl/css :color-bullet-wrapper)}
         [:& cbn/color-bullet {:color (cond-> color
                                        (nil? color-name) (assoc
                                                           :id nil
@@ -218,7 +222,7 @@
               :on-pointer-enter #(reset! hover-detach true)
               :on-pointer-leave #(reset! hover-detach false)
               :on-click detach-value}
-             i/detach-refactor])]
+             detach-icon])]
 
               ;; Rendering a gradient
          gradient-color?

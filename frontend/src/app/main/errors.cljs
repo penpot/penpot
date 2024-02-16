@@ -90,8 +90,7 @@
 
 (defmethod ptk/handle-error :default
   [error]
-  (when-let [cause (::instance error)]
-    (ts/schedule #(st/emit! (rt/assign-exception cause))))
+  (st/async-emit! (rt/assign-exception error))
   (print-group! "Unhandled Error"
                 (fn []
                   (print-trace! error)

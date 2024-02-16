@@ -7,7 +7,7 @@
 (ns app.common.data
   "A collection if helpers for working with data structures and other
   data resources."
-  (:refer-clojure :exclude [read-string hash-map merge name
+  (:refer-clojure :exclude [read-string hash-map merge name update-vals
                             parse-double group-by iteration concat mapcat
                             parse-uuid max min])
   #?(:cljs
@@ -402,6 +402,13 @@
   "Returns a function to access a map"
   [coll]
   (partial get coll))
+
+(defn update-vals
+  [m f]
+  (reduce-kv (fn [acc k v]
+               (assoc acc k (f v)))
+             m
+             m))
 
 (defn update-in-when
   [m key-seq f & args]

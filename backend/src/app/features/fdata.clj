@@ -22,12 +22,21 @@
 
 (defn enable-objects-map
   [file]
-  (let [update-fn #(d/update-when % :objects omap/wrap)]
+  (let [update-container
+        (fn [container]
+          (if (and (pmap/pointer-map? container)
+                   (not (pmap/loaded? container)))
+            container
+            (d/update-when container :objects omap/wrap)))
+
+        update-data
+        (fn [fdata]
+          (-> fdata
+              (update :pages-index d/update-vals update-container)
+              (d/update-when :components d/update-vals update-container)))]
+
     (-> file
-        (update :data (fn [fdata]
-                        (-> fdata
-                            (update :pages-index update-vals update-fn)
-                            (d/update-when :components update-vals update-fn))))
+        (update :data update-data)
         (update :features conj "fdata/objects-map"))))
 
 (defn process-objects
@@ -72,14 +81,15 @@
   "Given a database connection and the final file-id, persist all
   pointers to the underlying storage (the database)."
   [system file-id]
-  (doseq [[id item] @pmap/*tracked*]
-    (when (pmap/modified? item)
-      (l/trc :hint "persist pointer" :file-id (str file-id) :id (str id))
-      (let [content (-> item deref blob/encode)]
-        (db/insert! system :file-data-fragment
-                    {:id id
-                     :file-id file-id
-                     :content content})))))
+  (let [conn (db/get-connection system)]
+    (doseq [[id item] @pmap/*tracked*]
+      (when (pmap/modified? item)
+        (l/trc :hint "persist pointer" :file-id (str file-id) :id (str id))
+        (let [content (-> item deref blob/encode)]
+          (db/insert! conn :file-data-fragment
+                      {:id id
+                       :file-id file-id
+                       :content content}))))))
 
 (defn process-pointers
   "Apply a function to all pointers on the file. Usuly used for
