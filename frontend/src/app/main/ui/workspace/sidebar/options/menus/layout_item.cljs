@@ -313,36 +313,52 @@
                      :id    "align-self-end"}]])
 
 (mf/defc layout-item-menu
-  {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type" "is-layout-child?" "is-grid-parent?" "is-flex-parent?"]))]}
-  [{:keys [ids values is-layout-child? is-layout-container? is-grid-parent? is-flex-parent? is-flex-layout? is-grid-layout?] :as props}]
+  {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type" "is-layout-child?" "is-grid-parent?" "is-flex-parent?"]))]
+   ::mf/props :obj}
+  [{:keys [ids values
+           ^boolean is-layout-child?
+           ^boolean is-layout-container?
+           ^boolean is-grid-parent?
+           ^boolean is-flex-parent?
+           ^boolean is-flex-layout?
+           ^boolean is-grid-layout?]}]
 
   (let [selection-parents-ref (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))
         selection-parents     (mf/deref selection-parents-ref)
 
         is-absolute?          (:layout-item-absolute values)
 
-        is-col? (every? ctl/col? selection-parents)
+        is-col?               (every? ctl/col? selection-parents)
 
-        is-layout-child? (and is-layout-child? (not is-absolute?))
+        is-layout-child?      (and is-layout-child? (not is-absolute?))
 
-        state*                 (mf/use-state true)
-        open?                  (deref state*)
-        toggle-content         (mf/use-fn #(swap! state* not))
-        has-content?           (or is-layout-child? is-flex-parent? is-grid-parent? is-layout-container?)
+        state*                (mf/use-state true)
+        open?                 (deref state*)
+
+        toggle-content        (mf/use-fn #(swap! state* not))
+        has-content?          (or ^boolean is-layout-child?
+                                  ^boolean is-flex-parent?
+                                  ^boolean is-grid-parent?
+                                  ^boolean is-layout-container?)
 
         ;; Align self
 
-        align-self         (:layout-item-align-self values)
+        align-self           (:layout-item-align-self values)
 
         title
         (cond
-          (and is-layout-container? (not is-layout-child?) is-flex-layout?)
+          (and is-layout-container?
+               is-flex-layout?
+               (not is-layout-child?))
           "Flex board"
 
-          (and is-layout-container? (not is-layout-child?) is-grid-layout?)
+          (and is-layout-container?
+               is-grid-layout?
+               (not is-layout-child?))
           "Grid board"
 
-          (and is-layout-container? (not is-layout-child?))
+          (and is-layout-container?
+               (not is-layout-child?))
           "Layout board"
 
           is-flex-parent?
@@ -365,20 +381,24 @@
         ;; Margin
 
         on-change-margin-type
-        (fn [type]
-          (st/emit! (dwsl/update-layout-child ids {:layout-item-margin-type type})))
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [type]
+           (st/emit! (dwsl/update-layout-child ids {:layout-item-margin-type type}))))
 
         on-margin-change
-        (fn [type prop val]
-          (cond
-            (and (= type :simple) (= prop :m1))
-            (st/emit! (dwsl/update-layout-child ids {:layout-item-margin {:m1 val :m3 val}}))
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [type prop val]
+           (cond
+             (and (= type :simple) (= prop :m1))
+             (st/emit! (dwsl/update-layout-child ids {:layout-item-margin {:m1 val :m3 val}}))
 
-            (and (= type :simple) (= prop :m2))
-            (st/emit! (dwsl/update-layout-child ids {:layout-item-margin {:m2 val :m4 val}}))
+             (and (= type :simple) (= prop :m2))
+             (st/emit! (dwsl/update-layout-child ids {:layout-item-margin {:m2 val :m4 val}}))
 
-            :else
-            (st/emit! (dwsl/update-layout-child ids {:layout-item-margin {prop val}}))))
+             :else
+             (st/emit! (dwsl/update-layout-child ids {:layout-item-margin {prop val}})))))
 
         ;; Behaviour
 
