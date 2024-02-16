@@ -246,11 +246,12 @@
                         :id    "behaviour-h-auto"}])]])
 
 (mf/defc element-behaviour-vertical
-  [{:keys [auto? fill? layout-item-sizing on-change] :as props}]
+  {::mf/props :obj}
+  [{:keys [^boolean auto ^boolean fill layout-item-sizing on-change]}]
   [:div {:class (stl/css-case :vertical-behaviour true
-                              :one-element (and (not fill?) (not auto?))
-                              :two-element (or fill? auto?)
-                              :three-element (and fill? auto?))}
+                              :one-element (and (not fill) (not auto))
+                              :two-element (or fill auto)
+                              :three-element (and fill auto))}
    [:& radio-buttons {:selected  (d/name layout-item-sizing)
                       :on-change on-change
                       :wide      true
@@ -260,13 +261,13 @@
                       :icon-class (stl/css :rotated)
                       :title      "Fix height"
                       :id         "behaviour-v-fix"}]
-    (when fill?
+    (when fill
       [:& radio-button {:value      "fill"
                         :icon       i/fill-content-refactor
                         :icon-class (stl/css :rotated)
                         :title      "Height 100%"
                         :id         "behaviour-v-fill"}])
-    (when auto?
+    (when auto
       [:& radio-button {:value      "auto"
                         :icon       i/hug-content-refactor
                         :icon-class (stl/css :rotated)
@@ -286,8 +287,8 @@
                                      :fill fill?
                                      :layout-item-sizing layout-item-h-sizing
                                      :on-change on-change-behaviour-h-refactor}]
-   [:& element-behaviour-vertical {:auto? auto?
-                                   :fill? fill?
+   [:& element-behaviour-vertical {:auto auto?
+                                   :fill fill?
                                    :layout-item-sizing layout-item-v-sizing
                                    :on-change on-change-behaviour-v-refactor}]])
 
