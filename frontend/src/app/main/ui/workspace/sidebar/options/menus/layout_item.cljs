@@ -45,14 +45,14 @@
 
 (mf/defc margin-simple
   {::mf/props :obj}
-  [{:keys [values on-change on-blur]}]
-  (let [m1 (:m1 values)
-        m2 (:m2 values)
-        m3 (:m3 values)
-        m4 (:m4 values)
+  [{:keys [margin on-change on-blur]}]
+  (let [m1 (:m1 margin)
+        m2 (:m2 margin)
+        m3 (:m3 margin)
+        m4 (:m4 margin)
 
-        m1 (when (and (not= values :multiple) (= m1 m3)) m1)
-        m2 (when (and (not= values :multiple) (= m2 m4)) m2)
+        m1 (when (and (not= margin :multiple) (= m1 m3)) m1)
+        m2 (when (and (not= margin :multiple) (= m2 m4)) m2)
 
         on-focus
         (mf/use-fn
@@ -105,9 +105,8 @@
 
 (mf/defc margin-multiple
   {::mf/props :obj}
-  [{:keys [values on-change on-blur]}]
-  (let [margin (:layout-item-margin values)
-        m1     (:m1 margin)
+  [{:keys [margin on-change on-blur]}]
+  (let [m1     (:m1 margin)
         m2     (:m2 margin)
         m3     (:m3 margin)
         m4     (:m4 margin)
@@ -186,7 +185,7 @@
 (mf/defc margin-section
   {::mf/props :obj
    ::mf/private true
-   ::mf/expected-props #{:values :type :on-type-change :on-change}}
+   ::mf/expected-props #{:margin :type :on-type-change :on-change}}
   [{:keys [type on-type-change] :as props}]
   (let [type       (d/nilv type :simple)
         on-blur    (mf/use-fn #(select-margins false false false false))
@@ -221,13 +220,13 @@
 
 (mf/defc element-behaviour-horizontal
   {::mf/props :obj}
-  [{:keys [^boolean is-auto ^boolean has-fill item-sizing on-change]}]
+  [{:keys [^boolean is-auto ^boolean has-fill sizing on-change]}]
   [:div {:class (stl/css-case :horizontal-behaviour true
                               :one-element (and (not has-fill) (not is-auto))
                               :two-element (or has-fill is-auto)
                               :three-element (and has-fill is-auto))}
    [:& radio-buttons
-    {:selected  (d/name item-sizing)
+    {:selected  (d/name sizing)
      :on-change on-change
      :wide      true
      :name      "flex-behaviour-h"}
@@ -253,13 +252,13 @@
 
 (mf/defc element-behaviour-vertical
   {::mf/props :obj}
-  [{:keys [^boolean is-auto ^boolean has-fill item-sizing on-change]}]
+  [{:keys [^boolean is-auto ^boolean has-fill sizing on-change]}]
   [:div {:class (stl/css-case :vertical-behaviour true
                               :one-element (and (not has-fill) (not is-auto))
                               :two-element (or has-fill is-auto)
                               :three-element (and has-fill is-auto))}
    [:& radio-buttons
-    {:selected  (d/name item-sizing)
+    {:selected  (d/name sizing)
      :on-change on-change
      :wide      true
      :name      "flex-behaviour-v"}
@@ -291,8 +290,8 @@
    ::mf/private true}
   [{:keys [^boolean is-auto
            ^boolean has-fill
-           item-h-sizing
-           item-v-sizing
+           h-sizing
+           v-sizing
            on-h-change
            on-v-change]}]
   [:div {:class (stl/css-case
@@ -302,12 +301,12 @@
    [:& element-behaviour-horizontal
     {:is-auto is-auto
      :has-fill has-fill
-     :item-sizing item-h-sizing
+     :sizing h-sizing
      :on-change on-h-change}]
    [:& element-behaviour-vertical
     {:is-auto is-auto
      :has-fill has-fill
-     :item-sizing item-v-sizing
+     :sizing v-sizing
      :on-change on-v-change}]])
 
 (mf/defc align-self-row
@@ -364,6 +363,8 @@
 
         ;; Align self
         align-self         (:layout-item-align-self values)
+        h-sizing           (:layout-item-h-sizing values)
+        v-sizing           (:layout-item-v-sizing values)
 
         title
         (cond
@@ -399,7 +400,6 @@
              (st/emit! (dwsl/update-layout-child ids {:layout-item-align-self (keyword value)})))))
 
         ;; Margin
-
         on-change-margin-type
         (mf/use-fn
          (mf/deps ids)
@@ -428,7 +428,6 @@
            (let [value (keyword value)]
              (st/emit! (dwsl/update-layout-child ids {:layout-item-h-sizing value})))))
 
-
         on-change-behaviour-v
         (mf/use-fn
          (mf/deps ids)
@@ -437,10 +436,14 @@
              (st/emit! (dwsl/update-layout-child ids {:layout-item-v-sizing value})))))
 
         ;; Size and position
-
         on-size-change
-        (fn [measure value]
-          (st/emit! (dwsl/update-layout-child ids {measure value})))
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [value event]
+           (let [attr (-> (dom/get-current-target event)
+                          (dom/get-data "attr")
+                          (keyword))]
+             (st/emit! (dwsl/update-layout-child ids {attr value})))))
 
         on-change-position
         (mf/use-fn
@@ -483,8 +486,7 @@
            [:div {:class (stl/css :z-index-wrapper)
                   :title "z-index"}
 
-            [:span {:class (stl/css :icon-text)}
-             "Z"]
+            [:span {:class (stl/css :icon-text)} "Z"]
             [:> numeric-input*
              {:class (stl/css :numeric-input)
               :placeholder "--"
@@ -496,8 +498,8 @@
         [:div {:class (stl/css :row)}
          [:& element-behaviour {:has-fill is-layout-child?
                                 :is-auto is-layout-container?
-                                :item-v-sizing (:layout-item-v-sizing values)
-                                :item-h-sizing (:layout-item-h-sizing values)
+                                :v-sizing (:layout-item-v-sizing values)
+                                :h-sizing (:layout-item-h-sizing values)
                                 :on-h-change on-change-behaviour-h
                                 :on-v-change on-change-behaviour-v}]]
 
@@ -509,13 +511,13 @@
 
         (when is-layout-child?
           [:div {:class (stl/css :row)}
-           [:& margin-section {:values (:layout-item-margin values)
+           [:& margin-section {:margin (:layout-item-margin values)
                                :type (:layout-item-margin-type values)
                                :on-type-change on-change-margin-type
                                :on-change on-margin-change}]])
 
-        (when (or (= (:layout-item-h-sizing values) :fill)
-                  (= (:layout-item-v-sizing values) :fill))
+        (when (or (= h-sizing :fill)
+                  (= v-sizing :fill))
           [:div {:class (stl/css :row)}
            [:div {:class (stl/css :advanced-options)}
             (when (= (:layout-item-h-sizing values) :fill)
@@ -530,8 +532,9 @@
                   :min 0
                   :data-wrap true
                   :placeholder "--"
-                  :on-focus #(dom/select-target %)
-                  :on-change (partial on-size-change :layout-item-min-w)
+                  :data-attr "layout-item-min-w"
+                  :on-focus dom/select-target
+                  :on-change on-size-change
                   :value (get values :layout-item-min-w)
                   :nillable true}]]
 
@@ -544,11 +547,13 @@
                   :min 0
                   :data-wrap true
                   :placeholder "--"
-                  :on-focus #(dom/select-target %)
-                  :on-change (partial on-size-change :layout-item-max-w)
+                  :data-attr "layout-item-max-w"
+                  :on-focus dom/select-target
+                  :on-change on-size-change
                   :value (get values :layout-item-max-w)
                   :nillable true}]]])
-            (when (= (:layout-item-v-sizing values) :fill)
+
+            (when (= v-sizing :fill)
               [:div {:class (stl/css :vertical-fill)}
                [:div {:class (stl/css :layout-item-min-h)
                       :title (tr "workspace.options.layout-item.layout-item-min-h")}
@@ -560,8 +565,9 @@
                   :min 0
                   :data-wrap true
                   :placeholder "--"
-                  :on-focus #(dom/select-target %)
-                  :on-change (partial on-size-change :layout-item-min-h)
+                  :data-attr "layout-item-min-h"
+                  :on-focus dom/select-target
+                  :on-change on-size-change
                   :value (get values :layout-item-min-h)
                   :nillable true}]]
 
@@ -575,7 +581,8 @@
                   :min 0
                   :data-wrap true
                   :placeholder "--"
-                  :on-focus #(dom/select-target %)
-                  :on-change (partial on-size-change :layout-item-max-h)
+                  :data-attr "layout-item-max-h"
+                  :on-focus dom/select-target
+                  :on-change on-size-change
                   :value (get values :layout-item-max-h)
                   :nillable true}]]])]])])]))
