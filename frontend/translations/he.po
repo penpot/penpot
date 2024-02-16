@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-10-16 04:09+0000\n"
+"PO-Revision-Date: 2024-02-17 14:02+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
 "n % 10 == 0) ? 2 : 3));\n"
-"X-Generator: Weblate 5.1-dev\n"
+"X-Generator: Weblate 5.4\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -5034,3 +5034,171 @@ msgstr "מייסד/סגן נשיא"
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.circle-marker-short"
 msgstr "עיגול"
+
+#: src/app/main/ui/auth/register.cljs
+#, markdown
+msgid "auth.terms-privacy-agreement-md"
+msgstr ""
+"עצם יצירת חשבון חדש מהווה הסכמה ל[תנאי השירות](%s) ול[מדיניות הפרטיות](%s) "
+"שלנו."
+
+#: src/app/main/errors.cljs
+msgid "errors.version-not-supported"
+msgstr "מספר גרסת הקובץ לא תואם"
+
+#: src/app/main/errors.cljs
+msgid "errors.team-feature-mismatch"
+msgstr "התגלתה יכולת לא תואמת ‚%s’"
+
+msgid "labels.share"
+msgstr "שיתוף"
+
+msgid "onboarding.choice.team-up.continue-creating-team"
+msgstr "להמשיך ביצירת צוות"
+
+msgid "onboarding.choice.team-up.start-without-a-team"
+msgstr "להתחיל בלי צוות"
+
+msgid "workspace.layout_grid.editor.options.edit-grid"
+msgstr "עריכת רשת"
+
+msgid "workspace.layout_grid.editor.options.exit"
+msgstr "יציאה מהמערכת"
+
+msgid "workspace.layout_grid.editor.top-bar.locate"
+msgstr "איתור"
+
+msgid "workspace.layout_grid.editor.top-bar.done"
+msgstr "בוצע"
+
+msgid "workspace.top-bar.read-only.done"
+msgstr "בוצע"
+
+msgid "workspace.options.guides.title"
+msgstr "קווים מנחים"
+
+msgid "media.linear"
+msgstr "קווי"
+
+msgid "media.radial"
+msgstr "מעגלי"
+
+msgid "media.gradient"
+msgstr "מדרג"
+
+msgid "media.choose-image"
+msgstr "בחירת תמונה"
+
+msgid "shortcuts.toggle-theme"
+msgstr "החלפת ערכת עיצוב"
+
+msgid "workspace.header.menu.toggle-dark-theme"
+msgstr "החלפה לערכת עיצוב כהה"
+
+msgid "workspace.context-menu.grid-track.column.add-before"
+msgstr "הוספת עמודה משמאל"
+
+msgid "workspace.context-menu.grid-track.column.delete-shapes"
+msgstr "מחיקת עמודה וצורות"
+
+msgid "workspace.context-menu.grid-track.row.duplicate"
+msgstr "שכפול שורה"
+
+#: src/app/main/errors.cljs
+msgid "errors.file-feature-mismatch"
+msgstr ""
+"נראה שאין התאמ בין היכולות הפעילות לבין הקובץ שניסית לפתוח. יש להחיל הסבות "
+"עבור ‚%s’ לפני שיתאפשר לפתוח את הקובץ הזה."
+
+msgid "workspace.header.menu.toggle-light-theme"
+msgstr "החלפה לערכת עיצוב בהירה"
+
+msgid "workspace.options.component.swap"
+msgstr "החלפת רכיב"
+
+msgid "workspace.options.component.swap.empty"
+msgstr "עדיין אין נכסים בתיקייה הזאת"
+
+#, markdown
+msgid "workspace.top-bar.read-only"
+msgstr "**מצב חקירה** (צפייה בלבד)"
+
+msgid "dashboard.import.analyze-error.components-v2"
+msgstr "קובץ עם רכיבים בגרסה 2 מופעל אך הצוות הזה לא תומך בזה עדיין."
+
+msgid "errors.validation"
+msgstr "שגיאת אימות"
+
+msgid "errors.paste-data-validation"
+msgstr "נתונים שגויים בלוח הגזירים"
+
+msgid "inspect.attributes.typography.text-transform.unset"
+msgstr "ביטול הגדרה"
+
+msgid "labels.search"
+msgstr "חיפוש"
+
+msgid "onboarding.choice.team-up.start-without-a-team-description"
+msgstr "אפשר ליצור צוות בהמשך."
+
+msgid "onboarding.choice.team-up.continue-without-a-team"
+msgstr "להמשיך בלי צוות"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites"
+msgstr "ליצור צוות ולשלוח הזמנות"
+
+msgid "onboarding.choice.team-up.create-team-without-inviting"
+msgstr "ליצור צוות בלי לשלוח הזמנות"
+
+msgid "onboarding.choice.team-up.create-team-and-invite"
+msgstr "ליצור צוות ולהזמין"
+
+msgid "onboarding.choice.team-up.create-team-without-invite"
+msgstr "ליצור צוות"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites-description"
+msgstr "אפשר להזמין בהמשך"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.loading"
+msgstr "בטעינה…"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow"
+msgstr "זרימה"
+
+msgid "media.image"
+msgstr "תמונה"
+
+msgid "media.solid"
+msgstr "אחיד"
+
+msgid "workspace.context-menu.grid-track.column.duplicate"
+msgstr "שכפול עמודה"
+
+msgid "workspace.context-menu.grid-track.column.add-after"
+msgstr "הוספת עמודה מימין"
+
+msgid "workspace.context-menu.grid-track.column.delete"
+msgstr "מחיקת עמודה"
+
+msgid "workspace.context-menu.grid-track.row.add-before"
+msgstr "הוספת שורה למעלה"
+
+msgid "workspace.context-menu.grid-track.row.add-after"
+msgstr "הוספת שורה מתחת"
+
+msgid "workspace.context-menu.grid-track.row.delete"
+msgstr "מחיקת שורה"
+
+msgid "workspace.context-menu.grid-track.row.delete-shapes"
+msgstr "מחיקת שורה וצורות"
+
+msgid "workspace.context-menu.grid-cells.merge"
+msgstr "מיזוג תאים"
+
+msgid "workspace.context-menu.grid-cells.area"
+msgstr "יצירת שטח"
+
+msgid "workspace.context-menu.grid-cells.create-board"
+msgstr "יצירת לוח"
