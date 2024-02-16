@@ -275,20 +275,20 @@
                         :id         "behaviour-v-auto"}])]])
 
 (mf/defc element-behaviour
-  [{:keys [auto?
-           fill?
+  {::mf/props :obj}
+  [{:keys [^boolean auto ^boolean fill
            layout-item-h-sizing
            layout-item-v-sizing
            on-change-behaviour-h-refactor
-           on-change-behaviour-v-refactor] :as props}]
+           on-change-behaviour-v-refactor]}]
   [:div {:class (stl/css-case :behaviour-menu true
-                              :wrap (and fill? auto?))}
-   [:& element-behaviour-horizontal {:auto auto?
-                                     :fill fill?
+                              :wrap (and fill auto))}
+   [:& element-behaviour-horizontal {:auto auto
+                                     :fill fill
                                      :layout-item-sizing layout-item-h-sizing
                                      :on-change on-change-behaviour-h-refactor}]
-   [:& element-behaviour-vertical {:auto auto?
-                                   :fill fill?
+   [:& element-behaviour-vertical {:auto auto
+                                   :fill fill
                                    :layout-item-sizing layout-item-v-sizing
                                    :on-change on-change-behaviour-v-refactor}]])
 
@@ -468,8 +468,8 @@
               :value (:layout-item-z-index values)}]]])
 
         [:div {:class (stl/css :row)}
-         [:& element-behaviour {:fill? is-layout-child?
-                                :auto? is-layout-container?
+         [:& element-behaviour {:fill is-layout-child?
+                                :auto is-layout-container?
                                 :layout-item-v-sizing (or (:layout-item-v-sizing values) :fix)
                                 :layout-item-h-sizing (or (:layout-item-h-sizing values) :fix)
                                 :on-change-behaviour-h-refactor on-change-behaviour-h
