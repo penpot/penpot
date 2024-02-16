@@ -220,11 +220,12 @@
       i/margin-refactor]]))
 
 (mf/defc element-behaviour-horizontal
-  [{:keys [auto? fill? layout-item-sizing on-change] :as props}]
+  {::mf/props :obj}
+  [{:keys [^boolean auto ^boolean fill layout-item-sizing on-change]}]
   [:div {:class (stl/css-case :horizontal-behaviour true
-                              :one-element (and (not fill?) (not auto?))
-                              :two-element (or fill? auto?)
-                              :three-element (and fill? auto?))}
+                              :one-element (and (not fill) (not auto))
+                              :two-element (or fill auto)
+                              :three-element (and fill auto))}
    [:& radio-buttons {:selected  (d/name layout-item-sizing)
                       :on-change on-change
                       :wide      true
@@ -233,12 +234,12 @@
                       :icon  i/fixed-width-refactor
                       :title "Fix width"
                       :id    "behaviour-h-fix"}]
-    (when fill?
+    (when fill
       [:& radio-button {:value "fill"
                         :icon  i/fill-content-refactor
                         :title "Width 100%"
                         :id    "behaviour-h-fill"}])
-    (when auto?
+    (when auto
       [:& radio-button {:value "auto"
                         :icon  i/hug-content-refactor
                         :title "Fit content"
@@ -281,8 +282,8 @@
            on-change-behaviour-v-refactor] :as props}]
   [:div {:class (stl/css-case :behaviour-menu true
                               :wrap (and fill? auto?))}
-   [:& element-behaviour-horizontal {:auto? auto?
-                                     :fill? fill?
+   [:& element-behaviour-horizontal {:auto auto?
+                                     :fill fill?
                                      :layout-item-sizing layout-item-h-sizing
                                      :on-change on-change-behaviour-h-refactor}]
    [:& element-behaviour-vertical {:auto? auto?
