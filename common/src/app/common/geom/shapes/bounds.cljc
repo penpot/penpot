@@ -15,8 +15,8 @@
 (defn shape-stroke-margin
   [shape stroke-width]
   (if (cfh/path-shape? shape)
-    ;; TODO: Calculate with the stroke offset (not implemented yet
-    (mth/sqrt (* 2 stroke-width stroke-width))
+    ;; TODO: Calculate with the stroke offset (not implemented yet)
+    (+ stroke-width (mth/sqrt (* 2 stroke-width stroke-width)))
     (- (mth/sqrt (* 2 stroke-width stroke-width)) stroke-width)))
 
 (defn- apply-filters
@@ -104,7 +104,7 @@
                       0))
               (reduce d/max 0))
 
-         margin
+         stroke-margin
          (if ignore-margin?
            0
            (shape-stroke-margin shape stroke-width))
@@ -124,9 +124,8 @@
                       :drop-shadow (+ (mth/abs (:offset-y %)) (* (:spread %) 2) (* (:blur %) 2) 10)
                       0))
               (reduce d/max 0))]
-
-     {:horizontal (mth/ceil (+ stroke-width margin shadow-width))
-      :vertical (mth/ceil (+ stroke-width margin shadow-height))})))
+     {:horizontal (mth/ceil (+ stroke-margin shadow-width))
+      :vertical (mth/ceil (+ stroke-margin shadow-height))})))
 
 (defn- add-padding
   [bounds padding]
@@ -143,47 +142,51 @@
         (update :height + (* 2 v-padding)))))
 
 (defn calculate-base-bounds
-  [shape]
-  (-> (get-shape-filter-bounds shape)
-      (add-padding (calculate-padding shape true))))
+  ([shape]
+   (calculate-base-bounds shape true))
+  ([shape ignore-margin?]
+   (-> (get-shape-filter-bounds shape)
+       (add-padding (calculate-padding shape ignore-margin?)))))
 
 (defn get-object-bounds
-  [objects shape]
-  (let [base-bounds (calculate-base-bounds shape)
-        bounds
-        (cond
-          (or (empty? (:shapes shape))
-              (or (:masked-group shape) (= :bool (:type shape)))
-              (and (cfh/frame-shape? shape) (not (:show-content shape))))
-          [base-bounds]
+  ([objects shape]
+   (get-object-bounds objects shape nil))
+  ([objects shape {:keys [ignore-margin?] :or {ignore-margin? true}}]
+   (let [base-bounds (calculate-base-bounds shape ignore-margin?)
+         bounds
+         (cond
+           (or (empty? (:shapes shape))
+               (or (:masked-group shape) (= :bool (:type shape)))
+               (and (cfh/frame-shape? shape) (not (:show-content shape))))
+           [base-bounds]
 
-          :else
-          (cfh/reduce-objects
-           objects
+           :else
+           (cfh/reduce-objects
+            objects
 
-           (fn [shape]
-             (and (not (:hidden shape))
-                  (d/not-empty? (:shapes shape))
-                  (or (not (cfh/frame-shape? shape))
-                      (:show-content shape))
+            (fn [shape]
+              (and (not (:hidden shape))
+                   (d/not-empty? (:shapes shape))
+                   (or (not (cfh/frame-shape? shape))
+                       (:show-content shape))
 
-                  (or (not (cfh/group-shape? shape))
-                      (not (:masked-group shape)))))
-           (:id shape)
+                   (or (not (cfh/group-shape? shape))
+                       (not (:masked-group shape)))))
+            (:id shape)
 
-           (fn [result child]
-             (cond-> result
-               (not (:hidden child))
-               (conj (calculate-base-bounds child))))
+            (fn [result child]
+              (cond-> result
+                (not (:hidden child))
+                (conj (calculate-base-bounds child))))
 
-           [base-bounds]))
+            [base-bounds]))
 
-        children-bounds
-        (cond->> (grc/join-rects bounds)
-          (not (cfh/frame-shape? shape)) (or (:children-bounds shape)))
+         children-bounds
+         (cond->> (grc/join-rects bounds)
+           (not (cfh/frame-shape? shape)) (or (:children-bounds shape)))
 
-        filters (shape->filters shape)
-        blur-value (or (-> shape :blur :value) 0)]
+         filters (shape->filters shape)
+         blur-value (or (-> shape :blur :value) 0)]
 
-    (get-rect-filter-bounds children-bounds filters blur-value)))
+     (get-rect-filter-bounds children-bounds filters blur-value))))
 

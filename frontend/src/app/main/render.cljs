@@ -449,7 +449,7 @@
                  (assoc :fills []))
 
 
-        {:keys [width height] :as bounds} (gsb/get-object-bounds objects object)
+        {:keys [width height] :as bounds} (gsb/get-object-bounds objects object {:ignore-margin? false})
         vbox (format-viewbox bounds)
         fonts (ff/shape->fonts object objects)
 

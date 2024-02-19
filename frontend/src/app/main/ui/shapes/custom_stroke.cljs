@@ -47,7 +47,7 @@
                          :center (/ (:stroke-width stroke 0) 2)
                          :outer (:stroke-width stroke 0)
                          0)
-        margin         (gsb/shape-stroke-margin stroke stroke-width)
+        stroke-margin  (gsb/shape-stroke-margin shape stroke-width)
 
         ;; NOTE: for performance reasons we may can delimit a bit the
         ;; dependencies to really useful shape attrs instead of using
@@ -56,8 +56,6 @@
                         (if (cfh/text-shape? shape)
                           (gst/shape->rect shape)
                           (grc/points->rect (:points shape))))
-
-        stroke-margin (+ stroke-width margin)
 
         x             (- (dm/get-prop selrect :x) stroke-margin)
         y             (- (dm/get-prop selrect :y) stroke-margin)

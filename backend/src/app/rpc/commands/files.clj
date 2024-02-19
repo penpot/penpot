@@ -347,6 +347,7 @@
 (sv/defmethod ::get-file-fragment
   "Retrieve a file fragment by its ID. Only authenticated users."
   {::doc/added "1.17"
+   ::rpc/auth false
    ::sm/params schema:get-file-fragment
    ::sm/result schema:file-fragment}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id fragment-id share-id]}]
