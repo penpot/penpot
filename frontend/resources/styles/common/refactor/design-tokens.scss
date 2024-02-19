@@ -273,6 +273,7 @@
   --colorpicker-details-color: var(--color-background-quaternary);
   --colorpicker-details-color-selected: var(--color-accent-primary);
   --colorpicker-handlers-color: var(--color-foreground-primary);
+  --colorpicker-background-color: var(--color-foreground-primary);
 
   // COMMENTS
   --comment-title-color: var(--color-foreground-primary);
@@ -400,4 +401,6 @@
 
   --text-editor-selection-background-color: var(--la-tertiary-70);
   --expand-button-icon-border-width-selected: 2px;
+
+  --colorpicker-background-color: var(--color-background-primary);
 }
