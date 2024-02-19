@@ -12,7 +12,6 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
-   [app.common.files.defaults :as cfd]
    [app.common.files.migrations :as fmg]
    [app.common.files.validate :as fval]
    [app.common.logging :as l]
@@ -381,23 +380,24 @@
            (d/group-by first rest)
            (reduce (partial process-group-of-assets) data)))))
 
+(defn- fix-version
+  [file]
+  (let [file (fmg/fix-version file)]
+    ;; FIXME: We're temporarily activating all migrations because a
+    ;; problem in the environments messed up with the version numbers
+    ;; When this problem is fixed delete the following line
+    (if (> (:version file) 22)
+      (assoc file :version 22)
+      file)))
 
 (defn process-file
   [{:keys [id] :as file}]
   (-> file
+      (fix-version)
       (update :data (fn [fdata]
                       (-> fdata
                           (assoc :id id)
-                          (dissoc :recent-colors)
-                          (cond-> (> (:version fdata) cfd/version)
-                            (assoc :version cfd/version))
-                          ;; FIXME: We're temporarily activating all
-                          ;; migrations because a problem in the
-                          ;; environments messed up with the version
-                          ;; numbers When this problem is fixed delete
-                          ;; the following line
-                          (cond-> (> (:version fdata) 22)
-                            (assoc :version 22)))))
+                          (dissoc :recent-colors))))
       (fmg/migrate-file)
       (update :data (fn [fdata]
                       (-> fdata
@@ -409,19 +409,21 @@
 
 (defn- upsert-file!
   [conn file]
-  (let [sql (str "INSERT INTO file (id, project_id, name, revn, is_shared, data, created_at, modified_at) "
-                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?) "
-                 "ON CONFLICT (id) DO UPDATE SET data=?")]
+  (let [sql (str "INSERT INTO file (id, project_id, name, revn, version, is_shared, data, created_at, modified_at) "
+                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                 "ON CONFLICT (id) DO UPDATE SET data=?, version=?")]
     (db/exec-one! conn [sql
                         (:id file)
                         (:project-id file)
                         (:name file)
                         (:revn file)
+                        (:version file)
                         (:is-shared file)
                         (:data file)
                         (:created-at file)
                         (:modified-at file)
-                        (:data file)])))
+                        (:data file)
+                        (:version file)])))
 
 (defn persist-file!
   "Applies all the final validations and perist the file."

@@ -393,7 +393,7 @@
          ::rres/body    (str/ffmt "PROFILE '%' ACTIVATED" (:email profile))}))))
 
 
-(defn- reset-file-data-version
+(defn- reset-file-version
   [cfg {:keys [params] :as request}]
   (let [file-id (some-> params :file-id d/parse-uuid)
         version (some-> params :version d/parse-integer)]
@@ -413,7 +413,7 @@
                 :code :invalid-version
                 :hint "provided invalid version"))
 
-    (db/tx-run! cfg srepl/process-file! file-id #(update % :data assoc :version version))
+    (db/tx-run! cfg srepl/process-file! file-id #(assoc % :version version))
 
     {::rres/status  200
      ::rres/headers {"content-type" "text/plain"}
@@ -486,8 +486,8 @@
     ["/error" {:handler (partial error-list-handler cfg)}]
     ["/actions/resend-email-verification"
      {:handler (partial resend-email-notification cfg)}]
-    ["/actions/reset-file-data-version"
-     {:handler (partial reset-file-data-version cfg)}]
+    ["/actions/reset-file-version"
+     {:handler (partial reset-file-version cfg)}]
     ["/file/export" {:handler (partial export-handler cfg)}]
     ["/file/import" {:handler (partial import-handler cfg)}]
     ["/file/data" {:handler (partial file-data-handler cfg)}]

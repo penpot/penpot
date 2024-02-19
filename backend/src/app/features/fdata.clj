@@ -22,18 +22,16 @@
 
 (defn enable-objects-map
   [file]
-  (let [update-container
-        (fn [container]
-          (if (and (pmap/pointer-map? container)
-                   (not (pmap/loaded? container)))
-            container
-            (d/update-when container :objects omap/wrap)))
+  (let [update-page
+        (fn [page]
+          (if (and (pmap/pointer-map? page)
+                   (not (pmap/loaded? page)))
+            page
+            (update page :objects omap/wrap)))
 
         update-data
         (fn [fdata]
-          (-> fdata
-              (update :pages-index d/update-vals update-container)
-              (d/update-when :components d/update-vals update-container)))]
+          (update fdata :pages-index d/update-vals update-page))]
 
     (-> file
         (update :data update-data)
@@ -43,19 +41,15 @@
   "Apply a function to all objects-map on the file. Usualy used for convert
   the objects-map instances to plain maps"
   [fdata update-fn]
-  (let [update-container
-        (fn [container]
-          (d/update-when container :objects
-                         (fn [objects]
-                           (if (omap/objects-map? objects)
-                             (update-fn objects)
-                             objects))))]
-    (cond-> fdata
-      (contains? fdata :pages-index)
-      (update :pages-index update-vals update-container)
-
-      (contains? fdata :components)
-      (update :components update-vals update-container))))
+  (if (contains? fdata :pages-index)
+    (update fdata :pages-index d/update-vals
+            (fn [page]
+              (update page :objects
+                      (fn [objects]
+                        (if (omap/objects-map? objects)
+                          (update-fn objects)
+                          objects)))))
+    fdata))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; POINTER-MAP
@@ -95,15 +89,13 @@
   "Apply a function to all pointers on the file. Usuly used for
   dereference the pointer to a plain value before some processing."
   [fdata update-fn]
-  (cond-> fdata
-    (contains? fdata :pages-index)
-    (update :pages-index process-pointers update-fn)
-
-    :always
-    (update-vals (fn [val]
-                   (if (pmap/pointer-map? val)
-                     (update-fn val)
-                     val)))))
+  (let [update-fn' (fn [val]
+                     (if (pmap/pointer-map? val)
+                       (update-fn val)
+                       val))]
+    (-> fdata
+        (d/update-vals update-fn')
+        (update :pages-index d/update-vals update-fn'))))
 
 (defn get-used-pointer-ids
   "Given a file, return all pointer ids used in the data."
@@ -119,7 +111,6 @@
   (-> file
       (update :data (fn [fdata]
                       (-> fdata
-                          (update :pages-index update-vals pmap/wrap)
+                          (update :pages-index d/update-vals pmap/wrap)
                           (d/update-when :components pmap/wrap))))
-
       (update :features conj "fdata/pointer-map")))

@@ -19,6 +19,8 @@
    [promesa.exec :as px]
    [promesa.exec.csp :as sp]))
 
+(def default-tmp-dir "/tmp/penpot")
+
 (declare ^:private remove-temp-file)
 (declare ^:private io-loop)
 
@@ -33,6 +35,7 @@
 
 (defmethod ig/init-key ::cleaner
   [_ cfg]
+  (fs/create-dir default-tmp-dir)
   (px/fn->thread (partial io-loop cfg)
                  {:name "penpot/storage/tmp-cleaner" :virtual true}))
 
@@ -70,18 +73,14 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn tempfile
-  "Returns a tmpfile candidate (without creating it)"
   [& {:keys [suffix prefix min-age]
       :or {prefix "penpot."
            suffix ".tmp"}}]
-  (let [path (fs/tempfile :suffix suffix :prefix prefix)]
-    (sp/offer! queue [path (some-> min-age dt/duration)])
-    path))
-
-(defn create-tempfile
-  [& {:keys [suffix prefix min-age]
-      :or {prefix "penpot."
-           suffix ".tmp"}}]
-  (let [path (fs/create-tempfile :suffix suffix :prefix prefix)]
+  (let [path (fs/create-tempfile
+              :perms "rw-r--r--"
+              :dir default-tmp-dir
+              :suffix suffix
+              :prefix prefix)]
+    (fs/delete-on-exit! path)
     (sp/offer! queue [path (some-> min-age dt/duration)])
     path))

@@ -183,8 +183,8 @@
                                                (l/trace :hint "update-file" :time (dt/format-duration elapsed))))))))))
 
 (defn update-file
-  [{:keys [::db/conn ::mtx/metrics] :as cfg}
-   {:keys [id file features changes changes-with-metadata] :as params}]
+  [{:keys [::mtx/metrics] :as cfg}
+   {:keys [file features changes changes-with-metadata] :as params}]
   (let [features  (-> features
                       (set/difference cfeat/frontend-only-features)
                       (set/union (:features file)))
@@ -207,12 +207,6 @@
 
     (mtx/run! metrics {:id :update-file-changes :inc (count changes)})
 
-    (when (not= features (:features file))
-      (let [features (db/create-array conn "text" features)]
-        (db/update! conn :file
-                    {:features features}
-                    {:id id})))
-
     (binding [cfeat/*current*  features
               cfeat/*previous* (:features file)]
       (let [file   (assoc file :features features)
@@ -234,7 +228,8 @@
    {:keys [profile-id file changes session-id ::created-at skip-validate] :as params}]
   (let [;; Process the file data on separated thread for avoid to do
         ;; the CPU intensive operation on vthread.
-        file (px/invoke! executor (partial update-file-data cfg file changes skip-validate))]
+        file     (px/invoke! executor (partial update-file-data cfg file changes skip-validate))
+        features (db/create-array conn "text" (:features file))]
 
     (db/insert! conn :file-change
                 {:id (uuid/next)
@@ -252,6 +247,8 @@
     (db/update! conn :file
                 {:revn (:revn file)
                  :data (:data file)
+                 :version (:version file)
+                 :features features
                  :data-backend nil
                  :modified-at created-at
                  :has-media-trimmed false}

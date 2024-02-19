@@ -64,6 +64,11 @@
     "<local>"
     (str "<" (get-in state [:workspace-libraries file-id :name]) ">")))
 
+(defn pretty-uuid
+  [uuid]
+  (let [uuid-str (str uuid)]
+    (subs uuid-str (- (count uuid-str) 6))))
+
 ;; ---- Components and instances creation ----
 
 (defn duplicate-component
@@ -590,8 +595,14 @@
   instance, and all its children, from the given component."
   [changes libraries container shape-id reset? components-v2]
   (log/debug :msg "Sync shape direct" :shape (str shape-id) :reset? reset?)
-  (let [shape-inst     (ctn/get-shape container shape-id)]
-    (if (ctk/in-component-copy? shape-inst)
+  (let [shape-inst (ctn/get-shape container shape-id)
+        library    (dm/get-in libraries [(:component-file shape-inst) :data])
+        component  (or (ctkl/get-component library (:component-id shape-inst))
+                       (and reset?
+                            (ctkl/get-deleted-component library (:component-id shape-inst))))
+        component-shape (ctn/get-component-shape (:objects container) shape-inst)]
+    (if (and (ctk/in-component-copy? shape-inst)
+             (or (= (:id component) (:component-id component-shape)) reset?)) ; In a normal sync, we don't want to sync remote mains, only near
       (let [redirect-shaperef (partial redirect-shaperef container libraries)
             library    (dm/get-in libraries [(:component-file shape-inst) :data])
             component  (or (ctkl/get-component library (:component-id shape-inst))
@@ -1004,7 +1015,10 @@
 
 (defn- add-shape-to-instance
   [changes component-shape index component-page container root-instance root-main omit-touched? set-remote-synced?]
-  (log/info :msg (str "ADD [P] " (:name component-shape)))
+  (log/info :msg (str "ADD [P " (pretty-uuid (:id container)) "] "
+                      (:name component-shape)
+                      " "
+                      (pretty-uuid (:id component-shape))))
   (let [component-parent-shape (ctn/get-shape component-page (:parent-id component-shape))
         parent-shape           (d/seek #(ctk/is-main-of? component-parent-shape %)
                                        (cfh/get-children-with-self (:objects container)
@@ -1075,7 +1089,10 @@
 
 (defn- add-shape-to-main
   [changes shape index component component-container page root-instance root-main]
-  (log/info :msg (str "ADD [C] " (:name shape)))
+  (log/info :msg (str "ADD [C " (pretty-uuid (:id component-container)) "] "
+                      (:name shape)
+                      " "
+                      (pretty-uuid (:id shape))))
   (let [parent-shape           (ctn/get-shape page (:parent-id shape))
         component-parent-shape (d/seek #(ctk/is-main-of? % parent-shape)
                                        (cfh/get-children-with-self (:objects component-container)
@@ -1176,8 +1193,11 @@
 (defn- remove-shape
   [changes shape container omit-touched?]
   (log/info :msg (str "REMOVE-SHAPE "
-                      (if (cfh/page? container) "[P] " "[C] ")
-                      (:name shape)))
+                      (if (cfh/page? container) "[P " "[C ")
+                      (pretty-uuid (:id container)) "] "
+                      (:name shape)
+                      " "
+                      (pretty-uuid (:id shape))))
   (let [objects    (get container :objects)
         parents    (cfh/get-parent-ids objects (:id shape))
         parent     (first parents)
@@ -1225,8 +1245,11 @@
 (defn- move-shape
   [changes shape index-before index-after container omit-touched?]
   (log/info :msg (str "MOVE "
-                      (if (cfh/page? container) "[P] " "[C] ")
+                      (if (cfh/page? container) "[P " "[C ")
+                      (pretty-uuid (:id container)) "] "
                       (:name shape)
+                      " "
+                      (pretty-uuid (:id shape))
                       " "
                       index-before
                       " -> "
@@ -1263,8 +1286,11 @@
     changes
     (do
       (log/info :msg (str "CHANGE-TOUCHED "
-                          (if (cfh/page? container) "[P] " "[C] ")
-                          (:name dest-shape))
+                          (if (cfh/page? container) "[P " "[C ")
+                          (pretty-uuid (:id container)) "] "
+                          (:name dest-shape)
+                          " "
+                          (pretty-uuid (:id dest-shape)))
                 :options options)
       (let [new-touched (cond
                           reset-touched?
@@ -1298,8 +1324,11 @@
     changes
     (do
       (log/info :msg (str "CHANGE-REMOTE-SYNCED? "
-                          (if (cfh/page? container) "[P] " "[C] ")
-                          (:name shape))
+                          (if (cfh/page? container) "[P " "[C ")
+                          (pretty-uuid (:id container)) "] "
+                          (:name shape)
+                          " "
+                          (pretty-uuid (:id shape)))
                 :remote-synced remote-synced?)
       (-> changes
           (update :redo-changes conj (make-change
@@ -1327,9 +1356,14 @@
 
   (log/info :msg (str "SYNC "
                       (:name origin-shape)
+                      " "
+                      (pretty-uuid (:id origin-shape))
                       " -> "
-                      (if (cfh/page? container) "[P] " "[C] ")
-                      (:name dest-shape)))
+                      (if (cfh/page? container) "[P " "[C ")
+                      (pretty-uuid (:id container)) "] "
+                      (:name dest-shape)
+                      " "
+                      (pretty-uuid (:id dest-shape))))
 
   (let [;; To synchronize geometry attributes we need to make a prior
         ;; operation, because coordinates are absolute, but we need to

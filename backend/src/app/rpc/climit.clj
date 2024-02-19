@@ -197,40 +197,41 @@
         config (::config climit)
         label  (::sv/name mdata)]
 
-    (reduce (fn [handler [limit-id key-fn]]
-              (if-let [config (get config limit-id)]
-                (let [key-fn (or key-fn noop-fn)]
-                  (l/dbg :hint "instrumenting method"
-                         :method label
-                         :limit (id->str limit-id)
-                         :timeout (:timeout config)
-                         :permits (:permits config)
-                         :queue (:queue config)
-                         :keyed (not= key-fn noop-fn))
+    (if climit
+      (reduce (fn [handler [limit-id key-fn]]
+                (if-let [config (get config limit-id)]
+                  (let [key-fn (or key-fn noop-fn)]
+                    (l/dbg :hint "instrumenting method"
+                           :method label
+                           :limit (id->str limit-id)
+                           :timeout (:timeout config)
+                           :permits (:permits config)
+                           :queue (:queue config)
+                           :keyed (not= key-fn noop-fn))
 
+                    (if (and (= key-fn ::rpc/profile-id)
+                             (false? (::rpc/auth mdata true)))
 
-                  (if (and (= key-fn ::rpc/profile-id)
-                           (false? (::rpc/auth mdata true)))
+                      ;; We don't enforce by-profile limit on methods that does
+                      ;; not require authentication
+                      handler
 
-                    ;; We don't enforce by-profile limit on methods that does
-                    ;; not require authentication
-                    handler
+                      (fn [cfg params]
+                        (let [limit-key  (key-fn params)
+                              cache-key  [limit-id limit-key]
+                              limiter    (cache/get cache cache-key (partial create-limiter config))
+                              profile-id (if (= key-fn ::rpc/profile-id)
+                                           limit-key
+                                           (get params ::rpc/profile-id))]
+                          (invoke limiter metrics limit-id limit-key label profile-id handler [cfg params])))))
 
-                    (fn [cfg params]
-                      (let [limit-key  (key-fn params)
-                            cache-key  [limit-id limit-key]
-                            limiter    (cache/get cache cache-key (partial create-limiter config))
-                            profile-id (if (= key-fn ::rpc/profile-id)
-                                         limit-key
-                                         (get params ::rpc/profile-id))]
-                        (invoke limiter metrics limit-id limit-key label profile-id handler [cfg params])))))
+                  (do
+                    (l/wrn :hint "no config found for specified queue" :id (id->str limit-id))
+                    handler)))
 
-                (do
-                  (l/wrn :hint "no config found for specified queue" :id (id->str limit-id))
-                  handler)))
-
-            handler
-            (concat global-limits (get-limits mdata)))))
+              handler
+              (concat global-limits (get-limits mdata)))
+      handler)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PUBLIC API

@@ -71,19 +71,14 @@
       data     (assoc :data (blob/decode data)))))
 
 (defn check-version!
-  [{:keys [data] :as file}]
-  (dm/assert!
-   "expect data to be decoded"
-   (map? data))
-
-  (let [version (:version data 0)]
+  [file]
+  (let [version (:version file)]
     (when (> version fmg/version)
       (ex/raise :type :restriction
                 :code :file-version-not-supported
                 :hint "file version is greated that the maximum"
                 :file-version version
                 :max-version fmg/version))
-
     file))
 
 ;; --- FILE PERMISSIONS
@@ -252,6 +247,7 @@
 
       (db/update! conn :file
                   {:data (blob/encode (:data file))
+                   :version (:version file)
                    :features (db/create-array conn "text" (:features file))}
                   {:id id})
 

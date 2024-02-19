@@ -1496,6 +1496,13 @@
             fdata (migrate-graphics fdata)]
         (update fdata :options assoc :components-v2 true)))))
 
+(defn- fix-version
+  [file]
+  (let [file (fmg/fix-version file)]
+    (if (> (:version file) 22)
+      (assoc file :version 22)
+      file)))
+
 (defn- get-file
   [system id]
   (binding [pmap/*load-fn* (partial fdata/load-pointer system id)]
@@ -1506,10 +1513,7 @@
         (update :data assoc :id id)
         (update :data fdata/process-pointers deref)
         (update :data fdata/process-objects (partial into {}))
-        (update :data (fn [data]
-                        (if (> (:version data) 22)
-                          (assoc data :version 22)
-                          data)))
+        (fix-version)
         (fmg/migrate-file))))
 
 (defn get-team
@@ -1524,21 +1528,9 @@
   (cfv/validate-file! file libs)
   (cfv/validate-file-schema! file))
 
-(defn- process-file
-  [{:keys [::db/conn] :as system} {:keys [id] :as file} & {:keys [validate?]}]
-  (let [libs  (->> (files/get-file-libraries conn id)
-                   (into [file] (comp (map :id)
-                                      (map (partial get-file system))))
-                   (d/index-by :id))
-
-        file  (-> file
-                  (update :data migrate-fdata libs)
-                  (update :features conj "components/v2"))
-
-        _     (when validate?
-                (validate-file! file libs))
-
-        file (if (contains? (:features file) "fdata/objects-map")
+(defn- persist-file!
+  [{:keys [::db/conn] :as system} {:keys [id] :as file}]
+  (let [file (if (contains? (:features file) "fdata/objects-map")
                (fdata/enable-objects-map file)
                file)
 
@@ -1547,15 +1539,32 @@
                  (let [file (fdata/enable-pointer-map file)]
                    (fdata/persist-pointers! system id)
                    file))
-               file)]
+               file)
+
+        ;; Ensure all files has :data with id
+        file (update file :data assoc :id id)]
 
     (db/update! conn :file
                 {:data (blob/encode (:data file))
                  :features (db/create-array conn "text" (:features file))
                  :revn (:revn file)}
-                {:id (:id file)})
+                {:id (:id file)})))
 
-    (dissoc file :data)))
+(defn- process-file!
+  [{:keys [::db/conn] :as system} {:keys [id] :as file} & {:keys [validate?]}]
+  (let [libs  (->> (files/get-file-libraries conn id)
+                   (into [file] (comp (map :id)
+                                      (map (partial get-file system))))
+                   (d/index-by :id))
+
+        file  (-> file
+                  (update :data migrate-fdata libs)
+                  (update :features conj "components/v2"))]
+
+    (when validate?
+      (validate-file! file libs))
+
+    file))
 
 (def ^:private sql:get-and-lock-team-files
   "SELECT f.id
@@ -1605,13 +1614,15 @@
                         (when (string? label)
                           (fsnap/take-file-snapshot! system {:file-id file-id
                                                              :label (str "migration/" label)}))
-                        (let [file (get-file system file-id)]
+                        (let [file (get-file system file-id)
+                              file (process-file! system file :validate? validate?)]
+
                           (events/tap :progress
                                       {:op :migrate-file
                                        :name (:name file)
                                        :id (:id file)})
 
-                          (process-file system file :validate? validate?)))))
+                          (persist-file! system file)))))
 
         (catch Throwable cause
           (vreset! err true)

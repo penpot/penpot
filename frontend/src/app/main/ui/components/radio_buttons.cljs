@@ -18,26 +18,24 @@
 
 (mf/defc radio-button
   {::mf/props :obj}
-  [props]
-  (let [context    (mf/use-ctx context)
-        icon       (unchecked-get props "icon")
-        id         (unchecked-get props "id")
-        value      (unchecked-get props "value")
-        disabled   (unchecked-get props "disabled")
-        title      (unchecked-get props "title")
-        unique-key (unchecked-get props "unique-key")
-        icon-class (unchecked-get props "icon-class")
-        type       (or (unchecked-get props "type")
-                       (if (unchecked-get context "allow-empty")
-                         "checkbox"
-                         "radio"))
+  [{:keys [icon id value disabled title unique-key icon-class type]}]
+  (let [context     (mf/use-ctx context)
+        allow-empty (unchecked-get context "allow-empty")
+        type        (if ^boolean type
+                      type
+                      (if ^boolean allow-empty
+                        "checkbox"
+                        "radio"))
 
-        on-change  (unchecked-get context "on-change")
-        selected   (unchecked-get context "selected")
-        name       (unchecked-get context "name")
+        on-change   (unchecked-get context "on-change")
+        selected    (unchecked-get context "selected")
+        name        (unchecked-get context "name")
 
-        encode-fn  (unchecked-get context "encode-fn")
-        checked?   (= selected value)]
+        encode-fn   (unchecked-get context "encode-fn")
+        checked?    (= selected value)
+
+        value       (encode-fn value)]
+
 
     [:label {:html-for id
              :title title
@@ -48,33 +46,22 @@
                      :disabled disabled)}
 
      (if (some? icon)
-       [:span {:class (when icon-class icon-class)}
-        icon]
-       [:span {:class (stl/css :title-name)}
-        (encode-fn value)])
+       [:span {:class icon-class} icon]
+       [:span {:class (stl/css :title-name)} value])
 
      [:input {:id id
               :on-change on-change
               :type type
               :name name
               :disabled disabled
-              :value (encode-fn value)
+              :value value
               :checked checked?}]]))
 
 (mf/defc radio-buttons
   {::mf/props :obj}
-  [props]
-  (let [children     (unchecked-get props "children")
-        on-change    (unchecked-get props "on-change")
-        selected     (unchecked-get props "selected")
-        name         (unchecked-get props "name")
-        class        (unchecked-get props "class")
-        wide         (unchecked-get props "wide")
-        allow-empty? (unchecked-get props "allow-empty")
-
-        encode-fn (d/nilv (unchecked-get props "encode-fn") identity)
-        decode-fn (d/nilv (unchecked-get props "encode-fn") identity)
-
+  [{:keys [children on-change selected class wide encode-fn decode-fn] :as props}]
+  (let [encode-fn (d/nilv encode-fn identity)
+        decode-fn (d/nilv decode-fn identity)
         nitems    (if (array? children)
                     (alength children)
                     1)
@@ -90,21 +77,17 @@
         (mf/use-fn
          (mf/deps on-change)
          (fn [event]
-           (let [input-node (dom/get-target event)
+           (let [input (dom/get-target event)
                  value (dom/get-target-val event)
                  value (when (not= value selected) value)]
              (when (fn? on-change)
-               (do (on-change (decode-fn value) event)
-                   (dom/blur! input-node))))))
+               (on-change (decode-fn value) event)
+               (dom/blur! input)))))
 
         context-value
-        (mf/with-memo [selected on-change' name encode-fn decode-fn]
-          #js {:selected selected
-               :on-change on-change'
-               :name name
-               :encode-fn encode-fn
-               :decode-fn decode-fn
-               :allow-empty allow-empty?})]
+        (mf/spread-obj props {:on-change on-change'
+                              :encode-fn encode-fn
+                              :decode-fn decode-fn})]
 
     [:& (mf/provider context) {:value context-value}
      [:div {:class (dm/str class " " (stl/css :radio-btn-wrapper))

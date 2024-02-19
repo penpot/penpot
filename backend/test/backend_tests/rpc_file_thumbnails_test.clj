@@ -21,7 +21,7 @@
    [clojure.java.io :as io]
    [clojure.test :as t]
    [cuerdas.core :as str]
-   [datoteka.core :as fs]
+   [datoteka.fs :as fs]
    [mockery.core :refer [with-mocks]]))
 
 (t/use-fixtures :once th/state-init)
@@ -81,7 +81,6 @@
     (let [out (th/command! data2)]
       (t/is (nil? (:error out)))
       (t/is (map? (:result out))))
-
 
     ;; run the task again
     (let [res (th/run-task! "storage-gc-touched" {:min-age 0})]

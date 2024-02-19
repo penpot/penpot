@@ -38,7 +38,7 @@
    [clojure.spec.alpha :as s]
    [clojure.test :as t]
    [cuerdas.core :as str]
-   [datoteka.core :as fs]
+   [datoteka.fs :as fs]
    [environ.core :refer [env]]
    [expound.alpha :as expound]
    [integrant.core :as ig]
@@ -127,6 +127,8 @@
                 app.auth/verify-password (fn [a b] {:valid (= a b)})
                 app.common.features/get-enabled-features (fn [& _] app.common.features/supported-features)]
 
+    (fs/create-dir "/tmp/penpot")
+
     (let [templates [{:id "test"
                       :name "test"
                       :file-uri "test"
@@ -191,6 +193,7 @@
   (let [path (fs/path "/tmp/penpot")]
     (when (fs/exists? path)
       (fs/delete (fs/path "/tmp/penpot")))
+    (fs/create-dir "/tmp/penpot")
     (next)))
 
 (defn serial
@@ -496,7 +499,7 @@
 (defn tempfile
   [source]
   (let [rsc (io/resource source)
-        tmp (fs/create-tempfile)]
+        tmp (fs/create-tempfile :dir "/tmp/penpot" :prefix "test-")]
     (io/copy (io/file rsc)
              (io/file tmp))
     tmp))
