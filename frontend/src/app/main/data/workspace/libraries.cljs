@@ -1022,6 +1022,7 @@
                                    (dwlh/generate-sync-library it file-id :colors asset-id library-id state))
                                  (when sync-typographies?
                                    (dwlh/generate-sync-library it file-id :typographies asset-id library-id state))])
+
                file-changes    (reduce
                                 pcb/concat-changes
                                 (-> (pcb/empty-changes it)
@@ -1035,17 +1036,14 @@
 
                changes         (pcb/concat-changes library-changes file-changes)
 
+               find-frames     (fn [change]
+                                 (->> (ch/frames-changed file change)
+                                      (map #(assoc %1 :page-id (:page-id change)))))
 
-               find-frames (fn [change]
-                             (->> (ch/frames-changed file change)
-                                  (map #(assoc %1 :page-id (:page-id change)))))
-
-
-
-               updated-frames (->> changes
-                                   :redo-changes
-                                   (mapcat find-frames)
-                                   distinct)]
+               updated-frames  (->> changes
+                                    :redo-changes
+                                    (mapcat find-frames)
+                                    distinct)]
 
            (log/debug :msg "SYNC-FILE finished" :js/rchanges (log-changes
                                                               (:redo-changes changes)
