@@ -595,8 +595,14 @@
   instance, and all its children, from the given component."
   [changes libraries container shape-id reset? components-v2]
   (log/debug :msg "Sync shape direct" :shape (str shape-id) :reset? reset?)
-  (let [shape-inst     (ctn/get-shape container shape-id)]
-    (if (ctk/in-component-copy? shape-inst)
+  (let [shape-inst (ctn/get-shape container shape-id)
+        library    (dm/get-in libraries [(:component-file shape-inst) :data])
+        component  (or (ctkl/get-component library (:component-id shape-inst))
+                       (and reset?
+                            (ctkl/get-deleted-component library (:component-id shape-inst))))
+        component-shape (ctn/get-component-shape (:objects container) shape-inst)]
+    (if (and (ctk/in-component-copy? shape-inst)
+             (or (= (:id component) (:component-id component-shape)) reset?)) ; In a normal sync, we don't want to sync remote mains, only near
       (let [redirect-shaperef (partial redirect-shaperef container libraries)
             library    (dm/get-in libraries [(:component-file shape-inst) :data])
             component  (or (ctkl/get-component library (:component-id shape-inst))
