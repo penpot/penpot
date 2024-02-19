@@ -865,7 +865,7 @@
             0)))))
 
 (defn- add-component-for-swap
-  [shape file-id id-new-component index target-cell keep-props-values]
+  [shape file-id id-new-component index target-cell keep-props-values {:keys [undo-group]}]
   (dm/assert! (uuid? id-new-component))
   (dm/assert! (uuid? file-id))
   (ptk/reify ::add-component-for-swap
@@ -877,6 +877,7 @@
             objects   (:objects page)
             position  (gpt/point (:x shape) (:y shape))
             changes   (-> (pcb/empty-changes it (:id page))
+                          (pcb/set-undo-group undo-group)
                           (pcb/with-objects objects))
             position  (-> position (with-meta {:cell target-cell}))
 
@@ -925,10 +926,20 @@
             index (find-shape-index objects (:parent-id shape) (:id shape))
 
             ;; Store the properties that need to be maintained when the component is swapped
-            keep-props-values (select-keys shape ctk/swap-keep-attrs)]
-        (rx/of (dwsh/delete-shapes nil (d/ordered-set (:id shape)) {:component-swap true})
-               (add-component-for-swap shape file-id id-new-component index target-cell keep-props-values)
-               (ptk/data-event :layout/update [(:parent-id shape)]))))))
+            keep-props-values (select-keys shape ctk/swap-keep-attrs)
+
+            undo-id (js/Symbol)
+            undo-group (uuid/next)]
+
+        (rx/of
+         (dwu/start-undo-transaction undo-id)
+         (dwsh/delete-shapes nil (d/ordered-set (:id shape)) {:component-swap true
+                                                              :undo-id undo-id
+                                                              :undo-group undo-group})
+         (add-component-for-swap shape file-id id-new-component index target-cell keep-props-values
+                                 {:undo-group undo-group})
+         (ptk/data-event :layout/update [(:parent-id shape)])
+         (dwu/commit-undo-transaction undo-id))))))
 
 (defn component-multi-swap
   "Swaps several components with another one"
@@ -945,7 +956,6 @@
          (rx/map #(component-swap % file-id id-new-component) (rx/from shapes))
          (rx/of (dwu/commit-undo-transaction undo-id))
          (rx/of (dwsp/open-specialized-panel :component-swap)))))))
-
 
 (def valid-asset-types
   #{:colors :components :typographies})
