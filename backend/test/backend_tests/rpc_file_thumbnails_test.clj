@@ -82,7 +82,6 @@
       (t/is (nil? (:error out)))
       (t/is (map? (:result out))))
 
-
     ;; run the task again
     (let [res (th/run-task! "storage-gc-touched" {:min-age 0})]
       (t/is (= 2 (:freeze res))))

@@ -34,23 +34,19 @@
     <Logger name="app.common.files.migrations" level="debug" />
 
     <Logger name="app.loggers" level="debug" additivity="false">
-      <AppenderRef ref="console" level="info" />
       <AppenderRef ref="main" level="debug" />
     </Logger>
 
     <Logger name="app" level="all" additivity="false">
       <AppenderRef ref="main" level="trace" />
-      <AppenderRef ref="console" level="info" />
     </Logger>
 
     <Logger name="user" level="trace" additivity="false">
       <AppenderRef ref="main" level="trace" />
-      <AppenderRef ref="console" level="info" />
     </Logger>
 
     <Root level="info">
       <AppenderRef ref="main" />
-      <AppenderRef ref="console" level="info" />
     </Root>
   </Loggers>
 </Configuration>

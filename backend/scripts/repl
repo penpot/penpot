@@ -68,7 +68,7 @@ export OPTIONS="
        -J-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager \
        -J-Djdk.attach.allowAttachSelf \
        -J-Dpolyglot.engine.WarnInterpreterOnly=false \
-       -J-Dlog4j2.configurationFile=log4j2-devenv.xml \
+       -J-Dlog4j2.configurationFile=log4j2-devenv-repl.xml \
        -J-XX:+EnableDynamicAgentLoading \
        -J-XX:-OmitStackTraceInFastThrow \
        -J-XX:+UnlockDiagnosticVMOptions \
