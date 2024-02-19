@@ -18,7 +18,7 @@
    [clojure.java.io :as io]
    [clojure.test :as t]
    [cuerdas.core :as str]
-   [datoteka.core :as fs]
+   [datoteka.fs :as fs]
    [mockery.core :refer [with-mocks]]))
 
 ;; TODO: profile deletion with teams

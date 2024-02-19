@@ -11,7 +11,7 @@
    [app.rpc :as-alias rpc]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
-   [datoteka.core :as fs]))
+   [datoteka.fs :as fs]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
