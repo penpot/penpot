@@ -52,8 +52,8 @@
   [_ cfg]
   (merge {::port 6060
           ::host "0.0.0.0"
-          ::max-body-size (* 1024 1024 30)             ; 30 MiB
-          ::max-multipart-body-size (* 1024 1024 120)} ; 120 MiB
+          ::max-body-size (* 1024 1024 30)             ; default 30 MiB
+          ::max-multipart-body-size (* 1024 1024 120)} ; default 120 MiB
          (d/without-nils cfg)))
 
 (defmethod ig/pre-init-spec ::server [_]

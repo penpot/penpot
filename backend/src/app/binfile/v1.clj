@@ -65,7 +65,11 @@
 
 (def ^:const buffer-size (:xnio/buffer-size yt/defaults))
 (def ^:const penpot-magic-number 800099563638710213)
-(def ^:const max-object-size (* 1024 1024 100)) ; Only allow 100MiB max file size.
+
+
+;; A maximum (storage) object size allowed: 100MiB
+(def ^:const max-object-size
+  (* 1024 1024 100))
 
 (def ^:dynamic *position* nil)
 
