@@ -153,7 +153,6 @@
    (get-object-bounds objects shape nil))
   ([objects shape {:keys [ignore-margin?] :or {ignore-margin? true}}]
    (let [base-bounds (calculate-base-bounds shape ignore-margin?)
-         _ (prn ">" (:name shape) base-bounds)
          bounds
          (cond
            (or (empty? (:shapes shape))
