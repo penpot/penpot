@@ -130,6 +130,8 @@
   color: var(--button-tertiary-foreground-color-rest);
   background-color: transparent;
   border: var(--button-tertiary-border-width) solid transparent;
+  display: grid;
+  place-content: center;
   svg,
   span svg {
     stroke: var(--button-tertiary-foreground-color-rest);
