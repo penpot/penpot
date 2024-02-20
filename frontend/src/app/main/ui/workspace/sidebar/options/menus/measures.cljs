@@ -52,6 +52,9 @@
    :svg-raw #{:size :position :rotation}
    :text    #{:size :position :rotation}})
 
+(def ^:private clip-content-icon (i/icon-xref :clip-content-refactor (stl/css :checkbox-button)))
+(def ^:private play-icon (i/icon-xref :play-refactor (stl/css :checkbox-button)))
+
 (defn select-measure-keys
   "Consider some shapes can be drawn from bottom to top or from left to right"
   [shape]
@@ -543,8 +546,7 @@
                     :title (tr "workspace.options.clip-content")
                     :class (stl/css-case  :clip-content-label true
                                           :selected (not (:show-content values)))}
-            [:span {:class (stl/css :icon)}
-             i/clip-content-refactor]]])
+            clip-content-icon]])
         (when (options :show-in-viewer)
           [:div {:class (stl/css :show-in-viewer)}
            [:input {:type "checkbox"
@@ -559,4 +561,4 @@
                     :class (stl/css-case  :clip-content-label true
                                           :selected (not (:hide-in-viewer values)))}
             [:span {:class (stl/css :icon)}
-             i/play-refactor]]])])]))
+             play-icon]]])])]))
