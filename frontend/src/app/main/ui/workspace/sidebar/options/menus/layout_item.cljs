@@ -20,7 +20,8 @@
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [get-layout-flex-icon]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [rumext.v2 :as mf]))
+   [rumext.v2 :as mf]
+   [rumext.v2.props :as-alias mf.props]))
 
 (def layout-item-attrs
   [:layout-item-margin      ;; {:m1 0 :m2 0 :m3 0 :m4 0}
@@ -185,7 +186,7 @@
 (mf/defc margin-section
   {::mf/props :obj
    ::mf/private true
-   ::mf/expected-props #{:margin :type :on-type-change :on-change}}
+   ::mf.props/expect #{:margin :type :on-type-change :on-change}}
   [{:keys [type on-type-change] :as props}]
   (let [type       (d/nilv type :simple)
         on-blur    (mf/use-fn #(select-margins false false false false))
@@ -330,7 +331,7 @@
                      :id    "align-self-end"}]])
 
 (mf/defc layout-item-menu
-  {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type" "is-layout-child?" "is-grid-parent?" "is-flex-parent?"]))]
+  {::mf/memo #{:ids :values :type :is-layout-child? :is-grid-parent :is-flex-parent?}
    ::mf/props :obj}
   [{:keys [ids values
            ^boolean is-layout-child?
