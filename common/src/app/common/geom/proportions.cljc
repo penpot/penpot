@@ -40,6 +40,6 @@
     (cond
       (= type :svg-raw) (setup-proportions-size shape)
       (= type :image)   (setup-proportions-image shape)
-      image-fill?       (setup-proportions-size shape)
       (= type :text)    shape
+      image-fill?       (setup-proportions-size shape)
       :else             (setup-proportions-const shape))))

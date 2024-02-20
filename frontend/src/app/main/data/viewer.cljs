@@ -74,9 +74,11 @@
           (assoc-in [:viewer-local :interactions-show?] interactions-show?)))
 
     ptk/WatchEvent
-    (watch [_ _ _]
+    (watch [_ state _]
       (rx/of (fetch-bundle (d/without-nils params))
-             (fetch-comment-threads params)))
+             ;; Only fetch threads for logged-in users
+             (when (some? (:profile state))
+               (fetch-comment-threads params))))
 
     ptk/EffectEvent
     (effect [_ _ _]
