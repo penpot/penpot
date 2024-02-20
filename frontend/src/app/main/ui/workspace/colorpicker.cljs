@@ -422,8 +422,9 @@
            (reset! dirty? (not= data new-data))
            (reset! last-change new-data)
 
-           (when (fn? on-change)
-             (on-change new-data))))]
+           (if (fn? on-change)
+             (on-change new-data)
+             (st/emit! (dc/update-colorpicker new-data)))))]
 
     (mf/with-effect []
       #(when (and @dirty? @last-change on-close)
