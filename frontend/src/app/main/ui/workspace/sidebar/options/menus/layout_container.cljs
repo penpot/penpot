@@ -61,10 +61,10 @@
    :layout-grid-rows])
 
 (defn get-layout-flex-icon
-  [type val ^boolean is-col?]
+  [type val ^boolean column?]
   (case type
     :align-items
-    (if is-col?
+    (if column?
       (case val
         :start    i/align-items-column-start-refactor
         :end      i/align-items-column-end-refactor
@@ -79,7 +79,7 @@
         :baseline i/align-items-row-baseline))
 
     :justify-content
-    (if is-col?
+    (if column?
       (case val
         :start         i/justify-content-column-start-refactor
         :end           i/justify-content-column-end-refactor
@@ -96,7 +96,7 @@
         :space-between i/justify-content-row-between-refactor))
 
     :align-content
-    (if is-col?
+    (if column?
       (case val
         :start         i/align-content-column-start-refactor
         :end           i/align-content-column-end-refactor
@@ -116,7 +116,7 @@
         :stretch nil))
 
     :align-self
-    (if is-col?
+    (if column?
       (case val
         :auto     i/remove-refactor
         :start    i/align-self-row-left-refactor
@@ -133,10 +133,10 @@
         :baseline i/align-self-column-baseline))))
 
 (defn get-layout-grid-icon-refactor
-  [type val ^boolean is-col?]
+  [type val ^boolean column?]
   (case type
     :align-items
-    (if is-col?
+    (if column?
       (case val
         :auto     i/remove-refactor
         :start    i/align-self-row-left-refactor
@@ -153,7 +153,7 @@
         :baseline i/align-self-column-baseline))
 
     :justify-items
-    (if (not is-col?)
+    (if (not column?)
       (case val
         :start         i/align-content-column-start-refactor
         :center        i/align-content-column-center-refactor
@@ -205,82 +205,82 @@
 
 (mf/defc align-row
   {::mf/props :obj}
-  [{:keys [is-col? align-items on-change]}]
+  [{:keys [is-column align-items on-change]}]
   [:& radio-buttons {:selected (d/name align-items)
                      :on-change on-change
                      :name "flex-align-items"}
    [:& radio-button {:value "start"
-                     :icon  (get-layout-flex-icon :align-items :start is-col?)
+                     :icon  (get-layout-flex-icon :align-items :start is-column)
                      :title "Align items start"
                      :id     "align-items-start"}]
    [:& radio-button {:value "center"
-                     :icon  (get-layout-flex-icon :align-items :center is-col?)
+                     :icon  (get-layout-flex-icon :align-items :center is-column)
                      :title "Align items center"
                      :id    "align-items-center"}]
    [:& radio-button {:value "end"
-                     :icon  (get-layout-flex-icon :align-items :end is-col?)
+                     :icon  (get-layout-flex-icon :align-items :end is-column)
                      :title "Align items end"
                      :id    "align-items-end"}]])
 
 (mf/defc align-content-row
   {::mf/props :obj}
-  [{:keys [is-col? align-content on-change]}]
+  [{:keys [is-column align-content on-change]}]
   [:& radio-buttons {:selected (d/name align-content)
                      :on-change on-change
                      :name "flex-align-content"}
    [:& radio-button {:value      "start"
-                     :icon       (get-layout-flex-icon :align-content :start is-col?)
+                     :icon       (get-layout-flex-icon :align-content :start is-column)
                      :title      "Align content start"
                      :id         "align-content-start"}]
    [:& radio-button {:value      "center"
-                     :icon       (get-layout-flex-icon :align-content :center is-col?)
+                     :icon       (get-layout-flex-icon :align-content :center is-column)
                      :title      "Align content center"
                      :id         "align-content-center"}]
    [:& radio-button {:value      "end"
-                     :icon       (get-layout-flex-icon :align-content :end is-col?)
+                     :icon       (get-layout-flex-icon :align-content :end is-column)
                      :title      "Align content end"
                      :id         "align-content-end"}]
    [:& radio-button {:value      "space-between"
-                     :icon       (get-layout-flex-icon :align-content :space-between is-col?)
+                     :icon       (get-layout-flex-icon :align-content :space-between is-column)
                      :title      "Align content space-between"
                      :id         "align-content-space-between"}]
    [:& radio-button {:value      "space-around"
-                     :icon       (get-layout-flex-icon :align-content :space-around is-col?)
+                     :icon       (get-layout-flex-icon :align-content :space-around is-column)
                      :title      "Align content space-around"
                      :id         "align-content-space-around"}]
    [:& radio-button {:value      "space-evenly"
-                     :icon       (get-layout-flex-icon :align-content :space-evenly is-col?)
+                     :icon       (get-layout-flex-icon :align-content :space-evenly is-column)
                      :title      "Align content space-evenly"
                      :id         "align-content-space-evenly"}]])
 
 (mf/defc justify-content-row
   {::mf/props :obj}
-  [{:keys [is-col? justify-content on-change]}]
+  [{:keys [is-column justify-content on-change]}]
   [:& radio-buttons {:selected (d/name justify-content)
                      :on-change on-change
                      :name "flex-justify"}
    [:& radio-button {:value "start"
-                     :icon  (get-layout-flex-icon :justify-content :start is-col?)
+                     :icon  (get-layout-flex-icon :justify-content :start is-column)
                      :title "Justify content start"
                      :id    "justify-content-start"}]
    [:& radio-button {:value "center"
-                     :icon  (get-layout-flex-icon :justify-content :center is-col?)
+                     :icon  (get-layout-flex-icon :justify-content :center is-column)
                      :title "Justify content center"
                      :id    "justify-content-center"}]
    [:& radio-button {:value "end"
-                     :icon  (get-layout-flex-icon :justify-content :end is-col?)
+                     :icon  (get-layout-flex-icon :justify-content :end is-column)
                      :title "Justify content end"
                      :id    "justify-content-end"}]
    [:& radio-button {:value "space-between"
-                     :icon  (get-layout-flex-icon :justify-content :space-between is-col?)
+                     :icon  (get-layout-flex-icon :justify-content :space-between is-column)
                      :title "Justify content space-between"
                      :id    "justify-content-space-between"}]
    [:& radio-button {:value "space-around"
-                     :icon  (get-layout-flex-icon :justify-content :space-around is-col?)
+                     :icon  (get-layout-flex-icon :justify-content :space-around is-column)
                      :title "Justify content space-around"
                      :id    "justify-content-space-around"}]
    [:& radio-button {:value "space-evenly"
-                     :icon  (get-layout-flex-icon :justify-content :space-evenly is-col?)
+                     :icon  (get-layout-flex-icon :justify-content :space-evenly is-column)
                      :title "Justify content space-evenly"
                      :id    "justify-content-space-evenly"}]])
 
@@ -493,7 +493,7 @@
 
 (mf/defc gap-section
   {::mf/props :obj}
-  [{:keys [is-col? wrap-type gap-selected? on-change gap-value]}]
+  [{:keys [is-column wrap-type on-change gap-value]}]
   (let [select-gap
         (fn [gap]
           (st/emit! (udw/set-gap-selected gap)))]
@@ -506,7 +506,7 @@
 
     [:div {:class (stl/css :gap-group)}
      [:div {:class (stl/css-case :row-gap true
-                                 :disabled (and (= :nowrap wrap-type) (not is-col?)))
+                                 :disabled (and (= :nowrap wrap-type) (not is-column)))
             :title "Row gap"}
       [:span {:class (stl/css :icon)} i/gap-vertical-refactor]
       [:> numeric-input* {:class (stl/css :numeric-input true)
@@ -514,19 +514,17 @@
                           :placeholder "--"
                           :on-focus (fn [event]
                                       (select-gap :row-gap)
-                                      (reset! gap-selected? :row-gap)
                                       (dom/select-target event))
                           :on-change (partial on-change (= :nowrap wrap-type) :row-gap)
                           :on-blur (fn [_]
-                                     (select-gap nil)
-                                     (reset! gap-selected? :none))
+                                     (select-gap nil))
                           :nillable true
                           :min 0
                           :value (:row-gap gap-value)
-                          :disabled (and (= :nowrap wrap-type) (not is-col?))}]]
+                          :disabled (and (= :nowrap wrap-type) (not is-column))}]]
 
      [:div {:class (stl/css-case :column-gap true
-                                 :disabled (and (= :nowrap wrap-type) is-col?))
+                                 :disabled (and (= :nowrap wrap-type) is-column))
             :title "Column gap"}
       [:span {:class (stl/css :icon)}
        i/gap-horizontal-refactor]
@@ -535,24 +533,23 @@
                           :placeholder "--"
                           :on-focus (fn [event]
                                       (select-gap :column-gap)
-                                      (reset! gap-selected? :column-gap)
                                       (dom/select-target event))
                           :on-change (partial on-change (= :nowrap wrap-type) :column-gap)
                           :on-blur (fn [_]
                                      (select-gap nil)
-                                     (reset! gap-selected? :none))
+                                     )
                           :nillable true
                           :min 0
                           :value (:column-gap gap-value)
-                          :disabled (and (= :nowrap wrap-type) is-col?)}]]]))
+                          :disabled (and (= :nowrap wrap-type) is-column)}]]]))
 
 ;; GRID COMPONENTS
 
 (defn get-layout-grid-icon
-  [type val ^boolean is-col?]
+  [type val ^boolean column?]
   (case type
     :justify-items
-    (if is-col?
+    (if column?
       (case val
         :stretch       i/align-items-row-strech
         :start         i/grid-justify-content-column-start
@@ -607,28 +604,28 @@
 
 (mf/defc align-grid-row
   {::mf/props :obj}
-  [{:keys [is-col? align-items set-align]}]
-  (let [type (if is-col? :column :row)]
+  [{:keys [is-column align-items set-align]}]
+  (let [type (if is-column :column :row)]
     [:& radio-buttons {:selected (d/name align-items)
                        :on-change #(set-align % type)
                        :name (dm/str "flex-align-items-" (d/name type))}
      [:& radio-button {:value "start"
-                       :icon  (get-layout-grid-icon-refactor :align-items :start is-col?)
+                       :icon  (get-layout-grid-icon-refactor :align-items :start is-column)
                        :title "Align items start"
                        :id     (dm/str "align-items-start-" (d/name type))}]
      [:& radio-button {:value "center"
-                       :icon  (get-layout-grid-icon-refactor :align-items :center is-col?)
+                       :icon  (get-layout-grid-icon-refactor :align-items :center is-column)
                        :title "Align items center"
                        :id    (dm/str "align-items-center-" (d/name type))}]
      [:& radio-button {:value "end"
-                       :icon  (get-layout-grid-icon-refactor :align-items :end is-col?)
+                       :icon  (get-layout-grid-icon-refactor :align-items :end is-column)
                        :title "Align items end"
                        :id    (dm/str "align-items-end-" (d/name type))}]]))
 
 (mf/defc justify-grid-row
   {::mf/props :obj}
-  [{:keys [is-col? justify-items set-justify]}]
-  (let [type (if is-col? :column :row)]
+  [{:keys [is-column justify-items set-justify]}]
+  (let [type (if is-column :column :row)]
 
     [:& radio-buttons {:selected (d/name justify-items)
                        :on-change #(set-justify % type)
@@ -636,7 +633,7 @@
      (for [justify [:start :center :end :space-around :space-between :stretch]]
        [:& radio-button {:key   (dm/str "justify-item-" (d/name justify))
                          :value (d/name justify)
-                         :icon  (get-layout-grid-icon-refactor :justify-items justify is-col?)
+                         :icon  (get-layout-grid-icon-refactor :justify-items justify is-column)
                          :title (dm/str "Justify items " (d/name justify))
                          :id    (dm/str "justify-items-" (d/name justify) "-" (d/name type))}])]))
 
@@ -651,7 +648,7 @@
 
 (mf/defc grid-track-info
   {::mf/props :obj}
-  [{:keys [is-col?
+  [{:keys [is-column
            type
            index
            column
@@ -691,7 +688,7 @@
         (h/use-sortable
          :data-type "penpot/grid-track"
          :on-drop drop-track
-         :data {:is-col? is-col?
+         :data {:is-column is-column
                 :index index
                 :column column}
          :draggable? true)]
@@ -707,7 +704,7 @@
      [:div {:class (stl/css :track-info-container)}
       [:div {:class (stl/css :track-info-dir-icon)
              :on-click handle-select-track}
-       (if is-col? i/flex-vertical-refactor i/flex-horizontal-refactor)]
+       (if is-column i/flex-vertical-refactor i/flex-horizontal-refactor)]
 
       [:div {:class (stl/css :track-info-value)}
        [:> numeric-input* {:no-validate true
@@ -732,17 +729,17 @@
 
 (mf/defc grid-columns-row
   {::mf/props :obj}
-  [{:keys [is-col? expanded? column-values toggle add-new-element set-column-value set-column-type
+  [{:keys [is-column expanded? column-values toggle add-new-element set-column-value set-column-type
            remove-element reorder-track hover-track on-select-track]}]
   (let [column-num (count column-values)
         direction (if (> column-num 1)
-                    (if ^boolean is-col? "Columns " "Rows ")
-                    (if ^boolean is-col? "Column " "Row "))
+                    (if ^boolean is-column "Columns " "Rows ")
+                    (if ^boolean is-column "Column " "Row "))
 
         track-name (dm/str direction  (if (= column-num 0) " - empty" column-num))
         track-detail (str/join ", " (map manage-values column-values))
 
-        type (if is-col? :column :row)
+        type (if is-column :column :row)
 
         add-track
         #(do
@@ -763,7 +760,7 @@
          (for [[index column] (d/enumerate column-values)]
            [:& grid-track-info {:key (dm/str index "-" (name type))
                                 :type type
-                                :is-col? is-col?
+                                :is-column is-column
                                 :index index
                                 :column column
                                 :set-column-value set-column-value
@@ -826,7 +823,7 @@
 
         saved-dir (:layout-flex-dir values)
 
-        is-col?   (or (= :column saved-dir) (= :column-reverse saved-dir))
+        is-column   (or (= :column saved-dir) (= :column-reverse saved-dir))
 
         set-direction-refactor
         (mf/use-fn
@@ -885,9 +882,6 @@
 
 
         ;; Gap
-
-        gap-selected?       (mf/use-state :none)
-
         set-gap
         (fn [gap-multiple? type val]
           (let [val (mth/finite val 0)]
@@ -1029,7 +1023,7 @@
            :flex
            [:div  {:class (stl/css :flex-layout-menu)}
             [:div {:class (stl/css :first-row)}
-             [:& align-row {:is-col? is-col?
+             [:& align-row {:is-column is-column
                             :align-items align-items
                             :on-change set-align-items}]
 
@@ -1040,7 +1034,7 @@
                            :on-click toggle-wrap}]]
 
             [:div {:class (stl/css :second-row :help-button-wrapper)}
-             [:& justify-content-row {:is-col? is-col?
+             [:& justify-content-row {:is-column is-column
                                       :justify-content justify-content
                                       :on-change set-justify-content}]
 
@@ -1048,13 +1042,12 @@
                        :class (stl/css :help-button)} i/help-refactor]]
             (when (= :wrap wrap-type)
               [:div {:class (stl/css :third-row)}
-               [:& align-content-row {:is-col? is-col?
+               [:& align-content-row {:is-column is-column
                                       :align-content align-content
                                       :on-change set-align-content}]])
             [:div {:class (stl/css :forth-row)}
-             [:& gap-section {:is-col? is-col?
+             [:& gap-section {:is-column is-column
                               :wrap-type wrap-type
-                              :gap-selected? gap-selected?
                               :on-change set-gap
                               :gap-value (:layout-gap values)}]
 
@@ -1076,19 +1069,19 @@
                [:& direction-row-grid {:saved-dir saved-grid-dir
                                        :on-change set-direction}]]]
 
-             [:& align-grid-row {:is-col? false
+             [:& align-grid-row {:is-column false
                                  :align-items align-items-row
                                  :set-align set-align-grid}]
 
-             [:& align-grid-row {:is-col? true
+             [:& align-grid-row {:is-column true
                                  :align-items align-items-column
                                  :set-align set-align-grid}]]
 
             [:div {:class (stl/css :row :grid-layout-align)}
-             [:& justify-grid-row {:is-col? true
+             [:& justify-grid-row {:is-column true
                                    :justify-items grid-justify-content-column
                                    :set-justify set-justify-grid}]
-             [:& justify-grid-row {:is-col? false
+             [:& justify-grid-row {:is-column false
                                    :justify-items grid-justify-content-row
                                    :set-justify set-justify-grid}]]
             [:div {:class (stl/css :row)}
@@ -1107,7 +1100,6 @@
    ::mf/props :obj}
   [{:keys [ids values]}]
   (let [;; Gap
-        gap-selected?  (mf/use-state :none)
         saved-grid-dir (:layout-grid-dir values)
 
         set-direction
@@ -1253,19 +1245,19 @@
         [:& direction-row-grid {:saved-dir saved-grid-dir
                                 :on-change set-direction}]]]
 
-      [:& align-grid-row {:is-col? false
+      [:& align-grid-row {:is-column false
                           :align-items align-items-row
                           :set-align set-align-grid}]
 
-      [:& align-grid-row {:is-col? true
+      [:& align-grid-row {:is-column true
                           :align-items align-items-column
                           :set-align set-align-grid}]]
 
      [:div {:class (stl/css :row :grid-layout-align)}
-      [:& justify-grid-row {:is-col? true
+      [:& justify-grid-row {:is-column true
                             :justify-items grid-justify-content-column
                             :set-justify set-justify-grid}]
-      [:& justify-grid-row {:is-col? false
+      [:& justify-grid-row {:is-column false
                             :justify-items grid-justify-content-row
                             :set-justify set-justify-grid}]
 
@@ -1284,7 +1276,7 @@
                            :on-change on-padding-change}]]
 
      [:div {:class (stl/css :row :grid-tracks-row)}
-      [:& grid-columns-row {:is-col? true
+      [:& grid-columns-row {:is-column true
                             :expanded? @columns-open?
                             :toggle toggle-columns-open
                             :column-values column-values
@@ -1296,7 +1288,7 @@
                             :hover-track hover-track
                             :on-select-track handle-select-track}]
 
-      [:& grid-columns-row {:is-col? false
+      [:& grid-columns-row {:is-column false
                             :expanded? @rows-open?
                             :toggle toggle-rows-open
                             :column-values rows-values
