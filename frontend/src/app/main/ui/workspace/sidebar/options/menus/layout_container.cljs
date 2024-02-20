@@ -1041,11 +1041,13 @@
         saved-grid-dir (:layout-grid-dir values)
 
         set-direction
-        (fn [dir]
-          (let [dir (keyword dir)]
-            (st/emit! (dwsl/update-layout ids {:layout-grid-dir dir}))))
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [dir]
+           (let [dir (keyword dir)]
+             (st/emit! (dwsl/update-layout ids {:layout-grid-dir dir})))))
 
-        set-gap
+        on-gap-change
         (fn [gap-multiple? type val]
           (if gap-multiple?
             (st/emit! (dwsl/update-layout ids {:layout-gap {:row-gap val :column-gap val}}))
@@ -1053,8 +1055,10 @@
 
         ;; Padding
         change-padding-type
-        (fn [type]
-          (st/emit! (dwsl/update-layout ids {:layout-padding-type type})))
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [type]
+           (st/emit! (dwsl/update-layout ids {:layout-padding-type type}))))
 
         on-padding-change
         (fn [type prop val]
@@ -1095,20 +1099,17 @@
                (st/emit! (dwsl/update-layout ids {:layout-justify-content value}))
                (st/emit! (dwsl/update-layout ids {:layout-align-content value}))))))
 
-        ;;Grid columns
-        column-grid-values  (:layout-grid-columns values)
-        grid-columns-open?  (mf/use-state false)
-        toggle-columns-info (mf/use-fn
-                             (fn [_]
-                               (swap! grid-columns-open? not)))
+        columns-open?    (mf/use-state false)
+        rows-open?       (mf/use-state false)
 
-        ;; Grid rows / columns
-        rows-grid-values  (:layout-grid-rows values)
-        grid-rows-open?  (mf/use-state false)
-        toggle-rows-info
-        (mf/use-fn
-         (fn [_]
-           (swap! grid-rows-open? not)))
+        column-values    (:layout-grid-columns values)
+        rows-values      (:layout-grid-rows values)
+
+        toggle-columns-open
+        (mf/use-fn #(swap! columns-open? not))
+
+        toggle-rows-open
+        (mf/use-fn #(swap! rows-open? not))
 
         add-new-element
         (mf/use-fn
@@ -1214,9 +1215,9 @@
 
      [:div {:class (stl/css :row :grid-tracks-row)}
       [:& grid-columns-row {:is-col? true
-                            :expanded? @grid-columns-open?
-                            :toggle toggle-columns-info
-                            :column-values column-grid-values
+                            :expanded? @columns-open?
+                            :toggle toggle-columns-open
+                            :column-values column-values
                             :add-new-element add-new-element
                             :set-column-value set-column-value
                             :set-column-type set-column-type
@@ -1226,9 +1227,9 @@
                             :on-select-track handle-select-track}]
 
       [:& grid-columns-row {:is-col? false
-                            :expanded? @grid-rows-open?
-                            :toggle toggle-rows-info
-                            :column-values rows-grid-values
+                            :expanded? @rows-open?
+                            :toggle toggle-rows-open
+                            :column-values rows-values
                             :add-new-element add-new-element
                             :set-column-value set-column-value
                             :set-column-type set-column-type
