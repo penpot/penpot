@@ -17,7 +17,7 @@
   (if (cfh/path-shape? shape)
     ;; TODO: Calculate with the stroke offset (not implemented yet)
     (+ stroke-width (mth/sqrt (* 2 stroke-width stroke-width)))
-    (- (mth/sqrt (* 2 stroke-width stroke-width)) stroke-width)))
+    (mth/sqrt (* 2 stroke-width stroke-width))))
 
 (defn- apply-filters
   [attr type filters]
@@ -153,6 +153,7 @@
    (get-object-bounds objects shape nil))
   ([objects shape {:keys [ignore-margin?] :or {ignore-margin? true}}]
    (let [base-bounds (calculate-base-bounds shape ignore-margin?)
+         _ (prn ">" (:name shape) base-bounds)
          bounds
          (cond
            (or (empty? (:shapes shape))
