@@ -284,141 +284,211 @@
                      :title "Justify content space-evenly"
                      :id    "justify-content-space-evenly"}]])
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; PADDING
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- select-padding
+  ([p]
+   (select-padding (= p :p1) (= p :p2) (= p :p3) (= p :p4)))
+  ([p1? p2? p3? p4?]
+   (st/emit! (udw/set-paddings-selected {:p1 p1? :p2 p2? :p3 p3? :p4 p4?}))))
+
+(defn- on-padding-blur
+  [_event]
+  (select-padding false false false false))
+
+(mf/defc simple-padding-selection
+  {::mf/props :obj}
+  [{:keys [padding on-change]}]
+  (let [p1 (:p1 padding)
+        p2 (:p2 padding)
+        p3 (:p3 padding)
+        p4 (:p4 padding)
+
+        p1 (if (and (not (= :multiple padding))
+                    (= p1 p3))
+             p1
+             "--")
+
+        p2 (if (and (not (= :multiple padding))
+                    (= p2 p4))
+             p2
+             "--")
+
+        on-change'
+        (mf/use-fn
+         (mf/deps on-change)
+         (fn [value event]
+           (let [attr (-> (dom/get-current-target event)
+                          (dom/get-data "attr")
+                          (keyword))]
+             (on-change :simple attr value event))))
+
+        on-focus
+        (mf/use-fn
+         (fn [event]
+           (let [attr (-> (dom/get-current-target event)
+                          (dom/get-data "attr")
+                          (keyword))]
+
+             (case attr
+               :p1 (select-padding true false true false)
+               :p2 (select-padding false true false true))
+
+             (dom/select-target event))))]
+
+    [:div {:class (stl/css :paddings-simple)}
+     [:div {:class (stl/css :padding-simple)
+            :title "Vertical padding"}
+      [:span {:class (stl/css :icon)}
+       i/padding-top-bottom-refactor]
+      [:> numeric-input*
+       {:class (stl/css :numeric-input)
+        :placeholder "--"
+        :data-attr "p1"
+        :on-change on-change'
+        :on-focus on-focus
+        :nillable true
+        :min 0
+        :value p1}]]
+     [:div {:class (stl/css :padding-simple)
+            :title "Horizontal padding"}
+
+      [:span {:class (stl/css :icon)}
+       i/padding-left-right-refactor]
+      [:> numeric-input*
+       {:className (stl/css :numeric-input)
+        :placeholder "--"
+        :data-attr "p2"
+        :on-change on-change'
+        :on-focus on-focus
+        :on-blur on-padding-blur
+        :nillable true
+        :min 0
+        :value p2}]]]))
+
+(mf/defc multiple-padding-selection
+  {::mf/props :obj}
+  [{:keys [padding on-change]}]
+  (let [p1 (:p1 padding)
+        p2 (:p2 padding)
+        p3 (:p3 padding)
+        p4 (:p4 padding)
+
+        on-change'
+        (mf/use-fn
+         (mf/deps on-change)
+         (fn [value event]
+           (let [attr (-> (dom/get-current-target event)
+                          (dom/get-data "attr")
+                          (keyword))]
+             (on-change :multiple attr value event))))
+
+        on-focus
+        (mf/use-fn
+         (fn [event]
+           (let [attr (-> (dom/get-current-target event)
+                          (dom/get-data "attr")
+                          (keyword))]
+
+             (select-padding attr)
+             (dom/select-target event))))]
+
+    [:div {:class (stl/css :paddings-multiple)}
+     [:div {:class (stl/css :padding-multiple)
+            :title "Top padding"}
+      [:span {:class (stl/css :icon)}
+       i/padding-top-refactor]
+      [:> numeric-input*
+       {:class (stl/css :numeric-input)
+        :placeholder "--"
+        :data-attr "p1"
+        :on-change on-change'
+        :on-focus on-focus
+        :on-blur on-padding-blur
+        :nillable true
+        :min 0
+        :value p1}]]
+
+     [:div {:class (stl/css :padding-multiple)
+            :title "Right padding"}
+      [:span {:class (stl/css :icon)}
+       i/padding-right-refactor]
+      [:> numeric-input*
+       {:class (stl/css :numeric-input)
+        :placeholder "--"
+        :data-attr "p2"
+        :on-change on-change'
+        :on-focus on-focus
+        :on-blur on-padding-blur
+        :nillable true
+        :min 0
+        :value p2}]]
+
+     [:div {:class (stl/css :padding-multiple)
+            :title "Bottom padding"}
+      [:span {:class (stl/css :icon)}
+       i/padding-bottom-refactor]
+      [:> numeric-input*
+       {:class (stl/css :numeric-input)
+        :placeholder "--"
+        :data-attr "p3"
+        :on-change on-change'
+        :on-focus on-focus
+        :on-blur on-padding-blur
+        :nillable true
+        :min 0
+        :value p3}]]
+
+     [:div {:class (stl/css :padding-multiple)
+            :title "Left padding"}
+      [:span {:class (stl/css :icon)}
+       i/padding-left-refactor]
+      [:> numeric-input*
+       {:class (stl/css :numeric-input)
+        :placeholder "--"
+        :data-attr "p4"
+        :on-change on-change'
+        :on-focus on-focus
+        :on-blur on-padding-blur
+        :nillable true
+        :min 0
+        :value p4}]]]))
+
 (mf/defc padding-section
   {::mf/props :obj}
-  [{:keys [values on-change-style on-change]}]
-  (let [padding-type (:layout-padding-type values)
-
-        toggle-padding-mode
+  [{:keys [type on-type-change on-change] :as props}]
+  (let [on-type-change'
         (mf/use-fn
-         (mf/deps padding-type on-change-style)
-         (fn []
-           (let [padding (if (= padding-type :multiple) :simple :multiple)]
-             (on-change-style padding))))
+         (mf/deps on-type-change)
+         (fn [event]
+           (let [type (-> (dom/get-current-target event)
+                          (dom/get-data "type"))
+                 type (if (= type "multiple") :simple :multiple)]
+             (on-type-change type))))
 
-        p1 (if (and (not (= :multiple (:layout-padding values)))
-                    (= (dm/get-in values [:layout-padding :p1])
-                       (dm/get-in values [:layout-padding :p3])))
-             (dm/get-in values [:layout-padding :p1])
-             "--")
+        props (mf/spread-obj props {:on-change on-change})]
 
-        p2 (if (and (not (= :multiple (:layout-padding values)))
-                    (= (dm/get-in values [:layout-padding :p2])
-                       (dm/get-in values [:layout-padding :p4])))
-             (dm/get-in values [:layout-padding :p2])
-             "--")
-
-        select-paddings
-        (fn [p1? p2? p3? p4?]
-          (st/emit! (udw/set-paddings-selected {:p1 p1? :p2 p2? :p3 p3? :p4 p4?})))
-
-        select-padding #(select-paddings (= % :p1) (= % :p2) (= % :p3) (= % :p4))]
-
-    (mf/use-effect
-     (fn []
-       (fn []
-         ;;on destroy component
-         (select-paddings false false false false))))
+    (mf/with-effect []
+      ;; on destroy component
+      (fn []
+        (on-padding-blur nil)))
 
     [:div {:class (stl/css :padding-group)}
      [:div {:class (stl/css :padding-inputs)}
       (cond
-        (= padding-type :simple)
-        [:div {:class (stl/css :paddings-simple)}
-         [:div {:class (stl/css :padding-simple)
-                :title "Vertical padding"}
-          [:span {:class (stl/css :icon)}
-           i/padding-top-bottom-refactor]
-          [:> numeric-input*
-           {:className (stl/css :numeric-input)
-            :placeholder "--"
-            :on-change (partial on-change :simple :p1)
-            :on-focus #(do
-                         (dom/select-target %)
-                         (select-paddings true false true false))
-            :nillable true
-            :min 0
-            :value p1}]]
-         [:div {:class (stl/css :padding-simple)
-                :title "Horizontal padding"}
+        (= type :simple)
+        [:> simple-padding-selection props]
 
-          [:span {:class (stl/css :icon)}
-           i/padding-left-right-refactor]
-          [:> numeric-input*
-           {:className (stl/css :numeric-input)
-            :placeholder "--"
-            :on-change (partial on-change :simple :p2)
-            :on-focus #(do (dom/select-target %)
-                           (select-paddings false true false true))
-            :on-blur #(select-paddings false false false false)
-            :nillable true
-            :min 0
-            :value p2}]]]
-        (= padding-type :multiple)
-        [:div {:class (stl/css :paddings-multiple)}
+        (= type :multiple)
+        [:> multiple-padding-selection props])]
 
-         [:div {:class (stl/css :padding-multiple)
-                :title "Top padding"}
-          [:span {:class (stl/css :icon)}
-           i/padding-top-refactor]
-          [:> numeric-input*
-           {:className (stl/css :numeric-input)
-            :placeholder "--"
-            :on-change (partial on-change :multiple :p1)
-            :on-focus #(do (dom/select-target %)
-                           (select-padding :p1))
-            :on-blur #(select-paddings false false false false)
-            :nillable true
-            :min 0
-            :value  (:p1 (:layout-padding values))}]]
-
-         [:div {:class (stl/css :padding-multiple)
-                :title "Right padding"}
-          [:span {:class (stl/css :icon)}
-           i/padding-right-refactor]
-          [:> numeric-input*
-           {:className (stl/css :numeric-input)
-            :placeholder "--"
-            :on-change (partial on-change :multiple :p2)
-            :on-focus #(do (dom/select-target %)
-                           (select-padding :p2))
-            :on-blur #(select-paddings false false false false)
-            :nillable true
-            :min 0
-            :value  (:p2 (:layout-padding values))}]]
-
-         [:div {:class (stl/css :padding-multiple)
-                :title "Bottom padding"}
-          [:span {:class (stl/css :icon)}
-           i/padding-bottom-refactor]
-          [:> numeric-input*
-           {:className (stl/css :numeric-input)
-            :placeholder "--"
-            :on-change (partial on-change :multiple :p3)
-            :on-focus #(do (dom/select-target %)
-                           (select-padding :p3))
-            :on-blur #(select-paddings false false false false)
-            :nillable true
-            :min 0
-            :value  (:p3 (:layout-padding values))}]]
-
-         [:div {:class (stl/css :padding-multiple)
-                :title "Left padding"}
-          [:span {:class (stl/css :icon)}
-           i/padding-left-refactor]
-          [:> numeric-input*
-           {:className (stl/css :numeric-input)
-            :placeholder "--"
-            :on-change (partial on-change :multiple :p4)
-            :on-focus #(do (dom/select-target %)
-                           (select-padding :p4))
-            :on-blur #(select-paddings false false false false)
-            :nillable true
-            :min 0
-            :value  (:p4 (:layout-padding values))}]]])]
-     [:button {:class (stl/css-case :padding-toggle true
-                                    :selected (= padding-type :multiple))
-               :on-click toggle-padding-mode}
+     [:button {:class (stl/css-case
+                       :padding-toggle true
+                       :selected (= type :multiple))
+               :data-type (name type)
+               :on-click on-type-change'}
       i/padding-extended-refactor]]))
 
 (mf/defc gap-section
@@ -439,7 +509,7 @@
                                  :disabled (and (= :nowrap wrap-type) (not is-col?)))
             :title "Row gap"}
       [:span {:class (stl/css :icon)} i/gap-vertical-refactor]
-      [:> numeric-input* {:className (stl/css :numeric-input true)
+      [:> numeric-input* {:class (stl/css :numeric-input true)
                           :no-validate true
                           :placeholder "--"
                           :on-focus (fn [event]
@@ -988,10 +1058,10 @@
                               :on-change set-gap
                               :gap-value (:layout-gap values)}]
 
-             [:& padding-section {:values values
-                                  :on-change-style change-padding-type
+             [:& padding-section {:padding (:layout-padding values)
+                                  :type (:layout-padding-type values)
+                                  :on-type-change change-padding-type
                                   :on-change on-padding-change}]]]
-
 
            :grid
            [:div {:class (stl/css :grid-layout-menu)}
