@@ -1618,7 +1618,7 @@
 
                   file-id  (:current-file-id state)
                   frame-id (cfh/common-parent-frame objects selected)
-                  version  (dm/get-in state [:workspace-data :version])
+                  version  (dm/get-in state [:workspace-file :version])
 
                   initial  {:type :copied-shapes
                             :features features
