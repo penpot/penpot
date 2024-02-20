@@ -15,61 +15,64 @@
    [app.util.timers :as tm]
    [rumext.v2 :as mf]))
 
-;; --- SESSION WIDGET
-
 (mf/defc session-widget
-  [{:keys [session profile index] :as props}]
-  (let [profile (assoc profile :color (:color session))]
+  {::mf/props :obj
+   ::mf/memo true}
+  [{:keys [color profile index]}]
+  (let [profile       (assoc profile :color color)
+        full-name     (:fullname profile)]
     [:li {:class (stl/css :session-icon)
-          :style {:z-index (str (or (+ 1 (* -1 index)) 0))
-                  :background-color (:color session)}
-          :title (:fullname profile)}
-     [:img {:alt (:fullname profile)
-            :style {:background-color (:color session)}
+          :style {:z-index (dm/str (+ 1 (* -1 index)))
+                  :background-color color}
+          :title full-name}
+     [:img {:alt full-name
+            :style {:background-color color}
             :src (cfg/resolve-profile-photo-url profile)}]]))
 
 (mf/defc active-sessions
-  {::mf/wrap [mf/memo]}
+  {::mf/memo true}
   []
   (let [users          (mf/deref refs/users)
         presence       (mf/deref refs/workspace-presence)
-        user-ids       (vals presence)
-        num-users      (count user-ids)
-        first-users    (take 2 user-ids)
+
+        sessions       (vals presence)
+        num-sessions   (count sessions)
+
         open*          (mf/use-state false)
-        open?          (deref open*)
-        open-users-widget
+        open?          (and ^boolean (deref open*) (> num-sessions 2))
+        on-open
         (mf/use-fn
          (fn []
            (reset! open* true)
            (tm/schedule-on-idle
             #(dom/focus! (dom/get-element "users-close")))))
-        close-users-widget (mf/use-fn #(reset! open* false))]
+
+        on-close
+        (mf/use-fn #(reset! open* false))]
 
     [:*
-     (when (and (> num-users 2) open?)
+     (when ^boolean open?
        [:button {:id "users-close"
                  :class (stl/css :active-users-opened)
-                 :on-click close-users-widget
-                 :on-blur close-users-widget}
+                 :on-click on-close
+                 :on-blur on-close}
         [:ul {:class (stl/css :active-users-list)}
-         (for [session user-ids]
+         (for [session sessions]
            [:& session-widget
-            {:session session
+            {:color (:color session)
              :index 0
              :profile (get users (:profile-id session))
-             :key (:id session)}])]])
+             :key (dm/str (:id session))}])]])
 
      [:button {:class (stl/css-case :active-users true)
-               :on-click open-users-widget}
-
+               :on-click on-open}
       [:ul {:class (stl/css :active-users-list)}
-       (when (> num-users 2) [:span {:class (stl/css :users-num)} (dm/str "+" (- num-users 2))])
-       (for [[index session] (d/enumerate first-users)]
+       (when (> num-sessions 2)
+         [:span {:class (stl/css :users-num)} (dm/str "+" (- num-sessions 2))])
+
+       (for [[index session] (d/enumerate (take 2 sessions))]
          [:& session-widget
-          {:session session
+          {:color (:color session)
            :index index
            :profile (get users (:profile-id session))
-           :key (:id session)}])]]]))
-
-
+           :key (dm/str (:id session))}])]]]))
