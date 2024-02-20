@@ -452,7 +452,7 @@
            [:span {:class (stl/css :icon)}  i/rotation-refactor]
            [:> numeric-input*
             {:no-validate true
-             :min 0
+             :min -359
              :max 359
              :data-wrap true
              :placeholder (if (= :multiple (:rotation values)) (tr "settings.multiple") "--")
