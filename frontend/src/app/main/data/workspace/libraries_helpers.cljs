@@ -674,7 +674,6 @@
     (let [omit-touched?        (not reset?)
           clear-remote-synced? (and initial-root? reset?)
           set-remote-synced?   (and (not initial-root?) reset?)
-
           changes (cond-> changes
                     :always
                     (update-attrs shape-inst
