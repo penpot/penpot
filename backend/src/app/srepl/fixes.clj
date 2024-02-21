@@ -117,3 +117,20 @@
       (l/trc :hint "file repaired" :file-id (str (:id file))))
 
     file'))
+
+(defn fix-touched-shapes-group
+  [file _]
+  ;; Remove :shapes-group from the touched elements
+  (letfn [(fix-fdata [data]
+            (-> data
+                (update :pages-index update-vals fix-container)))
+
+          (fix-container [container]
+            (d/update-when container :objects update-vals fix-shape))
+
+          (fix-shape [shape]
+            (d/update-when shape :touched
+                           (fn [touched]
+                             (disj touched :shapes-group))))]
+    file  (-> file
+              (update :data fix-fdata))))
