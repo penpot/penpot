@@ -640,27 +640,30 @@
      (tr "workspace.layout_grid.editor.options.edit-grid")]))
 
 (mf/defc align-grid-row
-  {::mf/props :obj}
-  [{:keys [is-column align-items set-align]}]
-  (let [type (if ^boolean is-column :column :row)]
-    [:& radio-buttons {:selected (d/name align-items)
-                       :on-change #(set-align % type)
-                       :name (dm/str "flex-align-items-" (d/name type))}
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [is-column value on-change]}]
+  (let [type (if ^boolean is-column "column" "row")]
+    [:& radio-buttons {:selected (name value)
+                       :decode-fn keyword
+                       :on-change on-change
+                       :name (dm/str "flex-align-items-" type)}
      [:& radio-button {:value "start"
                        :icon  (get-layout-grid-icon-refactor :align-items :start is-column)
                        :title "Align items start"
-                       :id     (dm/str "align-items-start-" (d/name type))}]
+                       :id     (dm/str "align-items-start-" type)}]
      [:& radio-button {:value "center"
                        :icon  (get-layout-grid-icon-refactor :align-items :center is-column)
                        :title "Align items center"
-                       :id    (dm/str "align-items-center-" (d/name type))}]
+                       :id    (dm/str "align-items-center-" type)}]
      [:& radio-button {:value "end"
                        :icon  (get-layout-grid-icon-refactor :align-items :end is-column)
                        :title "Align items end"
-                       :id    (dm/str "align-items-end-" (d/name type))}]]))
+                       :id    (dm/str "align-items-end-" type)}]]))
 
 (mf/defc justify-grid-row
-  {::mf/props :obj}
+  {::mf/props :obj
+   ::mf/private :obj}
   [{:keys [is-column value on-change]}]
   (let [type (if ^boolean is-column "column" "row")]
     [:& radio-buttons {:selected (name value)
@@ -993,14 +996,17 @@
         align-items-row    (:layout-align-items values)
         align-items-column (:layout-justify-items values)
 
-        set-align-grid
+        on-column-align-change
         (mf/use-fn
          (mf/deps ids)
-         (fn [value type]
-           (let [value (keyword value)]
-             (if (= type :row)
-               (st/emit! (dwsl/update-layout ids {:layout-align-items value}))
-               (st/emit! (dwsl/update-layout ids {:layout-justify-items value}))))))
+         (fn [value]
+           (st/emit! (dwsl/update-layout ids {:layout-justify-items value}))))
+
+        on-row-align-change
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [value]
+           (st/emit! (dwsl/update-layout ids {:layout-align-items value}))))
 
         ;; Justify grid
         grid-justify-content-row    (:layout-justify-content values)
@@ -1139,12 +1145,12 @@
                                        :on-change set-direction}]]]
 
              [:& align-grid-row {:is-column false
-                                 :align-items align-items-row
-                                 :set-align set-align-grid}]
+                                 :value align-items-row
+                                 :on-change on-row-align-change}]
 
              [:& align-grid-row {:is-column true
-                                 :align-items align-items-column
-                                 :set-align set-align-grid}]]
+                                 :value align-items-column
+                                 :on-change on-column-align-change}]]
 
             [:div {:class (stl/css :row :grid-layout-align)}
              [:& justify-grid-row {:is-column true
@@ -1208,14 +1214,18 @@
         align-items-row    (:layout-align-items values)
         align-items-column (:layout-justify-items values)
 
-        set-align-grid
+        on-column-align-change
         (mf/use-fn
          (mf/deps ids)
-         (fn [value type]
-           (let [value (keyword value)]
-             (if (= type :row)
-               (st/emit! (dwsl/update-layout ids {:layout-align-items value}))
-               (st/emit! (dwsl/update-layout ids {:layout-justify-items value}))))))
+         (fn [value]
+           (st/emit! (dwsl/update-layout ids {:layout-justify-items value}))))
+
+        on-row-align-change
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [value]
+           (st/emit! (dwsl/update-layout ids {:layout-align-items value}))))
+
 
         ;; Justify grid
         grid-justify-content-row    (:layout-justify-content values)
@@ -1318,12 +1328,12 @@
                                 :on-change set-direction}]]]
 
       [:& align-grid-row {:is-column false
-                          :align-items align-items-row
-                          :set-align set-align-grid}]
+                          :value align-items-row
+                          :on-change on-row-align-change}]
 
       [:& align-grid-row {:is-column true
-                          :align-items align-items-column
-                          :set-align set-align-grid}]]
+                          :value align-items-column
+                          :on-change on-column-align-change}]]
 
      [:div {:class (stl/css :row :grid-layout-align)}
       [:& justify-grid-row {:is-column true
