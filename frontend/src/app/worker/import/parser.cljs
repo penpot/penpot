@@ -820,10 +820,13 @@
 (defn add-frame-data [props node]
   (let [grids (parse-grids node)
         show-content (get-meta node :show-content str->bool)
-        hide-in-viewer (get-meta node :hide-in-viewer str->bool)]
+        hide-in-viewer (get-meta node :hide-in-viewer str->bool)
+        use-for-thumbnail (get-meta node :use-for-thumbnail str->bool)]
     (-> props
         (assoc :show-content show-content)
         (assoc :hide-in-viewer hide-in-viewer)
+        (cond-> use-for-thumbnail
+          (assoc :use-for-thumbnail use-for-thumbnail))
         (cond-> (d/not-empty? grids)
           (assoc :grids grids)))))
 
