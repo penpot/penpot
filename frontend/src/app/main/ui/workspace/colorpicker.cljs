@@ -159,9 +159,13 @@
 
         on-select-library-color
         (mf/use-fn
+         (mf/deps data handle-change-color)
          (fn [_ color]
-           (st/emit! (dc/apply-color-from-colorpicker color))
-           (on-change color)))
+           (if (and (some? (:color color)) (some? (:gradient data)))
+             (handle-change-color {:hex (:color color) :alpha (:opacity color)})
+             (do
+               (st/emit! (dc/apply-color-from-colorpicker color))
+               (on-change color)))))
 
         on-add-library-color
         (mf/use-fn
