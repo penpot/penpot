@@ -509,18 +509,19 @@
          (mf/deps objects)
          (fn [] (frame-wrapper-factory objects)))]
 
-    [:> "symbol" #js {:id (str (:id component))
-                      :viewBox vbox
-                      "penpot:path" path
-                      "penpot:main-instance-id" main-instance-id
-                      "penpot:main-instance-page" main-instance-page
-                      "penpot:main-instance-x" main-instance-x
-                      "penpot:main-instance-y" main-instance-y}
-     [:title name]
-     [:> shape-container {:shape root-shape}
-      (case (:type root-shape)
-        :group [:& group-wrapper {:shape root-shape :view-box vbox}]
-        :frame [:& frame-wrapper {:shape root-shape :view-box vbox}])]]))
+    (when root-shape
+      [:> "symbol" #js {:id (str (:id component))
+                        :viewBox vbox
+                        "penpot:path" path
+                        "penpot:main-instance-id" main-instance-id
+                        "penpot:main-instance-page" main-instance-page
+                        "penpot:main-instance-x" main-instance-x
+                        "penpot:main-instance-y" main-instance-y}
+       [:title name]
+       [:> shape-container {:shape root-shape}
+        (case (:type root-shape)
+          :group [:& group-wrapper {:shape root-shape :view-box vbox}]
+          :frame [:& frame-wrapper {:shape root-shape :view-box vbox}])]])))
 
 (mf/defc components-svg
   {::mf/wrap-props false}

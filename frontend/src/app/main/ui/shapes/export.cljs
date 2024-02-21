@@ -104,6 +104,9 @@
           (-> (add! :show-content)
               (add! :hide-in-viewer)))
 
+        (cond-> (and frame? (:use-for-thumbnail shape))
+          (add! :use-for-thumbnail))
+
         (cond-> (and (or rect? image? frame?) (some? (:r1 shape)))
           (-> (add! :r1)
               (add! :r2)
