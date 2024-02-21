@@ -1020,7 +1020,16 @@
                                    :set-justify set-justify-grid}]
              [:& justify-grid-row {:is-col? false
                                    :justify-items grid-justify-content-row
-                                   :set-justify set-justify-grid}]]]
+                                   :set-justify set-justify-grid}]]
+            [:div {:class (stl/css :row)}
+             [:& gap-section {:gap-selected? gap-selected?
+                              :on-change set-gap
+                              :gap-value (:layout-gap values)}]]
+
+            [:div {:class (stl/css :row :padding-section)}
+             [:& padding-section {:values values
+                                  :on-change-style change-padding-type
+                                  :on-change on-padding-change}]]]
            nil)))]))
 
 (mf/defc grid-layout-edition
@@ -1192,6 +1201,17 @@
       [:button {:on-click handle-locate-grid
                 :class (stl/css :locate-button)}
        i/locate-refactor]]
+
+     [:div {:class (stl/css :row)}
+      [:& gap-section {:gap-selected? gap-selected?
+                       :on-change set-gap
+                       :gap-value (:layout-gap values)}]]
+
+     [:div {:class (stl/css :row :padding-section)}
+      [:& padding-section {:values values
+                           :on-change-style change-padding-type
+                           :on-change on-padding-change}]]
+
      [:div {:class (stl/css :row :grid-tracks-row)}
       [:& grid-columns-row {:is-col? true
                             :expanded? @grid-columns-open?
@@ -1215,13 +1235,4 @@
                             :remove-element remove-element
                             :reorder-track reorder-track
                             :hover-track hover-track
-                            :on-select-track handle-select-track}]]
-     [:div {:class (stl/css :row)}
-      [:& gap-section {:gap-selected? gap-selected?
-                       :on-change set-gap
-                       :gap-value (:layout-gap values)}]]
-
-     [:div {:class (stl/css :row :padding-section)}
-      [:& padding-section {:values values
-                           :on-change-style change-padding-type
-                           :on-change on-padding-change}]]]))
+                            :on-select-track handle-select-track}]]]))
