@@ -642,7 +642,7 @@
 (mf/defc align-grid-row
   {::mf/props :obj}
   [{:keys [is-column align-items set-align]}]
-  (let [type (if is-column :column :row)]
+  (let [type (if ^boolean is-column :column :row)]
     [:& radio-buttons {:selected (d/name align-items)
                        :on-change #(set-align % type)
                        :name (dm/str "flex-align-items-" (d/name type))}
@@ -661,18 +661,48 @@
 
 (mf/defc justify-grid-row
   {::mf/props :obj}
-  [{:keys [is-column justify-items set-justify]}]
-  (let [type (if is-column :column :row)]
+  [{:keys [is-column value on-change]}]
+  (let [type (if ^boolean is-column "column" "row")]
+    [:& radio-buttons {:selected (name value)
+                       :on-change on-change
+                       :decode-fn keyword
+                       :name (dm/str "grid-justify-items-" type)}
 
-    [:& radio-buttons {:selected (d/name justify-items)
-                       :on-change #(set-justify % type)
-                       :name (dm/str "grid-justify-items-" (d/name type))}
-     (for [justify [:start :center :end :space-around :space-between :stretch]]
-       [:& radio-button {:key   (dm/str "justify-item-" (d/name justify))
-                         :value (d/name justify)
-                         :icon  (get-layout-grid-icon-refactor :justify-items justify is-column)
-                         :title (dm/str "Justify items " (d/name justify))
-                         :id    (dm/str "justify-items-" (d/name justify) "-" (d/name type))}])]))
+     [:& radio-button {:key "justify-item-start"
+                       :value "start"
+                       :icon (get-layout-grid-icon-refactor :justify-items :start is-column)
+                       :title "Justify items start"
+                       :id (dm/str "justify-items-start-" type)}]
+
+     [:& radio-button {:key "justify-item-center"
+                       :value "center"
+                       :icon (get-layout-grid-icon-refactor :justify-items :center is-column)
+                       :title "Justify items center"
+                       :id (dm/str "justify-items-center-" type)}]
+
+     [:& radio-button {:key "justify-item-end"
+                       :value "end"
+                       :icon (get-layout-grid-icon-refactor :justify-items :end is-column)
+                       :title "Justify items end"
+                       :id (dm/str "justify-items-end-" type)}]
+
+     [:& radio-button {:key "justify-item-space-around"
+                       :value "space-around"
+                       :icon (get-layout-grid-icon-refactor :justify-items :space-around is-column)
+                       :title "Justify items space-around"
+                       :id (dm/str "justify-items-space-around-" type)}]
+
+     [:& radio-button {:key "justify-item-space-between"
+                       :value "space-between"
+                       :icon (get-layout-grid-icon-refactor :justify-items :space-between is-column)
+                       :title "Justify items space-between"
+                       :id (dm/str "justify-items-space-between-" type)}]
+
+     [:& radio-button {:key "justify-item-stretch"
+                       :value "stretch"
+                       :icon (get-layout-grid-icon-refactor :justify-items :stretch is-column)
+                       :title "Justify items stretch"
+                       :id (dm/str "justify-items-stretch-" type)}]]))
 
 (defn- manage-values
   [{:keys [type value]}]
@@ -978,14 +1008,17 @@
 
         grid-enabled?  (features/use-feature "layout/grid")
 
-        set-justify-grid
+        on-column-justify-change
         (mf/use-fn
          (mf/deps ids)
-         (fn [value type]
-           (let [value (keyword value)]
-             (if (= type :row)
-               (st/emit! (dwsl/update-layout ids {:layout-justify-content value}))
-               (st/emit! (dwsl/update-layout ids {:layout-align-content value}))))))
+         (fn [value]
+           (st/emit! (dwsl/update-layout ids {:layout-align-content value}))))
+
+        on-row-justify-change
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [value]
+           (st/emit! (dwsl/update-layout ids {:layout-justify-content value}))))
 
         handle-show-layout-dropdown
         (mf/use-fn
@@ -1087,7 +1120,7 @@
                               :on-change on-gap-change
                               :value (:layout-gap values)}]
 
-             [:& padding-section {:padding (:layout-padding values)
+             [:& padding-section {:values (:layout-padding values)
                                   :type (:layout-padding-type values)
                                   :on-type-change change-padding-type
                                   :on-change on-padding-change}]]]
@@ -1115,15 +1148,14 @@
 
             [:div {:class (stl/css :row :grid-layout-align)}
              [:& justify-grid-row {:is-column true
-                                   :justify-items grid-justify-content-column
-                                   :set-justify set-justify-grid}]
+                                   :value grid-justify-content-column
+                                   :on-change on-column-justify-change}]
              [:& justify-grid-row {:is-column false
-                                   :justify-items grid-justify-content-row
-                                   :set-justify set-justify-grid}]]
+                                   :value grid-justify-content-row
+                                   :on-change on-row-justify-change}]]
             [:div {:class (stl/css :row)}
-             [:& gap-section {:gap-selected? gap-selected?
-                              :on-change set-gap
-                              :gap-value (:layout-gap values)}]]
+             [:& gap-section {:on-change on-gap-change
+                              :value (:layout-gap values)}]]
 
             [:div {:class (stl/css :row :padding-section)}
              [:& padding-section {:values values
@@ -1185,19 +1217,21 @@
                (st/emit! (dwsl/update-layout ids {:layout-align-items value}))
                (st/emit! (dwsl/update-layout ids {:layout-justify-items value}))))))
 
-
         ;; Justify grid
         grid-justify-content-row    (:layout-justify-content values)
         grid-justify-content-column (:layout-align-content values)
 
-        set-justify-grid
+        on-column-justify-change
         (mf/use-fn
          (mf/deps ids)
-         (fn [value type]
-           (let [value (keyword value)]
-             (if (= type :row)
-               (st/emit! (dwsl/update-layout ids {:layout-justify-content value}))
-               (st/emit! (dwsl/update-layout ids {:layout-align-content value}))))))
+         (fn [value]
+           (st/emit! (dwsl/update-layout ids {:layout-align-content value}))))
+
+        on-row-justify-change
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [value]
+           (st/emit! (dwsl/update-layout ids {:layout-justify-content value}))))
 
         columns-open?    (mf/use-state false)
         rows-open?       (mf/use-state false)
@@ -1293,23 +1327,23 @@
 
      [:div {:class (stl/css :row :grid-layout-align)}
       [:& justify-grid-row {:is-column true
-                            :justify-items grid-justify-content-column
-                            :set-justify set-justify-grid}]
+                            :value grid-justify-content-column
+                            :on-change on-column-justify-change}]
       [:& justify-grid-row {:is-column false
-                            :justify-items grid-justify-content-row
-                            :set-justify set-justify-grid}]
+                            :value grid-justify-content-row
+                            :on-change on-row-justify-change}]
 
       [:button {:on-click handle-locate-grid
                 :class (stl/css :locate-button)}
        i/locate-refactor]]
 
      [:div {:class (stl/css :row)}
-      [:& gap-section {:gap-selected? gap-selected?
-                       :on-change set-gap
-                       :gap-value (:layout-gap values)}]]
+      [:& gap-section {:on-change on-gap-change
+                       :value (:layout-gap values)}]]
 
      [:div {:class (stl/css :row :padding-section)}
-      [:& padding-section {:values values
+      [:& padding-section {:value (:layout-padding values)
+                           :type (:layout-padding-type values)
                            :on-change-style change-padding-type
                            :on-change on-padding-change}]]
 
