@@ -94,7 +94,8 @@
    :layout-item-max-w       :layout-item-max-w
    :layout-item-min-w       :layout-item-min-w
    :layout-item-absolute    :layout-item-absolute
-   :layout-item-z-index     :layout-item-z-index})
+   :layout-item-z-index     :layout-item-z-index
+   :layout-item-align-self  :layout-item-align-self})
 
 (def swap-keep-attrs
   #{:layout-item-margin
@@ -106,7 +107,8 @@
     :layout-item-max-w
     :layout-item-min-w
     :layout-item-absolute
-    :layout-item-z-index})
+    :layout-item-z-index
+    :layout-item-align-self})
 
 (defn instance-root?
   "Check if this shape is the head of a top instance."

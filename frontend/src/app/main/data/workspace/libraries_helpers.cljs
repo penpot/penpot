@@ -1445,19 +1445,18 @@
 (defn- update-flex-child-copy-attrs
   "Synchronizes the attributes inside the flex-child items (main->copy)"
   [changes _shape-main shape-copy main-container main-component copy-container omit-touched?]
-  (let [do-changes
-        (fn [cc]
-          (-> cc
-              (pcb/with-container copy-container)
-              (pcb/with-objects (:objects copy-container))
-              (pcb/update-shapes
-               (:shapes shape-copy)
-               (fn [child-copy]
-                 (let [child-main (ctf/get-ref-shape main-container main-component child-copy)]
-                   (-> child-copy
-                       (propagate-attrs child-main ctk/swap-keep-attrs omit-touched?))))
-               {:ignore-touched true})))]
-    (pcb/concat-changes changes (do-changes (pcb/empty-changes)))))
+  (let [new-changes
+        (-> (pcb/empty-changes)
+            (pcb/with-container copy-container)
+            (pcb/with-objects (:objects copy-container))
+            (pcb/update-shapes
+             (:shapes shape-copy)
+             (fn [child-copy]
+               (let [child-main (ctf/get-ref-shape main-container main-component child-copy)]
+                 (-> child-copy
+                     (propagate-attrs child-main ctk/swap-keep-attrs omit-touched?))))
+             {:ignore-touched true}))]
+    (pcb/concat-changes changes new-changes)))
 
 (defn- update-flex-child-main-attrs
   "Synchronizes the attributes inside the flex-child items (copy->main)"
