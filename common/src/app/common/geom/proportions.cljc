@@ -4,7 +4,9 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.geom.proportions)
+(ns app.common.geom.proportions
+  (:require
+   [app.common.data :as d]))
 
 ;; --- Proportions
 
@@ -36,7 +38,8 @@
 
 (defn setup-proportions
   [{:keys [type] :as shape}]
-  (let [image-fill? (every? #(some? (:fill-image %)) (:fills shape))]
+  (let [image-fill? (and (d/not-empty? (:fills shape))
+                         (every? #(some? (:fill-image %)) (:fills shape)))]
     (cond
       (= type :svg-raw) (setup-proportions-size shape)
       (= type :image)   (setup-proportions-image shape)
