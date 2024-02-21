@@ -491,57 +491,94 @@
                :on-click on-type-change'}
       i/padding-extended-refactor]]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; GAP
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- select-gap!
+  [value]
+  (st/emit! (udw/set-gap-selected value)))
+
+(defn- on-gap-focus
+  [event]
+  (let [type (-> (dom/get-current-target event)
+                 (dom/get-data "type")
+                 (keyword))]
+    (select-gap! type)
+    (dom/select-target event)))
+
+(defn- on-gap-blur
+  [_event]
+  (select-gap! nil))
+
 (mf/defc gap-section
   {::mf/props :obj}
-  [{:keys [is-column wrap-type on-change gap-value]}]
-  (let [select-gap
-        (fn [gap]
-          (st/emit! (udw/set-gap-selected gap)))]
+  [{:keys [is-column wrap-type on-change value]
+    :or {wrap-type :none}
+    :as props}]
+  (let [nowrap? (= :nowrap wrap-type)
 
-    (mf/use-effect
-     (fn []
-       (fn []
-         ;;on destroy component
-         (select-gap nil))))
+        row-gap-disabled?
+        (and ^boolean nowrap?
+             (not ^boolean is-column))
+
+        col-gap-disabled?
+        (and ^boolean nowrap?
+             ^boolean is-column)
+
+        on-change'
+        (mf/use-fn
+         (mf/deps on-change)
+         (fn [value event]
+           (let [target    (dom/get-current-target event)
+                 wrap-type (dom/get-data target "wrap-type")
+                 type      (keyword (dom/get-data target "type"))]
+             (on-change (= "nowrap" wrap-type) type value event))))]
+
+    (mf/with-effect []
+      ;; on destroy component
+      (fn []
+        (on-gap-blur nil)))
 
     [:div {:class (stl/css :gap-group)}
-     [:div {:class (stl/css-case :row-gap true
-                                 :disabled (and (= :nowrap wrap-type) (not is-column)))
+
+     [:div {:class (stl/css-case
+                    :row-gap true
+                    :disabled row-gap-disabled?)
             :title "Row gap"}
       [:span {:class (stl/css :icon)} i/gap-vertical-refactor]
-      [:> numeric-input* {:class (stl/css :numeric-input true)
-                          :no-validate true
-                          :placeholder "--"
-                          :on-focus (fn [event]
-                                      (select-gap :row-gap)
-                                      (dom/select-target event))
-                          :on-change (partial on-change (= :nowrap wrap-type) :row-gap)
-                          :on-blur (fn [_]
-                                     (select-gap nil))
-                          :nillable true
-                          :min 0
-                          :value (:row-gap gap-value)
-                          :disabled (and (= :nowrap wrap-type) (not is-column))}]]
+      [:> numeric-input*
+       {:class (stl/css :numeric-input true)
+        :no-validate true
+        :placeholder "--"
+        :data-type "row-gap"
+        :data-wrap-type (name wrap-type)
+        :on-focus on-gap-focus
+        :on-change on-change'
+        :on-blur on-gap-blur
+        :nillable true
+        :min 0
+        :value (:row-gap value)
+        :disabled row-gap-disabled?}]]
 
-     [:div {:class (stl/css-case :column-gap true
-                                 :disabled (and (= :nowrap wrap-type) is-column))
+     [:div {:class (stl/css-case
+                    :column-gap true
+                    :disabled col-gap-disabled?)
             :title "Column gap"}
-      [:span {:class (stl/css :icon)}
-       i/gap-horizontal-refactor]
-      [:> numeric-input* {:className (stl/css :numeric-input)
-                          :no-validate true
-                          :placeholder "--"
-                          :on-focus (fn [event]
-                                      (select-gap :column-gap)
-                                      (dom/select-target event))
-                          :on-change (partial on-change (= :nowrap wrap-type) :column-gap)
-                          :on-blur (fn [_]
-                                     (select-gap nil)
-                                     )
-                          :nillable true
-                          :min 0
-                          :value (:column-gap gap-value)
-                          :disabled (and (= :nowrap wrap-type) is-column)}]]]))
+      [:span {:class (stl/css :icon)} i/gap-horizontal-refactor]
+      [:> numeric-input*
+       {:class (stl/css :numeric-input true)
+        :no-validate true
+        :placeholder "--"
+        :data-type "column-gap"
+        :data-wrap-type (name wrap-type)
+        :on-focus on-gap-focus
+        :on-change on-change'
+        :on-blur on-gap-blur
+        :nillable true
+        :min 0
+        :value (:column-gap value)
+        :disabled col-gap-disabled?}]]]))
 
 ;; GRID COMPONENTS
 
@@ -882,15 +919,14 @@
 
 
         ;; Gap
-        set-gap
-        (fn [gap-multiple? type val]
+        on-gap-change
+        (fn [multiple? type val]
           (let [val (mth/finite val 0)]
-            (if gap-multiple?
+            (if ^boolean multiple?
               (st/emit! (dwsl/update-layout ids {:layout-gap {:row-gap val :column-gap val}}))
               (st/emit! (dwsl/update-layout ids {:layout-gap {type val}})))))
 
         ;; Padding
-
         change-padding-type
         (fn [type]
           (st/emit! (dwsl/update-layout ids {:layout-padding-type type})))
@@ -1048,8 +1084,8 @@
             [:div {:class (stl/css :forth-row)}
              [:& gap-section {:is-column is-column
                               :wrap-type wrap-type
-                              :on-change set-gap
-                              :gap-value (:layout-gap values)}]
+                              :on-change on-gap-change
+                              :value (:layout-gap values)}]
 
              [:& padding-section {:padding (:layout-padding values)
                                   :type (:layout-padding-type values)
@@ -1110,10 +1146,12 @@
              (st/emit! (dwsl/update-layout ids {:layout-grid-dir dir})))))
 
         on-gap-change
-        (fn [gap-multiple? type val]
-          (if gap-multiple?
-            (st/emit! (dwsl/update-layout ids {:layout-gap {:row-gap val :column-gap val}}))
-            (st/emit! (dwsl/update-layout ids {:layout-gap {type val}}))))
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [multiple? type val]
+           (if multiple?
+             (st/emit! (dwsl/update-layout ids {:layout-gap {:row-gap val :column-gap val}}))
+             (st/emit! (dwsl/update-layout ids {:layout-gap {type val}})))))
 
         ;; Padding
         change-padding-type
