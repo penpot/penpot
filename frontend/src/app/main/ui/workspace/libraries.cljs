@@ -368,12 +368,12 @@
                                                      0
                                                      (count colors)
                                                      (count typographies))]]
-            [:input {:type "button"
-                     :class (stl/css-case :item-update true
-                                          :disabled updating?)
-                     :value (tr "workspace.libraries.update")
-                     :data-library-id (dm/str id)
-                     :on-click update}]
+            [:button {:type "button"
+                      :class (stl/css :item-update)
+                      :disabled updating?
+                      :data-library-id (dm/str id)
+                      :on-click update}
+             (tr "workspace.libraries.update")]
 
             [:div {:class (stl/css :libraries-updates)}
              (when-not (empty? components)
