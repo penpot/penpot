@@ -56,8 +56,8 @@
                           :subsections [:edit]
                           :fn #(emit-when-no-readonly dwc/redo)}
 
-   :clear-undo           {:tooltip (ds/alt "Z")
-                          :command "alt+z"
+   :clear-undo           {:tooltip (ds/alt "Q")
+                          :command "alt+q"
                           :subsections [:edit]
                           :fn #(emit-when-no-readonly dwu/reinitialize-undo)}
 
