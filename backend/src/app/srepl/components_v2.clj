@@ -143,10 +143,10 @@
 
 (def ^:private sql:get-files-by-report
   "WITH files AS (
-     SELECT t.id t.features, mr.name
+     SELECT f.id, f.features, mr.label
        FROM migration_file_report AS mr
-       JOIN file AS t ON (t.id = mr.file_id)
-      WHERE t.deleted_at IS NULL
+       JOIN file AS f ON (f.id = mr.file_id)
+      WHERE f.deleted_at IS NULL
         AND mr.error IS NOT NULL
       ORDER BY mr.created_at
    ) SELECT id, features FROM files %(pred)s")
