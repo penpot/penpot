@@ -52,67 +52,65 @@
          (fn [event]
            (let [mode (-> (dom/get-current-target event)
                           (dom/get-data "value")
-                          (d/read-string))]
+                          (keyword))
+                 mode (if (= :pending mode) :all :pending)]
              (st/emit! (dcm/update-filters {:show mode})))))
 
         update-options
         (mf/use-fn
          (fn [event]
-           (let [mode (-> (dom/get-target event)
+           (let [mode (-> (dom/get-current-target event)
                           (dom/get-data "value")
-                          (boolean))]
+                          (parse-boolean))]
              (st/emit! (dcm/update-options {:show-sidebar? (not mode)})))))]
 
     [:div {:class (stl/css :view-options)
            :on-click toggle-dropdown}
-     [:span {:class (stl/css :dropdown-title)}
-      (tr "labels.comments")]
-     [:span {:class (stl/css :icon-dropdown)}
-      i/arrow-refactor]
+     [:span {:class (stl/css :dropdown-title)} (tr "labels.comments")]
+     [:span {:class (stl/css :icon-dropdown)} i/arrow-refactor]
+
      [:& dropdown {:show @show-dropdown?
                    :on-close hide-dropdown}
       [:ul {:class (stl/css :dropdown)}
-       [:li {:class (stl/css-case :dropdown-element true
-                                  :selected (or (= :all cmode) (nil? cmode)))
+
+       [:li {:class (stl/css-case
+                     :dropdown-element true
+                     :selected (or (= :all cmode) (nil? cmode)))
              :data-value "all"
              :on-click update-mode}
-
         [:span {:class (stl/css :label)} (tr "labels.show-all-comments")]
         (when (or (= :all cmode) (nil? cmode))
           [:span {:class (stl/css :icon)} i/tick-refactor])]
 
-       [:li {:class (stl/css-case :dropdown-element true
-                                  :selected (= :yours cmode))
+       [:li {:class (stl/css-case
+                     :dropdown-element true
+                     :selected (= :yours cmode))
              :data-value "yours"
              :on-click update-mode}
-
-        [:span {:class (stl/css :label)}
-         (tr "labels.show-your-comments")]
-
+        [:span {:class (stl/css :label)} (tr "labels.show-your-comments")]
         (when (= :yours cmode)
           [:span {:class (stl/css :icon)}
            i/tick-refactor])]
 
        [:li {:class (stl/css :separator)}]
 
-       [:li {:class (stl/css-case :dropdown-element true
-                                  :selected (= :pending cshow))
-             :data-value (if (= :pending cshow) "all" "pending")
+       [:li {:class (stl/css-case
+                     :dropdown-element true
+                     :selected (= :pending cshow))
+             :data-value (d/name cshow)
              :on-click update-show}
-
-        [:span {:class (stl/css :label)}
-         (tr "labels.hide-resolved-comments")]
+        [:span {:class (stl/css :label)} (tr "labels.hide-resolved-comments")]
         (when  (= :pending cshow)
           [:span {:class (stl/css :icon)}
            i/tick-refactor])]
 
        [:li {:class (stl/css :separator)}]
 
-       [:li {:class (stl/css-case :dropdown-element true
-                                  :selected show-sidebar?)
+       [:li {:class (stl/css-case
+                     :dropdown-element true
+                     :selected show-sidebar?)
              :data-value (dm/str show-sidebar?)
              :on-click update-options}
-
         [:span {:class (stl/css :label)} (tr "labels.show-comments-list")]
         (when show-sidebar?
           [:span {:class (stl/css :icon)} i/tick-refactor])]]]]))
