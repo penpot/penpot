@@ -9,6 +9,7 @@
   (:require
    [app.common.colors :as cc]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.config :as cfg]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.colors :as dc]
@@ -50,6 +51,7 @@
 ;; --- Color Picker Modal
 
 (mf/defc colorpicker
+  {::mf/props :obj}
   [{:keys [data disable-gradient disable-opacity disable-image on-change on-accept]}]
   (let [state                  (mf/deref refs/colorpicker)
         node-ref               (mf/use-ref)
@@ -90,7 +92,7 @@
                       (not @drag?)))))
 
         on-fill-image-click
-        (mf/use-callback #(dom/click (mf/ref-val fill-image-ref)))
+        (mf/use-fn #(dom/click (mf/ref-val fill-image-ref)))
 
         on-fill-image-selected
         (mf/use-fn
@@ -107,7 +109,7 @@
                                     (assoc :keep-aspect-ratio keep-aspect-ratio?))}
                         true)))))
 
-        set-tab!
+        on-change-tab
         (mf/use-fn
          (fn [event]
            (let [tab (-> (dom/get-current-target event)
@@ -157,9 +159,13 @@
 
         on-select-library-color
         (mf/use-fn
+         (mf/deps data handle-change-color)
          (fn [_ color]
-           (st/emit! (dc/apply-color-from-colorpicker color))
-           (on-change color)))
+           (if (and (some? (:color color)) (some? (:gradient data)))
+             (handle-change-color {:hex (:color color) :alpha (:opacity color)})
+             (do
+               (st/emit! (dc/apply-color-from-colorpicker color))
+               (on-change color)))))
 
         on-add-library-color
         (mf/use-fn
@@ -226,7 +232,7 @@
         (dom/set-css-property! node "--saturation-grad-from" (format-hsl hsl-from))
         (dom/set-css-property! node "--saturation-grad-to" (format-hsl hsl-to))))
 
-    ;; Updates color when used el pixel picker
+    ;; Updates color when pixel picker is used
     (mf/with-effect [picking-color? picked-color picked-color-select]
       (when (and picking-color? picked-color picked-color-select)
         (let [[r g b alpha] picked-color
@@ -294,7 +300,7 @@
        [:*
         [:div {:class (stl/css :colorpicker-tabs)}
          [:& tab-container
-          {:on-change-tab set-tab!
+          {:on-change-tab on-change-tab
            :selected @active-color-tab
            :collapsable false}
 
@@ -349,7 +355,7 @@
           :on-select-color on-select-library-color
           :on-add-library-color on-add-library-color}]])
 
-     (when on-accept
+     (when (fn? on-accept)
        [:div {:class (stl/css :actions)}
         [:button {:class (stl/css-case
                           :accept-color true
@@ -372,59 +378,69 @@
         x-pos 400]
 
     (cond
-      (or (nil? x) (nil? y)) #js {:left "auto" :right "16rem" :top "4rem"}
+      (or (nil? x) (nil? y))
+      #js {:left "auto" :right "16rem" :top "4rem"}
+
       (= position :left)
       (if (> y max-y)
-        #js {:left (str (- x x-pos) "px")
+        #js {:left (dm/str (- x x-pos) "px")
              :bottom "1rem"}
-        #js {:left (str (- x x-pos) "px")
-             :top (str (- y 70) "px")})
+        #js {:left (dm/str (- x x-pos) "px")
+             :top (dm/str (- y 70) "px")})
+
       (= position :right)
       (if (> y max-y)
-        #js {:left (str (+ x 80) "px")
+        #js {:left (dm/str (+ x 80) "px")
              :bottom "1rem"}
-        #js {:left (str (+ x 80) "px")
-             :top (str (- y 70) "px")})
-      :else (if (> y max-y)
-              #js {:left (str (+ x left-offset) "px")
-                   :bottom "1rem"}
-              #js {:left (str (+ x left-offset) "px")
-                   :top (str (- y 70) "px")}))))
+        #js {:left (dm/str (+ x 80) "px")
+             :top (dm/str (- y 70) "px")})
+
+      :else
+      (if (> y max-y)
+        #js {:left (dm/str (+ x left-offset) "px")
+             :bottom "1rem"}
+        #js {:left (dm/str (+ x left-offset) "px")
+             :top (dm/str (- y 70) "px")}))))
 
 (mf/defc colorpicker-modal
   {::mf/register modal/components
-   ::mf/register-as :colorpicker}
+   ::mf/register-as :colorpicker
+   ::mf/props :obj}
   [{:keys [x y data position
            disable-gradient
            disable-opacity
            disable-image
            on-change
            on-close
-           on-accept] :as props}]
-  (let [vport (mf/deref viewport)
-        dirty? (mf/use-var false)
+           on-accept]}]
+  (let [vport       (mf/deref viewport)
+        dirty?      (mf/use-var false)
         last-change (mf/use-var nil)
-        position (or position :left)
-        style (calculate-position vport position x y)
+        position    (d/nilv position :left)
+        style       (calculate-position vport position x y)
 
-        handle-change
-        (fn [new-data]
-          (reset! dirty? (not= data new-data))
-          (reset! last-change new-data)
-          (when on-change
-            (on-change new-data)))]
+        on-change'
+        (mf/use-fn
+         (mf/deps on-change)
+         (fn [new-data]
+           (reset! dirty? (not= data new-data))
+           (reset! last-change new-data)
 
-    (mf/use-effect
-     (fn []
-       #(when (and @dirty? @last-change on-close)
-          (on-close @last-change))))
+           (if (fn? on-change)
+             (on-change new-data)
+             (st/emit! (dc/update-colorpicker new-data)))))]
+
+    (mf/with-effect []
+      #(when (and @dirty? @last-change on-close)
+         (on-close @last-change)))
 
     [:div {:class (stl/css :colorpicker-tooltip)
            :style style}
+
      [:& colorpicker {:data data
                       :disable-gradient disable-gradient
                       :disable-opacity disable-opacity
                       :disable-image disable-image
-                      :on-change handle-change
+                      :on-change on-change'
                       :on-accept on-accept}]]))
 

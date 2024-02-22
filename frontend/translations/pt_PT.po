@@ -2402,10 +2402,6 @@ msgid "questions.more-than-50"
 msgstr "Mais de 50"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.never-used-a-tool"
-msgstr "Nunca usei uma ferramenta de design no passado"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.next"
 msgstr "Seguinte"
 

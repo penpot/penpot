@@ -48,6 +48,7 @@
     [:div {:class (stl/css :self-align-menu)}
      [:& radio-buttons {:selected (d/name alignment)
                         :on-change handle-set-alignment
+                        :allow-empty true
                         :name (dm/str "flex-align-items-" type)}
       [:& radio-button {:value "start"
                         :icon  (if is-col? i/align-self-row-left-refactor i/align-self-column-top-refactor)

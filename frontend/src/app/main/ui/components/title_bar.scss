@@ -19,7 +19,7 @@
 .title,
 .title-only,
 .inspect-title {
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   display: flex;
   align-items: center;
   flex-grow: 1;
@@ -45,61 +45,10 @@
   color: var(--title-foreground-color);
   stroke: var(--title-foreground-color);
   overflow: hidden;
-  .toggle-btn {
-    @include buttonStyle;
-    display: flex;
-    align-items: center;
-    flex-grow: 1;
-    padding: 0;
-    color: var(--title-foreground-color);
-    stroke: var(--title-foreground-color);
-    overflow: hidden;
-    .collapsabled-icon {
-      @include flexCenter;
-      height: $s-24;
-      border-radius: $br-8;
-      svg {
-        @extend .button-icon-small;
-        transform: rotate(90deg);
-        stroke: var(--icon-foreground);
-      }
-      &.rotated svg {
-        transform: rotate(0deg);
-      }
-    }
-    &:hover {
-      color: var(--title-foreground-color-hover);
-      stroke: var(--title-foreground-color-hover);
-      .title {
-        color: var(--title-foreground-color-hover);
-        stroke: var(--title-foreground-color-hover);
-      }
-      .collapsabled-icon svg {
-        stroke: var(--title-foreground-color-hover);
-      }
-    }
-  }
-  .collapsabled-icon {
-    @include buttonStyle;
-    @include flexCenter;
-    height: $s-24;
-    border-radius: $br-8;
-    svg {
-      @extend .button-icon-small;
-      transform: rotate(90deg);
-      stroke: var(--icon-foreground);
-    }
-    &.rotated svg {
-      transform: rotate(0deg);
-    }
-  }
+
   &:hover {
     color: var(--title-foreground-color-hover);
-    stroke: var(--title-foreground-color-hover);
     .title {
-      stroke: var(--title-foreground-color-hover);
-    }
-    .collapsabled-icon svg {
       stroke: var(--title-foreground-color-hover);
     }
   }
@@ -119,7 +68,7 @@
 
 .title,
 .title-only {
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   display: flex;
   align-items: center;
   flex-grow: 1;
@@ -136,4 +85,50 @@
 
 .title-only-icon-gap {
   --title-bar-title-margin: #{$s-12};
+}
+
+.toggle-btn {
+  @include buttonStyle;
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  padding: 0;
+  color: var(--title-foreground-color);
+  stroke: var(--title-foreground-color);
+  overflow: hidden;
+
+  --chevron-icon-color: var(--icon-foreground);
+
+  &:hover {
+    --chevron-icon-color: var(--title-foreground-color-hover);
+
+    color: var(--title-foreground-color-hover);
+    .title {
+      color: var(--title-foreground-color-hover);
+      stroke: var(--title-foreground-color-hover);
+    }
+  }
+}
+
+.collapsabled-icon {
+  @include buttonStyle;
+  @include flexCenter;
+  height: $s-24;
+  border-radius: $br-8;
+
+  --chevron-icon-rotation: 90deg;
+
+  &.collapsed {
+    --chevron-icon-rotation: 0deg;
+  }
+
+  &:hover {
+    --chevron-icon-color: var(--title-foreground-color-hover);
+  }
+}
+
+.chevron-icon {
+  @extend .button-icon-small;
+  transform: rotate(var(--chevron-icon-rotation));
+  stroke: var(--chevron-icon-color);
 }

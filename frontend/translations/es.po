@@ -2346,6 +2346,9 @@ msgstr "¿Quieres recibir noticias sobre Penpot?"
 msgid "onboarding.team-modal.create-team"
 msgstr "Crea un equipo"
 
+msgid "onboarding.team-modal.team-definition"
+msgstr "¿Qué es un equipo?"
+
 msgid "onboarding.team-modal.create-team-desc"
 msgstr ""
 "Un equipo permite colaborar en Penpot trabajando en los mismos archivos y "
@@ -2468,8 +2471,8 @@ msgid "questions.more-than-50"
 msgstr "Más de 50"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.never-used-a-tool"
-msgstr "Nunca antes he usado una herramienta de diseño"
+msgid "questions.never-used-one"
+msgstr "Ninguna"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.next"

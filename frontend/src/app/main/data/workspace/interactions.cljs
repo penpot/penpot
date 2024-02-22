@@ -27,6 +27,11 @@
 
 (defn add-flow
   [starting-frame]
+
+  (dm/assert!
+   "expect uuid"
+   (uuid? starting-frame))
+
   (ptk/reify ::add-flow
     ptk/WatchEvent
     (watch [it state _]

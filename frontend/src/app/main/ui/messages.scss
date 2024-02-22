@@ -102,12 +102,12 @@
 }
 
 .text {
-  @include titleTipography;
+  @include bodyMedTipography;
   flex-grow: 1;
 }
 
 .link {
-  @include titleTipography;
+  @include bodyMedTipography;
   color: var(--modal-link-foreground-color);
   margin: 0;
 }
@@ -119,7 +119,7 @@
 
 .action-btn {
   @extend .button-tertiary;
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   min-height: $s-32;
   min-width: $s-32;
   svg {

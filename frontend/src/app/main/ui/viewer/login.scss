@@ -19,7 +19,7 @@
 }
 
 .modal-title {
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   color: var(--modal-title-foreground-color);
 }
 
@@ -29,7 +29,7 @@
 
 .modal-content {
   @include flexColumn;
-  @include titleTipography;
+  @include bodyMedTipography;
   gap: $s-24;
   max-height: $s-400;
   width: $s-368;

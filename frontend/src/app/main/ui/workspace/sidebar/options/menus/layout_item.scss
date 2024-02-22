@@ -21,6 +21,7 @@
 .flex-element-menu {
   @include flexColumn;
   gap: $s-12;
+  margin-block-end: $s-8;
 }
 
 .behaviour-menu {

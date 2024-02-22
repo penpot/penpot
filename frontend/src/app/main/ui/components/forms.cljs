@@ -214,7 +214,7 @@
        [:span {:class (stl/css :hint)} hint])]))
 
 (mf/defc select
-  [{:keys [options disabled form default] :as props
+  [{:keys [options disabled form default dropdown-class] :as props
     :or {default ""}}]
   (let [input-name (get props :name)
         form       (or form (mf/use-ctx form-ctx))
@@ -230,6 +230,7 @@
       {:default-value value
        :disabled disabled
        :options options
+       :dropdown-class dropdown-class
        :on-change handle-change}]]))
 
 (mf/defc radio-buttons
@@ -244,6 +245,7 @@
         on-change     (unchecked-get props "on-change")
         options       (unchecked-get props "options")
         trim?         (unchecked-get props "trim")
+        class         (unchecked-get props "class")
         encode-fn     (d/nilv (unchecked-get props "encode-fn") identity)
         decode-fn     (d/nilv (unchecked-get props "decode-fn") identity)
 
@@ -258,31 +260,39 @@
 
              (when (fn? on-change)
                (on-change name value)))))]
-    [:div {:class (stl/css :custom-radio)}
-     (for [{:keys [image value label]} options]
+    [:div {:class (dm/str class " " (stl/css :custom-radio))}
+     (for [{:keys [image icon value label area]} options]
        (let [image?   (some? image)
+             icon?    (some? icon)
              value'   (encode-fn value)
              checked? (= value current-value)
              key      (str/ffmt "%-%" (d/name name) (d/name value'))]
          [:label {:for key
                   :key key
-                  :style {:background-image (when image? (str/ffmt "url(%)" image))}
+                  :style {:grid-area area}
                   :class (stl/css-case :radio-label true
                                        :global/checked checked?
-                                       :with-image image?)}
+                                       :with-image (or image? icon?))}
+          (cond
+            image?
+            [:span {:style {:background-image (str/ffmt "url(%)" image)}
+                    :class (stl/css :image-inside)}]
+            icon?
+            [:span {:class (stl/css :icon-inside)} icon]
+
+            :else
+            [:span {:class (stl/css-case :radio-icon true
+                                         :global/checked checked?)}
+             (when checked? [:span {:class (stl/css :radio-dot)}])])
+
+          label
           [:input {:on-change on-change'
                    :type "radio"
                    :class (stl/css :radio-input)
                    :id key
                    :name name
                    :value value'
-                   :checked checked?}]
-          (when (not image?)
-            [:span {:class (stl/css-case :radio-icon true
-                                         :global/checked checked?)}
-             (when checked? [:span {:class (stl/css :radio-dot)}])])
-
-          label]))]))
+                   :checked checked?}]]))]))
 
 (mf/defc submit-button*
   {::mf/wrap-props false}

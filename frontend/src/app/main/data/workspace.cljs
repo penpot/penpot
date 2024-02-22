@@ -593,20 +593,21 @@
 (defn rename-file
   [id name]
   {:pre [(uuid? id) (string? name)]}
-  (ptk/reify ::rename-file
-    IDeref
-    (-deref [_]
-      {::ev/origin "workspace" :id id :name name})
+  (let [name (str/prune name 200)]
+    (ptk/reify ::rename-file
+      IDeref
+      (-deref [_]
+        {::ev/origin "workspace" :id id :name name})
 
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-file :name] name))
+      ptk/UpdateEvent
+      (update [_ state]
+        (assoc-in state [:workspace-file :name] name))
 
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (let [params {:id id :name name}]
-        (->> (rp/cmd! :rename-file params)
-             (rx/ignore))))))
+      ptk/WatchEvent
+      (watch [_ _ _]
+        (let [params {:id id :name name}]
+          (->> (rp/cmd! :rename-file params)
+               (rx/ignore)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace State Manipulation

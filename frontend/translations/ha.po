@@ -3367,10 +3367,6 @@ msgstr "idan akwai qari (bayyana)"
 msgid "workspace.assets.typography.text-styles"
 msgstr "salon rubutu"
 
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.never-used-a-tool"
-msgstr "ban tava aiki da kayan zane ba"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.circle-marker"
 msgstr "da'irar kasuwa"

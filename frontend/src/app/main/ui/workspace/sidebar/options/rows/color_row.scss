@@ -21,6 +21,7 @@
   --detach-icon-foreground-color: none;
 
   display: grid;
+  flex: 1;
   grid-template-columns: 1fr auto;
   align-items: center;
   gap: $s-2;
@@ -42,10 +43,15 @@
   @extend .input-element;
   flex-grow: 1;
   width: 100%;
+  min-width: 0;
   border-radius: $br-8 0 0 $br-8;
   padding: 0;
   margin-inline-end: 0;
   gap: $s-4;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
   input {
     padding: 0;
   }
@@ -61,7 +67,7 @@
     }
   }
   .color-name {
-    @include titleTipography;
+    @include bodyMedTipography;
     @include textEllipsis;
     padding-inline: $s-6;
     border-radius: $br-8;
@@ -80,7 +86,7 @@
     stroke: var(--detach-icon-foreground-color);
   }
   .color-input-wrapper {
-    @include titleTipography;
+    @include bodyMedTipography;
     display: flex;
     align-items: center;
     height: $s-28;

@@ -33,7 +33,7 @@
 }
 
 .multiple-text {
-  @include titleTipography;
+  @include bodyMedTipography;
   flex-grow: 1;
   color: var(--input-foreground-color-active);
 }

@@ -28,7 +28,7 @@
     width: 100%;
     .tab-container-tab-title {
       @include flexCenter;
-      @include tabTitleTipography;
+      @include uppercaseTitleTipography;
       height: 100%;
       width: 100%;
       padding: 0 $s-8;

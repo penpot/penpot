@@ -8,7 +8,7 @@
 
 .editable-label-input {
   @include textEllipsis;
-  @include titleTipography;
+  @include bodyMedTipography;
   @include removeInputStyle;
   flex-grow: 1;
   height: $s-28;

@@ -13,50 +13,55 @@
 .modal-container {
   @extend .modal-container-base;
   position: relative;
-  min-width: $s-712;
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: $s-32;
+  padding-inline: $s-100;
+  padding-block-start: $s-100;
+  padding-block-end: $s-72;
+  margin: 0;
+  width: $s-960;
+  height: $s-632;
+  max-width: $s-960;
+  max-height: $s-632;
 }
 
-.modal-header {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  margin-top: $s-80;
-  margin-bottom: $s-32;
+.modal-left {
+  width: $s-172;
+  margin-block-end: $s-64;
+  img {
+    width: $s-172;
+    border-radius: $br-8 0 0 $br-8;
+  }
+}
+
+.modal-right {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: $s-40 auto auto auto auto $s-32;
+  gap: $s-24;
+  position: relative;
 }
 
 .modal-title {
   @include bigTitleTipography;
-  text-align: center;
   color: var(--modal-title-foreground-color);
-  margin-bottom: $s-16;
 }
 
 .modal-text {
-  @include titleTipography;
+  @include bodyLargeTypography;
   color: var(--modal-text-foreground-color);
   margin: 0;
 }
 
-.modal-content {
-  @include flexColumn;
-  @include titleTipography;
-  gap: $s-32;
-  margin-bottom: $s-24;
-}
-
 .newsletter-options {
-  @include flexColumn;
+  display: grid;
   gap: $s-16;
+  margin-inline-start: $s-16;
 }
 
 .input-wrapper {
   @extend .input-checkbox;
-}
-
-.modal-info {
-  @include flexColumn;
-  gap: $s-16;
-  margin-bottom: $s-32;
 }
 
 .modal-link {
@@ -65,17 +70,7 @@
   margin: 0;
 }
 
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  button {
-    @extend .modal-accept-btn;
-  }
-}
-
-.deco {
-  position: absolute;
-  width: 183px;
-  top: -106px;
-  left: 261px;
+.accept-btn {
+  @extend .modal-accept-btn;
+  justify-self: flex-end;
 }

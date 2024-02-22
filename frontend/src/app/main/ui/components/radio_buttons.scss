@@ -21,7 +21,6 @@
   flex-grow: 1;
   border-radius: $s-8;
   box-sizing: border-box;
-  border: $s-2 solid var(--radio-btn-border-color);
   input {
     display: none;
   }
@@ -30,7 +29,7 @@
     stroke: var(--radio-btn-foreground-color);
   }
   .title-name {
-    @include tabTitleTipography;
+    @include uppercaseTitleTipography;
     color: var(--radio-btn-foreground-color);
   }
   &:hover {

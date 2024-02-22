@@ -108,7 +108,7 @@
 }
 
 .accept-color {
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   @extend .button-secondary;
   width: 100%;
   height: $s-32;
@@ -161,7 +161,7 @@
 
 .choose-image {
   @extend .button-secondary;
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   width: 100%;
   margin-top: $s-12;
   height: $s-32;

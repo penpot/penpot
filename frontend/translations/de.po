@@ -4991,10 +4991,6 @@ msgid "questions.other"
 msgstr "Sonstiges (bitte angeben)"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.never-used-a-tool"
-msgstr "Ich habe noch nie ein Design-Tool verwendet"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.test-penpot-to-see-if-its-a-fit-for-team"
 msgstr "Testen Sie Penpot, um zu sehen, ob es für das Team geeignet ist "
 

@@ -44,7 +44,7 @@
 }
 
 .select-name {
-  @include titleTipography;
+  @include bodyMedTipography;
   display: flex;
   justify-content: flex-start;
   align-items: center;
@@ -128,13 +128,14 @@
   border-radius: $br-8;
   height: $s-32;
   width: $s-28;
-  svg {
-    @extend .button-icon;
-    stroke: var(--icon-foreground);
-  }
   &.selected {
     @extend .button-icon-selected;
   }
+}
+
+.lock-ratio-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
 }
 
 .position {
@@ -219,20 +220,19 @@
   .clip-content-input {
     display: none;
   }
-  .clip-content-label {
-    @extend .button-tertiary;
-    height: $s-32;
-    width: $s-28;
-    border-radius: $br-8;
-    .icon {
-      @include flexCenter;
-      svg {
-        @extend .button-icon;
-        stroke: var(--icon-foreground);
-      }
-    }
-    &.selected {
-      @extend .button-icon-selected;
-    }
-  }
+}
+
+.clip-content-label {
+  @extend .button-tertiary;
+  height: $s-32;
+  width: $s-28;
+  border-radius: $br-8;
+}
+
+.selected {
+  @extend .button-icon-selected;
+}
+
+.checkbox-button {
+  @extend .button-icon;
 }

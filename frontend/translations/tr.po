@@ -4876,10 +4876,6 @@ msgstr "Satır yüksekliğini artır"
 msgid "questions.other"
 msgstr "Diğer (lütfen belirtiniz)"
 
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.never-used-a-tool"
-msgstr "Daha önce hiç tasarım aracı kullanmadım"
-
 msgid "labels.discard"
 msgstr "At"
 

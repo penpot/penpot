@@ -8,7 +8,7 @@
 
 .element-name {
   @include textEllipsis;
-  @include titleTipography;
+  @include bodyMedTipography;
   flex-grow: 1;
   color: var(--context-hover-color, var(--layer-row-foreground-color));
   &.selected {
@@ -27,7 +27,7 @@
 }
 .element-name-input {
   @include textEllipsis;
-  @include titleTipography;
+  @include bodyMedTipography;
   @include removeInputStyle;
   flex-grow: 1;
   height: $s-28;

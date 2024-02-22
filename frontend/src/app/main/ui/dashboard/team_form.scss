@@ -19,7 +19,7 @@
 }
 
 .modal-title {
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   color: var(--modal-title-foreground-color);
 }
 
@@ -35,7 +35,7 @@
   @extend .input-element-label;
   label {
     @include flexColumn;
-    @include titleTipography;
+    @include bodyMedTipography;
     align-items: flex-start;
     width: 100%;
     border: none;
@@ -43,7 +43,7 @@
     height: 100%;
 
     input {
-      @include titleTipography;
+      @include bodyMedTipography;
       margin-top: $s-8;
     }
   }

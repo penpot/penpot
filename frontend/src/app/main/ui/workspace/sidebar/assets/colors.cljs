@@ -377,6 +377,7 @@
                           (grp/group-assets colors reverse-sort?))
 
         read-only?      (mf/use-ctx ctx/workspace-read-only?)
+
         add-color
         (mf/use-fn
          (fn [value _]
@@ -386,23 +387,22 @@
         (mf/use-fn
          (mf/deps file-id)
          (fn [event]
-           (let [bounding-rect (-> event
-                                   (dom/get-current-target)
-                                   (dom/get-bounding-rect))
-                 x-position (:right bounding-rect)
-                 y-position  (:top bounding-rect)]
+           (let [bounds     (-> event
+                                (dom/get-current-target)
+                                (dom/get-bounding-rect))
+                 x-position (:right bounds)
+                 y-position (:top bounds)]
 
              (st/emit! (dw/set-assets-section-open file-id :colors true)
                        (ptk/event ::ev/event {::ev/name "add-asset-to-library"
-                                              :asset-type "color"}))
-             ;; FIXME: replace interop with dom helpers
-             (modal/show! :colorpicker
-                          {:x x-position
-                           :y y-position
-                           :on-accept add-color
-                           :data {:color "#406280"
-                                  :opacity 1}
-                           :position :right}))))
+                                              :asset-type "color"})
+                       (modal/show :colorpicker
+                                   {:x x-position
+                                    :y y-position
+                                    :on-accept add-color
+                                    :data {:color "#406280"
+                                           :opacity 1}
+                                    :position :right})))))
 
         create-group
         (mf/use-fn

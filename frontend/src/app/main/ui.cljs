@@ -16,7 +16,6 @@
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
    [app.main.ui.onboarding :refer [onboarding-modal]]
-   [app.main.ui.onboarding.questions :refer [questions-modal]]
    [app.main.ui.releases :refer [release-notes-modal]]
    [app.main.ui.static :as static]
    [app.util.dom :as dom]
@@ -98,11 +97,6 @@
         #_[:& app.main.ui.onboarding.team-choice/onboarding-team-modal]
         (when-let [props (get profile :props)]
           (cond
-            (and (contains? cf/flags :onboarding-questions)
-                 (not (:onboarding-questions-answered props false))
-                 (not (:onboarding-viewed props false)))
-            [:& questions-modal]
-
             (and (not (:onboarding-viewed props))
                  (contains? cf/flags :onboarding))
             [:& onboarding-modal {}]

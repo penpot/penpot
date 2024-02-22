@@ -17,7 +17,7 @@
   (if (cfh/path-shape? shape)
     ;; TODO: Calculate with the stroke offset (not implemented yet)
     (+ stroke-width (mth/sqrt (* 2 stroke-width stroke-width)))
-    (- (mth/sqrt (* 2 stroke-width stroke-width)) stroke-width)))
+    (mth/sqrt (* 2 stroke-width stroke-width))))
 
 (defn- apply-filters
   [attr type filters]

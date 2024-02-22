@@ -4769,10 +4769,6 @@ msgid "questions.leave-feedback-for-my-team-project"
 msgstr "Zanechte zpětnou vazbu pro můj týmový projekt"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.never-used-a-tool"
-msgstr "Nikdy jsem nepoužil žádný designový nástroj"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.next"
 msgstr "Další"
 

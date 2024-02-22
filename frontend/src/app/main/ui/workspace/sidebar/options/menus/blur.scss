@@ -57,7 +57,7 @@
       }
     }
     .label {
-      @include titleTipography;
+      @include bodyMedTipography;
       flex-grow: 1;
       display: flex;
       align-items: center;

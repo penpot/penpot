@@ -59,7 +59,7 @@
 
 (mf/defc radio-buttons
   {::mf/props :obj}
-  [{:keys [children on-change selected class wide encode-fn decode-fn] :as props}]
+  [{:keys [children on-change selected class wide encode-fn decode-fn allow-empty] :as props}]
   (let [encode-fn (d/nilv encode-fn identity)
         decode-fn (d/nilv decode-fn identity)
         nitems    (if (array? children)
@@ -75,14 +75,17 @@
 
         on-change'
         (mf/use-fn
-         (mf/deps on-change)
+         (mf/deps selected on-change)
          (fn [event]
            (let [input (dom/get-target event)
                  value (dom/get-target-val event)
-                 value (when (not= value selected) value)]
+
+                 ;; Only allow null values when the "allow-empty" prop is true
+                 value (when (or (not allow-empty)
+                                 (not= value selected)) value)]
              (when (fn? on-change)
-               (on-change (decode-fn value) event)
-               (dom/blur! input)))))
+               (on-change (decode-fn value) event))
+             (dom/blur! input))))
 
         context-value
         (mf/spread-obj props {:on-change on-change'

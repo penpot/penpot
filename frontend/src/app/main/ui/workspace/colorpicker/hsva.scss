@@ -19,7 +19,7 @@
 }
 
 .hsva-selector-label {
-  @include tabTitleTipography;
+  @include uppercaseTitleTipography;
   display: flex;
   align-items: center;
   justify-content: flex-start;

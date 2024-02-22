@@ -52,6 +52,11 @@
    :svg-raw #{:size :position :rotation}
    :text    #{:size :position :rotation}})
 
+(def ^:private clip-content-icon (i/icon-xref :clip-content-refactor (stl/css :checkbox-button)))
+(def ^:private play-icon (i/icon-xref :play-refactor (stl/css :checkbox-button)))
+(def ^:private locked-icon (i/icon-xref :detach-refactor (stl/css :lock-ratio-icon)))
+(def ^:private unlocked-icon (i/icon-xref :detached-refactor (stl/css :lock-ratio-icon)))
+
 (defn select-measure-keys
   "Consider some shapes can be drawn from bottom to top or from left to right"
   [shape]
@@ -413,8 +418,8 @@
                           :disabled (= proportion-lock :multiple))
                   :on-click on-proportion-lock-change}
          (if proportion-lock
-           i/lock-refactor
-           i/unlock-refactor)]])
+           locked-icon
+           unlocked-icon)]])
      (when (options :position)
        [:div {:class (stl/css :position)}
         [:div {:class (stl/css-case :x-position true
@@ -447,7 +452,7 @@
            [:span {:class (stl/css :icon)}  i/rotation-refactor]
            [:> numeric-input*
             {:no-validate true
-             :min 0
+             :min -359
              :max 359
              :data-wrap true
              :placeholder (if (= :multiple (:rotation values)) (tr "settings.multiple") "--")
@@ -543,8 +548,7 @@
                     :title (tr "workspace.options.clip-content")
                     :class (stl/css-case  :clip-content-label true
                                           :selected (not (:show-content values)))}
-            [:span {:class (stl/css :icon)}
-             i/clip-content-refactor]]])
+            clip-content-icon]])
         (when (options :show-in-viewer)
           [:div {:class (stl/css :show-in-viewer)}
            [:input {:type "checkbox"
@@ -559,4 +563,4 @@
                     :class (stl/css-case  :clip-content-label true
                                           :selected (not (:hide-in-viewer values)))}
             [:span {:class (stl/css :icon)}
-             i/play-refactor]]])])]))
+             play-icon]]])])]))
