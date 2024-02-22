@@ -599,15 +599,10 @@
         library    (dm/get-in libraries [(:component-file shape-inst) :data])
         component  (or (ctkl/get-component library (:component-id shape-inst))
                        (and reset?
-                            (ctkl/get-deleted-component library (:component-id shape-inst))))
-        component-shape (ctn/get-component-shape (:objects container) shape-inst)]
+                            (ctkl/get-deleted-component library (:component-id shape-inst))))]
     (if (and (ctk/in-component-copy? shape-inst)
-             (or (= (:id component) (:component-id component-shape)) reset?)) ; In a normal sync, we don't want to sync remote mains, only near
+             (or (ctf/direct-copy? shape-inst component container nil libraries) reset?)) ; In a normal sync, we don't want to sync remote mains, only direct/near
       (let [redirect-shaperef (partial redirect-shaperef container libraries)
-            library    (dm/get-in libraries [(:component-file shape-inst) :data])
-            component  (or (ctkl/get-component library (:component-id shape-inst))
-                           (and reset?
-                                (ctkl/get-deleted-component library (:component-id shape-inst))))
 
             shape-main (when component
                          (if (and reset? components-v2)

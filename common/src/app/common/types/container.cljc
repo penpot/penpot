@@ -150,6 +150,22 @@
      :else
      (get-head-shape objects (get objects (:parent-id shape)) options))))
 
+(defn get-parent-heads
+  "Get all component heads that are ancestors of the shape, in top-down order
+   (include self if it's also a head)."
+  [objects shape]
+  (->> (cfh/get-parents-with-self objects (:id shape))
+       (filter ctk/instance-head?)
+       (reverse)))
+
+(defn get-parent-copy-heads
+  "Get all component heads that are ancestors of the shape, in top-down order,
+   excluding mains (include self if it's also a head)."
+  [objects shape]
+  (->> (cfh/get-parents-with-self objects (:id shape))
+       (filter #(and (ctk/instance-head? %) (ctk/in-component-copy? %)))
+       (reverse)))
+
 (defn get-instance-root
   "Get the parent shape at the top of the component instance (main or copy)."
   [objects shape]
