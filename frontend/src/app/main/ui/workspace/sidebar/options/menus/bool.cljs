@@ -85,13 +85,11 @@
                            :title (str (tr "exclude") " (" (sc/get-tooltip :bool-exclude) ")")
                            :id "bool-opt-exclude"}]]]
 
-       [:div {:class (stl/css :bool-group)}
-        [:button
-         {:title (tr "workspace.shape.menu.flatten")
-          :class (stl/css-case
-                  :flatten-button true
-                  :disabled disabled-flatten)
-          :disabled disabled-flatten
-          :on-click flatten-objects}
-         flatten-icon]]])))
-
+       [:button
+        {:title (tr "workspace.shape.menu.flatten")
+         :class (stl/css-case
+                 :flatten-button true
+                 :disabled disabled-flatten)
+         :disabled disabled-flatten
+         :on-click flatten-objects}
+        flatten-icon]])))

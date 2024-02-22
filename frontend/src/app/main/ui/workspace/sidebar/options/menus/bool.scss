@@ -7,15 +7,16 @@
 @import "refactor/common-refactor.scss";
 
 .boolean-options {
-  display: flex;
-  gap: $s-4;
+  display: grid;
+  grid-template-columns: repeat(8, $s-28);
+  column-gap: $s-4;
   height: $s-32;
-  margin: 0 calc(-1 * $s-2);
 }
 
 .bool-group {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / span 4;
 }
 
 .flatten-button {
@@ -23,6 +24,7 @@
   height: $s-32;
   width: $s-32;
   border-radius: $br-8;
+  grid-column: 5 / span 1;
   --flatten-icon-foreground-color: var(--icon-foreground);
 
   &.disabled {

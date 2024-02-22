@@ -11,10 +11,13 @@
    [app.main.ui.icons :as i]
    [rumext.v2 :as mf]))
 
+(def ^:private chevron-icon
+  (i/icon-xref :arrow-refactor (stl/css :chevron-icon)))
+
 (mf/defc title-bar
   {::mf/wrap-props false}
   [{:keys [collapsable collapsed on-collapsed title children on-btn-click btn-children class all-clickable add-icon-gap origin]}]
-  (let [klass (dm/str (stl/css :title-bar) " " class)]
+  (let [klass (dm/str (stl/css-case :title-bar true :all-clickable all-clickable) " " class)]
     [:div {:class klass}
      (if ^boolean collapsable
        [:div {:class (stl/css :title-wrapper)}
@@ -23,15 +26,15 @@
                     :on-click on-collapsed}
            [:span {:class (stl/css-case
                            :collapsabled-icon true
-                           :rotated collapsed)}
-            i/arrow-refactor]
+                           :collapsed collapsed)}
+            chevron-icon]
            [:div {:class (stl/css :title)} title]]
           [:*
            [:button {:class (stl/css-case
                              :collapsabled-icon true
-                             :rotated collapsed)
+                             :collapsed collapsed)
                      :on-click on-collapsed}
-            i/arrow-refactor]
+            chevron-icon]
            [:div {:class (stl/css :title)} title]])]
        [:div {:class (stl/css-case :title-only true
                                    :title-only-icon-gap add-icon-gap

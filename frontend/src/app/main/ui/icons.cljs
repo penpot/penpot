@@ -337,6 +337,7 @@
 (def ^:icon delete-text-refactor (icon-xref :delete-text-refactor))
 (def ^:icon desc-sort-refactor (icon-xref :desc-sort-refactor))
 (def ^:icon detach-refactor (icon-xref :detach-refactor))
+(def ^:icon detached-refactor (icon-xref :detached-refactor))
 (def ^:icon document-refactor (icon-xref :document-refactor))
 (def ^:icon download-refactor (icon-xref :download-refactor))
 (def ^:icon drop-refactor (icon-xref :drop-refactor))
