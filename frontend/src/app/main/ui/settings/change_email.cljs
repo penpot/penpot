@@ -17,7 +17,7 @@
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
-   [app.main.ui.messages :as msgs]
+   [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.i18n :as i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [cljs.spec.alpha :as s]
@@ -110,7 +110,7 @@
                   :on-click on-close} i/close-refactor]]
 
        [:div {:class (stl/css :modal-content)}
-        [:& msgs/inline-notification
+        [:& context-notification
          {:type :info
           :content (tr "modals.change-email.info" (:email profile))}]
 

@@ -19,7 +19,7 @@
    [app.main.ui.components.forms :as fm]
    [app.main.ui.components.link :as lk]
    [app.main.ui.icons :as i]
-   [app.main.ui.messages :as msgs]
+   [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as k]
@@ -158,10 +158,9 @@
     [:*
      (when-let [message @error]
        [:div {:class (stl/css :error-wrapper)}
-        [:& msgs/inline-notification
+        [:& context-notification
          {:type :warning
           :content message
-          :on-close #(reset! error nil)
           :data-test "login-banner"
           :role "alert"}]])
 

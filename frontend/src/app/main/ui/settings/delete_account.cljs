@@ -12,7 +12,7 @@
    [app.main.data.users :as du]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
-   [app.main.ui.messages :as msgs]
+   [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.i18n :as i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
@@ -47,7 +47,7 @@
                  :on-click on-close} i/close-refactor]]
 
       [:div {:class (stl/css :modal-content)}
-       [:& msgs/inline-notification
+       [:& context-notification
         {:type :warning
          :content (tr "modals.delete-account.info")}]]
 
