@@ -19,6 +19,7 @@
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.icons :as i]
+   [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.main.worker :as uw]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -385,14 +386,12 @@
 
        (when (and (= :importing (:status @state)) (not pending-import?))
          (if (> warning-files 0)
-           [:div {:class (stl/css-case :feedback-banner true
-                                       :warning true)}
-            [:div {:class (stl/css :icon)} i/msg-warning-refactor]
-            [:div {:class (stl/css :message)} (tr "dashboard.import.import-warning" warning-files success-files)]]
-
-           [:div {:class (stl/css :feedback-banner)}
-            [:div {:class (stl/css :icon)}  i/msg-success-refactor]
-            [:div {:class (stl/css :message)} (tr "dashboard.import.import-message" (i18n/c (if (some? template) 1 success-files)))]]))
+           [:& context-notification
+            {:type :warning
+             :content (tr "dashboard.import.import-warning" warning-files success-files)}]
+           [:& context-notification
+            {:type :success
+             :content (tr "dashboard.import.import-message" (i18n/c (if (some? template) 1 success-files)))}]))
 
        (for [file files]
          (let [editing? (and (some? (:file-id file))

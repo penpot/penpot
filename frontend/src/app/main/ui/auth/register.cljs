@@ -18,7 +18,7 @@
    [app.main.ui.components.forms :as fm]
    [app.main.ui.components.link :as lk]
    [app.main.ui.icons :as i]
-   [app.main.ui.messages :as msgs]
+   [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.i18n :refer [tr tr-html]]
    [app.util.router :as rt]
    [beicon.v2.core :as rx]
@@ -28,7 +28,7 @@
 (mf/defc demo-warning
   [_]
   [:div {:class (stl/css :banner)}
-   [:& msgs/inline-notification
+   [:& context-notification
     {:type :warning
      :content (tr "auth.demo-warning")}]])
 
