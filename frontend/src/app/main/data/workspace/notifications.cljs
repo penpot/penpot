@@ -144,7 +144,8 @@
                               (remove nil?))
                   used  (into #{} xfm presence)
                   avail (set/difference presence-palette used)]
-              (or (first avail) "var(--app-black)")))
+              ;; If all colores are used we select the default one
+              (or (first avail) "#dee563")))
 
           (update-color [color presence]
             (if (some? color)
@@ -158,7 +159,7 @@
                 (assoc :updated-at (dt/now))
                 (assoc :version version)
                 (update :color update-color presence)
-                (assoc :text-color "#000")))
+                (assoc :text-color "#000000")))
 
           (update-presence [presence]
             (-> presence
