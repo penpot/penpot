@@ -7,6 +7,7 @@
 (ns app.common.geom.shapes.path
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
@@ -975,7 +976,7 @@
           flip-y (gmt/scale (gpt/point 1 -1))
           :always (gmt/multiply (:transform-inverse shape (gmt/matrix))))
 
-        center (or (gco/shape->center shape)
+        center (or (some-> (dm/get-prop shape :selrect) grc/rect->center)
                    (content-center content))
 
         base-content (transform-content

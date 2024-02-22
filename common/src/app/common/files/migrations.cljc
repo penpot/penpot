@@ -492,9 +492,11 @@
   [data]
   (some-> cfeat/*new* (swap! conj "fdata/shape-data-type"))
   (letfn [(update-object [object]
-            (-> object
-                (d/update-when :selrect grc/make-rect)
-                (cts/map->Shape)))
+            (if (cfh/root? object)
+              object
+              (-> object
+                  (update :selrect grc/make-rect)
+                  (cts/map->Shape))))
           (update-container [container]
             (d/update-when container :objects update-vals update-object))]
     (-> data

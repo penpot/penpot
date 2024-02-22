@@ -63,10 +63,11 @@
      (make-rect x1 y1 (- x2 x1) (- y2 y1))))
 
   ([x y width height]
-   (when (d/num? x y width height)
+   (if (d/num? x y width height)
      (let [w (mth/max width 0.01)
            h (mth/max height 0.01)]
-       (pos->Rect x y w h x y (+ x w) (+ y h))))))
+       (pos->Rect x y w h x y (+ x w) (+ y h)))
+     (make-rect))))
 
 (def ^:private schema:rect-attrs
   [:map {:title "RectAttrs"}
