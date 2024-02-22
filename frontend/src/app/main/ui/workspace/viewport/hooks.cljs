@@ -291,7 +291,7 @@
                        (not (ctk/main-instance? obj))))
 
                ;; Set with the elements to remove from the hover list
-               remove-id-xf
+               remove-hover-xf
                (cond
                  mod?
                  (filter grouped?)
@@ -306,8 +306,25 @@
                                 (and (contains? #{:group :bool} (dm/get-in objects [% :type]))
                                      (not (contains? child-parent? %)))))))
 
-               remove-id?
-               (into selected-with-parents remove-id-xf ids)
+               remove-measure-xf
+               (cond
+                 mod?
+                 (filter grouped?)
+
+                 (not mod?)
+                 (let [child-parent?
+                       (into #{}
+                             (comp (remove #(cfh/group-like-shape? objects %))
+                                   (mapcat #(cfh/get-parent-ids objects %)))
+                             ids)]
+                   (filter #(and (contains? #{:group :bool} (dm/get-in objects [% :type]))
+                                 (not (contains? child-parent? %))))))
+
+               remove-hover?
+               (into selected-with-parents remove-hover-xf ids)
+
+               remove-measure?
+               (into selected-with-parents remove-measure-xf ids)
 
                no-fill-nested-frames?
                (fn [id]
@@ -318,7 +335,7 @@
 
                hover-shape
                (->> ids
-                    (remove remove-id?)
+                    (remove remove-hover?)
                     (remove (partial cfh/hidden-parent? objects))
                     (remove #(and mod? (no-fill-nested-frames? %)))
                     (filter #(or (empty? focus) (cpf/is-in-focus? objects focus %)))
@@ -329,14 +346,12 @@
                measure-hover-shape
                (when show-measures?
                  (->> ids
-                      (remove #(group-empty-space? % objects ids))
+                      (remove remove-measure?)
                       (remove (partial cfh/hidden-parent? objects))
                       (remove #(and mod? (no-fill-nested-frames? %)))
                       (filter #(or (empty? focus) (cpf/is-in-focus? objects focus %)))
                       (first)
                       (get objects)))]
-
-
            (reset! hover hover-shape)
            (reset! measure-hover measure-hover-shape)
            (reset! hover-ids ids)))
