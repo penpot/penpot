@@ -896,8 +896,12 @@
                                                  libraries
                                                  nil
                                                  (:parent-id shape)
-                                                 (:frame-id shape))
+                                                 (:frame-id shape)
+                                                 {:force-id (:id shape)})
 
+            new-shape (cond-> new-shape
+                        (not-any? #(str/starts-with? (name %) "swapped-from") (:touched shape))
+                        (assoc :touched #{(keyword (dm/str "swapped-from-" (:shape-ref shape)))}))
             changes
             (-> changes
                 ;; Restore the properties
@@ -905,7 +909,13 @@
 
                 ;; We need to set the same index as the original shape
                 (pcb/change-parent (:parent-id shape) [new-shape] index {:component-swap true
-                                                                         :ignore-touched true}))]
+                                                                         :ignore-touched true})
+
+                (dwlh/change-touched
+                 new-shape
+                 shape
+                 (ctn/make-container page :page)
+                 {:copy-touched? true}))]
 
         ;; First delete so we don't break the grid layout cells
         (rx/of (dch/commit-changes changes)

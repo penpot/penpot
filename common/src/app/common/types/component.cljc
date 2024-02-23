@@ -4,7 +4,9 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.types.component)
+(ns app.common.types.component
+  (:require
+   [app.common.data.macros :as dm]))
 
 ;; Attributes that may be synced in components, and the group they belong to.
 ;; When one attribute is modified in a shape inside a component, the corresponding
@@ -138,6 +140,10 @@
   (and (:shape-ref shape-inst)
        (or (= (:shape-ref shape-inst) (:id shape-main))
            (= (:shape-ref shape-inst) (:shape-ref shape-main)))))
+
+(defn is-swapped-from?
+  [shape-main shape-inst]
+  (some #(= (name %) (dm/str "swapped-from-" (:id shape-main))) (:touched shape-inst)))
 
 (defn main-instance?
   "Check if this shape is the root of the main instance of some

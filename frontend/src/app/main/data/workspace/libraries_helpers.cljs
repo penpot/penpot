@@ -152,9 +152,14 @@
 (defn generate-instantiate-component
   "Generate changes to create a new instance from a component."
   ([changes objects file-id component-id position page libraries]
-   (generate-instantiate-component changes objects file-id component-id position page libraries nil nil nil))
+   (generate-instantiate-component changes objects file-id component-id position page libraries nil nil nil {}))
 
   ([changes objects file-id component-id position page libraries old-id parent-id frame-id]
+   (generate-instantiate-component changes objects file-id component-id position page libraries old-id parent-id frame-id {}))
+
+  ([changes objects file-id component-id position page libraries old-id parent-id frame-id
+    {:keys [force-id]
+     :or {force-id nil}}]
    (let [component     (ctf/get-component libraries file-id component-id)
          parent        (when parent-id (get objects parent-id))
          library       (get libraries file-id)
@@ -166,7 +171,8 @@
                                       component
                                       (:data library)
                                       position
-                                      components-v2)
+                                      components-v2
+                                      {:force-id force-id})
 
          first-shape (cond-> (first new-shapes)
                        (not (nil? parent-id))
@@ -982,8 +988,14 @@
                  (both-cb changes child-inst child-main))
 
           (let [child-inst' (d/seek #(ctk/is-main-of? child-main %) children-inst)
-                child-main' (d/seek #(ctk/is-main-of? % child-inst) children-main)]
+                child-main' (d/seek #(ctk/is-main-of? % child-inst) children-main)
+                swap-from   (d/seek #(ctk/is-swapped-from? child-main %) children-inst)]
             (cond
+              (some? swap-from)
+              (recur (next children-inst)
+                     (next children-main)
+                     changes)
+
               (nil? child-inst')
               (recur children-inst
                      (next children-main)
@@ -1272,7 +1284,7 @@
       changes
       changes')))
 
-(defn- change-touched
+(defn change-touched
   [changes dest-shape origin-shape container
    {:keys [reset-touched? copy-touched?] :as options}]
   (if (or (nil? (:shape-ref dest-shape))
