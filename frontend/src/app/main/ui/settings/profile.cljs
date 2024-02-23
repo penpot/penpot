@@ -9,7 +9,7 @@
   (:require
    [app.common.spec :as us]
    [app.config :as cf]
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
    [app.main.data.users :as du]
    [app.main.refs :as refs]
@@ -29,7 +29,7 @@
 
 (defn- on-success
   [_]
-  (st/emit! (dm/success (tr "notifications.profile-saved"))))
+  (st/emit! (msg/success (tr "notifications.profile-saved"))))
 
 (defn- on-submit
   [form _event]

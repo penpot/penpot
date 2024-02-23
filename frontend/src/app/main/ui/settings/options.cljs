@@ -8,7 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.spec :as us]
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as msg]
    [app.main.data.users :as du]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -26,7 +26,7 @@
 
 (defn- on-success
   [_]
-  (st/emit! (dm/success (tr "notifications.profile-saved"))))
+  (st/emit! (msg/success (tr "notifications.profile-saved"))))
 
 (defn- on-submit
   [form _event]

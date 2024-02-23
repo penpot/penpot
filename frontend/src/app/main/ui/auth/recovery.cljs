@@ -8,7 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.spec :as us]
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as msg]
    [app.main.data.users :as du]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
@@ -39,11 +39,11 @@
 
 (defn- on-error
   [_form _error]
-  (st/emit! (dm/error (tr "auth.notifications.invalid-token-error"))))
+  (st/emit! (msg/error (tr "auth.notifications.invalid-token-error"))))
 
 (defn- on-success
   [_]
-  (st/emit! (dm/info (tr "auth.notifications.password-changed-successfully"))
+  (st/emit! (msg/info (tr "auth.notifications.password-changed-successfully"))
             (rt/nav :auth-login)))
 
 (defn- on-submit

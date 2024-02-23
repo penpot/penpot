@@ -17,6 +17,7 @@
 (mf/defc notifications-hub
   []
   (let [message  (mf/deref refs/message)
+
         on-close #(st/emit! dmsg/hide)
 
         toast-message   {:type (or (:type message) :info)
@@ -33,16 +34,14 @@
                          :content (:content message)}
 
         ;; TODO review this options
-        is-toast-msg (some? (:timeout message))
-        actions?     (some? (:actions message))
-        inline?      (and (some? (:position message)) (= :floating (:position message)))
-        close?       (and (some? (:controls message)) (= :close (:controls message)))]
+        is-toast-msg (or (= :toast (:notification-type message)) (some? (:timeout message)))
+        is-inline-msg      (or (= :inline (:notification-type message)) (and (some? (:position message)) (= :floating (:position message))))]
 
     (when message
       (cond
-        (and close? is-toast-msg)
+        is-toast-msg
         [:& toast-notification toast-message]
-        (and actions? inline?)
+        is-inline-msg
         [:& inline-notification inline-message]
         :else
         [:& context-notification context-message]))))

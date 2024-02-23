@@ -42,21 +42,22 @@
   [{:keys [type content links] :as props}]
 
   [:aside {:class (stl/css-case :context-notification true
-                                :warning  (= type :warning)
-                                :error    (= type :error)
-                                :success  (= type :success)
-                                :info     (= type :info))}
+                                :warning    (= type :warning)
+                                :error      (= type :error)
+                                :success    (= type :success)
+                                :info       (= type :info))}
 
    (get-icon-by-type type)
 
    [:div {:class (stl/css :context-text)}
     content]
 
-   [:nav {:class (stl/css :link-nav)}
-    (for [[index link] (d/enumerate links)]
-          ;; TODO Review this component
-      [:& lb/link-button {:class (stl/css :link)
-                          :on-click (:callback link)
-                          :value (:label link)
-                          :key (dm/str "link-" index)}])]])
+   (when (some? links)
+     [:nav {:class (stl/css :link-nav)}
+      (for [[index link] (d/enumerate links)]
+      ;; TODO Review this component
+        [:& lb/link-button {:class (stl/css :link)
+                            :on-click (:callback link)
+                            :value (:label link)
+                            :key (dm/str "link-" index)}])])])
 

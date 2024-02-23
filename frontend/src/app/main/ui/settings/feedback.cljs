@@ -9,7 +9,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.spec :as us]
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as msg]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -39,7 +39,7 @@
          (mf/deps profile)
          (fn [_]
            (reset! loading false)
-           (st/emit! (dm/success (tr "labels.feedback-sent")))
+           (st/emit! (msg/success (tr "labels.feedback-sent")))
            (swap! form assoc :data {} :touched {} :errors {})))
 
         on-error
@@ -48,8 +48,8 @@
          (fn [{:keys [code] :as error}]
            (reset! loading false)
            (if (= code :feedback-disabled)
-             (st/emit! (dm/error (tr "labels.feedback-disabled")))
-             (st/emit! (dm/error (tr "errors.generic"))))))
+             (st/emit! (msg/error (tr "labels.feedback-disabled")))
+             (st/emit! (msg/error (tr "errors.generic"))))))
 
         on-submit
         (mf/use-callback

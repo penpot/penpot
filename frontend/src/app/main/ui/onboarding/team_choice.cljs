@@ -11,7 +11,7 @@
    [app.common.spec :as us]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -169,7 +169,7 @@
         on-error
         (mf/use-fn
          (fn [_form _response]
-           (st/emit! (dm/error "Error on creating team."))))
+           (st/emit! (msg/error "Error on creating team."))))
 
         ;; The SKIP branch only creates the team, without invitations
         on-invite-later
