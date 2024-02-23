@@ -7,7 +7,7 @@
 (ns app.main.ui.onboarding.newsletter
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
    [app.main.data.users :as du]
    [app.main.store :as st]
@@ -33,7 +33,7 @@
          (mf/deps @newsletter-updates @newsletter-news)
          (fn []
            (st/emit! (when (or @newsletter-updates @newsletter-news)
-                       (dm/success message))
+                       (msg/success message))
                      (modal/show {:type :onboarding-team})
                      (du/update-profile-props {:newsletter-updates @newsletter-updates :newsletter-news @newsletter-news}))))]
 

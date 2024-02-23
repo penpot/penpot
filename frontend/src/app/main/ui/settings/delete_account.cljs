@@ -7,7 +7,7 @@
 (ns app.main.ui.settings.delete-account
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
    [app.main.data.users :as du]
    [app.main.store :as st]
@@ -21,7 +21,7 @@
   [{:keys [code] :as error}]
   (if (= :owner-teams-with-people code)
     (let [msg (tr "notifications.profile-deletion-not-allowed")]
-      (rx/of (dm/error msg)))
+      (rx/of (msg/error msg)))
     (rx/throw error)))
 
 (mf/defc delete-account-modal

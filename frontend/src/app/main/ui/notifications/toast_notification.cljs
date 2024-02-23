@@ -49,6 +49,7 @@
   [{:keys [type content on-close links] :as props}]
 
   [:aside {:class (stl/css-case :toast-notification true
+                                :with-links (some? links)
                                 :warning  (= type :warning)
                                 :error    (= type :error)
                                 :success  (= type :success)

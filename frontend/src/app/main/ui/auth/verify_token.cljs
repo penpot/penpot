@@ -7,7 +7,7 @@
 (ns app.main.ui.auth.verify-token
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as msg]
    [app.main.data.users :as du]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -25,13 +25,13 @@
 (defmethod handle-token :verify-email
   [data]
   (let [msg (tr "dashboard.notifications.email-verified-successfully")]
-    (ts/schedule 1000 #(st/emit! (dm/success msg)))
+    (ts/schedule 1000 #(st/emit! (msg/success msg)))
     (st/emit! (du/login-from-token data))))
 
 (defmethod handle-token :change-email
   [_data]
   (let [msg (tr "dashboard.notifications.email-changed-successfully")]
-    (ts/schedule 100 #(st/emit! (dm/success msg)))
+    (ts/schedule 100 #(st/emit! (msg/success msg)))
     (st/emit! (rt/nav :settings-profile)
               (du/fetch-profile))))
 
@@ -44,7 +44,7 @@
   (case (:state tdata)
     :created
     (st/emit!
-     (dm/success (tr "auth.notifications.team-invitation-accepted"))
+     (msg/success (tr "auth.notifications.team-invitation-accepted"))
      (du/fetch-profile)
      (rt/nav :dashboard-projects {:team-id (:team-id tdata)}))
 
@@ -57,7 +57,7 @@
   [_tdata]
   (st/emit!
    (rt/nav :auth-login)
-   (dm/warn (tr "errors.unexpected-token"))))
+   (msg/warn (tr "errors.unexpected-token"))))
 
 (mf/defc verify-token
   [{:keys [route] :as props}]
@@ -79,17 +79,17 @@
 
                 (= :email-already-exists code)
                 (let [msg (tr "errors.email-already-exists")]
-                  (ts/schedule 100 #(st/emit! (dm/error msg)))
+                  (ts/schedule 100 #(st/emit! (msg/error msg)))
                   (st/emit! (rt/nav :auth-login)))
 
                 (= :email-already-validated code)
                 (let [msg (tr "errors.email-already-validated")]
-                  (ts/schedule 100 #(st/emit! (dm/warn msg)))
+                  (ts/schedule 100 #(st/emit! (msg/warn msg)))
                   (st/emit! (rt/nav :auth-login)))
 
                 :else
                 (let [msg (tr "errors.generic")]
-                  (ts/schedule 100 #(st/emit! (dm/error msg)))
+                  (ts/schedule 100 #(st/emit! (msg/error msg)))
                   (st/emit! (rt/nav :auth-login))))))))
 
     (if @bad-token

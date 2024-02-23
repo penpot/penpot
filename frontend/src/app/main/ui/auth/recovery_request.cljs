@@ -9,7 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.spec :as us]
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as msg]
    [app.main.data.users :as du]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
@@ -37,7 +37,7 @@
                                :initial {})
         submitted (mf/use-state false)
 
-        default-success-finish #(st/emit! (dm/info (tr "auth.notifications.recovery-token-sent")))
+        default-success-finish #(st/emit! (msg/info (tr "auth.notifications.recovery-token-sent")))
 
         on-success
         (mf/use-callback
@@ -53,13 +53,13 @@
            (reset! submitted false)
            (case code
              :profile-not-verified
-             (rx/of (dm/error (tr "auth.notifications.profile-not-verified") {:timeout nil}))
+             (rx/of (msg/error (tr "auth.notifications.profile-not-verified")))
 
              :profile-is-muted
-             (rx/of (dm/error (tr "errors.profile-is-muted")))
+             (rx/of (msg/error (tr "errors.profile-is-muted")))
 
              :email-has-permanent-bounces
-             (rx/of (dm/error (tr "errors.email-has-permanent-bounces" (:email data))))
+             (rx/of (msg/error (tr "errors.email-has-permanent-bounces" (:email data))))
 
              (rx/throw error))))
 
