@@ -202,7 +202,7 @@
             (when (some? head-component)
               (get-ref-shape (:data head-file) head-component shape))))]
 
-    (d/seek find-ref-shape-in-head parent-heads)))
+    (some find-ref-shape-in-head parent-heads)))
 
 (defn find-remote-shape
   "Recursively go back by the :shape-ref of the shape until find the correct shape of the original component"
