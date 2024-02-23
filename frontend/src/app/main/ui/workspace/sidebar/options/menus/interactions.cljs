@@ -357,13 +357,14 @@
              (update-interaction index #(ctsi/set-offset-effect % value)))))
 
 
-        event-type-options   [{:value :click :label (tr "workspace.options.interaction-on-click")}
-                             ;; TODO: need more UX research
-                             ;; :mouse-over (tr "workspace.options.interaction-while-hovering")
-                             ;; :mouse-press (tr "workspace.options.interaction-while-pressing")
-                              {:value :mouse-enter :label (tr "workspace.options.interaction-mouse-enter")}
-                              {:value :mouse-leave :label (tr "workspace.options.interaction-mouse-leave")}
-                              {:value :after-delay :label (tr "workspace.options.interaction-after-delay")}]
+        event-type-options   (-> [{:value :click :label (tr "workspace.options.interaction-on-click")}
+                                  ;; TODO: need more UX research
+                                  ;; :mouse-over (tr "workspace.options.interaction-while-hovering")
+                                  ;; :mouse-press (tr "workspace.options.interaction-while-pressing")
+                                  {:value :mouse-enter :label (tr "workspace.options.interaction-mouse-enter")}
+                                  {:value :mouse-leave :label (tr "workspace.options.interaction-mouse-leave")}]
+                                 (cond-> (cfh/frame-shape? shape)
+                                   (conj {:value :after-delay :label (tr "workspace.options.interaction-after-delay")})))
 
         action-type-options [{:value :navigate :label (tr "workspace.options.interaction-navigate-to")}
                              {:value :open-overlay :label (tr "workspace.options.interaction-open-overlay")}

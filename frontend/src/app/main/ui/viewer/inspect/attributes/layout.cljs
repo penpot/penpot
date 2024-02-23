@@ -26,6 +26,8 @@
    :align-content
    :justify-items
    :justify-content
+   :row-gap
+   :column-gap
    :gap
    :padding])
 
