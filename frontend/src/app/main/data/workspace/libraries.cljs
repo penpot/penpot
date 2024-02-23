@@ -618,11 +618,13 @@
                                   (wsh/lookup-selected)
                                   (cfh/clean-loops objects))
             selected-objects (map #(get objects %) selected)
-            can-detach?      (every? #(not (ctn/has-any-copy-parent? objects %)) selected-objects)
+            copies           (filter ctk/in-component-copy? selected-objects)
+            can-detach?      (and (seq copies)
+                                  (every? #(not (ctn/has-any-copy-parent? objects %)) selected-objects))
             changes (when can-detach?
                       (reduce
                        (fn [changes id]
-                         (dwlh/generate-detach-instance changes libraries container id))
+                         (dwlh/generate-detach-instance changes container libraries id))
                        (-> (pcb/empty-changes it)
                            (pcb/with-container container)
                            (pcb/with-objects objects))
