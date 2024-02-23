@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-11-16 18:03+0000\n"
-"Last-Translator: Swapnil C <swapnilchitnis360@gmail.com>\n"
+"PO-Revision-Date: 2024-02-24 15:02+0000\n"
+"Last-Translator: Louis Chance <contact@louischance.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Weblate 5.2\n"
+"X-Generator: Weblate 5.5-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -2267,7 +2267,7 @@ msgid "onboarding-v2.welcome.desc3.title"
 msgstr "Guide du contributeur"
 
 msgid "onboarding-v2.welcome.title"
-msgstr "Bienvenu sur Penpot !"
+msgstr "Bienvenue sur Penpot !"
 
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr ""
@@ -5034,3 +5034,18 @@ msgstr "Après un délai"
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.add-flex"
 msgstr "Ajouter flex layout"
+
+#: src/app/main/errors.cljs
+msgid "errors.version-not-supported"
+msgstr "Le numéro de version du fichier est incompatible"
+
+#: src/app/main/errors.cljs
+msgid "errors.team-feature-mismatch"
+msgstr "Fonctionnalité incompatible détectée '%s'"
+
+#: src/app/main/errors.cljs
+msgid "errors.file-feature-mismatch"
+msgstr ""
+"Il semble y avoir une incompatibilité entre les fonctionnalités actives et "
+"celles du fichier que tentez d'ouvrir. Vous devez activer les migrations "
+"pour '%s' avant de pouvoir ouvrir le fichier."
