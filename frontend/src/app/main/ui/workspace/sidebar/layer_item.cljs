@@ -155,7 +155,8 @@
      children]))
 
 (mf/defc layer-item
-  {::mf/wrap-props false}
+  {::mf/wrap-props false
+   ::mf/wrap [mf/memo]}
   [{:keys [index item selected objects sortable? filtered? depth parent-size component-child? highlighted]}]
   (let [id                (:id item)
         blocked?          (:blocked item)
