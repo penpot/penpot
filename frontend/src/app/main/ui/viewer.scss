@@ -58,6 +58,7 @@
 }
 
 .viewer-section {
+  @extend .new-scrollbar;
   grid-row: 1 / span 2;
   grid-column: 1 / span 1;
   display: flex;
@@ -94,7 +95,7 @@
 }
 
 .viewer-go-next.comment-sidebar {
-  right: $s-264;
+  right: $s-280;
 }
 
 .viewer-go-prev {
