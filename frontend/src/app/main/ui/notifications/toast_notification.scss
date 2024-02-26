@@ -7,10 +7,10 @@
 @import "refactor/common-refactor.scss";
 
 .toast-notification {
-  --bg-color: var(--alert-background-color-default);
-  --fg-color: var(--alert-text-foreground-color-default);
-  --icon-color: var(--alert-icon-foreground-color-default);
-  --border-color: var(--alert-border-color-default);
+  --toast-notification-bg-color: var(--alert-background-color-default);
+  --toast-notification-fg-color: var(--alert-text-foreground-color-default);
+  --toast-notification-icon-color: var(--alert-icon-foreground-color-default);
+  --toast-notification-border-color: var(--alert-border-color-default);
   @include alertShadow;
   position: fixed;
   top: $s-16;
@@ -22,10 +22,10 @@
   min-width: $s-500;
   max-width: calc(10 * $s-100);
   padding: $s-8 $s-8 $s-8 $s-16;
-  border: $s-1 solid var(--border-color);
-  background-color: var(--bg-color);
+  border: $s-1 solid var(--toast-notification-border-color);
+  background-color: var(--toast-notification-bg-color);
   border-radius: $br-8;
-  color: var(--fg-color);
+  color: var(--toast-notification-fg-color);
   z-index: $z-index-alert;
 }
 
@@ -34,17 +34,17 @@
 }
 
 .warning {
-  --bg-color: var(--alert-background-color-warning);
-  --fg-color: var(--alert-text-foreground-color-warning);
-  --icon-color: var(--alert-icon-foreground-color-warning);
-  --border-color: var(--alert-border-color-warning);
+  --toast-notification-bg-color: var(--alert-background-color-warning);
+  --toast-notification-fg-color: var(--alert-text-foreground-color-warning);
+  --toast-notification-icon-color: var(--alert-icon-foreground-color-warning);
+  --toast-notification-border-color: var(--alert-border-color-warning);
 }
 
 .success {
-  --bg-color: var(--alert-background-color-success);
-  --fg-color: var(--alert-text-foreground-color-success);
-  --icon-color: var(--alert-icon-foreground-color-success);
-  --border-color: var(--alert-border-color-success);
+  --toast-notification-bg-color: var(--alert-background-color-success);
+  --toast-notification-fg-color: var(--alert-text-foreground-color-success);
+  --toast-notification-icon-color: var(--alert-icon-foreground-color-success);
+  --toast-notification-border-color: var(--alert-border-color-success);
 }
 
 .info {
@@ -55,17 +55,17 @@
 }
 
 .default {
-  --bg-color: var(--alert-background-color-default);
-  --fg-color: var(--alert-text-foreground-color-default);
-  --icon-color: var(--alert-icon-foreground-color-default);
-  --border-color: var(--alert-border-color-default);
+  --toast-notification-bg-color: var(--alert-background-color-default);
+  --toast-notification-fg-color: var(--alert-text-foreground-color-default);
+  --toast-notification-icon-color: var(--alert-icon-foreground-color-default);
+  --toast-notification-border-color: var(--alert-border-color-default);
 }
 
 .error {
-  --bg-color: var(--alert-background-color-error);
-  --fg-color: var(--alert-text-foreground-color-error);
-  --icon-color: var(--alert-icon-foreground-color-error);
-  --border-color: var(--alert-border-color-error);
+  --toast-notification-bg-color: var(--alert-background-color-error);
+  --toast-notification-fg-color: var(--alert-text-foreground-color-error);
+  --toast-notification-icon-color: var(--alert-icon-foreground-color-error);
+  --toast-notification-border-color: var(--alert-border-color-error);
 }
 
 .link-nav {
@@ -81,7 +81,7 @@
 .icon {
   @extend .button-icon;
   height: 100%;
-  stroke: var(--icon-color);
+  stroke: var(--toast-notification-icon-color);
 }
 
 .text {
@@ -99,5 +99,5 @@
 
 .close-icon {
   @extend .button-icon;
-  stroke: var(--icon-color);
+  stroke: var(--toast-notification-icon-color);
 }
