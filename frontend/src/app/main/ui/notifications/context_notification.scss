@@ -59,7 +59,7 @@
 
 .icon {
   @extend .button-icon;
-  height: 100%;
+  align-self: self-start;
   stroke: var(--icon-color);
 }
 
@@ -76,7 +76,12 @@
   margin: auto 0;
 }
 
-.link {
+// The second rule only applies when the element receives embedded
+// links within the content by means of the dangerouslySetInnerHTML.
+// Only in this case the contain-html class will be used.
+
+.link,
+.contain-html .context-text a {
   @include bodyMedTipography;
   align-self: center;
   height: $s-16;

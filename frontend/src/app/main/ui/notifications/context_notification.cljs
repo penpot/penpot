@@ -39,23 +39,29 @@
    They are contextual messages in specific areas off the app"
 
   {::mf/props :obj}
-  [{:keys [type content links] :as props}]
+  [{:keys [type content links is-html] :as props}]
 
   [:aside {:class (stl/css-case :context-notification true
-                                :warning    (= type :warning)
-                                :error      (= type :error)
-                                :success    (= type :success)
-                                :info       (= type :info))}
+                                :contain-html is-html
+                                :warning      (= type :warning)
+                                :error        (= type :error)
+                                :success      (= type :success)
+                                :info         (= type :info))}
 
    (get-icon-by-type type)
 
-   [:div {:class (stl/css :context-text)}
-    content]
+   ;; The content can arrive in markdown format, in these cases
+   ;;  we will use the prop is-html to true to indicate it and
+   ;; that the html injection is performed and the necessary css classes are applied.
+   [:div {:class (stl/css :context-text)
+          :dangerouslySetInnerHTML (when is-html #js {:__html content})}
+    (when-not is-html
+      content)]
 
    (when (some? links)
      [:nav {:class (stl/css :link-nav)}
       (for [[index link] (d/enumerate links)]
-      ;; TODO Review this component
+        ;; TODO Review this component
         [:& lb/link-button {:class (stl/css :link)
                             :on-click (:callback link)
                             :value (:label link)
