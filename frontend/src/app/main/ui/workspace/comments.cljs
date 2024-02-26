@@ -27,7 +27,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (mf/defc sidebar-options
-  []
+  [{:keys [from-viewer]}]
   (let [{cmode :mode cshow :show} (mf/deref refs/comments-local)
         update-mode
         (mf/use-fn
@@ -44,7 +44,8 @@
            (let [mode (if (= :pending cshow) :all :pending)]
              (st/emit! (dcm/update-filters {:show mode})))))]
 
-    [:ul {:class (stl/css :comment-mode-dropdown)}
+    [:ul {:class (stl/css-case :comment-mode-dropdown true
+                               :viewer-dropdown from-viewer)}
      [:li {:class (stl/css-case :dropdown-item true
                                 :selected (or (= :all cmode) (nil? cmode)))
            :data-value "all"
@@ -115,8 +116,10 @@
                         (dwcm/center-to-comment-thread thread)
                         (-> (dcm/open-thread thread)
                             (with-meta {::ev/origin "workspace"})))))))]
-    [:div  {:class (stl/css :comments-section)}
-     [:div {:class (stl/css :comments-section-title)}
+    [:div  {:class (stl/css-case :comments-section true
+                                 :from-viewer  from-viewer)}
+     [:div {:class (stl/css-case :comments-section-title true
+                                 :viewer-title from-viewer)}
       [:span (tr "labels.comments")]
       [:button {:class (stl/css :close-button)
                 :on-click close-section}
@@ -132,7 +135,7 @@
 
      [:& dropdown {:show options?
                    :on-close #(reset! state* false)}
-      [:& sidebar-options {:local local}]]
+      [:& sidebar-options {:local local :from-viewer from-viewer}]]
 
      [:div {:class (stl/css :comments-section-content)}
 
