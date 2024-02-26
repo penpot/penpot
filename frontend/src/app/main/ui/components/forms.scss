@@ -257,7 +257,11 @@
 }
 
 // SUBMIT-BUTTON
-.btn-disabled {
+.button-submit {
+  @extend .button-primary;
+}
+
+:disabled {
   @extend .button-disabled;
 }
 
@@ -422,6 +426,7 @@
     fill: none;
   }
 }
+
 //TEXTAREA
 
 .textarea-label {

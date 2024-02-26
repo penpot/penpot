@@ -296,19 +296,13 @@
 
 (mf/defc submit-button*
   {::mf/wrap-props false}
-  [{:keys [on-click children label form class name disabled large?] :as props}]
+  [{:keys [on-click children label form class name disabled] :as props}]
   (let [form      (or form (mf/use-ctx form-ctx))
 
         disabled? (or (and (some? form) (not (:valid @form)))
                       (true? disabled))
 
-        large?    (d/nilv large? true)
-
-        class     (dm/str (d/nilv class "btn-primary")
-                          " "
-                          (if large? "btn-large" "")
-                          " "
-                          (if disabled? (stl/css :btn-disabled) ""))
+        class     (d/nilv class (stl/css :button-submit))
 
         name      (d/nilv name "submit")
 
