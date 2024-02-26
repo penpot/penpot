@@ -255,50 +255,6 @@
     }
   }
 
-  .banner {
-    @include bodyMedTipography;
-    --bg-color: var(--alert-background-color-default);
-    --fg-color: var(--alert-text-foreground-color-default);
-    --icon-color: var(--alert-icon-foreground-color-default);
-    --border-color: var(--alert-border-color-default);
-    overflow: hidden;
-    display: grid;
-    grid-template-columns: $s-16 1fr;
-    gap: $s-8;
-    padding: $s-8 $s-8 $s-8 $s-16;
-    border-radius: $br-12;
-    border: $s-1 solid var(--border-color);
-    border-radius: $br-12;
-    background-color: var(--bg-color);
-    color: var(--fg-color);
-    font-size: $fs-12;
-
-    .icon {
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-
-      svg {
-        stroke: var(--icon-color);
-        fill: none;
-        height: $s-16;
-        width: $s-16;
-      }
-    }
-    .content a {
-      color: $da-primary;
-    }
-    &.warning {
-      --bg-color: var(--alert-background-color-warning);
-      --fg-color: var(--alert-text-foreground-color-warning);
-      --icon-color: var(--alert-icon-foreground-color-warning);
-      --border-color: var(--alert-border-color-warning);
-      .icon svg {
-        stroke: var(--element-foreground-warning);
-      }
-    }
-  }
-
   .btn-primary {
     flex-shrink: 0;
   }
