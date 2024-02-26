@@ -190,7 +190,7 @@
   [{:keys [type on-type-change] :as props}]
   (let [type       (d/nilv type :simple)
         on-blur    (mf/use-fn #(select-margins false false false false))
-        props      (mf/spread-obj props {:on-blur on-blur})
+        props      (mf/spread props :on-blur on-blur)
 
         on-type-change'
         (mf/use-fn

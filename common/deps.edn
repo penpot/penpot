@@ -2,7 +2,7 @@
  {org.clojure/clojure {:mvn/version "1.11.1"}
   org.clojure/data.json {:mvn/version "2.5.0"}
   org.clojure/tools.cli {:mvn/version "1.0.219"}
-  org.clojure/clojurescript {:mvn/version "1.11.60"}
+  org.clojure/clojurescript {:mvn/version "1.11.132"}
   org.clojure/test.check {:mvn/version "1.1.1"}
   org.clojure/data.fressian {:mvn/version "1.0.0"}
 
@@ -19,7 +19,7 @@
   criterium/criterium {:mvn/version "0.4.6"}
 
   metosin/jsonista {:mvn/version "0.3.8"}
-  metosin/malli {:mvn/version "0.13.0"}
+  metosin/malli {:mvn/version "0.14.0"}
 
   expound/expound {:mvn/version "0.9.0"}
   com.cognitect/transit-clj {:mvn/version "1.0.333"}
@@ -63,7 +63,7 @@
  {:dev
   {:extra-deps
    {org.clojure/tools.namespace {:mvn/version "RELEASE"}
-    thheller/shadow-cljs {:mvn/version "2.26.2"}
+    thheller/shadow-cljs {:mvn/version "2.27.4"}
     com.clojure-goes-fast/clj-async-profiler {:mvn/version "RELEASE"}
     com.bhauman/rebel-readline {:mvn/version "RELEASE"}
     criterium/criterium {:mvn/version "RELEASE"}
