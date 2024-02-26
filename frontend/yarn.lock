@@ -6294,6 +6294,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"date-fns@npm:^3.3.1":
+  version: 3.3.1
+  resolution: "date-fns@npm:3.3.1"
+  checksum: e04ff79244010e03b912d791cd3250af5f18866ce868604958d76bd87e5fb0b79f0a810b8e7066248452b41779b288c4fd21de1cac2cd4b6d384e9dd931c9674
+  languageName: node
+  linkType: hard
+
 "debug-fabulous@npm:^1.0.0":
   version: 1.1.0
   resolution: "debug-fabulous@npm:1.1.0"
@@ -6749,7 +6756,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"editorconfig@npm:^1.0.3":
+"editorconfig@npm:^1.0.4":
   version: 1.0.4
   resolution: "editorconfig@npm:1.0.4"
   dependencies:
@@ -7328,10 +7335,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eventsource-parser@npm:^1.1.1":
-  version: 1.1.1
-  resolution: "eventsource-parser@npm:1.1.1"
-  checksum: 6eae5e8300dc5d4dcd29d09d037a43b9954077fbcc936904065d1abf5ec503f1fa56a942ad4f796b7dcc3bf64224440917ea635ef4a75f5522e9951df4b9aadf
+"eventsource-parser@npm:^1.1.2":
+  version: 1.1.2
+  resolution: "eventsource-parser@npm:1.1.2"
+  checksum: b38948bc81ae6c2a8b9c88383d4f8c2bfbaf23955827a9af68d39bc0550ae83cc400b197e814bea9aef6e0cdc9bae5afd95787418ee3d9ad01ffc4774cf1b84a
   languageName: node
   linkType: hard
 
@@ -7909,9 +7916,9 @@ __metadata:
     animate.css: "npm:^4.1.1"
     autoprefixer: "npm:^10.4.17"
     concurrently: "npm:^8.2.2"
-    date-fns: "npm:^2.30.0"
+    date-fns: "npm:^3.3.1"
     draft-js: "git+https://github.com/penpot/draft-js.git"
-    eventsource-parser: "npm:^1.1.1"
+    eventsource-parser: "npm:^1.1.2"
     fancy-log: "npm:^2.0.0"
     gettext-parser: "npm:^8.0.0"
     gulp: "npm:4.0.2"
@@ -7924,7 +7931,7 @@ __metadata:
     gulp-sourcemaps: "npm:^3.0.0"
     gulp-svg-sprite: "npm:^2.0.3"
     highlight.js: "npm:^11.9.0"
-    js-beautify: "npm:^1.14.11"
+    js-beautify: "npm:^1.15.1"
     jsdom: "npm:^24.0.0"
     jszip: "npm:^3.10.1"
     luxon: "npm:^3.4.4"
@@ -7938,14 +7945,14 @@ __metadata:
     postcss: "npm:^8.4.35"
     postcss-clean: "npm:^1.2.2"
     postcss-modules: "npm:^6.0.0"
-    prettier: "npm:^3.1.1"
+    prettier: "npm:^3.2.5"
     prop-types: "npm:^15.8.1"
     randomcolor: "npm:^0.6.2"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
     react-virtualized: "npm:^9.22.5"
     rimraf: "npm:^5.0.5"
-    rxjs: "npm:8.0.0-alpha.13"
+    rxjs: "npm:8.0.0-alpha.14"
     sass: "npm:^1.71.1"
     sax: "npm:^1.3.0"
     shadow-cljs: "npm:2.27.4"
@@ -9685,19 +9692,27 @@ __metadata:
   languageName: node
   linkType: hard
 
-"js-beautify@npm:^1.14.11":
-  version: 1.14.11
-  resolution: "js-beautify@npm:1.14.11"
+"js-beautify@npm:^1.15.1":
+  version: 1.15.1
+  resolution: "js-beautify@npm:1.15.1"
   dependencies:
     config-chain: "npm:^1.1.13"
-    editorconfig: "npm:^1.0.3"
+    editorconfig: "npm:^1.0.4"
     glob: "npm:^10.3.3"
+    js-cookie: "npm:^3.0.5"
     nopt: "npm:^7.2.0"
   bin:
     css-beautify: js/bin/css-beautify.js
     html-beautify: js/bin/html-beautify.js
     js-beautify: js/bin/js-beautify.js
-  checksum: 23267f8e68a4cf190274906fbec98c4fa44025e1b7e1fa701480867c9ab6b2b90a1bb2b358cd487c34d735a1039c16bcb51f82d390bcc6384172cc540aa11c9b
+  checksum: 4140dd95537143eb429b6c8e47e21310f16c032d97a03163c6c7c0502bc663242a5db08d3ad941b87f24a142ce4f9190c556d2340bcd056545326377dfae5362
+  languageName: node
+  linkType: hard
+
+"js-cookie@npm:^3.0.5":
+  version: 3.0.5
+  resolution: "js-cookie@npm:3.0.5"
+  checksum: 04a0e560407b4489daac3a63e231d35f4e86f78bff9d792011391b49c59f721b513411cd75714c418049c8dc9750b20fcddad1ca5a2ca616c3aca4874cce5b3a
   languageName: node
   linkType: hard
 
@@ -12034,12 +12049,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier@npm:^3.1.1":
-  version: 3.1.1
-  resolution: "prettier@npm:3.1.1"
+"prettier@npm:^3.2.5":
+  version: 3.2.5
+  resolution: "prettier@npm:3.2.5"
   bin:
     prettier: bin/prettier.cjs
-  checksum: facc944ba20e194ff4db765e830ffbcb642803381f0d2033ed397e79904fa4ccc877dc25ad68f42d36985c01d051c990ca1b905fb83d2d7d65fe69e4386fa1a3
+  checksum: ea327f37a7d46f2324a34ad35292af2ad4c4c3c3355da07313339d7e554320f66f65f91e856add8530157a733c6c4a897dc41b577056be5c24c40f739f5ee8c6
   languageName: node
   linkType: hard
 
@@ -13104,13 +13119,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"rxjs@npm:8.0.0-alpha.13":
-  version: 8.0.0-alpha.13
-  resolution: "rxjs@npm:8.0.0-alpha.13"
-  peerDependencies:
-    "@types/node": ^20.6.3
-    typescript: ^5.2.2
-  checksum: d3d8a395e7b92158d621d686b819aa5be480f5c17155f695506b9a70a32af886962d23d4040a1d1611d815abe0ba0fd4929b3687da75a62a03a1e90e5b616464
+"rxjs@npm:8.0.0-alpha.14":
+  version: 8.0.0-alpha.14
+  resolution: "rxjs@npm:8.0.0-alpha.14"
+  checksum: 14e4b487455c0940e3d87985cc3f2917ec88ce8cd3ede06071eb071a841d729549d43cab198757863838a4e22c1d7d3e9816f08d37357fa7e3506bdd6f8af56e
   languageName: node
   linkType: hard
 
