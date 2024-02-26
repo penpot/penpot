@@ -80,7 +80,7 @@
      [:> fm/submit-button*
       {:label (tr "dashboard.save-settings")
        :disabled (empty? (:touched @form))
-       :className (stl/css :btn-primary)}]
+       :class (stl/css :btn-primary)}]
 
      [:div {:class (stl/css :links)}
       [:div {:class (stl/css :link-item)}

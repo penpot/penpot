@@ -117,6 +117,6 @@
           {:label (if team
                     (tr "labels.update-team")
                     (tr "labels.create-team"))
-           :className (stl/css :accept-btn)}]]]]]]))
+           :class (stl/css :accept-btn)}]]]]]]))
 
 
