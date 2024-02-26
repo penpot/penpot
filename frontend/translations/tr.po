@@ -4764,12 +4764,6 @@ msgstr "Ortala"
 msgid "workspace.options.stroke-cap.diamond-marker-short"
 msgstr "Elmas"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.scd-message"
-msgid_plural "modals.unpublish-shared-confirm.activated.scd-message"
-msgstr[0] "Bu kütüphane burada etkinleştirildi:"
-msgstr[1] "Bu kütüphaneler burada etkinleştirildi:"
-
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.questions-how-are-you-planning-to-use-penpot"
 msgstr "Penpot'u nasıl kullanmayı planlıyorsunuz?"
@@ -4858,12 +4852,6 @@ msgstr "Orantılı ölçeklendirmeyi etkinleştir"
 #: src/app/main/data/workspace/libraries.cljs
 msgid "workspace.updates.more-info"
 msgstr "Daha fazla bilgi"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.no-files-message"
-msgid_plural "modals.unpublish-shared-confirm.activated.no-files-message"
-msgstr[0] "Hiçbir dosyada etkinleştirilmemiş."
-msgstr[1] "Hiçbir dosyada etkinleştirilmemişler."
 
 #: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "auth.name.not-all-space"

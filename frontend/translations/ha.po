@@ -2157,12 +2157,6 @@ msgstr ""
 "wurin da za ka san yadda za ka hada-hannu da fassara, neman fasali, manyan "
 "gudunmawa, magance matsalaâ€¦"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.scd-message"
-msgid_plural "modals.unpublish-shared-confirm.activated.scd-message"
-msgstr[0] "an buxe wannan taskar a nan:"
-msgstr[1] "an buxe taskokin nan a nan:"
-
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hright"
 msgstr "Daidaita dama (%s)"
@@ -3308,12 +3302,6 @@ msgstr "Yi da kanka"
 
 msgid "labels.save"
 msgstr "ajiye"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.no-files-message"
-msgid_plural "modals.unpublish-shared-confirm.activated.no-files-message"
-msgstr[0] "ba zai yi aiki a kowane kundi ba."
-msgstr[1] "ba zai yi aiki a kowane kundi ba."
 
 msgid "dashboard.import.progress.process-media"
 msgstr "kammala aiki"

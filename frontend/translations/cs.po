@@ -4872,20 +4872,6 @@ msgstr[2] ""
 "Aktiva, která již byla v těchto souborech použita, tam zůstanou (nebude "
 "porušen žádný návrh)."
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.no-files-message"
-msgid_plural "modals.unpublish-shared-confirm.activated.no-files-message"
-msgstr[0] "Není aktivován v žádném souboru."
-msgstr[1] "Nejsou aktivovány v žádném souboru."
-msgstr[2] "Nejsou aktivovány v žádném souboru."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.scd-message"
-msgid_plural "modals.unpublish-shared-confirm.activated.scd-message"
-msgstr[0] "Tato knihovna je aktivována zde:"
-msgstr[1] "Tyto knihovny jsou aktivovány zde:"
-msgstr[2] "Tyto knihovny jsou aktivovány zde:"
-
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "auth.name.too-long"
 msgstr "Název musí obsahovat maximálně 250 znaků."
