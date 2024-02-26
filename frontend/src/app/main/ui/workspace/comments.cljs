@@ -128,7 +128,7 @@
       [:span {:class (stl/css :mode-label)} (case (:mode local)
                                               (nil :all) (tr "labels.show-all-comments")
                                               :yours     (tr "labels.show-your-comments"))]
-      [:div {:class (stl/css :icon)} i/arrow-refactor]]
+      [:div {:class (stl/css :arrow-icon)} i/arrow-refactor]]
 
      [:& dropdown {:show options?
                    :on-close #(reset! state* false)}

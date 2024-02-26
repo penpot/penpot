@@ -64,9 +64,8 @@
   justify-content: flex-start;
 }
 
-.icon {
+.arrow-icon {
   @include flexCenter;
-  padding-right: 8px;
   height: $s-24;
   width: $s-24;
   svg {
@@ -78,7 +77,7 @@
 
 .comment-mode-dropdown {
   @extend .dropdown-wrapper;
-  top: $s-80;
+  top: $s-92;
   left: $s-12;
   width: $s-256;
 }
