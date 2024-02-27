@@ -196,57 +196,69 @@
 
         open-menu?  (mf/use-state false)
         edit?       (mf/use-state false)
-        state*      (mf/use-var (:font-family font))
+        state*      (mf/use-state (:font-family font))
         font-family (deref state*)
 
 
         on-change
-        (fn [event]
-          (reset! state* (dom/get-target-val event)))
+        (mf/use-callback
+         (fn [event]
+           (reset! state* (dom/get-target-val event))))
 
         on-save
-        (fn [_]
-          (let [font-family font-family]
-            (when-not (str/blank? font-family)
-              (st/emit! (df/update-font
-                         {:id font-id
-                          :name font-family})))
-            (reset! edit? false)))
+        (mf/use-callback
+         (mf/deps font-family)
+         (fn [_]
+           (when-not (str/blank? font-family)
+             (st/emit! (df/update-font {:id font-id :name font-family})))
+           (reset! edit? false)))
 
         on-key-down
-        (fn [event]
-          (when (kbd/enter? event)
-            (on-save event)))
+        (mf/use-callback
+         (mf/deps on-save)
+         (fn [event]
+           (when (kbd/enter? event)
+             (on-save event))))
 
         on-cancel
-        (fn [_]
-          (reset! edit? false)
-          (reset! state* (:font-family font)))
+        (mf/use-callback
+         (fn [_]
+           (reset! edit? false)
+           (reset! state* (:font-family font))))
 
         delete-font-fn
-        (fn [] (st/emit! (df/delete-font font-id)))
+        (mf/use-callback
+         (mf/deps font-id)
+         (fn []
+           (st/emit! (df/delete-font font-id))))
 
         delete-variant-fn
-        (fn [id] (st/emit! (df/delete-font-variant id)))
+        (mf/use-callback
+         (fn [id]
+           (st/emit! (df/delete-font-variant id))))
 
         on-delete
-        (fn []
-          (st/emit! (modal/show
-                     {:type :confirm
-                      :title (tr "modals.delete-font.title")
-                      :message (tr "modals.delete-font.message")
-                      :accept-label (tr "labels.delete")
-                      :on-accept (fn [_props] (delete-font-fn))})))
+        (mf/use-callback
+         (mf/deps delete-font-fn)
+         (fn []
+           (st/emit! (modal/show
+                      {:type :confirm
+                       :title (tr "modals.delete-font.title")
+                       :message (tr "modals.delete-font.message")
+                       :accept-label (tr "labels.delete")
+                       :on-accept (fn [_props] (delete-font-fn))}))))
 
         on-delete-variant
-        (fn [id]
-          (st/emit! (modal/show
-                     {:type :confirm
-                      :title (tr "modals.delete-font-variant.title")
-                      :message (tr "modals.delete-font-variant.message")
-                      :accept-label (tr "labels.delete")
-                      :on-accept (fn [_props]
-                                   (delete-variant-fn id))})))]
+        (mf/use-callback
+         (mf/deps delete-variant-fn)
+         (fn [id]
+           (st/emit! (modal/show
+                      {:type :confirm
+                       :title (tr "modals.delete-font-variant.title")
+                       :message (tr "modals.delete-font-variant.message")
+                       :accept-label (tr "labels.delete")
+                       :on-accept (fn [_props]
+                                    (delete-variant-fn id))}))))]
 
     [:div {:class (stl/css :font-item :table-row)}
      [:div {:class (stl/css :table-field :family)}
