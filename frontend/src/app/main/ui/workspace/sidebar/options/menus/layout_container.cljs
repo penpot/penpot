@@ -1279,7 +1279,7 @@
       [:button {:on-click open-grid-help
                 :class (stl/css :help-button)} i/help-refactor]
       [:button {:class (stl/css :exit-btn)
-                :on-click #(st/emit! udw/clear-edition-mode)}
+                :on-click #(st/emit! (udw/clear-edition-mode))}
        (tr "workspace.layout_grid.editor.options.exit")]]
 
      [:div {:class (stl/css :row :first-row)}
