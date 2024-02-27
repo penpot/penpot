@@ -107,8 +107,8 @@
                              :initial initial)
 
         on-error
-        (fn [err]
-          (let [cause (ex-data err)]
+        (fn [cause]
+          (let [cause (ex-data cause)]
             (cond
               (and (= :restriction (:type cause))
                    (= :profile-blocked (:code cause)))

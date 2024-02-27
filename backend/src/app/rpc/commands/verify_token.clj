@@ -9,6 +9,7 @@
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.db :as db]
+   [app.db.sql :as-alias sql]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
@@ -82,7 +83,16 @@
 
 (defmethod process-token :auth
   [{:keys [conn] :as cfg} _params {:keys [profile-id] :as claims}]
-  (let [profile (profile/get-profile conn profile-id)]
+  (let [profile (profile/get-profile conn profile-id {::sql/for-update true})
+        props   (merge (:props profile)
+                       (:props claims))
+        profile (assoc profile :props props)]
+
+    (when (not= props (:props profile))
+      (db/update! conn :profile
+                  {:props (db/tjson props)}
+                  {:id profile-id}))
+
     (assoc claims :profile profile)))
 
 ;; --- Team Invitation
