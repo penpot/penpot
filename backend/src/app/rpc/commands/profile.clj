@@ -91,8 +91,8 @@
 
 (defn get-profile
   "Get profile by id. Throws not-found exception if no profile found."
-  [conn id & {:as attrs}]
-  (-> (db/get-by-id conn :profile id attrs)
+  [conn id & {:as opts}]
+  (-> (db/get-by-id conn :profile id opts)
       (decode-row)))
 
 ;; --- MUTATION: Update Profile (own)

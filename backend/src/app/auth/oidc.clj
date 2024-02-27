@@ -282,12 +282,12 @@
     (into [(keyword (:name provider) fitem)] (map keyword) items)))
 
 (defn- build-redirect-uri
-  [{:keys [provider] :as cfg}]
+  [{:keys [::provider] :as cfg}]
   (let [public (u/uri (cf/get :public-uri))]
     (str (assoc public :path (str "/api/auth/oauth/" (:name provider) "/callback")))))
 
 (defn- build-auth-uri
-  [{:keys [provider] :as cfg} state]
+  [{:keys [::provider] :as cfg} state]
   (let [params {:client_id (:client-id provider)
                 :redirect_uri (build-redirect-uri cfg)
                 :response_type "code"
@@ -298,15 +298,19 @@
         (assoc :query query)
         (str))))
 
+(defn- qualify-prop-key
+  [provider k]
+  (keyword (:name provider) (name k)))
+
 (defn- qualify-props
   [provider props]
   (reduce-kv (fn [result k v]
-               (assoc result (keyword (:name provider) (name k)) v))
+               (assoc result (qualify-prop-key provider k) v))
              {}
              props))
 
-(defn fetch-access-token
-  [{:keys [provider] :as cfg} code]
+(defn- fetch-access-token
+  [{:keys [::provider] :as cfg} code]
   (let [params {:client_id (:client-id provider)
                 :client_secret (:client-secret provider)
                 :code code
@@ -363,7 +367,7 @@
        :props    props})))
 
 (defn- fetch-user-info
-  [{:keys [provider] :as cfg} tdata]
+  [{:keys [::provider] :as cfg} tdata]
   (l/trace :hint "fetch user info"
            :uri (:user-uri provider)
            :token (obfuscate-string (:token/access tdata)))
@@ -388,7 +392,7 @@
     (-> response :body json/decode)))
 
 (defn- get-user-info
-  [{:keys [provider]} tdata]
+  [{:keys [::provider]} tdata]
   (try
     (when (:token/id tdata)
       (let [{:keys [kid alg] :as theader} (jwt/decode-header (:token/id tdata))]
@@ -412,8 +416,8 @@
                    ::fullname
                    ::props]))
 
-(defn get-info
-  [{:keys [provider ::setup/props] :as cfg} {:keys [params] :as request}]
+(defn- get-info
+  [{:keys [::provider ::setup/props] :as cfg} {:keys [params] :as request}]
   (when-let [error (get params :error)]
     (ex/raise :type :internal
               :code :error-on-retrieving-code
@@ -471,89 +475,101 @@
       (update :props merge (:props state)))))
 
 (defn- get-profile
-  [{:keys [::db/pool] :as cfg} info]
-  (dm/with-open [conn (db/open pool)]
-    (some->> (:email info)
-             (profile/clean-email)
-             (profile/get-profile-by-email conn))))
+  [cfg info]
+  (db/run! cfg (fn [{:keys [::db/conn]}]
+                 (some->> (:email info)
+                          (profile/clean-email)
+                          (profile/get-profile-by-email conn)))))
 
 (defn- redirect-response
   [uri]
   {::rres/status 302
    ::rres/headers {"location" (str uri)}})
 
-(defn- generate-error-redirect
-  [_ cause]
-  (let [data   (if (ex/error? cause) (ex-data cause) nil)
-        code   (or (:code data) :unexpected)
-        type   (or (:type data) :internal)
-        hint   (or (:hint data)
-                   (if (ex/exception? cause)
-                     (ex-message cause)
-                     (str cause)))
+(defn- redirect-with-error
+  ([error] (redirect-with-error error nil))
+  ([error hint]
+   (let [params {:error error :hint hint}
+         params (d/without-nils params)
+         uri    (-> (u/uri (cf/get :public-uri))
+                    (assoc :path "/#/auth/login")
+                    (assoc :query (u/map->query-string params)))]
+     (redirect-response uri))))
 
-        params {:error "unable-to-auth"
-                :hint hint
-                :type type
-                :code code}
+(defn- redirect-to-register
+  [cfg info]
+  (let [info   (assoc info
+                      :iss :prepared-register
+                      :exp (dt/in-future {:hours 48}))
 
+        params {:token (tokens/generate (::setup/props cfg) info)
+                :fullname (:fullname info)}
+        params (d/without-nils params)]
+
+    (redirect-response
+     (-> (u/uri (cf/get :public-uri))
+         (assoc :path "/#/auth/register/validate")
+         (assoc :query (u/map->query-string params))))))
+
+(defn- redirect-to-verify-token
+  [token]
+  (let [params {:token token}
         uri    (-> (u/uri (cf/get :public-uri))
-                   (assoc :path "/#/auth/login")
+                   (assoc :path "/#/auth/verify-token")
                    (assoc :query (u/map->query-string params)))]
 
     (redirect-response uri)))
 
-(defn- generate-redirect
+(defn- provider-matches-profile?
+  [{:keys [::provider] :as cfg} {:keys [props] :as profile}]
+  (or (= (:auth-backend profile) (:name provider))
+      (let [email-prop (qualify-prop-key provider :email)]
+        (contains? props email-prop))))
+
+(defn- provider-has-email-verified?
+  [{:keys [::provider] :as cfg} {:keys [props] :as info}]
+  (let [prop (qualify-prop-key provider :email_verified)]
+    (true? (get props prop))))
+
+(defn- process-callback
   [cfg request info profile]
-  (if profile
-    (let [sxf    (session/create-fn cfg (:id profile))
-          token  (or (:invitation-token info)
-                     (tokens/generate (::setup/props cfg)
-                                      {:iss :auth
-                                       :exp (dt/in-future "15m")
-                                       :profile-id (:id profile)}))
-          params {:token token}
-          uri    (-> (u/uri (cf/get :public-uri))
-                     (assoc :path "/#/auth/verify-token")
-                     (assoc :query (u/map->query-string params)))]
+  (cond
+    (some? profile)
+    (cond
+      (:is-blocked profile)
+      (redirect-with-error "profile-blocked")
 
-      (when (:is-blocked profile)
-        (ex/raise :type :restriction
-                  :code :profile-blocked))
+      (not (provider-matches-profile? cfg profile))
+      (redirect-with-error "auth-provider-not-allowed")
 
-      (audit/submit! cfg {::audit/type "command"
-                          ::audit/name "login-with-oidc"
-                          ::audit/profile-id (:id profile)
-                          ::audit/ip-addr (audit/parse-client-ip request)
-                          ::audit/props (audit/profile->props profile)})
+      (not (:is-active profile))
+      (let [info (assoc info :profile-id (:id profile))]
+        (redirect-to-register cfg info))
 
-      (->> (redirect-response uri)
-           (sxf request)))
+      :else
+      (let [sxf   (session/create-fn cfg (:id profile))
+            token (or (:invitation-token info)
+                      (tokens/generate (::setup/props cfg)
+                                       {:iss :auth
+                                        :exp (dt/in-future "15m")
+                                        :props (:props info)
+                                        :profile-id (:id profile)}))]
 
-    (if (auth/email-domain-in-whitelist? (:email info))
-      (let [info   (assoc info
-                          :iss :prepared-register
-                          :exp (dt/in-future {:hours 48}))
+        (audit/submit! cfg {::audit/type "command"
+                            ::audit/name "login-with-oidc"
+                            ::audit/profile-id (:id profile)
+                            ::audit/ip-addr (audit/parse-client-ip request)
+                            ::audit/props (audit/profile->props profile)})
 
-            props  (:props info)
-            info   (if (or (:google/email_verified props)
-                           (:github/email_verified props)
-                           (:gitlab/email_verified props)
-                           (:oidc/email_verified props))
-                     (assoc info :is-active true)
-                     info)
+        (->> (redirect-to-verify-token token)
+             (sxf request))))
 
-            token  (tokens/generate (::setup/props cfg) info)
+    (not (auth/email-domain-in-whitelist? (:email info)))
+    (redirect-with-error "email-domain-not-allowed")
 
-            params (d/without-nils
-                    {:token token
-                     :fullname (:fullname info)})
-            uri    (-> (u/uri (cf/get :public-uri))
-                       (assoc :path "/#/auth/register/validate")
-                       (assoc :query (u/map->query-string params)))]
-
-        (redirect-response uri))
-      (generate-error-redirect cfg "email-domain-not-allowed"))))
+    :else
+    (let [info (assoc info :is-active (provider-has-email-verified? cfg info))]
+      (redirect-to-register cfg info))))
 
 (defn- auth-handler
   [cfg {:keys [params] :as request}]
@@ -572,10 +588,10 @@
   (try
     (let [info    (get-info cfg request)
           profile (get-profile cfg info)]
-      (generate-redirect cfg request info profile))
+      (process-callback cfg request info profile))
     (catch Throwable cause
-      (l/warn :hint "error on oauth process" :cause cause)
-      (generate-error-redirect cfg cause))))
+      (l/err :hint "error on oauth process" :cause cause)
+      (redirect-with-error "unable-to-auth" (ex-message cause)))))
 
 (def provider-lookup
   {:compile
@@ -584,12 +600,11 @@
        (fn [request]
          (let [provider (some-> request :path-params :provider keyword)]
            (if-let [provider (get providers provider)]
-             (handler (assoc cfg :provider provider) request)
+             (handler (assoc cfg ::provider provider) request)
              (ex/raise :type :restriction
                        :code :provider-not-configured
                        :provider provider
                        :hint "provider not configured"))))))})
-
 
 (s/def ::client-id ::cf/oidc-client-id)
 (s/def ::client-secret ::cf/oidc-client-secret)
@@ -603,7 +618,6 @@
 (s/def ::email-attr ::cf/oidc-email-attr)
 (s/def ::name-attr ::cf/oidc-name-attr)
 
-;; FIXME: migrate to qualified-keywords
 (s/def ::provider
   (s/keys :req-un [::client-id
                    ::client-secret]

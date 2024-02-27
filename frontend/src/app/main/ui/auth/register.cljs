@@ -26,18 +26,20 @@
 
 ;; --- PAGE: Register
 
-(defn- validate
+(defn- validate-password-length
   [errors data]
   (let [password (:password data)]
     (cond-> errors
       (> 8 (count password))
-      (assoc :password {:message "errors.password-too-short"})
-      :always
-      (d/update-when :email
-                     (fn [{:keys [code] :as error}]
-                       (cond-> error
-                         (= code ::us/email)
-                         (assoc :message (tr "errors.email-invalid"))))))))
+      (assoc :password {:message "errors.password-too-short"}))))
+
+(defn- validate-email
+  [errors _]
+  (d/update-when errors :email
+                 (fn [{:keys [code] :as error}]
+                   (cond-> error
+                     (= code ::us/email)
+                     (assoc :message (tr "errors.email-invalid"))))))
 
 (s/def ::fullname ::us/not-empty-string)
 (s/def ::password ::us/not-empty-string)
@@ -49,23 +51,12 @@
   (s/keys :req-un [::password ::email]
           :opt-un [::invitation-token]))
 
-(defn- handle-prepare-register-error
+(defn- on-prepare-register-error
   [form cause]
   (let [{:keys [type code]} (ex-data cause)]
     (condp = [type code]
       [:restriction :registration-disabled]
       (st/emit! (msg/error (tr "errors.registration-disabled")))
-
-      [:restriction :profile-blocked]
-      (st/emit! (msg/error (tr "errors.profile-blocked")))
-
-      [:validation :email-has-permanent-bounces]
-      (let [email (get @form [:data :email])]
-        (st/emit! (msg/error (tr "errors.email-has-permanent-bounces" email))))
-
-      [:validation :email-already-exists]
-      (swap! form assoc-in [:errors :email]
-             {:message "errors.email-already-exists"})
 
       [:validation :email-as-password]
       (swap! form assoc-in [:errors :password]
@@ -73,7 +64,7 @@
 
       (st/emit! (msg/error (tr "errors.generic"))))))
 
-(defn- handle-prepare-register-success
+(defn- on-prepare-register-success
   [params]
   (st/emit! (rt/nav :auth-register-validate {} params)))
 
@@ -81,28 +72,30 @@
   [{:keys [params on-success-callback]}]
   (let [initial (mf/use-memo (mf/deps params) (constantly params))
         form    (fm/use-form :spec ::register-form
-                             :validators [validate
+                             :validators [validate-password-length
+                                          validate-email
                                           (fm/validate-not-empty :password (tr "auth.password-not-empty"))]
                              :initial initial)
-        submitted? (mf/use-state false)
 
-        on-success (fn [p]
-                     (if (nil? on-success-callback)
-                       (handle-prepare-register-success p)
-                       (on-success-callback p)))
+        submitted? (mf/use-state false)
 
         on-submit
         (mf/use-fn
+         (mf/deps on-success-callback)
          (fn [form _event]
            (reset! submitted? true)
-           (let [cdata (:clean-data @form)]
+           (let [cdata      (:clean-data @form)
+                 on-success (fn [data]
+                              (if (nil? on-success-callback)
+                                (on-prepare-register-success data)
+                                (on-success-callback data)))
+                 on-error   (fn [data]
+                              (on-prepare-register-error form data))]
+
              (->> (rp/cmd! :prepare-register-profile cdata)
                   (rx/map #(merge % params))
                   (rx/finalize #(reset! submitted? false))
-                  (rx/subs!
-                   on-success
-                   (partial handle-prepare-register-error form))))))]
-
+                  (rx/subs! on-success on-error)))))]
 
     [:& fm/form {:on-submit on-submit :form form}
      [:div {:class (stl/css :fields-row)}
@@ -125,7 +118,6 @@
        :disabled @submitted?
        :data-test "register-form-submit"
        :class (stl/css :register-btn)}]]))
-
 
 (mf/defc register-methods
   {::mf/props :obj}
@@ -169,15 +161,8 @@
 ;; --- PAGE: register validation
 
 (defn- handle-register-error
-  [form error]
-  (case (:code error)
-    :email-already-exists
-    (swap! form assoc-in [:errors :email]
-           {:message "errors.email-already-exists"})
-
-    (do
-      (println (:explain error))
-      (st/emit! (msg/error (tr "errors.generic"))))))
+  [_form _data]
+  (st/emit! (msg/error (tr "errors.generic"))))
 
 (defn- handle-register-success
   [data]
@@ -186,8 +171,6 @@
     (let [token (:invitation-token data)]
       (st/emit! (rt/nav :auth-verify-token {} {:token token})))
 
-    ;; The :is-active flag is true, when insecure-register is enabled
-    ;; or the user used external auth provider.
     (:is-active data)
     (st/emit! (du/login-from-register))
 
