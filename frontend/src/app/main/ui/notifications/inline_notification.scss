@@ -9,7 +9,6 @@
 .inline-notification {
   --inline-notification-bg-color: var(--alert-background-color-default);
   --inline-notification-fg-color: var(--alert-text-foreground-color-default);
-  --inline-notification-icon-color: var(--alert-icon-foreground-color-default);
   --inline-notification-border-color: var(--alert-border-color-default);
   @include alertShadow;
   position: absolute;
@@ -17,12 +16,13 @@
   left: 0;
   right: 0;
   display: grid;
-  grid-template-columns: $s-16 auto 1fr auto;
-  gap: $s-8;
+  grid-template-columns: 1fr auto;
+  gap: $s-24;
   min-height: $s-48;
   min-width: $s-640;
-  max-width: $s-712;
-  padding: $s-8 $s-8 $s-8 $s-16;
+  width: fit-content;
+  max-width: $s-960;
+  padding: $s-8;
   margin-inline: auto;
   border: $s-1 solid var(--inline-notification-border-color);
   border-radius: $br-8;
@@ -31,15 +31,13 @@
   color: var(--inline-notification-fg-color);
 }
 
-.icon {
-  @extend .button-icon;
-  height: 100%;
-  stroke: var(--inline-notification-icon-color);
-}
-
 .inline-text {
   @include bodyMedTipography;
   align-self: center;
+}
+
+.link-nav {
+  display: inline;
 }
 
 .link {
@@ -53,15 +51,16 @@
   display: grid;
   grid-template-columns: none;
   grid-auto-flow: column;
-  gap: $s-8;
   align-self: center;
+  gap: $s-8;
 }
 
 .action-btn {
-  @extend .button-tertiary;
+  @extend .button-secondary;
   @include uppercaseTitleTipography;
   min-height: $s-32;
   min-width: $s-32;
+  width: fit-content;
   padding: $s-8 $s-24;
   border: $s-1 solid transparent;
 }

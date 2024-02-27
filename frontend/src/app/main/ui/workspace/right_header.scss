@@ -37,6 +37,8 @@
   border-radius: $br-8;
   .label {
     @include bodyMedTipography;
+    height: 100%;
+    padding: $s-8 0;
     color: var(--button-tertiary-foreground-color-rest);
   }
 
@@ -180,14 +182,12 @@
 
 .status-icon {
   @include flexCenter;
-  width: $s-16;
-  height: $s-16;
+  width: $s-24;
+  height: $s-24;
   margin: 0;
   border-radius: $br-circle;
   svg {
     @extend .button-icon;
-    height: $s-12;
-    width: $s-12;
     stroke: var(--status-widget-icon-foreground-color);
   }
 }

@@ -203,8 +203,9 @@
 
      [:& persistence-state-widget]
 
-     [:div {:class (stl/css :separator)}]
+     [:& export-progress-widget]
 
+     [:div {:class (stl/css :separator)}]
 
      [:div {:class (stl/css :zoom-section)}
       [:& zoom-widget-workspace
@@ -214,8 +215,6 @@
         :on-zoom-reset on-zoom-reset
         :on-zoom-fit on-zoom-fit
         :on-zoom-selected on-zoom-selected}]]
-
-     [:& export-progress-widget]
 
      [:div {:class (stl/css :comments-section)}
       [:button {:title (tr "workspace.toolbar.comments" (sc/get-tooltip :add-comment))

@@ -49,7 +49,6 @@
   [{:keys [type content on-close links] :as props}]
 
   [:aside {:class (stl/css-case :toast-notification true
-                                :with-links (some? links)
                                 :warning  (= type :warning)
                                 :error    (= type :error)
                                 :success  (= type :success)
@@ -58,15 +57,16 @@
    (get-icon-by-type type)
 
    [:div {:class (stl/css :text)}
-    content]
+    content
+    (when (some? links)
+      [:nav {:class (stl/css :link-nav)}
+       (for [[index link] (d/enumerate links)]
+         [:& lb/link-button {:key (dm/str "link-" index)
+                             :class (stl/css :link)
+                             :on-click (:callback link)
+                             :value (:label link)}])])]
 
-   (when (some? links)
-     [:nav {:class (stl/css :link-nav)}
-      (for [[index link] (d/enumerate links)]
-        [:& lb/link-button {:key (dm/str "link-" index)
-                            :class (stl/css :link)
-                            :on-click (:callback link)
-                            :value (:label link)}])])
+
 
    [:button {:class (stl/css :btn-close)
              :on-click on-close}
