@@ -16,7 +16,7 @@
 (declare show)
 
 (def default-animation-timeout 600)
-(def default-timeout 5000)
+(def default-timeout 7000)
 
 (def ^:private
   schema:message
@@ -27,6 +27,8 @@
       [::sm/one-of #{:visible :hide}]]
      [:position {:optional true}
       [::sm/one-of #{:fixed :floating :inline}]]
+     [:notification-type {:optional true}
+      [::sm/one-of #{:inline :context :toast}]]
      [:controls {:optional true}
       [::sm/one-of #{:none :close :inline-actions :bottom-actions}]]
      [:tag {:optional true}
@@ -93,18 +95,18 @@
           (rx/of hide))))))
 
 (defn error
-  ([content] (error content {}))
-  ([content {:keys [timeout] :or {timeout default-timeout}}]
+  ([content]
    (show {:content content
           :type :error
-          :position :fixed
-          :timeout timeout})))
+          :notification-type :toast
+          :position :fixed})))
 
 (defn info
   ([content] (info content {}))
   ([content {:keys [timeout] :or {timeout default-timeout}}]
    (show {:content content
           :type :info
+          :notification-type :toast
           :position :fixed
           :timeout timeout})))
 
@@ -113,6 +115,7 @@
   ([content {:keys [timeout] :or {timeout default-timeout}}]
    (show {:content content
           :type :success
+          :notification-type :toast
           :position :fixed
           :timeout timeout})))
 
@@ -121,6 +124,7 @@
   ([content {:keys [timeout] :or {timeout default-timeout}}]
    (show {:content content
           :type :warning
+          :notification-type :toast
           :position :fixed
           :timeout timeout})))
 
@@ -142,6 +146,7 @@
          {:content content
           :type :info
           :position :floating
+          :notification-type :inline
           :controls controls
           :links links
           :actions actions

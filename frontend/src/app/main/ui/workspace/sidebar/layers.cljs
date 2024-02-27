@@ -21,19 +21,51 @@
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.layer-item :refer [layer-item]]
    [app.util.dom :as dom]
+   [app.util.globals :as globals]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
+   [app.util.object :as obj]
    [app.util.timers :as ts]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
-   [rumext.v2 :as mf]))
+   [goog.events :as events]
+   [rumext.v2 :as mf])
+  (:import goog.events.EventType))
 
 ;; This components is a piece for sharding equality check between top
 ;; level frames and try to avoid rerender frames that are does not
 ;; affected by the selected set.
 (mf/defc frame-wrapper
-  {::mf/wrap-props false
-   ::mf/wrap [mf/memo #(mf/deferred % ts/idle-then-raf)]}
+  {::mf/wrap-props false}
   [props]
-  [:> layer-item props])
+  (let [selected (obj/get props "selected")
+        callback (mf/use-var false)
+        pending-selected (mf/use-var selected)
+        current-selected (mf/use-state selected)
+
+        props
+        (-> props
+            (obj/clone)
+            (obj/set! "selected" @current-selected))]
+
+    (mf/use-effect
+     (mf/deps selected)
+     (fn []
+       ;; Change in selected we schedule a idle-then-raf
+       ;; following changes will update the pending but not create
+       ;; a new callbacks
+       (reset! pending-selected selected)
+       (when (not @callback)
+         (reset!
+          callback
+          (ts/idle-then-raf
+           (fn []
+             (reset! current-selected @pending-selected)
+             (reset! callback nil)))))
+       (fn []
+         (when @callback
+           (rx/dispose! @callback)))))
+    [:> layer-item props]))
 
 (mf/defc layers-tree
   {::mf/wrap [mf/memo #(mf/throttle % 200)]
@@ -158,6 +190,21 @@
         (mf/use-fn
          #(swap! state* update :show-menu not))
 
+        on-toggle-filters-click
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (toggle-filters)))
+
+        hide-menu
+        (mf/use-fn
+         #(swap! state* assoc :show-menu false))
+
+        on-key-down
+        (mf/use-fn
+         (fn [event]
+           (when (kbd/esc? event) (hide-menu))))
+
         update-search-text
         (mf/use-fn
          (fn [value _event]
@@ -190,6 +237,7 @@
         add-filter
         (mf/use-fn
          (fn [event]
+           (dom/stop-propagation event)
            (let [key (-> (dom/get-current-target event)
                          (dom/get-data "filter")
                          (keyword))]
@@ -226,6 +274,11 @@
            (when (<= current-items filtered-objects-total)
              (swap! state* update :num-items + 100))))]
 
+    (mf/with-effect []
+      (let [keys [(events/listen globals/document EventType.KEYDOWN on-key-down)
+                  (events/listen globals/document EventType.CLICK hide-menu)]]
+        (fn [] (doseq [key keys] (events/unlistenByKey key)))))
+
     [filtered-objects
      handle-show-more
      #(mf/html
@@ -236,7 +289,7 @@
                            :value current-search
                            :on-clear clear-search-text
                            :placeholder (tr "workspace.sidebar.layers.search")}
-            [:button {:on-click toggle-filters
+            [:button {:on-click on-toggle-filters-click
                       :class (stl/css-case
                               :filter-button true
                               :opened show-menu?
@@ -459,7 +512,7 @@
         (mf/use-fn
          #(st/emit! (dw/toggle-focus-mode)))]
 
-    [:div#layers
+    [:div#layers {:class (stl/css :layers)}
      (if (d/not-empty? focus)
        [:div {:class (stl/css :tool-window-bar)}
         [:button {:class (stl/css :focus-title)

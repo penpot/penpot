@@ -117,6 +117,12 @@
   [libraries component-id & {:keys [include-deleted?] :or {include-deleted? false}}]
   (some #(ctkl/get-component (:data %) component-id include-deleted?) (vals libraries)))
 
+(defn find-component-file
+  [file libraries component-file]
+  (if (and (some? file) (= component-file (:id file)))
+    file
+    (get libraries component-file)))
+
 (defn get-component
   "Retrieve a component from a library."
   [libraries library-id component-id & {:keys [include-deleted?] :or {include-deleted? false}}]
@@ -188,21 +194,30 @@
   "Locate the nearest component in the local file or libraries, and retrieve the shape
    referenced by the instance shape."
   [file page libraries shape & {:keys [include-deleted?] :or {include-deleted? false}}]
-  (let [parent-heads (->> (cfh/get-parents-with-self (:objects page) (:id shape))
-                          (filter ctk/instance-head?)
-                          (reverse))
-
-        find-ref-shape-in-head
+  (let [find-ref-shape-in-head
         (fn [head-shape]
-          (let [head-file      (if (and (some? file) (= (:component-file head-shape) (:id file)))
-                                 file
-                                 (get libraries (:component-file head-shape)))
+          (let [head-file      (find-component-file file libraries (:component-file head-shape))
                 head-component (when (some? head-file)
                                  (ctkl/get-component (:data head-file) (:component-id head-shape) include-deleted?))]
             (when (some? head-component)
               (get-ref-shape (:data head-file) head-component shape))))]
 
-    (d/seek find-ref-shape-in-head parent-heads)))
+    (some find-ref-shape-in-head (ctn/get-parent-heads (:objects page) shape))))
+
+(defn find-ref-component
+  "Locate the nearest component in the local file or libraries that is referenced by the
+   instance shape."
+  [file page libraries shape & {:keys [include-deleted?] :or {include-deleted? false}}]
+  (let [find-ref-component-in-head
+        (fn [head-shape]
+          (let [head-file      (find-component-file file libraries (:component-file head-shape))
+                head-component (when (some? head-file)
+                                 (ctkl/get-component (:data head-file) (:component-id head-shape) include-deleted?))]
+            (when (some? head-component)
+              (when (get-ref-shape (:data head-file) head-component shape)
+                head-component))))]
+
+    (some find-ref-component-in-head (ctn/get-parent-copy-heads (:objects page) shape))))
 
 (defn find-remote-shape
   "Recursively go back by the :shape-ref of the shape until find the correct shape of the original component"
@@ -228,6 +243,13 @@
       (if (nil? (:shape-ref remote-shape))
         remote-shape
         (find-remote-shape component-container libraries remote-shape)))))
+
+(defn direct-copy?
+  "Check if the shape is in a direct copy of the component (i.e. the shape-ref points to shapes inside
+   the component)."
+  [shape component page file libraries]
+  (let [ref-component (find-ref-component file page libraries shape :include-deleted? true)]
+    (true? (= (:id component) (:id ref-component)))))
 
 (defn get-component-shapes
   "Retrieve all shapes of the component"

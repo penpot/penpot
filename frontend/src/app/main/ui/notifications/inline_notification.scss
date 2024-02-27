@@ -1,0 +1,79 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.inline-notification {
+  --inline-notification-bg-color: var(--alert-background-color-default);
+  --inline-notification-fg-color: var(--alert-text-foreground-color-default);
+  --inline-notification-icon-color: var(--alert-icon-foreground-color-default);
+  --inline-notification-border-color: var(--alert-border-color-default);
+  @include alertShadow;
+  position: absolute;
+  top: $s-72;
+  left: 0;
+  right: 0;
+  display: grid;
+  grid-template-columns: $s-16 auto 1fr auto;
+  gap: $s-8;
+  min-height: $s-48;
+  min-width: $s-640;
+  max-width: $s-712;
+  padding: $s-8 $s-8 $s-8 $s-16;
+  margin-inline: auto;
+  border: $s-1 solid var(--inline-notification-border-color);
+  border-radius: $br-8;
+  z-index: $z-index-modal;
+  background-color: var(--inline-notification-bg-color);
+  color: var(--inline-notification-fg-color);
+}
+
+.icon {
+  @extend .button-icon;
+  height: 100%;
+  stroke: var(--inline-notification-icon-color);
+}
+
+.inline-text {
+  @include bodyMedTipography;
+  align-self: center;
+}
+
+.link {
+  @include bodyMedTipography;
+  margin: 0;
+  height: 100%;
+  color: var(--modal-link-foreground-color);
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  gap: $s-8;
+  align-self: center;
+}
+
+.action-btn {
+  @extend .button-tertiary;
+  @include uppercaseTitleTipography;
+  min-height: $s-32;
+  min-width: $s-32;
+  padding: $s-8 $s-24;
+  border: $s-1 solid transparent;
+}
+
+.action-btn.primary {
+  @extend .button-primary;
+}
+
+.action-btn.secondary {
+  @extend .button-secondary;
+}
+
+.action-btn.danger {
+  @extend .modal-danger-btn;
+}

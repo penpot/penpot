@@ -255,47 +255,6 @@
     }
   }
 
-  .banner {
-    overflow: hidden;
-    display: grid;
-    grid-template-columns: $s-40 1fr;
-
-    background-color: $db-primary;
-    border-radius: $br-12;
-    border: $s-1 solid $db-quaternary;
-    color: $df-primary;
-    font-size: $fs-12;
-
-    &:not(:last-child) {
-      margin-bottom: $s-12;
-    }
-    .icon {
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      padding-top: $s-12;
-
-      svg {
-        stroke: $df-secondary;
-        fill: none;
-        height: $s-20;
-        width: $s-20;
-      }
-    }
-    .content {
-      margin: $s-12;
-      a {
-        color: $da-primary;
-      }
-    }
-    &.warning {
-      background-color: $db-quaternary;
-      .icon svg {
-        stroke: var(--element-foreground-warning);
-      }
-    }
-  }
-
   .btn-primary {
     flex-shrink: 0;
   }

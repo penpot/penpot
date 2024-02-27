@@ -176,7 +176,7 @@
    (contains? event-types event-type))
 
   (dm/assert!
-   "The `:after-delay` event type incompatible with frame shapes"
+   "The `:after-delay` event type incompatible with not frame shapes"
    (or (not= event-type :after-delay)
        (cfh/frame-shape? shape)))
 

@@ -2127,20 +2127,6 @@ msgstr[0] "Anulați publicarea"
 msgstr[1] "Anulați publicarea"
 msgstr[2] "Anulați publicarea"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.no-files-message"
-msgid_plural "modals.unpublish-shared-confirm.activated.no-files-message"
-msgstr[0] "Nu este activat în niciun fișier."
-msgstr[1] "Nu sunt activate în niciun fișier."
-msgstr[2] "Nu sunt activate în niciun fișier."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.scd-message"
-msgid_plural "modals.unpublish-shared-confirm.activated.scd-message"
-msgstr[0] "Aceasta librărie este activată aici:"
-msgstr[1] "Aceste librării sunt activate aici:"
-msgstr[2] "Aceste librării sunt activate aici:"
-
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"

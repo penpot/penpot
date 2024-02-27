@@ -184,6 +184,7 @@
 
         set-markup
         (mf/use-callback
+         (mf/deps markup-type*)
          (fn [value]
            (reset! markup-type* value)))
 

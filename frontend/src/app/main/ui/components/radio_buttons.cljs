@@ -18,7 +18,7 @@
 
 (mf/defc radio-button
   {::mf/props :obj}
-  [{:keys [icon id value disabled title unique-key icon-class type]}]
+  [{:keys [icon id value disabled title icon-class type]}]
   (let [context     (mf/use-ctx context)
         allow-empty (unchecked-get context "allow-empty")
         type        (if ^boolean type
@@ -39,7 +39,6 @@
 
     [:label {:html-for id
              :title title
-             :key unique-key
              :class (stl/css-case
                      :radio-icon true
                      :checked checked?
@@ -88,9 +87,10 @@
              (dom/blur! input))))
 
         context-value
-        (mf/spread-obj props {:on-change on-change'
-                              :encode-fn encode-fn
-                              :decode-fn decode-fn})]
+        (mf/spread props
+                   :on-change on-change'
+                   :encode-fn encode-fn
+                   :decode-fn decode-fn)]
 
     [:& (mf/provider context) {:value context-value}
      [:div {:class (dm/str class " " (stl/css :radio-btn-wrapper))

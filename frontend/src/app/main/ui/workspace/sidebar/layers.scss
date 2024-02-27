@@ -12,7 +12,7 @@
   justify-content: space-between;
   height: $s-32;
   min-height: $s-32;
-  margin: $s-4 0 $s-4 $s-8;
+  margin: $s-8 0 $s-4 $s-8;
   padding-right: $s-8;
 
   &.search {
@@ -164,10 +164,14 @@
   color: var(--pill-foreground-color);
 }
 
+.layers {
+  position: relative;
+}
+
 .filters-container {
   @extend .menu-dropdown;
-  top: $s-44;
-  left: $s-12;
+  position: absolute;
+  left: $s-20;
   width: $s-192;
   .filter-menu-item {
     @include bodyMedTipography;

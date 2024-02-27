@@ -11,7 +11,7 @@
    [app.common.logging :as log]
    [app.common.spec :as us]
    [app.config :as cf]
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as msg]
    [app.main.data.users :as du]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -19,7 +19,7 @@
    [app.main.ui.components.forms :as fm]
    [app.main.ui.components.link :as lk]
    [app.main.ui.icons :as i]
-   [app.main.ui.messages :as msgs]
+   [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as k]
@@ -48,10 +48,10 @@
                    (cond
                      (and (= type :restriction)
                           (= code :provider-not-configured))
-                     (st/emit! (dm/error (tr "errors.auth-provider-not-configured")))
+                     (st/emit! (msg/error (tr "errors.auth-provider-not-configured")))
 
                      :else
-                     (st/emit! (dm/error (tr "errors.generic"))))))))
+                     (st/emit! (msg/error (tr "errors.generic"))))))))
 
 (defn- login-with-ldap
   [event params]
@@ -67,13 +67,13 @@
                      (cond
                        (and (= type :restriction)
                             (= code :ldap-not-initialized))
-                       (st/emit! (dm/error (tr "errors.ldap-disabled")))
+                       (st/emit! (msg/error (tr "errors.ldap-disabled")))
 
                        (fn? on-error)
                        (on-error error)
 
                        :else
-                       (st/emit! (dm/error (tr "errors.generic")))))))))
+                       (st/emit! (msg/error (tr "errors.generic")))))))))
 
 (s/def ::email ::us/email)
 (s/def ::password ::us/not-empty-string)
@@ -157,12 +157,12 @@
 
     [:*
      (when-let [message @error]
-       [:& msgs/inline-banner
-        {:type :warning
-         :content message
-         :on-close #(reset! error nil)
-         :data-test "login-banner"
-         :role "alert"}])
+       [:div {:class (stl/css :error-wrapper)}
+        [:& context-notification
+         {:type :warning
+          :content message
+          :data-test "login-banner"
+          :role "alert"}]])
 
      [:& fm/form {:on-submit on-submit :form form}
       [:div {:class (stl/css :fields-row)}

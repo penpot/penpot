@@ -70,6 +70,7 @@
           (rx/of (msg/dialog
                   :content (tr "notifications.by-code.upgrade-version")
                   :controls :inline-actions
+                  :notification-type :inline
                   :type level
                   :actions [{:label "Refresh" :callback force-reload!}]
                   :tag :notification)))

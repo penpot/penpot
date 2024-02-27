@@ -14,10 +14,10 @@
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
-
    [app.main.ui.components.context-menu-a11y :refer [context-menu-a11y]]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.icons :as i]
+   [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -131,18 +131,14 @@
                            :ref input-ref
                            :on-selected handle-selected}]]
 
-       [:div {:class (stl/css :banner)}
-        [:div {:class (stl/css :icon)} i/msg-neutral-refactor]
-        [:div {:class (stl/css :content)}
-         [:& i18n/tr-html {:tag-name "span"
-                           :label "dashboard.fonts.hero-text2"}]]]
+       [:& context-notification {:content (tr "dashboard.fonts.hero-text2")
+                                 :type :default
+                                 :is-html true}]
 
        (when problematic-fonts?
-         [:div {:class (stl/css :banner :warning)}
-          [:div {:class (stl/css :icon)} i/msg-warning-refactor]
-          [:div {:class (stl/css :content)}
-           [:& i18n/tr-html {:tag-name "span"
-                             :label "dashboard.fonts.warning-text"}]]])]]
+         [:& context-notification {:content (tr "dashboard.fonts.warning-text")
+                                   :type :warning
+                                   :is-html true}])]]
 
      [:*
       (when (some? (vals fonts))
@@ -176,7 +172,7 @@
 
            [:div {:class (stl/css :table-field :options)}
             (when (:height-warning? item)
-              [:span {:class (stl/css :icon :failure)} i/msg-warning-refactor])
+              [:span {:class (stl/css :icon :failure)} i/msg-neutral-refactor])
 
             [:button {:on-click #(on-upload item)
                       :class (stl/css-case :btn-primary true

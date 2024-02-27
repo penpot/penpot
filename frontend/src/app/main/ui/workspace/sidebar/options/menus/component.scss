@@ -51,6 +51,15 @@
     grid-template-columns: 1fr $s-28;
     gap: $s-2;
   }
+
+  &.without-actions {
+    padding-right: 0.5rem;
+    .component-name-wrapper {
+      width: 100%;
+
+      border-radius: $br-8;
+    }
+  }
 }
 
 .component-name-wrapper {

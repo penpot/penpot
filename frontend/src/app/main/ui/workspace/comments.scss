@@ -13,6 +13,10 @@
   grid-template-rows: $s-40 $s-48 1fr;
 }
 
+.from-viewer {
+  padding: 0 $s-8;
+}
+
 .comments-section-title {
   @include flexCenter;
   @include uppercaseTitleTipography;
@@ -27,6 +31,11 @@
     flex-grow: 1;
     color: var(--title-foreground-color-hover);
   }
+}
+
+.viewer-title {
+  margin: 0;
+  margin-block-start: $s-8;
 }
 
 .close-button {
@@ -48,7 +57,8 @@
   @extend .asset-element;
   background-color: var(--color-background-tertiary);
   display: flex;
-  width: $s-256;
+  width: 100%;
+  max-width: $s-256;
   height: $s-32;
   padding: $s-8;
   border-radius: $br-8;
@@ -64,9 +74,8 @@
   justify-content: flex-start;
 }
 
-.icon {
+.arrow-icon {
   @include flexCenter;
-  padding-right: 8px;
   height: $s-24;
   width: $s-24;
   svg {
@@ -78,9 +87,14 @@
 
 .comment-mode-dropdown {
   @extend .dropdown-wrapper;
-  top: $s-80;
+  top: $s-92;
   left: $s-12;
-  width: $s-256;
+  max-width: $s-256;
+  width: 100%;
+}
+
+.viewer-dropdown {
+  left: $s-8;
 }
 
 .dropdown-item {

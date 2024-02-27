@@ -10,14 +10,14 @@
    [app.common.data :as d]
    [app.common.data.macros :as dma]
    [app.common.spec :as us]
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
    [app.main.data.users :as du]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
-   [app.main.ui.messages :as msgs]
+   [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.i18n :as i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [cljs.spec.alpha :as s]
@@ -47,11 +47,11 @@
                     (assoc-in data [:errors :email-1] error))))
 
     :profile-is-muted
-    (rx/of (dm/error (tr "errors.profile-is-muted")))
+    (rx/of (msg/error (tr "errors.profile-is-muted")))
 
     :email-has-permanent-bounces
     (let [email (get @form [:data :email-1])]
-      (rx/of (dm/error (tr "errors.email-has-permanent-bounces" email))))
+      (rx/of (msg/error (tr "errors.email-has-permanent-bounces" email))))
 
     (rx/throw error)))
 
@@ -61,7 +61,7 @@
     (st/emit! (du/fetch-profile)
               (modal/hide))
     (let [message (tr "notifications.validation-email-sent" (:email profile))]
-      (st/emit! (dm/info message)
+      (st/emit! (msg/info message)
                 (modal/hide)))))
 
 (defn- on-submit
@@ -110,7 +110,7 @@
                   :on-click on-close} i/close-refactor]]
 
        [:div {:class (stl/css :modal-content)}
-        [:& msgs/inline-banner
+        [:& context-notification
          {:type :info
           :content (tr "modals.change-email.info" (:email profile))}]
 

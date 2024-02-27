@@ -4992,14 +4992,6 @@ msgstr "… תרשימי מתאר, סיפורי ותהליכי משתמשים, �
 msgid "workspace.options.stroke-cap.diamond-marker-short"
 msgstr "יהלום"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.scd-message"
-msgid_plural "modals.unpublish-shared-confirm.activated.scd-message"
-msgstr[0] "הספרייה הזאת מופעלת כאן:"
-msgstr[1] "הספריות האלו מופעלות כאן:"
-msgstr[2] "הספריות האלו מופעלות כאן:"
-msgstr[3] "הספריות האלו מופעלות כאן:"
-
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
 msgid "settings.detach"
 msgstr "ניתוק"
@@ -5007,14 +4999,6 @@ msgstr "ניתוק"
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.triangle-arrow-short"
 msgstr "משולש"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.no-files-message"
-msgid_plural "modals.unpublish-shared-confirm.activated.no-files-message"
-msgstr[0] "אינו מופעל באף קובץ."
-msgstr[1] "אינם מופעלים באף קובץ."
-msgstr[2] "אינם מופעלים באף קובץ."
-msgstr[3] "אינם מופעלים באף קובץ."
 
 msgid "workspace.shape.menu.create-annotation"
 msgstr "יצירת הסבר"

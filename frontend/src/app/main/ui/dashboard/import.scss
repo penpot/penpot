@@ -29,37 +29,10 @@
 
 .modal-content {
   @include bodyMedTipography;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $s-16;
   margin-bottom: $s-24;
-}
-
-.feedback-banner {
-  @include flexRow;
-  height: $s-32;
-  width: 100%;
-  margin-bottom: $s-24;
-  border-radius: $br-8;
-  background-color: var(--alert-background-color-success);
-  color: var(--alert-foreground-color-success);
-
-  .icon {
-    @include flexCenter;
-    height: $s-24;
-    width: $s-24;
-    svg {
-      @extend .button-icon;
-      stroke: var(--alert-foreground-color-success);
-    }
-  }
-  .message {
-    @include bodyMedTipography;
-  }
-  &.warning {
-    background-color: var(--alert-background-color-warning);
-    color: var(--alert-foreground-color-warning);
-    .icon svg {
-      stroke: var(--alert-foreground-color-warning);
-    }
-  }
 }
 
 .action-buttons {

@@ -173,6 +173,6 @@
       (if edata
         [:& static/exception-page {:data edata}]
         [:*
-         [:& msgs/notifications]
+         [:& msgs/notifications-hub]
          (when route
            [:& main-page {:route route :profile profile}])])]]))

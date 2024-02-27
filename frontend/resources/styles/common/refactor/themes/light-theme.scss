@@ -24,6 +24,18 @@
   --color-accent-quaternary: var(--la-quaternary);
   --color-component-highlight: var(--la-secondary);
 
+  --color-success-background: var(--status-color-success-200);
+  --color-success-foreground: var(--status-color-success-500);
+
+  --color-warning-background: var(--status-color-warning-200);
+  --color-warning-foreground: var(--status-color-warning-500);
+
+  --color-error-background: var(--status-color-error-200);
+  --color-error-foreground: var(--status-color-error-500);
+
+  --color-info-background: var(--status-color-info-200);
+  --color-info-foreground: var(--status-color-info-500);
+
   --overlay-color: var(--lb-primary-60);
   --shadow-color: var(--lf-secondary-40);
   --radio-button-box-shadow: 0 0 0 1px var(--lb-secondary) inset;

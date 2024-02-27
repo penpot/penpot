@@ -35,28 +35,26 @@
         cancel-label (tr "labels.cancel")
         accept-style (or accept-style :danger)
 
-        is-delete?   (= origin :delete)
         count-files  (count (keys references))
 
-        title        (if ^boolean is-delete?
-                       (tr "modals.delete-shared-confirm.title" (i18n/c count-libraries))
-                       (tr "modals.unpublish-shared-confirm.title" (i18n/c count-libraries)))
+        title        (case origin
+                       :delete    (tr "modals.delete-shared-confirm.title" (i18n/c count-libraries))
+                       :unpublish (tr "modals.unpublish-shared-confirm.title" (i18n/c count-libraries))
+                       :move      (tr "modals.move-shared-confirm.title" (i18n/c count-libraries)))
 
-        subtitle     (if ^boolean is-delete?
-                       (tr "modals.delete-shared-confirm.message" (i18n/c count-libraries))
-                       (tr "modals.unpublish-shared-confirm.message" (i18n/c count-libraries)))
+        subtitle     (case origin
+                       :delete    (tr "modals.delete-shared-confirm.message" (i18n/c count-libraries))
+                       :unpublish (tr "modals.unpublish-shared-confirm.message" (i18n/c count-libraries))
+                       :move      (tr "modals.move-shared-confirm.message" (i18n/c count-libraries)))
 
-        accept-label (if ^boolean is-delete?
-                       (tr "modals.delete-shared-confirm.accept" (i18n/c count-libraries))
-                       (tr "modals.unpublish-shared-confirm.accept" (i18n/c count-libraries)))
+        accept-label (case origin
+                       :delete    (tr "modals.delete-shared-confirm.accept" (i18n/c count-libraries))
+                       :unpublish (tr "modals.unpublish-shared-confirm.accept" (i18n/c count-libraries))
+                       :move      (tr "modals.move-shared-confirm.accept" (i18n/c count-libraries)))
 
-        no-files-msg (if ^boolean is-delete?
-                       (tr "modals.delete-shared-confirm.activated.no-files-message" (i18n/c count-libraries))
-                       (tr "modals.unpublish-shared-confirm.activated.no-files-message" (i18n/c count-libraries)))
+        no-files-msg (tr "modals.delete-shared-confirm.activated.no-files-message" (i18n/c count-libraries))
 
-        scd-msg      (if ^boolean is-delete?
-                       (tr "modals.delete-shared-confirm.activated.scd-message" (i18n/c count-libraries))
-                       (tr "modals.unpublish-shared-confirm.activated.scd-message" (i18n/c count-libraries)))
+        scd-msg      (tr "modals.delete-shared-confirm.activated.scd-message" (i18n/c count-libraries))
 
         hint         (tr "modals.delete-unpublish-shared-confirm.activated.hint" (i18n/c count-files))
 

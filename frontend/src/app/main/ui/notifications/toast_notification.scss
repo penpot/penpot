@@ -1,0 +1,103 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.toast-notification {
+  --toast-notification-bg-color: var(--alert-background-color-default);
+  --toast-notification-fg-color: var(--alert-text-foreground-color-default);
+  --toast-notification-icon-color: var(--alert-icon-foreground-color-default);
+  --toast-notification-border-color: var(--alert-border-color-default);
+  @include alertShadow;
+  position: fixed;
+  top: $s-16;
+  right: $s-16;
+  display: grid;
+  grid-template-columns: $s-16 1fr auto;
+  gap: $s-8;
+  min-height: $s-32;
+  min-width: $s-500;
+  max-width: calc(10 * $s-100);
+  padding: $s-8 $s-8 $s-8 $s-16;
+  border: $s-1 solid var(--toast-notification-border-color);
+  background-color: var(--toast-notification-bg-color);
+  border-radius: $br-8;
+  color: var(--toast-notification-fg-color);
+  z-index: $z-index-alert;
+}
+
+.with-links {
+  grid-template-columns: $s-16 auto 1fr auto;
+}
+
+.warning {
+  --toast-notification-bg-color: var(--alert-background-color-warning);
+  --toast-notification-fg-color: var(--alert-text-foreground-color-warning);
+  --toast-notification-icon-color: var(--alert-icon-foreground-color-warning);
+  --toast-notification-border-color: var(--alert-border-color-warning);
+}
+
+.success {
+  --toast-notification-bg-color: var(--alert-background-color-success);
+  --toast-notification-fg-color: var(--alert-text-foreground-color-success);
+  --toast-notification-icon-color: var(--alert-icon-foreground-color-success);
+  --toast-notification-border-color: var(--alert-border-color-success);
+}
+
+.info {
+  --bg-color: var(--alert-background-color-info);
+  --fg-color: var(--alert-text-foreground-color-info);
+  --icon-color: var(--alert-icon-foreground-color-info);
+  --border-color: var(--alert-border-color-info);
+}
+
+.default {
+  --toast-notification-bg-color: var(--alert-background-color-default);
+  --toast-notification-fg-color: var(--alert-text-foreground-color-default);
+  --toast-notification-icon-color: var(--alert-icon-foreground-color-default);
+  --toast-notification-border-color: var(--alert-border-color-default);
+}
+
+.error {
+  --toast-notification-bg-color: var(--alert-background-color-error);
+  --toast-notification-fg-color: var(--alert-text-foreground-color-error);
+  --toast-notification-icon-color: var(--alert-icon-foreground-color-error);
+  --toast-notification-border-color: var(--alert-border-color-error);
+}
+
+.link-nav {
+  height: $s-24;
+}
+
+.link {
+  @include bodyMedTipography;
+  color: var(--modal-link-foreground-color);
+  margin: 0;
+}
+
+.icon {
+  @extend .button-icon;
+  height: 100%;
+  stroke: var(--toast-notification-icon-color);
+}
+
+.text {
+  @include bodyMedTipography;
+  align-self: center;
+}
+
+.btn-close {
+  @include buttonStyle;
+  @include flexCenter;
+  height: 100%;
+  min-width: $s-32;
+  background-color: transparent;
+}
+
+.close-icon {
+  @extend .button-icon;
+  stroke: var(--toast-notification-icon-color);
+}

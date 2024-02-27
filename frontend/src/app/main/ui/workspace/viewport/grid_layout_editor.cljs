@@ -113,7 +113,7 @@
            (+ (:y start-p) (/ 9 zoom))])
 
         handle-click
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps on-click)
          #(when on-click (on-click)))]
 
@@ -142,7 +142,7 @@
         current-pos-ref (mf/use-ref nil)
 
         handle-pointer-down
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps on-drag-start)
          (fn [event]
            (let [raw-pt (dom/get-client-position event)
@@ -154,7 +154,7 @@
              (when on-drag-start (on-drag-start event position)))))
 
         handle-lost-pointer-capture
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps on-drag-end)
          (fn [event]
            (let [raw-pt (mf/ref-val current-pos-ref)
@@ -165,7 +165,7 @@
              (when on-drag-end (on-drag-end event position)))))
 
         handle-pointer-move
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps on-drag-delta on-drag-position)
          (fn [event]
            (when (mf/ref-val dragging-ref)
@@ -198,7 +198,7 @@
         layout-data (unchecked-get props "layout-data")
 
         handle-drag-position
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps shape row column row-span column-span)
          (fn [_ position]
            (let [[drag-row  drag-column] (gsg/get-position-grid-coord layout-data position)
@@ -235,7 +235,7 @@
              (st/emit! (dwm/set-modifiers (dwm/create-modif-tree [(:id shape)] modifiers))))))
 
         handle-drag-end
-        (mf/use-callback
+        (mf/use-fn
          (fn []
            (st/emit! (dwm/apply-modifiers))))
 
@@ -291,17 +291,10 @@
       text]]))
 
 (mf/defc grid-cell
-  {::mf/wrap [#(mf/memo' % (mf/check-props ["shape" "cell" "layout-data" "zoom" "hover?" "selected?"]))]
-   ::mf/wrap-props false}
-  [props]
-  (let [shape       (unchecked-get props "shape")
-        cell        (unchecked-get props "cell")
-        layout-data (unchecked-get props "layout-data")
-        zoom        (unchecked-get props "zoom")
-        hover?      (unchecked-get props "hover?")
-        selected?   (unchecked-get props "selected?")
-
-        cell-bounds (gsg/cell-bounds layout-data cell)
+  {::mf/memo #{:shape :cell :layout-data :zoom :hover? :selected?}
+   ::mf/props :obj}
+  [{:keys [shape cell layout-data zoom hover? selected?]}]
+  (let [cell-bounds (gsg/cell-bounds layout-data cell)
         cell-origin (gpo/origin cell-bounds)
         cell-width  (gpo/width-points cell-bounds)
         cell-height (gpo/height-points cell-bounds)
@@ -309,19 +302,19 @@
         cell-origin (gpt/transform cell-origin (gmt/transform-in cell-center (:transform-inverse shape)))
 
         handle-pointer-enter
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps (:id shape) (:id cell))
          (fn []
            (st/emit! (dwge/hover-grid-cell (:id shape) (:id cell) true))))
 
         handle-pointer-leave
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps (:id shape) (:id cell))
          (fn []
            (st/emit! (dwge/hover-grid-cell (:id shape) (:id cell) false))))
 
         handle-pointer-down
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps (:id shape) (:id cell) selected?)
          (fn [event]
            (when (dom/left-mouse? event)
@@ -339,7 +332,7 @@
                (st/emit! (dwge/set-selection (:id shape) (:id cell)))))))
 
         handle-context-menu
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps (:id shape) (:id cell) selected?)
          (fn [event]
            (dom/prevent-default event)
@@ -424,7 +417,7 @@
         start-size-after (mf/use-var nil)
 
         handle-drag-start
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps shape track-before track-after)
          (fn []
            (reset! start-size-before (:size track-before))
@@ -444,7 +437,7 @@
              (st/emit! (dwm/set-modifiers (dwm/create-modif-tree [(:id shape)] modifiers))))))
 
         handle-drag-position
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps shape track-before track-after)
          (fn [_ position]
            (let [[tracks-prop axis]
@@ -469,7 +462,7 @@
              (st/emit! (dwm/set-modifiers (dwm/create-modif-tree [(:id shape)] modifiers))))))
 
         handle-drag-end
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps track-before track-after)
          (fn []
            (reset! start-size-before nil)
@@ -732,7 +725,7 @@
         text-p (if (= type :column) hpt vpt)
 
         handle-blur-track-input
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps (:id shape))
          (fn [event]
            (let [target (-> event dom/get-target)
@@ -760,7 +753,7 @@
                (obj/set! target "value" (dom/get-attribute target "data-default-value"))))))
 
         handle-keydown-track-input
-        (mf/use-callback
+        (mf/use-fn
          (fn [event]
            (let [enter? (kbd/enter? event)
                  esc?   (kbd/esc? event)]
@@ -770,13 +763,13 @@
                (dom/blur! (dom/get-target event))))))
 
         handle-pointer-enter
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps (:id shape) type index)
          (fn []
            (st/emit! (dwsl/hover-layout-track [(:id shape)] type index true))))
 
         handle-pointer-leave
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps (:id shape) type index)
          (fn []
            (st/emit! (dwsl/hover-layout-track [(:id shape)] type index false))))
@@ -788,25 +781,25 @@
           [(- (:x text-p) (max 0 (:size track-data))) (- (:y text-p) (/ 36 zoom)) (max 0 (:size track-data)) (/ 36 zoom)])
 
         handle-drag-start
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps on-start-reorder-track type index)
          (fn []
            (on-start-reorder-track type index)))
 
         handle-drag-end
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps on-end-reorder-track type index)
          (fn [event position]
            (on-end-reorder-track type index position (not (kbd/mod? event)))))
 
         handle-drag-position
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps on-move-reorder-track type index)
          (fn [_ position]
            (on-move-reorder-track type index position)))
 
         handle-show-track-menu
-        (mf/use-callback
+        (mf/use-fn
          (fn [event]
            (dom/stop-propagation event)
            (dom/prevent-default event)
@@ -895,10 +888,9 @@
        :zoom zoom}]]))
 
 (mf/defc editor
-  {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
+  {::mf/memo true
+   ::mf/props :obj}
   [props]
-
   (let [base-shape (unchecked-get props "shape")
         objects    (unchecked-get props "objects")
         modifiers  (unchecked-get props "modifiers")
@@ -962,31 +954,30 @@
         height (max (gpo/height-points bounds) (+ row-total-size row-total-gap (ctl/v-padding shape)))
 
         handle-pointer-down
-        (mf/use-callback
+        (mf/use-fn
          (fn [event]
            (let [left-click? (= 1 (.-which (.-nativeEvent event)))]
              (when left-click?
                (dom/stop-propagation event)))))
 
         handle-add-column
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps (:id shape))
          (fn []
            (st/emit! (st/emit! (dwsl/add-layout-track [(:id shape)] :column ctl/default-track-value)))))
 
         handle-add-row
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps (:id shape))
          (fn []
            (st/emit! (st/emit! (dwsl/add-layout-track [(:id shape)] :row ctl/default-track-value)))))
-
 
         target-tracks* (mf/use-ref nil)
         drop-track-type* (mf/use-state nil)
         drop-track-target* (mf/use-state nil)
 
         handle-start-reorder-track
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps layout-data)
          (fn [type _from-idx]
            ;; Initialize target-tracks
@@ -1014,7 +1005,7 @@
              (reset! drop-track-type* type))))
 
         handle-move-reorder-track
-        (mf/use-callback
+        (mf/use-fn
          (fn [_type _from-idx position]
            (let [index
                  (->> (mf/ref-val target-tracks*)
@@ -1025,7 +1016,7 @@
                (reset! drop-track-target* index)))))
 
         handle-end-reorder-track
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps base-shape @drop-track-target*)
          (fn [type from-index _position move-content?]
            (when-let [to-index @drop-track-target*]
@@ -1041,9 +1032,8 @@
            (reset! drop-track-type* nil)
            (reset! drop-track-target* nil)))]
 
-    (mf/use-effect
-     (fn []
-       #(st/emit! (dwge/stop-grid-layout-editing (:id shape)))))
+    (mf/with-effect []
+      #(st/emit! (dwge/stop-grid-layout-editing (:id shape))))
 
     (when (and (not (:hidden shape)) (not (:blocked shape)))
       [:g.grid-editor {:pointer-events (when view-only "none")
@@ -1057,7 +1047,8 @@
                          :zoom zoom
                          :hover? (contains? hover-cells (:id cell))
                          :selected? (contains? selected-cells (:id cell))}])]
-       (when-not view-only
+
+       (when-not ^boolean view-only
          [:*
           [:& grid-editor-frame {:zoom zoom
                                  :bounds bounds

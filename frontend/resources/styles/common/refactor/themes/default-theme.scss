@@ -24,6 +24,18 @@
   --color-accent-quaternary: var(--da-quaternary);
   --color-component-highlight: var(--da-secondary);
 
+  --color-success-background: var(--status-color-success-950);
+  --color-success-foreground: var(--status-color-success-500);
+
+  --color-warning-background: var(--status-color-warning-950);
+  --color-warning-foreground: var(--status-color-warning-500);
+
+  --color-error-background: var(--status-color-error-950);
+  --color-error-foreground: var(--status-color-error-500);
+
+  --color-info-background: var(--status-color-info-950);
+  --color-info-foreground: var(--status-color-info-500);
+
   --overlay-color: var(--db-primary-60);
 
   --shadow-color: var(--db-secondary-30);

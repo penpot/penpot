@@ -10,7 +10,7 @@
    [app.common.data :as d]
    [app.common.spec :as us]
    [app.config :as cf]
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as msg]
    [app.main.data.users :as du]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -18,7 +18,7 @@
    [app.main.ui.components.forms :as fm]
    [app.main.ui.components.link :as lk]
    [app.main.ui.icons :as i]
-   [app.main.ui.messages :as msgs]
+   [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.i18n :refer [tr tr-html]]
    [app.util.router :as rt]
    [beicon.v2.core :as rx]
@@ -28,7 +28,7 @@
 (mf/defc demo-warning
   [_]
   [:div {:class (stl/css :banner)}
-   [:& msgs/inline-banner
+   [:& context-notification
     {:type :warning
      :content (tr "auth.demo-warning")}]])
 
@@ -61,14 +61,14 @@
   [form {:keys [type code] :as cause}]
   (condp = [type code]
     [:restriction :registration-disabled]
-    (st/emit! (dm/error (tr "errors.registration-disabled")))
+    (st/emit! (msg/error (tr "errors.registration-disabled")))
 
     [:restriction :profile-blocked]
-    (st/emit! (dm/error (tr "errors.profile-blocked")))
+    (st/emit! (msg/error (tr "errors.profile-blocked")))
 
     [:validation :email-has-permanent-bounces]
     (let [email (get @form [:data :email])]
-      (st/emit! (dm/error (tr "errors.email-has-permanent-bounces" email))))
+      (st/emit! (msg/error (tr "errors.email-has-permanent-bounces" email))))
 
     [:validation :email-already-exists]
     (swap! form assoc-in [:errors :email]
@@ -78,7 +78,7 @@
     (swap! form assoc-in [:errors :password]
            {:message "errors.email-as-password"})
 
-    (st/emit! (dm/error (tr "errors.generic")))))
+    (st/emit! (msg/error (tr "errors.generic")))))
 
 (defn- handle-prepare-register-success
   [params]
@@ -182,7 +182,7 @@
 
     (do
       (println (:explain error))
-      (st/emit! (dm/error (tr "errors.generic"))))))
+      (st/emit! (msg/error (tr "errors.generic"))))))
 
 (defn- handle-register-success
   [data]

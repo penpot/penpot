@@ -609,24 +609,29 @@
   (ptk/reify ::detach-selected-components
     ptk/WatchEvent
     (watch [it state _]
-      (let [page-id   (:current-page-id state)
-            objects   (wsh/lookup-page-objects state page-id)
-            file      (wsh/get-local-file state)
-            container (cfh/get-container file :page page-id)
-            libraries (wsh/get-libraries state)
-            selected  (->> state
-                           (wsh/lookup-selected)
-                           (cfh/clean-loops objects))
+      (let [page-id          (:current-page-id state)
+            objects          (wsh/lookup-page-objects state page-id)
+            file             (wsh/get-local-file state)
+            container        (cfh/get-container file :page page-id)
+            libraries        (wsh/get-libraries state)
+            selected         (->> state
+                                  (wsh/lookup-selected)
+                                  (cfh/clean-loops objects))
+            selected-objects (map #(get objects %) selected)
+            copies           (filter ctk/in-component-copy? selected-objects)
+            can-detach?      (and (seq copies)
+                                  (every? #(not (ctn/has-any-copy-parent? objects %)) selected-objects))
+            changes (when can-detach?
+                      (reduce
+                       (fn [changes id]
+                         (dwlh/generate-detach-instance changes container libraries id))
+                       (-> (pcb/empty-changes it)
+                           (pcb/with-container container)
+                           (pcb/with-objects objects))
+                       selected))]
 
-            changes (reduce
-                     (fn [changes id]
-                       (dwlh/generate-detach-instance changes libraries container id))
-                     (-> (pcb/empty-changes it)
-                         (pcb/with-container container)
-                         (pcb/with-objects objects))
-                     selected)]
-
-        (rx/of (dch/commit-changes changes))))))
+        (rx/of (when can-detach?
+                 (dch/commit-changes changes)))))))
 
 (defn nav-to-component-file
   [file-id component]
@@ -1126,12 +1131,12 @@
                   :controls :inline-actions
                   :links   [{:label (tr "workspace.updates.more-info")
                              :callback do-more-info}]
-                  :actions [{:label (tr "workspace.updates.update")
-                             :type :primary
-                             :callback do-update}
-                            {:label (tr "workspace.updates.dismiss")
+                  :actions [{:label (tr "workspace.updates.dismiss")
                              :type :secondary
-                             :callback do-dismiss}]
+                             :callback do-dismiss}
+                            {:label (tr "workspace.updates.update")
+                             :type :primary
+                             :callback do-update}]
                   :tag :sync-dialog)))))))
 
 (defn component-changed

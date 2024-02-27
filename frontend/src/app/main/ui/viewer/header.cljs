@@ -34,7 +34,8 @@
   (modal/show! :login-register {}))
 
 (mf/defc zoom-widget
-  {::mf/wrap [mf/memo]}
+  {::mf/memo true
+   ::mf/props :obj}
   [{:keys [zoom
            on-increase
            on-decrease
@@ -102,38 +103,38 @@
         [:span  {:class (stl/css :shortcuts)}
          (for [sc (scd/split-sc (sc/get-tooltip :toggle-zoom-style))]
            [:span {:class (stl/css :shortcut-key)
-                   :key (str "zoom-fit-" sc)} sc])]]
+                   :key (dm/str "zoom-fit-" sc)} sc])]]
        [:li {:class (stl/css :zoom-option)
              :on-click on-zoom-fill}
         (tr "workspace.header.zoom-fill")
         [:span  {:class (stl/css :shortcuts)}
          (for [sc (scd/split-sc (sc/get-tooltip :toggle-zoom-style))]
            [:span {:class (stl/css :shortcut-key)
-                   :key (str "zoom-fill-" sc)} sc])]]
+                   :key (dm/str "zoom-fill-" sc)} sc])]]
        [:li {:class (stl/css :zoom-option)
              :on-click on-fullscreen}
         (tr "workspace.header.zoom-full-screen")
         [:span  {:class (stl/css :shortcuts)}
          (for [sc (scd/split-sc (sc/get-tooltip :toggle-fullscreen))]
            [:span {:class (stl/css :shortcut-key)
-                   :key (str "zoom-fullscreen-" sc)} sc])]]]]]))
+                   :key (dm/str "zoom-fullscreen-" sc)} sc])]]]]]))
 
 (mf/defc header-options
   [{:keys [section zoom page file index permissions interactions-mode]}]
   (let [fullscreen?    (mf/deref fullscreen-ref)
 
         toggle-fullscreen
-        (mf/use-callback
+        (mf/use-fn
          (fn [] (st/emit! dv/toggle-fullscreen)))
 
         go-to-workspace
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps page)
          (fn []
            (st/emit! (dv/go-to-workspace (:id page)))))
 
         open-share-dialog
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps page)
          (fn []
            (modal/show! :share-link {:page page :file file})
@@ -209,22 +210,22 @@
         show-dropdown? (mf/use-state false)
 
         toggle-thumbnails
-        (mf/use-callback
+        (mf/use-fn
          (fn []
            (st/emit! dv/toggle-thumbnails-panel)))
 
         open-dropdown
-        (mf/use-callback
+        (mf/use-fn
          (fn []
            (reset! show-dropdown? true)))
 
         close-dropdown
-        (mf/use-callback
+        (mf/use-fn
          (fn []
            (reset! show-dropdown? false)))
 
         navigate-to
-        (mf/use-callback
+        (mf/use-fn
          (fn [page-id]
            (st/emit! (dv/go-to-page page-id))
            (reset! show-dropdown? false)))]
@@ -245,8 +246,8 @@
          (for [id (get-in file [:data :pages])]
            [:li {:class (stl/css-case :dropdown-element true
                                       :selected (= page-id id))
-                 :id (str id)
-                 :key (str id)
+                 :id (dm/str id)
+                 :key (dm/str id)
                  :on-click (partial navigate-to id)}
             [:span {:class (stl/css :label)}
              (get-in file [:data :pages-index id :name])]

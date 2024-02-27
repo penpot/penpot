@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
@@ -26,16 +27,20 @@
    [rumext.v2 :as mf]))
 
 (mf/defc comments-menu
-  {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
+  {::mf/props :obj
+   ::mf/memo true}
   []
-  (let [{cmode :mode cshow :show show-sidebar? :show-sidebar?} (mf/deref refs/comments-local)
+  (let [state           (mf/deref refs/comments-local)
+        cmode           (:mode state)
+        cshow           (:show state)
+        show-sidebar?   (:show-sidebar? state false)
+
         show-dropdown?  (mf/use-state false)
         toggle-dropdown (mf/use-fn #(swap! show-dropdown? not))
         hide-dropdown   (mf/use-fn #(reset! show-dropdown? false))
 
         update-mode
-        (mf/use-callback
+        (mf/use-fn
          (fn [event]
            (let [mode (-> (dom/get-current-target event)
                           (dom/get-data "value")
@@ -43,78 +48,76 @@
              (st/emit! (dcm/update-filters {:mode mode})))))
 
         update-show
-        (mf/use-callback
+        (mf/use-fn
          (fn [event]
            (let [mode (-> (dom/get-current-target event)
                           (dom/get-data "value")
-                          (d/read-string))]
+                          (keyword))
+                 mode (if (= :pending mode) :all :pending)]
              (st/emit! (dcm/update-filters {:show mode})))))
 
         update-options
-        (mf/use-callback
-         (mf/deps show-sidebar?)
+        (mf/use-fn
          (fn [event]
-           (let [mode (-> (dom/get-target event)
+           (let [mode (-> (dom/get-current-target event)
                           (dom/get-data "value")
-                          (boolean))]
+                          (parse-boolean))]
              (st/emit! (dcm/update-options {:show-sidebar? (not mode)})))))]
 
     [:div {:class (stl/css :view-options)
            :on-click toggle-dropdown}
-     [:span {:class (stl/css :dropdown-title)}
-      (tr "labels.comments")]
-     [:span {:class (stl/css :icon-dropdown)}
-      i/arrow-refactor]
+     [:span {:class (stl/css :dropdown-title)} (tr "labels.comments")]
+     [:span {:class (stl/css :icon-dropdown)} i/arrow-refactor]
+
      [:& dropdown {:show @show-dropdown?
                    :on-close hide-dropdown}
       [:ul {:class (stl/css :dropdown)}
-       [:li {:class (stl/css-case :dropdown-element true
-                                  :selected (or (= :all cmode) (nil? cmode)))
+
+       [:li {:class (stl/css-case
+                     :dropdown-element true
+                     :selected (or (= :all cmode) (nil? cmode)))
              :data-value "all"
              :on-click update-mode}
-
         [:span {:class (stl/css :label)} (tr "labels.show-all-comments")]
         (when (or (= :all cmode) (nil? cmode))
           [:span {:class (stl/css :icon)} i/tick-refactor])]
 
-       [:li {:class (stl/css-case :dropdown-element true
-                                  :selected (= :yours cmode))
+       [:li {:class (stl/css-case
+                     :dropdown-element true
+                     :selected (= :yours cmode))
              :data-value "yours"
              :on-click update-mode}
-
-        [:span {:class (stl/css :label)}
-         (tr "labels.show-your-comments")]
-
+        [:span {:class (stl/css :label)} (tr "labels.show-your-comments")]
         (when (= :yours cmode)
           [:span {:class (stl/css :icon)}
            i/tick-refactor])]
 
        [:li {:class (stl/css :separator)}]
 
-       [:li {:class (stl/css-case :dropdown-element true
-                                  :selected (= :pending cshow))
-             :data-value (if (= :pending cshow) "all" "pending")
+       [:li {:class (stl/css-case
+                     :dropdown-element true
+                     :selected (= :pending cshow))
+             :data-value (d/name cshow)
              :on-click update-show}
-
-        [:span {:class (stl/css :label)}
-         (tr "labels.hide-resolved-comments")]
+        [:span {:class (stl/css :label)} (tr "labels.hide-resolved-comments")]
         (when  (= :pending cshow)
           [:span {:class (stl/css :icon)}
            i/tick-refactor])]
 
        [:li {:class (stl/css :separator)}]
 
-       [:li {:class (stl/css-case :dropdown-element true
-                                  :selected show-sidebar?)
-             :data-value (str show-sidebar?)
+       [:li {:class (stl/css-case
+                     :dropdown-element true
+                     :selected show-sidebar?)
+             :data-value (dm/str show-sidebar?)
              :on-click update-options}
-
         [:span {:class (stl/css :label)} (tr "labels.show-comments-list")]
         (when show-sidebar?
           [:span {:class (stl/css :icon)} i/tick-refactor])]]]]))
 
 
-(defn- update-thread-position [positions {:keys [id] :as thread}]
+(defn- update-thread-position
+  [positions {:keys [id] :as thread}]
   (if-let [data (get positions id)]
     (-> thread
         (assoc :position (:position data))
@@ -122,7 +125,8 @@
     thread))
 
 (mf/defc comments-layer
-  [{:keys [zoom file users frame page] :as props}]
+  {::mf/props :obj}
+  [{:keys [zoom file users frame page]}]
   (let [profile        (mf/deref refs/profile)
         local          (mf/deref refs/comments-local)
 

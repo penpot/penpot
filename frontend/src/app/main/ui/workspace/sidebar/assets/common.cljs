@@ -355,6 +355,9 @@
                                           (not (ctn/has-any-copy-parent? objects shape))
                                           (cfh/component-touched? objects (:id shape)))))
 
+        can-detach? (and (seq copies)
+                         (every? #(not (ctn/has-any-copy-parent? objects %)) copies))
+
 
         do-detach-component
         #(st/emit! (dwl/detach-components (map :id copies)))
@@ -420,7 +423,7 @@
                       (when (and (not multi) main-instance? local-component? lacks-annotation? components-v2)
                         {:msg "workspace.shape.menu.create-annotation"
                          :action do-create-annotation})
-                      (when (seq copies)
+                      (when can-detach?
                         {:msg (if (> (count copies) 1)
                                 "workspace.shape.menu.detach-instances-in-bulk"
                                 "workspace.shape.menu.detach-instance")

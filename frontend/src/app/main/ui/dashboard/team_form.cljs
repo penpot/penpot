@@ -9,7 +9,7 @@
   (:require
    [app.common.spec :as us]
    [app.main.data.dashboard :as dd]
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
@@ -29,22 +29,22 @@
 (defn- on-create-success
   [_form response]
   (let [msg "Team created successfully"]
-    (st/emit! (dm/success msg)
+    (st/emit! (msg/success msg)
               (modal/hide)
               (rt/nav :dashboard-projects {:team-id (:id response)}))))
 
 (defn- on-update-success
   [_form _response]
   (let [msg "Team created successfully"]
-    (st/emit! (dm/success msg)
+    (st/emit! (msg/success msg)
               (modal/hide))))
 
 (defn- on-error
   [form _response]
   (let [id  (get-in @form [:clean-data :id])]
     (if id
-      (rx/of (dm/error "Error on updating team."))
-      (rx/of (dm/error "Error on creating team.")))))
+      (rx/of (msg/error "Error on updating team."))
+      (rx/of (msg/error "Error on creating team.")))))
 
 (defn- on-create-submit
   [form]
@@ -117,6 +117,6 @@
           {:label (if team
                     (tr "labels.update-team")
                     (tr "labels.create-team"))
-           :className (stl/css :accept-btn)}]]]]]]))
+           :class (stl/css :accept-btn)}]]]]]]))
 
 

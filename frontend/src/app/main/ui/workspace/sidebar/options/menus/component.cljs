@@ -522,7 +522,8 @@
        (when open?
          [:div {:class (stl/css :element-content)}
           [:div {:class (stl/css-case :component-wrapper true
-                                      :with-actions show-menu?)}
+                                      :with-actions show-menu?
+                                      :without-actions (not show-menu?))}
            [:button {:class (stl/css-case :component-name-wrapper true
                                           :with-main (and can-swap? (not multi))
                                           :swappeable (and can-swap? (not swap-opened?)))

@@ -632,6 +632,7 @@
                      (not= @hover-top-frame-id (:id frame)))
             [:& grid-layout/editor
              {:zoom zoom
+              :key (dm/str (:id frame))
               :objects base-objects
               :modifiers modifiers
               :shape frame

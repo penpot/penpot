@@ -8,7 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.spec :as us]
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
    [app.main.data.users :as du]
    [app.main.store :as st]
@@ -66,7 +66,7 @@
          (fn [_]
            (let [message (tr "dashboard.access-tokens.create.success")]
              (st/emit! (du/fetch-access-tokens)
-                       (dm/success message)
+                       (msg/success message)
                        (reset! created? true)))))
 
         on-close
@@ -79,7 +79,7 @@
         on-error
         (mf/use-fn
          (fn [_]
-           (st/emit! (dm/error (tr "errors.generic"))
+           (st/emit! (msg/error (tr "errors.generic"))
                      (modal/hide))))
 
         on-submit
@@ -101,9 +101,10 @@
          (fn [event]
            (dom/prevent-default event)
            (wapi/write-to-clipboard (:token created))
-           (st/emit! (dm/show {:type :info
-                               :content (tr "dashboard.access-tokens.copied-success")
-                               :timeout 1000}))))]
+           (st/emit! (msg/show {:type :info
+                                :notification-type :toast
+                                :content (tr "dashboard.access-tokens.copied-success")
+                                :timeout 7000}))))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-container)}

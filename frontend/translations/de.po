@@ -2122,18 +2122,6 @@ msgid_plural "modals.unpublish-shared-confirm.accept"
 msgstr[0] "Veröffentlichung aufheben"
 msgstr[1] "Veröffentlichung aufheben"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.no-files-message"
-msgid_plural "modals.unpublish-shared-confirm.activated.no-files-message"
-msgstr[0] "Es ist in keiner Datei aktiviert."
-msgstr[1] "Sie sind in keiner Datei aktiviert."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.scd-message"
-msgid_plural "modals.unpublish-shared-confirm.activated.scd-message"
-msgstr[0] "Diese Bibliothek ist hier aktiviert:"
-msgstr[1] "Diese Bibliotheken sind hier aktiviert:"
-
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
