@@ -606,7 +606,8 @@
 
             shape-main (when component
                          (if (and reset? components-v2)
-                           (ctf/find-remote-shape container libraries shape-inst)
+                           ;; the reset is against the ref-shape, not against the original shape of the component
+                           (ctf/find-ref-shape nil container libraries shape-inst {:include-deleted? true})
                            (ctf/get-ref-shape library component shape-inst)))
 
             shape-inst (if (and reset? components-v2)
