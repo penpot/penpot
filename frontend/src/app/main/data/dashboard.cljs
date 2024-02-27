@@ -63,7 +63,7 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [stoper-s   (rx/filter (ptk/type? ::finalize) stream)
+      (let [stopper   (rx/filter (ptk/type? ::finalize) stream)
             profile-id (:profile-id state)]
 
         (->> (rx/merge
@@ -92,7 +92,7 @@
                    (rx/filter #(= id (:id %)))
                    (rx/map du/set-current-team)))
 
-             (rx/take-until stoper-s))))))
+             (rx/take-until stopper))))))
 
 (defn finalize
   [params]

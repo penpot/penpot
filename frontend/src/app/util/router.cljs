@@ -149,7 +149,7 @@
 
     ptk/EffectEvent
     (effect [_ state stream]
-      (let [stoper  (rx/filter (ptk/type? ::initialize-history) stream)
+      (let [stopper (rx/filter (ptk/type? ::initialize-history) stream)
             history (:history state)
             router  (:router state)]
         (ts/schedule #(on-change router (.getToken ^js history)))
@@ -158,5 +158,5 @@
                             (fn []
                               (bhistory/disable! history)
                               (e/unlistenByKey key)))))
-             (rx/take-until stoper)
+             (rx/take-until stopper)
              (rx/subs! #(on-change router %)))))))

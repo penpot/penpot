@@ -234,7 +234,7 @@
       ptk/EffectEvent
       (effect [_ _ stream]
         (let [session (atom nil)
-              stoper  (rx/filter (ptk/type? ::initialize) stream)
+              stopper  (rx/filter (ptk/type? ::initialize) stream)
               buffer  (atom #queue [])
               profile (->> (rx/from-atom storage {:emit-current-value? true})
                            (rx/map :profile)
@@ -259,7 +259,7 @@
                                    (rx/tap (fn [_]
                                              (l/debug :hint "events chunk persisted" :total (count chunk))))
                                    (rx/map (constantly chunk))))))
-               (rx/take-until stoper)
+               (rx/take-until stopper)
                (rx/subs! (fn [chunk]
                            (swap! buffer remove-from-buffer (count chunk)))
                          (fn [cause]
@@ -290,7 +290,7 @@
                          (swap! buffer append-to-buffer event)))
 
                (rx/switch-map #(rx/timer (inst-ms session-timeout)))
-               (rx/take-until stoper)
+               (rx/take-until stopper)
                (rx/subs! (fn [_]
                            (l/debug :hint "session reinitialized")
                            (reset! session nil))

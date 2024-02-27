@@ -209,7 +209,7 @@
                  (rx/filter #(= @resource-id (:resource-id %)))
                  (rx/share))
 
-            stoper
+            stopper
             (rx/filter #(or (= "ended" (:status %))
                             (= "error" (:status %)))
                        progress-stream)]
@@ -228,12 +228,12 @@
                         (initialize-export-status exports cmd resource))))
 
          ;; We proceed to update the export state with incoming
-         ;; progress updates. We delay the stoper for give some time
+         ;; progress updates. We delay the stopper for give some time
          ;; to update the status with ended or errored status before
          ;; close the stream.
          (->> progress-stream
               (rx/map update-export-status)
-              (rx/take-until (rx/delay 500 stoper))
+              (rx/take-until (rx/delay 500 stopper))
               (rx/finalize (fn []
                              (swap! st/ongoing-tasks disj :export))))
 
@@ -246,7 +246,7 @@
               (rx/take 1)
               (rx/delay default-timeout)
               (rx/map #(clear-export-state @resource-id))
-              (rx/take-until (rx/delay 6000 stoper))))))))
+              (rx/take-until (rx/delay 6000 stopper))))))))
 
 (defn retry-last-export
   []

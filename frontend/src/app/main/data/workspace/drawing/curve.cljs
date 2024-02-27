@@ -28,7 +28,7 @@
 
 (def simplify-tolerance 0.3)
 
-(defn stoper-event?
+(defn stopper-event?
   [{:keys [type] :as event}]
   (and (mse/mouse-event? event)
        (= type :up)))
@@ -104,7 +104,7 @@
   (ptk/reify ::handle-drawing
     ptk/WatchEvent
     (watch [_ _ stream]
-      (let [stoper (rx/filter stoper-event? stream)
+      (let [stopper (rx/filter stopper-event? stream)
             mouse  (rx/sample 10 ms/mouse-position)
             shape  (cts/setup-shape {:type :path
                                      :initialized? true
@@ -115,7 +115,7 @@
          (rx/of #(update % :workspace-drawing assoc :object shape))
          (->> mouse
               (rx/map insert-point)
-              (rx/take-until stoper))
+              (rx/take-until stopper))
          (rx/of
           (setup-frame)
           (finish-drawing)
