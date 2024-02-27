@@ -6,22 +6,7 @@
 
 (ns app.util.time
   (:require
-   ["date-fns/format" :default dateFnsFormat]
-   ["date-fns/formatDistanceToNowStrict" :default dateFnsFormatDistanceToNowStrict]
-   ["date-fns/locale/ar-SA" :default dateFnsLocalesAr]
-   ["date-fns/locale/ca" :default dateFnsLocalesCa]
-   ["date-fns/locale/de" :default dateFnsLocalesDe]
-   ["date-fns/locale/el" :default dateFnsLocalesEl]
-   ["date-fns/locale/en-US" :default dateFnsLocalesEnUs]
-   ["date-fns/locale/es" :default dateFnsLocalesEs]
-   ["date-fns/locale/fa-IR" :default dateFnsLocalesFa]
-   ["date-fns/locale/fr" :default dateFnsLocalesFr]
-   ["date-fns/locale/he" :default dateFnsLocalesHe]
-   ["date-fns/locale/pt-BR" :default dateFnsLocalesPtBr]
-   ["date-fns/locale/ro" :default dateFnsLocalesRo]
-   ["date-fns/locale/ru" :default dateFnsLocalesRu]
-   ["date-fns/locale/tr" :default dateFnsLocalesTr]
-   ["date-fns/locale/zh-CN" :default dateFnsLocalesZhCn]
+   ["./time_impl.js" :as impl]
    [app.common.data.macros :as dm]
    [app.common.time :as common-time]
    [app.util.object :as obj]
@@ -207,22 +192,6 @@
       :json (.toJSON it)
       (.toFormat ^js it fmt))))
 
-(def ^:private locales
-  #js {:en dateFnsLocalesEnUs
-       :ar dateFnsLocalesAr
-       :he dateFnsLocalesHe
-       :fr dateFnsLocalesFr
-       :tr dateFnsLocalesTr
-       :es dateFnsLocalesEs
-       :ca dateFnsLocalesCa
-       :el dateFnsLocalesEl
-       :ru dateFnsLocalesRu
-       :ro dateFnsLocalesRo
-       :de dateFnsLocalesDe
-       :fa dateFnsLocalesFa
-       :pt_br dateFnsLocalesPtBr
-       :zh_cn dateFnsLocalesZhCn})
-
 (defn timeago
   ([v] (timeago v nil))
   ([v {:keys [locale] :or {locale "en"}}]
@@ -230,19 +199,18 @@
      (let [v (if (datetime? v) (format v :date) v)]
        (->> #js {:includeSeconds true
                  :addSuffix true
-                 :locale (obj/get locales locale)}
-            (dateFnsFormatDistanceToNowStrict v))))))
+                 :locale (obj/get impl/locales locale)}
+            (impl/format-distance-to-now v))))))
 
 (defn format-date-locale
   ([v] (format-date-locale v nil))
   ([v {:keys [locale] :or {locale "en"}}]
    (when v
      (let [v (if (datetime? v) (format v :date) v)
-           locale (obj/get locales locale)
+           locale (obj/get impl/locales locale)
            f (.date (.-formatLong ^js locale) v)]
        (->> #js {:locale locale}
-            (dateFnsFormat v f))))))
-
+            (impl/format v f))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Measurement Helpers
