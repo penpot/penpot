@@ -26,7 +26,7 @@
 (def guide-width 1)
 (def guide-opacity 0.7)
 (def guide-opacity-hover 1)
-(def guide-color colors/primary)
+(def guide-color colors/new-primary)
 (def guide-pill-width 34)
 (def guide-pill-height 20)
 (def guide-pill-corner-radius 4)

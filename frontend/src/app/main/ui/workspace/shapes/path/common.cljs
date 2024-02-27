@@ -13,7 +13,7 @@
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
-(def primary-color "var(--color-accent-tertiary)")
+(def accent-color "var(--color-accent-tertiary)")
 (def secondary-color "var(--color-accent-quaternary)")
 (def black-color "var(--app-black)")
 (def white-color "var(--app-white)")

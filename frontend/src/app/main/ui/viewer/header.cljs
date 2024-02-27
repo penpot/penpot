@@ -161,6 +161,8 @@
          #(st/emit! dv/zoom-to-fit))]
 
     [:div {:class (stl/css :options-zone)}
+     [:& export-progress-widget]
+
      (case section
        :interactions [:*
                       (when index
@@ -168,8 +170,6 @@
                       [:& interactions-menu {:interactions-mode interactions-mode}]]
        :comments [:& comments-menu]
        [:div {:class (stl/css :view-options)}])
-
-     [:& export-progress-widget]
 
      [:& zoom-widget
       {:zoom zoom

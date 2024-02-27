@@ -19,18 +19,14 @@
   grid-template-columns: $s-16 1fr auto;
   gap: $s-8;
   min-height: $s-32;
-  min-width: $s-500;
-  max-width: calc(10 * $s-100);
-  padding: $s-8 $s-8 $s-8 $s-16;
+  min-width: $s-228;
+  max-width: $s-400;
+  padding: $s-8;
   border: $s-1 solid var(--toast-notification-border-color);
   background-color: var(--toast-notification-bg-color);
   border-radius: $br-8;
   color: var(--toast-notification-fg-color);
   z-index: $z-index-alert;
-}
-
-.with-links {
-  grid-template-columns: $s-16 auto 1fr auto;
 }
 
 .warning {
@@ -69,7 +65,7 @@
 }
 
 .link-nav {
-  height: $s-24;
+  display: inline;
 }
 
 .link {
@@ -80,7 +76,7 @@
 
 .icon {
   @extend .button-icon;
-  height: 100%;
+  align-self: flex-start;
   stroke: var(--toast-notification-icon-color);
 }
 
@@ -91,9 +87,10 @@
 
 .btn-close {
   @include buttonStyle;
-  @include flexCenter;
-  height: 100%;
-  min-width: $s-32;
+  align-self: flex-start;
+  width: $s-16;
+  margin: 0;
+  padding: 0;
   background-color: transparent;
 }
 
