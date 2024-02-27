@@ -24,7 +24,6 @@
    [app.util.globals :as globals]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.object :as obj]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -36,35 +35,25 @@
 ;; level frames and try to avoid rerender frames that are does not
 ;; affected by the selected set.
 (mf/defc frame-wrapper
-  {::mf/wrap-props false}
-  [props]
-  (let [selected (obj/get props "selected")
-        callback (mf/use-var false)
+  {::mf/props :obj}
+  [{:keys [selected] :as props}]
+  (let [disposable       (mf/use-var nil)
         pending-selected (mf/use-var selected)
         current-selected (mf/use-state selected)
+        props            (mf/spread props :selected @current-selected)]
 
-        props
-        (-> props
-            (obj/clone)
-            (obj/set! "selected" @current-selected))]
+    (mf/with-effect [selected]
+      (reset! pending-selected selected)
+      (swap! disposable (fn [value]
+                          (when (some? value)
+                            (rx/dispose! value))
+                          (ts/idle-then-raf
+                           (fn []
+                             (reset! current-selected @pending-selected)
+                             (reset! disposable nil)))))
+      (fn []
+        (some-> @disposable rx/dispose!)))
 
-    (mf/use-effect
-     (mf/deps selected)
-     (fn []
-       ;; Change in selected we schedule a idle-then-raf
-       ;; following changes will update the pending but not create
-       ;; a new callbacks
-       (reset! pending-selected selected)
-       (when (not @callback)
-         (reset!
-          callback
-          (ts/idle-then-raf
-           (fn []
-             (reset! current-selected @pending-selected)
-             (reset! callback nil)))))
-       (fn []
-         (when @callback
-           (rx/dispose! @callback)))))
     [:> layer-item props]))
 
 (mf/defc layers-tree
