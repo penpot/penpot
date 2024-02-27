@@ -90,7 +90,7 @@
                          ::dwsp/interrupt)
 
                (when (and (not= edition id) (or text-editing? grid-editing?))
-                 (st/emit! dw/clear-edition-mode))
+                 (st/emit! (dw/clear-edition-mode)))
 
                (when (and (not text-editing?)
                           (not blocked)

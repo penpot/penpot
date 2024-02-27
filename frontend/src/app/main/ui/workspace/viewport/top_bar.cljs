@@ -69,7 +69,7 @@
        [:& view-only-actions]
 
        path-edition?
-       [:div.viewport-actions
+       [:div {:class (stl/css :viewport-actions)}
         [:& path-actions {:shape shape}]]
 
        grid-edition?

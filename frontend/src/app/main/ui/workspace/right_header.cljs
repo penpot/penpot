@@ -171,7 +171,7 @@
         (mf/use-fn
          (fn []
            (st/emit! :interrupt
-                     dw/clear-edition-mode)
+                     (dw/clear-edition-mode))
            ;; Delay so anything that launched :interrupt can finish
            (ts/schedule 100 #(st/emit! (dw/select-for-drawing :comments)))))
 

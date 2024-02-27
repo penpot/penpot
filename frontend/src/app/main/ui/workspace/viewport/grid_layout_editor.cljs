@@ -61,7 +61,7 @@
               :on-click #(st/emit! (dwge/locate-board (:id shape)))}
      (tr "workspace.layout_grid.editor.top-bar.locate")]
     [:button {:class (stl/css :done-btn)
-              :on-click #(st/emit! dw/clear-edition-mode)}
+              :on-click #(st/emit! (dw/clear-edition-mode))}
      (tr "workspace.layout_grid.editor.top-bar.done")]]])
 
 (mf/defc grid-editor-frame

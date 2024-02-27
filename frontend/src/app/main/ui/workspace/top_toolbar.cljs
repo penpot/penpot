@@ -33,7 +33,7 @@
         on-click
         (mf/use-fn
          (fn []
-           (st/emit! :interrupt dw/clear-edition-mode)
+           (st/emit! :interrupt (dw/clear-edition-mode))
            (dom/click (mf/ref-val ref))))
 
         on-selected
@@ -72,7 +72,7 @@
         read-only?           (mf/use-ctx ctx/workspace-read-only?)
 
         rulers?              (mf/deref refs/rulers?)
-        hide-toolbar?        (mf/deref refs/toolbar-visibility)
+        hide-toolbar?        (mf/deref refs/toolbar-hidden)
 
         interrupt
         (mf/use-fn #(st/emit! :interrupt))
@@ -83,8 +83,7 @@
            (let [tool (-> (dom/get-current-target event)
                           (dom/get-data "tool")
                           (keyword))]
-             (st/emit! :interrupt
-                       dw/clear-edition-mode)
+             (st/emit! :interrupt (dw/clear-edition-mode))
 
              ;; Delay so anything that launched :interrupt can finish
              (ts/schedule 100 #(st/emit! (dw/select-for-drawing tool))))))
