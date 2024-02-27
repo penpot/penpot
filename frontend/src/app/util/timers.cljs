@@ -43,7 +43,7 @@
 (if (and (exists? js/window)
          (.-requestIdleCallback js/window))
   (do
-    (def ^:private request-idle-callback #(js/requestIdleCallback %))
+    (def ^:private request-idle-callback #(js/requestIdleCallback % #js {:timeout 30000})) ;; 30s timeout
     (def ^:private cancel-idle-callback #(js/cancelIdleCallback %)))
   (do
     (def ^:private request-idle-callback #(js/setTimeout % 250))
