@@ -2112,20 +2112,6 @@ msgstr[0] "Nav atlases"
 msgstr[1] "Atcelt publicēšanu"
 msgstr[2] "Atcelt publicēšanu"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.no-files-message"
-msgid_plural "modals.unpublish-shared-confirm.activated.no-files-message"
-msgstr[0] "Nav aktivēti nevienā datnē."
-msgstr[1] "Tas nav aktivēts nevienā datnē."
-msgstr[2] "Tie nav aktivēti nevienā datnē."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.scd-message"
-msgid_plural "modals.unpublish-shared-confirm.activated.scd-message"
-msgstr[0] "Bibliotēkas ir aktivētas šeit:"
-msgstr[1] "Šī bibliotēka ir aktivēta šeit:"
-msgstr[2] "Šīs bibliotēkas ir aktivētas šeit:"
-
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"

@@ -392,13 +392,19 @@
         (has-any-copy-parent? objects (:parent-id shape))))))
 
 (defn has-any-main?
-  "Check if the shape has any children or parent that is a main component."
+  "Check if the shape is a main component or has any children or parent that is a main component."
   [objects shape]
   (let [children (cfh/get-children-with-self objects (:id shape))
         parents  (cfh/get-parents objects (:id shape))]
     (or
      (some ctk/main-instance? children)
      (some ctk/main-instance? parents))))
+
+(defn has-any-main-children?
+  "Check if the shape is a main component or has any children that is a main component."
+  [objects shape]
+  (let [children (cfh/get-children-with-self objects (:id shape))]
+    (some ctk/main-instance? children)))
 
 (defn valid-shape-for-component?
   "Check if a main component can be generated from this shape in terms of nested components:
@@ -412,7 +418,7 @@
 (defn- invalid-structure-for-component?
   "Check if the structure generated nesting children in parent is invalid in terms of nested components"
   [objects parent children]
-  (let [selected-main-instance? (some true? (map #(has-any-main? objects %) children))
+  (let [selected-main-instance? (some true? (map #(has-any-main-children? objects %) children))
         parent-in-component?    (in-any-component? objects parent)
         comps-nesting-loop?     (not (->> children
                                           (map #(cfh/components-nesting-loop? objects (:id %) (:id parent)))

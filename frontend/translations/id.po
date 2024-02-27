@@ -2098,16 +2098,6 @@ msgid "modals.unpublish-shared-confirm.accept"
 msgid_plural "modals.unpublish-shared-confirm.accept"
 msgstr[0] "Batalkan penerbitan"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.no-files-message"
-msgid_plural "modals.unpublish-shared-confirm.activated.no-files-message"
-msgstr[0] "Tidak diaktifkan dalam berkas mana pun."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.scd-message"
-msgid_plural "modals.unpublish-shared-confirm.activated.scd-message"
-msgstr[0] "Pustaka ini diaktifkan di sini:"
-
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"

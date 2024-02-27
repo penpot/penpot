@@ -2145,20 +2145,6 @@ msgstr[1] "Publicaties ongedaan maken"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.no-files-message"
-msgid_plural "modals.unpublish-shared-confirm.activated.no-files-message"
-msgstr[0] "Het is in geen enkel bestand geactiveerd."
-msgstr[1] "Ze zijn in geen enkel bestand geactiveerd."
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.scd-message"
-msgid_plural "modals.unpublish-shared-confirm.activated.scd-message"
-msgstr[0] "Deze bibliotheek wordt hier geactiveerd:"
-msgstr[1] "Deze bibliotheken worden hier geactiveerd:"
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] ""

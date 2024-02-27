@@ -2090,18 +2090,6 @@ msgstr "Remover \"%s\" como Biblioteca Partilhada"
 msgid "modals.small-nudge"
 msgstr "Pequeno deslocamento"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.no-files-message"
-msgid_plural "modals.unpublish-shared-confirm.activated.no-files-message"
-msgstr[0] "Não está ativa em nenhum ficheiro."
-msgstr[1] "Não estão ativas em nenhum ficheiro."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.scd-message"
-msgid_plural "modals.unpublish-shared-confirm.activated.scd-message"
-msgstr[0] "Esta biblioteca está ativa aqui:"
-msgstr[1] "Estas bibliotecas estão ativas aqui:"
-
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"

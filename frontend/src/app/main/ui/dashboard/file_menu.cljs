@@ -133,14 +133,29 @@
             (st/emit! (dd/fetch-recent-files team-id)
                       (dd/clear-selected-files))))
 
+        on-move-accept
+        (fn [params team-id project-id]
+          (st/emit! (dd/move-files
+                     (with-meta params
+                       {:on-success #(on-move-success team-id project-id)}))))
+
         on-move
         (fn [team-id project-id]
           (let [params  {:ids (into #{} (map :id) files)
                          :project-id project-id}]
             (fn []
-              (st/emit! (dd/move-files
-                         (with-meta params
-                           {:on-success #(on-move-success team-id project-id)}))))))
+
+              (let [num-shared (filter #(:is-shared %) files)]
+                (if (and (< 0 (count num-shared))
+                         (not= team-id current-team-id))
+                  (st/emit! (modal/show
+                             {:type :delete-shared-libraries
+                              :origin :move
+                              :ids (into #{} (map :id) files)
+                              :on-accept #(on-move-accept params team-id project-id)
+                              :count-libraries (count num-shared)}))
+
+                  (on-move-accept params team-id project-id))))))
 
         add-shared
         #(st/emit! (dd/set-file-shared (assoc file :is-shared true)))
