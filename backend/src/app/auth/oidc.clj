@@ -20,7 +20,6 @@
    [app.http.client :as http]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
-   [app.main :as-alias main]
    [app.rpc.commands.profile :as profile]
    [app.setup :as-alias setup]
    [app.tokens :as tokens]
@@ -531,13 +530,21 @@
       (->> (redirect-response uri)
            (sxf request)))
 
-
     (if (auth/email-domain-in-whitelist? (:email info))
       (let [info   (assoc info
                           :iss :prepared-register
-                          :is-active true
                           :exp (dt/in-future {:hours 48}))
+
+            props  (:props info)
+            info   (if (or (:google/email_verified props)
+                           (:github/email_verified props)
+                           (:gitlab/email_verified props)
+                           (:oidc/email_verified props))
+                     (assoc info :is-active true)
+                     info)
+
             token  (tokens/generate (::setup/props cfg) info)
+
             params (d/without-nils
                     {:token token
                      :fullname (:fullname info)})
@@ -547,7 +554,6 @@
 
         (redirect-response uri))
       (generate-error-redirect cfg "email-domain-not-allowed"))))
-
 
 (defn- auth-handler
   [cfg {:keys [params] :as request}]
