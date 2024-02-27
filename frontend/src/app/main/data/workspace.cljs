@@ -1080,7 +1080,7 @@
   (let [object     (get objects object-id)
         parent-id  (:parent-id (get objects object-id))
         parent     (get objects parent-id)]
-    [(gal/align-to-rect object parent axis)]))
+    [(gal/align-to-parent object parent axis)]))
 
 (defn align-objects-list
   [objects selected axis]
