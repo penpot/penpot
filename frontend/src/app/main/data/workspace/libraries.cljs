@@ -688,6 +688,8 @@
 
          (rx/take-until stopper-s))))))
 
+(declare component-swap)
+
 (defn reset-component
   "Cancels all modifications in the shape with the given id, and all its children, in
   the current page. Set all attributes equal to the ones in the linked component,
@@ -699,24 +701,35 @@
     (watch [it state _]
       (log/info :msg "RESET-COMPONENT of shape" :id (str id))
       (let [file      (wsh/get-local-file state)
-            libraries (wsh/get-libraries state)
+            objects   (wsh/lookup-page-objects state)
+            shape     (get objects id)
+            swapped-from (-> (d/seek #(str/starts-with? (name %) "swapped-from-") (:touched shape)))
+            swapped-from (when swapped-from
+                           (->  swapped-from
+                                (name)
+                                (str/replace "swapped-from-" "")
+                                (uuid)))
+            swapped-from (-> objects
+                             (get swapped-from))]
 
-            page-id   (:current-page-id state)
-            container (cfh/get-container file :page page-id)
+        (if (some? swapped-from)
+            (rx/of (component-swap shape (:id file) (:component-id swapped-from)))
+            (let [page-id   (:current-page-id state)
+                  libraries (wsh/get-libraries state)
+                  container (cfh/get-container file :page page-id)
 
-            components-v2
-            (features/active-feature? state "components/v2")
+                  components-v2
+                  (features/active-feature? state "components/v2")
 
-            changes
-            (-> (pcb/empty-changes it)
-                (pcb/with-container container)
-                (pcb/with-objects (:objects container))
-                (dwlh/generate-sync-shape-direct libraries container id true components-v2))]
-
-        (log/debug :msg "RESET-COMPONENT finished" :js/rchanges (log-changes
-                                                                 (:redo-changes changes)
-                                                                 file))
-        (rx/of (dch/commit-changes changes))))))
+                  changes
+                  (-> (pcb/empty-changes it)
+                      (pcb/with-container container)
+                      (pcb/with-objects (:objects container))
+                      (dwlh/generate-sync-shape-direct libraries container id true components-v2))]
+              (log/debug :msg "RESET-COMPONENT finished" :js/rchanges (log-changes
+                                                                        (:redo-changes changes)
+                                                                        file))
+              (rx/of (dch/commit-changes changes))))))))
 
 (defn reset-components
   "Cancels all modifications in the shapes with the given ids"

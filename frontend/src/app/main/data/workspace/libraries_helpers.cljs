@@ -27,7 +27,8 @@
    [app.common.types.typography :as cty]
    [app.main.data.workspace.state-helpers :as wsh]
    [cljs.spec.alpha :as s]
-   [clojure.set :as set]))
+   [clojure.set :as set]
+   [cuerdas.core :as str]))
 
 ;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
 (log/set-level! :warn)
@@ -1302,11 +1303,13 @@
                           reset-touched?
                           nil
                           copy-touched?
-                          (if (:remote-synced origin-shape)
-                            nil
-                            (set/union
-                             (:touched dest-shape)
-                             (:touched origin-shape))))]
+                          ;; (if (:remote-synced origin-shape)
+                          ;;   nil
+                          (set/union
+                           (:touched dest-shape)
+                           (:touched origin-shape)
+                              ;; )
+                           ))]
 
         (-> changes
             (update :redo-changes conj (make-change
