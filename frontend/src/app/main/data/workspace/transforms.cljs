@@ -370,9 +370,9 @@
 
     ptk/WatchEvent
     (watch [_ _ stream]
-      (let [stoper          (->> stream
-                                 (rx/filter mse/mouse-event?)
-                                 (rx/filter mse/mouse-up-event?))
+      (let [stopper          (->> stream
+                                  (rx/filter mse/mouse-event?)
+                                  (rx/filter mse/mouse-up-event?))
 
             group           (gsh/shapes->rect shapes)
             group-center    (grc/rect->center group)
@@ -399,7 +399,7 @@
                (fn [[pos mod? shift?]]
                  (let [delta-angle (calculate-angle pos mod? shift?)]
                    (dwm/set-rotation-modifiers delta-angle shapes group-center))))
-              (rx/take-until stoper))
+              (rx/take-until stopper))
          (rx/of (dwm/apply-modifiers)
                 (finish-transform)))))))
 

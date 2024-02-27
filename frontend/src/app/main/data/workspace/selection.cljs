@@ -64,12 +64,12 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [zoom   (dm/get-in state [:workspace-local :zoom] 1)
-            stoper (rx/merge
-                    (->> stream
-                         (rx/filter mse/mouse-event?)
-                         (rx/filter mse/mouse-up-event?))
-                    (->> stream
-                         (rx/filter interrupt?)))
+            stopper (rx/merge
+                     (->> stream
+                          (rx/filter mse/mouse-event?)
+                          (rx/filter mse/mouse-up-event?))
+                     (->> stream
+                          (rx/filter interrupt?)))
 
             init-position @ms/mouse-position
 
@@ -99,7 +99,7 @@
                  (rx/scan calculate-selrect init-selrect)
                  (rx/filter #(or (> (dm/get-prop % :width) (/ 10 zoom))
                                  (> (dm/get-prop % :height) (/ 10 zoom))))
-                 (rx/take-until stoper))]
+                 (rx/take-until stopper))]
 
         (rx/concat
          (if preserve?
@@ -667,9 +667,9 @@
 
     ptk/WatchEvent
     (watch [_ _ stream]
-      (let [stoper (rx/filter (ptk/type? ::memorize-duplicated) stream)]
+      (let [stopper (rx/filter (ptk/type? ::memorize-duplicated) stream)]
         (->> (rx/timer 10000) ;; This time may be adjusted after some user testing.
-             (rx/take-until stoper)
+             (rx/take-until stopper)
              (rx/map clear-memorize-duplicated))))))
 
 (defn calc-duplicate-delta

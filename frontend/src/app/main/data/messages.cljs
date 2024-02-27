@@ -61,16 +61,16 @@
     ptk/WatchEvent
     (watch [_ _ stream]
       (rx/merge
-       (let [stoper (rx/filter (ptk/type? ::hide) stream)]
+       (let [stopper (rx/filter (ptk/type? ::hide) stream)]
          (->> stream
               (rx/filter (ptk/type? :app.util.router/navigate))
               (rx/map (constantly hide))
-              (rx/take-until stoper)))
+              (rx/take-until stopper)))
        (when (:timeout data)
-         (let [stoper (rx/filter (ptk/type? ::show) stream)]
+         (let [stopper (rx/filter (ptk/type? ::show) stream)]
            (->> (rx/of hide)
                 (rx/delay (:timeout data))
-                (rx/take-until stoper))))))))
+                (rx/take-until stopper))))))))
 
 (def hide
   (ptk/reify ::hide
@@ -80,10 +80,10 @@
 
     ptk/WatchEvent
     (watch [_ _ stream]
-      (let [stoper (rx/filter (ptk/type? ::show) stream)]
+      (let [stopper (rx/filter (ptk/type? ::show) stream)]
         (->> (rx/of #(dissoc % :message))
              (rx/delay default-animation-timeout)
-             (rx/take-until stoper))))))
+             (rx/take-until stopper))))))
 
 (defn hide-tag
   [tag]

@@ -34,7 +34,7 @@
   (ptk/reify ::initialize-comments
     ptk/WatchEvent
     (watch [_ _ stream]
-      (let [stoper (rx/filter #(= ::finalize %) stream)]
+      (let [stopper (rx/filter #(= ::finalize %) stream)]
         (rx/merge
          (rx/of (dcm/retrieve-comment-threads file-id))
          (->> stream
@@ -45,11 +45,11 @@
               (rx/filter (fn [[_ space]] (not space)))
               (rx/map first)
               (rx/map handle-comment-layer-click)
-              (rx/take-until stoper))
+              (rx/take-until stopper))
          (->> stream
               (rx/filter dwco/interrupt?)
               (rx/map handle-interrupt)
-              (rx/take-until stoper)))))))
+              (rx/take-until stopper)))))))
 
 (defn- handle-interrupt
   []
