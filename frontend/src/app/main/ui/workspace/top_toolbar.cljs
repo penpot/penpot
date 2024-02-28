@@ -53,7 +53,8 @@
      [:button
       {:title (tr "workspace.toolbar.image" (sc/get-tooltip :insert-image))
        :aria-label (tr "workspace.toolbar.image" (sc/get-tooltip :insert-image))
-       :on-click on-click}
+       :on-click on-click
+       :class (stl/css :main-toolbar-options-button)}
       i/img-refactor
       [:& file-uploader
        {:input-id "image-upload"
@@ -114,7 +115,8 @@
          [:button
           {:title (tr "workspace.toolbar.move"  (sc/get-tooltip :move))
            :aria-label (tr "workspace.toolbar.move"  (sc/get-tooltip :move))
-           :class (stl/css-case :selected (and (nil? selected-drawtool)
+           :class (stl/css-case :main-toolbar-options-button true
+                                :selected (and (nil? selected-drawtool)
                                                (not edition)))
            :on-click interrupt}
           i/move-refactor]]
@@ -123,7 +125,7 @@
           [:button
            {:title (tr "workspace.toolbar.frame" (sc/get-tooltip :draw-frame))
             :aria-label (tr "workspace.toolbar.frame" (sc/get-tooltip :draw-frame))
-            :class  (stl/css-case :selected (= selected-drawtool :frame))
+            :class  (stl/css-case :main-toolbar-options-button true :selected (= selected-drawtool :frame))
             :on-click select-drawtool
             :data-tool "frame"
             :data-test "artboard-btn"}
@@ -132,7 +134,7 @@
           [:button
            {:title (tr "workspace.toolbar.rect" (sc/get-tooltip :draw-rect))
             :aria-label (tr "workspace.toolbar.rect" (sc/get-tooltip :draw-rect))
-            :class (stl/css-case :selected (= selected-drawtool :rect))
+            :class (stl/css-case :main-toolbar-options-button true :selected (= selected-drawtool :rect))
             :on-click select-drawtool
             :data-tool "rect"
             :data-test "rect-btn"}
@@ -141,7 +143,7 @@
           [:button
            {:title (tr "workspace.toolbar.ellipse" (sc/get-tooltip :draw-ellipse))
             :aria-label (tr "workspace.toolbar.ellipse" (sc/get-tooltip :draw-ellipse))
-            :class (stl/css-case :selected (= selected-drawtool :circle))
+            :class (stl/css-case :main-toolbar-options-button true :selected (= selected-drawtool :circle))
             :on-click select-drawtool
             :data-tool "circle"
             :data-test "ellipse-btn"}
@@ -150,7 +152,7 @@
           [:button
            {:title (tr "workspace.toolbar.text" (sc/get-tooltip :draw-text))
             :aria-label (tr "workspace.toolbar.text" (sc/get-tooltip :draw-text))
-            :class (stl/css-case :selected (= selected-drawtool :text))
+            :class (stl/css-case :main-toolbar-options-button true :selected (= selected-drawtool :text))
             :on-click select-drawtool
             :data-tool "text"}
            i/text-refactor]]
@@ -161,7 +163,7 @@
           [:button
            {:title  (tr "workspace.toolbar.curve" (sc/get-tooltip :draw-curve))
             :aria-label (tr "workspace.toolbar.curve" (sc/get-tooltip :draw-curve))
-            :class (stl/css-case :selected (= selected-drawtool :curve))
+            :class (stl/css-case :main-toolbar-options-button true :selected (= selected-drawtool :curve))
             :on-click select-drawtool
             :data-tool "curve"
             :data-test "curve-btn"}
@@ -170,7 +172,7 @@
           [:button
            {:title (tr "workspace.toolbar.path" (sc/get-tooltip :draw-path))
             :aria-label (tr "workspace.toolbar.path" (sc/get-tooltip :draw-path))
-            :class (stl/css-case :selected (= selected-drawtool :path))
+            :class (stl/css-case :main-toolbar-options-button true :selected (= selected-drawtool :path))
             :on-click select-drawtool
             :data-tool "path"
             :data-test "path-btn"}
@@ -180,7 +182,7 @@
            [:li
             [:button
              {:title "Debugging tool"
-              :class (stl/css-case :selected (contains? layout :debug-panel))
+              :class (stl/css-case :main-toolbar-options-button true :selected (contains? layout :debug-panel))
               :on-click toggle-debug-panel}
              i/bug-refactor]])]]
 
