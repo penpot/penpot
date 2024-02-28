@@ -115,9 +115,11 @@
 }
 
 .show-more {
-  align-items: center;
-  color: $df-secondary;
   display: flex;
+  align-items: center;
+  column-gap: $s-12;
+
+  color: $df-secondary;
   font-size: $fs-14;
   justify-content: space-between;
   cursor: pointer;
@@ -129,20 +131,14 @@
 
   &:hover {
     color: $da-tertiary;
-    svg {
-      fill: $da-tertiary;
-    }
   }
 }
 
-.placeholder-icon {
-  transform: rotate(-90deg);
-  margin-left: $s-12;
-  svg {
-    height: $s-16;
-    width: $s-16;
-    fill: $df-secondary;
-  }
+.show-more-icon {
+  height: $s-16;
+  width: $s-16;
+  fill: none;
+  stroke: currentColor;
 }
 
 .team-hero {
