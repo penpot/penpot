@@ -27,15 +27,12 @@
 (s/def ::profile-form
   (s/keys :req-un [::fullname ::email]))
 
-(defn- on-success
-  [_]
-  (st/emit! (msg/success (tr "notifications.profile-saved"))))
-
 (defn- on-submit
   [form _event]
-  (let [data  (:clean-data @form)
-        mdata {:on-success (partial on-success form)}]
-    (st/emit! (du/update-profile (with-meta data mdata)))))
+  (let [data  (:clean-data @form)]
+    (st/emit! (du/update-profile data)
+              (du/persist-profile)
+              (msg/success (tr "notifications.profile-saved")))))
 
 ;; --- Profile Form
 
