@@ -222,13 +222,16 @@
    :toggle-layout-flex   {:tooltip (ds/shift "A")
                           :command "shift+a"
                           :subsections [:modify-layers]
-                          :fn #(emit-when-no-readonly (dwsl/toggle-layout :flex))}
+                          :fn #(emit-when-no-readonly
+                                (with-meta (dwsl/toggle-layout :flex)
+                                  {::ev/origin "workspace:shortcuts"}))}
 
    :toggle-layout-grid   {:tooltip (ds/meta-shift "A")
                           :command (ds/c-mod "shift+a")
                           :subsections [:modify-layers]
-                          :fn #(emit-when-no-readonly (dwsl/toggle-layout :grid))}
-
+                          :fn #(emit-when-no-readonly
+                                (with-meta (dwsl/toggle-layout :grid)
+                                  {::ev/origin "workspace:shortcuts"}))}
    ;; TOOLS
 
    :draw-frame           {:tooltip "B"
