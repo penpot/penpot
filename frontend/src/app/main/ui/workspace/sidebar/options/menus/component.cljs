@@ -34,7 +34,8 @@
    [rumext.v2 :as mf]))
 
 (mf/defc component-annotation
-  [{:keys [id shape component] :as props}]
+  {::mf/props :obj}
+  [{:keys [id shape component]}]
   (let [main-instance?        (:main-instance shape)
         component-id          (:component-id shape)
         annotation            (:annotation component)
@@ -170,8 +171,8 @@
           [:div {:class (stl/css  :counter)} (str @size "/300")])]])))
 
 (mf/defc component-swap-item
-  {::mf/wrap-props false}
-  [{:keys [item loop shapes file-id root-shape container component-id is-search listing-thumbs] :as props}]
+  {::mf/props :obj}
+  [{:keys [item loop shapes file-id root-shape container component-id is-search listing-thumbs]}]
   (let [on-select-component
         (mf/use-fn
          (mf/deps shapes file-id item)
@@ -197,7 +198,8 @@
       (if is-search (:full-name item) (:name item))]]))
 
 (mf/defc component-group-item
-  [{:keys [item on-enter-group] :as props}]
+  {::mf/props :obj}
+  [{:keys [item on-enter-group]}]
   (let [group-name (:name item)
         path (cfh/butlast-path-with-dots group-name)
         on-group-click #(on-enter-group group-name)]
@@ -216,7 +218,8 @@
       i/arrow-refactor]]))
 
 (mf/defc component-swap
-  [{:keys [shapes] :as props}]
+  {::mf/props :obj}
+  [{:keys [shapes]}]
   (let [single?             (= 1 (count shapes))
         shape               (first shapes)
         current-file-id     (mf/use-ctx ctx/current-file-id)
@@ -429,7 +432,8 @@
                                       :on-enter-group on-enter-group}]))]]]]))
 
 (mf/defc component-ctx-menu
-  [{:keys [menu-entries on-close show main-instance] :as props}]
+  {::mf/props :obj}
+  [{:keys [menu-entries on-close show main-instance]}]
   (let [do-action
         (fn [action event]
           (dom/stop-propagation event)
@@ -446,7 +450,8 @@
           (tr (:msg  entry))]])]]))
 
 (mf/defc component-menu
-  [{:keys [shapes swap-opened?] :as props}]
+  {::mf/props :obj}
+  [{:keys [shapes swap-opened?]}]
   (let [current-file-id     (mf/use-ctx ctx/current-file-id)
         components-v2       (mf/use-ctx ctx/components-v2)
         workspace-data      (deref refs/workspace-data)
