@@ -96,3 +96,11 @@
   flex: 1;
   overflow: hidden;
 }
+
+.tab-content {
+  scrollbar-gutter: stable;
+}
+
+.tab-header {
+  margin-right: $s-12;
+}
