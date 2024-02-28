@@ -154,7 +154,9 @@
 
         ;; These extra operations ensure that we are selecting a frame its initial location is rendered in the ruler
         minv (+ minv (mod offset step))
-        maxv (+ maxv (mod offset step))]
+        maxv (+ maxv (mod offset step))
+
+        rulers-width (* rulers-width zoom-inverse)]
 
     [:g.rulers {:clipPath (str "url(#" clip-id ")")}
      [:defs
