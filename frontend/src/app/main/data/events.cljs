@@ -121,26 +121,10 @@
 (derive :app.main.data.workspace/set-workspace-layout ::generic-action)
 (derive :app.main.data.workspace/toggle-layout-flag ::generic-action)
 
-(defmulti process-event ptk/type)
-(defmethod process-event :default [_] nil)
+(defprotocol Event
+  (-data [_] "Get event data"))
 
-(defmethod process-event ::event
-  [event]
-  (let [data   (deref event)
-        origin (::origin data)]
-    (when (::name data)
-      (d/without-nils
-       {:type    (::type data "action")
-        :name    (::name data)
-        :context (::context data)
-        :props   (-> data
-                     (dissoc ::name)
-                     (dissoc ::type)
-                     (dissoc ::origin)
-                     (dissoc ::context)
-                     (cond-> origin (assoc :origin origin)))}))))
-
-(defn- normalize-props
+(defn- simplify-props
   "Removes complex data types from props."
   [data]
   (into {}
@@ -156,24 +140,65 @@
                   :else       kv))))
         data))
 
-(defmethod process-event ::generic-action
+
+(defmulti process-event-by-type ptk/type)
+
+(defn- process-event-by-proto
+  [event]
+  (let [data    (d/deep-merge (-data event) (meta event))
+        type    (ptk/type event)
+        ev-name (name type)
+        context (-> (::context data)
+                    (assoc :event-origin (::origin data))
+                    (assoc :event-namespace (namespace type))
+                    (assoc :event-symbol ev-name)
+                    (d/without-nils))
+        props   (-> data d/without-qualified simplify-props)]
+
+    {:type (::type data "action")
+     :name (::name data ev-name)
+     :context context
+     :props props}))
+
+(defn- process-event
+  [event]
+  (if (satisfies? Event event)
+    (process-event-by-proto event)
+    (process-event-by-type event)))
+
+(defmethod process-event-by-type :default [_] nil)
+
+(defmethod process-event-by-type ::event
+  [event]
+  (let [data    (deref event)
+        context (-> (::context data)
+                    (assoc :event-origin (::origin data))
+                    (d/without-nils))
+        props   (-> data d/without-qualified simplify-props)]
+
+    {:type    (::type data "action")
+     :name    (::name data "unnamed")
+     :context context
+     :props   props}))
+
+(defmethod process-event-by-type ::generic-action
   [event]
   (let [type  (ptk/type event)
-        mdata (meta event)
         data  (if (satisfies? IDeref event)
                 (deref event)
-                {})]
+                {})
+        data  (d/deep-merge data (meta event))]
 
     {:type    "action"
-     :name    (or (::name mdata) (name type))
-     :props   (-> (merge data (::props mdata))
-                  (normalize-props))
+     :name    (or (::name data) (name type))
+     :props   (-> (d/without-qualified data)
+                  (simplify-props))
      :context (d/without-nils
-               {:event-origin (::origin mdata)
+               {:event-origin (::origin data)
                 :event-namespace (namespace type)
                 :event-symbol (name type)})}))
 
-(defmethod process-event :app.util.router/navigated
+(defmethod process-event-by-type :app.util.router/navigated
   [event]
   (let [match (deref event)
         route (get-in match [:data :name])
@@ -183,9 +208,9 @@
                :project-id (get-in match [:path-params :project-id])}]
     {:name "navigate"
      :type "action"
-     :props (normalize-props props)}))
+     :props (simplify-props props)}))
 
-(defmethod process-event :app.main.data.users/logged-in
+(defmethod process-event-by-type :app.main.data.users/logged-in
   [event]
   (let [data  (deref event)
         mdata (meta data)
@@ -196,10 +221,11 @@
                :is-muted (:is-muted data)
                :default-team-id (str (:default-team-id data))
                :default-project-id (str (:default-project-id data))}]
+
     {:name "signin"
      :type "identify"
      :profile-id (:id data)
-     :props (normalize-props props)}))
+     :props (simplify-props props)}))
 
 ;; --- MAIN LOOP
 
