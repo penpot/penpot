@@ -51,31 +51,6 @@
       min-height: $s-32;
       margin-left: $s-8;
     }
-    .show-more {
-      align-items: center;
-      color: $df-secondary;
-      display: flex;
-      font-size: $fs-14;
-      justify-content: space-between;
-      cursor: pointer;
-      background-color: transparent;
-      border: none;
-      .placeholder-icon {
-        transform: rotate(-90deg);
-        margin-left: $s-12;
-        svg {
-          height: $s-16;
-          width: $s-16;
-          fill: $df-secondary;
-        }
-      }
-      &:hover {
-        color: $da-tertiary;
-        svg {
-          fill: $da-tertiary;
-        }
-      }
-    }
 
     .btn-secondary {
       border: none;
@@ -137,34 +112,36 @@
       opacity: 1;
     }
   }
+}
 
-  .show-more {
-    align-items: center;
-    color: $df-secondary;
-    display: flex;
-    font-size: $fs-14;
-    justify-content: space-between;
-    cursor: pointer;
-    background-color: transparent;
-    border: none;
-    position: absolute;
-    top: $s-8;
-    right: $s-52;
-    .placeholder-icon {
-      transform: rotate(-90deg);
-      margin-left: $s-8;
-      svg {
-        height: $s-16;
-        width: $s-16;
-        fill: $df-secondary;
-      }
+.show-more {
+  align-items: center;
+  color: $df-secondary;
+  display: flex;
+  font-size: $fs-14;
+  justify-content: space-between;
+  cursor: pointer;
+  background-color: transparent;
+  border: none;
+  position: absolute;
+  top: $s-8;
+  right: $s-52;
+
+  &:hover {
+    color: $da-tertiary;
+    svg {
+      fill: $da-tertiary;
     }
-    &:hover {
-      color: $da-tertiary;
-      svg {
-        fill: $da-tertiary;
-      }
-    }
+  }
+}
+
+.placeholder-icon {
+  transform: rotate(-90deg);
+  margin-left: $s-12;
+  svg {
+    height: $s-16;
+    width: $s-16;
+    fill: $df-secondary;
   }
 }
 
