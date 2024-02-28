@@ -18,3 +18,7 @@
   @include bodyMedTipography;
   color: var(--entry-foreground-color);
 }
+
+.copy-btn-title {
+  max-width: $s-28;
+}

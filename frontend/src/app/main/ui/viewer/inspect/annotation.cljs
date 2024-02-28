@@ -18,6 +18,7 @@
    [:& title-bar {:collapsable false
                   :title       (tr "workspace.options.component.annotation")
                   :class       (stl/css :title-spacing-annotation)}
-    [:& copy-button {:data content}]]
+    [:& copy-button {:data content
+                     :class (stl/css :copy-btn-title)}]]
 
    [:div {:class (stl/css :annotation-content)} content]])
