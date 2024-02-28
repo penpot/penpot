@@ -247,6 +247,16 @@ function templatePipeline(options) {
 
 gulpSass.compiler = sass;
 
+
+gulp.task("scss:clean", async function (next) {
+  try {
+    await rimraf("./resources/public/.tmp");
+    await rimraf("./resources/public/css");
+  } finally {
+    next();
+  }
+});
+
 gulp.task("scss:modules", function () {
   return gulp
     .src(["src/**/**.scss"])
@@ -314,7 +324,10 @@ gulp.task("scss:touch:modules", function() {
   return gulp.src("src/**/**.scss").pipe(touch());
 });
 
-gulp.task("scss", gulp.series("scss:main", "scss:modules", "scss:concat", "scss:touch:main"));
+gulp.task("scss", gulp.series("scss:main",
+                              "scss:modules",
+                              "scss:concat",
+                              "scss:touch:main"));
 
 gulp.task("svg:sprite:icons", function () {
   return gulp
@@ -419,9 +432,18 @@ gulp.task("clean:dist", function (next) {
 });
 
 gulp.task("build:styles", gulp.parallel("scss"));
-gulp.task("build:assets", gulp.parallel("polyfills", "templates", "copy:assets"));
 
-gulp.task("watch", gulp.series("dev:dirs", "build:styles", "build:assets", "watch:main"));
+gulp.task("build:assets",
+          gulp.parallel("polyfills",
+                        "templates",
+                        "copy:assets"));
+
+gulp.task("watch",
+          gulp.series("dev:dirs",
+                      "scss:clean",
+                      "build:styles",
+                      "build:assets",
+                      "watch:main"));
 
 gulp.task("build:copy", function () {
   return gulp.src("./resources/public/**/*").pipe(gulp.dest("./target/dist/"));
