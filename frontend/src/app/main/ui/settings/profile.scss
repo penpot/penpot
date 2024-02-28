@@ -20,16 +20,15 @@
   display: flex;
   justify-content: center;
   flex-direction: column;
-  max-width: $s-368;
+  max-width: $s-500;
   margin-bottom: $s-32;
   width: $s-580;
-  margin: $s-80 auto auto $s-120;
+  margin: $s-80 auto $s-120 auto;
   justify-content: center;
 
   form {
     display: flex;
     flex-direction: column;
-    width: $s-500;
 
     .btn-secondary {
       width: 100%;
