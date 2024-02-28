@@ -211,7 +211,7 @@
   ([{:keys [type metadata] :as shape} objects]
    (assert (map? objects))
    (case type
-     :group
+     (:group :frame)
      (group-to-path shape objects)
 
      :bool
