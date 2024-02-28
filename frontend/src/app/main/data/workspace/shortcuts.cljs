@@ -552,12 +552,12 @@
                           :command (ds/c-mod "alt+enter")
                           :fn #(emit-when-no-readonly (dp/open-preview-selected))}
 
-
    ;; THEME
    :toggle-theme    {:tooltip (ds/alt "M")
                      :command (ds/a-mod "m")
                      :subsections [:basics]
-                     :fn #(st/emit! (du/toggle-theme))}})
+                     :fn #(st/emit! (with-meta (du/toggle-theme)
+                                      {::ev/origin "workspace:shortcut"}))}})
 
 (def opacity-shortcuts
   (into {} (->>

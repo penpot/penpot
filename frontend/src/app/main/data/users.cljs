@@ -53,7 +53,9 @@
 
 (defn set-current-team!
   [team-id]
-  (swap! storage assoc ::current-team-id team-id))
+  (if (nil? team-id)
+    (swap! storage dissoc ::current-team-id)
+    (swap! storage assoc ::current-team-id team-id)))
 
 ;; --- EVENT: fetch-teams
 
@@ -132,7 +134,7 @@
           (swap! storage assoc :profile profile)
           (i18n/set-locale! (:lang profile))
           (when (not= previous-email email)
-            (swap! storage dissoc ::current-team-id)))))))
+            (set-current-team! nil)))))))
 
 (defn fetch-profile
   []
@@ -295,6 +297,19 @@
 
 ;; --- Update Profile
 
+(defn persist-profile
+  [& {:as opts}]
+  (ptk/reify ::persist-profile
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [on-success (:on-success opts identity)
+            on-error   (:on-error opts rx/throw)
+            profile    (:profile state)]
+
+        (->> (rp/cmd! :update-profile (dissoc profile :props))
+             (rx/tap on-success)
+             (rx/catch on-error))))))
+
 (defn update-profile
   [data]
   (dm/assert!
@@ -303,21 +318,19 @@
 
   (ptk/reify ::update-profile
     ptk/WatchEvent
-    (watch [_ _ stream]
-      (let [mdata      (meta data)
-            on-success (:on-success mdata identity)
-            on-error   (:on-error mdata rx/throw)]
-        (->> (rp/cmd! :update-profile (dissoc data :props))
-             (rx/mapcat
-              (fn [_]
-                (rx/merge
-                 (->> stream
-                      (rx/filter (ptk/type? ::profile-fetched))
-                      (rx/take 1)
-                      (rx/tap on-success)
-                      (rx/ignore))
-                 (rx/of (profile-fetched data)))))
-             (rx/catch on-error))))))
+    (watch [_ state _]
+      (let [data     (dissoc data :props)
+            profile  (:profile state)
+            profile' (d/deep-merge profile data)]
+
+        (rx/concat
+         (rx/of #(assoc % :profile profile'))
+
+         (when (not= (:theme profile) (:theme profile'))
+           (rx/of (ptk/data-event ::ev/event
+                                  {::ev/name "activate-theme"
+                                   ::ev/origin "settings"
+                                   :theme (:theme profile')}))))))))
 
 ;; --- Toggle Theme
 
@@ -327,18 +340,19 @@
     ptk/UpdateEvent
     (update [_ state]
       (update-in state [:profile :theme]
-                 (fn [theme]
-                   (cond
-                     (= theme "default")
+                 (fn [current]
+                   (if (= current "default")
                      "light"
-
-                     :else
                      "default"))))
 
     ptk/WatchEvent
-    (watch [_ state _]
-      (rx/of (update-profile (:profile state))))))
-
+    (watch [it state _]
+      (let [profile (get state :profile)
+            origin  (::ev/origin (meta it))]
+        (rx/of (ptk/data-event ::ev/event {:theme (:theme profile)
+                                           ::ev/name "activate-theme"
+                                           ::ev/origin origin})
+               (persist-profile))))))
 
 ;; --- Request Email Change
 
