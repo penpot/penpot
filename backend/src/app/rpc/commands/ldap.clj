@@ -12,7 +12,6 @@
    [app.db :as db]
    [app.http.session :as session]
    [app.loggers.audit :as-alias audit]
-   [app.main :as-alias main]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.auth :as auth]
    [app.rpc.commands.profile :as profile]
@@ -73,7 +72,7 @@
               (rph/with-meta {::audit/props (:props profile)
                               ::audit/profile-id (:id profile)})))
 
-        (-> profile
+        (-> (profile/strip-private-attrs profile)
             (rph/with-transform (session/create-fn cfg (:id profile)))
             (rph/with-meta {::audit/props (:props profile)
                             ::audit/profile-id (:id profile)}))))))

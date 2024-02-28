@@ -154,7 +154,7 @@
       [:*
        [:hr {:class (stl/css :separator)}]
        [:div {:class (stl/css :demo-account)}
-        [:& lk/link {:action  #(st/emit! (du/create-demo-profile))
+        [:& lk/link {:action login/create-demo-profile
                      :class (stl/css :demo-account-link)}
          (tr "auth.create-demo-account")]]])]])
 
@@ -265,5 +265,3 @@
    [:div {:class (stl/css :notification-text)} (tr "auth.verification-email-sent")]
    [:div {:class (stl/css :notification-text-email)} (:email params "")]
    [:div {:class (stl/css :notification-text)} (tr "auth.check-your-email")]])
-
-

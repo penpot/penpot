@@ -231,8 +231,35 @@
                                    (rx/observe-on :async)))))
              (rx/catch on-error))))))
 
+(def ^:private schema:login-with-ldap
+  (sm/define
+    [:map
+     [:email ::sm/email]
+     [:password :string]]))
+
+(defn login-with-ldap
+  [params]
+
+  (dm/assert!
+   "expected valid params"
+   (sm/check! schema:login-with-ldap params))
+
+  (ptk/reify ::login-with-ldap
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [{:keys [on-error on-success]
+             :or {on-error rx/throw
+                  on-success identity}} (meta params)]
+        (->> (rp/cmd! :login-with-ldap params)
+             (rx/tap on-success)
+             (rx/map (fn [profile]
+                       (-> profile
+                           (with-meta {::ev/source "login-with-ldap"})
+                           (logged-in))))
+             (rx/catch on-error))))))
 
 (defn login-from-token
+  "Used mainly as flow continuation after token validation."
   [{:keys [profile] :as tdata}]
   (ptk/reify ::login-from-token
     ptk/WatchEvent
