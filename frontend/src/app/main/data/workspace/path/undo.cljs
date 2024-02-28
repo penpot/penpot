@@ -9,7 +9,9 @@
    [app.common.data :as d]
    [app.common.data.undo-stack :as u]
    [app.common.uuid :as uuid]
+   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.path.changes :as changes]
+   [app.main.data.workspace.path.common :as common]
    [app.main.data.workspace.path.state :as st]
    [app.main.store :as store]
    [beicon.v2.core :as rx]
@@ -65,8 +67,14 @@
                undo-stack)))))
 
     ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (changes/save-path-content {:preserve-move-to true})))))
+    (watch [_ state _]
+      (let [id (st/get-path-id state)
+            undo-stack (get-in state [:workspace-local :edit-path id :undo-stack])]
+        (if (> (:index undo-stack) 0)
+          (rx/of (changes/save-path-content {:preserve-move-to true}))
+          (rx/of (changes/save-path-content {:preserve-move-to true})
+                 (common/finish-path)
+                 (dwc/show-toolbar)))))))
 
 (defn redo-path []
   (ptk/reify ::redo-path
