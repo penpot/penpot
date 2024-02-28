@@ -37,20 +37,30 @@
       stroke: var(--radio-btn-foreground-color-selected);
     }
   }
+}
 
-  &.checked {
-    background-color: var(--radio-btn-background-color-selected);
-    border-color: var(--radio-btn-border-color-selected);
-    svg {
-      stroke: var(--radio-btn-foreground-color-selected);
-    }
-    .title-name {
-      color: var(--radio-btn-foreground-color-selected);
-    }
+.checked {
+  background-color: var(--radio-btn-background-color-selected);
+  border-color: var(--radio-btn-border-color-selected);
+  svg {
+    stroke: var(--radio-btn-foreground-color-selected);
   }
+  .title-name {
+    color: var(--radio-btn-foreground-color-selected);
+  }
+}
 
-  &.disabled {
-    cursor: default;
+.disabled {
+  cursor: default;
+  background-color: transparent;
+  border: $s-2 solid transparent;
+  svg {
+    stroke: var(--button-foreground-color-disabled);
+  }
+  .title-name {
+    color: var(--button-foreground-color-disabled);
+  }
+  &:hover {
     background-color: transparent;
     border: $s-2 solid transparent;
     svg {
@@ -58,16 +68,6 @@
     }
     .title-name {
       color: var(--button-foreground-color-disabled);
-    }
-    &:hover {
-      background-color: transparent;
-      border: $s-2 solid transparent;
-      svg {
-        stroke: var(--button-foreground-color-disabled);
-      }
-      .title-name {
-        color: var(--button-foreground-color-disabled);
-      }
     }
   }
 }
