@@ -95,6 +95,9 @@
 
 ;; --- Grid Item Library
 
+(def ^:private menu-icon
+  (i/icon-xref :menu-refactor (stl/css :menu-icon)))
+
 (mf/defc grid-item-library
   {::mf/wrap [mf/memo]}
   [{:keys [file] :as props}]
@@ -381,7 +384,7 @@
                          (when (kbd/enter? event)
                            (dom/stop-propagation event)
                            (on-menu-click event)))}
-         i/actions
+         menu-icon
          (when (and selected? file-menu-open?)
            [:& file-menu {:files (vals selected-files)
                           :show? (:menu-open dashboard-local)
