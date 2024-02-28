@@ -2225,7 +2225,10 @@
                         (pcb/with-library-data data)
                         (pcb/update-component id update-fn))]
 
-        (rx/of (dch/commit-changes changes))))))
+        (rx/concat
+         (rx/of (dch/commit-changes changes))
+         (when (nil? annotation)
+           (rx/of (ptk/data-event ::ev/event {::ev/name "delete-component-annotation"}))))))))
 
 (defn set-annotations-expanded
   [expanded]
@@ -2242,7 +2245,12 @@
       (if id
         (-> (assoc-in state [:workspace-annotations :id-for-create] id)
             (assoc-in [:workspace-annotations :expanded] true))
-        (d/dissoc-in state [:workspace-annotations :id-for-create])))))
+        (d/dissoc-in state [:workspace-annotations :id-for-create])))
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (when (some? id)
+        (rx/of (ptk/data-event ::ev/event {::ev/name "create-component-annotation"}))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Preview blend modes
