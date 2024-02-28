@@ -97,7 +97,10 @@
                                         (obj/set! "fill" (str "url(#fill-" index "-" render-id ")")))}
                         (cond-> browser-props
                           (obj/merge! browser-props)))
-              shape (assoc shape :fills (:fills data))]
+              shape (assoc shape :fills (:fills data))
+
+              ;; Need to create new render-id per text-block
+              render-id (dm/str render-id "-" index)]
 
           [:& (mf/provider muc/render-id) {:key index :value render-id}
            [:& shape-custom-strokes {:shape shape :position index :render-id render-id}
