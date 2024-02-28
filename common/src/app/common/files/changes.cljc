@@ -749,21 +749,23 @@
 (defmulti components-changed (fn [_ change] (:type change)))
 
 (defmethod components-changed :mod-obj
-  [file-data {:keys [id page-id _component-id operations]}]
-  (when page-id
-    (let [page (ctpl/get-page file-data page-id)
-          shape-and-parents (map #(ctn/get-shape page %)
-                                 (cons id (cfh/get-parent-ids (:objects page) id)))
-          need-sync? (fn [operation]
-                       ; We need to trigger a sync if the shape has changed any
-                       ; attribute that participates in components synchronization.
-                       (and (= (:type operation) :set)
-                            (get ctk/sync-attrs (:attr operation))))
-          any-sync? (some need-sync? operations)]
-      (when any-sync?
-        (let [xform (comp (filter :main-instance) ; Select shapes that are main component instances
+  [file-data {:keys [id page-id component-id operations]}]
+  (let [need-sync? (fn [operation]
+                     ; We need to trigger a sync if the shape has changed any
+                     ; attribute that participates in components synchronization.
+                     (and (= (:type operation) :set)
+                          (get ctk/sync-attrs (:attr operation))))
+        any-sync? (some need-sync? operations)]
+    (when any-sync?
+      (if page-id
+        (let [page (ctpl/get-page file-data page-id)
+              shape-and-parents (map #(ctn/get-shape page %)
+                                     (cons id (cfh/get-parent-ids (:objects page) id)))
+              xform (comp (filter :main-instance) ; Select shapes that are main component instances
                           (map :component-id))]
-          (into #{} xform shape-and-parents))))))
+          (into #{} xform shape-and-parents))
+        (when component-id
+          #{component-id})))))
 
 (defmethod components-changed :mov-objects
   [file-data {:keys [page-id _component-id parent-id shapes] :as change}]
