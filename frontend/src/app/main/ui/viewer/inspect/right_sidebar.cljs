@@ -109,7 +109,9 @@
             [:span {:class (stl/css :layer-title)} (:name first-shape)]])]
         [:div {:class (stl/css :inspect-content)}
          [:& tab-container {:on-change-tab handle-change-tab
-                            :selected @section}
+                            :selected @section
+                            :content-class (stl/css :tab-content)
+                            :header-class (stl/css :tab-header)}
           [:& tab-element {:id :info :title (tr "inspect.tabs.info")}
            [:& attributes {:page-id page-id
                            :objects objects
