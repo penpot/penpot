@@ -196,46 +196,6 @@
 (def context-menu
   (l/derived :context-menu workspace-local))
 
-(defn path-editing?
-  "Returns true if we're editing a path or creating a new one."
-  [state]
-  (let [selected    (dm/get-in state [:workspace-local :selected])
-        edition     (dm/get-in state [:workspace-local :edition])
-
-        edit-path?  (dm/get-in state [:workspace-local :edit-path edition])
-
-        drawing     (dm/get-in state [:workspace-drawing])
-        drawing-obj (:object drawing)
-
-        shape       (or drawing-obj (-> selected first))
-        shape-id    (:id shape)
-
-        single?     (= (count selected) 1)
-        editing?    (and (some? shape-id) (some? edition) (= shape-id edition))
-
-        ;; we need to check if we're drawing a new object
-        ;; but we're not using the pencil tool.
-        draw-path?  (and (some? drawing-obj)
-                         (cph/path-shape? drawing-obj)
-                         (not= :curve (:tool drawing)))
-
-        path-edition? (or (and single? editing?
-                               (and (not (cph/text-shape? shape))
-                                    (not (cph/frame-shape? shape))))
-                          draw-path?
-                          edit-path?)]
-
-    path-edition?))
-
-(def toolbar-hidden
-  (l/derived
-   (fn [state]
-     (let [visibility (dm/get-in state [:workspace-local :hide-toolbar])
-           editing?   (path-editing? state)
-           hidden?    (if editing? true visibility)]
-       hidden?))
-   st/state))
-
 ;; page item that it is being edited
 (def editing-page-item
   (l/derived :page-item workspace-local))

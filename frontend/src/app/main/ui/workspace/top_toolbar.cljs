@@ -7,12 +7,14 @@
 (ns app.main.ui.workspace.top-toolbar
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.media :as cm]
    [app.main.data.events :as ev]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.media :as dwm]
+   [app.main.data.workspace.path.state :as pst]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -22,6 +24,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.timers :as ts]
+   [okulary.core :as l]
    [rumext.v2 :as mf]))
 
 (mf/defc image-upload
@@ -62,6 +65,15 @@
         :ref ref
         :on-selected on-selected}]]]))
 
+(def toolbar-hidden
+  (l/derived
+   (fn [state]
+     (let [visibility (dm/get-in state [:workspace-local :hide-toolbar])
+           editing?   (pst/path-editing? state)
+           hidden?    (if editing? true visibility)]
+       hidden?))
+   st/state))
+
 (mf/defc top-toolbar
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
@@ -72,7 +84,7 @@
         read-only?           (mf/use-ctx ctx/workspace-read-only?)
 
         rulers?              (mf/deref refs/rulers?)
-        hide-toolbar?        (mf/deref refs/toolbar-hidden)
+        hide-toolbar?        (mf/deref toolbar-hidden)
 
         interrupt
         (mf/use-fn #(st/emit! :interrupt))
