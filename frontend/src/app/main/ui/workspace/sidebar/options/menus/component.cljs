@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.menus.component
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.types.component :as ctk]
@@ -218,11 +219,12 @@
 (mf/defc component-swap-item
   {::mf/props :obj}
   [{:keys [item loop shapes file-id root-shape container component-id is-search listing-thumbs]}]
-  (let [on-select-component
+  (let [on-select
         (mf/use-fn
          (mf/deps shapes file-id item)
          #(when-not loop
             (st/emit! (dwl/component-multi-swap shapes file-id (:id item)))))
+
         item-ref       (mf/use-ref)
         visible?       (h/use-visible item-ref :once? true)]
     [:div {:ref item-ref
@@ -232,7 +234,7 @@
                                 :selected (= (:id item) component-id)
                                 :disabled loop)
            :key (str "swap-item-" (:id item))
-           :on-click on-select-component}
+           :on-click on-select}
      (when visible?
        [:& cmm/component-item-thumbnail {:file-id (:file-id item)
                                          :root-shape root-shape
@@ -262,44 +264,75 @@
      [:span {:class (stl/css :arrow-icon)}
       i/arrow-refactor]]))
 
+(def ^:private ref:swap-libraries
+  (letfn [(get-libraries [state]
+            (let [file (:workspace-file state)
+                  data (:workspace-data state)
+                  libs (:workspace-libraries state)]
+              (assoc libs (:id file)
+                     (assoc file :data data))))]
+    (l/derived get-libraries st/state)))
+
+
+(defn- find-common-path
+  ([components]
+   (let [paths (map (comp cfh/last-path :path) components)]
+     (find-common-path paths [] 0)))
+  ([paths path n]
+   (let [current (nth (first paths) n nil)]
+     (if (or (nil? current)
+             (not (every? #(= current (nth % n nil)) paths)))
+       path
+       (find-common-path paths (conj path current) (inc n))))))
+
+(defn- same-component-file?
+  [shape-a shape-b]
+  (= (:component-file shape-a)
+     (:component-file shape-b)))
+
+(defn- same-component?
+  [shape-a shape-b]
+  (= (:component-id shape-a)
+     (:component-id shape-b)))
+
+;; Get the ids of the components and its root-shapes that are parents of the current shape, to avoid loops
+(defn get-parent-component-ids
+  [objects shape ids]
+  (let [shape-id (:id shape)]
+    (if (uuid/zero? shape-id)
+      ids
+      (let [ids (if (ctk/instance-head? shape)
+                  (conj ids shape-id (:component-id shape))
+                  ids)]
+        (get-parent-component-ids objects (get objects (:parent-id shape)) ids)))))
+
 (mf/defc component-swap
   {::mf/props :obj}
   [{:keys [shapes]}]
   (let [single?             (= 1 (count shapes))
         shape               (first shapes)
         current-file-id     (mf/use-ctx ctx/current-file-id)
-        workspace-file      (mf/deref refs/workspace-file)
-        workspace-data      (mf/deref refs/workspace-data)
-        workspace-libraries (mf/deref refs/workspace-libraries)
+        libraries           (mf/deref ref:swap-libraries)
         objects             (mf/deref refs/workspace-page-objects)
-        libraries           (assoc workspace-libraries current-file-id (assoc workspace-file :data workspace-data))
-        single-comp         (ctf/get-component libraries (:component-file shape) (:component-id shape))
-        every-same-file?    (every? #(= (:component-file shape) (:component-file %)) shapes)
-        current-comp-id     (when (every? #(= (:component-id shape) (:component-id %)) shapes)
-                              (:component-id shape))
+
+        ^boolean
+        every-same-file?    (every? (partial same-component-file? shape) shapes)
+
+        component-id        (if (every? (partial same-component? shape) shapes)
+                              (:component-id shape)
+                              nil)
 
         file-id             (if every-same-file?
                               (:component-file shape)
                               current-file-id)
 
-        orig-components     (map #(ctf/get-component libraries (:component-file %) (:component-id %)) shapes)
-
-        paths                (->> orig-components
-                                  (map :path)
-                                  (map cfh/split-path))
-
-        find-common-path    (fn common-path [path n]
-                              (let [current (nth (first paths) n nil)]
-                                (if (or (nil? current)
-                                        (not (every? #(= current (nth % n nil)) paths)))
-                                  path
-                                  (common-path (conj path current) (inc n)))))
+        components          (map #(ctf/get-component libraries (:component-file %) (:component-id %)) shapes)
 
         path                (if single?
-                              (:path single-comp)
+                              (:path (first components))
                               (cfh/join-path (if (not every-same-file?)
                                                ""
-                                               (find-common-path [] 0))))
+                                               (find-common-path components))))
 
         filters*            (mf/use-state
                              {:term ""
@@ -311,13 +344,14 @@
 
         is-search?          (not (str/blank? (:term filters)))
 
-        current-library-id    (if (contains? libraries (:file-id filters))
-                                (:file-id filters)
-                                current-file-id)
+
+        current-library-id  (if (contains? libraries (:file-id filters))
+                              (:file-id filters)
+                              current-file-id)
 
         current-library-name  (if (= current-library-id current-file-id)
                                 (str/upper (tr "workspace.assets.local-library"))
-                                (get-in libraries [current-library-id :name]))
+                                (dm/get-in libraries [current-library-id :name]))
 
         components          (->> (get-in libraries [current-library-id :data :components])
                                  vals
@@ -351,22 +385,16 @@
                               (->> (concat groups components)
                                    (sort-by :name)))
 
-        ;; Get the ids of the components and its root-shapes that are parents of the current shape, to avoid loops
-        get-comps-ids       (fn get-comps-ids [shape ids]
-                              (if (uuid/zero? (:id shape))
-                                ids
-                                (let [ids (if (ctk/instance-head? shape)
-                                            (conj ids (:id shape) (:component-id shape))
-                                            ids)]
-                                  (get-comps-ids (get objects (:parent-id shape)) ids))))
+        parent-components   (mf/with-memo [shapes objects]
+                              (into #{}
+                                    (comp
+                                     (map :parent-id)
+                                     (map (d/getf objects))
+                                     (mapcat #(get-parent-component-ids objects % [])))
+                                    shapes))
 
-        parent-components   (->> shapes
-                                 (map :parent-id)
-                                 (map #(get objects %))
-                                 (mapcat #(get-comps-ids % []))
-                                 set)
-
-        libraries-options  (map (fn [library] {:value (:id library) :label (:name library)}) (vals libraries))
+        libraries-options  (map (fn [library] {:value (:id library) :label (:name library)})
+                                (vals libraries))
 
         on-library-change
         (mf/use-fn
@@ -469,7 +497,7 @@
                                        :file-id current-library-id
                                        :root-shape root-shape
                                        :container container
-                                       :component-id current-comp-id
+                                       :component-id component-id
                                        :is-search is-search?
                                        :listing-thumbs (:listing-thumbs? filters)}])
 
