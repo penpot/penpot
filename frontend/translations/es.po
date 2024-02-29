@@ -1074,7 +1074,7 @@ msgstr "Correo electrónico"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-go-to"
-msgstr "Ir a Twitter"
+msgstr "Ir a X"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-subtitle1"
@@ -1082,7 +1082,7 @@ msgstr "Cuenta habilitada para responder todas tus dudas técnicas."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-title"
-msgstr "Cuenta de Twitter para soporte"
+msgstr "Cuenta de X para soporte"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"

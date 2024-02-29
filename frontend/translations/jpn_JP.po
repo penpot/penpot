@@ -620,7 +620,7 @@ msgstr "メールアドレス"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-title"
-msgstr "Twitterサポートアカウント"
+msgstr "Xサポートアカウント"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
