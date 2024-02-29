@@ -8,32 +8,40 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.main.data.events :as-alias ev]
    [app.main.ui.icons :as i]
-   [app.util.timers :as timers]
+   [app.util.dom :as dom]
+   [app.util.timers :as tm]
    [app.util.webapi :as wapi]
-   [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
-(mf/defc copy-button [{:keys [data on-copied children class]}]
-  (let [just-copied (mf/use-state false)]
-    (mf/use-effect
-     (mf/deps @just-copied)
-     (fn []
-       (when @just-copied
-         (when (fn? on-copied)
-           (on-copied))
-         (let [sub (timers/schedule 1000 #(reset! just-copied false))]
-           ;; On unmount we dispose the timer
-           #(rx/-dispose sub)))))
-    [:button {:class (dm/str class " " (stl/css-case :copy-button  (not (some? children))
-                                                     :copy-wrapper (some? children)))
-              :on-click #(when-not @just-copied
-                           (reset! just-copied true)
-                           (wapi/write-to-clipboard (if (fn? data) (data) data)))}
+(mf/defc copy-button
+  {::mf/props :obj}
+  [{:keys [data on-copied children class]}]
+  (let [active* (mf/use-state false)
+        active? (deref active*)
 
-     (when children
-       children)
+        class   (dm/str class " "
+                        (stl/css-case
+                         :copy-button  (not (some? children))
+                         :copy-wrapper (some? children)))
+
+        on-click
+        (mf/use-fn
+         (mf/deps data)
+         (fn [event]
+           (when-not (dom/get-boolean-data event "active")
+             (reset! active* true)
+             (tm/schedule 1000 #(reset! active* false))
+             (when (fn? on-copied) (on-copied event))
+             (wapi/write-to-clipboard
+              (if (fn? data) (data) data)))))]
+
+    [:button {:class class
+              :data-active (dm/str active?)
+              :on-click on-click}
+     children
      [:span {:class (stl/css :icon-btn)}
-      (if @just-copied
+      (if active?
         i/tick-refactor
         i/clipboard-refactor)]]))
