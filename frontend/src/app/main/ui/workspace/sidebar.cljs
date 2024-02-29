@@ -27,7 +27,6 @@
    [app.main.ui.workspace.sidebar.sitemap :refer [sitemap]]
    [app.util.debug :as dbg]
    [app.util.i18n :refer [tr]]
-   [app.util.object :as obj]
    [rumext.v2 :as mf]))
 
 ;; --- Left Sidebar (Component)
@@ -157,10 +156,9 @@
            (set-size (if (> size 276) 276 768))))
 
         props
-        (-> props
-            (obj/clone)
-            (obj/set! "on-change-section" handle-change-section)
-            (obj/set! "on-expand" handle-expand))]
+        (mf/spread props
+                   :on-change-section handle-change-section
+                   :on-expand handle-expand)]
 
     [:& (mf/provider muc/sidebar) {:value :right}
      [:aside {:class (stl/css-case :right-settings-bar true
@@ -186,7 +184,7 @@
          [:& comments-sidebar]
 
          (true? is-history?)
-         [:& history-toolbox]
+         [:> history-toolbox {}]
 
          :else
          [:> options-toolbox props])]]]))
