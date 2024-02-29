@@ -1,0 +1,90 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+}
+
+.modal-container {
+  display: grid;
+  grid-template-columns: $s-324 1fr;
+  height: $s-500;
+  width: $s-888;
+  border-radius: $br-8;
+  background-color: var(--modal-background-color);
+  border: $s-2 solid var(--modal-border-color);
+}
+
+.start-image {
+  width: $s-324;
+  border-radius: $br-8 0 0 $br-8;
+}
+
+.modal-content {
+  padding: $s-40;
+  display: grid;
+  grid-template-rows: auto 1fr $s-32;
+  gap: $s-24;
+}
+
+.modal-header {
+  display: grid;
+  gap: $s-8;
+}
+
+.verstion-tag {
+  @include flexCenter;
+  @include headlineSmallTypography;
+  height: $s-32;
+  width: $s-96;
+  background-color: var(--communication-tag-background-color);
+  color: var(--communication-tag-foreground-color);
+  border-radius: $br-8;
+}
+
+.modal-title {
+  @include headlineLargeTypography;
+  color: var(--modal-title-foreground-color);
+}
+
+.features-block {
+  display: flex;
+  flex-direction: column;
+  gap: $s-16;
+  width: $s-440;
+}
+
+.feature {
+  display: flex;
+  flex-direction: column;
+  gap: $s-8;
+}
+
+.feature-title {
+  @include bodyLargeTypography;
+  color: var(--modal-title-foreground-color);
+}
+
+.feature-content {
+  @include bodyMediumTypography;
+  margin: 0;
+  color: var(--modal-text-foreground-color);
+}
+
+.navigation {
+  width: 100%;
+  display: grid;
+  grid-template-areas: "bullets button";
+}
+
+.next-btn {
+  @extend .button-primary;
+  width: $s-100;
+  justify-self: flex-end;
+  grid-area: button;
+}

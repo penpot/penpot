@@ -33,7 +33,7 @@
     .option-wrapper {
       width: 100%;
       .library-name {
-        @include bodyMedTipography;
+        @include bodySmallTypography;
         color: var(--context-menu-foreground-color);
         display: grid;
         grid-template-columns: 1fr $s-24;

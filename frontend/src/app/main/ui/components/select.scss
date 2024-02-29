@@ -12,7 +12,7 @@
   --icon-color: var(--icon-foreground);
   --text-color: var(--menu-foreground-color);
   @extend .new-scrollbar;
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   position: relative;
   display: grid;
   grid-template-columns: 1fr auto;

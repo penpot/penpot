@@ -55,12 +55,12 @@
 }
 
 .after {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   margin-top: $s-1;
 }
 
 .interactions-help {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   text-align: center;
   color: var(--title-foreground-color);
 }
@@ -120,7 +120,7 @@
   }
   .interaction-name {
     @include twoLineTextEllipsis;
-    @include bodyMedTipography;
+    @include bodySmallTypography;
     padding-left: $s-4;
     width: $s-92;
     margin: auto 0;
@@ -287,7 +287,7 @@
 }
 
 .flow-name-wrapper {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   @include focusInput;
   display: flex;
   align-items: center;
@@ -324,7 +324,7 @@
   }
 
   .flow-input-wrapper {
-    @include bodyMedTipography;
+    @include bodySmallTypography;
     display: flex;
     align-items: center;
     height: $s-28;

@@ -32,7 +32,7 @@
       margin-bottom: 0;
     }
     .library-name {
-      @include bodyMedTipography;
+      @include bodySmallTypography;
       color: var(--context-menu-foreground-color);
       display: grid;
       grid-template-columns: 1fr $s-24;

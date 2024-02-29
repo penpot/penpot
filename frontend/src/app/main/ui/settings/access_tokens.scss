@@ -191,7 +191,7 @@
 .modal-content {
   @include flexColumn;
   gap: $s-24;
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   margin-bottom: $s-24;
 }
 
@@ -200,7 +200,7 @@
 }
 
 .select-title {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   color: var(--modal-title-foreground-color);
 }
 
@@ -223,7 +223,7 @@
 
 .token-value {
   @include textEllipsis;
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   flex-grow: 1;
 }
 

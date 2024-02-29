@@ -19,7 +19,7 @@
 }
 
 .section-title {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   height: $s-32;
   display: flex;
   align-items: center;
@@ -55,7 +55,7 @@
 
 // Comment-thread
 .comment {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   display: flex;
   flex-direction: column;
   gap: $s-12;
@@ -98,7 +98,7 @@
 }
 
 .content {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   color: var(--color-foreground-primary);
 }
 
@@ -151,7 +151,7 @@
 .comment-container {
   position: relative;
   .comment {
-    @include bodyMedTipography;
+    @include bodySmallTypography;
     .author {
       display: flex;
       gap: $s-8;
@@ -195,7 +195,7 @@
     .content {
       position: relative;
       .text {
-        @include bodyMedTipography;
+        @include bodySmallTypography;
       }
     }
   }

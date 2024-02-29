@@ -45,7 +45,7 @@
 }
 
 .modal-content {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   margin-bottom: $s-24;
 }
 .input-wrapper {

@@ -1,0 +1,32 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.step-dots {
+  display: grid;
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  gap: $s-8;
+  height: fit-content;
+  width: fit-content;
+  margin: 0;
+  padding: 0;
+  align-self: center;
+  justify-self: flex-start;
+}
+
+.dot {
+  height: $s-12;
+  width: $s-12;
+  border-radius: $br-circle;
+  background-color: var(--modal-navigator-foreground-color-rest);
+  cursor: pointer;
+}
+
+.current {
+  background-color: var(--modal-navigator-foreground-color-active);
+}

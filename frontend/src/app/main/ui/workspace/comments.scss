@@ -110,7 +110,7 @@
     }
   }
   .label {
-    @include bodyMedTipography;
+    @include bodySmallTypography;
   }
   &:hover {
     .icon svg {
@@ -164,7 +164,7 @@
 }
 
 .placeholder-label {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   text-align: center;
   width: $s-184;
   color: var(--empty-message-foreground-color);

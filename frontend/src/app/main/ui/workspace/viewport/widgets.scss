@@ -26,7 +26,7 @@
   cursor: pointer;
   display: flex;
   .content {
-    @include bodyMedTipography;
+    @include bodySmallTypography;
     display: flex;
     align-items: center;
     height: $s-24;

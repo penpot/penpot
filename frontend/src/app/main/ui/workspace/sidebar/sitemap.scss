@@ -35,7 +35,7 @@
 
 .view-only-mode {
   @include flexCenter;
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   height: $s-20;
   padding: $s-4 $s-6;
   margin-right: $s-12;
@@ -75,7 +75,7 @@
 }
 
 .page-element {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   min-height: $s-32;
   width: 100%;
   cursor: pointer;
@@ -139,7 +139,7 @@
     }
     input.element-name {
       @include textEllipsis;
-      @include bodyMedTipography;
+      @include bodySmallTypography;
       @include removeInputStyle;
       flex-grow: 1;
       height: $s-28;
