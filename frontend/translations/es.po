@@ -3016,8 +3016,8 @@ msgstr "Bloquear/Desbloquear proporciones"
 msgid "shortcuts.toggle-rules"
 msgstr "Mostrar/ocultar reglas"
 
-msgid "shortcuts.toggle-scale-text"
-msgstr "Alternar escalado de texto"
+msgid "shortcuts.scale"
+msgstr "Escalado"
 
 msgid "shortcuts.toggle-snap-grid"
 msgstr "Alinear a la rejilla"

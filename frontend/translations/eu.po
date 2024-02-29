@@ -2574,9 +2574,6 @@ msgstr "Blokeatu/Desblokeatu proportzioak"
 msgid "shortcuts.toggle-rules"
 msgstr "Erakutsi/ezkutatu erregelak"
 
-msgid "shortcuts.toggle-scale-text"
-msgstr "Erakutsi/Ezkutatu testua eskalatzea"
-
 msgid "shortcuts.toggle-snap-grid"
 msgstr "Lerrokatu sarera"
 

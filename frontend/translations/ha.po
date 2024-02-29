@@ -245,9 +245,6 @@ msgstr ""
 "ka tuna da kowa. masu qirqira, masu tsarawa, shuwagabanniS... daban-daban ya "
 "qara :)"
 
-msgid "shortcuts.toggle-scale-text"
-msgstr "Juya sikelin rubutu"
-
 msgid "modals.invite-member.repeated-invitation"
 msgstr ""
 "waxansu imel daga membobin qungiyar na yanzu. ba za a aikawa da gayyatarsu "

@@ -292,10 +292,10 @@
                           :subsections [:tools]
                           :fn #(emit-when-no-readonly (dw/toggle-proportion-lock))}
 
-   :toggle-scale-text   {:tooltip "K"
-                         :command "k"
-                         :subsections [:tools]
-                         :fn #(emit-when-no-readonly (toggle-layout-flag :scale-text))}
+   :scale                {:tooltip "K"
+                          :command "k"
+                          :subsections [:tools]
+                          :fn #(emit-when-no-readonly (toggle-layout-flag :scale-text))}
 
    :open-color-picker    {:tooltip "I"
                           :command "i"

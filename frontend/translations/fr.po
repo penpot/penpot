@@ -2792,9 +2792,6 @@ msgstr "Verrouiller les proportions"
 msgid "shortcuts.toggle-rules"
 msgstr "Afficher/masquer les règles"
 
-msgid "shortcuts.toggle-scale-text"
-msgstr "Activer/désactiver le redimensionnement du texte"
-
 msgid "shortcuts.toggle-snap-grid"
 msgstr "Aligner sur la grille"
 

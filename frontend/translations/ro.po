@@ -2964,9 +2964,6 @@ msgstr "Blocați proporțiile"
 msgid "shortcuts.toggle-rules"
 msgstr "Afișați/ascundeți rigle"
 
-msgid "shortcuts.toggle-scale-text"
-msgstr "Comută scalarea textului"
-
 msgid "shortcuts.toggle-snap-grid"
 msgstr "Fixare la grilă"
 

@@ -177,7 +177,7 @@
   ;;   shortcuts.toggle-lock
   ;;   shortcuts.toggle-lock-size
   ;;   shortcuts.toggle-rules
-  ;;   shortcuts.toggle-scale-text
+  ;;   shortcuts.scale
   ;;   shortcuts.toggle-snap-grid
   ;;   shortcuts.toggle-snap-guide
   ;;   shortcuts.toggle-textpalette

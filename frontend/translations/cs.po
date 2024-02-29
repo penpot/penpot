@@ -2577,9 +2577,6 @@ msgstr "Uzamknout proporce"
 msgid "shortcuts.toggle-rules"
 msgstr "Zobrazit/skrýt pravítka"
 
-msgid "shortcuts.toggle-scale-text"
-msgstr "Přepnout měřítko textu"
-
 msgid "shortcuts.toggle-snap-grid"
 msgstr "Přichytit k mřížce"
 

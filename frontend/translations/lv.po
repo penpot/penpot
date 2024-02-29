@@ -2918,9 +2918,6 @@ msgstr "Slēgt proporcijas"
 msgid "shortcuts.toggle-rules"
 msgstr "Rādīt/paslēpt mērjoslas"
 
-msgid "shortcuts.toggle-scale-text"
-msgstr "Pārslēgt teksta mērogošanu"
-
 msgid "shortcuts.toggle-snap-grid"
 msgstr "Pieķerties režģim"
 

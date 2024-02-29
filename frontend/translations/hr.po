@@ -2353,9 +2353,6 @@ msgstr "Zaključaj proporcije"
 msgid "shortcuts.toggle-rules"
 msgstr "Prikaži/sakrij \"rules\""
 
-msgid "shortcuts.toggle-scale-text"
-msgstr "Promjena mjerila teksta"
-
 #, fuzzy
 msgid "shortcuts.toggle-snap-grid"
 msgstr "Poravnanje s \"gridom\""
