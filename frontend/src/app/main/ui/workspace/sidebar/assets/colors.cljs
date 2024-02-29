@@ -224,10 +224,10 @@
               :on-double-click rename-color-clicked}
 
         (if (= (:name color) default-name)
-          [:span  {:class (stl/css :default-name-only)} default-name]
+          [:span  {:class (stl/css :default-name)} default-name]
           [:*
-           [:span  {:class (stl/css :name)} (:name color)]
-           [:span  {:class (stl/css :default-name)} default-name]])])
+           (:name color)
+           [:span  {:class (stl/css :default-name :default-name-with-color)} default-name]])])
 
      (when local?
        [:& cmm/assets-context-menu
