@@ -131,8 +131,10 @@
   .dropdown {
     right: $s-2;
     top: $s-52;
-    min-width: $s-160;
     max-height: $s-480;
+    &:not(.teams-dropdown) {
+      min-width: $s-160;
+    }
   }
 }
 
