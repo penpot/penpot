@@ -847,7 +847,7 @@ msgstr "電子郵件"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-go-to"
-msgstr "前往Twitter"
+msgstr "前往X"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-subtitle1"
@@ -855,7 +855,7 @@ msgstr "協助解你的決技術問題。"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-title"
-msgstr "Twitter支援帳戶"
+msgstr "X支援帳戶"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"

@@ -1064,7 +1064,7 @@ msgstr "Email"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-go-to"
-msgstr "Accéder à Twitter"
+msgstr "Accéder à X"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-subtitle1"
@@ -1072,7 +1072,7 @@ msgstr "Nous sommes là pour répondre à vos questions techniques."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-title"
-msgstr "Compte d’assistance Twitter"
+msgstr "Compte d’assistance X"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"

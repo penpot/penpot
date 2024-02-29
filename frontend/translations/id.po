@@ -1044,7 +1044,7 @@ msgstr "Surel"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-go-to"
-msgstr "Pergi ke Twitter"
+msgstr "Pergi ke X"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-subtitle1"
@@ -1052,7 +1052,7 @@ msgstr "Di sini untuk membantu dengan kueri teknis Anda."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-title"
-msgstr "Akun dukungan Twitter"
+msgstr "Akun dukungan X"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"

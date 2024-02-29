@@ -911,7 +911,7 @@ msgstr "البريد الإلكتروني"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-go-to"
-msgstr "اذهب إلى Twitter"
+msgstr "اذهب إلى X"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-subtitle1"
