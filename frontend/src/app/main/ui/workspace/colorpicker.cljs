@@ -11,6 +11,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.config :as cfg]
+   [app.main.data.events :as-alias ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.libraries :as dwl]
@@ -32,6 +33,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [cuerdas.core :as str]
    [okulary.core :as l]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 ;; --- Refs
@@ -103,11 +105,16 @@
         (mf/use-fn
          (mf/deps current-color)
          (fn []
-           (let [keep-aspect-ratio? (-> current-color :image :keep-aspect-ratio not)]
-             (st/emit! (dc/update-colorpicker-color
-                        {:image (-> (:image current-color)
-                                    (assoc :keep-aspect-ratio keep-aspect-ratio?))}
-                        true)))))
+           (let [keep-aspect-ratio? (-> current-color :image :keep-aspect-ratio not)
+                 image              (-> (:image current-color)
+                                        (assoc :keep-aspect-ratio keep-aspect-ratio?))]
+
+
+             (st/emit!
+              (dc/update-colorpicker-color {:image image} true)
+              (ptk/data-event ::ev/event {::ev/name "toggle-image-aspect-ratio"
+                                          ::ev/origin "workspace:colorpicker"
+                                          :checked keep-aspect-ratio?})))))
 
         on-change-tab
         (mf/use-fn
@@ -279,7 +286,8 @@
              [:label {:for "keep-aspect-ratio"
                       :class (stl/css-case  :global/checked keep-aspect-ratio?)}
               [:span {:class (stl/css-case :global/checked keep-aspect-ratio?)}
-               (when keep-aspect-ratio? i/status-tick-refactor)]
+               (when keep-aspect-ratio?
+                 i/status-tick-refactor)]
               (tr "media.keep-aspect-ratio")
               [:input {:type "checkbox"
                        :id "keep-aspect-ratio"
