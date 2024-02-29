@@ -50,7 +50,9 @@
   </body>
 </html>")
 
-(defn get-flex-elements [page-id shapes from]
+;; FIXME: rename to hook naming convention
+(defn get-flex-elements
+  [page-id shapes from]
   (let [ids (mapv :id shapes)
         ids (hooks/use-equal-memo ids)
 
@@ -63,6 +65,7 @@
 
     (mf/deref get-layout-children-refs)))
 
+;; FIXME: rename to hook naming convention
 (defn get-objects [from]
   (let [page-objects-ref
         (mf/use-memo
