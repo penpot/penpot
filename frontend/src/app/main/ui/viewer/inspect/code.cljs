@@ -20,7 +20,6 @@
    [app.main.ui.components.code-block :refer [code-block]]
    [app.main.ui.components.copy-button :refer [copy-button]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
-   [app.main.ui.hooks :as hooks]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.icons :as i]
    [app.main.ui.shapes.text.fontfaces :refer [shapes->fonts]]
@@ -50,33 +49,16 @@
   </body>
 </html>")
 
-;; FIXME: rename to hook naming convention
-(defn get-flex-elements
-  [page-id shapes from]
-  (let [ids (mapv :id shapes)
-        ids (hooks/use-equal-memo ids)
-
-        get-layout-children-refs
-        (mf/use-memo
-         (mf/deps ids page-id from)
-         #(if (= from :workspace)
-            (refs/workspace-get-flex-child ids)
-            (refs/get-flex-child-viewer ids page-id)))]
-
-    (mf/deref get-layout-children-refs)))
-
-;; FIXME: rename to hook naming convention
-(defn get-objects [from]
+(defn- use-objects [from]
   (let [page-objects-ref
-        (mf/use-memo
-         (mf/deps from)
-         (fn []
-           (if (= from :workspace)
-             refs/workspace-page-objects
-             (refs/get-viewer-objects))))]
+        (mf/with-memo [from]
+          (if (= from :workspace)
+            ;; FIXME: fix naming consistency issues
+            refs/workspace-page-objects
+            (refs/get-viewer-objects)))]
     (mf/deref page-objects-ref)))
 
-(defn shapes->images
+(defn- shapes->images
   [shapes]
   (->> shapes
        (keep
@@ -84,7 +66,7 @@
           (when-let [data (or (:metadata shape) (:fill-image shape) (-> shape :fills first :fill-image))]
             [(:id shape) (cfg/resolve-file-media data)])))))
 
-(defn replace-map
+(defn- replace-map
   [value map]
   (reduce
    (fn [value [old new]]
@@ -107,35 +89,39 @@
         fontfaces-css* (mf/use-state nil)
         images-data*   (mf/use-state nil)
 
-        collapsed*     (mf/use-state #{})
-        collapsed-css? (contains? @collapsed* :css)
+        style-type     (deref style-type*)
+        markup-type    (deref markup-type*)
+        fontfaces-css  (deref fontfaces-css*)
+        images-data    (deref images-data*)
+
+        collapsed*        (mf/use-state #{})
+        collapsed-css?    (contains? @collapsed* :css)
         collapsed-markup? (contains? @collapsed* :markup)
 
-        style-type    (deref style-type*)
-        markup-type   (deref markup-type*)
-        fontfaces-css (deref fontfaces-css*)
-        images-data   (deref images-data*)
+        objects        (use-objects from)
 
-        shapes      (->> shapes
-                         (map #(gsh/translate-to-frame % frame)))
+        shapes
+        (mf/with-memo [shapes frame]
+          (mapv #(gsh/translate-to-frame % frame) shapes))
 
-        objects    (get-objects from)
+        all-children
+        (mf/use-memo
+         (mf/deps shapes objects)
+         (fn []
+           (->> shapes
+                (map :id)
+                (cfh/selected-with-children objects)
+                (ctst/sort-z-index objects)
+                (map (d/getf objects)))))
 
-        all-children (->> shapes
-                          (map :id)
-                          (cfh/selected-with-children objects)
-                          (ctst/sort-z-index objects)
-                          (map (d/getf objects)))
+        fonts
+        (mf/with-memo [all-children]
+          (shapes->fonts all-children))
 
+        images-urls
+        (mf/with-memo [all-children]
+          (shapes->images all-children))
 
-        shapes (hooks/use-equal-memo shapes)
-        all-children (hooks/use-equal-memo all-children)
-
-        fonts (-> (shapes->fonts all-children)
-                  (hooks/use-equal-memo))
-
-        images-urls (-> (shapes->images all-children)
-                        (hooks/use-equal-memo))
         style-code
         (mf/use-memo
          (mf/deps fontfaces-css style-type all-children cg/generate-style-code)
@@ -156,7 +142,9 @@
         (mf/use-fn
          (mf/deps markup-type from)
          (fn []
-           (let [origin (if (= :workspace from) "workspace" "viewer")]
+           (let [origin (if (= :workspace from)
+                          "workspace"
+                          "viewer")]
              (st/emit! (ptk/event ::ev/event
                                   {::ev/name "copy-inspect-code"
                                    ::ev/origin origin
@@ -164,9 +152,11 @@
 
         on-style-copied
         (mf/use-fn
-         (mf/deps style-type)
+         (mf/deps style-type from)
          (fn []
-           (let [origin (if (= :workspace from) "workspace" "viewer")]
+           (let [origin (if (= :workspace from)
+                          "workspace"
+                          "viewer")]
              (st/emit! (ptk/event ::ev/event
                                   {::ev/name "copy-inspect-style"
                                    ::ev/origin origin
@@ -208,17 +198,27 @@
 
         handle-collapse
         (mf/use-fn
-         (fn [e]
-           (let [panel-type (keyword (dom/get-data (dom/get-current-target e) "type"))]
+         (fn [event]
+           (let [panel-type (-> (dom/get-current-target event)
+                                (dom/get-data "type")
+                                (keyword))]
              (swap! collapsed*
                     (fn [collapsed]
                       (if (contains? collapsed panel-type)
                         (disj collapsed panel-type)
-                        (conj collapsed panel-type)))))))]
+                        (conj collapsed panel-type)))))))
+        copy-css-fn
+        (mf/use-fn
+         (mf/deps style-code images-data)
+         #(replace-map style-code images-data))
 
-    (mf/use-effect
-     (mf/deps fonts)
-     #(->> (rx/from fonts)
+        copy-html-fn
+        (mf/use-fn
+         (mf/deps markup-code images-data)
+         #(replace-map markup-code images-data))]
+
+    (mf/with-effect [fonts]
+      (->> (rx/from fonts)
            (rx/merge-map fonts/fetch-font-css)
            (rx/reduce conj [])
            (rx/subs!
@@ -226,9 +226,8 @@
               (let [css (str/join "\n" result)]
                 (reset! fontfaces-css* css))))))
 
-    (mf/use-effect
-     (mf/deps images-urls)
-     #(->> (rx/from images-urls)
+    (mf/with-effect [images-urls]
+      (->> (rx/from images-urls)
            (rx/merge-map
             (fn [[_ uri]]
               (->> (http/fetch-data-uri uri true)
@@ -272,13 +271,13 @@
                   :on-click on-expand}
          i/code-refactor]
 
-        [:& copy-button {:data #(replace-map style-code images-data)
+        [:& copy-button {:data copy-css-fn
                          :class (stl/css :css-copy-btn)
                          :on-copied on-style-copied}]]]
 
       (when-not collapsed-css?
         [:div {:class (stl/css :code-row-display)
-               :style #js {"--code-height" (str (or style-size 400) "px")}}
+               :style {:--code-height (dm/str (or style-size 400) "px")}}
          [:& code-block {:type style-type
                          :code style-code}]])
 
@@ -313,13 +312,13 @@
                   :on-click on-expand}
          i/code-refactor]
 
-        [:& copy-button {:data #(replace-map markup-code images-data)
+        [:& copy-button {:data copy-html-fn
                          :class (stl/css :html-copy-btn)
                          :on-copied on-markup-copied}]]]
 
       (when-not collapsed-markup?
         [:div {:class (stl/css :code-row-display)
-               :style #js {"--code-height" (str (or markup-size 400) "px")}}
+               :style {:--code-height (dm/str (or markup-size 400) "px")}}
          [:& code-block {:type markup-type
                          :code markup-code}]])
 
