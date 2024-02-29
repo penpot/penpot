@@ -35,10 +35,13 @@
   top: calc($s-2 + $s-48);
   width: $s-272;
   padding: $s-6;
+  max-height: calc(100vh - 3 * ($s-2 + $s-48));
+  overflow: scroll;
 }
 
 .dropdown-element {
   @extend .dropdown-element-base;
+  min-height: $s-32;
   .icon {
     @include flexCenter;
     height: 100%;
