@@ -10,7 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.ui.components.copy-button :refer [copy-button]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [inspect-title-bar]]
    [app.main.ui.viewer.inspect.attributes.common :refer [color-row]]
    [app.util.code-gen.style-css :as css]
    [app.util.i18n :refer [tr]]
@@ -53,10 +53,9 @@
 
     (when (and (seq shapes) (> (count shapes) 0))
       [:div {:class (stl/css :attributes-block)}
-       [:& title-bar {:collapsable false
-                      :origin      :inspect
-                      :title       (tr "inspect.attributes.shadow")
-                      :class       (stl/css :title-spacing-shadow)}]
+       [:& inspect-title-bar
+        {:title (tr "inspect.attributes.shadow")
+         :class (stl/css :title-spacing-shadow)}]
 
        [:div {:class (stl/css :attributes-content)}
         (for [shape shapes]

@@ -9,7 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.main.ui.components.copy-button :refer [copy-button]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [inspect-title-bar]]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -53,8 +53,7 @@
   (let [shape (first shapes)]
     (when (seq (:svg-attrs shape))
       [:div {:class (stl/css :attributes-block)}
-       [:& title-bar {:collapsable false
-                      :origin      :inspect
-                      :title       (tr "workspace.sidebar.options.svg-attrs.title")
-                      :class       (stl/css :title-spacing-svg)}]
+       [:& inspect-title-bar
+        {:title (tr "workspace.sidebar.options.svg-attrs.title")
+         :class (stl/css :title-spacing-svg)}]
        [:& svg-block {:shape shape}]])))

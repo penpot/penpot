@@ -9,7 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.main.ui.components.copy-button :refer [copy-button]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [inspect-title-bar]]
    [app.util.code-gen.style-css :as css]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -22,10 +22,9 @@
   (let [shapes (->> shapes (filter has-blur?))]
     (when (seq shapes)
       [:div {:class (stl/css :attributes-block)}
-       [:& title-bar {:collapsable false
-                      :title       (tr "inspect.attributes.blur")
-                      :origin      :inspect
-                      :class       (stl/css :title-spacing-blur)}
+       [:& inspect-title-bar
+        {:title (tr "inspect.attributes.blur")
+         :class (stl/css :title-spacing-blur)}
         (when (= (count shapes) 1)
           [:& copy-button {:data  (css/get-css-property objects (first shapes) :filter)
                            :class (stl/css :copy-btn-title)}])]

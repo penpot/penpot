@@ -181,29 +181,29 @@
         (use-resize-hook :code 400 100 800 :y false :bottom)
 
         ;; set-style
-        ;; (mf/use-callback
+        ;; (mf/use-fn
         ;;  (fn [value]
         ;;    (reset! style-type* value)))
 
         set-markup
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps markup-type*)
          (fn [value]
            (reset! markup-type* value)))
 
         handle-copy-all-code
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps style-code markup-code images-data)
          (fn []
            (wapi/write-to-clipboard (gen-all-code style-code markup-code images-data))))
 
         ;;handle-open-review
-        ;;(mf/use-callback
+        ;;(mf/use-fn
         ;; (fn []
         ;;   (st/emit! (dp/open-preview-selected))))
 
         handle-collapse
-        (mf/use-callback
+        (mf/use-fn
          (fn [e]
            (let [panel-type (keyword (dom/get-data (dom/get-current-target e) "type"))]
              (swap! collapsed*
@@ -257,11 +257,11 @@
 
        [:div {:class (stl/css :code-lang-option)}
         "CSS"]
-      ;; We will have a select when we have more than one option
-      ;;  [:& select {:default-value style-type
-      ;;              :class (stl/css :code-lang-select)
-      ;;              :on-change set-style
-      ;;              :options [{:label "CSS" :value "css"}]}]
+       ;; We will have a select when we have more than one option
+       ;;  [:& select {:default-value style-type
+       ;;              :class (stl/css :code-lang-select)
+       ;;              :on-change set-style
+       ;;              :options [{:label "CSS" :value "css"}]}]
 
        [:div {:class (stl/css :action-btns)}
         [:button {:class (stl/css :expand-button)
