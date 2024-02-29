@@ -2970,8 +2970,8 @@ msgstr "Lock proportions"
 msgid "shortcuts.toggle-rules"
 msgstr "Show / Hide rulers"
 
-msgid "shortcuts.toggle-scale-text"
-msgstr "Toggle scale text"
+msgid "shortcuts.scale"
+msgstr "Scale"
 
 msgid "shortcuts.toggle-snap-grid"
 msgstr "Snap to grid"

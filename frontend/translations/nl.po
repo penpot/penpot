@@ -2980,9 +2980,6 @@ msgstr "Proporties vergrendelen"
 msgid "shortcuts.toggle-rules"
 msgstr "Linialen tonen/verbergen"
 
-msgid "shortcuts.toggle-scale-text"
-msgstr "Tekstschaal in/uitschakelen"
-
 msgid "shortcuts.toggle-snap-grid"
 msgstr "Uitlijnen op raster"
 

@@ -2798,9 +2798,6 @@ msgstr "Seitenverhältnis sperren/entsperren"
 msgid "shortcuts.toggle-rules"
 msgstr "Lineale ein-/ausblenden"
 
-msgid "shortcuts.toggle-scale-text"
-msgstr "Textskalierung aktivieren/deaktivieren"
-
 msgid "shortcuts.toggle-snap-grid"
 msgstr "Am Raster ausrichten"
 

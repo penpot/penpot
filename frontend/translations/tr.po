@@ -2503,9 +2503,6 @@ msgstr "Oranları kilitle"
 msgid "shortcuts.toggle-rules"
 msgstr "Cetvelleri göster/gizle"
 
-msgid "shortcuts.toggle-scale-text"
-msgstr "Ölçek metnini değiştir"
-
 msgid "shortcuts.toggle-snap-grid"
 msgstr "Izgaraya tuttur"
 

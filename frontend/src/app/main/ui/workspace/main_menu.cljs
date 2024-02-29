@@ -184,7 +184,7 @@
          (tr "workspace.header.menu.disable-scale-content")
          (tr "workspace.header.menu.enable-scale-content"))]
       [:span {:class (stl/css :shortcut)}
-       (for [sc (scd/split-sc (sc/get-tooltip :toggle-scale-text))]
+       (for [sc (scd/split-sc (sc/get-tooltip :scale))]
          [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
 
      [:> dropdown-menu-item* {:on-click    toggle-flag

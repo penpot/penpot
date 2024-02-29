@@ -2823,9 +2823,6 @@ msgstr "נעילת יחס"
 msgid "shortcuts.toggle-rules"
 msgstr "הצגת/הסתרת סרגלים"
 
-msgid "shortcuts.toggle-scale-text"
-msgstr "החלפת מצב שינוי קנה מידה של כתב"
-
 msgid "shortcuts.toggle-snap-grid"
 msgstr "הצמדה לרשת"
 

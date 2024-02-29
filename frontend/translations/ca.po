@@ -2260,9 +2260,6 @@ msgstr "Bloqueja les proporcions"
 msgid "shortcuts.toggle-rules"
 msgstr "Mostra/Amaga les regles"
 
-msgid "shortcuts.toggle-scale-text"
-msgstr "Activa/desactiva l'escalat de text"
-
 msgid "shortcuts.toggle-snap-grid"
 msgstr "Ajusta a la graella"
 

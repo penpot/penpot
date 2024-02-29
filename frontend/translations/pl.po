@@ -2472,9 +2472,6 @@ msgstr "Zablokuj proporcje"
 msgid "shortcuts.toggle-rules"
 msgstr "Pokaż/ukryj linijki"
 
-msgid "shortcuts.toggle-scale-text"
-msgstr "Przełącz skalowanie tekstu"
-
 msgid "shortcuts.toggle-snap-grid"
 msgstr "Przyciągaj do siatki"
 
