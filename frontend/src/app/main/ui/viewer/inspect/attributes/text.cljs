@@ -14,7 +14,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.copy-button :refer [copy-button]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [inspect-title-bar]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.viewer.inspect.attributes.common :refer [color-row]]
    [app.util.i18n :refer [tr]]
@@ -190,10 +190,9 @@
   [{:keys [shapes]}]
   (when-let [shapes (seq (filter has-text? shapes))]
     [:div {:class (stl/css :attributes-block)}
-     [:& title-bar {:collapsable false
-                    :origin      :inspect
-                    :title       (tr "inspect.attributes.typography")
-                    :class       (stl/css :title-spacing-text)}]
+     [:& inspect-title-bar
+      {:title (tr "inspect.attributes.typography")
+       :class (stl/css :title-spacing-text)}]
 
      (for [shape shapes]
        [:& text-block {:shape shape
