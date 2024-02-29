@@ -78,12 +78,12 @@
   (ptk/reify ::handle-drawing
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [stoper       (rx/merge
-                          (->> stream
-                               (rx/filter mse/mouse-event?)
-                               (rx/filter mse/mouse-up-event?))
-                          (->> stream
-                               (rx/filter #(= % :interrupt))))
+      (let [stopper       (rx/merge
+                           (->> stream
+                                (rx/filter mse/mouse-event?)
+                                (rx/filter mse/mouse-up-event?))
+                           (->> stream
+                                (rx/filter #(= % :interrupt))))
 
             layout       (get state :workspace-layout)
             zoom         (dm/get-in state [:workspace-local :zoom] 1)
@@ -131,7 +131,7 @@
                     (rx/filter #(> (gpt/distance % initial) (/ 2 zoom)))
                     ;; Take until before the snap calculation otherwise we could cancel the snap in the worker
                     ;; and its a problem for fast moving drawing
-                    (rx/take-until stoper)
+                    (rx/take-until stopper)
                     (rx/with-latest-from ms/mouse-position-shift ms/mouse-position-mod)
                     (rx/switch-map
                      (fn [[point :as current]]

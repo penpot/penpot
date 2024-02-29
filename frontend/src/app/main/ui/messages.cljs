@@ -29,13 +29,12 @@
                          :links (:links message)
                          :content (:content message)}
 
-        context-message {:actions (:actions message)
+        context-message {:type (or (:type message) :info)
                          :links (:links message)
                          :content (:content message)}
 
-        ;; TODO review this options
-        is-toast-msg (or (= :toast (:notification-type message)) (some? (:timeout message)))
-        is-inline-msg      (or (= :inline (:notification-type message)) (and (some? (:position message)) (= :floating (:position message))))]
+        is-toast-msg   (or (= :toast (:notification-type message)) (some? (:timeout message)))
+        is-inline-msg  (or (= :inline (:notification-type message)) (and (some? (:position message)) (= :floating (:position message))))]
 
     (when message
       (cond

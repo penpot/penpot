@@ -103,6 +103,12 @@
   (concat (map #(ctn/make-container % :page) (ctpl/pages-seq file-data))
           (map #(ctn/make-container % :component) (ctkl/components-seq file-data))))
 
+(defn object-containers-seq
+  "Generate a sequence of all pages and all deleted components (all those components that have :objects), wrapped as containers"
+  [file-data]
+  (concat (map #(ctn/make-container % :page) (ctpl/pages-seq file-data))
+          (map #(ctn/make-container % :component) (ctkl/deleted-components-seq file-data))))
+
 (defn update-container
   "Update a container inside the file, it can be a page or a component"
   [file-data container f]

@@ -37,7 +37,7 @@
     ptk/WatchEvent
     (watch [_ _ stream]
       (log/debug :hint "initialize persistence")
-      (let [stoper   (rx/filter (ptk/type? ::initialize-persistence) stream)
+      (let [stopper   (rx/filter (ptk/type? ::initialize-persistence) stream)
             commits  (l/atom [])
             saving?  (l/atom false)
 
@@ -53,7 +53,7 @@
 
             on-dirty
             (fn []
-              ;; Enable reload stoper
+              ;; Enable reload stopper
               (swap! st/ongoing-tasks conj :workspace-change)
               (st/emit! (update-persistence-status {:status :pending})))
 
@@ -64,7 +64,7 @@
 
             on-saved
             (fn []
-              ;; Disable reload stoper
+              ;; Disable reload stopper
               (swap! st/ongoing-tasks disj :workspace-change)
               (st/emit! (update-persistence-status {:status :saved}))
               (reset! saving? false))]
@@ -82,7 +82,7 @@
                             (assoc :file-id file-id))))
               (rx/observe-on :async)
               (rx/tap #(swap! commits conj %))
-              (rx/take-until (rx/delay 100 stoper))
+              (rx/take-until (rx/delay 100 stopper))
               (rx/finalize (fn []
                              (log/debug :hint "finalize persistence: changes watcher"))))
 
@@ -115,7 +115,7 @@
                                    (rx/tap on-saved)
                                    (rx/ignore)))
                              (rx/empty))))
-              (rx/take-until (rx/delay 100 stoper))
+              (rx/take-until (rx/delay 100 stopper))
               (rx/finalize (fn []
                              (log/debug :hint "finalize persistence: save loop"))))
 
@@ -126,7 +126,7 @@
               (rx/filter library-file?)
               (rx/filter (complement #(empty? (:changes %))))
               (rx/map persist-synchronous-changes)
-              (rx/take-until (rx/delay 100 stoper))
+              (rx/take-until (rx/delay 100 stopper))
               (rx/finalize (fn []
                              (log/debug :hint "finalize persistence: synchronous save loop")))))))))
 

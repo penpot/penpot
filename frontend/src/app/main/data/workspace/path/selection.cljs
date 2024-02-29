@@ -120,12 +120,12 @@
       ptk/WatchEvent
       (watch [_ state stream]
         (let [zoom   (get-in state [:workspace-local :zoom] 1)
-              stoper (rx/merge
-                      (->> stream
-                           (rx/filter mse/mouse-event?)
-                           (rx/filter mse/mouse-up-event?))
-                      (->> stream
-                           (rx/filter dwc/interrupt?)))
+              stopper (rx/merge
+                       (->> stream
+                            (rx/filter mse/mouse-event?)
+                            (rx/filter mse/mouse-up-event?))
+                       (->> stream
+                            (rx/filter dwc/interrupt?)))
 
               from-p @ms/mouse-position]
           (rx/concat
@@ -133,7 +133,7 @@
                 (rx/map #(grc/points->rect [from-p %]))
                 (rx/filter (partial valid-rect? zoom))
                 (rx/map update-area-selection)
-                (rx/take-until stoper))
+                (rx/take-until stopper))
 
            (rx/of (select-node-area shift?)
                   (clear-area-selection))))))))

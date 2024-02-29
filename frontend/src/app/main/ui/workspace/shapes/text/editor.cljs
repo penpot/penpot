@@ -122,8 +122,7 @@
         (fn [event]
           (dom/stop-propagation event)
           (when (kbd/esc? event)
-            (st/emit! :interrupt)
-            (st/emit! dw/clear-edition-mode)))
+            (st/emit! :interrupt (dw/clear-edition-mode))))
 
         on-mount
         (fn []

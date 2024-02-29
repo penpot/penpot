@@ -13,25 +13,22 @@
    [cuerdas.core :as str]))
 
 (def black "#000000")
-(def canvas "#E8E9EA")
+
 (def default-layout "#DE4762")
-(def gray-10 "#E3E3E3")
 (def gray-20 "#B1B2B5")
-(def gray-30 "#7B7D85")
-(def gray-40 "#64666A")
-(def gray-50 "#303236")
 (def info "#59B9E2")
 (def test "#fabada")
 (def white "#FFFFFF")
-(def primary "#31EFB8")
-(def danger "#E65244")
 (def warning "#FC8802")
 
 ;; new-css-system colors
-(def new-primary "#91fadb")
-(def new-danger "#ff4986")
-(def new-warning "#ff9b49")
-(def canvas-background "#1d1f20")
+(def new-primary "#7efff5")
+(def new-danger "#ff3277")
+(def new-warning "#fe4811")
+(def new-primary-light "#6911d4")
+(def background-quaternary "#2e3434")
+(def background-quaternary-light "#eef0f2")
+(def canvas "#E8E9EA")
 
 (def names
   {"aliceblue" "#f0f8ff"

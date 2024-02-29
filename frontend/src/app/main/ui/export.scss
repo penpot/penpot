@@ -6,69 +6,101 @@
 
 @import "refactor/common-refactor.scss";
 
-.export-progress-modal-overlay {
-  display: flex;
-  justify-content: center;
-  position: fixed;
+// PROGRESS WIDGET
+.export-progress-widget {
+  @include flexCenter;
+  width: $s-28;
+  height: $s-28;
+}
+
+// PROGRESS MODAL
+.export-progress-modal {
+  --export-modal-bg-color: var(--alert-background-color-default);
+  --export-modal-fg-color: var(--alert-text-foreground-color-default);
+  --export-modal-icon-color: var(--alert-icon-foreground-color-default);
+  --export-modal-border-color: var(--alert-border-color-default);
+  position: absolute;
   right: $s-16;
   top: $s-48;
-  background-color: var(--modal-background-color);
+  display: grid;
+  grid-template-columns: $s-24 1fr $s-24;
+  grid-template-areas:
+    "icon text close"
+    "bar bar bar";
+  gap: $s-4 $s-8;
+  padding-block-start: $s-8;
+  background-color: var(--export-modal-bg-color);
+  border: $s-1 solid var(--export-modal-border-color);
   border-radius: $br-8;
-  z-index: $z-index-20;
+  z-index: $z-index-modal;
   overflow: hidden;
 }
 
-.export-progress-modal-container {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-around;
-  height: 100%;
-  width: 100%;
-}
-.export-progress-modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: stretch;
-  padding: $s-8;
+.has-error {
+  --export-modal-bg-color: var(--alert-background-color-error);
+  --export-modal-fg-color: var(--alert-text-foreground-color-error);
+  --export-modal-icon-color: var(--alert-icon-foreground-color-error);
+  --export-modal-border-color: var(--alert-border-color-error);
+  grid-template-areas: "icon text close";
+  gap: $s-8;
+  padding-block: $s-8;
 }
 
-.export-progress-modal-title {
-  display: flex;
-  flex-grow: 1;
-  padding: 0;
-  margin: 0;
+.icon {
+  @extend .button-icon;
+  grid-area: icon;
+  align-self: center;
+  margin-inline-start: $s-8;
+  stroke: var(--export-modal-icon-color);
 }
 
-.title-text {
-  @include flexCenter;
-  @include bodyLargeTypography;
+.export-progress-title {
+  @include bodyMedTipography;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: $s-8;
+  grid-area: text;
+  align-self: center;
   padding: 0;
   margin: 0;
-  color: var(--modal-title-foreground-color);
-  padding-left: $s-4;
+  color: var(--export-modal-fg-color);
 }
+
 .progress {
-  @include bodyLargeTypography;
+  @include bodyMedTipography;
   padding-left: $s-8;
   margin: 0;
+  align-self: center;
   color: var(--modal-text-foreground-color);
 }
+
 .retry-btn {
-  @extend .button-tertiary;
+  @include buttonStyle;
   @include bodyMedTipography;
+  display: inline;
+  text-align: left;
+  color: var(--modal-link-foreground-color);
+  margin: 0;
+  padding: 0;
 }
 
-.modal-close-button {
-  @extend .button-tertiary;
-  svg {
-    @extend .button-icon-small;
-    stroke: var(--icon-foreground);
-  }
+.progress-close-button {
+  @include buttonStyle;
+  padding: 0;
+  margin-inline-end: $s-8;
 }
+
+.close-icon {
+  @extend .button-icon;
+  stroke: var(--export-modal-icon-color);
+}
+
 .progress-bar {
   margin-top: 0;
+  grid-area: bar;
 }
 
+// EXPORT MODAL
 .modal-overlay {
   @extend .modal-overlay-base;
   &.transparent {

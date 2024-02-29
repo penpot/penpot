@@ -48,25 +48,24 @@
   transition: opacity 0.3s ease;
   li {
     position: relative;
+  }
+}
 
-    button {
-      @extend .button-tertiary;
-      height: $s-36;
-      width: $s-36;
-      flex-shrink: 0;
-      border-radius: $s-8;
-      border: none;
-      margin: 0 $s-2;
+.main-toolbar-options-button {
+  @extend .button-tertiary;
+  height: $s-36;
+  width: $s-36;
+  flex-shrink: 0;
+  border-radius: $s-8;
+  margin: 0 $s-2;
 
-      svg {
-        @extend .button-icon;
-        stroke: var(--color-foreground-secondary);
-      }
+  svg {
+    @extend .button-icon;
+    stroke: var(--color-foreground-secondary);
+  }
 
-      &.selected {
-        @extend .button-icon-selected;
-      }
-    }
+  &.selected {
+    @extend .button-icon-selected;
   }
 }
 

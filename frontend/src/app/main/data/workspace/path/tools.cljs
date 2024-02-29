@@ -40,7 +40,7 @@
               (rx/of (dch/update-shapes [id] upsp/convert-to-path))
               (rx/of (dch/commit-changes changes)
                      (when (empty? new-content)
-                       dwe/clear-edition-mode))))))))))
+                       (dwe/clear-edition-mode)))))))))))
 
 (defn make-corner
   ([]

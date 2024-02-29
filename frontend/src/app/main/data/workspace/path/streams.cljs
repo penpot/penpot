@@ -52,19 +52,19 @@
 
          start (-> @ms/mouse-position to-pixel-snap)
 
-         stoper (rx/merge
-                 (->> st/stream
-                      (rx/filter mse/mouse-event?)
-                      (rx/filter mse/mouse-up-event?))
-                 (->> st/stream
-                      (rx/filter finish-edition?)))
+         stopper (rx/merge
+                  (->> st/stream
+                       (rx/filter mse/mouse-event?)
+                       (rx/filter mse/mouse-up-event?))
+                  (->> st/stream
+                       (rx/filter finish-edition?)))
 
          position-stream
          (->> ms/mouse-position
               (rx/map to-pixel-snap)
               (rx/filter (dragging? start zoom))
               (rx/take 1)
-              (rx/take-until stoper))]
+              (rx/take-until stopper))]
 
      (rx/merge
       (->> position-stream

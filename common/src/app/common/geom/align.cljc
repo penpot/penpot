@@ -8,7 +8,8 @@
   (:require
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
-   [app.common.geom.shapes :as gsh]))
+   [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.points :as gpo]))
 
 ;; --- Alignment
 
@@ -28,6 +29,23 @@
         align-pos (calc-align-pos wrapper-rect rect axis)
         delta (gpt/point (- (:x align-pos) (:x wrapper-rect))
                          (- (:y align-pos) (:y wrapper-rect)))]
+    (gsh/move shape delta)))
+
+(defn align-to-parent
+  "Does the same calc as align-to-rect but relative to a parent shape."
+  [shape parent axis]
+  (let [parent-bounds (:points parent)
+        wrapper-rect
+        (-> (gsh/transform-points (:points shape) (gsh/shape->center parent) (:transform-inverse parent))
+            (grc/points->rect))
+
+        align-pos (calc-align-pos wrapper-rect (:selrect parent) axis)
+
+        xv   #(gpo/start-hv parent-bounds %)
+        yv   #(gpo/start-vv parent-bounds %)
+
+        delta (-> (xv (- (:x align-pos) (:x wrapper-rect)))
+                  (gpt/add (yv (- (:y align-pos) (:y wrapper-rect)))))]
     (gsh/move shape delta)))
 
 (defn calc-align-pos

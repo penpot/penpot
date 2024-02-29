@@ -11,11 +11,8 @@
    [app.common.data.macros :as dm]
    [app.common.uuid :as uuid]
    [app.main.ui.components.link-button :as lb]
-   [app.main.ui.icons :as i]
    [rumext.v2 :as mf]))
 
-(def ^:private neutral-icon
-  (i/icon-xref :msg-neutral-refactor (stl/css :icon)))
 
 
 (mf/defc inline-notification
@@ -25,18 +22,17 @@
   {::mf/props :obj}
   [{:keys [content actions links] :as props}]
   [:aside {:class (stl/css :inline-notification)}
-   neutral-icon
-
    [:div {:class (stl/css :inline-text)}
-    content]
 
-   (when (some? links)
-     [:nav {:class (stl/css :link-nav)}
-      (for [[index link] (d/enumerate links)]
-        [:& lb/link-button {:key (dm/str "link-" index)
-                            :class (stl/css :link)
-                            :on-click (:callback link)
-                            :value (:label link)}])])
+    content
+
+    (when (some? links)
+      [:nav {:class (stl/css :link-nav)}
+       (for [[index link] (d/enumerate links)]
+         [:& lb/link-button {:key (dm/str "link-" index)
+                             :class (stl/css :link)
+                             :on-click (:callback link)
+                             :value (:label link)}])])]
 
    [:div  {:class (stl/css :actions)}
     (for [action actions]

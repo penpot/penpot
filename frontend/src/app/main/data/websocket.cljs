@@ -51,9 +51,9 @@
 
         (vreset! ws-conn ws)
 
-        (let [stoper  (rx/merge
-                       (rx/filter (ptk/type? ::finalize) stream)
-                       (rx/filter (ptk/type? ::initialize) stream))]
+        (let [stopper  (rx/merge
+                        (rx/filter (ptk/type? ::finalize) stream)
+                        (rx/filter (ptk/type? ::initialize) stream))]
 
           (->> (rx/merge
                 (rx/of #(assoc % :ws-conn ws))
@@ -64,7 +64,7 @@
                 (->> (ws/get-rcv-stream ws)
                      (rx/filter ws/opened-event?)
                      (rx/map (fn [_] (ptk/data-event ::opened {})))))
-               (rx/take-until stoper)))))))
+               (rx/take-until stopper)))))))
 
 ;; --- Finalize Websocket
 

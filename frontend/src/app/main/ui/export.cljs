@@ -25,6 +25,15 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
+(def ^:private neutral-icon
+  (i/icon-xref :msg-neutral-refactor (stl/css :icon)))
+
+(def ^:private error-icon
+  (i/icon-xref :delete-text-refactor (stl/css :icon)))
+
+(def ^:private close-icon
+  (i/icon-xref :close-refactor (stl/css :close-icon)))
+
 (mf/defc export-multiple-dialog
   [{:keys [exports title cmd no-selection]}]
   (let [lstate          (mf/deref refs/export)
@@ -198,25 +207,34 @@
 (mf/defc export-progress-widget
   {::mf/wrap [mf/memo]}
   []
-  (let [state           (mf/deref refs/export)
-        error?          (:error state)
-        healthy?        (:healthy? state)
-        detail-visible? (:detail-visible state)
-        widget-visible? (:widget-visible state)
-        progress        (:progress state)
-        exports         (:exports state)
-        total           (count exports)
-        complete?       (= progress total)
-        circ            (* 2 Math/PI 12)
-        pct             (- circ (* circ (/ progress total)))
+  (let [state             (mf/deref refs/export)
+        profile           (mf/deref refs/profile)
+        theme             (or (:theme profile) "default")
+        is-default-theme? (= "default" theme)
+        error?            (:error state)
+        healthy?          (:healthy? state)
+        detail-visible?   (:detail-visible state)
+        widget-visible?   (:widget-visible state)
+        progress          (:progress state)
+        exports           (:exports state)
+        total             (count exports)
+        complete?         (= progress total)
+        circ              (* 2 Math/PI 12)
+        pct               (- circ (* circ (/ progress total)))
 
         pwidth (if error?
                  280
                  (/ (* progress 280) total))
         color  (cond
                  error?         clr/new-danger
-                 healthy?       clr/new-primary
+                 healthy?       (if is-default-theme?
+                                  clr/new-primary
+                                  clr/new-primary-light)
                  (not healthy?) clr/new-warning)
+
+        background-clr (if is-default-theme?
+                         clr/background-quaternary
+                         clr/background-quaternary-light)
         title  (cond
                  error?          (tr "workspace.options.exporting-object-error")
                  complete?       (tr "workspace.options.exporting-complete")
@@ -233,57 +251,60 @@
      (when widget-visible?
        [:div {:class (stl/css :export-progress-widget)
               :on-click toggle-detail-visibility}
-        [:svg {:width "32" :height "32"}
-         [:circle {:r "12"
-                   :cx "16"
-                   :cy "16"
+        [:svg {:width "24" :height "24"}
+         [:circle {:r "10"
+                   :cx "12"
+                   :cy "12"
                    :fill "transparent"
-                   :stroke clr/gray-40
+                   :stroke background-clr
                    :stroke-width "4"}]
-         [:circle {:r "12"
-                   :cx "16"
-                   :cy "16"
+         [:circle {:r "10"
+                   :cx "12"
+                   :cy "12"
                    :fill "transparent"
                    :stroke color
                    :stroke-width "4"
                    :stroke-dasharray (dm/str circ " " circ)
                    :stroke-dashoffset pct
-                   :transform "rotate(-90 16,16)"
+                   :transform "rotate(-90 12,12)"
                    :style {:transition "stroke-dashoffset 1s ease-in-out"}}]]])
 
      (when detail-visible?
-       [:div {:class (stl/css :export-progress-modal-overlay)}
-        [:div {:class (stl/css :export-progress-modal-container)}
-         [:div {:class (stl/css :export-progress-modal-header)}
-          [:p {:class (stl/css :export-progress-modal-title)}
-           [:span {:class (stl/css :title-text)}
-            title]
-           (if error?
-             [:button {:class (stl/css :retry-btn)
-                       :on-click retry-last-export}
-              (tr "workspace.options.retry")]
+       [:div {:class (stl/css-case :export-progress-modal true
+                                   :has-error error?)}
+        (if error?
+          error-icon
+          neutral-icon)
 
-             [:p {:class (stl/css :progress)}
-              (dm/str progress " / " total)])]
+        [:p {:class (stl/css :export-progress-title)}
+         title
+         (if error?
+           [:button {:class (stl/css :retry-btn)
+                     :on-click retry-last-export}
+            (tr "workspace.options.retry")]
 
-          [:button {:class (stl/css :modal-close-button)
-                    :on-click toggle-detail-visibility}
-           i/close-refactor]]
+           [:p {:class (stl/css :progress)}
+            (dm/str progress " / " total)])]
 
-         [:svg {:class (stl/css :progress-bar)
-                :height 5
-                :width 280}
-          [:g
-           [:path {:d "M0 0 L280 0"
-                   :stroke clr/black
-                   :stroke-width 30}]
-           [:path {:d (dm/str "M0 0 L280 0")
-                   :stroke color
-                   :stroke-width 30
-                   :fill "transparent"
-                   :stroke-dasharray 280
-                   :stroke-dashoffset (- 280 pwidth)
-                   :style {:transition "stroke-dashoffset 1s ease-in-out"}}]]]]])]))
+        [:button {:class (stl/css :progress-close-button)
+                  :on-click toggle-detail-visibility}
+         close-icon]
+
+        (when-not error?
+          [:svg {:class (stl/css :progress-bar)
+                 :height 4
+                 :width 280}
+           [:g
+            [:path {:d "M0 0 L280 0"
+                    :stroke background-clr
+                    :stroke-width 30}]
+            [:path {:d (dm/str "M0 0 L280 0")
+                    :stroke color
+                    :stroke-width 30
+                    :fill "transparent"
+                    :stroke-dasharray 280
+                    :stroke-dashoffset (- 280 pwidth)
+                    :style {:transition "stroke-dashoffset 1s ease-in-out"}}]]])])]))
 
 (def ^:const options [:all :merge :detach])
 

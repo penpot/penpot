@@ -38,7 +38,7 @@
   (ptk/reify ::initialize
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [stoper     (rx/filter (ptk/type? ::finalize) stream)
+      (let [stopper     (rx/filter (ptk/type? ::finalize) stream)
             profile-id (:profile-id state)
 
             initmsg    [{:type :subscribe-file
@@ -87,7 +87,7 @@
                                   (rx/pipe (rxs/throttle 100))
                                   (rx/map #(handle-pointer-send file-id (:pt %)))))
 
-                            (rx/take-until stoper))]
+                            (rx/take-until stopper))]
 
         (rx/concat stream (rx/of (dws/send endmsg)))))))
 

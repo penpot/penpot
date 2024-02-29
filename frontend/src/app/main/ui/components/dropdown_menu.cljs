@@ -32,7 +32,7 @@
         ref        (gobj/get props "container")
         ids        (gobj/get props "ids")
         list-class (gobj/get props "list-class")
-        ids (filter some? ids)
+        ids        (filter some? ids)
         on-click
         (fn [event]
           (let [target (dom/get-target event)
@@ -69,7 +69,7 @@
                     actual-index (d/index-of ids actual-id)
                     previous-id (if (= 0 actual-index)
                                   (last ids)
-                                  (nth ids (- actual-index 1)))]
+                                  (get ids (- actual-index 1) (last ids)))]
                 (dom/focus! (dom/get-element previous-id))))
 
             (when (kbd/down-arrow? event)
@@ -78,8 +78,9 @@
                     actual-index (d/index-of ids actual-id)
                     next-id (if (= (- len 1) actual-index)
                               (first ids)
-                              (nth ids (+ 1 actual-index)))]
-                (dom/focus! (dom/get-element next-id))))
+                              (get ids (+ 1 actual-index) (first ids)))
+                    node-item (dom/get-element next-id)]
+                (dom/focus! node-item)))
 
             (when (kbd/tab? event)
               (on-close))))]
@@ -100,5 +101,10 @@
   (assert (fn? (gobj/get props "on-close")) "missing `on-close` prop")
   (assert (boolean? (gobj/get props "show")) "missing `show` prop")
 
-  (when (gobj/get props "show")
-    (mf/element dropdown-menu' props)))
+  (let [ids (obj/get props "ids")
+        ids (d/nilv ids (->> (obj/get props "children")
+                             (keep #(obj/get-in % ["props" "id"]))))]
+    (when (gobj/get props "show")
+      (mf/element
+       dropdown-menu'
+       (mf/spread-props props {:ids ids})))))

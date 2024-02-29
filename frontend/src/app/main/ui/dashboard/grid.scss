@@ -220,38 +220,38 @@ $thumbnail-default-height: $s-168; // Default width
   span {
     color: $db-secondary;
   }
+}
 
-  .project-th-icon {
-    align-items: center;
-    display: flex;
-    margin-right: $s-8;
-    margin-top: 0;
+.project-th-icon {
+  align-items: center;
+  display: flex;
+  margin-right: $s-8;
+  margin-top: 0;
+}
 
-    &.menu {
-      align-items: flex-end;
-      display: flex;
-      flex-direction: column;
-      height: $s-32;
-      justify-content: center;
-      margin-right: 0;
-      margin-top: $s-20;
-      width: 100%;
+.menu {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  height: $s-32;
+  justify-content: center;
+  margin-right: 0;
+  margin-top: $s-20;
+  width: 100%;
+  --menu-icon-color: var(--button-tertiary-foreground-color-rest);
 
-      > svg {
-        fill: $df-secondary;
-        margin-right: 0;
-        height: $s-16;
-        width: $s-16;
-      }
-
-      &:hover,
-      &:focus {
-        > svg {
-          fill: $da-tertiary;
-        }
-      }
-    }
+  &:hover,
+  &:focus {
+    --menu-icon-color: var(--button-tertiary-foreground-color-hover);
   }
+}
+
+.menu-icon {
+  stroke: var(--menu-icon-color);
+  fill: none;
+  margin-right: 0;
+  height: $s-16;
+  width: $s-16;
 }
 
 .project-th-actions.force-display {

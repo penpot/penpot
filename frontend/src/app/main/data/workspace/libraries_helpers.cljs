@@ -317,10 +317,10 @@
 
   (let [file          (wsh/get-file state file-id)
         components-v2 (get-in file [:options :components-v2])]
-    (loop [pages (vals (get file :pages-index))
+    (loop [containers (ctf/object-containers-seq file)
            changes (pcb/empty-changes it)]
-      (if-let [page (first pages)]
-        (recur (next pages)
+      (if-let [container (first containers)]
+        (recur (next containers)
                (pcb/concat-changes
                 changes
                 (generate-sync-container it
@@ -328,7 +328,7 @@
                                          asset-id
                                          library-id
                                          state
-                                         (cfh/make-container page :page)
+                                         container
                                          components-v2)))
         changes))))
 
@@ -597,9 +597,7 @@
   (log/debug :msg "Sync shape direct" :shape (str shape-id) :reset? reset?)
   (let [shape-inst (ctn/get-shape container shape-id)
         library    (dm/get-in libraries [(:component-file shape-inst) :data])
-        component  (or (ctkl/get-component library (:component-id shape-inst))
-                       (and reset?
-                            (ctkl/get-deleted-component library (:component-id shape-inst))))]
+        component  (ctkl/get-component library (:component-id shape-inst) true)]
     (if (and (ctk/in-component-copy? shape-inst)
              (or (ctf/direct-copy? shape-inst component container nil libraries) reset?)) ; In a normal sync, we don't want to sync remote mains, only direct/near
       (let [redirect-shaperef (partial redirect-shaperef container libraries)

@@ -34,6 +34,9 @@
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
+(def ^:private show-more-icon
+  (i/icon-xref :arrow-refactor (stl/css :show-more-icon)))
+
 (mf/defc header
   {::mf/wrap [mf/memo]}
   []
@@ -314,7 +317,7 @@
           :aria-label (tr "dashboard.new-file")
           :data-test "project-new-file"
           :on-key-down handle-create-click}
-         i/close]
+         i/add-refactor]
 
         [:button
          {:class (stl/css :btn-secondary :btn-small :tooltip :tooltip-bottom)
@@ -323,7 +326,7 @@
           :aria-label  (tr "dashboard.options")
           :data-test "project-options"
           :on-key-down handle-menu-click}
-         i/actions]]]]
+         i/menu-refactor]]]]
 
      [:div {:class (stl/css :grid-container) :ref rowref}
       [:& line-grid
@@ -343,7 +346,7 @@
                         (when (kbd/enter? event)
                           (on-nav)))}
         [:div {:class (stl/css :placeholder-label)} (tr "dashboard.show-all-files")]
-        [:div {:class (stl/css :placeholder-icon)} i/arrow-down]])]))
+        show-more-icon])]))
 
 
 (def recent-files-ref

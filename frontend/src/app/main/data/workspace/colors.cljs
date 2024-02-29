@@ -526,9 +526,9 @@
   (ptk/reify ::initialize-colorpicker
     ptk/WatchEvent
     (watch [_ _ stream]
-      (let [stoper (rx/merge
-                    (rx/filter (ptk/type? ::finalize-colorpicker) stream)
-                    (rx/filter (ptk/type? ::initialize-colorpicker) stream))]
+      (let [stopper (rx/merge
+                     (rx/filter (ptk/type? ::finalize-colorpicker) stream)
+                     (rx/filter (ptk/type? ::initialize-colorpicker) stream))]
 
         (->> (rx/merge
               (->> stream
@@ -537,7 +537,7 @@
               (rx/filter (ptk/type? ::update-colorpicker-color) stream)
               (rx/filter (ptk/type? ::activate-colorpicker-gradient) stream))
              (rx/map (constantly (colorpicker-onchange-runner on-change)))
-             (rx/take-until stoper))))
+             (rx/take-until stopper))))
 
     ptk/UpdateEvent
     (update [_ state]

@@ -6,11 +6,11 @@
 
 (ns user
   (:require
+   [app.common.pprint :as pp]
    [app.common.schema :as sm]
    [app.common.schema.desc-js-like :as smdj]
    [app.common.schema.desc-native :as smdn]
    [app.common.schema.generators :as sg]
-   [app.common.pprint :as pp]
    [clojure.java.io :as io]
    [clojure.pprint :refer [pprint print-table]]
    [clojure.repl :refer :all]

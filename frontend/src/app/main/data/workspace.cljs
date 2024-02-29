@@ -41,7 +41,6 @@
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.collapse :as dwco]
    [app.main.data.workspace.drawing :as dwd]
-   [app.main.data.workspace.drawing.common :as dwdc]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.fix-bool-contents :as fbc]
    [app.main.data.workspace.fix-broken-shapes :as fbs]
@@ -153,7 +152,7 @@
     (watch [_ _ stream]
       (let [team-id   (:id team)
             file-id   (:id file)
-            stoper-s  (rx/filter (ptk/type? ::bundle-fetched) stream)]
+            stopper  (rx/filter (ptk/type? ::bundle-fetched) stream)]
 
         (->> (rx/concat
               ;; Initialize notifications
@@ -204,7 +203,7 @@
 
               (rx/of (with-meta (workspace-initialized)
                        {:file-id file-id})))
-             (rx/take-until stoper-s))))))
+             (rx/take-until stopper))))))
 
 (defn- libraries-fetched
   [libraries]
@@ -1080,7 +1079,7 @@
   (let [object     (get objects object-id)
         parent-id  (:parent-id (get objects object-id))
         parent     (get objects parent-id)]
-    [(gal/align-to-rect object parent axis)]))
+    [(gal/align-to-parent object parent axis)]))
 
 (defn align-objects-list
   [objects selected axis]
@@ -2138,7 +2137,6 @@
     (watch [_ _ _]
       (if read-only?
         (rx/of :interrupt
-               (dwdc/clear-drawing)
                (remove-layout-flag :colorpalette)
                (remove-layout-flag :textpalette))
         (rx/empty)))))

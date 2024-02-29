@@ -56,14 +56,13 @@
    [:div {:class (stl/css :context-text)
           :dangerouslySetInnerHTML (when is-html #js {:__html content})}
     (when-not is-html
-      content)]
-
-   (when (some? links)
-     [:nav {:class (stl/css :link-nav)}
-      (for [[index link] (d/enumerate links)]
-        ;; TODO Review this component
-        [:& lb/link-button {:class (stl/css :link)
-                            :on-click (:callback link)
-                            :value (:label link)
-                            :key (dm/str "link-" index)}])])])
+      [:*
+       content
+       (when (some? links)
+         (for [[index link] (d/enumerate links)]
+                   ;; TODO Review this component
+           [:& lb/link-button {:class (stl/css :link)
+                               :on-click (:callback link)
+                               :value (:label link)
+                               :key (dm/str "link-" index)}]))])]])
 
