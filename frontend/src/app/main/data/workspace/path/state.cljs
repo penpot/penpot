@@ -46,8 +46,8 @@
 (defn get-path-id
   "Retrieves the currently editing path id"
   [state]
-  (or (get-in state [:workspace-local :edition])
-      (get-in state [:workspace-drawing :object :id])))
+  (or (dm/get-in state [:workspace-local :edition])
+      (dm/get-in state [:workspace-drawing :object :id])))
 
 (defn get-path-location
   [state & ks]
