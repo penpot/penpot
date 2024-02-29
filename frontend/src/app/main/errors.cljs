@@ -124,6 +124,7 @@
     (let [message (tr "errors.paste-data-validation")]
       (st/async-emit!
        (msg/show {:content message
+                  :notification-type :toast
                   :type :error
                   :timeout 3000})))
 
@@ -138,6 +139,7 @@
   [error]
   (ts/schedule
    #(st/emit! (msg/show {:content "Internal Assertion Error"
+                         :notification-type :toast
                          :type :error
                          :timeout 3000})))
 
@@ -153,6 +155,7 @@
   (ts/schedule
    #(st/emit!
      (msg/show {:content "Something wrong has happened (on worker)."
+                :notification-type :toast
                 :type :error
                 :timeout 3000})))
 
@@ -166,6 +169,7 @@
   [_]
   (ts/schedule
    #(st/emit! (msg/show {:content "SVG is invalid or malformed"
+                         :notification-type :toast
                          :type :error
                          :timeout 3000}))))
 
@@ -174,6 +178,7 @@
   [_]
   (ts/schedule
    #(st/emit! (msg/show {:content "There was an error with the comment"
+                         :notification-type :toast
                          :type :error
                          :timeout 3000}))))
 

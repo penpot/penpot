@@ -135,6 +135,7 @@
         (fn [_]
           (wapi/write-to-clipboard current-link)
           (st/emit! (msg/show {:type :info
+                               :notification-type :toast
                                :content (tr "common.share-link.link-copied-success")
                                :timeout 1000})))
 
