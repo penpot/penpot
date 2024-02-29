@@ -391,12 +391,13 @@
 (mf/defc context-menu-layout
   {::mf/props :obj}
   [{:keys [shapes]}]
-  (let [single?    (= (count shapes) 1)
+  (let [single? (= (count shapes) 1)
 
-        ^boolean
-        is-flex?   (and single?
-                        (some cfh/frame-shape? shapes)
-                        (= :flex (:layout (first shapes))))
+        has-flex?
+        (and single? (every? ctl/flex-layout? shapes))
+
+        has-grid?
+        (and single? (every? ctl/grid-layout? shapes))
 
         on-add-layout
         (mf/use-fn
@@ -414,12 +415,17 @@
            (let [ids (map :id shapes)]
              (st/emit! (dwsl/remove-layout ids)))))]
 
-    (if is-flex?
+    (if (or ^boolean has-flex?
+            ^boolean has-grid?)
       [:div
        [:& menu-separator]
-       [:& menu-entry {:title (tr "workspace.shape.menu.remove-flex")
-                       :shortcut (sc/get-tooltip :toggle-layout-flex)
-                       :on-click on-remove-layout}]]
+       (if has-flex?
+         [:& menu-entry {:title (tr "workspace.shape.menu.remove-flex")
+                         :shortcut (sc/get-tooltip :toggle-layout-flex)
+                         :on-click on-remove-layout}]
+         [:& menu-entry {:title (tr "workspace.shape.menu.remove-grid")
+                         :shortcut (sc/get-tooltip :toggle-layout-grid)
+                         :on-click on-remove-layout}])]
 
       [:div
        [:& menu-separator]

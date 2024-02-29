@@ -4837,6 +4837,10 @@ msgstr "Ruta"
 msgid "workspace.shape.menu.remove-flex"
 msgstr "Eliminar flex layout"
 
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-grid"
+msgstr "Eliminar grid layout"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs
