@@ -124,7 +124,10 @@
 
 (defn create-layout-from-id
   [id type from-frame?]
-  (assert (uuid? id) (str id))
+  (dm/assert!
+   "expected uuid for `id`"
+   (uuid? id))
+
   (ptk/reify ::create-layout-from-id
     ptk/WatchEvent
     (watch [_ state _]
