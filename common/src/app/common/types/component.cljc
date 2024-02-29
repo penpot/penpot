@@ -4,7 +4,11 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.types.component)
+(ns app.common.types.component
+  (:require
+   [app.common.data :as d]
+   [app.common.uuid :as uuid]
+   [cuerdas.core :as str]))
 
 ;; Attributes that may be synced in components, and the group they belong to.
 ;; When one attribute is modified in a shape inside a component, the corresponding
@@ -169,6 +173,29 @@
   [shape-id page-id component]
   (and (= shape-id (:main-instance-id component))
        (= page-id (:main-instance-page component))))
+
+(defn build-swap-slot-group
+  "Convert a swap-slot into a :touched group"
+  [swap-slot]
+  (when swap-slot
+    (keyword (str "swap-slot-" swap-slot))))
+
+(defn get-swap-slot
+  "If the shape has a :touched group in the form :swap-slot-<uuid>, get the id."
+  [shape]
+  (let [group (->> (:touched shape)
+                   (map name)
+                   (d/seek #(str/starts-with? % "swap-slot-")))]
+    (when group
+      (uuid/uuid (subs group 10)))))
+
+(defn match-swap-slot?
+  [shape-inst shape-main]
+  (let [slot-inst   (get-swap-slot shape-inst)
+        slot-main   (get-swap-slot shape-main)]
+    (when (some? slot-inst)
+      (or (= slot-inst slot-main)
+          (= slot-inst (:id shape-main))))))
 
 (defn get-component-root
   [component]

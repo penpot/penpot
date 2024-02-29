@@ -30,7 +30,7 @@
    [clojure.set :as set]))
 
 ;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
-(log/set-level! :warn)
+(log/set-level! :trace)
 
 (declare generate-sync-container)
 (declare generate-sync-shape)
@@ -594,7 +594,7 @@
   "Generate changes to synchronize one shape that is the root of a component
   instance, and all its children, from the given component."
   [changes libraries container shape-id reset? components-v2]
-  (log/debug :msg "Sync shape direct" :shape (str shape-id) :reset? reset?)
+  (log/debug :msg "Sync shape direct" :shape-inst (str shape-id) :reset? reset?)
   (let [shape-inst (ctn/get-shape container shape-id)
         library    (dm/get-in libraries [(:component-file shape-inst) :data])
         component  (ctkl/get-component library (:component-id shape-inst) true)]
@@ -656,7 +656,7 @@
 (defn- generate-sync-shape-direct-recursive
   [changes container shape-inst component library shape-main root-inst root-main reset? initial-root? redirect-shaperef components-v2]
   (log/debug :msg "Sync shape direct recursive"
-             :shape (str (:name shape-inst))
+             :shape-inst (str (:name shape-inst) " " (pretty-uuid (:id shape-inst)))
              :component (:name component))
 
   (if (nil? shape-main)
@@ -713,6 +713,8 @@
                           (map #(redirect-shaperef %) children-inst) children-inst)
 
           only-inst (fn [changes child-inst]
+                      (log/trace :msg "Only inst"
+                                 :child-inst (str (:name child-inst) " " (pretty-uuid (:id child-inst))))
                       (if-not (and omit-touched?
                                    (contains? (:touched shape-inst)
                                               :shapes-group))
@@ -723,6 +725,8 @@
                         changes))
 
           only-main (fn [changes child-main]
+                      (log/trace :msg "Only main"
+                                 :child-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
                       (if-not (and omit-touched?
                                    (contains? (:touched shape-inst)
                                               :shapes-group))
@@ -739,6 +743,9 @@
                         changes))
 
           both (fn [changes child-inst child-main]
+                 (log/trace :msg "Both"
+                            :child-inst (str (:name child-inst) " " (pretty-uuid (:id child-inst)))
+                            :child-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
                  (generate-sync-shape-direct-recursive changes
                                                        container
                                                        child-inst
@@ -753,6 +760,9 @@
                                                        components-v2))
 
           moved (fn [changes child-inst child-main]
+                  (log/trace :msg "Move"
+                             :child-inst (str (:name child-inst) " " (pretty-uuid (:id child-inst)))
+                             :child-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
                   (move-shape
                    changes
                    child-inst
@@ -768,7 +778,8 @@
                         only-main
                         both
                         moved
-                        false))))
+                        false
+                        reset?))))
 
 
 (defn- generate-rename-component
@@ -939,6 +950,7 @@
                             only-main
                             both
                             moved
+                            true
                             true)
 
           ;; The inverse sync may be made on a component that is inside a
@@ -957,12 +969,15 @@
 ;; ---- Operation generation helpers ----
 
 (defn- compare-children
-  [changes children-inst children-main only-inst-cb only-main-cb both-cb moved-cb inverse?]
+  [changes children-inst children-main only-inst-cb only-main-cb both-cb moved-cb inverse? reset?]
+  (log/trace :msg "Compare children")
   (loop [children-inst (seq (or children-inst []))
          children-main (seq (or children-main []))
          changes       changes]
     (let [child-inst (first children-inst)
           child-main (first children-main)]
+      (log/trace :main (str (:name child-main) " " (pretty-uuid (:id child-main)))
+                 :inst (str (:name child-inst) " " (pretty-uuid (:id child-inst))))
       (cond
         (and (nil? child-inst) (nil? child-main))
         changes
@@ -979,31 +994,58 @@
                  (next children-main)
                  (both-cb changes child-inst child-main))
 
-          (let [child-inst' (d/seek #(ctk/is-main-of? child-main %) children-inst)
-                child-main' (d/seek #(ctk/is-main-of? % child-inst) children-main)]
-            (cond
-              (nil? child-inst')
-              (recur children-inst
-                     (next children-main)
-                     (only-main-cb changes child-main))
-
-              (nil? child-main')
+          (if (and (ctk/match-swap-slot? child-main child-inst) (not reset?))
+            (do
+              (log/trace :msg "Match slot"
+                         :shape-inst (str (:name child-inst) " " (pretty-uuid (:id child-inst)))
+                         :shape-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
               (recur (next children-inst)
-                     children-main
-                     (only-inst-cb changes child-inst))
+                     (next children-main)
+                     changes))
 
-              :else
-              (if inverse?
-                (recur (next children-inst)
-                       (remove #(= (:id %) (:id child-main')) children-main)
-                       (-> changes
-                           (both-cb child-inst child-main')
-                           (moved-cb child-inst child-main')))
-                (recur (remove #(= (:id %) (:id child-inst')) children-inst)
-                       (next children-main)
-                       (-> changes
-                           (both-cb child-inst' child-main)
-                           (moved-cb child-inst' child-main)))))))))))
+            (let [child-inst' (d/seek #(ctk/is-main-of? child-main %) children-inst)
+                  child-main' (d/seek #(ctk/is-main-of? % child-inst) children-main)]
+              (cond
+                (nil? child-inst')
+                (let [matching-inst (d/seek #(ctk/match-swap-slot? % child-main) children-inst)]
+                  (if (and (some? matching-inst) (not reset?))
+                    (do
+                      (log/trace :msg "Match slot inst"
+                                 :shape-inst (str (:name child-inst') " " (pretty-uuid (:id child-inst')))
+                                 :shape-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
+                      (recur (remove #(= (:id %) (:id matching-inst)) children-inst)
+                             (next children-main)
+                             changes))
+                    (recur children-inst
+                           (next children-main)
+                           (only-main-cb changes child-main))))
+
+                (nil? child-main')
+                (let [matching-main (d/seek #(ctk/match-swap-slot? child-inst %) children-main)]
+                  (if (and (some? matching-main) (not reset?))
+                    (do
+                      (log/trace :msg "Match slot main"
+                                 :shape-inst (str (:name child-inst) " " (pretty-uuid (:id child-inst)))
+                                 :shape-main (str (:name child-main') " " (pretty-uuid (:id child-main'))))
+                      (recur (next children-inst)
+                             (remove #(= (:id %) (:id matching-main)) children-inst)
+                             changes))
+                    (recur (next children-inst)
+                           children-main
+                           (only-inst-cb changes child-inst))))
+
+                :else
+                (if inverse?
+                  (recur (next children-inst)
+                         (remove #(= (:id %) (:id child-main')) children-main)
+                         (-> changes
+                             (both-cb child-inst child-main')
+                             (moved-cb child-inst child-main')))
+                  (recur (remove #(= (:id %) (:id child-inst')) children-inst)
+                         (next children-main)
+                         (-> changes
+                             (both-cb child-inst' child-main)
+                             (moved-cb child-inst' child-main))))))))))))
 
 (defn- add-shape-to-instance
   [changes component-shape index component-page container root-instance root-main omit-touched? set-remote-synced?]
@@ -1033,7 +1075,8 @@
                                (assoc :remote-synced true)
 
                                :always
-                               (assoc :shape-ref (:id original-shape)))))
+                               (-> (assoc :shape-ref (:id original-shape))
+                                   (dissoc :touched))))) ; New shape, by definition, is synced to the main shape
 
         update-original-shape (fn [original-shape _new-shape]
                                 original-shape)
@@ -1270,11 +1313,10 @@
       changes
       changes')))
 
-(defn- change-touched
+(defn change-touched
   [changes dest-shape origin-shape container
    {:keys [reset-touched? copy-touched?] :as options}]
-  (if (or (nil? (:shape-ref dest-shape))
-          (not (or reset-touched? copy-touched?)))
+  (if (nil? (:shape-ref dest-shape))
     changes
     (do
       (log/info :msg (str "CHANGE-TOUCHED "
@@ -1287,12 +1329,16 @@
       (let [new-touched (cond
                           reset-touched?
                           nil
+
                           copy-touched?
                           (if (:remote-synced origin-shape)
                             nil
                             (set/union
                              (:touched dest-shape)
-                             (:touched origin-shape))))]
+                             (:touched origin-shape)))
+
+                          :else
+                          (:touched dest-shape))]
 
         (-> changes
             (update :redo-changes conj (make-change

@@ -361,7 +361,8 @@
 
 (defn set-touched-group
   [touched group]
-  (conj (or touched #{}) group))
+  (when group
+    (conj (or touched #{}) group)))
 
 (defn touched-group?
   [shape group]

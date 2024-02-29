@@ -177,11 +177,35 @@
                          shape-id)))
       (dm/get-in component [:objects shape-id]))))
 
+(defn get-component-shape-context
+  "Retrieve one shape in the component by id. Return the shape and its 
+  context (the file and the container)."
+  [file component shape-id]
+  (let [components-v2 (dm/get-in file [:data :options :components-v2])]
+    (if (and components-v2 (not (:deleted component)))
+      (let [component-page (get-component-page (:data file) component)]
+        (when component-page
+          (let [child (cfh/get-child (:objects component-page)
+                                     (:main-instance-id component)
+                                     shape-id)]
+            (when child
+              [child file (ctn/make-container component-page :page)]))))
+      [(dm/get-in component [:objects shape-id])
+       file
+       (ctn/make-container component :component)])))
+
 (defn get-ref-shape
   "Retrieve the shape in the component that is referenced by the instance shape."
   [file-data component shape]
   (when (:shape-ref shape)
     (get-component-shape file-data component (:shape-ref shape))))
+
+(defn get-ref-shape-context
+  "Retrieve the shape in the component that is referenced by the instance shape.
+   Return the shape and its context (the file and the container)."
+  [file component shape]
+  (when (:shape-ref shape)
+    (get-component-shape-context file component (:shape-ref shape))))
 
 (defn get-shape-in-copy
   "Given a shape in the main component and the root of the copy component returns the equivalent
@@ -196,11 +220,33 @@
   [file page libraries shape & {:keys [include-deleted?] :or {include-deleted? false}}]
   (let [find-ref-shape-in-head
         (fn [head-shape]
-          (let [head-file      (find-component-file file libraries (:component-file head-shape))
-                head-component (when (some? head-file)
-                                 (ctkl/get-component (:data head-file) (:component-id head-shape) include-deleted?))]
-            (when (some? head-component)
-              (get-ref-shape (:data head-file) head-component shape))))]
+          (let [component-file (find-component-file file libraries (:component-file head-shape))
+                component      (when (some? component-file)
+                                 (ctkl/get-component (:data component-file) (:component-id head-shape) include-deleted?))]
+            (when (some? component)
+              (get-ref-shape (:data component-file) component shape))))]
+
+    (some find-ref-shape-in-head (ctn/get-parent-heads (:objects page) shape))))
+
+(defn find-ref-shape-context
+  "Locate the nearest component in the local file or libraries, and retrieve the shape
+   referenced by the instance shape. Return the shape and its context (the file and
+   the container)."
+  ; TODO: It should be nice to avoid this duplicity without adding overhead in the simple case.
+  ;       Perhaps adding the context as metadata of the shape?
+  [file page libraries shape & {:keys [include-deleted?] :or {include-deleted? false}}]
+  (let [find-ref-shape-in-head
+        (fn [head-shape]
+          ;; (js/console.log "head-shape" (clj->js head-shape))
+          ;; (js/console.log "     component-file" (str (:component-file head-shape)))
+          ;; (js/console.log "     component-id" (str (:component-id head-shape)))
+          (let [component-file (find-component-file file libraries (:component-file head-shape))
+                component      (when (some? component-file)
+                                 (ctkl/get-component (:data component-file) (:component-id head-shape) include-deleted?))]
+            ;; (js/console.log "component-file" (clj->js component-file))
+            ;; (js/console.log "component" (clj->js component))
+            (when (some? component)
+              (get-ref-shape-context component-file component shape))))]
 
     (some find-ref-shape-in-head (ctn/get-parent-heads (:objects page) shape))))
 
@@ -210,12 +256,14 @@
   [file page libraries shape & {:keys [include-deleted?] :or {include-deleted? false}}]
   (let [find-ref-component-in-head
         (fn [head-shape]
-          (let [head-file      (find-component-file file libraries (:component-file head-shape))
-                head-component (when (some? head-file)
-                                 (ctkl/get-component (:data head-file) (:component-id head-shape) include-deleted?))]
-            (when (some? head-component)
-              (when (get-ref-shape (:data head-file) head-component shape)
-                head-component))))]
+          (let [component-file (find-component-file file libraries (:component-file head-shape))
+                component      (when (some? component-file)
+                                 (ctkl/get-component (:data component-file)
+                                                     (:component-id head-shape)
+                                                     include-deleted?))]
+            (when (some? component)
+              (when (get-ref-shape (:data component-file) component shape)
+                component))))]
 
     (some find-ref-component-in-head (ctn/get-parent-copy-heads (:objects page) shape))))
 
@@ -250,6 +298,35 @@
   [shape component page file libraries]
   (let [ref-component (find-ref-component file page libraries shape :include-deleted? true)]
     (true? (= (:id component) (:id ref-component)))))
+
+(defn find-swap-slot
+  [shape page file libraries]
+  (dm/assert! "expected shape is head" (ctk/instance-head? shape))
+  ;; (js/console.log "find-swap-slot" (clj->js shape))
+  (if-let [swap-slot (ctk/get-swap-slot shape)]
+    ;; (do (js/console.log "uno" (str swap-slot)) swap-slot)
+    swap-slot
+    (let [[ref-shape ref-file ref-container] (find-ref-shape-context file
+                                                                     page
+                                                                     libraries
+                                                                     shape
+                                                                     :include-deleted? true)]
+      ;; (js/console.log "ref-shape" (clj->js ref-shape))
+      (when ref-shape
+        ;; (js/console.log "ref-shape" (clj->js ref-shape))
+        (if-let [swap-slot (ctk/get-swap-slot ref-shape)]
+          ;; (do (js/console.log "dos" (str swap-slot)) swap-slot)
+          swap-slot
+          (if (ctk/main-instance? ref-shape)
+            (:id shape)
+            (find-swap-slot ref-shape ref-container ref-file libraries)))))))
+
+(defn match-swap-slot?
+  [shape-inst shape-main page-inst page-main file libraries]
+  (let [slot-inst   (find-swap-slot shape-inst page-inst file libraries)
+        slot-main   (find-swap-slot shape-main page-main file libraries)]
+    (or (= slot-inst slot-main)
+        (= slot-inst (:id shape-main)))))
 
 (defn get-component-shapes
   "Retrieve all shapes of the component"
