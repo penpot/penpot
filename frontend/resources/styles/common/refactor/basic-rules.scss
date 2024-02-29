@@ -278,7 +278,7 @@
 // INPUTS
 .input-base {
   @include removeInputStyle;
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   @include textEllipsis;
   // @include focusInput;
   height: $s-28;
@@ -313,7 +313,7 @@
 }
 
 .input-element {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   @include focusInput;
   display: flex;
   align-items: center;
@@ -383,7 +383,7 @@
 }
 
 .input-element-label {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   display: flex;
   align-items: flex-start;
   padding: 0;
@@ -488,7 +488,7 @@
   display: flex;
   align-items: center;
   label {
-    @include bodyMedTipography;
+    @include bodySmallTypography;
     display: flex;
     align-items: center;
     gap: $s-6;
@@ -519,7 +519,7 @@
   display: flex;
   flex-direction: column;
   label {
-    @include bodyMedTipography;
+    @include bodySmallTypography;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -529,7 +529,7 @@
 
   input {
     @extend .input-base;
-    @include bodyMedTipography;
+    @include bodySmallTypography;
     border-radius: $br-8;
     height: $s-32;
     min-height: $s-32;
@@ -606,7 +606,7 @@
 }
 
 .modal-hint-base {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   color: var(--modal-title-foreground-color);
   border-top: $s-1 solid var(--modal-hint-border-color);
   border-bottom: $s-1 solid var(--modal-hint-border-color);
@@ -666,7 +666,7 @@
 }
 // UI ELEMENTS
 .asset-element {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   display: flex;
   align-items: center;
   height: $s-32;
@@ -687,7 +687,7 @@
 }
 
 .shortcut-key-base {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   @include flexCenter;
   height: $s-20;
   padding: $s-2 $s-6;
@@ -697,7 +697,7 @@
 
 .user-icon {
   @include flexCenter;
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   height: $s-24;
   width: $s-24;
   border-radius: $br-circle;
@@ -709,7 +709,7 @@
 }
 
 .mixed-bar {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   display: flex;
   align-items: center;
   flex-grow: 1;
@@ -785,7 +785,7 @@
   gap: $s-4;
   height: $s-32;
   :global(.attr-label) {
-    @include bodyMedTipography;
+    @include bodySmallTypography;
     @include twoLineTextEllipsis;
     width: $s-92;
     margin: auto 0;
@@ -797,12 +797,12 @@
     grid-area: content;
     display: flex;
     color: var(--entry-foreground-color-hover);
-    @include bodyMedTipography;
+    @include bodySmallTypography;
   }
 }
 
 .copy-button-children {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   color: var(--color-foreground-primary);
   text-align: left;
   margin: 0;
@@ -816,7 +816,7 @@
 }
 
 .comment-bubbles {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   @include flexCenter;
   height: $s-32;
   width: $s-32;
@@ -851,7 +851,7 @@
 }
 
 .menu-item-base {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -866,7 +866,7 @@
 }
 
 .dropdown-element-base {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   display: flex;
   align-items: center;
   gap: $s-8;
@@ -913,7 +913,7 @@
 }
 
 .select-wrapper {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   position: relative;
   display: flex;
   align-items: center;

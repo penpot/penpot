@@ -26,7 +26,7 @@
 }
 
 .paginator {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   position: absolute;
   top: $s-40;
   right: $s-100;
@@ -140,7 +140,7 @@
   @extend .input-element-label;
   label {
     @include flexColumn;
-    @include bodyMedTipography;
+    @include bodySmallTypography;
     align-items: flex-start;
     width: 100%;
     border: none;
@@ -148,7 +148,7 @@
     height: 100%;
 
     input {
-      @include bodyMedTipography;
+      @include bodySmallTypography;
       margin-top: $s-8;
     }
   }
@@ -185,7 +185,7 @@
 }
 
 .modal-hint {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   color: var(--modal-text-foreground-color);
   text-align: right;
 }

@@ -62,7 +62,7 @@
 }
 
 .breadcrumb {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   @include flexRow;
   color: var(--title-foreground-color);
   cursor: pointer;
@@ -114,7 +114,7 @@
 }
 
 .current-frame {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   @include flexRow;
   flex-grow: 1;
   color: var(--title-foreground-color-hover);
@@ -198,7 +198,7 @@
 
 .go-log-btn {
   @extend .button-tertiary;
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   height: $s-32;
   padding: 0 $s-8;
   border-radius: $br-8;
@@ -213,7 +213,7 @@
   min-width: $s-64;
   border-radius: $br-8;
   .label {
-    @include bodyMedTipography;
+    @include bodySmallTypography;
     color: var(--button-tertiary-foreground-color-rest);
   }
 

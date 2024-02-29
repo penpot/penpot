@@ -26,7 +26,7 @@
 }
 
 .attr-name {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   @include twoLineTextEllipsis;
   width: $s-88;
   margin: auto $s-4;
@@ -60,7 +60,7 @@
 }
 
 .attr-title {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   font-size: $fs-10;
   text-transform: uppercase;
   margin-inline-start: $s-4;

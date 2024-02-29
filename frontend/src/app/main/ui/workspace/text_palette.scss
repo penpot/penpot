@@ -80,7 +80,7 @@
 }
 
 .typography-item {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -135,6 +135,6 @@
 }
 
 .text-palette-empty {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   color: var(--palette-text-color);
 }

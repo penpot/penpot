@@ -112,7 +112,7 @@
 }
 
 .not-found {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   color: var(--empty-message-foreground-color);
   margin: $s-12;
 }
@@ -181,7 +181,7 @@
       background-color: var(--pill-background-color);
 
       .command-name {
-        @include bodyMedTipography;
+        @include bodySmallTypography;
         margin-left: $s-2;
         color: var(--pill-foreground-color);
       }
@@ -191,7 +191,7 @@
         color: var(--pill-foreground-color);
 
         .key {
-          @include bodyMedTipography;
+          @include bodySmallTypography;
           @include flexCenter;
           text-transform: capitalize;
           height: $s-20;

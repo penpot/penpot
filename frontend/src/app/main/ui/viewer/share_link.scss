@@ -34,7 +34,7 @@
 }
 
 .modal-content {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   @include flexColumn;
   gap: $s-24;
 }
@@ -86,7 +86,7 @@
 }
 
 .description {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   color: var(--modal-text-foreground-color);
   margin-bottom: $s-24;
 }
@@ -181,7 +181,7 @@
 }
 .count-pages,
 .current-tag {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   color: var(--input-foreground-color);
 }
 

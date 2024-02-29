@@ -612,7 +612,7 @@
       }
     }
     .message {
-      @include bodyMedTipography;
+      @include bodySmallTypography;
       color: var(--alert-foreground-color-error);
     }
   }
@@ -636,7 +636,7 @@
       }
     }
     .message {
-      @include bodyMedTipography;
+      @include bodySmallTypography;
       color: var(--alert-foreground-color-warning);
     }
   }
@@ -694,7 +694,7 @@
 .modal-content {
   @include flexColumn;
   gap: $s-24;
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   margin-bottom: $s-24;
 }
 
@@ -703,7 +703,7 @@
 }
 
 .select-title {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   color: var(--modal-title-foreground-color);
 }
 

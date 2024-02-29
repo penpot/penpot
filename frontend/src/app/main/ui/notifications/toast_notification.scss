@@ -69,7 +69,7 @@
 }
 
 .link {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   color: var(--modal-link-foreground-color);
   margin: 0;
 }
@@ -81,7 +81,7 @@
 }
 
 .text {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   align-self: center;
 }
 

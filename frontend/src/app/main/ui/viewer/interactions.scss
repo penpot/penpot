@@ -7,7 +7,7 @@
 @use "common/refactor/common-refactor.scss" as *;
 
 .view-options {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   display: flex;
   align-items: center;
   position: relative;
@@ -19,7 +19,7 @@
   cursor: pointer;
 }
 .dropdown-title {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   flex-grow: 1;
   color: var(--input-foreground-color-active);
 }

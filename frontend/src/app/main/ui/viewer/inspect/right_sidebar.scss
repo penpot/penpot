@@ -50,7 +50,7 @@
 }
 
 .layer-title {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   @include text-ellipsis;
   height: $s-32;
   padding: $s-8 0;
@@ -79,7 +79,7 @@
 }
 
 .placeholder-label {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   text-align: center;
   width: $s-200;
   color: var(--empty-message-foreground-color);

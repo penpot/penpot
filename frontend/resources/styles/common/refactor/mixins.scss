@@ -63,26 +63,49 @@
   line-height: 1.2;
 }
 
+@mixin headlineLargeTypography {
+  font-family: "worksans", sans-serif;
+  font-size: $fs-18;
+  line-height: 1.2;
+  text-transform: uppercase;
+  font-weight: $fw400;
+}
+
 @mixin headlineMediumTypography {
   font-family: "worksans", sans-serif;
   font-size: $fs-16;
   line-height: 1.4;
   text-transform: uppercase;
-  font-weight: normal;
+  font-weight: $fw400;
+}
+
+@mixin headlineSmallTypography {
+  font-family: "worksans", sans-serif;
+  font-size: $fs-12;
+  line-height: 1.2;
+  text-transform: uppercase;
+  font-weight: $fw500;
 }
 
 @mixin bodyLargeTypography {
   font-family: "worksans", sans-serif;
   font-size: $fs-16;
   line-height: 1.5;
-  font-weight: normal;
+  font-weight: $fw400;
 }
 
-@mixin bodyMedTipography {
+@mixin bodyMediumTypography {
+  font-family: "worksans", sans-serif;
+  font-size: $fs-14;
+  line-height: 1.4;
+  font-weight: $fw400;
+}
+
+@mixin bodySmallTypography {
   font-family: "worksans", sans-serif;
   font-size: $fs-12;
   font-weight: $fw400;
-  line-height: 1.2;
+  line-height: 1.4;
 }
 
 @mixin codeTypography {
@@ -110,7 +133,7 @@
 }
 
 @mixin inspectValue {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   display: inline-block;
   width: fit-content;
   padding: 0;

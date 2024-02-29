@@ -30,7 +30,7 @@
 
 .modal-content {
   @include flexColumn;
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   gap: $s-24;
   margin-bottom: $s-24;
 }
@@ -40,7 +40,7 @@
 }
 
 .select-title {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   color: var(--modal-title-foreground-color);
 }
 

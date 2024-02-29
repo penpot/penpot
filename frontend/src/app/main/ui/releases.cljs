@@ -26,6 +26,7 @@
    [app.main.ui.releases.v1-7]
    [app.main.ui.releases.v1-8]
    [app.main.ui.releases.v1-9]
+   [app.main.ui.releases.v2-0]
    [app.util.object :as obj]
    [app.util.timers :as tm]
    [rumext.v2 :as mf]))
@@ -90,4 +91,4 @@
 
 (defmethod rc/render-release-notes "0.0"
   [params]
-  (rc/render-release-notes (assoc params :version "1.19")))
+  (rc/render-release-notes (assoc params :version "2.0")))

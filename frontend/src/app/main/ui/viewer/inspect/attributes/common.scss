@@ -78,7 +78,7 @@
   grid-template-rows: 1fr 1fr;
 }
 .color-name-wrapper {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   @include flexColumn;
   padding: $s-8 $s-4 $s-8 $s-8;
   height: $s-32;
@@ -89,21 +89,21 @@
     max-width: $s-124;
   }
   .color-name-library {
-    @include bodyMedTipography;
+    @include bodySmallTypography;
     @include textEllipsis;
     text-align: left;
     height: $s-16;
     color: var(--menu-foreground-color-rest);
   }
   .color-value-wrapper {
-    @include bodyMedTipography;
+    @include bodySmallTypography;
     height: $s-16;
     color: var(--menu-foreground-color);
   }
 }
 
 .opacity-info {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   color: var(--menu-foreground-color);
   padding: $s-8 0;
 }

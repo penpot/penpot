@@ -45,7 +45,7 @@
     border: $s-1 solid var(--input-border-color-focus);
     input.element-name {
       @include textEllipsis;
-      @include bodyMedTipography;
+      @include bodySmallTypography;
       @include removeInputStyle;
       flex-grow: 1;
       height: $s-28;
@@ -67,7 +67,7 @@
 }
 
 .name-block {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   display: grid;
   grid-template-columns: auto 1fr;
   margin: 0;

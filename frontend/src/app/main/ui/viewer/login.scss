@@ -29,7 +29,7 @@
 
 .modal-content {
   @include flexColumn;
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   gap: $s-24;
   max-height: $s-400;
   width: $s-368;

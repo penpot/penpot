@@ -29,7 +29,7 @@
   cursor: pointer;
 
   .cell-name {
-    @include bodyMedTipography;
+    @include bodySmallTypography;
     @include textEllipsis;
     display: none;
     position: absolute;
@@ -44,7 +44,7 @@
     color: var(--assets-item-name-foreground-color);
     input {
       @include textEllipsis;
-      @include bodyMedTipography;
+      @include bodySmallTypography;
       @include removeInputStyle;
       height: auto;
       padding: 0;
@@ -132,13 +132,13 @@
 }
 
 .item-name {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   @include textEllipsis;
   order: 2;
   color: var(--assets-item-name-foreground-color);
   input {
     @include textEllipsis;
-    @include bodyMedTipography;
+    @include bodySmallTypography;
     @include removeInputStyle;
     height: $s-32;
     padding: $s-4;

@@ -32,7 +32,7 @@
 }
 
 .inline-text {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   align-self: center;
 }
 
@@ -41,7 +41,7 @@
 }
 
 .link {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   margin: 0;
   height: 100%;
   color: var(--modal-link-foreground-color);

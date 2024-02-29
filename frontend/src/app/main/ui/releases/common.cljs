@@ -5,15 +5,16 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.releases.common
+  (:require-macros [app.main.style :as stl])
   (:require
-   [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
 (defmulti render-release-notes :version)
 
 (mf/defc navigation-bullets
   [{:keys [slide navigate total]}]
-  [:ul.step-dots
+  [:ul {:class (stl/css :step-dots)}
    (for [i (range total)]
-     [:li {:class (dom/classnames :current (= slide i))
+     [:li {:class (stl/css-case :dot true
+                                :current (= slide i))
            :on-click #(navigate i)}])])

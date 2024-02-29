@@ -36,7 +36,7 @@
   width: $s-48;
   border-radius: $br-8;
   .label {
-    @include bodyMedTipography;
+    @include bodySmallTypography;
     height: 100%;
     padding: $s-8 0;
     color: var(--button-tertiary-foreground-color-rest);

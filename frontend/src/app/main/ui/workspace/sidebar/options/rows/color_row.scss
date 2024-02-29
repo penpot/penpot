@@ -67,7 +67,7 @@
     }
   }
   .color-name {
-    @include bodyMedTipography;
+    @include bodySmallTypography;
     @include textEllipsis;
     padding-inline: $s-6;
     border-radius: $br-8;
@@ -86,7 +86,7 @@
     stroke: var(--detach-icon-foreground-color);
   }
   .color-input-wrapper {
-    @include bodyMedTipography;
+    @include bodySmallTypography;
     display: flex;
     align-items: center;
     height: $s-28;

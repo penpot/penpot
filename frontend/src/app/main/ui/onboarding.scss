@@ -45,7 +45,7 @@
 }
 
 .release {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   position: absolute;
   top: calc(-1 * $s-28);
   right: 0;

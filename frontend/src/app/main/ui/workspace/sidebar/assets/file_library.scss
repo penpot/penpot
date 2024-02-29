@@ -14,7 +14,7 @@
 }
 
 .file-name {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   display: flex;
   justify-content: flex-start;
   align-items: center;
@@ -71,6 +71,6 @@
 }
 
 .no-found-text {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   color: var(--not-found-foreground-color);
 }
