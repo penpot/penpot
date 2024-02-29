@@ -104,7 +104,9 @@
       {:on-change-tab on-change-tab
        :selected section
        :collapsable false
-       :content-class (stl/css-case :content-class true :inspect (= section :inspect))
+       :content-class (stl/css-case
+                       :content-class true
+                       :inspect (= section :inspect))
        :header-class (stl/css :tab-spacing)}
       [:& tab-element {:id :design
                        :title (tr "workspace.options.design")}

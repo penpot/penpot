@@ -153,20 +153,24 @@
                (cb/format-code markup-type))))
 
         on-markup-copied
-        (mf/use-callback
-         (mf/deps markup-type)
+        (mf/use-fn
+         (mf/deps markup-type from)
          (fn []
-           (st/emit! (ptk/event ::ev/event
-                                {::ev/name "copy-inspect-code"
-                                 :type markup-type}))))
+           (let [origin (if (= :workspace from) "workspace" "viewer")]
+             (st/emit! (ptk/event ::ev/event
+                                  {::ev/name "copy-inspect-code"
+                                   ::ev/origin origin
+                                   :type markup-type})))))
 
         on-style-copied
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps style-type)
          (fn []
-           (st/emit! (ptk/event ::ev/event
-                                {::ev/name "copy-inspect-style"
-                                 :type style-type}))))
+           (let [origin (if (= :workspace from) "workspace" "viewer")]
+             (st/emit! (ptk/event ::ev/event
+                                  {::ev/name "copy-inspect-style"
+                                   ::ev/origin origin
+                                   :type style-type})))))
 
         {on-markup-pointer-down :on-pointer-down
          on-markup-lost-pointer-capture :on-lost-pointer-capture

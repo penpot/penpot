@@ -40,16 +40,16 @@
 
 (mf/defc right-sidebar
   [{:keys [frame page objects file selected shapes page-id file-id share-id from on-change-section on-expand]
-    :or {from :inspect}}]
-  (let [section         (mf/use-state :info #_:code)
-        objects         (or objects (:objects page))
-        shapes          (or shapes
-                            (resolve-shapes objects selected))
-        first-shape     (first shapes)
-        page-id         (or page-id (:id page))
-        file-id         (or file-id (:id file))
+    :or {from :viewer}}]
+  (let [section        (mf/use-state :info #_:code)
+        objects        (or objects (:objects page))
+        shapes         (or shapes
+                           (resolve-shapes objects selected))
+        first-shape    (first shapes)
+        page-id        (or page-id (:id page))
+        file-id        (or file-id (:id file))
 
-        libraries       (get-libraries from)
+        libraries      (get-libraries from)
 
         file           (mf/deref refs/viewer-file)
         components-v2  (dm/get-in file [:data :options :components-v2])
@@ -83,7 +83,7 @@
          (handle-change-tab :info))))
 
     [:aside {:class (stl/css-case :settings-bar-right true
-                                  :viewer-code (= from :inspect))}
+                                  :viewer-code (= from :viewer))}
      (if (seq shapes)
        [:div {:class (stl/css :tool-windows)}
         [:div {:class (stl/css :shape-row)}
