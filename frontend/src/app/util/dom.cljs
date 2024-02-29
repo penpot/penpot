@@ -607,6 +607,21 @@
   (when (some? node)
     (.getAttribute node (dm/str "data-" attr))))
 
+(defn- resolve-node
+  [event]
+  (cond
+    (instance? js/Element event)
+    event
+
+    :else
+    (get-current-target event)))
+
+(defn get-boolean-data
+  [node attr]
+  (some-> (resolve-node node)
+          (get-data attr)
+          (parse-boolean)))
+
 (defn set-data!
   [^js node ^string attr value]
   (when (some? node)
