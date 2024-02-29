@@ -8,12 +8,14 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.main.data.events :as ev]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
+   [app.util.dom :as dom]
    [app.util.i18n :refer [t] :as i18n]
    [cuerdas.core :as str]
    [okulary.core :as l]
@@ -283,8 +285,18 @@
        nil)]))
 
 (mf/defc history-entry [{:keys [locale entry idx-entry disabled? current?]}]
+  {::mf/props :obj}
   (let [hover?         (mf/use-state false)
-        show-detail?   (mf/use-state false)]
+        show-detail?   (mf/use-state false)
+        toggle-show-detail
+        (mf/use-fn
+         (fn [event]
+           (let [has-entry? (-> (dom/get-current-target event)
+                                (dom/get-data "has-entry")
+                                (parse-boolean))]
+             (dom/stop-propagation event)
+             (when has-entry?
+               (swap! show-detail? not)))))]
     [:div {:class (stl/css-case :history-entry true
                                 :disabled disabled?
                                 :current current?
@@ -301,8 +313,8 @@
       (when (:detail entry)
         [:div {:class (stl/css-case :history-entry-summary-button true
                                     :button-opened @show-detail?)
-               :on-click #(when (:detail entry)
-                            (swap! show-detail? not))}
+               :on-click toggle-show-detail
+               :data-has-entry (dm/str (not (nil? (:detail entry))))}
          i/arrow-refactor])]
 
      (when @show-detail?
