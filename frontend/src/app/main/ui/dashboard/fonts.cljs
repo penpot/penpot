@@ -58,8 +58,15 @@
   (let [fonts*    (mf/use-state {})
         fonts     (deref fonts*)
         input-ref (mf/use-ref)
-
         uploading (mf/use-state #{})
+
+        bad-font-family-tmp?
+        (mf/use-fn
+         (fn [font]
+           (and (contains? font :font-family-tmp)
+                (str/blank? (:font-family-tmp font)))))
+
+        disable-upload-all? (some bad-font-family-tmp? (vals fonts))
 
         handle-click
         (mf/use-fn #(dom/click (mf/ref-val input-ref)))
@@ -95,7 +102,13 @@
         on-blur-name
         (fn [id event]
           (let [name (dom/get-target-val event)]
-            (swap! fonts* df/rename-and-regroup id name installed-fonts)))
+            (when-not (str/blank? name)
+              (swap! fonts* df/rename-and-regroup id name installed-fonts))))
+
+        on-change-name
+        (fn [id event]
+          (let [name (dom/get-target-val event)]
+            (swap! fonts* update-in [id] #(assoc % :font-family-tmp name))))
 
         on-delete
         (mf/use-fn
@@ -145,9 +158,11 @@
         [:div {:class (stl/css :font-item :table-row)}
          [:span (tr "dashboard.fonts.fonts-added" (i18n/c (count (vals fonts))))]
          [:div {:class (stl/css :table-field :options)}
-          [:button {:class (stl/css :btn-primary)
+          [:button {:class (stl/css-case :btn-primary true
+                                         :disabled disable-upload-all?)
                     :on-click handle-upload-all
-                    :data-test "upload-all"}
+                    :data-test "upload-all"
+                    :disabled disable-upload-all?}
            [:span (tr "dashboard.fonts.upload-all")]]
           [:button {:class (stl/css :btn-secondary)
                     :on-click handle-dismiss-all
@@ -155,12 +170,15 @@
            [:span (tr "dashboard.fonts.dismiss-all")]]]])
 
       (for [item (sort-by :font-family (vals fonts))]
-        (let [uploading? (contains? @uploading (:id item))]
+        (let [uploading? (contains? @uploading (:id item))
+              disable-upload? (or uploading?
+                                  (bad-font-family-tmp? item))]
           [:div {:class (stl/css :font-item :table-row)
                  :key (:id item)}
            [:div {:class (stl/css :table-field :family)}
             [:input {:type "text"
                      :on-blur #(on-blur-name (:id item) %)
+                     :on-change #(on-change-name (:id item) %)
                      :default-value (:font-family item)}]]
            [:div {:class (stl/css :table-field :variants)}
             [:span {:class (stl/css :label)}
@@ -177,8 +195,8 @@
             [:button {:on-click #(on-upload item)
                       :class (stl/css-case :btn-primary true
                                            :upload-button true
-                                           :disabled uploading?)
-                      :disabled uploading?}
+                                           :disabled disable-upload?)
+                      :disabled disable-upload?}
              (if uploading?
                (tr "labels.uploading")
                (tr "labels.upload"))]
