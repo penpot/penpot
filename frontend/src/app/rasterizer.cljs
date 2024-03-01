@@ -54,18 +54,34 @@
          (obj/set! image "onerror" nil)
          (obj/set! image "onabort" nil))))))
 
-(defn- svg-get-size
+(defn- svg-get-adjusted-size
+  "Returns the adjusted size of an SVG."
+  [width height max]
+  (let [ratio (/ width height)]
+    (if (> width height)
+      [max (* max (/ 1 ratio))]
+      [(* max ratio) max])))
+
+(defn- svg-get-size-from-viewbox
+  "Returns the size of an SVG from its viewbox."
   [svg max]
   (let [doc  (get-document-element svg)
         vbox (dom/get-attribute doc "viewBox")]
     (when (string? vbox)
       (let [[_ _ width height] (str/split vbox #"\s+")
             width  (d/parse-integer width 0)
-            height (d/parse-integer height 0)
-            ratio  (/ width height)]
-        (if (> width height)
-          [max (* max (/ 1 ratio))]
-          [(* max ratio) max])))))
+            height (d/parse-integer height 0)]
+        (svg-get-adjusted-size width height max)))))
+
+(defn- svg-get-size-from-intrinsic-size
+  "Returns the size of an SVG from its intrinsic size."
+  [svg max]
+  (let [doc    (get-document-element svg)
+        width  (dom/get-attribute doc "width")
+        height (dom/get-attribute doc "height")
+        width  (d/parse-integer width 0)
+        height (d/parse-integer height 0)]
+    (svg-get-adjusted-size width height max)))
 
 (defn- svg-has-intrinsic-size?
   "Returns true if the SVG has an intrinsic size."
@@ -75,14 +91,19 @@
         height (dom/get-attribute doc "height")]
     (d/num? width height)))
 
+(defn- svg-get-size
+  [svg max]
+  (if (svg-has-intrinsic-size? svg)
+    (svg-get-size-from-intrinsic-size svg max)
+    (svg-get-size-from-viewbox svg max)))
+
 (defn- svg-set-intrinsic-size!
   "Sets the intrinsic size of an SVG to the given max size."
   [^js svg max]
-  (when-not (svg-has-intrinsic-size? svg)
-    (let [doc   (get-document-element svg)
-          [w h] (svg-get-size svg max)]
-      (dom/set-attribute! doc "width" (dm/str w))
-      (dom/set-attribute! doc "height" (dm/str h))))
+  (let [doc   (get-document-element svg)
+        [w h] (svg-get-size svg max)]
+    (dom/set-attribute! doc "width" (dm/str w))
+    (dom/set-attribute! doc "height" (dm/str h)))
   svg)
 
 (defn- fetch-as-data-uri
