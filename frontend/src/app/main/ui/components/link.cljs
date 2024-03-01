@@ -12,10 +12,10 @@
 
 (mf/defc link
   {::mf/wrap-props false}
-  [{:keys [action klass data-test keyboard-action children]}]
+  [{:keys [action class data-test keyboard-action children]}]
   (let [keyboard-action (d/nilv keyboard-action action)]
     [:a {:on-click action
-         :class klass
+         :class class
          :on-key-down (fn [event]
                         (when ^boolean (kbd/enter? event)
                           (keyboard-action event)))
