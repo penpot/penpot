@@ -211,6 +211,7 @@
     (watch [_ _ _]
       (rx/concat
        (rx/of (msg/show {:content (tr "media.loading")
+                         :notification-type :toast
                          :type :info
                          :timeout nil
                          :tag :media-loading}))
@@ -440,6 +441,7 @@
 
         (rx/concat
          (rx/of (msg/show {:content (tr "media.loading")
+                           :notification-type :toast
                            :type :info
                            :timeout nil
                            :tag :media-loading}))
