@@ -21,7 +21,6 @@
   (let [valign (:vertical-align node "top")
         base   #js {:height (fmt/format-pixels height)
                     :width  (fmt/format-pixels width)
-                    :fontFamily "sourcesanspro"
                     :display "flex"
                     :whiteSpace "break-spaces"}]
     (cond-> base
