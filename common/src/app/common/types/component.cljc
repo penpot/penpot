@@ -190,12 +190,12 @@
       (uuid/uuid (subs group 10)))))
 
 (defn match-swap-slot?
-  [shape-inst shape-main]
-  (let [slot-inst   (get-swap-slot shape-inst)
-        slot-main   (get-swap-slot shape-main)]
+  [shape-main shape-inst]
+  (let [slot-main   (get-swap-slot shape-main)
+        slot-inst   (get-swap-slot shape-inst)]
     (when (some? slot-inst)
-      (or (= slot-inst slot-main)
-          (= slot-inst (:id shape-main))))))
+      (or (= slot-main slot-inst)
+          (= (:id shape-main) slot-inst)))))
 
 (defn get-component-root
   [component]

@@ -292,11 +292,11 @@
             (find-swap-slot ref-shape ref-container ref-file libraries)))))))
 
 (defn match-swap-slot?
-  [shape-inst shape-main page-inst page-main file libraries]
-  (let [slot-inst   (find-swap-slot shape-inst page-inst file libraries)
-        slot-main   (find-swap-slot shape-main page-main file libraries)]
-    (or (= slot-inst slot-main)
-        (= slot-inst (:id shape-main)))))
+  [shape-main shape-inst page-inst page-main file libraries]
+  (let [slot-main   (find-swap-slot shape-main page-main file libraries)
+        slot-inst   (find-swap-slot shape-inst page-inst file libraries)]
+    (or (= slot-main slot-inst)
+        (= (:id shape-main) slot-inst))))
 
 (defn get-component-shapes
   "Retrieve all shapes of the component"
