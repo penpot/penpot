@@ -19,7 +19,7 @@
 
 (defn- on-error
   [form error]
-  (case (:code error)
+  (case (:code (ex-data error))
     :old-password-not-match
     (swap! form assoc-in [:errors :password-old]
            {:message (tr "errors.wrong-old-password")})
@@ -103,7 +103,7 @@
         :label (t locale "labels.confirm-password")}]]
 
      [:> fm/submit-button*
-      {:label (t locale "dashboard.update-settings")
+      {:label (t locale "dashboard.password-change")
        :data-test "submit-password"
        :class (stl/css :update-btn)}]]))
 

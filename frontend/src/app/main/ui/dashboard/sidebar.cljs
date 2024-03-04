@@ -34,6 +34,7 @@
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
    [cljs.spec.alpha :as s]
+   [cuerdas.core :as str]
    [goog.functions :as f]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
@@ -91,8 +92,9 @@
         (mf/use-callback
          (mf/deps item)
          (fn [name]
-           (st/emit! (-> (dd/rename-project (assoc item :name name))
-                         (with-meta {::ev/origin "dashboard:sidebar"})))
+           (when-not (str/blank? name)
+             (st/emit! (-> (dd/rename-project (assoc item :name name))
+                           (with-meta {::ev/origin "dashboard:sidebar"}))))
            (swap! local* assoc :edition? false)))
 
         on-drag-enter
