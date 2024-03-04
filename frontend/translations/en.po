@@ -3508,6 +3508,9 @@ msgstr "Editing grid"
 msgid "workspace.layout_grid.editor.top-bar.locate"
 msgstr "Locate"
 
+msgid "workspace.layout_grid.editor.top-bar.locate.tooltip"
+msgstr "Locate grid layout"
+
 msgid "workspace.layout_grid.editor.top-bar.done"
 msgstr "Done"
 
