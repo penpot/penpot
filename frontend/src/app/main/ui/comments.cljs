@@ -391,6 +391,7 @@
     (mf/with-layout-effect [thread-pos comments-map]
       (when-let [node (mf/ref-val ref)]
         (dom/scroll-into-view-if-needed! node)))
+
     (when (some? comment)
       [:div {:class (stl/css :thread-content)
              :style {:top (str pos-y "px")

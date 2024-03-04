@@ -7,61 +7,67 @@
 (ns app.main.ui.workspace.viewport.comments
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data.macros :as dm]
    [app.main.data.comments :as dcm]
    [app.main.data.workspace.comments :as dwcm]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.comments :as cmt]
-   [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
+(defn- update-position
+  [positions {:keys [id] :as thread}]
+  (if (contains? positions id)
+    (-> thread
+        (assoc :position (dm/get-in positions [id :position]))
+        (assoc :frame-id (dm/get-in positions [id :frame-id])))
+    thread))
+
 (mf/defc comments-layer
+  {::mf/props :obj}
   [{:keys [vbox vport zoom file-id page-id drawing] :as props}]
-  (let [pos-x                 (* (- (:x vbox)) zoom)
-        pos-y                 (* (- (:y vbox)) zoom)
+  (let [pos-x    (* (- (:x vbox)) zoom)
+        pos-y    (* (- (:y vbox)) zoom)
 
-        profile               (mf/deref refs/profile)
-        users                 (mf/deref refs/current-file-comments-users)
-        local                 (mf/deref refs/comments-local)
-        threads-position-ref  (l/derived (l/in [:workspace-data :pages-index page-id :options :comment-threads-position]) st/state)
-        threads-position-map  (mf/deref threads-position-ref)
-        threads-map           (mf/deref refs/threads-ref)
+        profile  (mf/deref refs/profile)
+        users    (mf/deref refs/current-file-comments-users)
+        local    (mf/deref refs/comments-local)
 
-        update-thread-position (fn update-thread-position [thread]
-                                 (if (contains? threads-position-map (:id thread))
-                                   (-> thread
-                                       (assoc :position (get-in threads-position-map [(:id thread) :position]))
-                                       (assoc :frame-id (get-in threads-position-map [(:id thread) :frame-id])))
-                                   thread))
+        positions-ref
+        (mf/with-memo [page-id]
+          (-> (l/in [:workspace-data :pages-index page-id :options :comment-threads-position])
+              (l/derived st/state)))
 
-        threads               (->> (vals threads-map)
-                                   (filter #(= (:page-id %) page-id))
-                                   (mapv update-thread-position)
-                                   (dcm/apply-filters local profile))
+        positions   (mf/deref positions-ref)
+        threads-map (mf/deref refs/threads-ref)
+
+        threads
+        (mf/with-memo [threads-map positions local profile]
+          (->> (vals threads-map)
+               (filter #(= (:page-id %) page-id))
+               (mapv (partial update-position positions))
+               (dcm/apply-filters local profile)))
 
         on-draft-cancel
-        (mf/use-callback
-         #(st/emit! :interrupt))
+        (mf/use-fn #(st/emit! :interrupt))
 
         on-draft-submit
-        (mf/use-callback
+        (mf/use-fn
          (fn [draft]
            (st/emit! (dcm/create-thread-on-workspace draft))))]
 
-    (mf/use-effect
-     (mf/deps file-id)
-     (fn []
-       (st/emit! (dwcm/initialize-comments file-id))
-       (fn []
-         (st/emit! ::dwcm/finalize))))
+    (mf/with-effect [file-id]
+      (st/emit! (dwcm/initialize-comments file-id))
+      (fn [] (st/emit! ::dwcm/finalize)))
+
     [:div {:class (stl/css :comments-section)}
      [:div
       {:class (stl/css :workspace-comments-container)
-       :style {:width (str (:width vport) "px")
-               :height (str (:height vport) "px")}}
+       :style {:width (dm/str (:width vport) "px")
+               :height (dm/str (:height vport) "px")}}
       [:div {:class (stl/css :threads)
-             :style {:transform (str/format "translate(%spx, %spx)" pos-x pos-y)}}
+             :style {:transform (dm/fmt "translate(%px, %px)" pos-x pos-y)}}
        (for [item threads]
          [:& cmt/thread-bubble {:thread item
                                 :zoom zoom
@@ -70,7 +76,7 @@
 
        (when-let [id (:open local)]
          (when-let [thread (get threads-map id)]
-           [:& cmt/thread-comments {:thread (update-thread-position thread)
+           [:& cmt/thread-comments {:thread (update-position positions thread)
                                     :users users
                                     :zoom zoom}]))
 
