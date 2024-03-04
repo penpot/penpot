@@ -1076,14 +1076,13 @@
   (->> (cells-seq parent :sort? true)
        (reduce
         (fn [[parent auto?] cell]
-
           (let [[cell auto?]
                 (cond
                   (and (empty? (:shapes cell))
                        (= :manual (:position cell))
                        (= (:row-span cell) 1)
                        (= (:column-span cell) 1))
-                  [(assoc cell :position :auto) false]
+                  [cell false]
 
                   (and (or (not= (:row-span cell) 1)
                            (not= (:column-span cell) 1))

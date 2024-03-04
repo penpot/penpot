@@ -573,6 +573,7 @@
                               (> (:row-span cell) 1)
                               (> (:column-span cell) 1))
                           (-> (d/update-in-when [:layout-grid-cells cell-id] assoc :shapes [] :position :auto)
+                              (d/update-in-when [:layout-grid-cells cell-id] dissoc :area-name)
                               (ctl/resize-cell-area (:row cell) (:column cell) (:row cell) (:column cell) 1 1)
                               (ctl/assign-cells objects)))))
                     shape))
@@ -585,6 +586,7 @@
                         (cond-> shape
                           (contains? #{:area :auto} (:position cell))
                           (-> (d/assoc-in-when [:layout-grid-cells cell-id :position] :manual)
+                              (d/update-in-when [:layout-grid-cells cell-id] dissoc :area-name)
                               (ctl/assign-cells objects)))))
                     shape))
 
