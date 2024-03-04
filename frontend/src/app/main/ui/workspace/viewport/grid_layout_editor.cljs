@@ -736,20 +736,23 @@
                  [track-type value]
                  (cond
                    (str/ends-with? value "%")
-                   [:percent value-int]
+                   [:percent (d/nilv value-int 50)]
 
                    (str/ends-with? value "FR")
-                   [:flex value-int]
+                   [:flex (d/nilv value-int 1)]
 
                    (some? value-int)
-                   [:fixed value-int]
+                   [:fixed (d/nilv value-int 100)]
 
-                   (or (= value "AUTO") (= "" value))
-                   [:auto nil])]
+                   :else
+                   [:auto nil])
 
+                 track-data (when (some? track-type) {:type track-type :value value})]
+
+             (dom/set-value! (mf/ref-val track-input-ref) (format-size track-data))
              (if (some? track-type)
-               (do (st/emit! (dwsl/change-layout-track [(:id shape)] type index {:type track-type :value value}))
-                   (dom/set-data! target "default-value" (format-size {:type track-type :value value})))
+               (do (st/emit! (dwsl/change-layout-track [(:id shape)] type index track-data))
+                   (dom/set-data! target "default-value" (format-size track-data)))
                (obj/set! target "value" (dom/get-attribute target "data-default-value"))))))
 
         handle-keydown-track-input
