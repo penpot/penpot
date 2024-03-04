@@ -1055,7 +1055,7 @@ msgstr "Adresă de Email"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-go-to"
-msgstr "Accesați Twitter"
+msgstr "Accesați X"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-subtitle1"
@@ -1063,7 +1063,7 @@ msgstr "Aici pentru a vă ajuta cu întrebările tehnice."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-title"
-msgstr "Cont de asistență Twitter"
+msgstr "Cont de asistență X"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
@@ -2963,9 +2963,6 @@ msgstr "Blocați proporțiile"
 
 msgid "shortcuts.toggle-rules"
 msgstr "Afișați/ascundeți rigle"
-
-msgid "shortcuts.toggle-scale-text"
-msgstr "Comută scalarea textului"
 
 msgid "shortcuts.toggle-snap-grid"
 msgstr "Fixare la grilă"

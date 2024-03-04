@@ -915,7 +915,7 @@ msgstr "Email"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-go-to"
-msgstr "Przejdź do Twittera"
+msgstr "Przejdź do Xa"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-subtitle1"
@@ -923,7 +923,7 @@ msgstr "Służymy pomocą w kwestiach technicznych."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-title"
-msgstr "Konto wsparcia na Twitterze"
+msgstr "Konto wsparcia na Xze"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
@@ -2471,9 +2471,6 @@ msgstr "Zablokuj proporcje"
 
 msgid "shortcuts.toggle-rules"
 msgstr "Pokaż/ukryj linijki"
-
-msgid "shortcuts.toggle-scale-text"
-msgstr "Przełącz skalowanie tekstu"
 
 msgid "shortcuts.toggle-snap-grid"
 msgstr "Przyciągaj do siatki"

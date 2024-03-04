@@ -539,6 +539,7 @@
           (every? (partial ctl/grid-layout-immediate-child? objects))))
    workspace-page-objects =))
 
+;; FIXME: move to viewer.inspect.code
 (defn get-flex-child-viewer
   [ids page-id]
   (l/derived
@@ -550,7 +551,7 @@
              ids)))
    st/state =))
 
-
+;; FIXME: move to viewer.inspect.code
 (defn get-viewer-objects
   ([]
    (let [route      (deref route)
@@ -573,9 +574,6 @@
 (defn workspace-grid-edition-id
   [id]
   (l/derived #(get % id) workspace-grid-edition))
-
-(def workspace-annotations
-  (l/derived #(get % :workspace-annotations {}) st/state))
 
 (def current-file-id
   (l/derived :current-file-id st/state))

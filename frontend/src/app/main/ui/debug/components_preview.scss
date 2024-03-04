@@ -53,7 +53,7 @@
       flex-direction: column;
       border-radius: $s-8;
       h3 {
-        @include bodyMedTipography;
+        @include bodySmallTypography;
         font-size: $fs-24;
         width: 100%;
       }

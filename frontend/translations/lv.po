@@ -1051,7 +1051,7 @@ msgstr "E-pasts"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-go-to"
-msgstr "Atvērt Twitter"
+msgstr "Atvērt X"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-subtitle1"
@@ -1059,7 +1059,7 @@ msgstr "Šeit, lai palīdzētu ar tehniskajiem jautājumiem."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-title"
-msgstr "Twitter atbalsta konts"
+msgstr "X atbalsta konts"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
@@ -2917,9 +2917,6 @@ msgstr "Slēgt proporcijas"
 
 msgid "shortcuts.toggle-rules"
 msgstr "Rādīt/paslēpt mērjoslas"
-
-msgid "shortcuts.toggle-scale-text"
-msgstr "Pārslēgt teksta mērogošanu"
 
 msgid "shortcuts.toggle-snap-grid"
 msgstr "Pieķerties režģim"

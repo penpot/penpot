@@ -134,7 +134,7 @@
   }
 
   label {
-    @include bodyMedTipography;
+    @include bodySmallTypography;
     display: flex;
     align-items: center;
     gap: $s-2;

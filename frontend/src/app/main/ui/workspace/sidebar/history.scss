@@ -59,7 +59,7 @@
 }
 
 .history-entry-empty-msg {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   color: var(--empty-message-foreground-color);
 }
 

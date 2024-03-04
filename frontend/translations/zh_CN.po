@@ -2477,9 +2477,6 @@ msgstr "锁定比例"
 msgid "shortcuts.toggle-rules"
 msgstr "显示/隐藏规则"
 
-msgid "shortcuts.toggle-scale-text"
-msgstr "切换缩放文本"
-
 msgid "shortcuts.toggle-snap-grid"
 msgstr "网络对齐"
 

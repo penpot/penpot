@@ -71,7 +71,7 @@
 
 .color-text {
   @include twoLineTextEllipsis;
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   width: $s-80;
   text-align: center;
   margin-top: $s-2;

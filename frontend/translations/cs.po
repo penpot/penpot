@@ -948,7 +948,7 @@ msgstr "E-mail"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-go-to"
-msgstr "Přejít na Twitter"
+msgstr "Přejít na X"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-subtitle1"
@@ -956,7 +956,7 @@ msgstr "Zde vám pomůžeme s vašimi technickými dotazy."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-title"
-msgstr "Účet podpory na Twitteru"
+msgstr "Účet podpory na Xu"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
@@ -2576,9 +2576,6 @@ msgstr "Uzamknout proporce"
 
 msgid "shortcuts.toggle-rules"
 msgstr "Zobrazit/skrýt pravítka"
-
-msgid "shortcuts.toggle-scale-text"
-msgstr "Přepnout měřítko textu"
 
 msgid "shortcuts.toggle-snap-grid"
 msgstr "Přichytit k mřížce"

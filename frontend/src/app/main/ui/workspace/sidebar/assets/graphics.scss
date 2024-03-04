@@ -36,7 +36,7 @@
         height: 10vh;
       }
       .cell-name {
-        @include bodyMedTipography;
+        @include bodySmallTypography;
         @include textEllipsis;
         display: none;
         position: absolute;
@@ -110,7 +110,7 @@
       }
 
       .item-name {
-        @include bodyMedTipography;
+        @include bodySmallTypography;
         @include textEllipsis;
         padding-left: $s-8;
         color: var(--assets-item-name-foreground-color);

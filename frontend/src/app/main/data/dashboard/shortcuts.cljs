@@ -7,6 +7,7 @@
 (ns app.main.data.dashboard.shortcuts
   (:require
    [app.main.data.dashboard :as dd]
+   [app.main.data.events :as ev]
    [app.main.data.shortcuts :as ds]
    [app.main.data.users :as du]
    [app.main.store :as st]))
@@ -35,7 +36,10 @@
    :toggle-theme    {:tooltip (ds/alt "M")
                      :command (ds/a-mod "m")
                      :subsections [:general-dashboard]
-                     :fn #(st/emit! (du/toggle-theme))}})
+                     :fn #(st/emit! (with-meta (du/toggle-theme)
+                                      {::ev/origin "dashboard:shortcuts"}))}})
+
+
 
 (defn get-tooltip [shortcut]
   (assert (contains? shortcuts shortcut) (str shortcut))

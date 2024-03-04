@@ -41,7 +41,7 @@
 .input-with-label {
   @include flexColumn;
   gap: $s-8;
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   justify-content: flex-start;
   align-items: flex-start;
   height: 100%;
@@ -143,7 +143,7 @@
 }
 
 .hint {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   color: var(--modal-text-foreground-color);
   width: 99%;
 }
@@ -151,7 +151,7 @@
 .checkbox {
   @extend .input-checkbox;
   .checkbox-label {
-    @include bodyMedTipography;
+    @include bodySmallTypography;
     display: flex;
     align-items: center;
     flex-direction: row-reverse;
@@ -186,7 +186,7 @@
     background-color: var(--input-background-color);
     .main-content {
       @include flexColumn;
-      @include bodyMedTipography;
+      @include bodySmallTypography;
       position: relative;
       justify-content: center;
       flex-grow: 1;
@@ -231,7 +231,7 @@
 
   select {
     @extend .menu-dropdown;
-    @include bodyMedTipography;
+    @include bodySmallTypography;
     box-sizing: border-box;
     position: absolute;
     top: 0;
@@ -247,7 +247,7 @@
     background-color: transparent;
     cursor: pointer;
     option {
-      @include bodyMedTipography;
+      @include bodySmallTypography;
       color: var(--title-foreground-color-hover);
       background-color: var(--menu-background-color);
       appearance: none;
@@ -276,7 +276,7 @@
   overflow-y: hidden;
   .inside-input {
     @include removeInputStyle;
-    @include bodyMedTipography;
+    @include bodySmallTypography;
     @include textEllipsis;
     width: 100%;
     max-width: calc(100% - $s-1);
@@ -315,7 +315,7 @@
         border: $s-1 solid var(--pill-background-color);
         box-sizing: border-box;
         .text {
-          @include bodyMedTipography;
+          @include bodySmallTypography;
           padding-right: $s-8;
           color: var(--pill-foreground-color);
         }
@@ -352,7 +352,7 @@
 }
 
 .radio-label {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   @include flexRow;
   align-items: flex-start;
   gap: $s-8;

@@ -8,6 +8,7 @@
   "Workspace layout management events and helpers."
   (:require
    [app.common.data.macros :as dm]
+   [app.main.data.events :as ev]
    [app.util.storage :refer [storage]]
    [clojure.set :as set]
    [potok.v2.core :as ptk]))
@@ -114,8 +115,16 @@
 
 (defn set-options-mode
   [mode]
-  (dm/assert! (contains? valid-options-mode mode))
+  (dm/assert!
+   "expected valid options mode"
+   (contains? valid-options-mode mode))
+
   (ptk/reify ::set-options-mode
+    ev/Event
+    (-data [_]
+      {::ev/origin "workspace:sidebar"
+       :mode (name mode)})
+
     ptk/UpdateEvent
     (update [_ state]
       (assoc-in state [:workspace-global :options-mode] mode))))

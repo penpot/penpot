@@ -100,26 +100,27 @@
                              :initial initial)
 
         on-error
-        (fn [cause]
-          (cond
-            (and (= :restriction (:type cause))
-                 (= :profile-blocked (:code cause)))
-            (reset! error (tr "errors.profile-blocked"))
+        (fn [err]
+          (let [cause (ex-data err)]
+            (cond
+              (and (= :restriction (:type cause))
+                   (= :profile-blocked (:code cause)))
+              (reset! error (tr "errors.profile-blocked"))
 
-            (and (= :restriction (:type cause))
-                 (= :admin-only-profile (:code cause)))
-            (reset! error (tr "errors.profile-blocked"))
+              (and (= :restriction (:type cause))
+                   (= :admin-only-profile (:code cause)))
+              (reset! error (tr "errors.profile-blocked"))
 
-            (and (= :validation (:type cause))
-                 (= :wrong-credentials (:code cause)))
-            (reset! error (tr "errors.wrong-credentials"))
+              (and (= :validation (:type cause))
+                   (= :wrong-credentials (:code cause)))
+              (reset! error (tr "errors.wrong-credentials"))
 
-            (and (= :validation (:type cause))
-                 (= :account-without-password (:code cause)))
-            (reset! error (tr "errors.wrong-credentials"))
+              (and (= :validation (:type cause))
+                   (= :account-without-password (:code cause)))
+              (reset! error (tr "errors.wrong-credentials"))
 
-            :else
-            (reset! error (tr "errors.generic"))))
+              :else
+              (reset! error (tr "errors.generic")))))
 
         on-success-default
         (fn [data]

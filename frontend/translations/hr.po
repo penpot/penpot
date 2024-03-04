@@ -856,7 +856,7 @@ msgstr "E-mail"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-go-to"
-msgstr "Idi na Twitter"
+msgstr "Idi na X"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-subtitle1"
@@ -864,7 +864,7 @@ msgstr "Ovdje za pomoć za tvoje tehničke upite."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-title"
-msgstr "Twitter korisnički račun za podršku"
+msgstr "X korisnički račun za podršku"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
@@ -2352,9 +2352,6 @@ msgstr "Zaključaj proporcije"
 #, fuzzy
 msgid "shortcuts.toggle-rules"
 msgstr "Prikaži/sakrij \"rules\""
-
-msgid "shortcuts.toggle-scale-text"
-msgstr "Promjena mjerila teksta"
 
 #, fuzzy
 msgid "shortcuts.toggle-snap-grid"

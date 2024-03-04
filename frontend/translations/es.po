@@ -1074,7 +1074,7 @@ msgstr "Correo electrónico"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-go-to"
-msgstr "Ir a Twitter"
+msgstr "Ir a X"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-subtitle1"
@@ -1082,7 +1082,7 @@ msgstr "Cuenta habilitada para responder todas tus dudas técnicas."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-title"
-msgstr "Cuenta de Twitter para soporte"
+msgstr "Cuenta de X para soporte"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
@@ -3016,8 +3016,8 @@ msgstr "Bloquear/Desbloquear proporciones"
 msgid "shortcuts.toggle-rules"
 msgstr "Mostrar/ocultar reglas"
 
-msgid "shortcuts.toggle-scale-text"
-msgstr "Alternar escalado de texto"
+msgid "shortcuts.scale"
+msgstr "Escalado"
 
 msgid "shortcuts.toggle-snap-grid"
 msgstr "Alinear a la rejilla"
@@ -4836,6 +4836,10 @@ msgstr "Ruta"
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.remove-flex"
 msgstr "Eliminar flex layout"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-grid"
+msgstr "Eliminar grid layout"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs,

@@ -914,15 +914,15 @@ msgstr "E-mail"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-go-to"
-msgstr "Ir ao Twitter"
+msgstr "Ir ao X"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-subtitle1"
-msgstr "Precisa de ajuda com dúvidas mais técnicas? Veja o nosso Twitter."
+msgstr "Precisa de ajuda com dúvidas mais técnicas? Veja o nosso X."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-title"
-msgstr "Conta de suporte no Twitter"
+msgstr "Conta de suporte no X"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
@@ -2462,9 +2462,6 @@ msgstr "Fixar proporções"
 
 msgid "shortcuts.toggle-rules"
 msgstr "Mostrar/ocultar réguas"
-
-msgid "shortcuts.toggle-scale-text"
-msgstr "Alternar escalonamento de texto"
 
 msgid "shortcuts.toggle-snap-grid"
 msgstr "Aderir a grade"

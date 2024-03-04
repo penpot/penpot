@@ -33,7 +33,7 @@
 }
 
 .counter {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   color: var(--viewer-thumbnails-control-foreground-color);
 }
 
@@ -142,7 +142,7 @@
 }
 
 .thumbnail-info {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   @include textEllipsis;
   text-align: center;
   color: var(--viewer-thumbnails-control-foreground-color);

@@ -953,6 +953,10 @@
   (dm/assert! (uuid? id-new-component))
   (dm/assert! (uuid? file-id))
   (ptk/reify ::component-multi-swap
+    ev/Event
+    (-data [_]
+      {::ev/name "component-swap"})
+
     ptk/WatchEvent
     (watch [_ _ _]
       (let [undo-id (js/Symbol)]

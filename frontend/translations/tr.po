@@ -930,7 +930,7 @@ msgstr "E-posta"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-go-to"
-msgstr "Twitter'a git"
+msgstr "X'a git"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-subtitle1"
@@ -938,7 +938,7 @@ msgstr "Teknik sorularınıza yardımcı olmak için buradayız."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-title"
-msgstr "Twitter destek hesabı"
+msgstr "X destek hesabı"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
@@ -2502,9 +2502,6 @@ msgstr "Oranları kilitle"
 
 msgid "shortcuts.toggle-rules"
 msgstr "Cetvelleri göster/gizle"
-
-msgid "shortcuts.toggle-scale-text"
-msgstr "Ölçek metnini değiştir"
 
 msgid "shortcuts.toggle-snap-grid"
 msgstr "Izgaraya tuttur"

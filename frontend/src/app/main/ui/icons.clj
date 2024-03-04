@@ -10,10 +10,18 @@
    [cuerdas.core :as str]
    [rumext.v2]))
 
+(def exceptions #{:penpot-logo-icon})
+
 (defmacro icon-xref
   [id & [class]]
   (let [href (str "#icon-" (name id))
-        class (or class (str "icon-" (name id)))]
+        class (or class (str "icon-" (name id)))
+
+        ;; FIXME: Debug tool. Remove when we remove the old icons
+        class (cond-> class
+                (and (not (str/ends-with? (name id) "-refactor"))
+                     (not (contains? exceptions id)))
+                (str " deprecated-icon"))]
     `(rumext.v2/html
       [:svg {:width 500 :height 500 :class ~class}
        [:use {:href ~href}]])))

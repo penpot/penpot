@@ -269,7 +269,8 @@
          (mf/deps permissions)
          (fn []
            (if (:is-logged permissions)
-             (st/emit! dv/close-thumbnails-panel (dv/go-to-section :inspect))
+             (st/emit! dv/close-thumbnails-panel
+                       (dv/go-to-section :inspect))
              (open-login-dialog))))
 
         navigate
@@ -279,10 +280,10 @@
            (let [section (-> (dom/get-current-target event)
                              (dom/get-data "value")
                              (keyword))]
-
              (if (or (= section :interactions) (:is-logged permissions))
                (st/emit! (dv/go-to-section section))
                (open-login-dialog)))))]
+
 
     [:header {:class (stl/css-case :viewer-header true
                                    :fullscreen (mf/deref fullscreen-ref))}

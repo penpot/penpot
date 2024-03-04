@@ -55,7 +55,7 @@
 }
 
 .export-progress-title {
-  @include bodyMedTipography;
+  @include bodyMediumTypography;
   display: grid;
   grid-template-columns: auto 1fr;
   gap: $s-8;
@@ -67,7 +67,7 @@
 }
 
 .progress {
-  @include bodyMedTipography;
+  @include bodyMediumTypography;
   padding-left: $s-8;
   margin: 0;
   align-self: center;
@@ -76,7 +76,7 @@
 
 .retry-btn {
   @include buttonStyle;
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   display: inline;
   text-align: left;
   color: var(--modal-link-foreground-color);
@@ -128,10 +128,10 @@
 
 .modal-content,
 .no-selection {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   margin-bottom: $s-24;
   .modal-hint {
-    @include bodyMedTipography;
+    @include bodySmallTypography;
     color: var(--modal-text-foreground-color);
   }
   .modal-link {

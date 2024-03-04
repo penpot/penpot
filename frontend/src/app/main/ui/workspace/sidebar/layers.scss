@@ -108,7 +108,7 @@
 }
 
 .focus-name {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   display: flex;
   align-items: center;
   height: 100%;
@@ -124,7 +124,7 @@
 
 .focus-mode-tag {
   @include flexCenter;
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   height: $s-20;
   padding: $s-4 $s-6;
   border: $s-1 solid var(--tag-background-color);
@@ -160,7 +160,7 @@
 
 .layer-filter-name {
   @include flexCenter;
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   color: var(--pill-foreground-color);
 }
 
@@ -174,7 +174,7 @@
   left: $s-20;
   width: $s-192;
   .filter-menu-item {
-    @include bodyMedTipography;
+    @include bodySmallTypography;
     display: flex;
     align-items: center;
     justify-content: space-between;

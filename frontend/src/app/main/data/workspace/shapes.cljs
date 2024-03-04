@@ -436,9 +436,11 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [selected   (wsh/lookup-selected state)
-            pages      (-> state :workspace-data :pages-index vals)]
+            pages      (-> state :workspace-data :pages-index vals)
+            undo-id  (js/Symbol)]
 
         (rx/concat
+         (rx/of (dwu/start-undo-transaction undo-id))
          ;; First: clear the `:use-for-thumbnail` flag from all not
          ;; selected frames.
          (rx/from
@@ -456,4 +458,5 @@
                       (dch/update-shapes frame-ids #(dissoc % :use-for-thumbnail) {:page-id page-id})))))
 
          ;; And finally: toggle the flag value on all the selected shapes
-         (rx/of (dch/update-shapes selected #(update % :use-for-thumbnail not))))))))
+         (rx/of (dch/update-shapes selected #(update % :use-for-thumbnail not))
+                (dwu/commit-undo-transaction undo-id)))))))

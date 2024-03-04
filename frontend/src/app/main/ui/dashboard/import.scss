@@ -28,7 +28,7 @@
 }
 
 .modal-content {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   display: grid;
   grid-template-columns: 1fr;
   gap: $s-16;
@@ -52,7 +52,7 @@
 .modal-scd-msg,
 .modal-subtitle,
 .modal-msg {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   color: var(--modal-text-foreground-color);
   line-height: 1.5;
 }
@@ -78,7 +78,7 @@
       flex-grow: 1;
     }
     .file-name-label {
-      @include bodyMedTipography;
+      @include bodySmallTypography;
       display: flex;
       align-items: center;
       gap: $s-12;

@@ -37,7 +37,6 @@
    [app.main.ui.workspace.sidebar.options.shapes.svg-raw :as svg-raw]
    [app.main.ui.workspace.sidebar.options.shapes.text :as text]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.object :as obj]
    [rumext.v2 :as mf]))
 
 ;; --- Options
@@ -75,7 +74,8 @@
 
 
 (mf/defc options-content
-  {::mf/wrap [mf/memo]}
+  {::mf/memo true
+   ::mf/props :obj}
   [{:keys [selected section shapes shapes-with-children page-id file-id on-change-section on-expand]}]
   (let [drawing              (mf/deref refs/workspace-drawing)
         objects              (mf/deref refs/workspace-page-objects)
@@ -104,7 +104,9 @@
       {:on-change-tab on-change-tab
        :selected section
        :collapsable false
-       :content-class (stl/css-case :content-class true :inspect (= section :inspect))
+       :content-class (stl/css-case
+                       :content-class true
+                       :inspect (= section :inspect))
        :header-class (stl/css :tab-spacing)}
       [:& tab-element {:id :design
                        :title (tr "workspace.options.design")}
@@ -172,14 +174,10 @@
 ;; need on multiple selection in majority of cases
 
 (mf/defc options-toolbox
-  {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
-  [props]
-  (let [section              (obj/get props "section")
-        selected             (obj/get props "selected")
-        on-change-section    (obj/get props "on-change-section")
-        on-expand            (obj/get props "on-expand")
-        page-id              (mf/use-ctx ctx/current-page-id)
+  {::mf/memo true
+   ::mf/props :obj}
+  [{:keys [section selected on-change-section on-expand]}]
+  (let [page-id              (mf/use-ctx ctx/current-page-id)
         file-id              (mf/use-ctx ctx/current-file-id)
         shapes               (mf/deref refs/selected-objects)
         shapes-with-children (mf/deref refs/selected-shapes-with-children)]

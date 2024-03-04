@@ -873,7 +873,7 @@ msgstr "Correu electrònic"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-go-to"
-msgstr "Ves al Twitter"
+msgstr "Ves al X"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-subtitle1"
@@ -881,7 +881,7 @@ msgstr "Compte per a ajudar amb dubtes tècnics."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-title"
-msgstr "Compte de Twitter d'ajuda"
+msgstr "Compte de X d'ajuda"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
@@ -2259,9 +2259,6 @@ msgstr "Bloqueja les proporcions"
 
 msgid "shortcuts.toggle-rules"
 msgstr "Mostra/Amaga les regles"
-
-msgid "shortcuts.toggle-scale-text"
-msgstr "Activa/desactiva l'escalat de text"
 
 msgid "shortcuts.toggle-snap-grid"
 msgstr "Ajusta a la graella"

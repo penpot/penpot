@@ -24,7 +24,7 @@
 }
 
 .empty-state {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   color: var(--empty-message-foreground-color);
   display: grid;
   place-items: center;
@@ -134,7 +134,7 @@
 
 .counter {
   @include flexCenter;
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   border-radius: $br-8;
   width: $s-64;
   height: $s-32;

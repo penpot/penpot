@@ -10,7 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.ui.components.copy-button :refer [copy-button]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [inspect-title-bar]]
    [app.main.ui.viewer.inspect.attributes.common :as cmm]
    [app.util.code-gen.style-css :as css]
    [app.util.i18n :refer [tr]]
@@ -36,10 +36,9 @@
 (mf/defc geometry-panel
   [{:keys [objects shapes]}]
   [:div {:class (stl/css :attributes-block)}
-   [:& title-bar {:collapsable false
-                  :title       (tr "inspect.attributes.size")
-                  :origin      :inspect
-                  :class       (stl/css :title-spacing-geometry)}
+   [:& inspect-title-bar
+    {:title (tr "inspect.attributes.size")
+     :class (stl/css :title-spacing-geometry)}
 
     (when (= (count shapes) 1)
       [:& copy-button {:data (css/get-shape-properties-css objects (first shapes) properties)

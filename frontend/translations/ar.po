@@ -911,7 +911,7 @@ msgstr "البريد الإلكتروني"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-go-to"
-msgstr "اذهب إلى Twitter"
+msgstr "اذهب إلى X"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-subtitle1"
@@ -2913,9 +2913,6 @@ msgstr "المركز السفلي"
 
 msgid "workspace.shape.menu.transform-to-path"
 msgstr "تحويل الى المسار"
-
-msgid "shortcuts.toggle-scale-text"
-msgstr "تبديل نص الحجم"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-animation-push"

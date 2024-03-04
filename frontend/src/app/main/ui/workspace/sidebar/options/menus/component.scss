@@ -96,7 +96,7 @@
 }
 
 .component-name {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   @include textEllipsis;
   direction: rtl;
   text-align: left;
@@ -104,7 +104,7 @@
 }
 
 .component-parent-name {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   @include textEllipsis;
   direction: rtl;
   text-align: left;
@@ -143,7 +143,7 @@
 }
 
 .copy-text {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   height: 100%;
   display: flex;
   align-items: center;
@@ -244,7 +244,7 @@
 }
 
 .path-name {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   @include textEllipsis;
   direction: rtl;
   height: $s-32;
@@ -252,7 +252,7 @@
 }
 
 .path-name-last {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   @include textEllipsis;
   height: $s-32;
   padding: $s-8 0 $s-8 $s-2;
@@ -260,7 +260,7 @@
 }
 
 .component-list-empty {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   margin: 0 $s-4 0 $s-8;
   color: $df-secondary;
 }
@@ -346,7 +346,7 @@
     object-fit: contain;
   }
   .component-name {
-    @include bodyMedTipography;
+    @include bodySmallTypography;
     @include textEllipsis;
     display: none;
     position: absolute;
@@ -431,7 +431,7 @@
 }
 
 .library-name {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   @include textEllipsis;
   color: var(--title-foreground-color);
   padding: $s-8 0 $s-8 $s-2;
@@ -452,7 +452,7 @@
 }
 
 .component-group {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   display: grid;
   grid-template-columns: 1fr $s-12;
   height: $s-32;
@@ -495,7 +495,7 @@
 // Component annotation
 
 .component-annotation {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   color: var(--entry-foreground-color);
   border-radius: $br-8;
 
@@ -613,7 +613,7 @@
   }
 
   .counter {
-    @include bodyMedTipography;
+    @include bodySmallTypography;
     text-align: right;
     color: var(--entry-foreground-color);
     margin: 0 $s-8 $s-8 0;

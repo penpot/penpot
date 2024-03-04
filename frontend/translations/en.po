@@ -1051,7 +1051,7 @@ msgstr "Email"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-go-to"
-msgstr "Go to Twitter"
+msgstr "Go to X"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-subtitle1"
@@ -1059,7 +1059,7 @@ msgstr "Here to help with your technical queries."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-title"
-msgstr "Twitter support account"
+msgstr "X support account"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
@@ -2970,8 +2970,8 @@ msgstr "Lock proportions"
 msgid "shortcuts.toggle-rules"
 msgstr "Show / Hide rulers"
 
-msgid "shortcuts.toggle-scale-text"
-msgstr "Toggle scale text"
+msgid "shortcuts.scale"
+msgstr "Scale"
 
 msgid "shortcuts.toggle-snap-grid"
 msgstr "Snap to grid"
@@ -4760,6 +4760,10 @@ msgstr "Path"
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.remove-flex"
 msgstr "Remove flex layout"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-grid"
+msgstr "Remove grid layout"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.reset-overrides"

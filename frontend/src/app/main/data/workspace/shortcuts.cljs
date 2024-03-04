@@ -222,13 +222,16 @@
    :toggle-layout-flex   {:tooltip (ds/shift "A")
                           :command "shift+a"
                           :subsections [:modify-layers]
-                          :fn #(emit-when-no-readonly (dwsl/toggle-layout :flex))}
+                          :fn #(emit-when-no-readonly
+                                (with-meta (dwsl/toggle-layout :flex)
+                                  {::ev/origin "workspace:shortcuts"}))}
 
    :toggle-layout-grid   {:tooltip (ds/meta-shift "A")
                           :command (ds/c-mod "shift+a")
                           :subsections [:modify-layers]
-                          :fn #(emit-when-no-readonly (dwsl/toggle-layout :grid))}
-
+                          :fn #(emit-when-no-readonly
+                                (with-meta (dwsl/toggle-layout :grid)
+                                  {::ev/origin "workspace:shortcuts"}))}
    ;; TOOLS
 
    :draw-frame           {:tooltip "B"
@@ -292,10 +295,10 @@
                           :subsections [:tools]
                           :fn #(emit-when-no-readonly (dw/toggle-proportion-lock))}
 
-   :toggle-scale-text   {:tooltip "K"
-                         :command "k"
-                         :subsections [:tools]
-                         :fn #(emit-when-no-readonly (toggle-layout-flag :scale-text))}
+   :scale                {:tooltip "K"
+                          :command "k"
+                          :subsections [:tools]
+                          :fn #(emit-when-no-readonly (toggle-layout-flag :scale-text))}
 
    :open-color-picker    {:tooltip "I"
                           :command "i"
@@ -549,12 +552,12 @@
                           :command (ds/c-mod "alt+enter")
                           :fn #(emit-when-no-readonly (dp/open-preview-selected))}
 
-
    ;; THEME
    :toggle-theme    {:tooltip (ds/alt "M")
                      :command (ds/a-mod "m")
                      :subsections [:basics]
-                     :fn #(st/emit! (du/toggle-theme))}})
+                     :fn #(st/emit! (with-meta (du/toggle-theme)
+                                      {::ev/origin "workspace:shortcut"}))}})
 
 (def opacity-shortcuts
   (into {} (->>

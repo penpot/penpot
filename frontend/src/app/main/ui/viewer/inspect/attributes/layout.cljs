@@ -11,7 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.types.shape.layout :as ctl]
    [app.main.ui.components.copy-button :refer [copy-button]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [inspect-title-bar]]
    [app.main.ui.viewer.inspect.attributes.common :as cmm]
    [app.util.code-gen.style-css :as css]
    [rumext.v2 :as mf]))
@@ -52,10 +52,9 @@
 
     (when (seq shapes)
       [:div {:class (stl/css :attributes-block)}
-       [:& title-bar {:collapsable false
-                      :origin      :inspect
-                      :title       "Layout"
-                      :class       (stl/css :title-spacing-layout)}
+       [:& inspect-title-bar
+        {:title "Layout"
+         :class (stl/css :title-spacing-layout)}
 
         (when (= (count shapes) 1)
           [:& copy-button {:data (css/get-shape-properties-css objects (first shapes) properties)

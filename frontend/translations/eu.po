@@ -948,7 +948,7 @@ msgstr "Posta elektronikoa"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-go-to"
-msgstr "Twitterrera joan"
+msgstr "Xrera joan"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-subtitle1"
@@ -956,7 +956,7 @@ msgstr "Zure zalantza teknikoak erantzuteko kontua."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-title"
-msgstr "Laguntzarako Twitter kontua"
+msgstr "Laguntzarako X kontua"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
@@ -2573,9 +2573,6 @@ msgstr "Blokeatu/Desblokeatu proportzioak"
 
 msgid "shortcuts.toggle-rules"
 msgstr "Erakutsi/ezkutatu erregelak"
-
-msgid "shortcuts.toggle-scale-text"
-msgstr "Erakutsi/Ezkutatu testua eskalatzea"
 
 msgid "shortcuts.toggle-snap-grid"
 msgstr "Lerrokatu sarera"

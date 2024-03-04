@@ -72,7 +72,7 @@
 
 .typography-name,
 .typography-font {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   @include textEllipsis;
   display: flex;
   align-items: center;
@@ -90,7 +90,7 @@
 }
 
 .font-name-wrapper {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   display: flex;
   align-items: center;
   height: $s-32;
@@ -169,7 +169,7 @@
       color: var(--assets-item-name-foreground-color-hover);
     }
     .typography-name {
-      @include bodyMedTipography;
+      @include bodySmallTypography;
       @include textEllipsis;
       display: flex;
       align-items: center;
@@ -178,7 +178,7 @@
       color: var(--assets-item-name-foreground-color-hover);
     }
     .typography-font {
-      @include bodyMedTipography;
+      @include bodySmallTypography;
       @include textEllipsis;
       margin-left: $s-6;
       display: flex;
@@ -207,14 +207,14 @@
     --calcualted-width: calc(var(--width) - $s-48);
     padding-left: $s-2;
     .info-label {
-      @include bodyMedTipography;
+      @include bodySmallTypography;
       @include textEllipsis;
       width: calc(var(--calcualted-width) / 2);
       padding-top: $s-8;
       color: var(--assets-item-name-foreground-color);
     }
     .info-content {
-      @include bodyMedTipography;
+      @include bodySmallTypography;
       @include textEllipsis;
       padding-top: $s-8;
       width: calc(var(--calcualted-width) / 2);
@@ -254,7 +254,7 @@
     position: relative;
   }
   .font-option {
-    @include bodyMedTipography;
+    @include bodySmallTypography;
     @extend .asset-element;
     padding: $s-8 0 $s-8 $s-8;
     cursor: pointer;
@@ -277,7 +277,7 @@
     gap: $s-4;
     .font-size-options {
       @extend .asset-element;
-      @include bodyMedTipography;
+      @include bodySmallTypography;
       flex-grow: 1;
       width: $s-60;
       margin: 0;
@@ -331,7 +331,7 @@
 
 .font-size-select {
   @include removeInputStyle;
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   height: $s-32;
   height: 100%;
   width: 100%;
@@ -410,7 +410,7 @@
   }
 
   .label {
-    @include bodyMedTipography;
+    @include bodySmallTypography;
     flex-grow: 1;
   }
 }

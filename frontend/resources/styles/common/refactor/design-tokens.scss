@@ -309,6 +309,8 @@
   --modal-link-foreground-color: var(--color-accent-primary);
   --modal-border-color: var(--color-background-quaternary);
   --modal-separator-backogrund-color: var(--color-background-quaternary);
+  --modal-navigator-foreground-color-rest: var(--color-background-quaternary);
+  --modal-navigator-foreground-color-active: var(--color-accent-primary);
 
   // ALERTS NOTIFICATION TOAST & STATUS WIDGET
   --alert-background-color-success: var(--color-success-background);
@@ -371,6 +373,9 @@
   --flow-tag-foreground-color: var(--color-foreground-secondary);
   --flow-tag-background-color-hover: var(--color-background-quaternary);
   --flow-tag-foreground-color-hover: var(--color-accent-primary);
+
+  --communication-tag-background-color: var(--color-foreground-primary);
+  --communication-tag-foreground-color: var(--color-background-tertiary);
 
   // VIEWER
   --viewer-background-color: var(--color-background-secondary);

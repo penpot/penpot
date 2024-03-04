@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.menus.component
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.types.component :as ctk]
@@ -31,152 +32,199 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.timers :as tm]
    [cuerdas.core :as str]
+   [okulary.core :as l]
    [rumext.v2 :as mf]))
 
+(def ref:annotations-state
+  (l/derived :workspace-annotations st/state))
+
 (mf/defc component-annotation
-  [{:keys [id shape component] :as props}]
-  (let [main-instance?        (:main-instance shape)
-        component-id          (:component-id shape)
-        annotation            (:annotation component)
-        editing?              (mf/use-state false)
-        invalid-text?         (mf/use-state (or (nil? annotation) (str/blank? annotation)))
-        size                  (mf/use-state (count annotation))
-        textarea-ref          (mf/use-ref)
+  {::mf/props :obj}
+  [{:keys [id shape component]}]
+  (let [main-instance? (:main-instance shape)
+        component-id   (:component-id shape)
+        annotation     (:annotation component)
+        shape-id       (:id shape)
 
-        ;; hack to create an autogrowing textarea
-        ;; based on https://css-tricks.com/the-cleanest-trick-for-autogrowing-textareas/
-        autogrow              #(let [textarea (mf/ref-val textarea-ref)
-                                     text (when textarea (.-value textarea))]
-                                 (reset! invalid-text? (str/blank? text))
-                                 (when textarea
-                                   (reset! size (count text))
-                                   (aset (.-dataset (.-parentNode textarea)) "replicatedValue" text)))
-        initialize            #(let [textarea (mf/ref-val textarea-ref)]
-                                 (when textarea
-                                   (aset textarea "value" annotation)
-                                   (autogrow)))
+        editing*       (mf/use-state false)
+        editing?       (deref editing*)
 
-        discard               (fn [event]
-                                (dom/stop-propagation event)
-                                (let [textarea (mf/ref-val textarea-ref)]
-                                  (aset textarea "value" annotation)
-                                  (reset! editing? false)
-                                  (st/emit! (dw/set-annotations-id-for-create nil))
-                                  (autogrow)))
-        save                  (fn [event]
-                                (dom/stop-propagation event)
-                                (let [textarea (mf/ref-val textarea-ref)
-                                      text (.-value textarea)]
-                                  (when-not (str/blank? text)
-                                    (reset! editing? false)
-                                    (st/emit!
-                                     (dw/set-annotations-id-for-create nil)
-                                     (dw/update-component-annotation component-id text)))))
-        workspace-annotations (mf/deref refs/workspace-annotations)
-        annotations-expanded? (:expanded? workspace-annotations)
-        creating?             (= id (:id-for-create workspace-annotations))
+        invalid-text*  (mf/use-state #(str/blank? annotation))
+        invalid-text?  (deref invalid-text*)
 
-        expand                #(when-not (or @editing? creating?)
-                                 (st/emit! (dw/set-annotations-expanded %)))
-        edit                  (fn [event]
-                                (dom/stop-propagation event)
-                                (when main-instance?
-                                  (let [textarea (mf/ref-val textarea-ref)]
-                                    (reset! editing? true)
-                                    (dom/focus! textarea))))
-        on-delete-annotation
-        (mf/use-callback
-         (mf/deps (:id shape))
+        size*          (mf/use-state #(count annotation))
+        size           (deref size*)
+
+        textarea-ref   (mf/use-ref)
+
+        state          (mf/deref ref:annotations-state)
+        expanded?      (:expanded state)
+        create-id      (:id-for-create state)
+        creating?      (= id create-id)
+
+        ;; hack to create an autogrowing textarea based on
+        ;; https://css-tricks.com/the-cleanest-trick-for-autogrowing-textareas/
+        adjust-textarea-size
+        (mf/use-fn
+         #(when-let [textarea (mf/ref-val textarea-ref)]
+            (let [text (dom/get-value textarea)]
+              (reset! invalid-text* (str/blank? text))
+              (reset! size* (count text))
+              (let [^js parent  (.-parentNode textarea)
+                    ^js dataset (.-dataset parent)]
+                (set! (.-replicatedValue dataset) text)))))
+
+        on-toggle-expand
+        (mf/use-fn
+         (mf/deps expanded? editing? creating?)
+         (fn [_]
+           (st/emit! (dw/set-annotations-expanded (not expanded?)))))
+
+        on-discard
+        (mf/use-fn
+         (mf/deps adjust-textarea-size creating?)
          (fn [event]
            (dom/stop-propagation event)
-           (st/emit! (modal/show
-                      {:type :confirm
-                       :title (tr "modals.delete-component-annotation.title")
-                       :message (tr "modals.delete-component-annotation.message")
-                       :accept-label (tr "ds.confirm-ok")
-                       :on-accept (fn []
-                                    (st/emit!
-                                     (dw/set-annotations-id-for-create nil)
-                                     (dw/update-component-annotation component-id nil)))}))))]
+           (when-let [textarea (mf/ref-val textarea-ref)]
+             (dom/set-value! textarea annotation)
+             (reset! editing* false)
+             (when creating?
+               (st/emit! (dw/set-annotations-id-for-create nil)))
+             (adjust-textarea-size))))
 
-    (mf/use-effect
-     (mf/deps (:id shape))
-     (fn []
-       (initialize)
-       (when (and (not creating?) (:id-for-create workspace-annotations)) ;; cleanup set-annotations-id-for-create if we aren't on the marked component
-         (st/emit! (dw/set-annotations-id-for-create nil)))
-       (fn [] (st/emit! (dw/set-annotations-id-for-create nil))))) ;; cleanup set-annotationsid-for-create on unload
+        on-edit
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (when ^boolean main-instance?
+             (when-let [textarea (mf/ref-val textarea-ref)]
+               (reset! editing* true)
+               (dom/focus! textarea)))))
+
+        on-save
+        (mf/use-fn
+         (mf/deps creating?)
+         (fn [event]
+           (dom/stop-propagation event)
+           (when-let [textarea (mf/ref-val textarea-ref)]
+             (let [text (dom/get-value textarea)]
+               (when-not (str/blank? text)
+                 (reset! editing* false)
+                 (when ^boolean creating?
+                   (st/emit! (dw/set-annotations-id-for-create nil)))
+                 (dw/update-component-annotation component-id text))))))
+
+        on-delete-annotation
+        (mf/use-fn
+         (mf/deps shape-id component-id creating?)
+         (fn [event]
+           (dom/stop-propagation event)
+           (let [on-accept (fn []
+                             (st/emit!
+                              ;; (ptk/data-event {::ev/name "delete-component-annotation"})
+                              (when creating?
+                                (dw/set-annotations-id-for-create nil))
+                              (dw/update-component-annotation component-id nil)))]
+             (st/emit! (modal/show
+                        {:type :confirm
+                         :title (tr "modals.delete-component-annotation.title")
+                         :message (tr "modals.delete-component-annotation.message")
+                         :accept-label (tr "ds.confirm-ok")
+                         :on-accept on-accept})))))]
+
+    (mf/with-effect [shape-id state create-id creating?]
+      (when-let [textarea (mf/ref-val textarea-ref)]
+        (dom/set-value! textarea annotation)
+        (adjust-textarea-size))
+
+      ;; cleanup set-annotations-id-for-create if we aren't on the marked component
+      (when (and (not creating?) (some? create-id))
+        (st/emit! (dw/set-annotations-id-for-create nil)))
+
+      ;; cleanup set-annotationsid-for-create on unload
+      (fn []
+        (when creating?
+          (st/emit! (dw/set-annotations-id-for-create nil)))))
 
     (when (or creating? annotation)
-      [:div {:class (stl/css-case :component-annotation true
-                                  :editing @editing?
-                                  :creating creating?)}
-       [:div {:class (stl/css-case :annotation-title true
-                                   :expandeable (not (or @editing? creating?))
-                                   :expanded annotations-expanded?)
-              :on-click #(expand (not annotations-expanded?))}
+      [:div {:class (stl/css-case
+                     :component-annotation true
+                     :editing editing?
+                     :creating creating?)}
+       [:div {:class (stl/css-case
+                      :annotation-title true
+                      :expandeable (not (or editing? creating?))
+                      :expanded expanded?)
+              :on-click on-toggle-expand}
 
-        (if (or @editing? creating?)
+        (if (or editing? creating?)
           [:span {:class (stl/css :annotation-text)}
-           (if @editing?
+           (if editing?
              (tr "workspace.options.component.edit-annotation")
              (tr "workspace.options.component.create-annotation"))]
 
           [:*
-           [:span {:class (stl/css-case :icon-arrow true
-                                        :expanded annotations-expanded?)}
+           [:span {:class (stl/css-case
+                           :icon-arrow true
+                           :expanded expanded?)}
             i/arrow-refactor]
            [:span {:class (stl/css :annotation-text)}
             (tr "workspace.options.component.annotation")]])
 
         [:div {:class (stl/css :icons-wrapper)}
-         (when (and main-instance? annotations-expanded?)
-           (if (or @editing? creating?)
+         (when (and ^boolean main-instance?
+                    ^boolean expanded?)
+           (if (or ^boolean editing?
+                   ^boolean creating?)
              [:*
-              [:div {:title (if creating? (tr "labels.create") (tr "labels.save"))
-                     :on-click save
-                     :class (stl/css-case :icon true
-                                          :icon-tick true
-                                          :hidden @invalid-text?)}
+              [:div {:title (if ^boolean creating?
+                              (tr "labels.create")
+                              (tr "labels.save"))
+                     :on-click on-save
+                     :class (stl/css-case
+                             :icon true
+                             :icon-tick true
+                             :hidden invalid-text?)}
                i/tick-refactor]
               [:div {:class (stl/css :icon :icon-cross)
                      :title (tr "labels.discard")
-                     :on-click discard}
+                     :on-click on-discard}
                i/close-refactor]]
 
              [:*
               [:div {:class (stl/css :icon :icon-edit)
                      :title (tr "labels.edit")
-                     :on-click edit}
+                     :on-click on-edit}
                i/curve-refactor]
               [:div {:class (stl/css :icon :icon-trash)
                      :title (tr "labels.delete")
                      :on-click on-delete-annotation}
                i/delete-refactor]]))]]
 
-       [:div {:class (stl/css-case :hidden (not annotations-expanded?))}
+       [:div {:class (stl/css-case :hidden (not expanded?))}
         [:div {:class (stl/css :grow-wrap)}
          [:div {:class (stl/css :texarea-copy)}]
          [:textarea
           {:ref textarea-ref
            :id "annotation-textarea"
            :data-debug annotation
-           :auto-focus (or @editing? creating?)
+           :auto-focus (or editing? creating?)
            :maxLength 300
-           :on-input autogrow
+           :on-input adjust-textarea-size
            :default-value annotation
-           :read-only (not (or creating? @editing?))}]]
-        (when (or @editing? creating?)
-          [:div {:class (stl/css  :counter)} (str @size "/300")])]])))
+           :read-only (not (or creating? editing?))}]]
+        (when (or editing? creating?)
+          [:div {:class (stl/css  :counter)} (str size "/300")])]])))
 
 (mf/defc component-swap-item
-  {::mf/wrap-props false}
-  [{:keys [item loop shapes file-id root-shape container component-id is-search listing-thumbs] :as props}]
-  (let [on-select-component
+  {::mf/props :obj}
+  [{:keys [item loop shapes file-id root-shape container component-id is-search listing-thumbs]}]
+  (let [on-select
         (mf/use-fn
          (mf/deps shapes file-id item)
          #(when-not loop
             (st/emit! (dwl/component-multi-swap shapes file-id (:id item)))))
+
         item-ref       (mf/use-ref)
         visible?       (h/use-visible item-ref :once? true)]
     [:div {:ref item-ref
@@ -186,7 +234,7 @@
                                 :selected (= (:id item) component-id)
                                 :disabled loop)
            :key (str "swap-item-" (:id item))
-           :on-click on-select-component}
+           :on-click on-select}
      (when visible?
        [:& cmm/component-item-thumbnail {:file-id (:file-id item)
                                          :root-shape root-shape
@@ -197,12 +245,13 @@
       (if is-search (:full-name item) (:name item))]]))
 
 (mf/defc component-group-item
-  [{:keys [item on-enter-group] :as props}]
+  {::mf/props :obj}
+  [{:keys [item on-enter-group]}]
   (let [group-name (:name item)
         path (cfh/butlast-path-with-dots group-name)
         on-group-click #(on-enter-group group-name)]
     [:div {:class (stl/css :component-group)
-           :key (uuid/next) :on-click on-group-click
+           :on-click on-group-click
            :title group-name}
 
      [:div {:class (stl/css :path-wrapper)}
@@ -215,43 +264,75 @@
      [:span {:class (stl/css :arrow-icon)}
       i/arrow-refactor]]))
 
+(def ^:private ref:swap-libraries
+  (letfn [(get-libraries [state]
+            (let [file (:workspace-file state)
+                  data (:workspace-data state)
+                  libs (:workspace-libraries state)]
+              (assoc libs (:id file)
+                     (assoc file :data data))))]
+    (l/derived get-libraries st/state)))
+
+
+(defn- find-common-path
+  ([components]
+   (let [paths (map (comp cfh/last-path :path) components)]
+     (find-common-path paths [] 0)))
+  ([paths path n]
+   (let [current (nth (first paths) n nil)]
+     (if (or (nil? current)
+             (not (every? #(= current (nth % n nil)) paths)))
+       path
+       (find-common-path paths (conj path current) (inc n))))))
+
+(defn- same-component-file?
+  [shape-a shape-b]
+  (= (:component-file shape-a)
+     (:component-file shape-b)))
+
+(defn- same-component?
+  [shape-a shape-b]
+  (= (:component-id shape-a)
+     (:component-id shape-b)))
+
+;; Get the ids of the components and its root-shapes that are parents of the current shape, to avoid loops
+(defn get-parent-component-ids
+  [objects shape ids]
+  (let [shape-id (:id shape)]
+    (if (uuid/zero? shape-id)
+      ids
+      (let [ids (if (ctk/instance-head? shape)
+                  (conj ids shape-id (:component-id shape))
+                  ids)]
+        (get-parent-component-ids objects (get objects (:parent-id shape)) ids)))))
+
 (mf/defc component-swap
-  [{:keys [shapes] :as props}]
+  {::mf/props :obj}
+  [{:keys [shapes]}]
   (let [single?             (= 1 (count shapes))
         shape               (first shapes)
         current-file-id     (mf/use-ctx ctx/current-file-id)
-        workspace-file      (mf/deref refs/workspace-file)
-        workspace-data      (mf/deref refs/workspace-data)
-        workspace-libraries (mf/deref refs/workspace-libraries)
+        libraries           (mf/deref ref:swap-libraries)
         objects             (mf/deref refs/workspace-page-objects)
-        libraries           (assoc workspace-libraries current-file-id (assoc workspace-file :data workspace-data))
-        single-comp         (ctf/get-component libraries (:component-file shape) (:component-id shape))
-        every-same-file?    (every? #(= (:component-file shape) (:component-file %)) shapes)
-        current-comp-id     (when (every? #(= (:component-id shape) (:component-id %)) shapes)
-                              (:component-id shape))
+
+        ^boolean
+        every-same-file?    (every? (partial same-component-file? shape) shapes)
+
+        component-id        (if (every? (partial same-component? shape) shapes)
+                              (:component-id shape)
+                              nil)
 
         file-id             (if every-same-file?
                               (:component-file shape)
                               current-file-id)
 
-        orig-components     (map #(ctf/get-component libraries (:component-file %) (:component-id %)) shapes)
-
-        paths                (->> orig-components
-                                  (map :path)
-                                  (map cfh/split-path))
-
-        find-common-path    (fn common-path [path n]
-                              (let [current (nth (first paths) n nil)]
-                                (if (or (nil? current)
-                                        (not (every? #(= current (nth % n nil)) paths)))
-                                  path
-                                  (common-path (conj path current) (inc n)))))
+        components          (map #(ctf/get-component libraries (:component-file %) (:component-id %)) shapes)
 
         path                (if single?
-                              (:path single-comp)
+                              (:path (first components))
                               (cfh/join-path (if (not every-same-file?)
                                                ""
-                                               (find-common-path [] 0))))
+                                               (find-common-path components))))
 
         filters*            (mf/use-state
                              {:term ""
@@ -263,13 +344,14 @@
 
         is-search?          (not (str/blank? (:term filters)))
 
-        current-library-id    (if (contains? libraries (:file-id filters))
-                                (:file-id filters)
-                                current-file-id)
+
+        current-library-id  (if (contains? libraries (:file-id filters))
+                              (:file-id filters)
+                              current-file-id)
 
         current-library-name  (if (= current-library-id current-file-id)
                                 (str/upper (tr "workspace.assets.local-library"))
-                                (get-in libraries [current-library-id :name]))
+                                (dm/get-in libraries [current-library-id :name]))
 
         components          (->> (get-in libraries [current-library-id :data :components])
                                  vals
@@ -292,7 +374,7 @@
 
         groups              (when-not is-search?
                               (->> (sort (sequence xform components))
-                                   (map #(assoc {} :name %))))
+                                   (map (fn [name] {:name name}))))
 
         components          (if is-search?
                               (filter #(str/includes? (str/lower (:full-name %)) (str/lower (:term filters))) components)
@@ -303,22 +385,16 @@
                               (->> (concat groups components)
                                    (sort-by :name)))
 
-        ;; Get the ids of the components and its root-shapes that are parents of the current shape, to avoid loops
-        get-comps-ids       (fn get-comps-ids [shape ids]
-                              (if (uuid/zero? (:id shape))
-                                ids
-                                (let [ids (if (ctk/instance-head? shape)
-                                            (conj ids (:id shape) (:component-id shape))
-                                            ids)]
-                                  (get-comps-ids (get objects (:parent-id shape)) ids))))
+        parent-components   (mf/with-memo [shapes objects]
+                              (into #{}
+                                    (comp
+                                     (map :parent-id)
+                                     (map (d/getf objects))
+                                     (mapcat #(get-parent-component-ids objects % [])))
+                                    shapes))
 
-        parent-components   (->> shapes
-                                 (map :parent-id)
-                                 (map #(get objects %))
-                                 (mapcat #(get-comps-ids % []))
-                                 set)
-
-        libraries-options  (map (fn [library] {:value (:id library) :label (:name library)}) (vals libraries))
+        libraries-options  (map (fn [library] {:value (:id library) :label (:name library)})
+                                (vals libraries))
 
         on-library-change
         (mf/use-fn
@@ -409,27 +485,29 @@
                                    :component-list (not (:listing-thumbs? filters)))}
         (for [item items]
           (if (:id item)
-            (let [data       (get-in libraries [current-library-id :data])
+            (let [data       (dm/get-in libraries [current-library-id :data])
                   container  (ctf/get-component-page data item)
                   root-shape (ctf/get-component-root data item)
                   loop?      (or (contains? parent-components (:main-instance-id item))
                                  (contains? parent-components (:id item)))]
-              [:& component-swap-item {:key (:id item)
+              [:& component-swap-item {:key (dm/str (:id item))
                                        :item item
                                        :loop loop?
                                        :shapes shapes
                                        :file-id current-library-id
                                        :root-shape root-shape
                                        :container container
-                                       :component-id current-comp-id
+                                       :component-id component-id
                                        :is-search is-search?
                                        :listing-thumbs (:listing-thumbs? filters)}])
+
             [:& component-group-item {:item item
-                                      :key (:id item)
+                                      :key (:name item)
                                       :on-enter-group on-enter-group}]))]]]]))
 
 (mf/defc component-ctx-menu
-  [{:keys [menu-entries on-close show main-instance] :as props}]
+  {::mf/props :obj}
+  [{:keys [menu-entries on-close show main-instance]}]
   (let [do-action
         (fn [action event]
           (dom/stop-propagation event)
@@ -438,15 +516,16 @@
     [:& dropdown {:show show :on-close on-close}
      [:ul {:class (stl/css-case :custom-select-dropdown true
                                 :not-main (not main-instance))}
-      (for [entry menu-entries :when (not (nil? entry))]
-        [:li {:key (uuid/next)
-              :class (stl/css :dropdown-element)
-              :on-click (partial do-action (:action entry))}
-         [:span {:class (stl/css :dropdown-label)}
-          (tr (:msg  entry))]])]]))
+      (for [{:keys [msg] :as entry} menu-entries]
+        (when (some? msg)
+          [:li {:key msg
+                :class (stl/css :dropdown-element)
+                :on-click (partial do-action (:action entry))}
+           [:span {:class (stl/css :dropdown-label)} (tr msg)]]))]]))
 
 (mf/defc component-menu
-  [{:keys [shapes swap-opened?] :as props}]
+  {::mf/props :obj}
+  [{:keys [shapes swap-opened?]}]
   (let [current-file-id     (mf/use-ctx ctx/current-file-id)
         components-v2       (mf/use-ctx ctx/components-v2)
         workspace-data      (deref refs/workspace-data)
@@ -467,7 +546,11 @@
         shape               (first shapes)
         id                  (:id shape)
         shape-name          (:name shape)
-        component           (ctf/resolve-component shape {:id current-file-id :data workspace-data} workspace-libraries {:include-deleted? true})
+        component           (ctf/resolve-component shape
+                                                   {:id current-file-id
+                                                    :data workspace-data}
+                                                   workspace-libraries
+                                                   {:include-deleted? true})
         main-instance?      (if components-v2 (ctk/main-instance? shape) true)
 
         toggle-content

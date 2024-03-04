@@ -35,7 +35,7 @@
   @extend .input-element-label;
   label {
     @include flexColumn;
-    @include bodyMedTipography;
+    @include bodySmallTypography;
     align-items: flex-start;
     width: 100%;
     border: none;
@@ -43,7 +43,7 @@
     height: 100%;
 
     input {
-      @include bodyMedTipography;
+      @include bodySmallTypography;
       margin-top: $s-8;
     }
   }

@@ -1065,7 +1065,7 @@ msgstr "E-Mail"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-go-to"
-msgstr "Zu Twitter wechseln"
+msgstr "Zu X wechseln"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-subtitle1"
@@ -1073,7 +1073,7 @@ msgstr "Hier helfen wir Ihnen bei technischen Fragen."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-title"
-msgstr "Twitter Support-Konto"
+msgstr "X Support-Konto"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
@@ -2797,9 +2797,6 @@ msgstr "Seitenverhältnis sperren/entsperren"
 
 msgid "shortcuts.toggle-rules"
 msgstr "Lineale ein-/ausblenden"
-
-msgid "shortcuts.toggle-scale-text"
-msgstr "Textskalierung aktivieren/deaktivieren"
 
 msgid "shortcuts.toggle-snap-grid"
 msgstr "Am Raster ausrichten"

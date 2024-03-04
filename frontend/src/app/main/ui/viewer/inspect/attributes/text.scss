@@ -36,7 +36,7 @@
   border: $s-1 solid var(--menu-border-color-disabled);
   margin-top: $s-4;
   .content {
-    @include bodyMedTipography;
+    @include bodySmallTypography;
     width: 100%;
     padding: $s-4 0;
     color: var(--color-foreground-secondary);

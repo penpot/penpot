@@ -19,6 +19,7 @@
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
+   [app.main.data.events :as ev]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.colors :as cl]
    [app.main.data.workspace.grid-layout.editor :as dwge]
@@ -123,7 +124,10 @@
 
 (defn create-layout-from-id
   [id type from-frame?]
-  (assert (uuid? id) (str id))
+  (dm/assert!
+   "expected uuid for `id`"
+   (uuid? id))
+
   (ptk/reify ::create-layout-from-id
     ptk/WatchEvent
     (watch [_ state _]
@@ -192,7 +196,7 @@
 
 (defn remove-layout
   [ids]
-  (ptk/reify ::remove-layout
+  (ptk/reify ::remove-shape-layout
     ptk/WatchEvent
     (watch [_ _ _]
       (let [undo-id (js/Symbol)]
@@ -204,7 +208,11 @@
 
 (defn create-layout
   [type]
-  (ptk/reify ::create-layout
+  (ptk/reify ::create-shape-layout
+    ev/Event
+    (-data [_]
+      {:layout (name type)})
+
     ptk/WatchEvent
     (watch [_ state _]
       (let [page-id          (:current-page-id state)
@@ -224,19 +232,21 @@
 
 (defn toggle-layout
   [type]
-  (ptk/reify ::toggle-layout-flex
+  (ptk/reify ::toggle-shape-layout
     ptk/WatchEvent
-    (watch [_ state _]
+    (watch [it state _]
       (let [objects          (wsh/lookup-page-objects state)
             selected         (wsh/lookup-selected state)
             selected-shapes  (map (d/getf objects) selected)
             single?          (= (count selected-shapes) 1)
-            has-layout? (and single? (ctl/any-layout? objects (:id (first selected-shapes))))]
+            has-layout?      (and single?
+                                  (ctl/any-layout? objects (:id (first selected-shapes))))]
 
         (when (not= 0 (count selected))
-          (if has-layout?
-            (rx/of (remove-layout selected))
-            (rx/of (create-layout type))))))))
+          (let [event (if has-layout?
+                        (remove-layout selected)
+                        (create-layout type))]
+            (rx/of (with-meta event (meta it)))))))))
 
 (defn update-layout
   [ids changes]

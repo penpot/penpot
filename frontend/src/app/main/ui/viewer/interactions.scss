@@ -7,7 +7,7 @@
 @use "common/refactor/common-refactor.scss" as *;
 
 .view-options {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   display: flex;
   align-items: center;
   position: relative;
@@ -19,7 +19,7 @@
   cursor: pointer;
 }
 .dropdown-title {
-  @include bodyMedTipography;
+  @include bodySmallTypography;
   flex-grow: 1;
   color: var(--input-foreground-color-active);
 }
@@ -35,10 +35,13 @@
   top: calc($s-2 + $s-48);
   width: $s-272;
   padding: $s-6;
+  max-height: calc(100vh - 3 * ($s-2 + $s-48));
+  overflow: scroll;
 }
 
 .dropdown-element {
   @extend .dropdown-element-base;
+  min-height: $s-32;
   .icon {
     @include flexCenter;
     height: 100%;

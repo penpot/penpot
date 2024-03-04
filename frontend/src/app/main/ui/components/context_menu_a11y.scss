@@ -46,7 +46,7 @@
     .context-menu-item {
       display: flex;
       .context-menu-action {
-        @include bodyMedTipography;
+        @include bodySmallTypography;
         display: flex;
         align-items: center;
         justify-content: flex-start;

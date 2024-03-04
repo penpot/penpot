@@ -2210,14 +2210,12 @@
   (ptk/reify ::update-component-annotation
     ptk/WatchEvent
     (watch [it state _]
-
       (let [data (get state :workspace-data)
-
             update-fn
             (fn [component]
-                ;; NOTE: we need to ensure the component exists,
-                ;; because there are small possibilities of race
-                ;; conditions with component deletion.
+              ;; NOTE: we need to ensure the component exists,
+              ;; because there are small possibilities of race
+              ;; conditions with component deletion.
               (when component
                 (if (nil? annotation)
                   (dissoc component :annotation)
@@ -2227,14 +2225,17 @@
                         (pcb/with-library-data data)
                         (pcb/update-component id update-fn))]
 
-        (rx/of (dch/commit-changes changes))))))
+        (rx/concat
+         (rx/of (dch/commit-changes changes))
+         (when (nil? annotation)
+           (rx/of (ptk/data-event ::ev/event {::ev/name "delete-component-annotation"}))))))))
 
 (defn set-annotations-expanded
-  [expanded?]
+  [expanded]
   (ptk/reify ::set-annotations-expanded
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-annotations :expanded?] expanded?))))
+      (assoc-in state [:workspace-annotations :expanded] expanded))))
 
 (defn set-annotations-id-for-create
   [id]
@@ -2243,8 +2244,13 @@
     (update [_ state]
       (if id
         (-> (assoc-in state [:workspace-annotations :id-for-create] id)
-            (assoc-in [:workspace-annotations :expanded?] true))
-        (d/dissoc-in state [:workspace-annotations :id-for-create])))))
+            (assoc-in [:workspace-annotations :expanded] true))
+        (d/dissoc-in state [:workspace-annotations :id-for-create])))
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (when (some? id)
+        (rx/of (ptk/data-event ::ev/event {::ev/name "create-component-annotation"}))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Preview blend modes

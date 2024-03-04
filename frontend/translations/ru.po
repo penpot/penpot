@@ -865,7 +865,7 @@ msgstr "Эл. почта"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-go-to"
-msgstr "Перейти в Twitter"
+msgstr "Перейти в X"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-subtitle1"
@@ -873,7 +873,7 @@ msgstr "Здесь, чтобы помочь с вашими технически
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-title"
-msgstr "Аккаунт поддержки в Twitter"
+msgstr "Аккаунт поддержки в X"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"

@@ -48,9 +48,11 @@
   (dom/stop-propagation event))
 
 (mf/defc menu-entry
-  [{:keys [title shortcut on-click on-pointer-enter on-pointer-leave on-unmount children selected? icon disabled] :as props}]
+  {::mf/props :obj}
+  [{:keys [title shortcut on-click on-pointer-enter on-pointer-leave
+           on-unmount children selected? icon disabled value]}]
   (let [submenu-ref (mf/use-ref nil)
-        hovering? (mf/use-ref false)
+        hovering?   (mf/use-ref false)
         on-pointer-enter
         (mf/use-callback
          (fn []
@@ -86,6 +88,7 @@
     (if icon
       [:li {:class (stl/css :icon-menu-item)
             :disabled disabled
+            :data-value value
             :ref set-dom-node
             :on-click on-click
             :on-pointer-enter on-pointer-enter
@@ -100,6 +103,7 @@
       [:li {:class (stl/css :context-menu-item)
             :disabled disabled
             :ref set-dom-node
+            :data-value value
             :on-click on-click
             :on-pointer-enter on-pointer-enter
             :on-pointer-leave on-pointer-leave}
@@ -383,39 +387,56 @@
 
           [:& menu-entry {:title (tr "workspace.shape.menu.flow-start")
                           :on-click do-add-flow}])))))
-(mf/defc context-menu-flex
+
+(mf/defc context-menu-layout
+  {::mf/props :obj}
   [{:keys [shapes]}]
-  (let [single?            (= (count shapes) 1)
-        has-frame?         (->> shapes (d/seek cfh/frame-shape?))
-        is-flex-container? (and single? has-frame? (= :flex (:layout (first shapes))))
-        ids                (->> shapes (map :id))
+  (let [single? (= (count shapes) 1)
 
-        add-layout
-        (fn [type]
-          (if (and single? has-frame?)
-            (st/emit! (dwsl/create-layout-from-id (first ids) type true))
-            (st/emit! (dwsl/create-layout-from-selection type))))
+        has-flex?
+        (and single? (every? ctl/flex-layout? shapes))
 
-        remove-flex
-        (fn []
-          (st/emit! (dwsl/remove-layout ids)))]
+        has-grid?
+        (and single? (every? ctl/grid-layout? shapes))
 
-    [:*
-     (when (not is-flex-container?)
-       [:div
-        [:& menu-separator]
-        [:& menu-entry {:title (tr "workspace.shape.menu.add-flex")
-                        :shortcut (sc/get-tooltip :toggle-layout-flex)
-                        :on-click #(add-layout :flex)}]
-        [:& menu-entry {:title (tr "workspace.shape.menu.add-grid")
-                        :shortcut (sc/get-tooltip :toggle-layout-grid)
-                        :on-click #(add-layout :grid)}]])
-     (when  is-flex-container?
-       [:div
-        [:& menu-separator]
-        [:& menu-entry {:title (tr "workspace.shape.menu.remove-flex")
-                        :shortcut (sc/get-tooltip :toggle-layout-flex)
-                        :on-click remove-flex}]])]))
+        on-add-layout
+        (mf/use-fn
+         (fn [event]
+           (let [type (-> (dom/get-current-target event)
+                          (dom/get-data "value")
+                          (keyword))]
+             (st/emit! (with-meta (dwsl/create-layout type)
+                         {::ev/origin "workspace:context-menu"})))))
+
+        on-remove-layout
+        (mf/use-fn
+         (mf/deps shapes)
+         (fn [_event]
+           (let [ids (map :id shapes)]
+             (st/emit! (dwsl/remove-layout ids)))))]
+
+    (if (or ^boolean has-flex?
+            ^boolean has-grid?)
+      [:div
+       [:& menu-separator]
+       (if has-flex?
+         [:& menu-entry {:title (tr "workspace.shape.menu.remove-flex")
+                         :shortcut (sc/get-tooltip :toggle-layout-flex)
+                         :on-click on-remove-layout}]
+         [:& menu-entry {:title (tr "workspace.shape.menu.remove-grid")
+                         :shortcut (sc/get-tooltip :toggle-layout-grid)
+                         :on-click on-remove-layout}])]
+
+      [:div
+       [:& menu-separator]
+       [:& menu-entry {:title (tr "workspace.shape.menu.add-flex")
+                       :shortcut (sc/get-tooltip :toggle-layout-flex)
+                       :value "flex"
+                       :on-click on-add-layout}]
+       [:& menu-entry {:title (tr "workspace.shape.menu.add-grid")
+                       :shortcut (sc/get-tooltip :toggle-layout-grid)
+                       :value "grid"
+                       :on-click on-add-layout}]])))
 
 (mf/defc context-menu-component
   [{:keys [shapes]}]
@@ -476,7 +497,7 @@
        [:> context-menu-path props]
        [:> context-menu-layer-options props]
        [:> context-menu-prototype props]
-       [:> context-menu-flex props]
+       [:> context-menu-layout props]
        [:> context-menu-component props]
        [:> context-menu-delete props]])))
 
