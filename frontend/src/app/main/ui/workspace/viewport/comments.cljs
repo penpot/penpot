@@ -27,8 +27,13 @@
 (mf/defc comments-layer
   {::mf/props :obj}
   [{:keys [vbox vport zoom file-id page-id drawing] :as props}]
-  (let [pos-x    (* (- (:x vbox)) zoom)
-        pos-y    (* (- (:y vbox)) zoom)
+  (let [vbox-x   (dm/get-prop vbox :x)
+        vbox-y   (dm/get-prop vbox :y)
+        vport-w  (dm/get-prop vport :width)
+        vport-h  (dm/get-prop vport :height)
+
+        pos-x    (* (- vbox-x) zoom)
+        pos-y    (* (- vbox-y) zoom)
 
         profile  (mf/deref refs/profile)
         users    (mf/deref refs/current-file-comments-users)
@@ -64,8 +69,8 @@
     [:div {:class (stl/css :comments-section)}
      [:div
       {:class (stl/css :workspace-comments-container)
-       :style {:width (dm/str (:width vport) "px")
-               :height (dm/str (:height vport) "px")}}
+       :style {:width (dm/str vport-w "px")
+               :height (dm/str vport-h "px")}}
       [:div {:class (stl/css :threads)
              :style {:transform (dm/fmt "translate(%px, %px)" pos-x pos-y)}}
        (for [item threads]
