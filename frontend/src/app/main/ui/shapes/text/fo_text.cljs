@@ -8,6 +8,7 @@
   (:require
    [app.common.colors :as cc]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.text.styles :as sts]
@@ -169,16 +170,16 @@
     [colors color-mapping color-mapping-inverse]))
 
 (mf/defc text-shape
-  {::mf/wrap-props false
+  {::mf/props :obj
    ::mf/forward-ref true}
-  [props ref]
-  (let [shape (obj/get props "shape")
-        transform (gsh/transform-str shape)
-
-        {:keys [id x y width height content]} shape
-        grow-type (obj/get props "grow-type") ;; This is only needed in workspace
-        ;; We add 8px to add a padding for the exporter
-        ;; width (+ width 8)
+  [{:keys [shape grow-type]} ref]
+  (let [transform (gsh/transform-str shape)
+        id        (dm/get-prop shape :id)
+        x         (dm/get-prop shape :x)
+        y         (dm/get-prop shape :y)
+        width     (dm/get-prop shape :width)
+        height    (dm/get-prop shape :height)
+        content   (get shape :content)
 
         [colors _color-mapping color-mapping-inverse] (retrieve-colors shape)]
 
@@ -186,7 +187,7 @@
      {:x x
       :y y
       :id id
-      :data-colors (->> colors (str/join ","))
+      :data-colors (str/join "," colors)
       :data-mapping (-> color-mapping-inverse clj->js js/JSON.stringify)
       :transform transform
       :width  (if (#{:auto-width} grow-type) 100000 width)
