@@ -3570,6 +3570,9 @@ msgstr "Editando rejilla"
 msgid "workspace.layout_grid.editor.top-bar.locate"
 msgstr "Mostrar"
 
+msgid "workspace.layout_grid.editor.top-bar.locate.tooltip"
+msgstr "Mostrar grid layout"
+
 msgid "workspace.layout_grid.editor.top-bar.done"
 msgstr "Hecho"
 

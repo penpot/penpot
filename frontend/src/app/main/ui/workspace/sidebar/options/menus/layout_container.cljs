@@ -1313,7 +1313,8 @@
                             :on-change on-row-justify-change}]
 
       [:button {:on-click handle-locate-grid
-                :class (stl/css :locate-button)}
+                :class (stl/css :locate-button)
+                :title (tr "workspace.layout_grid.editor.top-bar.locate.tooltip")}
        i/locate-refactor]]
 
      [:div {:class (stl/css :row)}
