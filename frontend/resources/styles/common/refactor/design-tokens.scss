@@ -155,6 +155,7 @@
   --icon-foreground-hover: var(--color-foreground-primary);
   --icon-foreground-accept: var(--status-color-success-500);
   --icon-foreground-discard: var(--status-color-error-500);
+  --icon-foreground-active: var(--color-accent-primary);
 
   // INPUTS, SELECTS, DROPDOWNS
 
@@ -201,6 +202,7 @@
 
   --menu-background-color: var(--color-background-tertiary);
   --menu-foreground-color: var(--color-foreground-primary);
+  --menu-icon-foreground-color: var(--color-foreground-secondary);
   --menu-background-color-selected: var(--color-background-tertiary);
   --menu-background-color-hover: var(--color-background-quaternary);
   --menu-foreground-color-hover: var(--color-foreground-primary);
@@ -358,6 +360,11 @@
   --search-bar-background-color: var(--color-background-primary);
   --search-bar-input-background-color: var(--color-background-tertiary);
   --search-bar-input-border-color: var(--color-background-tertiary);
+  --search-bar-input-border-color-focus: var(--color-accent-primary);
+  --search-bar-placeholder-foreground-color: var(--color-foreground-secondary);
+  --search-bar-foreground-color: var(--color-foreground-primary);
+  --search-bar-icon-foreground-color: var(--color-foreground-secondary);
+  --search-bar-icon-foreground-color-hover: var(--color-accent-primary);
 
   --pill-background-color: var(--color-background-tertiary);
   --pill-foreground-color: var(--color-foreground-primary);
@@ -368,6 +375,8 @@
 
   --resize-area-background-color: var(--color-background-primary);
   --resize-area-border-color: var(--color-background-quaternary);
+
+  --profile-section-background-color: var(--color-background-tertiary);
 
   --flow-tag-background-color: var(--color-background-tertiary);
   --flow-tag-foreground-color: var(--color-foreground-secondary);
@@ -393,6 +402,14 @@
   // NEW TEAM BUTTON
   // TODO: we should not put these functional tokens here, but rather in the components they belong to
   --new-team-button-background-color: var(--color-background-primary);
+
+  //DASHBOARD
+  --sidebar-element-foreground-color: var(--color-foreground-secondary);
+  --sidebar-element-background-color-hover: var(--color-background-secondary);
+  --sidebar-element-foreground-color-hover: var(--color-accent-primary);
+  --sidebar-element-background-color-selected: var(--color-background-quaternary);
+  --sidebar-element-foreground-color-selected: var(--color-accent-primary);
+  --profile-foreground-color: var(--color-foreground-primary);
 }
 
 #app {

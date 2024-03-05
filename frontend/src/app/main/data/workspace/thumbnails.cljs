@@ -58,15 +58,17 @@
 
 (defn request-thumbnail
   "Enqueues a request to generate a thumbnail for the given ids."
-  [file-id page-id shape-id tag]
-  (ptk/reify ::request-thumbnail
-    ptk/EffectEvent
-    (effect [_ _ _]
-      (l/dbg :hint "request thumbnail" :file-id file-id :page-id page-id :shape-id shape-id :tag tag)
-      (q/enqueue-unique
-       queue
-       (create-request file-id page-id shape-id tag)
-       (partial find-request file-id page-id shape-id tag)))))
+  ([file-id page-id shape-id tag]
+   (request-thumbnail file-id page-id shape-id tag "unknown"))
+  ([file-id page-id shape-id tag requester]
+   (ptk/reify ::request-thumbnail
+     ptk/EffectEvent
+     (effect [_ _ _]
+       (l/dbg :hint "request thumbnail" :requester requester :file-id file-id :page-id page-id :shape-id shape-id :tag tag)
+       (q/enqueue-unique
+        queue
+        (create-request file-id page-id shape-id tag)
+        (partial find-request file-id page-id shape-id tag))))))
 
 ;; This function first renders the HTML calling `render/render-frame` that
 ;; returns HTML as a string, then we send that data to the iframe rasterizer
@@ -291,6 +293,6 @@
               (->> all-changes-s
                    (rx/buffer-until notifier-s)
                    (rx/mapcat #(into #{} %))
-                   (rx/map #(request-thumbnail file-id page-id % "frame"))))
+                   (rx/map #(request-thumbnail file-id page-id % "frame" "watch-state-changes"))))
 
              (rx/take-until stopper-s))))))

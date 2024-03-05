@@ -44,10 +44,10 @@
 }
 
 .info {
-  --bg-color: var(--alert-background-color-info);
-  --fg-color: var(--alert-text-foreground-color-info);
-  --icon-color: var(--alert-icon-foreground-color-info);
-  --border-color: var(--alert-border-color-info);
+  --toast-notification-bg-color: var(--alert-background-color-info);
+  --toast-notification-fg-color: var(--alert-text-foreground-color-info);
+  --toast-notification-icon-color: var(--alert-icon-foreground-color-info);
+  --toast-notification-border-color: var(--alert-border-color-info);
 }
 
 .default {

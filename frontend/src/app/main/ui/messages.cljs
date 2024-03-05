@@ -33,6 +33,7 @@
                          :links (:links message)
                          :content (:content message)}
 
+        is-context-msg (and (nil? (:timeout message)) (nil? (:actions message)))
         is-toast-msg   (or (= :toast (:notification-type message)) (some? (:timeout message)))
         is-inline-msg  (or (= :inline (:notification-type message)) (and (some? (:position message)) (= :floating (:position message))))]
 
@@ -42,5 +43,7 @@
         [:& toast-notification toast-message]
         is-inline-msg
         [:& inline-notification inline-message]
+        is-context-msg
+        [:& context-notification context-message]
         :else
-        [:& context-notification context-message]))))
+        [:& toast-notification toast-message]))))

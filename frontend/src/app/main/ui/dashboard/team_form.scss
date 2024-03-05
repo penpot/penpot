@@ -31,6 +31,10 @@
   margin-bottom: $s-24;
 }
 
+.team-form {
+  min-width: $s-400;
+}
+
 .group-name-input {
   @extend .input-element-label;
   label {
@@ -44,7 +48,6 @@
 
     input {
       @include bodySmallTypography;
-      margin-top: $s-8;
     }
   }
 }

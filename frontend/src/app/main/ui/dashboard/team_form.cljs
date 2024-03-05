@@ -89,7 +89,9 @@
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-container)}
-      [:& fm/form {:form form :on-submit on-submit}
+      [:& fm/form {:form form
+                   :on-submit on-submit
+                   :class (stl/css :team-form)}
 
        [:div {:class (stl/css :modal-header)}
         (if team

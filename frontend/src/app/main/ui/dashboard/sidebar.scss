@@ -7,498 +7,375 @@
 @use "common/refactor/common-refactor.scss" as *;
 @use "common/refactor/common-dashboard";
 
+// SIDEBAR COMPONENT
 .dashboard-sidebar {
   grid-row: 1 / span 2;
   grid-column: 1 / span 2;
-
-  background-color: var(--panel-background-color);
-  border-right: $s-1 solid $db-quaternary;
-  margin: 0 $s-16 0 0;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  height: 100%;
+  width: 100%;
   padding: $s-16 0 0 0;
-
+  margin: 0 $s-16 0 0;
+  border-right: $s-1 solid var(--panel-border-color);
+  background-color: var(--panel-background-color);
   z-index: $z-index-1;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
 }
 
+//SIDEBAR CONTENT COMPONENT
 .sidebar-content {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto auto auto auto 1fr;
+  gap: $s-24;
   height: 100%;
-  overflow-y: auto;
   padding: 0;
-
-  hr {
-    border-color: transparent;
-    margin: $s-12 $s-16;
-  }
+  overflow-y: auto;
 }
 
+// SIDEBAR TEAM SWITCH
 .sidebar-team-switch {
   position: relative;
-  display: flex;
   margin: $s-4 $s-16;
-
-  .switch-content {
-    background-color: $db-tertiary;
-    border-radius: $br-8;
-    height: $s-48;
-    display: flex;
-    width: 100%;
-    border: $s-1 solid $db-tertiary;
-    align-items: center;
-
-    svg {
-      fill: #8f9da3;
-    }
-  }
-
-  .switch-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    svg {
-      fill: $df-secondary;
-      width: $s-12;
-      height: $s-12;
-    }
-  }
-
-  .current-team {
-    height: 100%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    flex-grow: 1;
-    font-size: $fs-14;
-    padding: 0 $s-12;
-    background-color: transparent;
-    border: none;
-  }
-
-  .team-name {
-    flex-grow: 1;
-    display: flex;
-    height: $s-40;
-    align-items: center;
-  }
-
-  .team-text {
-    color: $df-primary;
-    width: $s-144;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    overflow: hidden;
-    text-align: left;
-  }
-
-  .team-icon {
-    display: flex;
-    align-items: center;
-    padding-right: $s-12;
-
-    img {
-      border-radius: 50%;
-      flex-shrink: 0;
-      height: $s-24;
-      width: $s-24;
-    }
-
-    svg {
-      width: $s-24;
-      height: $s-24;
-    }
-  }
-
-  .switch-options {
-    @include buttonStyle;
-    @include flexCenter;
-    max-width: $s-24;
-    min-width: $s-28;
-    height: 100%;
-    border-left: $s-1 solid $db-primary;
-    background-color: transparent;
-
-    svg {
-      fill: $df-secondary;
-      width: $s-16;
-      height: $s-12;
-    }
-  }
-
-  .dropdown {
-    right: $s-2;
-    top: $s-52;
-    max-height: $s-480;
-    &:not(.teams-dropdown) {
-      min-width: $s-160;
-    }
-  }
 }
 
-.dropdown {
-  @include menuShadow;
-  position: absolute;
-  z-index: $z-index-4;
-  background-color: $db-tertiary;
-  border: $s-1 solid $db-quaternary;
+.switch-content {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  height: $s-48;
+  width: 100%;
   border-radius: $br-8;
+  border: $s-1 solid var(--menu-background-color);
+  background-color: var(--menu-background-color);
+}
 
-  .separator {
-    border-color: transparent;
-    margin-top: $s-12;
-  }
+.current-team {
+  @include buttonStyle;
+  display: grid;
+  align-items: center;
+  grid-template-columns: 1fr auto;
+  gap: $s-8;
+  height: 100%;
+  padding: 0 $s-12;
+}
 
-  li {
-    border-radius: $br-8;
-    height: $s-40;
-    margin: $s-6;
+.team-name {
+  display: grid;
+  align-items: center;
+  grid-template-columns: auto 1fr;
+  gap: $s-12;
+  height: $s-40;
+}
 
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    font-size: $fs-14;
-    padding: $s-6 $s-16;
+.team-text {
+  @include textEllipsis;
+  @include smallTitleTipography;
+  width: $s-144;
+  text-align: left;
+  color: var(--menu-foreground-color-hover);
+}
 
-    .warning {
-      color: var(--element-foreground-warning);
-    }
-
-    &:hover {
-      background-color: $db-quaternary;
-    }
-    svg {
-      height: $s-12;
-      width: $s-12;
-    }
-  }
-
-  hr {
-    border-color: transparent;
-    margin: 0;
-  }
-
-  &.options-dropdown {
-    li {
-      color: $df-primary;
-      &.warning {
-        color: var(--element-foreground-warning);
-      }
-    }
+// This icon still use the old svg
+.penpot-icon {
+  @include flexCenter;
+  svg {
+    fill: var(--icon-foreground);
+    width: $s-24;
+    height: $s-24;
   }
 }
+
+.team-picture {
+  @include flexCenter;
+  border-radius: 50%;
+  height: $s-24;
+  width: $s-24;
+}
+
+.arrow-icon {
+  @extend .button-icon;
+  transform: rotate(90deg);
+  stroke: var(--icon-foreground);
+}
+
+.switch-options {
+  @include buttonStyle;
+  @include flexCenter;
+  max-width: $s-24;
+  min-width: $s-28;
+  height: 100%;
+  border-left: $s-1 solid var(--panel-background-color);
+  background-color: transparent;
+}
+
+.menu-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
+}
+
+// DROPDOWNS
 
 .teams-dropdown {
-  background-color: $db-tertiary;
-  border-radius: $br-8;
-  border: $s-1 solid $db-quaternary;
-  min-width: $s-248;
-
+  @extend .menu-dropdown;
   left: 0;
   top: $s-52;
-
+  height: fit-content;
   max-height: $s-480;
+  min-width: $s-248;
+  width: 100%;
   overflow-x: hidden;
   overflow-y: auto;
+}
 
-  li {
-    border-radius: $br-8;
-    height: $s-40;
-    padding: 0 $s-6;
-    margin: $s-6;
+.team-dropdown-item {
+  @extend .menu-item-base;
+  display: grid;
+  grid-template-columns: $s-24 1fr auto;
+  gap: $s-8;
+  height: $s-40;
+}
 
-    svg {
-      fill: $df-secondary;
+.action {
+  --sidebar-action-icon-color: var(--icon-foreground);
+  --sidebar-icon-backgroun-color: var(--color-background-secondary);
+  &:hover {
+    --sidebar-action-icon-color: var(--color-background-secondary);
+    --sidebar-icon-backgroun-color: var(--color-accent-primary);
+  }
+}
+
+.icon-wrapper {
+  @include flexCenter;
+  width: $s-24;
+  height: $s-24;
+  margin-right: $s-12;
+  border-radius: 50%;
+  background-color: var(--sidebar-icon-backgroun-color);
+}
+
+.add-icon {
+  @extend .button-icon;
+  width: $s-24;
+  height: $s-24;
+  stroke: var(--sidebar-action-icon-color);
+}
+
+.team-separator {
+  border-top: $s-1 solid var(--dropdown-separator-color);
+  margin: 0;
+}
+
+.tick-icon {
+  @extend .button-icon-small;
+  stroke: var(--icon-foreground);
+}
+
+.options-dropdown {
+  @extend .menu-dropdown;
+  right: $s-2;
+  top: $s-52;
+  max-height: $s-480;
+  &:not(.teams-dropdown) {
+    min-width: $s-160;
+  }
+}
+
+.team-options-item {
+  @extend .menu-item-base;
+  height: $s-40;
+}
+
+.team-option-separator {
+  height: $s-1;
+  margin: 0;
+  border-top: $s-1 solid var(--dropdown-separator-color);
+}
+
+// Sections
+.sidebar-nav {
+  margin: 0;
+  user-select: none;
+  overflow: none;
+}
+
+.pinned-projects {
+  overflow-y: auto;
+}
+
+.sidebar-nav-item {
+  cursor: pointer;
+  &:hover {
+    background-color: var(--sidebar-element-background-color-hover);
+    span {
+      color: var(--sidebar-element-foreground-color-hover);
     }
+  }
 
-    &:hover {
-      background-color: $db-quaternary;
-      .team-icon {
-        &.new-team {
-          background-color: $da-primary;
-          color: $db-primary;
-          svg {
-            fill: $db-secondary;
-          }
-        }
-      }
-    }
-    .team-icon {
-      display: flex;
-      align-items: center;
-    }
-    .team-text {
-      color: $df-primary;
-      width: $s-168;
-    }
-
-    &.action {
-      .team-icon {
-        background-color: #2e3434;
-        background-color: var(--new-team-button-background-color);
-        border-radius: 50%;
-        height: $s-24;
-        margin-right: $s-12;
-        padding: $s-6;
-        width: $s-24;
-
-        svg {
-          height: $s-12;
-          width: $s-12;
-        }
-      }
+  &.current {
+    background-color: var(--sidebar-element-background-color-selected);
+    .element-title {
+      color: var(--sidebar-element-foreground-color-selected);
     }
   }
 }
+
+.recent-projects svg {
+  stroke: var(--main-icon-foreground);
+}
+
+.sidebar-link {
+  display: block;
+  padding: $s-8 $s-8 $s-8 $s-24;
+  font-weight: $fw400;
+  width: 100%;
+  &:hover {
+    text-decoration: none;
+  }
+}
+
+.project-element {
+  padding: $s-8 $s-8 $s-8 $s-24;
+}
+
+.element-title {
+  @include textEllipsis;
+  color: var(--sidebar-element-foreground-color);
+  font-size: $fs-14;
+}
+
+// Pinned projects
 
 .sidebar-empty-placeholder {
   padding: $s-12;
-  color: $df-secondary;
+  color: var(--empty-message-foreground-color);
   display: flex;
   align-items: center;
-
-  .icon {
-    padding: 0 $s-12;
-    svg {
-      fill: none;
-      stroke: currentColor;
-      width: $s-12;
-      height: $s-12;
-    }
-  }
-  .text {
-    font-size: $fs-12;
-  }
 }
+
+.pin-icon {
+  @extend .button-icon-small;
+  stroke: var(--icon-foreground);
+  margin: 0 $s-12;
+}
+
+.empty-text {
+  font-size: $fs-12;
+}
+
+// Search
 
 .sidebar-search {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr;
   align-items: center;
   border: $s-1 solid transparent;
-  display: flex;
-  margin: $s-6 $s-16;
-
-  background-color: $db-tertiary;
+  margin: 0 $s-16;
   border-radius: $br-8;
-  margin-bottom: $s-32;
-  margin-top: 0;
-  position: relative;
+  background-color: var(--search-bar-input-background-color);
+}
 
-  .input-text {
-    background: transparent;
-    border: 0;
-    font-size: $fs-14;
-    margin: 0;
-    width: 100%;
-    height: $s-40;
+.input-text {
+  @include smallTitleTipography;
+  height: $s-40;
+  width: 100%;
+  padding: $s-6 $s-12;
+  margin: 0;
+  border: transparent;
+  border-radius: $br-8;
+  background: transparent;
+  color: var(--search-bar-foreground-color);
 
-    border-radius: $br-8;
-    color: $df-primary;
-    max-width: 100%;
-    padding: $s-6 $s-12;
-
-    &:focus,
-    &:focus-within {
-      border: $s-1 solid $da-primary;
-    }
+  &:focus,
+  &:focus-within,
+  &:focus-visible {
+    outline: none;
+    border: $s-1 solid var(--search-bar-input-border-color-focus);
   }
   ::placeholder {
-    color: $df-secondary;
-  }
-
-  .search,
-  .clear-search {
-    align-items: center;
-    cursor: pointer;
-    display: flex;
-    height: $s-24;
-    margin-left: auto;
-    padding: 0 $s-8;
-    width: $s-32;
-
-    position: absolute;
-    top: calc(50% - $s-12);
-    right: $s-2;
-
-    svg {
-      fill: $df-secondary;
-      height: $s-16;
-      width: $s-16;
-    }
-  }
-
-  .clear-search svg {
-    transform: rotate(45deg);
-
-    &:hover {
-      fill: $da-primary;
-    }
+    color: var(--search-bar-placeholder-foreground-color);
   }
 }
 
-.sidebar-nav {
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  margin: 0;
-  user-select: none;
-
-  &.no-overflow {
-    overflow: unset;
-  }
-
-  & > li {
-    align-items: center;
-    cursor: pointer;
-    display: flex;
-    flex-shrink: 0;
-
-    &.project-element {
-      padding: $s-8 $s-8 $s-8 $s-24;
-    }
-
-    a {
-      padding: $s-8 $s-8 $s-8 $s-24;
-      font-weight: $fw400;
-      width: 100%;
-      &:hover {
-        text-decoration: none;
-      }
-    }
-
-    svg {
-      fill: $db-secondary;
-      margin-right: $s-8;
-      height: $s-12;
-      width: $s-12;
-    }
-
-    .element-title {
-      color: $df-secondary;
-      font-size: $fs-14;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    &.recent-projects {
-      svg {
-        fill: $df-primary;
-      }
-    }
-
-    input.element-title {
-      border: 0;
-      height: $s-32;
-      padding: $s-6;
-      margin: 0;
-      width: 100%;
-      background-color: $df-primary;
-    }
-
-    .close {
-      background-color: $df-primary;
-      cursor: pointer;
-      padding-left: $s-6;
-
-      svg {
-        fill: $df-secondary;
-        height: $s-16;
-        transform: rotate(45deg) translateY(7px);
-        width: $s-16;
-        margin: 0;
-      }
-    }
-
-    .element-subtitle {
-      color: $df-secondary;
-      font-style: italic;
-    }
-
-    &:hover {
-      background-color: $db-secondary;
-      span {
-        color: $da-primary;
-      }
-    }
-
-    &.current {
-      background-color: $db-quaternary;
-      .element-title {
-        color: $da-primary;
-      }
-    }
-  }
+.search-btn {
+  @include buttonStyle;
+  @include flexCenter;
+  position: absolute;
+  right: 0;
+  height: $s-24;
+  width: $s-32;
+  padding: 0 $s-8;
 }
 
+.search-icon,
+.clear-search-btn {
+  @extend .button-icon;
+  --sidebar-search-foreground-color: var(--search-bar-icon-foreground-color);
+  stroke: var(--sidebar-search-foreground-color);
+}
+
+.clear-search-btn:hover {
+  --sidebar-search-foreground-color: var(--search-bar-icon-foreground-color-hover);
+}
+
+// Profile
 .profile-section {
-  align-items: center;
-  cursor: pointer;
-  display: flex;
-  padding: $s-12 $s-16;
   position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  padding: $s-12 $s-16;
+  border-top: $s-1 solid var(--panel-border-color);
+  background-color: var(--profile-section-background-color);
+  cursor: pointer;
+}
 
-  background-color: $db-tertiary;
-  border-top: $s-1 solid $db-quaternary;
+.profile {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: $s-8;
+  cursor: pointer;
+}
 
-  .profile {
-    align-items: center;
-    cursor: pointer;
-    display: flex;
-    flex-grow: 1;
+.profile-fullname {
+  @include smallTitleTipography;
+  @include text-ellipsis;
+  align-self: center;
+  max-width: $s-160;
+  color: var(--profile-foreground-color);
+}
 
-    span {
-      @include text-ellipsis;
-      color: $df-primary;
-      margin: $s-12;
-      font-size: $fs-14;
-      max-width: $s-160;
-    }
+.profile-img {
+  height: $s-40;
+  width: $s-40;
+  border-radius: $br-circle;
+}
 
-    img {
-      border-radius: 50%;
-      flex-shrink: 0;
-      height: $s-40;
-      width: $s-40;
-    }
-    svg {
-      height: $s-12;
-      margin-left: auto;
-      margin-right: $s-8;
-      width: $s-12;
-    }
-  }
+.profile-dropdown {
+  @extend .menu-dropdown;
+  left: $s-16;
+  bottom: $s-72;
+  min-width: $s-252;
+  // TODO ADD animation fadeInUp
+}
 
-  .dropdown {
-    left: $s-16;
-    bottom: $s-44;
-    background-color: var(--profile-drowpdown-background-color);
-    border: $s-1 solid $db-tertiary;
-    border-radius: $br-8;
-    min-width: $s-252;
+.profile-dropdown-item {
+  @extend .menu-item-base;
+  @include smallTitleTipography;
+  height: $s-40;
+  padding: $s-8 $s-16;
+}
 
-    @include animation(0, 0.2s, fadeInUp);
+.profile-separator {
+  height: $s-6;
+}
 
-    li {
-      font-size: $fs-14;
-      padding: $s-8 $s-16;
+.item-with-icon {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: $s-8;
+}
 
-      svg {
-        fill: $df-secondary;
-        margin-right: $s-8;
-
-        height: $s-12;
-        width: $s-12;
-      }
-
-      .text {
-        color: $df-primary;
-      }
-
-      &.separator {
-        border-top: $s-1 solid transparent;
-      }
-    }
-  }
+.exit-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
 }

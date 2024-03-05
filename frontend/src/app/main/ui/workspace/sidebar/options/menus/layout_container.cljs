@@ -918,8 +918,11 @@
         on-gap-change
         (fn [multiple? type val]
           (let [val (mth/finite val 0)]
-            (if ^boolean multiple?
+            (cond
+              ^boolean multiple?
               (st/emit! (dwsl/update-layout ids {:layout-gap {:row-gap val :column-gap val}}))
+
+              (some? type)
               (st/emit! (dwsl/update-layout ids {:layout-gap {type val}})))))
 
         ;; Padding
@@ -941,7 +944,7 @@
                (and (= type :simple) (= prop :p2))
                (st/emit! (dwsl/update-layout ids {:layout-padding {:p2 val :p4 val}}))
 
-               :else
+               (some? prop)
                (st/emit! (dwsl/update-layout ids {:layout-padding {prop val}}))))))
 
         ;; Grid-direction
@@ -1126,16 +1129,16 @@
                                  :on-change on-column-justify-change}]
            [:& justify-grid-row {:is-column false
                                  :value grid-justify-content-row
-                                 :on-change on-row-justify-change}]]]
-         [:div {:class (stl/css :row)}
-          [:& gap-section {:on-change on-gap-change
-                           :value (:layout-gap values)}]]
+                                 :on-change on-row-justify-change}]]
 
-         [:div {:class (stl/css :row :padding-section)}
-          [:& padding-section {:value (:layout-padding values)
-                               :type (:layout-padding-type values)
-                               :on-change-style on-padding-type-change
-                               :on-change on-padding-change}]]
+          [:div {:class (stl/css :row)}
+           [:& gap-section {:on-change on-gap-change
+                            :value (:layout-gap values)}]]
+          [:div {:class (stl/css :row :padding-section)}
+           [:& padding-section {:value (:layout-padding values)
+                                :type (:layout-padding-type values)
+                                :on-change-style on-padding-type-change
+                                :on-change on-padding-change}]]]
 
          nil))]))
 
@@ -1156,9 +1159,10 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [multiple? type val]
-           (if multiple?
-             (st/emit! (dwsl/update-layout ids {:layout-gap {:row-gap val :column-gap val}}))
-             (st/emit! (dwsl/update-layout ids {:layout-gap {type val}})))))
+           (let [val (mth/finite val 0)]
+             (if multiple?
+               (st/emit! (dwsl/update-layout ids {:layout-gap {:row-gap val :column-gap val}}))
+               (st/emit! (dwsl/update-layout ids {:layout-gap {type val}}))))))
 
         ;; Padding
         on-padding-type-change
@@ -1169,15 +1173,16 @@
 
         on-padding-change
         (fn [type prop val]
-          (cond
-            (and (= type :simple) (= prop :p1))
-            (st/emit! (dwsl/update-layout ids {:layout-padding {:p1 val :p3 val}}))
+          (let [val (mth/finite val 0)]
+            (cond
+              (and (= type :simple) (= prop :p1))
+              (st/emit! (dwsl/update-layout ids {:layout-padding {:p1 val :p3 val}}))
 
-            (and (= type :simple) (= prop :p2))
-            (st/emit! (dwsl/update-layout ids {:layout-padding {:p2 val :p4 val}}))
+              (and (= type :simple) (= prop :p2))
+              (st/emit! (dwsl/update-layout ids {:layout-padding {:p2 val :p4 val}}))
 
-            :else
-            (st/emit! (dwsl/update-layout ids {:layout-padding {prop val}}))))
+              :else
+              (st/emit! (dwsl/update-layout ids {:layout-padding {prop val}})))))
 
         ;; Align grid
         align-items-row    (:layout-align-items values)
@@ -1308,7 +1313,8 @@
                             :on-change on-row-justify-change}]
 
       [:button {:on-click handle-locate-grid
-                :class (stl/css :locate-button)}
+                :class (stl/css :locate-button)
+                :title (tr "workspace.layout_grid.editor.top-bar.locate.tooltip")}
        i/locate-refactor]]
 
      [:div {:class (stl/css :row)}

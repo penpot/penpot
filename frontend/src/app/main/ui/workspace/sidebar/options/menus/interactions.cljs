@@ -380,7 +380,8 @@
                                {:value "" :label (tr "workspace.options.interaction-none")})]
         destination-options
         (mf/with-memo [frames-opts default-opts]
-          (d/concat-vec default-opts frames-opts))
+          (let [sorted-frames-opts (sort-by :label frames-opts)]
+            (d/concat-vec default-opts sorted-frames-opts)))
 
         shape-parents-opts (get-shared-frames-options shape-parents)
 

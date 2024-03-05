@@ -18,7 +18,6 @@
    [app.util.http :as http]
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
-   [clojure.set :as set]
    [cuerdas.core :as str]
    [lambdaisland.uri :as u]
    [okulary.core :as l]
@@ -273,13 +272,17 @@
 
 (defn get-content-fonts
   "Extracts the fonts used by the content of a text shape"
-  [{font-id :font-id children :children :as content}]
-  (let [current-font
-        (if (some? font-id)
-          #{(select-keys content [:font-id :font-variant-id])}
-          #{(select-keys txt/default-text-attrs [:font-id :font-variant-id])})
-        children-font (->> children (mapv get-content-fonts))]
-    (reduce set/union (conj children-font current-font))))
+  [content]
+  (->> (txt/node-seq content)
+       (filter txt/is-text-node?)
+       (reduce
+        (fn [result {:keys [font-id] :as node}]
+          (let [current-font
+                (if (some? font-id)
+                  (select-keys node [:font-id :font-variant-id])
+                  (select-keys txt/default-text-attrs [:font-id :font-variant-id]))]
+            (conj result current-font)))
+        #{})))
 
 (defn fetch-font-css
   "Given a font and the variant-id, retrieves the fontface CSS"
