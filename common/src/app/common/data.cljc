@@ -716,20 +716,19 @@
 
 (defn name
   "Improved version of name that won't fail if the input is not a keyword"
-  ([maybe-keyword] (name maybe-keyword nil))
-  ([maybe-keyword default-value]
-   (cond
-     (keyword? maybe-keyword)
-     (c/name maybe-keyword)
+  [maybe-keyword]
+  (cond
+    (nil? maybe-keyword)
+    nil
 
-     (string? maybe-keyword)
-     maybe-keyword
+    (keyword? maybe-keyword)
+    (c/name maybe-keyword)
 
-     (nil? maybe-keyword) default-value
+    (string? maybe-keyword)
+    maybe-keyword
 
-     :else
-     (or default-value
-         (str maybe-keyword)))))
+    :else
+    (str maybe-keyword)))
 
 (defn prefix-keyword
   "Given a keyword and a prefix will return a new keyword with the prefix attached
