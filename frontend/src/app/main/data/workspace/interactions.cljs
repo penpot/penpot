@@ -215,7 +215,6 @@
 
         target-frame
         (->> (ctst/get-frames-by-position objects position)
-             (remove :hide-in-viewer)
              (last))]
 
     (when (and (not= (:id target-frame) uuid/zero)
