@@ -536,6 +536,22 @@
   ([shape]
    (or (:layout-item-z-index shape) 0)))
 
+(defn- comparator-layout-z-index
+  [[idx-a child-a] [idx-b child-b]]
+  (cond
+    (> (layout-z-index child-a) (layout-z-index child-b)) 1
+    (< (layout-z-index child-a) (layout-z-index child-b)) -1
+    (< idx-a idx-b) 1
+    (> idx-a idx-b) -1
+    :else 0))
+
+(defn sort-layout-children-z-index
+  [children]
+  (->> children
+       (d/enumerate)
+       (sort comparator-layout-z-index)
+       (mapv second)))
+
 (defn change-h-sizing?
   [frame-id objects children-ids]
   (and (flex-layout? objects frame-id)
