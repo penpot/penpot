@@ -24,7 +24,7 @@
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.project-menu :refer [project-menu]]
    [app.main.ui.dashboard.team-form]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as i :refer [icon-xref]]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.i18n :as i18n :refer [tr]]
@@ -38,6 +38,33 @@
    [goog.functions :as f]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
+
+(def ^:private clear-search-icon
+  (icon-xref :delete-text-refactor (stl/css :clear-search-icon)))
+
+(def ^:private search-icon
+  (icon-xref :search-refactor (stl/css :search-icon)))
+
+(def ^:private tick-icon
+  (icon-xref :tick-refactor (stl/css :tick-icon)))
+
+(def ^:private logo-icon
+  (icon-xref :logo-refactor (stl/css :logo-icon)))
+
+(def ^:private add-icon
+  (icon-xref :add-refactor (stl/css :add-icon)))
+
+(def ^:private arrow-icon
+  (icon-xref :arrow-refactor (stl/css :arrow-icon)))
+
+(def ^:private menu-icon
+  (icon-xref :menu-refactor (stl/css :menu-icon)))
+
+(def ^:private pin-icon
+  (icon-xref :pin-refactor (stl/css :pin-icon)))
+
+(def ^:private exit-icon
+  (icon-xref :exit-refactor (stl/css :exit-icon)))
 
 (mf/defc sidebar-project
   [{:keys [item selected?] :as props}]
@@ -231,11 +258,11 @@
                  :tab-index "0"
                  :on-click on-clear-click
                  :on-key-down handle-clear-search}
-        i/close]
+        clear-search-icon]
 
        [:button {:class (stl/css :search-btn)
                  :on-click on-clear-click}
-        i/search])]))
+        search-icon])]))
 
 (mf/defc teams-selector-dropdown-items
   {::mf/wrap-props false}
@@ -278,10 +305,11 @@
                               :on-key-down handle-select-default
                               :id          "teams-selector-default-team"
                               :class       (stl/css :team-dropdown-item)}
-      [:span {:class (stl/css :team-icon)} i/logo-icon]
+      [:span {:class (stl/css :penpot-icon)} i/logo-icon]
+
       [:span {:class (stl/css :team-text)} (tr "dashboard.your-penpot")]
       (when (= (:default-team-id profile) (:id team))
-        [:span {:class (stl/css :check-icon)} i/tick])]
+        tick-icon)]
 
      (for [team-item (remove :is-default (vals teams))]
        [:> dropdown-menu-item* {:on-click    team-selected
@@ -296,7 +324,7 @@
         [:span {:class (stl/css :team-text)
                 :title (:name team-item)} (:name team-item)]
         (when (= (:id team-item) (:id team))
-          [:span {:class (stl/css :check-icon)} i/tick])])
+          tick-icon)])
 
      [:hr {:role "separator"
            :class (stl/css :team-separator)}]
@@ -304,7 +332,7 @@
                               :on-key-down handle-creation-key-down
                               :id          "teams-selector-create-team"
                               :class       (stl/css :team-dropdown-item :action)}
-      [:span {:class (stl/css :team-icon :new-team)} i/close]
+      [:span {:class (stl/css :icon-wrapper)} add-icon]
       [:span {:class (stl/css :team-text)} (tr "dashboard.create-new-team")]]]))
 
 (s/def ::member-id ::us/uuid)
@@ -612,7 +640,7 @@
 
        (if (:is-default team)
          [:div {:class (stl/css :team-name)}
-          [:span {:class (stl/css :team-icon)} i/logo-icon]
+          [:span {:class (stl/css :penpot-icon)} i/logo-icon]
           [:span {:class (stl/css :team-text)} (tr "dashboard.default-team-name")]]
 
          [:div {:class (stl/css :team-name)}
@@ -621,14 +649,14 @@
                  :alt (:name team)}]
           [:span {:class (stl/css :team-text) :title (:name team)} (:name team)]])
 
-       [:span {:class (stl/css :switch-icon)} i/arrow-down]]
+       arrow-icon]
 
       (when-not (:is-default team)
         [:button {:class (stl/css :switch-options)
                   :on-click handle-show-opts-click
                   :tab-index "0"
                   :on-key-down handle-show-opts-keydown}
-         i/actions])]
+         menu-icon])]
 
      ;; Teams Dropdown
 
@@ -791,7 +819,7 @@
              :team-id (:id team)
              :selected? (= (:id item) (:id project))}])]
         [:div {:class (stl/css :sidebar-empty-placeholder)}
-         [:span {:class (stl/css :empty-placeholder-icon)} i/pin-refactor]
+         pin-icon
          [:span {:class (stl/css :empty-text)} (tr "dashboard.no-projects-placeholder")]])]]))
 
 (mf/defc profile-section
@@ -1004,7 +1032,7 @@
              :on-click handle-logout-click
              :on-key-down handle-logout-keydown
              :data-test "logout-profile-opt"}
-        [:span {:class (stl/css :exit-icon)} i/exit]
+        exit-icon
         (tr "labels.logout")]]
 
       (when (and team profile)

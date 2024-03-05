@@ -75,7 +75,8 @@
   color: var(--menu-foreground-color-hover);
 }
 
-.team-icon {
+// This icon still use the old svg
+.penpot-icon {
   @include flexCenter;
   svg {
     fill: var(--icon-foreground);
@@ -91,13 +92,10 @@
   width: $s-24;
 }
 
-.switch-icon {
-  @include flexCenter;
-  svg {
-    fill: var(--icon-foreground);
-    width: $s-12;
-    height: $s-12;
-  }
+.arrow-icon {
+  @extend .button-icon;
+  transform: rotate(90deg);
+  stroke: var(--icon-foreground);
 }
 
 .switch-options {
@@ -108,12 +106,11 @@
   height: 100%;
   border-left: $s-1 solid var(--panel-background-color);
   background-color: transparent;
+}
 
-  svg {
-    fill: var(--icon-foreground);
-    width: $s-16;
-    height: $s-12;
-  }
+.menu-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
 }
 
 // DROPDOWNS
@@ -138,18 +135,29 @@
   height: $s-40;
 }
 
-.team-dropdown-item.action .team-icon {
-  height: $s-24;
+.action {
+  --sidebar-action-icon-color: var(--icon-foreground);
+  --sidebar-icon-backgroun-color: var(--color-background-secondary);
+  &:hover {
+    --sidebar-action-icon-color: var(--color-background-secondary);
+    --sidebar-icon-backgroun-color: var(--color-accent-primary);
+  }
+}
+
+.icon-wrapper {
+  @include flexCenter;
   width: $s-24;
-  padding: $s-6;
+  height: $s-24;
   margin-right: $s-12;
   border-radius: 50%;
-  background-color: var(--new-team-button-background-color);
+  background-color: var(--sidebar-icon-backgroun-color);
+}
 
-  svg {
-    height: $s-12;
-    width: $s-12;
-  }
+.add-icon {
+  @extend .button-icon;
+  width: $s-24;
+  height: $s-24;
+  stroke: var(--sidebar-action-icon-color);
 }
 
 .team-separator {
@@ -157,13 +165,9 @@
   margin: 0;
 }
 
-.check-icon {
-  @extend .button-icon;
-  fill: var(--icon-foreground);
-  svg {
-    height: 12px;
-    width: 12px;
-  }
+.tick-icon {
+  @extend .button-icon-small;
+  stroke: var(--icon-foreground);
 }
 
 .options-dropdown {
@@ -200,14 +204,6 @@
 
 .sidebar-nav-item {
   cursor: pointer;
-
-  svg {
-    fill: var(--icon-foreground);
-    margin-right: $s-8;
-    height: $s-12;
-    width: $s-12;
-  }
-
   &:hover {
     background-color: var(--sidebar-element-background-color-hover);
     span {
@@ -224,7 +220,7 @@
 }
 
 .recent-projects svg {
-  fill: var(--main-icon-foreground);
+  stroke: var(--main-icon-foreground);
 }
 
 .sidebar-link {
@@ -256,14 +252,10 @@
   align-items: center;
 }
 
-.empty-placeholder-icon {
-  padding: 0 $s-12;
-  svg {
-    fill: none;
-    stroke: currentColor;
-    width: $s-12;
-    height: $s-12;
-  }
+.pin-icon {
+  @extend .button-icon-small;
+  stroke: var(--icon-foreground);
+  margin: 0 $s-12;
 }
 
 .empty-text {
@@ -313,20 +305,17 @@
   height: $s-24;
   width: $s-32;
   padding: 0 $s-8;
-
-  svg {
-    fill: var(--search-bar-icon-foreground-color);
-    height: $s-16;
-    width: $s-16;
-  }
 }
 
-.clear-search-btn svg {
-  transform: rotate(45deg);
+.search-icon,
+.clear-search-btn {
+  @extend .button-icon;
+  --sidebar-search-foreground-color: var(--search-bar-icon-foreground-color);
+  stroke: var(--sidebar-search-foreground-color);
+}
 
-  &:hover {
-    fill: var(--search-bar-icon-foreground-color-hover);
-  }
+.clear-search-btn:hover {
+  --sidebar-search-foreground-color: var(--search-bar-icon-foreground-color-hover);
 }
 
 // Profile
@@ -345,12 +334,6 @@
   grid-template-columns: auto 1fr;
   gap: $s-8;
   cursor: pointer;
-  svg {
-    height: $s-12;
-    width: $s-12;
-    margin-left: auto;
-    margin-right: $s-8;
-  }
 }
 
 .profile-fullname {
@@ -389,11 +372,10 @@
 .item-with-icon {
   display: grid;
   grid-template-columns: auto 1fr;
+  gap: $s-8;
+}
 
-  svg {
-    fill: var(--menu-icon-foreground-color);
-    margin-right: $s-8;
-    height: $s-12;
-    width: $s-12;
-  }
+.exit-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
 }
