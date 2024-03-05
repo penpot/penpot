@@ -267,20 +267,21 @@
 (defn inside-layout?
   "Check if the shape is inside a layout"
   [objects shape]
-
-  (loop [current-id (:id shape)]
-    (let [current (get objects current-id)]
+  (loop [current-id (dm/get-prop shape :id)]
+    (let [current   (get objects current-id)
+          parent-id (dm/get-prop current :parent-id)]
       (cond
-        (or (nil? current) (= current-id (:parent-id current)))
+        (or (nil? current) (= current-id parent-id))
         false
 
-        (= :frame (:type current))
+        (cfh/frame-shape? current-id)
         (:layout current)
 
         :else
-        (recur (:parent-id current))))))
+        (recur parent-id)))))
 
-(defn wrap? [{:keys [layout-wrap-type]}]
+(defn wrap?
+  [{:keys [layout-wrap-type]}]
   (= layout-wrap-type :wrap))
 
 (defn fill-width?
