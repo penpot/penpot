@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.shapes.grid-layout.areas :as sga]
    [app.common.math :as mth]
    [app.common.schema :as sm]
@@ -47,7 +48,8 @@
   #{:flex :grid})
 
 (def flex-direction-types
-  #{:row :reverse-row :row-reverse :column :reverse-column :column-reverse}) ;;TODO remove reverse-column and reverse-row after script
+  ;;TODO remove reverse-column and reverse-row after script
+  #{:row :reverse-row :row-reverse :column :reverse-column :column-reverse})
 
 (def grid-direction-types
   #{:row :column})
@@ -128,7 +130,7 @@
 (def grid-cell-justify-self-types
   #{:auto :start :center :end :stretch})
 
-(sm/define! ::grid-cell
+(sm/def! ::grid-cell
   [:map {:title "GridCell"}
    [:id ::sm/uuid]
    [:area-name {:optional true} :string]
@@ -142,7 +144,7 @@
    [:shapes
     [:vector {:gen/max 1} ::sm/uuid]]])
 
-(sm/define! ::grid-track
+(sm/def! ::grid-track
   [:map {:title "GridTrack"}
    [:type [::sm/one-of grid-track-types]]
    [:value {:optional true} [:maybe ::sm/safe-number]]])
@@ -197,14 +199,14 @@
   ([objects id]
    (flex-layout? (get objects id)))
   ([shape]
-   (and (= :frame (:type shape))
+   (and (cfh/frame-shape? shape)
         (= :flex (:layout shape)))))
 
 (defn grid-layout?
   ([objects id]
    (grid-layout? (get objects id)))
   ([shape]
-   (and (= :frame (:type shape))
+   (and (cfh/frame-shape? shape)
         (= :grid (:layout shape)))))
 
 (defn any-layout?
@@ -212,7 +214,10 @@
    (any-layout? (get objects id)))
 
   ([shape]
-   (or (flex-layout? shape) (grid-layout? shape))))
+   (and (cfh/frame-shape? shape)
+        (let [layout (:layout shape)]
+          (or (= :flex layout)
+              (= :grid layout))))))
 
 (defn flex-layout-immediate-child? [objects shape]
   (let [parent-id (:parent-id shape)
