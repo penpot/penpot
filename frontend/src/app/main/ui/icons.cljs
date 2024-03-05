@@ -348,6 +348,7 @@
 (def ^:icon easing-ease-in-out-refactor (icon-xref :easing-ease-in-out-refactor))
 (def ^:icon effects-refactor (icon-xref :effects-refactor))
 (def ^:icon elipse-refactor (icon-xref :elipse-refactor))
+(def ^:icon exit-refactor (icon-xref :exit-refactor))
 (def ^:icon expand-refactor (icon-xref :expand-refactor))
 (def ^:icon feedback-refactor (icon-xref :feedback-refactor))
 (def ^:icon fill-content-refactor (icon-xref :fill-content-refactor))
@@ -394,6 +395,7 @@
 (def ^:icon layers-refactor (icon-xref :layers-refactor))
 (def ^:icon locate-refactor (icon-xref :locate-refactor))
 (def ^:icon lock-refactor (icon-xref :lock-refactor))
+(def ^:icon logo-refactor (icon-xref :penpot-logo-icon)) ;; This icon will not change
 (def ^:icon library-refactor (icon-xref :library-refactor))
 (def ^:icon margin-bottom-refactor (icon-xref :margin-bottom-refactor))
 (def ^:icon margin-left-refactor (icon-xref :margin-left-refactor))
