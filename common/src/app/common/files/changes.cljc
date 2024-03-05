@@ -507,8 +507,7 @@
                 (and (:shape-ref parent)
                      (#{:group :frame} (:type parent))
                      (not ignore-touched))
-                (-> (update :touched cfh/set-touched-group :shapes-group)
-                    (dissoc :remote-synced)))))
+                (dissoc :remote-synced))))
 
           (remove-from-old-parent [old-objects objects shape-id]
             (let [prev-parent-id (dm/get-in old-objects [shape-id :parent-id])]
@@ -525,9 +524,7 @@
                   (-> objects
                       (d/update-in-when [pid :shapes] d/without-obj sid)
                       (d/update-in-when [pid :shapes] d/vec-without-nils)
-                      (cond-> component? (d/update-when pid #(-> %
-                                                                 (update :touched cfh/set-touched-group :shapes-group)
-                                                                 (dissoc :remote-synced)))))))))
+                      (cond-> component? (d/update-when pid #(dissoc % :remote-synced))))))))
           (update-parent-id [objects id]
             (-> objects
                 (d/update-when id assoc :parent-id parent-id)))
