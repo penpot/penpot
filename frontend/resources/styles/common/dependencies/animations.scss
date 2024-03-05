@@ -1475,7 +1475,7 @@
   animation-name: fadeInRightBig;
 }
 
-@-webkit-keyframes fadeInUp {
+@-webkit-keyframes :global(fadeInUp) {
   0% {
     opacity: 0;
     -webkit-transform: translate3d(0, 100%, 0);
@@ -1489,7 +1489,7 @@
   }
 }
 
-@keyframes fadeInUp {
+@keyframes :global(fadeInUp) {
   0% {
     opacity: 0;
     -webkit-transform: translate3d(0, 100%, 0);

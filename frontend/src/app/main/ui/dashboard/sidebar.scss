@@ -355,7 +355,9 @@
   left: $s-16;
   bottom: $s-72;
   min-width: $s-252;
-  // TODO ADD animation fadeInUp
+  :global {
+    animation: fadeInUp 0.2s;
+  }
 }
 
 .profile-dropdown-item {
