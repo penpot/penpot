@@ -36,7 +36,7 @@
 
 (defn use-import-file
   [project-id on-finish-import]
-  (mf/use-callback
+  (mf/use-fn
    (mf/deps project-id on-finish-import)
    (fn [files]
      (when files
@@ -52,7 +52,9 @@
                      :on-finish-import on-finish-import})))))))
 
 (mf/defc import-form
-  {::mf/forward-ref true}
+  {::mf/forward-ref true
+   ::mf/props :obj}
+
   [{:keys [project-id on-finish-import]} external-ref]
 
   (let [on-file-selected (use-import-file project-id on-finish-import)]
@@ -62,23 +64,25 @@
                         :ref external-ref
                         :on-selected on-file-selected}]]))
 
-(defn update-file [files file-id new-name]
-  (->> files
-       (mapv
-        (fn [file]
-          (let [new-name (str/trim new-name)]
-            (cond-> file
-              (and (= (:file-id file) file-id)
-                   (not= "" new-name))
-              (assoc :name new-name)))))))
+(defn update-file
+  [files file-id new-name]
+  (mapv
+   (fn [file]
+     (let [new-name (str/trim new-name)]
+       (cond-> file
+         (and (= (:file-id file) file-id)
+              (not= "" new-name))
+         (assoc :name new-name))))
+   files))
 
-(defn remove-file [files file-id]
-  (->> files
-       (mapv
-        (fn [file]
-          (cond-> file
-            (= (:file-id file) file-id)
-            (assoc :deleted? true))))))
+(defn remove-file
+  [files file-id]
+  (mapv
+   (fn [file]
+     (cond-> file
+       (= (:file-id file) file-id)
+       (assoc :deleted? true)))
+   files))
 
 (defn set-analyze-error
   [files uri error]
@@ -89,7 +93,8 @@
                  (-> (assoc :status :analyze-error)
                      (assoc :error error)))))))
 
-(defn set-analyze-result [files uri type data]
+(defn set-analyze-result
+  [files uri type data]
   (let [existing-files? (into #{} (->> files (map :file-id) (filter some?)))
         replace-file
         (fn [file]
@@ -106,12 +111,14 @@
             [file]))]
     (into [] (mapcat replace-file) files)))
 
-(defn mark-files-importing [files]
+(defn mark-files-importing
+  [files]
   (->> files
        (filter #(= :ready (:status %)))
        (mapv #(assoc % :status :importing))))
 
-(defn update-status [files file-id status progress errors]
+(defn update-status
+  [files file-id status progress errors]
   (->> files
        (mapv (fn [file]
                (cond-> file
@@ -124,7 +131,7 @@
                  (= file-id (:file-id file))
                  (assoc :errors errors))))))
 
-(defn parse-progress-message
+(defn- parse-progress-message
   [message]
   (case (:type message)
     :upload-data
@@ -151,7 +158,8 @@
     (str message)))
 
 (mf/defc import-entry
-  [{:keys [state file editing? can-be-deleted?]}]
+  {::mf/props :obj}
+  [{:keys [state file editing? can-be-deleted]}]
   (let [loading?       (or (= :analyzing (:status file))
                            (= :importing (:status file)))
         analyze-error? (= :analyze-error (:status file))
@@ -163,7 +171,7 @@
         progress       (:progress file)
 
         handle-edit-key-press
-        (mf/use-callback
+        (mf/use-fn
          (fn [e]
            (when (or (kbd/enter? e) (kbd/esc? e))
              (dom/prevent-default e)
@@ -171,7 +179,7 @@
              (dom/blur! (dom/get-target e)))))
 
         handle-edit-blur
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps file)
          (fn [e]
            (let [value (dom/get-target-val e)]
@@ -179,13 +187,13 @@
                                (update :files update-file (:file-id file) value))))))
 
         handle-edit-entry
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps file)
          (fn []
            (swap! state assoc :editing (:file-id file))))
 
         handle-remove-entry
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps file)
          (fn []
            (swap! state update :files remove-file (:file-id file))))]
@@ -224,7 +232,7 @@
       [:div {:class (stl/css :edit-entry-buttons)}
        (when (= "application/zip" (:type file))
          [:button {:on-click handle-edit-entry}   i/curve-refactor])
-       (when can-be-deleted?
+       (when can-be-deleted
          [:button {:on-click handle-remove-entry} i/delete-refactor])]]
      (cond
        analyze-error?
@@ -252,7 +260,8 @@
 
 (mf/defc import-dialog
   {::mf/register modal/components
-   ::mf/register-as :import}
+   ::mf/register-as :import
+   ::mf/props :obj}
   [{:keys [project-id files template on-finish-import]}]
   (let [state (mf/use-state
                {:status :analyzing
@@ -262,7 +271,7 @@
                             (mapv #(assoc % :status :analyzing)))})
 
         analyze-import
-        (mf/use-callback
+        (mf/use-fn
          (fn [files]
            (->> (uw/ask-many!
                  {:cmd :analyze-import
@@ -277,7 +286,7 @@
                      (swap! state update :files set-analyze-result uri type data)))))))
 
         import-files
-        (mf/use-callback
+        (mf/use-fn
          (fn [project-id files]
            (st/emit! (ptk/event ::ev/event {::ev/name "import-files"
                                             :num-files (count files)}))
@@ -291,7 +300,7 @@
                    (swap! state update :files update-status file-id status message errors))))))
 
         handle-cancel
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps (:editing @state))
          (fn [event]
            (when (nil? (:editing @state))
@@ -334,7 +343,7 @@
 
 
         handle-continue
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps project-id (:files @state))
          (fn [event]
            (dom/prevent-default event)
@@ -343,7 +352,7 @@
              (continue-files))))
 
         handle-accept
-        (mf/use-callback
+        (mf/use-fn
          (fn [event]
            (dom/prevent-default event)
            (st/emit! (modal/hide))
@@ -400,13 +409,13 @@
                              :key (dm/str (:uri file))
                              :file file
                              :editing? editing?
-                             :can-be-deleted? (> (count files) 1)}]))
+                             :can-be-deleted (> (count files) 1)}]))
 
        (when (some? template)
          [:& import-entry {:state state
                            :file (assoc template :status (if (= 1 (:importing-templates @state)) :importing :ready))
                            :editing? false
-                           :can-be-deleted? false}])]
+                           :can-be-deleted false}])]
 
       [:div {:class (stl/css :modal-footer)}
        [:div {:class (stl/css :action-buttons)}
