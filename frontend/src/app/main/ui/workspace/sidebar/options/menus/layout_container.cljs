@@ -1137,7 +1137,7 @@
           [:div {:class (stl/css :row :padding-section)}
            [:& padding-section {:value (:layout-padding values)
                                 :type (:layout-padding-type values)
-                                :on-change-style on-padding-type-change
+                                :on-type-change on-padding-type-change
                                 :on-change on-padding-change}]]]
 
          nil))]))
@@ -1324,7 +1324,7 @@
      [:div {:class (stl/css :row :padding-section)}
       [:& padding-section {:value (:layout-padding values)
                            :type (:layout-padding-type values)
-                           :on-change-style on-padding-type-change
+                           :on-type-change on-padding-type-change
                            :on-change on-padding-change}]]
 
      [:div {:class (stl/css :row :grid-tracks-row)}
