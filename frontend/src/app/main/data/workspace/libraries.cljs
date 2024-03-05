@@ -808,7 +808,7 @@
         component       (ctkl/get-component data component-id)
         page-id         (:main-instance-page component)
         root-id         (:main-instance-id component)]
-    (dwt/request-thumbnail file-id page-id root-id tag)))
+    (dwt/request-thumbnail file-id page-id root-id tag "update-component-thumbnail-sync")))
 
 (defn update-component-sync
   ([shape-id file-id] (update-component-sync shape-id file-id nil))

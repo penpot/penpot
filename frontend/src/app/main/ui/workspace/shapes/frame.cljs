@@ -107,9 +107,9 @@
     (-> (image-size href)
         (p/then
          (fn [{:keys [width height]}]
-           (when (or (not (mth/close? width fixed-width 2))
-                     (not (mth/close? height fixed-height 2)))
-             (st/emit! (dwt/request-thumbnail file-id page-id frame-id "frame"))))))))
+           (when (or (not (mth/close? width fixed-width 5))
+                     (not (mth/close? height fixed-height 5)))
+             (st/emit! (dwt/request-thumbnail file-id page-id frame-id "frame" "check-thumbnail-size"))))))))
 
 (defn root-frame-wrapper-factory
   [shape-wrapper]
@@ -175,7 +175,7 @@
         (mf/with-effect []
           (when-not (some? thumbnail-uri)
             (tm/schedule-on-idle
-             #(st/emit! (dwt/request-thumbnail file-id page-id frame-id "frame"))))
+             #(st/emit! (dwt/request-thumbnail file-id page-id frame-id "frame" "root-frame"))))
           #(when-let [task (mf/ref-val task-ref)]
              (d/close! task)))
 
