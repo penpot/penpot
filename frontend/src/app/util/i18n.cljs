@@ -177,10 +177,12 @@
   {::mf/wrap-props false}
   [props]
   (let [label    (obj/get props "label")
+        class    (obj/get props "class")
         tag-name (obj/get props "tag-name" "p")
         params   (obj/get props "params" [])
         html (apply tr (d/concat-vec [label] params))]
-    [:> tag-name {:dangerouslySetInnerHTML #js {:__html html}}]))
+    [:> tag-name {:dangerouslySetInnerHTML #js {:__html html}
+                  :className class}]))
 
 ;; DEPRECATED
 (defn use-locale
