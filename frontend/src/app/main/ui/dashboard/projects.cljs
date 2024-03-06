@@ -37,6 +37,9 @@
 (def ^:private show-more-icon
   (i/icon-xref :arrow-refactor (stl/css :show-more-icon)))
 
+(def ^:private close-icon
+  (i/icon-xref :close-refactor (stl/css :close-icon)))
+
 (mf/defc header
   {::mf/wrap [mf/memo]}
   []
@@ -44,10 +47,9 @@
     [:header {:class (stl/css :dashboard-header)}
      [:div#dashboard-projects-title {:class (stl/css :dashboard-title)}
       [:h1 (tr "dashboard.projects-title")]]
-     [:button
-      {:class (stl/css :btn-secondary :btn-small)
-       :on-click on-click
-       :data-test "new-project-button"}
+     [:button {:class (stl/css :btn-secondary :btn-small)
+               :on-click on-click
+               :data-test "new-project-button"}
       (tr "dashboard.new-project")]]))
 
 (mf/defc team-hero
@@ -84,11 +86,10 @@
         :on-click on-invite-click}
        (tr "onboarding.choice.team-up.invite-members")]]
 
-     [:button
-      {:class (stl/css :close)
-       :on-click on-close-click
-       :aria-label (tr "labels.close")}
-      [:span i/close]]]))
+     [:button {:class (stl/css :close)
+               :on-click on-close-click
+               :aria-label (tr "labels.close")}
+      close-icon]]))
 
 (def builtin-templates
   (l/derived :builtin-templates st/state))
@@ -139,11 +140,10 @@
          :importing [:span.loader i/loader-pencil]
          :success "")]]
 
-     [:button
-      {:class (stl/css :close)
-       :on-click close-tutorial
-       :aria-label (tr "labels.close")}
-      [:span {:class (stl/css :icon)} i/close]]]))
+     [:button {:class (stl/css :close)
+               :on-click close-tutorial
+               :aria-label (tr "labels.close")}
+      close-icon]]))
 
 (mf/defc interface-walkthrough
   {::mf/wrap [mf/memo]}
@@ -163,11 +163,10 @@
            :target "_blank"
            :on-click handle-walkthrough-link}
        (tr "dasboard.walkthrough-hero.start")]]
-     [:button
-      {:class (stl/css :close)
-       :on-click close-walkthrough
-       :aria-label (tr "labels.close")}
-      [:span {:class (stl/css :icon)} i/close]]]))
+     [:button {:class (stl/css :close)
+               :on-click close-walkthrough
+               :aria-label (tr "labels.close")}
+      close-icon]]))
 
 (mf/defc project-item
   [{:keys [project first? team files] :as props}]
@@ -310,13 +309,12 @@
         (when-not (:is-default project)
           [:> pin-button* {:class (stl/css :pin-button) :is-pinned (:is-pinned project) :on-click toggle-pin :tab-index 0}])
 
-        [:button
-         {:class (stl/css :btn-secondary :btn-small :tooltip :tooltip-bottom)
-          :on-click on-create-click
-          :alt (tr "dashboard.new-file")
-          :aria-label (tr "dashboard.new-file")
-          :data-test "project-new-file"
-          :on-key-down handle-create-click}
+        [:button {:class (stl/css :btn-secondary :btn-small :tooltip :tooltip-bottom)
+                  :on-click on-create-click
+                  :alt (tr "dashboard.new-file")
+                  :aria-label (tr "dashboard.new-file")
+                  :data-test "project-new-file"
+                  :on-key-down handle-create-click}
          i/add-refactor]
 
         [:button

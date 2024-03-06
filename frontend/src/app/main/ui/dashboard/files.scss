@@ -30,3 +30,8 @@
 .new-file {
   margin-inline-end: $s-8;
 }
+
+.menu-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
+}
