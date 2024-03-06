@@ -23,6 +23,7 @@
    [app.rpc.climit :as climit]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
+   [app.setup :as-alias setup]
    [app.storage :as sto]
    [app.tokens :as tokens]
    [app.util.services :as sv]
@@ -296,12 +297,12 @@
 
 (defn- request-email-change!
   [{:keys [::conn] :as cfg} {:keys [profile email] :as params}]
-  (let [token   (tokens/generate (::main/props cfg)
+  (let [token   (tokens/generate (::setup/props cfg)
                                  {:iss :change-email
                                   :exp (dt/in-future "15m")
                                   :profile-id (:id profile)
                                   :email email})
-        ptoken  (tokens/generate (::main/props cfg)
+        ptoken  (tokens/generate (::setup/props cfg)
                                  {:iss :profile-identity
                                   :profile-id (:id profile)
                                   :exp (dt/in-future {:days 30})})]

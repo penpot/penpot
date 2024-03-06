@@ -20,6 +20,7 @@
    [app.rpc.commands.auth :as auth]
    [app.rpc.commands.files-create :refer [create-file]]
    [app.rpc.commands.profile :as profile]
+   [app.setup :as-alias setup]
    [app.srepl.helpers :as srepl]
    [app.storage :as-alias sto]
    [app.storage.tmp :as tmp]
@@ -340,7 +341,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- resend-email-notification
-  [{:keys [::db/pool ::main/props] :as cfg} {:keys [params] :as request}]
+  [{:keys [::db/pool ::setup/props] :as cfg} {:keys [params] :as request}]
 
   (when-not (contains? params :force)
     (ex/raise :type :validation

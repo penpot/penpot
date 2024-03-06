@@ -13,6 +13,7 @@
    [app.rpc :as-alias rpc]
    [app.rpc.doc :as-alias doc]
    [app.rpc.quotes :as quotes]
+   [app.setup :as-alias setup]
    [app.tokens :as tokens]
    [app.util.services :as sv]
    [app.util.time :as dt]
@@ -23,7 +24,7 @@
   (dissoc row :perms))
 
 (defn create-access-token
-  [{:keys [::db/conn ::main/props]} profile-id name expiration]
+  [{:keys [::db/conn ::setup/props]} profile-id name expiration]
   (let [created-at (dt/now)
         token-id   (uuid/next)
         token      (tokens/generate props {:iss "access-token"
@@ -47,7 +48,7 @@
   [{:keys [::db/pool] :as system} profile-id name expiration]
   (db/with-atomic [conn pool]
     (let [props (:app.setup/props system)]
-      (create-access-token {::db/conn conn ::main/props props}
+      (create-access-token {::db/conn conn ::setup/props props}
                            profile-id
                            name
                            expiration))))

@@ -15,6 +15,7 @@
    [app.db.sql :as sql]
    [app.http.session.tasks :as-alias tasks]
    [app.main :as-alias main]
+   [app.setup :as-alias setup]
    [app.tokens :as tokens]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
@@ -138,7 +139,7 @@
 (declare ^:private gen-token)
 
 (defn create-fn
-  [{:keys [::manager ::main/props]} profile-id]
+  [{:keys [::manager ::setup/props]} profile-id]
   (us/assert! ::manager manager)
   (us/assert! ::us/uuid profile-id)
 
@@ -196,7 +197,7 @@
          (neg? (compare default-renewal-max-age elapsed)))))
 
 (defn- wrap-soft-auth
-  [handler {:keys [::manager ::main/props]}]
+  [handler {:keys [::manager ::setup/props]}]
   (us/assert! ::manager manager)
   (letfn [(handle-request [request]
             (try

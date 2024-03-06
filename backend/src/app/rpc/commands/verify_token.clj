@@ -18,6 +18,7 @@
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
    [app.rpc.quotes :as quotes]
+   [app.setup :as-alias setup]
    [app.tokens :as tokens]
    [app.tokens.spec.team-invitation :as-alias spec.team-invitation]
    [app.util.services :as sv]
@@ -38,7 +39,7 @@
    ::doc/module :auth}
   [{:keys [::db/pool] :as cfg} {:keys [token] :as params}]
   (db/with-atomic [conn pool]
-    (let [claims (tokens/verify (::main/props cfg) {:token token})
+    (let [claims (tokens/verify (::setup/props cfg) {:token token})
           cfg    (assoc cfg :conn conn)]
       (process-token cfg params claims))))
 
