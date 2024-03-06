@@ -211,7 +211,7 @@
   (ptk/reify ::create-shape-layout
     ev/Event
     (-data [_]
-      {:layout (name type)})
+      {:layout (d/name type)})
 
     ptk/WatchEvent
     (watch [_ state _]

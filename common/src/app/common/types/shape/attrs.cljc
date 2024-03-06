@@ -65,6 +65,11 @@
             :layout-padding-type
             :layout-padding
 
+            :layout-grid-dir
+            :layout-justify-items
+            :layout-grid-columns
+            :layout-grid-rows
+
             :layout-item-margin
             :layout-item-margin-type
             :layout-item-h-sizing

@@ -69,47 +69,50 @@
 
 (defn generate-report
   [data]
-  (let [team-id    (:current-team-id @st/state)
-        profile-id (:profile-id @st/state)
+  (try
+    (let [team-id    (:current-team-id @st/state)
+          profile-id (:profile-id @st/state)
 
-        trace      (:app.main.errors/trace data)
-        instance   (:app.main.errors/instance data)
-        content    (with-out-str
-                     (println "Hint:   " (or (:hint data) (ex-message instance) "--"))
-                     (println "Prof ID:" (str (or profile-id "--")))
-                     (println "Team ID:" (str (or team-id "--")))
+          trace      (:app.main.errors/trace data)
+          instance   (:app.main.errors/instance data)
+          content    (with-out-str
+                       (println "Hint:   " (or (:hint data) (ex-message instance) "--"))
+                       (println "Prof ID:" (str (or profile-id "--")))
+                       (println "Team ID:" (str (or team-id "--")))
 
-                     (when-let [file-id (:file-id data)]
-                       (println "File ID:" (str file-id)))
-
-                     (println)
-
-                     (println "Data:")
-                     (loop [data data]
-                       (-> (d/without-qualified data)
-                           (dissoc :explain)
-                           (d/update-when :data (constantly "(...)"))
-                           (pp/pprint {:level 8 :length 10}))
+                       (when-let [file-id (:file-id data)]
+                         (println "File ID:" (str file-id)))
 
                        (println)
 
-                       (when-let [explain (:explain data)]
-                         (print explain))
+                       (println "Data:")
+                       (loop [data data]
+                         (-> (d/without-qualified data)
+                             (dissoc :explain)
+                             (d/update-when :data (constantly "(...)"))
+                             (pp/pprint {:level 8 :length 10}))
 
-                       (when (and (= :server-error (:type data))
-                                  (contains? data :data))
-                         (recur (:data data))))
+                         (println)
 
-                     (println "Trace:")
-                     (println trace)
-                     (println)
+                         (when-let [explain (:explain data)]
+                           (print explain))
 
-                     (println "Last events:")
-                     (pp/pprint @st/last-events {:length 200})
+                         (when (and (= :server-error (:type data))
+                                    (contains? data :data))
+                           (recur (:data data))))
 
-                     (println))]
+                       (println "Trace:")
+                       (println trace)
+                       (println)
 
-    (wapi/create-blob content "text/plain")))
+                       (println "Last events:")
+                       (pp/pprint @st/last-events {:length 200})
+
+                       (println))]
+      (wapi/create-blob content "text/plain"))
+    (catch :default err
+      (.error js/console err)
+      nil)))
 
 
 (mf/defc internal-error
@@ -117,6 +120,7 @@
   [{:keys [data]}]
   (let [on-click   (mf/use-fn #(st/emit! (rt/assign-exception nil)))
         report-uri (mf/use-ref nil)
+        report     (mf/use-memo (mf/deps data) #(generate-report data))
 
         on-download
         (mf/use-fn
@@ -125,17 +129,18 @@
            (when-let [uri (mf/ref-val report-uri)]
              (dom/trigger-download-uri "report" "text/plain" uri))))]
 
-    (mf/with-effect [data]
-      (let [report (generate-report data)
-            uri    (wapi/create-uri report)]
-        (mf/set-ref-val! report-uri uri)
-        (fn []
-          (wapi/revoke-uri uri))))
+    (mf/with-effect [report]
+      (when (some? report)
+        (let [uri    (wapi/create-uri report)]
+          (mf/set-ref-val! report-uri uri)
+          (fn []
+            (wapi/revoke-uri uri)))))
 
     [:> error-container {}
      [:div {:class (stl/css :main-message)} (tr "labels.internal-error.main-message")]
      [:div {:class (stl/css :desc-message)} (tr "labels.internal-error.desc-message")]
-     [:a {:on-click on-download} "Download report.txt"]
+     (when (some? report)
+       [:a {:on-click on-download} "Download report.txt"])
      [:div {:class (stl/css :sign-info)}
       [:button {:on-click on-click} (tr "labels.retry")]]]))
 
