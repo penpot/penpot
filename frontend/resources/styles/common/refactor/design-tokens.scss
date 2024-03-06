@@ -370,6 +370,7 @@
   --pill-foreground-color: var(--color-foreground-primary);
 
   --tag-background-color: var(--color-accent-primary);
+  --tag-background-color-disabled: var(--color-foreground-primary);
 
   --link-foreground-color: var(--color-accent-primary);
 
@@ -377,7 +378,9 @@
   --resize-area-border-color: var(--color-background-quaternary);
 
   --profile-section-background-color: var(--color-background-tertiary);
-
+  --dashboard-list-background-color: var(--color-background-tertiary);
+  --dashboard-list-foreground-color: var(--color-foreground-primary);
+  --dashboard-list-text-foreground-color: var(--color-foreground-secondary);
   --flow-tag-background-color: var(--color-background-tertiary);
   --flow-tag-foreground-color: var(--color-foreground-secondary);
   --flow-tag-background-color-hover: var(--color-background-quaternary);
