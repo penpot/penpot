@@ -100,7 +100,7 @@
                        (on-success-callback p)))
 
         on-submit
-        (mf/use-callback
+        (mf/use-fn
          (fn [form _event]
            (reset! submitted? true)
            (let [cdata (:clean-data @form)]
@@ -114,7 +114,7 @@
 
     [:& fm/form {:on-submit on-submit :form form}
      [:div {:class (stl/css :fields-row)}
-      [:& fm/input {:type "email"
+      [:& fm/input {:type "text"
                     :name :email
                     :label (tr "auth.email")
                     :data-test "email-input"
@@ -225,7 +225,7 @@
                        (on-success-callback (:email p))))
 
         on-submit
-        (mf/use-callback
+        (mf/use-fn
          (fn [form _event]
            (reset! submitted? true)
            (let [params (:clean-data @form)]
