@@ -116,7 +116,7 @@
 
         detach-color
         (mf/use-fn
-         (mf/deps ids index)
+         (mf/deps ids index value)
          (fn [_color _opacity]
            (when-not (string? (:color value))
              (st/emit! (dch/update-shapes

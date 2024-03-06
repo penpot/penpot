@@ -7,6 +7,7 @@
 (ns app.main.data.workspace.layout
   "Workspace layout management events and helpers."
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.data.events :as ev]
    [app.util.storage :refer [storage]]
@@ -123,7 +124,7 @@
     ev/Event
     (-data [_]
       {::ev/origin "workspace:sidebar"
-       :mode (name mode)})
+       :mode (d/name mode)})
 
     ptk/UpdateEvent
     (update [_ state]

@@ -492,7 +492,7 @@
      [:button {:class (stl/css-case
                        :padding-toggle true
                        :selected (= type :multiple))
-               :data-type (name type)
+               :data-type (d/name type)
                :on-click on-type-change'}
       i/padding-extended-refactor]]))
 
@@ -557,7 +557,7 @@
         :no-validate true
         :placeholder "--"
         :data-type "row-gap"
-        :data-wrap-type (name wrap-type)
+        :data-wrap-type (d/name wrap-type)
         :on-focus on-gap-focus
         :on-change on-change'
         :on-blur on-gap-blur
@@ -576,7 +576,7 @@
         :no-validate true
         :placeholder "--"
         :data-type "column-gap"
-        :data-wrap-type (name wrap-type)
+        :data-wrap-type (d/name wrap-type)
         :on-focus on-gap-focus
         :on-change on-change'
         :on-blur on-gap-blur
@@ -627,7 +627,7 @@
    ::mf/private true}
   [{:keys [is-column value on-change]}]
   (let [type (if ^boolean is-column "column" "row")]
-    [:& radio-buttons {:selected (name value)
+    [:& radio-buttons {:selected (d/name value)
                        :decode-fn keyword
                        :on-change on-change
                        :name (dm/str "flex-align-items-" type)}
@@ -649,7 +649,7 @@
    ::mf/private :obj}
   [{:keys [is-column value on-change]}]
   (let [type (if ^boolean is-column "column" "row")]
-    [:& radio-buttons {:selected (name value)
+    [:& radio-buttons {:selected (d/name value)
                        :on-change on-change
                        :decode-fn keyword
                        :name (dm/str "grid-justify-items-" type)}
@@ -811,7 +811,7 @@
        [:& h/sortable-container {}
         [:div {:class (stl/css :grid-tracks-info-container)}
          (for [[index column] (d/enumerate column-values)]
-           [:& grid-track-info {:key (dm/str index "-" (name type))
+           [:& grid-track-info {:key (dm/str index "-" (d/name type))
                                 :type type
                                 :is-column is-column
                                 :index index
@@ -1137,7 +1137,7 @@
           [:div {:class (stl/css :row :padding-section)}
            [:& padding-section {:value (:layout-padding values)
                                 :type (:layout-padding-type values)
-                                :on-change-style on-padding-type-change
+                                :on-type-change on-padding-type-change
                                 :on-change on-padding-change}]]]
 
          nil))]))
@@ -1324,7 +1324,7 @@
      [:div {:class (stl/css :row :padding-section)}
       [:& padding-section {:value (:layout-padding values)
                            :type (:layout-padding-type values)
-                           :on-change-style on-padding-type-change
+                           :on-type-change on-padding-type-change
                            :on-change on-padding-change}]]
 
      [:div {:class (stl/css :row :grid-tracks-row)}

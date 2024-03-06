@@ -122,8 +122,9 @@
               (some? layout-props)
               (d/patch-object layout-props)
 
+              ;; Frames from shapes will not be displayed in viewer and no clipped
               (or (not= frame-id uuid/zero) without-fill?)
-              (assoc :fills [] :hide-in-viewer true)))
+              (assoc :fills [] :hide-in-viewer true :show-content true)))
 
            shape
            (with-meta shape {:index new-index})
