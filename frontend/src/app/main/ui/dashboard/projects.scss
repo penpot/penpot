@@ -141,6 +141,7 @@
   stroke: currentColor;
 }
 
+// Team hero
 .team-hero {
   background-color: $db-tertiary;
   border-radius: $br-8;
@@ -150,60 +151,6 @@
   padding: $s-8;
   position: relative;
 
-  .text {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    flex-grow: 1;
-    padding: $s-20 $s-20;
-  }
-  .title {
-    font-size: $fs-24;
-    color: $df-primary;
-    font-weight: $fw400;
-  }
-  .info {
-    flex: 1;
-    font-size: $fs-16;
-    span {
-      color: $df-secondary;
-      display: block;
-    }
-    a {
-      color: $da-primary;
-    }
-    padding: $s-8 0;
-  }
-  .close {
-    position: absolute;
-    top: $s-20;
-    right: $s-20;
-    background-color: transparent;
-    border: none;
-    cursor: pointer;
-    svg {
-      transform: rotate(45deg);
-      width: $s-16;
-      height: $s-16;
-    }
-  }
-  .invite {
-    height: $s-32;
-    width: $s-180;
-  }
-  .img-wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: $s-200;
-    height: $s-200;
-    overflow: hidden;
-    border-radius: $br-4;
-    @media (max-width: 1200px) {
-      display: none;
-      width: 0;
-    }
-  }
   img {
     border-radius: $br-4;
     height: $s-200;
@@ -214,8 +161,70 @@
       width: 0;
     }
   }
-  svg {
-    fill: $df-secondary;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex-grow: 1;
+  padding: $s-20 $s-20;
+}
+
+.title {
+  font-size: $fs-24;
+  color: $df-primary;
+  font-weight: $fw400;
+}
+
+.info {
+  flex: 1;
+  font-size: $fs-16;
+  span {
+    color: $df-secondary;
+    display: block;
+  }
+  a {
+    color: $da-primary;
+  }
+  padding: $s-8 0;
+}
+
+.close {
+  --close-icon-foreground-color: var(--icon-foreground);
+  position: absolute;
+  top: $s-20;
+  right: $s-24;
+  width: $s-24;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  &:hover {
+    --close-icon-foreground-color: var(--button-icon-foreground-color-selected);
+  }
+}
+
+.close-icon {
+  @extend .button-icon;
+  stroke: var(--close-icon-foreground-color);
+}
+
+.invite {
+  height: $s-32;
+  width: $s-180;
+}
+
+.img-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: $s-200;
+  height: $s-200;
+  overflow: hidden;
+  border-radius: $br-4;
+  @media (max-width: 1200px) {
+    display: none;
+    width: 0;
   }
 }
 
@@ -278,30 +287,6 @@
     .action {
       width: $s-180;
       height: $s-40;
-    }
-    .close {
-      position: absolute;
-      top: 0;
-      right: 0;
-      width: $s-24;
-      cursor: pointer;
-      display: flex;
-      margin: $s-20;
-      justify-content: center;
-      align-items: center;
-      background-color: transparent;
-      border: none;
-      .icon {
-        svg {
-          fill: $df-secondary;
-          height: $s-16;
-          width: $s-16;
-          transform: rotate(45deg);
-          &:hover {
-            fill: $da-tertiary;
-          }
-        }
-      }
     }
   }
   .walkthrough {
