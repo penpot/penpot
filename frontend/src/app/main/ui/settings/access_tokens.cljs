@@ -25,6 +25,15 @@
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
+(def ^:private clipboard-icon
+  (i/icon-xref :clipboard-refactor (stl/css :clipboard-icon)))
+
+(def ^:private close-icon
+  (i/icon-xref :close-refactor (stl/css :close-icon)))
+
+(def ^:private menu-icon
+  (i/icon-xref :menu-refactor (stl/css :menu-icon)))
+
 (def tokens-ref
   (l/derived :access-tokens st/state))
 
@@ -114,7 +123,8 @@
         [:h2 {:class (stl/css :modal-title)} (tr "modals.create-access-token.title")]
 
         [:button {:class (stl/css :modal-close-btn)
-                  :on-click on-close} i/close-refactor]]
+                  :on-click on-close}
+         close-icon]]
 
        [:div {:class (stl/css :modal-content)}
         [:div {:class (stl/css :fields-row)}
@@ -154,7 +164,7 @@
             [:button {:title (tr "modals.create-access-token.copy-token")
                       :class (stl/css :copy-btn)
                       :on-click copy-token}
-             i/clipboard-refactor]])
+             clipboard-icon]])
          #_(when @created?
              [:button {:class (stl/css :copy-btn)
                        :title (tr "modals.create-access-token.copy-token")
@@ -226,7 +236,7 @@
            :ref menu-ref
            :on-click on-menu-click
            :on-key-down on-keydown}
-     i/actions
+     menu-icon
      [:& context-menu-a11y
       {:on-close on-menu-close
        :show show?

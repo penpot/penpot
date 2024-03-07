@@ -64,6 +64,8 @@
   align-items: center;
 
   .icon {
+    height: 100%;
+    width: $s-16;
     padding-left: $s-12;
     cursor: pointer;
   }
@@ -98,6 +100,11 @@
   &.actions {
     position: relative;
   }
+}
+
+.menu-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
 }
 
 .dashboard-access-tokens {
@@ -232,9 +239,10 @@
   @extend .button-secondary;
   height: $s-28;
   width: $s-28;
-  svg {
-    @extend .button-icon-small;
-  }
+}
+
+.clipboard-icon {
+  @extend .button-icon-small;
 }
 
 .token-created-info {
