@@ -262,29 +262,32 @@
         (mf/use-fn
          (mf/deps id index objects expanded? selected)
          (fn [side _data]
-           (let [shape (get objects id)
+           (let [single? (= (count selected) 1)
+                 same?   (and single? (= (first selected) id))]
+             (when-not same?
+               (let [shape (get objects id)
 
-                 parent-id
-                 (cond
-                   (= side :center)
-                   id
+                     parent-id
+                     (cond
+                       (= side :center)
+                       id
 
-                   (and expanded? (= side :bot) (d/not-empty? (:shapes shape)))
-                   id
+                       (and expanded? (= side :bot) (d/not-empty? (:shapes shape)))
+                       id
 
-                   :else
-                   (cfh/get-parent-id objects id))
+                       :else
+                       (cfh/get-parent-id objects id))
 
-                 [parent-id _] (ctn/find-valid-parent-and-frame-ids parent-id objects (map #(get objects %) selected))
+                     [parent-id _] (ctn/find-valid-parent-and-frame-ids parent-id objects (map #(get objects %) selected))
 
-                 parent    (get objects parent-id)
+                     parent    (get objects parent-id)
 
-                 to-index  (cond
-                             (= side :center) 0
-                             (and expanded? (= side :bot) (d/not-empty? (:shapes shape))) (count (:shapes parent))
-                             (= side :top) (inc index)
-                             :else index)]
-             (st/emit! (dw/relocate-selected-shapes parent-id to-index)))))
+                     to-index  (cond
+                                 (= side :center) 0
+                                 (and expanded? (= side :bot) (d/not-empty? (:shapes shape))) (count (:shapes parent))
+                                 (= side :top) (inc index)
+                                 :else index)]
+                 (st/emit! (dw/relocate-selected-shapes parent-id to-index)))))))
 
         on-hold
         (mf/use-fn
