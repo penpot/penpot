@@ -20,6 +20,9 @@
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
+(def ^:private arrow-icon
+  (i/icon-xref :arrow-refactor (stl/css :arrow-icon)))
+
 (def ^:private go-settings-profile
   #(st/emit! (rt/nav :settings-profile)))
 
@@ -63,7 +66,7 @@
      [:div {:class (stl/css :sidebar-content-section)}
       [:div {:class (stl/css :back-to-dashboard)
              :on-click go-dashboard}
-       [:span {:class (stl/css :icon)} i/arrow-down]
+       arrow-icon
        [:span {:class (stl/css :text)} (tr "labels.dashboard")]]]
 
      [:hr]
