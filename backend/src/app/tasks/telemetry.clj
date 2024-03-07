@@ -40,6 +40,7 @@
   (fn [{:keys [send? enabled?] :or {send? true enabled? false}}]
     (let [subs     {:newsletter-updates (get-subscriptions-newsletter-updates pool)
                     :newsletter-news (get-subscriptions-newsletter-news pool)}
+
           enabled? (or enabled?
                        (contains? cf/flags :telemetry)
                        (cf/get :telemetry-enabled))
@@ -78,12 +79,11 @@
 
 (defn- send!
   [cfg data]
-  (let [response (http/req! cfg
-                            {:method :post
-                             :uri (cf/get :telemetry-uri)
-                             :headers {"content-type" "application/json"}
-                             :body (json/encode-str data)}
-                            {:sync? true})]
+  (let [request {:method :post
+                 :uri (cf/get :telemetry-uri)
+                 :headers {"content-type" "application/json"}
+                 :body (json/encode-str data)}
+        response (http/req! cfg request)]
     (when (> (:status response) 206)
       (ex/raise :type :internal
                 :code :invalid-response

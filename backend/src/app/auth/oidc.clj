@@ -38,7 +38,7 @@
 ;; HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- obfuscate-string
+(defn obfuscate-string
   [s]
   (if (< (count s) 10)
     (apply str (take (count s) (repeat "*")))
