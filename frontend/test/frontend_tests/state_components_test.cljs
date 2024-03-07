@@ -186,9 +186,9 @@
                     ;; Expected shape tree:
                     ;;
                     ;; [Page: Page]
-                    ;;    Root Frame         
+                    ;;    Root Frame
                     ;;      Rect 1          #
-                    ;;        Rect 1         
+                    ;;        Rect 1
                     ;;      Rect 1          #
                     ;;        Rect 1*         @--> Rect 1
                     ;;          Rect 1        ---> Rect 1
@@ -362,6 +362,7 @@
                                             component2]
                                            (thl/resolve-component
                                             new-state
+                                            (:current-file-id new-state)
                                             new-component-id)]
 
                                        (t/is (= (:name component2) "Rect 1")))))]
@@ -657,7 +658,7 @@
                     ;;
                     ;; [Board]
                     ;;   page1 / Board
-                    ;; 
+                    ;;
                                      (let [instance1  (thp/get-shape new-state :instance1)
 
                                            [[group shape1 shape2]

@@ -117,12 +117,6 @@
     (ctkl/update-component file-data (:id container) f)))
 
 ;; Asset helpers
-
-(defn find-component
-  "Retrieve a component from libraries, iterating over all of them."
-  [libraries component-id & {:keys [include-deleted?] :or {include-deleted? false}}]
-  (some #(ctkl/get-component (:data %) component-id include-deleted?) (vals libraries)))
-
 (defn find-component-file
   [file libraries component-file]
   (if (and (some? file) (= component-file (:id file)))
