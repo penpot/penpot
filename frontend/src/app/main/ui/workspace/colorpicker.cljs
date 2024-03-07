@@ -316,7 +316,7 @@
            (if picking-color?
              [:div {:class (stl/css :picker-detail-wrapper)}
               [:div {:class (stl/css :center-circle)}]
-              [:canvas#picker-detail {:width 256 :height 140}]]
+              [:canvas#picker-detail {:class (stl/css :picker-detail) :width 256 :height 140}]]
              [:& ramp-selector
               {:color current-color
                :disable-opacity disable-opacity
@@ -328,7 +328,7 @@
            (if picking-color?
              [:div {:class (stl/css :picker-detail-wrapper)}
               [:div {:class (stl/css :center-circle)}]
-              [:canvas#picker-detail {:width 256 :height 140}]]
+              [:canvas#picker-detail {:class (stl/css :picker-detail) :width 256 :height 140}]]
              [:& harmony-selector
               {:color current-color
                :disable-opacity disable-opacity
@@ -340,7 +340,7 @@
            (if picking-color?
              [:div {:class (stl/css :picker-detail-wrapper)}
               [:div {:class (stl/css :center-circle)}]
-              [:canvas#picker-detail {:width 256 :height 140}]]
+              [:canvas#picker-detail {:class (stl/css :picker-detail) :width 256 :height 140}]]
              [:& hsva-selector
               {:color current-color
                :disable-opacity disable-opacity
