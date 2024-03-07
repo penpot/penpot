@@ -117,7 +117,7 @@
          [:? {}
           (if (:token query-params)
             [:> static/error-container {}
-             [:div.image i/unchain]
+             [:div.image i/detach-refactor]
              [:div.main-message (tr "viewer.breaking-change.message")]
              [:div.desc-message (tr "viewer.breaking-change.description")]]
 
