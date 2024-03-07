@@ -55,7 +55,7 @@
                :on-click on-show-comments
                :on-key-down handle-keydown
                :data-test "open-comments"
-               :class (stl/css-case :button true
+               :class (stl/css-case :comment-button true
                                     :open show?
                                     :unread (boolean (seq tgroups)))}
       comments-icon-small]]))
@@ -101,7 +101,7 @@
      [:& dropdown {:show show? :on-close on-hide-comments}
       [:div {:class (stl/css :dropdown :comments-section :comment-threads-section)}
        [:div {:class (stl/css :header)}
-        [:h3 (tr "labels.comments")]
+        [:h3 {:class (stl/css :header-title)} (tr "labels.comments")]
         [:button {:class (stl/css :close-btn)
                   :tab-index (if show? "0" "-1")
                   :on-click on-hide-comments
