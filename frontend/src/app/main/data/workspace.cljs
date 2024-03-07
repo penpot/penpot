@@ -1967,8 +1967,13 @@
 
               page-objects (:objects page)
 
+              libraries    (wsh/get-libraries state)
+              ldata        (wsh/get-local-file state)
+
+              full-libs    (assoc-in libraries [(:id ldata) :data] ldata)
+
               [parent-id
-               frame-id]   (ctn/find-valid-parent-and-frame-ids candidate-parent-id page-objects (vals objects))
+               frame-id]   (ctn/find-valid-parent-and-frame-ids candidate-parent-id page-objects (vals objects) true full-libs)
 
               index        (if (= candidate-parent-id parent-id)
                              index
@@ -1978,8 +1983,7 @@
 
               all-objects  (merge page-objects objects)
 
-              libraries    (wsh/get-libraries state)
-              ldata        (wsh/get-file state file-id)
+
 
               drop-cell    (when (ctl/grid-layout? all-objects parent-id)
                              (gslg/get-drop-cell frame-id all-objects position))
