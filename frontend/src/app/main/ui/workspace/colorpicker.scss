@@ -132,6 +132,11 @@
   transform: translate(calc(-1 * $s-12), calc(-1 * $s-12));
 }
 
+.picker-detail {
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+
 .select {
   width: $s-116;
 }
