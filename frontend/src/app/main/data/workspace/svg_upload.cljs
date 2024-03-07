@@ -102,7 +102,7 @@
           (rx/of (dwu/start-undo-transaction undo-id)
                  (dch/commit-changes changes)
                  (dws/select-shapes (d/ordered-set (:id new-shape)))
-                 (ptk/data-event :layout/update [(:id new-shape)])
+                 (ptk/data-event :layout/update {:ids [(:id new-shape)]})
                  (dwu/commit-undo-transaction undo-id)))
 
         (catch :default cause

@@ -52,7 +52,7 @@
    [potok.v2.core :as ptk]))
 
 ;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
-(log/set-level! :trace)
+(log/set-level! :warn)
 
 (defn- log-changes
   [changes file]
@@ -334,7 +334,7 @@
             (when-not (empty? (:redo-changes changes))
               (rx/of (dch/commit-changes changes)
                      (dws/select-shapes (d/ordered-set (:id root)))
-                     (ptk/data-event :layout/update parents)))))))))
+                     (ptk/data-event :layout/update {:ids parents})))))))))
 
 (defn add-component
   "Add a new component to current file library, from the currently selected shapes.
@@ -566,7 +566,7 @@
              undo-id (js/Symbol)]
          (rx/of (dwu/start-undo-transaction undo-id)
                 (dch/commit-changes changes)
-                (ptk/data-event :layout/update [(:id new-shape)])
+                (ptk/data-event :layout/update {:ids [(:id new-shape)]})
                 (dws/select-shapes (d/ordered-set (:id new-shape)))
                 (when start-move?
                   (dwtr/start-move initial-point #{(:id new-shape)}))
@@ -948,7 +948,6 @@
 
             undo-id (js/Symbol)
             undo-group (uuid/next)]
-
         (rx/of
          (dwu/start-undo-transaction undo-id)
          (dwsh/delete-shapes nil (d/ordered-set (:id shape)) {:component-swap true
@@ -956,7 +955,7 @@
                                                               :undo-group undo-group})
          (add-component-for-swap shape file page libraries id-new-component index target-cell keep-props-values
                                  {:undo-group undo-group})
-         (ptk/data-event :layout/update [(:parent-id shape)])
+         (ptk/data-event :layout/update {:ids [(:parent-id shape)] :undo-group undo-group})
          (dwu/commit-undo-transaction undo-id))))))
 
 (defn component-multi-swap
@@ -1082,7 +1081,7 @@
                                                 :file-id file-id))))
             (when-not (empty? updated-frames)
               (rx/merge
-               (rx/of (ptk/data-event :layout/update (map :id updated-frames)))
+               (rx/of (ptk/data-event :layout/update {:ids (map :id updated-frames) :undo-group undo-group}))
                (->> (rx/from updated-frames)
                     (rx/mapcat
                      (fn [shape]

@@ -94,7 +94,7 @@
 ;; Never call this directly but through the data-event `:layout/update`
 ;; Otherwise a lot of cycle dependencies could be generated
 (defn- update-layout-positions
-  [ids]
+  [{:keys [ids undo-group]}]
   (ptk/reify ::update-layout-positions
     ptk/WatchEvent
     (watch [_ state _]
@@ -103,7 +103,8 @@
         (if (d/not-empty? ids)
           (let [modif-tree (dwm/create-modif-tree ids (ctm/reflow-modifiers))]
             (rx/of (dwm/apply-modifiers {:modifiers modif-tree
-                                         :stack-undo? true})))
+                                         :stack-undo? true
+                                         :undo-group undo-group})))
           (rx/empty))))))
 
 (defn initialize
@@ -139,7 +140,7 @@
         (rx/of (dwu/start-undo-transaction undo-id)
                (dch/update-shapes [id] layout-initializer {:with-objects? true})
                (dch/update-shapes (dm/get-prop parent :shapes) #(dissoc % :constraints-h :constraints-v))
-               (ptk/data-event :layout/update [id])
+               (ptk/data-event :layout/update {:ids [id]})
                (dwu/commit-undo-transaction undo-id))))))
 
 (defn create-layout-from-selection
@@ -180,7 +181,7 @@
               (dch/update-shapes [new-shape-id] #(assoc % :layout-item-h-sizing :auto :layout-item-v-sizing :auto))
               (dch/update-shapes selected #(assoc % :layout-item-h-sizing :fix :layout-item-v-sizing :fix))
               (dwsh/delete-shapes page-id selected)
-              (ptk/data-event :layout/update [new-shape-id])
+              (ptk/data-event :layout/update {:ids [new-shape-id]})
               (dwu/commit-undo-transaction undo-id)))
 
            ;; Create Layout from selection
@@ -191,7 +192,7 @@
             (dch/update-shapes [new-shape-id] #(assoc % :layout-item-h-sizing :auto :layout-item-v-sizing :auto))
             (dch/update-shapes selected #(assoc % :layout-item-h-sizing :fix :layout-item-v-sizing :fix))))
 
-         (rx/of (ptk/data-event :layout/update [new-shape-id])
+         (rx/of (ptk/data-event :layout/update {:ids [new-shape-id]})
                 (dwu/commit-undo-transaction undo-id)))))))
 
 (defn remove-layout
@@ -203,7 +204,7 @@
         (rx/of
          (dwu/start-undo-transaction undo-id)
          (dch/update-shapes ids #(apply dissoc % layout-keys))
-         (ptk/data-event :layout/update ids)
+         (ptk/data-event :layout/update {:ids ids})
          (dwu/commit-undo-transaction undo-id))))))
 
 (defn create-layout
@@ -256,7 +257,7 @@
       (let [undo-id (js/Symbol)]
         (rx/of (dwu/start-undo-transaction undo-id)
                (dch/update-shapes ids (d/patch-object changes))
-               (ptk/data-event :layout/update ids)
+               (ptk/data-event :layout/update {:ids ids})
                (dwu/commit-undo-transaction undo-id))))))
 
 (defn add-layout-track
@@ -275,7 +276,7 @@
                    (case type
                      :row    (ctl/add-grid-row shape value index)
                      :column (ctl/add-grid-column shape value index))))
-                (ptk/data-event :layout/update ids)
+                (ptk/data-event :layout/update {:ids ids})
                 (dwu/commit-undo-transaction undo-id)))))))
 
 (defn remove-layout-track
@@ -309,7 +310,7 @@
                       :row    (ctl/remove-grid-row shape index objects)
                       :column (ctl/remove-grid-column shape index objects)))
                   {:with-objects? true})
-                 (ptk/data-event :layout/update ids)
+                 (ptk/data-event :layout/update {:ids ids})
                  (dwu/commit-undo-transaction undo-id)))))))
 
 (defn duplicate-layout-track
@@ -363,7 +364,7 @@
             undo-id (js/Symbol)]
         (rx/of (dwu/start-undo-transaction undo-id)
                (dch/commit-changes changes)
-               (ptk/data-event :layout/update ids)
+               (ptk/data-event :layout/update {:ids ids})
                (dwu/commit-undo-transaction undo-id))))))
 
 (defn reorder-layout-track
@@ -381,7 +382,7 @@
                   (case type
                     :row    (ctl/reorder-grid-row shape from-index to-index move-content?)
                     :column (ctl/reorder-grid-column shape from-index to-index move-content?))))
-               (ptk/data-event :layout/update ids)
+               (ptk/data-event :layout/update {:ids ids})
                (dwu/commit-undo-transaction undo-id))))))
 
 (defn hover-layout-track
@@ -426,7 +427,7 @@
                 (fn [shape]
                   (-> shape
                       (update-in [property index] merge props))))
-               (ptk/data-event :layout/update ids)
+               (ptk/data-event :layout/update {:ids ids})
                (dwu/commit-undo-transaction undo-id))))))
 
 (defn fix-child-sizing
@@ -523,7 +524,7 @@
                       (cond-> (ctl/grid-layout? parent)
                         (ctl/assign-cells objects))))
                 {:with-objects? true})
-               (ptk/data-event :layout/update ids)
+               (ptk/data-event :layout/update {:ids ids})
                (dwu/commit-undo-transaction undo-id))))))
 
 (defn update-grid-cells
@@ -546,7 +547,7 @@
                      [:layout-grid-cells cell-id]
                      d/patch-object props))
                   shape))))
-         (ptk/data-event :layout/update [layout-id])
+         (ptk/data-event :layout/update {:ids [layout-id]})
          (dwu/commit-undo-transaction undo-id))))))
 
 (defn change-cells-mode
@@ -612,7 +613,7 @@
                     (d/update-in-when [:layout-grid-cells (:id target-cell)] assoc :position :area)))))
           {:with-objects? true})
          (dwge/clean-selection layout-id)
-         (ptk/data-event :layout/update [layout-id])
+         (ptk/data-event :layout/update {:ids [layout-id]})
          (dwu/commit-undo-transaction undo-id))))))
 
 (defn merge-cells
@@ -644,7 +645,7 @@
                   (ctl/assign-cells objects))))
           {:with-objects? true})
          (dwge/clean-selection layout-id)
-         (ptk/data-event :layout/update [layout-id])
+         (ptk/data-event :layout/update {:ids [layout-id]})
          (dwu/commit-undo-transaction undo-id))))))
 
 (defn update-grid-cell-position
@@ -669,7 +670,7 @@
                                         (:row-span new-data) (:column-span new-data))
                   (ctl/assign-cells objects))))
           {:with-objects? true})
-         (ptk/data-event :layout/update [layout-id])
+         (ptk/data-event :layout/update {:ids [layout-id]})
          (dwu/commit-undo-transaction undo-id))))))
 
 
@@ -724,5 +725,5 @@
         (rx/of
          (dwu/start-undo-transaction undo-id)
          (dch/commit-changes changes)
-         (ptk/data-event :layout/update [layout-id])
+         (ptk/data-event :layout/update {:ids [layout-id]})
          (dwu/commit-undo-transaction undo-id))))))

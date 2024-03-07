@@ -30,7 +30,7 @@
    [clojure.set :as set]))
 
 ;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
-(log/set-level! :trace)
+(log/set-level! :warn)
 
 (declare generate-sync-container)
 (declare generate-sync-shape)
@@ -320,16 +320,17 @@
     (loop [containers (ctf/object-containers-seq file)
            changes (pcb/empty-changes it)]
       (if-let [container (first containers)]
-        (recur (next containers)
-               (pcb/concat-changes
-                changes
-                (generate-sync-container it
-                                         asset-type
-                                         asset-id
-                                         library-id
-                                         state
-                                         container
-                                         components-v2)))
+        (do
+          (recur (next containers)
+                 (pcb/concat-changes
+                  changes
+                  (generate-sync-container it
+                                           asset-type
+                                           asset-id
+                                           library-id
+                                           state
+                                           container
+                                           components-v2))))
         changes))))
 
 (defn generate-sync-library

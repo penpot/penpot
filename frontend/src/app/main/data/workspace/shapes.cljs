@@ -57,7 +57,7 @@
           (rx/of (dwu/start-undo-transaction undo-id)
                  (dch/commit-changes changes)
                  (when-not no-update-layout?
-                   (ptk/data-event :layout/update [(:parent-id shape)]))
+                   (ptk/data-event :layout/update {:ids [(:parent-id shape)]}))
                  (when-not no-select?
                    (dws/select-shapes (d/ordered-set (:id shape))))
                  (dwu/commit-undo-transaction undo-id))
@@ -141,10 +141,11 @@
 
          (rx/concat
           (rx/of (dwu/start-undo-transaction undo-id)
-                 (update-shape-flags ids-to-hide {:hidden true}))
+                 (update-shape-flags ids-to-hide {:hidden true :undo-group (:undo-group options)}))
           (real-delete-shapes file page objects ids-to-delete it {:components-v2 components-v2
                                                                   :ignore-touched (:component-swap options)
-                                                                  :undo-group (:undo-group options)})
+                                                                  :undo-group (:undo-group options)
+                                                                  :undo-id undo-id})
           (rx/of (dwu/commit-undo-transaction undo-id))))))))
 
 (defn- real-delete-shapes-changes
@@ -291,11 +292,11 @@
 (defn- real-delete-shapes
   [file page objects ids it options]
   (let [[changes all-parents] (real-delete-shapes-changes file page objects ids it options)
-        undo-id (js/Symbol)]
+        undo-id (or (:undo-id options) (js/Symbol))]
     (rx/of (dwu/start-undo-transaction undo-id)
            (dc/detach-comment-thread ids)
            (dch/commit-changes changes)
-           (ptk/data-event :layout/update all-parents)
+           (ptk/data-event :layout/update {:ids all-parents :undo-group (:undo-group options)})
            (dwu/commit-undo-transaction undo-id))))
 
 (defn create-and-add-shape
@@ -377,7 +378,7 @@
             (dwu/start-undo-transaction undo-id)
             (dch/commit-changes changes)
             (dws/select-shapes (d/ordered-set (:id frame-shape)))
-            (ptk/data-event :layout/update [(:id frame-shape)])
+            (ptk/data-event :layout/update {:ids [(:id frame-shape)]})
             (dwu/commit-undo-transaction undo-id))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -385,7 +386,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn update-shape-flags
-  [ids {:keys [blocked hidden transforming] :as flags}]
+  [ids {:keys [blocked hidden transforming undo-group] :as flags}]
   (dm/assert!
    "expected valid coll of uuids"
    (every? uuid? ids))
@@ -409,7 +410,7 @@
             ids     (if (boolean? blocked)
                       (into ids (->> ids (mapcat #(cfh/get-children-ids objects %))))
                       ids)]
-        (rx/of (dch/update-shapes ids update-fn {:attrs #{:blocked :hidden :transforming}}))))))
+        (rx/of (dch/update-shapes ids update-fn {:attrs #{:blocked :hidden :transforming} :undo-group undo-group}))))))
 
 (defn toggle-visibility-selected
   []

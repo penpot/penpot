@@ -332,7 +332,7 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (ptk/data-event :layout/update [id])))))
+      (rx/of (ptk/data-event :layout/update {:ids [id]})))))
 
 (defn split-segments
   [{:keys [from-p to-p t]}]
