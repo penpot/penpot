@@ -86,7 +86,7 @@
 
         accept-edit (fn []
                       (let [name-input (mf/ref-val name-ref)
-                            name       (dom/get-value name-input)]
+                            name       (str/trim (dom/get-value name-input))]
                         (reset! editing? false)
                         (st/emit! (dwi/end-rename-flow)
                                   (when-not (str/empty? name)
