@@ -1024,18 +1024,18 @@
 
         :else
         (if (or (ctk/is-main-of? child-main child-inst)
-                (ctf/match-swap-slot? child-main child-inst container-inst container-main file libraries))
+                (and (ctf/match-swap-slot? child-main child-inst container-inst container-main file libraries) (not reset?)))
           (recur (next children-inst)
                  (next children-main)
-                 (if (or (ctk/is-main-of? child-main child-inst) reset?)
+                 (if (ctk/is-main-of? child-main child-inst)
                    (both-cb changes child-inst child-main)
                    (swapped-cb changes child-inst child-main)))
 
           (let [child-inst' (d/seek #(or (ctk/is-main-of? child-main %)
-                                         (ctf/match-swap-slot? child-main % container-inst container-main file libraries))
+                                         (and (ctf/match-swap-slot? child-main % container-inst container-main file libraries) (not reset?)))
                                     children-inst)
                 child-main' (d/seek #(or (ctk/is-main-of? % child-inst)
-                                         (ctf/match-swap-slot? % child-inst container-inst container-main file libraries))
+                                         (and (ctf/match-swap-slot? % child-inst container-inst container-main file libraries) (not reset?)))
                                     children-main)]
             (cond
               (nil? child-inst')
