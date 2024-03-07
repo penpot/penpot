@@ -699,6 +699,7 @@
     (watch [it state _]
       (log/info :msg "RESET-COMPONENT of shape" :id (str id))
       (let [file      (wsh/get-local-file state)
+            file-full (wsh/get-local-file-full state)
             libraries (wsh/get-libraries state)
 
             page-id   (:current-page-id state)
@@ -711,7 +712,7 @@
             (-> (pcb/empty-changes it)
                 (pcb/with-container container)
                 (pcb/with-objects (:objects container))
-                (dwlh/generate-sync-shape-direct libraries container id true components-v2))]
+                (dwlh/generate-sync-shape-direct file-full libraries container id true components-v2))]
 
         (log/debug :msg "RESET-COMPONENT finished" :js/rchanges (log-changes
                                                                  (:redo-changes changes)
@@ -750,6 +751,7 @@
        (log/info :msg "UPDATE-COMPONENT of shape" :id (str id) :undo-group undo-group)
        (let [page-id       (get state :current-page-id)
              local-file    (wsh/get-local-file state)
+             full-file     (wsh/get-local-file-full state)
              container     (cfh/get-container local-file :page page-id)
              shape         (ctn/get-shape container id)
              components-v2 (features/active-feature? state "components/v2")]
@@ -761,7 +763,7 @@
                  (-> (pcb/empty-changes it)
                      (pcb/set-undo-group undo-group)
                      (pcb/with-container container)
-                     (dwlh/generate-sync-shape-inverse libraries container id components-v2))
+                     (dwlh/generate-sync-shape-inverse full-file libraries container id components-v2))
 
                  file-id   (:component-file shape)
                  file      (wsh/get-file state file-id)

@@ -425,8 +425,9 @@
 (defmethod generate-sync-shape :components
   [_ changes _library-id state container shape components-v2]
   (let [shape-id  (:id shape)
+        file      (wsh/get-local-file-full state)
         libraries (wsh/get-libraries state)]
-    (generate-sync-shape-direct changes libraries container shape-id false components-v2)))
+    (generate-sync-shape-direct changes file libraries container shape-id false components-v2)))
 
 (defmethod generate-sync-shape :colors
   [_ changes library-id state _ shape _]
@@ -594,7 +595,7 @@
 (defn generate-sync-shape-direct
   "Generate changes to synchronize one shape that is the root of a component
   instance, and all its children, from the given component."
-  [changes libraries container shape-id reset? components-v2]
+  [changes file libraries container shape-id reset? components-v2]
   (log/debug :msg "Sync shape direct" :shape-inst (str shape-id) :reset? reset?)
   (let [shape-inst (ctn/get-shape container shape-id)
         library    (dm/get-in libraries [(:component-file shape-inst) :data])
@@ -623,6 +624,8 @@
                                                 shape-inst
                                                 component
                                                 library
+                                                file
+                                                libraries
                                                 shape-main
                                                 root-inst
                                                 root-main
@@ -655,7 +658,7 @@
             nil))))))
 
 (defn- generate-sync-shape-direct-recursive
-  [changes container shape-inst component library shape-main root-inst root-main reset? initial-root? redirect-shaperef components-v2]
+  [changes container shape-inst component library file libraries shape-main root-inst root-main reset? initial-root? redirect-shaperef components-v2]
   (log/debug :msg "Sync shape direct recursive"
              :shape-inst (str (:name shape-inst) " " (pretty-uuid (:id shape-inst)))
              :component (:name component))
@@ -752,6 +755,8 @@
                                                        child-inst
                                                        component
                                                        library
+                                                       file
+                                                       libraries
                                                        child-main
                                                        root-inst
                                                        root-main
@@ -782,6 +787,10 @@
       (compare-children changes
                         children-inst
                         children-main
+                        container
+                        component-container
+                        file
+                        libraries
                         only-inst
                         only-main
                         both
@@ -812,7 +821,7 @@
 (defn generate-sync-shape-inverse
   "Generate changes to update the component a shape is linked to, from
   the values in the shape and all its children."
-  [changes libraries container shape-id components-v2]
+  [changes file libraries container shape-id components-v2]
   (log/debug :msg "Sync shape inverse" :shape (str shape-id))
   (let [redirect-shaperef (partial redirect-shaperef container libraries)
         shape-inst     (ctn/get-shape container shape-id)
@@ -843,6 +852,8 @@
                                              shape-inst
                                              component
                                              library
+                                             file
+                                             libraries
                                              shape-main
                                              root-inst
                                              root-main
@@ -852,7 +863,7 @@
       changes)))
 
 (defn- generate-sync-shape-inverse-recursive
-  [changes container shape-inst component library shape-main root-inst root-main initial-root? redirect-shaperef components-v2]
+  [changes container shape-inst component library file libraries shape-main root-inst root-main initial-root? redirect-shaperef components-v2]
   (log/trace :msg "Sync shape inverse recursive"
              :shape (str (:name shape-inst))
              :component (:name component))
@@ -935,6 +946,8 @@
                                                         child-inst
                                                         component
                                                         library
+                                                        file
+                                                        libraries
                                                         child-main
                                                         root-inst
                                                         root-main
@@ -962,6 +975,10 @@
           (compare-children changes
                             children-inst
                             children-main
+                            container
+                            component-container
+                            file
+                            libraries
                             only-inst
                             only-main
                             both
@@ -986,7 +1003,7 @@
 ;; ---- Operation generation helpers ----
 
 (defn- compare-children
-  [changes children-inst children-main only-inst-cb only-main-cb both-cb swapped-cb moved-cb inverse? reset?]
+  [changes children-inst children-main container-inst container-main file libraries only-inst-cb only-main-cb both-cb swapped-cb moved-cb inverse? reset?]
   (log/trace :msg "Compare children")
   (loop [children-inst (seq (or children-inst []))
          children-main (seq (or children-main []))
@@ -1007,7 +1024,7 @@
 
         :else
         (if (or (ctk/is-main-of? child-main child-inst)
-                (ctk/match-swap-slot? child-main child-inst))
+                (ctf/match-swap-slot? child-main child-inst container-inst container-main file libraries))
           (recur (next children-inst)
                  (next children-main)
                  (if (or (ctk/is-main-of? child-main child-inst) reset?)
@@ -1015,10 +1032,10 @@
                    (swapped-cb changes child-inst child-main)))
 
           (let [child-inst' (d/seek #(or (ctk/is-main-of? child-main %)
-                                         (ctk/match-swap-slot? child-main %))
+                                         (ctf/match-swap-slot? child-main % container-inst container-main file libraries))
                                     children-inst)
                 child-main' (d/seek #(or (ctk/is-main-of? % child-inst)
-                                         (ctk/match-swap-slot? % child-inst))
+                                         (ctf/match-swap-slot? % child-inst container-inst container-main file libraries))
                                     children-main)]
             (cond
               (nil? child-inst')

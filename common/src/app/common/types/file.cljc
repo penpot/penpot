@@ -204,7 +204,7 @@
 (defn find-ref-shape
   "Locate the nearest component in the local file or libraries, and retrieve the shape
    referenced by the instance shape."
-  [file page libraries shape & {:keys [include-deleted? with-context?] :or {include-deleted? false with-context? false}}]
+  [file container libraries shape & {:keys [include-deleted? with-context?] :or {include-deleted? false with-context? false}}]
   (let [find-ref-shape-in-head
         (fn [head-shape]
           (let [component-file (find-component-file file libraries (:component-file head-shape))
@@ -213,7 +213,7 @@
             (when (some? component)
               (get-ref-shape (:data component-file) component shape :with-context? with-context?))))]
 
-    (some find-ref-shape-in-head (ctn/get-parent-heads (:objects page) shape))))
+    (some find-ref-shape-in-head (ctn/get-parent-heads (:objects container) shape))))
 
 (defn find-ref-component
   "Locate the nearest component in the local file or libraries that is referenced by the
@@ -265,14 +265,13 @@
     (true? (= (:id component) (:id ref-component)))))
 
 (defn find-swap-slot
-  [shape page file libraries]
-  (dm/assert! "expected shape is head" (ctk/instance-head? shape))
+  [shape container file libraries]
   ;; (js/console.log "find-swap-slot" (clj->js shape))
   (if-let [swap-slot (ctk/get-swap-slot shape)]
     ;; (do (js/console.log "uno" (str swap-slot)) swap-slot)
     swap-slot
     (let [ref-shape (find-ref-shape file
-                                    page
+                                    container
                                     libraries
                                     shape
                                     :include-deleted? true
@@ -292,11 +291,12 @@
             (find-swap-slot ref-shape ref-container ref-file libraries)))))))
 
 (defn match-swap-slot?
-  [shape-main shape-inst page-inst page-main file libraries]
-  (let [slot-main   (find-swap-slot shape-main page-main file libraries)
-        slot-inst   (find-swap-slot shape-inst page-inst file libraries)]
-    (or (= slot-main slot-inst)
-        (= (:id shape-main) slot-inst))))
+  [shape-main shape-inst container-inst container-main file libraries]
+  (let [slot-main (find-swap-slot shape-main container-main file libraries)
+        slot-inst (find-swap-slot shape-inst container-inst file libraries)]
+    (when (some? slot-inst)
+      (or (= slot-main slot-inst)
+          (= (:id shape-main) slot-inst)))))
 
 (defn get-component-shapes
   "Retrieve all shapes of the component"
