@@ -135,25 +135,20 @@
 }
 
 .back-to-dashboard {
+  display: flex;
+  align-items: center;
   padding: $s-12 $s-16;
   font-size: $fs-14;
   cursor: pointer;
-  display: flex;
-
-  .icon {
-    display: flex;
-    align-items: center;
-    margin-right: $s-12;
-  }
 
   .text {
     color: $df-primary;
   }
+}
 
-  svg {
-    fill: $df-secondary;
-    transform: rotate(90deg);
-    width: $s-12;
-    height: $s-12;
-  }
+.arrow-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
+  transform: rotate(180deg);
+  margin-right: $s-12;
 }
