@@ -416,12 +416,6 @@
      (some ctk/main-instance? children)
      (some ctk/main-instance? parents))))
 
-(defn has-any-main-children?
-  "Check if the shape is a main component or has any children that is a main component."
-  [objects shape]
-  (let [children (cfh/get-children-with-self objects (:id shape))]
-    (some ctk/main-instance? children)))
-
 (defn valid-shape-for-component?
   "Check if a main component can be generated from this shape in terms of nested components:
   - A main can't be the ancestor of another main
@@ -431,10 +425,29 @@
    (not (has-any-main? objects shape))
    (not (has-any-copy-parent? objects shape))))
 
+
+(defn collect-main-shapes [shape objects]
+  (if (ctk/main-instance? shape)
+    [shape]
+    (if-let [children (cfh/get-children objects (:id shape))]
+      (mapcat collect-main-shapes children objects)
+      [])))
+
 (defn- invalid-structure-for-component?
   "Check if the structure generated nesting children in parent is invalid in terms of nested components"
-  [objects parent children]
-  (let [selected-main-instance? (some true? (map #(has-any-main-children? objects %) children))
+  [objects parent children pasting? libraries]
+  (let [; When we are pasting, the main shapes will be pasted as copies, unless the
+        ; original component doesn't exist or is deleted. So for this function purposes, they
+        ; are removed from the list
+        remove? (fn [shape]
+                  (let [component (get-in libraries [(:component-file shape) :data  :components (:component-id shape)])]
+                    (and component (not (:deleted component)))))
+
+        selected-components (cond->> (mapcat collect-main-shapes children objects)
+                              pasting?
+                              (remove #(remove? %)))
+
+        selected-main-instance? (seq selected-components)
         parent-in-component?    (in-any-component? objects parent)
         comps-nesting-loop?     (not (->> children
                                           (map #(cfh/components-nesting-loop? objects (:id %) (:id parent)))
@@ -450,13 +463,15 @@
 
 (defn find-valid-parent-and-frame-ids
   "Navigate trough the ancestors until find one that is valid. Returns [ parent-id frame-id ]"
-  [parent-id objects children]
-  (letfn [(get-frame [parent-id]
-            (if (cfh/frame-shape? objects parent-id) parent-id (get-in objects [parent-id :frame-id])))]
-    (let [parent (get objects parent-id)
+  ([parent-id objects children]
+   (find-valid-parent-and-frame-ids parent-id objects children false nil))
+  ([parent-id objects children pasting? libraries]
+   (letfn [(get-frame [parent-id]
+             (if (cfh/frame-shape? objects parent-id) parent-id (get-in objects [parent-id :frame-id])))]
+     (let [parent (get objects parent-id)
           ;; We can always move the children to the parent they already have
-          no-changes?
-          (->> children (every? #(= parent-id (:parent-id %))))]
-      (if (or no-changes? (not (invalid-structure-for-component? objects parent children)))
-        [parent-id (get-frame parent-id)]
-        (recur (:parent-id parent) objects children)))))
+           no-changes?
+           (->> children (every? #(= parent-id (:parent-id %))))]
+       (if (or no-changes? (not (invalid-structure-for-component? objects parent children pasting? libraries)))
+         [parent-id (get-frame parent-id)]
+         (recur (:parent-id parent) objects children pasting? libraries))))))
