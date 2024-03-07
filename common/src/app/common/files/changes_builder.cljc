@@ -109,11 +109,12 @@
   [changes f]
   (update changes :redo-changes #(mapv f %)))
 
+;; redo-changes is a vector and :undo-changes is a list
 (defn concat-changes
   [changes1 changes2]
   (-> changes1
       (update :redo-changes d/concat-vec (:redo-changes changes2))
-      (update :undo-changes d/concat-vec (:undo-changes changes2))))
+      (update :undo-changes #(concat (:undo-changes changes2) %))))
 
 ; TODO: remove this when not needed
 (defn- assert-page-id!
