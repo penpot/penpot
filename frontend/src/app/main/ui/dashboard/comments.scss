@@ -7,17 +7,9 @@
 @use "common/refactor/common-refactor.scss" as *;
 
 .dashboard-comments-section {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  @include flexCenter;
   position: relative;
   border-radius: $br-8;
-
-  button {
-    cursor: pointer;
-    background: none;
-    border: none;
-  }
 }
 
 .thread-groups {
@@ -25,13 +17,6 @@
   overflow-y: scroll;
   max-height: $s-440;
   overflow: auto;
-
-  hr {
-    background-color: $df-primary;
-    border: 0;
-    height: $s-1;
-    margin: 0;
-  }
 }
 
 .thread-group {
@@ -58,10 +43,9 @@
   margin-bottom: $s-24;
 }
 
-.button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.comment-button {
+  @include buttonStyle;
+  @include flexCenter;
   border-radius: $br-8;
   height: $s-32;
   width: $s-32;
@@ -107,13 +91,14 @@
   height: $s-40;
   align-items: center;
   padding: 0 $s-12;
-  h3 {
-    color: $df-secondary;
-    font-size: $fs-11;
-    line-height: 1.28;
-    flex-grow: 1;
-    text-transform: uppercase;
-  }
+}
+
+.header-title {
+  color: $df-secondary;
+  font-size: $fs-11;
+  line-height: 1.28;
+  flex-grow: 1;
+  text-transform: uppercase;
 }
 
 .close-btn {
