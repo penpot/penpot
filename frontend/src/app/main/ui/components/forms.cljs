@@ -372,7 +372,10 @@
         in-klass (str class " "
                       (stl/css-case
                        :inside-input true
-                       :no-padding   (pos? (count @items))))
+                       :no-padding   (pos? (count @items))
+                       :invalid (and (some? valid-item-fn)
+                                     touched?
+                                     (not (valid-item-fn @value)))))
 
         on-focus
         (mf/use-fn #(reset! focus? true))
@@ -394,27 +397,38 @@
         (mf/use-fn
          (mf/deps @value)
          (fn [event]
-           (cond
-             (or (kbd/enter? event)
-                 (kbd/comma? event))
-             (do
-               (dom/prevent-default event)
-               (dom/stop-propagation event)
-               (let [val (cond-> @value trim str/trim)]
+           (let [val (cond-> @value trim str/trim)]
+             (cond
+               (or (kbd/enter? event) (kbd/comma? event) (kbd/space? event))
+               (do
+                 (dom/prevent-default event)
+                 (dom/stop-propagation event)
+
+                 ;; Once enter/comma is pressed we mark it as touched
+                 (swap! form assoc-in [:touched input-name] true)
+
+                 ;; Empty values means "submit" the form (whent some items have been added
                  (when (and (kbd/enter? event) (str/empty? @value) (not-empty @items))
                    (on-submit form))
-                 (when (not (str/empty? @value))
-                   (reset! value "")
-                   (swap! items conj-dedup {:text val
-                                            :valid (valid-item-fn val)
-                                            :caution (caution-item-fn val)}))))
 
-             (and (kbd/backspace? event)
-                  (str/empty? @value))
-             (do
-               (dom/prevent-default event)
-               (dom/stop-propagation event)
-               (swap! items (fn [items] (if (c/empty? items) items (pop items))))))))
+                 ;; If we have a string in the input we add it only if valid
+                 (when (and (valid-item-fn val) (not (str/empty? @value)))
+                   (reset! value "")
+
+                   ;; Once added the form is back as "untouched"
+                   (swap! form assoc-in [:touched input-name] false)
+
+                   ;; This split will allow users to copy comma/space separated values of emails
+                   (doseq [val (str/split val #",|\s+")]
+                     (swap! items conj-dedup {:text (str/trim val)
+                                              :valid (valid-item-fn val)
+                                              :caution (caution-item-fn val)}))))
+
+               (and (kbd/backspace? event) (str/empty? @value))
+               (do
+                 (dom/prevent-default event)
+                 (dom/stop-propagation event)
+                 (swap! items (fn [items] (if (c/empty? items) items (pop items)))))))))
 
         on-blur
         (mf/use-fn
