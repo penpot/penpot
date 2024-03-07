@@ -127,6 +127,7 @@
 - Selected color affects all of them [Taiga #5285](https://tree.taiga.io/project/penpot/issue/5285)
 - Fix problem with shadow negative spread [Github #3421](https://github.com/penpot/penpot/issues/3421)
 - Fix problem with linked colors to strokes [Github #3522](https://github.com/penpot/penpot/issues/3522)
+- Fix problem with hand tool stuck [Github #3318](https://github.com/penpot/penpot/issues/3318)
 
 
 ## 1.19.5
