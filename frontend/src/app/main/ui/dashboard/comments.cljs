@@ -20,6 +20,17 @@
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
+
+(def ^:private close-icon
+  (i/icon-xref :close-refactor (stl/css :close-icon)))
+
+(def ^:private comments-icon-svg
+  (i/icon-xref :comments-refactor (stl/css :comments-icon)))
+
+
+(def ^:private comments-icon-small
+  (i/icon-xref :comments-refactor (stl/css :comments-icon-small)))
+
 (mf/defc comments-icon
   [{:keys [profile show? on-show-comments]}]
 
@@ -47,7 +58,7 @@
                :class (stl/css-case :button true
                                     :open show?
                                     :unread (boolean (seq tgroups)))}
-      i/comments-refactor]]))
+      comments-icon-small]]))
 
 (mf/defc comments-section
   [{:keys [profile team show? on-hide-comments]}]
@@ -91,11 +102,11 @@
       [:div {:class (stl/css :dropdown :comments-section :comment-threads-section)}
        [:div {:class (stl/css :header)}
         [:h3 (tr "labels.comments")]
-        [:button
-         {:class (stl/css :close)
-          :tab-index (if show? "0" "-1")
-          :on-click on-hide-comments
-          :on-key-down handle-keydown} i/close]]
+        [:button {:class (stl/css :close-btn)
+                  :tab-index (if show? "0" "-1")
+                  :on-click on-hide-comments
+                  :on-key-down handle-keydown}
+         close-icon]]
 
        (if (seq tgroups)
          [:div {:class (stl/css :thread-groups)}
@@ -113,5 +124,5 @@
               :key (:page-id tgroup)}])]
 
          [:div {:class (stl/css :thread-groups-placeholder)}
-          i/comments-refactor
+          comments-icon-svg
           (tr "labels.no-comments-available")])]]]))

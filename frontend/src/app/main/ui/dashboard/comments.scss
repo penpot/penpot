@@ -48,14 +48,14 @@
   padding: $s-24;
   text-align: center;
   color: $df-secondary;
+}
 
-  svg {
-    stroke: $df-secondary;
-    fill: none;
-    height: $s-24;
-    margin-bottom: $s-24;
-    width: $s-24;
-  }
+.comments-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
+  height: $s-24;
+  width: $s-24;
+  margin-bottom: $s-24;
 }
 
 .button {
@@ -65,26 +65,22 @@
   border-radius: $br-8;
   height: $s-32;
   width: $s-32;
+  --comment-icon-small-foreground-color: var(--icon-foreground);
 
-  svg {
-    width: $s-16;
-    height: $s-16;
-    stroke: $df-secondary;
-    fill: none;
-  }
-
-  &.unread svg,
-  &.open svg {
-    stroke: $da-tertiary;
+  &.unread,
+  &.open {
+    --comment-icon-small-foreground-color: var(--icon-foreground-selected);
   }
 
   &:hover {
     background-color: $db-quaternary;
-
-    svg {
-      stroke: $da-primary;
-    }
+    --comment-icon-small-foreground-color: var(--icon-foreground-active);
   }
+}
+
+.comments-icon-small {
+  @extend .button-icon;
+  stroke: var(--comment-icon-small-foreground-color);
 }
 
 .dropdown {
@@ -111,7 +107,6 @@
   height: $s-40;
   align-items: center;
   padding: 0 $s-12;
-
   h3 {
     color: $df-secondary;
     font-size: $fs-11;
@@ -119,16 +114,14 @@
     flex-grow: 1;
     text-transform: uppercase;
   }
+}
 
-  .close {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    svg {
-      width: $s-16;
-      height: $s-16;
-      transform: rotate(45deg);
-      fill: $df-secondary;
-    }
-  }
+.close-btn {
+  @include buttonStyle;
+  @include flexCenter;
+}
+
+.close-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
 }
