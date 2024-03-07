@@ -270,7 +270,7 @@
                                   :icon-fill ready?)}
        (cond loading?       i/loader-pencil
              ready?         i/logo-icon
-             import-warn?   i/msg-warning
+             import-warn?   i/msg-warning-refactor
              import-error?  i/close-refactor
              import-finish? i/tick-refactor
              analyze-error? i/close-refactor)]

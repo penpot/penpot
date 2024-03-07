@@ -69,15 +69,11 @@
       (case val
         :start    i/align-items-column-start-refactor
         :end      i/align-items-column-end-refactor
-        :center   i/align-items-column-center-refactor
-        :stretch  i/align-items-column-strech
-        :baseline i/align-items-column-baseline)
-      (case val ;; TODO Check strech and baseline icons
+        :center   i/align-items-column-center-refactor)
+      (case val
         :start    i/align-items-row-start-refactor
         :end      i/align-items-row-end-refactor
-        :center   i/align-items-row-center-refactor
-        :stretch  i/align-items-row-strech
-        :baseline i/align-items-row-baseline))
+        :center   i/align-items-row-center-refactor))
 
     :justify-content
     (if column?
@@ -122,16 +118,12 @@
         :auto     i/remove-refactor
         :start    i/align-self-row-left-refactor
         :end      i/align-self-row-right-refactor
-        :center   i/align-self-row-center-refactor
-        :stretch  i/align-self-row-strech
-        :baseline i/align-self-row-baseline)
+        :center   i/align-self-row-center-refactor)
       (case val
         :auto     i/remove-refactor
         :start    i/align-self-column-top-refactor
         :end      i/align-self-column-bottom-refactor
-        :center   i/align-self-column-center-refactor
-        :stretch  i/align-self-column-strech
-        :baseline i/align-self-column-baseline))))
+        :center   i/align-self-column-center-refactor))))
 
 (defn get-layout-grid-icon
   [type val ^boolean column?]
@@ -142,16 +134,12 @@
         :auto     i/remove-refactor
         :start    i/align-self-row-left-refactor
         :end      i/align-self-row-right-refactor
-        :center   i/align-self-row-center-refactor
-        :stretch  i/align-self-row-strech
-        :baseline i/align-self-row-baseline)
+        :center   i/align-self-row-center-refactor)
       (case val
         :auto     i/remove-refactor
         :start    i/align-self-column-top-refactor
         :end      i/align-self-column-bottom-refactor
-        :center   i/align-self-column-center-refactor
-        :stretch  i/align-self-column-strech
-        :baseline i/align-self-column-baseline))
+        :center   i/align-self-column-center-refactor))
 
     :justify-items
     (if (not column?)

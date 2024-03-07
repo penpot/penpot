@@ -71,7 +71,7 @@
       [:div.modal-header
        [:div.modal-close-button
         {:on-click close-fn
-         :data-test "close-templates-btn"} i/close]]
+         :data-test "close-templates-btn"} i/close-refactor]]
 
       [:div.modal-content
        [:h3 (tr "onboarding.templates.title")]
