@@ -12,7 +12,6 @@
    [app.common.schema :as sm]
    [app.common.types.components-list :as ctkl]
    [app.common.types.pages-list :as ctpl]
-   [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
    [cuerdas.core :as str]))
@@ -740,22 +739,6 @@
        (map (d/getf objects))
        (d/seek root-frame?)
        :id))
-
-(defn comparator-layout-z-index
-  [[idx-a child-a] [idx-b child-b]]
-  (cond
-    (> (ctl/layout-z-index child-a) (ctl/layout-z-index child-b)) 1
-    (< (ctl/layout-z-index child-a) (ctl/layout-z-index child-b)) -1
-    (< idx-a idx-b) 1
-    (> idx-a idx-b) -1
-    :else 0))
-
-(defn sort-layout-children-z-index
-  [children]
-  (->> children
-       (d/enumerate)
-       (sort comparator-layout-z-index)
-       (mapv second)))
 
 (defn common-parent-frame
   "Search for the common frame for the selected shapes. Otherwise returns the root frame"

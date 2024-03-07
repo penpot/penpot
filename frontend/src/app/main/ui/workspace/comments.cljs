@@ -27,6 +27,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (mf/defc sidebar-options
+  {::mf/props :obj}
   [{:keys [from-viewer]}]
   (let [{cmode :mode cshow :show} (mf/deref refs/comments-local)
         update-mode
@@ -67,6 +68,7 @@
       [:span {:class (stl/css :icon)} i/tick-refactor]]]))
 
 (mf/defc comments-sidebar
+  {::mf/props :obj}
   [{:keys [users threads page-id from-viewer]}]
   (let [threads-map (mf/deref refs/threads-ref)
         profile     (mf/deref refs/profile)

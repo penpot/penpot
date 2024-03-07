@@ -110,9 +110,10 @@
              (let [text (dom/get-value textarea)]
                (when-not (str/blank? text)
                  (reset! editing* false)
+                 (st/emit! (dw/update-component-annotation component-id text))
                  (when ^boolean creating?
-                   (st/emit! (dw/set-annotations-id-for-create nil)))
-                 (dw/update-component-annotation component-id text))))))
+                   (st/emit! (dw/set-annotations-id-for-create nil))))))))
+
 
         on-delete-annotation
         (mf/use-fn

@@ -248,6 +248,7 @@
         renewal    (dt/plus created-at default-renewal-max-age)
         expires    (dt/plus created-at max-age)
         secure?    (contains? cf/flags :secure-session-cookies)
+        strict?    (contains? cf/flags :strict-session-cookies)
         cors?      (contains? cf/flags :cors)
         name       (cf/get :auth-token-cookie-name default-auth-token-cookie-name)
         comment    (str "Renewal at: " (dt/format-instant renewal :rfc1123))
@@ -256,7 +257,7 @@
                     :expires expires
                     :value token
                     :comment comment
-                    :same-site (if cors? :none :lax)
+                    :same-site (if cors? :none (if strict? :strict :lax))
                     :secure secure?}]
     (update response :cookies assoc name cookie)))
 
