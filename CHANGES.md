@@ -126,6 +126,7 @@
 - Strange cursor behavior after clicking viewport with text tool [Taiga #4363](https://tree.taiga.io/project/penpot/issue/4363)
 - Selected color affects all of them [Taiga #5285](https://tree.taiga.io/project/penpot/issue/5285)
 - Fix problem with shadow negative spread [Github #3421](https://github.com/penpot/penpot/issues/3421)
+- Fix problem with linked colors to strokes [Github #3522](https://github.com/penpot/penpot/issues/3522)
 
 
 ## 1.19.5
