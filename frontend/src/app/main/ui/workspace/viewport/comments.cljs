@@ -81,9 +81,10 @@
 
        (when-let [id (:open local)]
          (when-let [thread (get threads-map id)]
-           [:& cmt/thread-comments {:thread (update-position positions thread)
-                                    :users users
-                                    :zoom zoom}]))
+           (when (seq (dcm/apply-filters local profile [thread]))
+             [:& cmt/thread-comments {:thread (update-position positions thread)
+                                      :users users
+                                      :zoom zoom}])))
 
        (when-let [draft (:comment drawing)]
          [:& cmt/draft-thread {:draft draft
