@@ -25,7 +25,7 @@
    [rumext.v2 :as mf]))
 
 (def ^:private menu-icon
-  (i/icon-xref :menu-refactor (stl/css :menu-icon)))
+  (i/icon-xref :menu (stl/css :menu-icon)))
 
 (mf/defc header
   [{:keys [project create-fn] :as props}]

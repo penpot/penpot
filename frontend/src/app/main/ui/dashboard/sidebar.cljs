@@ -40,31 +40,31 @@
    [rumext.v2 :as mf]))
 
 (def ^:private clear-search-icon
-  (icon-xref :delete-text-refactor (stl/css :clear-search-icon)))
+  (icon-xref :delete-text (stl/css :clear-search-icon)))
 
 (def ^:private search-icon
-  (icon-xref :search-refactor (stl/css :search-icon)))
+  (icon-xref :search (stl/css :search-icon)))
 
 (def ^:private tick-icon
-  (icon-xref :tick-refactor (stl/css :tick-icon)))
+  (icon-xref :tick (stl/css :tick-icon)))
 
 (def ^:private logo-icon
-  (icon-xref :logo-refactor (stl/css :logo-icon)))
+  (icon-xref :logo (stl/css :logo-icon)))
 
 (def ^:private add-icon
-  (icon-xref :add-refactor (stl/css :add-icon)))
+  (icon-xref :add (stl/css :add-icon)))
 
 (def ^:private arrow-icon
-  (icon-xref :arrow-refactor (stl/css :arrow-icon)))
+  (icon-xref :arrow (stl/css :arrow-icon)))
 
 (def ^:private menu-icon
-  (icon-xref :menu-refactor (stl/css :menu-icon)))
+  (icon-xref :menu (stl/css :menu-icon)))
 
 (def ^:private pin-icon
-  (icon-xref :pin-refactor (stl/css :pin-icon)))
+  (icon-xref :pin (stl/css :pin-icon)))
 
 (def ^:private exit-icon
-  (icon-xref :exit-refactor (stl/css :exit-icon)))
+  (icon-xref :exit (stl/css :exit-icon)))
 
 (mf/defc sidebar-project
   [{:keys [item selected?] :as props}]

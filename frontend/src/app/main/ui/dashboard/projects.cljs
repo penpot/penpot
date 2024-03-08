@@ -35,10 +35,10 @@
    [rumext.v2 :as mf]))
 
 (def ^:private show-more-icon
-  (i/icon-xref :arrow-refactor (stl/css :show-more-icon)))
+  (i/icon-xref :arrow (stl/css :show-more-icon)))
 
 (def ^:private close-icon
-  (i/icon-xref :close-refactor (stl/css :close-icon)))
+  (i/icon-xref :close (stl/css :close-icon)))
 
 (mf/defc header
   {::mf/wrap [mf/memo]}

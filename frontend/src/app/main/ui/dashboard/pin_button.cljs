@@ -16,7 +16,7 @@
    [rumext.v2 :as mf]))
 
 (def ^:private pin-icon
-  (icon-xref :pin-refactor (stl/css :icon)))
+  (icon-xref :pin (stl/css :icon)))
 
 (mf/defc pin-button*
   {::mf/props :obj}

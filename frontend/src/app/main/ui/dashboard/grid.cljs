@@ -96,7 +96,7 @@
 ;; --- Grid Item Library
 
 (def ^:private menu-icon
-  (i/icon-xref :menu-refactor (stl/css :menu-icon)))
+  (i/icon-xref :menu (stl/css :menu-icon)))
 
 (mf/defc grid-item-library
   {::mf/wrap [mf/memo]}

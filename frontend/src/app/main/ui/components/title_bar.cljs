@@ -12,7 +12,7 @@
    [rumext.v2 :as mf]))
 
 (def ^:private chevron-icon
-  (i/icon-xref :arrow-refactor (stl/css :chevron-icon)))
+  (i/icon-xref :arrow (stl/css :chevron-icon)))
 
 (mf/defc title-bar
   {::mf/props :obj}

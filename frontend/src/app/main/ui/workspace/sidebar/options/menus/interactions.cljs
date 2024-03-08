@@ -183,19 +183,19 @@
          [:& flow-item {:flow flow :key (str (:id flow))}])])))
 
 (def ^:private corner-center-icon
-  (i/icon-xref :corner-center-refactor (stl/css :corner-icon)))
+  (i/icon-xref :corner-center (stl/css :corner-icon)))
 (def ^:private corner-bottom-icon
-  (i/icon-xref :corner-bottom-refactor (stl/css :corner-icon)))
+  (i/icon-xref :corner-bottom (stl/css :corner-icon)))
 (def ^:private corner-bottomleft-icon
-  (i/icon-xref :corner-bottomleft-refactor (stl/css :corner-icon)))
+  (i/icon-xref :corner-bottomleft (stl/css :corner-icon)))
 (def ^:private corner-bottomright-icon
-  (i/icon-xref :corner-bottomright-refactor (stl/css :corner-icon)))
+  (i/icon-xref :corner-bottomright (stl/css :corner-icon)))
 (def ^:private corner-top-icon
-  (i/icon-xref :corner-top-refactor (stl/css :corner-icon)))
+  (i/icon-xref :corner-top (stl/css :corner-icon)))
 (def ^:private corner-topleft-icon
-  (i/icon-xref :corner-topleft-refactor (stl/css :corner-icon)))
+  (i/icon-xref :corner-topleft (stl/css :corner-icon)))
 (def ^:private corner-topright-icon
-  (i/icon-xref :corner-topright-refactor (stl/css :corner-icon)))
+  (i/icon-xref :corner-topright (stl/css :corner-icon)))
 
 (mf/defc interaction-entry
   [{:keys [index shape interaction update-interaction remove-interaction]}]
