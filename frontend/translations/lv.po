@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-01-06 22:06+0000\n"
+"PO-Revision-Date: 2024-03-09 13:01+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= "
 "19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
-"X-Generator: Weblate 5.4-dev\n"
+"X-Generator: Weblate 5.5-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -3683,7 +3683,7 @@ msgstr "Auto"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.column"
-msgstr "Kolonnas"
+msgstr "Slejas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.grid-title"
@@ -3694,7 +3694,7 @@ msgstr "Krāsa"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.params.columns"
-msgstr "Kolonnas"
+msgstr "Slejas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.params.gutter"
@@ -4111,11 +4111,11 @@ msgstr "Apakša"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.column"
-msgstr "Kolona"
+msgstr "Sleja"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.column-reverse"
-msgstr "Apgrieztā kolonna"
+msgstr "Apvērsta sleja"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.row"
@@ -5157,3 +5157,59 @@ msgstr "Ir pieejama jauna versija, lūgums atsvaidzināt lapu"
 
 msgid "workspace.layout_grid.editor.title"
 msgstr "Režģa labošana"
+
+msgid "shortcuts.toggle-theme"
+msgstr "Mainīt izskatu"
+
+msgid "workspace.header.menu.toggle-light-theme"
+msgstr "Pārslēgties uz gaišo izskatu"
+
+msgid "workspace.header.menu.toggle-dark-theme"
+msgstr "Pārslēgties uz tumšo izskatu"
+
+msgid "workspace.context-menu.grid-track.column.duplicate"
+msgstr "Divkāršota sleja"
+
+msgid "workspace.context-menu.grid-track.column.delete"
+msgstr "Izdzēst sleju"
+
+msgid "workspace.context-menu.grid-track.column.delete-shapes"
+msgstr "Izdzēst slejas un apveidus"
+
+msgid "workspace.context-menu.grid-track.row.duplicate"
+msgstr "Divkāršot rindu"
+
+msgid "workspace.context-menu.grid-track.row.add-before"
+msgstr "Pievienot 1 rindu virs"
+
+msgid "workspace.context-menu.grid-track.column.add-after"
+msgstr "Pievienot 1 sleju pa labi"
+
+msgid "workspace.context-menu.grid-track.column.add-before"
+msgstr "Pievienot 1 sleju pa kreisi"
+
+msgid "workspace.context-menu.grid-track.row.add-after"
+msgstr "Pievienot 1 rindu zem"
+
+msgid "workspace.context-menu.grid-track.row.delete"
+msgstr "Izdzēst rindu"
+
+msgid "workspace.context-menu.grid-track.row.delete-shapes"
+msgstr "Izdzēst rindu un apveidus"
+
+msgid "workspace.context-menu.grid-cells.merge"
+msgstr "Apvienot šūnas"
+
+msgid "workspace.context-menu.grid-cells.area"
+msgstr "Izveidot laukumu"
+
+msgid "workspace.context-menu.grid-cells.create-board"
+msgstr "Izveidot plātni"
+
+msgid "dashboard.import.analyze-error.components-v2"
+msgstr ""
+"Datne ar v2 sastāvdaļām ir aktivizēta, bet šī komanda to vēl neatbalsta."
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.loading"
+msgstr "Ielādē…"
