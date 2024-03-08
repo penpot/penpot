@@ -15,7 +15,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.search-bar :refer [search-bar]]
-   [app.main.ui.components.shape-icon-refactor :as sic]
+   [app.main.ui.components.shape-icon :as sic]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
@@ -308,7 +308,7 @@
                          :on-click remove-filter}
 
                 [:span {:class (stl/css :layer-filter-icon)}
-                 [:& sic/element-icon-refactor-by-type
+                 [:& sic/element-icon-by-type
                   {:type fkey
                    :main-instance? (= fkey :component)}]]
                 [:span {:class (stl/css :layer-filter-name)}

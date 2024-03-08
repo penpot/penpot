@@ -17,7 +17,7 @@
    [app.main.data.workspace.collapse :as dwc]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.shape-icon-refactor :as sic]
+   [app.main.ui.components.shape-icon :as sic]
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
@@ -100,7 +100,7 @@
            (when absolute?
              [:div {:class (stl/css :absolute)}])
 
-           [:& sic/element-icon-refactor
+           [:& sic/element-icon
             {:shape item
              :main-instance? main-instance?}]]]
 
@@ -111,7 +111,7 @@
                  :on-double-click on-zoom-to-selected}
            (when ^boolean absolute?
              [:div {:class (stl/css :absolute)}])
-           [:& sic/element-icon-refactor
+           [:& sic/element-icon
             {:shape item
              :main-instance? main-instance?}]]])
 
