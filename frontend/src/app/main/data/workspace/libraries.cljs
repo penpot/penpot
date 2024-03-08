@@ -905,7 +905,6 @@
                                                                                        libraries)
                                                                    (ctk/build-swap-slot-group))))
 
-            ;; _ (js/console.log "new-shape" (str (:id new-shape)) (clj->js new-shape))
             changes
             (-> changes
                 ;; Restore the properties

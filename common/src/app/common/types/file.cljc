@@ -266,9 +266,7 @@
 
 (defn find-swap-slot
   [shape container file libraries]
-  ;; (js/console.log "find-swap-slot" (clj->js shape))
   (if-let [swap-slot (ctk/get-swap-slot shape)]
-    ;; (do (js/console.log "uno" (str swap-slot)) swap-slot)
     swap-slot
     (let [ref-shape (find-ref-shape file
                                     container
@@ -279,12 +277,8 @@
           shape-meta (meta ref-shape)
           ref-file (:file shape-meta)
           ref-container (:container shape-meta)]
-      ;; (js/console.log "ref-shape" (clj->js ref-shape))
-      ;; (js/console.log "ref-file" (clj->js ref-file))
-      ;; (js/console.log "ref-container" (clj->js ref-container))
       (when ref-shape
         (if-let [swap-slot (ctk/get-swap-slot ref-shape)]
-          ;; (do (js/console.log "dos" (str swap-slot)) swap-slot)
           swap-slot
           (if (ctk/main-instance? ref-shape)
             (:id shape)
