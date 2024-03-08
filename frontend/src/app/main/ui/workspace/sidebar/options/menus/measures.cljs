@@ -353,7 +353,7 @@
                                      :opened show-presets-dropdown?)
                :on-click open-presets}
          [:span {:class (stl/css :select-name)} (tr "workspace.options.size-presets")]
-         [:span {:class (stl/css :collapsed-icon)} i/arrow-refactor]
+         [:span {:class (stl/css :collapsed-icon)} i/arrow]
 
          [:& dropdown {:show show-presets-dropdown?
                        :on-close close-presets}
@@ -377,15 +377,15 @@
                    [:span {:class (stl/css :preset-name)} (:name size-preset)]
                    [:span {:class (stl/css :preset-size)} (:width size-preset) " x " (:height size-preset)]]
                   (when preset-match
-                    [:span {:class (stl/css :check-icon)} i/tick-refactor])])))]]]
+                    [:span {:class (stl/css :check-icon)} i/tick])])))]]]
 
         [:& radio-buttons {:selected (or (d/name orientation) "")
                            :on-change on-orientation-change
                            :name "frame-otientation"}
-         [:& radio-button {:icon i/size-vertical-refactor
+         [:& radio-button {:icon i/size-vertical
                            :value "vert"
                            :id "size-vertical"}]
-         [:& radio-button {:icon i/size-horizontal-refactor
+         [:& radio-button {:icon i/size-horizontal
                            :value "horiz"
                            :id "size-horizontal"}]]])
      (when (options :size)
@@ -449,7 +449,7 @@
         (when (options :rotation)
           [:div {:class (stl/css :rotation)
                  :title (tr "workspace.options.rotation")}
-           [:span {:class (stl/css :icon)}  i/rotation-refactor]
+           [:span {:class (stl/css :icon)}  i/rotation]
            [:> numeric-input*
             {:no-validate true
              :min -359
@@ -467,7 +467,7 @@
               (= radius-mode :radius-1)
               [:div {:class (stl/css :radius-1)
                      :title (tr "workspace.options.radius")}
-               [:span {:class (stl/css :icon)}  i/corner-radius-refactor]
+               [:span {:class (stl/css :icon)}  i/corner-radius]
                [:> numeric-input*
                 {:placeholder (if (= :multiple (:rx values)) (tr "settings.multiple") "--")
                  :ref radius-input-ref
@@ -479,7 +479,7 @@
               @radius-multi?
               [:div {:class (stl/css :radius-1)
                      :title (tr "workspace.options.radius")}
-               [:span {:class (stl/css :icon)}  i/corner-radius-refactor]
+               [:span {:class (stl/css :icon)}  i/corner-radius]
                [:input.input-text
                 {:type "number"
                  :placeholder "Mixed"
@@ -532,7 +532,7 @@
                               (tr "workspace.options.radius.all-corners")
                               (tr "workspace.options.radius.single-corners"))
                      :on-click toggle-radius-mode}
-            i/corner-radius-refactor]])])
+            i/corner-radius]])])
      (when (or (options :clip-content) (options :show-in-viewer))
        [:div {:class (stl/css :clip-show)}
         (when (options :clip-content)

@@ -109,7 +109,7 @@
          [:& title-bar {:collapsable  false
                         :title        "Title"
                         :on-btn-click on-btn-click
-                        :btn-children i/add-refactor}]]
+                        :btn-children i/add}]]
         [:& component-wrapper
          {:title "Collapsed title and action button"}
          [:& title-bar {:collapsable  true
@@ -117,7 +117,7 @@
                         :on-collapsed  toggle-collapsed
                         :title        "Title"
                         :on-btn-click on-btn-click
-                        :btn-children i/add-refactor}]]
+                        :btn-children i/add}]]
         [:& component-wrapper
          {:title "Collapsed title and children"}
          [:& title-bar {:collapsable  true
@@ -179,10 +179,10 @@
          [:& radio-buttons {:selected radio-selected
                             :on-change set-radio-selected
                             :name "listing-style"}
-          [:& radio-button {:icon i/view-as-list-refactor
+          [:& radio-button {:icon i/view-as-list
                             :value "first"
                             :id :list}]
-          [:& radio-button {:icon i/flex-grid-refactor
+          [:& radio-button {:icon i/flex-grid
                             :value "second"
                             :id :grid}]]]
         [:& component-wrapper
@@ -190,14 +190,14 @@
          [:& radio-buttons {:selected radio-selected
                             :on-change set-radio-selected
                             :name "listing-style"}
-          [:& radio-button {:icon i/view-as-list-refactor
+          [:& radio-button {:icon i/view-as-list
                             :value "first"
                             :id :first}]
-          [:& radio-button {:icon i/flex-grid-refactor
+          [:& radio-button {:icon i/flex-grid
                             :value "second"
                             :id :second}]
 
-          [:& radio-button {:icon i/add-refactor
+          [:& radio-button {:icon i/add
                             :value "third"
                             :id :third}]]]
 
@@ -206,18 +206,18 @@
          [:& radio-buttons {:selected radio-selected
                             :on-change set-radio-selected
                             :name "listing-style"}
-          [:& radio-button {:icon i/view-as-list-refactor
+          [:& radio-button {:icon i/view-as-list
                             :value "first"
                             :id :first}]
-          [:& radio-button {:icon i/flex-grid-refactor
+          [:& radio-button {:icon i/flex-grid
                             :value "second"
                             :id :second}]
 
-          [:& radio-button {:icon i/add-refactor
+          [:& radio-button {:icon i/add
                             :value "third"
                             :id :third}]
 
-          [:& radio-button {:icon i/board-refactor
+          [:& radio-button {:icon i/board
                             :value "forth"
                             :id :forth}]]]]
        [:div {:class (stl/css :components-group)}
@@ -229,7 +229,7 @@
         [:& component-wrapper
          {:title "Button primary with icon"}
          [:button  {:class (stl/css :button-primary)}
-          i/add-refactor]]
+          i/add]]
 
         [:& component-wrapper
          {:title "Button secondary"}
@@ -238,7 +238,7 @@
         [:& component-wrapper
          {:title "Button secondary with icon"}
          [:button  {:class (stl/css :button-secondary)}
-          i/add-refactor]]
+          i/add]]
 
         [:& component-wrapper
          {:title "Button tertiary"}
@@ -247,7 +247,7 @@
         [:& component-wrapper
          {:title "Button tertiary with icon"}
          [:button  {:class (stl/css :button-tertiary)}
-          i/add-refactor]]]
+          i/add]]]
        [:div {:class (stl/css :components-group)}
         [:h3 "Inputs"]
         [:& component-wrapper
@@ -265,6 +265,6 @@
          {:title "Input with icon"}
          [:div {:class (stl/css :input-wrapper)}
           [:span {:class (stl/css :input-label)}
-           i/add-refactor]
+           i/add]
           [:input  {:class (stl/css :basic-input)
                     :placeholder "----"}]]]]]]]))

@@ -227,7 +227,7 @@
            [:div {:class (stl/css :table-field :options)}
             (when (:height-warning? item)
               [:span {:class (stl/css :icon :failure)}
-               i/msg-neutral-refactor])
+               i/msg-neutral])
 
             [:button {:on-click on-upload
                       :data-id (dm/str id)
@@ -242,7 +242,7 @@
             [:span {:class (stl/css :icon :close)
                     :data-id (dm/str id)
                     :on-click on-delete}
-             i/close-refactor]]]))]]))
+             i/close]]]))]]))
 
 (mf/defc installed-font-context-menu
   {::mf/props :obj
@@ -368,7 +368,7 @@
           {:class (stl/css :icon :close)
            :data-id (dm/str id)
            :on-click on-delete-variant}
-          i/add-refactor]])]
+          i/add]])]
 
      (if ^boolean edition?
        [:div {:class (stl/css :table-field :options)}
@@ -380,12 +380,12 @@
          (tr "labels.save")]
         [:button {:class (stl/css :icon :close)
                   :on-click on-cancel}
-         i/close-refactor]]
+         i/close]]
 
        [:div {:class (stl/css :table-field :options)}
         [:span {:class (stl/css :icon)
                 :on-click on-menu-open}
-         i/menu-refactor]
+         i/menu]
 
         [:& installed-font-context-menu
          {:on-close on-menu-close
@@ -432,7 +432,7 @@
 
        :else
        [:div {:class (stl/css :fonts-placeholder)}
-        [:div {:class (stl/css :icon)} i/text-refactor]
+        [:div {:class (stl/css :icon)} i/text]
         [:div {:class (stl/css :label)} (tr "dashboard.fonts.empty-placeholder")]])]))
 
 (mf/defc fonts-page

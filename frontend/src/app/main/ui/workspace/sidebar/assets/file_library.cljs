@@ -70,7 +70,7 @@
               :href (str "#" url)
               :target "_blank"
               :on-click dom/stop-propagation}
-          i/open-link-refactor]])]]))
+          i/open-link]])]]))
 
 (mf/defc file-library-content
   {::mf/wrap-props false}
@@ -290,7 +290,7 @@
                 (not ^boolean show-typography?))
        [:div  {:class (stl/css :asset-title)}
         [:span {:class (stl/css :no-found-icon)}
-         i/search-refactor]
+         i/search]
         [:span {:class (stl/css :no-found-text)}
          (tr "workspace.assets.not-found")]])]))
 

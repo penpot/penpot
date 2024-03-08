@@ -36,7 +36,7 @@
        {:class (stl/css :grid-empty-placeholder)}
        [:button {:class (stl/css :create-new)
                  :on-click on-click}
-        i/add-refactor]])))
+        i/add]])))
 
 (mf/defc loading-placeholder
   []

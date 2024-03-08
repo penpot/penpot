@@ -162,7 +162,7 @@
                     :class (stl/css-case :palette-btn true
                                          :selected color-palette?)
                     :on-click on-select-color-palette}
-           i/drop-refactor]]
+           i/drop-icon]]
 
          [:li {:class (stl/css :palette-item)}
           [:button {:title (tr "workspace.toolbar.text-palette" (sc/get-tooltip :toggle-textpalette))
@@ -170,14 +170,14 @@
                     :class (stl/css-case :palette-btn true
                                          :selected text-palette?)
                     :on-click on-select-text-palette}
-           i/text-palette-refactor]]]
+           i/text-palette]]]
 
 
         (if any-palette?
           [:*
            [:button {:class (stl/css :palette-actions)
                      :on-click #(swap! state* update :show-menu not)}
-            i/menu-refactor]
+            i/menu]
            [:div {:class (stl/css :palette)
                   :ref container}
             (when text-palette?

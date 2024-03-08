@@ -87,7 +87,7 @@
                      :class        (stl/css-case :title-spacing-blur (not has-value?))}
        (when-not has-value?
          [:button {:class (stl/css :add-blur)
-                   :on-click handle-add} i/add-refactor])]]
+                   :on-click handle-add} i/add])]]
      (when (and open? has-value?)
        [:div {:class (stl/css :element-set-content)}
         [:div {:class (stl/css-case :first-row true
@@ -96,17 +96,17 @@
           [:button {:class (stl/css-case :show-more true
                                          :selected more-options?)
                     :on-click toggle-more-options}
-           i/menu-refactor]
+           i/menu]
           [:span {:class (stl/css :label)}
            (tr "workspace.options.blur-options.title")]]
          [:div {:class (stl/css :actions)}
           [:button {:class (stl/css :action-btn)
                     :on-click handle-toggle-visibility}
            (if hidden?
-             i/hide-refactor
-             i/shown-refactor)]
+             i/hide
+             i/shown)]
           [:button {:class (stl/css :action-btn)
-                    :on-click handle-delete} i/remove-refactor]]]
+                    :on-click handle-delete} i/remove-icon]]]
         (when more-options?
           [:div {:class (stl/css :second-row)}
            [:label {:class (stl/css :label)

@@ -117,14 +117,14 @@
        {:class  (stl/css-case :is-toggled (= edit-mode :draw))
         :title (tr "workspace.path.actions.draw-nodes" (sc/get-tooltip :draw-nodes))
         :on-click on-select-draw-mode}
-       i/pentool-refactor]
+       i/pentool]
 
             ;; Edit mode
       [:button
        {:class (stl/css-case :is-toggled (= edit-mode :move))
         :title (tr "workspace.path.actions.move-nodes" (sc/get-tooltip :move-nodes))
         :on-click on-select-edit-mode}
-       i/move-refactor]]
+       i/move]]
 
      [:div {:class (stl/css :sub-actions-group)}
             ;; Add Node
@@ -132,14 +132,14 @@
        {:disabled (not (:add-node enabled-buttons))
         :title (tr "workspace.path.actions.add-node" (sc/get-tooltip :add-node))
         :on-click on-add-node}
-       i/add-refactor]
+       i/add]
 
             ;; Remove node
       [:button
        {:disabled (not (:remove-node enabled-buttons))
         :title (tr "workspace.path.actions.delete-node" (sc/get-tooltip :delete-node))
         :on-click on-remove-node}
-       i/remove-refactor]]
+       i/remove-icon]]
 
      [:div {:class (stl/css :sub-actions-group)}
             ;; Merge Nodes
@@ -147,21 +147,21 @@
        {:disabled (not (:merge-nodes enabled-buttons))
         :title (tr "workspace.path.actions.merge-nodes" (sc/get-tooltip :merge-nodes))
         :on-click on-merge-nodes}
-       i/merge-nodes-refactor]
+       i/merge-nodes]
 
             ;; Join Nodes
       [:button
        {:disabled (not (:join-nodes enabled-buttons))
         :title (tr "workspace.path.actions.join-nodes" (sc/get-tooltip :join-nodes))
         :on-click on-join-nodes}
-       i/join-nodes-refactor]
+       i/join-nodes]
 
             ;; Separate Nodes
       [:button
        {:disabled (not (:separate-nodes enabled-buttons))
         :title (tr "workspace.path.actions.separate-nodes" (sc/get-tooltip :separate-nodes))
         :on-click on-separate-nodes}
-       i/separate-nodes-refactor]]
+       i/separate-nodes]]
 
            ;; Make Corner
      [:div {:class (stl/css :sub-actions-group)}
@@ -169,14 +169,14 @@
        {:disabled (not (:make-corner enabled-buttons))
         :title (tr "workspace.path.actions.make-corner" (sc/get-tooltip :make-corner))
         :on-click on-make-corner}
-       i/to-corner-refactor]
+       i/to-corner]
 
             ;; Make Curve
       [:button
        {:disabled (not (:make-curve enabled-buttons))
         :title (tr "workspace.path.actions.make-curve" (sc/get-tooltip :make-curve))
         :on-click on-make-curve}
-       i/to-curve-refactor]]
+       i/to-curve]]
 
            ;; Toggle snap
      [:div {:class (stl/css :sub-actions-group)}
@@ -184,5 +184,5 @@
        {:class  (stl/css-case :is-toggled snap-toggled)
         :title (tr "workspace.path.actions.snap-nodes" (sc/get-tooltip :snap-nodes))
         :on-click on-toggle-snap}
-       i/snap-nodes-refactor]]]))
+       i/snap-nodes]]]))
 

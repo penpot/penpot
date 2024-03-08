@@ -96,7 +96,7 @@
        [:span
         {:class (stl/css :icon-wrapper)}
         (if selected? [:span {:class (stl/css :selected-icon)}
-                       i/tick-refactor]
+                       i/tick]
             [:span {:class (stl/css :selected-icon)}])
         [:span {:class (stl/css :shape-icon)} icon]]
        [:span {:class (stl/css :title)} title]]
@@ -115,7 +115,7 @@
                     :class (stl/css :shortcut-key)} sc])])
 
        (when (> (count children) 1)
-         [:span {:class (stl/css :submenu-icon)} i/arrow-refactor])
+         [:span {:class (stl/css :submenu-icon)} i/arrow])
 
        (when (> (count children) 1)
          [:ul {:class (stl/css :workspace-context-submenu)

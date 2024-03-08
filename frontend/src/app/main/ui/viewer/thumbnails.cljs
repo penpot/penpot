@@ -62,9 +62,9 @@
 
       [:div {:class (stl/css :thumbnails-content)}
        [:button {:class (stl/css :left-scroll-handler)
-                 :on-click on-left-arrow-click} i/arrow-refactor]
+                 :on-click on-left-arrow-click} i/arrow]
        [:button {:class (stl/css :right-scroll-handler)
-                 :on-click on-right-arrow-click} i/arrow-refactor]
+                 :on-click on-right-arrow-click} i/arrow]
 
        [:div {:class (stl/css :thumbnails-list)
               :ref container
@@ -80,9 +80,9 @@
     (tr "labels.num-of-frames" (i18n/c total))]
    [:span {:class (stl/css :actions)}
     [:button {:class (stl/css :expand-btn)
-              :on-click on-toggle-expand} i/arrow-refactor]
+              :on-click on-toggle-expand} i/arrow]
     [:button {:class (stl/css :close-btn)
-              :on-click on-close} i/close-refactor]]])
+              :on-click on-close} i/close]]])
 
 (mf/defc thumbnail-item
   {::mf/wrap [mf/memo

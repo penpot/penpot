@@ -173,18 +173,18 @@
        (cond
          (or (= :multiple hidden?) (not hidden?))
          [:button {:on-click handle-set-hidden
-                   :class (stl/css :hidden-btn)} i/shown-refactor]
+                   :class (stl/css :hidden-btn)} i/shown]
 
          :else
          [:button {:on-click handle-set-visible
-                   :class (stl/css :hidden-btn)} i/hide-refactor])
+                   :class (stl/css :hidden-btn)} i/hide])
 
        (cond
          (or (= :multiple blocked?) (not blocked?))
          [:button {:on-click handle-set-blocked
-                   :class (stl/css :lock-btn)} i/unlock-refactor]
+                   :class (stl/css :lock-btn)} i/unlock]
 
          :else
          [:button {:on-click handle-set-unblocked
                    :class (stl/css-case :lock-btn true
-                                        :locked blocked?)} i/lock-refactor])]]]))
+                                        :locked blocked?)} i/lock])]]]))

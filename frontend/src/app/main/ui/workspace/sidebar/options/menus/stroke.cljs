@@ -171,7 +171,7 @@
                      :class        (stl/css-case :title-spacing-stroke (not has-strokes?))}
 
        [:button {:class (stl/css :add-stroke)
-                 :on-click on-add-stroke} i/add-refactor]]]
+                 :on-click on-add-stroke} i/add]]]
      (when open?
        [:div {:class (stl/css-case :element-content true
                                    :empty-content (not has-strokes?))}
@@ -182,7 +182,7 @@
             (tr "settings.multiple")]
            [:button {:on-click handle-remove-all
                      :class (stl/css :remove-btn)}
-            i/remove-refactor]]
+            i/remove-icon]]
           (seq strokes)
           [:& h/sortable-container {}
            (for [[index value] (d/enumerate (:strokes values []))]

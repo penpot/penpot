@@ -24,4 +24,4 @@
       [:button {:class (stl/css :collapsed-button)
                 :on-click on-click
                 :aria-label (tr "workspace.sidebar.expand")}
-       i/arrow-refactor]]]))
+       i/arrow]]]))

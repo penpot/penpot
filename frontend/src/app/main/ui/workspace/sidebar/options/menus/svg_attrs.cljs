@@ -41,7 +41,7 @@
         [:div  {:class (stl/css :attr-actions)}
          [:button {:class (stl/css :attr-action-btn)
                    :on-click handle-delete}
-          i/remove-refactor]]]
+          i/remove-icon]]]
        [:div {:class (stl/css :attr-nested-content)}
         [:div  {:class (stl/css :attr-title)}
          (str (d/name (last attr)))]

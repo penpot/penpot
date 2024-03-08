@@ -265,9 +265,9 @@
 
      (when (some? on-remove)
        [:button {:class (stl/css :remove-btn)
-                 :on-click on-remove} i/remove-refactor])
+                 :on-click on-remove} i/remove-icon])
      (when select-only
        [:button {:class (stl/css :select-btn)
                  :on-click handle-select}
-        i/move-refactor])]))
+        i/move])]))
 

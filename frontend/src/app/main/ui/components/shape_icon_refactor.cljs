@@ -17,49 +17,49 @@
   [{:keys [shape main-instance?]}]
   (if (ctk/instance-head? shape)
     (if main-instance?
-      i/component-refactor
-      i/copy-refactor)
+      i/component
+      i/component-copy)
     (case (:type shape)
       :frame (cond
                (and (ctl/flex-layout? shape) (ctl/col? shape))
-               i/flex-horizontal-refactor
+               i/flex-horizontal
 
                (and (ctl/flex-layout? shape) (ctl/row? shape))
-               i/flex-vertical-refactor
+               i/flex-vertical
 
                (ctl/grid-layout? shape)
-               i/flex-grid-refactor
+               i/flex-grid
 
                :else
-               i/board-refactor)
+               i/board)
       ;; TODO -> THUMBNAIL ICON
-      :image i/img-refactor
-      :line (if (cts/has-images? shape) i/img-refactor i/path-refactor)
-      :circle (if (cts/has-images? shape) i/img-refactor i/elipse-refactor)
-      :path (if (cts/has-images? shape) i/img-refactor i/path-refactor)
-      :rect (if (cts/has-images? shape) i/img-refactor i/rectangle-refactor)
-      :text i/text-refactor
+      :image i/img
+      :line (if (cts/has-images? shape) i/img i/path)
+      :circle (if (cts/has-images? shape) i/img i/elipse)
+      :path (if (cts/has-images? shape) i/img i/path)
+      :rect (if (cts/has-images? shape) i/img i/rectangle)
+      :text i/text
       :group (if (:masked-group shape)
-               i/mask-refactor
-               i/group-refactor)
+               i/mask
+               i/group)
       :bool (case (:bool-type shape)
-              :difference   i/boolean-difference-refactor
-              :exclude      i/boolean-exclude-refactor
-              :intersection i/boolean-intersection-refactor
-              #_:default    i/boolean-union-refactor)
-      :svg-raw i/img-refactor
+              :difference   i/boolean-difference
+              :exclude      i/boolean-exclude
+              :intersection i/boolean-intersection
+              #_:default    i/boolean-union)
+      :svg-raw i/img
       nil)))
 
 
 (mf/defc element-icon-refactor-by-type
   [{:keys [type main-instance?] :as props}]
   (if main-instance?
-    i/component-refactor
+    i/component
     (case type
-      :frame i/board-refactor
-      :image i/img-refactor
-      :shape i/path-refactor
-      :text i/text-refactor
-      :mask i/mask-refactor
-      :group i/group-refactor
+      :frame i/board
+      :image i/img
+      :shape i/path
+      :text i/text
+      :mask i/mask
+      :group i/group
       nil)))

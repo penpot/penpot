@@ -390,7 +390,7 @@
         (when (and (not components-v2) (not read-only?))
           [:button {:class (stl/css :assets-btn)
                     :on-click add-graphic}
-           i/add-refactor
+           i/add
            [:& file-uploader {:accept cm/str-image-types
                               :multi true
                               :ref input-ref

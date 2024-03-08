@@ -123,10 +123,10 @@
   {::mf/wrap-props false}
   [{:keys [section]}]
   (case section
-    :colors i/drop-refactor
-    :components i/component-refactor
-    :typographies i/text-palette-refactor
-    i/add-refactor))
+    :colors i/drop-icon
+    :components i/component
+    :typographies i/text-palette
+    i/add))
 
 (mf/defc asset-section
   {::mf/wrap-props false}

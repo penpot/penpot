@@ -131,7 +131,7 @@
             :on-double-click on-double-click
             :on-context-menu on-context-menu}
       [:div {:class (stl/css :page-icon)}
-       i/document-refactor]
+       i/document]
 
       (if editing?
         [:*
@@ -148,7 +148,7 @@
          [:div {:class  (stl/css :page-actions)}
           (when (and deletable? (not workspace-read-only?))
             [:button {:on-click on-delete}
-             i/delete-refactor])]])]]))
+             i/delete])]])]]))
 
 ;; --- Page Item Wrapper
 
@@ -222,7 +222,7 @@
          (tr "labels.view-only")]
         [:button {:class (stl/css :add-page)
                   :on-click on-create}
-         i/add-refactor])]
+         i/add])]
 
      [:div {:class (stl/css :tool-window-content)}
       [:& pages-list {:file file :key (:id file)}]]]))

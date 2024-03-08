@@ -62,4 +62,4 @@
       (when (not= "" value)
         [:button {:class (stl/css :clear)
                   :on-click handle-clear}
-         i/delete-text-refactor])]]))
+         i/delete-text])]]))

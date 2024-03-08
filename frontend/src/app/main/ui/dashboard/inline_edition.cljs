@@ -69,5 +69,5 @@
               :on-key-down on-keyup
               :on-blur on-blur}]
      [:span {:class (stl/css :close)
-             :on-click on-cancel} i/close-refactor]]))
+             :on-click on-cancel} i/close]]))
 

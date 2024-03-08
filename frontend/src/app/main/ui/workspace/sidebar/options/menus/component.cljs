@@ -168,7 +168,7 @@
            [:span {:class (stl/css-case
                            :icon-arrow true
                            :expanded expanded?)}
-            i/arrow-refactor]
+            i/arrow]
            [:span {:class (stl/css :annotation-text)}
             (tr "workspace.options.component.annotation")]])
 
@@ -186,21 +186,21 @@
                              :icon true
                              :icon-tick true
                              :hidden invalid-text?)}
-               i/tick-refactor]
+               i/tick]
               [:div {:class (stl/css :icon :icon-cross)
                      :title (tr "labels.discard")
                      :on-click on-discard}
-               i/close-refactor]]
+               i/close]]
 
              [:*
               [:div {:class (stl/css :icon :icon-edit)
                      :title (tr "labels.edit")
                      :on-click on-edit}
-               i/curve-refactor]
+               i/curve]
               [:div {:class (stl/css :icon :icon-trash)
                      :title (tr "labels.delete")
                      :on-click on-delete-annotation}
-               i/delete-refactor]]))]]
+               i/delete]]))]]
 
        [:div {:class (stl/css-case :hidden (not expanded?))}
         [:div {:class (stl/css :grow-wrap)}
@@ -263,7 +263,7 @@
        (cfh/last-path group-name)]]
 
      [:span {:class (stl/css :arrow-icon)}
-      i/arrow-refactor]]))
+      i/arrow]]))
 
 (def ^:private ref:swap-libraries
   (letfn [(get-libraries [state]
@@ -440,7 +440,8 @@
                         :id "swap-component-search-filter"
                         :value (:term filters)
                         :placeholder (str (tr "labels.search") " " (get-in libraries [current-library-id :name]))
-                        :icon (mf/html [:span {:class (stl/css :search-icon)} i/search-refactor])}]]
+                        :icon (mf/html [:span {:class (stl/css :search-icon)}
+                                        i/search])}]]
 
        [:& select {:class (stl/css :select-library)
                    :default-value current-library-id
@@ -456,10 +457,10 @@
                             :selected (if (:listing-thumbs? filters) "grid" "list")
                             :on-change toggle-list-style
                             :name "swap-listing-style"}
-          [:& radio-button {:icon i/view-as-list-refactor
+          [:& radio-button {:icon i/view-as-list
                             :value "list"
                             :id "swap-opt-list"}]
-          [:& radio-button {:icon i/flex-grid-refactor
+          [:& radio-button {:icon i/flex-grid
                             :value "grid"
                             :id "swap-opt-grid"}]]]]
 
@@ -467,7 +468,7 @@
          [:button {:class (stl/css :component-path)
                    :on-click on-go-back
                    :title filter-path-with-dots}
-          [:span {:class (stl/css :back-arrow)} i/arrow-refactor]
+          [:span {:class (stl/css :back-arrow)} i/arrow]
           (when-not (= "" filter-path-with-dots)
             [:span {:class (stl/css :path-name)}
              (dm/str "\u00A0\u2022\u00A0" filter-path-with-dots)])
@@ -590,7 +591,7 @@
         (if swap-opened?
           [:button {:class (stl/css :title-back)
                     :on-click on-component-back}
-           [:span {:class (stl/css :icon-back)} i/arrow-refactor]
+           [:span {:class (stl/css :icon-back)} i/arrow]
            [:span (tr "workspace.options.component")]]
 
           [:& title-bar {:collapsable  true
@@ -615,8 +616,8 @@
 
             [:span {:class (stl/css :component-icon)}
              (if main-instance?
-               i/component-refactor
-               i/copy-refactor)]
+               i/component
+               i/component-copy)]
 
             [:div {:class (stl/css :name-wrapper)}
              [:div {:class (stl/css :component-name)}
@@ -633,7 +634,7 @@
               [:button {:class (stl/css-case :menu-btn true
                                              :selected menu-open?)
                         :on-click on-menu-click}
-               i/menu-refactor]
+               i/menu]
 
               [:& component-ctx-menu {:show menu-open?
                                       :on-close on-menu-close

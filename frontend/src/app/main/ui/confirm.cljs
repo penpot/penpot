@@ -70,7 +70,7 @@
       [:div {:class (stl/css :modal-header)}
        [:h2 {:class (stl/css :modal-title)} title]
        [:button {:class (stl/css :modal-close-btn)
-                 :on-click cancel-fn} i/close-refactor]]
+                 :on-click cancel-fn} i/close]]
 
       [:div {:class (stl/css :modal-content)}
        (when (and (string? message) (not= message ""))
@@ -87,7 +87,7 @@
            (for [item items]
              [:li {:class (stl/css :modal-item-element)}
               [:span {:class (stl/css :modal-component-icon)}
-               i/component-refactor]
+               i/component]
               [:span {:class (stl/css :modal-component-name)}
                (:name item)]])]])]
 

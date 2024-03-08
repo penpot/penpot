@@ -270,10 +270,10 @@
                                   :icon-fill ready?)}
        (cond loading?       i/loader-pencil
              ready?         i/logo-icon
-             import-warn?   i/msg-warning-refactor
-             import-error?  i/close-refactor
-             import-finish? i/tick-refactor
-             analyze-error? i/close-refactor)]
+             import-warn?   i/msg-warning
+             import-error?  i/close
+             import-finish? i/tick
+             analyze-error? i/close)]
 
       (if editing?
         [:div {:class (stl/css :file-name-edit)}
@@ -287,14 +287,14 @@
          (:name entry)
          (when ^boolean is-shared?
            [:span {:class (stl/css :icon)}
-            i/library-refactor])])
+            i/library])])
 
       [:div {:class (stl/css :edit-entry-buttons)}
        (when (and (= "application/zip" (:type entry))
                   (= status :ready))
-         [:button {:on-click on-edit'} i/curve-refactor])
+         [:button {:on-click on-edit'} i/curve])
        (when can-be-deleted
-         [:button {:on-click on-delete'} i/delete-refactor])]]
+         [:button {:on-click on-delete'} i/delete])]]
 
      (cond
        analyze-error?
@@ -322,7 +322,7 @@
              [:span {:class (stl/css-case
                              :linked-library-tag true
                              :error error?)}
-              i/detach-refactor]])))]]))
+              i/detach]])))]]))
 
 (mf/defc import-dialog
   {::mf/register modal/components
@@ -455,7 +455,7 @@
        [:h2  {:class (stl/css :modal-title)} (tr "dashboard.import")]
 
        [:button {:class (stl/css :modal-close-btn)
-                 :on-click on-cancel} i/close-refactor]]
+                 :on-click on-cancel} i/close]]
 
       [:div {:class (stl/css :modal-content)}
        (when (and (= :analyzing status) errors?)

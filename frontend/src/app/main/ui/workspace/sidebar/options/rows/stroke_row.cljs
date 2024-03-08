@@ -59,13 +59,13 @@
          (fn [color]
            (on-color-change index color)))
 
-        on-color-detach-refactor
+        on-color-detach
         (mf/use-callback
          (mf/deps index on-color-detach)
          (fn [color]
            (on-color-detach index color)))
 
-        on-remove-refactor
+        on-remove
         (mf/use-callback
          (mf/deps index on-remove)
          #(on-remove index))
@@ -123,14 +123,14 @@
         stroke-caps-options
         [{:value nil :label (tr "workspace.options.stroke-cap.none")}
          :separator
-         {:value :line-arrow :label (tr "workspace.options.stroke-cap.line-arrow-short") :icon :stroke-arrow-refactor}
-         {:value :triangle-arrow :label (tr "workspace.options.stroke-cap.triangle-arrow-short") :icon :stroke-triangle-refactor}
-         {:value :square-marker :label (tr "workspace.options.stroke-cap.square-marker-short") :icon :stroke-rectangle-refactor}
-         {:value :circle-marker :label (tr "workspace.options.stroke-cap.circle-marker-short") :icon :stroke-circle-refactor}
-         {:value :diamond-marker :label (tr "workspace.options.stroke-cap.diamond-marker-short") :icon :stroke-diamond-refactor}
+         {:value :line-arrow :label (tr "workspace.options.stroke-cap.line-arrow-short") :icon :stroke-arrow}
+         {:value :triangle-arrow :label (tr "workspace.options.stroke-cap.triangle-arrow-short") :icon :stroke-triangle}
+         {:value :square-marker :label (tr "workspace.options.stroke-cap.square-marker-short") :icon :stroke-rectangle}
+         {:value :circle-marker :label (tr "workspace.options.stroke-cap.circle-marker-short") :icon :stroke-circle}
+         {:value :diamond-marker :label (tr "workspace.options.stroke-cap.diamond-marker-short") :icon :stroke-diamond}
          :separator
-         {:value :round :label (tr "workspace.options.stroke-cap.round") :icon :stroke-rounded-refactor}
-         {:value :square :label (tr "workspace.options.stroke-cap.square") :icon :stroke-squared-refactor}]
+         {:value :round :label (tr "workspace.options.stroke-cap.round") :icon :stroke-rounded}
+         {:value :square :label (tr "workspace.options.stroke-cap.square") :icon :stroke-squared}]
 
         on-cap-switch
         (mf/use-callback
@@ -152,8 +152,8 @@
                     :index index
                     :title title
                     :on-change on-color-change-refactor
-                    :on-detach on-color-detach-refactor
-                    :on-remove on-remove-refactor
+                    :on-detach on-color-detach
+                    :on-remove on-remove
                     :disable-drag disable-drag
                     :on-focus on-focus
                     :select-on-focus select-on-focus
@@ -164,7 +164,7 @@
       [:div {:class (stl/css :stroke-width-input-element)
              :title (tr "workspace.options.stroke-width")}
        [:span {:class (stl/css :icon)}
-        i/stroke-size-refactor]
+        i/stroke-size]
        [:> numeric-input*
         {:min 0
          :className (stl/css :stroke-width-input)
@@ -201,7 +201,7 @@
 
         [:button {:class (stl/css :swap-caps-btn)
                   :on-click on-cap-switch}
-         i/switch-refactor]
+         i/switch]
 
         [:div {:class (stl/css :cap-select)}
          [:& select

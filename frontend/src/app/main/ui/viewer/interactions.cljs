@@ -246,9 +246,9 @@
     (when (seq flows)
       [:div {:on-click toggle-dropdown
              :class (stl/css :view-options)}
-       [:span {:class (stl/css :icon)} i/play-refactor]
+       [:span {:class (stl/css :icon)} i/play]
        [:span {:class (stl/css :dropdown-title)} (:name current-flow)]
-       [:span {:class (stl/css :icon-dropdown)}  i/arrow-refactor]
+       [:span {:class (stl/css :icon-dropdown)}  i/arrow]
        [:& dropdown {:show show-dropdown?
                      :on-close hide-dropdown}
         [:ul {:class (stl/css :dropdown)}
@@ -261,7 +261,7 @@
                  :on-click select-flow}
             [:span {:class (stl/css :label)} (:name flow)]
             (when (= (:id flow) (:id current-flow))
-              [:span {:class (stl/css :icon)} i/tick-refactor])])]]])))
+              [:span {:class (stl/css :icon)} i/tick])])]]])))
 
 (mf/defc interactions-menu
   [{:keys [interactions-mode]}]
@@ -280,7 +280,7 @@
     [:div {:on-click toggle-dropdown
            :class (stl/css :view-options)}
      [:span {:class (stl/css :dropdown-title)} (tr "viewer.header.interactions")]
-     [:span {:class (stl/css :icon-dropdown)} i/arrow-refactor]
+     [:span {:class (stl/css :icon-dropdown)} i/arrow]
      [:& dropdown {:show @show-dropdown?
                    :on-close hide-dropdown}
       [:ul {:class (stl/css :dropdown)}
@@ -291,7 +291,7 @@
 
         [:span {:class (stl/css :label)} (tr "viewer.header.dont-show-interactions")]
         (when (= interactions-mode :hide)
-          [:span {:class (stl/css :icon)}  i/tick-refactor])]
+          [:span {:class (stl/css :icon)}  i/tick])]
 
        [:li {:class (stl/css-case :dropdown-element true
                                   :selected (= interactions-mode :show))
@@ -299,7 +299,7 @@
              :data-mode "show"}
         [:span {:class (stl/css :label)} (tr "viewer.header.show-interactions")]
         (when (= interactions-mode :show)
-          [:span {:class (stl/css :icon)}  i/tick-refactor])]
+          [:span {:class (stl/css :icon)}  i/tick])]
 
 
 
@@ -310,7 +310,7 @@
 
         [:span {:class (stl/css :label)} (tr "viewer.header.show-interactions-on-click")]
         (when (= interactions-mode :show-on-click)
-          [:span {:class (stl/css :icon)}  i/tick-refactor])]]]]))
+          [:span {:class (stl/css :icon)}  i/tick])]]]]))
 
 (defn animate-go-to-frame
   [animation current-viewport orig-viewport current-size orig-size wrapper-size]

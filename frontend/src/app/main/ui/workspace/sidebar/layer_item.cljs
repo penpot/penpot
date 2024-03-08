@@ -93,7 +93,7 @@
                               :toggle-content true
                               :inverse expanded?)
                       :on-click on-toggle-collapse}
-             i/arrow-refactor])
+             i/arrow])
 
           [:div {:class (stl/css :icon-shape)
                  :on-double-click on-zoom-to-selected}
@@ -142,7 +142,7 @@
                              (tr "workspace.shape.menu.show")
                              (tr "workspace.shape.menu.hide"))
                     :on-click on-toggle-visibility}
-           (if ^boolean hidden? i/hide-refactor i/shown-refactor)]
+           (if ^boolean hidden? i/hide i/shown)]
           [:button {:class (stl/css-case
                             :block-element true
                             :selected blocked?)
@@ -150,7 +150,7 @@
                              (tr "workspace.shape.menu.unlock")
                              (tr "workspace.shape.menu.lock"))
                     :on-click on-toggle-blocking}
-           (if ^boolean blocked? i/lock-refactor i/unlock-refactor)]])]]
+           (if ^boolean blocked? i/lock i/unlock)]])]]
 
      children]))
 

@@ -56,7 +56,7 @@
          [:label {:for "newsletter-updates"}
           [:span {:class (stl/css-case :global/checked @newsletter-updates)}
            (when @newsletter-updates
-             i/status-tick-refactor)]
+             i/status-tick)]
           (tr "onboarding-v2.newsletter.updates")
           [:input {:type "checkbox"
                    :id "newsletter-updates"
@@ -66,7 +66,7 @@
          [:label {:for "newsletter-news"}
           [:span {:class (stl/css-case :global/checked @newsletter-news)}
            (when @newsletter-news
-             i/status-tick-refactor)]
+             i/status-tick)]
           (tr "onboarding-v2.newsletter.news")
           [:input {:type "checkbox"
                    :id "newsletter-news"

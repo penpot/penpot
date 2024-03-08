@@ -148,7 +148,7 @@
        [:button {:class (stl/css-case :show-options true
                                       :selected open?)
                  :on-click toggle-advanced-options}
-        i/menu-refactor]
+        i/menu]
        [:div {:class (stl/css :type-select-wrapper)}
         [:& select
          {:class (stl/css :grid-type-select)
@@ -179,10 +179,10 @@
       [:div {:class (stl/css :actions)}
        [:button {:class (stl/css :action-btn)
                  :on-click handle-toggle-visibility}
-        (if display i/shown-refactor i/hide-refactor)]
+        (if display i/shown i/hide)]
        [:button {:class (stl/css :action-btn)
                  :on-click on-remove}
-        i/remove-refactor]]]
+        i/remove-icon]]]
 
      (when (:display grid)
        [:& advanced-options {:class (stl/css :grid-advanced-options)
@@ -201,7 +201,7 @@
             [:button {:class (stl/css-case :show-more-options true
                                            :selected show-more-options?)
                       :on-click toggle-more-options}
-             i/menu-refactor]]
+             i/menu]]
            (when show-more-options?
              [:div {:class (stl/css :second-row)}
               [:button {:class (stl/css-case :btn-options true
@@ -258,7 +258,8 @@
             [:div {:class (stl/css :gutter)
                    :title (tr "workspace.options.grid.params.gutter")}
              [:span {:class (stl/css-case :icon true
-                                          :rotated (= type :row))} i/gap-horizontal-refactor]
+                                          :rotated (= type :row))}
+              i/gap-horizontal]
              [:> numeric-input* {:placeholder "0"
                                  :on-change (handle-change :params :gutter)
                                  :nillable true
@@ -268,7 +269,8 @@
             [:div {:class (stl/css :margin)
                    :title (tr "workspace.options.grid.params.margin")}
              [:span {:class (stl/css-case :icon true
-                                          :rotated (= type :column))} i/grid-margin-refactor]
+                                          :rotated (= type :column))}
+              i/grid-margin]
              [:> numeric-input* {:placeholder "0"
                                  :on-change (handle-change :params :margin)
                                  :nillable true
@@ -279,7 +281,7 @@
                                            :selected show-more-options?)
                       :on-click toggle-more-options
                       :disabled is-default}
-             i/menu-refactor]
+             i/menu]
             (when show-more-options?
               [:div {:class (stl/css :more-options)}
                [:button {:class (stl/css :option-btn)
@@ -309,7 +311,7 @@
 
       [:button  {:on-click handle-create-grid
                  :class (stl/css :add-grid)}
-       i/add-refactor]]
+       i/add]]
 
      (when (and open? (seq frame-grids))
        [:div  {:class (stl/css :element-set-content)}

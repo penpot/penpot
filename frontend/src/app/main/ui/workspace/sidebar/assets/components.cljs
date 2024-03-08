@@ -517,17 +517,17 @@
          [:& radio-buttons {:selected (if listing-thumbs? "grid" "list")
                             :on-change toggle-list-style
                             :name "listing-style"}
-          [:& radio-button {:icon i/view-as-list-refactor
+          [:& radio-button {:icon i/view-as-list
                             :value "list"
                             :id "opt-list"}]
-          [:& radio-button {:icon i/flex-grid-refactor
+          [:& radio-button {:icon i/flex-grid
                             :value "grid"
                             :id "opt-grid"}]]])
 
       (when (and components-v2 (not read-only?) local?)
         [:div {:on-click add-component
                :class (stl/css :add-component)}
-         i/add-refactor
+         i/add
          [:& file-uploader {:accept cm/str-image-types
                             :multi true
                             :ref input-ref

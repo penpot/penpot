@@ -75,7 +75,7 @@
        [:h2 {:class (stl/css :modal-title)} (tr "labels.continue-with-penpot")]
        [:button {:class (stl/css :modal-close-btn)
                  :title (tr "labels.close")
-                 :on-click close} i/close-refactor]]
+                 :on-click close} i/close]]
 
       [:div  {:class (stl/css :modal-content)}
 

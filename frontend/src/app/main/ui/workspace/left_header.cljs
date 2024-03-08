@@ -108,7 +108,7 @@
           :on-double-click start-editing-name}
          file-name])]
      (when ^boolean shared?
-       [:span {:class (stl/css :shared-badge)} i/library-refactor])
+       [:span {:class (stl/css :shared-badge)} i/library])
      [:div {:class (stl/css :menu-section)}
       [:& main-menu/menu
        {:layout layout

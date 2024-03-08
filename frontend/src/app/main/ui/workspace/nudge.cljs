@@ -46,7 +46,7 @@
       [:div {:class (stl/css :modal-header)}
        [:h2 {:class (stl/css :modal-title)} (tr "modals.nudge-title")]
        [:button {:class (stl/css :modal-close-btn)
-                 :on-click on-close} i/close-refactor]]
+                 :on-click on-close} i/close]]
       [:div {:class (stl/css :modal-content)}
        [:div {:class (stl/css :input-wrapper)}
         [:label {:class (stl/css :modal-msg)

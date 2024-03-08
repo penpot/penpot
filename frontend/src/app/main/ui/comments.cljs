@@ -323,12 +323,12 @@
          [:div {:class (stl/css :options-resolve-wrapper)
                 :on-click toggle-resolved}
           [:span {:class (stl/css-case :options-resolve true
-                                       :global/checked (:is-resolved thread))} i/tick-refactor]])
+                                       :global/checked (:is-resolved thread))} i/tick]])
 
        (when (= (:id profile) (:id owner))
          [:div {:class (stl/css :options)
                 :on-click on-toggle-options}
-          i/menu-refactor])]
+          i/menu])]
 
       [:div {:class (stl/css :content)}
        (if @edition?
@@ -585,7 +585,7 @@
       [:span {:class (stl/css :page-name)} (:page-name group)]]
 
      [:div {:class (stl/css :section-title)}
-      [:span {:class (stl/css :icon)} i/document-refactor]
+      [:span {:class (stl/css :icon)} i/document]
       [:span {:class (stl/css :page-name)} (:page-name group)]])
 
    [:div {:class (stl/css :threads)}

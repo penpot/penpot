@@ -46,17 +46,17 @@
       (cond
         (empty? search-term)
         [:div {:class (stl/css :grid-empty-placeholder :search)}
-         [:div {:class (stl/css :icon)} i/search-refactor]
+         [:div {:class (stl/css :icon)} i/search]
          [:div {:class (stl/css :text)} (tr "dashboard.type-something")]]
 
         (nil? result)
         [:div {:class (stl/css :grid-empty-placeholder :search)}
-         [:div {:class (stl/css :icon)} i/search-refactor]
+         [:div {:class (stl/css :icon)} i/search]
          [:div {:class (stl/css :text)} (tr "dashboard.searching-for" search-term)]]
 
         (empty? result)
         [:div {:class (stl/css :grid-empty-placeholder :search)}
-         [:div {:class (stl/css :icon)} i/search-refactor]
+         [:div {:class (stl/css :icon)} i/search]
          [:div {:class (stl/css :text)} (tr "dashboard.no-matches-for" search-term)]]
 
         :else

@@ -220,7 +220,7 @@
                  [:button {:class (stl/css :context-menu-action :submenu-back)
                            :data-no-close true
                            :on-click exit-submenu}
-                  [:span {:class (stl/css :submenu-icon-back)} i/arrow-refactor]
+                  [:span {:class (stl/css :submenu-icon-back)} i/arrow]
                   parent-option]]
 
                 [:li {:class (stl/css :separator)}]])
@@ -257,14 +257,14 @@
                            option-name)
 
                          (when (and selected (= data-test selected))
-                           [:span {:class (stl/css :selected-icon)} i/tick-refactor])]
+                           [:span {:class (stl/css :selected-icon)} i/tick])]
 
                         [:a {:class (stl/css :context-menu-action :submenu)
                              :data-no-close true
                              :on-click (enter-submenu option-name sub-options)
                              :data-test data-test}
                          option-name
-                         [:span {:class (stl/css :submenu-icon)} i/arrow-refactor]])]))))])])])))
+                         [:span {:class (stl/css :submenu-icon)} i/arrow]])]))))])])])))
 
 (mf/defc context-menu-a11y
   {::mf/wrap-props false}

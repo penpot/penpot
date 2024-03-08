@@ -109,11 +109,11 @@
       (when (= @selected :file)
         [:button {:class (stl/css :add-color-btn)
                   :on-click on-add-library-color}
-         i/add-refactor])
+         i/add])
 
       [:button {:class (stl/css :palette-btn)
                 :on-click toggle-palette}
-       i/swatches-refactor]
+       i/swatches]
 
       (for [[idx color] (map-indexed vector @current-colors)]
         [:& cb/color-bullet
