@@ -7,12 +7,10 @@
 (ns app.main.ui.workspace.sidebar.options.menus.component
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
-   [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
@@ -296,16 +294,6 @@
   (= (:component-id shape-a)
      (:component-id shape-b)))
 
-;; Get the ids of the components and its root-shapes that are parents of the current shape, to avoid loops
-(defn get-parent-component-ids
-  [objects shape ids]
-  (let [shape-id (:id shape)]
-    (if (uuid/zero? shape-id)
-      ids
-      (let [ids (if (ctk/instance-head? shape)
-                  (conj ids shape-id (:component-id shape))
-                  ids)]
-        (get-parent-component-ids objects (get objects (:parent-id shape)) ids)))))
 
 (mf/defc component-swap
   {::mf/props :obj}
@@ -386,13 +374,17 @@
                               (->> (concat groups components)
                                    (sort-by :name)))
 
-        parent-components   (mf/with-memo [shapes objects]
-                              (into #{}
-                                    (comp
-                                     (map :parent-id)
-                                     (map (d/getf objects))
-                                     (mapcat #(get-parent-component-ids objects % [])))
-                                    shapes))
+        find-parent-components
+        (mf/use-fn
+         (mf/deps objects)
+         (fn [shape]
+           (->> (cfh/get-parents objects (:id shape))
+                (map :component-id)
+                (remove nil?))))
+
+        ;; Get the ids of the components that are parents of the shapes, to avoid loops
+        parent-components (mapcat find-parent-components shapes)
+
 
         libraries-options  (map (fn [library] {:value (:id library) :label (:name library)})
                                 (vals libraries))
@@ -489,8 +481,10 @@
             (let [data       (dm/get-in libraries [current-library-id :data])
                   container  (ctf/get-component-page data item)
                   root-shape (ctf/get-component-root data item)
-                  loop?      (or (contains? parent-components (:main-instance-id item))
-                                 (contains? parent-components (:id item)))]
+                  components (->> (cfh/get-children-with-self (:objects container) (:id root-shape))
+                                  (keep :component-id)
+                                  set)
+                  loop?      (some #(contains? components %) parent-components)]
               [:& component-swap-item {:key (dm/str (:id item))
                                        :item item
                                        :loop loop?
