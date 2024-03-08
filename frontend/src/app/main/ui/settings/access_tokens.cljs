@@ -26,13 +26,13 @@
    [rumext.v2 :as mf]))
 
 (def ^:private clipboard-icon
-  (i/icon-xref :clipboard-refactor (stl/css :clipboard-icon)))
+  (i/icon-xref :clipboard (stl/css :clipboard-icon)))
 
 (def ^:private close-icon
-  (i/icon-xref :close-refactor (stl/css :close-icon)))
+  (i/icon-xref :close (stl/css :close-icon)))
 
 (def ^:private menu-icon
-  (i/icon-xref :menu-refactor (stl/css :menu-icon)))
+  (i/icon-xref :menu (stl/css :menu-icon)))
 
 (def tokens-ref
   (l/derived :access-tokens st/state))

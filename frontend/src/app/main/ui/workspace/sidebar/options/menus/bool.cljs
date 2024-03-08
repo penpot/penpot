@@ -18,7 +18,7 @@
    [rumext.v2 :as mf]))
 
 (def ^:private flatten-icon
-  (i/icon-xref :boolean-flatten-refactor (stl/css :flatten-icon)))
+  (i/icon-xref :boolean-flatten (stl/css :flatten-icon)))
 
 (mf/defc bool-options
   []

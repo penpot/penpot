@@ -34,28 +34,28 @@
 
 
 (def ^:private arrow-icon
-  (i/icon-xref :arrow-refactor (stl/css :arrow-icon)))
+  (i/icon-xref :arrow (stl/css :arrow-icon)))
 
 (def ^:private menu-icon
-  (i/icon-xref :menu-refactor (stl/css :menu-icon)))
+  (i/icon-xref :menu (stl/css :menu-icon)))
 
 (def ^:private warning-icon
-  (i/icon-xref :msg-warning-refactor (stl/css :warning-icon)))
+  (i/icon-xref :msg-warning (stl/css :warning-icon)))
 
 (def ^:private success-icon
-  (i/icon-xref :msg-success-refactor (stl/css :success-icon)))
+  (i/icon-xref :msg-success (stl/css :success-icon)))
 
 (def ^:private image-icon
-  (i/icon-xref :img-refactor (stl/css :image-icon)))
+  (i/icon-xref :img (stl/css :image-icon)))
 
 (def ^:private user-icon
-  (i/icon-xref :user-refactor (stl/css :user-icon)))
+  (i/icon-xref :user (stl/css :user-icon)))
 
 (def ^:private document-icon
-  (i/icon-xref :document-refactor (stl/css :document-icon)))
+  (i/icon-xref :document (stl/css :document-icon)))
 
 (def ^:private group-icon
-  (i/icon-xref :group-refactor (stl/css :group-icon)))
+  (i/icon-xref :group (stl/css :group-icon)))
 
 (mf/defc header
   {::mf/wrap [mf/memo]

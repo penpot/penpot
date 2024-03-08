@@ -21,10 +21,10 @@
    [rumext.v2 :as mf]))
 
 (def ^:private arrow-icon
-  (i/icon-xref :arrow-refactor (stl/css :arrow-icon)))
+  (i/icon-xref :arrow (stl/css :arrow-icon)))
 
 (def ^:private feedback-icon
-  (i/icon-xref :feedback-refactor (stl/css :feedback-icon)))
+  (i/icon-xref :feedback (stl/css :feedback-icon)))
 
 (def ^:private go-settings-profile
   #(st/emit! (rt/nav :settings-profile)))

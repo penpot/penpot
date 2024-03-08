@@ -26,13 +26,13 @@
    [rumext.v2 :as mf]))
 
 (def ^:private neutral-icon
-  (i/icon-xref :msg-neutral-refactor (stl/css :icon)))
+  (i/icon-xref :msg-neutral (stl/css :icon)))
 
 (def ^:private error-icon
-  (i/icon-xref :delete-text-refactor (stl/css :icon)))
+  (i/icon-xref :delete-text (stl/css :icon)))
 
 (def ^:private close-icon
-  (i/icon-xref :close-refactor (stl/css :close-icon)))
+  (i/icon-xref :close (stl/css :close-icon)))
 
 (mf/defc export-multiple-dialog
   [{:keys [exports title cmd no-selection]}]

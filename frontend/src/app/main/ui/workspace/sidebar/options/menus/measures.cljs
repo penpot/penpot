@@ -52,10 +52,10 @@
    :svg-raw #{:size :position :rotation}
    :text    #{:size :position :rotation}})
 
-(def ^:private clip-content-icon (i/icon-xref :clip-content-refactor (stl/css :checkbox-button)))
-(def ^:private play-icon (i/icon-xref :play-refactor (stl/css :checkbox-button)))
-(def ^:private locked-icon (i/icon-xref :detach-refactor (stl/css :lock-ratio-icon)))
-(def ^:private unlocked-icon (i/icon-xref :detached-refactor (stl/css :lock-ratio-icon)))
+(def ^:private clip-content-icon (i/icon-xref :clip-content (stl/css :checkbox-button)))
+(def ^:private play-icon (i/icon-xref :play (stl/css :checkbox-button)))
+(def ^:private locked-icon (i/icon-xref :detach (stl/css :lock-ratio-icon)))
+(def ^:private unlocked-icon (i/icon-xref :detached (stl/css :lock-ratio-icon)))
 
 (defn select-measure-keys
   "Consider some shapes can be drawn from bottom to top or from left to right"

@@ -29,7 +29,7 @@
 
 
 (def ^:private detach-icon
-  (i/icon-xref :detach-refactor (stl/css :detach-icon)))
+  (i/icon-xref :detach (stl/css :detach-icon)))
 
 (defn opacity->string
   [opacity]

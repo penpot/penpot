@@ -22,14 +22,14 @@
 
 
 (def ^:private close-icon
-  (i/icon-xref :close-refactor (stl/css :close-icon)))
+  (i/icon-xref :close (stl/css :close-icon)))
 
 (def ^:private comments-icon-svg
-  (i/icon-xref :comments-refactor (stl/css :comments-icon)))
+  (i/icon-xref :comments (stl/css :comments-icon)))
 
 
 (def ^:private comments-icon-small
-  (i/icon-xref :comments-refactor (stl/css :comments-icon-small)))
+  (i/icon-xref :comments (stl/css :comments-icon-small)))
 
 (mf/defc comments-icon
   [{:keys [profile show? on-show-comments]}]
