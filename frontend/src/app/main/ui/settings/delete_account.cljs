@@ -44,7 +44,7 @@
 
        [:h2 {:class (stl/css :modal-title)} (tr "modals.delete-account.title")]
        [:button {:class (stl/css :modal-close-btn)
-                 :on-click on-close} i/close-refactor]]
+                 :on-click on-close} i/close]]
 
       [:div {:class (stl/css :modal-content)}
        [:& context-notification

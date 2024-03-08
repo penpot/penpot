@@ -485,7 +485,7 @@
         (when-not read-only?
           [:button {:class (stl/css :assets-btn)
                     :on-click add-color-clicked}
-           i/add-refactor])])
+           i/add])])
 
 
      [:& cmm/asset-section-block {:role :content}

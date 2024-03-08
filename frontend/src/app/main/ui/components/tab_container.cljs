@@ -48,7 +48,7 @@
          {:on-click handle-collapse
           :class (stl/css :collapse-sidebar)
           :aria-label (tr "workspace.sidebar.collapse")}
-         i/arrow-refactor])
+         i/arrow])
       [:div  {:class (stl/css :tab-container-tab-wrapper)}
        (for [tab children]
          (let [props (.-props tab)

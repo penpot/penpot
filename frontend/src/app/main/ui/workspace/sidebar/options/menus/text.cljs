@@ -45,19 +45,19 @@
       [:& radio-button {:value "left"
                         :id "text-align-left"
                         :title (tr "workspace.options.text-options.text-align-left" (sc/get-tooltip :text-align-left))
-                        :icon i/text-align-left-refactor}]
+                        :icon i/text-align-left}]
       [:& radio-button {:value "center"
                         :id "text-align-center"
                         :title (tr "workspace.options.text-options.text-align-center" (sc/get-tooltip :text-align-center))
-                        :icon i/text-align-center-refactor}]
+                        :icon i/text-align-center}]
       [:& radio-button {:value "right"
                         :id "text-align-right"
                         :title (tr "workspace.options.text-options.text-align-right" (sc/get-tooltip :text-align-right))
-                        :icon i/text-align-right-refactor}]
+                        :icon i/text-align-right}]
       [:& radio-button {:value "justify"
                         :id "text-align-justify"
                         :title (tr "workspace.options.text-options.text-align-justify" (sc/get-tooltip :text-align-justify))
-                        :icon i/text-justify-refactor}]]]))
+                        :icon i/text-justify}]]]))
 
 (mf/defc text-direction-options
   [{:keys [values on-change on-blur] :as props}]
@@ -80,12 +80,12 @@
                         :type "checkbox"
                         :id "ltr-text-direction"
                         :title (tr "workspace.options.text-options.direction-ltr")
-                        :icon i/text-ltr-refactor}]
+                        :icon i/text-ltr}]
       [:& radio-button {:value "rtl"
                         :type "checkbox"
                         :id "rtl-text-direction"
                         :title (tr "workspace.options.text-options.direction-rtl")
-                        :icon i/text-rtl-refactor}]]]))
+                        :icon i/text-rtl}]]]))
 
 (mf/defc vertical-align
   [{:keys [values on-change on-blur] :as props}]
@@ -105,15 +105,15 @@
       [:& radio-button {:value "top"
                         :id "vertical-text-align-top"
                         :title (tr "workspace.options.text-options.align-top")
-                        :icon i/text-top-refactor}]
+                        :icon i/text-top}]
       [:& radio-button {:value "center"
                         :id "vertical-text-align-center"
                         :title (tr "workspace.options.text-options.align-middle")
-                        :icon i/text-middle-refactor}]
+                        :icon i/text-middle}]
       [:& radio-button {:value "bottom"
                         :id "vertical-text-align-bottom"
                         :title (tr "workspace.options.text-options.align-bottom")
-                        :icon i/text-bottom-refactor}]]]))
+                        :icon i/text-bottom}]]]))
 
 (mf/defc grow-options
   [{:keys [ids values on-blur] :as props}]
@@ -139,15 +139,15 @@
       [:& radio-button {:value "fixed"
                         :id "text-fixed-grow"
                         :title (tr "workspace.options.text-options.grow-fixed")
-                        :icon i/text-fixed-refactor}]
+                        :icon i/text-fixed}]
       [:& radio-button {:value "auto-width"
                         :id "text-auto-width-grow"
                         :title (tr "workspace.options.text-options.grow-auto-width")
-                        :icon i/text-auto-width-refactor}]
+                        :icon i/text-auto-width}]
       [:& radio-button {:value "auto-height"
                         :id "text-auto-height-grow"
                         :title (tr "workspace.options.text-options.grow-auto-height")
-                        :icon i/text-auto-height-refactor}]]]))
+                        :icon i/text-auto-height}]]]))
 
 (mf/defc text-decoration-options
   [{:keys [values on-change on-blur] :as props}]
@@ -169,12 +169,12 @@
                         :type "checkbox"
                         :id "underline-text-decoration"
                         :title (tr "workspace.options.text-options.underline" (sc/get-tooltip :underline))
-                        :icon i/text-underlined-refactor}]
+                        :icon i/text-underlined}]
       [:& radio-button {:value "line-through"
                         :type "checkbox"
                         :id "line-through-text-decoration"
                         :title (tr "workspace.options.text-options.strikethrough" (sc/get-tooltip :line-through))
-                        :icon i/text-stroked-refactor}]]]))
+                        :icon i/text-stroked}]]]))
 
 (mf/defc text-menu
   {::mf/wrap [mf/memo]}
@@ -291,7 +291,7 @@
        (when (and (not typography) (not multiple?))
          [:button {:class   (stl/css :add-typography)
                    :on-click on-convert-to-typography}
-          i/add-refactor])]]
+          i/add])]]
 
      (when main-menu-open?
        [:div {:class (stl/css :element-content)}
@@ -309,7 +309,7 @@
            [:div  {:class (stl/css :multiple-typography-button)
                    :on-click handle-detach-typography
                    :title (tr "workspace.libraries.text.multiple-typography-tooltip")}
-            i/detach-refactor]]
+            i/detach]]
 
           :else
           [:> text-options opts])
@@ -319,7 +319,7 @@
          [:> grow-options opts]
          [:button {:class (stl/css :more-options)
                    :on-click toggle-more-options}
-          i/menu-refactor]]
+          i/menu]]
 
         (when more-options-open?
           [:div  {:class (stl/css :text-decoration-options)}

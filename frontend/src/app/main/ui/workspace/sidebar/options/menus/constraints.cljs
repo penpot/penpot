@@ -225,7 +225,7 @@
                [:span {:class (stl/css-case :check-mark true
                                             :checked (:fixed-scroll values))}
                 (when (:fixed-scroll values)
-                  i/status-tick-refactor)]
+                  i/status-tick)]
                (tr "workspace.options.constraints.fix-when-scrolling")
                [:input {:type "checkbox"
                         :id "fixed-on-scroll"

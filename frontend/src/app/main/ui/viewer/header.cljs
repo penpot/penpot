@@ -86,13 +86,13 @@
          [:button {:class (stl/css :zoom-btn)
                    :on-click on-decrease}
           [:span {:class (stl/css :zoom-icon)}
-           i/remove-refactor]]
+           i/remove-icon]]
          [:p  {:class (stl/css :zoom-text)}
           (fmt/format-percent zoom)]
          [:button {:class (stl/css :zoom-btn)
                    :on-click on-increase}
           [:span {:class (stl/css :zoom-icon)}
-           i/add-refactor]]]
+           i/add]]]
         [:button {:class (stl/css :reset-btn)
                   :on-click on-zoom-reset}
          (tr "workspace.header.reset-zoom")]]
@@ -183,13 +183,13 @@
      (when (:can-edit permissions)
        [:span {:on-click go-to-workspace
                :class (stl/css :edit-btn)}
-        i/curve-refactor])
+        i/curve])
 
      [:span {:title (tr "viewer.header.fullscreen")
              :class (stl/css-case :fullscreen-btn true
                                   :selected fullscreen?)
              :on-click toggle-fullscreen}
-      i/expand-refactor]
+      i/expand]
 
      (when (:is-admin permissions)
        [:button {:on-click open-share-dialog
@@ -238,7 +238,7 @@
              :on-click open-dropdown}
        [:span  {:class (stl/css :breadcrumb-text)}
         (dm/str file-name " / " page-name)]
-       [:span {:class (stl/css :icon)} i/arrow-refactor]
+       [:span {:class (stl/css :icon)} i/arrow]
        [:span "/"]
        [:& dropdown {:show @show-dropdown?
                      :on-close close-dropdown}
@@ -252,11 +252,11 @@
             [:span {:class (stl/css :label)}
              (get-in file [:data :pages-index id :name])]
             (when (= page-id id)
-              [:span {:class (stl/css :icon-check)} i/tick-refactor])])]]]
+              [:span {:class (stl/css :icon-check)} i/tick])])]]]
       [:div {:class (stl/css :current-frame)
              :on-click toggle-thumbnails}
        [:span {:class (stl/css :frame-name)} frame-name]
-       [:span {:class (stl/css :icon)} i/arrow-refactor]]]]))
+       [:span {:class (stl/css :icon)} i/arrow]]]]))
 
 (mf/defc header
   [{:keys [project file page frame zoom section permissions index interactions-mode]}]
@@ -308,7 +308,7 @@
                 :class (stl/css-case :mode-zone-btn true
                                      :selected (= section :interactions))
                 :title (tr "viewer.header.interactions-section" (sc/get-tooltip :open-interactions))}
-       i/play-refactor]
+       i/play]
 
       (when (or (:can-edit permissions)
                 (= (:who-comment permissions) "all"))
@@ -317,7 +317,7 @@
                   :class (stl/css-case :mode-zone-btn true
                                        :selected (= section :comments))
                   :title (tr "viewer.header.comments-section" (sc/get-tooltip :open-comments))}
-         i/comments-refactor])
+         i/comments])
 
       (when (or (= (:type permissions) :membership)
                 (and (= (:type permissions) :share-link)
@@ -326,7 +326,7 @@
                   :class (stl/css-case :mode-zone-btn true
                                        :selected (= section :inspect))
                   :title (tr "viewer.header.inspect-section" (sc/get-tooltip :open-inspect))}
-         i/code-refactor])]
+         i/code])]
 
      [:& header-options {:section section
                          :permissions permissions

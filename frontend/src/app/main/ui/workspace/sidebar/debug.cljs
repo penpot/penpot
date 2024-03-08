@@ -35,14 +35,14 @@
      [:div {:class (stl/css :panel-title)}
       [:span "Debugging tools"]
       [:div {:class (stl/css :close-button) :on-click handle-close}
-       i/close-refactor]]
+       i/close]]
 
      [:div {:class (stl/css :debug-panel-inner)}
       (for [option (sort-by d/name dbg/options)]
         [:div {:class (stl/css :checkbox-wrapper)}
          [:span {:class (stl/css-case :checkbox-icon true :global/checked (dbg/enabled? option))
                  :on-click #(on-toggle-enabled % option)}
-          (when (dbg/enabled? option) i/status-tick-refactor)]
+          (when (dbg/enabled? option) i/status-tick)]
 
          [:input {:type "checkbox"
                   :id (d/name option)

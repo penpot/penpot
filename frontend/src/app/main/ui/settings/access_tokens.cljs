@@ -172,7 +172,7 @@
                        :on-click copy-token}
               [:span {:class (stl/css :token-value)} (:token created "")]
               [:span {:class (stl/css :icon)}
-               i/clipboard-refactor]])]]
+               i/clipboard]])]]
 
        [:div {:class (stl/css :modal-footer)}
         [:div {:class (stl/css :action-buttons)}

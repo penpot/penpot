@@ -846,7 +846,7 @@
           [:h2 {:class (stl/css :modal-title)} (tr "modals.create-webhook.title")])
 
         [:button {:class (stl/css :modal-close-btn)
-                  :on-click on-modal-close} i/close-refactor]]
+                  :on-click on-modal-close} i/close]]
 
        [:div {:class (stl/css :modal-content)}
         [:div {:class (stl/css :fields-row)}

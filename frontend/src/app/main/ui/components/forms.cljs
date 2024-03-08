@@ -52,11 +52,11 @@
         help-icon'   (cond
                        (and (= input-type "password")
                             (= @type' "password"))
-                       i/shown-refactor
+                       i/shown
 
                        (and (= input-type "password")
                             (= @type' "text"))
-                       i/hide-refactor
+                       i/hide
 
                        :else
                        help-icon)
@@ -125,7 +125,7 @@
                  :for (name input-name)} label
 
          (when is-checkbox?
-           [:span {:class (stl/css-case :global/checked checked?)} (when checked? i/status-tick-refactor)])
+           [:span {:class (stl/css-case :global/checked checked?)} (when checked? i/status-tick)])
 
          (if is-checkbox?
            [:> :input props]
@@ -140,11 +140,11 @@
 
             (when show-valid?
               [:span {:class (stl/css :valid-icon)}
-               i/tick-refactor])
+               i/tick])
 
             (when show-invalid?
               [:span {:class (stl/css :invalid-icon)}
-               i/close-refactor])])]
+               i/close])])]
 
         (some? children)
         [:label {:for (name input-name)}
@@ -479,7 +479,7 @@
                                         :caution (:caution item))}
             [:span {:class (stl/css :text)} (:text item)]
             [:button {:class (stl/css :icon)
-                      :on-click #(remove-item! item)} i/close-refactor]]])])]))
+                      :on-click #(remove-item! item)} i/close]]])])]))
 
 ;; --- Validators
 

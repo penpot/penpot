@@ -164,7 +164,7 @@
                                       {:label (tr "questions.adobe-xd") :value "adobe-xd" :image "images/form/adobe-xd.png" :area "image3"}
                                       {:label (tr "questions.canva") :value "canva" :image "images/form/canva.png" :area "image4"}
                                       {:label (tr "questions.invision") :value "invision" :image "images/form/invision.png" :area "image5"}
-                                      {:label (tr "questions.never-used-one")  :area "image6" :value "never-used-a-tool" :icon i/curve-refactor}
+                                      {:label (tr "questions.never-used-one")  :area "image6" :value "never-used-a-tool" :icon i/curve}
                                       {:label (tr "questions.other") :value "other" :area "other"}]
                             :name :experience-design-tool
                             :class (stl/css :image-radio)

@@ -153,13 +153,13 @@
                 :visibility (if show-artboard-names? "visible" "hidden")}
           (cond
             (:use-for-thumbnail frame)
-            [:use {:href "#icon-boards-thumbnail-refactor"}]
+            [:use {:href "#icon-boards-thumbnail"}]
 
             grid-edition?
-            [:use {:href "#icon-grid-refactor"}]
+            [:use {:href "#icon-grid"}]
 
             main-instance?
-            [:use {:href "#icon-component-refactor"}])])
+            [:use {:href "#icon-component"}])])
 
 
        [:foreignObject {:x text-pos-x
@@ -266,7 +266,7 @@
              :on-double-click on-double-click
              :on-pointer-enter on-pointer-enter
              :on-pointer-leave on-pointer-leave}
-       i/play-refactor
+       i/play
        [:span (:name flow)]]]]))
 
 (mf/defc frame-flows

@@ -50,7 +50,7 @@
                   :title (tr "workspace.align.hleft" (sc/get-tooltip :align-left))
                   :data-value "hleft"
                   :on-click align-objects}
-         i/align-left-refactor]
+         i/align-left]
 
         [:button {:class (stl/css-case :align-button true
                                        :disabled disabled-align)
@@ -58,7 +58,7 @@
                   :title (tr "workspace.align.hcenter" (sc/get-tooltip :align-hcenter))
                   :data-value "hcenter"
                   :on-click align-objects}
-         i/align-horizontal-center-refactor]
+         i/align-horizontal-center]
 
         [:button {:class (stl/css-case :align-button true
                                        :disabled disabled-align)
@@ -66,7 +66,7 @@
                   :title (tr "workspace.align.hright" (sc/get-tooltip :align-right))
                   :data-value "hright"
                   :on-click align-objects}
-         i/align-right-refactor]
+         i/align-right]
 
         [:button {:class (stl/css-case :align-button true
                                        :disabled disabled-distribute)
@@ -74,7 +74,7 @@
                   :title (tr "workspace.align.hdistribute" (sc/get-tooltip :h-distribute))
                   :data-value "horizontal"
                   :on-click distribute-objects}
-         i/distribute-horizontally-refactor]]
+         i/distribute-horizontally]]
 
        [:div {:class (stl/css :align-group)}
         [:button {:class (stl/css-case :align-button true
@@ -83,7 +83,7 @@
                   :title (tr "workspace.align.vtop" (sc/get-tooltip :align-top))
                   :data-value "vtop"
                   :on-click  align-objects}
-         i/align-top-refactor]
+         i/align-top]
 
         [:button {:class (stl/css-case :align-button true
                                        :disabled disabled-align)
@@ -91,7 +91,7 @@
                   :title (tr "workspace.align.vcenter" (sc/get-tooltip :align-vcenter))
                   :data-value "vcenter"
                   :on-click  align-objects}
-         i/align-vertical-center-refactor]
+         i/align-vertical-center]
 
         [:button {:class (stl/css-case :align-button true
                                        :disabled disabled-align)
@@ -99,7 +99,7 @@
                   :title (tr "workspace.align.vbottom" (sc/get-tooltip :align-bottom))
                   :data-value "vbottom"
                   :on-click  align-objects}
-         i/align-bottom-refactor]
+         i/align-bottom]
 
         [:button {:title (tr "workspace.align.vdistribute" (sc/get-tooltip :v-distribute))
                   :class (stl/css-case :align-button true
@@ -107,5 +107,5 @@
                   :disabled disabled-distribute
                   :data-value "vertical"
                   :on-click distribute-objects}
-         i/distribute-vertical-spacing-refactor]]])))
+         i/distribute-vertical-spacing]]])))
 

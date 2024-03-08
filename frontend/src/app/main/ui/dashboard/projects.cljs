@@ -315,7 +315,7 @@
                   :aria-label (tr "dashboard.new-file")
                   :data-test "project-new-file"
                   :on-key-down handle-create-click}
-         i/add-refactor]
+         i/add]
 
         [:button
          {:class (stl/css :btn-secondary :btn-small :tooltip :tooltip-bottom)
@@ -324,7 +324,7 @@
           :aria-label  (tr "dashboard.options")
           :data-test "project-options"
           :on-key-down handle-menu-click}
-         i/menu-refactor]]]]
+         i/menu]]]]
 
      [:div {:class (stl/css :grid-container) :ref rowref}
       [:& line-grid

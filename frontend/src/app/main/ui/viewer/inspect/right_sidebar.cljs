@@ -89,7 +89,7 @@
         [:div {:class (stl/css :shape-row)}
          (if (> (count shapes) 1)
            [:*
-            [:span {:class (stl/css :layers-icon)} i/layers-refactor]
+            [:span {:class (stl/css :layers-icon)} i/layers]
             [:span {:class (stl/css :layer-title)} (tr "inspect.tabs.code.selected.multiple" (count shapes))]]
            [:*
             [:span {:class (stl/css :shape-icon)}
@@ -130,12 +130,12 @@
        [:div {:class (stl/css :empty)}
         [:div {:class (stl/css :code-info)}
          [:span {:class (stl/css :placeholder-icon)}
-          i/code-refactor]
+          i/code]
          [:span {:class (stl/css :placeholder-label)}
           (tr "inspect.empty.select")]]
         [:div {:class (stl/css :help-info)}
          [:span {:class (stl/css :placeholder-icon)}
-          i/help-refactor]
+          i/help]
          [:span {:class (stl/css :placeholder-label)}
           (tr "inspect.empty.help")]]
         [:button {:class (stl/css :more-info-btn)

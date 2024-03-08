@@ -150,20 +150,20 @@
 
 (defn entry->icon [{:keys [type]}]
   (case type
-    :page i/document-refactor
-    :shape i/svg-refactor
-    :rect i/rectangle-refactor
-    :circle i/elipse-refactor
-    :text i/text-refactor
-    :path i/path-refactor
-    :frame i/board-refactor
-    :group i/group-refactor
-    :color i/drop-refactor
-    :typography i/text-palette-refactor
-    :component i/component-refactor
-    :media i/img-refactor
-    :image i/img-refactor
-    i/svg-refactor))
+    :page i/document
+    :shape i/svg
+    :rect i/rectangle
+    :circle i/elipse
+    :text i/text
+    :path i/path
+    :frame i/board
+    :group i/group
+    :color i/drop-icon
+    :typography i/text-palette
+    :component i/component
+    :media i/img
+    :image i/img
+    i/svg))
 
 (defn is-shape? [type]
   (contains? #{:shape :rect :circle :text :path :frame :group} type))
@@ -315,7 +315,7 @@
                                     :button-opened @show-detail?)
                :on-click toggle-show-detail
                :data-has-entry (dm/str (not (nil? (:detail entry))))}
-         i/arrow-refactor])]
+         i/arrow])]
 
      (when @show-detail?
        [:& history-entry-details {:entry entry}])]))
@@ -334,10 +334,10 @@
       [:span (t locale "workspace.undo.title")]
       [:div {:class (stl/css :close-button)
              :on-click toggle-history}
-       i/close-refactor]]
+       i/close]]
      (if (empty? entries)
        [:div {:class (stl/css :history-entry-empty)}
-        [:div {:class (stl/css :history-entry-empty-icon)} i/history-refactor]
+        [:div {:class (stl/css :history-entry-empty-icon)} i/history]
         [:div {:class (stl/css :history-entry-empty-msg)} (t locale "workspace.undo.empty")]]
        [:ul {:class (stl/css :history-entries)}
         (for [[idx-entry entry] (->> entries (map-indexed vector) reverse)] #_[i (range 0 10)]

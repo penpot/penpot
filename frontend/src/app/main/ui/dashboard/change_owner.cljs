@@ -45,7 +45,7 @@
       [:div {:class (stl/css :modal-header)}
        [:h2 {:class (stl/css :modal-title)} (tr "modals.leave-and-reassign.title")]
        [:button {:class (stl/css :modal-close-btn)
-                 :on-click on-cancel} i/close-refactor]]
+                 :on-click on-cancel} i/close]]
 
       [:div {:class (stl/css :modal-content)}
        [:p {:class (stl/css :modal-msg)}

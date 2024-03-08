@@ -159,7 +159,7 @@
         [:button {:class (stl/css :libraries-button)
                   :on-click show-libraries-dialog}
          [:span {:class (stl/css :libraries-icon)}
-          i/library-refactor]
+          i/library]
          (tr "workspace.assets.libraries")])
 
       [:div {:class (stl/css :search-wrapper)}
@@ -170,7 +170,7 @@
          {:on-click on-open-menu
           :class (stl/css-case :section-button true
                                :opened menu-open?)}
-         i/filter-refactor]]
+         i/filter-icon]]
        [:& context-menu-a11y
         {:on-close on-menu-close
          :selectable true
@@ -186,8 +186,8 @@
        [:button {:class (stl/css :sort-button)
                  :on-click toggle-ordering}
         (if reverse-sort?
-          i/asc-sort-refactor
-          i/desc-sort-refactor)]]]
+          i/asc-sort
+          i/desc-sort)]]]
 
      [:& (mf/provider cmm/assets-filters) {:value filters}
       [:& (mf/provider cmm/assets-toggle-ordering) {:value toggle-ordering}

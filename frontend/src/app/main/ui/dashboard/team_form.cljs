@@ -101,7 +101,7 @@
            (tr "labels.create-team")])
 
         [:button {:class (stl/css :modal-close-btn)
-                  :on-click on-close} i/close-refactor]]
+                  :on-click on-close} i/close]]
 
        [:div {:class (stl/css :modal-content)}
         [:& fm/input {:type "text"

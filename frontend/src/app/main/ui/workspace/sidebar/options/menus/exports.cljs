@@ -177,7 +177,8 @@
                      :title        (tr (if (> (count ids) 1) "workspace.options.export-multiple" "workspace.options.export"))
                      :class        (stl/css-case :title-spacing-export (not has-exports?))}
        [:button {:class (stl/css :add-export)
-                 :on-click add-export} i/add-refactor]]]
+                 :on-click add-export}
+        i/add]]]
      (when open?
        [:div {:class (stl/css :element-set-content)}
 
@@ -188,7 +189,7 @@
            [:div {:class (stl/css :actions)}
             [:button {:class (stl/css :action-btn)
                       :on-click on-remove-all}
-             i/remove-refactor]]]
+             i/remove-icon]]]
 
           (seq exports)
           [:*
@@ -222,7 +223,7 @@
 
               [:button {:class (stl/css :action-btn)
                         :on-click (partial delete-export index)}
-               i/remove-refactor]])])
+               i/remove-icon]])])
 
         (when (or (= :multiple exports) (seq exports))
           [:button

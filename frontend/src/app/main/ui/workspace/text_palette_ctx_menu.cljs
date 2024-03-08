@@ -38,7 +38,7 @@
 
            (when (= selected (:id cur-library))
              [:span {:class (stl/css :icon-wrapper)}
-              i/tick-refactor])]))
+              i/tick])]))
 
       [:li
        {:class (stl/css-case :file-library true
@@ -52,4 +52,4 @@
          (dm/str "(" (count file-typographies) ")")]]
        (when (= selected :file)
          [:span {:class (stl/css :icon-wrapper)}
-          i/tick-refactor])]]]))
+          i/tick])]]]))

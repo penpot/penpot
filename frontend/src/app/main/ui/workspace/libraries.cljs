@@ -230,7 +230,7 @@
                     :type "button"
                     :data-library-id (dm/str id)
                     :on-click unlink-library}
-           i/detach-refactor]])]]
+           i/detach]])]]
 
      [:div {:class (stl/css :section)}
       [:& title-bar {:collapsable false
@@ -240,7 +240,7 @@
        [:& search-bar {:on-change change-search-term
                        :value search-term
                        :placeholder (tr "workspace.libraries.search-shared-libraries")
-                       :icon (mf/html [:span {:class (stl/css :search-icon)} i/search-refactor])}]]
+                       :icon (mf/html [:span {:class (stl/css :search-icon)} i/search])}]]
 
       (if (seq shared-libraries)
         [:div {:class (stl/css :section-list-shared)}
@@ -261,7 +261,7 @@
             [:button {:class (stl/css :item-button-shared)
                       :data-library-id (dm/str id)
                       :on-click link-library}
-             i/add-refactor]])]
+             i/add]])]
 
         (when (empty? shared-libraries)
           [:div {:class (stl/css :section-list-empty)}
@@ -492,7 +492,7 @@
      [:div {:class (stl/css :modal-dialog)}
       [:button {:class (stl/css :close)
                 :on-click close-dialog}
-       i/close-refactor]
+       i/close]
       [:div {:class (stl/css :modal-title)}
        "Libraries"]
       [:div  {:class (stl/css :modal-content)}

@@ -97,7 +97,7 @@
 
        [:span {:class (stl/css :editable-label-close)
                :on-click cancel-edition}
-        i/delete-text-refactor]]
+        i/delete-text]]
 
       [:span {:class final-class
               :title tooltip
