@@ -21,7 +21,6 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.timers :as ts]
    [rumext.v2 :as mf]))
 
 (mf/defc libraries
@@ -51,12 +50,13 @@
 
         toggle-palette
         (mf/use-fn
+         (mf/deps @selected)
          (fn []
            (r/set-resize-type! :bottom)
            (dom/add-class!  (dom/get-element-by-class "color-palette") "fade-out-down")
-           (ts/schedule 300 #(st/emit! (dw/remove-layout-flag :textpalette)
-                                       (-> (dw/toggle-layout-flag :colorpalette)
-                                           (vary-meta assoc ::ev/origin "workspace-colorpicker"))))))
+           (st/emit! (dw/remove-layout-flag :textpalette)
+                     (-> (mdc/show-palette @selected)
+                         (vary-meta assoc ::ev/origin "workspace-colorpicker")))))
 
         shared-libs-options (mapv (fn [lib] {:value (d/name (:id lib)) :label (:name lib)}) (vals shared-libs))
 

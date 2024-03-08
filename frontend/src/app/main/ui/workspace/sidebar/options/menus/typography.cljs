@@ -144,8 +144,8 @@
            (on-select font)
            (on-close)))]
 
-    (mf/with-effect []
-      (st/emit! (fts/load-recent-fonts)))
+    (mf/with-effect [fonts]
+      (st/emit! (fts/load-recent-fonts fonts)))
 
     (mf/with-effect [fonts]
       (let [key (events/listen js/document "keydown" on-key-down)]

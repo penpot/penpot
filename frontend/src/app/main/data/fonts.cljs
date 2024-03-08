@@ -318,9 +318,12 @@
         (swap! storage assoc ::recent-fonts most-recent-fonts)))))
 
 (defn load-recent-fonts
-  []
+  [fonts]
   (ptk/reify ::load-recent-fonts
     ptk/UpdateEvent
     (update [_ state]
-      (let [saved-recent-fonts (::recent-fonts @storage)]
+      (let [fonts-map (d/index-by :id fonts)
+            saved-recent-fonts (->> (::recent-fonts @storage)
+                                    (keep #(get fonts-map (:id %)))
+                                    (into #{}))]
         (assoc-in state [:workspace-data :recent-fonts] saved-recent-fonts)))))
