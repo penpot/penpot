@@ -719,7 +719,7 @@
         (rx/of
          (dwu/start-undo-transaction undo-id)
          (dch/commit-changes changes)
-         (ptk/data-event :layout/update selected)
+         (ptk/data-event :layout/update {:ids selected})
          (dwu/commit-undo-transaction undo-id))))))
 
 (defn nudge-selected-shapes

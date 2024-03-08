@@ -110,6 +110,11 @@
   [state]
   (get state :workspace-data))
 
+(defn get-local-file-full
+  [state]
+  (-> (get state :workspace-file)
+      (assoc :data (get state :workspace-data))))
+
 (defn get-file
   "Get the data content of the given file (it may be the current file
   or one library)."

@@ -382,7 +382,7 @@
                                                      :stack-undo? true
                                                      :ignore-remote? true
                                                      :ignore-touched true})
-                   (ptk/data-event :layout/update ids)
+                   (ptk/data-event :layout/update {:ids ids})
                    (dwu/commit-undo-transaction undo-id))))))))
 
 (defn resize-text

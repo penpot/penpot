@@ -777,7 +777,7 @@
 
         (rx/of (dwu/start-undo-transaction undo-id)
                (dch/commit-changes changes)
-               (ptk/data-event :layout/update selected-ids)
+               (ptk/data-event :layout/update {:ids selected-ids})
                (dwu/commit-undo-transaction undo-id))))))
 
 ;; --- Change Shape Order (D&D Ordering)
@@ -987,7 +987,7 @@
         (rx/of (dwu/start-undo-transaction undo-id)
                (dch/commit-changes changes)
                (dwco/expand-collapse parent-id)
-               (ptk/data-event :layout/update (concat all-parents ids))
+               (ptk/data-event :layout/update {:ids (concat all-parents ids)})
                (dwu/commit-undo-transaction undo-id))))))
 
 (defn relocate-selected-shapes
@@ -1105,7 +1105,7 @@
         (when (can-align? selected objects)
           (rx/of (dwu/start-undo-transaction undo-id)
                  (dwt/position-shapes moved)
-                 (ptk/data-event :layout/update selected)
+                 (ptk/data-event :layout/update {:ids selected})
                  (dwu/commit-undo-transaction undo-id)))))))
 
 (defn can-distribute? [selected]
@@ -1132,7 +1132,7 @@
         (when (can-distribute? selected)
           (rx/of (dwu/start-undo-transaction undo-id)
                  (dwt/position-shapes moved)
-                 (ptk/data-event :layout/update selected)
+                 (ptk/data-event :layout/update {:ids selected})
                  (dwu/commit-undo-transaction undo-id)))))))
 
 ;; --- Shape Proportions
@@ -2016,7 +2016,7 @@
           (rx/of (dwu/start-undo-transaction undo-id)
                  (dch/commit-changes changes)
                  (dws/select-shapes selected)
-                 (ptk/data-event :layout/update [frame-id])
+                 (ptk/data-event :layout/update {:ids [frame-id]})
                  (dwu/commit-undo-transaction undo-id)))))))
 
 (defn as-content [text]

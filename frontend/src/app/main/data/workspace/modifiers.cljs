@@ -458,7 +458,7 @@
   ([]
    (apply-modifiers nil))
 
-  ([{:keys [modifiers undo-transation? stack-undo? ignore-constraints ignore-snap-pixel]
+  ([{:keys [modifiers undo-transation? stack-undo? ignore-constraints ignore-snap-pixel undo-group]
      :or {undo-transation? true stack-undo? false ignore-constraints false ignore-snap-pixel false}}]
    (ptk/reify ::apply-modifiers
      ptk/WatchEvent
@@ -508,6 +508,7 @@
                   {:reg-objects? true
                    :stack-undo? stack-undo?
                    :ignore-tree ignore-tree
+                   :undo-group undo-group
                    ;; Attributes that can change in the transform. This way we don't have to check
                    ;; all the attributes
                    :attrs [:selrect

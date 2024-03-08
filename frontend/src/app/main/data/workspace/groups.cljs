@@ -194,7 +194,7 @@
                 (prepare-create-group it objects page-id shapes "Group" false)]
             (rx/of (dch/commit-changes changes)
                    (dws/select-shapes (d/ordered-set (:id group)))
-                   (ptk/data-event :layout/update parents))))))))
+                   (ptk/data-event :layout/update {:ids parents}))))))))
 
 (def ungroup-selected
   (ptk/reify ::ungroup-selected
@@ -244,7 +244,7 @@
         (when-not (empty? selected)
           (rx/of (dwu/start-undo-transaction undo-id)
                  (dch/commit-changes changes)
-                 (ptk/data-event :layout/update parents)
+                 (ptk/data-event :layout/update {:ids parents})
                  (dwu/commit-undo-transaction undo-id)
                  (dws/select-shapes child-ids)))))))
 
@@ -289,7 +289,7 @@
             (rx/of (dwu/start-undo-transaction undo-id)
                    (dch/commit-changes changes)
                    (dws/select-shapes (d/ordered-set (:id group)))
-                   (ptk/data-event :layout/update [(:id group)])
+                   (ptk/data-event :layout/update {:ids [(:id group)]})
                    (dwu/commit-undo-transaction undo-id))))))))
 
 (def unmask-group

@@ -751,7 +751,7 @@
                 (dwu/start-undo-transaction undo-id)
                 (dch/commit-changes changes)
                 (select-shapes new-selected)
-                (ptk/data-event :layout/update frames)
+                (ptk/data-event :layout/update {:ids frames})
                 (memorize-duplicated id-original id-duplicated)
                 (dwu/commit-undo-transaction undo-id))))))))))
 
