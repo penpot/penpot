@@ -9,7 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.main.refs :as refs]
-   [app.main.ui.components.color-bullet-new :as cb]
+   [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.icons :as i]
    [app.util.i18n :refer [tr]]

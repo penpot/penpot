@@ -163,10 +163,12 @@
                                    (:gradient color) (uc/gradient-type->string (get-in color [:gradient :type]))
                                    (:color color) (:color color)
                                    :else (:value color))]
-                [:div {:class (stl/css :asset-list-item)
+                [:div {:class (stl/css :asset-list-item :color-item)
                        :key (str "assets-color-" (:id color))}
                  [:& bc/color-bullet {:color {:color (:color color)
-                                              :opacity (:opacity color)}}]
+                                              :id (:id color)
+                                              :opacity (:opacity color)}
+                                      :mini? true}]
                  [:div {:class (stl/css :name-block)}
                   [:span {:class (stl/css :color-name)} (:name color)]
                   (when-not (= (:name color) default-name)

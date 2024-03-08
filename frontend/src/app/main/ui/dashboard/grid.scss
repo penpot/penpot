@@ -370,3 +370,9 @@ $thumbnail-default-height: $s-168; // Default width
     }
   }
 }
+
+.color-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: $s-8;
+}
