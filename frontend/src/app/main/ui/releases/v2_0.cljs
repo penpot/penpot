@@ -13,7 +13,7 @@
 
 (defmethod c/render-release-notes "1.21"
   [data]
-  (c/render-release-notes (assoc data :verstion "2.0")))
+  (c/render-release-notes (assoc data :version "2.0")))
 
 ;; TODO: Review all copies and alt text
 (defmethod c/render-release-notes "2.0"
@@ -35,7 +35,7 @@
           [:h1 {:class (stl/css :modal-title)}
            "What's new?"]
 
-          [:div {:class (stl/css :verstion-tag)}
+          [:div {:class (stl/css :version-tag)}
            (dm/str "Version " version)]]
 
          [:div {:class (stl/css :features-block)}
