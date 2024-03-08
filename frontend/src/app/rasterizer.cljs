@@ -58,7 +58,7 @@
   "Returns the adjusted size of an SVG."
   [width height max]
   (let [ratio (/ width height)]
-    (if (> width height)
+    (if (< width height)
       [max (* max (/ 1 ratio))]
       [(* max ratio) max])))
 
