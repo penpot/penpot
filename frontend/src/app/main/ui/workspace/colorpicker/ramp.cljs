@@ -9,7 +9,7 @@
   (:require
    [app.common.colors :as cc]
    [app.common.math :as mth]
-   [app.main.ui.components.color-bullet-new :as cb]
+   [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.workspace.colorpicker.slider-selector :refer [slider-selector]]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))

@@ -14,7 +14,7 @@
    [app.config :as cf]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.color-bullet-new :as cbn]
+   [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.components.copy-button :refer [copy-button]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.formats :as fmt]
@@ -69,8 +69,8 @@
          [:div {:class (stl/css :attributes-color-row)}
           [:div {:class (stl/css :bullet-wrapper)
                  :style #js {"--bullet-size" "16px"}}
-           [:& cbn/color-bullet {:color color
-                                 :mini? true}]]
+           [:& cb/color-bullet {:color color
+                                :mini? true}]]
 
           [:div {:class (stl/css :format-wrapper)}
            [:div {:class (stl/css :image-format)}
@@ -101,8 +101,8 @@
       [:div {:class (stl/css :attributes-color-row)}
        [:div {:class (stl/css :bullet-wrapper)
               :style #js {"--bullet-size" "16px"}}
-        [:& cbn/color-bullet {:color color
-                              :mini? true}]]
+        [:& cb/color-bullet {:color color
+                             :mini? true}]]
 
        [:div {:class (stl/css :format-wrapper)}
         (when-not (and on-change-format (or (:gradient color) image))
@@ -125,9 +125,9 @@
           [:span {:class (stl/css-case :color-value-wrapper true
                                        :gradient-name (:gradient color))}
            (if (:gradient color)
-             [:& cbn/color-name {:color color :size 90}]
+             [:& cb/color-name {:color color :size 90}]
              (case format
-               :hex [:& cbn/color-name {:color color}]
+               :hex [:& cb/color-name {:color color}]
                :rgba (let [[r g b a] (cc/hex->rgba (:color color) (:opacity color))]
                        (str/ffmt "%, %, %, %" r g b a))
                :hsla (let [[h s l a] (cc/hex->hsla (:color color) (:opacity color))

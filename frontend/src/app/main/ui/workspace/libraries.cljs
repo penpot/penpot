@@ -20,7 +20,7 @@
    [app.main.refs :as refs]
    [app.main.render :refer [component-svg]]
    [app.main.store :as st]
-   [app.main.ui.components.color-bullet :as bc]
+   [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.components.link-button :as lb]
    [app.main.ui.components.search-bar :refer [search-bar]]
    [app.main.ui.components.tab-container :refer [tab-container tab-element]]
@@ -407,7 +407,8 @@
                     [:div {:class (stl/css :libraries-updates-item)
                            :key (dm/str (:id color))}
                      [:*
-                      [:& bc/color-bullet {:color {:color (:color color)
+                      [:& cb/color-bullet {:color {:color (:color color)
+                                                   :id (:id color)
                                                    :opacity (:opacity color)}}]
                       [:div {:class (stl/css :name-block)}
                        [:span {:class (stl/css :item-name)

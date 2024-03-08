@@ -15,7 +15,7 @@
    [app.main.data.workspace.libraries :as dwl]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.color-bullet-new :as cbn]
+   [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.components.color-input :refer [color-input*]]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.context :as ctx]
@@ -201,12 +201,12 @@
                                   :editing editing-text?
                                   :gradient-name-wrapper gradient-color?)}
        [:div {:class (stl/css :color-bullet-wrapper)}
-        [:& cbn/color-bullet {:color (cond-> color
-                                       (nil? color-name) (assoc
-                                                          :id nil
-                                                          :file-id nil))
-                              :mini? true
-                              :on-click handle-click-color}]]
+        [:& cb/color-bullet {:color (cond-> color
+                                      (nil? color-name) (assoc
+                                                         :id nil
+                                                         :file-id nil))
+                             :mini? true
+                             :on-click handle-click-color}]]
        (cond
               ;; Rendering a color with ID
          library-color?
