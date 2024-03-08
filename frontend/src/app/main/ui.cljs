@@ -107,8 +107,7 @@
                  (not= "0.0" (:main cf/version)))
             [:& release-notes-modal {:version (:main cf/version)}]))
 
-        (when profile
-          [:& dashboard-page {:route route :profile profile}])]
+        [:& dashboard-page {:route route :profile profile}]]
 
        :viewer
        (let [{:keys [query-params path-params]} route

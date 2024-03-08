@@ -125,6 +125,10 @@
 - [VIEWER] Cannot scroll down in code </> mode [Taiga #4655](https://tree.taiga.io/project/penpot/issue/4655)
 - Strange cursor behavior after clicking viewport with text tool [Taiga #4363](https://tree.taiga.io/project/penpot/issue/4363)
 - Selected color affects all of them [Taiga #5285](https://tree.taiga.io/project/penpot/issue/5285)
+- Fix problem with shadow negative spread [Github #3421](https://github.com/penpot/penpot/issues/3421)
+- Fix problem with linked colors to strokes [Github #3522](https://github.com/penpot/penpot/issues/3522)
+- Fix problem with hand tool stuck [Github #3318](https://github.com/penpot/penpot/issues/3318)
+- Fix problem with fix scrolling on nested elements [Github #3508](https://github.com/penpot/penpot/issues/3508)
 
 
 ## 1.19.5

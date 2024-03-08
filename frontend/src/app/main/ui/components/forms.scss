@@ -293,6 +293,13 @@
       outline: none;
       border: $s-1 solid var(--input-border-color-focus);
     }
+    &.invalid {
+      border: $s-1 solid var(--input-border-color-error);
+      &:hover,
+      &:focus {
+        border: $s-1 solid var(--input-border-color-error);
+      }
+    }
   }
   label {
     display: none;

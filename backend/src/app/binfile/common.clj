@@ -277,7 +277,7 @@
               (update :fill-color-ref-file lookup-index)
 
               ;; This covers the old shapes and the new :strokes
-              (uuid? (:storage-color-ref-file form))
+              (uuid? (:stroke-color-ref-file form))
               (update :stroke-color-ref-file lookup-index)
 
               ;; This covers all text shapes that have typography referenced

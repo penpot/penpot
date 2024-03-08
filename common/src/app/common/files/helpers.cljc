@@ -762,6 +762,13 @@
 
         (recur frame-id frame-parents (rest selected))))))
 
+(defn fixed-scroll?
+  [shape]
+  ^boolean
+  (and (:fixed-scroll shape)
+       (= (:parent-id shape) (:frame-id shape))
+       (not= (:frame-id shape) uuid/zero)))
+
 (defn fixed?
   [objects shape-id]
   (let [ids-to-check
@@ -772,4 +779,4 @@
               (take-while #(and (not= % uuid/zero) (not (root-frame? objects %))))))]
     (boolean
      (->> ids-to-check
-          (d/seek (fn [id] (dm/get-in objects [id :fixed-scroll])))))))
+          (d/seek (fn [id] () (fixed-scroll? (get objects id))))))))

@@ -787,24 +787,25 @@
 
         on-error
         (mf/use-fn
-         (fn [form {:keys [type code hint] :as error}]
-           (if (and (= type :validation)
-                    (= code :webhook-validation))
-             (let [message (cond
-                             (= hint "unknown")
-                             (tr "errors.webhooks.unexpected")
-                             (= hint "invalid-uri")
-                             (tr "errors.webhooks.invalid-uri")
-                             (= hint "ssl-validation-error")
-                             (tr "errors.webhooks.ssl-validation")
-                             (= hint "timeout")
-                             (tr "errors.webhooks.timeout")
-                             (= hint "connection-error")
-                             (tr "errors.webhooks.connection")
-                             (str/starts-with? hint "unexpected-status")
-                             (tr "errors.webhooks.unexpected-status" (extract-status hint)))]
-               (swap! form assoc-in [:errors :uri] {:message message}))
-             (rx/throw error))))
+         (fn [form error]
+           (let [{:keys [type code hint]} (ex-data error)]
+             (if (and (= type :validation)
+                      (= code :webhook-validation))
+               (let [message (cond
+                               (= hint "unknown")
+                               (tr "errors.webhooks.unexpected")
+                               (= hint "invalid-uri")
+                               (tr "errors.webhooks.invalid-uri")
+                               (= hint "ssl-validation-error")
+                               (tr "errors.webhooks.ssl-validation")
+                               (= hint "timeout")
+                               (tr "errors.webhooks.timeout")
+                               (= hint "connection-error")
+                               (tr "errors.webhooks.connection")
+                               (str/starts-with? hint "unexpected-status")
+                               (tr "errors.webhooks.unexpected-status" (extract-status hint)))]
+                 (swap! form assoc-in [:errors :uri] {:message message}))
+               (rx/throw error)))))
 
         on-create-submit
         (mf/use-fn

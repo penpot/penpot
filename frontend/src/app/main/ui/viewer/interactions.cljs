@@ -41,7 +41,7 @@
 
 (defn get-fixed-ids
   [objects]
-  (let [fixed-ids (filter :fixed-scroll (vals objects))
+  (let [fixed-ids (filter cfh/fixed-scroll? (vals objects))
 
         ;; we have to consider the children if the fixed element is a group
         fixed-children-ids

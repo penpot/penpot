@@ -45,6 +45,12 @@
                        :in "SourceAlpha"
                        :result filter-id}])
 
+     (when (< spread 0)
+       [:feMorphology {:radius (- spread)
+                       :operator "erode"
+                       :in "SourceAlpha"
+                       :result filter-id}])
+
      [:feOffset {:dx offset-x :dy offset-y}]
      [:feGaussianBlur {:stdDeviation (/ blur 2)}]
      [:& color-matrix {:color color}]
