@@ -147,7 +147,7 @@
 
 (defn get-component-container
   "Retrieve the container that holds the component shapes (the page in components-v2
-   or the component itself in v1)"
+   or the component itself in v1 or deleted component)."
   [file-data component]
   (let [components-v2 (dm/get-in file-data [:options :components-v2])]
     (if (and components-v2 (not (:deleted component)))
@@ -182,11 +182,12 @@
                                  :data file-data}
                           :container (ctn/make-container component-page :page)})))))
 
-      (cond-> (dm/get-in component [:objects shape-id])
-        with-context?
-        (with-meta {:file {:id (:id file-data)
-                           :data file-data}
-                    :container (ctn/make-container component :component)})))))
+      (let [shape (dm/get-in component [:objects shape-id])]
+        (cond-> shape
+          (and shape with-context?)
+          (with-meta {:file {:id (:id file-data)
+                             :data file-data}
+                      :container (ctn/make-container component :component)}))))))
 
 (defn get-ref-shape
   "Retrieve the shape in the component that is referenced by the instance shape."
