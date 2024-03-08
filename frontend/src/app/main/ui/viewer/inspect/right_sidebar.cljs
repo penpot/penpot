@@ -10,7 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.types.component :as ctk]
    [app.main.refs :as refs]
-   [app.main.ui.components.shape-icon-refactor :as sir]
+   [app.main.ui.components.shape-icon :as sir]
    [app.main.ui.components.tab-container :refer [tab-container tab-element]]
    [app.main.ui.icons :as i]
    [app.main.ui.viewer.inspect.attributes :refer [attributes]]
@@ -93,7 +93,7 @@
             [:span {:class (stl/css :layer-title)} (tr "inspect.tabs.code.selected.multiple" (count shapes))]]
            [:*
             [:span {:class (stl/css :shape-icon)}
-             [:& sir/element-icon-refactor {:shape first-shape :main-instance? main-instance?}]]
+             [:& sir/element-icon {:shape first-shape :main-instance? main-instance?}]]
                        ;; Execution time translation strings:
                        ;;   inspect.tabs.code.selected.circle
                        ;;   inspect.tabs.code.selected.component

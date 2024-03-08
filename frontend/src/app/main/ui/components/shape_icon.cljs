@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.components.shape-icon-refactor
+(ns app.main.ui.components.shape-icon
   (:require
    [app.common.types.component :as ctk]
    [app.common.types.shape :as cts]
@@ -12,7 +12,7 @@
    [app.main.ui.icons :as i]
    [rumext.v2 :as mf]))
 
-(mf/defc element-icon-refactor
+(mf/defc element-icon
   {::mf/wrap-props false}
   [{:keys [shape main-instance?]}]
   (if (ctk/instance-head? shape)
@@ -51,7 +51,7 @@
       nil)))
 
 
-(mf/defc element-icon-refactor-by-type
+(mf/defc element-icon-by-type
   [{:keys [type main-instance?] :as props}]
   (if main-instance?
     i/component
