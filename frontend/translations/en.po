@@ -988,7 +988,7 @@ msgid "errors.webhooks.invalid-uri"
 msgstr "URL does not pass validation."
 
 msgid "errors.webhooks.last-delivery"
-msgstr "Last delivery was not successfull."
+msgstr "Last delivery was not successful."
 
 msgid "errors.webhooks.ssl-validation"
 msgstr "Error on SSL validation."
@@ -3144,7 +3144,7 @@ msgid "viewer.header.sitemap"
 msgstr "Sitemap"
 
 msgid "webhooks.last-delivery.success"
-msgstr "Last delivery was successfull."
+msgstr "Last delivery was successful."
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hcenter"

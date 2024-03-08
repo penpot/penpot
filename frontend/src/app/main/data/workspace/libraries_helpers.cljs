@@ -464,21 +464,35 @@
   [changes shape container update-node]
   (let [old-content (:content shape)
         new-content (txt/transform-nodes update-node old-content)
+
+        redo-change
+        (make-change
+         container
+         {:type :mod-obj
+          :id (:id shape)
+          :operations [{:type :set
+                        :attr :content
+                        :val new-content}
+                       {:type :set
+                        :attr :position-data
+                        :val nil}]})
+
+        undo-change
+        (make-change
+         container
+         {:type :mod-obj
+          :id (:id shape)
+          :operations [{:type :set
+                        :attr :content
+                        :val old-content}
+                       {:type :set
+                        :attr :position-data
+                        :val nil}]})
+
         changes'    (-> changes
-                        (update :redo-changes conj (make-change
-                                                    container
-                                                    {:type :mod-obj
-                                                     :id (:id shape)
-                                                     :operations [{:type :set
-                                                                   :attr :content
-                                                                   :val new-content}]}))
-                        (update :undo-changes conj (make-change
-                                                    container
-                                                    {:type :mod-obj
-                                                     :id (:id shape)
-                                                     :operations [{:type :set
-                                                                   :attr :content
-                                                                   :val old-content}]})))]
+                        (update :redo-changes conj redo-change)
+                        (update :undo-changes conj undo-change))]
+
     (if (= new-content old-content)
       changes
       changes')))
