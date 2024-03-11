@@ -345,18 +345,21 @@
         edition* (mf/use-state nil)
         edition  (deref edition*)
 
+        template-finished* (mf/use-state nil)
+        template-finished (deref template-finished*)
+
         on-template-cloned-success
         (mf/use-fn
          (fn []
-           (swap! status* (constantly :importing))
-           ;; (swap! state assoc :status :importing :importing-templates 0)
+           (reset! status* :importing)
+           (reset! template-finished* true)
            (st/emit! (dd/fetch-recent-files))))
 
         on-template-cloned-error
         (mf/use-fn
          (fn [cause]
-           (swap! status* (constantly :error))
-           ;; (swap! state assoc :status :error :importing-templates 0)
+           (reset! status* :error)
+           (reset! template-finished* true)
            (errors/print-error! cause)
            (rx/of (modal/hide)
                   (msg/error (tr "dashboard.libraries-and-templates.import-error")))))
@@ -434,15 +437,29 @@
                              1
                              (count (filterv has-status-success? entries)))
 
-        errors?            (or (some has-status-error? entries)
-                               (zero? (count entries)))
-
+        errors?            (if (some? template)
+                             (= status :error)
+                             (or (some has-status-error? entries)
+                                 (zero? (count entries))))
 
         pending-analysis?  (some has-status-analyzing? entries)
-        pending-import?    (pos? num-importing)
-        valid-all-entries? (or (some? template)
-                               (not (some has-status-analyze-error? entries)))]
+        pending-import?    (and (or (nil? template)
+                                    (not template-finished))
+                                (pos? num-importing))
 
+        valid-all-entries? (or (some? template)
+                               (not (some has-status-analyze-error? entries)))
+
+        template-status
+        (cond
+          (and (= :importing status) pending-import?)
+          :importing
+
+          (and (= :importing status) (not ^boolean pending-import?))
+          :import-finish
+
+          :else
+          :ready)]
 
     ;; Run analyze operation on component mount
     (mf/with-effect []
@@ -486,7 +503,7 @@
                            :can-be-deleted (> (count entries) 1)}])
 
        (when (some? template)
-         [:& import-entry {:entry (assoc template :status  :ready)
+         [:& import-entry {:entry (assoc template :status template-status)
                            :can-be-deleted false}])]
 
       [:div {:class (stl/css :modal-footer)}
