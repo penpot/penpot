@@ -3582,6 +3582,9 @@ msgstr "Editar rejilla"
 msgid "workspace.layout_grid.editor.options.exit"
 msgstr "Salir"
 
+msgid "workspace.layout_grid.editor.padding.expand"
+msgstr "Mostrar el padding a 4 lados"
+
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.add"
 msgstr "Añadir"
