@@ -139,11 +139,21 @@
   padding: $s-12;
   border-radius: $br-8;
   background-color: var(--comment-modal-background-color);
+  --translate-x: 0%;
+  --translate-y: 0%;
+  transform: translate(var(--translate-x), var(--translate-y));
   .comments {
     display: flex;
     flex-direction: column;
     gap: $s-24;
   }
+}
+
+.thread-content-left {
+  --translate-x: -100%;
+}
+.thread-content-top {
+  --translate-y: -100%;
 }
 
 // comment-item
