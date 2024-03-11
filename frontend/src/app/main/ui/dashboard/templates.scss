@@ -42,7 +42,7 @@
   border-top-right-radius: $br-10;
   margin-right: $s-32;
   position: relative;
-  z-index: 1;
+  z-index: $z-index-1;
   background-color: $db-quaternary;
 }
 
