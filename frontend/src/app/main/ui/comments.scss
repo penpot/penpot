@@ -196,6 +196,7 @@
       position: relative;
       .text {
         @include bodySmallTypography;
+        white-space: pre;
       }
     }
   }
