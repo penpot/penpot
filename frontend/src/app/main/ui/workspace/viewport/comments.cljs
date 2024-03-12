@@ -84,6 +84,7 @@
            (when (seq (dcm/apply-filters local profile [thread]))
              [:& cmt/thread-comments {:thread (update-position positions thread)
                                       :users users
+                                      :viewport {:offset-x pos-x :offset-y pos-y :width (:width vport) :height (:height vport)}
                                       :zoom zoom}])))
 
        (when-let [draft (:comment drawing)]
@@ -91,3 +92,4 @@
                                :on-cancel on-draft-cancel
                                :on-submit on-draft-submit
                                :zoom zoom}])]]]))
+

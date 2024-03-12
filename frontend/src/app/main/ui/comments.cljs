@@ -355,22 +355,41 @@
   [thread-id]
   (l/derived (l/in [:comments thread-id]) st/state))
 
+(defn- offset-position [position viewport zoom bubble-margin]
+  (let [base-x (+ (* (:x position) zoom) (:offset-x viewport))
+        base-y (+ (* (:y position) zoom) (:offset-y viewport))
+        w (:width viewport)
+        h (:height viewport)
+        comment-width 284 ;; TODO: this is the width set via CSS in an outer container…
+                          ;; We should probably do this in a different way.
+        orientation-left? (>= (+ base-x comment-width (:x bubble-margin)) w)
+        orientation-top? (>= base-y (/ h 2))
+        h-dir (if orientation-left? :left :right)
+        v-dir (if orientation-top? :top :bottom)
+        x (:x position)
+        y (:y position)]
+    {:x x :y y :h-dir h-dir :v-dir v-dir}))
+
 (mf/defc thread-comments
   {::mf/wrap [mf/memo]}
-  [{:keys [thread zoom users origin position-modifier]}]
+  [{:keys [thread zoom users origin position-modifier viewport]}]
   (let [ref          (mf/use-ref)
-
-
         thread-id    (:id thread)
         thread-pos   (:position thread)
 
-        pos          (cond-> thread-pos
+        base-pos     (cond-> thread-pos
                        (some? position-modifier)
                        (gpt/transform position-modifier))
 
-        pos-x        (+ (* (:x pos) zoom) 24)
-        pos-y        (- (* (:y pos) zoom) 28)
+        max-height   (int (* (:height viewport) 0.75))
+                          ;; We should probably look for a better way of doing this.
+        bubble-margin {:x 24 :y 0}
+        pos          (offset-position base-pos viewport zoom bubble-margin)
 
+        margin-x     (* (:x bubble-margin) (if (= (:h-dir pos) :left) -1 1))
+        margin-y     (* (:y bubble-margin) (if (= (:v-dir pos) :top) -1 1))
+        pos-x        (+ (* (:x pos) zoom) margin-x)
+        pos-y        (- (* (:y pos) zoom) margin-y)
 
         comments-ref (mf/with-memo [thread-id]
                        (make-comments-ref thread-id))
@@ -393,9 +412,14 @@
         (dom/scroll-into-view-if-needed! node)))
 
     (when (some? comment)
-      [:div {:class (stl/css :thread-content)
-             :style {:top (str pos-y "px")
-                     :left (str pos-x "px")}
+      [:div {:class (stl/css-case :thread-content true
+                                  :thread-content-left (= (:h-dir pos) :left)
+                                  :thread-content-top (= (:v-dir pos) :top))
+             :id (str "thread-" thread-id)
+             :style {:left (str pos-x "px")
+                     :top (str pos-y "px")
+                     :max-height max-height
+                     :overflow-y "scroll"}
              :on-click dom/stop-propagation}
 
        [:div {:class (stl/css :comments)}
