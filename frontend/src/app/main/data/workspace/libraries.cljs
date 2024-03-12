@@ -708,11 +708,18 @@
             components-v2
             (features/active-feature? state "components/v2")
 
+            shape-inst (ctn/get-shape container id)
+            swap-slot (-> (ctn/get-shape container id)
+                          (ctk/get-swap-slot))
             changes
             (-> (pcb/empty-changes it)
                 (pcb/with-container container)
                 (pcb/with-objects (:objects container))
-                (dwlh/generate-sync-shape-direct file-full libraries container id true components-v2))]
+                (dwlh/generate-sync-shape-direct file-full libraries container id true components-v2)
+                (cond->
+                 (some? swap-slot)
+                  ;;  We need to propagate parent changes
+                  (dwlh/generate-sync-shape-direct file-full libraries container (:parent-id shape-inst) true components-v2)))]
 
         (log/debug :msg "RESET-COMPONENT finished" :js/rchanges (log-changes
                                                                  (:redo-changes changes)
