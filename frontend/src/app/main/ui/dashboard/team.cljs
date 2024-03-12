@@ -24,6 +24,7 @@
    [app.main.ui.dashboard.change-owner]
    [app.main.ui.dashboard.team-form]
    [app.main.ui.icons :as i]
+   [app.main.ui.notifications.badge :refer [badge-notification]]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -551,19 +552,6 @@
              :on-click on-change'}
         (tr "labels.editor")]]]]))
 
-(mf/defc invitation-status-badge
-  {::mf/wrap-props false}
-  [{:keys [status]}]
-  [:div
-   {:class (stl/css-case
-            :status-badge true
-            :badge-expired      (= status :expired)
-            :badge-pending      (= status :pending))}
-   [:span {:class (stl/css :status-label)}
-    (if (= status :expired)
-      (tr "labels.expired-invitation")
-      (tr "labels.pending-invitation"))]])
-
 (mf/defc invitation-actions
   {::mf/wrap-props false}
   [{:keys [invitation team-id]}]
@@ -668,6 +656,10 @@
         email    (:email invitation)
         role     (:role invitation)
         status   (if expired? :expired :pending)
+        type     (if expired? :warning :default)
+        badge-content (if (= status :expired)
+                        (tr "labels.expired-invitation")
+                        (tr "labels.pending-invitation"))
 
         on-change-role
         (mf/use-fn
@@ -688,7 +680,7 @@
         :on-change on-change-role}]]
 
      [:div {:class (stl/css :table-field :field-status)}
-      [:& invitation-status-badge {:status status}]]
+      [:& badge-notification {:type type :content badge-content}]]
 
      [:div {:class (stl/css :table-field :field-actions)}
       (when can-invite?

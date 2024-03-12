@@ -322,25 +322,6 @@
   align-items: center;
 }
 
-// STATUS BADGE
-.status-badge {
-  @include flexCenter;
-  @include headlineSmallTypography;
-  min-width: $s-76;
-  width: fit-content;
-  height: $s-24;
-  border-radius: $br-8;
-  color: var(--pill-foreground-color);
-}
-
-.badge-pending {
-  background-color: var(--status-widget-background-color-warning);
-}
-
-.badge-expired {
-  background-color: var(--tag-background-color-disabled);
-}
-
 .invitations-dropdown {
   bottom: calc(-1 * $s-112);
   right: calc(-1 * $s-20);

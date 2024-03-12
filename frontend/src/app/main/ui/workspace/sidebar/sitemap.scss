@@ -33,17 +33,6 @@
   }
 }
 
-.view-only-mode {
-  @include flexCenter;
-  @include bodySmallTypography;
-  height: $s-20;
-  padding: $s-4 $s-6;
-  margin-right: $s-12;
-  border: $s-1 solid var(--tag-background-color);
-  border-radius: $br-6;
-  color: var(--tag-background-color);
-}
-
 .resize-area {
   position: absolute;
   bottom: calc(-1 * $s-8);
@@ -236,6 +225,7 @@
 }
 
 .title-spacing-sitemap {
-  padding-left: $s-8;
-  margin-top: $s-8;
+  padding-inline-start: $s-8;
+  margin-block-start: $s-8;
+  padding-inline-end: $s-20;
 }
