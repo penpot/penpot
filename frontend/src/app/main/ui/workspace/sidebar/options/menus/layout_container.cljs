@@ -480,6 +480,7 @@
      [:button {:class (stl/css-case
                        :padding-toggle true
                        :selected (= type :multiple))
+               :title (tr "workspace.layout_grid.editor.padding.expand")
                :data-type (d/name type)
                :on-click on-type-change'}
       i/padding-extended]]))

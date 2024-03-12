@@ -1521,11 +1521,26 @@
 
 (defn- update-flex-child-copy-attrs
   "Synchronizes the attributes inside the flex-child items (main->copy)"
-  [changes _shape-main shape-copy main-container main-component copy-container omit-touched?]
+  [changes shape-main shape-copy main-container main-component copy-container omit-touched?]
+
   (let [new-changes
         (-> (pcb/empty-changes)
             (pcb/with-container copy-container)
             (pcb/with-objects (:objects copy-container))
+
+            ;; The layout-item-sizing needs to be update when the parent is auto or fix
+            (pcb/update-shapes
+             [(:id shape-copy)]
+             (fn [shape-copy]
+               (cond-> shape-copy
+                 (contains? #{:auto :fix} (:layout-item-h-sizing shape-main))
+                 (propagate-attrs shape-main #{:layout-item-h-sizing} omit-touched?)
+
+                 (contains? #{:auto :fix} (:layout-item-h-sizing shape-main))
+                 (propagate-attrs shape-main #{:layout-item-v-sizing} omit-touched?)))
+             {:ignore-touched true})
+
+            ;; Update the child flex properties from the parent
             (pcb/update-shapes
              (:shapes shape-copy)
              (fn [child-copy]
@@ -1542,6 +1557,20 @@
         (-> (pcb/empty-changes)
             (pcb/with-page main-container)
             (pcb/with-objects (:objects main-container))
+
+            ;; The layout-item-sizing needs to be update when the parent is auto or fix
+            (pcb/update-shapes
+             [(:id shape-main)]
+             (fn [shape-main]
+               (cond-> shape-main
+                 (contains? #{:auto :fix} (:layout-item-h-sizing shape-copy))
+                 (propagate-attrs shape-copy #{:layout-item-h-sizing} omit-touched?)
+
+                 (contains? #{:auto :fix} (:layout-item-h-sizing shape-copy))
+                 (propagate-attrs shape-copy #{:layout-item-v-sizing} omit-touched?)))
+             {:ignore-touched true})
+
+            ;; Updates the children properties from the parent
             (pcb/update-shapes
              (:shapes shape-main)
              (fn [child-main]
@@ -1620,4 +1649,3 @@
   (if (cfh/page? container)
     (assoc change :page-id (:id container))
     (assoc change :component-id (:id container))))
-

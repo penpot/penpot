@@ -3520,6 +3520,9 @@ msgstr "Edit grid"
 msgid "workspace.layout_grid.editor.options.exit"
 msgstr "Exit"
 
+msgid "workspace.layout_grid.editor.padding.expand"
+msgstr "Show 4 sided padding options"
+
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.add"
 msgstr "Add"
