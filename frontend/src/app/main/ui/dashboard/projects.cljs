@@ -276,7 +276,8 @@
          (fn [event]
            (when (kbd/enter? event)
              (dom/stop-propagation event)
-             (on-menu-click event))))]
+             (on-menu-click event))))
+        title-width (/ 100 limit)]
 
     [:article {:class (stl/css-case :dashboard-project-row true :first first?)}
      [:header {:class (stl/css :project)}
@@ -285,46 +286,52 @@
          [:& inline-edition {:content (:name project)
                              :on-end on-edit}]
          [:h2 {:on-click on-nav
+               :style {:max-width (str title-width "%")}
+               :class (stl/css :project-name)
+               :title (if (:is-default project)
+                        (tr "labels.drafts")
+                        (:name project))
                :on-context-menu on-menu-click}
           (if (:is-default project)
             (tr "labels.drafts")
             (:name project))])
 
-       [:& project-menu
-        {:project project
-         :show? (:menu-open @local)
-         :left (+ 24 (:x (:menu-pos @local)))
-         :top (:y (:menu-pos @local))
-         :on-edit on-edit-open
-         :on-menu-close on-menu-close
-         :on-import on-import}]
+       [:div {:class (stl/css :info-wrapper)}
+        [:& project-menu
+         {:project project
+          :show? (:menu-open @local)
+          :left (+ 24 (:x (:menu-pos @local)))
+          :top (:y (:menu-pos @local))
+          :on-edit on-edit-open
+          :on-menu-close on-menu-close
+          :on-import on-import}]
 
-       [:span {:class (stl/css :info)} (str (tr "labels.num-of-files" (i18n/c file-count)))]
+        [:span {:class (stl/css :info)} (str (tr "labels.num-of-files" (i18n/c file-count)))]
 
-       (let [time (-> (:modified-at project)
-                      (dt/timeago {:locale locale}))]
-         [:span {:class (stl/css :recent-files-row-title-info)} (str ", " time)])
+        (let [time (-> (:modified-at project)
+                       (dt/timeago {:locale locale}))]
+          [:span {:class (stl/css :recent-files-row-title-info)} (str ", " time)])
 
-       [:div {:class (stl/css :project-actions)}
-        (when-not (:is-default project)
-          [:> pin-button* {:class (stl/css :pin-button) :is-pinned (:is-pinned project) :on-click toggle-pin :tab-index 0}])
+        [:div {:class (stl/css :project-actions)}
+         (when-not (:is-default project)
+           [:> pin-button* {:class (stl/css :pin-button) :is-pinned (:is-pinned project) :on-click toggle-pin :tab-index 0}])
 
-        [:button {:class (stl/css :btn-secondary :btn-small :tooltip :tooltip-bottom)
-                  :on-click on-create-click
-                  :alt (tr "dashboard.new-file")
-                  :aria-label (tr "dashboard.new-file")
-                  :data-test "project-new-file"
-                  :on-key-down handle-create-click}
-         i/add]
+         [:button {:class (stl/css :btn-secondary :btn-small)
+                   :on-click on-create-click
+                   :title (tr "dashboard.new-file")
+                   :aria-label (tr "dashboard.new-file")
+                   :data-test "project-new-file"
+                   :on-key-down handle-create-click}
+          i/add]
 
-        [:button
-         {:class (stl/css :btn-secondary :btn-small :tooltip :tooltip-bottom)
-          :on-click on-menu-click
-          :alt (tr "dashboard.options")
-          :aria-label  (tr "dashboard.options")
-          :data-test "project-options"
-          :on-key-down handle-menu-click}
-         i/menu]]]]
+         [:button
+          {:class (stl/css :btn-secondary :btn-small)
+           :on-click on-menu-click
+           :title (tr "dashboard.options")
+           :aria-label  (tr "dashboard.options")
+           :data-test "project-options"
+           :on-key-down handle-menu-click}
+          i/menu]]]]]
 
      [:div {:class (stl/css :grid-container) :ref rowref}
       [:& line-grid
