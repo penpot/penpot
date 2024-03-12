@@ -223,7 +223,6 @@
 .button-disabled {
   @include buttonStyle;
   @include flexCenter;
-  height: $s-32;
   background-color: var(--button-background-color-disabled);
   border: $s-1 solid var(--button-border-color-disabled);
   color: var(--button-foreground-color-disabled);
@@ -905,7 +904,7 @@
   margin: 0;
   margin-top: $s-1;
   border-radius: $br-8;
-  z-index: $z-index-3;
+  z-index: $z-index-4;
   overflow-y: auto;
   overflow-x: hidden;
   background-color: var(--menu-background-color);

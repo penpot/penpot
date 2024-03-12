@@ -43,7 +43,7 @@
   .resize-area {
     grid-area: resize;
     height: $s-8;
-    z-index: $z-index-3;
+    z-index: $z-index-4;
     width: calc(100% - $s-8);
     border-radius: $br-circle;
     cursor: ns-resize;
