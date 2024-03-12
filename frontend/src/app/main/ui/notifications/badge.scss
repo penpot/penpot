@@ -1,0 +1,64 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.badge-notification {
+  @include smallTitleTipography;
+  --badge-notification-bg-color: var(--alert-background-color-default);
+  --badge-notification-fg-color: var(--alert-text-foreground-color-default);
+  --badge-notification-border-color: var(--alert-border-color-default);
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  grid-template-columns: 1fr;
+  min-height: $s-32;
+  height: fit-content;
+  min-width: $s-80;
+  width: fit-content;
+  padding: 0;
+  margin: 0;
+  border: $s-1 solid var(--badge-notification-border-color);
+  border-radius: $br-8;
+  background-color: var(--badge-notification-bg-color);
+  color: var(--badge-notification-fg-color);
+}
+
+.small {
+  @include bodySmallTypography;
+  min-height: $s-20;
+  border-radius: $br-6;
+}
+
+.warning {
+  --badge-notification-bg-color: var(--alert-background-color-warning);
+  --badge-notification-fg-color: var(--alert-text-foreground-color-warning);
+  --badge-notification-border-color: var(--alert-border-color-warning);
+}
+
+.success {
+  --badge-notification-bg-color: var(--alert-background-color-success);
+  --badge-notification-fg-color: var(--alert-text-foreground-color-success);
+  --badge-notification-border-color: var(--alert-border-color-success);
+}
+
+.info {
+  --badge-notification-bg-color: var(--alert-background-color-info);
+  --badge-notification-fg-color: var(--alert-text-foreground-color-info);
+  --badge-notification-border-color: var(--alert-border-color-info);
+}
+
+.error {
+  --badge-notification-bg-color: var(--alert-background-color-error);
+  --badge-notification-fg-color: var(--alert-text-foreground-color-error);
+  --badge-notification-border-color: var(--alert-border-color-error);
+}
+
+.focus {
+  --badge-notification-bg-color: transparent;
+  --badge-notification-fg-color: var(--alert-text-foreground-color-focus);
+  --badge-notification-border-color: var(--alert-border-color-focus);
+}

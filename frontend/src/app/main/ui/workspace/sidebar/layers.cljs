@@ -19,6 +19,7 @@
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
+   [app.main.ui.notifications.badge :refer [badge-notification]]
    [app.main.ui.workspace.sidebar.layer-item :refer [layer-item]]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
@@ -513,8 +514,7 @@
           (or title (tr "workspace.sidebar.layers"))]
 
          [:div {:class (stl/css :focus-mode-tag-wrapper)}
-          [:div {:class (stl/css :focus-mode-tag)}
-           (tr "workspace.focus.focus-mode")]]]]
+          [:& badge-notification {:content (tr "workspace.focus.focus-mode") :size :small :is-focus true}]]]]
 
        (filter-component))
 
