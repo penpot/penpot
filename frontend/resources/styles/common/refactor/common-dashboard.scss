@@ -95,12 +95,14 @@
     cursor: pointer;
 
     svg {
-      fill: $df-secondary;
+      stroke: $df-secondary;
+      fill: none;
       width: $s-16;
       height: $s-16;
 
       &:hover {
-        fill: $da-tertiary;
+        stroke: $da-tertiary;
+        fill: none;
       }
     }
   }
