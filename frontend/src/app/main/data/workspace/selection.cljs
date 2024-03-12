@@ -709,8 +709,8 @@
          (let [page     (wsh/lookup-page state)
                objects  (:objects page)
                selected (->> (wsh/lookup-selected state)
-                             (map #(get objects %))
-                             (remove #(ctk/in-component-copy-not-root? %)) ;; We don't want to change the structure of component copies
+                             (map (d/getf objects))
+                             (filter #(ctk/allow-duplicate? objects %))
                              (map :id)
                              set)]
            (when (seq selected)

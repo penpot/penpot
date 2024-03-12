@@ -240,3 +240,13 @@
          (distinct)
          (filter #(not (eq % (get comp1 %) (get comp2 %))))
          set)))
+
+(defn allow-duplicate?
+  [objects shape]
+
+  (let [parent (get objects (:parent-id shape))]
+    ;; We don't want to change the structure of component copies
+    (and (not (in-component-copy-not-head? shape))
+         ;; Non instance, non copy. We allow
+         (or (not (instance-head? shape))
+             (not (in-component-copy? parent))))))
