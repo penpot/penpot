@@ -40,6 +40,12 @@
 (def ^:private close-icon
   (i/icon-xref :close (stl/css :close-icon)))
 
+(def ^:private add-icon
+  (i/icon-xref :add (stl/css :add-icon)))
+
+(def ^:private menu-icon
+  (i/icon-xref :menu (stl/css :menu-icon)))
+
 (mf/defc header
   {::mf/wrap [mf/memo]}
   []
@@ -312,26 +318,26 @@
                        (dt/timeago {:locale locale}))]
           [:span {:class (stl/css :recent-files-row-title-info)} (str ", " time)])
 
-        [:div {:class (stl/css :project-actions)}
+        [:div {:class (stl/css-case :project-actions true
+                                    :pinned-project (:is-pinned project))}
          (when-not (:is-default project)
            [:> pin-button* {:class (stl/css :pin-button) :is-pinned (:is-pinned project) :on-click toggle-pin :tab-index 0}])
 
-         [:button {:class (stl/css :btn-secondary :btn-small)
+         [:button {:class (stl/css :add-file-btn)
                    :on-click on-create-click
                    :title (tr "dashboard.new-file")
                    :aria-label (tr "dashboard.new-file")
                    :data-test "project-new-file"
                    :on-key-down handle-create-click}
-          i/add]
+          add-icon]
 
-         [:button
-          {:class (stl/css :btn-secondary :btn-small)
-           :on-click on-menu-click
-           :title (tr "dashboard.options")
-           :aria-label  (tr "dashboard.options")
-           :data-test "project-options"
-           :on-key-down handle-menu-click}
-          i/menu]]]]]
+         [:button {:class (stl/css :options-btn)
+                   :on-click on-menu-click
+                   :title (tr "dashboard.options")
+                   :aria-label  (tr "dashboard.options")
+                   :data-test "project-options"
+                   :on-key-down handle-menu-click}
+          menu-icon]]]]]
 
      [:div {:class (stl/css :grid-container) :ref rowref}
       [:& line-grid
@@ -343,14 +349,13 @@
 
      (when (and (> limit 0)
                 (> file-count limit))
-       [:button
-        {:class (stl/css :show-more)
-         :on-click on-nav
-         :tab-index "0"
-         :on-key-down (fn [event]
-                        (when (kbd/enter? event)
-                          (on-nav)))}
-        [:div {:class (stl/css :placeholder-label)} (tr "dashboard.show-all-files")]
+       [:button {:class (stl/css :show-more)
+                 :on-click on-nav
+                 :tab-index "0"
+                 :on-key-down (fn [event]
+                                (when (kbd/enter? event)
+                                  (on-nav)))}
+        [:span {:class (stl/css :placeholder-label)} (tr "dashboard.show-all-files")]
         show-more-icon])]))
 
 
