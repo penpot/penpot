@@ -98,8 +98,12 @@
 }
 
 .content {
+  position: relative;
   @include bodySmallTypography;
   color: var(--color-foreground-primary);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 .replies {
@@ -203,13 +207,6 @@
         }
       }
     }
-    .content {
-      position: relative;
-      .text {
-        @include bodySmallTypography;
-        white-space: pre;
-      }
-    }
   }
   .comment-options-dropdown {
     @extend .dropdown-wrapper;
@@ -233,7 +230,6 @@
     height: 100%;
     width: 100%;
     max-width: $s-260;
-    min-width: $s-260;
     margin-bottom: $s-8;
     padding: $s-8;
     color: var(--input-foreground-color-active);
