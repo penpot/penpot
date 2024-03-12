@@ -9,135 +9,129 @@
 
 .dashboard-container {
   flex: 1 0 0;
-  margin-right: $s-16;
-  overflow-y: auto;
   width: 100%;
-  border-top: $s-1 solid $db-quaternary;
+  margin-right: $s-16;
+  border-top: $s-1 solid var(--panel-border-color);
+  overflow-y: auto;
+}
 
-  &.dashboard-projects {
-    user-select: none;
-  }
-  &.dashboard-shared {
-    width: calc(100vw - $s-320);
-    margin-right: $s-52;
-  }
+.dashboard-projects {
+  user-select: none;
+}
 
-  &.search {
-    margin-top: $s-12;
-  }
+.dashboard-shared {
+  width: calc(100vw - $s-320);
+  margin-right: $s-52;
+}
+
+.search {
+  margin-top: $s-12;
 }
 
 .dashboard-project-row {
+  --actions-opacity: 0;
   margin-bottom: $s-24;
   position: relative;
-
-  .project {
-    align-items: center;
-    border-radius: $br-4;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: $s-16;
-    padding: $s-8 $s-8 $s-8 $s-16;
-    width: 99%;
-    max-height: $s-40;
-    gap: $s-8;
-
-    .project-name-wrapper {
-      display: flex;
-      align-items: center;
-      justify-content: flex-start;
-      width: 100%;
-      min-height: $s-32;
-      margin-left: $s-8;
-    }
-
-    .btn-secondary {
-      border: none;
-      padding: $s-8;
-    }
-
-    .project-name {
-      @include textEllipsis;
-      cursor: pointer;
-      font-size: $fs-16;
-      line-height: 0.8;
-      font-weight: $fw400;
-      color: $df-primary;
-      margin-right: $s-4;
-      margin-right: $s-12;
-      width: fit-content;
-    }
-    .info-wrapper {
-      display: flex;
-      align-items: center;
-      gap: $s-8;
-    }
-    .info,
-    .recent-files-row-title-info {
-      font-size: $fs-14;
-      line-height: 1.15;
-      font-weight: $fw400;
-      color: $df-secondary;
-      @media (max-width: 760px) {
-        display: none;
-      }
-    }
-
-    .project-actions {
-      display: flex;
-      opacity: 0;
-      margin-left: $s-32;
-
-      .btn-small:not(.pin-button) {
-        height: $s-32;
-        margin: 0 $s-8;
-        width: $s-32;
-
-        &:not(:hover) {
-          background: transparent;
-        }
-        svg {
-          fill: $df-primary;
-          height: $s-16;
-          width: $s-16;
-        }
-      }
-    }
-  }
-
-  .grid-container {
-    width: 100%;
-    padding: 0 $s-4;
-  }
 
   &:hover,
   &:focus,
   &:focus-within {
-    .project-actions {
-      opacity: 1;
-    }
+    --actions-opacity: 1;
   }
 }
 
-.show-more {
+.pinned-project {
+  --actions-opacity: 1;
+}
+
+.project {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: $s-8;
+  width: 99%;
+  max-height: $s-40;
+  padding: $s-8 $s-8 $s-8 $s-16;
+  margin-top: $s-16;
+  border-radius: $br-4;
+}
+
+.project-name-wrapper {
   display: flex;
   align-items: center;
-  column-gap: $s-12;
+  justify-content: flex-start;
+  width: 100%;
+  min-height: $s-32;
+  margin-left: $s-8;
+}
 
-  color: $df-secondary;
-  font-size: $fs-14;
-  justify-content: space-between;
+.project-name {
+  @include bodyLargeTypography;
+  @include textEllipsis;
+  width: fit-content;
+  margin-right: $s-12;
+  line-height: 0.8;
+  color: var(--title-foreground-color-hover);
   cursor: pointer;
-  background-color: transparent;
-  border: none;
+}
+
+.info-wrapper {
+  display: flex;
+  align-items: center;
+  gap: $s-8;
+}
+
+.info,
+.recent-files-row-title-info {
+  @include bodyMediumTypography;
+  color: var(--title-foreground-color);
+  @media (max-width: 760px) {
+    display: none;
+  }
+}
+
+.project-actions {
+  display: flex;
+  opacity: var(--actions-opacity);
+  margin-left: $s-32;
+}
+
+.add-file-btn,
+.options-btn {
+  @extend .button-tertiary;
+  height: $s-32;
+  width: $s-32;
+  margin: 0 $s-8;
+  padding: $s-8;
+}
+
+.add-icon,
+.menu-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
+}
+
+.grid-container {
+  width: 100%;
+  padding: 0 $s-4;
+}
+
+.show-more {
+  --show-more-color: var(--button-secondary-foreground-color-rest);
+  @include buttonStyle;
+  @include bodyMediumTypography;
   position: absolute;
   top: $s-8;
   right: $s-52;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  column-gap: $s-12;
+  color: var(--show-more-color);
 
   &:hover {
-    color: $da-tertiary;
+    --show-more-color: var(--button-secondary-foreground-color-active);
   }
 }
 
@@ -145,7 +139,7 @@
   height: $s-16;
   width: $s-16;
   fill: none;
-  stroke: currentColor;
+  stroke: var(--show-more-color);
 }
 
 // Team hero
