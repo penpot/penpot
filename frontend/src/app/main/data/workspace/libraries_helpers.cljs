@@ -263,9 +263,6 @@
          parent            (get-in page [:objects parent-id])
          main-inst         (get-in component [:objects (:main-instance-id component)])
          inside-component? (some? (ctn/get-instance-root (:objects page) parent))
-         origin-frame      (get-in page [:objects (:frame-id main-inst)])
-         ;; We are using a deleted component andit's coordenates are absolute, we must adjust them to its containing frame to adjust the delta
-         delta             (gpt/subtract delta (-> origin-frame :selrect gpt/point))
          shapes            (cfh/get-children-with-self (:objects component) (:main-instance-id component))
          shapes            (map #(gsh/move % delta) shapes)
 
