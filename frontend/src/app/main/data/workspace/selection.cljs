@@ -466,7 +466,7 @@
      (nil? obj)
      changes
 
-     (ctf/is-known-component? obj libraries)
+     (ctf/is-main-of-known-component? obj libraries)
      (prepare-duplicate-component-change changes objects page obj parent-id frame-id delta libraries library-data it)
 
      :else
@@ -484,6 +484,9 @@
                                       (ctk/instance-root? obj))
            duplicating-component? (or duplicating-component? (ctk/instance-head? obj))
            is-component-main?     (ctk/main-instance? obj)
+
+           original-ref-shape     (-> (ctf/find-original-ref-shape nil page libraries obj {:include-deleted? true})
+                                      :id)
            into-component?        (and duplicating-component?
                                        (ctn/in-any-component? objects parent))
 
@@ -513,6 +516,10 @@
 
                (cond-> (or frame? group? bool?)
                  (assoc :shapes []))
+
+               (cond-> (and (some? original-ref-shape)
+                            (not= original-ref-shape (:shape-ref obj)))
+                 (assoc :shape-ref original-ref-shape))
 
                (gsh/move delta)
                (d/update-when :interactions #(ctsi/remap-interactions % ids-map objects))

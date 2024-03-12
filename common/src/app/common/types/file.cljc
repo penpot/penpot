@@ -215,6 +215,15 @@
 
     (some find-ref-shape-in-head (ctn/get-parent-heads (:objects container) shape))))
 
+(defn find-original-ref-shape
+  "Recursively call to find-ref-shape until find the original shape of the original component"
+  [file container libraries shape & options]
+  (let [ref-shape (find-ref-shape file container libraries shape options)]
+    (if (nil? (:shape-ref ref-shape))
+      ref-shape
+      (find-original-ref-shape file container libraries ref-shape options))))
+
+
 (defn find-ref-component
   "Locate the nearest component in the local file or libraries that is referenced by the
    instance shape."
@@ -303,7 +312,7 @@
       (vals (:objects component)))))
 
 ;; Return true if the object is a component that exists on the file or its libraries (even a deleted one)
-(defn is-known-component?
+(defn is-main-of-known-component?
   [shape libraries]
   (let [main-instance?  (ctk/main-instance? shape)
         component-id    (:component-id shape)
