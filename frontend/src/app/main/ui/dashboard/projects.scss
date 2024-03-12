@@ -48,6 +48,7 @@
       display: flex;
       align-items: center;
       justify-content: flex-start;
+      width: 100%;
       min-height: $s-32;
       margin-left: $s-8;
     }
@@ -57,7 +58,8 @@
       padding: $s-8;
     }
 
-    h2 {
+    .project-name {
+      @include textEllipsis;
       cursor: pointer;
       font-size: $fs-16;
       line-height: 0.8;
@@ -65,8 +67,13 @@
       color: $df-primary;
       margin-right: $s-4;
       margin-right: $s-12;
+      width: fit-content;
     }
-
+    .info-wrapper {
+      display: flex;
+      align-items: center;
+      gap: $s-8;
+    }
     .info,
     .recent-files-row-title-info {
       font-size: $fs-14;
@@ -80,7 +87,7 @@
 
     .project-actions {
       display: flex;
-      opacity: 1;
+      opacity: 0;
       margin-left: $s-32;
 
       .btn-small:not(.pin-button) {
