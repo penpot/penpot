@@ -284,24 +284,14 @@
   {::mf/wrap-props false}
   []
   (let [entries   (->> (seq (js/Object.entries default))
-                       (sort-by first))
-        refactor? (fn [[key]] (str/ends-with? key "Refactor"))]
-    [:*
-     [:section.debug-icons-preview
-      [:h2.subtitle-old "Classic (Deprecated)"]
-      (for [[key val] (remove refactor? entries)]
-        [:div.icon-item-old {:key key
-                             :title key}
-         val
-         [:span key]])]
-
-     [:section.debug-icons-preview
-      [:h2 "Refactor"]
-      (for [[key val] (filter refactor? entries)]
-        [:div.icon-item {:key key
-                         :title key}
-         val
-         [:span key]])]]))
+                       (sort-by first))]
+    [:section.debug-icons-preview
+     [:h2 "icons"]
+     (for [[key val] entries]
+       [:div.icon-item-old {:key key
+                            :title key}
+        val
+        [:span key]])]))
 
 (defn key->icon
   [icon-key]
