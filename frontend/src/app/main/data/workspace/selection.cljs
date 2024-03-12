@@ -443,7 +443,8 @@
                                               libraries
                                               (:id component-root)
                                               parent-id
-                                              frame-id)
+                                              frame-id
+                                              {})
 
         restore-component
         #(let [restore (dwlh/prepare-restore-component changes library-data (:component-id component-root) it page delta (:id component-root) parent-id frame-id)]

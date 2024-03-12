@@ -901,7 +901,8 @@
                                                  libraries
                                                  nil
                                                  (:parent-id shape)
-                                                 (:frame-id shape))
+                                                 (:frame-id shape)
+                                                 {:force-frame? true})
 
             new-shape (cond-> new-shape
                         (nil? (ctk/get-swap-slot new-shape))
