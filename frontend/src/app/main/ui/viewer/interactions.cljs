@@ -316,18 +316,37 @@
   [animation current-viewport orig-viewport current-size orig-size wrapper-size]
   (case (:animation-type animation)
 
+    ;; Why use three keyframes instead of two?
+    ;; If we use two keyframes, the first frame
+    ;; will disappear while the second frame
+    ;; is still appearing.
+    ;; ___  ___
+    ;;    \/
+    ;; ___/\___
+    ;;     ^ in here we have 50% opacity of both frames so the background
+    ;;       is visible.
+    ;;
+    ;; This solution waits until the second frame
+    ;; has appeared to disappear the first one.
+    ;; ________
+    ;;   /\
+    ;; _/  \___
+    ;;    ^ in here we have 100% opacity of the first frame and 0% opacity.
     :dissolve
     (do (dom/animate! orig-viewport
                       [#js {:opacity "100%"}
-                       #js {:opacity "0"}]
-                      #js {:duration (:duration animation)
-                           :easing (name (:easing animation))}
-                      #(st/emit! (dv/complete-animation)))
+                       #js {:opacity "0%"}
+                       #js {:opacity "0%"}]
+                      #js {:delay (/ (:duration animation) 3)
+                           :duration (/ (* 2 (:duration animation)) 3)
+                           :easing (name (:easing animation))})
         (dom/animate! current-viewport
-                      [#js {:opacity "0"}
+                      [#js {:opacity "0%"}
+                       #js {:opacity "100%"}
                        #js {:opacity "100%"}]
                       #js {:duration (:duration animation)
-                           :easing (name (:easing animation))}))
+                           :easing (name (:easing animation))}
+                      #(st/emit! (dv/complete-animation))))
 
     :slide
     (case (:way animation)
