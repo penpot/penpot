@@ -441,6 +441,7 @@
   [{:keys [visible?  typography editable? name-input-ref on-close on-change on-name-blur local? navigate-to-library on-key-down]}]
   (let [ref       (mf/use-ref nil)
         font-data (fonts/get-font-data (:font-id typography))]
+    (fonts/ensure-loaded! (:font-id typography))
 
     (mf/use-effect
      (mf/deps visible?)
