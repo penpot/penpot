@@ -1167,6 +1167,26 @@
                              :callback do-update}]
                   :tag :sync-dialog)))))))
 
+
+(defn touch-component
+  "Update the modified-at attribute of the component to now"
+  [id]
+  (dm/verify! (uuid? id))
+  (ptk/reify ::touch-component
+    cljs.core/IDeref
+    (-deref [_] [id])
+
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [data          (get state :workspace-data)
+            changes (-> (pcb/empty-changes it)
+                        (pcb/with-library-data data)
+                        (pcb/update-component id #(assoc % :modified-at (dt/now))))]
+        (rx/of (dch/commit-changes {:origin it
+                                    :redo-changes (:redo-changes changes)
+                                    :undo-changes []
+                                    :save-undo? false}))))))
+
 (defn component-changed
   "Notify that the component with the given id has changed, so it needs to be updated
    in the current file and in the copies. And also update its thumbnails."
@@ -1178,6 +1198,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of
+       (touch-component component-id)
        (launch-component-sync component-id file-id undo-group)))))
 
 (defn watch-component-changes
@@ -1225,13 +1246,18 @@
                              (map (partial ch/components-changed old-data))
                              (reduce into #{})))]
 
-                  (if (and (d/not-empty? changed-components) save-undo?)
-                    (do (log/info :msg "DETECTED COMPONENTS CHANGED"
-                                  :ids (map str changed-components)
-                                  :undo-group undo-group)
+                  (if (d/not-empty? changed-components)
+                    (if save-undo?
+                      (do (log/info :msg "DETECTED COMPONENTS CHANGED"
+                                    :ids (map str changed-components)
+                                    :undo-group undo-group)
 
-                        (->> (rx/from changed-components)
-                             (rx/map #(component-changed % (:id old-data) undo-group))))
+                          (->> (rx/from changed-components)
+                               (rx/map #(component-changed % (:id old-data) undo-group))))
+                      ;; even if save-undo? is false, we need to update the :modified-date of the component
+                      ;; (for example, for undos)
+                      (->> (rx/from changed-components)
+                           (rx/map #(touch-component %))))
                     (rx/empty)))))
 
             changes-s
