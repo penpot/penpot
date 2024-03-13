@@ -13,6 +13,8 @@
 
 .modal-dialog {
   @extend .modal-container-base;
+  display: grid;
+  grid-template-rows: auto 1fr;
   height: $s-520;
   max-height: $s-520;
   width: $s-712;
@@ -30,7 +32,7 @@
 
 .modal-title {
   @include headlineMediumTypography;
-  margin-bottom: $s-16;
+  margin-block-end: $s-16;
   color: var(--modal-title-foreground-color);
 }
 
@@ -40,15 +42,20 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: $s-32;
-  padding-top: $s-24;
-  height: 100%;
   max-height: $s-400;
+  padding-block-start: $s-16;
 }
 
-.section {
-  display: flex;
-  flex-direction: column;
-  height: calc(100% - $s-12);
+.lib-section,
+.update-section,
+.shared-section {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: $s-8;
+}
+
+.shared-section {
+  grid-template-rows: auto auto 1fr;
 }
 
 .title-spacing-lib {
@@ -57,20 +64,21 @@
 
 .section-list,
 .section-list-shared {
-  height: 100%;
+  display: grid;
+  grid-auto-rows: min-content;
+  gap: $s-8;
   max-height: $s-320;
-  margin-top: $s-12;
-  overflow: auto;
+  overflow-y: auto;
 }
 
 .section-list-item {
   display: grid;
   grid-template-columns: 1fr auto;
-  column-gap: $s-12;
-  margin-bottom: $s-24;
-  &:last-child {
-    margin-bottom: $s-8;
-  }
+  gap: $s-8;
+}
+
+.item-content {
+  height: fit-content;
 }
 
 .item-name {
@@ -85,6 +93,7 @@
   height: $s-32;
   min-width: $s-92;
   padding: $s-8 $s-24;
+  margin: 0;
   border-radius: $br-8;
 }
 
@@ -95,26 +104,17 @@
 .item-button,
 .item-button-shared {
   @extend .button-secondary;
-  padding: $s-8 $s-24;
   height: $s-32;
-  border-radius: $br-8;
-  margin-right: $s-2;
-  padding: $s-8;
   width: $s-32;
-  margin-left: $s-8;
-  svg {
-    @extend .button-icon;
-    stroke: var(--icon-foreground);
-  }
+  margin-inline-start: $s-2;
+  margin-inline-end: $s-8;
+  padding: $s-8;
 }
 
-.item-button-icon {
-  width: $s-28;
-  height: $s-28;
-  svg {
-    @extend .button-icon;
-    stroke: var(--icon-foreground);
-  }
+.detach-icon,
+.add-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
 }
 
 .section-list-shared {
@@ -123,46 +123,56 @@
 
 .section-title {
   @include headlineSmallTypography;
+  margin-block-end: $s-12;
   color: var(--title-foreground-color);
-  margin-bottom: $s-12;
-}
-
-.libraries-search {
-  margin: $s-12 0;
 }
 
 .search-icon {
   @include flexCenter;
-  padding: 0 0 0 $s-8;
   width: $s-20;
+  padding: 0 0 0 $s-8;
   svg {
     @extend .button-icon-small;
     stroke: var(--icon-foreground);
   }
 }
 
+// empty state
 .section-list-empty {
-  @include bodyLargeTypography;
-  @include flexCenter;
-  color: var(--empty-message-foreground-color);
-
-  svg {
-    @extend .button-icon-small;
-    stroke: var(--icon-foreground);
-    width: $s-16;
-    height: $s-16;
-  }
+  @include bodyMediumTypography;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  justify-items: center;
+  gap: $s-8;
+  text-align: center;
+  height: fit-content;
+  margin-block: $s-16;
+  color: var(--modal-title-foreground-color);
 }
 
+.empty-state-icon {
+  @include flexCenter;
+  width: $s-48;
+  height: $s-48;
+  border-radius: $br-circle;
+  background-color: var(--pill-background-color);
+}
+
+.library-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
+  height: $s-32;
+  width: $s-32;
+}
+
+// Update library tab
 .libraries-updates-see-all {
+  @extend .link;
   direction: rtl;
   grid-column: span 3;
-  margin-top: $s-8;
-  margin-right: $s-8;
-  & input {
-    @extend .link;
-    margin: 0;
-  }
+  margin-block-start: $s-8;
+  margin-inline-start: $s-8;
+  margin: 0;
 }
 
 .updates-content {
@@ -173,55 +183,41 @@
   display: grid;
   grid-column: span 3;
   grid-template-columns: repeat(auto-fill, minmax($s-160, 1fr));
-  grid-gap: $s-24;
-  font-size: $fs-12;
-  margin-top: $s-16;
+  gap: $s-24;
+  margin-block-start: $s-16;
 }
 
 .libraries-updates-item {
-  display: flex;
-  align-items: center;
+  @include bodyLargeTypography;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: $s-8;
   color: var(--library-content-foreground-color);
-
-  &:not(:first-child) {
-    margin-top: $s-8;
-  }
-
-  & svg {
-    background-color: var(--color-canvas);
-    border-radius: $br-4;
-    border: $s-2 solid transparent;
-    height: $s-24;
-    width: $s-24;
-    min-height: $s-24;
-    min-width: $s-24;
-  }
-
-  & .name-block {
-    color: var(--gray-20-color);
-    margin-left: $s-8;
-    width: $s-168;
-
-    &.ellipsis {
-      padding-left: calc($s-24 + #{$s-8});
-    }
-  }
-
-  & .item-name {
-    display: block;
-    margin: 0;
-    text-overflow: ellipsis;
-    overflow: hidden;
-    white-space: nowrap;
-  }
 }
 
-.modal-v2-info {
-  width: $s-664;
-  height: fit-content;
-  .modal-title {
-    font-size: $fs-18;
-  }
+.component-svg {
+  background-color: var(--color-canvas);
+  border-radius: $br-4;
+  border: $s-2 solid transparent;
+  height: $s-24;
+  width: $s-24;
+  min-height: $s-24;
+  min-width: $s-24;
+}
+
+.name-block {
+  color: var(--library-content-foreground-color);
+  width: $s-168;
+}
+
+.ellipsis {
+  padding-inline-start: calc($s-24 + #{$s-8});
+}
+
+.item-name {
+  @include textEllipsis;
+  margin: 0;
 }
 
 .item-update {
@@ -230,8 +226,8 @@
   height: $s-32;
   min-width: $s-92;
   padding: $s-8 $s-24;
+  margin-inline-end: $s-2;
   border-radius: $br-8;
-  margin-right: $s-2;
   &:disabled {
     @extend .button-disabled;
   }
@@ -242,6 +238,7 @@
   color: var(--library-content-foreground-color);
   display: flex;
   flex-wrap: wrap;
+  margin: 0;
 }
 
 .element-count {
@@ -253,10 +250,21 @@
   }
 }
 
+// Modal Component v2 update
+.modal-v2-info {
+  width: $s-664;
+  height: fit-content;
+}
+
+.modal-v2-title {
+  @include headlineMediumTypography;
+  color: var(--modal-title-foreground-color);
+}
+
 .info-content {
+  display: grid;
+  grid-template-rows: repeat(4, 1fr);
   margin-top: $s-32;
-  display: flex;
-  flex-direction: column;
   gap: $s-24;
 }
 
@@ -276,7 +284,6 @@
   margin-top: $s-8;
   border-radius: $br-circle;
   background: $db-quaternary;
-
   display: flex;
   justify-content: center;
   align-items: center;
@@ -284,28 +291,27 @@
   svg {
     width: $s-32;
     height: $s-32;
-    fill: $da-primary;
+    fill: var(--icon-foreground-active);
   }
 }
 
 .info-block-title {
+  @include bodyLargeTypography;
   grid-area: title;
-  font-size: $fs-16;
-  color: $df-primary;
+  color: var(--modal-title-foreground-color);
 }
 
 .info-block-content {
+  @include bodyMediumTypography;
   grid-area: content;
-  font-size: $fs-14;
-  color: $df-secondary;
-  line-height: 1.2;
+  color: var(--library-content-foreground-color);
 }
 
 .info-bottom {
-  margin-top: $s-24;
-  margin-right: $s-8;
   display: flex;
   justify-content: flex-end;
+  margin-block-start: $s-24;
+  margin-inline-end: $s-8;
 }
 
 .primary-button {

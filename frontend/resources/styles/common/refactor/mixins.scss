@@ -116,11 +116,11 @@
 }
 
 @mixin textEllipsis {
+  display: block;
   max-width: 99%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  display: block;
 }
 
 @mixin twoLineTextEllipsis {
