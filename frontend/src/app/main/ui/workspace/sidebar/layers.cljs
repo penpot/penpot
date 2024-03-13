@@ -25,7 +25,7 @@
    [app.util.globals :as globals]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.timers :as ts]
+   [app.util.rxops :refer [throttle-fn]]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [goog.events :as events]
@@ -38,22 +38,24 @@
 (mf/defc frame-wrapper
   {::mf/props :obj}
   [{:keys [selected] :as props}]
-  (let [disposable       (mf/use-var nil)
-        pending-selected (mf/use-var selected)
+  (let [pending-selected (mf/use-var selected)
         current-selected (mf/use-state selected)
-        props            (mf/spread props :selected @current-selected)]
+        props            (mf/spread props :selected @current-selected)
 
-    (mf/with-effect [selected]
+        set-selected
+        (mf/use-memo
+         (fn []
+           (throttle-fn
+            50
+            #(when-let [pending-selected @pending-selected]
+               (reset! current-selected pending-selected)))))]
+
+    (mf/with-effect [selected set-selected]
       (reset! pending-selected selected)
-      (swap! disposable (fn [value]
-                          (when (some? value)
-                            (rx/dispose! value))
-                          (ts/idle-then-raf
-                           (fn []
-                             (reset! current-selected @pending-selected)
-                             (reset! disposable nil)))))
+      (set-selected)
       (fn []
-        (some-> @disposable rx/dispose!)))
+        (reset! pending-selected nil)
+        #(rx/dispose! set-selected)))
 
     [:> layer-item props]))
 
