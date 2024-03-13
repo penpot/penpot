@@ -44,7 +44,7 @@
 
                 (when-not ^boolean timeout-id
                   (set! (.-timeoutId state)
-                        (js/setTimeout execute-fn (- delay ctime ltime))))))))]
+                        (js/setTimeout execute-fn (- delay (- ctime ltime)))))))))]
 
     (specify! wrapped-fn
       rx/IDisposable
