@@ -19,7 +19,7 @@
 .title,
 .title-only,
 .inspect-title {
-  @include uppercaseTitleTipography;
+  @include headlineSmallTypography;
   display: grid;
   align-items: center;
   justify-content: flex-start;

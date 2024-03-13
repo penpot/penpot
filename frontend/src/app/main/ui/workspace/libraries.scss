@@ -6,7 +6,7 @@
 
 @import "refactor/common-refactor.scss";
 
-// Library
+// Library modal
 .modal-overlay {
   @extend .modal-overlay-base;
 }
@@ -122,8 +122,8 @@
 }
 
 .section-title {
-  @include bodyLargeTypography;
-  color: var(--modal-title-foreground-color);
+  @include headlineSmallTypography;
+  color: var(--title-foreground-color);
   margin-bottom: $s-12;
 }
 
@@ -226,7 +226,7 @@
 
 .item-update {
   @extend .button-primary;
-  @include uppercaseTitleTipography;
+  @include headlineSmallTypography;
   height: $s-32;
   min-width: $s-92;
   padding: $s-8 $s-24;
@@ -238,7 +238,7 @@
 }
 
 .item-contents {
-  @include bodyLargeTypography;
+  @include bodyMediumTypography;
   color: var(--library-content-foreground-color);
   display: flex;
   flex-wrap: wrap;
@@ -310,6 +310,6 @@
 
 .primary-button {
   @extend .button-primary;
-  @include uppercaseTitleTipography;
+  @include headlineSmallTypography;
   padding: $s-0 $s-16;
 }
