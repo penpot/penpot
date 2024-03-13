@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.colors :as cc]
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]
    [app.main.ui.workspace.colorpicker.slider-selector :refer [slider-selector]]
@@ -118,17 +119,24 @@
                                             :h new-hue
                                             :s saturation})))
 
-        on-change-opacity (fn [new-alpha] (on-change {:alpha new-alpha}))]
+        on-change-opacity (fn [new-alpha] (on-change {:alpha new-alpha}))
+
+        ;; This colors are to display the value slider
+        [h1 s1 l1] (cc/hsv->hsl [hue saturation 0])
+        [h2 s2 l2] (cc/hsv->hsl [hue saturation 255])]
 
     (mf/use-effect
      (mf/deps canvas-ref)
      (fn [] (when canvas-ref
               (create-color-wheel (mf/ref-val canvas-ref)))))
-    [:div {:class (stl/css :harmony-selector)}
+
+    [:div {:class (stl/css :harmony-selector)
+           :style {"--hue-from" (dm/str "hsl(" h1 ", " (* s1 100) "%, " (* l1 100) "%)")
+                   "--hue-to" (dm/str "hsl(" h2 ", " (* s2 100) "%, " (* l2 100) "%)")}}
      [:div {:class (stl/css :handlers-wrapper)}
       [:& slider-selector {:type :value
                            :vertical? true
-                           :reverse? true
+                           :reverse? false
                            :value value
                            :max-value 255
                            :vertical true

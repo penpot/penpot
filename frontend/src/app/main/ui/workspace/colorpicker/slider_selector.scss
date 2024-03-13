@@ -107,7 +107,7 @@
 }
 
 .slider-selector.value {
-  background: linear-gradient(var(--gradient-direction), #000 0%, #fff 100%);
+  background: linear-gradient(var(--gradient-direction), var(--hue-from, #000) 0%, var(--hue-to, #fff) 100%);
 }
 .slider-selector.saturation {
   background: linear-gradient(
