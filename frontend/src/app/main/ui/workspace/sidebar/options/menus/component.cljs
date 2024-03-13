@@ -275,7 +275,7 @@
 
 (defn- find-common-path
   ([components]
-   (let [paths (map (comp cfh/last-path :path) components)]
+   (let [paths (map (comp cfh/split-path :path) components)]
      (find-common-path paths [] 0)))
   ([paths path n]
    (let [current (nth (first paths) n nil)]
