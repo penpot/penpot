@@ -23,7 +23,6 @@
    [app.metrics :as mtx]
    [app.rpc :as-alias rpc]
    [app.rpc.doc :as-alias rpc.doc]
-   [app.setup :as-alias setup]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [promesa.exec :as px]
@@ -137,7 +136,7 @@
                 ::rpc/routes
                 ::rpc.doc/routes
                 ::oidc/routes
-                ::setup/props
+                ::main/props
                 ::assets/routes
                 ::debug/routes
                 ::db/pool

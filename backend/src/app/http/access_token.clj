@@ -10,7 +10,6 @@
    [app.config :as cf]
    [app.db :as db]
    [app.main :as-alias main]
-   [app.setup :as-alias setup]
    [app.tokens :as tokens]
    [ring.request :as rreq]))
 
@@ -43,7 +42,7 @@
 (defn- wrap-soft-auth
   "Soft Authentication, will be executed synchronously on the undertow
   worker thread."
-  [handler {:keys [::setup/props]}]
+  [handler {:keys [::main/props]}]
   (letfn [(handle-request [request]
             (try
               (let [token  (get-token request)

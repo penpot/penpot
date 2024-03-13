@@ -15,7 +15,6 @@
    [app.db :as db]
    [app.http.client :as http]
    [app.main :as-alias main]
-   [app.setup :as-alias setup]
    [app.util.json :as json]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
@@ -33,10 +32,10 @@
 (defmethod ig/pre-init-spec ::handler [_]
   (s/keys :req [::http/client
                 ::db/pool
-                ::setup/props]))
+                ::main/props]))
 
 (defmethod ig/init-key ::handler
-  [_ {:keys [::db/pool ::setup/props] :as cfg}]
+  [_ {:keys [::db/pool ::main/props] :as cfg}]
   (fn [{:keys [send? enabled?] :or {send? true enabled? false}}]
     (let [subs     {:newsletter-updates (get-subscriptions-newsletter-updates pool)
                     :newsletter-news (get-subscriptions-newsletter-news pool)}

@@ -22,7 +22,6 @@
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
    [app.rpc.commands.profile :as profile]
-   [app.setup :as-alias setup]
    [app.tokens :as tokens]
    [app.util.json :as json]
    [app.util.time :as dt]
@@ -414,7 +413,7 @@
                    ::props]))
 
 (defn get-info
-  [{:keys [provider ::setup/props] :as cfg} {:keys [params] :as request}]
+  [{:keys [provider ::main/props] :as cfg} {:keys [params] :as request}]
   (when-let [error (get params :error)]
     (ex/raise :type :internal
               :code :error-on-retrieving-code
@@ -509,7 +508,7 @@
   (if profile
     (let [sxf    (session/create-fn cfg (:id profile))
           token  (or (:invitation-token info)
-                     (tokens/generate (::setup/props cfg)
+                     (tokens/generate (::main/props cfg)
                                       {:iss :auth
                                        :exp (dt/in-future "15m")
                                        :profile-id (:id profile)}))
@@ -537,7 +536,7 @@
                           :iss :prepared-register
                           :is-active true
                           :exp (dt/in-future {:hours 48}))
-            token  (tokens/generate (::setup/props cfg) info)
+            token  (tokens/generate (::main/props cfg) info)
             params (d/without-nils
                     {:token token
                      :fullname (:fullname info)})
@@ -552,7 +551,7 @@
 (defn- auth-handler
   [cfg {:keys [params] :as request}]
   (let [props (audit/extract-utm-params params)
-        state (tokens/generate (::setup/props cfg)
+        state (tokens/generate (::main/props cfg)
                                {:iss :oauth
                                 :invitation-token (:invitation-token params)
                                 :props props
@@ -619,7 +618,7 @@
   [_]
   (s/keys :req [::session/manager
                 ::http/client
-                ::setup/props
+                ::main/props
                 ::db/pool
                 ::providers]))
 

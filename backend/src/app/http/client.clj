@@ -55,8 +55,8 @@
   convention."
   ([cfg-or-client request]
    (let [client (resolve-client cfg-or-client)]
-     (send! client request {:sync? true})))
+     (send! client request {})))
   ([cfg-or-client request options]
    (let [client (resolve-client cfg-or-client)]
-     (send! client request (merge {:sync? true} options)))))
+     (send! client request options))))
 

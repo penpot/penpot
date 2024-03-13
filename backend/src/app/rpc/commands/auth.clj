@@ -26,7 +26,6 @@
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
-   [app.setup :as-alias setup]
    [app.tokens :as tokens]
    [app.util.services :as sv]
    [app.util.time :as dt]
@@ -89,7 +88,7 @@
                                   (profile/strip-private-attrs))
 
                   invitation (when-let [token (:invitation-token params)]
-                               (tokens/verify (::setup/props cfg) {:token token :iss :team-invitation}))
+                               (tokens/verify (::main/props cfg) {:token token :iss :team-invitation}))
 
                   ;; If invitation member-id does not matches the profile-id, we just proceed to ignore the
                   ;; invitation because invitations matches exactly; and user can't login with other email and
@@ -134,7 +133,7 @@
 (defn recover-profile
   [{:keys [::db/pool] :as cfg} {:keys [token password]}]
   (letfn [(validate-token [token]
-            (let [tdata (tokens/verify (::setup/props cfg) {:token token :iss :password-recovery})]
+            (let [tdata (tokens/verify (::main/props cfg) {:token token :iss :password-recovery})]
               (:profile-id tdata)))
 
           (update-password [conn profile-id]
@@ -171,7 +170,7 @@
                 :code :registration-disabled)))
 
   (when (contains? params :invitation-token)
-    (let [invitation (tokens/verify (::setup/props cfg) {:token (:invitation-token params) :iss :team-invitation})]
+    (let [invitation (tokens/verify (::main/props cfg) {:token (:invitation-token params) :iss :team-invitation})]
       (when-not (= (:email params) (:member-email invitation))
         (ex/raise :type :restriction
                   :code :email-does-not-match-invitation
@@ -234,7 +233,7 @@
 
         params (d/without-nils params)
 
-        token  (tokens/generate (::setup/props cfg) params)]
+        token  (tokens/generate (::main/props cfg) params)]
     (with-meta {:token token}
       {::audit/profile-id uuid/zero})))
 
@@ -341,7 +340,7 @@
 
 (defn register-profile
   [{:keys [::db/conn] :as cfg} {:keys [token fullname] :as params}]
-  (let [claims     (tokens/verify (::setup/props cfg) {:token token :iss :prepared-register})
+  (let [claims     (tokens/verify (::main/props cfg) {:token token :iss :prepared-register})
         params     (-> claims
                        (into params)
                        (assoc :fullname fullname))
@@ -358,7 +357,7 @@
                             (create-profile-rels! conn))))
 
         invitation (when-let [token (:invitation-token params)]
-                     (tokens/verify (::setup/props cfg) {:token token :iss :team-invitation}))]
+                     (tokens/verify (::main/props cfg) {:token token :iss :team-invitation}))]
 
     ;; If profile is filled in claims, means it tries to register
     ;; again, so we proceed to update the modified-at attr
@@ -378,7 +377,7 @@
       ;; email.
       (and (some? invitation) (= (:email profile) (:member-email invitation)))
       (let [claims (assoc invitation :member-id  (:id profile))
-            token  (tokens/generate (::setup/props cfg) claims)
+            token  (tokens/generate (::main/props cfg) claims)
             resp   {:invitation-token token}]
         (-> resp
             (rph/with-transform (session/create-fn cfg (:id profile)))
@@ -405,7 +404,7 @@
       ;; In all other cases, send a verification email.
       :else
       (do
-        (send-email-verification! conn (::setup/props cfg) profile)
+        (send-email-verification! conn (::main/props cfg) profile)
         (rph/with-meta profile
           {::audit/replace-props (audit/profile->props profile)
            ::audit/profile-id (:id profile)})))))
@@ -430,14 +429,14 @@
 (defn request-profile-recovery
   [{:keys [::db/pool] :as cfg} {:keys [email] :as params}]
   (letfn [(create-recovery-token [{:keys [id] :as profile}]
-            (let [token (tokens/generate (::setup/props cfg)
+            (let [token (tokens/generate (::main/props cfg)
                                          {:iss :password-recovery
                                           :exp (dt/in-future "15m")
                                           :profile-id id})]
               (assoc profile :token token)))
 
           (send-email-notification [conn profile]
-            (let [ptoken (tokens/generate (::setup/props cfg)
+            (let [ptoken (tokens/generate (::main/props cfg)
                                           {:iss :profile-identity
                                            :profile-id (:id profile)
                                            :exp (dt/in-future {:days 30})})]

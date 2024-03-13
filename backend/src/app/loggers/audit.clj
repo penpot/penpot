@@ -24,7 +24,6 @@
    [app.main :as-alias main]
    [app.rpc :as-alias rpc]
    [app.rpc.retry :as rtry]
-   [app.setup :as-alias setup]
    [app.tokens :as tokens]
    [app.util.services :as-alias sv]
    [app.util.time :as dt]
@@ -262,7 +261,7 @@
 (s/def ::tasks/uri ::us/string)
 
 (defmethod ig/pre-init-spec ::tasks/archive-task [_]
-  (s/keys :req [::db/pool ::setup/props ::http.client/client]))
+  (s/keys :req [::db/pool ::main/props ::http.client/client]))
 
 (defmethod ig/init-key ::tasks/archive
   [_ cfg]
@@ -288,7 +287,7 @@
                 (px/sleep 100)
                 (recur (+ total ^long n)))
               (when (pos? total)
-                (l/dbg :hint "events archived" :total total)))))))))
+                (l/debug :hint "events archived" :total total)))))))))
 
 (def ^:private sql:retrieve-batch-of-audit-log
   "select *
@@ -323,7 +322,7 @@
                               :context]))
 
           (send [events]
-            (let [token   (tokens/generate (::setup/props cfg)
+            (let [token   (tokens/generate (::main/props cfg)
                                            {:iss "authentication"
                                             :iat (dt/now)
                                             :uid uuid/zero})
@@ -332,11 +331,11 @@
                            "origin" (cf/get :public-uri)
                            "cookie" (u/map->query-string {:auth-token token})}
                   params  {:uri uri
-                           :timeout 12000
+                           :timeout 6000
                            :method :post
                            :headers headers
                            :body body}
-                  resp    (http.client/req! cfg params)]
+                  resp    (http.client/req! cfg params {:sync? true})]
               (if (= (:status resp) 204)
                 true
                 (do
@@ -356,7 +355,7 @@
                          (map row->event))
             events (into [] xform rows)]
         (when-not (empty? events)
-          (l/trc :hint "archive events chunk" :uri uri :events (count events))
+          (l/trace :hint "archive events chunk" :uri uri :events (count events))
           (when (send events)
             (mark-as-archived conn rows)
             (count events)))))))
