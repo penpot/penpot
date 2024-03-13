@@ -31,7 +31,7 @@
      [:div {:class (stl/css :viewport-actions-container)}
       [:div {:class (stl/css :viewport-actions-title)}
        [:& i18n/tr-html {:tag-name "span"
-                         :label "workspace.top-bar.read-only"}]]
+                         :label "workspace.top-bar.view-only"}]]
       [:button {:class (stl/css :done-btn)
                 :on-click handle-close-view-mode} (tr "workspace.top-bar.read-only.done")]]]))
 
