@@ -24,12 +24,16 @@
 (s/def ::options-form
   (s/keys :opt-un [::lang ::theme]))
 
+(defn- on-success
+  [profile]
+  (st/emit! (msg/success (tr "notifications.profile-saved"))
+            (du/profile-fetched profile)))
+
 (defn- on-submit
   [form _event]
   (let [data  (:clean-data @form)]
     (st/emit! (du/update-profile data)
-              (du/persist-profile)
-              (msg/success (tr "notifications.profile-saved")))))
+              (du/persist-profile {:on-success on-success}))))
 
 (mf/defc options-form
   {::mf/wrap-props false}
