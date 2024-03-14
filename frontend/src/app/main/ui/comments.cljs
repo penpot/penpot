@@ -604,11 +604,13 @@
   [{:keys [group users on-thread-click]}]
   [:div {:class (stl/css :thread-group)}
    (if (:file-name group)
-     [:div {:class (stl/css :section-title)}
+     [:div {:class (stl/css :section-title)
+            :title (str (:file-name group) ", " (:page-name group))}
       [:span {:class (stl/css :file-name)} (:file-name group) ", "]
       [:span {:class (stl/css :page-name)} (:page-name group)]]
 
-     [:div {:class (stl/css :section-title)}
+     [:div {:class (stl/css :section-title)
+            :title (:page-name group)}
       [:span {:class (stl/css :icon)} i/document]
       [:span {:class (stl/css :page-name)} (:page-name group)]])
 
