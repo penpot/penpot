@@ -385,24 +385,24 @@
         (mf/use-fn
          (fn []
            (st/emit! (du/update-profile-props {:team-hero? false})
-                     (ptk/event ::ev/event {::ev/name "dont-show-team-up-hero"
-                                            ::ev/origin "dashboard"}))))
+                     (ptk/data-event ::ev/event {::ev/name "dont-show-team-up-hero"
+                                                 ::ev/origin "dashboard"}))))
         close-tutorial
         (mf/use-fn
          (fn []
            (st/emit! (du/update-profile-props {:viewed-tutorial? true})
-                     (ptk/event ::ev/event {::ev/name "dont-show"
-                                            ::ev/origin "get-started-hero-block"
-                                            :type "tutorial"
-                                            :section "dashboard"}))))
+                     (ptk/data-event ::ev/event {::ev/name "dont-show-tutorial"
+                                                 ::ev/origin "get-started-hero"
+                                                 :type "tutorial"
+                                                 :section "dashboard"}))))
         close-walkthrough
         (mf/use-fn
          (fn []
            (st/emit! (du/update-profile-props {:viewed-walkthrough? true})
-                     (ptk/event ::ev/event {::ev/name "dont-show"
-                                            ::ev/origin "get-started-hero-block"
-                                            :type "walkthrough"
-                                            :section "dashboard"}))))]
+                     (ptk/data-event ::ev/event {::ev/name "dont-show-walkthrough"
+                                                 ::ev/origin "get-started-hero"
+                                                 :type "walkthrough"
+                                                 :section "dashboard"}))))]
 
     (mf/with-effect [team]
       (let [tname (if (:is-default team)

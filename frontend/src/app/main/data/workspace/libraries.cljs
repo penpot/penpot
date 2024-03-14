@@ -108,8 +108,8 @@
                                    (uc/gradient-type->string (get-in color [:gradient :type])))))]
     (dm/assert! ::ctc/color color)
     (ptk/reify ::add-color
-      IDeref
-      (-deref [_] color)
+      ev/Event
+      (-data [_] color)
 
       ptk/WatchEvent
       (watch [it _ _]
@@ -185,6 +185,9 @@
   [{:keys [id] :as params}]
   (dm/assert! (uuid? id))
   (ptk/reify ::delete-color
+    ev/Event
+    (-data [_] {:id id})
+
     ptk/WatchEvent
     (watch [it state _]
       (let [data    (get state :workspace-data)
@@ -200,6 +203,9 @@
    (ctf/check-media-object! media))
 
   (ptk/reify ::add-media
+    ev/Event
+    (-data [_] media)
+
     ptk/WatchEvent
     (watch [it _ _]
       (let [obj     (select-keys media [:id :name :width :height :mtype])
@@ -230,6 +236,9 @@
   [{:keys [id] :as params}]
   (dm/assert! (uuid? id))
   (ptk/reify ::delete-media
+    ev/Event
+    (-data [_] {:id id})
+
     ptk/WatchEvent
     (watch [it state _]
       (let [data        (get state :workspace-data)
@@ -247,8 +256,8 @@
       (ctt/check-typography! typography))
 
      (ptk/reify ::add-typography
-       IDeref
-       (-deref [_] typography)
+       ev/Event
+       (-data [_] typography)
 
        ptk/WatchEvent
        (watch [it _ _]
@@ -291,6 +300,9 @@
   (dm/assert! (uuid? id))
   (dm/assert! (string? new-name))
   (ptk/reify ::rename-typography
+    ev/Event
+    (-data [_] {:id id :name new-name})
+
     ptk/WatchEvent
     (watch [it state _]
       (when (and (some? new-name) (not= "" new-name))
@@ -304,6 +316,9 @@
   [id]
   (dm/assert! (uuid? id))
   (ptk/reify ::delete-typography
+    ev/Event
+    (-data [_] {:id id})
+
     ptk/WatchEvent
     (watch [it state _]
       (let [data    (get state :workspace-data)
@@ -316,8 +331,10 @@
   "This is the second step of the component creation."
   [selected components-v2]
   (ptk/reify ::add-component2
-    IDeref
-    (-deref [_] {:num-shapes (count selected)})
+    ev/Event
+    (-data [_]
+      {::ev/name "add-component"
+       :shapes (count selected)})
 
     ptk/WatchEvent
     (watch [it state _]
@@ -369,9 +386,10 @@
             selected-objects   (map #(get objects %) selected)
             ;; We don't want to change the structure of component copies
             can-make-component (every? true? (map #(ctn/valid-shape-for-component? objects %) selected-objects))
-            added-components   (map
-                                #(add-component2 [%] components-v2)
-                                selected)
+            added-components   (map (fn [id]
+                                      (with-meta (add-component2 [id] components-v2)
+                                        {:multiple true}))
+                                    selected)
             undo-id (js/Symbol)]
         (when can-make-component
           (rx/concat
@@ -1266,9 +1284,11 @@
   [id is-shared]
   {:pre [(uuid? id) (boolean? is-shared)]}
   (ptk/reify ::set-file-shared
-    IDeref
-    (-deref [_]
-      {::ev/origin "workspace" :id id :shared is-shared})
+    ev/Event
+    (-data [_]
+      {::ev/origin "workspace"
+       :id id
+       :shared is-shared})
 
     ptk/UpdateEvent
     (update [_ state]
@@ -1302,6 +1322,12 @@
 (defn link-file-to-library
   [file-id library-id]
   (ptk/reify ::attach-library
+    ev/Event
+    (-data [_]
+      {::ev/name "attach-library"
+       :file-id file-id
+       :library-id library-id})
+
     ;; NOTE: this event implements UpdateEvent protocol for perform an
     ;; optimistic update state for make the UI feel more responsive.
     ptk/UpdateEvent
@@ -1331,6 +1357,12 @@
 (defn unlink-file-from-library
   [file-id library-id]
   (ptk/reify ::detach-library
+    ev/Event
+    (-data [_]
+      {::ev/name "detach-library"
+       :file-id file-id
+       :library-id library-id})
+
     ptk/UpdateEvent
     (update [_ state]
       (d/dissoc-in state [:workspace-libraries library-id]))
