@@ -221,7 +221,7 @@
    {::db/pool (ig/ref ::db/pool)}
 
    ::http.awsns/routes
-   {::props              (ig/ref ::setup/props)
+   {::setup/props        (ig/ref ::setup/props)
     ::db/pool            (ig/ref ::db/pool)
     ::http.client/client (ig/ref ::http.client/client)}
 
@@ -262,7 +262,7 @@
    ::oidc/routes
    {::http.client/client (ig/ref ::http.client/client)
     ::db/pool            (ig/ref ::db/pool)
-    ::props              (ig/ref ::setup/props)
+    ::setup/props        (ig/ref ::setup/props)
     ::oidc/providers     {:google (ig/ref ::oidc.providers/google)
                           :github (ig/ref ::oidc.providers/github)
                           :gitlab (ig/ref ::oidc.providers/gitlab)
@@ -274,7 +274,7 @@
     ::db/pool            (ig/ref ::db/pool)
     ::rpc/routes         (ig/ref ::rpc/routes)
     ::rpc.doc/routes     (ig/ref ::rpc.doc/routes)
-    ::props              (ig/ref ::setup/props)
+    ::setup/props        (ig/ref ::setup/props)
     ::mtx/routes         (ig/ref ::mtx/routes)
     ::oidc/routes        (ig/ref ::oidc/routes)
     ::http.debug/routes  (ig/ref ::http.debug/routes)
@@ -286,7 +286,7 @@
    {::db/pool         (ig/ref ::db/pool)
     ::session/manager (ig/ref ::session/manager)
     ::sto/storage     (ig/ref ::sto/storage)
-    ::props           (ig/ref ::setup/props)}
+    ::setup/props     (ig/ref ::setup/props)}
 
    ::http.ws/routes
    {::db/pool         (ig/ref ::db/pool)
@@ -322,7 +322,7 @@
     ::rpc/climit         (ig/ref ::rpc/climit)
     ::rpc/rlimit         (ig/ref ::rpc/rlimit)
     ::setup/templates    (ig/ref ::setup/templates)
-    ::props              (ig/ref ::setup/props)}
+    ::setup/props        (ig/ref ::setup/props)}
 
    :app.rpc.doc/routes
    {:methods (ig/ref :app.rpc/methods)}
@@ -331,7 +331,7 @@
    {::rpc/methods     (ig/ref :app.rpc/methods)
     ::db/pool         (ig/ref ::db/pool)
     ::session/manager (ig/ref ::session/manager)
-    ::props           (ig/ref ::setup/props)}
+    ::setup/props     (ig/ref ::setup/props)}
 
    ::wrk/registry
    {::mtx/metrics (ig/ref ::mtx/metrics)
@@ -388,7 +388,7 @@
    :app.tasks.telemetry/handler
    {::db/pool            (ig/ref ::db/pool)
     ::http.client/client (ig/ref ::http.client/client)
-    ::props              (ig/ref ::setup/props)}
+    ::setup/props        (ig/ref ::setup/props)}
 
    [::srepl/urepl ::srepl/server]
    {::srepl/port (cf/get :urepl-port 6062)
@@ -402,7 +402,7 @@
 
    ::setup/props
    {::db/pool    (ig/ref ::db/pool)
-    ::key        (cf/get :secret-key)
+    ::setup/key  (cf/get :secret-key)
 
     ;; NOTE: this dependency is only necessary for proper initialization ordering, props
     ;; module requires the migrations to run before initialize.
@@ -412,7 +412,7 @@
    {}
 
    ::audit.tasks/archive
-   {::props              (ig/ref ::setup/props)
+   {::setup/props        (ig/ref ::setup/props)
     ::db/pool            (ig/ref ::db/pool)
     ::http.client/client (ig/ref ::http.client/client)}
 

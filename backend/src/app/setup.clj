@@ -50,16 +50,15 @@
                       :cause cause))))
         instance-id)))
 
-(s/def ::main/key ::us/string)
-(s/def ::main/props
-  (s/map-of ::us/keyword some?))
+(s/def ::key ::us/string)
+(s/def ::props (s/map-of ::us/keyword some?))
 
 (defmethod ig/pre-init-spec ::props [_]
   (s/keys :req [::db/pool]
-          :opt [::main/key]))
+          :opt [::key]))
 
 (defmethod ig/init-key ::props
-  [_ {:keys [::db/pool ::main/key] :as cfg}]
+  [_ {:keys [::db/pool ::key] :as cfg}]
   (db/with-atomic [conn pool]
     (db/xact-lock! conn 0)
     (when-not key

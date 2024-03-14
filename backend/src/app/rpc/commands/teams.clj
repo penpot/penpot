@@ -26,6 +26,7 @@
    [app.rpc.helpers :as rph]
    [app.rpc.permissions :as perms]
    [app.rpc.quotes :as quotes]
+   [app.setup :as-alias setup]
    [app.storage :as sto]
    [app.tokens :as tokens]
    [app.util.services :as sv]
@@ -691,7 +692,7 @@
 
 (defn- create-invitation-token
   [cfg {:keys [profile-id valid-until team-id member-id member-email role]}]
-  (tokens/generate (::main/props cfg)
+  (tokens/generate (::setup/props cfg)
                    {:iss :team-invitation
                     :exp valid-until
                     :profile-id profile-id
@@ -702,7 +703,7 @@
 
 (defn- create-profile-identity-token
   [cfg profile]
-  (tokens/generate (::main/props cfg)
+  (tokens/generate (::setup/props cfg)
                    {:iss :profile-identity
                     :profile-id (:id profile)
                     :exp (dt/in-future {:days 30})}))
