@@ -148,17 +148,6 @@
 
     attrs))
 
-(defn add-layer-styles!
-  [props shape]
-  (let [opacity (:opacity shape)]
-    (if (some? opacity)
-      (obj/set! props "opacity" opacity)
-      props)))
-
-(defn get-layer-styles
-  [shape]
-  (add-layer-styles! #js {} shape))
-
 (defn get-svg-props
   [shape render-id]
   (let [attrs (get shape :svg-attrs {})
@@ -195,8 +184,7 @@
 
          style        (-> (obj/get props "style")
                           (obj/clone)
-                          (obj/merge! svg-styles)
-                          (add-layer-styles! shape))
+                          (obj/merge! svg-styles))
 
          url-fill?    (or ^boolean (some? (:fill-image shape))
                           ^boolean (cfh/image-shape? shape)

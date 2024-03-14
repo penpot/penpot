@@ -10,7 +10,6 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
-   [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.text.styles :as sts]
    [app.util.object :as obj]
    [cuerdas.core :as str]
@@ -192,7 +191,6 @@
       :transform transform
       :width  (if (#{:auto-width} grow-type) 100000 width)
       :height (if (#{:auto-height :auto-width} grow-type) 100000 height)
-      :style  (attrs/get-layer-styles shape)
       :ref ref}
      ;; We use a class here because react has a bug that won't use the appropriate selector for
      ;; `background-clip`
