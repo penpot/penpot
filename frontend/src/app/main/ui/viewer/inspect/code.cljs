@@ -124,11 +124,11 @@
 
         style-code
         (mf/use-memo
-         (mf/deps fontfaces-css style-type all-children cg/generate-style-code)
+         (mf/deps fontfaces-css style-type shapes all-children cg/generate-style-code)
          (fn []
            (dm/str
             fontfaces-css "\n"
-            (-> (cg/generate-style-code objects style-type all-children)
+            (-> (cg/generate-style-code objects style-type shapes all-children)
                 (cb/format-code style-type)))))
 
         markup-code

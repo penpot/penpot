@@ -76,7 +76,7 @@
                 (let [style-code
                       (dm/str
                        fontfaces-css "\n"
-                       (-> (cg/generate-style-code objects style-type all-children)
+                       (-> (cg/generate-style-code objects style-type [shape] all-children)
                            (cb/format-code style-type)))
 
                       markup-code
