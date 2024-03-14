@@ -274,7 +274,9 @@
   (ptk/reify ::delete-comment
     ptk/UpdateEvent
     (update [_ state]
-      (d/update-in-when state [:comments thread-id] dissoc id))
+      (-> state
+          (d/update-in-when [:comments thread-id] dissoc id)
+          (d/update-in-when [:comment-threads thread-id :count-comments] dec)))
 
     ptk/WatchEvent
     (watch [_ state _]

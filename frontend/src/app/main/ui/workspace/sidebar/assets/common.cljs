@@ -142,7 +142,7 @@
 
         on-collapsed
         (mf/use-fn
-         (mf/deps file-id section open?)
+         (mf/deps file-id section open? assets-count)
          (fn [_]
            (when (< 0 assets-count)
              (st/emit! (dw/set-assets-section-open file-id section (not open?))))))
