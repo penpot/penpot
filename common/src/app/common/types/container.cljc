@@ -90,6 +90,10 @@
   [container shape-id f]
   (update-in container [:objects shape-id] f))
 
+(defn get-container-root
+  [container]
+  (d/seek #(or (nil? (:parent-id %)) (= (:parent-id %) uuid/zero)) (shapes-seq container)))
+
 (defn get-direct-children
   [container shape]
   (map #(get-shape container %) (:shapes shape)))
@@ -107,7 +111,7 @@
     (get-children-rec [] id)))
 
 (defn get-component-shape
-  "Get the parent top shape linked to a component for this shape, if any"
+  "Get the parent top shape linked to a component main for this shape, if any"
   ([objects shape] (get-component-shape objects shape nil))
   ([objects shape {:keys [allow-main?] :or {allow-main? false} :as options}]
    (let [parent (get objects (:parent-id shape))]
