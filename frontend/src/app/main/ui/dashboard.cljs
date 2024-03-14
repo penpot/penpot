@@ -58,6 +58,9 @@
         project-id         (:id project)
         team-id            (:id team)
 
+        dashboard-local     (mf/deref refs/dashboard-local)
+        file-menu-open?     (:menu-open dashboard-local)
+
         default-project-id
         (mf/with-memo [projects]
           (->> (vals projects)
@@ -83,6 +86,7 @@
 
 
     [:div {:class (stl/css :dashboard-content)
+           :style {:pointer-events (when file-menu-open? "none")}
            :on-click clear-selected-fn :ref container}
      (case section
        :dashboard-projects

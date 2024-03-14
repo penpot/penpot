@@ -609,11 +609,15 @@
 (defmethod process-change :add-recent-color
   [data {:keys [color]}]
   ;; Moves the color to the top of the list and then truncates up to 15
-  (update data :recent-colors (fn [rc]
-                                (let [rc (conj (filterv (comp not #{color}) (or rc [])) color)]
-                                  (if (> (count rc) 15)
-                                    (subvec rc 1)
-                                    rc)))))
+  (update
+   data
+   :recent-colors
+   (fn [rc]
+     (let [rc (->> rc (d/removev (partial ctc/eq-recent-color? color)))
+           rc (-> rc (conj color))]
+       (cond-> rc
+         (> (count rc) 15)
+         (subvec 1))))))
 
 ;; -- Media
 

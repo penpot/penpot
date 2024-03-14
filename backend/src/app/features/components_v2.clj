@@ -806,7 +806,8 @@
                                                 :width (:width (:selrect root-shape))
                                                 :height (:height (:selrect root-shape))
                                                 :name (:name component)
-                                                :shapes [new-id]})
+                                                :shapes [new-id]
+                                                :show-content true})
                                               (assoc :frame-id nil
                                                      :parent-id nil))
                               root-shape' (assoc root-shape
@@ -846,13 +847,15 @@
 
                   (fix-shape [shape]
                     (if (or (nil? (:parent-id shape)) (ctk/instance-head? shape))
-                      (assoc shape
-                             :type :frame                  ; Old groups must be converted
-                             :fills (or (:fills shape) []) ; to frames and conform to spec
-                             :shapes (or (:shapes shape) [])
-                             :hide-in-viewer (or (:hide-in-viewer shape) true)
-                             :rx (or (:rx shape) 0)
-                             :ry (or (:ry shape) 0))
+                      (let [frame? (= :frame (:type shape))]
+                        (assoc shape
+                               :type :frame            ; Old groups must be converted
+                               :fills (or (:fills shape) []) ; to frames and conform to spec
+                               :shapes (or (:shapes shape) [])
+                               :hide-in-viewer (if frame? (boolean (:hide-in-viewer shape)) true)
+                               :show-content   (if frame? (boolean (:show-content shape)) true)
+                               :rx (or (:rx shape) 0)
+                               :ry (or (:ry shape) 0)))
                       shape))]
             (-> file-data
                 (update :pages-index update-vals fix-container)

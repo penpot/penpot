@@ -388,15 +388,18 @@
                            (on-menu-click event)))}
          menu-icon
          (when (and selected? file-menu-open?)
-           [:& file-menu {:files (vals selected-files)
-                          :show? (:menu-open dashboard-local)
-                          :left (+ 24 (:x (:menu-pos dashboard-local)))
-                          :top (:y (:menu-pos dashboard-local))
-                          :navigate? true
-                          :on-edit on-edit
-                          :on-menu-close on-menu-close
-                          :origin origin
-                          :parent-id (str file-id "-action-menu")}])]]]]]))
+           ;; When the menu is open we disable events in the dashboard. We need to force pointer events
+           ;; so the menu can be handled
+           [:div {:style {:pointer-events "all"}}
+            [:& file-menu {:files (vals selected-files)
+                           :show? (:menu-open dashboard-local)
+                           :left (+ 24 (:x (:menu-pos dashboard-local)))
+                           :top (:y (:menu-pos dashboard-local))
+                           :navigate? true
+                           :on-edit on-edit
+                           :on-menu-close on-menu-close
+                           :origin origin
+                           :parent-id (str file-id "-action-menu")}]])]]]]]))
 
 (mf/defc grid
   [{:keys [files project origin limit library-view? create-fn] :as props}]

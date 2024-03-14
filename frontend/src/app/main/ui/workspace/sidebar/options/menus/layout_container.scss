@@ -113,7 +113,7 @@
 
     .padding-simple {
       @extend .input-element;
-      width: $s-108;
+      max-width: $s-108;
     }
   }
 
@@ -124,7 +124,7 @@
 
     .padding-multiple {
       @extend .input-element;
-      width: $s-108;
+      max-width: $s-108;
     }
   }
 
