@@ -169,6 +169,13 @@
                (update-input value-str)
                (dom/blur! node)))))
 
+        handle-change
+        (mf/use-fn
+         (mf/deps parse-value)
+         (fn []
+           ;; Store the last value inputed
+           (reset! last-value* (parse-value))))
+
         handle-mouse-wheel
         (mf/use-fn
          (mf/deps set-delta)
@@ -218,7 +225,7 @@
                   (obj/unset! "selectOnFocus")
                   (obj/unset! "nillable")
                   (obj/set! "value" mf/undefined)
-                  (obj/set! "onChange" mf/undefined)
+                  (obj/set! "onChange" handle-change)
                   (obj/set! "className" class)
                   (obj/set! "type" "text")
                   (obj/set! "ref" ref)
