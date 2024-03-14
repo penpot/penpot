@@ -652,11 +652,10 @@
 
     [:& dropdown {:show (boolean mdata)
                   :on-close #(st/emit! dw/hide-context-menu)}
-     [:ul
-      {:class (stl/css :workspace-context-menu)
-       :ref dropdown-ref
-       :style {:top top :left left}
-       :on-context-menu prevent-default}
+     [:ul {:class (stl/css :workspace-context-menu)
+           :ref dropdown-ref
+           :style {:top top :left left}
+           :on-context-menu prevent-default}
 
       (case (:kind mdata)
         :shape [:& shape-context-menu {:mdata mdata}]

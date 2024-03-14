@@ -19,6 +19,8 @@ $thumbnail-default-height: $s-168; // Default width
 
 .grid-row {
   display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: calc($s-12 + var(--th-width, #{$thumbnail-default-width}));
   width: 100%;
   gap: $s-24;
 }

@@ -5063,8 +5063,8 @@ msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
 
 #, markdown
-msgid "workspace.top-bar.read-only"
-msgstr "**Inspect mode** (View Only)"
+msgid "workspace.top-bar.view-only"
+msgstr "**Inspecting mode** (View Only)"
 
 msgid "workspace.top-bar.read-only.done"
 msgstr "Done"

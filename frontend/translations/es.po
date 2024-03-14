@@ -3633,7 +3633,7 @@ msgstr "%s componentes"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.file-library"
-msgstr "Biblioteca de este archivo"
+msgstr "Biblioteca del archivo"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.graphics"
@@ -5148,7 +5148,7 @@ msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
 
 #, markdown
-msgid "workspace.top-bar.read-only"
+msgid "workspace.top-bar.view-only"
 msgstr "**Modo inspección** (View only)"
 
 msgid "workspace.top-bar.read-only.done"

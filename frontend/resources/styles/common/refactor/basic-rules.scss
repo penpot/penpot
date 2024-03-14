@@ -32,6 +32,12 @@
     background: var(--text-editor-selection-background-color);
     color: var(--text-editor-selection-foreground-color);
   }
+
+  ::placeholder,
+  ::-webkit-input-placeholder {
+    @include bodySmallTypography;
+    color: var(--input-placeholder-color);
+  }
 }
 
 // BUTTONS
@@ -39,7 +45,7 @@
   @include buttonStyle;
   @include flexCenter;
   @include focusPrimary;
-  @include uppercaseTitleTipography;
+  @include headlineSmallTypography;
   background-color: var(--button-primary-background-color-rest);
   border: $s-1 solid var(--button-primary-border-color-rest);
   color: var(--button-primary-foreground-color-rest);
@@ -303,7 +309,7 @@
 }
 
 .input-label {
-  @include uppercaseTitleTipography;
+  @include headlineSmallTypography;
   @include flexCenter;
   width: $s-20;
   padding-left: $s-8;
@@ -401,6 +407,7 @@
     background-color: var(--input-background-color);
   }
   ::placeholder {
+    @include bodySmallTypography;
     color: var(--input-placeholder-color);
   }
   &:hover {

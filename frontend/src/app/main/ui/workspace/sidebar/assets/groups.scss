@@ -18,7 +18,6 @@
 
 .path {
   @include textEllipsis;
-  max-width: 90%;
   margin-left: $s-2;
   text-transform: initial;
   color: var(--title-foreground-color-hover);
