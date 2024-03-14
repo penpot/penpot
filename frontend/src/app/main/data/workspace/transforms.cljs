@@ -621,7 +621,7 @@
                       (let [undo-id (js/Symbol)]
                         (rx/of (dwu/start-undo-transaction undo-id)
                                (move-shapes-to-frame ids target-frame drop-index)
-                               (dwm/apply-modifiers {:undo-transation? false})
+                               (dwm/apply-modifiers {:undo-transation? false :force-ignore-ids ids})
                                (finish-transform)
                                (dwu/commit-undo-transaction undo-id))))))))))))))
 

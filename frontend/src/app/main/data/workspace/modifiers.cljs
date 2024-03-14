@@ -458,7 +458,7 @@
   ([]
    (apply-modifiers nil))
 
-  ([{:keys [modifiers undo-transation? stack-undo? ignore-constraints ignore-snap-pixel undo-group]
+  ([{:keys [modifiers force-ignore-ids undo-transation? stack-undo? ignore-constraints ignore-snap-pixel undo-group]
      :or {undo-transation? true stack-undo? false ignore-constraints false ignore-snap-pixel false}}]
    (ptk/reify ::apply-modifiers
      ptk/WatchEvent
@@ -484,7 +484,11 @@
              ignore-tree
              (calculate-ignore-tree object-modifiers objects)
 
+             ignore-tree (reduce #(assoc %1 %2 true) ignore-tree force-ignore-ids)
+
              undo-id     (js/Symbol)]
+
+         (js/console.log "apply-modifiers" (clj->js object-modifiers))
 
          (rx/concat
           (if undo-transation?
@@ -508,6 +512,7 @@
                   {:reg-objects? true
                    :stack-undo? stack-undo?
                    :ignore-tree ignore-tree
+                ;; :ignore-touched true
                    :undo-group undo-group
                    ;; Attributes that can change in the transform. This way we don't have to check
                    ;; all the attributes
