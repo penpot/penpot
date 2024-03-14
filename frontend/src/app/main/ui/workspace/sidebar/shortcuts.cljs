@@ -171,15 +171,15 @@
   ;;   shortcuts.toggle-assets
   ;;   shortcuts.toggle-colorpalette
   ;;   shortcuts.toggle-focus-mode
-  ;;   shortcuts.toggle-grid
+  ;;   shortcuts.toggle-guides
   ;;   shortcuts.toggle-history
   ;;   shortcuts.toggle-layers
   ;;   shortcuts.toggle-lock
   ;;   shortcuts.toggle-lock-size
   ;;   shortcuts.toggle-rules
   ;;   shortcuts.scale
-  ;;   shortcuts.toggle-snap-grid
-  ;;   shortcuts.toggle-snap-guide
+  ;;   shortcuts.toggle-snap-guides
+  ;;   shortcuts.toggle-snap-ruler-guide
   ;;   shortcuts.toggle-textpalette
   ;;   shortcuts.toggle-visibility
   ;;   shortcuts.toggle-zoom-style

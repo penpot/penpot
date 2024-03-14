@@ -2535,24 +2535,12 @@ msgid "workspace.header.menu.disable-scale-text"
 msgstr "إبطال المقياس النسبي"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.disable-snap-grid"
-msgstr "إبطال الفرقعة للتشبيك"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-dynamic-alignment"
 msgstr "تككين المحاذاة الدينماكية"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-scale-text"
 msgstr "تمكين نص المقياس"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.enable-snap-grid"
-msgstr "الفرقعة للتشبيك"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-grid"
-msgstr "إخفاء التشبيك"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -2565,10 +2553,6 @@ msgstr "إخفاء المسطرات"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.select-all"
 msgstr "حدد الجميع"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-grid"
-msgstr "أظهر التشبيك"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"
@@ -3742,9 +3726,6 @@ msgstr "أصل الرسومات"
 msgid "workspace.options.layout.packed"
 msgstr "معباة"
 
-msgid "shortcuts.toggle-snap-guide"
-msgstr "تبديل الفرقعة للمرشد"
-
 msgid "workspace.header.menu.enable-snap-pixel-grid"
 msgstr "تمكين الفرقعة للبكسل"
 
@@ -4197,9 +4178,6 @@ msgstr "أقصى ارتفاع"
 
 msgid "workspace.shape.menu.restore-main"
 msgstr "استعادة العنصر الرئيسي"
-
-msgid "shortcuts.toggle-snap-grid"
-msgstr "تبديل الفرقعة للتشبيك"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.blend-mode.saturation"

@@ -2451,9 +2451,6 @@ msgstr "Przełącz tryb skupienia"
 msgid "shortcuts.toggle-fullscreen"
 msgstr "Przełącz tryb pełnoekranowy"
 
-msgid "shortcuts.toggle-grid"
-msgstr "Pokaż/ukryj siatkę"
-
 msgid "shortcuts.toggle-history"
 msgstr "Przełącz historię"
 
@@ -2471,12 +2468,6 @@ msgstr "Zablokuj proporcje"
 
 msgid "shortcuts.toggle-rules"
 msgstr "Pokaż/ukryj linijki"
-
-msgid "shortcuts.toggle-snap-grid"
-msgstr "Przyciągaj do siatki"
-
-msgid "shortcuts.toggle-snap-guide"
-msgstr "Przyciągaj do prowadnic"
 
 msgid "shortcuts.toggle-textpalette"
 msgstr "Przełącz paletę tekstu"
@@ -2806,10 +2797,6 @@ msgid "workspace.header.menu.disable-scale-text"
 msgstr "Wyłącz skalowanie tekstu"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.disable-snap-grid"
-msgstr "Wyłącz przyciąganie do siatki"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-snap-guides"
 msgstr "Wyłącz przyciąganie do prowadnic"
 
@@ -2825,10 +2812,6 @@ msgid "workspace.header.menu.enable-scale-text"
 msgstr "Włącz skalowanie tekstu"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.enable-snap-grid"
-msgstr "Przyciągaj do siatki"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-snap-guides"
 msgstr "Przyciągaj do prowadnic"
 
@@ -2838,10 +2821,6 @@ msgstr "Włącz przyciąganie do piksela"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-artboard-names"
 msgstr "Ukryj nazwy obszarów kompozycji"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-grid"
-msgstr "Ukryj siatki"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -2885,10 +2864,6 @@ msgstr "Zaznacz wszystko"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-artboard-names"
 msgstr "Pokaz nazwy obszarów kompozycji"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-grid"
-msgstr "Pokaż siatkę"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"

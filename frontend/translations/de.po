@@ -2777,9 +2777,6 @@ msgstr "Fokusmodus umschalten"
 msgid "shortcuts.toggle-fullscreen"
 msgstr "Vollbild aktivieren/deaktivieren"
 
-msgid "shortcuts.toggle-grid"
-msgstr "Raster ein-/ausblenden"
-
 msgid "shortcuts.toggle-history"
 msgstr "Verlauf ein-/ausblenden"
 
@@ -2797,12 +2794,6 @@ msgstr "Seitenverhältnis sperren/entsperren"
 
 msgid "shortcuts.toggle-rules"
 msgstr "Lineale ein-/ausblenden"
-
-msgid "shortcuts.toggle-snap-grid"
-msgstr "Am Raster ausrichten"
-
-msgid "shortcuts.toggle-snap-guide"
-msgstr "An Hilfslinien ausrichten"
 
 msgid "shortcuts.toggle-textpalette"
 msgstr "Textpalette ein-/ausblenden"
@@ -3174,10 +3165,6 @@ msgid "workspace.header.menu.disable-scale-text"
 msgstr "Textskalierung deaktivieren"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.disable-snap-grid"
-msgstr "Am Raster ausrichten deaktivieren"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-snap-guides"
 msgstr "Ausrichten an Hilfslinien deaktivieren"
 
@@ -3196,10 +3183,6 @@ msgid "workspace.header.menu.enable-scale-text"
 msgstr "Textskalierung aktivieren"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.enable-snap-grid"
-msgstr "Am Raster ausrichten"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-snap-guides"
 msgstr "An Hilfslinien ausrichten"
 
@@ -3209,10 +3192,6 @@ msgstr "Ausrichten am Pixel aktivieren"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-artboard-names"
 msgstr "Namen von Zeichenflächen ausblenden"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-grid"
-msgstr "Raster ausblenden"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -3259,10 +3238,6 @@ msgstr "Alles auswählen"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-artboard-names"
 msgstr "Namen der Zeichenflächen anzeigen"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-grid"
-msgstr "Raster einblenden"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"

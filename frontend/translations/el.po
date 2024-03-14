@@ -1349,20 +1349,8 @@ msgid "workspace.header.menu.disable-dynamic-alignment"
 msgstr "Απενεργοποίηση δυναμικής ευθυγράμμισης"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.disable-snap-grid"
-msgstr "Απενεργοποιήστε τη σύνδεση στο πλέγμα"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-dynamic-alignment"
 msgstr "Ενεργοποίηση δυναμικής ευθυγράμμισης"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.enable-snap-grid"
-msgstr "Σύνδεση στο πλέγμα"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-grid"
-msgstr "Απόκρυψη πλεγμάτων"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -1375,10 +1363,6 @@ msgstr "Απόκρυψη κανόνες"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.select-all"
 msgstr "Επιλογή όλων"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-grid"
-msgstr "Εμφάνιση πλέγματος"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"

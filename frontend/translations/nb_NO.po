@@ -603,14 +603,6 @@ msgid "workspace.assets.typography.font-variant-id"
 msgstr "Variant"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.enable-snap-grid"
-msgstr "Fest til rutenett"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-grid"
-msgstr "Vis rutenett"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-rules"
 msgstr "Vis regler"
 
