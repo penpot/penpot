@@ -27,6 +27,7 @@
    [app.main.data.modal :as md]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.collapse :as dwc]
+   [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.libraries-helpers :as dwlh]
    [app.main.data.workspace.specialized-panel :as-alias dwsp]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -63,14 +64,8 @@
   (ptk/reify ::handle-area-selection
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [zoom   (dm/get-in state [:workspace-local :zoom] 1)
-            stopper (rx/merge
-                     (->> stream
-                          (rx/filter mse/mouse-event?)
-                          (rx/filter mse/mouse-up-event?))
-                     (->> stream
-                          (rx/filter interrupt?)))
-
+      (let [zoom          (dm/get-in state [:workspace-local :zoom] 1)
+            stopper       (mse/drag-stopper stream)
             init-position @ms/mouse-position
 
             init-selrect  (grc/make-rect
@@ -155,7 +150,7 @@
              objects (wsh/lookup-page-objects state page-id)]
          (rx/of
           (dwc/expand-all-parents [id] objects)
-          :interrupt
+          (dwe/clear-edition-mode)
           ::dwsp/interrupt))))))
 
 (defn select-prev-shape
