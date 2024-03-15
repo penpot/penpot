@@ -41,6 +41,7 @@
   (let [edition     (mf/deref refs/selected-edition)
         selected    (mf/deref refs/selected-objects)
         drawing     (mf/deref refs/workspace-drawing)
+        rulers?     (mf/deref refs/rulers?)
         drawing-obj (:object drawing)
         shape       (or drawing-obj (-> selected first))
 
@@ -69,7 +70,7 @@
        [:& view-only-actions]
 
        path-edition?
-       [:div {:class (stl/css :viewport-actions)}
+       [:div {:class (stl/css-case :viewport-actions true :viewport-actions-no-rulers (not rulers?))}
         [:& path-actions {:shape shape}]]
 
        grid-edition?

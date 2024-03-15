@@ -11,7 +11,8 @@
   pointer-events: initial;
   position: absolute;
   top: $s-12;
-  left: calc(50% - 240px);
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
   height: $s-56;
