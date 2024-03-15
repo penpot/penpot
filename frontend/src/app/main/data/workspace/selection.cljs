@@ -434,7 +434,9 @@
         moved-component   (gsh/move component-root delta)
         pos               (gpt/point (:x moved-component) (:y moved-component))
         origin-frame      (get-in page [:objects frame-id])
-        delta             (gpt/subtract delta (-> origin-frame :selrect gpt/point))
+        delta             (cond-> delta
+                            (some? origin-frame)
+                            (gpt/subtract (-> origin-frame :selrect gpt/point)))
 
         instantiate-component
         #(dwlh/generate-instantiate-component changes
