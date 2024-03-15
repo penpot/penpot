@@ -353,13 +353,14 @@
    (ptk/reify ::create-artboard-from-selection
      ptk/WatchEvent
      (watch [it state _]
-       (let [page-id  (:current-page-id state)
-             objects  (wsh/lookup-page-objects state page-id)
-             selected (wsh/lookup-selected state)
-             selected (cfh/clean-loops objects selected)
+       (let [page-id      (:current-page-id state)
+             objects      (wsh/lookup-page-objects state page-id)
+             selected     (->> (wsh/lookup-selected state)
+                               (cfh/clean-loops objects)
+                               (remove #(ctn/has-any-copy-parent? objects (get objects %))))
 
-             changes  (-> (pcb/empty-changes it page-id)
-                          (pcb/with-objects objects))
+             changes      (-> (pcb/empty-changes it page-id)
+                              (pcb/with-objects objects))
 
              [frame-shape changes]
              (cfsh/prepare-create-artboard-from-selection changes
