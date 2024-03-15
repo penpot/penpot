@@ -1092,7 +1092,12 @@
               (let [shapes (cfh/get-children-with-self (:objects component)
                                                        (:id component))
 
-                    root-shape (first shapes)
+                    ;; Let's calculate the top shame name from the components path and name
+                    root-shape (-> (first shapes)
+                                   (assoc :name (cfh/merge-path-item (:path component) (:name component))))
+
+                    shapes (assoc shapes 0 root-shape)
+
                     orig-pos   (gpt/point (:x root-shape) (:y root-shape))
                     delta      (gpt/subtract position orig-pos)
 
