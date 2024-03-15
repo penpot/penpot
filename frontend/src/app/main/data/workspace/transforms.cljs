@@ -905,6 +905,11 @@
             moving-shapes-ids
             (map :id moving-shapes)
 
+            moving-shapes-children-ids
+            (->> moving-shapes
+                 (mapcat #(cfh/get-children-with-self objects (:id %)))
+                 (map :id))
+
             changes
             (-> (pcb/empty-changes it page-id)
                 (pcb/with-objects objects)
@@ -913,7 +918,7 @@
                   (pcb/update-shapes moving-shapes-ids ctl/remove-layout-item-data))
                 ;; Remove component-root property when moving a shape inside a component
                 (cond-> (ctn/get-instance-root objects frame)
-                  (pcb/update-shapes moving-shapes-ids #(dissoc % :component-root)))
+                  (pcb/update-shapes moving-shapes-children-ids #(dissoc % :component-root)))
                 ;; Add component-root property when moving a component outside a component
                 (cond-> (not (ctn/get-instance-root objects frame))
                   (pcb/update-shapes moving-shapes-ids (fn [shape]
