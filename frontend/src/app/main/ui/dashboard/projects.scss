@@ -44,6 +44,11 @@
   --actions-opacity: 1;
 }
 
+.projects-container {
+  display: grid;
+  grid-auto-rows: min-content;
+}
+
 .project {
   display: flex;
   flex-direction: row;

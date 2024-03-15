@@ -21,7 +21,7 @@
 
 .dashboard-content {
   display: grid;
-  grid-template-rows: $s-64 auto auto 1fr;
+  grid-template-rows: $s-64 1fr;
   position: relative;
   grid-row: 1 / span 2;
   padding: $s-16 $s-16 0 0;

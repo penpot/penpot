@@ -417,31 +417,32 @@
     (when (seq projects)
       [:*
        [:& header]
+       [:div {:class (stl/css :projects-container)}
+        [:*
+         (when team-hero?
+           [:& team-hero {:team team :close-fn close-banner}])
 
-       (when team-hero?
-         [:& team-hero {:team team :close-fn close-banner}])
+         (when (and (contains? cf/flags :dashboard-templates-section)
+                    (or (not tutorial-viewed?)
+                        (not walkthrough-viewed?)))
+           [:div {:class (stl/css :hero-projects)}
+            (when (and (not tutorial-viewed?) (:is-default team))
+              [:& tutorial-project
+               {:close-tutorial close-tutorial
+                :default-project-id default-project-id}])
 
-       (when (and (contains? cf/flags :dashboard-templates-section)
-                  (or (not tutorial-viewed?)
-                      (not walkthrough-viewed?)))
-         [:div {:class (stl/css :hero-projects)}
-          (when (and (not tutorial-viewed?) (:is-default team))
-            [:& tutorial-project
-             {:close-tutorial close-tutorial
-              :default-project-id default-project-id}])
+            (when (and (not walkthrough-viewed?) (:is-default team))
+              [:& interface-walkthrough
+               {:close-walkthrough close-walkthrough}])])
 
-          (when (and (not walkthrough-viewed?) (:is-default team))
-            [:& interface-walkthrough
-             {:close-walkthrough close-walkthrough}])])
-
-       [:div {:class (stl/css :dashboard-container :no-bg :dashboard-projects)}
-        (for [{:keys [id] :as project} projects]
-          (let [files (when recent-map
-                        (->> (vals recent-map)
-                             (filterv #(= id (:project-id %)))
-                             (sort-by :modified-at #(compare %2 %1))))]
-            [:& project-item {:project project
-                              :team team
-                              :files files
-                              :first? (= project (first projects))
-                              :key id}]))]])))
+         [:div {:class (stl/css :dashboard-container :no-bg :dashboard-projects)}
+          (for [{:keys [id] :as project} projects]
+            (let [files (when recent-map
+                          (->> (vals recent-map)
+                               (filterv #(= id (:project-id %)))
+                               (sort-by :modified-at #(compare %2 %1))))]
+              [:& project-item {:project project
+                                :team team
+                                :files files
+                                :first? (= project (first projects))
+                                :key id}]))]]]])))
