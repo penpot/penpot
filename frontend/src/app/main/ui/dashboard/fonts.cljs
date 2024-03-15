@@ -161,7 +161,7 @@
         (mf/use-fn
          (mf/deps fonts)
          (fn [_]
-           (run! on-delete (vals fonts))))]
+           (run! #(swap! fonts* dissoc (:id %)) (vals fonts))))]
 
     [:div {:class (stl/css :dashboard-fonts-upload)}
      [:div {:class (stl/css :dashboard-fonts-hero)}
