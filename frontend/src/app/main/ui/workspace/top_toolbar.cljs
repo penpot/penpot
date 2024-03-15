@@ -119,7 +119,7 @@
 
     (when-not ^boolean read-only?
       [:aside {:class (stl/css-case :main-toolbar true
-                                    :not-rulers-present (not rulers?)
+                                    :main-toolbar-no-rulers (not rulers?)
                                     :main-toolbar-hidden hide-toolbar?)}
        [:ul {:class (stl/css :main-toolbar-options)}
         [:li
