@@ -33,7 +33,8 @@
        [:& i18n/tr-html {:tag-name "span"
                          :label "workspace.top-bar.view-only"}]]
       [:button {:class (stl/css :done-btn)
-                :on-click handle-close-view-mode} (tr "workspace.top-bar.read-only.done")]]]))
+                :on-click handle-close-view-mode}
+       (tr "workspace.top-bar.read-only.done")]]]))
 
 (mf/defc top-bar
   {::mf/wrap [mf/memo]}
@@ -70,7 +71,7 @@
        [:& view-only-actions]
 
        path-edition?
-       [:div {:class (stl/css-case :viewport-actions true :viewport-actions-no-rulers (not rulers?))}
+       [:div {:class (stl/css-case :viewport-actions-path true :viewport-actions-no-rulers (not rulers?))}
         [:& path-actions {:shape shape}]]
 
        grid-edition?
