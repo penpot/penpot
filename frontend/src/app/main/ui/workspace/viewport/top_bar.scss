@@ -9,7 +9,10 @@
 .viewport-actions {
   pointer-events: none;
   position: absolute;
-  top: $s-44;
+  --actions-toolbar-position-y: #{$s-28};
+  --actions-toolbar-offset-y: #{$s-6};
+
+  top: calc(var(--actions-toolbar-position-y) + var(--actions-toolbar-offset-y));
   left: 50%;
   z-index: $z-index-20;
 
@@ -46,4 +49,8 @@
       @extend .button-icon;
     }
   }
+}
+
+.viewport-actions-no-rulers {
+  --actions-toolbar-position-y: 0px;
 }
