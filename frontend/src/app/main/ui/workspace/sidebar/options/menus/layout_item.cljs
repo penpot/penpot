@@ -80,7 +80,7 @@
      [:div {:class (stl/css :vertical-margin)
             :title "Vertical margin"}
       [:span {:class (stl/css :icon)}
-       i/margin-top-bottom-refactor]
+       i/margin-top-bottom]
       [:> numeric-input* {:class (stl/css :numeric-input)
                           :placeholder "--"
                           :data-name "m1"
@@ -93,7 +93,7 @@
      [:div {:class (stl/css :horizontal-margin)
             :title "Horizontal margin"}
       [:span {:class (stl/css :icon)}
-       i/margin-left-right-refactor]
+       i/margin-left-right]
       [:> numeric-input* {:class (stl/css :numeric-input)
                           :placeholder "--"
                           :data-name "m2"
@@ -133,7 +133,7 @@
      [:div {:class (stl/css :top-margin)
             :title "Top margin"}
       [:span {:class (stl/css :icon)}
-       i/margin-top-refactor]
+       i/margin-top]
       [:> numeric-input* {:class (stl/css :numeric-input)
                           :placeholder "--"
                           :data-name "m1"
@@ -145,7 +145,7 @@
      [:div {:class (stl/css :right-margin)
             :title "Right margin"}
       [:span {:class (stl/css :icon)}
-       i/margin-right-refactor]
+       i/margin-right]
       [:> numeric-input* {:class (stl/css :numeric-input)
                           :placeholder "--"
                           :data-name "m2"
@@ -158,7 +158,7 @@
      [:div {:class (stl/css :bottom-margin)
             :title "Bottom margin"}
       [:span {:class (stl/css :icon)}
-       i/margin-bottom-refactor]
+       i/margin-bottom]
       [:> numeric-input* {:class (stl/css :numeric-input)
                           :placeholder "--"
                           :data-name "m3"
@@ -171,7 +171,7 @@
      [:div {:class (stl/css :left-margin)
             :title "Left margin"}
       [:span {:class (stl/css :icon)}
-       i/margin-left-refactor]
+       i/margin-left]
       [:> numeric-input* {:class (stl/css :numeric-input)
                           :placeholder "--"
                           :data-name "m4"
@@ -216,7 +216,7 @@
                        :selected (= type :multiple))
                :title "Margin - multiple"
                :on-click on-type-change'}
-      i/margin-refactor]]))
+      i/margin]]))
 
 (mf/defc element-behaviour-horizontal
   {::mf/props :obj
@@ -236,20 +236,20 @@
 
     [:& radio-button
      {:value "fix"
-      :icon  i/fixed-width-refactor
+      :icon  i/fixed-width
       :title "Fix width"
       :id    "behaviour-h-fix"}]
 
     (when has-fill
       [:& radio-button
        {:value "fill"
-        :icon  i/fill-content-refactor
+        :icon  i/fill-content
         :title "Width 100%"
         :id    "behaviour-h-fill"}])
     (when is-auto
       [:& radio-button
        {:value "auto"
-        :icon  i/hug-content-refactor
+        :icon  i/hug-content
         :title "Fit content"
         :id    "behaviour-h-auto"}])]])
 
@@ -271,7 +271,7 @@
 
     [:& radio-button
      {:value      "fix"
-      :icon       i/fixed-width-refactor
+      :icon       i/fixed-width
       :icon-class (stl/css :rotated)
       :title      "Fix height"
       :id         "behaviour-v-fix"}]
@@ -279,14 +279,14 @@
     (when has-fill
       [:& radio-button
        {:value      "fill"
-        :icon       i/fill-content-refactor
+        :icon       i/fill-content
         :icon-class (stl/css :rotated)
         :title      "Height 100%"
         :id         "behaviour-v-fill"}])
     (when is-auto
       [:& radio-button
        {:value      "auto"
-        :icon       i/hug-content-refactor
+        :icon       i/hug-content
         :icon-class (stl/css :rotated)
         :title      "Fit content"
         :id         "behaviour-v-auto"}])]])

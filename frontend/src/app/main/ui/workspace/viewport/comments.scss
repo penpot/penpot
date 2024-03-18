@@ -15,10 +15,13 @@
   pointer-events: none;
   overflow: hidden;
   user-select: text;
+  position: absolute;
 }
 
 .threads {
   position: absolute;
-  top: $s-0;
-  left: $s-0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }

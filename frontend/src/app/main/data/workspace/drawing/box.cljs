@@ -78,13 +78,7 @@
   (ptk/reify ::handle-drawing
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [stopper       (rx/merge
-                           (->> stream
-                                (rx/filter mse/mouse-event?)
-                                (rx/filter mse/mouse-up-event?))
-                           (->> stream
-                                (rx/filter #(= % :interrupt))))
-
+      (let [stopper      (mse/drag-stopper stream)
             layout       (get state :workspace-layout)
             zoom         (dm/get-in state [:workspace-local :zoom] 1)
 

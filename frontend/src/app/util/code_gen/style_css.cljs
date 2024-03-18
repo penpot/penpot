@@ -35,8 +35,8 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2rem;
-  gap: 2rem;
+  width: 100vw;
+  min-height: 100vh;
 }
 
 * {
@@ -94,6 +94,7 @@ body {
    :flex-direction
    :flex-wrap
    :flex
+   :flex-grow
 
    ;; Grid related properties
    :grid-template-rows
@@ -117,8 +118,8 @@ body {
    :grid-area])
 
 (defn shape->css-property
-  [shape objects property]
-  (when-let [value (get-value property shape objects)]
+  [shape objects property options]
+  (when-let [value (get-value property shape objects options)]
     [property value]))
 
 (defn shape->wrapper-css-properties
@@ -155,10 +156,10 @@ body {
 
 (defn shape->css-properties
   "Given a shape extract the CSS properties in the format of list [property value]"
-  [shape objects properties]
+  [shape objects properties options]
   (->> properties
        (keep (fn [property]
-               (when-let [value (get-value property shape objects)]
+               (when-let [value (get-value property shape objects options)]
                  [property value])))))
 
 (defn format-css-value
@@ -189,7 +190,7 @@ body {
 
   ([objects shape properties options]
    (-> shape
-       (shape->css-properties objects properties)
+       (shape->css-properties objects properties options)
        (format-css-properties options))))
 
 (defn format-js-styles
@@ -248,13 +249,13 @@ body {
 
            properties
            (-> shape
-               (shape->css-properties objects css-properties)
+               (shape->css-properties objects css-properties options)
                (format-css-properties options))
 
            wrapper-properties
            (when wrapper?
              (-> (d/concat-vec
-                  (shape->css-properties shape objects shape-wrapper-css-properties)
+                  (shape->css-properties shape objects shape-wrapper-css-properties options)
                   (shape->wrapper-css-properties shape objects))
                  (format-css-properties options)))
 
@@ -285,7 +286,7 @@ body {
 
   ([objects shape property options]
    (-> shape
-       (shape->css-property objects property)
+       (shape->css-property objects property options)
        (format-css-property options))))
 
 (defn get-css-value
@@ -293,18 +294,19 @@ body {
    (get-css-value objects shape property nil))
 
   ([objects shape property options]
-   (when-let [prop (shape->css-property shape objects property)]
+   (when-let [prop (shape->css-property shape objects property options)]
      (format-css-value prop options))))
 
 (defn generate-style
-  ([objects shapes]
-   (generate-style objects shapes nil))
-  ([objects shapes options]
-   (dm/str
-    prelude
-    (->> shapes
-         (keep #(get-shape-css-selector % objects options))
-         (str/join "\n\n")))))
+  ([objects root-shapes all-shapes]
+   (generate-style objects root-shapes all-shapes nil))
+  ([objects root-shapes all-shapes options]
+   (let [options (assoc options :root-shapes (into #{} (map :id) root-shapes))]
+     (dm/str
+      prelude
+      (->> all-shapes
+           (keep #(get-shape-css-selector % objects options))
+           (str/join "\n\n"))))))
 
 (defn shadow->css
   [shadow]

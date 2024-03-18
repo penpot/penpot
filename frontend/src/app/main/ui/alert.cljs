@@ -54,7 +54,7 @@
       [:div {:class (stl/css :modal-header)}
        [:h2 {:class (stl/css :modal-title)} title]
        [:button {:class (stl/css :modal-close-btn)
-                 :on-click accept-fn} i/close-refactor]]
+                 :on-click accept-fn} i/close]]
 
       [:div {:class (stl/css :modal-content)}
        (when (and (string? message) (not= message ""))

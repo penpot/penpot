@@ -124,11 +124,11 @@
 
         style-code
         (mf/use-memo
-         (mf/deps fontfaces-css style-type all-children cg/generate-style-code)
+         (mf/deps fontfaces-css style-type shapes all-children cg/generate-style-code)
          (fn []
            (dm/str
             fontfaces-css "\n"
-            (-> (cg/generate-style-code objects style-type all-children)
+            (-> (cg/generate-style-code objects style-type shapes all-children)
                 (cb/format-code style-type)))))
 
         markup-code
@@ -256,7 +256,7 @@
         [:span {:class (stl/css-case
                         :collapsabled-icon true
                         :rotated collapsed-css?)}
-         i/arrow-refactor]]
+         i/arrow]]
 
        [:div {:class (stl/css :code-lang-option)}
         "CSS"]
@@ -269,7 +269,7 @@
        [:div {:class (stl/css :action-btns)}
         [:button {:class (stl/css :expand-button)
                   :on-click on-expand}
-         i/code-refactor]
+         i/code]
 
         [:& copy-button {:data copy-css-fn
                          :class (stl/css :css-copy-btn)
@@ -295,7 +295,7 @@
         [:span {:class (stl/css-case
                         :collapsabled-icon true
                         :rotated collapsed-markup?)}
-         i/arrow-refactor]]
+         i/arrow]]
 
        [:& radio-buttons {:selected markup-type
                           :on-change set-markup
@@ -310,7 +310,7 @@
        [:div {:class (stl/css :action-btns)}
         [:button {:class (stl/css :expand-button)
                   :on-click on-expand}
-         i/code-refactor]
+         i/code]
 
         [:& copy-button {:data copy-html-fn
                          :class (stl/css :html-copy-btn)

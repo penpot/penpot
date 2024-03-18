@@ -1973,9 +1973,6 @@ msgstr "Переключить палитру цветов"
 msgid "shortcuts.toggle-focus-mode"
 msgstr "Переключить режим фокуса"
 
-msgid "shortcuts.toggle-grid"
-msgstr "Показать/скрыть сетку"
-
 msgid "shortcuts.toggle-history"
 msgstr "Переключить историю"
 
@@ -2252,24 +2249,12 @@ msgid "workspace.header.menu.disable-dynamic-alignment"
 msgstr "Отключить активное выравнивание"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.disable-snap-grid"
-msgstr "Отключить привязку к сетке"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-dynamic-alignment"
 msgstr "Включить активное выравнивание"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.enable-snap-grid"
-msgstr "Привяка к сетке"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-artboard-names"
 msgstr "Скрыть имена кадров"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-grid"
-msgstr "Скрыть сетки"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -2301,10 +2286,6 @@ msgstr ""
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-artboard-names"
 msgstr "Показать имена кадров"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-grid"
-msgstr "Показать сетку"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"

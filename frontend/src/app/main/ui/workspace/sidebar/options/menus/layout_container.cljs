@@ -36,10 +36,10 @@
 (defn- dir-icons-refactor
   [val]
   (case val
-    :row            i/grid-row-refactor
-    :row-reverse    i/row-reverse-refactor
-    :column         i/column-refactor
-    :column-reverse i/column-reverse-refactor))
+    :row            i/grid-row
+    :row-reverse    i/row-reverse
+    :column         i/column
+    :column-reverse i/column-reverse))
 
 ;; FLEX COMPONENTS
 
@@ -67,71 +67,63 @@
     :align-items
     (if column?
       (case val
-        :start    i/align-items-column-start-refactor
-        :end      i/align-items-column-end-refactor
-        :center   i/align-items-column-center-refactor
-        :stretch  i/align-items-column-strech
-        :baseline i/align-items-column-baseline)
-      (case val ;; TODO Check strech and baseline icons
-        :start    i/align-items-row-start-refactor
-        :end      i/align-items-row-end-refactor
-        :center   i/align-items-row-center-refactor
-        :stretch  i/align-items-row-strech
-        :baseline i/align-items-row-baseline))
+        :start    i/align-items-column-start
+        :end      i/align-items-column-end
+        :center   i/align-items-column-center)
+      (case val
+        :start    i/align-items-row-start
+        :end      i/align-items-row-end
+        :center   i/align-items-row-center))
 
     :justify-content
     (if column?
       (case val
-        :start         i/justify-content-column-start-refactor
-        :end           i/justify-content-column-end-refactor
-        :center        i/justify-content-column-center-refactor
-        :space-around  i/justify-content-column-around-refactor
-        :space-evenly  i/justify-content-column-evenly-refactor
-        :space-between i/justify-content-column-between-refactor)
+        :start         i/justify-content-column-start
+        :end           i/justify-content-column-end
+        :center        i/justify-content-column-center
+        :space-around  i/justify-content-column-around
+        :space-evenly  i/justify-content-column-evenly
+        :space-between i/justify-content-column-between)
       (case val
-        :start         i/justify-content-row-start-refactor
-        :end           i/justify-content-row-end-refactor
-        :center        i/justify-content-row-center-refactor
-        :space-around  i/justify-content-row-around-refactor
-        :space-evenly  i/justify-content-row-evenly-refactor
-        :space-between i/justify-content-row-between-refactor))
+        :start         i/justify-content-row-start
+        :end           i/justify-content-row-end
+        :center        i/justify-content-row-center
+        :space-around  i/justify-content-row-around
+        :space-evenly  i/justify-content-row-evenly
+        :space-between i/justify-content-row-between))
 
     :align-content
     (if column?
       (case val
-        :start         i/align-content-column-start-refactor
-        :end           i/align-content-column-end-refactor
-        :center        i/align-content-column-center-refactor
-        :space-around  i/align-content-column-around-refactor
-        :space-evenly  i/align-content-column-evenly-refactor
-        :space-between i/align-content-column-between-refactor
+        :start         i/align-content-column-start
+        :end           i/align-content-column-end
+        :center        i/align-content-column-center
+        :space-around  i/align-content-column-around
+        :space-evenly  i/align-content-column-evenly
+        :space-between i/align-content-column-between
         :stretch nil)
 
       (case val
-        :start         i/align-content-row-start-refactor
-        :end           i/align-content-row-end-refactor
-        :center        i/align-content-row-center-refactor
-        :space-around  i/align-content-row-around-refactor
-        :space-evenly  i/align-content-row-evenly-refactor
-        :space-between i/align-content-row-between-refactor
+        :start         i/align-content-row-start
+        :end           i/align-content-row-end
+        :center        i/align-content-row-center
+        :space-around  i/align-content-row-around
+        :space-evenly  i/align-content-row-evenly
+        :space-between i/align-content-row-between
         :stretch nil))
 
     :align-self
     (if column?
       (case val
-        :auto     i/remove-refactor
-        :start    i/align-self-row-left-refactor
-        :end      i/align-self-row-right-refactor
-        :center   i/align-self-row-center-refactor
-        :stretch  i/align-self-row-strech
-        :baseline i/align-self-row-baseline)
+        :auto     i/remove-icon
+        :start    i/align-self-row-left
+        :end      i/align-self-row-right
+        :center   i/align-self-row-center)
       (case val
-        :auto     i/remove-refactor
-        :start    i/align-self-column-top-refactor
-        :end      i/align-self-column-bottom-refactor
-        :center   i/align-self-column-center-refactor
-        :stretch  i/align-self-column-strech
-        :baseline i/align-self-column-baseline))))
+        :auto     i/remove-icon
+        :start    i/align-self-column-top
+        :end      i/align-self-column-bottom
+        :center   i/align-self-column-center))))
 
 (defn get-layout-grid-icon
   [type val ^boolean column?]
@@ -139,36 +131,32 @@
     :align-items
     (if column?
       (case val
-        :auto     i/remove-refactor
-        :start    i/align-self-row-left-refactor
-        :end      i/align-self-row-right-refactor
-        :center   i/align-self-row-center-refactor
-        :stretch  i/align-self-row-strech
-        :baseline i/align-self-row-baseline)
+        :auto     i/remove-icon
+        :start    i/align-self-row-left
+        :end      i/align-self-row-right
+        :center   i/align-self-row-center)
       (case val
-        :auto     i/remove-refactor
-        :start    i/align-self-column-top-refactor
-        :end      i/align-self-column-bottom-refactor
-        :center   i/align-self-column-center-refactor
-        :stretch  i/align-self-column-strech
-        :baseline i/align-self-column-baseline))
+        :auto     i/remove-icon
+        :start    i/align-self-column-top
+        :end      i/align-self-column-bottom
+        :center   i/align-self-column-center))
 
     :justify-items
     (if (not column?)
       (case val
-        :start         i/align-content-column-start-refactor
-        :center        i/align-content-column-center-refactor
-        :end           i/align-content-column-end-refactor
-        :space-around  i/align-content-column-around-refactor
-        :space-between i/align-content-column-between-refactor
-        :stretch       i/align-content-column-stretch-refactor)
+        :start         i/align-content-column-start
+        :center        i/align-content-column-center
+        :end           i/align-content-column-end
+        :space-around  i/align-content-column-around
+        :space-between i/align-content-column-between
+        :stretch       i/align-content-column-stretch)
       (case val
-        :start         i/align-content-row-start-refactor
-        :center        i/align-content-row-center-refactor
-        :end           i/align-content-row-end-refactor
-        :space-around  i/align-content-row-around-refactor
-        :space-between i/align-content-row-between-refactor
-        :stretch       i/align-content-row-stretch-refactor))))
+        :start         i/align-content-row-start
+        :center        i/align-content-row-center
+        :end           i/align-content-row-end
+        :space-around  i/align-content-row-around
+        :space-between i/align-content-row-between
+        :stretch       i/align-content-row-stretch))))
 
 (mf/defc direction-row-flex
   {::mf/props :obj
@@ -204,7 +192,7 @@
                      "No wrap"
                      "Wrap")
             :on-click on-click}
-   i/wrap-refactor])
+   i/wrap])
 
 (mf/defc align-row
   {::mf/props :obj}
@@ -347,7 +335,7 @@
      [:div {:class (stl/css :padding-simple)
             :title "Vertical padding"}
       [:span {:class (stl/css :icon)}
-       i/padding-top-bottom-refactor]
+       i/padding-top-bottom]
       [:> numeric-input*
        {:class (stl/css :numeric-input)
         :placeholder "--"
@@ -361,7 +349,7 @@
             :title "Horizontal padding"}
 
       [:span {:class (stl/css :icon)}
-       i/padding-left-right-refactor]
+       i/padding-left-right]
       [:> numeric-input*
        {:className (stl/css :numeric-input)
         :placeholder "--"
@@ -404,7 +392,7 @@
      [:div {:class (stl/css :padding-multiple)
             :title "Top padding"}
       [:span {:class (stl/css :icon)}
-       i/padding-top-refactor]
+       i/padding-top]
       [:> numeric-input*
        {:class (stl/css :numeric-input)
         :placeholder "--"
@@ -419,7 +407,7 @@
      [:div {:class (stl/css :padding-multiple)
             :title "Right padding"}
       [:span {:class (stl/css :icon)}
-       i/padding-right-refactor]
+       i/padding-right]
       [:> numeric-input*
        {:class (stl/css :numeric-input)
         :placeholder "--"
@@ -434,7 +422,7 @@
      [:div {:class (stl/css :padding-multiple)
             :title "Bottom padding"}
       [:span {:class (stl/css :icon)}
-       i/padding-bottom-refactor]
+       i/padding-bottom]
       [:> numeric-input*
        {:class (stl/css :numeric-input)
         :placeholder "--"
@@ -449,7 +437,7 @@
      [:div {:class (stl/css :padding-multiple)
             :title "Left padding"}
       [:span {:class (stl/css :icon)}
-       i/padding-left-refactor]
+       i/padding-left]
       [:> numeric-input*
        {:class (stl/css :numeric-input)
         :placeholder "--"
@@ -492,9 +480,10 @@
      [:button {:class (stl/css-case
                        :padding-toggle true
                        :selected (= type :multiple))
+               :title (tr "workspace.layout_grid.editor.padding.expand")
                :data-type (d/name type)
                :on-click on-type-change'}
-      i/padding-extended-refactor]]))
+      i/padding-extended]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GAP
@@ -551,7 +540,7 @@
                     :row-gap true
                     :disabled row-gap-disabled?)
             :title "Row gap"}
-      [:span {:class (stl/css :icon)} i/gap-vertical-refactor]
+      [:span {:class (stl/css :icon)} i/gap-vertical]
       [:> numeric-input*
        {:class (stl/css :numeric-input true)
         :no-validate true
@@ -570,7 +559,7 @@
                     :column-gap true
                     :disabled col-gap-disabled?)
             :title "Column gap"}
-      [:span {:class (stl/css :icon)} i/gap-horizontal-refactor]
+      [:span {:class (stl/css :icon)} i/gap-horizontal]
       [:> numeric-input*
        {:class (stl/css :numeric-input true)
         :no-validate true
@@ -757,7 +746,7 @@
      [:div {:class (stl/css :track-info-container)}
       [:div {:class (stl/css :track-info-dir-icon)
              :on-click handle-select-track}
-       (if is-column i/flex-vertical-refactor i/flex-horizontal-refactor)]
+       (if is-column i/flex-vertical i/flex-horizontal)]
 
       [:div {:class (stl/css :track-info-value)}
        [:> numeric-input* {:no-validate true
@@ -778,7 +767,7 @@
 
      [:button {:class (stl/css :remove-track-btn)
                :on-click #(remove-element type index)}
-      i/remove-refactor]]))
+      i/remove-icon]]))
 
 (mf/defc grid-columns-row
   {::mf/props :obj}
@@ -801,11 +790,11 @@
 
     [:div {:class (stl/css :grid-tracks)}
      [:div {:class (stl/css :grid-track-header)}
-      [:button {:class (stl/css :expand-icon) :on-click toggle} i/menu-refactor]
+      [:button {:class (stl/css :expand-icon) :on-click toggle} i/menu]
       [:div {:class (stl/css :track-title) :on-click toggle}
        [:div {:class (stl/css :track-name) :title track-name} track-name]
        [:div {:class (stl/css :track-detail) :title track-detail} track-detail]]
-      [:button {:class (stl/css :add-column) :on-click add-track} i/add-refactor]]
+      [:button {:class (stl/css :add-column) :on-click add-track} i/add]]
 
      (when expanded?
        [:& h/sortable-container {}
@@ -1014,7 +1003,7 @@
             [:*
              [:button {:class (stl/css :add-layout)
                        :on-click on-toggle-dropdown-visibility}
-              i/menu-refactor]
+              i/menu]
 
              [:& dropdown {:show show-dropdown?
                            :on-close on-hide-dropdown}
@@ -1031,14 +1020,14 @@
           (when has-layout?
             [:button {:class (stl/css :remove-layout)
                       :on-click on-remove-layout}
-             i/remove-refactor])]
+             i/remove-icon])]
 
          [:div {:class (stl/css :title-actions)}
           (if ^boolean grid-enabled?
             [:*
              [:button {:class (stl/css :add-layout)
                        :on-click on-toggle-dropdown-visibility}
-              i/add-refactor]
+              i/add]
 
              [:& dropdown {:show show-dropdown?
                            :on-close on-hide-dropdown}
@@ -1055,11 +1044,11 @@
             [:button {:class (stl/css :add-layout)
                       :data-type "flex"
                       :on-click on-add-layout}
-             i/add-refactor])
+             i/add])
           (when has-layout?
             [:button {:class (stl/css :remove-layout)
                       :on-click on-remove-layout}
-             i/remove-refactor])])]]
+             i/remove-icon])])]]
 
      (when (and ^boolean open?
                 ^boolean has-layout?
@@ -1085,7 +1074,7 @@
 
            [:button {:on-click open-flex-help
                      :class (stl/css :help-button)}
-            i/help-refactor]]
+            i/help]]
           (when (= :wrap wrap-type)
             [:div {:class (stl/css :third-row)}
              [:& align-content-row {:is-column is-column
@@ -1108,7 +1097,7 @@
             [:div {:class (stl/css :edit-grid-wrapper)}
              [:& grid-edit-mode {:id (first ids)}]
              [:button {:on-click open-grid-help
-                       :class (stl/css :help-button)} i/help-refactor]])
+                       :class (stl/css :help-button)} i/help]])
 
           [:div {:class (stl/css :row :first-row)}
            [:div {:class (stl/css :direction-edit)}
@@ -1285,7 +1274,7 @@
      [:div {:class (stl/css :row)}
       [:div {:class (stl/css :grid-layout-menu-title)} "GRID LAYOUT"]
       [:button {:on-click open-grid-help
-                :class (stl/css :help-button)} i/help-refactor]
+                :class (stl/css :help-button)} i/help]
       [:button {:class (stl/css :exit-btn)
                 :on-click #(st/emit! (udw/clear-edition-mode))}
        (tr "workspace.layout_grid.editor.options.exit")]]
@@ -1315,7 +1304,7 @@
       [:button {:on-click handle-locate-grid
                 :class (stl/css :locate-button)
                 :title (tr "workspace.layout_grid.editor.top-bar.locate.tooltip")}
-       i/locate-refactor]]
+       i/locate]]
 
      [:div {:class (stl/css :row)}
       [:& gap-section {:on-change on-gap-change

@@ -49,19 +49,20 @@
 
         on-error
         (mf/use-callback
-         (fn [data {:keys [code] :as error}]
+         (fn [data cause]
            (reset! submitted false)
-           (case code
-             :profile-not-verified
-             (rx/of (msg/error (tr "auth.notifications.profile-not-verified")))
+           (let [code (-> cause ex-data :code)]
+             (case code
+               :profile-not-verified
+               (rx/of (msg/error (tr "auth.notifications.profile-not-verified")))
 
-             :profile-is-muted
-             (rx/of (msg/error (tr "errors.profile-is-muted")))
+               :profile-is-muted
+               (rx/of (msg/error (tr "errors.profile-is-muted")))
 
-             :email-has-permanent-bounces
-             (rx/of (msg/error (tr "errors.email-has-permanent-bounces" (:email data))))
+               :email-has-permanent-bounces
+               (rx/of (msg/error (tr "errors.email-has-permanent-bounces" (:email data))))
 
-             (rx/throw error))))
+               (rx/throw cause)))))
 
         on-submit
         (mf/use-callback

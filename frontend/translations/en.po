@@ -988,7 +988,7 @@ msgid "errors.webhooks.invalid-uri"
 msgstr "URL does not pass validation."
 
 msgid "errors.webhooks.last-delivery"
-msgstr "Last delivery was not successfull."
+msgstr "Last delivery was not successful."
 
 msgid "errors.webhooks.ssl-validation"
 msgstr "Error on SSL validation."
@@ -2949,8 +2949,8 @@ msgstr "Toggle focus mode"
 msgid "shortcuts.toggle-fullscreen"
 msgstr "Toggle fullscreen"
 
-msgid "shortcuts.toggle-grid"
-msgstr "Show / Hide grid"
+msgid "shortcuts.toggle-guides"
+msgstr "Show / Hide guides"
 
 msgid "shortcuts.toggle-history"
 msgstr "Toggle history"
@@ -2967,17 +2967,17 @@ msgstr "Lock / Unlock"
 msgid "shortcuts.toggle-lock-size"
 msgstr "Lock proportions"
 
-msgid "shortcuts.toggle-rules"
+msgid "shortcuts.toggle-rulers"
 msgstr "Show / Hide rulers"
 
 msgid "shortcuts.scale"
 msgstr "Scale"
 
-msgid "shortcuts.toggle-snap-grid"
-msgstr "Snap to grid"
-
-msgid "shortcuts.toggle-snap-guide"
+msgid "shortcuts.toggle-snap-guides"
 msgstr "Snap to guides"
+
+msgid "shortcuts.toggle-snap-ruler-guide"
+msgstr "Snap to ruler guides"
 
 msgid "shortcuts.toggle-textpalette"
 msgstr "Toggle text palette"
@@ -3144,7 +3144,7 @@ msgid "viewer.header.sitemap"
 msgstr "Sitemap"
 
 msgid "webhooks.last-delivery.success"
-msgstr "Last delivery was successfull."
+msgstr "Last delivery was successful."
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hcenter"
@@ -3340,12 +3340,12 @@ msgid "workspace.header.menu.disable-scale-text"
 msgstr "Disable scale text"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.disable-snap-grid"
-msgstr "Disable snap to grid"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-snap-guides"
 msgstr "Disable snap to guides"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-snap-ruler-guides"
+msgstr "Disable snap to ruler guides"
 
 msgid "workspace.header.menu.disable-snap-pixel-grid"
 msgstr "Disable snap to pixel"
@@ -3362,12 +3362,12 @@ msgid "workspace.header.menu.enable-scale-text"
 msgstr "Enable scale text"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.enable-snap-grid"
-msgstr "Snap to grid"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-snap-guides"
 msgstr "Snap to guides"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-snap-ruler-guides"
+msgstr "Snap to ruler guides"
 
 msgid "workspace.header.menu.enable-snap-pixel-grid"
 msgstr "Enable snap to pixel"
@@ -3377,8 +3377,8 @@ msgid "workspace.header.menu.hide-artboard-names"
 msgstr "Hide board names"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-grid"
-msgstr "Hide grids"
+msgid "workspace.header.menu.hide-guides"
+msgstr "Hide guides"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -3427,8 +3427,8 @@ msgid "workspace.header.menu.show-artboard-names"
 msgstr "Show boards names"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-grid"
-msgstr "Show grid"
+msgid "workspace.header.menu.show-guides"
+msgstr "Show guides"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"
@@ -3519,6 +3519,9 @@ msgstr "Edit grid"
 
 msgid "workspace.layout_grid.editor.options.exit"
 msgstr "Exit"
+
+msgid "workspace.layout_grid.editor.padding.expand"
+msgstr "Show 4 sided padding options"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.add"
@@ -5060,8 +5063,8 @@ msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
 
 #, markdown
-msgid "workspace.top-bar.read-only"
-msgstr "**Inspect mode** (View Only)"
+msgid "workspace.top-bar.view-only"
+msgstr "**Inspecting mode** (View Only)"
 
 msgid "workspace.top-bar.read-only.done"
 msgstr "Done"

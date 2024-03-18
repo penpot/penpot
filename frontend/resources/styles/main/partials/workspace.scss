@@ -68,100 +68,6 @@ $height-palette-max: 80px;
   }
 }
 
-.workspace-context-menu {
-  background-color: $color-white;
-  border-radius: $br3;
-  box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
-  left: 740px;
-  position: absolute;
-  top: 40px;
-  width: 240px;
-  z-index: 12;
-
-  li {
-    align-items: center;
-    font-size: $fs14;
-    padding: $size-1 $size-4;
-    cursor: pointer;
-
-    display: flex;
-    justify-content: space-between;
-
-    &.separator {
-      border-top: 1px solid $color-gray-10;
-      padding: 0px;
-      margin: 2px;
-    }
-
-    span {
-      color: $color-gray-60;
-    }
-
-    span.shortcut {
-      color: $color-gray-20;
-      font-size: $fs12;
-    }
-
-    &:hover {
-      background-color: $color-primary-lighter;
-    }
-
-    .submenu-icon {
-      position: absolute;
-      right: 1rem;
-
-      svg {
-        width: 10px;
-        height: 10px;
-      }
-    }
-  }
-
-  .icon-menu-item {
-    display: flex;
-    justify-content: flex-start;
-
-    &:hover {
-      background-color: $color-primary-lighter;
-    }
-
-    span.title {
-      margin-left: 5px;
-    }
-
-    .selected-icon {
-      svg {
-        width: 10px;
-        height: 10px;
-      }
-    }
-
-    .shape-icon {
-      margin-left: 3px;
-      svg {
-        width: 13px;
-        height: 13px;
-      }
-    }
-
-    .icon-wrapper {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      margin: 0;
-    }
-  }
-}
-
-// .workspace-loader {
-//   display: flex;
-//   justify-content: center;
-//   align-items: center;
-
-//   svg {
-//     fill: $color-gray-50;
-//   }
-// }
-
 .workspace-content {
   background-color: $color-canvas;
   display: flex;
@@ -242,20 +148,22 @@ $height-palette-max: 80px;
 
     .viewport-overlays {
       cursor: initial;
-      height: 100%;
       overflow: hidden;
       pointer-events: none;
       position: absolute;
-      width: 100%;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
       z-index: 10;
 
       .pixel-overlay {
-        height: 100%;
         left: 0;
         pointer-events: initial;
         position: absolute;
         top: 0;
-        width: 100%;
+        right: 0;
+        bottom: 0;
         z-index: 1;
       }
     }

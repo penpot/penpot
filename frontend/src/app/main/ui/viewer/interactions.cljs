@@ -41,7 +41,7 @@
 
 (defn get-fixed-ids
   [objects]
-  (let [fixed-ids (filter :fixed-scroll (vals objects))
+  (let [fixed-ids (filter cfh/fixed-scroll? (vals objects))
 
         ;; we have to consider the children if the fixed element is a group
         fixed-children-ids
@@ -246,9 +246,9 @@
     (when (seq flows)
       [:div {:on-click toggle-dropdown
              :class (stl/css :view-options)}
-       [:span {:class (stl/css :icon)} i/play-refactor]
+       [:span {:class (stl/css :icon)} i/play]
        [:span {:class (stl/css :dropdown-title)} (:name current-flow)]
-       [:span {:class (stl/css :icon-dropdown)}  i/arrow-refactor]
+       [:span {:class (stl/css :icon-dropdown)}  i/arrow]
        [:& dropdown {:show show-dropdown?
                      :on-close hide-dropdown}
         [:ul {:class (stl/css :dropdown)}
@@ -261,7 +261,7 @@
                  :on-click select-flow}
             [:span {:class (stl/css :label)} (:name flow)]
             (when (= (:id flow) (:id current-flow))
-              [:span {:class (stl/css :icon)} i/tick-refactor])])]]])))
+              [:span {:class (stl/css :icon)} i/tick])])]]])))
 
 (mf/defc interactions-menu
   [{:keys [interactions-mode]}]
@@ -280,7 +280,7 @@
     [:div {:on-click toggle-dropdown
            :class (stl/css :view-options)}
      [:span {:class (stl/css :dropdown-title)} (tr "viewer.header.interactions")]
-     [:span {:class (stl/css :icon-dropdown)} i/arrow-refactor]
+     [:span {:class (stl/css :icon-dropdown)} i/arrow]
      [:& dropdown {:show @show-dropdown?
                    :on-close hide-dropdown}
       [:ul {:class (stl/css :dropdown)}
@@ -291,7 +291,7 @@
 
         [:span {:class (stl/css :label)} (tr "viewer.header.dont-show-interactions")]
         (when (= interactions-mode :hide)
-          [:span {:class (stl/css :icon)}  i/tick-refactor])]
+          [:span {:class (stl/css :icon)}  i/tick])]
 
        [:li {:class (stl/css-case :dropdown-element true
                                   :selected (= interactions-mode :show))
@@ -299,7 +299,7 @@
              :data-mode "show"}
         [:span {:class (stl/css :label)} (tr "viewer.header.show-interactions")]
         (when (= interactions-mode :show)
-          [:span {:class (stl/css :icon)}  i/tick-refactor])]
+          [:span {:class (stl/css :icon)}  i/tick])]
 
 
 
@@ -310,24 +310,43 @@
 
         [:span {:class (stl/css :label)} (tr "viewer.header.show-interactions-on-click")]
         (when (= interactions-mode :show-on-click)
-          [:span {:class (stl/css :icon)}  i/tick-refactor])]]]]))
+          [:span {:class (stl/css :icon)}  i/tick])]]]]))
 
 (defn animate-go-to-frame
   [animation current-viewport orig-viewport current-size orig-size wrapper-size]
   (case (:animation-type animation)
 
+    ;; Why use three keyframes instead of two?
+    ;; If we use two keyframes, the first frame
+    ;; will disappear while the second frame
+    ;; is still appearing.
+    ;; ___  ___
+    ;;    \/
+    ;; ___/\___
+    ;;     ^ in here we have 50% opacity of both frames so the background
+    ;;       is visible.
+    ;;
+    ;; This solution waits until the second frame
+    ;; has appeared to disappear the first one.
+    ;; ________
+    ;;   /\
+    ;; _/  \___
+    ;;    ^ in here we have 100% opacity of the first frame and 0% opacity.
     :dissolve
     (do (dom/animate! orig-viewport
                       [#js {:opacity "100%"}
-                       #js {:opacity "0"}]
-                      #js {:duration (:duration animation)
-                           :easing (name (:easing animation))}
-                      #(st/emit! (dv/complete-animation)))
+                       #js {:opacity "0%"}
+                       #js {:opacity "0%"}]
+                      #js {:delay (/ (:duration animation) 3)
+                           :duration (/ (* 2 (:duration animation)) 3)
+                           :easing (name (:easing animation))})
         (dom/animate! current-viewport
-                      [#js {:opacity "0"}
+                      [#js {:opacity "0%"}
+                       #js {:opacity "100%"}
                        #js {:opacity "100%"}]
                       #js {:duration (:duration animation)
-                           :easing (name (:easing animation))}))
+                           :easing (name (:easing animation))}
+                      #(st/emit! (dv/complete-animation))))
 
     :slide
     (case (:way animation)

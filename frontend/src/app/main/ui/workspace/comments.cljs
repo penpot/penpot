@@ -27,6 +27,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (mf/defc sidebar-options
+  {::mf/props :obj}
   [{:keys [from-viewer]}]
   (let [{cmode :mode cshow :show} (mf/deref refs/comments-local)
         update-mode
@@ -52,21 +53,22 @@
            :on-click update-mode}
 
       [:span {:class (stl/css :label)} (tr "labels.show-all-comments")]
-      [:span {:class (stl/css :icon)} i/tick-refactor]]
+      [:span {:class (stl/css :icon)} i/tick]]
      [:li {:class  (stl/css-case :dropdown-item true
                                  :selected (= :yours cmode))
            :data-value "yours"
            :on-click update-mode}
       [:span {:class (stl/css :label)}  (tr "labels.show-your-comments")]
-      [:span {:class (stl/css :icon)} i/tick-refactor]]
+      [:span {:class (stl/css :icon)} i/tick]]
      [:li {:class (stl/css :separator)}]
      [:li {:class (stl/css-case :dropdown-item true
                                 :selected (= :pending cshow))
            :on-click update-show}
       [:span {:class (stl/css :label)}  (tr "labels.hide-resolved-comments")]
-      [:span {:class (stl/css :icon)} i/tick-refactor]]]))
+      [:span {:class (stl/css :icon)} i/tick]]]))
 
 (mf/defc comments-sidebar
+  {::mf/props :obj}
   [{:keys [users threads page-id from-viewer]}]
   (let [threads-map (mf/deref refs/threads-ref)
         profile     (mf/deref refs/profile)
@@ -123,7 +125,7 @@
       [:span (tr "labels.comments")]
       [:button {:class (stl/css :close-button)
                 :on-click close-section}
-       i/close-refactor]]
+       i/close]]
 
      [:button {:class (stl/css :mode-dropdown-wrapper)
                :on-click toggle-mode-selector}
@@ -131,7 +133,7 @@
       [:span {:class (stl/css :mode-label)} (case (:mode local)
                                               (nil :all) (tr "labels.show-all-comments")
                                               :yours     (tr "labels.show-your-comments"))]
-      [:div {:class (stl/css :arrow-icon)} i/arrow-refactor]]
+      [:div {:class (stl/css :arrow-icon)} i/arrow]]
 
      [:& dropdown {:show options?
                    :on-close #(reset! state* false)}
@@ -153,6 +155,6 @@
              :key (:page-id tgroup)}])]
 
         [:div {:class (stl/css :thread-group-placeholder)}
-         [:span {:class (stl/css :placeholder-icon)} i/comments-refactor]
+         [:span {:class (stl/css :placeholder-icon)} i/comments]
          [:span {:class (stl/css :placeholder-label)}
           (tr "labels.no-comments-available")]])]]))

@@ -77,7 +77,7 @@
      [:div {:class  (stl/css-case :font-item true
                                   :selected current?)}
       [:span {:class (stl/css :label)} (:name font)]
-      [:span {:class (stl/css :icon)} (when current? i/tick-refactor)]]]))
+      [:span {:class (stl/css :icon)} (when current? i/tick)]]]))
 
 (declare row-renderer)
 
@@ -144,8 +144,8 @@
            (on-select font)
            (on-close)))]
 
-    (mf/with-effect []
-      (st/emit! (fts/load-recent-fonts)))
+    (mf/with-effect [fonts]
+      (st/emit! (fts/load-recent-fonts fonts)))
 
     (mf/with-effect [fonts]
       (let [key (events/listen js/document "keydown" on-key-down)]
@@ -303,7 +303,7 @@
          [:span {:class (stl/css :name)}
           (:name font)]
          [:span {:class (stl/css :icon)}
-          i/arrow-refactor]]
+          i/arrow]]
 
         :else
         (tr "dashboard.fonts.deleted-placeholder"))]
@@ -362,7 +362,7 @@
      [:div {:class (stl/css :line-height)}
       [:span {:class (stl/css :icon)
               :alt (tr "workspace.options.text-options.line-height")}
-       i/text-lineheight-refactor]
+       i/text-lineheight]
       [:> numeric-input*
        {:min -200
         :max 200
@@ -379,7 +379,7 @@
       [:span
        {:class (stl/css :icon)
         :alt (tr "workspace.options.text-options.letter-spacing")}
-       i/text-letterspacing-refactor]
+       i/text-letterspacing]
       [:> numeric-input*
        {:min -200
         :max 200
@@ -405,15 +405,15 @@
      [:& radio-buttons {:selected text-transform
                         :on-change handle-change
                         :name "text-transform"}
-      [:& radio-button {:icon i/text-uppercase-refactor
+      [:& radio-button {:icon i/text-uppercase
                         :type "checkbox"
                         :value "uppercase"
                         :id "text-transform-uppercase"}]
-      [:& radio-button {:icon i/text-mixed-refactor
+      [:& radio-button {:icon i/text-mixed
                         :type "checkbox"
                         :value "capitalize"
                         :id "text-transform-capitalize"}]
-      [:& radio-button {:icon i/text-lowercase-refactor
+      [:& radio-button {:icon i/text-lowercase
                         :type "checkbox"
                         :value "lowercase"
                         :id "text-transform-lowercase"}]]]))
@@ -441,6 +441,7 @@
   [{:keys [visible?  typography editable? name-input-ref on-close on-change on-name-blur local? navigate-to-library on-key-down]}]
   (let [ref       (mf/use-ref nil)
         font-data (fonts/get-font-data (:font-id typography))]
+    (fonts/ensure-loaded! (:font-id typography))
 
     (mf/use-effect
      (mf/deps visible?)
@@ -472,7 +473,7 @@
 
            [:div {:class (stl/css :action-btn)
                   :on-click on-close}
-            i/tick-refactor]]
+            i/tick]]
 
           [:& text-options {:values typography
                             :on-change on-change
@@ -494,7 +495,7 @@
             (:name font-data)]
            [:div {:class (stl/css :action-btn)
                   :on-click on-close}
-            i/menu-refactor]]
+            i/menu]]
 
           [:div {:class (stl/css :info-row)}
            [:span {:class (stl/css :info-label)}  (tr "workspace.assets.typography.font-variant-id")]
@@ -624,10 +625,10 @@
        (when ^boolean on-detach
          [:button {:class (stl/css :element-set-actions-button)
                    :on-click on-detach}
-          i/detach-refactor])
+          i/detach])
        [:button {:class (stl/css :menu-btn)
                  :on-click on-open}
-        i/menu-refactor]]]
+        i/menu]]]
 
      [:& typography-advanced-options
       {:visible? open?

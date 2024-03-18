@@ -18,6 +18,7 @@
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
+   [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.attrs :refer [editable-attrs]]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
@@ -193,13 +194,16 @@
                   (update :shapes #(d/removev ids %))
                   (ctl/assign-cells objects))
 
-        ids (->> ids (remove #(ctl/position-absolute? objects %)))
+        ids (->> ids
+                 (remove #(ctl/position-absolute? objects %))
+                 (ctst/sort-z-index objects)
+                 reverse)
+
         frame (-> frame
                   (update :shapes d/concat-vec ids)
                   (cond-> (some? cell)
                     (ctl/push-into-cell ids row column))
                   (ctl/assign-cells objects))]
-
     (-> modifiers
         (ctm/change-property :layout-grid-rows (:layout-grid-rows frame))
         (ctm/change-property :layout-grid-columns (:layout-grid-columns frame))
@@ -454,7 +458,7 @@
   ([]
    (apply-modifiers nil))
 
-  ([{:keys [modifiers undo-transation? stack-undo? ignore-constraints ignore-snap-pixel]
+  ([{:keys [modifiers undo-transation? stack-undo? ignore-constraints ignore-snap-pixel undo-group]
      :or {undo-transation? true stack-undo? false ignore-constraints false ignore-snap-pixel false}}]
    (ptk/reify ::apply-modifiers
      ptk/WatchEvent
@@ -504,6 +508,7 @@
                   {:reg-objects? true
                    :stack-undo? stack-undo?
                    :ignore-tree ignore-tree
+                   :undo-group undo-group
                    ;; Attributes that can change in the transform. This way we don't have to check
                    ;; all the attributes
                    :attrs [:selrect

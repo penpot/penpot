@@ -26,13 +26,13 @@
    [rumext.v2 :as mf]))
 
 (def ^:private neutral-icon
-  (i/icon-xref :msg-neutral-refactor (stl/css :icon)))
+  (i/icon-xref :msg-neutral (stl/css :icon)))
 
 (def ^:private error-icon
-  (i/icon-xref :delete-text-refactor (stl/css :icon)))
+  (i/icon-xref :delete-text (stl/css :icon)))
 
 (def ^:private close-icon
-  (i/icon-xref :close-refactor (stl/css :close-icon)))
+  (i/icon-xref :close (stl/css :close-icon)))
 
 (mf/defc export-multiple-dialog
   [{:keys [exports title cmd no-selection]}]
@@ -86,7 +86,7 @@
        [:h2 {:class (stl/css :modal-title)} title]
        [:button {:class (stl/css :modal-close-btn)
                  :on-click cancel-fn}
-        i/close-refactor]]
+        i/close]]
 
       [:*
        [:div {:class (stl/css :modal-content)}
@@ -99,12 +99,12 @@
               (cond
                 all-checked? [:span {:class (stl/css-case :checkobox-tick true
                                                           :global/checked true)}
-                              i/tick-refactor]
+                              i/tick]
                 all-unchecked? [:span {:class (stl/css-case :checkobox-tick true
                                                             :global/uncheked true)}]
                 :else [:span {:class (stl/css-case :checkobox-tick true
                                                    :global/intermediate true)}
-                       i/remove-refactor])]]
+                       i/remove-icon])]]
             [:div {:class (stl/css :selection-title)}
              (tr "dashboard.export-multiple.selected"
                  (c (count enabled-exports))
@@ -123,7 +123,7 @@
                     (if (:enabled export)
                       [:span {:class (stl/css-case :checkobox-tick true
                                                    :global/checked true)}
-                       i/tick-refactor]
+                       i/tick]
                       [:span {:class (stl/css-case :checkobox-tick true
                                                    :global/uncheked true)}])]
 
@@ -318,8 +318,8 @@
 
    [:div {:class (stl/css :file-name)}
     [:span {:class (stl/css :file-icon)}
-     (cond (:export-success? file) i/tick-refactor
-           (:export-error? file)   i/close-refactor
+     (cond (:export-success? file) i/tick
+           (:export-error? file)   i/close
            (:loading? file)        i/loader-pencil)]
 
     [:div {:class (stl/css :file-name-label)}
@@ -417,7 +417,7 @@
        [:h2 {:class (stl/css :modal-title)}
         (tr "dashboard.export.title")]
        [:button {:class (stl/css :modal-close-btn)
-                 :on-click on-cancel} i/close-refactor]]
+                 :on-click on-cancel} i/close]]
 
       (cond
         (= status :prepare)
@@ -440,7 +440,7 @@
                                 ;;   dashboard.export.options.merge.title
               [:span {:class (stl/css-case :global/checked (= selected type))}
                (when (= selected type)
-                 i/status-tick-refactor)]
+                 i/status-tick)]
               [:div {:class (stl/css :option-content)}
                [:h3 {:class (stl/css :modal-subtitle)} (tr (dm/str "dashboard.export.options." (d/name type) ".title"))]
                [:p  {:class (stl/css :modal-msg)} (tr (dm/str "dashboard.export.options." (d/name type) ".message"))]]

@@ -107,8 +107,7 @@
                  (not= "0.0" (:main cf/version)))
             [:& release-notes-modal {:version (:main cf/version)}]))
 
-        (when profile
-          [:& dashboard-page {:route route :profile profile}])]
+        [:& dashboard-page {:route route :profile profile}]]
 
        :viewer
        (let [{:keys [query-params path-params]} route
@@ -118,7 +117,7 @@
          [:? {}
           (if (:token query-params)
             [:> static/error-container {}
-             [:div.image i/unchain]
+             [:div.image i/detach]
              [:div.main-message (tr "viewer.breaking-change.message")]
              [:div.desc-message (tr "viewer.breaking-change.description")]]
 

@@ -152,7 +152,7 @@
 
         handle-key-down
         (mf/use-fn
-         (mf/deps set-delta apply-value update-input)
+         (mf/deps set-delta apply-value update-input parse-value)
          (fn [event]
            (mf/set-ref-val! dirty-ref true)
            (let [up?    (kbd/up-arrow? event)
@@ -162,13 +162,14 @@
                  node   (mf/ref-val ref)]
              (when (or up? down?)
                (set-delta event up? down?))
+             (reset! last-value* (parse-value))
              (when enter?
                (dom/blur! node))
              (when esc?
                (update-input value-str)
                (dom/blur! node)))))
 
-        handle-key-up
+        handle-change
         (mf/use-fn
          (mf/deps parse-value)
          (fn []
@@ -224,14 +225,13 @@
                   (obj/unset! "selectOnFocus")
                   (obj/unset! "nillable")
                   (obj/set! "value" mf/undefined)
-                  (obj/set! "onChange" mf/undefined)
+                  (obj/set! "onChange" handle-change)
                   (obj/set! "className" class)
                   (obj/set! "type" "text")
                   (obj/set! "ref" ref)
                   (obj/set! "defaultValue" (fmt/format-number value))
                   (obj/set! "title" title)
                   (obj/set! "onKeyDown" handle-key-down)
-                  (obj/set! "onKeyUp" handle-key-up)
                   (obj/set! "onBlur" handle-blur)
                   (obj/set! "onFocus" handle-focus))]
 

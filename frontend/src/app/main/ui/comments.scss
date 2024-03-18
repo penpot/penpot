@@ -19,6 +19,8 @@
 }
 
 .section-title {
+  display: grid;
+  grid-template-columns: auto auto;
   @include bodySmallTypography;
   height: $s-32;
   display: flex;
@@ -27,10 +29,12 @@
 }
 
 .file-name {
+  @include textEllipsis;
   color: var(--comment-subtitle-color);
 }
 
 .page-name {
+  @include textEllipsis;
   color: var(--comment-subtitle-color);
 }
 
@@ -98,8 +102,12 @@
 }
 
 .content {
+  position: relative;
   @include bodySmallTypography;
   color: var(--color-foreground-primary);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 .replies {
@@ -138,12 +146,23 @@
   width: $s-284;
   padding: $s-12;
   border-radius: $br-8;
+  border: $s-2 solid var(--modal-border-color);
   background-color: var(--comment-modal-background-color);
+  --translate-x: 0%;
+  --translate-y: 0%;
+  transform: translate(var(--translate-x), var(--translate-y));
   .comments {
     display: flex;
     flex-direction: column;
     gap: $s-24;
   }
+}
+
+.thread-content-left {
+  --translate-x: -100%;
+}
+.thread-content-top {
+  --translate-y: -100%;
 }
 
 // comment-item
@@ -192,12 +211,6 @@
         }
       }
     }
-    .content {
-      position: relative;
-      .text {
-        @include bodySmallTypography;
-      }
-    }
   }
   .comment-options-dropdown {
     @extend .dropdown-wrapper;
@@ -221,7 +234,6 @@
     height: 100%;
     width: 100%;
     max-width: $s-260;
-    min-width: $s-260;
     margin-bottom: $s-8;
     padding: $s-8;
     color: var(--input-foreground-color-active);

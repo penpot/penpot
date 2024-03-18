@@ -13,6 +13,7 @@
    [app.common.schema :as sm]
    [app.common.types.shape-tree :as ctst]
    [app.main.data.comments :as dcm]
+   [app.main.data.events :as ev]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.common :as dwco]
    [app.main.data.workspace.drawing :as dwd]
@@ -118,7 +119,8 @@
               (rx/take 1)
               (rx/mapcat #(rx/of (center-to-comment-thread thread)
                                  (dwd/select-for-drawing :comments)
-                                 (dcm/open-thread thread)))))))))
+                                 (with-meta (dcm/open-thread thread)
+                                   {::ev/origin "workspace"})))))))))
 
 (defn update-comment-thread-position
   ([thread  [new-x new-y]]

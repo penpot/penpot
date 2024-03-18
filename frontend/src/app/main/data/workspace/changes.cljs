@@ -101,7 +101,7 @@
 
           ;; Update layouts for properties marked
           (if (d/not-empty? update-layout-ids)
-            (rx/of (ptk/data-event :layout/update update-layout-ids))
+            (rx/of (ptk/data-event :layout/update {:ids update-layout-ids}))
             (rx/empty))))))))
 
 (defn send-update-indices

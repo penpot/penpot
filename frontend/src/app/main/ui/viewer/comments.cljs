@@ -67,7 +67,7 @@
     [:div {:class (stl/css :view-options)
            :on-click toggle-dropdown}
      [:span {:class (stl/css :dropdown-title)} (tr "labels.comments")]
-     [:span {:class (stl/css :icon-dropdown)} i/arrow-refactor]
+     [:span {:class (stl/css :icon-dropdown)} i/arrow]
 
      [:& dropdown {:show @show-dropdown?
                    :on-close hide-dropdown}
@@ -80,7 +80,7 @@
              :on-click update-mode}
         [:span {:class (stl/css :label)} (tr "labels.show-all-comments")]
         (when (or (= :all cmode) (nil? cmode))
-          [:span {:class (stl/css :icon)} i/tick-refactor])]
+          [:span {:class (stl/css :icon)} i/tick])]
 
        [:li {:class (stl/css-case
                      :dropdown-element true
@@ -90,7 +90,7 @@
         [:span {:class (stl/css :label)} (tr "labels.show-your-comments")]
         (when (= :yours cmode)
           [:span {:class (stl/css :icon)}
-           i/tick-refactor])]
+           i/tick])]
 
        [:li {:class (stl/css :separator)}]
 
@@ -102,7 +102,7 @@
         [:span {:class (stl/css :label)} (tr "labels.hide-resolved-comments")]
         (when  (= :pending cshow)
           [:span {:class (stl/css :icon)}
-           i/tick-refactor])]
+           i/tick])]
 
        [:li {:class (stl/css :separator)}]
 
@@ -113,7 +113,7 @@
              :on-click update-options}
         [:span {:class (stl/css :label)} (tr "labels.show-comments-list")]
         (when show-sidebar?
-          [:span {:class (stl/css :icon)} i/tick-refactor])]]]]))
+          [:span {:class (stl/css :icon)} i/tick])]]]]))
 
 
 (defn- update-thread-position

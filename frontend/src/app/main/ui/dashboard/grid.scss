@@ -18,7 +18,9 @@ $thumbnail-default-height: $s-168; // Default width
 }
 
 .grid-row {
-  display: flex;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: calc($s-12 + var(--th-width, #{$thumbnail-default-width}));
   width: 100%;
   gap: $s-24;
 }
@@ -369,4 +371,10 @@ $thumbnail-default-height: $s-168; // Default width
       width: $s-20;
     }
   }
+}
+
+.color-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: $s-8;
 }

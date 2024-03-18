@@ -6,44 +6,51 @@
 
 @import "refactor/common-refactor.scss";
 
-.viewport-actions {
+.viewport-actions,
+.viewport-actions-path {
   pointer-events: none;
   position: absolute;
-  top: $s-44;
+  --actions-toolbar-position-y: #{$s-28};
+  --actions-toolbar-offset-y: #{$s-6};
+
+  top: calc(var(--actions-toolbar-position-y) + var(--actions-toolbar-offset-y));
   left: 50%;
   z-index: $z-index-20;
+}
 
-  .viewport-actions-container {
-    @include flexRow;
-    background: var(--panel-background-color);
-    border-radius: $br-12;
-    box-shadow: 0 0 $s-12 0 var(--menu-shadow-color);
-    gap: $s-8;
-    height: $s-48;
-    margin-left: -50%;
-    padding: $s-8;
-    cursor: initial;
-    pointer-events: initial;
-    width: $s-400;
-  }
+.viewport-actions-path {
+  z-index: $z-index-3;
+}
 
-  .viewport-actions-title {
-    flex: 1;
-    font-size: $fs-12;
-    color: var(--color-foreground-secondary);
-    padding-left: $s-8;
-  }
+.viewport-actions-container {
+  @include flexRow;
+  background: var(--panel-background-color);
+  border-radius: $br-12;
+  box-shadow: 0 0 $s-12 0 var(--menu-shadow-color);
+  gap: $s-8;
+  height: $s-48;
+  margin-left: -50%;
+  padding: $s-8;
+  cursor: initial;
+  pointer-events: initial;
+  width: $s-400;
+  border: $s-2 solid var(--panel-border-color);
+}
 
-  .done-btn {
-    @extend .button-primary;
-    text-transform: uppercase;
-    padding: $s-8 $s-20;
-    font-size: $fs-11;
-  }
-  .close-btn {
-    @extend .button-tertiary;
-    svg {
-      @extend .button-icon;
-    }
-  }
+.viewport-actions-title {
+  flex: 1;
+  font-size: $fs-12;
+  color: var(--color-foreground-secondary);
+  padding-left: $s-8;
+}
+
+.done-btn {
+  @extend .button-primary;
+  text-transform: uppercase;
+  padding: $s-8 $s-20;
+  font-size: $fs-11;
+}
+
+.viewport-actions-no-rulers {
+  --actions-toolbar-position-y: 0px;
 }

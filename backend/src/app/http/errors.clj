@@ -60,8 +60,12 @@
 
 (defmethod handle-error :restriction
   [err _ _]
-  {::rres/status 400
-   ::rres/body (ex-data err)})
+  (let [{:keys [code] :as data} (ex-data err)]
+    (if (= code :method-not-allowed)
+      {::rres/status 405
+       ::rres/body data}
+      {::rres/status 400
+       ::rres/body data})))
 
 (defmethod handle-error :rate-limit
   [err _ _]

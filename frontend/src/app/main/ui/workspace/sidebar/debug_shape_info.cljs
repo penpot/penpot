@@ -129,7 +129,7 @@
       [:span "Debug"]
       [:div {:class (stl/css :close-button)
              :on-click #(dbg/disable! :shape-panel)}
-       i/close-refactor]]
+       i/close]]
 
      (if (empty? selected)
        [:div {:class (stl/css :attrs-container)} "No shapes selected"]

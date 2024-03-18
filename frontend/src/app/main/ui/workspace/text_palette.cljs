@@ -136,7 +136,7 @@
      (when show-arrows?
        [:button {:class (stl/css :left-arrow)
                  :disabled (= offset 0)
-                 :on-click on-left-arrow-click} i/arrow-refactor])
+                 :on-click on-left-arrow-click} i/arrow])
 
      [:div {:class (stl/css :text-palette-content)
             :ref container
@@ -164,7 +164,7 @@
      (when show-arrows?
        [:button {:class (stl/css :right-arrow)
                  :disabled (= offset max-offset)
-                 :on-click on-right-arrow-click} i/arrow-refactor])]))
+                 :on-click on-right-arrow-click} i/arrow])]))
 
 (mf/defc text-palette
   {::mf/wrap [mf/memo]}

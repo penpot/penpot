@@ -24,9 +24,11 @@
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
+   [app.main.data.events :as ev]
    [app.main.data.modal :as md]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.collapse :as dwc]
+   [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.libraries-helpers :as dwlh]
    [app.main.data.workspace.specialized-panel :as-alias dwsp]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -63,14 +65,8 @@
   (ptk/reify ::handle-area-selection
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [zoom   (dm/get-in state [:workspace-local :zoom] 1)
-            stopper (rx/merge
-                     (->> stream
-                          (rx/filter mse/mouse-event?)
-                          (rx/filter mse/mouse-up-event?))
-                     (->> stream
-                          (rx/filter interrupt?)))
-
+      (let [zoom          (dm/get-in state [:workspace-local :zoom] 1)
+            stopper       (mse/drag-stopper stream)
             init-position @ms/mouse-position
 
             init-selrect  (grc/make-rect
@@ -155,7 +151,7 @@
              objects (wsh/lookup-page-objects state page-id)]
          (rx/of
           (dwc/expand-all-parents [id] objects)
-          :interrupt
+          (dwe/clear-edition-mode)
           ::dwsp/interrupt))))))
 
 (defn select-prev-shape
@@ -433,6 +429,10 @@
         main-component    (ctf/get-component libraries file-id component-id)
         moved-component   (gsh/move component-root delta)
         pos               (gpt/point (:x moved-component) (:y moved-component))
+        origin-frame      (get-in page [:objects frame-id])
+        delta             (cond-> delta
+                            (some? origin-frame)
+                            (gpt/subtract (-> origin-frame :selrect gpt/point)))
 
         instantiate-component
         #(dwlh/generate-instantiate-component changes
@@ -444,7 +444,8 @@
                                               libraries
                                               (:id component-root)
                                               parent-id
-                                              frame-id)
+                                              frame-id
+                                              {})
 
         restore-component
         #(let [restore (dwlh/prepare-restore-component changes library-data (:component-id component-root) it page delta (:id component-root) parent-id frame-id)]
@@ -466,7 +467,7 @@
      (nil? obj)
      changes
 
-     (ctf/is-known-component? obj libraries)
+     (ctf/is-main-of-known-component? obj libraries)
      (prepare-duplicate-component-change changes objects page obj parent-id frame-id delta libraries library-data it)
 
      :else
@@ -484,6 +485,9 @@
                                       (ctk/instance-root? obj))
            duplicating-component? (or duplicating-component? (ctk/instance-head? obj))
            is-component-main?     (ctk/main-instance? obj)
+
+           original-ref-shape     (-> (ctf/find-original-ref-shape nil page libraries obj {:include-deleted? true})
+                                      :id)
            into-component?        (and duplicating-component?
                                        (ctn/in-any-component? objects parent))
 
@@ -513,6 +517,10 @@
 
                (cond-> (or frame? group? bool?)
                  (assoc :shapes []))
+
+               (cond-> (and (some? original-ref-shape)
+                            (not= original-ref-shape (:shape-ref obj)))
+                 (assoc :shape-ref original-ref-shape))
 
                (gsh/move delta)
                (d/update-when :interactions #(ctsi/remap-interactions % ids-map objects))
@@ -709,8 +717,8 @@
          (let [page     (wsh/lookup-page state)
                objects  (:objects page)
                selected (->> (wsh/lookup-selected state)
-                             (map #(get objects %))
-                             (remove #(ctk/in-component-copy-not-root? %)) ;; We don't want to change the structure of component copies
+                             (map (d/getf objects))
+                             (filter #(ctk/allow-duplicate? objects %))
                              (map :id)
                              set)]
            (when (seq selected)
@@ -751,7 +759,7 @@
                 (dwu/start-undo-transaction undo-id)
                 (dch/commit-changes changes)
                 (select-shapes new-selected)
-                (ptk/data-event :layout/update frames)
+                (ptk/data-event :layout/update {:ids frames})
                 (memorize-duplicated id-original id-duplicated)
                 (dwu/commit-undo-transaction undo-id))))))))))
 
@@ -782,6 +790,9 @@
 (defn toggle-focus-mode
   []
   (ptk/reify ::toggle-focus-mode
+    ev/Event
+    (-data [_] {})
+
     ptk/UpdateEvent
     (update [_ state]
       (let [selected (wsh/lookup-selected state)]

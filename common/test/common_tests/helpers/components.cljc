@@ -82,7 +82,7 @@
   [page root-inst-id libraries]
   (let [root-inst     (ctn/get-shape page root-inst-id)
 
-        component     (ctf/find-component libraries (:component-id root-inst))
+        component     (ctf/get-component libraries (:component-file root-inst) (:component-id root-inst))
 
         shapes-inst   (cfh/get-children-with-self (:objects page) root-inst-id)
         shapes-main   (cfh/get-children-with-self (:objects component) (:shape-ref root-inst))
@@ -94,7 +94,7 @@
                               (ctn/get-component-shape (:objects page) shape)
 
                               component
-                              (ctf/find-component libraries (:component-id component-shape))
+                              (ctf/get-component libraries (:component-file component-shape) (:component-id component-shape))
 
                               main-shape
                               (ctn/get-shape component (:shape-ref shape))]
@@ -118,7 +118,7 @@
   [page root-inst-id libraries]
   (let [root-inst     (ctn/get-shape page root-inst-id)
 
-        component     (ctf/find-component libraries (:component-id root-inst))
+        component     (ctf/get-component libraries (:component-file root-inst) (:component-id root-inst))
 
         shapes-inst   (cfh/get-children-with-self (:objects page) root-inst-id)
         shapes-main   (cfh/get-children-with-self (:objects component) (:shape-ref root-inst))
@@ -130,7 +130,7 @@
                               (ctn/get-component-shape (:objects page) shape)
 
                               component
-                              (ctf/find-component libraries (:component-id component-shape))
+                              (ctf/get-component libraries (:component-file component-shape) (:component-id component-shape))
 
                               main-shape
                               (ctn/get-shape component (:shape-ref shape))]
@@ -142,15 +142,5 @@
 
     [shapes-inst shapes-main component]))
 
-(defn resolve-component
-  "Get the component with the given id and all its shapes."
-  [page component-id libraries]
-  (let [component   (ctf/find-component libraries component-id)
-        root-main   (ctk/get-component-root component)
-        shapes-main (cfh/get-children-with-self (:objects component) (:id root-main))]
 
-    ;; Validate that the component tree is well constructed
-    (run! check-noninstance shapes-main)
-
-    [shapes-main component]))
 

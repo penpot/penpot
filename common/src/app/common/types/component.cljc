@@ -4,7 +4,11 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.types.component)
+(ns app.common.types.component
+  (:require
+   [app.common.data :as d]
+   [app.common.uuid :as uuid]
+   [cuerdas.core :as str]))
 
 ;; Attributes that may be synced in components, and the group they belong to.
 ;; When one attribute is modified in a shape inside a component, the corresponding
@@ -170,6 +174,29 @@
   (and (= shape-id (:main-instance-id component))
        (= page-id (:main-instance-page component))))
 
+(defn build-swap-slot-group
+  "Convert a swap-slot into a :touched group"
+  [swap-slot]
+  (when swap-slot
+    (keyword (str "swap-slot-" swap-slot))))
+
+(defn get-swap-slot
+  "If the shape has a :touched group in the form :swap-slot-<uuid>, get the id."
+  [shape]
+  (let [group (->> (:touched shape)
+                   (map name)
+                   (d/seek #(str/starts-with? % "swap-slot-")))]
+    (when group
+      (uuid/uuid (subs group 10)))))
+
+(defn match-swap-slot?
+  [shape-main shape-inst]
+  (let [slot-main   (get-swap-slot shape-main)
+        slot-inst   (get-swap-slot shape-inst)]
+    (when (some? slot-inst)
+      (or (= slot-main slot-inst)
+          (= (:id shape-main) slot-inst)))))
+
 (defn get-component-root
   [component]
   (if (true? (:main-instance-id component))
@@ -213,3 +240,13 @@
          (distinct)
          (filter #(not (eq % (get comp1 %) (get comp2 %))))
          set)))
+
+(defn allow-duplicate?
+  [objects shape]
+
+  (let [parent (get objects (:parent-id shape))]
+    ;; We don't want to change the structure of component copies
+    (and (not (in-component-copy-not-head? shape))
+         ;; Non instance, non copy. We allow
+         (or (not (instance-head? shape))
+             (not (in-component-copy? parent))))))

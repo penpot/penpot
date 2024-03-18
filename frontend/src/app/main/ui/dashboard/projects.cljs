@@ -35,7 +35,16 @@
    [rumext.v2 :as mf]))
 
 (def ^:private show-more-icon
-  (i/icon-xref :arrow-refactor (stl/css :show-more-icon)))
+  (i/icon-xref :arrow (stl/css :show-more-icon)))
+
+(def ^:private close-icon
+  (i/icon-xref :close (stl/css :close-icon)))
+
+(def ^:private add-icon
+  (i/icon-xref :add (stl/css :add-icon)))
+
+(def ^:private menu-icon
+  (i/icon-xref :menu (stl/css :menu-icon)))
 
 (mf/defc header
   {::mf/wrap [mf/memo]}
@@ -44,10 +53,9 @@
     [:header {:class (stl/css :dashboard-header)}
      [:div#dashboard-projects-title {:class (stl/css :dashboard-title)}
       [:h1 (tr "dashboard.projects-title")]]
-     [:button
-      {:class (stl/css :btn-secondary :btn-small)
-       :on-click on-click
-       :data-test "new-project-button"}
+     [:button {:class (stl/css :btn-secondary :btn-small)
+               :on-click on-click
+               :data-test "new-project-button"}
       (tr "dashboard.new-project")]]))
 
 (mf/defc team-hero
@@ -84,11 +92,10 @@
         :on-click on-invite-click}
        (tr "onboarding.choice.team-up.invite-members")]]
 
-     [:button
-      {:class (stl/css :close)
-       :on-click on-close-click
-       :aria-label (tr "labels.close")}
-      [:span i/close]]]))
+     [:button {:class (stl/css :close)
+               :on-click on-close-click
+               :aria-label (tr "labels.close")}
+      close-icon]]))
 
 (def builtin-templates
   (l/derived :builtin-templates st/state))
@@ -139,11 +146,10 @@
          :importing [:span.loader i/loader-pencil]
          :success "")]]
 
-     [:button
-      {:class (stl/css :close)
-       :on-click close-tutorial
-       :aria-label (tr "labels.close")}
-      [:span {:class (stl/css :icon)} i/close]]]))
+     [:button {:class (stl/css :close)
+               :on-click close-tutorial
+               :aria-label (tr "labels.close")}
+      close-icon]]))
 
 (mf/defc interface-walkthrough
   {::mf/wrap [mf/memo]}
@@ -163,11 +169,10 @@
            :target "_blank"
            :on-click handle-walkthrough-link}
        (tr "dasboard.walkthrough-hero.start")]]
-     [:button
-      {:class (stl/css :close)
-       :on-click close-walkthrough
-       :aria-label (tr "labels.close")}
-      [:span {:class (stl/css :icon)} i/close]]]))
+     [:button {:class (stl/css :close)
+               :on-click close-walkthrough
+               :aria-label (tr "labels.close")}
+      close-icon]]))
 
 (mf/defc project-item
   [{:keys [project first? team files] :as props}]
@@ -277,7 +282,8 @@
          (fn [event]
            (when (kbd/enter? event)
              (dom/stop-propagation event)
-             (on-menu-click event))))]
+             (on-menu-click event))))
+        title-width (/ 100 limit)]
 
     [:article {:class (stl/css-case :dashboard-project-row true :first first?)}
      [:header {:class (stl/css :project)}
@@ -286,47 +292,52 @@
          [:& inline-edition {:content (:name project)
                              :on-end on-edit}]
          [:h2 {:on-click on-nav
+               :style {:max-width (str title-width "%")}
+               :class (stl/css :project-name)
+               :title (if (:is-default project)
+                        (tr "labels.drafts")
+                        (:name project))
                :on-context-menu on-menu-click}
           (if (:is-default project)
             (tr "labels.drafts")
             (:name project))])
 
-       [:& project-menu
-        {:project project
-         :show? (:menu-open @local)
-         :left (+ 24 (:x (:menu-pos @local)))
-         :top (:y (:menu-pos @local))
-         :on-edit on-edit-open
-         :on-menu-close on-menu-close
-         :on-import on-import}]
+       [:div {:class (stl/css :info-wrapper)}
+        [:& project-menu
+         {:project project
+          :show? (:menu-open @local)
+          :left (+ 24 (:x (:menu-pos @local)))
+          :top (:y (:menu-pos @local))
+          :on-edit on-edit-open
+          :on-menu-close on-menu-close
+          :on-import on-import}]
 
-       [:span {:class (stl/css :info)} (str (tr "labels.num-of-files" (i18n/c file-count)))]
+        [:span {:class (stl/css :info)} (str (tr "labels.num-of-files" (i18n/c file-count)))]
 
-       (let [time (-> (:modified-at project)
-                      (dt/timeago {:locale locale}))]
-         [:span {:class (stl/css :recent-files-row-title-info)} (str ", " time)])
+        (let [time (-> (:modified-at project)
+                       (dt/timeago {:locale locale}))]
+          [:span {:class (stl/css :recent-files-row-title-info)} (str ", " time)])
 
-       [:div {:class (stl/css :project-actions)}
-        (when-not (:is-default project)
-          [:> pin-button* {:class (stl/css :pin-button) :is-pinned (:is-pinned project) :on-click toggle-pin :tab-index 0}])
+        [:div {:class (stl/css-case :project-actions true
+                                    :pinned-project (:is-pinned project))}
+         (when-not (:is-default project)
+           [:> pin-button* {:class (stl/css :pin-button) :is-pinned (:is-pinned project) :on-click toggle-pin :tab-index 0}])
 
-        [:button
-         {:class (stl/css :btn-secondary :btn-small :tooltip :tooltip-bottom)
-          :on-click on-create-click
-          :alt (tr "dashboard.new-file")
-          :aria-label (tr "dashboard.new-file")
-          :data-test "project-new-file"
-          :on-key-down handle-create-click}
-         i/add-refactor]
+         [:button {:class (stl/css :add-file-btn)
+                   :on-click on-create-click
+                   :title (tr "dashboard.new-file")
+                   :aria-label (tr "dashboard.new-file")
+                   :data-test "project-new-file"
+                   :on-key-down handle-create-click}
+          add-icon]
 
-        [:button
-         {:class (stl/css :btn-secondary :btn-small :tooltip :tooltip-bottom)
-          :on-click on-menu-click
-          :alt (tr "dashboard.options")
-          :aria-label  (tr "dashboard.options")
-          :data-test "project-options"
-          :on-key-down handle-menu-click}
-         i/menu-refactor]]]]
+         [:button {:class (stl/css :options-btn)
+                   :on-click on-menu-click
+                   :title (tr "dashboard.options")
+                   :aria-label  (tr "dashboard.options")
+                   :data-test "project-options"
+                   :on-key-down handle-menu-click}
+          menu-icon]]]]]
 
      [:div {:class (stl/css :grid-container) :ref rowref}
       [:& line-grid
@@ -338,14 +349,13 @@
 
      (when (and (> limit 0)
                 (> file-count limit))
-       [:button
-        {:class (stl/css :show-more)
-         :on-click on-nav
-         :tab-index "0"
-         :on-key-down (fn [event]
-                        (when (kbd/enter? event)
-                          (on-nav)))}
-        [:div {:class (stl/css :placeholder-label)} (tr "dashboard.show-all-files")]
+       [:button {:class (stl/css :show-more)
+                 :on-click on-nav
+                 :tab-index "0"
+                 :on-key-down (fn [event]
+                                (when (kbd/enter? event)
+                                  (on-nav)))}
+        [:span {:class (stl/css :placeholder-label)} (tr "dashboard.show-all-files")]
         show-more-icon])]))
 
 
@@ -375,24 +385,24 @@
         (mf/use-fn
          (fn []
            (st/emit! (du/update-profile-props {:team-hero? false})
-                     (ptk/event ::ev/event {::ev/name "dont-show-team-up-hero"
-                                            ::ev/origin "dashboard"}))))
+                     (ptk/data-event ::ev/event {::ev/name "dont-show-team-up-hero"
+                                                 ::ev/origin "dashboard"}))))
         close-tutorial
         (mf/use-fn
          (fn []
            (st/emit! (du/update-profile-props {:viewed-tutorial? true})
-                     (ptk/event ::ev/event {::ev/name "dont-show"
-                                            ::ev/origin "get-started-hero-block"
-                                            :type "tutorial"
-                                            :section "dashboard"}))))
+                     (ptk/data-event ::ev/event {::ev/name "dont-show-tutorial"
+                                                 ::ev/origin "get-started-hero"
+                                                 :type "tutorial"
+                                                 :section "dashboard"}))))
         close-walkthrough
         (mf/use-fn
          (fn []
            (st/emit! (du/update-profile-props {:viewed-walkthrough? true})
-                     (ptk/event ::ev/event {::ev/name "dont-show"
-                                            ::ev/origin "get-started-hero-block"
-                                            :type "walkthrough"
-                                            :section "dashboard"}))))]
+                     (ptk/data-event ::ev/event {::ev/name "dont-show-walkthrough"
+                                                 ::ev/origin "get-started-hero"
+                                                 :type "walkthrough"
+                                                 :section "dashboard"}))))]
 
     (mf/with-effect [team]
       (let [tname (if (:is-default team)
@@ -407,31 +417,32 @@
     (when (seq projects)
       [:*
        [:& header]
+       [:div {:class (stl/css :projects-container)}
+        [:*
+         (when team-hero?
+           [:& team-hero {:team team :close-fn close-banner}])
 
-       (when team-hero?
-         [:& team-hero {:team team :close-fn close-banner}])
+         (when (and (contains? cf/flags :dashboard-templates-section)
+                    (or (not tutorial-viewed?)
+                        (not walkthrough-viewed?)))
+           [:div {:class (stl/css :hero-projects)}
+            (when (and (not tutorial-viewed?) (:is-default team))
+              [:& tutorial-project
+               {:close-tutorial close-tutorial
+                :default-project-id default-project-id}])
 
-       (when (and (contains? cf/flags :dashboard-templates-section)
-                  (or (not tutorial-viewed?)
-                      (not walkthrough-viewed?)))
-         [:div {:class (stl/css :hero-projects)}
-          (when (and (not tutorial-viewed?) (:is-default team))
-            [:& tutorial-project
-             {:close-tutorial close-tutorial
-              :default-project-id default-project-id}])
+            (when (and (not walkthrough-viewed?) (:is-default team))
+              [:& interface-walkthrough
+               {:close-walkthrough close-walkthrough}])])
 
-          (when (and (not walkthrough-viewed?) (:is-default team))
-            [:& interface-walkthrough
-             {:close-walkthrough close-walkthrough}])])
-
-       [:div {:class (stl/css :dashboard-container :no-bg :dashboard-projects)}
-        (for [{:keys [id] :as project} projects]
-          (let [files (when recent-map
-                        (->> (vals recent-map)
-                             (filterv #(= id (:project-id %)))
-                             (sort-by :modified-at #(compare %2 %1))))]
-            [:& project-item {:project project
-                              :team team
-                              :files files
-                              :first? (= project (first projects))
-                              :key id}]))]])))
+         [:div {:class (stl/css :dashboard-container :no-bg :dashboard-projects)}
+          (for [{:keys [id] :as project} projects]
+            (let [files (when recent-map
+                          (->> (vals recent-map)
+                               (filterv #(= id (:project-id %)))
+                               (sort-by :modified-at #(compare %2 %1))))]
+              [:& project-item {:project project
+                                :team team
+                                :files files
+                                :first? (= project (first projects))
+                                :key id}]))]]]])))

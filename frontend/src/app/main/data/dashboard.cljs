@@ -469,7 +469,11 @@
              (rx/map prepare)
              (rx/mapcat #(rp/cmd! :update-team-photo %))
              (rx/tap on-success)
-             (rx/map du/fetch-teams)
+             (rx/mapcat (fn [_]
+                          (rx/of (du/fetch-teams)
+                                 (ptk/data-event ::ev/event
+                                                 {::ev/name "update-team-photo"
+                                                  :team-id team-id}))))
              (rx/catch on-error))))))
 
 (defn update-team-member-role
@@ -484,7 +488,12 @@
         (->> (rp/cmd! :update-team-member-role params)
              (rx/mapcat (fn [_]
                           (rx/of (fetch-team-members team-id)
-                                 (du/fetch-teams)))))))))
+                                 (du/fetch-teams)
+                                 (ptk/data-event ::ev/event
+                                                 {::ev/name "update-team-member-role"
+                                                  :team-id team-id
+                                                  :role role
+                                                  :member-id member-id})))))))))
 
 (defn delete-team-member
   [{:keys [member-id] :as params}]
@@ -497,7 +506,11 @@
         (->> (rp/cmd! :delete-team-member params)
              (rx/mapcat (fn [_]
                           (rx/of (fetch-team-members team-id)
-                                 (du/fetch-teams)))))))))
+                                 (du/fetch-teams)
+                                 (ptk/data-event ::ev/event
+                                                 {::ev/name "delete-team-member"
+                                                  :team-id team-id
+                                                  :member-id member-id})))))))))
 
 (defn leave-team
   [{:keys [reassign-to] :as params}]
@@ -516,6 +529,11 @@
                       (assoc :reassign-to reassign-to))]
         (->> (rp/cmd! :leave-team params)
              (rx/tap #(tm/schedule on-success))
+             (rx/map (fn [_]
+                       (ptk/data-event ::ev/event
+                                       {::ev/name "leave-team"
+                                        :reassign-to reassign-to
+                                        :team-id team-id})))
              (rx/catch on-error))))))
 
 (defn invite-team-members
@@ -528,8 +546,11 @@
    (sm/check-set-of-emails! emails))
 
   (ptk/reify ::invite-team-members
-    IDeref
-    (-deref [_] {:role role :team-id team-id :resend? resend?})
+    ev/Event
+    (-data [_]
+      {:role role
+       :team-id team-id
+       :resend resend?})
 
     ptk/WatchEvent
     (watch [_ _ _]
@@ -727,6 +748,11 @@
   [{:keys [id name] :as params}]
   (dm/assert! (uuid? id))
   (ptk/reify ::duplicate-project
+    ev/Event
+    (-data [_]
+      {:project-id id
+       :name name})
+
     ptk/WatchEvent
     (watch [_ _ _]
       (let [{:keys [on-success on-error]
@@ -744,10 +770,12 @@
   [{:keys [id team-id] :as params}]
   (dm/assert! (uuid? id))
   (dm/assert! (uuid? team-id))
+
   (ptk/reify ::move-project
-    IDeref
-    (-deref [_]
-      {:id id :team-id team-id})
+    ev/Event
+    (-data [_]
+      {:id id
+       :team-id team-id})
 
     ptk/WatchEvent
     (watch [_ _ _]
@@ -834,9 +862,11 @@
 (defn rename-file
   [{:keys [id name] :as params}]
   (ptk/reify ::rename-file
-    IDeref
-    (-deref [_]
-      {::ev/origin "dashboard" :id id :name name})
+    ev/Event
+    (-data [_]
+      {::ev/origin "dashboard"
+       :id id
+       :name name})
 
     ptk/UpdateEvent
     (update [_ state]
@@ -856,9 +886,11 @@
 (defn set-file-shared
   [{:keys [id is-shared] :as params}]
   (ptk/reify ::set-file-shared
-    IDeref
-    (-deref [_]
-      {::ev/origin "dashboard" :id id :shared is-shared})
+    ev/Event
+    (-data [_]
+      {::ev/origin "dashboard"
+       :id id
+       :shared is-shared})
 
     ptk/UpdateEvent
     (update [_ state]
@@ -912,9 +944,8 @@
   [{:keys [project-id] :as params}]
   (dm/assert! (uuid? project-id))
   (ptk/reify ::create-file
-
-    IDeref
-    (-deref [_] {:project-id project-id})
+    ev/Event
+    (-data [_] {:project-id project-id})
 
     ptk/WatchEvent
     (watch [it state _]
@@ -967,8 +998,8 @@
    (sm/check-set-of-uuid! ids))
 
   (ptk/reify ::move-files
-    IDeref
-    (-deref [_]
+    ev/Event
+    (-data [_]
       {:num-files (count ids)
        :project-id project-id})
 
@@ -998,8 +1029,8 @@
   [{:keys [template-id project-id] :as params}]
   (dm/assert! (uuid? project-id))
   (ptk/reify ::clone-template
-    IDeref
-    (-deref [_]
+    ev/Event
+    (-data [_]
       {:template-id template-id
        :project-id project-id})
 

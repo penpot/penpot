@@ -11,6 +11,10 @@
    [app.main.ui.releases.common :as c]
    [rumext.v2 :as mf]))
 
+(defmethod c/render-release-notes "1.21"
+  [data]
+  (c/render-release-notes (assoc data :version "2.0")))
+
 ;; TODO: Review all copies and alt text
 (defmethod c/render-release-notes "2.0"
   [{:keys [slide klass next finish navigate version]}]
@@ -20,41 +24,41 @@
      [:div {:class (stl/css :modal-overlay)}
       [:div.animated {:class klass}
        [:div {:class (stl/css :modal-container)}
-        ;; TODO: Review alt
         [:img {:src "images/features/2.0-intro-image.png"
                :class (stl/css :start-image)
                :border "0"
-               :alt "Community code contributions"}]
+               :alt "A graphic illustration with Penpot style"}]
 
         [:div {:class (stl/css :modal-content)}
          [:div {:class (stl/css :modal-header)}
           [:h1 {:class (stl/css :modal-title)}
-           "What's new?"]
+           "Welcome to Penpot 2.0! "]
 
-          [:div {:class (stl/css :verstion-tag)}
+          [:div {:class (stl/css :version-tag)}
            (dm/str "Version " version)]]
 
          [:div {:class (stl/css :features-block)}
-          [:div {:class (stl/css :feature)}
-           [:h2 {:class (stl/css :feature-title)}
-            "CSS Grid Layout"]
-           [:p  {:class (stl/css :feature-content)}
-            "Crea una estructura flexible para componer
-             los elementos de tu diseño y obten el código html/css."]]
+          [:p {:class (stl/css :feature-content)}
+           [:spam {:class (stl/css :feature-title)}
+            "CSS Grid Layout: "]
+           "Bring your designs to life, knowing that what you create is what developers code."]
 
-          [:div {:class (stl/css :feature)}
-           [:h2 {:class (stl/css :feature-title)}
-            "New Components"]
-           [:p  {:class (stl/css :feature-content)}
-            "Ahora tus main components estarán en un espacio
-             físico, para que los puedas ver y gestionar fácilmente."]]
+          [:p  {:class (stl/css :feature-content)}
+           [:spam {:class (stl/css :feature-title)}
+            "Sleeker UI: "]
+           "We’ve polished Penpot to make your experience smoother and more enjoyable."]
 
-          [:div {:class (stl/css :feature)}
-           [:h2 {:class (stl/css :feature-title)}
-            "New User Interface"]
-           [:p  {:class (stl/css :feature-content)}
-            "Hemos hecho Penpot aún más bonito, y además
-             ahora puedes elegir entre tema oscuro y claro."]]]
+          [:p  {:class (stl/css :feature-content)}
+           [:spam {:class (stl/css :feature-title)}
+            "New Components System: "]
+           "Managing and using your design components got a whole lot better."]
+
+          [:p  {:class (stl/css :feature-content)}
+           "And that’s not all - we’ve fined tuned performance and "
+           "accessibility to give you a better and more fluid design experience."]
+
+          [:p  {:class (stl/css :feature-content)}
+           " Ready to dive in? Let 's get started!"]]
 
          [:div {:class (stl/css :navigation)}
           [:button {:class (stl/css :next-btn)
@@ -64,32 +68,38 @@
      [:div {:class (stl/css :modal-overlay)}
       [:div.animated {:class klass}
        [:div {:class (stl/css :modal-container)}
-        ;; TODO: Review alt
         [:img {:src "images/features/2.0-css-grid.gif"
                :class (stl/css :start-image)
                :border "0"
-               :alt "Community code contributions"}]
+               :alt "Penpot's CSS Grid Layout"}]
 
         [:div {:class (stl/css :modal-content)}
          [:div {:class (stl/css :modal-header)}
           [:h1 {:class (stl/css :modal-title)}
-           "css grid layout"]]
+           "CSS Grid Layout - Design Meets Development"]]
+
          [:div {:class (stl/css :feature)}
           [:p {:class (stl/css :feature-content)}
-           "¿Querías más flexibilidad para componer tus diseños?
-            Selecciona GridLayout para crear una estructura con los
-            márgenes y espacios que necesites. Los elementos de tu diseño
-            se adaptarán como un guante. Además tendrás en el momento el
-            código html y css con estándares web."]
+           "The much-awaited Grid Layout introduces 2-dimensional"
+           " layout capabilities to Penpot, allowing for the creation"
+           " of adaptive layouts by leveraging the power of CSS properties."]
 
           [:p {:class (stl/css :feature-content)}
-           "Elige entre FlexLayout o GridLayout en tu panel lateral derecho."]]
+           "It’s a host of new features, including columns and"
+           " rows management, flexible units such as FR (fractions),"
+           " the ability to create and name areas, and tons of new "
+           "and unique possibilities within a design tool."]
+
+          [:p {:class (stl/css :feature-content)}
+           "Designers will learn CSS basics while working, "
+           "and as always with Penpot, developers can pick"
+           " up the design as code to take it from there."]]
 
          [:div {:class (stl/css :navigation)}
           [:& c/navigation-bullets
            {:slide slide
             :navigate navigate
-            :total 3}]
+            :total 4}]
 
           [:button {:on-click next
                     :class (stl/css :next-btn)} "Continue"]]]]]]
@@ -98,30 +108,32 @@
      [:div {:class (stl/css :modal-overlay)}
       [:div.animated {:class klass}
        [:div {:class (stl/css :modal-container)}
-        [:img {:src "images/features/2.0-components.gif"
+        [:img {:src "images/features/2.0-new-ui.gif"
                :class (stl/css :start-image)
                :border "0"
-               :alt "Community code contributions"}]
+               :alt "Penpot's UI Makeover"}]
 
         [:div {:class (stl/css :modal-content)}
          [:div {:class (stl/css :modal-header)}
           [:h1 {:class (stl/css :modal-title)}
-           "New components"]]
+           "UI Makeover -  Smoother, Sharper, and Simply More Fun"]]
+
          [:div {:class (stl/css :feature)}
           [:p {:class (stl/css :feature-content)}
-           "Os hemos escuchado y ahora los main components están
-            disponibles en el archivo para gestionarlos más cómodamente."]
+           "We've completely overhauled Penpot's user interface. "
+           "The improvements in consistency, the introduction of "
+           "new microinteractions, and attention to countless details"
+           " will significantly enhance the productivity and enjoyment of using Penpot."]
           [:p {:class (stl/css :feature-content)}
-           "No te preocupes por tus archivos con main componentes v1,
-            al abrirlos con la nueva versión los encontrarás agrupados
-            en una página nueva, sanos y salvos."]]
+           "Furthermore, we’ve made several accessibility improvements, "
+           "with better color contrast, keyboard navigation,"
+           " and adherence to other best practices."]]
 
          [:div {:class (stl/css :navigation)}
-
           [:& c/navigation-bullets
            {:slide slide
             :navigate navigate
-            :total 3}]
+            :total 4}]
 
           [:button {:on-click next
                     :class (stl/css :next-btn)} "Continue"]]]]]]
@@ -130,36 +142,65 @@
      [:div {:class (stl/css :modal-overlay)}
       [:div.animated {:class klass}
        [:div {:class (stl/css :modal-container)}
-        [:img {:src "images/features/2.0-new-ui.gif"
+        [:img {:src "images/features/2.0-components.gif"
                :class (stl/css :start-image)
                :border "0"
-               :alt "Community code contributions"}]
+               :alt "Penpot's new components system"}]
 
         [:div {:class (stl/css :modal-content)}
          [:div {:class (stl/css :modal-header)}
           [:h1 {:class (stl/css :modal-title)}
-           "REDISEÑO Y MEJORAS DE RENDIMIENTO"]]
-
+           "New Components System"]]
          [:div {:class (stl/css :feature)}
           [:p {:class (stl/css :feature-content)}
-           "Le hemos dado una vuelta al interface y añadido
-            pequeñas mejoras de usabilidad.
-            Además, ahora puedes elegir entre tema oscuro y tema claro,
-            dignos de Dark Vader y Luke Skywalker."]
+           "The new Penpot components system improves"
+           " control over instances, including their "
+           "inheritances and properties overrides. "
+           "Main components are now accessible as design"
+           " elements, allowing a better updating "
+           "workflow through instant changes synchronization."]
           [:p {:class (stl/css :feature-content)}
-           "Aunque siempre estamos puliendo el rendimiento
-            y la estabilidad, en esta versión hemos
-            conseguido grandes mejoras en ese sentido."]
+           "And that’s not all, there are new capabilities "
+           "such as component swapping and annotations "
+           "that will help you to better manage your design systems."]]
 
+         [:div {:class (stl/css :navigation)}
+          [:& c/navigation-bullets
+           {:slide slide
+            :navigate navigate
+            :total 4}]
+
+          [:button {:on-click next
+                    :class (stl/css :next-btn)} "Continue"]]]]]]
+
+     3
+     [:div {:class (stl/css :modal-overlay)}
+      [:div.animated {:class klass}
+       [:div {:class (stl/css :modal-container)}
+        [:img {:src "images/features/2.0-html.gif"
+               :class (stl/css :start-image)
+               :border "0"
+               :alt " Penpot's  HTML code generator"}]
+
+        [:div {:class (stl/css :modal-content)}
+         [:div {:class (stl/css :modal-header)}
+          [:h1 {:class (stl/css :modal-title)}
+           "And much more"]]
+         [:div {:class (stl/css :feature)}
           [:p {:class (stl/css :feature-content)}
-           "Que lo disfrutes!"]]
+           "In addition to all of this, we’ve included several other requested improvements:"]
+          [:ul {:class (stl/css :feature-list)}
+           [:li "Access HTML markup code directly in inspect mode"]
+           [:li "Images are now treated as element fills, maintaining their aspect ratio on resize, ideal for flexible designs"]
+           [:li "Enjoy new color themes with options for both dark and light modes"]
+           [:li "Feel the speed boost! Enjoy a smoother experience with a bunch of performance improvements"]]]
 
          [:div {:class (stl/css :navigation)}
 
           [:& c/navigation-bullets
            {:slide slide
             :navigate navigate
-            :total 3}]
+            :total 4}]
 
           [:button {:on-click finish
                     :class (stl/css :next-btn)} "Let's go"]]]]]])))

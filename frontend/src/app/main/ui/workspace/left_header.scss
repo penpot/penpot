@@ -41,7 +41,6 @@
   height: $s-16;
   width: 100%;
   padding-bottom: $s-2;
-  margin-top: calc(-1 * $s-2);
   color: var(--title-foreground-color);
   cursor: pointer;
 }
@@ -54,10 +53,10 @@
 
 .file-name-input {
   @include flexCenter;
-  height: 100%;
   width: 100%;
   margin: 0;
   border: 0;
+  padding: 0;
   border-radius: $br-4;
   background-color: var(--input-background-color);
   font-size: $fs-14;

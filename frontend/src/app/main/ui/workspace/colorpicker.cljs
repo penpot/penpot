@@ -264,7 +264,7 @@
         [:button {:class (stl/css-case :picker-btn true
                                        :selected picking-color?)
                   :on-click handle-click-picker}
-         i/picker-refactor])]
+         i/picker])]
 
      (when (or (= selected-mode :linear-gradient)
                (= selected-mode :radial-gradient))
@@ -287,7 +287,7 @@
                       :class (stl/css-case  :global/checked keep-aspect-ratio?)}
               [:span {:class (stl/css-case :global/checked keep-aspect-ratio?)}
                (when keep-aspect-ratio?
-                 i/status-tick-refactor)]
+                 i/status-tick)]
               (tr "media.keep-aspect-ratio")
               [:input {:type "checkbox"
                        :id "keep-aspect-ratio"
@@ -312,11 +312,11 @@
            :selected @active-color-tab
            :collapsable false}
 
-          [:& tab-element {:id :ramp :title i/rgba-refactor}
+          [:& tab-element {:id :ramp :title i/rgba}
            (if picking-color?
              [:div {:class (stl/css :picker-detail-wrapper)}
               [:div {:class (stl/css :center-circle)}]
-              [:canvas#picker-detail {:width 256 :height 140}]]
+              [:canvas#picker-detail {:class (stl/css :picker-detail) :width 256 :height 140}]]
              [:& ramp-selector
               {:color current-color
                :disable-opacity disable-opacity
@@ -324,11 +324,11 @@
                :on-start-drag on-start-drag
                :on-finish-drag on-finish-drag}])]
 
-          [:& tab-element {:id :harmony :title i/rgba-complementary-refactor}
+          [:& tab-element {:id :harmony :title i/rgba-complementary}
            (if picking-color?
              [:div {:class (stl/css :picker-detail-wrapper)}
               [:div {:class (stl/css :center-circle)}]
-              [:canvas#picker-detail {:width 256 :height 140}]]
+              [:canvas#picker-detail {:class (stl/css :picker-detail) :width 256 :height 140}]]
              [:& harmony-selector
               {:color current-color
                :disable-opacity disable-opacity
@@ -336,11 +336,11 @@
                :on-start-drag on-start-drag
                :on-finish-drag on-finish-drag}])]
 
-          [:& tab-element {:id :hsva :title i/hsva-refactor}
+          [:& tab-element {:id :hsva :title i/hsva}
            (if picking-color?
              [:div {:class (stl/css :picker-detail-wrapper)}
               [:div {:class (stl/css :center-circle)}]
-              [:canvas#picker-detail {:width 256 :height 140}]]
+              [:canvas#picker-detail {:class (stl/css :picker-detail) :width 256 :height 140}]]
              [:& hsva-selector
               {:color current-color
                :disable-opacity disable-opacity

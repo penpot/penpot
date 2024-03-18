@@ -25,6 +25,12 @@
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
+(def ^:private arrow-icon
+  (i/icon-xref :arrow (stl/css :arrow-icon)))
+
+(def ^:private download-icon
+  (i/icon-xref :download (stl/css :download-icon)))
+
 (def builtin-templates
   (l/derived :builtin-templates st/state))
 
@@ -76,10 +82,16 @@
 
     [:div {:class (stl/css :title)}
      [:button {:tab-index "0"
+               :class (stl/css :title-btn)
                :on-click on-click
                :on-key-down on-key-down}
-      [:span (tr "dashboard.libraries-and-templates")]
-      [:span {:class (stl/css :icon)} (if ^boolean collapsed i/arrow-up i/arrow-down)]]]))
+      [:span {:class (stl/css :title-text)}
+       (tr "dashboard.libraries-and-templates")]
+      (if ^boolean collapsed
+        [:span {:class (stl/css :title-icon :title-icon-collapsed)}
+         arrow-icon]
+        [:span {:class (stl/css :title-icon)}
+         arrow-icon])]]))
 
 (mf/defc card-item
   {::mf/wrap-props false}
@@ -112,8 +124,8 @@
        [:img {:src (dm/str thb)
               :alt (:name item)}]]
       [:div {:class (stl/css :card-name)}
-       [:span (:name item)]
-       [:span {:class (stl/css :icon)} i/download-refactor]]]]))
+       [:span {:class (stl/css :card-text)} (:name item)]
+       download-icon]]]))
 
 (mf/defc card-item-link
   {::mf/wrap-props false}
@@ -260,18 +272,16 @@
         :total total}]]
 
      (when (< card-offset 0)
-       [:button
-        {:class (stl/css :button :left)
-         :tab-index (if ^boolean collapsed "-1" "0")
-         :on-click on-move-left
-         :on-key-down on-move-left-key-down}
-        i/go-prev])
+       [:button {:class (stl/css :move-button :move-left)
+                 :tab-index (if ^boolean collapsed "-1" "0")
+                 :on-click on-move-left
+                 :on-key-down on-move-left-key-down}
+        arrow-icon])
 
      (when more-cards
-       [:button
-        {:class (stl/css :button :right)
-         :tab-index (if collapsed "-1" "0")
-         :on-click on-move-right
-         :aria-label (tr "labels.next")
-         :on-key-down  on-move-right-key-down}
-        i/go-next])]))
+       [:button {:class (stl/css :move-button :move-right)
+                 :tab-index (if collapsed "-1" "0")
+                 :on-click on-move-right
+                 :aria-label (tr "labels.next")
+                 :on-key-down  on-move-right-key-down}
+        arrow-icon])]))

@@ -86,7 +86,7 @@
 
         accept-edit (fn []
                       (let [name-input (mf/ref-val name-ref)
-                            name       (dom/get-value name-input)]
+                            name       (str/trim (dom/get-value name-input))]
                         (reset! editing? false)
                         (st/emit! (dwi/end-rename-flow)
                                   (when-not (str/empty? name)
@@ -139,7 +139,7 @@
        [:button {:class (stl/css :start-flow-btn)
                  :on-click start-flow}
         [:span {:class (stl/css :button-icon)}
-         i/play-refactor]]
+         i/play]]
        [:span {:class (stl/css :flow-input-wrapper)}
         [:input
          {:class (stl/css :flow-input)
@@ -151,7 +151,7 @@
 
      [:button {:class (stl/css :remove-flow-btn)
                :on-click remove-flow}
-      i/remove-refactor]]))
+      i/remove-icon]]))
 
 (mf/defc page-flows
   [{:keys [flows]}]
@@ -177,25 +177,25 @@
           [:button {:class (stl/css :add-flow-btn)
                     :title (tr  "workspace.options.flows.add-flow-start")
                     :on-click add-flow}
-           i/add-refactor])]
+           i/add])]
 
        (when flow
          [:& flow-item {:flow flow :key (str (:id flow))}])])))
 
 (def ^:private corner-center-icon
-  (i/icon-xref :corner-center-refactor (stl/css :corner-icon)))
+  (i/icon-xref :corner-center (stl/css :corner-icon)))
 (def ^:private corner-bottom-icon
-  (i/icon-xref :corner-bottom-refactor (stl/css :corner-icon)))
+  (i/icon-xref :corner-bottom (stl/css :corner-icon)))
 (def ^:private corner-bottomleft-icon
-  (i/icon-xref :corner-bottomleft-refactor (stl/css :corner-icon)))
+  (i/icon-xref :corner-bottomleft (stl/css :corner-icon)))
 (def ^:private corner-bottomright-icon
-  (i/icon-xref :corner-bottomright-refactor (stl/css :corner-icon)))
+  (i/icon-xref :corner-bottomright (stl/css :corner-icon)))
 (def ^:private corner-top-icon
-  (i/icon-xref :corner-top-refactor (stl/css :corner-icon)))
+  (i/icon-xref :corner-top (stl/css :corner-icon)))
 (def ^:private corner-topleft-icon
-  (i/icon-xref :corner-topleft-refactor (stl/css :corner-icon)))
+  (i/icon-xref :corner-topleft (stl/css :corner-icon)))
 (def ^:private corner-topright-icon
-  (i/icon-xref :corner-topright-refactor (stl/css :corner-icon)))
+  (i/icon-xref :corner-topright (stl/css :corner-icon)))
 
 (mf/defc interaction-entry
   [{:keys [index shape interaction update-interaction remove-interaction]}]
@@ -412,11 +412,11 @@
             (d/concat-vec basic-animation-opts [{:value :push :label (tr "workspace.options.interaction-animation-push")}])
             basic-animation-opts))
 
-        easing-options [{:icon  :easing-linear-refactor :value :linear :label (tr "workspace.options.interaction-easing-linear")}
-                        {:icon  :easing-ease-refactor :value :ease :label (tr "workspace.options.interaction-easing-ease")}
-                        {:icon  :easing-ease-in-refactor :value :ease-in :label (tr "workspace.options.interaction-easing-ease-in")}
-                        {:icon  :easing-ease-out-refactor :value :ease-out :label (tr "workspace.options.interaction-easing-ease-out")}
-                        {:icon  :easing-ease-in-out-refactor :value :ease-in-out :label (tr "workspace.options.interaction-easing-ease-in-out")}]]
+        easing-options [{:icon  :easing-linear :value :linear :label (tr "workspace.options.interaction-easing-linear")}
+                        {:icon  :easing-ease :value :ease :label (tr "workspace.options.interaction-easing-ease")}
+                        {:icon  :easing-ease-in :value :ease-in :label (tr "workspace.options.interaction-easing-ease-in")}
+                        {:icon  :easing-ease-out :value :ease-out :label (tr "workspace.options.interaction-easing-ease-out")}
+                        {:icon  :easing-ease-in-out :value :ease-in-out :label (tr "workspace.options.interaction-easing-ease-in-out")}]]
 
 
     [:div {:class (stl/css-case  :element-set-options-group true
@@ -426,7 +426,7 @@
       [:button {:class (stl/css-case :extend-btn true
                                      :extended extended-open?)
                 :on-click toggle-extended}
-       i/menu-refactor]
+       i/menu]
 
       [:div {:class (stl/css :interactions-info)
              :on-click toggle-extended}
@@ -435,7 +435,7 @@
       [:button {:class (stl/css :remove-btn)
                 :data-value index
                 :on-click #(remove-interaction index)}
-       i/remove-refactor]]
+       i/remove-icon]]
 
      (when extended-open?
        [:div {:class (stl/css :extended-options)}
@@ -490,7 +490,7 @@
                      :class (stl/css-case  :global/checked preserve-scroll?)}
              [:span {:class (stl/css-case :global/checked preserve-scroll?)}
               (when preserve-scroll?
-                i/status-tick-refactor)]
+                i/status-tick)]
              (tr "workspace.options.interaction-preserve-scroll")
              [:input {:type "checkbox"
                       :id (str "preserve-" index)
@@ -586,7 +586,7 @@
                        :class (stl/css-case  :global/checked close-click-outside?)}
                [:span {:class (stl/css-case :global/checked close-click-outside?)}
                 (when close-click-outside?
-                  i/status-tick-refactor)]
+                  i/status-tick)]
                (tr "workspace.options.interaction-close-outside")
                [:input {:type "checkbox"
                         :id (str "close-" index)
@@ -600,7 +600,7 @@
                        :class (stl/css-case  :global/checked background-overlay?)}
                [:span {:class (stl/css-case :global/checked background-overlay?)}
                 (when background-overlay?
-                  i/status-tick-refactor)]
+                  i/status-tick)]
                (tr "workspace.options.interaction-background")
                [:input {:type "checkbox"
                         :id (str "background-" index)
@@ -638,19 +638,19 @@
                [:& radio-buttons {:selected (d/name direction)
                                   :on-change change-direction
                                   :name "animation-direction"}
-                [:& radio-button {:icon i/column-refactor
+                [:& radio-button {:icon i/column
                                   :icon-class (stl/css :right)
                                   :value "right"
                                   :id "animation-right"}]
-                [:& radio-button {:icon i/column-refactor
+                [:& radio-button {:icon i/column
                                   :icon-class (stl/css :left)
                                   :id "animation-left"
                                   :value "left"}]
-                [:& radio-button {:icon i/column-refactor
+                [:& radio-button {:icon i/column
                                   :icon-class (stl/css :down)
                                   :id "animation-down"
                                   :value "down"}]
-                [:& radio-button {:icon i/column-refactor
+                [:& radio-button {:icon i/column
                                   :icon-class (stl/css :up)
                                   :id "animation-up"
                                   :value "up"}]]]])
@@ -687,7 +687,7 @@
                         :class (stl/css-case  :global/checked (-> interaction :animation :offset-effect))}
                 [:span {:class (stl/css-case :global/checked (-> interaction :animation :offset-effect))}
                  (when (-> interaction :animation :offset-effect)
-                   i/status-tick-refactor)]
+                   i/status-tick)]
                 (tr "workspace.options.interaction-offset-effect")
                 [:input {:type "checkbox"
                          :id (str "offset-effect-" index)
@@ -726,21 +726,21 @@
 
           [:button {:class (stl/css :add-interaction-btn)
                     :on-click add-interaction}
-           i/add-refactor]]])
+           i/add]]])
 
       (when (= (count interactions) 0)
         [:div {:class (stl/css :help-content)}
          (when (and shape (not (cfh/unframed-shape? shape)))
            [:div {:class (stl/css :help-group)}
-            [:div {:class (stl/css :interactions-help-icon)} i/add-refactor]
+            [:div {:class (stl/css :interactions-help-icon)} i/add]
             [:div {:class (stl/css :interactions-help)}
              (tr "workspace.options.add-interaction")]])
          [:div {:class (stl/css :help-group)}
-          [:div {:class (stl/css :interactions-help-icon)} i/interaction-refactor]
+          [:div {:class (stl/css :interactions-help-icon)} i/interaction]
           [:div {:class (stl/css :interactions-help)}
            (tr "workspace.options.select-a-shape")]]
          [:div {:class (stl/css :help-group)}
-          [:div {:class (stl/css :interactions-help-icon)} i/play-refactor]
+          [:div {:class (stl/css :interactions-help-icon)} i/play]
           [:div {:class (stl/css :interactions-help)}
            (tr "workspace.options.use-play-button")]]])
       [:div {:class (stl/css :groups)}

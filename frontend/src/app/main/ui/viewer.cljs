@@ -100,18 +100,18 @@
        [:button {:class (stl/css-case :viewer-go-prev true
                                       :left-bar left-bar)
                  :on-click go-prev-frame}
-        i/arrow-refactor])
+        i/arrow])
      (when (< (+ index 1) num-frames)
        [:button {:class (stl/css-case :viewer-go-next  true
                                       :comment-sidebar comment-sidebar
                                       :right-bar right-bar)
                  :on-click go-next-frame}
-        i/arrow-refactor])
+        i/arrow])
      [:div {:class (stl/css-case :viewer-bottom true
                                  :left-bar left-bar)}
       [:button {:on-click go-first-frame
                 :class (stl/css :reset-button)}
-       i/reload-refactor]
+       i/reload]
       [:span {:class (stl/css :counter)}
        (str/join " / " [(+ index 1) num-frames])]
       [:span]]]))

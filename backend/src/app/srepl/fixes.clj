@@ -10,10 +10,15 @@
   (:require
    [app.binfile.common :as bfc]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.files.changes :as cpc]
+   [app.common.files.helpers :as cfh]
    [app.common.files.repair :as cfr]
    [app.common.files.validate :as cfv]
    [app.common.logging :as l]
+   [app.common.types.component :as ctk]
+   [app.common.types.container :as ctn]
+   [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.features.fdata :as feat.fdata]
@@ -134,3 +139,101 @@
                              (disj touched :shapes-group))))]
     file  (-> file
               (update :data fix-fdata))))
+
+(defn add-swap-slots
+  [file libs _opts]
+  ;; Detect swapped copies and try to generate a valid swap-slot.
+  (letfn [(process-fdata [data]
+            ;; Walk through all containers in the file, both pages and deleted components.
+            (reduce process-container data (ctf/object-containers-seq data)))
+
+          (process-container [data container]
+            ;; Walk through all shapes in depth-first tree order.
+            (l/dbg :hint "Processing container" :type (:type container) :name (:name container))
+            (let [root-shape (ctn/get-container-root container)]
+              (ctf/update-container data
+                                    container
+                                    #(reduce process-shape % (ctn/get-direct-children container root-shape)))))
+
+          (process-shape [container shape]
+            ;; Look for head copies in the first level (either component roots or inside main components).
+            ;; Even if they have been swapped, we don't add slot to them because there is no way to know
+            ;; the original shape. Only children.
+            (if (and (ctk/instance-head? shape)
+                     (ctk/in-component-copy? shape)
+                     (nil? (ctk/get-swap-slot shape)))
+              (process-copy-head container shape)
+              (reduce process-shape container (ctn/get-direct-children container shape))))
+
+          (process-copy-head [container head-shape]
+            ;; Process recursively all children, comparing each one with the corresponding child in the main
+            ;; component, looking by position. If the shape-ref does not point to the found child, then it has
+            ;; been swapped and need to set up a slot.
+            (l/trc :hint "Processing copy-head" :id (:id head-shape) :name (:name head-shape))
+            (let [component-shape     (ctf/find-ref-shape file container libs head-shape :include-deleted? true :with-context? true)
+                  component-container (:container (meta component-shape))]
+              (loop [container          container
+                     children           (map #(ctn/get-shape container %) (:shapes head-shape))
+                     component-children (map #(ctn/get-shape component-container %) (:shapes component-shape))]
+                (let [child           (first children)
+                      component-child (first component-children)]
+                  (if (or (nil? child) (nil? component-child))
+                    container
+                    (let [container (if (and (not (ctk/is-main-of? component-child child))
+                                             (nil? (ctk/get-swap-slot child))
+                                             (ctk/instance-head? child))
+                                      (let [slot (guess-swap-slot component-child component-container)]
+                                        (l/dbg :hint "child" :id (:id child) :name (:name child) :slot slot)
+                                        (ctn/update-shape container (:id child)
+                                                          #(update % :touched
+                                                                   cfh/set-touched-group
+                                                                   (ctk/build-swap-slot-group slot))))
+                                      container)]
+                      (recur (process-copy-head container child)
+                             (rest children)
+                             (rest component-children))))))))
+
+          (guess-swap-slot [shape container]
+            ;; To guess the slot, we must follow the chain until we find the definitive main. But
+            ;; we cannot navigate by shape-ref, because main shapes may also have been swapped. So
+            ;; chain by position, too.
+            (if-let [slot (ctk/get-swap-slot shape)]
+              slot
+              (if-not (ctk/in-component-copy? shape)
+                (:id shape)
+                (let [head-copy (ctn/get-component-shape (:objects container) shape)]
+                  (if (= (:id head-copy) (:id shape))
+                    (:id shape)
+                    (let [head-main (ctf/find-ref-shape file
+                                                        container
+                                                        libs
+                                                        head-copy
+                                                        :include-deleted? true
+                                                        :with-context? true)
+                          container-main (:container (meta head-main))
+                          shape-main (find-match-by-position shape
+                                                             head-copy
+                                                             container
+                                                             head-main
+                                                             container-main)]
+                      (guess-swap-slot shape-main container-main)))))))
+
+          (find-match-by-position [shape-copy head-copy container-copy head-main container-main]
+            ;; Find the shape in the main that has the same position under its parent than
+            ;; the copy under its one. To get the parent we must process recursively until
+            ;; the component head, because mains may also have been swapped.
+            (let [parent-copy   (ctn/get-shape container-copy (:parent-id shape-copy))
+                  parent-main   (if (= (:id parent-copy) (:id head-copy))
+                                  head-main
+                                  (find-match-by-position parent-copy
+                                                          head-copy
+                                                          container-copy
+                                                          head-main
+                                                          container-main))
+                  index         (cfh/get-position-on-parent (:objects container-copy)
+                                                            (:id shape-copy))
+                  shape-main-id (dm/get-in parent-main [:shapes index])]
+              (ctn/get-shape container-main shape-main-id)))]
+
+    file  (-> file
+              (update :data process-fdata))))

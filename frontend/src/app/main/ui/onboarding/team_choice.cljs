@@ -40,23 +40,23 @@
     (tr "onboarding.team-modal.create-team-desc")]
    [:ul {:class (stl/css :team-features)}
     [:li {:class (stl/css :feature)}
-     [:span {:class (stl/css :icon)} i/document-refactor]
+     [:span {:class (stl/css :icon)} i/document]
      [:p {:class (stl/css :modal-desc)}
       (tr "onboarding.team-modal.create-team-feature-1")]]
     [:li {:class (stl/css :feature)}
-     [:span {:class (stl/css :icon)}  i/move-refactor]
+     [:span {:class (stl/css :icon)}  i/move]
      [:p {:class (stl/css :modal-desc)}
       (tr "onboarding.team-modal.create-team-feature-2")]]
     [:li {:class (stl/css :feature)}
-     [:span {:class (stl/css :icon)}  i/tree-refactor]
+     [:span {:class (stl/css :icon)}  i/tree]
      [:p {:class (stl/css :modal-desc)}
       (tr "onboarding.team-modal.create-team-feature-3")]]
     [:li {:class (stl/css :feature)}
-     [:span {:class (stl/css :icon)}  i/user-refactor]
+     [:span {:class (stl/css :icon)}  i/user]
      [:p {:class (stl/css :modal-desc)}
       (tr "onboarding.team-modal.create-team-feature-4")]]
     [:li {:class (stl/css :feature)}
-     [:span {:class (stl/css :icon)}  i/tick-refactor]
+     [:span {:class (stl/css :icon)}  i/tick]
      [:p {:class (stl/css :modal-desc)}
       (tr "onboarding.team-modal.create-team-feature-5")]]]])
 

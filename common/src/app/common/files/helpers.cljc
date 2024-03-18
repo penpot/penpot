@@ -12,7 +12,6 @@
    [app.common.schema :as sm]
    [app.common.types.components-list :as ctkl]
    [app.common.types.pages-list :as ctpl]
-   [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
    [cuerdas.core :as str]))
@@ -361,7 +360,8 @@
 
 (defn set-touched-group
   [touched group]
-  (conj (or touched #{}) group))
+  (when group
+    (conj (or touched #{}) group)))
 
 (defn touched-group?
   [shape group]
@@ -741,22 +741,6 @@
        (d/seek root-frame?)
        :id))
 
-(defn comparator-layout-z-index
-  [[idx-a child-a] [idx-b child-b]]
-  (cond
-    (> (ctl/layout-z-index child-a) (ctl/layout-z-index child-b)) 1
-    (< (ctl/layout-z-index child-a) (ctl/layout-z-index child-b)) -1
-    (< idx-a idx-b) 1
-    (> idx-a idx-b) -1
-    :else 0))
-
-(defn sort-layout-children-z-index
-  [children]
-  (->> children
-       (d/enumerate)
-       (sort comparator-layout-z-index)
-       (mapv second)))
-
 (defn common-parent-frame
   "Search for the common frame for the selected shapes. Otherwise returns the root frame"
   [objects selected]
@@ -779,6 +763,13 @@
 
         (recur frame-id frame-parents (rest selected))))))
 
+(defn fixed-scroll?
+  [shape]
+  ^boolean
+  (and (:fixed-scroll shape)
+       (= (:parent-id shape) (:frame-id shape))
+       (not= (:frame-id shape) uuid/zero)))
+
 (defn fixed?
   [objects shape-id]
   (let [ids-to-check
@@ -789,4 +780,4 @@
               (take-while #(and (not= % uuid/zero) (not (root-frame? objects %))))))]
     (boolean
      (->> ids-to-check
-          (d/seek (fn [id] (dm/get-in objects [id :fixed-scroll])))))))
+          (d/seek (fn [id] () (fixed-scroll? (get objects id))))))))

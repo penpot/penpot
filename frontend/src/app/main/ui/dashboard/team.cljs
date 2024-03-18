@@ -24,12 +24,39 @@
    [app.main.ui.dashboard.change-owner]
    [app.main.ui.dashboard.team-form]
    [app.main.ui.icons :as i]
+   [app.main.ui.notifications.badge :refer [badge-notification]]
+   [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
+
+
+(def ^:private arrow-icon
+  (i/icon-xref :arrow (stl/css :arrow-icon)))
+
+(def ^:private menu-icon
+  (i/icon-xref :menu (stl/css :menu-icon)))
+
+(def ^:private warning-icon
+  (i/icon-xref :msg-warning (stl/css :warning-icon)))
+
+(def ^:private success-icon
+  (i/icon-xref :msg-success (stl/css :success-icon)))
+
+(def ^:private image-icon
+  (i/icon-xref :img (stl/css :image-icon)))
+
+(def ^:private user-icon
+  (i/icon-xref :user (stl/css :user-icon)))
+
+(def ^:private document-icon
+  (i/icon-xref :document (stl/css :document-icon)))
+
+(def ^:private group-icon
+  (i/icon-xref :group (stl/css :group-icon)))
 
 (mf/defc header
   {::mf/wrap [mf/memo]
@@ -163,17 +190,16 @@
        (tr "modals.invite-team-member.title")]
 
       (when-not (= "" @error-text)
-        [:div {:class (stl/css :error-msg)}
-         [:span {:class (stl/css :icon)} i/msg-error]
-         [:span {:class (stl/css :message)} @error-text]])
+        [:& context-notification {:content  @error-text
+                                  :type :error}])
 
       (when (some current-data-emails current-members-emails)
-        [:div {:class (stl/css :warning-msg)}
-         [:span  {:class (stl/css :icon)} i/msg-warning]
-         [:span {:class (stl/css :message)} (tr "modals.invite-member.repeated-invitation")]])
+        [:& context-notification {:content  (tr "modals.invite-member.repeated-invitation")
+                                  :type :warning}])
 
       [:div {:class (stl/css :role-select)}
-       [:p {:class (stl/css :role-title)} (tr "onboarding.choice.team-up.roles")]
+       [:p {:class (stl/css :role-title)}
+        (tr "onboarding.choice.team-up.roles")]
        [:& fm/select {:name :role :options roles}]]
 
       [:div {:class (stl/css :invitation-row)}
@@ -190,6 +216,7 @@
       [:div {:class (stl/css :action-buttons)}
        [:> fm/submit-button*
         {:label (tr "modals.invite-member-confirm.accept")
+         :class (stl/css :accept-btn)
          :disabled (and (boolean (some current-data-emails current-members-emails))
                         (empty? (remove current-members-emails current-data-emails)))}]]]]))
 
@@ -202,8 +229,8 @@
   [{:keys [member profile]}]
   (let [is-you? (= (:id profile) (:id member))]
     [:*
-     [:div {:class (stl/css :member-image)}
-      [:img {:src (cfg/resolve-profile-photo-url member)}]]
+     [:img  {:class (stl/css :member-image)
+             :src (cfg/resolve-profile-photo-url member)}]
      [:div {:class (stl/css :member-info)}
       [:div {:class (stl/css :member-name)} (:name member)
        (when is-you?
@@ -238,19 +265,25 @@
        [:div {:class (stl/css :rol-selector :has-priv)
               :on-click on-show}
         [:span {:class (stl/css :rol-label)} (tr role)]
-        [:span {:class (stl/css :icon)} i/arrow-down]]
+        arrow-icon]
        [:div {:class (stl/css :rol-selector)}
         [:span {:class (stl/css :rol-label)} (tr role)]])
 
      [:& dropdown {:show @show? :on-close on-hide}
-      [:ul {:class (stl/css :dropdown :options-dropdown)}
-       [:li {:on-click on-set-admin} (tr "labels.admin")]
-       [:li {:on-click on-set-editor} (tr "labels.editor")]
-             ;; Temporarily disabled viewer role
-             ;; https://tree.taiga.io/project/penpot/issue/1083
-             ;;  [:li {:on-click set-viewer} (tr "labels.viewer")]
+      [:ul {:class (stl/css :roles-dropdown)}
+       [:li {:on-click on-set-admin
+             :class (stl/css :rol-dropdown-item)}
+        (tr "labels.admin")]
+       [:li {:on-click on-set-editor
+             :class (stl/css :rol-dropdown-item)}
+        (tr "labels.editor")]
+       ;; Temporarily disabled viewer role
+       ;; https://tree.taiga.io/project/penpot/issue/1083
+       ;;  [:li {:on-click set-viewer} (tr "labels.viewer")]
        (when you-owner?
-         [:li {:on-click (partial on-set-owner member)} (tr "labels.owner")])]]]))
+         [:li {:on-click (partial on-set-owner member)
+               :class (:stl/css :rol-dropdown-item)}
+          (tr "labels.owner")])]]]))
 
 (mf/defc member-actions
   {::mf/wrap-props false}
@@ -267,15 +300,20 @@
 
     [:*
      (when (or is-you? (and can-delete? (not (and is-owner? (not owner?)))))
-       [:span {:class (stl/css :icon)
-               :on-click on-show} [i/actions]])
+       [:button {:class (stl/css :menu-btn)
+                 :on-click on-show}
+        menu-icon])
 
      [:& dropdown {:show @show? :on-close on-hide}
-      [:ul {:class (stl/css :dropdown :actions-dropdown)}
+      [:ul {:class (stl/css :actions-dropdown)}
        (when is-you?
-         [:li {:on-click on-leave} (tr "dashboard.leave-team")])
+         [:li {:on-click on-leave
+               :class (stl/css :action-dropdown-item)
+               :key "is-you-option"} (tr "dashboard.leave-team")])
        (when (and can-delete? (not is-you?) (not (and is-owner? (not owner?))))
-         [:li {:on-click on-delete} (tr "labels.remove-member")])]]]))
+         [:li {:on-click on-delete
+               :class (stl/css :action-dropdown-item)
+               :key "is-not-you-option"} (tr "labels.remove-member")])]]]))
 
 (defn- set-role! [member-id role]
   (let [params {:member-id member-id :role role}]
@@ -396,10 +434,10 @@
               :else                 on-leave)]
 
     [:div {:class (stl/css :table-row)}
-     [:div {:class (stl/css :table-field :name)}
+     [:div {:class (stl/css :table-field :field-name)}
       [:& member-info {:member member :profile profile}]]
 
-     [:div {:class (stl/css :table-field :roles)}
+     [:div {:class (stl/css :table-field :field-roles)}
       [:& rol-info  {:member member
                      :team team
                      :on-set-admin on-set-admin
@@ -407,7 +445,7 @@
                      :on-set-owner on-set-owner
                      :profile profile}]]
 
-     [:div {:class (stl/css :table-field :actions)}
+     [:div {:class (stl/css :table-field :field-actions)}
       [:& member-actions {:member member
                           :profile profile
                           :team team
@@ -427,8 +465,8 @@
 
     [:div {:class (stl/css :dashboard-table :team-members)}
      [:div {:class (stl/css :table-header)}
-      [:div {:class (stl/css :table-field :name)} (tr "labels.member")]
-      [:div {:class (stl/css :table-field :role)} (tr "labels.role")]]
+      [:div {:class (stl/css :table-field :title-field-name)} (tr "labels.member")]
+      [:div {:class (stl/css :table-field :title-field-role)} (tr "labels.role")]]
 
      [:div {:class (stl/css :table-rows)}
       [:& team-member
@@ -499,27 +537,20 @@
        [:div {:class (stl/css :rol-selector :has-priv)
               :on-click on-show}
         [:span {:class (stl/css :rol-label)} label]
-        [:span {:class (stl/css :icon)} i/arrow-down]]
+        arrow-icon]
        [:div {:class (stl/css :rol-selector)}
         [:span {:class (stl/css :rol-label)} label]])
 
      [:& dropdown {:show @show? :on-close on-hide}
-      [:ul {:class (stl/css :dropdown :options-dropdown)}
-       [:li {:data-role "admin" :on-click on-change'} (tr "labels.admin")]
-       [:li {:data-role "editor" :on-click on-change'} (tr "labels.editor")]]]]))
-
-(mf/defc invitation-status-badge
-  {::mf/wrap-props false}
-  [{:keys [status]}]
-  [:div
-   {:class (stl/css-case
-            :status-badge true
-            :expired      (= status :expired)
-            :pending      (= status :pending))}
-   [:span {:class (stl/css :status-label)}
-    (if (= status :expired)
-      (tr "labels.expired-invitation")
-      (tr "labels.pending-invitation"))]])
+      [:ul {:class (stl/css :roles-dropdown)}
+       [:li {:data-role "admin"
+             :class (stl/css :rol-dropdown-item)
+             :on-click on-change'}
+        (tr "labels.admin")]
+       [:li {:data-role "editor"
+             :class (stl/css :rol-dropdown-item)
+             :on-click on-change'}
+        (tr "labels.editor")]]]]))
 
 (mf/defc invitation-actions
   {::mf/wrap-props false}
@@ -600,13 +631,21 @@
         on-show (mf/use-fn #(reset! show? true))]
 
     [:*
-     [:span {:class (stl/css :icon)
-             :on-click on-show} [i/actions]]
+     [:button {:class (stl/css :menu-btn)
+               :on-click on-show}
+      menu-icon]
+
      [:& dropdown {:show @show? :on-close on-hide}
-      [:ul {:class (stl/css :dropdown :actions-dropdown)}
-       [:li {:on-click on-copy}   (tr "labels.copy-invitation-link")]
-       [:li {:on-click on-resend} (tr "labels.resend-invitation")]
-       [:li {:on-click on-delete} (tr "labels.delete-invitation")]]]]))
+      [:ul {:class (stl/css :actions-dropdown :invitations-dropdown)}
+       [:li {:on-click on-copy
+             :class (stl/css :action-dropdown-item)}
+        (tr "labels.copy-invitation-link")]
+       [:li {:on-click on-resend
+             :class (stl/css :action-dropdown-item)}
+        (tr "labels.resend-invitation")]
+       [:li {:on-click on-delete
+             :class (stl/css :action-dropdown-item)}
+        (tr "labels.delete-invitation")]]]]))
 
 (mf/defc invitation-row
   {::mf/wrap [mf/memo]
@@ -617,6 +656,10 @@
         email    (:email invitation)
         role     (:role invitation)
         status   (if expired? :expired :pending)
+        type     (if expired? :warning :default)
+        badge-content (if (= status :expired)
+                        (tr "labels.expired-invitation")
+                        (tr "labels.pending-invitation"))
 
         on-change-role
         (mf/use-fn
@@ -626,20 +669,20 @@
                  mdata  {:on-success #(st/emit! (dd/fetch-team-invitations))}]
              (st/emit! (dd/update-team-invitation-role (with-meta params mdata))))))]
 
-    [:div {:class (stl/css :table-row)}
-     [:div {:class (stl/css :table-field :mail)} email]
+    [:div {:class (stl/css :table-row :table-row-invitations)}
+     [:div {:class (stl/css :table-field :field-email)} email]
 
-     [:div {:class (stl/css :table-field :roles)}
+     [:div {:class (stl/css :table-field :field-roles)}
       [:& invitation-role-selector
        {:can-invite? can-invite?
         :role role
         :status status
         :on-change on-change-role}]]
 
-     [:div {:class (stl/css :table-field :status)}
-      [:& invitation-status-badge {:status status}]]
+     [:div {:class (stl/css :table-field :field-status)}
+      [:& badge-notification {:type type :content badge-content}]]
 
-     [:div {:class (stl/css :table-field :actions)}
+     [:div {:class (stl/css :table-field :field-actions)}
       (when can-invite?
         [:& invitation-actions
          {:invitation invitation
@@ -660,11 +703,11 @@
         can-invite? (or owner? admin?)
         team-id     (:id team)]
 
-    [:div {:class (stl/css :dashboard-table :invitations)}
+    [:div {:class (stl/css :invitations)}
      [:div {:class (stl/css :table-header)}
-      [:div {:class (stl/css :table-field :name)} (tr "labels.invitations")]
-      [:div {:class (stl/css :table-field :role)} (tr "labels.role")]
-      [:div {:class (stl/css :table-field :status)} (tr "labels.status")]]
+      [:div {:class (stl/css :title-field-name)} (tr "labels.invitations")]
+      [:div {:class (stl/css :title-field-role)} (tr "labels.role")]
+      [:div {:class (stl/css :title-field-status)} (tr "labels.status")]]
      (if (empty? invitations)
        [:& empty-invitation-table {:can-invite? can-invite?}]
        [:div {:class (stl/css :table-rows)}
@@ -692,7 +735,7 @@
     [:*
      [:& header {:section :dashboard-team-invitations
                  :team team}]
-     [:section {:class (stl/css :dashboard-container :dashboard-team-invitations)}
+     [:section {:class (stl/css :dashboard-team-invitations)}
       ;; TODO: We should consider adding a "loading state" here
       ;; with an (if (nil? invitations) [:& loading-state] [:& invitations])
       (when-not (nil? invitations)
@@ -736,24 +779,25 @@
 
         on-error
         (mf/use-fn
-         (fn [form {:keys [type code hint] :as error}]
-           (if (and (= type :validation)
-                    (= code :webhook-validation))
-             (let [message (cond
-                             (= hint "unknown")
-                             (tr "errors.webhooks.unexpected")
-                             (= hint "invalid-uri")
-                             (tr "errors.webhooks.invalid-uri")
-                             (= hint "ssl-validation-error")
-                             (tr "errors.webhooks.ssl-validation")
-                             (= hint "timeout")
-                             (tr "errors.webhooks.timeout")
-                             (= hint "connection-error")
-                             (tr "errors.webhooks.connection")
-                             (str/starts-with? hint "unexpected-status")
-                             (tr "errors.webhooks.unexpected-status" (extract-status hint)))]
-               (swap! form assoc-in [:errors :uri] {:message message}))
-             (rx/throw error))))
+         (fn [form error]
+           (let [{:keys [type code hint]} (ex-data error)]
+             (if (and (= type :validation)
+                      (= code :webhook-validation))
+               (let [message (cond
+                               (= hint "unknown")
+                               (tr "errors.webhooks.unexpected")
+                               (= hint "invalid-uri")
+                               (tr "errors.webhooks.invalid-uri")
+                               (= hint "ssl-validation-error")
+                               (tr "errors.webhooks.ssl-validation")
+                               (= hint "timeout")
+                               (tr "errors.webhooks.timeout")
+                               (= hint "connection-error")
+                               (tr "errors.webhooks.connection")
+                               (str/starts-with? hint "unexpected-status")
+                               (tr "errors.webhooks.unexpected-status" (extract-status hint)))]
+                 (swap! form assoc-in [:errors :uri] {:message message}))
+               (rx/throw error)))))
 
         on-create-submit
         (mf/use-fn
@@ -794,7 +838,7 @@
           [:h2 {:class (stl/css :modal-title)} (tr "modals.create-webhook.title")])
 
         [:button {:class (stl/css :modal-close-btn)
-                  :on-click on-modal-close} i/close-refactor]]
+                  :on-click on-modal-close} i/close]]
 
        [:div {:class (stl/css :modal-content)}
         [:div {:class (stl/css :fields-row)}
@@ -828,20 +872,17 @@
                     (tr "modals.edit-webhook.submit-label")
                     (tr "modals.create-webhook.submit-label"))}]]]]]]))
 
-
 (mf/defc webhooks-hero
   {::mf/wrap-props false}
   []
   [:div {:class (stl/css :webhooks-hero-container)}
-   [:div {:class (stl/css :webhooks-hero)}
-    [:div {:class (stl/css :desc)}
-     [:h2 (tr "labels.webhooks")]
-     [:& i18n/tr-html {:label "dashboard.webhooks.description"}]]
-
-    [:div
-     {:class (stl/css :btn-primary)
-      :on-click #(st/emit! (modal/show :webhook {}))}
-     [:span (tr "dashboard.webhooks.create")]]]])
+   [:h2 {:class (stl/css :hero-title)}
+    (tr "labels.webhooks")]
+   [:& i18n/tr-html {:class (stl/css :hero-desc)
+                     :label "dashboard.webhooks.description"}]
+   [:button {:class (stl/css :hero-btn)
+             :on-click #(st/emit! (modal/show :webhook {}))}
+    (tr "dashboard.webhooks.create")]])
 
 (mf/defc webhook-actions
   {::mf/wrap-props false}
@@ -852,23 +893,24 @@
 
 
     [:*
-     [:span {:class (stl/css :icon)
-             :on-click on-show} [i/actions]]
+     [:button {:class (stl/css :menu-btn)
+               :on-click on-show}
+      menu-icon]
      [:& dropdown {:show @show? :on-close on-hide}
-      [:ul {:class (stl/css :dropdown :actions-dropdown)}
-       [:li {:on-click on-edit} (tr "labels.edit")]
-       [:li {:on-click on-delete} (tr "labels.delete")]]]]))
+      [:ul {:class (stl/css :webhook-actions-dropdown)}
+       [:li {:on-click on-edit
+             :class (stl/css :webhook-dropdown-item)} (tr "labels.edit")]
+       [:li {:on-click on-delete
+             :class (stl/css :webhook-dropdown-item)} (tr "labels.delete")]]]]))
 
 (mf/defc last-delivery-icon
   {::mf/wrap-props false}
   [{:keys [success? text]}]
-  [:div {:class (stl/css :last-delivery-icon)}
-   [:div {:class (stl/css :tooltip)}
-    [:div {:class (stl/css :label)} text]
-    [:div {:class (stl/css :arrow-down)}]]
+  [:div {:class (stl/css :last-delivery-icon)
+         :title text}
    (if success?
-     [:span {:class (stl/css :icon :success)} i/msg-success]
-     [:span {:class (stl/css :icon :failure)} i/msg-warning])])
+     success-icon
+     warning-icon)])
 
 (mf/defc webhook-item
   {::mf/wrap [mf/memo]}
@@ -913,12 +955,12 @@
                     (dm/str " " (tr "errors.webhooks.unexpected-status" (extract-status error-code))))))]
 
 
-    [:div {:class (stl/css :table-row)}
-     [:div {:class (stl/css :table-field :last-delivery)}
-      [:div {:class (stl/css :icon-container)}
-       [:& last-delivery-icon
-        {:success? (nil? error-code)
-         :text last-delivery-text}]]]
+    [:div {:class (stl/css :table-row :webhook-row)}
+     [:div {:class (stl/css :table-field :last-delivery)
+            :title last-delivery-text}
+      (if (nil? error-code)
+        success-icon
+        warning-icon)]
      [:div {:class (stl/css :table-field :uri)}
       [:div (dm/str (:uri webhook))]]
      [:div {:class (stl/css :table-field :active)}
@@ -933,10 +975,9 @@
 (mf/defc webhooks-list
   {::mf/wrap-props false}
   [{:keys [webhooks]}]
-  [:div {:class (stl/css :dashboard-table)}
-   [:div {:class (stl/css :table-rows)}
-    (for [webhook webhooks]
-      [:& webhook-item {:webhook webhook :key (:id webhook)}])]])
+  [:div {:class (stl/css :table-rows :webhook-table)}
+   (for [webhook webhooks]
+     [:& webhook-item {:webhook webhook :key (:id webhook)}])])
 
 (mf/defc team-webhooks-page
   {::mf/wrap-props false}
@@ -1005,38 +1046,51 @@
 
     [:*
      [:& header {:section :dashboard-team-settings :team team}]
-     [:section {:class (stl/css :dashboard-container :dashboard-team-settings)}
-      [:div {:class (stl/css :team-settings)}
-       [:div {:class (stl/css :horizontal-blocks)}
-        [:div {:class (stl/css :block :info-block)}
-         [:div {:class (stl/css :label)} (tr "dashboard.team-info")]
-         [:div {:class (stl/css :name)} (:name team)]
-         [:div {:class (stl/css :icon)}
-          (when can-edit?
-            [:span {:class (stl/css :update-overlay)
-                    :on-click on-image-click} i/image])
-          [:img {:src (cfg/resolve-team-photo-url team)}]
-          (when can-edit?
-            [:& file-uploader {:accept "image/jpeg,image/png"
-                               :multi false
-                               :ref finput
-                               :on-selected on-file-selected}])]]
+     [:section {:class (stl/css :dashboard-team-settings)}
+      [:div {:class (stl/css :block :info-block)}
+       [:div {:class (stl/css :block-label)}
+        (tr "dashboard.team-info")]
+       [:div {:class (stl/css :block-text)}
+        (:name team)]
+       [:div {:class (stl/css :team-icon)}
+        (when can-edit?
+          [:button {:class (stl/css :update-overlay)
+                    :on-click on-image-click}
+           image-icon])
+        [:img {:class (stl/css :team-image)
+               :src (cfg/resolve-team-photo-url team)}]
+        (when can-edit?
+          [:& file-uploader {:accept "image/jpeg,image/png"
+                             :multi false
+                             :ref finput
+                             :on-selected on-file-selected}])]]
 
-        [:div {:class (stl/css :block :owner-block)}
-         [:div {:class (stl/css :label)} (tr "dashboard.team-members")]
-         [:div {:class (stl/css :owner)}
-          [:span {:class (stl/css :icon)} [:img {:src (cfg/resolve-profile-photo-url owner)}]]
-          [:span {:class (stl/css :text)} (str (:name owner) " ("  (tr "labels.owner") ")")]]
-         [:div {:class (stl/css :summary)}
-          [:span {:class (stl/css :icon)} i/user]
-          [:span {:class (stl/css :text)} (tr "dashboard.num-of-members" (count members-map))]]]
+      [:div {:class (stl/css :block)}
+       [:div {:class (stl/css :block-label)}
+        (tr "dashboard.team-members")]
 
-        [:div {:class (stl/css :block :stats-block)}
-         [:div {:class (stl/css :label)} (tr "dashboard.team-projects")]
-         [:div {:class (stl/css :projects)}
-          [:span {:class (stl/css :icon)} i/folder]
-          [:span {:class (stl/css :text)} (tr "labels.num-of-projects" (i18n/c (dec (:projects stats))))]]
-         [:div {:class (stl/css :files)}
-          [:span {:class (stl/css :icon)} i/file-html]
-          [:span {:class (stl/css :text)} (tr "labels.num-of-files" (i18n/c (:files stats)))]]]]]]]))
+       [:div {:class (stl/css :block-content)}
+        [:img {:class (stl/css :owner-icon)
+               :src (cfg/resolve-profile-photo-url owner)}]
+        [:span {:class (stl/css :block-text)}
+         (str (:name owner) " ("  (tr "labels.owner") ")")]]
+
+       [:div {:class (stl/css :block-content)}
+        user-icon
+        [:span {:class (stl/css :block-text)}
+         (tr "dashboard.num-of-members" (count members-map))]]]
+
+      [:div {:class (stl/css :block)}
+       [:div {:class (stl/css :block-label)}
+        (tr "dashboard.team-projects")]
+
+       [:div {:class (stl/css :block-content)}
+        group-icon
+        [:span {:class (stl/css :block-text)}
+         (tr "labels.num-of-projects" (i18n/c (dec (:projects stats))))]]
+
+       [:div {:class (stl/css :block-content)}
+        document-icon
+        [:span {:class (stl/css :block-text)}
+         (tr "labels.num-of-files" (i18n/c (:files stats)))]]]]]))
 

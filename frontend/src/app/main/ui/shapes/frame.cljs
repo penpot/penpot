@@ -69,6 +69,7 @@
         y             (dm/get-prop shape :y)
         w             (dm/get-prop shape :width)
         h             (dm/get-prop shape :height)
+        opacity       (dm/get-prop shape :opacity)
         transform     (gsh/transform-str shape)
 
         show-content? (get shape :show-content)
@@ -92,7 +93,8 @@
           ;; transparent). It may have been changed to default black
           ;; if a shape coming from an imported SVG file is
           ;; rendered. See main.ui.shapes.attrs/add-style-attrs.
-          :fill "none"}
+          :fill "none"
+          :opacity opacity}
 
       [:& shape-fills {:shape shape}
        (if ^boolean path?
@@ -168,10 +170,10 @@
           childs        (unchecked-get props "childs")
           childs        (cond-> childs
                           (ctl/any-layout? shape)
-                          (cfh/sort-layout-children-z-index))]
+                          (ctl/sort-layout-children-z-index))]
 
       [:> frame-container props
-       [:g.frame-children {:opacity (:opacity shape)}
+       [:g.frame-children
         (for [item childs]
           (let [id (dm/get-prop item :id)]
             (when (some? id)

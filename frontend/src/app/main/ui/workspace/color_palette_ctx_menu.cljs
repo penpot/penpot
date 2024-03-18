@@ -9,7 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.main.refs :as refs]
-   [app.main.ui.components.color-bullet-new :as cb]
+   [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.icons :as i]
    [app.util.i18n :refer [tr]]
@@ -39,7 +39,7 @@
                (dm/str "(" (count colors) ")")]]
              (when (= selected id)
                [:span {:class (stl/css :icon-wrapper)}
-                i/tick-refactor])]
+                i/tick])]
             [:div {:class (stl/css :color-sample)
                    :style #js {"--bullet-size" "20px"}}
              (for [[i {:keys [color id gradient]}] (map-indexed vector (take 7 colors))]
@@ -63,7 +63,7 @@
 
          (when (= selected :file)
            [:span {:class (stl/css :icon-wrapper)}
-            i/tick-refactor])]
+            i/tick])]
         [:div {:class (stl/css :color-sample)
                :style #js {"--bullet-size" "20px"}}
          (for [[i color] (map-indexed vector (take 7 (vals file-colors)))]
@@ -85,7 +85,7 @@
 
          (when (= selected :recent)
            [:span {:class (stl/css :icon-wrapper)}
-            i/tick-refactor])]
+            i/tick])]
         [:div {:class (stl/css :color-sample)
                :style #js {"--bullet-size" "20px"}}
          (for [[idx color] (map-indexed vector (take 7 (reverse recent-colors)))]

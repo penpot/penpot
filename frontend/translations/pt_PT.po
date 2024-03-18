@@ -2903,9 +2903,6 @@ msgstr "Alternar modo de foco"
 msgid "shortcuts.toggle-fullscreen"
 msgstr "Alternar tela cheia"
 
-msgid "shortcuts.toggle-grid"
-msgstr "Mostrar/ocultar grade"
-
 msgid "shortcuts.toggle-history"
 msgstr "Alternar histórico"
 
@@ -2923,12 +2920,6 @@ msgstr "Bloquear proporções"
 
 msgid "shortcuts.toggle-rules"
 msgstr "Mostrar/ocultar regras"
-
-msgid "shortcuts.toggle-snap-grid"
-msgstr "Ajustar à grade"
-
-msgid "shortcuts.toggle-snap-guide"
-msgstr "Ajustar às guias"
 
 msgid "shortcuts.toggle-textpalette"
 msgstr "Alternar paleta de texto"
@@ -3304,10 +3295,6 @@ msgid "workspace.header.menu.disable-scale-text"
 msgstr "Desativar escala de texto"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.disable-snap-grid"
-msgstr "Desativar ajuste à grade"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-snap-guides"
 msgstr "Desativar ajuste às guias"
 
@@ -3326,10 +3313,6 @@ msgid "workspace.header.menu.enable-scale-text"
 msgstr "Ativar escalar texto"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.enable-snap-grid"
-msgstr "Ajustar à grade"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-snap-guides"
 msgstr "Ajustar às guias"
 
@@ -3339,10 +3322,6 @@ msgstr "Ativar ajuste ao pixel"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-artboard-names"
 msgstr "Ocultar nome das pranchetas"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-grid"
-msgstr "Ocultar grades"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -3389,10 +3368,6 @@ msgstr "Selecionar tudo"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-artboard-names"
 msgstr "Mostrar nomes das pranchetas"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-grid"
-msgstr "Mostrar grade"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"

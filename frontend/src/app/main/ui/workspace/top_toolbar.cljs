@@ -58,7 +58,7 @@
        :aria-label (tr "workspace.toolbar.image" (sc/get-tooltip :insert-image))
        :on-click on-click
        :class (stl/css :main-toolbar-options-button)}
-      i/img-refactor
+      i/img
       [:& file-uploader
        {:input-id "image-upload"
         :accept cm/str-image-types
@@ -119,7 +119,7 @@
 
     (when-not ^boolean read-only?
       [:aside {:class (stl/css-case :main-toolbar true
-                                    :not-rulers-present (not rulers?)
+                                    :main-toolbar-no-rulers (not rulers?)
                                     :main-toolbar-hidden hide-toolbar?)}
        [:ul {:class (stl/css :main-toolbar-options)}
         [:li
@@ -130,7 +130,7 @@
                                 :selected (and (nil? selected-drawtool)
                                                (not edition)))
            :on-click interrupt}
-          i/move-refactor]]
+          i/move]]
         [:*
          [:li
           [:button
@@ -140,7 +140,7 @@
             :on-click select-drawtool
             :data-tool "frame"
             :data-test "artboard-btn"}
-           i/board-refactor]]
+           i/board]]
          [:li
           [:button
            {:title (tr "workspace.toolbar.rect" (sc/get-tooltip :draw-rect))
@@ -149,7 +149,7 @@
             :on-click select-drawtool
             :data-tool "rect"
             :data-test "rect-btn"}
-           i/rectangle-refactor]]
+           i/rectangle]]
          [:li
           [:button
            {:title (tr "workspace.toolbar.ellipse" (sc/get-tooltip :draw-ellipse))
@@ -158,7 +158,7 @@
             :on-click select-drawtool
             :data-tool "circle"
             :data-test "ellipse-btn"}
-           i/elipse-refactor]]
+           i/elipse]]
          [:li
           [:button
            {:title (tr "workspace.toolbar.text" (sc/get-tooltip :draw-text))
@@ -166,7 +166,7 @@
             :class (stl/css-case :main-toolbar-options-button true :selected (= selected-drawtool :text))
             :on-click select-drawtool
             :data-tool "text"}
-           i/text-refactor]]
+           i/text]]
 
          [:& image-upload]
 
@@ -178,7 +178,7 @@
             :on-click select-drawtool
             :data-tool "curve"
             :data-test "curve-btn"}
-           i/curve-refactor]]
+           i/curve]]
          [:li
           [:button
            {:title (tr "workspace.toolbar.path" (sc/get-tooltip :draw-path))
@@ -187,7 +187,7 @@
             :on-click select-drawtool
             :data-tool "path"
             :data-test "path-btn"}
-           i/path-refactor]]
+           i/path]]
 
          (when *assert*
            [:li
@@ -195,7 +195,7 @@
              {:title "Debugging tool"
               :class (stl/css-case :main-toolbar-options-button true :selected (contains? layout :debug-panel))
               :on-click toggle-debug-panel}
-             i/bug-refactor]])]]
+             i/bug]])]]
 
        [:button {:class (stl/css :toolbar-handler)
                  :on-click toggle-toolbar}

@@ -403,7 +403,7 @@
          (when-not read-only?
            [:button {:class (stl/css :assets-btn)
                      :on-click add-typography}
-            i/add-refactor])])
+            i/add])])
 
       [:& cmm/asset-section-block {:role :content}
        [:& typographies-group {:file-id file-id

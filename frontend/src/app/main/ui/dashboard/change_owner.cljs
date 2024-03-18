@@ -29,10 +29,13 @@
         members-map (mf/deref refs/dashboard-team-members)
         members     (vals members-map)
 
-        options     (into [{:value ""
-                            :label (tr "modals.leave-and-reassign.select-member-to-promote")}]
-                          (filter #(not= (:label %) (:fullname profile))
-                                  (map #(hash-map :label (:name %) :value (str (:id %))) members)))
+        options
+        (into [{:value ""
+                :label (tr "modals.leave-and-reassign.select-member-to-promote")}]
+              (comp
+               (filter #(not= (:email %) (:email profile)))
+               (map #(hash-map :label (:name %) :value (str (:id %)))))
+              members)
 
         on-cancel   #(st/emit! (modal/hide))
         on-accept
@@ -45,7 +48,7 @@
       [:div {:class (stl/css :modal-header)}
        [:h2 {:class (stl/css :modal-title)} (tr "modals.leave-and-reassign.title")]
        [:button {:class (stl/css :modal-close-btn)
-                 :on-click on-cancel} i/close-refactor]]
+                 :on-click on-cancel} i/close]]
 
       [:div {:class (stl/css :modal-content)}
        [:p {:class (stl/css :modal-msg)}

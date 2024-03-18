@@ -358,3 +358,9 @@
 
     (process-shape-colors shape sync-color)))
 
+(defn eq-recent-color?
+  [c1 c2]
+  (or (= c1 c2)
+      (and (some? (:color c1))
+           (some? (:color c2))
+           (= (:color c1) (:color c2)))))

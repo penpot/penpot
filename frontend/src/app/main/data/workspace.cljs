@@ -458,9 +458,10 @@
   [{:keys [file-id]}]
   (let [id (uuid/next)]
     (ptk/reify ::create-page
-      IDeref
-      (-deref [_]
-        {:id id :file-id file-id})
+      ev/Event
+      (-data [_]
+        {:id id
+         :file-id file-id})
 
       ptk/WatchEvent
       (watch [it state _]
@@ -777,7 +778,7 @@
 
         (rx/of (dwu/start-undo-transaction undo-id)
                (dch/commit-changes changes)
-               (ptk/data-event :layout/update selected-ids)
+               (ptk/data-event :layout/update {:ids selected-ids})
                (dwu/commit-undo-transaction undo-id))))))
 
 ;; --- Change Shape Order (D&D Ordering)
@@ -987,7 +988,7 @@
         (rx/of (dwu/start-undo-transaction undo-id)
                (dch/commit-changes changes)
                (dwco/expand-collapse parent-id)
-               (ptk/data-event :layout/update (concat all-parents ids))
+               (ptk/data-event :layout/update {:ids (concat all-parents ids)})
                (dwu/commit-undo-transaction undo-id))))))
 
 (defn relocate-selected-shapes
@@ -1105,7 +1106,7 @@
         (when (can-align? selected objects)
           (rx/of (dwu/start-undo-transaction undo-id)
                  (dwt/position-shapes moved)
-                 (ptk/data-event :layout/update selected)
+                 (ptk/data-event :layout/update {:ids selected})
                  (dwu/commit-undo-transaction undo-id)))))))
 
 (defn can-distribute? [selected]
@@ -1132,7 +1133,7 @@
         (when (can-distribute? selected)
           (rx/of (dwu/start-undo-transaction undo-id)
                  (dwt/position-shapes moved)
-                 (ptk/data-event :layout/update selected)
+                 (ptk/data-event :layout/update {:ids selected})
                  (dwu/commit-undo-transaction undo-id)))))))
 
 ;; --- Shape Proportions
@@ -1967,8 +1968,13 @@
 
               page-objects (:objects page)
 
+              libraries    (wsh/get-libraries state)
+              ldata        (wsh/get-local-file state)
+
+              full-libs    (assoc-in libraries [(:id ldata) :data] ldata)
+
               [parent-id
-               frame-id]   (ctn/find-valid-parent-and-frame-ids candidate-parent-id page-objects (vals objects))
+               frame-id]   (ctn/find-valid-parent-and-frame-ids candidate-parent-id page-objects (vals objects) true full-libs)
 
               index        (if (= candidate-parent-id parent-id)
                              index
@@ -1978,8 +1984,7 @@
 
               all-objects  (merge page-objects objects)
 
-              libraries    (wsh/get-libraries state)
-              ldata        (wsh/get-file state file-id)
+
 
               drop-cell    (when (ctl/grid-layout? all-objects parent-id)
                              (gslg/get-drop-cell frame-id all-objects position))
@@ -2012,7 +2017,7 @@
           (rx/of (dwu/start-undo-transaction undo-id)
                  (dch/commit-changes changes)
                  (dws/select-shapes selected)
-                 (ptk/data-event :layout/update [frame-id])
+                 (ptk/data-event :layout/update {:ids [frame-id]})
                  (dwu/commit-undo-transaction undo-id)))))))
 
 (defn as-content [text]

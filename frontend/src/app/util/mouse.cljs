@@ -4,11 +4,14 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.util.mouse)
+(ns app.util.mouse
+  (:require
+   [beicon.v2.core :as rx]))
 
 (defrecord MouseEvent [type ctrl shift alt meta])
 (defrecord PointerEvent [source pt ctrl shift alt meta])
 (defrecord ScrollEvent [point])
+(defrecord BlurEvent [])
 
 (defn mouse-event?
   [v]
@@ -21,6 +24,10 @@
 (defn scroll-event?
   [v]
   (instance? ScrollEvent v))
+
+(defn blur-event?
+  [v]
+  (instance? BlurEvent v))
 
 (defn mouse-down-event?
   [^MouseEvent v]
@@ -61,3 +68,16 @@
 (defn get-pointer-shift-mod
   [^PointerEvent ev]
   (.-shift ev))
+
+(defn drag-stopper
+  "Creates a stream to stop drag events. Takes into account the mouse and also
+  if the window loses focus or the esc key is pressed."
+  [stream]
+  (rx/merge
+   (->> stream
+        (rx/filter blur-event?))
+   (->> stream
+        (rx/filter mouse-event?)
+        (rx/filter mouse-up-event?))
+   (->> stream
+        (rx/filter #(= % :interrupt)))))

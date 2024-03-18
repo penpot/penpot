@@ -11,7 +11,7 @@
    [app.main.data.workspace.colors :as mdc]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.color-bullet-new :as cb]
+   [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.util.color :as uc]
@@ -108,7 +108,7 @@
      (when show-arrows?
        [:button {:class (stl/css :left-arrow)
                  :disabled (= offset 0)
-                 :on-click on-left-arrow-click} i/arrow-refactor])
+                 :on-click on-left-arrow-click} i/arrow])
      [:div {:class  (stl/css :color-palette-content)
             :ref container
             :on-wheel on-scroll}
@@ -128,7 +128,7 @@
      (when show-arrows?
        [:button {:class (stl/css :right-arrow)
                  :disabled (= offset max-offset)
-                 :on-click on-right-arrow-click} i/arrow-refactor])]))
+                 :on-click on-right-arrow-click} i/arrow])]))
 
 (defn library->colors [shared-libs selected]
   (map #(merge % {:file-id selected})

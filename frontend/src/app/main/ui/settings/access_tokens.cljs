@@ -25,6 +25,15 @@
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
+(def ^:private clipboard-icon
+  (i/icon-xref :clipboard (stl/css :clipboard-icon)))
+
+(def ^:private close-icon
+  (i/icon-xref :close (stl/css :close-icon)))
+
+(def ^:private menu-icon
+  (i/icon-xref :menu (stl/css :menu-icon)))
+
 (def tokens-ref
   (l/derived :access-tokens st/state))
 
@@ -114,7 +123,8 @@
         [:h2 {:class (stl/css :modal-title)} (tr "modals.create-access-token.title")]
 
         [:button {:class (stl/css :modal-close-btn)
-                  :on-click on-close} i/close-refactor]]
+                  :on-click on-close}
+         close-icon]]
 
        [:div {:class (stl/css :modal-content)}
         [:div {:class (stl/css :fields-row)}
@@ -128,7 +138,8 @@
                        :placeholder (tr "modals.create-access-token.name.placeholder")}]]
 
         [:div {:class (stl/css :fields-row)}
-         [:div {:class (stl/css :select-title)}  (tr "modals.create-access-token.expiration-date.label")]
+         [:div {:class (stl/css :select-title)}
+          (tr "modals.create-access-token.expiration-date.label")]
          [:& fm/select {:options [{:label (tr "dashboard.access-tokens.expiration-never")    :value "never" :key "never"}
                                   {:label (tr "dashboard.access-tokens.expiration-30-days")  :value "720h"  :key "720h"}
                                   {:label (tr "dashboard.access-tokens.expiration-60-days")  :value "1440h" :key "1440h"}
@@ -154,14 +165,14 @@
             [:button {:title (tr "modals.create-access-token.copy-token")
                       :class (stl/css :copy-btn)
                       :on-click copy-token}
-             i/clipboard-refactor]])
+             clipboard-icon]])
          #_(when @created?
              [:button {:class (stl/css :copy-btn)
                        :title (tr "modals.create-access-token.copy-token")
                        :on-click copy-token}
               [:span {:class (stl/css :token-value)} (:token created "")]
               [:span {:class (stl/css :icon)}
-               i/clipboard-refactor]])]]
+               i/clipboard]])]]
 
        [:div {:class (stl/css :modal-footer)}
         [:div {:class (stl/css :action-buttons)}
@@ -182,16 +193,13 @@
 (mf/defc access-tokens-hero
   []
   (let [on-click (mf/use-fn #(st/emit! (modal/show :access-token {})))]
-    [:div {:class (stl/css :access-tokens-hero-container)}
-     [:div {:class (stl/css :access-tokens-hero)}
-      [:div {:class (stl/css :desc)}
-       [:h2 (tr "dashboard.access-tokens.personal")]
-       [:p (tr "dashboard.access-tokens.personal.description")]]
+    [:div {:class (stl/css :access-tokens-hero)}
+     [:h2 {:class (stl/css :hero-title)} (tr "dashboard.access-tokens.personal")]
+     [:p {:class (stl/css :hero-desc)} (tr "dashboard.access-tokens.personal.description")]
 
-      [:button
-       {:class (stl/css :btn-primary)
-        :on-click on-click}
-       [:span (tr "dashboard.access-tokens.create")]]]]))
+     [:button {:class (stl/css :hero-btn)
+               :on-click on-click}
+      (tr "dashboard.access-tokens.create")]]))
 
 (mf/defc access-token-actions
   [{:keys [on-delete]}]
@@ -221,12 +229,12 @@
              (dom/stop-propagation event)
              (on-menu-click event))))]
 
-    [:div {:class (stl/css :icon)
-           :tab-index "0"
-           :ref menu-ref
-           :on-click on-menu-click
-           :on-key-down on-keydown}
-     i/actions
+    [:button {:class (stl/css :menu-btn)
+              :tab-index "0"
+              :ref menu-ref
+              :on-click on-menu-click
+              :on-key-down on-keydown}
+     menu-icon
      [:& context-menu-a11y
       {:on-close on-menu-close
        :show show?
@@ -264,15 +272,15 @@
                        :on-accept delete-fn}))))]
 
     [:div {:class (stl/css :table-row)}
-     [:div {:class (stl/css :table-field :name)}
+     [:div {:class (stl/css :table-field :field-name)}
       (str (:name token))]
 
-     [:div {:class (stl/css :table-field :expiration-date)}
-      [:span {:class (stl/css-case :expired expired? :content true)}
-       (cond
-         (nil? expires-at) (tr "dashboard.access-tokens.no-expiration")
-         expired? (tr "dashboard.access-tokens.expired-on" expires-txt)
-         :else (tr "dashboard.access-tokens.expires-on" expires-txt))]]
+     [:div {:class (stl/css-case :expiration-date true
+                                 :expired expired?)}
+      (cond
+        (nil? expires-at) (tr "dashboard.access-tokens.no-expiration")
+        expired? (tr "dashboard.access-tokens.expired-on" expires-txt)
+        :else (tr "dashboard.access-tokens.expires-on" expires-txt))]
      [:div {:class (stl/css :table-field :actions)}
       [:& access-token-actions
        {:on-delete on-delete}]]]))
@@ -285,14 +293,13 @@
       (st/emit! (du/fetch-access-tokens)))
 
     [:div {:class (stl/css :dashboard-access-tokens)}
-     [:div
-      [:& access-tokens-hero]
-      (if (empty? tokens)
-        [:div {:class (stl/css :access-tokens-empty)}
-         [:div (tr "dashboard.access-tokens.empty.no-access-tokens")]
-         [:div (tr "dashboard.access-tokens.empty.add-one")]]
-        [:div {:class (stl/css :dashboard-table)}
-         [:div {:class (stl/css :table-rows)}
-          (for [token tokens]
-            [:& access-token-item {:token token :key (:id token)}])]])]]))
+     [:& access-tokens-hero]
+     (if (empty? tokens)
+       [:div {:class (stl/css :access-tokens-empty)}
+        [:div (tr "dashboard.access-tokens.empty.no-access-tokens")]
+        [:div (tr "dashboard.access-tokens.empty.add-one")]]
+       [:div {:class (stl/css :dashboard-table)}
+        [:div {:class (stl/css :table-rows)}
+         (for [token tokens]
+           [:& access-token-item {:token token :key (:id token)}])]])]))
 

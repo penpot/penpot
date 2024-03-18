@@ -24,6 +24,9 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
+(def ^:private menu-icon
+  (i/icon-xref :menu (stl/css :menu-icon)))
+
 (mf/defc header
   [{:keys [project create-fn] :as props}]
   (let [local (mf/use-state
@@ -92,14 +95,13 @@
                        :on-import on-import}]
 
      [:div {:class (stl/css :dashboard-header-actions)}
-      [:a
-       {:class (stl/css :btn-secondary :btn-small :new-file)
-        :tab-index "0"
-        :on-click on-create-click
-        :data-test "new-file"
-        :on-key-down (fn [event]
-                       (when (kbd/enter? event)
-                         (on-create-click event)))}
+      [:a {:class (stl/css :btn-secondary :btn-small :new-file)
+           :tab-index "0"
+           :on-click on-create-click
+           :data-test "new-file"
+           :on-key-down (fn [event]
+                          (when (kbd/enter? event)
+                            (on-create-click event)))}
        (tr "dashboard.new-file")]
 
       (when-not (:is-default project)
@@ -109,15 +111,14 @@
           :on-click toggle-pin
           :on-key-down (fn [event] (when (kbd/enter? event) (toggle-pin event)))}])
 
-      [:div
-       {:class (stl/css :icon :tooltip :tooltip-bottom-left)
-        :tab-index "0"
-        :on-click on-menu-click
-        :alt (tr "dashboard.options")
-        :on-key-down (fn [event]
-                       (when (kbd/enter? event)
-                         (on-menu-click event)))}
-       i/actions]]]))
+      [:div {:class (stl/css :icon)
+             :tab-index "0"
+             :on-click on-menu-click
+             :title (tr "dashboard.options")
+             :on-key-down (fn [event]
+                            (when (kbd/enter? event)
+                              (on-menu-click event)))}
+       menu-icon]]]))
 
 (mf/defc files-section
   [{:keys [project team] :as props}]

@@ -150,9 +150,7 @@
   (ptk/reify ::drag-selected-points
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [stopper (->> stream
-                         (rx/filter mse/mouse-event?)
-                         (rx/filter mse/mouse-up-event?))
+      (let [stopper (mse/drag-stopper stream)
 
             id (dm/get-in state [:workspace-local :edition])
 
@@ -279,9 +277,7 @@
                      (not alt?)))))
                (rx/take-until
                 (rx/merge
-                 (->> stream
-                      (rx/filter mse/mouse-event?)
-                      (rx/filter mse/mouse-up-event?))
+                 (mse/drag-stopper stream)
                  (->> stream
                       (rx/filter streams/finish-edition?)))))
 
@@ -332,7 +328,7 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (ptk/data-event :layout/update [id])))))
+      (rx/of (ptk/data-event :layout/update {:ids [id]})))))
 
 (defn split-segments
   [{:keys [from-p to-p t]}]

@@ -27,10 +27,12 @@
    [app.rpc.helpers :as rph]
    [app.rpc.retry :as retry]
    [app.rpc.rlimit :as rlimit]
+   [app.setup :as-alias setup]
    [app.storage :as-alias sto]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
+   [cuerdas.core :as str]
    [integrant.core :as ig]
    [promesa.core :as p]
    [ring.request :as rreq]
@@ -71,24 +73,31 @@
 (defn- rpc-handler
   "Ring handler that dispatches cmd requests and convert between
   internal async flow into ring async flow."
-  [methods {:keys [params path-params] :as request}]
-  (let [type       (keyword (:type path-params))
-        etag       (rreq/get-header request "if-none-match")
-        profile-id (or (::session/profile-id request)
-                       (::actoken/profile-id request))
+  [methods {:keys [params path-params method] :as request}]
+  (let [handler-name (:type path-params)
+        etag         (rreq/get-header request "if-none-match")
+        profile-id   (or (::session/profile-id request)
+                         (::actoken/profile-id request))
 
-        data       (-> params
-                       (assoc ::request-at (dt/now))
-                       (assoc ::session/id (::session/id request))
-                       (assoc ::cond/key etag)
-                       (cond-> (uuid? profile-id)
-                         (assoc ::profile-id profile-id)))
+        data         (-> params
+                         (assoc ::request-at (dt/now))
+                         (assoc ::session/id (::session/id request))
+                         (assoc ::cond/key etag)
+                         (cond-> (uuid? profile-id)
+                           (assoc ::profile-id profile-id)))
 
-        data       (vary-meta data assoc ::http/request request)
-        method     (get methods type default-handler)]
+        data         (vary-meta data assoc ::http/request request)
+        handler-fn   (get methods (keyword handler-name) default-handler)]
+
+    (when (and (or (= method :get)
+                   (= method :head))
+               (not (str/starts-with? handler-name "get-")))
+      (ex/raise :type :restriction
+                :code :method-not-allowed
+                :hint "method not allowed for this request"))
 
     (binding [cond/*enabled* true]
-      (let [response (method data)]
+      (let [response (handler-fn data)]
         (handle-response request response)))))
 
 (defn- wrap-metrics
@@ -240,7 +249,7 @@
                 ::ldap/provider
                 ::sto/storage
                 ::mtx/metrics
-                ::main/props]
+                ::setup/props]
           :opt [::climit
                 ::rlimit]))
 
@@ -257,7 +266,7 @@
 (defmethod ig/pre-init-spec ::routes [_]
   (s/keys :req [::methods
                 ::db/pool
-                ::main/props
+                ::setup/props
                 ::session/manager]))
 
 (defmethod ig/init-key ::routes

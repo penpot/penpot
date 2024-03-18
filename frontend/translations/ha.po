@@ -1908,10 +1908,6 @@ msgstr "kulle"
 msgid "labels.help-center"
 msgstr "sashen taimako"
 
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-grid"
-msgstr "Boye akwati"
-
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.entry.modify"
 msgstr "gyaggyarawa %s"
@@ -1945,10 +1941,6 @@ msgstr ""
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.email-has-permanent-bounces"
 msgstr "imel Â«%sÂ» na da bayanan matsaloli na dindindin."
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.disable-snap-grid"
-msgstr "kashe tsinkewa zuwa akwati"
 
 msgid "errors.webhooks.unexpected-status"
 msgstr "matsayin da ba zato %s"
@@ -2966,9 +2958,6 @@ msgstr "tsarin salo"
 msgid "dashboard.import.analyze-error"
 msgstr "kash! mun gaza shigo da kundinka"
 
-msgid "shortcuts.toggle-snap-guide"
-msgstr "Tsinke zuwa mai jagora"
-
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.recovery-request-subtitle"
 msgstr "za mu aika maka da saqon qa'idoji ta imel"
@@ -3306,10 +3295,6 @@ msgstr "kammala aiki"
 #: src/app/main/ui/confirm.cljs
 msgid "ds.confirm-ok"
 msgstr "haka"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-grid"
-msgstr "nuna akwati"
 
 #: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "auth.name.not-all-space"
@@ -3722,9 +3707,6 @@ msgstr "fadi"
 msgid "inspect.empty.select"
 msgstr "zabar zubi, hukumar masu sa ido akan bangarorinsu da lambobinsu"
 
-msgid "shortcuts.toggle-grid"
-msgstr "Nuna/boye akwati"
-
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.expires-on"
 msgstr "gama aiki kan %s"
@@ -4022,10 +4004,6 @@ msgstr "yanayin kallo (%s)"
 
 msgid "workspace.path.actions.make-curve"
 msgstr "Ta lankwasa (%s)"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.enable-snap-grid"
-msgstr "Tsinke zuwa akwati"
 
 msgid "workspace.options.search-font"
 msgstr "nemo jerin harufa"
@@ -4500,9 +4478,6 @@ msgstr "Upload custom fonts"
 
 msgid "shortcuts.flip-horizontal"
 msgstr "kifa shi dai dai"
-
-msgid "shortcuts.toggle-snap-grid"
-msgstr "Tsinke akwati"
 
 msgid "dashboard.import.progress.process-components"
 msgstr "aikin sassa"

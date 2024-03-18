@@ -6,20 +6,28 @@
 
 @import "refactor/common-refactor.scss";
 
-.workspace-context-menu,
-.workspace-context-submenu {
-  @include menuShadow;
+.workspace-context-menu {
   position: absolute;
   top: $s-40;
   left: $s-736;
-  display: flex;
-  flex-direction: column;
+  z-index: $z-index-4;
+}
+
+.context-list,
+.workspace-context-submenu {
+  @include menuShadow;
+  display: grid;
   width: $s-240;
   padding: $s-4;
   border-radius: $br-8;
   border: $s-2 solid var(--panel-border-color);
   background-color: var(--menu-background-color);
-  z-index: $z-index-3;
+  max-height: 100vh;
+  overflow-y: auto;
+}
+
+.workspace-context-submenu {
+  position: absolute;
 }
 
 .separator {

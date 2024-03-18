@@ -4,12 +4,13 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor" as *;
+@use "refactor/common-refactor" as *;
 
 .dashboard-header {
   align-items: center;
   display: flex;
   height: $s-64;
+  max-height: $s-64;
   justify-content: space-between;
   padding: $s-4 $s-16 $s-4 $s-8;
   position: relative;
@@ -18,6 +19,7 @@
   &.team {
     display: grid;
     grid-template-columns: 20% 1fr 20%;
+    max-height: $s-64;
   }
 
   .element-name {
@@ -93,12 +95,14 @@
     cursor: pointer;
 
     svg {
-      fill: $df-secondary;
+      stroke: $df-secondary;
+      fill: none;
       width: $s-16;
       height: $s-16;
 
       &:hover {
-        fill: $da-tertiary;
+        stroke: $da-tertiary;
+        fill: none;
       }
     }
   }

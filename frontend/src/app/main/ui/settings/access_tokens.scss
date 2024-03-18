@@ -6,168 +6,118 @@
 
 @use "common/refactor/common-refactor.scss" as *;
 
-.dashboard-table {
-  display: flex;
-  flex-direction: column;
-  font-size: $fs-16;
-  margin-top: $s-20;
+// ACCESS TOKENS PAGE
+.dashboard-access-tokens {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  margin: $s-80 auto $s-120 auto;
+  gap: $s-32;
   width: $s-800;
-  svg {
-    width: $s-12;
-    height: $s-12;
-    fill: $df-primary;
-  }
 }
 
-.table-header {
-  color: $df-secondary;
+// hero
+.access-tokens-hero {
   display: grid;
-  font-size: $fs-12;
-  grid-template-columns: 43% 1fr $s-108 $s-12;
-  height: $s-40;
+  grid-template-rows: auto auto 1fr;
+  gap: $s-32;
+  width: $s-500;
+  font-size: $fs-14;
+  margin: $s-16 auto 0 auto;
+}
+
+.hero-title {
+  @include bigTitleTipography;
+  color: var(--title-foreground-color-hover);
+}
+
+.hero-desc {
+  color: var(--title-foreground-color);
+  margin-bottom: 0;
+  font-size: $fs-14;
+}
+
+.hero-btn {
+  @extend .button-primary;
+}
+
+// table empty
+.access-tokens-empty {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  height: $s-156;
   max-width: $s-1000;
-  padding: 0 $s-16;
-  text-transform: uppercase;
   width: 100%;
+  padding: $s-32;
+  border: $s-1 solid var(--panel-border-color);
+  border-radius: $br-8;
+  color: var(--dashboard-list-text-foreground-color);
+}
+
+// Access tokens table
+.dashboard-table {
+  height: fit-content;
 }
 
 .table-rows {
-  color: $db-secondary;
-  display: flex;
-  flex-direction: column;
-  margin-top: $s-16;
-  max-width: $s-1000;
-  padding-top: 0;
+  display: grid;
+  grid-auto-rows: $s-64;
+  gap: $s-16;
   width: 100%;
+  height: 100%;
+  max-width: $s-1000;
+  margin-top: $s-16;
+  color: var(--title-foreground-color);
 }
 
 .table-row {
-  align-items: center;
-  background-color: $db-tertiary;
-  border-radius: $br-8;
-  color: $df-primary;
   display: grid;
-  font-size: $fs-14;
-  grid-template-columns: 1fr 43% $s-12;
-  height: fit-content;
-  min-height: $s-40;
+  grid-template-columns: 43% 1fr auto;
+  align-items: center;
+  height: $s-64;
+  width: 100%;
   padding: 0 $s-16;
-  width: 100%;
-
-  &:not(:first-child) {
-    margin-top: $s-8;
-  }
-}
-
-.table-field {
-  display: flex;
-  align-items: center;
-
-  .icon {
-    padding-left: $s-12;
-    cursor: pointer;
-  }
-
-  &.name {
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    color: $df-primary;
-    display: -webkit-box;
-    max-width: $s-480;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  &.expiration-date {
-    color: $df-secondary;
-    font-size: $fs-14;
-
-    .content {
-      padding: $s-2 $s-6;
-      &.expired {
-        background-color: var(--status-color-warning-500);
-        border-radius: $br-4;
-        color: $db-secondary;
-      }
-    }
-  }
-  &.access-token-created {
-    word-break: break-all;
-  }
-
-  &.actions {
-    position: relative;
-  }
-}
-
-.dashboard-access-tokens {
-  display: flex;
-  flex-direction: column;
-  margin-left: $s-120;
-  margin-top: $s-80;
-  width: $s-800;
-}
-
-.access-tokens-hero-container {
-  background-color: transparent;
-  display: flex;
-  flex-direction: column;
-  max-width: $s-1000;
-  width: 100%;
-}
-
-.access-tokens-hero {
-  display: flex;
-  flex-direction: column;
-  font-size: $fs-14;
-  gap: $s-32;
-  justify-content: space-between;
-  width: $s-468;
-
-  .desc {
-    background-color: transparent;
-    color: $df-secondary;
-    width: 100%;
-
-    h2 {
-      color: $df-primary;
-      font-size: $fs-24;
-      font-weight: regular;
-      margin-bottom: $s-32;
-    }
-    p {
-      color: $df-secondary;
-      margin-bottom: 0;
-      font-size: $fs-14;
-    }
-  }
-  .btn-primary {
-    flex-shrink: 0;
-  }
-}
-
-.access-tokens-empty {
-  align-items: center;
   border-radius: $br-8;
-  border: $s-1 solid $db-quaternary;
-  color: $df-secondary;
-  display: flex;
-  flex-direction: column;
-  font-size: $fs-14;
-  justify-content: center;
-  margin-top: $s-32;
-  max-width: $s-1000;
-  min-height: $s-136;
-  padding: $s-32;
-  text-align: center;
-  width: $s-468;
+  background-color: var(--dashboard-list-background-color);
+  color: var(--dashboard-list-foreground-color);
 }
 
-.btn-primary {
-  @extend .button-primary;
-  height: $s-32;
+.field-name {
+  @include textEllipsis;
+  display: grid;
+  width: 43%;
+  min-width: $s-300;
 }
 
+.expiration-date {
+  @include flexCenter;
+  min-width: $s-76;
+  width: fit-content;
+  height: $s-24;
+  border-radius: $br-8;
+  color: var(--dashboard-list-text-foreground-color);
+}
+
+.expired {
+  @include headlineSmallTypography;
+  padding: 0 $s-6;
+  color: var(--pill-foreground-color);
+  background-color: var(--status-widget-background-color-warning);
+}
+
+.actions {
+  position: relative;
+}
+.menu-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
+}
+
+.menu-btn {
+  @include buttonStyle;
+}
+
+// Create access token modal
 .modal-overlay {
   @extend .modal-overlay-base;
 }
@@ -179,13 +129,14 @@
 
 .modal-header {
   margin-bottom: $s-24;
-  .modal-title {
-    @include uppercaseTitleTipography;
-    color: var(--modal-title-foreground-color);
-  }
-  .modal-close-btn {
-    @extend .modal-close-btn-base;
-  }
+}
+
+.modal-title {
+  @include uppercaseTitleTipography;
+  color: var(--modal-title-foreground-color);
+}
+.modal-close-btn {
+  @extend .modal-close-btn-base;
 }
 
 .modal-content {
@@ -193,10 +144,6 @@
   gap: $s-24;
   @include bodySmallTypography;
   margin-bottom: $s-24;
-}
-
-.fields-row {
-  @include flexColumn;
 }
 
 .select-title {
@@ -232,9 +179,10 @@
   @extend .button-secondary;
   height: $s-28;
   width: $s-28;
-  svg {
-    @extend .button-icon-small;
-  }
+}
+
+.clipboard-icon {
+  @extend .button-icon-small;
 }
 
 .token-created-info {

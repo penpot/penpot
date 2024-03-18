@@ -23,7 +23,8 @@
     svg {
       width: $s-64;
       height: $s-64;
-      fill: $df-secondary;
+      stroke: $df-secondary;
+      fill: none;
     }
   }
 

@@ -171,15 +171,15 @@
   ;;   shortcuts.toggle-assets
   ;;   shortcuts.toggle-colorpalette
   ;;   shortcuts.toggle-focus-mode
-  ;;   shortcuts.toggle-grid
+  ;;   shortcuts.toggle-guides
   ;;   shortcuts.toggle-history
   ;;   shortcuts.toggle-layers
   ;;   shortcuts.toggle-lock
   ;;   shortcuts.toggle-lock-size
   ;;   shortcuts.toggle-rules
   ;;   shortcuts.scale
-  ;;   shortcuts.toggle-snap-grid
-  ;;   shortcuts.toggle-snap-guide
+  ;;   shortcuts.toggle-snap-guides
+  ;;   shortcuts.toggle-snap-ruler-guide
   ;;   shortcuts.toggle-textpalette
   ;;   shortcuts.toggle-visibility
   ;;   shortcuts.toggle-zoom-style
@@ -268,7 +268,7 @@
                   (stl/css :subsection-title)
                   (stl/css :section-title))}
    [:span {:class (stl/css-case :open is-visible?
-                                :collapsed-shortcuts true)} i/arrow-refactor]
+                                :collapsed-shortcuts true)} i/arrow]
    [:span {:class (if is-sub?
                     (stl/css :subsection-name)
                     (stl/css :section-name))} name]])
@@ -473,14 +473,14 @@
       [:div {:class (stl/css :shortcuts-title)} (tr "shortcuts.title")]
       [:div {:class (stl/css :shortcuts-close-button)
              :on-click close-fn}
-       i/close-refactor]]
+       i/close]]
      [:div {:class (stl/css :search-field)}
 
       [:& search-bar {:on-change on-search-term-change-2
                       :clear-action on-search-clear-click
                       :value @filter-term
                       :placeholder (tr "shortcuts.title")
-                      :icon (mf/html [:span {:class (stl/css :search-icon)} i/search-refactor])}]]
+                      :icon (mf/html [:span {:class (stl/css :search-icon)} i/search])}]]
 
      (if match-any?
        [:div {:class (stl/css :shortcuts-list)}

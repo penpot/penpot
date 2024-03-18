@@ -2482,9 +2482,6 @@ msgstr "Odak modunu değiştir"
 msgid "shortcuts.toggle-fullscreen"
 msgstr "Tam ekranı değiştir"
 
-msgid "shortcuts.toggle-grid"
-msgstr "Izgarayı göster/gizle"
-
 msgid "shortcuts.toggle-history"
 msgstr "Geçmişi değiştir"
 
@@ -2502,12 +2499,6 @@ msgstr "Oranları kilitle"
 
 msgid "shortcuts.toggle-rules"
 msgstr "Cetvelleri göster/gizle"
-
-msgid "shortcuts.toggle-snap-grid"
-msgstr "Izgaraya tuttur"
-
-msgid "shortcuts.toggle-snap-guide"
-msgstr "Kılavuzlara tuttur"
 
 msgid "shortcuts.toggle-textpalette"
 msgstr "Metin paletini değiştir"
@@ -2848,10 +2839,6 @@ msgid "workspace.header.menu.disable-scale-text"
 msgstr "Metin ölçeklendirmeyi devre dışı bırak"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.disable-snap-grid"
-msgstr "Izgaraya tutturmayı devre dışı bırak"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-snap-guides"
 msgstr "Kılavuzlara tutturmayı devre dışı bırak"
 
@@ -2867,10 +2854,6 @@ msgid "workspace.header.menu.enable-scale-text"
 msgstr "Metin ölçeklendirmeyi etkinleştir"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.enable-snap-grid"
-msgstr "Izgaraya tuttur"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-snap-guides"
 msgstr "Kılavuzlara tuttur"
 
@@ -2880,10 +2863,6 @@ msgstr "Piksele tutturmayı etkinleştir"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-artboard-names"
 msgstr "Çalışma yüzeyi adlarını gizle"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-grid"
-msgstr "Izgaraları gizle"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -2927,10 +2906,6 @@ msgstr "Tümünü seç"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-artboard-names"
 msgstr "Çalışma yüzeylerinin adlarını göster"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-grid"
-msgstr "Izgarayı göster"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"

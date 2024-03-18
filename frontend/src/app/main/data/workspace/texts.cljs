@@ -382,7 +382,7 @@
                                                      :stack-undo? true
                                                      :ignore-remote? true
                                                      :ignore-touched true})
-                   (ptk/data-event :layout/update ids)
+                   (ptk/data-event :layout/update {:ids ids})
                    (dwu/commit-undo-transaction undo-id))))))))
 
 (defn resize-text
@@ -601,12 +601,16 @@
             attrs        (-> typography
                              (assoc :typography-ref-file file-id)
                              (assoc :typography-ref-id (:id typography))
-                             (dissoc :id :name))]
+                             (dissoc :id :name))
+            undo-id (js/Symbol)]
 
-        (->> (rx/from (seq selected))
-             (rx/map (fn [id]
-                       (let [editor (get editor-state id)]
-                         (update-text-attrs {:id id :editor editor :attrs attrs})))))))))
+        (rx/concat
+         (rx/of (dwu/start-undo-transaction undo-id))
+         (->> (rx/from (seq selected))
+              (rx/map (fn [id]
+                        (let [editor (get editor-state id)]
+                          (update-text-attrs {:id id :editor editor :attrs attrs})))))
+         (rx/of (dwu/commit-undo-transaction undo-id)))))))
 
 (defn generate-typography-name
   [{:keys [font-id font-variant-id] :as typography}]

@@ -40,25 +40,25 @@
        [:div {:class (stl/css-case :status-icon true
                                    :pending-status true)
               :title (tr "workspace.header.unsaved")}
-        i/status-alert-refactor]
+        i/status-alert]
 
        :saving
        [:div {:class (stl/css-case :status-icon true
                                    :saving-status true)
               :title (tr "workspace.header.saving")}
-        i/status-update-refactor]
+        i/status-update]
 
        :saved
        [:div {:class (stl/css-case :status-icon true
                                    :saved-status true)
               :title (tr "workspace.header.saved")}
-        i/status-tick-refactor]
+        i/status-tick]
 
        :error
        [:div {:class (stl/css-case :status-icon true
                                    :error-status true)
               :title "There was an error saving the data. Please refresh if this persists."}
-        i/status-wrong-refactor]
+        i/status-wrong]
 
        nil)]))
 
@@ -112,12 +112,12 @@
          [:button {:class (stl/css :zoom-btn)
                    :on-click on-decrease}
           [:span {:class (stl/css :zoom-icon)}
-           i/remove-refactor]]
+           i/remove-icon]]
          [:p {:class (stl/css :zoom-text)} zoom]
          [:button {:class (stl/css :zoom-btn)
                    :on-click on-increase}
           [:span {:class (stl/css :zoom-icon)}
-           i/add-refactor]]]
+           i/add]]]
         [:button {:class (stl/css :reset-btn)
                   :on-click on-zoom-reset}
          (tr "workspace.header.reset-zoom")]]
@@ -223,7 +223,7 @@
                                      :selected (= selected-drawtool :comments))
                 :on-click toggle-comments
                 :data-tool "comments"}
-       i/comments-refactor]]
+       i/comments]]
 
      (when-not ^boolean read-only?
        [:div {:class (stl/css :history-section)}
@@ -233,10 +233,10 @@
           :class (stl/css-case :selected (contains? layout :document-history)
                                :history-button true)
           :on-click toggle-history}
-         i/history-refactor]])
+         i/history]])
 
      [:a {:class (stl/css :viewer-btn)
           :title (tr "workspace.header.viewer" (sc/get-tooltip :open-viewer))
           :on-click nav-to-viewer}
-      i/play-refactor]]))
+      i/play]]))
 

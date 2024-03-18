@@ -104,7 +104,7 @@
        (when (and current-icon current-icon-ref)
          [:span {:class (stl/css :current-icon)} current-icon-ref])
        [:span {:class (stl/css :current-label)} current-label]
-       [:span {:class (stl/css :dropdown-button)} i/arrow-refactor]
+       [:span {:class (stl/css :dropdown-button)} i/arrow]
        [:& dropdown {:show is-open? :on-close close-dropdown}
         [:ul {:ref dropdown-element* :data-direction @dropdown-direction*
               :class (dm/str dropdown-class " " (stl/css :custom-select-dropdown))}
@@ -126,4 +126,4 @@
                  :on-click select-item}
                 (when (and icon icon-ref) [:span {:class (stl/css :icon)} icon-ref])
                 [:span {:class (stl/css :label)} label]
-                [:span {:class (stl/css :check-icon)} i/tick-refactor]])))]]])))
+                [:span {:class (stl/css :check-icon)} i/tick]])))]]])))

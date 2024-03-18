@@ -6,14 +6,14 @@
 
 @import "refactor/common-refactor.scss";
 
-.workspace-context-menu {
+.text-context-menu {
   position: absolute;
   left: auto;
   bottom: var(--height);
   max-width: $s-480;
   padding: $s-4;
   margin: 0 0 $s-4 0;
-  z-index: $z-index-3;
+  z-index: $z-index-4;
   border-radius: $br-10;
   background-color: var(--context-menu-background-color);
 

@@ -18,7 +18,7 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.color-bullet-new :as cb]
+   [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
@@ -485,7 +485,7 @@
         (when-not read-only?
           [:button {:class (stl/css :assets-btn)
                     :on-click add-color-clicked}
-           i/add-refactor])])
+           i/add])])
 
 
      [:& cmm/asset-section-block {:role :content}

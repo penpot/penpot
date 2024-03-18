@@ -476,8 +476,7 @@
         svg-attrs     (attrs/get-svg-props shape render-id)
 
         style         (-> (obj/get props "style")
-                          (obj/clone)
-                          (attrs/add-layer-styles! shape))
+                          (obj/clone))
 
         props        (mf/spread-props svg-attrs
                                       {:id stroke-id

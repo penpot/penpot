@@ -145,7 +145,7 @@
 
        (when (and (not disable-remove?) (not (= :multiple fills)))
          [:button {:class (stl/css :add-fill)
-                   :on-click on-add} i/add-refactor])]]
+                   :on-click on-add} i/add])]]
 
      (when open?
        [:div {:class (stl/css :element-content)}
@@ -156,7 +156,7 @@
             (tr "settings.multiple")]
            [:button {:on-click on-remove-all
                      :class (stl/css :remove-btn)}
-            i/remove-refactor]]
+            i/remove-icon]]
 
           (seq fills)
           [:& h/sortable-container {}
@@ -187,7 +187,7 @@
             [:span {:class (stl/css-case :check-mark true
                                          :checked (not hide-fill-on-export?))}
              (when (not hide-fill-on-export?)
-               i/status-tick-refactor)]
+               i/status-tick)]
             (tr "workspace.options.show-fill-on-export")
             [:input {:type "checkbox"
                      :id "show-fill-on-export"

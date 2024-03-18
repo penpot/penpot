@@ -7,12 +7,10 @@
 (ns app.main.ui.workspace.sidebar.options.menus.component
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
-   [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
@@ -110,9 +108,10 @@
              (let [text (dom/get-value textarea)]
                (when-not (str/blank? text)
                  (reset! editing* false)
+                 (st/emit! (dw/update-component-annotation component-id text))
                  (when ^boolean creating?
-                   (st/emit! (dw/set-annotations-id-for-create nil)))
-                 (dw/update-component-annotation component-id text))))))
+                   (st/emit! (dw/set-annotations-id-for-create nil))))))))
+
 
         on-delete-annotation
         (mf/use-fn
@@ -167,7 +166,7 @@
            [:span {:class (stl/css-case
                            :icon-arrow true
                            :expanded expanded?)}
-            i/arrow-refactor]
+            i/arrow]
            [:span {:class (stl/css :annotation-text)}
             (tr "workspace.options.component.annotation")]])
 
@@ -185,21 +184,21 @@
                              :icon true
                              :icon-tick true
                              :hidden invalid-text?)}
-               i/tick-refactor]
+               i/tick]
               [:div {:class (stl/css :icon :icon-cross)
                      :title (tr "labels.discard")
                      :on-click on-discard}
-               i/close-refactor]]
+               i/close]]
 
              [:*
               [:div {:class (stl/css :icon :icon-edit)
                      :title (tr "labels.edit")
                      :on-click on-edit}
-               i/curve-refactor]
+               i/curve]
               [:div {:class (stl/css :icon :icon-trash)
                      :title (tr "labels.delete")
                      :on-click on-delete-annotation}
-               i/delete-refactor]]))]]
+               i/delete]]))]]
 
        [:div {:class (stl/css-case :hidden (not expanded?))}
         [:div {:class (stl/css :grow-wrap)}
@@ -262,7 +261,7 @@
        (cfh/last-path group-name)]]
 
      [:span {:class (stl/css :arrow-icon)}
-      i/arrow-refactor]]))
+      i/arrow]]))
 
 (def ^:private ref:swap-libraries
   (letfn [(get-libraries [state]
@@ -276,7 +275,7 @@
 
 (defn- find-common-path
   ([components]
-   (let [paths (map (comp cfh/last-path :path) components)]
+   (let [paths (map (comp cfh/split-path :path) components)]
      (find-common-path paths [] 0)))
   ([paths path n]
    (let [current (nth (first paths) n nil)]
@@ -295,16 +294,6 @@
   (= (:component-id shape-a)
      (:component-id shape-b)))
 
-;; Get the ids of the components and its root-shapes that are parents of the current shape, to avoid loops
-(defn get-parent-component-ids
-  [objects shape ids]
-  (let [shape-id (:id shape)]
-    (if (uuid/zero? shape-id)
-      ids
-      (let [ids (if (ctk/instance-head? shape)
-                  (conj ids shape-id (:component-id shape))
-                  ids)]
-        (get-parent-component-ids objects (get objects (:parent-id shape)) ids)))))
 
 (mf/defc component-swap
   {::mf/props :obj}
@@ -385,13 +374,17 @@
                               (->> (concat groups components)
                                    (sort-by :name)))
 
-        parent-components   (mf/with-memo [shapes objects]
-                              (into #{}
-                                    (comp
-                                     (map :parent-id)
-                                     (map (d/getf objects))
-                                     (mapcat #(get-parent-component-ids objects % [])))
-                                    shapes))
+        find-parent-components
+        (mf/use-fn
+         (mf/deps objects)
+         (fn [shape]
+           (->> (cfh/get-parents objects (:id shape))
+                (map :component-id)
+                (remove nil?))))
+
+        ;; Get the ids of the components that are parents of the shapes, to avoid loops
+        parent-components (mapcat find-parent-components shapes)
+
 
         libraries-options  (map (fn [library] {:value (:id library) :label (:name library)})
                                 (vals libraries))
@@ -439,7 +432,8 @@
                         :id "swap-component-search-filter"
                         :value (:term filters)
                         :placeholder (str (tr "labels.search") " " (get-in libraries [current-library-id :name]))
-                        :icon (mf/html [:span {:class (stl/css :search-icon)} i/search-refactor])}]]
+                        :icon (mf/html [:span {:class (stl/css :search-icon)}
+                                        i/search])}]]
 
        [:& select {:class (stl/css :select-library)
                    :default-value current-library-id
@@ -455,10 +449,10 @@
                             :selected (if (:listing-thumbs? filters) "grid" "list")
                             :on-change toggle-list-style
                             :name "swap-listing-style"}
-          [:& radio-button {:icon i/view-as-list-refactor
+          [:& radio-button {:icon i/view-as-list
                             :value "list"
                             :id "swap-opt-list"}]
-          [:& radio-button {:icon i/flex-grid-refactor
+          [:& radio-button {:icon i/flex-grid
                             :value "grid"
                             :id "swap-opt-grid"}]]]]
 
@@ -466,7 +460,7 @@
          [:button {:class (stl/css :component-path)
                    :on-click on-go-back
                    :title filter-path-with-dots}
-          [:span {:class (stl/css :back-arrow)} i/arrow-refactor]
+          [:span {:class (stl/css :back-arrow)} i/arrow]
           (when-not (= "" filter-path-with-dots)
             [:span {:class (stl/css :path-name)}
              (dm/str "\u00A0\u2022\u00A0" filter-path-with-dots)])
@@ -488,8 +482,10 @@
             (let [data       (dm/get-in libraries [current-library-id :data])
                   container  (ctf/get-component-page data item)
                   root-shape (ctf/get-component-root data item)
-                  loop?      (or (contains? parent-components (:main-instance-id item))
-                                 (contains? parent-components (:id item)))]
+                  components (->> (cfh/get-children-with-self (:objects container) (:id root-shape))
+                                  (keep :component-id)
+                                  set)
+                  loop?      (some #(contains? components %) parent-components)]
               [:& component-swap-item {:key (dm/str (:id item))
                                        :item item
                                        :loop loop?
@@ -589,7 +585,7 @@
         (if swap-opened?
           [:button {:class (stl/css :title-back)
                     :on-click on-component-back}
-           [:span {:class (stl/css :icon-back)} i/arrow-refactor]
+           [:span {:class (stl/css :icon-back)} i/arrow]
            [:span (tr "workspace.options.component")]]
 
           [:& title-bar {:collapsable  true
@@ -614,8 +610,8 @@
 
             [:span {:class (stl/css :component-icon)}
              (if main-instance?
-               i/component-refactor
-               i/copy-refactor)]
+               i/component
+               i/component-copy)]
 
             [:div {:class (stl/css :name-wrapper)}
              [:div {:class (stl/css :component-name)}
@@ -632,7 +628,7 @@
               [:button {:class (stl/css-case :menu-btn true
                                              :selected menu-open?)
                         :on-click on-menu-click}
-               i/menu-refactor]
+               i/menu]
 
               [:& component-ctx-menu {:show menu-open?
                                       :on-close on-menu-close

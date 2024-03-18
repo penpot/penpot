@@ -75,73 +75,23 @@
 
 ;; --- EVENT TRANSLATION
 
-(derive :app.main.data.comments/create-comment ::generic-action)
-(derive :app.main.data.comments/create-comment-thread ::generic-action)
-(derive :app.main.data.comments/delete-comment ::generic-action)
-(derive :app.main.data.comments/delete-comment-thread ::generic-action)
-(derive :app.main.data.comments/open-comment-thread ::generic-action)
-(derive :app.main.data.comments/update-comment ::generic-action)
-(derive :app.main.data.comments/update-comment-thread ::generic-action)
-(derive :app.main.data.comments/update-comment-thread-status ::generic-action)
-(derive :app.main.data.dashboard/delete-team-member ::generic-action)
-(derive :app.main.data.dashboard/duplicate-project ::generic-action)
-(derive :app.main.data.dashboard/create-file ::generic-action)
-(derive :app.main.data.dashboard/file-created ::generic-action)
-(derive :app.main.data.dashboard/invite-team-members ::generic-action)
-(derive :app.main.data.dashboard/leave-team ::generic-action)
-(derive :app.main.data.dashboard/move-files ::generic-action)
-(derive :app.main.data.dashboard/move-project ::generic-action)
-(derive :app.main.data.dashboard/project-created ::generic-action)
-(derive :app.main.data.dashboard/rename-file ::generic-action)
-(derive :app.main.data.dashboard/set-file-shared ::generic-action)
-(derive :app.main.data.dashboard/update-team-member-role ::generic-action)
-(derive :app.main.data.dashboard/update-team-photo ::generic-action)
-(derive :app.main.data.dashboard/clone-template ::generic-action)
-(derive :app.main.data.fonts/add-font ::generic-action)
-(derive :app.main.data.fonts/delete-font ::generic-action)
-(derive :app.main.data.fonts/delete-font-variant ::generic-action)
-(derive :app.main.data.modal/show-modal ::generic-action)
-(derive :app.main.data.users/logout ::generic-action)
-(derive :app.main.data.users/request-email-change ::generic-action)
-(derive :app.main.data.users/update-password ::generic-action)
-(derive :app.main.data.users/update-photo ::generic-action)
-(derive :app.main.data.workspace.comments/open-comment-thread ::generic-action)
-(derive :app.main.data.workspace.guides/update-guides ::generic-action)
-(derive :app.main.data.workspace.libraries/add-color ::generic-action)
-(derive :app.main.data.workspace.libraries/add-media ::generic-action)
-(derive :app.main.data.workspace.libraries/add-typography ::generic-action)
-(derive :app.main.data.workspace.libraries/delete-color ::generic-action)
-(derive :app.main.data.workspace.libraries/delete-media ::generic-action)
-(derive :app.main.data.workspace.libraries/delete-typography ::generic-action)
-(derive :app.main.data.workspace.persistence/attach-library ::generic-action)
-(derive :app.main.data.workspace.persistence/detach-library ::generic-action)
-(derive :app.main.data.workspace.persistence/set-file-shard ::generic-action)
-(derive :app.main.data.workspace.selection/toggle-focus-mode ::generic-action)
-(derive :app.main.data.workspace/create-page ::generic-action)
-(derive :app.main.data.workspace/set-workspace-layout ::generic-action)
-(derive :app.main.data.workspace/toggle-layout-flag ::generic-action)
-
 (defprotocol Event
   (-data [_] "Get event data"))
 
 (defn- simplify-props
   "Removes complex data types from props."
   [data]
-  (into {}
-        (comp
-         (remove (fn [[_ v]] (nil? v)))
-         (map (fn [[k v :as kv]]
-                (cond
-                  (map? v)    [k :placeholder/map]
-                  (vector? v) [k :placeholder/vec]
-                  (set? v)    [k :placeholder/set]
-                  (coll? v)   [k :placeholder/coll]
-                  (fn? v)     [k :placeholder/fn]
-                  :else       kv))))
-        data))
-
-
-(defmulti process-event-by-type ptk/type)
+  (reduce-kv (fn [data k v]
+               (cond
+                 (map? v)    (assoc data k :placeholder/map)
+                 (vector? v) (assoc data k :placeholder/vec)
+                 (set? v)    (assoc data k :placeholder/set)
+                 (coll? v)   (assoc data k :placeholder/coll)
+                 (fn? v)     (assoc data k :placeholder/fn)
+                 (nil? v)    (dissoc data k)
+                 :else       data))
+             data
+             data))
 
 (defn- process-event-by-proto
   [event]
@@ -160,72 +110,30 @@
      :context context
      :props props}))
 
+(defn- process-data-event
+  [event]
+  (let [data (deref event)
+        name (::name data)]
+
+    (when (string? name)
+      (let [type    (::type data "action")
+            context (-> (::context data)
+                        (assoc :event-origin (::origin data))
+                        (d/without-nils))
+            props   (-> data d/without-qualified simplify-props)]
+        {:type    type
+         :name    name
+         :context context
+         :props   props}))))
+
 (defn- process-event
   [event]
-  (if (satisfies? Event event)
+  (cond
+    (satisfies? Event event)
     (process-event-by-proto event)
-    (process-event-by-type event)))
 
-(defmethod process-event-by-type :default [_] nil)
-
-(defmethod process-event-by-type ::event
-  [event]
-  (let [data    (deref event)
-        context (-> (::context data)
-                    (assoc :event-origin (::origin data))
-                    (d/without-nils))
-        props   (-> data d/without-qualified simplify-props)]
-
-    {:type    (::type data "action")
-     :name    (::name data "unnamed")
-     :context context
-     :props   props}))
-
-(defmethod process-event-by-type ::generic-action
-  [event]
-  (let [type  (ptk/type event)
-        data  (if (satisfies? IDeref event)
-                (deref event)
-                {})
-        data  (d/deep-merge data (meta event))]
-
-    {:type    "action"
-     :name    (or (::name data) (name type))
-     :props   (-> (d/without-qualified data)
-                  (simplify-props))
-     :context (d/without-nils
-               {:event-origin (::origin data)
-                :event-namespace (namespace type)
-                :event-symbol (name type)})}))
-
-(defmethod process-event-by-type :app.util.router/navigated
-  [event]
-  (let [match (deref event)
-        route (get-in match [:data :name])
-        props {:route      (name route)
-               :team-id    (get-in match [:path-params :team-id])
-               :file-id    (get-in match [:path-params :file-id])
-               :project-id (get-in match [:path-params :project-id])}]
-    {:name "navigate"
-     :type "action"
-     :props (simplify-props props)}))
-
-(defmethod process-event-by-type :app.main.data.users/logged-in
-  [event]
-  (let [data  (deref event)
-        mdata (meta data)
-        props {:signin-source (::source mdata)
-               :email (:email data)
-               :auth-backend (:auth-backend data)
-               :fullname (:fullname data)
-               :is-muted (:is-muted data)
-               :default-team-id (str (:default-team-id data))
-               :default-project-id (str (:default-project-id data))}]
-
-    {:name "signin"
-     :type "identify"
-     :profile-id (:id data)
-     :props (simplify-props props)}))
+    (ptk/data-event? event)
+    (process-data-event event)))
 
 ;; --- MAIN LOOP
 

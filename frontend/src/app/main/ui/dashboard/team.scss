@@ -7,577 +7,427 @@
 @use "common/refactor/common-refactor.scss" as *;
 @use "common/refactor/common-dashboard";
 
-.dashboard-container {
-  flex: 1 0 0;
-  margin-right: $s-16;
-  overflow-y: auto;
+// Dashboard team settings
+.dashboard-team-settings {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  justify-items: center;
+  gap: $s-24;
   width: 100%;
-  border-top: $s-1 solid $db-quaternary;
-
-  &.dashboard-projects {
-    user-select: none;
-  }
-  &.dashboard-shared {
-    width: calc(100vw - $s-320);
-    margin-right: $s-52;
-  }
-
-  &.search {
-    margin-top: $s-12;
-  }
+  border-top: $s-1 solid var(--panel-border-color);
+  overflow-y: auto;
 }
 
-.dashboard-team-webhooks {
-  display: flex;
-  flex-direction: column;
-  width: $s-800;
-  margin-left: $s-120;
-  margin-top: $s-80;
-  border: none;
-  align-items: flex-start;
-}
-
-.webhooks-empty {
-  align-items: center;
-  background-color: transparent;
-  border-radius: $br-8;
-  border: $s-1 solid $db-quaternary;
-  color: $df-secondary;
-  display: flex;
-  flex-direction: column;
-  font-size: $fs-12;
-  justify-content: center;
-  margin-top: $s-32;
+.block {
+  display: grid;
+  grid-auto-rows: min-content;
+  gap: $s-8;
   max-width: $s-1000;
-  min-height: $s-136;
-  padding: $s-32;
-  text-align: center;
-  width: $s-468;
+  width: $s-1000;
+}
+
+.info-block {
+  position: relative;
+  padding-top: $s-180;
+}
+
+.block-label {
+  @include headlineSmallTypography;
+  color: var(--title-foreground-color);
+}
+
+.block-text {
+  color: var(--title-foreground-color-hover);
+}
+
+.block-content {
+  display: grid;
+  grid-template-columns: $s-32 1fr;
+  align-items: center;
+  gap: $s-12;
+}
+
+.owner-icon {
+  width: $s-32;
+  height: $s-32;
+  border-radius: 50%;
+}
+
+.user-icon,
+.document-icon,
+.group-icon {
+  @extend .button-icon;
+  margin: 0 auto;
+  stroke: var(--icon-foreground);
+}
+
+.team-icon {
+  --update-button-opacity: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: $s-120;
+  width: $s-120;
+  padding: $s-16;
+
+  &:hover {
+    --update-button-opacity: 1;
+  }
+}
+
+.team-image {
+  border-radius: 50%;
+  width: $s-120;
+  height: $s-120;
+}
+
+.update-overlay {
+  opacity: var(--update-button-opacity);
+  @include buttonStyle;
+  @include flexCenter;
+  position: absolute;
+  top: $s-16;
+  left: $s-16;
+  height: 100%;
+  width: 100%;
+  z-index: $z-index-modal;
+  border-radius: $br-circle;
+  background-color: $da-primary;
+}
+
+.image-icon {
+  @extend .button-icon;
+  min-width: $s-24;
+  min-height: $s-24;
+  stroke: var(--icon-foreground-hover);
+}
+
+// TEAM MEMBERS PAGE
+.dashboard-team-members {
+  display: grid;
+  justify-items: center;
+  width: 100%;
+  height: 100%;
+  padding-top: $s-20;
+  border-top: $s-1 solid var(--panel-border-color);
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.team-members {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: fit-content;
+  max-width: $s-1000;
+  width: $s-1000;
+}
+
+.table-header {
+  @include headlineSmallTypography;
+  display: grid;
+  align-items: center;
+  grid-template-columns: 43% 1fr $s-108 $s-12;
+  height: $s-40;
+  width: 100%;
+  max-width: $s-1000;
+  padding: 0 $s-16;
+  user-select: none;
+  color: var(--title-foreground-color);
+}
+
+.table-rows {
+  display: grid;
+  grid-auto-rows: $s-64;
+  gap: $s-16;
+  width: 100%;
+  height: 100%;
+  max-width: $s-1000;
+  margin-top: $s-16;
+  color: var(--title-foreground-color);
+}
+
+.table-row {
+  display: grid;
+  grid-template-columns: 43% 1fr auto;
+  align-items: center;
+  height: $s-64;
+  width: 100%;
+  padding: 0 $s-16;
+  border-radius: $br-8;
+  background-color: var(--dashboard-list-background-color);
+  color: var(--dashboard-list-foreground-color);
+}
+
+.title-field-name {
+  width: 43%;
+  min-width: $s-300;
+}
+
+.title-field-roles {
+  position: relative;
+  cursor: default;
+}
+
+.field-name {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: $s-16;
+  width: 43%;
+  min-width: $s-300;
+}
+
+.field-roles {
+  position: relative;
+  cursor: default;
+}
+
+.field-actions {
+  position: relative;
+}
+
+// MEMBER INFO
+.member-image {
+  height: $s-32;
+  width: $s-32;
+  border-radius: $br-circle;
+}
+
+.member-info {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  width: 100%;
+}
+
+.member-name,
+.member-email {
+  @include textEllipsis;
+  @include bodyLargeTypography;
+}
+
+.member-email {
+  @include bodySmallTypography;
+  color: var(--dashboard-list-text-foreground-color);
+}
+
+.you {
+  color: var(--dashboard-list-text-foreground-color);
+  margin-left: $s-6;
+}
+
+// ROL INFO
+.rol-selector {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  height: $s-32;
+  min-width: $s-160;
+  width: fit-content;
+  padding: $s-4 $s-8;
+  border-radius: $br-8;
+  border-color: var(--menu-background-color-hover);
+  background-color: var(--menu-background-color-hover);
+  font-size: $fs-14;
+}
+
+.has-priv {
+  cursor: pointer;
+}
+
+.rol-label {
+  user-select: none;
+}
+
+.roles-dropdown {
+  @extend .menu-dropdown;
+  bottom: calc(-1 * $s-76);
+  width: fit-content;
+  min-width: $s-160;
+}
+
+.rol-dropdown-item {
+  @extend .menu-item-base;
+}
+
+// MEMBER ACTIONS
+.menu-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
+}
+
+.menu-btn {
+  @include buttonStyle;
+}
+
+.actions-dropdown {
+  @extend .menu-dropdown;
+  bottom: calc(-1 * $s-32);
+  right: 0;
+  left: unset;
+  width: fit-content;
+  min-width: $s-160;
+}
+
+.action-dropdown-item {
+  @extend .menu-item-base;
+}
+
+// TEAM INVITATION PAGE
+.dashboard-team-invitations {
+  display: grid;
+  justify-items: center;
+  width: 100%;
+  height: 100%;
+  padding-top: $s-20;
+  border-top: $s-1 solid var(--panel-border-color);
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.invitations {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: fit-content;
+  max-width: $s-1000;
+  width: $s-1000;
+}
+
+.table-row-invitations {
+  grid-template-columns: 43% 1fr $s-108 $s-12;
+  align-items: center;
+}
+
+.empty-invitations {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  height: $s-156;
+  max-width: $s-1000;
+  width: 100%;
+  margin-top: $s-16;
+  border: $s-1 solid var(--panel-border-color);
+  border-radius: $br-8;
+  color: var(--dashboard-list-text-foreground-color);
+}
+
+.title-field-status {
+  position: relative;
+  cursor: default;
+}
+
+.field-email {
+  @include textEllipsis;
+  @include bodyLargeTypography;
+  display: grid;
+  align-items: center;
+}
+
+.invitations-dropdown {
+  bottom: calc(-1 * $s-112);
+  right: calc(-1 * $s-20);
+}
+
+// WEBHOOKS SECTION
+.dashboard-team-webhooks {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  justify-items: center;
+  gap: $s-24;
+  width: 100%;
+  height: 100%;
+  padding-top: $s-16;
+  border-top: $s-1 solid var(--panel-border-color);
+  overflow-y: auto;
 }
 
 .webhooks-hero-container {
+  display: grid;
+  gap: $s-32;
+  max-width: $s-1000;
+  width: $s-1000;
+}
+
+.webhooks-empty {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  height: $s-156;
   max-width: $s-1000;
   width: 100%;
-  display: flex;
-  flex-direction: column;
-
-  width: $s-468;
-  background-color: transparent;
-
-  .upload-button {
-    width: $s-100;
-  }
-
-  .btn-secondary {
-    margin-left: $s-12;
-  }
+  padding: $s-32;
+  border: $s-1 solid var(--panel-border-color);
+  border-radius: $br-8;
+  color: var(--dashboard-list-text-foreground-color);
 }
 
 .webhooks-hero {
   font-size: $fs-14;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
   gap: $s-32;
-  justify-content: space-between;
   margin-top: $s-32;
   margin: 0;
   padding: $s-32;
   padding: 0;
   width: $s-468;
-
-  .desc {
-    color: $df-secondary;
-    width: 100%;
-
-    h2 {
-      color: $df-primary;
-      font-size: $fs-24;
-      font-weight: regular;
-      margin-bottom: $s-32;
-    }
-    p {
-      color: $df-secondary;
-      margin-bottom: 0;
-      font-size: $fs-16;
-    }
-  }
-  .btn-primary {
-    @extend .button-primary;
-    height: $s-32;
-  }
 }
 
-.dropdown {
-  background-color: $db-tertiary;
-  border-radius: $br-8;
-  border: $s-1 solid $db-quaternary;
-  box-shadow: 0 $s-2 $s-8 rgba(0, 0, 0, 0.25);
-  left: calc(-1 * $s-144);
-  max-height: $s-480;
-  min-width: $s-252;
-  overflow-y: auto;
-  position: absolute;
-  top: $s-32;
-  width: $s-152;
-  z-index: $z-index-4;
-
-  hr {
-    margin: 0;
-    border-color: $df-secondary;
-  }
-
-  li {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    font-size: $fs-14;
-    padding: $s-4 $s-16;
-    border-radius: $br-8;
-    height: $s-40;
-    margin: $s-6;
-    color: $df-primary;
-
-    &:hover {
-      background-color: $db-quaternary;
-    }
-
-    &.title {
-      font-weight: $fw700;
-      cursor: default;
-    }
-  }
-
-  .separator {
-    border-color: transparent;
-    margin-top: $s-8;
-  }
-
-  &.options-dropdown {
-    li {
-      color: $df-primary;
-      &.warning {
-        color: var(--element-foreground-warning);
-      }
-    }
-  }
+.hero-title {
+  @include bigTitleTipography;
+  color: var(--dashboard-list-foreground-color);
 }
 
-.dashboard-table {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: $s-20;
-  font-size: $fs-16;
-
-  .table-header {
-    color: $df-secondary;
-    display: grid;
-    font-size: $fs-12;
-    grid-template-columns: 43% 1fr $s-108 $s-12;
-    height: $s-40;
-    max-width: $s-1000;
-    padding: 0 $s-16;
-    text-transform: uppercase;
-    user-select: none;
-    width: 100%;
-  }
-  .table-rows {
-    display: flex;
-    flex-direction: column;
-    max-width: $s-1000;
-    width: 100%;
-    margin-top: $s-16;
-    color: $db-secondary;
-  }
-
-  .table-row {
-    align-items: center;
-    background-color: $db-tertiary;
-    border-radius: $br-8;
-    color: $df-primary;
-    display: flex;
-    height: $s-64;
-    padding: 0 $s-16;
-    width: 100%;
-
-    &:not(:first-child) {
-      margin-top: $s-16;
-    }
-  }
-
-  .table-field {
-    display: flex;
-    align-items: center;
-
-    .icon {
-      padding-left: $s-12;
-      cursor: pointer;
-    }
-
-    &.name {
-      width: 43%;
-      min-width: $s-300;
-      display: flex;
-    }
-    &.roles {
-      flex-grow: 1;
-      cursor: default;
-      position: relative;
-      .rol-label {
-        user-select: none;
-      }
-      .rol-selector {
-        &.has-priv {
-          cursor: pointer;
-        }
-        min-width: $s-160;
-        height: $s-32;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: $s-4 $s-8;
-        font-size: $fs-14;
-        background-color: $db-quaternary;
-        border-color: transparent;
-        border-radius: $br-8;
-      }
-
-      .dropdown {
-        left: 0;
-      }
-    }
-
-    &.actions {
-      position: relative;
-      .actions-dropdown {
-        max-height: $s-480;
-        min-width: $s-180;
-      }
-
-      svg {
-        fill: $df-secondary;
-      }
-    }
-
-    &.status {
-      .status-badge {
-        min-width: $s-76;
-        height: $s-24;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        border-radius: $br-8;
-        color: $db-primary;
-        text-transform: uppercase;
-
-        &.pending {
-          background-color: var(--status-color-warning-500);
-        }
-
-        &.expired {
-          background-color: $df-secondary;
-        }
-
-        .status-label {
-          font-size: $fs-12;
-        }
-      }
-    }
-
-    &.uri {
-      flex-grow: 1;
-    }
-
-    &.active {
-      min-width: $s-100;
-    }
-
-    &.last-delivery {
-      display: flex;
-      justify-content: center;
-      width: $s-52;
-      position: relative;
-      .success svg {
-        fill: $da-tertiary;
-        width: $s-16;
-        height: $s-16;
-      }
-      .failure svg {
-        fill: var(--element-foreground-warning);
-        width: $s-16;
-        height: $s-16;
-      }
-
-      .icon-container {
-        width: $s-16;
-        height: $s-16;
-        overflow-x: visible;
-      }
-
-      .icon {
-        padding: 0;
-      }
-    }
-
-    .tooltip {
-      display: none;
-      position: absolute;
-      top: calc(-1 * $s-56);
-      left: 50%;
-      transform: translate(-50%, 0);
-      text-align: center;
-
-      .label {
-        border-radius: $br-4;
-        color: $df-primary;
-        background-color: $db-secondary;
-        white-space: nowrap;
-        padding: $s-12 $s-20;
-      }
-
-      .arrow-down {
-        margin: 0 auto;
-        width: 0;
-        height: 0;
-        border-left: $s-8 solid transparent;
-        border-right: $s-8 solid transparent;
-        border-top: $s-8 solid $db-secondary;
-      }
-    }
-
-    .last-delivery-icon:hover {
-      .tooltip {
-        display: block;
-      }
-    }
-  }
-
-  .member-info {
-    display: flex;
-    flex-direction: column;
-    margin-left: $s-16;
-  }
-  .member-name {
-    font-size: $fs-16;
-  }
-  .you {
-    color: $df-secondary;
-    margin-left: $s-6;
-  }
-  .member-email {
-    color: $df-secondary;
-    font-size: $fs-12;
-  }
-  .member-image {
-    height: $s-32;
-    width: $s-32;
-    img {
-      border-radius: 50%;
-    }
-  }
-
-  .dashboard-team-webhooks & {
-    width: $s-800;
-    .table-rows {
-      padding-top: 0;
-      .table-row {
-        font-size: $fs-16;
-        min-height: $s-40;
-        height: fit-content;
-        .name {
-          color: $df-primary;
-          max-width: $s-480;
-        }
-        .expiration-date {
-          color: $df-secondary;
-        }
-      }
-    }
-  }
-
-  &.team-members {
-    margin-bottom: $s-52;
-  }
-
-  &.invitations {
-    .table-row {
-      display: grid;
-      grid-template-columns: 43% 1fr $s-108 $s-12;
-    }
-  }
-
-  svg {
-    width: $s-12;
-    height: $s-12;
-    fill: $df-secondary;
-  }
-}
-
-.empty-invitations {
-  height: $s-156;
-  max-width: $s-1000;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-  margin-top: $s-16;
-  border: $s-1 solid $db-quaternary;
-  border-radius: $br-8;
+.hero-desc {
   color: $df-secondary;
+  margin-bottom: 0;
+  font-size: $fs-16;
+  max-width: $s-512;
 }
 
-.team-settings {
-  display: flex;
-  justify-content: center;
-  margin-top: $s-16;
-
-  svg {
-    width: $s-20;
-    height: $s-20;
-  }
-
-  .horizontal-blocks {
-    display: flex;
-    max-width: $s-1000;
-    justify-content: space-between;
-    width: 100%;
-    flex-direction: column;
-    gap: $s-24;
-  }
-
-  .block {
-    display: flex;
-    max-width: $s-324;
-    width: $s-324;
-    flex-direction: column;
-    padding: $s-12;
-
-    .label {
-      color: $df-secondary;
-      font-size: $fs-12;
-      text-transform: uppercase;
-    }
-    .icon svg {
-      fill: $df-secondary;
-    }
-    .name,
-    .text {
-      color: $df-primary;
-    }
-  }
-
-  .info-block {
-    position: relative;
-    padding-top: $s-180;
-
-    .name {
-      margin-top: $s-12;
-      font-size: $fs-24;
-      color: $df-primary;
-      @include text-ellipsis;
-      margin-right: $s-88;
-    }
-
-    .icon {
-      position: absolute;
-      padding: $s-16;
-      right: 0;
-      top: 0;
-      left: 0;
-      height: $s-120;
-      width: $s-120;
-
-      img {
-        border-radius: 50%;
-        width: $s-120;
-        height: $s-120;
-      }
-
-      .update-overlay {
-        opacity: 0;
-        cursor: pointer;
-        position: absolute;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        border-radius: 50%;
-        color: $df-primary;
-        z-index: $z-index-modal;
-        background-color: $da-primary;
-        height: 100%;
-        width: 100%;
-
-        svg {
-          fill: $db-primary;
-        }
-      }
-
-      &:hover {
-        .update-overlay {
-          opacity: 1;
-          top: $s-16;
-          left: $s-16;
-        }
-      }
-    }
-  }
-
-  .owner-block {
-    img {
-      width: $s-32;
-      height: $s-32;
-      border-radius: 50%;
-    }
-
-    svg {
-      width: $s-12;
-      height: $s-12;
-      fill: $db-secondary;
-    }
-
-    .owner {
-      margin-top: $s-6;
-      display: flex;
-      align-items: center;
-      color: $db-secondary;
-      .icon {
-        margin-right: $s-12;
-      }
-    }
-
-    .summary {
-      margin-top: $s-6;
-      color: $db-secondary;
-      .icon {
-        padding: 0 $s-12;
-        margin-right: $s-12;
-      }
-    }
-  }
-
-  .stats-block {
-    svg {
-      fill: $db-secondary;
-    }
-
-    .projects,
-    .files {
-      margin-top: $s-8;
-      display: flex;
-      align-items: center;
-      color: $db-secondary;
-
-      .icon {
-        display: flex;
-        align-items: center;
-        padding: 0 $s-2;
-        margin-right: $s-12;
-      }
-    }
-  }
+.hero-btn {
+  @extend .button-primary;
+  height: $s-32;
+  max-width: $s-512;
 }
 
+.webhook-table {
+  height: fit-content;
+}
+
+.webhook-row {
+  display: grid;
+  align-items: center;
+  grid-template-columns: auto 1fr auto auto;
+  gap: $s-16;
+}
+
+.actions {
+  position: relative;
+}
+
+.webhook-actions-dropdown {
+  @extend .menu-dropdown;
+  right: calc(-1 * $s-16);
+  bottom: calc(-1 * $s-40);
+  width: fit-content;
+  min-width: $s-160;
+}
+
+.webhook-dropdown-item {
+  @extend .menu-item-base;
+}
+
+.success-icon {
+  @extend .button-icon;
+  stroke: var(--alert-icon-foreground-color-success);
+}
+
+.warning-icon {
+  @extend .button-icon;
+  stroke: var(--alert-icon-foreground-color-warning);
+}
+
+// INVITE MEMBERS MODAL
 .modal-team-container {
   @extend .modal-container-base;
   @include menuShadow;
@@ -592,83 +442,46 @@
     top: $s-216;
     right: $s-32;
   }
-  .modal-title {
-    @include headlineMediumTypography;
-    height: $s-32;
-    color: var(--modal-title-foreground-color);
-  }
-  .error-msg {
-    @include flexRow;
-    height: $s-32;
-    border-radius: $br-8;
-    background-color: var(--alert-background-color-error);
-    .icon {
-      @include flexCenter;
-      width: $s-16;
-      height: $s-24;
-      svg {
-        @extend .button-icon;
-        stroke: var(--alert-icon-foreground-color-error);
-      }
-    }
-    .message {
-      @include bodySmallTypography;
-      color: var(--alert-foreground-color-error);
-    }
-  }
-
-  .warning-msg {
-    @include flexRow;
-    height: $s-32;
-    border-radius: $br-8;
-    background-color: var(--alert-background-color-warning);
-    padding: $s-24 $s-8;
-    gap: $s-8;
-    margin-bottom: $s-16;
-
-    .icon {
-      @include flexCenter;
-      width: $s-16;
-      height: $s-24;
-      svg {
-        @extend .button-icon;
-        stroke: var(--alert-icon-foreground-color-warning);
-      }
-    }
-    .message {
-      @include bodySmallTypography;
-      color: var(--alert-foreground-color-warning);
-    }
-  }
-
-  .role-select {
-    @include flexColumn;
-    row-gap: $s-8;
-    .role-title {
-      @include bodyLargeTypography;
-      margin: 0;
-      color: var(--modal-title-foreground-color);
-    }
-  }
-
-  .invitation-row {
-    margin-top: $s-8;
-    margin-bottom: $s-24;
-  }
-
-  .action-buttons {
-    display: flex;
-    justify-content: flex-end;
-    button {
-      @extend .modal-accept-btn;
-      &:disabled {
-        @extend .button-disabled;
-      }
-    }
-  }
 }
 
-// WEBHOOKS
+.modal-title {
+  @include headlineMediumTypography;
+  height: $s-32;
+  color: var(--modal-title-foreground-color);
+}
+
+.role-select {
+  @include flexColumn;
+  row-gap: $s-8;
+}
+
+.arrow-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
+  transform: rotate(90deg);
+}
+
+.role-title {
+  @include bodyLargeTypography;
+  margin: 0;
+  color: var(--modal-title-foreground-color);
+}
+
+.invitation-row {
+  margin-top: $s-8;
+  margin-bottom: $s-24;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.accept-btn {
+  @extend .modal-accept-btn;
+}
+
+// WEBHOOKS MODAL
 
 .modal-overlay {
   @extend .modal-overlay-base;

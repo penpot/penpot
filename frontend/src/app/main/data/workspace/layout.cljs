@@ -23,12 +23,12 @@
     :colorpalette
     :element-options
     :rulers
-    :display-grid
-    :snap-grid
+    :display-guides
+    :snap-guides
     :scale-text
     :dynamic-alignment
     :display-artboard-names
-    :snap-guides
+    :snap-ruler-guides
     :show-pixel-grid
     :snap-pixel-grid})
 
@@ -53,11 +53,11 @@
     :layers
     :element-options
     :rulers
-    :display-grid
-    :snap-grid
+    :display-guides
+    :snap-guides
     :dynamic-alignment
     :display-artboard-names
-    :snap-guides
+    :snap-ruler-guides
     :show-pixel-grid
     :snap-pixel-grid})
 
@@ -82,13 +82,14 @@
 (defn toggle-layout-flag
   [flag & {:keys [force?] :as opts}]
   (ptk/reify ::toggle-layout-flag
-    IDeref
-    (-deref [_] {:name flag})
+    ev/Event
+    (-data [_] {:name flag})
 
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-layout
               (fn [flags]
+                (prn flags)
                 (if force?
                   (conj flags flag)
                   (if (contains? flags flag)

@@ -7,17 +7,9 @@
 @use "common/refactor/common-refactor.scss" as *;
 
 .dashboard-comments-section {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  @include flexCenter;
   position: relative;
   border-radius: $br-8;
-
-  button {
-    cursor: pointer;
-    background: none;
-    border: none;
-  }
 }
 
 .thread-groups {
@@ -25,13 +17,6 @@
   overflow-y: scroll;
   max-height: $s-440;
   overflow: auto;
-
-  hr {
-    background-color: $df-primary;
-    border: 0;
-    height: $s-1;
-    margin: 0;
-  }
 }
 
 .thread-group {
@@ -48,43 +33,38 @@
   padding: $s-24;
   text-align: center;
   color: $df-secondary;
-
-  svg {
-    stroke: $df-secondary;
-    fill: none;
-    height: $s-24;
-    margin-bottom: $s-24;
-    width: $s-24;
-  }
 }
 
-.button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.comments-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
+  height: $s-24;
+  width: $s-24;
+  margin-bottom: $s-24;
+}
+
+.comment-button {
+  @include buttonStyle;
+  @include flexCenter;
   border-radius: $br-8;
   height: $s-32;
   width: $s-32;
+  --comment-icon-small-foreground-color: var(--icon-foreground);
 
-  svg {
-    width: $s-16;
-    height: $s-16;
-    stroke: $df-secondary;
-    fill: none;
-  }
-
-  &.unread svg,
-  &.open svg {
-    stroke: $da-tertiary;
+  &.unread,
+  &.open {
+    --comment-icon-small-foreground-color: var(--icon-foreground-selected);
   }
 
   &:hover {
     background-color: $db-quaternary;
-
-    svg {
-      stroke: $da-primary;
-    }
+    --comment-icon-small-foreground-color: var(--icon-foreground-active);
   }
+}
+
+.comments-icon-small {
+  @extend .button-icon;
+  stroke: var(--comment-icon-small-foreground-color);
 }
 
 .dropdown {
@@ -98,7 +78,7 @@
   min-height: $s-200;
   position: absolute;
   width: 100%;
-  z-index: $z-index-3;
+  z-index: $z-index-4;
 
   hr {
     margin: 0;
@@ -111,24 +91,22 @@
   height: $s-40;
   align-items: center;
   padding: 0 $s-12;
+}
 
-  h3 {
-    color: $df-secondary;
-    font-size: $fs-11;
-    line-height: 1.28;
-    flex-grow: 1;
-    text-transform: uppercase;
-  }
+.header-title {
+  color: $df-secondary;
+  font-size: $fs-11;
+  line-height: 1.28;
+  flex-grow: 1;
+  text-transform: uppercase;
+}
 
-  .close {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    svg {
-      width: $s-16;
-      height: $s-16;
-      transform: rotate(45deg);
-      fill: $df-secondary;
-    }
-  }
+.close-btn {
+  @include buttonStyle;
+  @include flexCenter;
+}
+
+.close-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
 }

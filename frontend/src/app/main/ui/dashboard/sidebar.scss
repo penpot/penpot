@@ -239,6 +239,7 @@
 
 .element-title {
   @include textEllipsis;
+  width: $s-256;
   color: var(--sidebar-element-foreground-color);
   font-size: $fs-14;
 }

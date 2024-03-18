@@ -2959,9 +2959,6 @@ msgstr "Focusmodus in/uitschakelen"
 msgid "shortcuts.toggle-fullscreen"
 msgstr "Volledig scherm in/uitschakelen"
 
-msgid "shortcuts.toggle-grid"
-msgstr "Raster tonen/verbergen"
-
 msgid "shortcuts.toggle-history"
 msgstr "Geschiedenis in/uitschakelen"
 
@@ -2979,12 +2976,6 @@ msgstr "Proporties vergrendelen"
 
 msgid "shortcuts.toggle-rules"
 msgstr "Linialen tonen/verbergen"
-
-msgid "shortcuts.toggle-snap-grid"
-msgstr "Uitlijnen op raster"
-
-msgid "shortcuts.toggle-snap-guide"
-msgstr "Uitlijnen op hulplijnen"
 
 msgid "shortcuts.toggle-textpalette"
 msgstr "Tekstpalet in/uitschakelen"
@@ -3358,10 +3349,6 @@ msgid "workspace.header.menu.disable-scale-text"
 msgstr "Tekstschaal uitschakelen"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.disable-snap-grid"
-msgstr "Uitlijnen op raster uitschakelen"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-snap-guides"
 msgstr "Uitlijnen op hulplijnen uitschakelen"
 
@@ -3380,10 +3367,6 @@ msgid "workspace.header.menu.enable-scale-text"
 msgstr "Tekstschaal inschakelen"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.enable-snap-grid"
-msgstr "Uitlijnen op raster"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-snap-guides"
 msgstr "Uitlijnen op hulplijnen"
 
@@ -3393,10 +3376,6 @@ msgstr "Uitlijnen op pixel"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-artboard-names"
 msgstr "Bordnamen verbergen"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-grid"
-msgstr "Rasters verbergen"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -3443,10 +3422,6 @@ msgstr "Alles selecteren"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-artboard-names"
 msgstr "Bordnamen tonen"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-grid"
-msgstr "Raster tonen"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"

@@ -1,36 +1,136 @@
 # CHANGELOG
 
-## :rocket: Next
+## 2.0.0 - I Just Can't Get Enough
+
+### :rocket: Epics and highlights
+- Grid CSS layout [Taiga #4915](https://tree.taiga.io/project/penpot/epic/4915)
+- UI redesign [Taiga #4958](https://tree.taiga.io/project/penpot/epic/4958)
+- New components System [Taiga #2662](https://tree.taiga.io/project/penpot/epic/2662)
+- Swap components [Taiga #1331](https://tree.taiga.io/project/penpot/us/1331)
+- Images as fill  [Taiga #2983](https://tree.taiga.io/project/penpot/us/2983)
+- HTML code generation [Taiga #5277](https://tree.taiga.io/project/penpot/us/5277)
+- Light and dark themes [Taiga #2287](https://tree.taiga.io/project/penpot/us/2287)
 
 ### :boom: Breaking changes & Deprecations
 
+- New strokes default to inside border [Taiga #6847](https://tree.taiga.io/project/penpot/issue/6847)
+
+### :heart: Community contributions (Thank you!)
+- New Hausa, Yoruba and Igbo translations and  update translation files (by All For Tech Empowerment Foundation) [Taiga #6950](https://tree.taiga.io/project/penpot/us/6950), [Taiga #6534](https://tree.taiga.io/project/penpot/us/6534)
+- Hide bounding-box when editing shape (by @VasilevsVV) [#3930](https://github.com/penpot/penpot/pull/3930)
+- CTRL + "+" to zoom into canvas instead of browser (by @audriu) [#3848](https://github.com/penpot/penpot/pull/3848)
+- Add dev deps.edn in the project root (by @PEZ) [#3794](https://github.com/penpot/penpot/pull/3794)
+- Allow passing overrides to frontend nginx config (by @m90) [#3602](https://github.com/penpot/penpot/pull/3602)
+- Update index.njk to remove typo (by @fdvmoreira) [#155](https://github.com/penpot/penpot-docs/pull/155)
+- Typo (by StephanEggermont) [#157](https://github.com/penpot/penpot-docs/pull/157)
+
 ### :sparkles: New features
-
-### :bug: Bugs fixed
-
-### :arrow_up: Deps updates
-
-### :heart: Community contributions by (Thank you!)
-
-## 1.20.0
-
-### :boom: Breaking changes & Deprecations
-
-### :sparkles: New features
-
+- Send comments with Ctrl+Enter / Cmd + Enter [Taiga #6085](https://tree.taiga.io/project/penpot/issue/6085)
 - Select through stroke only rectangle [Taiga #5484](https://tree.taiga.io/project/penpot/issue/5484)
+- Stroke default position [Taiga #6847](https://tree.taiga.io/project/penpot/issue/6847)
 - Override browser Ctrl+ and Ctrl- zoom with Penpot Zoom [Taiga #3200](https://tree.taiga.io/project/penpot/us/3200)
-- Reduce handlers for the flex layout gaps and paddings
+- Improve the way handlers work on flex layouts [Taiga #6598](https://tree.taiga.io/project/penpot/us/6598)
+- Add menu entry for toggle between light/dark theme [Taiga #6829](https://tree.taiga.io/project/penpot/issue/6829)
+- Switch themes shortcut [Taiga #6644](https://tree.taiga.io/project/penpot/us/6644)
+- Constraints section at design tab new position [Taiga #6830](https://tree.taiga.io/project/penpot/issue/6830)
+- [PICKER] File library colors order [Taiga #5399](https://tree.taiga.io/project/penpot/us/5399)
+- Onboarding invitations improvements [Taiga #5974](https://tree.taiga.io/project/penpot/us/5974)
+- [PERFORMANCE] Workspace thumbnails refactor [Taiga #5828](https://tree.taiga.io/project/penpot/us/5828)
+- [PERFORMANCE] Add performance optimizations to shape rendering [Taiga #5835](https://tree.taiga.io/project/penpot/us/5835)
+- [PERFORMANCE] Optimize SVG output [Taiga #4134](https://tree.taiga.io/project/penpot/us/4134)
+- [PERFORMANCE] Optimize svg on importation [Taiga #5879](https://tree.taiga.io/project/penpot/us/5879)
+- [PERFORMANCE] Optimization tasks related to design tab file [Taiga #5760](https://tree.taiga.io/project/penpot/us/5760)
+- [INSTALL] Ability to setup features by team [Taiga #6108](https://tree.taiga.io/project/penpot/us/6108)
+- [IMAGES] Keep aspect ratio option [Taiga #6933](https://tree.taiga.io/project/penpot/us/6933)
+- [INSPECT] UI review [Taiga #5687](https://tree.taiga.io/project/penpot/us/5687)
+- [GRID LAYOUT] Phase 1 [Taiga #4303](https://tree.taiga.io/project/penpot/us/4303)
+- [GRID LAYOUT] Inspect code for Grid [Taiga #5277](https://tree.taiga.io/project/penpot/us/5277)
+- [GRID LAYOUT] Phase 1 polishing [Taiga #5612](https://tree.taiga.io/project/penpot/us/5612)
+- [GRID LAYOUT] Improvements & Feedback [Taiga #6047](https://tree.taiga.io/project/penpot/us/6047)
+- [COMPONENTS] Naming of the main component [Taiga #5291](https://tree.taiga.io/project/penpot/us/5291)
+- [COMPONENTS] Rework inside of components - Library page [Taiga #2918](https://tree.taiga.io/project/penpot/us/2918)
+- [COMPONENTS] Update component when updating main instance [Taiga #3794](https://tree.taiga.io/project/penpot/us/3794)
+- [COMPONENTS] Main component new behavior [Taiga #3796](https://tree.taiga.io/project/penpot/us/3796)
+- [COMPONENTS] Main component look & feel [Taiga #5290](https://tree.taiga.io/project/penpot/us/5290)
+- [COMPONENTS] Library view [Taiga #2880](https://tree.taiga.io/project/penpot/us/2880)
+- [COMPONENTS] Positioning inside a component should relative, as in boards [Taiga #2826](https://tree.taiga.io/project/penpot/us/2826)
+- [COMPONENTS] Update message should show only if affecting at components that are being used at a file [Taiga #1397](https://tree.taiga.io/project/penpot/us/1397)
+- [COMPONENTS] Annotations [Taiga #4957](https://tree.taiga.io/project/penpot/us/4957)
+- [COMPONENTS] Synchronization order for nested components [Taiga #5439](https://tree.taiga.io/project/penpot/us/5439)
+- [COMPONENTS] Libraries modal zero case [Taiga #5294](https://tree.taiga.io/project/penpot/us/5294)
+- [COMPONENTS] Contextual menu casuistics [Taiga #5292](https://tree.taiga.io/project/penpot/us/5292)
+- [COMPONENTS] Libraries publishing flow review [Taiga #5293](https://tree.taiga.io/project/penpot/us/5293)
+- [COMPONENTS] Add loading text to Libraries modal [Taiga #6702](https://tree.taiga.io/project/penpot/us/6702)
+- [COMPONENTS] Components rename and organization in bulk [Taiga #2877](https://tree.taiga.io/project/penpot/us/2877)
+- [COMPONENTS] Info overlay about components V2 [Taiga #6276](https://tree.taiga.io/project/penpot/us/6276)
+- [REDESIGN] New styles basics [Taiga #4967](https://tree.taiga.io/project/penpot/us/4967)
+- [REDESIGN] Layers tab redesign [Taiga #4966](https://tree.taiga.io/project/penpot/us/4966)
+- [REDESIGN] Design tab phase 1 [Taiga #4982](https://tree.taiga.io/project/penpot/us/4966)
+- [REDESIGN] Assets tab redesign [Taiga #4984](https://tree.taiga.io/project/penpot/us/4984)
+- [REDESIGN] Palette panels (colors, typographies...) [Taiga #4983](https://tree.taiga.io/project/penpot/us/4983)
+- [REDESIGN] Workspace structure [Taiga #4988](https://tree.taiga.io/project/penpot/us/4988)
+- [REDESIGN] Shortcut tab [Taiga #4989](https://tree.taiga.io/project/penpot/us/4989)
+- [REDESIGN] Toolbar [Taiga #5500](https://tree.taiga.io/project/penpot/us/5500)
+- [REDESIGN] History tab [Taiga #5481](https://tree.taiga.io/project/penpot/us/5481)
+- [REDESIGN] Path options/toolbar [Taiga #5815](https://tree.taiga.io/project/penpot/us/5815)
+- [REDESIGN] Design tab phase 2 [Taiga #5814](https://tree.taiga.io/project/penpot/us/5814)
+- [REDESIGN] Design tab phase 3 and dashboard details [Taiga #5920](https://tree.taiga.io/project/penpot/us/5920)
+- [REDESIGN] Dashboard [Taiga #5164](https://tree.taiga.io/project/penpot/us/5164)
+- [REDESIGN] New Dashboard UI [Taiga #5869](https://tree.taiga.io/project/penpot/us/5869)
+- [REDESIGN] Prototype tab [Taiga #4985](https://tree.taiga.io/project/penpot/us/4985)
+- [REDESIGN] Code tab [Taiga #4986](https://tree.taiga.io/project/penpot/us/4986)
+- [REDESIGN] Modals and alert messages [Taiga #5915](https://tree.taiga.io/project/penpot/us/5915)
+- [REDESIGN] Comments page [Taiga #5917](https://tree.taiga.io/project/penpot/us/5917)
+- [REDESIGN] View Mode [Taiga #5163](https://tree.taiga.io/project/penpot/us/5163)
+- [REDESIGN] Miscellaneous tasks [Taiga #6050](https://tree.taiga.io/project/penpot/us/6050)
+- [REDESIGN] Swap components [Taiga #6739](https://tree.taiga.io/project/penpot/us/6739)
+- [REDESIGN] Font selector [Taiga #6677](https://tree.taiga.io/project/penpot/us/6677)
+- [REDESIGN] Colour system of alerts and notifications [Taiga #6746](https://tree.taiga.io/project/penpot/us/6746)
+- [REDESIGN] Review text in paragraphs for accessibility [Taiga #6703](https://tree.taiga.io/project/penpot/us/6703)
+- [REDESIGN] Interaction icons [Taiga #6880](https://tree.taiga.io/project/penpot/us/6880)
+- [REDESIGN] Panels visual separations [Taiga #6692](https://tree.taiga.io/project/penpot/us/6692)
+- [REDESIGN] Onboarding slides [Taiga #6678](https://tree.taiga.io/project/penpot/us/6678)
 
-### :bug: Bugs fixed
-
-- Fix pixelated thumbnails [Github #3681](https://github.com/penpot/penpot/issues/3681) [Github #3661](https://github.com/penpot/penpot/issues/3661)
+### :bug Bugs fixed
+- Fix pixelated thumbnails [Github #3681](https://github.com/penpot/penpot/issues/3681), [Github #3661](https://github.com/penpot/penpot/issues/3661)
 - Fix problem with not applying colors to boards [Github #3941](https://github.com/penpot/penpot/issues/3941)
 - Fix problem with path editor undoing changes [Github #3998](https://github.com/penpot/penpot/issues/3998)
+- [View mode] Open overlay places frame in the wrong position when paired with a fixed element [Taiga #6385](https://tree.taiga.io/project/penpot/issue/6385)
+- Flex Layout: Fit-content not recalculated after deleting an element [Taiga #5968](https://tree.taiga.io/project/penpot/issue/5968)
+- Selecting from Color Palette does not work for board when there is no existing fill [Taiga #6464](https://tree.taiga.io/project/penpot/issue/6464)
+- Color thumbnails are consistently rounded in the inspect code mode [Taiga #5886](https://tree.taiga.io/project/penpot/issue/5886)
+- Adding vector path points before first point of existing open path not working [Taiga #6593](https://tree.taiga.io/project/penpot/issue/6593)
+- Some image formats include the extension when importing  [Taiga #5485](https://tree.taiga.io/project/penpot/issue/5485)
+- Gradient color tool doesn't work properly with flipped items [Taiga #6485](https://tree.taiga.io/project/penpot/issue/6485)
+- [TEXT] Align options are not shown when several text are selected [Taiga #5948](https://tree.taiga.io/project/penpot/issue/5948)
+- [VIEW MODE] Comments not working properly on multiple pages [Taiga #6281](https://tree.taiga.io/project/penpot/issue/6281)
+- [PERFORMANCE] Alignments are slow [Taiga #5865](https://tree.taiga.io/project/penpot/issue/5865)
+- [EXPORT] Exporting an element with a non-visible drop shadow displays the shadow either way [Taiga #6768](https://tree.taiga.io/project/penpot/issue/6768)
+- [SAFARI] Color picker cursor is not pointing correctly [Taiga #6733](https://tree.taiga.io/project/penpot/issue/6733)
+- [Import Files] When user has imported .penpot file with new file name of previously downloaded library file the default library file name is set for it [Taiga #5596](https://tree.taiga.io/project/penpot/issue/5596)
+- Issue when resizing a duotone FA icon [Taiga #5935](https://tree.taiga.io/project/penpot/issue/5935)
+- "Hide grid" keyboard shortcut broken [Taiga #5102](https://tree.taiga.io/project/penpot/issue/5102)
+- Picking a gradient color in recent colors for a new color in the assets tab crashes Penpot [Taiga #5601](https://tree.taiga.io/project/penpot/issue/5601)
+- Thumbnails not loading [Taiga #6012](https://tree.taiga.io/project/penpot/issue/6012)
+- Don't show signup link/form when registration is disabled. [Taiga #1196](https://tree.taiga.io/project/penpot/issue/1196)
+- Registration Page UI UX issue with small resolutions [Taiga #1693](https://tree.taiga.io/project/penpot/issue/1693)
+- [LOGIN] "E-Mail-Adress" input field is set to type 'text' instead of 'eMail [Taiga #1921](https://tree.taiga.io/project/penpot/issue/1921)
+- Handling correctly slashes "/" in emails [Taiga #4906](https://tree.taiga.io/project/penpot/issue/4906)
+- Tab character in texts crashes the app [Taiga #4418](https://tree.taiga.io/project/penpot/issue/4418)
+- Text does not match export [Taiga #4129](https://tree.taiga.io/project/penpot/issue/4129)
+- Scrollbars cover the layers carets [Taiga #4431](https://tree.taiga.io/project/penpot/issue/4431)
+- Horizontal ruler disappear when overlapping a board [Taiga #4138](https://tree.taiga.io/project/penpot/issue/4138)
+- Resize shape + Alt key is not working [Taiga #3447](https://tree.taiga.io/project/penpot/issue/3447)
+- Libraries images broken on premise [Taiga #4573](https://tree.taiga.io/project/penpot/issue/4573)
+- [VIEWER] Cannot scroll down in code </> mode [Taiga #4655](https://tree.taiga.io/project/penpot/issue/4655)
+- Strange cursor behavior after clicking viewport with text tool [Taiga #4363](https://tree.taiga.io/project/penpot/issue/4363)
+- Selected color affects all of them [Taiga #5285](https://tree.taiga.io/project/penpot/issue/5285)
+- Fix problem with shadow negative spread [Github #3421](https://github.com/penpot/penpot/issues/3421)
+- Fix problem with linked colors to strokes [Github #3522](https://github.com/penpot/penpot/issues/3522)
+- Fix problem with hand tool stuck [Github #3318](https://github.com/penpot/penpot/issues/3318)
+- Fix problem with fix scrolling on nested elements [Github #3508](https://github.com/penpot/penpot/issues/3508)
+- Fix problem when changing typography assets [Github #3683](https://github.com/penpot/penpot/issues/3683)
 
-### :arrow_up: Deps updates
-
-### :heart: Community contributions by (Thank you!)
 
 ## 1.19.5
 

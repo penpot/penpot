@@ -15,16 +15,17 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.search-bar :refer [search-bar]]
-   [app.main.ui.components.shape-icon-refactor :as sic]
+   [app.main.ui.components.shape-icon :as sic]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
+   [app.main.ui.notifications.badge :refer [badge-notification]]
    [app.main.ui.workspace.sidebar.layer-item :refer [layer-item]]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.timers :as ts]
+   [app.util.rxops :refer [throttle-fn]]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [goog.events :as events]
@@ -37,22 +38,24 @@
 (mf/defc frame-wrapper
   {::mf/props :obj}
   [{:keys [selected] :as props}]
-  (let [disposable       (mf/use-var nil)
-        pending-selected (mf/use-var selected)
+  (let [pending-selected (mf/use-var selected)
         current-selected (mf/use-state selected)
-        props            (mf/spread props :selected @current-selected)]
+        props            (mf/spread props :selected @current-selected)
 
-    (mf/with-effect [selected]
+        set-selected
+        (mf/use-memo
+         (fn []
+           (throttle-fn
+            50
+            #(when-let [pending-selected @pending-selected]
+               (reset! current-selected pending-selected)))))]
+
+    (mf/with-effect [selected set-selected]
       (reset! pending-selected selected)
-      (swap! disposable (fn [value]
-                          (when (some? value)
-                            (rx/dispose! value))
-                          (ts/idle-then-raf
-                           (fn []
-                             (reset! current-selected @pending-selected)
-                             (reset! disposable nil)))))
+      (set-selected)
       (fn []
-        (some-> @disposable rx/dispose!)))
+        (reset! pending-selected nil)
+        #(rx/dispose! set-selected)))
 
     [:> layer-item props]))
 
@@ -283,11 +286,11 @@
                               :filter-button true
                               :opened show-menu?
                               :active active?)}
-             i/filter-refactor]]
+             i/filter-icon]]
 
            [:button {:class (stl/css :close-search)
                      :on-click toggle-search}
-            i/close-refactor]]
+            i/close]]
 
           [:div {:class (stl/css :active-filters)}
            (for [fkey current-filters]
@@ -308,13 +311,13 @@
                          :on-click remove-filter}
 
                 [:span {:class (stl/css :layer-filter-icon)}
-                 [:& sic/element-icon-refactor-by-type
+                 [:& sic/element-icon-by-type
                   {:type fkey
                    :main-instance? (= fkey :component)}]]
                 [:span {:class (stl/css :layer-filter-name)}
                  name]
                 [:span {:class (stl/css :layer-filter-close)}
-                 i/close-small-refactor]]))]
+                 i/close-small]]))]
 
           (when ^boolean show-menu?
             [:ul {:class (stl/css :filters-container)}
@@ -324,13 +327,13 @@
                    :on-click add-filter}
               [:div {:class (stl/css :filter-menu-item-name-wrapper)}
                [:span {:class (stl/css :filter-menu-item-icon)}
-                i/board-refactor]
+                i/board]
                [:span {:class (stl/css :filter-menu-item-name)}
                 (tr "workspace.sidebar.layers.frames")]]
 
               (when (contains? current-filters :frame)
                 [:span {:class (stl/css :filter-menu-item-tick)}
-                 i/tick-refactor])]
+                 i/tick])]
 
              [:li {:class (stl/css-case :filter-menu-item true
                                         :selected (contains? current-filters :group))
@@ -338,13 +341,13 @@
                    :on-click add-filter}
               [:div {:class (stl/css :filter-menu-item-name-wrapper)}
                [:span {:class (stl/css :filter-menu-item-icon)}
-                i/group-refactor]
+                i/group]
                [:span {:class (stl/css :filter-menu-item-name)}
                 (tr "workspace.sidebar.layers.groups")]]
 
               (when (contains? current-filters :group)
                 [:span {:class (stl/css :filter-menu-item-tick)}
-                 i/tick-refactor])]
+                 i/tick])]
 
              [:li {:class (stl/css-case :filter-menu-item true
                                         :selected (contains? current-filters :mask))
@@ -352,13 +355,13 @@
                    :on-click add-filter}
               [:div {:class (stl/css :filter-menu-item-name-wrapper)}
                [:span {:class (stl/css :filter-menu-item-icon)}
-                i/mask-refactor]
+                i/mask]
                [:span {:class (stl/css :filter-menu-item-name)}
                 (tr "workspace.sidebar.layers.masks")]]
 
               (when (contains? current-filters :mask)
                 [:span {:class (stl/css :filter-menu-item-tick)}
-                 i/tick-refactor])]
+                 i/tick])]
 
              [:li {:class (stl/css-case :filter-menu-item true
                                         :selected (contains? current-filters :component))
@@ -366,13 +369,13 @@
                    :on-click add-filter}
               [:div {:class (stl/css :filter-menu-item-name-wrapper)}
                [:span {:class (stl/css :filter-menu-item-icon)}
-                i/component-refactor]
+                i/component]
                [:span {:class (stl/css :filter-menu-item-name)}
                 (tr "workspace.sidebar.layers.components")]]
 
               (when (contains? current-filters :component)
                 [:span {:class (stl/css :filter-menu-item-tick)}
-                 i/tick-refactor])]
+                 i/tick])]
 
              [:li {:class (stl/css-case :filter-menu-item true
                                         :selected (contains? current-filters :text))
@@ -380,13 +383,13 @@
                    :on-click add-filter}
               [:div {:class (stl/css :filter-menu-item-name-wrapper)}
                [:span {:class (stl/css :filter-menu-item-icon)}
-                i/text-refactor]
+                i/text]
                [:span {:class (stl/css :filter-menu-item-name)}
                 (tr "workspace.sidebar.layers.texts")]]
 
               (when (contains? current-filters :text)
                 [:span {:class (stl/css :filter-menu-item-tick)}
-                 i/tick-refactor])]
+                 i/tick])]
 
              [:li {:class (stl/css-case :filter-menu-item true
                                         :selected (contains? current-filters :image))
@@ -394,13 +397,13 @@
                    :on-click add-filter}
               [:div {:class (stl/css :filter-menu-item-name-wrapper)}
                [:span {:class (stl/css :filter-menu-item-icon)}
-                i/img-refactor]
+                i/img]
                [:span {:class (stl/css :filter-menu-item-name)}
                 (tr "workspace.sidebar.layers.images")]]
 
               (when (contains? current-filters :image)
                 [:span {:class (stl/css :filter-menu-item-tick)}
-                 i/tick-refactor])]
+                 i/tick])]
 
              [:li {:class (stl/css-case :filter-menu-item true
                                         :selected (contains? current-filters :shape))
@@ -408,19 +411,19 @@
                    :on-click add-filter}
               [:div {:class (stl/css :filter-menu-item-name-wrapper)}
                [:span {:class (stl/css :filter-menu-item-icon)}
-                i/path-refactor]
+                i/path]
                [:span {:class (stl/css :filter-menu-item-name)}
                 (tr "workspace.sidebar.layers.shapes")]]
 
               (when (contains? current-filters :shape)
                 [:span {:class (stl/css :filter-menu-item-tick)}
-                 i/tick-refactor])]])]
+                 i/tick])]])]
 
          [:div {:class (stl/css :tool-window-bar)}
           [:& title-bar {:collapsable  false
                          :title        (:name page)
                          :on-btn-click toggle-search
-                         :btn-children i/search-refactor}]]))]))
+                         :btn-children i/search}]]))]))
 
 
 (defn- on-scroll
@@ -507,14 +510,13 @@
         [:button {:class (stl/css :focus-title)
                   :on-click toogle-focus-mode}
          [:span {:class (stl/css :back-button)}
-          i/arrow-refactor]
+          i/arrow]
 
          [:div {:class (stl/css :focus-name)}
           (or title (tr "workspace.sidebar.layers"))]
 
          [:div {:class (stl/css :focus-mode-tag-wrapper)}
-          [:div {:class (stl/css :focus-mode-tag)}
-           (tr "workspace.focus.focus-mode")]]]]
+          [:& badge-notification {:content (tr "workspace.focus.focus-mode") :size :small :is-focus true}]]]]
 
        (filter-component))
 

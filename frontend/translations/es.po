@@ -2995,8 +2995,8 @@ msgstr "Mostrar/ocultar focus mode"
 msgid "shortcuts.toggle-fullscreen"
 msgstr "Activar/desactivar pantalla completa"
 
-msgid "shortcuts.toggle-grid"
-msgstr "Mostrar/ocultar rejilla"
+msgid "shortcuts.toggle-guides"
+msgstr "Mostrar/ocultar guías"
 
 msgid "shortcuts.toggle-history"
 msgstr "Mostrar/ocultar histórico"
@@ -3013,17 +3013,17 @@ msgstr "Bloquear/Desbloquear"
 msgid "shortcuts.toggle-lock-size"
 msgstr "Bloquear/Desbloquear proporciones"
 
-msgid "shortcuts.toggle-rules"
+msgid "shortcuts.toggle-rulers"
 msgstr "Mostrar/ocultar reglas"
 
 msgid "shortcuts.scale"
 msgstr "Escalado"
 
-msgid "shortcuts.toggle-snap-grid"
-msgstr "Alinear a la rejilla"
+msgid "shortcuts.toggle-snap-guides"
+msgstr "Alinear a las guías"
 
-msgid "shortcuts.toggle-snap-guide"
-msgstr "Alinear a las guias"
+msgid "shortcuts.toggle-snap-ruler-guide"
+msgstr "Alinear a las guías de reglas"
 
 msgid "shortcuts.toggle-textpalette"
 msgstr "Mostrar/ocultar paleta de textos"
@@ -3402,12 +3402,12 @@ msgid "workspace.header.menu.disable-scale-text"
 msgstr "Desactivar escalar texto"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.disable-snap-grid"
-msgstr "Desactivar alinear a la rejilla"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-snap-guides"
 msgstr "Desactivar alinear a las guias"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-snap-ruler-guides"
+msgstr "Desactivar alinear a las guias de reglas"
 
 msgid "workspace.header.menu.disable-snap-pixel-grid"
 msgstr "Desactivar ajuste al pixel"
@@ -3424,12 +3424,12 @@ msgid "workspace.header.menu.enable-scale-text"
 msgstr "Activar escalar texto"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.enable-snap-grid"
-msgstr "Alinear a la rejilla"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-snap-guides"
 msgstr "Alinear a las guias"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-snap-ruler-guides"
+msgstr "Alinear a las guias de reglas"
 
 msgid "workspace.header.menu.enable-snap-pixel-grid"
 msgstr "Activar ajuste al pixel"
@@ -3439,8 +3439,8 @@ msgid "workspace.header.menu.hide-artboard-names"
 msgstr "Ocultar nombres de tableros"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-grid"
-msgstr "Ocultar rejillas"
+msgid "workspace.header.menu.hide-guides"
+msgstr "Ocultar guías"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -3489,7 +3489,7 @@ msgid "workspace.header.menu.show-artboard-names"
 msgstr "Mostrar nombres de tableros"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-grid"
+msgid "workspace.header.menu.show-g"
 msgstr "Mostrar rejilla"
 
 #: src/app/main/ui/workspace/header.cljs
@@ -3582,6 +3582,9 @@ msgstr "Editar rejilla"
 msgid "workspace.layout_grid.editor.options.exit"
 msgstr "Salir"
 
+msgid "workspace.layout_grid.editor.padding.expand"
+msgstr "Mostrar el padding a 4 lados"
+
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.add"
 msgstr "Añadir"
@@ -3630,7 +3633,7 @@ msgstr "%s componentes"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.file-library"
-msgstr "Biblioteca de este archivo"
+msgstr "Biblioteca del archivo"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.graphics"
@@ -5145,7 +5148,7 @@ msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
 
 #, markdown
-msgid "workspace.top-bar.read-only"
+msgid "workspace.top-bar.view-only"
 msgstr "**Modo inspección** (View only)"
 
 msgid "workspace.top-bar.read-only.done"

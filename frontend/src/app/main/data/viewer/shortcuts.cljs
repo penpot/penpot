@@ -37,17 +37,17 @@
                         :fn #(st/emit! dv/toggle-zoom-style)}
 
    :toggle-fullscreen  {:tooltip (ds/shift "F")
-                        :command "shift+f"
+                        :command ["shift+f" "alt+enter"]
                         :subsections [:zoom-viewer]
                         :fn #(st/emit! dv/toggle-fullscreen)}
 
-   :next-frame         {:tooltip ds/left-arrow
-                        :command ["left" "up"]
+   :prev-frame         {:tooltip ds/left-arrow
+                        :command ["left" "up" "shift+enter" "pageup" "shift+space"]
                         :subsections [:general-viewer]
                         :fn #(st/emit! dv/select-prev-frame)}
 
-   :prev-frame         {:tooltip ds/right-arrow
-                        :command ["right" "down"]
+   :next-frame         {:tooltip ds/right-arrow
+                        :command ["right" "down" "enter" "pagedown" "space"]
                         :subsections [:general-viewer]
                         :fn #(st/emit! dv/select-next-frame)}
 

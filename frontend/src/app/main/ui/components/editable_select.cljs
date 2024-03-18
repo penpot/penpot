@@ -180,7 +180,7 @@
 
      [:span {:class (stl/css :dropdown-button)
              :on-click toggle-dropdown}
-      i/arrow-refactor]
+      i/arrow]
 
      [:& dropdown {:show (or is-open? false)
                    :on-close close-dropdown}
@@ -199,4 +199,4 @@
                :on-click select-item}
               [:span {:class (stl/css :label)} label]
               [:span {:class (stl/css :check-icon)}
-               i/tick-refactor]])))]]]))
+               i/tick]])))]]]))

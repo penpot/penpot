@@ -1584,9 +1584,6 @@ msgstr "切換調色板"
 msgid "shortcuts.toggle-focus-mode"
 msgstr "切換專注模式"
 
-msgid "shortcuts.toggle-grid"
-msgstr "顯示/隱藏網格"
-
 msgid "shortcuts.toggle-history"
 msgstr "切換歷史記錄"
 

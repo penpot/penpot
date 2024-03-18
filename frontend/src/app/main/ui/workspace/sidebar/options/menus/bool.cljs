@@ -18,7 +18,7 @@
    [rumext.v2 :as mf]))
 
 (def ^:private flatten-icon
-  (i/icon-xref :boolean-flatten-refactor (stl/css :flatten-icon)))
+  (i/icon-xref :boolean-flatten (stl/css :flatten-icon)))
 
 (mf/defc bool-options
   []
@@ -64,22 +64,22 @@
                            :class (stl/css :boolean-radio-btn)
                            :on-change set-bool
                            :name "bool-options"}
-         [:& radio-button {:icon i/boolean-union-refactor
+         [:& radio-button {:icon i/boolean-union
                            :value "union"
                            :disabled disabled-bool-btns
                            :title (str (tr "workspace.shape.menu.union") " (" (sc/get-tooltip :bool-union) ")")
                            :id "bool-opt-union"}]
-         [:& radio-button {:icon i/boolean-difference-refactor
+         [:& radio-button {:icon i/boolean-difference
                            :value "difference"
                            :disabled disabled-bool-btns
                            :title (str (tr "workspace.shape.menu.difference") " (" (sc/get-tooltip :bool-difference) ")")
                            :id "bool-opt-differente"}]
-         [:& radio-button {:icon i/boolean-intersection-refactor
+         [:& radio-button {:icon i/boolean-intersection
                            :value "intersection"
                            :disabled disabled-bool-btns
                            :title (str (tr "intersection") " (" (sc/get-tooltip :bool-intersection) ")")
                            :id "bool-opt-intersection"}]
-         [:& radio-button {:icon i/boolean-exclude-refactor
+         [:& radio-button {:icon i/boolean-exclude
                            :value "exclude"
                            :disabled disabled-bool-btns
                            :title (str (tr "exclude") " (" (sc/get-tooltip :bool-exclude) ")")

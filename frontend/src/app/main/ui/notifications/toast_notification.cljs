@@ -14,19 +14,19 @@
    [rumext.v2 :as mf]))
 
 (def ^:private neutral-icon
-  (i/icon-xref :msg-neutral-refactor (stl/css :icon)))
+  (i/icon-xref :msg-neutral (stl/css :icon)))
 
 (def ^:private error-icon
-  (i/icon-xref :delete-text-refactor (stl/css :icon)))
+  (i/icon-xref :delete-text (stl/css :icon)))
 
 (def ^:private success-icon
-  (i/icon-xref :status-tick-refactor (stl/css :icon)))
+  (i/icon-xref :status-tick (stl/css :icon)))
 
 (def ^:private info-icon
-  (i/icon-xref :help-refactor (stl/css :icon)))
+  (i/icon-xref :help (stl/css :icon)))
 
 (def ^:private close-icon
-  (i/icon-xref :close-refactor (stl/css :close-icon)))
+  (i/icon-xref :close (stl/css :close-icon)))
 
 (defn get-icon-by-type
   [type]

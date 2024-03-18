@@ -156,6 +156,7 @@
   --icon-foreground-accept: var(--status-color-success-500);
   --icon-foreground-discard: var(--status-color-error-500);
   --icon-foreground-active: var(--color-accent-primary);
+  --icon-foreground-selected: var(--color-accent-tertiary);
 
   // INPUTS, SELECTS, DROPDOWNS
 
@@ -314,7 +315,13 @@
   --modal-navigator-foreground-color-rest: var(--color-background-quaternary);
   --modal-navigator-foreground-color-active: var(--color-accent-primary);
 
-  // ALERTS NOTIFICATION TOAST & STATUS WIDGET
+  // ALERTS, NOTIFICATION, TOAST & BADGES
+
+  --alert-background-color-default: var(--color-background-primary);
+  --alert-text-foreground-color-default: var(--color-foreground-primary);
+  --alert-icon-foreground-color-default: var(--color-foreground-primary);
+  --alert-border-color-default: var(--color-background-quaternary);
+
   --alert-background-color-success: var(--color-success-background);
   --alert-text-foreground-color-success: var(--color-foreground-primary);
   --alert-icon-foreground-color-success: var(--color-success-foreground);
@@ -335,26 +342,20 @@
   --alert-icon-foreground-color-info: var(--color-info-foreground);
   --alert-border-color-info: var(--color-info-foreground);
 
-  --alert-background-color-default: var(--color-background-primary);
-  --alert-text-foreground-color-default: var(--color-foreground-primary);
-  --alert-icon-foreground-color-default: var(--color-foreground-primary);
-  --alert-border-color-default: var(--color-background-quaternary);
+  --alert-text-foreground-color-focus: var(--color-accent-primary);
+  --alert-border-color-focus: var(--color-accent-primary);
 
-  --notification-background-color-success: var();
-  --notification-foreground-color-success: var();
-  --notification-border-color-success: var();
   --notification-foreground-color-default: var(--color-foreground-secondary);
 
+  --element-foreground-warning: var(--status-color-warning-500);
+  --element-foreground-error: var(--status-color-error-500);
+
+  // STATUS WIDGET
   --status-widget-background-color-success: var(--status-color-success-500);
   --status-widget-background-color-warning: var(--status-color-warning-500);
   --status-widget-background-color-pending: var(--status-color-pending-500);
   --status-widget-background-color-error: var(--status-color-error-500);
-  --status-widget-icon-foreground-color: var(--color-background-primary); // TODO review
-
-  --element-foreground-success: var(--status-color-success-500);
-  --element-foreground-warning: var(--status-color-warning-500);
-  --element-foreground-pending: var(--status-color-info-500);
-  --element-foreground-error: var(--status-color-error-500);
+  --status-widget-icon-foreground-color: var(--color-background-primary);
 
   // INTERFACE ELEMENTS
   --search-bar-background-color: var(--color-background-primary);
@@ -369,14 +370,15 @@
   --pill-background-color: var(--color-background-tertiary);
   --pill-foreground-color: var(--color-foreground-primary);
 
-  --tag-background-color: var(--color-accent-primary);
-
   --link-foreground-color: var(--color-accent-primary);
 
   --resize-area-background-color: var(--color-background-primary);
   --resize-area-border-color: var(--color-background-quaternary);
 
   --profile-section-background-color: var(--color-background-tertiary);
+  --dashboard-list-background-color: var(--color-background-tertiary);
+  --dashboard-list-foreground-color: var(--color-foreground-primary);
+  --dashboard-list-text-foreground-color: var(--color-foreground-secondary);
 
   --flow-tag-background-color: var(--color-background-tertiary);
   --flow-tag-foreground-color: var(--color-foreground-secondary);

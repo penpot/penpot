@@ -43,5 +43,5 @@
      children
      [:span {:class (stl/css :icon-btn)}
       (if active?
-        i/tick-refactor
-        i/clipboard-refactor)]]))
+        i/tick
+        i/clipboard)]]))

@@ -107,7 +107,7 @@
               :data-test "change-email-title"}
          (tr "modals.change-email.title")]
         [:button {:class (stl/css :modal-close-btn)
-                  :on-click on-close} i/close-refactor]]
+                  :on-click on-close} i/close]]
 
        [:div {:class (stl/css :modal-content)}
         [:& context-notification

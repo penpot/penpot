@@ -31,9 +31,10 @@
      [:div {:class (stl/css :viewport-actions-container)}
       [:div {:class (stl/css :viewport-actions-title)}
        [:& i18n/tr-html {:tag-name "span"
-                         :label "workspace.top-bar.read-only"}]]
+                         :label "workspace.top-bar.view-only"}]]
       [:button {:class (stl/css :done-btn)
-                :on-click handle-close-view-mode} (tr "workspace.top-bar.read-only.done")]]]))
+                :on-click handle-close-view-mode}
+       (tr "workspace.top-bar.read-only.done")]]]))
 
 (mf/defc top-bar
   {::mf/wrap [mf/memo]}
@@ -41,6 +42,7 @@
   (let [edition     (mf/deref refs/selected-edition)
         selected    (mf/deref refs/selected-objects)
         drawing     (mf/deref refs/workspace-drawing)
+        rulers?     (mf/deref refs/rulers?)
         drawing-obj (:object drawing)
         shape       (or drawing-obj (-> selected first))
 
@@ -69,7 +71,7 @@
        [:& view-only-actions]
 
        path-edition?
-       [:div {:class (stl/css :viewport-actions)}
+       [:div {:class (stl/css-case :viewport-actions-path true :viewport-actions-no-rulers (not rulers?))}
         [:& path-actions {:shape shape}]]
 
        grid-edition?

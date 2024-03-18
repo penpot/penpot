@@ -40,8 +40,7 @@
               (update :shapes update-parent-shapes)
               (update :shapes d/vec-without-nils)
               (cond-> (and (ctk/in-component-copy? parent) (not ignore-touched))
-                (-> (update :touched cfh/set-touched-group :shapes-group)
-                    (dissoc :remote-synced)))))
+                (dissoc :remote-synced))))
 
         update-objects
         (fn [objects parent-id]
@@ -85,8 +84,7 @@
              (let [parent (update parent :shapes d/without-obj shape-id)]
                (cond-> parent
                  (and (:shape-ref parent) (not ignore-touched))
-                 (-> (update :touched cfh/set-touched-group :shapes-group)
-                     (dissoc :remote-synced)))))
+                 (dissoc :remote-synced))))
 
            (delete-from-objects [objects]
              (if-let [target (get objects shape-id)]

@@ -20,6 +20,12 @@
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
+(def ^:private arrow-icon
+  (i/icon-xref :arrow (stl/css :arrow-icon)))
+
+(def ^:private feedback-icon
+  (i/icon-xref :feedback (stl/css :feedback-icon)))
+
 (def ^:private go-settings-profile
   #(st/emit! (rt/nav :settings-profile)))
 
@@ -61,43 +67,49 @@
 
     [:div {:class (stl/css :sidebar-content)}
      [:div {:class (stl/css :sidebar-content-section)}
-      [:div {:class (stl/css :back-to-dashboard)
-             :on-click go-dashboard}
-       [:span {:class (stl/css :icon)} i/arrow-down]
-       [:span {:class (stl/css :text)} (tr "labels.dashboard")]]]
+      [:button {:class (stl/css :back-to-dashboard)
+                :on-click go-dashboard}
+       arrow-icon
+       [:span {:class (stl/css :back-text)} (tr "labels.dashboard")]]]
 
-     [:hr]
+     [:hr {:class (stl/css :sidebar-separator)}]
 
      [:div {:class (stl/css :sidebar-content-section)}
-      [:ul {:class (stl/css :sidebar-nav :no-overflow)}
-       [:li {:class (when profile? (stl/css :current))
+      [:ul {:class (stl/css :sidebar-nav-settings)}
+       [:li {:class (stl/css-case :current profile?
+                                  :settings-item true)
              :on-click go-settings-profile}
         [:span {:class (stl/css :element-title)} (tr "labels.profile")]]
 
-       [:li {:class (when password? (stl/css :current))
+       [:li {:class (stl/css-case :current password?
+                                  :settings-item true)
              :on-click go-settings-password}
         [:span {:class (stl/css :element-title)} (tr "labels.password")]]
 
-       [:li {:class (when options? (stl/css :current))
+       [:li {:class (stl/css-case :current options?
+                                  :settings-item true)
              :on-click go-settings-options
              :data-test "settings-profile"}
         [:span {:class (stl/css :element-title)} (tr "labels.settings")]]
 
        (when (contains? cf/flags :access-tokens)
-         [:li {:class (when access-tokens? (stl/css :current))
+         [:li {:class (stl/css-case :current access-tokens?
+                                    :settings-item true)
                :on-click go-settings-access-tokens
                :data-test "settings-access-tokens"}
           [:span {:class (stl/css :element-title)} (tr "labels.access-tokens")]])
 
-       [:hr]
+       [:hr {:class (stl/css :sidebar-separator)}]
 
-       [:li {:on-click show-release-notes :data-test "release-notes"}
+       [:li {:on-click show-release-notes :data-test "release-notes"
+             :class (stl/css :settings-item)}
         [:span {:class (stl/css :element-title)} (tr "labels.release-notes")]]
 
        (when (contains? cf/flags :user-feedback)
-         [:li {:class (when feedback? (stl/css :current))
+         [:li {:class (stl/css-case :current feedback?
+                                    :settings-item true)
                :on-click go-settings-feedback}
-          i/feedback-refactor
+          feedback-icon
           [:span {:class (stl/css :element-title)} (tr "labels.give-feedback")]])]]]))
 
 (mf/defc sidebar

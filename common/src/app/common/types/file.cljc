@@ -117,12 +117,6 @@
     (ctkl/update-component file-data (:id container) f)))
 
 ;; Asset helpers
-
-(defn find-component
-  "Retrieve a component from libraries, iterating over all of them."
-  [libraries component-id & {:keys [include-deleted?] :or {include-deleted? false}}]
-  (some #(ctkl/get-component (:data %) component-id include-deleted?) (vals libraries)))
-
 (defn find-component-file
   [file libraries component-file]
   (if (and (some? file) (= component-file (:id file)))
@@ -153,7 +147,7 @@
 
 (defn get-component-container
   "Retrieve the container that holds the component shapes (the page in components-v2
-   or the component itself in v1)"
+   or the component itself in v1 or deleted component)."
   [file-data component]
   (let [components-v2 (dm/get-in file-data [:options :components-v2])]
     (if (and components-v2 (not (:deleted component)))
@@ -172,22 +166,34 @@
       (ctk/get-component-root component))))
 
 (defn get-component-shape
-  "Retrieve one shape in the component by id."
-  [file-data component shape-id]
+  "Retrieve one shape in the component by id. If with-context? is true, add the
+   file and container where the shape resides in its metadata."
+  [file-data component shape-id & {:keys [with-context?] :or {with-context? false}}]
   (let [components-v2 (dm/get-in file-data [:options :components-v2])]
     (if (and components-v2 (not (:deleted component)))
       (let [component-page (get-component-page file-data component)]
         (when component-page
-          (cfh/get-child (:objects component-page)
-                         (:main-instance-id component)
-                         shape-id)))
-      (dm/get-in component [:objects shape-id]))))
+          (let [child (cfh/get-child (:objects component-page)
+                                     (:main-instance-id component)
+                                     shape-id)]
+            (cond-> child
+              (and child with-context?)
+              (with-meta {:file {:id (:id file-data)
+                                 :data file-data}
+                          :container (ctn/make-container component-page :page)})))))
+
+      (let [shape (dm/get-in component [:objects shape-id])]
+        (cond-> shape
+          (and shape with-context?)
+          (with-meta {:file {:id (:id file-data)
+                             :data file-data}
+                      :container (ctn/make-container component :component)}))))))
 
 (defn get-ref-shape
   "Retrieve the shape in the component that is referenced by the instance shape."
-  [file-data component shape]
+  [file-data component shape & {:keys [with-context?] :or {with-context? false}}]
   (when (:shape-ref shape)
-    (get-component-shape file-data component (:shape-ref shape))))
+    (get-component-shape file-data component (:shape-ref shape) :with-context? with-context?)))
 
 (defn get-shape-in-copy
   "Given a shape in the main component and the root of the copy component returns the equivalent
@@ -199,16 +205,25 @@
 (defn find-ref-shape
   "Locate the nearest component in the local file or libraries, and retrieve the shape
    referenced by the instance shape."
-  [file page libraries shape & {:keys [include-deleted?] :or {include-deleted? false}}]
+  [file container libraries shape & {:keys [include-deleted? with-context?] :or {include-deleted? false with-context? false}}]
   (let [find-ref-shape-in-head
         (fn [head-shape]
-          (let [head-file      (find-component-file file libraries (:component-file head-shape))
-                head-component (when (some? head-file)
-                                 (ctkl/get-component (:data head-file) (:component-id head-shape) include-deleted?))]
-            (when (some? head-component)
-              (get-ref-shape (:data head-file) head-component shape))))]
+          (let [component-file (find-component-file file libraries (:component-file head-shape))
+                component      (when (some? component-file)
+                                 (ctkl/get-component (:data component-file) (:component-id head-shape) include-deleted?))]
+            (when (some? component)
+              (get-ref-shape (:data component-file) component shape :with-context? with-context?))))]
 
-    (some find-ref-shape-in-head (ctn/get-parent-heads (:objects page) shape))))
+    (some find-ref-shape-in-head (ctn/get-parent-heads (:objects container) shape))))
+
+(defn find-original-ref-shape
+  "Recursively call to find-ref-shape until find the original shape of the original component"
+  [file container libraries shape & options]
+  (let [ref-shape (find-ref-shape file container libraries shape options)]
+    (if (nil? (:shape-ref ref-shape))
+      ref-shape
+      (find-original-ref-shape file container libraries ref-shape options))))
+
 
 (defn find-ref-component
   "Locate the nearest component in the local file or libraries that is referenced by the
@@ -216,12 +231,14 @@
   [file page libraries shape & {:keys [include-deleted?] :or {include-deleted? false}}]
   (let [find-ref-component-in-head
         (fn [head-shape]
-          (let [head-file      (find-component-file file libraries (:component-file head-shape))
-                head-component (when (some? head-file)
-                                 (ctkl/get-component (:data head-file) (:component-id head-shape) include-deleted?))]
-            (when (some? head-component)
-              (when (get-ref-shape (:data head-file) head-component shape)
-                head-component))))]
+          (let [component-file (find-component-file file libraries (:component-file head-shape))
+                component      (when (some? component-file)
+                                 (ctkl/get-component (:data component-file)
+                                                     (:component-id head-shape)
+                                                     include-deleted?))]
+            (when (some? component)
+              (when (get-ref-shape (:data component-file) component shape)
+                component))))]
 
     (some find-ref-component-in-head (ctn/get-parent-copy-heads (:objects page) shape))))
 
@@ -257,6 +274,34 @@
   (let [ref-component (find-ref-component file page libraries shape :include-deleted? true)]
     (true? (= (:id component) (:id ref-component)))))
 
+(defn find-swap-slot
+  [shape container file libraries]
+  (if-let [swap-slot (ctk/get-swap-slot shape)]
+    swap-slot
+    (let [ref-shape (find-ref-shape file
+                                    container
+                                    libraries
+                                    shape
+                                    :include-deleted? true
+                                    :with-context? true)
+          shape-meta (meta ref-shape)
+          ref-file (:file shape-meta)
+          ref-container (:container shape-meta)]
+      (when ref-shape
+        (if-let [swap-slot (ctk/get-swap-slot ref-shape)]
+          swap-slot
+          (if (ctk/main-instance? ref-shape)
+            (:id shape)
+            (find-swap-slot ref-shape ref-container ref-file libraries)))))))
+
+(defn match-swap-slot?
+  [shape-main shape-inst container-inst container-main file libraries]
+  (let [slot-main (find-swap-slot shape-main container-main file libraries)
+        slot-inst (find-swap-slot shape-inst container-inst file libraries)]
+    (when (some? slot-inst)
+      (or (= slot-main slot-inst)
+          (= (:id shape-main) slot-inst)))))
+
 (defn get-component-shapes
   "Retrieve all shapes of the component"
   [file-data component]
@@ -268,7 +313,7 @@
       (vals (:objects component)))))
 
 ;; Return true if the object is a component that exists on the file or its libraries (even a deleted one)
-(defn is-known-component?
+(defn is-main-of-known-component?
   [shape libraries]
   (let [main-instance?  (ctk/main-instance? shape)
         component-id    (:component-id shape)

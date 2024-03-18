@@ -21,7 +21,7 @@
         shared-libs   (mf/deref refs/workspace-libraries)]
     [:& dropdown {:show show-menu?
                   :on-close close-menu}
-     [:ul {:class (stl/css :workspace-context-menu)}
+     [:ul {:class (stl/css :text-context-menu)}
       (for [[idx cur-library] (map-indexed vector (vals shared-libs))]
         (let [typographies (-> cur-library (get-in [:data :typographies]) vals)]
           [:li
@@ -38,7 +38,7 @@
 
            (when (= selected (:id cur-library))
              [:span {:class (stl/css :icon-wrapper)}
-              i/tick-refactor])]))
+              i/tick])]))
 
       [:li
        {:class (stl/css-case :file-library true
@@ -52,4 +52,4 @@
          (dm/str "(" (count file-typographies) ")")]]
        (when (= selected :file)
          [:span {:class (stl/css :icon-wrapper)}
-          i/tick-refactor])]]]))
+          i/tick])]]]))

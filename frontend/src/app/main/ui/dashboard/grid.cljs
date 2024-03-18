@@ -96,7 +96,7 @@
 ;; --- Grid Item Library
 
 (def ^:private menu-icon
-  (i/icon-xref :menu-refactor (stl/css :menu-icon)))
+  (i/icon-xref :menu (stl/css :menu-icon)))
 
 (mf/defc grid-item-library
   {::mf/wrap [mf/memo]}
@@ -163,10 +163,12 @@
                                    (:gradient color) (uc/gradient-type->string (get-in color [:gradient :type]))
                                    (:color color) (:color color)
                                    :else (:value color))]
-                [:div {:class (stl/css :asset-list-item)
+                [:div {:class (stl/css :asset-list-item :color-item)
                        :key (str "assets-color-" (:id color))}
                  [:& bc/color-bullet {:color {:color (:color color)
-                                              :opacity (:opacity color)}}]
+                                              :id (:id color)
+                                              :opacity (:opacity color)}
+                                      :mini? true}]
                  [:div {:class (stl/css :name-block)}
                   [:span {:class (stl/css :color-name)} (:name color)]
                   (when-not (= (:name color) default-name)
@@ -363,7 +365,7 @@
           :background-color (dm/get-in file [:data :options :background])}])
 
       (when (and (:is-shared file) (not library-view?))
-        [:div {:class (stl/css :item-badge)} i/library-refactor])
+        [:div {:class (stl/css :item-badge)} i/library])
 
       [:div {:class (stl/css :info-wrapper)}
        [:div {:class (stl/css :item-info)}
@@ -386,15 +388,18 @@
                            (on-menu-click event)))}
          menu-icon
          (when (and selected? file-menu-open?)
-           [:& file-menu {:files (vals selected-files)
-                          :show? (:menu-open dashboard-local)
-                          :left (+ 24 (:x (:menu-pos dashboard-local)))
-                          :top (:y (:menu-pos dashboard-local))
-                          :navigate? true
-                          :on-edit on-edit
-                          :on-menu-close on-menu-close
-                          :origin origin
-                          :parent-id (str file-id "-action-menu")}])]]]]]))
+           ;; When the menu is open we disable events in the dashboard. We need to force pointer events
+           ;; so the menu can be handled
+           [:div {:style {:pointer-events "all"}}
+            [:& file-menu {:files (vals selected-files)
+                           :show? (:menu-open dashboard-local)
+                           :left (+ 24 (:x (:menu-pos dashboard-local)))
+                           :top (:y (:menu-pos dashboard-local))
+                           :navigate? true
+                           :on-edit on-edit
+                           :on-menu-close on-menu-close
+                           :origin origin
+                           :parent-id (str file-id "-action-menu")}]])]]]]]))
 
 (mf/defc grid
   [{:keys [files project origin limit library-view? create-fn] :as props}]
@@ -414,8 +419,9 @@
         on-drag-enter
         (mf/use-fn
          (fn [e]
-           (when (or (dnd/has-type? e "Files")
-                     (dnd/has-type? e "application/x-moz-file"))
+           (when (and (not (dnd/has-type? e "penpot/files"))
+                      (or (dnd/has-type? e "Files")
+                          (dnd/has-type? e "application/x-moz-file")))
              (dom/prevent-default e)
              (reset! dragging? true))))
 
@@ -435,8 +441,9 @@
         on-drop
         (mf/use-fn
          (fn [e]
-           (when (or (dnd/has-type? e "Files")
-                     (dnd/has-type? e "application/x-moz-file"))
+           (when (and (not (dnd/has-type? e "penpot/files"))
+                      (or (dnd/has-type? e "Files")
+                          (dnd/has-type? e "application/x-moz-file")))
              (dom/prevent-default e)
              (reset! dragging? false)
              (import-files (.-files (.-dataTransfer e))))))]

@@ -30,7 +30,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.components.shape-icon-refactor :as sic]
+   [app.main.ui.components.shape-icon :as sic]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.util.dom :as dom]
@@ -96,7 +96,7 @@
        [:span
         {:class (stl/css :icon-wrapper)}
         (if selected? [:span {:class (stl/css :selected-icon)}
-                       i/tick-refactor]
+                       i/tick]
             [:span {:class (stl/css :selected-icon)}])
         [:span {:class (stl/css :shape-icon)} icon]]
        [:span {:class (stl/css :title)} title]]
@@ -115,7 +115,7 @@
                     :class (stl/css :shortcut-key)} sc])])
 
        (when (> (count children) 1)
-         [:span {:class (stl/css :submenu-icon)} i/arrow-refactor])
+         [:span {:class (stl/css :submenu-icon)} i/arrow])
 
        (when (> (count children) 1)
          [:ul {:class (stl/css :workspace-context-submenu)
@@ -180,7 +180,7 @@
                           :on-pointer-enter (on-pointer-enter (:id object))
                           :on-pointer-leave (on-pointer-leave (:id object))
                           :on-unmount (on-unmount (:id object))
-                          :icon (sic/element-icon-refactor {:shape object})}])])
+                          :icon (sic/element-icon {:shape object})}])])
      [:& menu-entry {:title (tr "workspace.shape.menu.forward")
                      :shortcut (sc/get-tooltip :bring-forward)
                      :on-click do-bring-forward}]
@@ -652,17 +652,15 @@
 
     [:& dropdown {:show (boolean mdata)
                   :on-close #(st/emit! dw/hide-context-menu)}
-     [:ul
-      {:class (stl/css :workspace-context-menu)
-       :ref dropdown-ref
-       :style {:top top :left left}
-       :on-context-menu prevent-default}
+     [:div {:class (stl/css :workspace-context-menu)
+            :ref dropdown-ref
+            :style {:top top :left left}
+            :on-context-menu prevent-default}
 
-      (case (:kind mdata)
-        :shape [:& shape-context-menu {:mdata mdata}]
-        :page [:& page-item-context-menu {:mdata mdata}]
-        :grid-track [:& grid-track-context-menu {:mdata mdata}]
-        :grid-cells [:& grid-cells-context-menu {:mdata mdata}]
-        [:& viewport-context-menu {:mdata mdata}])]]))
-
-
+      [:ul {:class (stl/css :context-list)}
+       (case (:kind mdata)
+         :shape [:& shape-context-menu {:mdata mdata}]
+         :page [:& page-item-context-menu {:mdata mdata}]
+         :grid-track [:& grid-track-context-menu {:mdata mdata}]
+         :grid-cells [:& grid-cells-context-menu {:mdata mdata}]
+         [:& viewport-context-menu {:mdata mdata}])]]]))

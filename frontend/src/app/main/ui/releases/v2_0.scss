@@ -37,7 +37,7 @@
   gap: $s-8;
 }
 
-.verstion-tag {
+.version-tag {
   @include flexCenter;
   @include headlineSmallTypography;
   height: $s-32;
@@ -74,6 +74,14 @@
   @include bodyMediumTypography;
   margin: 0;
   color: var(--modal-text-foreground-color);
+}
+
+.feature-list {
+  @include bodyMediumTypography;
+  color: var(--modal-text-foreground-color);
+  list-style: disc;
+  display: grid;
+  gap: $s-8;
 }
 
 .navigation {

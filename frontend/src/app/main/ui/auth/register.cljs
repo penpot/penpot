@@ -58,32 +58,32 @@
           :opt-un [::invitation-token]))
 
 (defn- handle-prepare-register-error
-  [form {:keys [type code] :as cause}]
-  (condp = [type code]
-    [:restriction :registration-disabled]
-    (st/emit! (msg/error (tr "errors.registration-disabled")))
+  [form cause]
+  (let [{:keys [type code]} (ex-data cause)]
+    (condp = [type code]
+      [:restriction :registration-disabled]
+      (st/emit! (msg/error (tr "errors.registration-disabled")))
 
-    [:restriction :profile-blocked]
-    (st/emit! (msg/error (tr "errors.profile-blocked")))
+      [:restriction :profile-blocked]
+      (st/emit! (msg/error (tr "errors.profile-blocked")))
 
-    [:validation :email-has-permanent-bounces]
-    (let [email (get @form [:data :email])]
-      (st/emit! (msg/error (tr "errors.email-has-permanent-bounces" email))))
+      [:validation :email-has-permanent-bounces]
+      (let [email (get @form [:data :email])]
+        (st/emit! (msg/error (tr "errors.email-has-permanent-bounces" email))))
 
-    [:validation :email-already-exists]
-    (swap! form assoc-in [:errors :email]
-           {:message "errors.email-already-exists"})
+      [:validation :email-already-exists]
+      (swap! form assoc-in [:errors :email]
+             {:message "errors.email-already-exists"})
 
-    [:validation :email-as-password]
-    (swap! form assoc-in [:errors :password]
-           {:message "errors.email-as-password"})
+      [:validation :email-as-password]
+      (swap! form assoc-in [:errors :password]
+             {:message "errors.email-as-password"})
 
-    (st/emit! (msg/error (tr "errors.generic")))))
+      (st/emit! (msg/error (tr "errors.generic"))))))
 
 (defn- handle-prepare-register-success
   [params]
   (st/emit! (rt/nav :auth-register-validate {} params)))
-
 
 (mf/defc register-form
   [{:keys [params on-success-callback] :as props}]
@@ -100,7 +100,7 @@
                        (on-success-callback p)))
 
         on-submit
-        (mf/use-callback
+        (mf/use-fn
          (fn [form _event]
            (reset! submitted? true)
            (let [cdata (:clean-data @form)]
@@ -114,7 +114,7 @@
 
     [:& fm/form {:on-submit on-submit :form form}
      [:div {:class (stl/css :fields-row)}
-      [:& fm/input {:type "email"
+      [:& fm/input {:type "text"
                     :name :email
                     :label (tr "auth.email")
                     :data-test "email-input"
@@ -225,7 +225,7 @@
                        (on-success-callback (:email p))))
 
         on-submit
-        (mf/use-callback
+        (mf/use-fn
          (fn [form _event]
            (reset! submitted? true)
            (let [params (:clean-data @form)]

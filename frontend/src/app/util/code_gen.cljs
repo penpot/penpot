@@ -19,8 +19,8 @@
     (generate-markup objects shapes)))
 
 (defn generate-style-code
-  [objects type shapes]
+  [objects type root-shapes all-shapes]
   (let [generate-style
         (case type
           "css" css/generate-style)]
-    (generate-style objects shapes)))
+    (generate-style objects root-shapes all-shapes)))

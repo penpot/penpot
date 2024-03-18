@@ -257,9 +257,7 @@
       (watch [_ state stream]
         (let [initial-position @ms/mouse-position
 
-              stopper (->> stream
-                           (rx/filter mse/mouse-event?)
-                           (rx/filter mse/mouse-up-event?))
+              stopper (mse/drag-stopper stream)
               layout  (:workspace-layout state)
               page-id (:current-page-id state)
               focus   (:workspace-focus-selected state)
@@ -370,10 +368,7 @@
 
     ptk/WatchEvent
     (watch [_ _ stream]
-      (let [stopper          (->> stream
-                                  (rx/filter mse/mouse-event?)
-                                  (rx/filter mse/mouse-up-event?))
-
+      (let [stopper         (mse/drag-stopper stream)
             group           (gsh/shapes->rect shapes)
             group-center    (grc/rect->center group)
             initial-angle   (gpt/angle @ms/mouse-position group-center)
@@ -436,10 +431,7 @@
      (watch [_ state stream]
        (let [initial  (deref ms/mouse-position)
 
-             stopper  (->> stream
-                           (rx/filter mse/mouse-event?)
-                           (rx/filter mse/mouse-up-event?))
-
+             stopper (mse/drag-stopper stream)
              zoom    (get-in state [:workspace-local :zoom] 1)
 
              ;; We toggle the selection so we don't have to wait for the event
@@ -518,10 +510,7 @@
 
              duplicate-move-started? (get-in state [:workspace-local :duplicate-move-started?] false)
 
-             stopper (->> stream
-                          (rx/filter mse/mouse-event?)
-                          (rx/filter mse/mouse-up-event?))
-
+             stopper (mse/drag-stopper stream)
              layout  (get state :workspace-layout)
              zoom    (get-in state [:workspace-local :zoom] 1)
              focus   (:workspace-focus-selected state)
@@ -719,7 +708,7 @@
         (rx/of
          (dwu/start-undo-transaction undo-id)
          (dch/commit-changes changes)
-         (ptk/data-event :layout/update selected)
+         (ptk/data-event :layout/update {:ids selected})
          (dwu/commit-undo-transaction undo-id))))))
 
 (defn nudge-selected-shapes

@@ -131,7 +131,7 @@
           (tr "workspace.assets.create-group")
           (tr "workspace.assets.rename-group"))]
        [:button {:class (stl/css :modal-close-btn)
-                 :on-click on-close} i/close-refactor]]
+                 :on-click on-close} i/close]]
 
       [:div {:class (stl/css :modal-content)}
        [:& fm/form {:form form :on-submit on-accept}

@@ -17,6 +17,7 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
+   [app.main.ui.notifications.badge :refer [badge-notification]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -131,7 +132,7 @@
             :on-double-click on-double-click
             :on-context-menu on-context-menu}
       [:div {:class (stl/css :page-icon)}
-       i/document-refactor]
+       i/document]
 
       (if editing?
         [:*
@@ -148,7 +149,7 @@
          [:div {:class  (stl/css :page-actions)}
           (when (and deletable? (not workspace-read-only?))
             [:button {:on-click on-delete}
-             i/delete-refactor])]])]]))
+             i/delete])]])]]))
 
 ;; --- Page Item Wrapper
 
@@ -218,11 +219,12 @@
                     :class         (stl/css :title-spacing-sitemap)}
 
       (if ^boolean read-only?
-        [:div {:class  (stl/css :view-only-mode)}
-         (tr "labels.view-only")]
+        [:& badge-notification {:is-focus true
+                                :size :small
+                                :content (tr "labels.view-only")}]
         [:button {:class (stl/css :add-page)
                   :on-click on-create}
-         i/add-refactor])]
+         i/add])]
 
      [:div {:class (stl/css :tool-window-content)}
       [:& pages-list {:file file :key (:id file)}]]]))

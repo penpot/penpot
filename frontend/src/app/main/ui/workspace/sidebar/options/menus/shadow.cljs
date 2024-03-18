@@ -160,7 +160,7 @@
         [:button {:class (stl/css-case :more-options true
                                        :selected open-shadow)
                   :on-click on-toggle-open-shadow}
-         i/menu-refactor]
+         i/menu]
         [:div {:class (stl/css :type-select)}
          [:& select
           {:class (stl/css :shadow-type-select)
@@ -171,11 +171,11 @@
         [:button {:class (stl/css :action-btn)
                   :on-click toggle-visibility}
          (if hidden?
-           i/hide-refactor
-           i/shown-refactor)]
+           i/hide
+           i/shown)]
         [:button {:class (stl/css :action-btn)
                   :on-click on-remove-shadow}
-         i/remove-refactor]]]
+         i/remove-icon]]]
       (when open-shadow
         [:& advanced-options {:class (stl/css :shadow-advanced-options)
                               :visible? open-shadow
@@ -298,7 +298,7 @@
 
        (when-not (= :multiple shadows)
          [:button {:class (stl/css :add-shadow)
-                   :on-click on-add-shadow} i/add-refactor])]]
+                   :on-click on-add-shadow} i/add])]]
 
      (when open?
        (cond
@@ -309,7 +309,7 @@
            [:div {:class (stl/css :actions)}
             [:button {:class (stl/css :action-btn)
                       :on-click on-remove-all}
-             i/remove-refactor]]]]
+             i/remove-icon]]]]
 
          (seq shadows)
          [:& h/sortable-container {}
