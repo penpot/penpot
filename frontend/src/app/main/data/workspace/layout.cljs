@@ -82,8 +82,8 @@
 (defn toggle-layout-flag
   [flag & {:keys [force?] :as opts}]
   (ptk/reify ::toggle-layout-flag
-    IDeref
-    (-deref [_] {:name flag})
+    ev/Event
+    (-data [_] {:name flag})
 
     ptk/UpdateEvent
     (update [_ state]

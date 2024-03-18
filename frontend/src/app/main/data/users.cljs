@@ -161,8 +161,16 @@
                 (rt/nav' :dashboard-projects {:team-id team-id}))))]
 
     (ptk/reify ::logged-in
-      IDeref
-      (-deref [_] profile)
+      ev/Event
+      (-data [_]
+        {::ev/name "signing"
+         ::ev/type "identify"
+         :email (:email profile)
+         :auth-backend (:auth-backend profile)
+         :fullname (:fullname profile)
+         :is-muted (:is-muted profile)
+         :default-team-id (:default-team-id profile)
+         :default-project-id (:default-project-id profile)})
 
       ptk/WatchEvent
       (watch [_ _ _]
@@ -288,6 +296,9 @@
   ([] (logout {}))
   ([params]
    (ptk/reify ::logout
+     ev/Event
+     (-data [_] {})
+
      ptk/WatchEvent
      (watch [_ _ _]
        (->> (rp/cmd! :logout)
@@ -360,6 +371,10 @@
   [{:keys [email] :as data}]
   (dm/assert! ::us/email email)
   (ptk/reify ::request-email-change
+    ev/Event
+    (-data [_]
+      {:email email})
+
     ptk/WatchEvent
     (watch [_ _ _]
       (let [{:keys [on-error on-success]
@@ -395,6 +410,9 @@
    (sm/check! schema:update-password data))
 
   (ptk/reify ::update-password
+    ev/Event
+    (-data [_] {})
+
     ptk/WatchEvent
     (watch [_ _ _]
       (let [{:keys [on-error on-success]
@@ -458,6 +476,9 @@
    (di/blob? file))
 
   (ptk/reify ::update-photo
+    ev/Event
+    (-data [_] {})
+
     ptk/WatchEvent
     (watch [_ _ _]
       (let [on-success di/notify-finished-loading

@@ -458,9 +458,10 @@
   [{:keys [file-id]}]
   (let [id (uuid/next)]
     (ptk/reify ::create-page
-      IDeref
-      (-deref [_]
-        {:id id :file-id file-id})
+      ev/Event
+      (-data [_]
+        {:id id
+         :file-id file-id})
 
       ptk/WatchEvent
       (watch [it state _]

@@ -11,23 +11,30 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.types.page :as ctp]
+   [app.main.data.events :as ev]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.state-helpers :as wsh]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
-(defn make-update-guide [guide]
+(defn make-update-guide
+  [guide]
   (fn [other]
     (cond-> other
       (= (:id other) (:id guide))
       (merge guide))))
 
-(defn update-guides [guide]
+(defn update-guides
+  [guide]
   (dm/assert!
    "expected valid guide"
    (ctp/check-page-guide! guide))
 
   (ptk/reify ::update-guides
+    ev/Event
+    (-data [_]
+      (assoc guide ::ev/name "update-guide"))
+
     ptk/WatchEvent
     (watch [it state _]
       (let [page (wsh/lookup-page state)
@@ -37,17 +44,20 @@
                 (pcb/update-page-option :guides assoc (:id guide) guide))]
         (rx/of (dch/commit-changes changes))))))
 
-(defn remove-guide [guide]
+(defn remove-guide
+  [guide]
   (dm/assert!
    "expected valid guide"
    (ctp/check-page-guide! guide))
 
   (ptk/reify ::remove-guide
+    ev/Event
+    (-data [_] guide)
+
     ptk/UpdateEvent
     (update [_ state]
       (let [sdisj (fnil disj #{})]
-        (-> state
-            (update-in [:workspace-guides :hover] sdisj (:id guide)))))
+        (update-in state [:workspace-guides :hover] sdisj (:id guide))))
 
     ptk/WatchEvent
     (watch [it state _]

@@ -18,6 +18,7 @@
    [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
+   [app.setup :as-alias setup]
    [app.tokens :as tokens]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
@@ -40,7 +41,7 @@
   {::rpc/auth false
    ::doc/added "1.15"
    ::doc/module :auth}
-  [{:keys [::main/props ::ldap/provider] :as cfg} params]
+  [{:keys [::setup/props ::ldap/provider] :as cfg} params]
   (when-not provider
     (ex/raise :type :restriction
               :code :ldap-not-initialized

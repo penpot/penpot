@@ -24,6 +24,7 @@
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
+   [app.main.data.events :as ev]
    [app.main.data.modal :as md]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.collapse :as dwc]
@@ -789,6 +790,9 @@
 (defn toggle-focus-mode
   []
   (ptk/reify ::toggle-focus-mode
+    ev/Event
+    (-data [_] {})
+
     ptk/UpdateEvent
     (update [_ state]
       (let [selected (wsh/lookup-selected state)]

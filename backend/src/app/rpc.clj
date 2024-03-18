@@ -27,6 +27,7 @@
    [app.rpc.helpers :as rph]
    [app.rpc.retry :as retry]
    [app.rpc.rlimit :as rlimit]
+   [app.setup :as-alias setup]
    [app.storage :as-alias sto]
    [app.util.services :as sv]
    [app.util.time :as dt]
@@ -248,7 +249,7 @@
                 ::ldap/provider
                 ::sto/storage
                 ::mtx/metrics
-                ::main/props]
+                ::setup/props]
           :opt [::climit
                 ::rlimit]))
 
@@ -265,7 +266,7 @@
 (defmethod ig/pre-init-spec ::routes [_]
   (s/keys :req [::methods
                 ::db/pool
-                ::main/props
+                ::setup/props
                 ::session/manager]))
 
 (defmethod ig/init-key ::routes
