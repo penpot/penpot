@@ -2802,9 +2802,6 @@ msgstr "החלפת מצב מיקוד"
 msgid "shortcuts.toggle-fullscreen"
 msgstr "החלפת מילוי מסך"
 
-msgid "shortcuts.toggle-grid"
-msgstr "הצגת/הסתרת רשת"
-
 msgid "shortcuts.toggle-history"
 msgstr "החלפת הצגת היסטוריה"
 
@@ -2822,12 +2819,6 @@ msgstr "נעילת יחס"
 
 msgid "shortcuts.toggle-rules"
 msgstr "הצגת/הסתרת סרגלים"
-
-msgid "shortcuts.toggle-snap-grid"
-msgstr "הצמדה לרשת"
-
-msgid "shortcuts.toggle-snap-guide"
-msgstr "הצמדה לקווים מנחים"
 
 msgid "shortcuts.toggle-textpalette"
 msgstr "החלפת לוח טקסט"
@@ -3203,10 +3194,6 @@ msgid "workspace.header.menu.disable-scale-text"
 msgstr "השבתת שינוי גודל טקסט"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.disable-snap-grid"
-msgstr "השבתת הצמדה לרשת"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-snap-guides"
 msgstr "השבתת הצמדה לקווים המנחים"
 
@@ -3225,10 +3212,6 @@ msgid "workspace.header.menu.enable-scale-text"
 msgstr "הפעלת שינוי גודל טקסט"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.enable-snap-grid"
-msgstr "הצמדה לרשת"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-snap-guides"
 msgstr "הצמדה לקווים מנחים"
 
@@ -3238,10 +3221,6 @@ msgstr "הפעלת הצמדה לפיקסל"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-artboard-names"
 msgstr "הסתרת שמות לוחות"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-grid"
-msgstr "הסתרת רשתות"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -3288,10 +3267,6 @@ msgstr "לבחור הכול"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-artboard-names"
 msgstr "הצגת שמות לוחות"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-grid"
-msgstr "הצגת רשת"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"

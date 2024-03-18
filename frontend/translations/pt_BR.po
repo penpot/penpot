@@ -2442,9 +2442,6 @@ msgstr "Entrar/Sair do modo de foco"
 msgid "shortcuts.toggle-fullscreen"
 msgstr "Entrar/Sair da tela cheia"
 
-msgid "shortcuts.toggle-grid"
-msgstr "Mostrar/Esconder grade"
-
 msgid "shortcuts.toggle-history"
 msgstr "Mostrar/Esconder histórico"
 
@@ -2462,12 +2459,6 @@ msgstr "Fixar proporções"
 
 msgid "shortcuts.toggle-rules"
 msgstr "Mostrar/ocultar réguas"
-
-msgid "shortcuts.toggle-snap-grid"
-msgstr "Aderir a grade"
-
-msgid "shortcuts.toggle-snap-guide"
-msgstr "Aderir as réguas"
 
 msgid "shortcuts.toggle-textpalette"
 msgstr "Mostrar/Esconder paleta de tipografias"
@@ -2796,10 +2787,6 @@ msgid "workspace.header.menu.disable-scale-text"
 msgstr "Desativar escalonamento de texto"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.disable-snap-grid"
-msgstr "Desativar aderência a grade"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-snap-guides"
 msgstr "Desativar aderência as réguas"
 
@@ -2815,10 +2802,6 @@ msgid "workspace.header.menu.enable-scale-text"
 msgstr "Ativar escalonamento de texto"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.enable-snap-grid"
-msgstr "Aderir a grade de pixels"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-snap-guides"
 msgstr "Aderir as réguas"
 
@@ -2828,10 +2811,6 @@ msgstr "Habilitar aderência a grade de pixels"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-artboard-names"
 msgstr "Esconder nomes das telas"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-grid"
-msgstr "Ocultar grades"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -2875,10 +2854,6 @@ msgstr "Selecionar tudo"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-artboard-names"
 msgstr "Mostrar nomes das telas"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-grid"
-msgstr "Mostrar grade"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"

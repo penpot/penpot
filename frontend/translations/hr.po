@@ -2333,10 +2333,6 @@ msgstr "Promijena fokus moda"
 msgid "shortcuts.toggle-fullscreen"
 msgstr "Promijeni cijeli zaslon"
 
-#, fuzzy
-msgid "shortcuts.toggle-grid"
-msgstr "Promijena \"grida\""
-
 msgid "shortcuts.toggle-history"
 msgstr "Promijena povijesti"
 
@@ -2352,14 +2348,6 @@ msgstr "Zaključaj proporcije"
 #, fuzzy
 msgid "shortcuts.toggle-rules"
 msgstr "Prikaži/sakrij \"rules\""
-
-#, fuzzy
-msgid "shortcuts.toggle-snap-grid"
-msgstr "Poravnanje s \"gridom\""
-
-#, fuzzy
-msgid "shortcuts.toggle-snap-guide"
-msgstr "Pričvrsti na guides"
 
 msgid "shortcuts.toggle-textpalette"
 msgstr "Promijeni paletu teksta"
@@ -2693,10 +2681,6 @@ msgid "workspace.header.menu.disable-scale-text"
 msgstr "Onemogući skaliranje teksta"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.disable-snap-grid"
-msgstr "Onemogući \"snap to grid\""
-
-#: src/app/main/ui/workspace/header.cljs
 #, fuzzy
 msgid "workspace.header.menu.disable-snap-guides"
 msgstr "Onemogući \"snap to guides\""
@@ -2713,10 +2697,6 @@ msgstr "Omogući dinamičko poravnanje"
 msgid "workspace.header.menu.enable-scale-text"
 msgstr "Omogući skaliranje teksta"
 
-#: src/app/main/ui/workspace/header.cljs
-#, fuzzy
-msgid "workspace.header.menu.enable-snap-grid"
-msgstr "Poravnanje s \"gridom\""
 
 #: src/app/main/ui/workspace/header.cljs
 #, fuzzy
@@ -2730,11 +2710,6 @@ msgstr "Omogući \"snap to pixel\""
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-artboard-names"
 msgstr "Sakrij nazive ploča"
-
-#: src/app/main/ui/workspace/header.cljs
-#, fuzzy
-msgid "workspace.header.menu.hide-grid"
-msgstr "Sakrij \"grid\""
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -2779,10 +2754,6 @@ msgstr "Odaberi sve"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-artboard-names"
 msgstr "Prikaži nazive ploča"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-grid"
-msgstr "Prikaži \"grid\""
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"

@@ -2943,9 +2943,6 @@ msgstr "Comutați modul de focus"
 msgid "shortcuts.toggle-fullscreen"
 msgstr "Comutați la ecran complet"
 
-msgid "shortcuts.toggle-grid"
-msgstr "Afișați/ascundeți grila"
-
 msgid "shortcuts.toggle-history"
 msgstr "Comutați istoricul"
 
@@ -2963,12 +2960,6 @@ msgstr "Blocați proporțiile"
 
 msgid "shortcuts.toggle-rules"
 msgstr "Afișați/ascundeți rigle"
-
-msgid "shortcuts.toggle-snap-grid"
-msgstr "Fixare la grilă"
-
-msgid "shortcuts.toggle-snap-guide"
-msgstr "Fixare la ghiduri"
 
 msgid "shortcuts.toggle-textpalette"
 msgstr "Comutați paleta de text"
@@ -3343,10 +3334,6 @@ msgid "workspace.header.menu.disable-scale-text"
 msgstr "Dezactivează dimensionarea textului"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.disable-snap-grid"
-msgstr "Dezactivați snap-ul la grilă"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-snap-guides"
 msgstr "Dezactivați fixarea la ghiduri"
 
@@ -3365,10 +3352,6 @@ msgid "workspace.header.menu.enable-scale-text"
 msgstr "Activează scalarea textului"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.enable-snap-grid"
-msgstr "Aliniază per grilă"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-snap-guides"
 msgstr "Fixare la ghiduri"
 
@@ -3378,10 +3361,6 @@ msgstr "Activați fixarea la pixel"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-artboard-names"
 msgstr "Ascundeți numele tablelor"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-grid"
-msgstr "Ascunde grila de ghidaj"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -3428,10 +3407,6 @@ msgstr "Selectează tot"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-artboard-names"
 msgstr "Afișați numele tablelor"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-grid"
-msgstr "Afişează sistemul grid"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"

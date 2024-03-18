@@ -2553,9 +2553,6 @@ msgstr "Erakutsi/ezkutatu foko-modua"
 msgid "shortcuts.toggle-fullscreen"
 msgstr "Aktibatu/desaktibatu pantaila osoa"
 
-msgid "shortcuts.toggle-grid"
-msgstr "Erakutsi/ezkutatu sarea"
-
 msgid "shortcuts.toggle-history"
 msgstr "Erakutsi/Ezkutatu historikoa"
 
@@ -2573,12 +2570,6 @@ msgstr "Blokeatu/Desblokeatu proportzioak"
 
 msgid "shortcuts.toggle-rules"
 msgstr "Erakutsi/ezkutatu erregelak"
-
-msgid "shortcuts.toggle-snap-grid"
-msgstr "Lerrokatu sarera"
-
-msgid "shortcuts.toggle-snap-guide"
-msgstr "Lerroatu gidetara"
 
 msgid "shortcuts.toggle-textpalette"
 msgstr "Erakutsi/Ezkutatu testuen paleta"
@@ -2939,10 +2930,6 @@ msgid "workspace.header.menu.disable-scale-text"
 msgstr "Desaktibatu testu eskala"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.disable-snap-grid"
-msgstr "Desaktibatu sarera atxikitzea"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-snap-guides"
 msgstr "Desaktibatu gidetara atxikitzea"
 
@@ -2961,10 +2948,6 @@ msgid "workspace.header.menu.enable-scale-text"
 msgstr "Aktibatu testua eskalatzea"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.enable-snap-grid"
-msgstr "Atxikitu sarera"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-snap-guides"
 msgstr "Atxikitu gidetara"
 
@@ -2974,10 +2957,6 @@ msgstr "Aktibatu pixelera atxikitzea"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-artboard-names"
 msgstr "Ezkutatu arbelen izenak"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-grid"
-msgstr "Ezkutatu saretak"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -3026,15 +3005,8 @@ msgid "workspace.header.menu.show-artboard-names"
 msgstr "Erakutsi arbelen izenak"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-grid"
-msgstr "Erakutsi sareta"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"
 msgstr "Erakutsi kolore-paleta"
-
-msgid "workspace.header.menu.show-pixel-grid"
-msgstr "Erakutsi pixelen sarea"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-rules"

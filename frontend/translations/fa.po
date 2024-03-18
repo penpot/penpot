@@ -1876,10 +1876,6 @@ msgstr "انتقال"
 msgid "shortcuts.paste"
 msgstr "چسباندن"
 
-#, fuzzy
-msgid "shortcuts.toggle-grid"
-msgstr "نمایش/پنهان کردن شبکه‌بندی"
-
 msgid "shortcuts.toggle-rules"
 msgstr "نمایش/پنهان کردن خط‌کش‌ها"
 

@@ -2456,9 +2456,6 @@ msgstr "切换焦点模式"
 msgid "shortcuts.toggle-fullscreen"
 msgstr "切换全屏"
 
-msgid "shortcuts.toggle-grid"
-msgstr "显示/隐藏网格"
-
 msgid "shortcuts.toggle-history"
 msgstr "切换历史"
 
@@ -2476,12 +2473,6 @@ msgstr "锁定比例"
 
 msgid "shortcuts.toggle-rules"
 msgstr "显示/隐藏规则"
-
-msgid "shortcuts.toggle-snap-grid"
-msgstr "网络对齐"
-
-msgid "shortcuts.toggle-snap-guide"
-msgstr "辅助线对齐"
 
 msgid "shortcuts.toggle-textpalette"
 msgstr "切换文本调色板"
@@ -2838,10 +2829,6 @@ msgid "workspace.header.menu.disable-scale-text"
 msgstr "禁用缩放文本"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.disable-snap-grid"
-msgstr "禁用吸附到网格"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-snap-guides"
 msgstr "禁用与参考线对齐"
 
@@ -2860,10 +2847,6 @@ msgid "workspace.header.menu.enable-scale-text"
 msgstr "启用缩放文本"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.enable-snap-grid"
-msgstr "吸附到网格"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-snap-guides"
 msgstr "与参考线对齐"
 
@@ -2873,10 +2856,6 @@ msgstr "启用像素对齐"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-artboard-names"
 msgstr "隐藏画板名称"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-grid"
-msgstr "隐藏网格"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -2923,10 +2902,6 @@ msgstr "全选"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-artboard-names"
 msgstr "显示画板名称"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-grid"
-msgstr "显示网格"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"

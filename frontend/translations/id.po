@@ -2910,9 +2910,6 @@ msgstr "Alih mode fokus"
 msgid "shortcuts.toggle-fullscreen"
 msgstr "Alih layar penuh"
 
-msgid "shortcuts.toggle-grid"
-msgstr "Tampilkan/sembunyikan kisi"
-
 msgid "shortcuts.toggle-history"
 msgstr "Alih riwayat"
 
@@ -2930,12 +2927,6 @@ msgstr "Kunci proporsi"
 
 msgid "shortcuts.toggle-rules"
 msgstr "Tampilkan/sembunyikan penggaris"
-
-msgid "shortcuts.toggle-snap-grid"
-msgstr "Tancap ke kisi"
-
-msgid "shortcuts.toggle-snap-guide"
-msgstr "Tancap ke pemandu"
 
 msgid "shortcuts.toggle-textpalette"
 msgstr "Alih palet teks"
@@ -3308,10 +3299,6 @@ msgid "workspace.header.menu.disable-scale-text"
 msgstr "Nonaktifkan skala teks"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.disable-snap-grid"
-msgstr "Nonaktifkan tancapan ke kisi"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-snap-guides"
 msgstr "Nonaktifkan tancapan ke pemandu"
 
@@ -3330,10 +3317,6 @@ msgid "workspace.header.menu.enable-scale-text"
 msgstr "Aktifkan skala teks"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.enable-snap-grid"
-msgstr "Tancapkan ke kisi"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-snap-guides"
 msgstr "Tancapkan ke pemandu"
 
@@ -3343,10 +3326,6 @@ msgstr "Aktifkan tancapkan ke piksel"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-artboard-names"
 msgstr "Sembunyikan nama papan"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-grid"
-msgstr "Sembunyikan kisi"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -3393,10 +3372,6 @@ msgstr "Pilih semua"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-artboard-names"
 msgstr "Tampilkan nama papan"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-grid"
-msgstr "Tampilkan kisi"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"

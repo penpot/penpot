@@ -192,15 +192,15 @@
                               :on-key-down (fn [event]
                                              (when (kbd/enter? event)
                                                (toggle-flag event)))
-                              :data-test   "snap-guides"
-                              :id          "file-menu-snap-guides"}
+                              :data-test   "snap-ruler-guides"
+                              :id          "file-menu-snap-ruler-guides"}
       [:span {:class (stl/css :item-name)}
-       (if (contains? layout :snap-guides)
-         (tr "workspace.header.menu.disable-snap-guides")
-         (tr "workspace.header.menu.enable-snap-guides"))]
+       (if (contains? layout :snap-ruler-guides)
+         (tr "workspace.header.menu.disable-snap-ruler-guides")
+         (tr "workspace.header.menu.enable-snap-ruler-guides"))]
       [:span {:class (stl/css :shortcut)}
 
-       (for [sc (scd/split-sc (sc/get-tooltip :toggle-snap-guide))]
+       (for [sc (scd/split-sc (sc/get-tooltip :toggle-snap-ruler-guide))]
          [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
 
      [:> dropdown-menu-item* {:on-click    toggle-flag
@@ -208,14 +208,14 @@
                               :on-key-down (fn [event]
                                              (when (kbd/enter? event)
                                                (toggle-flag event)))
-                              :data-test   "snap-grid"
-                              :id          "file-menu-snap-grid"}
+                              :data-test   "snap-guides"
+                              :id          "file-menu-snap-guides"}
       [:span {:class (stl/css :item-name)}
-       (if (contains? layout :snap-grid)
-         (tr "workspace.header.menu.disable-snap-grid")
-         (tr "workspace.header.menu.enable-snap-grid"))]
+       (if (contains? layout :snap-guides)
+         (tr "workspace.header.menu.disable-snap-guides")
+         (tr "workspace.header.menu.enable-snap-guides"))]
       [:span {:class (stl/css :shortcut)}
-       (for [sc (scd/split-sc (sc/get-tooltip :toggle-snap-grid))]
+       (for [sc (scd/split-sc (sc/get-tooltip :toggle-snap-guides))]
          [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
 
      [:> dropdown-menu-item* {:on-click    toggle-flag
@@ -321,14 +321,14 @@
                               :on-key-down (fn [event]
                                              (when (kbd/enter? event)
                                                (toggle-flag event)))
-                              :data-test   "display-grid"
-                              :id          "file-menu-grid"}
+                              :data-test   "display-guides"
+                              :id          "file-menu-guides"}
       [:span {:class (stl/css :item-name)}
-       (if (contains? layout :display-grid)
-         (tr "workspace.header.menu.hide-grid")
-         (tr "workspace.header.menu.show-grid"))]
+       (if (contains? layout :display-guides)
+         (tr "workspace.header.menu.hide-guides")
+         (tr "workspace.header.menu.show-guides"))]
       [:span {:class (stl/css :shortcut)}
-       (for [sc (scd/split-sc (sc/get-tooltip :toggle-grid))]
+       (for [sc (scd/split-sc (sc/get-tooltip :toggle-guides))]
          [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
 
 

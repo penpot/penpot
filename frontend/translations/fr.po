@@ -2771,9 +2771,6 @@ msgstr "Activer/désactiver le mode focus"
 msgid "shortcuts.toggle-fullscreen"
 msgstr "Activer/désactiver le plein écran"
 
-msgid "shortcuts.toggle-grid"
-msgstr "Afficher/masquer la grille"
-
 msgid "shortcuts.toggle-history"
 msgstr "Activer/désactiver l'historique"
 
@@ -2791,12 +2788,6 @@ msgstr "Verrouiller les proportions"
 
 msgid "shortcuts.toggle-rules"
 msgstr "Afficher/masquer les règles"
-
-msgid "shortcuts.toggle-snap-grid"
-msgstr "Aligner sur la grille"
-
-msgid "shortcuts.toggle-snap-guide"
-msgstr "Aligner sur les guides"
 
 msgid "shortcuts.toggle-textpalette"
 msgstr "Afficher/masquer la palette de texte"
@@ -3137,10 +3128,6 @@ msgid "workspace.header.menu.disable-scale-text"
 msgstr "Désactiver la mise à l'échelle du texte"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.disable-snap-grid"
-msgstr "Désactiver l’alignement sur la grille"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-snap-guides"
 msgstr "Désactiver l’alignement sur les guides"
 
@@ -3156,10 +3143,6 @@ msgid "workspace.header.menu.enable-scale-text"
 msgstr "Activer le redimensionnement du texte"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.enable-snap-grid"
-msgstr "Aligner sur la grille"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-snap-guides"
 msgstr "Aligner sur les guides"
 
@@ -3169,10 +3152,6 @@ msgstr "Activer l’alignement au pixel"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-artboard-names"
 msgstr "Masquer le nom des plans de travail"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-grid"
-msgstr "Masquer la grille"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -3216,10 +3195,6 @@ msgstr "Tout sélectionner"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-artboard-names"
 msgstr "Afficher le nom des plans de travail"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-grid"
-msgstr "Montrer la grille"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"

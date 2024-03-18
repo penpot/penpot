@@ -2897,9 +2897,6 @@ msgstr "Pārslēgt fokusa režīmu"
 msgid "shortcuts.toggle-fullscreen"
 msgstr "Pārslēgt pilnekrāna režīmu"
 
-msgid "shortcuts.toggle-grid"
-msgstr "Rādīt/paslēpt režģi"
-
 msgid "shortcuts.toggle-history"
 msgstr "Pārslēgt vēsturi"
 
@@ -2917,12 +2914,6 @@ msgstr "Slēgt proporcijas"
 
 msgid "shortcuts.toggle-rules"
 msgstr "Rādīt/paslēpt mērjoslas"
-
-msgid "shortcuts.toggle-snap-grid"
-msgstr "Pieķerties režģim"
-
-msgid "shortcuts.toggle-snap-guide"
-msgstr "Pieķerties vadotnēm"
 
 msgid "shortcuts.toggle-textpalette"
 msgstr "Pārslēgt teksta paleti"
@@ -3294,10 +3285,6 @@ msgid "workspace.header.menu.disable-scale-text"
 msgstr "Deaktivizēt teksta mērogošanu"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.disable-snap-grid"
-msgstr "Atspējot pieķeršanos režģim"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-snap-guides"
 msgstr "Atspējot pieķeršanos vadotnēm"
 
@@ -3316,10 +3303,6 @@ msgid "workspace.header.menu.enable-scale-text"
 msgstr "Aktivizēt teksta mērogošanu"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.enable-snap-grid"
-msgstr "Pieķerties režģim"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-snap-guides"
 msgstr "Pieķerties vadotnēm"
 
@@ -3329,10 +3312,6 @@ msgstr "Iespējot pieķeršanos pikselim"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-artboard-names"
 msgstr "Paslēpt plātņu nosaukumus"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-grid"
-msgstr "Paslēpt režģus"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -3379,10 +3358,6 @@ msgstr "Atlasīt visu"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-artboard-names"
 msgstr "Rādīt plātņu nosaukumus"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-grid"
-msgstr "Rādīt režģi"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"

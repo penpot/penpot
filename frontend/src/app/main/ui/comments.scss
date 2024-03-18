@@ -19,6 +19,8 @@
 }
 
 .section-title {
+  display: grid;
+  grid-template-columns: auto auto;
   @include bodySmallTypography;
   height: $s-32;
   display: flex;
@@ -27,10 +29,12 @@
 }
 
 .file-name {
+  @include textEllipsis;
   color: var(--comment-subtitle-color);
 }
 
 .page-name {
+  @include textEllipsis;
   color: var(--comment-subtitle-color);
 }
 

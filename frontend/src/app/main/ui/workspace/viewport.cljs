@@ -200,7 +200,7 @@
         show-cursor-tooltip?     tooltip
         show-draw-area?          drawing-obj
         show-gradient-handlers?  (= (count selected) 1)
-        show-grids?              (contains? layout :display-grid)
+        show-grids?              (contains? layout :display-guides)
 
         show-frame-outline?      (= transform :move)
         show-outlines?           (and (nil? transform)
@@ -223,7 +223,7 @@
                                       (= transform :move)
                                       (seq selected))
         show-snap-points?        (and (or (contains? layout :dynamic-alignment)
-                                          (contains? layout :snap-grid))
+                                          (contains? layout :snap-guides))
                                       (or drawing-obj transform))
         show-selrect?            (and selrect (empty? drawing) (not text-editing?))
         show-measures?           (and (not transform)
