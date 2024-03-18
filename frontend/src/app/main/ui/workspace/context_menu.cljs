@@ -652,16 +652,15 @@
 
     [:& dropdown {:show (boolean mdata)
                   :on-close #(st/emit! dw/hide-context-menu)}
-     [:ul {:class (stl/css :workspace-context-menu)
-           :ref dropdown-ref
-           :style {:top top :left left}
-           :on-context-menu prevent-default}
+     [:div {:class (stl/css :workspace-context-menu)
+            :ref dropdown-ref
+            :style {:top top :left left}
+            :on-context-menu prevent-default}
 
-      (case (:kind mdata)
-        :shape [:& shape-context-menu {:mdata mdata}]
-        :page [:& page-item-context-menu {:mdata mdata}]
-        :grid-track [:& grid-track-context-menu {:mdata mdata}]
-        :grid-cells [:& grid-cells-context-menu {:mdata mdata}]
-        [:& viewport-context-menu {:mdata mdata}])]]))
-
-
+      [:ul {:class (stl/css :context-list)}
+       (case (:kind mdata)
+         :shape [:& shape-context-menu {:mdata mdata}]
+         :page [:& page-item-context-menu {:mdata mdata}]
+         :grid-track [:& grid-track-context-menu {:mdata mdata}]
+         :grid-cells [:& grid-cells-context-menu {:mdata mdata}]
+         [:& viewport-context-menu {:mdata mdata}])]]]))
