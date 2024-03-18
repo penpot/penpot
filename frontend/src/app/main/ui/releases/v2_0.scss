@@ -76,6 +76,14 @@
   color: var(--modal-text-foreground-color);
 }
 
+.feature-list {
+  @include bodyMediumTypography;
+  color: var(--modal-text-foreground-color);
+  list-style: disc;
+  display: grid;
+  gap: $s-8;
+}
+
 .navigation {
   width: 100%;
   display: grid;
