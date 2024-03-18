@@ -193,9 +193,7 @@
     (watch [_ state stream]
       (let [initial-pos @ms/mouse-position
             selected (wsh/lookup-selected state)
-            stopper  (->> stream
-                          (rx/filter mse/mouse-event?)
-                          (rx/filter mse/mouse-up-event?))]
+            stopper  (mse/drag-stopper stream)]
         (when (= 1 (count selected))
           (rx/concat
            (->> ms/mouse-position
@@ -305,9 +303,7 @@
     (watch [_ state stream]
       (let [initial-pos @ms/mouse-position
             selected (wsh/lookup-selected state)
-            stopper  (->> stream
-                          (rx/filter mse/mouse-event?)
-                          (rx/filter mse/mouse-up-event?))]
+            stopper  (mse/drag-stopper stream)]
         (when (= 1 (count selected))
           (let [page-id     (:current-page-id state)
                 objects     (wsh/lookup-page-objects state page-id)

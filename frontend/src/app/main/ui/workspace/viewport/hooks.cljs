@@ -32,6 +32,7 @@
    [app.util.dom :as dom]
    [app.util.globals :as globals]
    [app.util.keyboard :as kbd]
+   [app.util.mouse :as mse]
    [beicon.v2.core :as rx]
    [beicon.v2.operators :as rxo]
    [goog.events :as events]
@@ -42,7 +43,8 @@
   (let [on-key-down       (actions/on-key-down)
         on-key-up         (actions/on-key-up)
         on-mouse-wheel    (actions/on-mouse-wheel zoom)
-        on-paste          (actions/on-paste disable-paste in-viewport? workspace-read-only?)]
+        on-paste          (actions/on-paste disable-paste in-viewport? workspace-read-only?)
+        on-blur           (mf/use-fn #(st/emit! (mse/->BlurEvent)))]
 
     (mf/use-layout-effect
      (mf/deps on-key-down on-key-up on-mouse-wheel on-paste workspace-read-only?)
@@ -52,7 +54,8 @@
                    ;; bind with passive=false to allow the event to be cancelled
                    ;; https://stackoverflow.com/a/57582286/3219895
                    (events/listen js/window EventType.WHEEL on-mouse-wheel #js {:passive false})
-                   (events/listen js/window EventType.PASTE on-paste)]]
+                   (events/listen js/window EventType.PASTE on-paste)
+                   (events/listen js/window EventType.BLUR on-blur)]]
          (fn []
            (doseq [key keys]
              (events/unlistenByKey key))))))))

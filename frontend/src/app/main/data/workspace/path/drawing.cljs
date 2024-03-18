@@ -139,9 +139,7 @@
                  (rx/map #(drag-handler position idx prefix %))
                  (rx/take-until
                   (rx/merge
-                   (->> stream
-                        (rx/filter mse/mouse-event?)
-                        (rx/filter mse/mouse-up-event?))
+                   (mse/drag-stopper stream)
                    (->> stream
                         (rx/filter helpers/end-path-event?)))))]
 
@@ -166,9 +164,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [stopper (rx/merge
-                     (->> stream
-                          (rx/filter mse/mouse-event?)
-                          (rx/filter mse/mouse-up-event?))
+                     (mse/drag-stopper stream)
                      (->> stream
                           (rx/filter helpers/end-path-event?)))
 
@@ -197,9 +193,7 @@
    (gpt/point? down-event))
 
   (let [stopper (rx/merge
-                 (->> stream
-                      (rx/filter mse/mouse-event?)
-                      (rx/filter mse/mouse-up-event?))
+                 (mse/drag-stopper stream)
                  (->> stream
                       (rx/filter helpers/end-path-event?)))
 

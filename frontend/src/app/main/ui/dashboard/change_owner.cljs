@@ -29,10 +29,13 @@
         members-map (mf/deref refs/dashboard-team-members)
         members     (vals members-map)
 
-        options     (into [{:value ""
-                            :label (tr "modals.leave-and-reassign.select-member-to-promote")}]
-                          (filter #(not= (:label %) (:fullname profile))
-                                  (map #(hash-map :label (:name %) :value (str (:id %))) members)))
+        options
+        (into [{:value ""
+                :label (tr "modals.leave-and-reassign.select-member-to-promote")}]
+              (comp
+               (filter #(not= (:email %) (:email profile)))
+               (map #(hash-map :label (:name %) :value (str (:id %)))))
+              members)
 
         on-cancel   #(st/emit! (modal/hide))
         on-accept

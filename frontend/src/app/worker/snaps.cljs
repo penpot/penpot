@@ -29,6 +29,7 @@
   (let [match-bounds?
         (fn [[_ data]]
           (some #(or (= :guide (:type %))
+                     (= :layout (:type %))
                      (grc/contains-point? bounds (:pt %))) data))]
     (->> (into []
                (comp (mapcat #(sd/query @state page-id frame-id axis %))

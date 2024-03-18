@@ -419,8 +419,9 @@
         on-drag-enter
         (mf/use-fn
          (fn [e]
-           (when (or (dnd/has-type? e "Files")
-                     (dnd/has-type? e "application/x-moz-file"))
+           (when (and (not (dnd/has-type? e "penpot/files"))
+                      (or (dnd/has-type? e "Files")
+                          (dnd/has-type? e "application/x-moz-file")))
              (dom/prevent-default e)
              (reset! dragging? true))))
 
@@ -440,8 +441,9 @@
         on-drop
         (mf/use-fn
          (fn [e]
-           (when (or (dnd/has-type? e "Files")
-                     (dnd/has-type? e "application/x-moz-file"))
+           (when (and (not (dnd/has-type? e "penpot/files"))
+                      (or (dnd/has-type? e "Files")
+                          (dnd/has-type? e "application/x-moz-file")))
              (dom/prevent-default e)
              (reset! dragging? false)
              (import-files (.-files (.-dataTransfer e))))))]

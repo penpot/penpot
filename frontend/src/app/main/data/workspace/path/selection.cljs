@@ -10,7 +10,6 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
-   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.path.state :as st]
    [app.main.streams :as ms]
    [app.util.mouse :as mse]
@@ -119,15 +118,9 @@
     (ptk/reify ::handle-area-selection
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [zoom   (get-in state [:workspace-local :zoom] 1)
-              stopper (rx/merge
-                       (->> stream
-                            (rx/filter mse/mouse-event?)
-                            (rx/filter mse/mouse-up-event?))
-                       (->> stream
-                            (rx/filter dwc/interrupt?)))
-
-              from-p @ms/mouse-position]
+        (let [zoom    (get-in state [:workspace-local :zoom] 1)
+              stopper (mse/drag-stopper stream)
+              from-p  @ms/mouse-position]
           (rx/concat
            (->> ms/mouse-position
                 (rx/map #(grc/points->rect [from-p %]))

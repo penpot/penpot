@@ -265,8 +265,7 @@
 
 (mf/defc interaction
   [{:keys [shape interactions interactions-show?]}]
-  (let [{:keys [x y width height]} (:selrect shape)
-        frame? (= :frame (:type shape))]
+  (let [{:keys [x y width height]} (:selrect shape)]
     (when-not (empty? interactions)
       [:rect {:x (- x 1)
               :y (- y 1)
@@ -276,7 +275,6 @@
               :stroke "var(--color-accent-tertiary)"
               :stroke-width (if interactions-show? 1 0)
               :fill-opacity (if interactions-show? 0.2 0)
-              :style {:pointer-events (when frame? "none")}
               :transform (gsh/transform-str shape)}])))
 
 
