@@ -12,6 +12,8 @@
 
 .modal-container {
   @extend .modal-container-base;
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-header {
@@ -29,6 +31,9 @@
 
 .modal-content {
   @include bodySmallTypography;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
   display: grid;
   grid-template-columns: 1fr;
   gap: $s-16;
