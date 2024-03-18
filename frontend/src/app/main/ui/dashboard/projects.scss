@@ -17,6 +17,12 @@
 
 .dashboard-projects {
   user-select: none;
+  height: calc(100vh - $s-64);
+}
+
+.with-hero,
+.with-team-hero {
+  height: calc(100vh - $s-280);
 }
 
 .dashboard-shared {
