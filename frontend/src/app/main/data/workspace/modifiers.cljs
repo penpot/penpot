@@ -546,10 +546,7 @@
                            :layout-padding-type
                            :layout-gap
                            :layout-item-margin
-                           :layout-item-margin-type
-                           :layout-grid-cells
-                           :layout-grid-columns
-                           :layout-grid-rows]})
+                           :layout-item-margin-type]})
                  ;; We've applied the text-modifier so we can dissoc the temporary data
                  (fn [state]
                    (update state :workspace-text-modifier #(apply dissoc % ids)))
