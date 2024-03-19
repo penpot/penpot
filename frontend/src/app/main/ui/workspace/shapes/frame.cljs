@@ -130,7 +130,7 @@
             container-ref  (mf/use-ref nil)
             content-ref    (mf/use-ref nil)
 
-            bounds         (gsb/get-object-bounds objects shape)
+            bounds         (gsb/get-object-bounds objects shape {:ignore-margin? false})
 
             x              (dm/get-prop bounds :x)
             y              (dm/get-prop bounds :y)
