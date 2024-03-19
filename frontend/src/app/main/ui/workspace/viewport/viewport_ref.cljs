@@ -49,7 +49,7 @@
          (mf/set-ref-val! ref node)
          (reset! viewport-ref node)
          (when (some? node)
-           (events/listen node EventType.MOUSEOUT (fn [] (st/emit! (mse/->BlurEvent)))))
+           (events/listen node EventType.MOUSELEAVE (fn [] (st/emit! (mse/->BlurEvent)))))
          (init-observer node on-change-bounds)))]))
 
 (defn point->viewport
