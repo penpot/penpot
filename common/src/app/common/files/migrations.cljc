@@ -73,7 +73,7 @@
   [{:keys [version] :as file}]
   (if (int? version)
     file
-    (let [version (or version (-> file :data :version))]
+    (let [version (or (-> file :data :version) 0)]
       (-> file
           (assoc :version version)
           (update :data dissoc :version)))))
