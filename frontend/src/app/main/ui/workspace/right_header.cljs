@@ -179,6 +179,10 @@
         (mf/use-fn
          (mf/deps selected-drawtool)
          (fn [_]
+           (when (contains? layout :document-history)
+             (st/emit! (-> (dw/remove-layout-flag :document-history)
+                           (vary-meta assoc ::ev/origin "workspace-header"))))
+
            (if (= :comments selected-drawtool)
              (st/emit! :interrupt)
              (active-comments))))
@@ -187,8 +191,11 @@
         (mf/use-fn
          (mf/deps selected-drawtool)
          (fn []
+
            (when (= :comments selected-drawtool)
-             (st/emit! :interrupt))
+             (st/emit! :interrupt
+                       (-> (dw/toggle-layout-flag :comments)
+                           (vary-meta assoc ::ev/origin "workspace-header"))))
 
            (st/emit! (-> (dw/toggle-layout-flag :document-history)
                          (vary-meta assoc ::ev/origin "workspace-header")))))]
