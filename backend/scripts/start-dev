@@ -15,13 +15,12 @@ export PENPOT_FLAGS="\
        enable-feature-fdata-pointer-map \
        enable-feature-fdata-objects-map \
        disable-secure-session-cookies \
+       enable-rpc-climit \
        enable-smtp \
        enable-access-tokens \
        disable-feature-components-v2 \
        enable-file-validation \
-       enable-file-schema-validation \
-       disable-soft-file-schema-validation \
-       disable-soft-file-validation";
+       enable-file-schema-validation";
 
 export OPTIONS="
        -A:jmx-remote -A:dev \
