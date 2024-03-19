@@ -51,7 +51,7 @@
 
 .layer-title {
   @include bodySmallTypography;
-  @include text-ellipsis;
+  @include textEllipsis;
   height: $s-32;
   padding: $s-8 0;
   color: var(--assets-item-name-foreground-color-rest);
