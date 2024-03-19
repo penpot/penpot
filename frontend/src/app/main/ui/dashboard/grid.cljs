@@ -13,11 +13,10 @@
    [app.common.logging :as log]
    [app.main.data.dashboard :as dd]
    [app.main.data.messages :as msg]
-   [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.rasterizer :as thr]
    [app.main.refs :as refs]
-   [app.main.render :refer [component-svg]]
+   [app.main.render :as render]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :as bc]
@@ -27,7 +26,6 @@
    [app.main.ui.dashboard.placeholder :refer [empty-placeholder loading-placeholder]]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
-   [app.main.worker :as wrk]
    [app.util.color :as uc]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
@@ -52,16 +50,7 @@
 (defn- ask-for-thumbnail
   "Creates some hooks to handle the files thumbnails cache"
   [file-id revn]
-  (->> (wrk/ask! {:cmd :thumbnails/generate-for-file
-                  :revn revn
-                  :file-id file-id
-                  :features (features/get-team-enabled-features @st/state)})
-       (rx/mapcat (fn [{:keys [fonts] :as result}]
-                    (->> (fonts/render-font-styles fonts)
-                         (rx/map (fn [styles]
-                                   (assoc result
-                                          :styles styles
-                                          :width 252))))))
+  (->> (render/render-thumbnail file-id revn)
        (rx/mapcat thr/render)
        (rx/mapcat (partial persist-thumbnail file-id revn))))
 
@@ -141,8 +130,8 @@
               (let [root-id (or (:main-instance-id component) (:id component))] ;; Check for components-v2 in library
                 [:div {:class (stl/css :asset-list-item)
                        :key (str "assets-component-" (:id component))}
-                 [:& component-svg {:root-shape (get-in component [:objects root-id])
-                                    :objects (:objects component)}] ;; Components in the summary come loaded with objects, even in v2
+                 [:& render/component-svg {:root-shape (get-in component [:objects root-id])
+                                           :objects (:objects component)}] ;; Components in the summary come loaded with objects, even in v2
                  [:div {:class (stl/css :name-block)}
                   [:span {:class (stl/css :item-name)
                           :title (:name component)}
