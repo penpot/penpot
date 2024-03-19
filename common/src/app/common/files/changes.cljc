@@ -686,6 +686,9 @@
                         ;;       after the check added in data/workspace/modifiers/check-delta
                         ;;       function. Better check it and test toroughly when activating
                         ;;       components-v2 mode.
+
+        is-move?        (and (= group :geometry-group) (contains? #{:x :y :points :selrect} attr))
+
         in-copy?        (ctk/in-component-copy? shape)
 
         ;; For geometric attributes, there are cases in that the value changes
@@ -698,7 +701,11 @@
 
     ;; Notify when value has changed, except when it has not moved relative to the
     ;; component head.
-    (when (and group (not equal?) (not (and ignore-geometry is-geometry?)))
+    ;; Do not notify if we are simply moving the main instance.
+    (when (and group
+               (not equal?)
+               (not (and ignore-geometry is-geometry?))
+               (not (and is-move? (ctk/main-instance? shape))))
       (on-changed shape))
 
     (cond-> shape
@@ -751,16 +758,21 @@
 
 (defmethod components-changed :mod-obj
   [file-data {:keys [id page-id component-id operations]}]
-  (let [need-sync? (fn [operation]
+  (let [page (ctpl/get-page file-data page-id)
+        is-main? (-> (dm/get-in page [:objects id])
+                     ctk/main-instance?)
+        need-sync? (fn [operation]
+                     (let [is-move? (and (= (:type operation) :set) (contains? #{:x :y :points :selrect} (:attr operation)))]
                      ; We need to trigger a sync if the shape has changed any
                      ; attribute that participates in components synchronization.
-                     (and (= (:type operation) :set)
-                          (get ctk/sync-attrs (:attr operation))))
+                     ; Do not trigger if we are simply moving the main instance
+                       (and (= (:type operation) :set)
+                            (get ctk/sync-attrs (:attr operation))
+                            (not (and is-move? is-main?)))))
         any-sync? (some need-sync? operations)]
     (when any-sync?
       (if page-id
-        (let [page (ctpl/get-page file-data page-id)
-              shape-and-parents (map #(ctn/get-shape page %)
+        (let [shape-and-parents (map #(ctn/get-shape page %)
                                      (cons id (cfh/get-parent-ids (:objects page) id)))
               xform (comp (filter :main-instance) ; Select shapes that are main component instances
                           (map :component-id))]
@@ -860,5 +872,4 @@
 (defmethod frames-changed :default
   [_ _]
   nil)
-
 
