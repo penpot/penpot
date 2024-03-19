@@ -433,7 +433,8 @@
           (letfn [(fix-component [components id component]
                     (let [root-shape (ctst/get-shape component (:id component))]
                       (if (or (empty? (:objects component))
-                              (nil? root-shape))
+                              (nil? root-shape)
+                              (nil? (:type root-shape)))
                         (dissoc components id)
                         components)))]
 
