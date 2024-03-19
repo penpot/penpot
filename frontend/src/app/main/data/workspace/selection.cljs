@@ -404,6 +404,7 @@
                                                        ids-map
                                                        %2
                                                        delta
+                                                       nil
                                                        libraries
                                                        library-data
                                                        it
@@ -459,10 +460,10 @@
 
 ;; TODO: move to common.files.shape-helpers
 (defn- prepare-duplicate-shape-change
-  ([changes objects page unames update-unames! ids-map obj delta libraries library-data it file-id]
-   (prepare-duplicate-shape-change changes objects page unames update-unames! ids-map obj delta libraries library-data it file-id (:frame-id obj) (:parent-id obj) false false))
+  ([changes objects page unames update-unames! ids-map obj delta level-delta libraries library-data it file-id]
+   (prepare-duplicate-shape-change changes objects page unames update-unames! ids-map obj delta level-delta libraries library-data it file-id (:frame-id obj) (:parent-id obj) false false))
 
-  ([changes objects page unames update-unames! ids-map obj delta libraries library-data it file-id frame-id parent-id duplicating-component? child?]
+  ([changes objects page unames update-unames! ids-map obj delta level-delta libraries library-data it file-id frame-id parent-id duplicating-component? child?]
    (cond
      (nil? obj)
      changes
@@ -486,10 +487,13 @@
            duplicating-component? (or duplicating-component? (ctk/instance-head? obj))
            is-component-main?     (ctk/main-instance? obj)
 
-           original-ref-shape     (-> (ctf/find-original-ref-shape nil page libraries obj {:include-deleted? true})
-                                      :id)
            into-component?        (and duplicating-component?
                                        (ctn/in-any-component? objects parent))
+
+           level-delta            (if (some? level-delta)
+                                    level-delta
+                                    (ctn/get-nesting-level-delta objects obj parent))
+           new-shape-ref          (ctf/advance-shape-ref nil page libraries obj level-delta {:include-deleted? true})
 
            regenerate-component
            (fn [changes shape]
@@ -518,9 +522,9 @@
                (cond-> (or frame? group? bool?)
                  (assoc :shapes []))
 
-               (cond-> (and (some? original-ref-shape)
-                            (not= original-ref-shape (:shape-ref obj)))
-                 (assoc :shape-ref original-ref-shape))
+               (cond-> (and (some? new-shape-ref)
+                            (not= new-shape-ref (:shape-ref obj)))
+                 (assoc :shape-ref new-shape-ref))
 
                (gsh/move delta)
                (d/update-when :interactions #(ctsi/remap-interactions % ids-map objects))
@@ -561,6 +565,7 @@
                                                  ids-map
                                                  child
                                                  delta
+                                                 level-delta
                                                  libraries
                                                  library-data
                                                  it
