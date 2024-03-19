@@ -62,14 +62,11 @@
     }
   }
 
-  .submenu-icon {
-    position: absolute;
-    right: $s-16;
-    svg {
-      @extend .button-icon-small;
-      stroke: var(--menu-foreground-color);
-    }
+  .submenu-icon svg {
+    @extend .button-icon-small;
+    stroke: var(--menu-foreground-color);
   }
+
   &:hover {
     background-color: var(--menu-background-color-hover);
     .title {
