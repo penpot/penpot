@@ -13,10 +13,10 @@
   height: $s-32;
   min-height: $s-32;
   margin: $s-8 0 $s-4 $s-8;
-  padding-right: $s-8;
+  padding-right: $s-12;
 
   &.search {
-    padding: 0 $s-8 0 $s-12;
+    padding: 0 $s-12 0 $s-8;
     gap: $s-4;
     .filter-button {
       @include flexCenter;
