@@ -383,13 +383,16 @@
           (update :svg-attrs dissoc :fill)
           (assoc-in [:fills 0 :fill-color] (clr/parse color-style)))
 
-      (dm/get-in shape [:svg-attrs :fillOpacity])
+      ;; Only create an opacity if the color is setted. Othewise can create problems down the line
+      (and (or (clr/color-string? color-attr) (clr/color-string? color-style))
+           (dm/get-in shape [:svg-attrs :fillOpacity]))
       (-> (update :svg-attrs dissoc :fillOpacity)
           (update-in [:svg-attrs :style] dissoc :fillOpacity)
           (assoc-in [:fills 0 :fill-opacity] (-> (dm/get-in shape [:svg-attrs :fillOpacity])
                                                  (d/parse-double 1))))
 
-      (dm/get-in shape [:svg-attrs :style :fillOpacity])
+      (and (or (clr/color-string? color-attr) (clr/color-string? color-style))
+           (dm/get-in shape [:svg-attrs :style :fillOpacity]))
       (-> (update-in [:svg-attrs :style] dissoc :fillOpacity)
           (update :svg-attrs dissoc :fillOpacity)
           (assoc-in [:fills 0 :fill-opacity] (-> (dm/get-in shape [:svg-attrs :style :fillOpacity])

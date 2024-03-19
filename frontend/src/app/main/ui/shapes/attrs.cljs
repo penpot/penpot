@@ -62,32 +62,34 @@
   (obj/merge! props (get-border-props shape)))
 
 (defn add-fill!
-  [attrs fill-data render-id index type]
-  (let [index (if (some? index) (dm/str "-" index) "")]
-    (cond
-      (contains? fill-data :fill-image)
-      (let [id (dm/str "fill-image-" render-id)]
-        (obj/set! attrs "fill" (dm/str "url(#" id ")")))
+  ([attrs fill-data render-id index type]
+   (add-fill! attrs fill-data render-id index type "none"))
+  ([attrs fill-data render-id index type fill-default]
+   (let [index (if (some? index) (dm/str "-" index) "")]
+     (cond
+       (contains? fill-data :fill-image)
+       (let [id (dm/str "fill-image-" render-id)]
+         (obj/set! attrs "fill" (dm/str "url(#" id ")")))
 
-      (some? (:fill-color-gradient fill-data))
-      (let [id (dm/str "fill-color-gradient-" render-id index)]
-        (obj/set! attrs "fill" (dm/str "url(#" id ")")))
+       (some? (:fill-color-gradient fill-data))
+       (let [id (dm/str "fill-color-gradient-" render-id index)]
+         (obj/set! attrs "fill" (dm/str "url(#" id ")")))
 
-      (contains? fill-data :fill-color)
-      (obj/set! attrs "fill" (:fill-color fill-data))
+       (contains? fill-data :fill-color)
+       (obj/set! attrs "fill" (:fill-color fill-data))
 
-      :else
-      (obj/set! attrs "fill" "none"))
+       :else
+       (obj/set! attrs "fill" fill-default))
 
-    (when (contains? fill-data :fill-opacity)
-      (obj/set! attrs "fillOpacity" (:fill-opacity fill-data)))
+     (when (contains? fill-data :fill-opacity)
+       (obj/set! attrs "fillOpacity" (:fill-opacity fill-data)))
 
-    (when (and (= :text type)
-               (nil? (:fill-color-gradient fill-data))
-               (nil? (:fill-color fill-data)))
-      (obj/set! attrs "fill" "black"))
+     (when (and (= :text type)
+                (nil? (:fill-color-gradient fill-data))
+                (nil? (:fill-color fill-data)))
+       (obj/set! attrs "fill" "black"))
 
-    attrs))
+     attrs)))
 
 (defn add-stroke!
   [attrs data render-id index open-path?]
@@ -165,8 +167,10 @@
           (obj/map->obj)))))
 
 (defn get-fill-style
-  [fill-data index render-id type]
-  (add-fill! #js {} fill-data render-id index type))
+  ([fill-data index render-id type]
+   (add-fill! #js {} fill-data render-id index type))
+  ([fill-data index render-id type fill-default]
+   (add-fill! #js {} fill-data render-id index type fill-default)))
 
 (defn add-fill-props!
   ([props shape render-id]
@@ -242,8 +246,10 @@
            (obj/set! style "fillOpacity" opacity)))
 
        ^boolean (d/not-empty? shape-fills)
-       (let [fill (nth shape-fills 0)]
-         (obj/merge! style (get-fill-style fill render-id 0 shape-type)))
+       (let [fill (nth shape-fills 0)
+             svg-fill (obj/get svg-attrs "fill")
+             fill-default (d/nilv svg-fill "none")]
+         (obj/merge! style (get-fill-style fill render-id 0 shape-type fill-default)))
 
        (and ^boolean (cfh/path-shape? shape)
             ^boolean (empty? shape-fills))
