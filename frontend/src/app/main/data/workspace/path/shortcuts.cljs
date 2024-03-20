@@ -22,13 +22,9 @@
 (defn esc-pressed []
   (ptk/reify ::esc-pressed
     ptk/WatchEvent
-    (watch [_ state _]
+    (watch [_ _ _]
       ;; Not interrupt when we're editing a path
-      (let [edition-id (or (get-in state [:workspace-drawing :object :id])
-                           (get-in state [:workspace-local :edition]))
-            path-edit-mode (get-in state [:workspace-local :edit-path edition-id :edit-mode])]
-        (when-not (= :draw path-edit-mode)
-          (rx/of :interrupt))))))
+      (rx/of :interrupt))))
 
 (def shortcuts
   {:move-nodes      {:tooltip "M"
