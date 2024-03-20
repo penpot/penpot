@@ -706,6 +706,38 @@
 
          (rx/take-until stopper-s))))))
 
+(defn sync-head
+  [id]
+  (ptk/reify ::sync-head
+    ptk/WatchEvent
+    (watch [it state _]
+      (log/info :msg "SYNC-head of shape" :id (str id))
+      (let [file       (wsh/get-local-file state)
+            file-full  (wsh/get-local-file-full state)
+            libraries  (wsh/get-libraries state)
+
+            page-id    (:current-page-id state)
+            container  (cfh/get-container file :page page-id)
+            objects    (:objects container)
+
+            shape-inst (ctn/get-shape container id)
+            parent     (get objects (:parent-id shape-inst))
+            head       (ctn/get-component-shape container parent)
+
+            components-v2
+            (features/active-feature? state "components/v2")
+
+            changes
+            (-> (pcb/empty-changes it)
+                (pcb/with-container container)
+                (pcb/with-objects (:objects container))
+                (dwlh/generate-sync-shape-direct file-full libraries container (:id head) false components-v2))]
+
+        (log/debug :msg "SYNC-head finished" :js/rchanges (log-changes
+                                                           (:redo-changes changes)
+                                                           file))
+        (rx/of (dch/commit-changes changes))))))
+
 (defn reset-component
   "Cancels all modifications in the shape with the given id, and all its children, in
   the current page. Set all attributes equal to the ones in the linked component,
@@ -726,23 +758,26 @@
             components-v2
             (features/active-feature? state "components/v2")
 
-            shape-inst (ctn/get-shape container id)
             swap-slot (-> (ctn/get-shape container id)
                           (ctk/get-swap-slot))
+
+            undo-id (js/Symbol)
+
             changes
             (-> (pcb/empty-changes it)
                 (pcb/with-container container)
                 (pcb/with-objects (:objects container))
-                (dwlh/generate-sync-shape-direct file-full libraries container id true components-v2)
-                (cond->
-                 (some? swap-slot)
-                  ;;  We need to propagate parent changes
-                  (dwlh/generate-sync-shape-direct file-full libraries container (:parent-id shape-inst) true components-v2)))]
+                (dwlh/generate-sync-shape-direct file-full libraries container id true components-v2))]
 
         (log/debug :msg "RESET-COMPONENT finished" :js/rchanges (log-changes
                                                                  (:redo-changes changes)
                                                                  file))
-        (rx/of (dch/commit-changes changes))))))
+        (rx/of
+         (dwu/start-undo-transaction undo-id)
+         (dch/commit-changes changes)
+         (when (some? swap-slot)
+           (sync-head id))
+         (dwu/commit-undo-transaction undo-id))))))
 
 (defn reset-components
   "Cancels all modifications in the shapes with the given ids"

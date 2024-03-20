@@ -588,7 +588,7 @@
                                        (t/is (= (:fill-color shape1) clr/black))
                                        (t/is (= (:fill-opacity shape1) 0))
                                        (t/is (= (:name shape2) "Rect 1"))
-                                       (t/is (= (:touched shape2) nil))
+                                       (t/is (= (:touched shape2) #{:fill-group}))
                                        (t/is (= (:fill-color shape2) clr/test))
                                        (t/is (= (:fill-opacity shape2) 0.5))
                                        (t/is (= (:name c-instance2) "Board"))
