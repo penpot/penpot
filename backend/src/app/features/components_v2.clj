@@ -215,10 +215,15 @@
                 (update :pages-index update-vals fix-container)
                 (d/update-when :components update-vals fix-container))))
 
-        fix-page-invalid-options
+        fix-invalid-page
         (fn [file-data]
           (letfn [(update-page [page]
-                    (update page :options fix-options))
+                    (-> page
+                        (update :name (fn [name]
+                                        (if (nil? name)
+                                          "Page"
+                                          name)))
+                        (update :options fix-options)))
 
                   (fix-background [options]
                     (if (and (contains? options :background)
@@ -433,7 +438,8 @@
           (letfn [(fix-component [components id component]
                     (let [root-shape (ctst/get-shape component (:id component))]
                       (if (or (empty? (:objects component))
-                              (nil? root-shape))
+                              (nil? root-shape)
+                              (nil? (:type root-shape)))
                         (dissoc components id)
                         components)))]
 
@@ -992,7 +998,7 @@
 
     (-> file-data
         (fix-file-data)
-        (fix-page-invalid-options)
+        (fix-invalid-page)
         (fix-misc-shape-issues)
         (fix-recent-colors)
         (fix-missing-image-metadata)

@@ -995,6 +995,9 @@
                 (= key :style)
                 attrs
 
+                (= key :unicode)
+                attrs
+
                 (str/starts-with? (d/name key) "data-")
                 attrs
 
