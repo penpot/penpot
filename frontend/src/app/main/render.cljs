@@ -28,9 +28,7 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
    [app.config :as cfg]
-   [app.main.features :as features]
    [app.main.fonts :as fonts]
-   [app.main.store :as st]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.bool :as bool]
    [app.main.ui.shapes.circle :as circle]
@@ -46,7 +44,6 @@
    [app.main.ui.shapes.svg-raw :as svg-raw]
    [app.main.ui.shapes.text :as text]
    [app.main.ui.shapes.text.fontfaces :as ff]
-   [app.main.worker :as wrk]
    [app.util.dom :as dom]
    [app.util.http :as http]
    [app.util.strings :as ust]
@@ -671,16 +668,3 @@
      (do
        (l/warn :msg "imposter shape is nil")
        (rx/empty)))))
-
-(defn render-thumbnail
-  [file-id revn]
-  (->> (wrk/ask! {:cmd :thumbnails/generate-for-file
-                  :revn revn
-                  :file-id file-id
-                  :features (features/get-team-enabled-features @st/state)})
-       (rx/mapcat (fn [{:keys [fonts] :as result}]
-                    (->> (fonts/render-font-styles fonts)
-                         (rx/map (fn [styles]
-                                   (assoc result
-                                          :styles styles
-                                          :width 252))))))))
