@@ -13,6 +13,7 @@
    [app.common.logging :as log]
    [app.main.data.dashboard :as dd]
    [app.main.data.messages :as msg]
+   [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.rasterizer :as thr]
    [app.main.refs :as refs]
@@ -26,6 +27,7 @@
    [app.main.ui.dashboard.placeholder :refer [empty-placeholder loading-placeholder]]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
+   [app.main.worker :as wrk]
    [app.util.color :as uc]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
@@ -47,10 +49,23 @@
     (->> (rp/cmd! :create-file-thumbnail params)
          (rx/map :uri))))
 
+(defn render-thumbnail
+  [file-id revn]
+  (->> (wrk/ask! {:cmd :thumbnails/generate-for-file
+                  :revn revn
+                  :file-id file-id
+                  :features (features/get-team-enabled-features @st/state)})
+       (rx/mapcat (fn [{:keys [fonts] :as result}]
+                    (->> (fonts/render-font-styles fonts)
+                         (rx/map (fn [styles]
+                                   (assoc result
+                                          :styles styles
+                                          :width 252))))))))
+
 (defn- ask-for-thumbnail
   "Creates some hooks to handle the files thumbnails cache"
   [file-id revn]
-  (->> (render/render-thumbnail file-id revn)
+  (->> (render-thumbnail file-id revn)
        (rx/mapcat thr/render)
        (rx/mapcat (partial persist-thumbnail file-id revn))))
 
