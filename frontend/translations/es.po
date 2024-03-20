@@ -5149,7 +5149,7 @@ msgstr "Pulsar para cerrar la ruta"
 
 #, markdown
 msgid "workspace.top-bar.view-only"
-msgstr "**Modo inspección** (View only)"
+msgstr "**Inspeccionando código** (View only)"
 
 msgid "workspace.top-bar.read-only.done"
 msgstr "Hecho"
