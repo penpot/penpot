@@ -186,20 +186,25 @@
     :else
     (get-instance-root objects (get objects (:parent-id shape)))))
 
-(defn inside-component-main?
-  "Check if the shape is a component main instance or is inside one."
+(defn find-component-main
+  "If the shape is a component main instance or is inside one, return it"
   [objects shape]
   (cond
     (or (nil? shape) (cfh/root? shape))
-    false
+    nil
     (nil? (:parent-id shape))  ; This occurs in the root of components v1
-    true
+    shape
     (ctk/main-instance? shape)
-    true
+    shape
     (ctk/instance-root? shape)
-    false
+    nil
     :else
-    (inside-component-main? objects (get objects (:parent-id shape)))))
+    (find-component-main objects (get objects (:parent-id shape)))))
+
+(defn inside-component-main?
+  "Check if the shape is a component main instance or is inside one."
+  [objects shape]
+  (some? (find-component-main objects shape)))
 
 (defn in-any-component?
   "Check if the shape is part of any component (main or copy), wether it's
