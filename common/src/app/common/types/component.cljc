@@ -197,6 +197,12 @@
       (or (= slot-main slot-inst)
           (= (:id shape-main) slot-inst)))))
 
+(defn remove-swap-slot
+  [shape]
+  (update shape :touched
+          (fn [touched]
+            (into #{} (remove #(str/starts-with? (name %) "swap-slot-") touched)))))
+
 (defn get-component-root
   [component]
   (if (true? (:main-instance-id component))
