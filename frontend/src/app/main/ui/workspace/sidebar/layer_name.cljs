@@ -109,6 +109,8 @@
          :style {"--depth" depth "--parent-size" parent-size}
          :ref ref
          :on-double-click start-edit}
-        (d/nilv shape-name "")]
+        (if (dbg/enabled? :show-ids)
+          (str (d/nilv shape-name "") " | " (str/slice (str shape-id) 24))
+          (d/nilv shape-name ""))]
        (when (and (dbg/enabled? :show-touched) ^boolean shape-touched?)
          [:span {:class (stl/css :element-name-touched)} "*"])])))

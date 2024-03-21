@@ -26,6 +26,7 @@
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
+   [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.timers :as tm]
@@ -639,4 +640,6 @@
             [:& component-swap {:shapes copies}])
 
           (when (and (not swap-opened?) (not multi) components-v2)
-            [:& component-annotation {:id id :shape shape :component component}])])])))
+            [:& component-annotation {:id id :shape shape :component component}])
+          (when (dbg/enabled? :display-touched)
+            [:div ":touched " (str (:touched shape))])])])))
