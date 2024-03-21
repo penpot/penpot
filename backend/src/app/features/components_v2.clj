@@ -1364,7 +1364,7 @@
     (sbuilder/create-svg-shapes svg-data position objects frame-id frame-id #{} false)))
 
 (defn- process-media-object
-  [fdata page-id frame-id mobj position]
+  [fdata page-id frame-id mobj position width-cb]
   (let [page    (ctpl/get-page fdata page-id)
         file-id (get fdata :id)
 
@@ -1414,16 +1414,17 @@
                                      cfsh/prepare-create-artboard-from-selection)
         changes (fcb/concat-changes changes changes2)]
 
+    (width-cb (:width shape))
     (:redo-changes changes)))
 
 (defn- create-media-grid
-  [fdata page-id frame-id grid media-group]
+  [fdata page-id frame-id grid media-group width-cb]
   (letfn [(process [fdata mobj position]
             (let [position (gpt/add position (gpt/point grid-gap grid-gap))
                   tp       (dt/tpoint)
                   err      (volatile! false)]
               (try
-                (let [changes (process-media-object fdata page-id frame-id mobj position)]
+                (let [changes (process-media-object fdata page-id frame-id mobj position width-cb)]
                   (cp/process-changes fdata changes false))
 
                 (catch Throwable cause
@@ -1509,11 +1510,19 @@
                                                                           (:id frame)
                                                                           (:id frame)
                                                                           nil
-                                                                          true))]
-            (recur (next groups)
-                   (create-media-grid fdata page-id (:id frame) grid assets)
-                   (gpt/add position (gpt/point 0 (+ height (* 2 grid-gap) frame-gap))))))))))
+                                                                          true))
+                max-width (volatile! 0)
 
+                update-width (fn [width]
+                               (when (> width @max-width)
+                                 (vreset! max-width width)))
+
+                fdata' (create-media-grid fdata page-id (:id frame) grid assets update-width)]
+
+            (prn "max-width" @max-width)
+            (recur (next groups)
+                   fdata'
+                   (gpt/add position (gpt/point 0 (+ height (* 2 grid-gap) frame-gap))))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PRIVATE HELPERS
