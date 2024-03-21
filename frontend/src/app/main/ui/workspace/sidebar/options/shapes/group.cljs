@@ -59,7 +59,7 @@
         [layer-ids      layer-values]        (get-attrs [shape] objects :layer)
         [constraint-ids constraint-values]   (get-attrs [shape] objects :constraint)
         [fill-ids       fill-values]         (get-attrs [shape] objects :fill)
-        [shadow-ids     shadow-values]       (get-attrs [shape] objects :shadow)
+        [shadow-ids     _]                   (get-attrs [shape] objects :shadow)
         [blur-ids       blur-values]         (get-attrs [shape] objects :blur)
         [stroke-ids     stroke-values]       (get-attrs [shape] objects :stroke)
         [text-ids       text-values]         (get-attrs [shape] objects :text)
@@ -108,7 +108,7 @@
                                :shared-libs shared-libs}]
 
      (when-not (empty? shadow-ids)
-       [:& shadow-menu {:type type :ids shadow-ids :values shadow-values}])
+       [:& shadow-menu {:type type :ids ids :values (select-keys shape [:shadow])}])
 
      (when-not (empty? blur-ids)
        [:& blur-menu {:type type :ids blur-ids :values blur-values}])
