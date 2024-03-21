@@ -27,6 +27,8 @@
   (ptk/reify ::select-for-drawing
     ptk/UpdateEvent
     (update [_ state]
+      (when (= tool :comments)
+        (update state :workspace-layout disj :document-history))
       (-> state
           (update :workspace-drawing assoc :tool tool)
           ;; When changing drawing tool disable "scale text" mode
