@@ -7,6 +7,7 @@
 (ns app.main.ui.auth
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data.macros :as dm]
    [app.config :as cf]
    [app.main.ui.auth.login :refer [login-page]]
    [app.main.ui.auth.recovery :refer [recovery-page]]
@@ -35,41 +36,39 @@
          [:a {:href cf/privacy-policy-uri :target "_blank"} (tr "auth.privacy-policy")])])))
 
 (mf/defc auth
-  [{:keys [route] :as props}]
-  (let [section (get-in route [:data :name])
-        params  (:query-params route)
-        show-illustration? (contains? cf/flags :login-illustration)]
+  {::mf/props :obj}
+  [{:keys [route]}]
+  (let [section (dm/get-in route [:data :name])
+        params  (:query-params route)]
 
-    (mf/use-effect
-     #(dom/set-html-title (tr "title.default")))
+    (mf/with-effect []
+      (dom/set-html-title (tr "title.default")))
 
-    [:main {:class (stl/css-case :auth-section true
-                                 :no-illustration (not show-illustration?))}
-     (when show-illustration?
-       [:div {:class (stl/css :login-illustration)}
-        i/login-illustration])
+    [:main {:class (stl/css :auth-section)}
+     [:div {:class (stl/css :login-illustration)}
+      i/login-illustration]
 
      [:section {:class (stl/css :auth-content)}
-      [:*
-       [:a {:href "#/" :class (stl/css :logo-btn)} i/logo]
-       (case section
-         :auth-register
-         [:& register-page {:params params}]
+      [:a {:href "#/" :class (stl/css :logo-btn)} i/logo]
+      (case section
+        :auth-register
+        [:& register-page {:params params}]
 
-         :auth-register-validate
-         [:& register-validate-page {:params params}]
+        :auth-register-validate
+        [:& register-validate-page {:params params}]
 
-         :auth-register-success
-         [:& register-success-page {:params params}]
+        :auth-register-success
+        [:& register-success-page {:params params}]
 
-         :auth-login
-         [:& login-page {:params params}]
+        :auth-login
+        [:& login-page {:params params}]
 
-         :auth-recovery-request
-         [:& recovery-request-page]
+        :auth-recovery-request
+        [:& recovery-request-page]
 
-         :auth-recovery
-         [:& recovery-page {:params params}])]
+        :auth-recovery
+        [:& recovery-page {:params params}])
 
-      (when (contains? #{:auth-login :auth-register} section)
+      (when (or (= section :auth-login)
+                (= section :auth-register))
         [:& terms-login])]]))

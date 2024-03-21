@@ -13,7 +13,6 @@
   "A common flags that affects both: backend and frontend."
   [:enable-registration
    :enable-login-with-password
-   :enable-login-illustration
    :enable-feature-styles-v2])
 
 (defn parse
