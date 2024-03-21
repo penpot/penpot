@@ -759,7 +759,8 @@
                                                root-inst
                                                root-main
                                                omit-touched?
-                                               set-remote-synced?)
+                                               set-remote-synced?
+                                               components-v2)
                         changes))
 
           both (fn [changes child-inst child-main]
@@ -813,7 +814,8 @@
                         swapped
                         moved
                         false
-                        reset?))))
+                        reset?
+                        components-v2))))
 
 
 (defn- generate-rename-component
@@ -948,7 +950,8 @@
                                          component-container
                                          container
                                          root-inst
-                                         root-main))
+                                         root-main
+                                         components-v2))
 
           only-main (fn [changes child-main]
                       (remove-shape changes
@@ -1001,7 +1004,8 @@
                             swapped
                             moved
                             true
-                            true)
+                            true
+                            components-v2)
 
           ;; The inverse sync may be made on a component that is inside a
           ;; remote library. We need to separate changes that are from
@@ -1019,7 +1023,7 @@
 ;; ---- Operation generation helpers ----
 
 (defn- compare-children
-  [changes children-inst children-main container-inst container-main file libraries only-inst-cb only-main-cb both-cb swapped-cb moved-cb inverse? reset?]
+  [changes children-inst children-main container-inst container-main file libraries only-inst-cb only-main-cb both-cb swapped-cb moved-cb inverse? reset? components-v2]
   (log/trace :msg "Compare children")
   (loop [children-inst (seq (or children-inst []))
          children-main (seq (or children-main []))
@@ -1039,18 +1043,18 @@
         (reduce only-inst-cb changes children-inst)
 
         :else
-        (if (or (ctk/is-main-of? child-main child-inst)
+        (if (or (ctk/is-main-of? child-main child-inst components-v2)
                 (and (ctf/match-swap-slot? child-main child-inst container-inst container-main file libraries) (not reset?)))
           (recur (next children-inst)
                  (next children-main)
-                 (if (ctk/is-main-of? child-main child-inst)
+                 (if (ctk/is-main-of? child-main child-inst components-v2)
                    (both-cb changes child-inst child-main)
                    (swapped-cb changes child-inst child-main)))
 
-          (let [child-inst' (d/seek #(or (ctk/is-main-of? child-main %)
+          (let [child-inst' (d/seek #(or (ctk/is-main-of? child-main % components-v2)
                                          (and (ctf/match-swap-slot? child-main % container-inst container-main file libraries) (not reset?)))
                                     children-inst)
-                child-main' (d/seek #(or (ctk/is-main-of? % child-inst)
+                child-main' (d/seek #(or (ctk/is-main-of? % child-inst components-v2)
                                          (and (ctf/match-swap-slot? % child-inst container-inst container-main file libraries) (not reset?)))
                                     children-main)]
             (cond
@@ -1066,7 +1070,7 @@
 
               :else
               (if inverse?
-                (let [is-main? (ctk/is-main-of? child-inst child-main')]
+                (let [is-main? (ctk/is-main-of? child-inst child-main' components-v2)]
                   (recur (next children-inst)
                          (remove #(= (:id %) (:id child-main')) children-main)
                          (cond-> changes
@@ -1076,7 +1080,7 @@
                            (swapped-cb child-inst child-main')
                            :always
                            (moved-cb child-inst child-main'))))
-                (let [is-main? (ctk/is-main-of? child-inst' child-main)]
+                (let [is-main? (ctk/is-main-of? child-inst' child-main components-v2)]
                   (recur (remove #(= (:id %) (:id child-inst')) children-inst)
                          (next children-main)
                          (cond-> changes
@@ -1088,13 +1092,13 @@
                            (moved-cb child-inst' child-main))))))))))))
 
 (defn- add-shape-to-instance
-  [changes component-shape index component-page container root-instance root-main omit-touched? set-remote-synced?]
+  [changes component-shape index component-page container root-instance root-main omit-touched? set-remote-synced? components-v2]
   (log/info :msg (str "ADD [P " (pretty-uuid (:id container)) "] "
                       (:name component-shape)
                       " "
                       (pretty-uuid (:id component-shape))))
   (let [component-parent-shape (ctn/get-shape component-page (:parent-id component-shape))
-        parent-shape           (d/seek #(ctk/is-main-of? component-parent-shape %)
+        parent-shape           (d/seek #(ctk/is-main-of? component-parent-shape % components-v2)
                                        (cfh/get-children-with-self (:objects container)
                                                                    (:id root-instance)))
         all-parents            (into [(:id parent-shape)]
@@ -1163,13 +1167,13 @@
       changes')))
 
 (defn- add-shape-to-main
-  [changes shape index component component-container page root-instance root-main]
+  [changes shape index component component-container page root-instance root-main components-v2]
   (log/info :msg (str "ADD [C " (pretty-uuid (:id component-container)) "] "
                       (:name shape)
                       " "
                       (pretty-uuid (:id shape))))
   (let [parent-shape           (ctn/get-shape page (:parent-id shape))
-        component-parent-shape (d/seek #(ctk/is-main-of? % parent-shape)
+        component-parent-shape (d/seek #(ctk/is-main-of? % parent-shape components-v2)
                                        (cfh/get-children-with-self (:objects component-container)
                                                                    (:id root-main)))
         all-parents  (into [(:id component-parent-shape)]
