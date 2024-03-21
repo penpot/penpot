@@ -787,9 +787,14 @@
 (defn relocate-shapes-changes [it objects parents parent-id page-id to-index ids
                                groups-to-delete groups-to-unmask shapes-to-detach
                                shapes-to-reroot shapes-to-deroot shapes-to-unconstraint]
-  (let [ordered-indexes (cfh/order-by-indexed-shapes objects ids)
-        shapes (map (d/getf objects) ordered-indexes)
-        parent (get objects parent-id)]
+  (let [ordered-indexes       (cfh/order-by-indexed-shapes objects ids)
+        shapes                (map (d/getf objects) ordered-indexes)
+        parent                (get objects parent-id)
+        component-main-parent (ctn/find-component-main objects parent false)
+        child-heads
+        (->> ordered-indexes
+             (mapcat #(ctn/get-child-heads objects %))
+             (map :id))]
 
     (-> (pcb/empty-changes it page-id)
         (pcb/with-objects objects)
@@ -801,6 +806,17 @@
         ;; Remove the hide in viewer flag
         (cond-> (and (not= uuid/zero parent-id) (cfh/frame-shape? parent))
           (pcb/update-shapes ordered-indexes #(cond-> % (cfh/frame-shape? %) (assoc :hide-in-viewer true))))
+
+        ;; Remove the swap slots if it is moving to a different component
+        (pcb/update-shapes child-heads
+                           (fn [shape]
+                             (cond-> shape
+                               (not= component-main-parent (ctn/find-component-main objects shape false))
+                               (ctk/remove-swap-slot))))
+
+        ;; Add component-root property when moving a component outside a component
+        (cond-> (not (ctn/get-instance-root objects parent))
+          (pcb/update-shapes child-heads #(assoc % :component-root true)))
 
         ;; Move the shapes
         (pcb/change-parent parent-id

@@ -461,9 +461,9 @@
 ;; TODO: move to common.files.shape-helpers
 (defn- prepare-duplicate-shape-change
   ([changes objects page unames update-unames! ids-map obj delta level-delta libraries library-data it file-id]
-   (prepare-duplicate-shape-change changes objects page unames update-unames! ids-map obj delta level-delta libraries library-data it file-id (:frame-id obj) (:parent-id obj) false false))
+   (prepare-duplicate-shape-change changes objects page unames update-unames! ids-map obj delta level-delta libraries library-data it file-id (:frame-id obj) (:parent-id obj) false false true))
 
-  ([changes objects page unames update-unames! ids-map obj delta level-delta libraries library-data it file-id frame-id parent-id duplicating-component? child?]
+  ([changes objects page unames update-unames! ids-map obj delta level-delta libraries library-data it file-id frame-id parent-id duplicating-component? child? remove-swap-slot?]
    (cond
      (nil? obj)
      changes
@@ -486,6 +486,7 @@
                                       (ctk/instance-root? obj))
            duplicating-component? (or duplicating-component? (ctk/instance-head? obj))
            is-component-main?     (ctk/main-instance? obj)
+           subinstance-head?      (ctk/subinstance-head? obj)
 
            into-component?        (and duplicating-component?
                                        (ctn/in-any-component? objects parent))
@@ -507,6 +508,9 @@
                       :name name
                       :parent-id parent-id
                       :frame-id frame-id)
+
+               (cond-> (and subinstance-head? remove-swap-slot?)
+                 (ctk/remove-swap-slot))
 
                (dissoc :shapes
                        :main-instance
@@ -573,7 +577,11 @@
                                                  (if frame? new-id frame-id)
                                                  new-id
                                                  duplicating-component?
-                                                 true))
+                                                 true
+                                                 (and remove-swap-slot?
+                                                      ;; only remove swap slot of children when the current shape
+                                                      ;; is not a subinstance head
+                                                      (not subinstance-head?))))
                changes
                (map (d/getf objects) (:shapes obj)))))))
 
