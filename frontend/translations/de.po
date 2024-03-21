@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-02-15 15:01+0000\n"
+"PO-Revision-Date: 2024-03-22 16:01+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.4-dev\n"
+"X-Generator: Weblate 5.5-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -4836,7 +4836,7 @@ msgid "workspace.viewport.click-to-close-path"
 msgstr "Klicken Sie, um den Pfad zu schließen"
 
 msgid "workspace.options.component.copy"
-msgstr "Kopieren"
+msgstr "Kopie"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.developer"
@@ -4859,7 +4859,7 @@ msgid "workspace.options.stroke-cap.square-marker-short"
 msgstr "Rechteck"
 
 msgid "workspace.options.component.main"
-msgstr "Main"
+msgstr "Hauptkomponente"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.freelancer"
