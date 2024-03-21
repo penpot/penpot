@@ -937,12 +937,14 @@
   (ptk/reify ::add-component-for-swap
     ptk/WatchEvent
     (watch [it _ _]
-      (let [objects   (:objects page)
-            position  (gpt/point (:x shape) (:y shape))
-            changes   (-> (pcb/empty-changes it (:id page))
-                          (pcb/set-undo-group undo-group)
-                          (pcb/with-objects objects))
-            position  (-> position (with-meta {:cell target-cell}))
+      (let [objects      (:objects page)
+            position     (gpt/point (:x shape) (:y shape))
+            changes      (-> (pcb/empty-changes it (:id page))
+                             (pcb/set-undo-group undo-group)
+                             (pcb/with-objects objects))
+            position     (-> position (with-meta {:cell target-cell}))
+            parent       (get objects (:parent-id shape))
+            inside-comp? (ctn/in-any-component? objects parent)
 
             [new-shape changes]
             (dwlh/generate-instantiate-component changes
@@ -958,7 +960,9 @@
                                                  {:force-frame? true})
 
             new-shape (cond-> new-shape
-                        (nil? (ctk/get-swap-slot new-shape))
+                        ; if the shape isn't inside a main component, it shouldn't have a swap slot
+                        (and (nil? (ctk/get-swap-slot new-shape))
+                             inside-comp?)
                         (update :touched cfh/set-touched-group (-> (ctf/find-swap-slot shape
                                                                                        page
                                                                                        {:id (:id file)
