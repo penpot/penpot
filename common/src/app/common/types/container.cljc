@@ -221,7 +221,7 @@
     true
     (ctk/main-instance? shape)
     true
-    (ctk/instance-head? shape)
+    (ctk/instance-root? shape)
     false
     :else
     (inside-component-main? objects (get objects (:parent-id shape)))))
