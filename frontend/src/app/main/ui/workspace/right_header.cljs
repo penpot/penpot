@@ -10,6 +10,7 @@
    [app.main.data.events :as ev]
    [app.main.data.shortcuts :as scd]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.drawing.common :as dwc]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -21,7 +22,6 @@
    [app.main.ui.workspace.presence :refer [active-sessions]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.timers :as ts]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
@@ -141,7 +141,7 @@
 (mf/defc right-header
   {::mf/wrap-props false}
   [{:keys [file layout page-id]}]
-  (let [file-id          (:id file)
+  (let [file-id           (:id file)
 
         zoom              (mf/deref refs/selected-zoom)
         read-only?        (mf/use-ctx ctx/workspace-read-only?)
@@ -169,33 +169,29 @@
 
         active-comments
         (mf/use-fn
+         (mf/deps layout)
          (fn []
            (st/emit! :interrupt
-                     (dw/clear-edition-mode))
-           ;; Delay so anything that launched :interrupt can finish
-           (ts/schedule 100 #(st/emit! (dw/select-for-drawing :comments)))))
+                     (dw/clear-edition-mode)
+                     (-> (dw/remove-layout-flag :document-history)
+                         (vary-meta assoc ::ev/origin "workspace-header"))
+                     (dw/select-for-drawing :comments))))
 
         toggle-comments
         (mf/use-fn
          (mf/deps selected-drawtool)
          (fn [_]
-           (when (contains? layout :document-history)
-             (st/emit! (-> (dw/remove-layout-flag :document-history)
-                           (vary-meta assoc ::ev/origin "workspace-header"))))
-
-           (if (= :comments selected-drawtool)
-             (st/emit! :interrupt)
+           (if (= selected-drawtool :comments)
+             (st/emit! (dwc/clear-drawing))
              (active-comments))))
 
         toggle-history
         (mf/use-fn
          (mf/deps selected-drawtool)
          (fn []
-
            (when (= :comments selected-drawtool)
              (st/emit! :interrupt
-                       (-> (dw/toggle-layout-flag :comments)
-                           (vary-meta assoc ::ev/origin "workspace-header"))))
+                       (dw/clear-edition-mode)))
 
            (st/emit! (-> (dw/toggle-layout-flag :document-history)
                          (vary-meta assoc ::ev/origin "workspace-header")))))]

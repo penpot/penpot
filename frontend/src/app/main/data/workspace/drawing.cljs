@@ -28,6 +28,10 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
+          (update :workspace-layout (fn [workspace-layout]
+                                      (if (= tool :comments)
+                                        (disj workspace-layout :document-history)
+                                        workspace-layout)))
           (update :workspace-drawing assoc :tool tool)
           ;; When changing drawing tool disable "scale text" mode
           ;; automatically, to help users that ignore how this

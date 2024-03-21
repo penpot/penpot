@@ -266,7 +266,7 @@
 
         rule-area-size (/ rulers/ruler-area-size zoom)]
 
-    (hooks/setup-dom-events zoom disable-paste in-viewport? workspace-read-only?)
+    (hooks/setup-dom-events zoom disable-paste in-viewport? workspace-read-only? drawing-tool drawing-path?)
     (hooks/setup-viewport-size vport viewport-ref)
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool drawing-path? node-editing? z? workspace-read-only?)
     (hooks/setup-keyboard alt? mod? space? z? shift?)
