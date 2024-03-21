@@ -17,11 +17,6 @@
   width: 100%;
   overflow: auto;
 
-  &.no-illustration {
-    display: flex;
-    justify-content: center;
-  }
-
   @media (max-width: 992px) {
     display: flex;
     justify-content: center;

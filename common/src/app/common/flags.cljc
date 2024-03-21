@@ -12,9 +12,7 @@
 (def default
   "A common flags that affects both: backend and frontend."
   [:enable-registration
-   :enable-login-with-password
-   :enable-login-illustration
-   :enable-feature-styles-v2])
+   :enable-login-with-password])
 
 (defn parse
   [& flags]
@@ -35,5 +33,3 @@
 
             :else
             (recur (rest flags) result)))))))
-
-

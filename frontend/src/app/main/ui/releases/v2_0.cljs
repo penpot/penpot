@@ -11,10 +11,6 @@
    [app.main.ui.releases.common :as c]
    [rumext.v2 :as mf]))
 
-(defmethod c/render-release-notes "1.21"
-  [data]
-  (c/render-release-notes (assoc data :version "2.0")))
-
 ;; TODO: Review all copies and alt text
 (defmethod c/render-release-notes "2.0"
   [{:keys [slide klass next finish navigate version]}]

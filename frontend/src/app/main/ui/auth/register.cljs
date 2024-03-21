@@ -18,19 +18,11 @@
    [app.main.ui.components.forms :as fm]
    [app.main.ui.components.link :as lk]
    [app.main.ui.icons :as i]
-   [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.i18n :refer [tr tr-html]]
    [app.util.router :as rt]
    [beicon.v2.core :as rx]
    [cljs.spec.alpha :as s]
    [rumext.v2 :as mf]))
-
-(mf/defc demo-warning
-  [_]
-  [:div {:class (stl/css :banner)}
-   [:& context-notification
-    {:type :warning
-     :content (tr "auth.demo-warning")}]])
 
 ;; --- PAGE: Register
 
@@ -86,7 +78,7 @@
   (st/emit! (rt/nav :auth-register-validate {} params)))
 
 (mf/defc register-form
-  [{:keys [params on-success-callback] :as props}]
+  [{:keys [params on-success-callback]}]
   (let [initial (mf/use-memo (mf/deps params) (constantly params))
         form    (fm/use-form :spec ::register-form
                              :validators [validate
@@ -136,7 +128,8 @@
 
 
 (mf/defc register-methods
-  [{:keys [params on-success-callback] :as props}]
+  {::mf/props :obj}
+  [{:keys [params on-success-callback]}]
   [:*
    (when login/show-alt-login-buttons?
      [:*
@@ -146,14 +139,15 @@
    [:& register-form {:params params :on-success-callback on-success-callback}]])
 
 (mf/defc register-page
-  [{:keys [params] :as props}]
+  {::mf/props :obj}
+  [{:keys [params]}]
   [:div {:class (stl/css :auth-form)}
    [:h1 {:class (stl/css :auth-title)
          :data-test "registration-title"} (tr "auth.register-title")]
    [:div {:class (stl/css :auth-subtitle)} (tr "auth.register-subtitle")]
 
    (when (contains? cf/flags :demo-warning)
-     [:& demo-warning])
+     [:& login/demo-warning])
 
    [:& register-methods {:params params}]
 
@@ -212,7 +206,7 @@
                      ::accept-newsletter-subscription])))
 
 (mf/defc register-validate-form
-  [{:keys [params on-success-callback] :as props}]
+  [{:keys [params on-success-callback]}]
   (let [form       (fm/use-form :spec ::register-validate-form
                                 :validators [(fm/validate-not-empty :fullname (tr "auth.name.not-all-space"))
                                              (fm/validate-length :fullname fm/max-length-allowed (tr "auth.name.too-long"))]
@@ -263,7 +257,7 @@
 
 
 (mf/defc register-validate-page
-  [{:keys [params] :as props}]
+  [{:keys [params]}]
   [:div {:class (stl/css :auth-form)}
    [:h1 {:class (stl/css :auth-title)
          :data-test "register-title"} (tr "auth.register-title")]
@@ -279,7 +273,7 @@
       (tr "labels.go-back")]]]])
 
 (mf/defc register-success-page
-  [{:keys [params] :as props}]
+  [{:keys [params]}]
   [:div {:class (stl/css :auth-form :register-success)}
    [:div {:class (stl/css :notification-icon)} i/icon-verify]
    [:div {:class (stl/css :notification-text)} (tr "auth.verification-email-sent")]

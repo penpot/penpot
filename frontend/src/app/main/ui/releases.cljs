@@ -91,4 +91,4 @@
 
 (defmethod rc/render-release-notes "0.0"
   [params]
-  (rc/render-release-notes (assoc params :version "1.21")))
+  (rc/render-release-notes (assoc params :version "2.0")))
