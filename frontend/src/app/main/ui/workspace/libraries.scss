@@ -182,6 +182,11 @@
   margin-block-start: $s-16;
 }
 
+.libraries-updates-column {
+  display: grid;
+  gap: $s-4;
+}
+
 .libraries-updates-item {
   @include bodyLargeTypography;
   display: grid;
