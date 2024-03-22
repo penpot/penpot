@@ -154,6 +154,17 @@
      :else
      (get-head-shape objects (get objects (:parent-id shape)) options))))
 
+(defn get-child-heads
+  "Get all recursive childs that are heads (when a head is found, do not
+   continue down looking for subsequent nested heads)."
+  [objects shape-id]
+  (let [shape (get objects shape-id)]
+    (if (nil? shape)
+      []
+      (if (ctk/instance-head? shape)
+        [shape]
+        (mapcat #(get-child-heads objects %) (:shapes shape))))))
+
 (defn get-parent-heads
   "Get all component heads that are ancestors of the shape, in top-down order
    (include self if it's also a head)."
@@ -169,6 +180,20 @@
   (->> (cfh/get-parents-with-self objects (:id shape))
        (filter #(and (ctk/instance-head? %) (ctk/in-component-copy? %)))
        (reverse)))
+
+(defn get-nesting-level-delta
+  "Get how many levels a shape will 'go up' if moved under the new parent."
+  [objects shape new-parent]
+  (let [orig-heads (->> (get-parent-copy-heads objects shape)
+                        (remove #(= (:id %) (:id shape))))
+        dest-heads (get-parent-copy-heads objects new-parent)
+
+        ;; Calculate how many parent heads share in common the original
+        ;; shape and the new parent.
+        pairs        (map vector orig-heads dest-heads)
+        common-count (count (take-while (fn [a b] (= a b)) pairs))]
+
+    (- (count orig-heads) common-count)))
 
 (defn get-instance-root
   "Get the parent shape at the top of the component instance (main or copy)."
