@@ -683,7 +683,6 @@
         deleted   (when dedupe
                     (-> (db/exec-one! conn [sql:remove-not-started-tasks task queue label])
                         :next.jdbc/update-count))]
-
     (l/trc :hint "submit task"
            :name task
            :queue queue
