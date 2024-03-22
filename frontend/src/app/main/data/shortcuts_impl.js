@@ -16,12 +16,20 @@ if (Mousetrap.addKeycodes) {
 }
 
 const target = Mousetrap.prototype || Mousetrap;
-target.stopCallback = function(e, element, combo) {
+target.stopCallback = function (e, element, combo) {
   // if the element has the data attribute "mousetrap-dont-stop" then no need
   // to stop. It should be used like <div data-mousetrap-dont-stop>...</div>
   // or :div {:data-mousetrap-dont-stop true}
   if ('mousetrapDontStop' in element.dataset) {
     return false
+  }
+
+  if ('composedPath' in e && typeof e.composedPath === 'function') {
+    // For open shadow trees, update `element` so that the following check works.
+    const initialEventTarget = e.composedPath()[0];
+    if (initialEventTarget !== e.target) {
+      element = initialEventTarget;
+    }
   }
 
   // stop for input, select, textarea and button
