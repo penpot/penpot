@@ -19,28 +19,24 @@
 }
 
 .separator {
-  border-color: $db-quaternary;
+  border-color: var(--modal-separator-backogrund-color);
   margin: 0;
-}
-
-.error-wrapper {
-  padding-block-end: $s-8;
 }
 
 .auth-title {
   @include bigTitleTipography;
-  color: $df-primary;
+  color: var(--title-foreground-color-hover);
 }
 
 .auth-subtitle {
-  font-size: $fs-14;
-  color: $df-secondary;
+  @include smallTitleTipography;
+  color: var(--title-foreground-color);
 }
 
 .auth-tagline {
   @include smallTitleTipography;
   margin: 0;
-  color: $df-secondary;
+  color: var(--title-foreground-color);
 }
 
 .form-field {
@@ -50,46 +46,32 @@
 }
 
 .buttons-stack {
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: $s-8;
-
-  button,
-  :global(.btn-primary) {
-    @extend .button-primary;
-    font-size: $fs-11;
-    height: $s-40;
-    text-transform: uppercase;
-    width: 100%;
-  }
 }
 
-.link-entry {
+.login-button,
+.login-ldap-button {
+  @extend .button-primary;
+  @include uppercaseTitleTipography;
+  height: $s-40;
+  width: 100%;
+}
+
+.demo-account,
+.go-back {
   display: flex;
   flex-direction: column;
   gap: $s-12;
-  border-top: $s-1 solid $db-quaternary;
-
-  span {
-    text-align: center;
-    font-size: $fs-14;
-    color: $df-secondary;
-  }
-  a {
-    @extend .button-secondary;
-    height: $s-40;
-    text-transform: uppercase;
-    font-size: $fs-11;
-  }
-}
-
-.go-back {
-  border-top: none;
-}
-
-.demo-account {
   padding: 0;
-  border-top: none;
+  border-block-start: none;
+}
+
+.demo-account-link,
+.go-back-link {
+  @extend .button-secondary;
+  @include uppercaseTitleTipography;
+  height: $s-40;
 }
 
 .links {
@@ -98,7 +80,8 @@
 }
 
 .register,
-.account {
+.account,
+.recovery-request {
   display: flex;
   justify-content: center;
   gap: $s-8;
@@ -106,21 +89,23 @@
 }
 
 .register-text,
-.account-text {
+.account-text,
+.recovery-text {
+  @include smallTitleTipography;
   text-align: right;
-  font-size: $fs-14;
-  color: $df-secondary;
+  color: var(--title-foreground-color);
 }
 
 .register-link,
-.account-link {
+.account-link,
+.recovery-link,
+.forgot-pass-link {
+  @include smallTitleTipography;
   text-align: left;
   background-color: transparent;
   border: none;
   display: inline;
-  font-size: $fs-14;
-  color: $da-primary;
-  font-weight: $fw400;
+  color: var(--link-foreground-color);
 
   &:hover {
     text-decoration: underline;
@@ -130,50 +115,37 @@
 .forgot-password {
   display: flex;
   justify-content: flex-end;
-  a {
-    font-size: $fs-14;
-    color: $da-primary;
-    font-weight: $fw400;
-  }
-  &:hover {
-    text-decoration: underline;
-  }
 }
 
 .submit-btn,
 .register-btn,
 .recover-btn {
   @extend .button-primary;
-  font-size: $fs-11;
+  @include uppercaseTitleTipography;
   height: $s-40;
-  text-transform: uppercase;
   width: 100%;
 }
 
 .login-btn {
-  border-radius: $br-8;
-  font-size: $fs-14;
+  @include smallTitleTipography;
   display: flex;
   align-items: center;
   gap: $s-6;
   width: 100%;
-  background-color: $db-tertiary;
-  color: var(--app-white);
+  border-radius: $br-8;
+  background-color: var(--button-secondary-background-color-rest);
+  color: var(--button-foreground-color-focus);
   span {
-    padding-top: $s-2;
+    padding-block-start: $s-2;
   }
 
   &:hover {
-    color: var(--app-white);
-    background-color: $db-quaternary;
+    color: var(--button-foreground-color-focus);
+    background-color: var(--button-secondary-background-color-hover);
   }
 }
 
 .auth-buttons {
   display: flex;
   gap: $s-8;
-}
-
-.banner {
-  margin: $s-16 0;
 }

@@ -153,7 +153,6 @@
    [:div {:class (stl/css :links)}
     [:div {:class (stl/css :account)}
      [:span {:class (stl/css :account-text)} (tr "auth.already-have-account") " "]
-
      [:& lk/link {:action  #(st/emit! (rt/nav :auth-login {} params))
                   :class (stl/css :account-link)
                   :data-test "login-here-link"}
@@ -162,8 +161,9 @@
     (when (contains? cf/flags :demo-users)
       [:*
        [:hr {:class (stl/css :separator)}]
-       [:div {:class (stl/css :link-entry :demo-account)}
-        [:& lk/link {:action  #(st/emit! (du/create-demo-profile))}
+       [:div {:class (stl/css :demo-account)}
+        [:& lk/link {:action  #(st/emit! (du/create-demo-profile))
+                     :class (stl/css :demo-account-link)}
          (tr "auth.create-demo-account")]]])]])
 
 ;; --- PAGE: register validation
@@ -270,8 +270,9 @@
    [:& register-validate-form {:params params}]
 
    [:div {:class (stl/css :links)}
-    [:div {:class (stl/css :link-entry :go-back)}
-     [:& lk/link {:action  #(st/emit! (rt/nav :auth-register {} {}))}
+    [:div {:class (stl/css :go-back)}
+     [:& lk/link {:action  #(st/emit! (rt/nav :auth-register {} {}))
+                  :class (stl/css :go-back-link)}
       (tr "labels.go-back")]]]])
 
 (mf/defc register-success-page

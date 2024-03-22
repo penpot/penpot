@@ -38,10 +38,9 @@
 (mf/defc demo-warning
   {::mf/props :obj}
   []
-  [:div {:class (stl/css :banner)}
-   [:& context-notification
-    {:type :warning
-     :content (tr "auth.demo-warning")}]])
+  [:& context-notification
+   {:type :warning
+    :content (tr "auth.demo-warning")}])
 
 (defn- login-with-oidc
   [event provider params]
@@ -166,12 +165,11 @@
 
     [:*
      (when-let [message @error]
-       [:div {:class (stl/css :error-wrapper)}
-        [:& context-notification
-         {:type :warning
-          :content message
-          :data-test "login-banner"
-          :role "alert"}]])
+       [:& context-notification
+        {:type :warning
+         :content message
+         :data-test "login-banner"
+         :role "alert"}])
 
      [:& fm/form {:on-submit on-submit
                   :class (stl/css :login-form)
@@ -195,6 +193,7 @@
                      (contains? cf/flags :login-with-password)))
         [:div {:class (stl/css :fields-row :forgot-password)}
          [:& lk/link {:action on-recovery-request
+                      :class (stl/css :forgot-pass-link)
                       :data-test "forgot-password"}
           (tr "auth.forgot-password")]])
 
@@ -209,6 +208,7 @@
        (when (contains? cf/flags :login-with-ldap)
          [:> fm/submit-button*
           {:label (tr "auth.login-with-ldap-submit")
+           :class (stl/css :login-ldap-button)
            :on-click on-submit-ldap}])]]]))
 
 (mf/defc login-buttons

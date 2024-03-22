@@ -93,6 +93,7 @@
    [:& recovery-form {:params params}]
 
    [:div {:class (stl/css :links)}
-    [:div {:class (stl/css :link-entry :go-back)}
-     [:a {:on-click #(st/emit! (rt/nav :auth-login))}
+    [:div {:class (stl/css :go-back)}
+     [:a {:on-click #(st/emit! (rt/nav :auth-login))
+          :class (stl/css :go-back-link)}
       (tr "profile.recovery.go-to-login")]]]])
