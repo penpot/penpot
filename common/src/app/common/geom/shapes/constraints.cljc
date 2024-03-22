@@ -326,7 +326,9 @@
             reset-modifiers?
             (and (gpo/axis-aligned? parent-bounds)
                  (gpo/axis-aligned? child-bounds)
-                 (gpo/axis-aligned? transformed-parent-bounds))
+                 (gpo/axis-aligned? transformed-parent-bounds)
+                 (not= :scale constraints-h)
+                 (not= :scale constraints-v))
 
             modifiers
             (if reset-modifiers?

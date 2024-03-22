@@ -311,6 +311,19 @@
 
     [new-root-shape (map remap-frame-id new-shapes) updated-shapes]))
 
+(defn remove-swap-keep-attrs
+  "Remove flex children properties except the fit-content for flex layouts. These are properties
+  that we don't have to propagate to copies but will be respected when swapping components"
+  [shape]
+  (let [layout-item-h-sizing (when (and (ctl/flex-layout? shape) (ctl/auto-width? shape)) :auto)
+        layout-item-v-sizing (when (and (ctl/flex-layout? shape) (ctl/auto-height? shape)) :auto)]
+    (-> shape
+        (d/without-keys ctk/swap-keep-attrs)
+        (cond-> (some? layout-item-h-sizing)
+          (assoc :layout-item-h-sizing layout-item-h-sizing))
+        (cond-> (some? layout-item-v-sizing)
+          (assoc :layout-item-v-sizing layout-item-v-sizing)))))
+
 (defn make-component-instance
   "Generate a new instance of the component inside the given container.
 
@@ -331,7 +344,7 @@
                            (-> (get-shape component-page (:main-instance-id component))
                                (assoc :parent-id nil) ;; On v2 we force parent-id to nil in order to behave like v1
                                (assoc :frame-id uuid/zero)
-                               (d/without-keys ctk/swap-keep-attrs))
+                               (remove-swap-keep-attrs))
                            (get-shape component (:id component)))
 
          orig-pos        (gpt/point (:x component-shape) (:y component-shape))
