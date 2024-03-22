@@ -189,7 +189,14 @@
         (mf/use-fn
          (mf/deps style-code markup-code images-data)
          (fn []
-           (wapi/write-to-clipboard (gen-all-code style-code markup-code images-data))))
+           (wapi/write-to-clipboard (gen-all-code style-code markup-code images-data))
+           (let [origin (if (= :workspace from)
+                          "workspace"
+                          "viewer")]
+             (st/emit! (ptk/event ::ev/event
+                                  {::ev/name "copy-inspect-code"
+                                   ::ev/origin origin
+                                   :type "all"})))))
 
         ;;handle-open-review
         ;;(mf/use-fn
