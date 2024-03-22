@@ -61,8 +61,12 @@ msgid "auth.login-submit"
 msgstr "Entrar"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "¡Un placer verte de nuevo!"
+msgid "auth.login-account-title"
+msgstr "Entrar en mi cuenta"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-tagline"
+msgstr "Penpot es la herramienta de diseño libre y open-source para la colaboración entre Diseño y Código"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"

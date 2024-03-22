@@ -6,21 +6,21 @@
 
 @use "common/refactor/common-refactor.scss" as *;
 
-.auth-form {
+.auth-form-wrapper {
   width: 100%;
-  padding-block-end: $s-16;
-
+  padding-block-end: 0;
+  display: grid;
+  gap: $s-24;
   form {
     display: flex;
     flex-direction: column;
     gap: $s-12;
-    margin-block-end: $s-24;
   }
 }
 
 .separator {
   border-color: $db-quaternary;
-  margin: $s-24 0;
+  margin: 0;
 }
 
 .error-wrapper {
@@ -33,8 +33,13 @@
 }
 
 .auth-subtitle {
-  margin-top: $s-24;
   font-size: $fs-14;
+  color: $df-secondary;
+}
+
+.auth-tagline {
+  @include smallTitleTipography;
+  margin: 0;
   color: $df-secondary;
 }
 
@@ -63,7 +68,6 @@
   display: flex;
   flex-direction: column;
   gap: $s-12;
-  padding: $s-24 0;
   border-top: $s-1 solid $db-quaternary;
 
   span {
@@ -77,8 +81,49 @@
     text-transform: uppercase;
     font-size: $fs-11;
   }
-  &.register a {
-    @extend .button-primary;
+}
+
+.go-back {
+  border-top: none;
+}
+
+.demo-account {
+  padding: 0;
+  border-top: none;
+}
+
+.links {
+  display: grid;
+  gap: $s-24;
+}
+
+.register,
+.account {
+  display: flex;
+  justify-content: center;
+  gap: $s-8;
+  padding: 0;
+}
+
+.register-text,
+.account-text {
+  text-align: right;
+  font-size: $fs-14;
+  color: $df-secondary;
+}
+
+.register-link,
+.account-link {
+  text-align: left;
+  background-color: transparent;
+  border: none;
+  display: inline;
+  font-size: $fs-14;
+  color: $da-primary;
+  font-weight: $fw400;
+
+  &:hover {
+    text-decoration: underline;
   }
 }
 
@@ -87,8 +132,11 @@
   justify-content: flex-end;
   a {
     font-size: $fs-14;
-    color: $df-secondary;
+    color: $da-primary;
     font-weight: $fw400;
+  }
+  &:hover {
+    text-decoration: underline;
   }
 }
 
@@ -109,51 +157,21 @@
   align-items: center;
   gap: $s-6;
   width: 100%;
-
+  background-color: $db-tertiary;
+  color: var(--app-white);
   span {
     padding-top: $s-2;
   }
 
   &:hover {
     color: var(--app-white);
+    background-color: $db-quaternary;
   }
 }
 
 .auth-buttons {
   display: flex;
   gap: $s-8;
-}
-
-.btn-google-auth {
-  color: var(--google-login-foreground);
-  background-color: var(--google-login-background);
-  &:hover {
-    background: var(--google-login-background-hover);
-  }
-}
-
-.btn-github-auth {
-  color: var(--github-login-foreground);
-  background: var(--github-login-background);
-  &:hover {
-    background: var(--github-login-background-hover);
-  }
-}
-
-.btn-oidc-auth {
-  color: var(--oidc-login-foreground);
-  background: var(--oidc-login-background);
-  &:hover {
-    background: var(--oidc-login-background-hover);
-  }
-}
-
-.btn-gitlab-auth {
-  color: var(--gitlab-login-foreground);
-  background: var(--gitlab-login-background);
-  &:hover {
-    background: var(--gitlab-login-background-hover);
-  }
 }
 
 .banner {

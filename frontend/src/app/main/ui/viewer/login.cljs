@@ -84,11 +84,11 @@
          [:div {:class (stl/css :form-container)}
           [:& login-methods {:on-success-callback success-login :origin :viewer}]
           [:div {:class (stl/css :links)}
-           [:div {:class (stl/css :link-entry)}
+           [:div {:class (stl/css :link-entry :recovery-request)}
             [:a {:on-click set-section
                  :data-value "recovery-request"}
              (tr "auth.forgot-password")]]
-           [:div {:class (stl/css :link-entry)}
+           [:div {:class (stl/css :link-entry :register)}
             [:span (tr "auth.register") " "]
             [:a {:on-click set-section
                  :data-value "register"}
@@ -98,7 +98,7 @@
          [:div {:class (stl/css :form-container)}
           [:& register-methods {:on-success-callback success-register}]
           [:div {:class (stl/css :links)}
-           [:div {:class (stl/css :link-entry)}
+           [:div {:class (stl/css :link-entry :account)}
             [:span (tr "auth.already-have-account") " "]
             [:a {:on-click set-section
                  :data-value "login"}
@@ -109,7 +109,7 @@
           [:& register-validate-form {:params {:token @register-token}
                                       :on-success-callback success-email-sent}]
           [:div {:class (stl/css :links)}
-           [:div {:class (stl/css :link-entry)}
+           [:div {:class (stl/css :link-entry :register)}
             [:a {:on-click set-section
                  :data-value "register"}
              (tr "labels.go-back")]]]]
