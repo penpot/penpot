@@ -228,48 +228,54 @@
 (mf/defc context-menu-group
   [{:keys [shapes]}]
 
-  (let [multiple? (> (count shapes) 1)
-        single?   (= (count shapes) 1)
-        do-create-artboard-from-selection #(st/emit! (dwsh/create-artboard-from-selection))
+  (let [multiple?    (> (count shapes) 1)
+        single?      (= (count shapes) 1)
+
+        objects      (deref refs/workspace-page-objects)
+        any-in-copy? (some true? (map #(ctn/has-any-copy-parent? objects %) shapes))
 
         ;; components can't be ungrouped
         has-frame? (->> shapes (d/seek #(and (cfh/frame-shape? %) (not (ctk/instance-head? %)))))
         has-group? (->> shapes (d/seek #(and (cfh/group-shape? %) (not (ctk/instance-head? %)))))
-        has-bool? (->> shapes (d/seek cfh/bool-shape?))
-        has-mask? (->> shapes (d/seek :masked-group))
+        has-bool?  (->> shapes (d/seek cfh/bool-shape?))
+        has-mask?  (->> shapes (d/seek :masked-group))
 
-        is-group? (and single? has-group?)
-        is-bool? (and single? has-bool?)
+        is-group?  (and single? has-group?)
+        is-bool?   (and single? has-bool?)
 
         do-create-group #(st/emit! dw/group-selected)
         do-mask-group   #(st/emit! dw/mask-group)
         do-remove-group #(st/emit! dw/ungroup-selected)
-        do-unmask-group #(st/emit! dw/unmask-group)]
+        do-unmask-group #(st/emit! dw/unmask-group)
+        do-create-artboard-from-selection
+        #(st/emit! (dwsh/create-artboard-from-selection))]
 
     [:*
-     (when (or has-bool? has-group? has-mask? has-frame?)
-       [:& menu-entry {:title (tr "workspace.shape.menu.ungroup")
-                       :shortcut (sc/get-tooltip :ungroup)
-                       :on-click do-remove-group}])
+     (when (not any-in-copy?)
+       [:*
+        (when (or has-bool? has-group? has-mask? has-frame?)
+          [:& menu-entry {:title (tr "workspace.shape.menu.ungroup")
+                          :shortcut (sc/get-tooltip :ungroup)
+                          :on-click do-remove-group}])
 
-     [:& menu-entry {:title (tr "workspace.shape.menu.group")
-                     :shortcut (sc/get-tooltip :group)
-                     :on-click do-create-group}]
+        [:& menu-entry {:title (tr "workspace.shape.menu.group")
+                        :shortcut (sc/get-tooltip :group)
+                        :on-click do-create-group}]
 
-     (when (or multiple? (and is-group? (not has-mask?)) is-bool?)
-       [:& menu-entry {:title (tr "workspace.shape.menu.mask")
-                       :shortcut (sc/get-tooltip :mask)
-                       :on-click do-mask-group}])
+        (when (or multiple? (and is-group? (not has-mask?)) is-bool?)
+          [:& menu-entry {:title (tr "workspace.shape.menu.mask")
+                          :shortcut (sc/get-tooltip :mask)
+                          :on-click do-mask-group}])
 
-     (when has-mask?
-       [:& menu-entry {:title (tr "workspace.shape.menu.unmask")
-                       :shortcut (sc/get-tooltip :unmask)
-                       :on-click do-unmask-group}])
+        (when has-mask?
+          [:& menu-entry {:title (tr "workspace.shape.menu.unmask")
+                          :shortcut (sc/get-tooltip :unmask)
+                          :on-click do-unmask-group}])
 
-     [:& menu-entry {:title (tr "workspace.shape.menu.create-artboard-from-selection")
-                     :shortcut (sc/get-tooltip :artboard-selection)
-                     :on-click do-create-artboard-from-selection}]
-     [:& menu-separator]]))
+        [:& menu-entry {:title (tr "workspace.shape.menu.create-artboard-from-selection")
+                        :shortcut (sc/get-tooltip :artboard-selection)
+                        :on-click do-create-artboard-from-selection}]
+        [:& menu-separator]])]))
 
 (mf/defc context-focus-mode-menu
   [{:keys []}]
@@ -391,7 +397,9 @@
 (mf/defc context-menu-layout
   {::mf/props :obj}
   [{:keys [shapes]}]
-  (let [single? (= (count shapes) 1)
+  (let [single?      (= (count shapes) 1)
+        objects      (deref refs/workspace-page-objects)
+        any-in-copy? (some true? (map #(ctn/has-any-copy-parent? objects %) shapes))
 
         has-flex?
         (and single? (every? ctl/flex-layout? shapes))
@@ -414,29 +422,30 @@
          (fn [_event]
            (let [ids (map :id shapes)]
              (st/emit! (dwsl/remove-layout ids)))))]
+    [:*
+     (when (not any-in-copy?)
+       (if (or ^boolean has-flex?
+               ^boolean has-grid?)
+         [:div
+          [:& menu-separator]
+          (if has-flex?
+            [:& menu-entry {:title (tr "workspace.shape.menu.remove-flex")
+                            :shortcut (sc/get-tooltip :toggle-layout-flex)
+                            :on-click on-remove-layout}]
+            [:& menu-entry {:title (tr "workspace.shape.menu.remove-grid")
+                            :shortcut (sc/get-tooltip :toggle-layout-grid)
+                            :on-click on-remove-layout}])]
 
-    (if (or ^boolean has-flex?
-            ^boolean has-grid?)
-      [:div
-       [:& menu-separator]
-       (if has-flex?
-         [:& menu-entry {:title (tr "workspace.shape.menu.remove-flex")
-                         :shortcut (sc/get-tooltip :toggle-layout-flex)
-                         :on-click on-remove-layout}]
-         [:& menu-entry {:title (tr "workspace.shape.menu.remove-grid")
-                         :shortcut (sc/get-tooltip :toggle-layout-grid)
-                         :on-click on-remove-layout}])]
-
-      [:div
-       [:& menu-separator]
-       [:& menu-entry {:title (tr "workspace.shape.menu.add-flex")
-                       :shortcut (sc/get-tooltip :toggle-layout-flex)
-                       :value "flex"
-                       :on-click on-add-layout}]
-       [:& menu-entry {:title (tr "workspace.shape.menu.add-grid")
-                       :shortcut (sc/get-tooltip :toggle-layout-grid)
-                       :value "grid"
-                       :on-click on-add-layout}]])))
+         [:div
+          [:& menu-separator]
+          [:& menu-entry {:title (tr "workspace.shape.menu.add-flex")
+                          :shortcut (sc/get-tooltip :toggle-layout-flex)
+                          :value "flex"
+                          :on-click on-add-layout}]
+          [:& menu-entry {:title (tr "workspace.shape.menu.add-grid")
+                          :shortcut (sc/get-tooltip :toggle-layout-grid)
+                          :value "grid"
+                          :on-click on-add-layout}]]))]))
 
 (mf/defc context-menu-component
   [{:keys [shapes]}]

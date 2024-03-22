@@ -21,7 +21,6 @@
    [app.worker :as-alias wrk]
    [clojure.edn :as edn]
    [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]
    [datoteka.fs :as fs]
    [integrant.core :as ig]
    [promesa.exec :as px]
@@ -241,16 +240,15 @@
   [{:keys [::label ::profile-id ::rpc/climit ::mtx/metrics] :as cfg} f]
   (let [config (get climit ::config)
         cache  (get climit ::cache)]
-
     (reduce (fn [handler [limit-id limit-key :as ckey]]
-              (let [config (get config limit-id)]
-                (when-not config
-                  (throw (IllegalArgumentException.
-                          (str/ffmt "config not found for: %" limit-id))))
-
+              (if-let [config (get config limit-id)]
                 (fn [& params]
                   (let [limiter (cache/get cache ckey (partial create-limiter config))]
-                    (invoke limiter metrics limit-id limit-key label profile-id handler params)))))
+                    (invoke limiter metrics limit-id limit-key label profile-id handler params)))
+
+                (do
+                  (l/wrn :hint "config not found" :label label :id limit-id)
+                  f)))
             f
             (get-limits cfg))))
 

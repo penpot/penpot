@@ -706,6 +706,38 @@
 
          (rx/take-until stopper-s))))))
 
+(defn sync-head
+  [id]
+  (ptk/reify ::sync-head
+    ptk/WatchEvent
+    (watch [it state _]
+      (log/info :msg "SYNC-head of shape" :id (str id))
+      (let [file       (wsh/get-local-file state)
+            file-full  (wsh/get-local-file-full state)
+            libraries  (wsh/get-libraries state)
+
+            page-id    (:current-page-id state)
+            container  (cfh/get-container file :page page-id)
+            objects    (:objects container)
+
+            shape-inst (ctn/get-shape container id)
+            parent     (get objects (:parent-id shape-inst))
+            head       (ctn/get-component-shape container parent)
+
+            components-v2
+            (features/active-feature? state "components/v2")
+
+            changes
+            (-> (pcb/empty-changes it)
+                (pcb/with-container container)
+                (pcb/with-objects (:objects container))
+                (dwlh/generate-sync-shape-direct file-full libraries container (:id head) false components-v2))]
+
+        (log/debug :msg "SYNC-head finished" :js/rchanges (log-changes
+                                                           (:redo-changes changes)
+                                                           file))
+        (rx/of (dch/commit-changes changes))))))
+
 (defn reset-component
   "Cancels all modifications in the shape with the given id, and all its children, in
   the current page. Set all attributes equal to the ones in the linked component,
@@ -726,23 +758,26 @@
             components-v2
             (features/active-feature? state "components/v2")
 
-            shape-inst (ctn/get-shape container id)
             swap-slot (-> (ctn/get-shape container id)
                           (ctk/get-swap-slot))
+
+            undo-id (js/Symbol)
+
             changes
             (-> (pcb/empty-changes it)
                 (pcb/with-container container)
                 (pcb/with-objects (:objects container))
-                (dwlh/generate-sync-shape-direct file-full libraries container id true components-v2)
-                (cond->
-                 (some? swap-slot)
-                  ;;  We need to propagate parent changes
-                  (dwlh/generate-sync-shape-direct file-full libraries container (:parent-id shape-inst) true components-v2)))]
+                (dwlh/generate-sync-shape-direct file-full libraries container id true components-v2))]
 
         (log/debug :msg "RESET-COMPONENT finished" :js/rchanges (log-changes
                                                                  (:redo-changes changes)
                                                                  file))
-        (rx/of (dch/commit-changes changes))))))
+        (rx/of
+         (dwu/start-undo-transaction undo-id)
+         (dch/commit-changes changes)
+         (when (some? swap-slot)
+           (sync-head id))
+         (dwu/commit-undo-transaction undo-id))))))
 
 (defn reset-components
   "Cancels all modifications in the shapes with the given ids"
@@ -1186,6 +1221,26 @@
                              :callback do-update}]
                   :tag :sync-dialog)))))))
 
+
+(defn touch-component
+  "Update the modified-at attribute of the component to now"
+  [id]
+  (dm/verify! (uuid? id))
+  (ptk/reify ::touch-component
+    cljs.core/IDeref
+    (-deref [_] [id])
+
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [data          (get state :workspace-data)
+            changes (-> (pcb/empty-changes it)
+                        (pcb/with-library-data data)
+                        (pcb/update-component id #(assoc % :modified-at (dt/now))))]
+        (rx/of (dch/commit-changes {:origin it
+                                    :redo-changes (:redo-changes changes)
+                                    :undo-changes []
+                                    :save-undo? false}))))))
+
 (defn component-changed
   "Notify that the component with the given id has changed, so it needs to be updated
    in the current file and in the copies. And also update its thumbnails."
@@ -1197,6 +1252,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of
+       (touch-component component-id)
        (launch-component-sync component-id file-id undo-group)))))
 
 (defn watch-component-changes
@@ -1244,13 +1300,18 @@
                              (map (partial ch/components-changed old-data))
                              (reduce into #{})))]
 
-                  (if (and (d/not-empty? changed-components) save-undo?)
-                    (do (log/info :msg "DETECTED COMPONENTS CHANGED"
-                                  :ids (map str changed-components)
-                                  :undo-group undo-group)
+                  (if (d/not-empty? changed-components)
+                    (if save-undo?
+                      (do (log/info :msg "DETECTED COMPONENTS CHANGED"
+                                    :ids (map str changed-components)
+                                    :undo-group undo-group)
 
-                        (->> (rx/from changed-components)
-                             (rx/map #(component-changed % (:id old-data) undo-group))))
+                          (->> (rx/from changed-components)
+                               (rx/map #(component-changed % (:id old-data) undo-group))))
+                      ;; even if save-undo? is false, we need to update the :modified-date of the component
+                      ;; (for example, for undos)
+                      (->> (rx/from changed-components)
+                           (rx/map #(touch-component %))))
                     (rx/empty)))))
 
             changes-s

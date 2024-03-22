@@ -219,7 +219,9 @@
          :auto-focus true
          :default-value (cfh/merge-path-item (:path color) (:name color))}]
 
-       [:div {:title (:name color)
+       [:div {:title (if (= (:name color) default-name)
+                       default-name
+                       (dm/str (:name color) " (" default-name ")"))
               :class (stl/css :name-block)
               :on-double-click rename-color-clicked}
 

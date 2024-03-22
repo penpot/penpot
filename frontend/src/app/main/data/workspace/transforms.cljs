@@ -606,11 +606,11 @@
               (->> move-stream
                    (rx/last)
                    (rx/mapcat
-                    (fn [[_ target-frame drop-index]]
+                    (fn [[_ target-frame drop-index cell-data]]
                       (let [undo-id (js/Symbol)]
                         (rx/of (dwu/start-undo-transaction undo-id)
-                               (move-shapes-to-frame ids target-frame drop-index)
                                (dwm/apply-modifiers {:undo-transation? false})
+                               (move-shapes-to-frame ids target-frame drop-index cell-data)
                                (finish-transform)
                                (dwu/commit-undo-transaction undo-id))))))))))))))
 
@@ -832,7 +832,7 @@
                                      :ignore-snap-pixel true}))))))
 
 (defn- move-shapes-to-frame
-  [ids frame-id drop-index]
+  [ids frame-id drop-index [row column :as cell]]
   (ptk/reify ::move-shapes-to-frame
     ptk/WatchEvent
     (watch [it state _]
@@ -905,6 +905,11 @@
             moving-shapes-ids
             (map :id moving-shapes)
 
+            moving-shapes-children-ids
+            (->> moving-shapes
+                 (mapcat #(cfh/get-children-with-self objects (:id %)))
+                 (map :id))
+
             changes
             (-> (pcb/empty-changes it page-id)
                 (pcb/with-objects objects)
@@ -913,7 +918,7 @@
                   (pcb/update-shapes moving-shapes-ids ctl/remove-layout-item-data))
                 ;; Remove component-root property when moving a shape inside a component
                 (cond-> (ctn/get-instance-root objects frame)
-                  (pcb/update-shapes moving-shapes-ids #(dissoc % :component-root)))
+                  (pcb/update-shapes moving-shapes-children-ids #(dissoc % :component-root)))
                 ;; Add component-root property when moving a component outside a component
                 (cond-> (not (ctn/get-instance-root objects frame))
                   (pcb/update-shapes moving-shapes-ids (fn [shape]
@@ -924,7 +929,16 @@
                 (pcb/update-shapes shape-ids-to-detach ctk/detach-shape)
                 (pcb/change-parent frame-id moving-shapes drop-index)
                 (cond-> (ctl/grid-layout? objects frame-id)
-                  (-> (pcb/update-shapes [frame-id] ctl/assign-cell-positions {:with-objects? true})
+                  (-> (pcb/update-shapes
+                       [frame-id]
+                       (fn [frame objects]
+                         (-> frame
+                             ;; Assign the cell when pushing into a specific grid cell
+                             (cond-> (some? cell)
+                               (-> (ctl/push-into-cell moving-shapes-ids row column)
+                                   (ctl/assign-cells objects)))
+                             (ctl/assign-cell-positions objects)))
+                       {:with-objects? true})
                       (pcb/reorder-grid-children [frame-id])))
                 (pcb/remove-objects empty-parents))]
 

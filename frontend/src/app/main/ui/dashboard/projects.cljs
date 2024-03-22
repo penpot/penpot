@@ -378,6 +378,7 @@
 
         tutorial-viewed?    (:viewed-tutorial? props true)
         walkthrough-viewed? (:viewed-walkthrough? props true)
+        is-my-penpot        (= (:default-team-id profile) (:id team))
 
         team-id             (:id team)
 
@@ -387,6 +388,7 @@
            (st/emit! (du/update-profile-props {:team-hero? false})
                      (ptk/data-event ::ev/event {::ev/name "dont-show-team-up-hero"
                                                  ::ev/origin "dashboard"}))))
+
         close-tutorial
         (mf/use-fn
          (fn []
@@ -395,6 +397,7 @@
                                                  ::ev/origin "get-started-hero"
                                                  :type "tutorial"
                                                  :section "dashboard"}))))
+
         close-walkthrough
         (mf/use-fn
          (fn []
@@ -402,7 +405,13 @@
                      (ptk/data-event ::ev/event {::ev/name "dont-show-walkthrough"
                                                  ::ev/origin "get-started-hero"
                                                  :type "walkthrough"
-                                                 :section "dashboard"}))))]
+                                                 :section "dashboard"}))))
+
+        show-hero? (and is-my-penpot
+                        (or (not tutorial-viewed?)
+                            (not walkthrough-viewed?)))
+
+        show-team-hero? (and (not is-my-penpot) team-hero?)]
 
     (mf/with-effect [team]
       (let [tname (if (:is-default team)
@@ -423,8 +432,7 @@
            [:& team-hero {:team team :close-fn close-banner}])
 
          (when (and (contains? cf/flags :dashboard-templates-section)
-                    (or (not tutorial-viewed?)
-                        (not walkthrough-viewed?)))
+                    show-hero?)
            [:div {:class (stl/css :hero-projects)}
             (when (and (not tutorial-viewed?) (:is-default team))
               [:& tutorial-project
@@ -435,7 +443,11 @@
               [:& interface-walkthrough
                {:close-walkthrough close-walkthrough}])])
 
-         [:div {:class (stl/css :dashboard-container :no-bg :dashboard-projects)}
+         [:div {:class (stl/css-case :dashboard-container true
+                                     :no-bg true
+                                     :dashboard-projects true
+                                     :with-hero show-hero?
+                                     :with-team-hero show-team-hero?)}
           (for [{:keys [id] :as project} projects]
             (let [files (when recent-map
                           (->> (vals recent-map)

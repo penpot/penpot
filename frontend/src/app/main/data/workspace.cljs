@@ -25,6 +25,7 @@
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
+   [app.common.types.file :as ctf]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
@@ -1598,6 +1599,34 @@
               (let [frame (get objects parent-frame-id)]
                 (gsh/translate-to-frame shape frame))))
 
+          ;; When copying an instance that is nested inside another one, we need to
+          ;; advance the shape refs to one or more levels of remote mains.
+          (advance-copies [state selected data]
+            (let [file      (wsh/get-local-file-full state)
+                  libraries (wsh/get-libraries state)
+                  page      (wsh/lookup-page state)
+                  heads     (mapcat #(ctn/get-child-heads (:objects data) %) selected)]
+              (update data :objects
+                      #(reduce (partial advance-copy file libraries page)
+                               %
+                               heads))))
+
+          (advance-copy [file libraries page objects shape]
+            (if (and (ctk/instance-head? shape) (not (ctk/main-instance? shape)))
+              (let [level-delta (ctn/get-nesting-level-delta (:objects page) shape uuid/zero)]
+                (if (pos? level-delta)
+                  (reduce (partial advance-shape file libraries page level-delta)
+                          objects
+                          (cfh/get-children-with-self objects (:id shape)))
+                  objects))
+              objects))
+
+          (advance-shape [file libraries page level-delta objects shape]
+            (let [new-shape-ref (ctf/advance-shape-ref file page libraries shape level-delta {:include-deleted? true})]
+              (cond-> objects
+                (and (some? new-shape-ref) (not= new-shape-ref (:shape-ref shape)))
+                (assoc-in [(:id shape) :shape-ref] new-shape-ref))))
+
           (on-copy-error [error]
             (js/console.error "clipboard blocked:" error)
             (rx/empty))]
@@ -1636,6 +1665,7 @@
                    (rx/merge-map (partial prepare-object objects frame-id))
                    (rx/reduce collect-data initial)
                    (rx/map (partial sort-selected state))
+                   (rx/map (partial advance-copies state selected))
                    (rx/map #(t/encode-str % {:type :json-verbose}))
                    (rx/map wapi/write-to-clipboard)
                    (rx/catch on-copy-error)

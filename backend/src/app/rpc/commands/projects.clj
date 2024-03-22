@@ -190,8 +190,8 @@
                   {:project-id (:id project)
                    :profile-id profile-id
                    :team-id team-id
-                   :is-pinned true})
-      (assoc project :is-pinned true))))
+                   :is-pinned false})
+      (assoc project :is-pinned false))))
 
 
 ;; --- MUTATION: Toggle Project Pin

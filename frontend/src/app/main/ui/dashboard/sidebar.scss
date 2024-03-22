@@ -339,7 +339,7 @@
 
 .profile-fullname {
   @include smallTitleTipography;
-  @include text-ellipsis;
+  @include textEllipsis;
   align-self: center;
   max-width: $s-160;
   color: var(--profile-foreground-color);

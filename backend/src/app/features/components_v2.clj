@@ -215,10 +215,15 @@
                 (update :pages-index update-vals fix-container)
                 (d/update-when :components update-vals fix-container))))
 
-        fix-page-invalid-options
+        fix-invalid-page
         (fn [file-data]
           (letfn [(update-page [page]
-                    (update page :options fix-options))
+                    (-> page
+                        (update :name (fn [name]
+                                        (if (nil? name)
+                                          "Page"
+                                          name)))
+                        (update :options fix-options)))
 
                   (fix-background [options]
                     (if (and (contains? options :background)
@@ -433,7 +438,8 @@
           (letfn [(fix-component [components id component]
                     (let [root-shape (ctst/get-shape component (:id component))]
                       (if (or (empty? (:objects component))
-                              (nil? root-shape))
+                              (nil? root-shape)
+                              (nil? (:type root-shape)))
                         (dissoc components id)
                         components)))]
 
@@ -731,43 +737,61 @@
         (fn [file-data]
           ;; Remap shape-refs so that they point to the near main.
           ;; At the same time, if there are any dangling ref, detach the shape and its children.
-          (letfn [(fix-container [container]
-                    (reduce fix-shape container (ctn/shapes-seq container)))
+          (let [count  (volatile! 0)
 
-                  (fix-shape [container shape]
-                    (if (ctk/in-component-copy? shape)
-                      ;; First look for the direct shape.
-                      (let [root         (ctn/get-component-shape (:objects container) shape)
-                            libraries    (assoc-in libraries [(:id file-data) :data] file-data)
-                            library      (get libraries (:component-file root))
-                            component    (ctkl/get-component (:data library) (:component-id root) true)
-                            direct-shape (ctf/get-component-shape (:data library) component (:shape-ref shape))]
-                        (if (some? direct-shape)
-                          ;; If it exists, there is nothing else to do.
-                          container
-                          ;; If not found, find the near shape.
-                          (let [near-shape (d/seek #(= (:shape-ref %) (:shape-ref shape))
-                                                   (ctf/get-component-shapes (:data library) component))]
-                            (if (some? near-shape)
-                              ;; If found, update the ref to point to the near shape.
-                              (ctn/update-shape container (:id shape) #(assoc % :shape-ref (:id near-shape)))
-                              ;; If not found, it may be a fostered component. Try to locate a direct shape
-                              ;; in the head component.
-                              (let [head           (ctn/get-head-shape (:objects container) shape)
-                                    library-2      (get libraries (:component-file head))
-                                    component-2    (ctkl/get-component (:data library-2) (:component-id head) true)
-                                    direct-shape-2 (ctf/get-component-shape (:data library-2) component-2 (:shape-ref shape))]
-                                (if (some? direct-shape-2)
-                                  ;; If it exists, there is nothing else to do.
-                                  container
-                                  ;; If not found, detach shape and all children.
-                                  ;; container
-                                  (detach-shape container shape)))))))
-                      container))]
+                fix-shape
+                (fn [container shape]
+                  (if (ctk/in-component-copy? shape)
+                    ;; First look for the direct shape.
+                    (let [root         (ctn/get-component-shape (:objects container) shape)
+                          libraries    (assoc-in libraries [(:id file-data) :data] file-data)
+                          library      (get libraries (:component-file root))
+                          component    (ctkl/get-component (:data library) (:component-id root) true)
+                          direct-shape (ctf/get-component-shape (:data library) component (:shape-ref shape))]
+                      (if (some? direct-shape)
+                        ;; If it exists, there is nothing else to do.
+                        container
+                        ;; If not found, find the near shape.
+                        (let [near-shape (d/seek #(= (:shape-ref %) (:shape-ref shape))
+                                                 (ctf/get-component-shapes (:data library) component))]
+                          (if (some? near-shape)
+                            ;; If found, update the ref to point to the near shape.
+                            (do
+                              (vswap! count inc)
+                              (ctn/update-shape container (:id shape) #(assoc % :shape-ref (:id near-shape))))
+                            ;; If not found, it may be a fostered component. Try to locate a direct shape
+                            ;; in the head component.
+                            (let [head           (ctn/get-head-shape (:objects container) shape)
+                                  library-2      (get libraries (:component-file head))
+                                  component-2    (ctkl/get-component (:data library-2) (:component-id head) true)
+                                  direct-shape-2 (ctf/get-component-shape (:data library-2) component-2 (:shape-ref shape))]
+                              (if (some? direct-shape-2)
+                                ;; If it exists, there is nothing else to do.
+                                container
+                                ;; If not found, detach shape and all children.
+                                ;; container
+                                (do
+                                  (vswap! count inc)
+                                  (detach-shape container shape))))))))
+                    container))
 
-            (-> file-data
-                (update :pages-index update-vals fix-container)
-                (d/update-when :components update-vals fix-container))))
+                fix-container
+                (fn [container]
+                  (reduce fix-shape container (ctn/shapes-seq container)))]
+
+            [(-> file-data
+                 (update :pages-index update-vals fix-container)
+                 (d/update-when :components update-vals fix-container))
+             @count]))
+
+        remap-refs-recur
+        ;; remapping refs can generate cascade changes so we call it until no changes are done
+        (fn [file-data]
+          (loop [f-data file-data]
+            (let [[f-data count] (remap-refs f-data)]
+              (if (= count 0)
+                f-data
+                (recur f-data)))))
 
         fix-converted-copies
         (fn [file-data]
@@ -974,7 +998,7 @@
 
     (-> file-data
         (fix-file-data)
-        (fix-page-invalid-options)
+        (fix-invalid-page)
         (fix-misc-shape-issues)
         (fix-recent-colors)
         (fix-missing-image-metadata)
@@ -993,8 +1017,8 @@
         (remove-nested-roots)
         (add-not-nested-roots)
         (fix-components-without-id)
-        (remap-refs)
         (fix-converted-copies)
+        (remap-refs-recur)
         (wrap-non-group-component-roots)
         (detach-non-group-instance-roots)
         (transform-to-frames)

@@ -118,6 +118,7 @@
          :id id
          :data-index index
          :on-click on-click
+         :on-mouse-down dom/prevent-default
          :on-key-down on-key-down}
      [:div {:class (stl/css :template-card)}
       [:div {:class (stl/css :img-container)}

@@ -187,15 +187,15 @@
 (def ^:private corner-bottom-icon
   (i/icon-xref :corner-bottom (stl/css :corner-icon)))
 (def ^:private corner-bottomleft-icon
-  (i/icon-xref :corner-bottomleft (stl/css :corner-icon)))
+  (i/icon-xref :corner-bottom-left (stl/css :corner-icon)))
 (def ^:private corner-bottomright-icon
-  (i/icon-xref :corner-bottomright (stl/css :corner-icon)))
+  (i/icon-xref :corner-bottom-right (stl/css :corner-icon)))
 (def ^:private corner-top-icon
   (i/icon-xref :corner-top (stl/css :corner-icon)))
 (def ^:private corner-topleft-icon
-  (i/icon-xref :corner-topleft (stl/css :corner-icon)))
+  (i/icon-xref :corner-top-left (stl/css :corner-icon)))
 (def ^:private corner-topright-icon
-  (i/icon-xref :corner-topright (stl/css :corner-icon)))
+  (i/icon-xref :corner-top-right (stl/css :corner-icon)))
 
 (mf/defc interaction-entry
   [{:keys [index shape interaction update-interaction remove-interaction]}]

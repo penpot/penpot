@@ -73,7 +73,7 @@
   [{:keys [version] :as file}]
   (if (int? version)
     file
-    (let [version (or version (-> file :data :version))]
+    (let [version (or (-> file :data :version) 0)]
       (-> file
           (assoc :version version)
           (update :data dissoc :version)))))
@@ -853,11 +853,11 @@
 (defn migrate-up-44
   [data]
   (letfn [(fix-shadow [shadow]
-            (if (string? (:color shadow))
-              (let [color {:color (:color shadow)
-                           :opacity 1}]
-                (assoc shadow :color color))
-              shadow))
+            (let [color (if (string? (:color shadow))
+                          {:color (:color shadow)
+                           :opacity 1}
+                          (d/without-nils (:color shadow)))]
+              (assoc shadow :color color)))
 
           (update-object [object]
             (d/update-when object :shadow

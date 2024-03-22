@@ -4,6 +4,18 @@
 //
 // Copyright (c) KALEIDOS INC
 
+@mixin font-face($style-name, $file, $weight: unquote("normal"), $style: unquote("normal")) {
+  $filepath: "/fonts/" + $file;
+  @font-face {
+    font-family: "#{$style-name}";
+    src:
+      url($filepath + ".woff2") format("woff2"),
+      url($filepath + ".ttf") format("truetype");
+    font-weight: unquote($weight);
+    font-style: unquote($style);
+  }
+}
+
 @mixin flexCenter {
   display: flex;
   justify-content: center;

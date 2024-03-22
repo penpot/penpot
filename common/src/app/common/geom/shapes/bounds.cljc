@@ -190,3 +190,8 @@
 
      (get-rect-filter-bounds children-bounds filters blur-value))))
 
+(defn get-frame-bounds
+  ([shape]
+   (get-frame-bounds shape nil))
+  ([shape {:keys [ignore-margin?] :or {ignore-margin? false}}]
+   (get-object-bounds [] shape {:ignore-margin? ignore-margin?})))

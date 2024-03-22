@@ -625,7 +625,7 @@
    (if (some? shape)
      (let [fonts          (ff/shape->fonts shape objects)
 
-           bounds         (gsb/get-object-bounds objects shape)
+           bounds         (gsb/get-object-bounds objects shape {:ignore-margin? false})
 
            background     (when (str/ends-with? object-id "component")
                             (or (:background options) (dom/get-css-variable "--assets-component-background-color") "#fff"))

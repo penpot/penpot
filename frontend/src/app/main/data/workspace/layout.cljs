@@ -89,7 +89,6 @@
     (update [_ state]
       (update state :workspace-layout
               (fn [flags]
-                (prn flags)
                 (if force?
                   (conj flags flag)
                   (if (contains? flags flag)

@@ -35,6 +35,14 @@
          :login-with-gitlab
          :login-with-oidc]))
 
+(mf/defc demo-warning
+  {::mf/props :obj}
+  []
+  [:div {:class (stl/css :banner)}
+   [:& context-notification
+    {:type :warning
+     :content (tr "auth.demo-warning")}]])
+
 (defn- login-with-oidc
   [event provider params]
   (dom/prevent-default event)
@@ -283,6 +291,9 @@
     [:div {:class (stl/css :auth-form)}
      [:h1 {:class (stl/css :auth-title)
            :data-test "login-title"} (tr "auth.login-title")]
+
+     (when (contains? cf/flags :demo-warning)
+       [:& demo-warning])
 
      [:hr {:class (stl/css :separator)}]
 

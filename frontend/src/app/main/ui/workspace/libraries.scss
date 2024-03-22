@@ -81,11 +81,6 @@
   height: fit-content;
 }
 
-.item-name {
-  @include bodyLargeTypography;
-  color: var(--library-name-foreground-color);
-}
-
 .item-publish,
 .item-unpublish {
   @extend .button-primary;
@@ -216,8 +211,11 @@
 }
 
 .item-name {
+  @include bodyLargeTypography;
   @include textEllipsis;
   margin: 0;
+  max-width: $s-244;
+  color: var(--library-name-foreground-color);
 }
 
 .item-update {
@@ -254,6 +252,7 @@
 .modal-v2-info {
   width: $s-664;
   height: fit-content;
+  max-height: fit-content;
 }
 
 .modal-v2-title {

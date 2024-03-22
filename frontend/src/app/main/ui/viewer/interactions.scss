@@ -36,7 +36,7 @@
   width: $s-272;
   padding: $s-6;
   max-height: calc(100vh - 3 * ($s-2 + $s-48));
-  overflow: scroll;
+  overflow: auto;
 }
 
 .dropdown-element {

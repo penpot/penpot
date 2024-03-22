@@ -39,8 +39,8 @@
   (s/keys :req-un [::email-1 ::email-2]))
 
 (defn- on-error
-  [form {:keys [code] :as error}]
-  (case code
+  [form error]
+  (case (:code (ex-data error))
     :email-already-exists
     (swap! form (fn [data]
                   (let [error {:message (tr "errors.email-already-exists")}]
@@ -93,7 +93,6 @@
            (let [different-emails-error? (= (dma/get-in @form [:errors :email-2 :code]) :different-emails)
                  email-1                 (dma/get-in @form [:clean-data :email-1])
                  email-2                 (dma/get-in @form [:clean-data :email-2])]
-             (println "different-emails-error?" (and different-emails-error? (= email-1 email-2)))
              (when (and different-emails-error? (= email-1 email-2))
                (swap! form d/dissoc-in [:errors :email-2])))))]
 
