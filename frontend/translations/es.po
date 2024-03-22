@@ -3313,6 +3313,14 @@ msgid "workspace.assets.search"
 msgstr "Buscar recursos"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.filter"
+msgstr "Filtrar"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.sort"
+msgstr "Ordenar"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.selected-count"
 msgid_plural "workspace.assets.selected-count"
 msgstr[0] "%s elemento seleccionado"
@@ -3674,6 +3682,14 @@ msgstr "Buscar bibliotecas compartidas"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.shared-libraries"
 msgstr "BIBLIOTECAS COMPARTIDAS"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.shared-library-btn"
+msgstr "Conectar biblioteca"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.unlink-library-btn"
+msgstr "Desconectar biblioteca"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.libraries.text.multiple-typography"

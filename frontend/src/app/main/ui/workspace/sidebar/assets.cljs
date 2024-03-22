@@ -168,6 +168,7 @@
                        :placeholder (tr "workspace.assets.search")}
         [:button
          {:on-click on-open-menu
+          :title (tr "workspace.assets.filter")
           :class (stl/css-case :section-button true
                                :opened menu-open?)}
          i/filter-icon]]
@@ -184,6 +185,7 @@
          :options options
          :workspace? true}]
        [:button {:class (stl/css :sort-button)
+                 :title (tr "workspace.assets.sort")
                  :on-click toggle-ordering}
         (if reverse-sort?
           i/asc-sort
