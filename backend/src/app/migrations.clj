@@ -376,7 +376,10 @@
     :fn (mg/resource "app/migrations/sql/0118-mod-task-table.sql")}
 
    {:name "0119-mod-file-table"
-    :fn (mg/resource "app/migrations/sql/0119-mod-file-table.sql")}])
+    :fn (mg/resource "app/migrations/sql/0119-mod-file-table.sql")}
+
+   {:name "0120-mod-audit-log-table"
+    :fn (mg/resource "app/migrations/sql/0120-mod-audit-log-table.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]
