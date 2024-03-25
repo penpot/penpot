@@ -37,6 +37,7 @@
                                    (= "userSpaceOnUse" (get attrs :gradientUnits "objectBoundingBox")))
 
           transform-pattern?  (and (= :pattern tag)
+                                   (= "userSpaceOnUse" (get attrs :patternContentUnits "userSpaceOnUse"))
                                    (= "userSpaceOnUse" (get attrs :patternUnits "userSpaceOnUse")))
 
           transform-clippath? (and (= :clipPath tag)
