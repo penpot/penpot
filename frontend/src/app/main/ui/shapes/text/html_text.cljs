@@ -21,10 +21,9 @@
         shape  (obj/get props "shape")
         code?  (obj/get props "code?")
         text   (:text node)
-        style  (when-not code?
-                 (if (= text "")
-                   (sts/generate-text-styles shape parent)
-                   (sts/generate-text-styles shape node)))
+        style  (if (= text "")
+                 (sts/generate-text-styles shape parent)
+                 (sts/generate-text-styles shape node))
         class  (when code? (:$id node))]
     [:span.text-node {:style style :class class}
      (if (= text "") "\u00A0" text)]))
@@ -36,7 +35,7 @@
         children (obj/get props "children")
         shape    (obj/get props "shape")
         code?    (obj/get props "code?")
-        style    (when-not code? (sts/generate-root-styles shape node))
+        style    (sts/generate-root-styles shape node code?)
         class  (when code? (:$id node))]
     [:div.root.rich-text
      {:style style
