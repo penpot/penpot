@@ -188,19 +188,36 @@
                 :profile-id (::profile-id event)
                 :ip-addr (::ip-addr event)
                 :context (::context event)
-                :props (::props event)}]
+                :props (::props event)}
+        tnow   (dt/now)]
 
     (when (contains? cf/flags :audit-log)
       ;; NOTE: this operation may cause primary key conflicts on inserts
       ;; because of the timestamp precission (two concurrent requests), in
       ;; this case we just retry the operation.
-      (let [tnow   (dt/now)
-            params (-> params
+      (let [params (-> params
                        (assoc :created-at tnow)
                        (assoc :tracked-at tnow)
                        (update :props db/tjson)
                        (update :context db/tjson)
                        (update :ip-addr db/inet)
+                       (assoc :source "backend"))]
+        (db/insert! cfg :audit-log params)))
+
+    (when (and (or (contains? cf/flags :telemetry)
+                   (cf/get :telemetry-enabled))
+               (not (contains? cf/flags :audit-log)))
+      ;; NOTE: this operation may cause primary key conflicts on inserts
+      ;; because of the timestamp precission (two concurrent requests), in
+      ;; this case we just retry the operation.
+      ;;
+      ;; NOTE: this is only executed when general audit log is disabled
+      (let [params (-> params
+                       (assoc :created-at tnow)
+                       (assoc :tracked-at tnow)
+                       (assoc :props (db/tjson {}))
+                       (assoc :context (db/tjson {}))
+                       (assoc :ip-addr (db/inet "0.0.0.0"))
                        (assoc :source "backend"))]
         (db/insert! cfg :audit-log params)))
 
