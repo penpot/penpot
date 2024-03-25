@@ -21,7 +21,6 @@
    [app.http.session :as-alias session]
    [app.http.session.tasks :as-alias session.tasks]
    [app.http.websocket :as http.ws]
-   [app.loggers.audit.tasks :as-alias audit.tasks]
    [app.loggers.webhooks :as-alias webhooks]
    [app.metrics :as-alias mtx]
    [app.metrics.definition :as-alias mdef]
@@ -346,8 +345,8 @@
      :storage-gc-deleted (ig/ref ::sto.gc-deleted/handler)
      :storage-gc-touched (ig/ref ::sto.gc-touched/handler)
      :session-gc         (ig/ref ::session.tasks/gc)
-     :audit-log-archive  (ig/ref ::audit.tasks/archive)
-     :audit-log-gc       (ig/ref ::audit.tasks/gc)
+     :audit-log-archive  (ig/ref :app.loggers.audit.archive-task/handler)
+     :audit-log-gc       (ig/ref :app.loggers.audit.gc-task/handler)
 
      :process-webhook-event
      (ig/ref ::webhooks/process-event-handler)
@@ -411,12 +410,12 @@
    ::svgo/optimizer
    {}
 
-   ::audit.tasks/archive
+   :app.loggers.audit.archive-task/handler
    {::setup/props        (ig/ref ::setup/props)
     ::db/pool            (ig/ref ::db/pool)
     ::http.client/client (ig/ref ::http.client/client)}
 
-   ::audit.tasks/gc
+   :app.loggers.audit.gc-task/handler
    {::db/pool (ig/ref ::db/pool)}
 
    ::webhooks/process-event-handler
