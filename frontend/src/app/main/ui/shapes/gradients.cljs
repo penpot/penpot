@@ -30,9 +30,9 @@
 
 (mf/defc linear-gradient
   {::mf/wrap-props false}
-  [{:keys [id gradient shape]}]
+  [{:keys [id gradient shape force-transform]}]
   (let [transform (mf/with-memo [shape]
-                    (when (cfh/frame-shape? shape)
+                    (when force-transform
                       (gsh/transform-matrix shape nil (gpt/point 0.5 0.5))))
 
         metadata? (mf/use-ctx ed/include-metadata-ctx)
