@@ -50,7 +50,6 @@
   cursor: pointer;
   color: var(--modal-title-foreground-color);
   text-transform: uppercase;
-  margin-bottom: $s-8;
   input {
     @extend .input-element;
     color: var(--input-foreground-color-active);
@@ -144,8 +143,9 @@
 
 .hint {
   @include bodySmallTypography;
-  color: var(--modal-text-foreground-color);
   width: 99%;
+  margin-block-start: $s-8;
+  color: var(--modal-text-foreground-color);
 }
 
 .checkbox {

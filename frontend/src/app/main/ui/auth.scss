@@ -7,6 +7,7 @@
 @use "common/refactor/common-refactor.scss" as *;
 
 .auth-section {
+  position: relative;
   align-items: center;
   background: var(--panel-background-color);
   display: grid;
@@ -43,8 +44,9 @@
 
 .auth-content {
   grid-column: 4 / 6;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: $s-24;
   height: fit-content;
   max-width: $s-412;
   padding-bottom: $s-8;
@@ -53,6 +55,9 @@
 }
 
 .logo-btn {
+  position: absolute;
+  top: $s-20;
+  left: $s-20;
   display: flex;
   justify-content: flex-start;
   margin-bottom: $s-52;
@@ -68,8 +73,6 @@
 
 .terms-login {
   font-size: $fs-11;
-  position: absolute;
-  bottom: 0;
   width: 100%;
   display: flex;
   gap: $s-4;
@@ -77,7 +80,10 @@
 
   a {
     font-weight: $fw700;
-    color: $df-secondary;
+    color: $da-primary;
+    &:hover {
+      text-decoration: underline;
+    }
   }
   span {
     border-bottom: $s-1 solid transparent;

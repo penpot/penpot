@@ -38,10 +38,9 @@
 (mf/defc demo-warning
   {::mf/props :obj}
   []
-  [:div {:class (stl/css :banner)}
-   [:& context-notification
-    {:type :warning
-     :content (tr "auth.demo-warning")}]])
+  [:& context-notification
+   {:type :warning
+    :content (tr "auth.demo-warning")}])
 
 (defn- login-with-oidc
   [event provider params]
@@ -166,14 +165,15 @@
 
     [:*
      (when-let [message @error]
-       [:div {:class (stl/css :error-wrapper)}
-        [:& context-notification
-         {:type :warning
-          :content message
-          :data-test "login-banner"
-          :role "alert"}]])
+       [:& context-notification
+        {:type :warning
+         :content message
+         :data-test "login-banner"
+         :role "alert"}])
 
-     [:& fm/form {:on-submit on-submit :form form}
+     [:& fm/form {:on-submit on-submit
+                  :class (stl/css :login-form)
+                  :form form}
       [:div {:class (stl/css :fields-row)}
        [:& fm/input
         {:name :email
@@ -193,6 +193,7 @@
                      (contains? cf/flags :login-with-password)))
         [:div {:class (stl/css :fields-row :forgot-password)}
          [:& lk/link {:action on-recovery-request
+                      :class (stl/css :forgot-pass-link)
                       :data-test "forgot-password"}
           (tr "auth.forgot-password")]])
 
@@ -207,6 +208,7 @@
        (when (contains? cf/flags :login-with-ldap)
          [:> fm/submit-button*
           {:label (tr "auth.login-with-ldap-submit")
+           :class (stl/css :login-ldap-button)
            :on-click on-submit-ldap}])]]]))
 
 (mf/defc login-buttons
@@ -255,11 +257,11 @@
            (when (k/enter? event)
              (login-oidc event))))]
     (when (contains? cf/flags :login-with-oidc)
-      [:div {:class (stl/css :link-entry :link-oidc)}
-       [:a {:tab-index "0"
-            :on-key-down handle-key-down
-            :on-click login-oidc}
-        (tr "auth.login-with-oidc-submit")]])))
+      [:button {:tab-index "0"
+                :class (stl/css :link-entry :link-oidc)
+                :on-key-down handle-key-down
+                :on-click login-oidc}
+       (tr "auth.login-with-oidc-submit")])))
 
 (mf/defc login-methods
   [{:keys [params on-success-callback origin] :as props}]
@@ -282,35 +284,29 @@
   [{:keys [params] :as props}]
   (let [go-register
         (mf/use-fn
-         #(st/emit! (rt/nav :auth-register {} params)))
+         #(st/emit! (rt/nav :auth-register {} params)))]
 
-        on-create-demo-profile
-        (mf/use-fn
-         #(st/emit! (du/create-demo-profile)))]
-
-    [:div {:class (stl/css :auth-form)}
+    [:div {:class (stl/css :auth-form-wrapper)}
      [:h1 {:class (stl/css :auth-title)
-           :data-test "login-title"} (tr "auth.login-title")]
+           :data-test "login-title"} (tr "auth.login-account-title")]
+
+     [:p {:class (stl/css :auth-tagline)}
+      (tr "auth.login-tagline")]
 
      (when (contains? cf/flags :demo-warning)
        [:& demo-warning])
 
-     [:hr {:class (stl/css :separator)}]
-
      [:& login-methods {:params params}]
+
+     [:hr {:class (stl/css :separator)}]
 
      [:div {:class (stl/css :links)}
       (when (contains? cf/flags :registration)
-        [:div {:class (stl/css :link-entry :register)}
-         [:span (tr "auth.register") " "]
+        [:div {:class (stl/css :register)}
+         [:span {:class (stl/css :register-text)}
+          (tr "auth.register") " "]
          [:& lk/link {:action go-register
+                      :class (stl/css :register-link)
                       :data-test "register-submit"}
-          (tr "auth.register-submit")]])]
-
-     (when (contains? cf/flags :demo-users)
-       [:div {:class (stl/css :link-entry :demo-account)}
-        [:span (tr "auth.create-demo-profile") " "]
-        [:& lk/link {:action on-create-demo-profile
-                     :data-test "demo-account-link"}
-         (tr "auth.create-demo-account")]])]))
+          (tr "auth.register-submit")]])]]))
 

@@ -37,6 +37,7 @@
 
 .group-name-input {
   @extend .input-element-label;
+  margin-bottom: $s-8;
   label {
     @include flexColumn;
     @include bodySmallTypography;
