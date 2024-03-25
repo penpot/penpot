@@ -868,7 +868,8 @@
 
                  (db/delete! conn :file-library-rel {:library-file-id id})
                  (db/update! conn :file
-                             {:is-shared false}
+                             {:is-shared false
+                              :modified-at (dt/now)}
                              {:id id})
                  file)
 
@@ -876,7 +877,8 @@
                     (true? (:is-shared params)))
                (let [file (assoc file :is-shared true)]
                  (db/update! conn :file
-                             {:is-shared true}
+                             {:is-shared true
+                              :modified-at (dt/now)}
                              {:id id})
                  file)
 
