@@ -69,6 +69,11 @@
 
 (def ^:dynamic ^:private *errors* nil)
 
+(defn- library-exists?
+  [file libraries shape]
+  (or (= (:component-file shape) (:id file))
+      (contains? libraries (:component-file shape))))
+
 (defn- report-error
   [code hint shape file page & {:as args}]
   (let [error {:code code
@@ -218,12 +223,11 @@
                   "Shape not expected to be main instance"
                   shape file page))
 
-  (let [library-exists? (or (= (:component-file shape) (:id file))
-                            (contains? libraries (:component-file shape)))
-        component (when library-exists?
+  (let [library-exists (library-exists? file libraries shape)
+        component (when library-exists
                     (ctf/resolve-component shape file libraries {:include-deleted? true}))]
     (if (nil? component)
-      (when library-exists?
+      (when library-exists
         (report-error :component-not-found
                       (str/ffmt "Component % not found in file %" (:component-id shape) (:component-file shape))
                       shape file page))
@@ -265,11 +269,10 @@
 (defn- check-component-ref
   "Validate that the referenced shape exists in the near component."
   [shape file page libraries]
-  (let [library-exists? (or (= (:component-file shape) (:id file))
-                            (contains? libraries (:component-file shape)))
-        ref-shape (when library-exists?
+  (let [library-exists (library-exists? file libraries shape)
+        ref-shape (when library-exists
                     (ctf/find-ref-shape file page libraries shape :include-deleted? true))]
-    (when (and library-exists? (nil? ref-shape))
+    (when (and library-exists (nil? ref-shape))
       (report-error :ref-shape-not-found
                     (str/ffmt "Referenced shape % not found in near component" (:shape-ref shape))
                     shape file page))))
@@ -313,20 +316,25 @@
    - :component-root
    - :shape-ref"
   [shape file page libraries]
-  (check-component-not-main-head shape file page libraries)
-  (check-component-root shape file page)
-  (check-component-ref shape file page libraries)
-  (run! #(check-shape % file page libraries :context :copy-top) (:shapes shape)))
+  ;; We propagate have to propagate to nested shapes if library is valid or not
+  (let [library-exists (library-exists? file libraries shape)]
+    (check-component-not-main-head shape file page libraries)
+    (check-component-root shape file page)
+    (check-component-ref shape file page libraries)
+    (run! #(check-shape % file page libraries :context :copy-top :library-exists library-exists) (:shapes shape))))
 
 (defn- check-shape-copy-root-nested
   "Root shape of a nested copy instance
    - :component-id
    - :component-file
    - :shape-ref"
-  [shape file page libraries]
+  [shape file page libraries library-exists]
   (check-component-not-main-head shape file page libraries)
   (check-component-not-root shape file page)
-  (check-component-ref shape file page libraries)
+  ;; We can have situations where the nested copy and the ancestor copy come from different libraries and some of them have been dettached
+  ;; so we only validate the shape-ref if the ancestor is from a valid library
+  (when library-exists
+    (check-component-ref shape file page libraries))
   (run! #(check-shape % file page libraries :context :copy-nested) (:shapes shape)))
 
 (defn- check-shape-main-not-root
@@ -367,7 +375,7 @@
    - :main-any
    - :copy-any
   "
-  [shape-id file page libraries & {:keys [context] :or {context :not-component}}]
+  [shape-id file page libraries & {:keys [context library-exists] :or {context :not-component library-exists false}}]
   (let [shape (ctst/get-shape page shape-id)]
     (when (some? shape)
       (check-geometry shape file page)
@@ -406,7 +414,7 @@
                 (report-error :nested-copy-not-allowed
                               "Nested copy component only allowed inside other component"
                               shape file page)
-                (check-shape-copy-root-nested shape file page libraries)))))
+                (check-shape-copy-root-nested shape file page libraries library-exists)))))
 
         (if (ctk/in-component-copy? shape)
           (if-not (#{:copy-top :copy-nested :copy-any} context)
