@@ -13,6 +13,7 @@
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.custom-stroke :refer [shape-custom-strokes]]
+   [app.main.ui.shapes.fills :as fills]
    [app.main.ui.shapes.gradients :as grad]
    [app.util.object :as obj]
    [rumext.v2 :as mf]))
@@ -103,5 +104,9 @@
               render-id (dm/str render-id "-" index)]
 
           [:& (mf/provider muc/render-id) {:key index :value render-id}
+           ;; Text fills definition. Need to be defined per-text block
+           [:defs
+            [:& fills/fills          {:shape shape :render-id render-id}]]
+
            [:& shape-custom-strokes {:shape shape :position index :render-id render-id}
             [:> :text props (:text data)]]]))]]))
