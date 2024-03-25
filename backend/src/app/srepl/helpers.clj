@@ -35,15 +35,18 @@
 
 (defn get-file
   "Get the migrated data of one file."
-  ([id] (get-file (or *system* main/system) id))
-  ([system id]
+  ([id] (get-file (or *system* main/system) id nil))
+  ([system id & {:keys [raw?] :as opts}]
    (db/run! system
             (fn [system]
-              (binding [pmap/*load-fn* (partial feat.fdata/load-pointer system id)]
-                (-> (files/get-file system id :migrate? false)
-                    (update :data feat.fdata/process-pointers deref)
-                    (update :data feat.fdata/process-objects (partial into {}))
-                    (fmg/migrate-file)))))))
+              (let [file (files/get-file system id :migrate? false)]
+                (if raw?
+                  file
+                  (binding [pmap/*load-fn* (partial feat.fdata/load-pointer system id)]
+                    (-> file
+                        (update :data feat.fdata/process-pointers deref)
+                        (update :data feat.fdata/process-objects (partial into {}))
+                        (fmg/migrate-file)))))))))
 
 (defn update-file!
   [system {:keys [id] :as file}]
@@ -166,7 +169,7 @@
     (fsnap/take-file-snapshot! system {:file-id file-id :label label}))
 
   (let [conn  (db/get-connection system)
-        file  (get-file system file-id)
+        file  (get-file system file-id opts)
         libs  (when with-libraries?
                 (->> (files/get-file-libraries conn file-id)
                      (into [file] (map (fn [{:keys [id]}]

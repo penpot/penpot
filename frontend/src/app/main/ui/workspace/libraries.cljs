@@ -239,6 +239,7 @@
 
           [:button {:class (stl/css :item-button)
                     :type "button"
+                    :title (tr "workspace.libraries.unlink-library-btn")
                     :data-library-id (dm/str id)
                     :on-click unlink-library}
            detach-icon]])]]
@@ -270,6 +271,7 @@
                                              :typography-count typography-count}])]]
             [:button {:class (stl/css :item-button-shared)
                       :data-library-id (dm/str id)
+                      :title (tr "workspace.libraries.shared-library-btn")
                       :on-click link-library}
              add-icon]])]
 

@@ -65,19 +65,8 @@
                  :features (:features file)
                  :version (:version file)
                  :data (:data file)}
-                {:id id})))
-
-(defn- process-file!
-  [cfg file]
-  (try
-    (let [file (decode-file cfg file)
-          file (clean-file! cfg file)]
-      (cfv/validate-file-schema! file)
-      (update-file! cfg file))
-    (catch Throwable cause
-      (l/err :hint "error on cleaning file (skiping)"
-             :file-id (str (:id file))
-             :cause cause))))
+                {:id id}
+                {::db/return-keys true})))
 
 (def ^:private
   sql:get-candidates
@@ -118,13 +107,15 @@
         unused (->> (db/exec! conn [sql:mark-file-media-object-deleted id ids])
                     (into #{} (map :id)))]
 
+    (l/dbg :hint "clean" :rel "file-media-object" :file-id (str id) :total (count unused))
+
     (doseq [id unused]
       (l/trc :hint "mark deleted"
              :rel "file-media-object"
              :id (str id)
              :file-id (str id)))
 
-    [(count unused) file]))
+    file))
 
 (def ^:private sql:mark-file-object-thumbnails-deleted
   "UPDATE file_tagged_object_thumbnail
@@ -149,13 +140,15 @@
         unused (->> (db/exec! conn [sql:mark-file-object-thumbnails-deleted file-id ids])
                     (into #{} (map :object-id)))]
 
+    (l/dbg :hint "clean" :rel "file-object-thumbnail" :file-id (str file-id) :total (count unused))
+
     (doseq [object-id unused]
       (l/trc :hint "mark deleted"
              :rel "file-tagged-object-thumbnail"
              :object-id object-id
              :file-id (str file-id)))
 
-    [(count unused) file]))
+    file))
 
 (def ^:private sql:mark-file-thumbnails-deleted
   "UPDATE file_thumbnail
@@ -168,13 +161,15 @@
   (let [unused (->> (db/exec! conn [sql:mark-file-thumbnails-deleted id revn])
                     (into #{} (map :revn)))]
 
+    (l/dbg :hint "clean" :rel "file-thumbnail" :file-id (str id) :total (count unused))
+
     (doseq [revn unused]
       (l/trc :hint "mark deleted"
              :rel "file-thumbnail"
              :revn revn
              :file-id (str id)))
 
-    [(count unused) file]))
+    file))
 
 
 (def ^:private sql:get-files-for-library
@@ -230,7 +225,9 @@
 
         file    (update file :data process-fdata unused)]
 
-    [(count unused) file]))
+
+    (l/dbg :hint "clean" :rel "components" :file-id (str file-id) :total (count unused))
+    file))
 
 (def ^:private sql:get-changes
   "SELECT id, data FROM file_change
@@ -242,46 +239,51 @@
       SET deleted_at = now()
     WHERE file_id = ?
       AND id != ALL(?::uuid[])
+      AND deleted_at IS NULL
    RETURNING id")
 
+(def ^:private xf:collect-pointers
+  (comp (map :data)
+        (map blob/decode)
+        (mapcat feat.fdata/get-used-pointer-ids)))
+
 (defn- clean-data-fragments!
-  [{:keys [::db/conn]} {:keys [id data] :as file}]
-  (let [used   (->> (db/cursor conn [sql:get-changes id])
-                    (into (feat.fdata/get-used-pointer-ids data)
-                          (comp (map :data)
-                                (map blob/decode)
-                                (mapcat feat.fdata/get-used-pointer-ids))))
+  [{:keys [::db/conn]} {:keys [id] :as file}]
+  (let [used   (into #{} xf:collect-pointers
+                     (cons file (db/cursor conn [sql:get-changes id])))
 
         unused (let [ids (db/create-array conn "uuid" used)]
                  (->> (db/exec! conn [sql:mark-deleted-data-fragments id ids])
                       (into #{} (map :id))))]
 
+    (l/dbg :hint "clean" :rel "file-data-fragment" :file-id (str id) :total (count unused))
     (doseq [id unused]
       (l/trc :hint "mark deleted"
              :rel "file-data-fragment"
              :id (str id)
-             :file-id (str id)))
+             :file-id (str id)))))
 
-    [(count unused) file]))
-
-(defn- clean-file!
-  [cfg {:keys [id] :as file}]
-  (let [[n1 file] (clean-file-media! cfg file)
-        [n2 file] (clean-file-thumbnails! cfg file)
-        [n3 file] (clean-file-object-thumbnails! cfg file)
-        [n4 file] (clean-deleted-components! cfg file)
-        [n5 file] (clean-data-fragments! cfg file)]
-
-    (l/dbg :hint "file clened"
-           :file-id (str id)
-           :modified-at (dt/format-instant (:modified-at file))
-           :media-objects n1
-           :thumbnails n2
-           :object-thumbnails n3
-           :components n4
-           :data-fragments n5)
-
+(defn- clean-media!
+  [cfg file]
+  (let [file (->> file
+                  (clean-file-media! cfg)
+                  (clean-file-thumbnails! cfg)
+                  (clean-file-object-thumbnails! cfg)
+                  (clean-deleted-components! cfg))]
+    (cfv/validate-file-schema! file)
     file))
+
+(defn- process-file!
+  [cfg file]
+  (try
+    (let [file (decode-file cfg file)
+          file (clean-media! cfg file)
+          file (update-file! cfg file)]
+      (clean-data-fragments! cfg file))
+    (catch Throwable cause
+      (l/err :hint "error on cleaning file (skiping)"
+             :file-id (str (:id file))
+             :cause cause))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HANDLER

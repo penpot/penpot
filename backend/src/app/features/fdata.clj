@@ -62,6 +62,12 @@
                                   {:id id :file-id file-id}
                                   {::sql/columns [:content]
                                    ::db/check-deleted false})]
+
+    (l/trc :hint "load pointer"
+           :file-id (str file-id)
+           :id (str id)
+           :found (some? content))
+
     (when-not content
       (ex/raise :type :internal
                 :code :fragment-not-found
