@@ -26,7 +26,6 @@
 
     <script>
       window.penpotTranslations = JSON.parse({{& translations}});
-      window.penpotThemes = {{& themes}};
       window.penpotVersion = "%version%";
       window.penpotBuildDate = "%buildDate%";
     </script>
@@ -39,8 +38,8 @@
 
   </head>
   <body>
-    {{>../public/images/sprites/symbol/icons.svg}}
-    {{>../public/images/sprites/symbol/cursors.svg}}
+    {{> ../public/images/sprites/symbol/icons.svg }}
+    {{> ../public/images/sprites/symbol/cursors.svg }}
     <div id="app"></div>
     <section id="modal"></section>
     {{# manifest}}
