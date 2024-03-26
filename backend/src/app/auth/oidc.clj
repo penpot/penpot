@@ -574,7 +574,9 @@
 
     :else
     (let [info (assoc info :is-active (provider-has-email-verified? cfg info))]
-      (redirect-to-register cfg info))))
+      (if (contains? cf/flags :registration)
+        (redirect-to-register cfg info)
+        (redirect-with-error "registration-disabled")))))
 
 (defn- auth-handler
   [cfg {:keys [params] :as request}]
