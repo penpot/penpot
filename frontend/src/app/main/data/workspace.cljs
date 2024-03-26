@@ -1573,7 +1573,9 @@
                            (->> (:strokes obj)
                                 (keep :stroke-image))
                            (when (cfh/image-shape? obj)
-                             [(:metadata obj)]))]
+                             [(:metadata obj)])
+                           (when (:fill-image obj)
+                             [(:fill-image obj)]))]
 
               (if (seq imgdata)
                 (->> (rx/from imgdata)
@@ -1833,13 +1835,19 @@
 (defn paste-shapes
   [{in-viewport? :in-viewport :as pdata}]
   (letfn [(translate-media [mdata media-idx attr-path]
-            (let [id   (get-in mdata attr-path)
+            (let [id   (-> (get-in mdata attr-path)
+                           (:id))
                   mobj (get media-idx id)]
               (if mobj
-                (update-in mdata attr-path (fn [value]
-                                             (-> value
-                                                 (assoc :id (:id mobj))
-                                                 (assoc :path (:path mobj)))))
+                (if (empty? attr-path)
+                  (-> mdata
+                      (assoc :id (:id mobj))
+                      (assoc :path (:path mobj)))
+                  (update-in mdata attr-path (fn [value]
+                                               (-> value
+                                                   (assoc :id (:id mobj))
+                                                   (assoc :path (:path mobj))))))
+
                 mdata)))
 
           (add-obj? [chg]
@@ -1849,15 +1857,15 @@
           ;; references to the new uploaded media-objects.
           (process-rchange [media-idx change]
             (let [;; Texts can have different fills for pieces of the text
-                  tr-fill-xf    (map #(translate-media % media-idx [:fill-image :id]))
-                  tr-stroke-xf  (map #(translate-media % media-idx [:stroke-image :id]))]
-
+                  tr-fill-xf    (map #(translate-media % media-idx [:fill-image]))
+                  tr-stroke-xf  (map #(translate-media % media-idx [:stroke-image]))]
               (if (add-obj? change)
                 (update change :obj (fn [obj]
                                       (-> obj
                                           (update :fills #(into [] tr-fill-xf %))
                                           (update :strokes #(into [] tr-stroke-xf %))
-                                          (d/update-when :metadata translate-media media-idx [:id])
+                                          (d/update-when :metadata translate-media media-idx [])
+                                          (d/update-when :fill-image translate-media media-idx [])
                                           (d/update-when :content
                                                          (fn [content]
                                                            (txt/xform-nodes tr-fill-xf content)))
@@ -1983,7 +1991,7 @@
         (let [file-id      (:current-file-id state)
               page         (wsh/lookup-page state)
 
-              media-idx    (->> (:media pdata)
+              media-idx    (->> (:images pdata)
                                 (d/index-by :prev-id))
 
               selected     (:selected pdata)
