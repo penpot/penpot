@@ -9,6 +9,8 @@
   (:require
    [app.common.data.macros :as dm]
    [app.config :as cf]
+   [app.main.data.users :as du]
+   [app.main.store :as st]
    [app.main.ui.auth.login :refer [login-page]]
    [app.main.ui.auth.recovery :refer [recovery-page]]
    [app.main.ui.auth.recovery-request :refer [recovery-request-page]]
@@ -42,10 +44,15 @@
   {::mf/props :obj}
   [{:keys [route]}]
   (let [section (dm/get-in route [:data :name])
-        params  (:query-params route)]
+        params  (:query-params route)
+        error   (:error params)]
 
     (mf/with-effect []
       (dom/set-html-title (tr "title.default")))
+
+    (mf/with-effect [error]
+      (when error
+        (st/emit! (du/show-redirect-error error))))
 
     [:main {:class (stl/css :auth-section)}
      [:a {:href "#/" :class (stl/css :logo-btn)} i/logo]

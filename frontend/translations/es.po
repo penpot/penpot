@@ -991,6 +991,14 @@ msgstr ""
 msgid "errors.registration-disabled"
 msgstr "El registro está actualmente desactivado."
 
+#: src/app/main/data/users.cljs
+msgid "errors.auth-provider-not-allowed"
+msgstr "El proveedor de autenticación no permitido para este perfil de usuario"
+
+#: src/app/main/data/users.cljs
+msgid "errors.email-domain-not-allowed"
+msgstr "Dominio no permitido"
+
 msgid "errors.team-leave.insufficient-members"
 msgstr ""
 "No hay miembros suficientes para salir del equipo, probablemente quieras "
