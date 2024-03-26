@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.types.component :as ctk]
    [app.main.data.viewer :as dv]
    [app.main.store :as st]
    [app.main.ui.workspace.sidebar.layer-item :refer [layer-item-inner]]
@@ -30,7 +31,7 @@
         item-ref  (mf/use-ref nil)
         depth     (+ depth 1)
 
-        component-tree? (or component-child? (:component-root item))
+        component-tree? (or component-child? (ctk/instance-root? item) (ctk/instance-head? item))
 
         collapsed-iref
         (mf/use-memo
