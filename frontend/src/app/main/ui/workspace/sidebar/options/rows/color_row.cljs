@@ -268,6 +268,7 @@
                  :on-click on-remove} i/remove-icon])
      (when select-only
        [:button {:class (stl/css :select-btn)
+                 :title (tr "settings.select-this-color")
                  :on-click handle-select}
         i/move])]))
 

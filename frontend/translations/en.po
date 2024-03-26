@@ -2527,6 +2527,10 @@ msgstr "Detach"
 msgid "settings.multiple"
 msgstr "Mixed"
 
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs
+msgid "settings.select-this-color"
+msgstr "Select items using this style"
+
 # SECTIONS
 msgid "shortcut-section.basics"
 msgstr "Basics"

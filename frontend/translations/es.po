@@ -2573,6 +2573,10 @@ msgstr "Desacoplar"
 msgid "settings.multiple"
 msgstr "Varios"
 
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs
+msgid "settings.select-this-color"
+msgstr "Seleccionar elementos que usan este estilo"
+
 # SECTIONS
 msgid "shortcut-section.basics"
 msgstr "Básicos"
