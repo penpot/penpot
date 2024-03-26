@@ -207,7 +207,7 @@ body {
   (let [properties
         (case (:type node)
           (:root "root")
-          (sts/generate-root-styles shape node)
+          (sts/generate-root-styles shape node true)
 
           (:paragraph-set "paragraph-set")
           (sts/generate-paragraph-set-styles shape)
