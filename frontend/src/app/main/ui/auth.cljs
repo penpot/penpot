@@ -30,7 +30,7 @@
          [:a {:href cf/terms-of-service-uri :target "_blank"} (tr "auth.terms-of-service")])
 
        (when show-all?
-         [:span (tr "labels.and")])
+         [:span (dm/str "  " (tr "labels.and") "  ")])
 
        (when show-privacy?
          [:a {:href cf/privacy-policy-uri :target "_blank"} (tr "auth.privacy-policy")])])))
@@ -45,11 +45,12 @@
       (dom/set-html-title (tr "title.default")))
 
     [:main {:class (stl/css :auth-section)}
+     [:a {:href "#/" :class (stl/css :logo-btn)} i/logo]
      [:div {:class (stl/css :login-illustration)}
       i/login-illustration]
 
      [:section {:class (stl/css :auth-content)}
-      [:a {:href "#/" :class (stl/css :logo-btn)} i/logo]
+
       (case section
         :auth-register
         [:& register-page {:params params}]
@@ -69,6 +70,5 @@
         :auth-recovery
         [:& recovery-page {:params params}])
 
-      (when (or (= section :auth-login)
-                (= section :auth-register))
+      (when (= section :auth-register)
         [:& terms-login])]]))

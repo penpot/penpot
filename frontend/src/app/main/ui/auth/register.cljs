@@ -132,19 +132,18 @@
   [{:keys [params on-success-callback]}]
   [:*
    (when login/show-alt-login-buttons?
-     [:*
-      [:hr {:class (stl/css :separator)}]
-      [:& login/login-buttons {:params params}]])
+     [:& login/login-buttons {:params params}])
    [:hr {:class (stl/css :separator)}]
    [:& register-form {:params params :on-success-callback on-success-callback}]])
 
 (mf/defc register-page
   {::mf/props :obj}
   [{:keys [params]}]
-  [:div {:class (stl/css :auth-form)}
+  [:div {:class (stl/css :auth-form-wrapper)}
    [:h1 {:class (stl/css :auth-title)
          :data-test "registration-title"} (tr "auth.register-title")]
-   [:div {:class (stl/css :auth-subtitle)} (tr "auth.register-subtitle")]
+   [:p {:class (stl/css :auth-tagline)}
+    (tr "auth.login-tagline")]
 
    (when (contains? cf/flags :demo-warning)
      [:& login/demo-warning])
@@ -152,18 +151,20 @@
    [:& register-methods {:params params}]
 
    [:div {:class (stl/css :links)}
-    [:div {:class (stl/css :link-entry :account)}
-     [:span (tr "auth.already-have-account") " "]
-
+    [:div {:class (stl/css :account)}
+     [:span {:class (stl/css :account-text)} (tr "auth.already-have-account") " "]
      [:& lk/link {:action  #(st/emit! (rt/nav :auth-login {} params))
+                  :class (stl/css :account-link)
                   :data-test "login-here-link"}
       (tr "auth.login-here")]]
 
     (when (contains? cf/flags :demo-users)
-      [:div {:class (stl/css :link-entry :demo-users)}
-       [:span (tr "auth.create-demo-profile") " "]
-       [:& lk/link {:action  #(st/emit! (du/create-demo-profile))}
-        (tr "auth.create-demo-account")]])]])
+      [:*
+       [:hr {:class (stl/css :separator)}]
+       [:div {:class (stl/css :demo-account)}
+        [:& lk/link {:action  #(st/emit! (du/create-demo-profile))
+                     :class (stl/css :demo-account-link)}
+         (tr "auth.create-demo-account")]]])]])
 
 ;; --- PAGE: register validation
 
@@ -228,7 +229,8 @@
                   (rx/subs! on-success
                             (partial handle-register-error form))))))]
 
-    [:& fm/form {:on-submit on-submit :form form}
+    [:& fm/form {:on-submit on-submit :form form
+                 :class (stl/css :register-validate-form)}
      [:div {:class (stl/css :fields-row)}
       [:& fm/input {:name :fullname
                     :label (tr "auth.fullname")
@@ -258,7 +260,7 @@
 
 (mf/defc register-validate-page
   [{:keys [params]}]
-  [:div {:class (stl/css :auth-form)}
+  [:div {:class (stl/css :auth-form-wrapper)}
    [:h1 {:class (stl/css :auth-title)
          :data-test "register-title"} (tr "auth.register-title")]
    [:div {:class (stl/css :auth-subtitle)} (tr "auth.register-subtitle")]
@@ -268,13 +270,14 @@
    [:& register-validate-form {:params params}]
 
    [:div {:class (stl/css :links)}
-    [:div {:class (stl/css :link-entry :go-back)}
-     [:& lk/link {:action  #(st/emit! (rt/nav :auth-register {} {}))}
+    [:div {:class (stl/css :go-back)}
+     [:& lk/link {:action  #(st/emit! (rt/nav :auth-register {} {}))
+                  :class (stl/css :go-back-link)}
       (tr "labels.go-back")]]]])
 
 (mf/defc register-success-page
   [{:keys [params]}]
-  [:div {:class (stl/css :auth-form :register-success)}
+  [:div {:class (stl/css :auth-form-wrapper :register-success)}
    [:div {:class (stl/css :notification-icon)} i/icon-verify]
    [:div {:class (stl/css :notification-text)} (tr "auth.verification-email-sent")]
    [:div {:class (stl/css :notification-text-email)} (:email params "")]

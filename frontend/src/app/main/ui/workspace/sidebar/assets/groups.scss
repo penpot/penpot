@@ -49,6 +49,7 @@
 }
 .input-wrapper {
   @extend .input-with-label;
+  margin-bottom: $s-8;
 }
 .action-buttons {
   @extend .modal-action-btns;

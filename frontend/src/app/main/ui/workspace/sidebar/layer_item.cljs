@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
@@ -61,7 +62,7 @@
             :class (stl/css-case
                     :layer-row true
                     :highlight highlighted?
-                    :component (some? (:component-id item))
+                    :component (ctk/instance-head? item)
                     :masked (:masked-group item)
                     :selected selected?
                     :type-frame (cfh/frame-shape? item)
@@ -321,7 +322,7 @@
 
         ref             (mf/use-ref)
         depth           (+ depth 1)
-        component-tree? (or component-child? (:component-root item))
+        component-tree? (or component-child? (ctk/instance-root? item) (ctk/instance-head? item))
 
         enable-drag      (mf/use-fn #(reset! drag-disabled* false))
         disable-drag     (mf/use-fn #(reset! drag-disabled* true))]

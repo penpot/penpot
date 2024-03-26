@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# NOTE: this script should be called from the parent directory to
+# properly work.
 
 set -ex
 
@@ -12,13 +14,13 @@ export EXTRA_PARAMS=$SHADOWCLJS_EXTRA_PARAMS;
 export NODE_ENV=production;
 
 yarn install || exit 1;
-yarn run build:clean || exit 1;
-yarn run build:styles || exit 1;
+rm -rf resources/public;
+rm -rf target/dist;
 
-clojure -J-Xms100M -J-Xmx1000M -J-XX:+UseSerialGC -M:dev:shadow-cljs release main --config-merge "{:release-version \"${CURRENT_HASH}\"}" $EXTRA_PARAMS || exit 1
+clojure -M:dev:shadow-cljs release main --config-merge "{:release-version \"${CURRENT_HASH}\"}" $EXTRA_PARAMS || exit 1
 
-yarn run build:assets || exit 1;
-yarn run build:copy || exit 1;
+yarn run compile || exit 1;
+rsync -avr resources/public/ target/dist/
 
 sed -i -re "s/\%version\%/$CURRENT_VERSION/g" ./target/dist/index.html;
 sed -i -re "s/\%buildDate\%/$BUILD_DATE/g" ./target/dist/index.html;

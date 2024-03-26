@@ -61,7 +61,9 @@
                                        (fm/validate-not-empty :password-1 (tr "auth.password-not-empty"))
                                        (fm/validate-not-empty :password-2 (tr "auth.password-not-empty"))]
                           :initial params)]
-    [:& fm/form {:on-submit on-submit :form form}
+    [:& fm/form {:on-submit on-submit
+                 :class (stl/css :recovery-form)
+                 :form form}
      [:div {:class (stl/css :fields-row)}
       [:& fm/input {:type "password"
                     :name :password-1
@@ -84,13 +86,14 @@
 
 (mf/defc recovery-page
   [{:keys [params] :as props}]
-  [:div {:class (stl/css :auth-form)}
+  [:div {:class (stl/css :auth-form-wrapper)}
    [:h1 {:class (stl/css :auth-title)} "Forgot your password?"]
    [:div {:class (stl/css :auth-subtitle)} "Please enter your new password"]
    [:hr {:class (stl/css :separator)}]
    [:& recovery-form {:params params}]
 
    [:div {:class (stl/css :links)}
-    [:div {:class (stl/css :link-entry)}
-     [:a {:on-click #(st/emit! (rt/nav :auth-login))}
+    [:div {:class (stl/css :go-back)}
+     [:a {:on-click #(st/emit! (rt/nav :auth-login))
+          :class (stl/css :go-back-link)}
       (tr "profile.recovery.go-to-login")]]]])

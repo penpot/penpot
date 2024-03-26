@@ -76,6 +76,7 @@
              (st/emit! (du/request-profile-recovery params)))))]
 
     [:& fm/form {:on-submit on-submit
+                 :class (stl/css :recovery-request-form)
                  :form form}
      [:div {:class (stl/css :fields-row)}
       [:& fm/input {:name :email
@@ -95,14 +96,15 @@
   [{:keys [params on-success-callback go-back-callback] :as props}]
   (let [default-go-back #(st/emit! (rt/nav :auth-login))
         go-back (or go-back-callback default-go-back)]
-    [:div {:class (stl/css :auth-form)}
+    [:div {:class (stl/css :auth-form-wrapper)}
      [:h1 {:class (stl/css :auth-title)} (tr "auth.recovery-request-title")]
      [:div {:class (stl/css :auth-subtitle)} (tr "auth.recovery-request-subtitle")]
      [:hr {:class (stl/css :separator)}]
 
      [:& recovery-form {:params params :on-success-callback on-success-callback}]
-
-     [:div {:class (stl/css :link-entry)}
+     [:hr {:class (stl/css :separator)}]
+     [:div {:class (stl/css :go-back)}
       [:& lk/link {:action go-back
+                   :class (stl/css :go-back-link)
                    :data-test "go-back-link"}
        (tr "labels.go-back")]]]))

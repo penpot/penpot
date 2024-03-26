@@ -19,7 +19,20 @@
    [app.rpc.climit :as-alias climit]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
-   [app.util.services :as sv]))
+   [app.util.services :as sv]
+   [app.util.time :as dt]))
+
+(def ^:private event-columns
+  [:id
+   :name
+   :source
+   :type
+   :tracked-at
+   :created-at
+   :profile-id
+   :ip-addr
+   :props
+   :context])
 
 (defn- event->row [event]
   [(uuid/next)
@@ -27,24 +40,38 @@
    (:source event)
    (:type event)
    (:timestamp event)
+   (:created-at event)
    (:profile-id event)
    (db/inet (:ip-addr event))
    (db/tjson (:props event))
    (db/tjson (d/without-nils (:context event)))])
 
-(def ^:private event-columns
-  [:id :name :source :type :tracked-at
-   :profile-id :ip-addr :props :context])
+(defn- adjust-timestamp
+  [{:keys [timestamp created-at] :as event}]
+  (let [margin (inst-ms (dt/diff timestamp created-at))]
+    (if (or (neg? margin)
+            (> margin 3600000))
+      ;; If event is in future or lags more than 1 hour, we reasign
+      ;; timestamp to the server creation date
+      (-> event
+          (assoc :timestamp created-at)
+          (update :context assoc :original-timestamp timestamp))
+      event)))
 
 (defn- handle-events
   [{:keys [::db/pool]} {:keys [::rpc/profile-id events] :as params}]
   (let [request (-> params meta ::http/request)
         ip-addr (audit/parse-client-ip request)
+        tnow    (dt/now)
         xform   (comp
-                 (map #(assoc % :profile-id profile-id))
-                 (map #(assoc % :ip-addr ip-addr))
-                 (map #(assoc % :source "frontend"))
+                 (map (fn [event]
+                        (-> event
+                            (assoc :created-at tnow)
+                            (assoc :profile-id profile-id)
+                            (assoc :ip-addr ip-addr)
+                            (assoc :source "frontend"))))
                  (filter :profile-id)
+                 (map adjust-timestamp)
                  (map event->row))
         events  (sequence xform events)]
     (when (seq events)

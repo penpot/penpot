@@ -6,36 +6,37 @@
 
 @use "common/refactor/common-refactor.scss" as *;
 
-.auth-form {
+.auth-form-wrapper {
   width: 100%;
-  padding-block-end: $s-16;
-
+  padding-block-end: 0;
+  display: grid;
+  gap: $s-24;
   form {
     display: flex;
     flex-direction: column;
     gap: $s-12;
-    margin-block-end: $s-24;
   }
 }
 
 .separator {
-  border-color: $db-quaternary;
-  margin: $s-24 0;
-}
-
-.error-wrapper {
-  padding-block-end: $s-8;
+  border-color: var(--modal-separator-backogrund-color);
+  margin: 0;
 }
 
 .auth-title {
   @include bigTitleTipography;
-  color: $df-primary;
+  color: var(--title-foreground-color-hover);
 }
 
 .auth-subtitle {
-  margin-top: $s-24;
-  font-size: $fs-14;
-  color: $df-secondary;
+  @include smallTitleTipography;
+  color: var(--title-foreground-color);
+}
+
+.auth-tagline {
+  @include smallTitleTipography;
+  margin: 0;
+  color: var(--title-foreground-color);
 }
 
 .form-field {
@@ -45,117 +46,106 @@
 }
 
 .buttons-stack {
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: $s-8;
-
-  button,
-  :global(.btn-primary) {
-    @extend .button-primary;
-    font-size: $fs-11;
-    height: $s-40;
-    text-transform: uppercase;
-    width: 100%;
-  }
 }
 
-.link-entry {
+.login-button,
+.login-ldap-button {
+  @extend .button-primary;
+  @include uppercaseTitleTipography;
+  height: $s-40;
+  width: 100%;
+}
+
+.demo-account,
+.go-back {
   display: flex;
   flex-direction: column;
   gap: $s-12;
-  padding: $s-24 0;
-  border-top: $s-1 solid $db-quaternary;
+  padding: 0;
+  border-block-start: none;
+}
 
-  span {
-    text-align: center;
-    font-size: $fs-14;
-    color: $df-secondary;
-  }
-  a {
-    @extend .button-secondary;
-    height: $s-40;
-    text-transform: uppercase;
-    font-size: $fs-11;
-  }
-  &.register a {
-    @extend .button-primary;
+.demo-account-link,
+.go-back-link {
+  @extend .button-secondary;
+  @include uppercaseTitleTipography;
+  height: $s-40;
+}
+
+.links {
+  display: grid;
+  gap: $s-24;
+}
+
+.register,
+.account,
+.recovery-request {
+  display: flex;
+  justify-content: center;
+  gap: $s-8;
+  padding: 0;
+}
+
+.register-text,
+.account-text,
+.recovery-text {
+  @include smallTitleTipography;
+  text-align: right;
+  color: var(--title-foreground-color);
+}
+
+.register-link,
+.account-link,
+.recovery-link,
+.forgot-pass-link {
+  @include smallTitleTipography;
+  text-align: left;
+  background-color: transparent;
+  border: none;
+  display: inline;
+  color: var(--link-foreground-color);
+
+  &:hover {
+    text-decoration: underline;
   }
 }
 
 .forgot-password {
   display: flex;
   justify-content: flex-end;
-  a {
-    font-size: $fs-14;
-    color: $df-secondary;
-    font-weight: $fw400;
-  }
 }
 
 .submit-btn,
 .register-btn,
 .recover-btn {
   @extend .button-primary;
-  font-size: $fs-11;
+  @include uppercaseTitleTipography;
   height: $s-40;
-  text-transform: uppercase;
   width: 100%;
 }
 
 .login-btn {
-  border-radius: $br-8;
-  font-size: $fs-14;
+  @include smallTitleTipography;
   display: flex;
   align-items: center;
   gap: $s-6;
   width: 100%;
-
+  border-radius: $br-8;
+  background-color: var(--button-secondary-background-color-rest);
+  color: var(--button-foreground-color-focus);
   span {
-    padding-top: $s-2;
+    padding-block-start: $s-2;
   }
 
   &:hover {
-    color: var(--app-white);
+    color: var(--button-foreground-color-focus);
+    background-color: var(--button-secondary-background-color-hover);
   }
 }
 
 .auth-buttons {
   display: flex;
   gap: $s-8;
-}
-
-.btn-google-auth {
-  color: var(--google-login-foreground);
-  background-color: var(--google-login-background);
-  &:hover {
-    background: var(--google-login-background-hover);
-  }
-}
-
-.btn-github-auth {
-  color: var(--github-login-foreground);
-  background: var(--github-login-background);
-  &:hover {
-    background: var(--github-login-background-hover);
-  }
-}
-
-.btn-oidc-auth {
-  color: var(--oidc-login-foreground);
-  background: var(--oidc-login-background);
-  &:hover {
-    background: var(--oidc-login-background-hover);
-  }
-}
-
-.btn-gitlab-auth {
-  color: var(--gitlab-login-foreground);
-  background: var(--gitlab-login-background);
-  &:hover {
-    background: var(--gitlab-login-background-hover);
-  }
-}
-
-.banner {
-  margin: $s-16 0;
 }
