@@ -27,7 +27,7 @@
   (i/icon-xref :add (stl/css :add-icon :pathbar-icon)))
 
 (def ^:private remove-icon
-  (i/icon-xref :remove-icon (stl/css :remove-icon :pathbar-icon)))
+  (i/icon-xref :remove (stl/css :remove :pathbar-icon)))
 
 (def ^:private merge-nodes-icon
   (i/icon-xref :merge-nodes (stl/css :merge-nodes-icon :pathbar-icon)))

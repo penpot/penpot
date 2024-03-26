@@ -10,8 +10,12 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.path :as gsp]
    [app.common.geom.shapes.text :as gst]
    [app.common.math :as mth]
+   [app.common.svg.path.bool :as pb]
+   [app.common.svg.path.shapes-to-path :as stp]
+   [app.common.svg.path.subpath :as ups]
    [app.main.refs :as refs]
    [app.util.color :as uc]
    [app.util.debug :as dbg]
@@ -87,13 +91,98 @@
                   :style {:stroke "green"
                           :stroke-width (/ 2 zoom)}}]]))]))
 
+(mf/defc debug-bool-shape
+  {::mf/wrap-props false}
+  [{:keys [shape]}]
+
+  (let [objects (mf/deref refs/workspace-page-objects)
+        zoom (mf/deref refs/selected-zoom)
+
+        radius (/ 3 zoom)
+
+        c1 (-> (get objects (first (:shapes shape)))
+               (stp/convert-to-path objects))
+        c2 (-> (get objects (second (:shapes shape)))
+               (stp/convert-to-path objects))
+
+        content-a (:content c1)
+        content-b (:content c2)
+
+        bool-type (:bool-type shape)
+        should-reverse? (and (not= :union bool-type)
+                             (= (ups/clockwise? content-b)
+                                (ups/clockwise? content-a)))
+
+        content-a (-> (:content c1)
+                      (pb/close-paths)
+                      (pb/add-previous))
+
+        content-b (-> (:content c2)
+                      (pb/close-paths)
+                      (cond-> should-reverse? (ups/reverse-content))
+                      (pb/add-previous))
+
+
+        sr-a (gsp/content->selrect content-a)
+        sr-b (gsp/content->selrect content-b)
+
+        [content-a-split content-b-split] (pb/content-intersect-split content-a content-b sr-a sr-b)
+
+        ;;content-a-geom (gsp/content->geom-data content-a)
+        ;;content-b-geom (gsp/content->geom-data content-b)
+        ;;content-a-split (->> content-a-split #_(filter #(pb/contains-segment? % content-b sr-b content-b-geom)))
+        ;;content-b-split (->> content-b-split #_(filter #(pb/contains-segment? % content-a sr-a content-a-geom)))
+        ]
+    [:*
+     (for [[i cmd] (d/enumerate content-a-split)]
+       (let [p1 (:prev cmd)
+             p2 (gsp/command->point cmd)
+
+             hp (case (:command cmd)
+                  :line-to  (-> (gsp/command->line cmd)
+                                (gsp/line-values 0.5))
+
+                  :curve-to (-> (gsp/command->bezier cmd)
+                                (gsp/curve-values 0.5))
+                  nil)]
+         [:*
+          (when p1
+            [:circle {:data-i i :key (dm/str "c11-" i) :cx (:x p1) :cy (:y p1) :r radius :fill "red"}])
+          [:circle {:data-i i :key (dm/str "c12-" i) :cx (:x p2) :cy (:y p2) :r radius :fill "red"}]
+
+          (when hp
+            [:circle {:data-i i :key (dm/str "c13-" i) :cx (:x hp) :cy (:y hp) :r radius :fill "orange"}])]))
+
+     (for [[i cmd] (d/enumerate content-b-split)]
+       (let [p1 (:prev cmd)
+             p2 (gsp/command->point cmd)
+
+             hp (case (:command cmd)
+                  :line-to  (-> (gsp/command->line cmd)
+                                (gsp/line-values 0.5))
+
+                  :curve-to (-> (gsp/command->bezier cmd)
+                                (gsp/curve-values 0.5))
+                  nil)]
+         [:*
+          (when p1
+            [:circle {:key (dm/str "c21-" i) :cx (:x p1) :cy (:y p1) :r radius :fill "blue"}])
+          [:circle {:key (dm/str "c22-" i) :cx (:x p2) :cy (:y p2) :r radius :fill "blue"}]
+
+          (when hp
+            [:circle {:data-i i :key (dm/str "c13-" i) :cx (:x hp) :cy (:y hp) :r radius :fill "green"}])]))]))
+
 (mf/defc shape-debug
   [{:keys [shape]}]
   [:*
    (when ^boolean (dbg/enabled? :bounding-boxes)
      [:& debug-bounding-boxes {:shape shape}])
 
-   (when (and ^boolean (cfh/text-shape? shape)
-              ^boolean (dbg/enabled? :text-outline)
+   (when (and ^boolean (dbg/enabled? :bool-shapes)
+              ^boolean (cfh/bool-shape? shape))
+     [:& debug-bool-shape {:shape shape}])
+
+   (when (and ^boolean (dbg/enabled? :text-outline)
+              ^boolean (cfh/text-shape? shape)
               ^boolean (seq (:position-data shape)))
      [:& debug-text-bounds {:shape shape}])])
