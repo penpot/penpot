@@ -83,17 +83,17 @@
 
 (defmethod process-token :auth
   [{:keys [conn] :as cfg} _params {:keys [profile-id] :as claims}]
-  (let [profile (profile/get-profile conn profile-id {::sql/for-update true})
-        props   (merge (:props profile)
-                       (:props claims))
-        profile (assoc profile :props props)]
-
+  (let [profile  (profile/get-profile conn profile-id {::sql/for-update true})
+        props    (merge (:props profile)
+                        (:props claims))]
     (when (not= props (:props profile))
       (db/update! conn :profile
                   {:props (db/tjson props)}
                   {:id profile-id}))
 
-    (assoc claims :profile profile)))
+
+    (let [profile (assoc profile :props props)]
+      (assoc claims :profile profile))))
 
 ;; --- Team Invitation
 

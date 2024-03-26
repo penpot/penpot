@@ -520,16 +520,21 @@
 
     (redirect-response uri)))
 
-(defn- provider-matches-profile?
-  [{:keys [::provider] :as cfg} {:keys [props] :as profile}]
-  (or (= (:auth-backend profile) (:name provider))
-      (let [email-prop (qualify-prop-key provider :email)]
-        (contains? props email-prop))))
-
 (defn- provider-has-email-verified?
   [{:keys [::provider] :as cfg} {:keys [props] :as info}]
   (let [prop (qualify-prop-key provider :email_verified)]
     (true? (get props prop))))
+
+(defn- profile-has-provider-props?
+  [{:keys [::provider] :as cfg} profile]
+  (let [prop (qualify-prop-key provider :email)]
+    (contains? (:props profile) prop)))
+
+(defn- provider-matches-profile?
+  [{:keys [::provider] :as cfg} profile info]
+  (or (= (:auth-backend profile) (:name provider))
+      (profile-has-provider-props? cfg profile)
+      (provider-has-email-verified? cfg info)))
 
 (defn- process-callback
   [cfg request info profile]
@@ -539,7 +544,7 @@
       (:is-blocked profile)
       (redirect-with-error "profile-blocked")
 
-      (not (provider-matches-profile? cfg profile))
+      (not (provider-matches-profile? cfg profile info))
       (redirect-with-error "auth-provider-not-allowed")
 
       (not (:is-active profile))
