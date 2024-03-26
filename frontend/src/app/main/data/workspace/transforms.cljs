@@ -971,7 +971,7 @@
             selrect   (gsh/shapes->rect shapes)
             center    (grc/rect->center selrect)
             modifiers (dwm/create-modif-tree selected (ctm/resize-modifiers (gpt/point -1.0 1.0) center))]
-        (rx/of (dwm/apply-modifiers {:modifiers modifiers}))))))
+        (rx/of (dwm/apply-modifiers {:modifiers modifiers :ignore-snap-pixel true}))))))
 
 (defn flip-vertical-selected []
   (ptk/reify ::flip-vertical-selected
@@ -983,4 +983,4 @@
             selrect   (gsh/shapes->rect shapes)
             center    (grc/rect->center selrect)
             modifiers (dwm/create-modif-tree selected (ctm/resize-modifiers (gpt/point 1.0 -1.0) center))]
-        (rx/of (dwm/apply-modifiers {:modifiers modifiers}))))))
+        (rx/of (dwm/apply-modifiers {:modifiers modifiers :ignore-snap-pixel true}))))))
