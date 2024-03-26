@@ -480,6 +480,16 @@
            parent      (get objects parent-id)
            name        (:name obj)
 
+           old-objects (:objects page)
+           old-parent  (->> (get old-objects (:id obj))
+                            :parent-id
+                            (get old-objects))
+
+           old-main-parent (:id (ctn/find-component-main old-objects old-parent))
+           main-parent     (:id (ctn/find-component-main objects obj))
+           ;; TODO: check this, probably most of the remove swap slot logic for copy/cut/paste/duplicate can be done here
+           remove-swap-slot? (not= main-parent old-main-parent)
+
            is-component-root?     (or (:saved-component-root obj)
                                       ;; Backward compatibility
                                       (:saved-component-root? obj)
@@ -507,6 +517,9 @@
                       :name name
                       :parent-id parent-id
                       :frame-id frame-id)
+
+               (cond-> remove-swap-slot?
+                 (ctk/remove-swap-slot))
 
                (dissoc :shapes
                        :main-instance
