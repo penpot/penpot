@@ -15,10 +15,11 @@
    [app.config :as cf]
    [app.main.data.events :as ev]
    [app.main.data.media :as di]
+   [app.main.data.messages :as msg]
    [app.main.data.websocket :as ws]
    [app.main.features :as features]
    [app.main.repo :as rp]
-   [app.util.i18n :as i18n]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.storage :refer [storage]]
    [beicon.v2.core :as rx]
@@ -683,3 +684,24 @@
         (->> (rp/cmd! :delete-access-token params)
              (rx/tap on-success)
              (rx/catch on-error))))))
+
+(defn show-redirect-error
+  "A helper event that interprets the OIDC redirect errors on the URI
+  and shows an appropriate error message using the notification
+  banners."
+  [error]
+  (ptk/reify ::show-redirect-error
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [hint (case error
+                   "registration-disabled"
+                   (tr "errors.registration-disabled")
+                   "profile-blocked"
+                   (tr "errors.profile-blocked")
+                   "auth-provider-not-allowed"
+                   (tr "errors.auth-provider-not-allowed")
+                   "email-domain-not-allowed"
+                   (tr "errors.email-domain-not-allowed")
+                   :else
+                   (tr "errors.generic"))]
+        (rx/of (msg/warn hint))))))

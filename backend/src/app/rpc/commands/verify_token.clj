@@ -91,7 +91,6 @@
                   {:props (db/tjson props)}
                   {:id profile-id}))
 
-
     (let [profile (assoc profile :props props)]
       (assoc claims :profile profile))))
 

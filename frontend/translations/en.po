@@ -968,6 +968,14 @@ msgstr "Your profile has emails muted (spam reports or high bounces)."
 msgid "errors.registration-disabled"
 msgstr "The registration is currently disabled."
 
+#: src/app/main/data/users.cljs
+msgid "errors.auth-provider-not-allowed"
+msgstr "Auth provider not allowed for this profile"
+
+#: src/app/main/data/users.cljs
+msgid "errors.email-domain-not-allowed"
+msgstr "Domain not allowed"
+
 msgid "errors.team-leave.insufficient-members"
 msgstr "Insufficient members to leave team, you probably want to delete it."
 
