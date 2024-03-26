@@ -23,6 +23,19 @@
     .cap-select {
       width: $s-124;
     }
+    .stroke-cap-dropdown,
+    .stroke-cap-dropdown-start {
+      min-width: $s-124;
+      width: fit-content;
+      max-width: $s-252;
+      right: 0;
+      left: unset;
+    }
+
+    .stroke-cap-dropdown-start {
+      left: 0;
+      right: unset;
+    }
     .swap-caps-btn {
       @extend .button-secondary;
       height: $s-32;

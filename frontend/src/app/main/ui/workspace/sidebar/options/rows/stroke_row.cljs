@@ -196,6 +196,7 @@
         [:div {:class (stl/css :cap-select)}
          [:& select
           {:default-value (:stroke-cap-start stroke)
+           :dropdown-class (stl/css :stroke-cap-dropdown-start)
            :options stroke-caps-options
            :on-change on-caps-start-change}]]
 
@@ -206,5 +207,6 @@
         [:div {:class (stl/css :cap-select)}
          [:& select
           {:default-value (:stroke-cap-end stroke)
+           :dropdown-class (stl/css :stroke-cap-dropdown)
            :options stroke-caps-options
            :on-change on-caps-end-change}]]])]))
