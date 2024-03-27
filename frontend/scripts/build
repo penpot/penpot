@@ -20,6 +20,7 @@ rm -rf target/dist;
 clojure -M:dev:shadow-cljs release main --config-merge "{:release-version \"${CURRENT_HASH}\"}" $EXTRA_PARAMS || exit 1
 
 yarn run compile || exit 1;
+mkdir -p target/dist;
 rsync -avr resources/public/ target/dist/
 
 sed -i -re "s/\%version\%/$CURRENT_VERSION/g" ./target/dist/index.html;
