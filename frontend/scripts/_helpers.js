@@ -32,7 +32,6 @@ async function findFiles(basePath, predicate, options={}) {
   predicate = predicate ?? function() { return true; }
 
   let files = await fs.readdir(basePath, {recursive: options.recursive ?? false})
-  files = files.filter((path) => path.endsWith(".svg"));
   files = files.map((path) => ph.join(basePath, path));
 
   return files;
@@ -54,7 +53,11 @@ export function isSassFile(path) {
 }
 
 export function isSvgFile(path) {
-  return path.endsWith(".scss");
+  return path.endsWith(".svg");
+}
+
+export function isJsFile(path) {
+  return path.endsWith(".js");
 }
 
 export async function compileSass(worker, path, options) {
@@ -378,7 +381,7 @@ export async function compilePolyfills() {
   log.info("init: compile polyfills")
 
 
-  const files = await findFiles("resources/polyfills/");
+  const files = await findFiles("resources/polyfills/", isJsFile);
   let result = [];
   for (let path of files) {
     const content = await fs.readFile(path, {encoding:"utf-8"});

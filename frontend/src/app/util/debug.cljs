@@ -86,7 +86,10 @@
     :shape-panel
 
     ;; Show what is touched in copies
-    :display-touched})
+    :display-touched
+
+    ;; Show some visual indicators for bool shape
+    :bool-shapes})
 
 (defn enable!
   [option]

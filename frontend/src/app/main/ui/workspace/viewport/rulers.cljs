@@ -101,13 +101,13 @@
         rulers-size (* rulers-size zoom-inverse)]
     (if (= axis :x)
       {:text-x val
-       :text-y (+ (:y vbox) (- rulers-pos (* 4 zoom-inverse)))
+       :text-y (+ (:y vbox) rulers-pos (* -1 zoom-inverse))
        :line-x1 val
        :line-y1 (+ (:y vbox) rulers-pos (* 2 zoom-inverse))
        :line-x2 val
        :line-y2 (+ (:y vbox) rulers-pos (* 2 zoom-inverse) rulers-size)}
 
-      {:text-x (+ (:x vbox) (- rulers-pos (* 4 zoom-inverse)))
+      {:text-x (+ (:x vbox) rulers-pos (* -1 zoom-inverse))
        :text-y val
        :line-x1 (+ (:x vbox) rulers-pos (* 2 zoom-inverse))
        :line-y1 val
@@ -171,7 +171,6 @@
           [:text {:x text-x
                   :y text-y
                   :text-anchor "middle"
-                  :dominant-baseline "middle"
                   :transform (when (= axis :y) (str "rotate(-90 " text-x "," text-y ")"))
                   :style {:font-size (* font-size zoom-inverse)
                           :font-family font-family
@@ -250,18 +249,16 @@
                     :fill-opacity selection-area-opacity}}]
 
     [:text {:x (- (:x1 selection-rect) (* 4 zoom-inverse))
-            :y (+ (:y vbox) (* 10.6 zoom-inverse))
+            :y (+ (:y vbox) (* 13.6 zoom-inverse))
             :text-anchor "end"
-            :dominant-baseline "middle"
             :style {:font-size (* font-size zoom-inverse)
                     :font-family font-family
                     :fill selection-area-color}}
      (fmt/format-number (- (:x1 selection-rect) offset-x))]
 
     [:text {:x (+ (:x2 selection-rect) (* 4 zoom-inverse))
-            :y (+ (:y vbox) (* 10.6 zoom-inverse))
+            :y (+ (:y vbox) (* 13.6 zoom-inverse))
             :text-anchor "start"
-            :dominant-baseline "middle"
             :style {:font-size (* font-size zoom-inverse)
                     :font-family font-family
                     :fill selection-area-color}}
@@ -293,18 +290,16 @@
                       :fill-opacity over-number-opacity}}]
 
       [:text {:x (- center-x (/ (:height selection-rect) 2) (* 15 zoom-inverse))
-              :y center-y
+              :y (+ center-y (* 4 zoom-inverse))
               :text-anchor "end"
-              :dominant-baseline "middle"
               :style {:font-size (* font-size zoom-inverse)
                       :font-family font-family
                       :fill selection-area-color}}
        (fmt/format-number (- (:y2 selection-rect) offset-y))]
 
       [:text {:x (+ center-x (/ (:height selection-rect) 2))
-              :y center-y
+              :y (+ center-y (* 4 zoom-inverse))
               :text-anchor "start"
-              :dominant-baseline "middle"
               :style {:font-size (* font-size zoom-inverse)
                       :font-family font-family
                       :fill selection-area-color}}

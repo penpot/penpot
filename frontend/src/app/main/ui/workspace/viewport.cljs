@@ -553,7 +553,7 @@
            :offset-y offset-y
            :show-rulers? show-rulers?}])
 
-       (when show-rulers?
+       (when (and show-rulers? show-grids?)
          [:& guides/viewport-guides
           {:zoom zoom
            :vbox vbox

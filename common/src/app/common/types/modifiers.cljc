@@ -737,30 +737,32 @@
 
           (apply-scale-content
             [shape value]
-            (cond-> shape
-              (cfh/text-shape? shape)
-              (update-text-content scale-text-content value)
+            ;; Scale can only be positive
+            (let [value (mth/abs value)]
+              (cond-> shape
+                (cfh/text-shape? shape)
+                (update-text-content scale-text-content value)
 
-              :always
-              (gsc/update-corners-scale value)
+                :always
+                (gsc/update-corners-scale value)
 
-              (d/not-empty? (:strokes shape))
-              (gss/update-strokes-width value)
+                (d/not-empty? (:strokes shape))
+                (gss/update-strokes-width value)
 
-              (d/not-empty? (:shadow shape))
-              (gse/update-shadows-scale value)
+                (d/not-empty? (:shadow shape))
+                (gse/update-shadows-scale value)
 
-              (some? (:blur shape))
-              (gse/update-blur-scale value)
+                (some? (:blur shape))
+                (gse/update-blur-scale value)
 
-              (ctl/flex-layout? shape)
-              (ctl/update-flex-scale value)
+                (ctl/flex-layout? shape)
+                (ctl/update-flex-scale value)
 
-              (ctl/grid-layout? shape)
-              (ctl/update-grid-scale value)
+                (ctl/grid-layout? shape)
+                (ctl/update-grid-scale value)
 
-              :always
-              (ctl/update-flex-child value)))]
+                :always
+                (ctl/update-flex-child value))))]
 
     (let [remove-children
           (fn [shapes children-to-remove]
