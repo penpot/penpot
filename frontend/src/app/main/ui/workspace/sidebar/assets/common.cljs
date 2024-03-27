@@ -28,7 +28,7 @@
    [app.util.array :as array]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
-   [app.util.i18n :as i18n :refer [tr]]
+   [app.util.i18n :as i18n :refer [tr c]]
    [app.util.strings :refer [matches-search]]
    [app.util.timers :as ts]
    [cljs.spec.alpha :as s]
@@ -216,8 +216,8 @@
 (defn create-counter-element
   [asset-count]
   (let [counter-el (dom/create-element "div")]
-    (dom/set-property! counter-el "class" "drag-counter")
-    (dom/set-text! counter-el (str asset-count))
+    (dom/set-property! counter-el "class" (stl/css :drag-counter))
+    (dom/set-text! counter-el (tr "workspace.assets.sidebar.components" (c asset-count)))
     counter-el))
 
 (defn set-drag-image
