@@ -3711,6 +3711,12 @@ msgstr "Swap component"
 msgid "workspace.options.component.swap.empty"
 msgstr "There are no assets in this library yet"
 
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs
+msgid "workspace.assets.sidebar.components"
+msgid_plural "workspace.assets.sidebar.components"
+msgstr[0] "1 component"
+msgstr[1] "%s components"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints"
 msgstr "Constraints"

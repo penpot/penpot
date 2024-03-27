@@ -45,3 +45,21 @@
 .asset-section.opened {
   margin-bottom: $s-12;
 }
+
+.drag-counter {
+  @include bodySmallTypography;
+  @include textEllipsis;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: calc($s-24 - $s-2);
+  background-color: var(--assets-item-name-background-color);
+  color: var(--assets-item-name-foreground-color);
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin: $s-4;
+  padding-inline: $s-4;
+  z-index: 2;
+}
