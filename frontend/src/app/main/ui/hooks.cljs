@@ -177,8 +177,9 @@
         on-mount
         (fn []
           (let [dom (mf/ref-val ref)]
-            (.setAttribute dom "draggable" true) ;; In firefox it needs to be draggable for problems with event handling.
-                                                 ;; It will stop the drag operation in on-drag-start
+            ;; In firefox it needs to be draggable for problems with event handling.
+            ;; It will stop the drag operation in on-drag-start
+            (.setAttribute dom "draggable" (and draggable? (not disabled)))
 
             ;; Register all events in the (default) bubble mode, so that they
             ;; are captured by the most leaf item. The handler will stop
