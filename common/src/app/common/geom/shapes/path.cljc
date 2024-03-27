@@ -845,12 +845,10 @@
 (defn close-content
   [content]
   (into []
-        (comp  (filter sp/is-closed?)
-               (mapcat :data))
+        (mapcat :data)
         (->> content
              (sp/close-subpaths)
              (sp/get-subpaths))))
-
 
 (defn ray-overlaps?
   [ray-point {selrect :selrect}]
