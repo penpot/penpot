@@ -146,7 +146,7 @@ def derive_password(password):
     print(f"Derived password: \"{res}\"")
 
 
-def migrate_components_v2():
+def migrate_v2():
     params = {
         "cmd": "migrate-v2",
         "params": {}
@@ -160,7 +160,7 @@ available_commands = (
     "delete-profile",
     "search-profile",
     "derive-password",
-    "migrate-components-v2",
+    "migrate-v2",
 )
 
 parser = argparse.ArgumentParser(
@@ -233,7 +233,7 @@ elif args.action == "search-profile":
 
     search_profile(email)
 
-elif args.action == "migrate-components-v2":
-    migrate_components_v2()
+elif args.action == "migrate-v2":
+    migrate_v2()
 
 

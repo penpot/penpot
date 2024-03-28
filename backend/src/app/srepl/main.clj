@@ -86,13 +86,11 @@
 
 (defn resend-email-verification-email!
   [email]
-  (let [sprops  (:app.setup/props main/system)
-        pool    (:app.db/pool main/system)
-        email   (profile/clean-email email)
-        profile (profile/get-profile-by-email pool email)]
-
-    (auth/send-email-verification! pool sprops profile)
-    :email-sent))
+  (db/tx-run! main/system
+              (fn [{:keys [::db/conn] :as cfg}]
+                (let [email   (profile/clean-email email)
+                      profile (profile/get-profile-by-email conn email)]
+                  (#'auth/send-email-verification! cfg profile)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PROFILES MANAGEMENT

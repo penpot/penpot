@@ -15,10 +15,11 @@
    [app.config :as cf]
    [app.main.data.events :as ev]
    [app.main.data.media :as di]
+   [app.main.data.messages :as msg]
    [app.main.data.websocket :as ws]
    [app.main.features :as features]
    [app.main.repo :as rp]
-   [app.util.i18n :as i18n]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.storage :refer [storage]]
    [beicon.v2.core :as rx]
@@ -231,8 +232,35 @@
                                    (rx/observe-on :async)))))
              (rx/catch on-error))))))
 
+(def ^:private schema:login-with-ldap
+  (sm/define
+    [:map
+     [:email ::sm/email]
+     [:password :string]]))
+
+(defn login-with-ldap
+  [params]
+
+  (dm/assert!
+   "expected valid params"
+   (sm/check! schema:login-with-ldap params))
+
+  (ptk/reify ::login-with-ldap
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [{:keys [on-error on-success]
+             :or {on-error rx/throw
+                  on-success identity}} (meta params)]
+        (->> (rp/cmd! :login-with-ldap params)
+             (rx/tap on-success)
+             (rx/map (fn [profile]
+                       (-> profile
+                           (with-meta {::ev/source "login-with-ldap"})
+                           (logged-in))))
+             (rx/catch on-error))))))
 
 (defn login-from-token
+  "Used mainly as flow continuation after token validation."
   [{:keys [profile] :as tdata}]
   (ptk/reify ::login-from-token
     ptk/WatchEvent
@@ -656,3 +684,24 @@
         (->> (rp/cmd! :delete-access-token params)
              (rx/tap on-success)
              (rx/catch on-error))))))
+
+(defn show-redirect-error
+  "A helper event that interprets the OIDC redirect errors on the URI
+  and shows an appropriate error message using the notification
+  banners."
+  [error]
+  (ptk/reify ::show-redirect-error
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [hint (case error
+                   "registration-disabled"
+                   (tr "errors.registration-disabled")
+                   "profile-blocked"
+                   (tr "errors.profile-blocked")
+                   "auth-provider-not-allowed"
+                   (tr "errors.auth-provider-not-allowed")
+                   "email-domain-not-allowed"
+                   (tr "errors.email-domain-not-allowed")
+                   :else
+                   (tr "errors.generic"))]
+        (rx/of (msg/warn hint))))))

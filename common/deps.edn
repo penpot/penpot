@@ -1,5 +1,5 @@
 {:deps
- {org.clojure/clojure {:mvn/version "1.11.1"}
+ {org.clojure/clojure {:mvn/version "1.11.2"}
   org.clojure/data.json {:mvn/version "2.5.0"}
   org.clojure/tools.cli {:mvn/version "1.0.219"}
   org.clojure/clojurescript {:mvn/version "1.11.132"}
@@ -7,12 +7,12 @@
   org.clojure/data.fressian {:mvn/version "1.0.0"}
 
   ;; Logging
-  org.apache.logging.log4j/log4j-api {:mvn/version "2.22.1"}
-  org.apache.logging.log4j/log4j-core {:mvn/version "2.22.1"}
-  org.apache.logging.log4j/log4j-web {:mvn/version "2.22.1"}
-  org.apache.logging.log4j/log4j-jul {:mvn/version "2.22.1"}
-  org.apache.logging.log4j/log4j-slf4j2-impl {:mvn/version "2.22.1"}
-  org.slf4j/slf4j-api {:mvn/version "2.0.10"}
+  org.apache.logging.log4j/log4j-api {:mvn/version "2.23.1"}
+  org.apache.logging.log4j/log4j-core {:mvn/version "2.23.1"}
+  org.apache.logging.log4j/log4j-web {:mvn/version "2.23.1"}
+  org.apache.logging.log4j/log4j-jul {:mvn/version "2.23.1"}
+  org.apache.logging.log4j/log4j-slf4j2-impl {:mvn/version "2.23.1"}
+  org.slf4j/slf4j-api {:mvn/version "2.0.12"}
   pl.tkowalcz.tjahzi/log4j2-appender {:mvn/version "0.9.32"}
 
   selmer/selmer {:mvn/version "1.12.59"}
@@ -28,7 +28,7 @@
   integrant/integrant {:mvn/version "0.8.1"}
 
   org.apache.commons/commons-pool2 {:mvn/version "2.12.0"}
-  org.graalvm.js/js {:mvn/version "23.0.2"}
+  org.graalvm.js/js {:mvn/version "23.0.3"}
 
   funcool/tubax {:mvn/version "2021.05.20-0"}
   funcool/cuerdas {:mvn/version "2023.11.09-407"}
@@ -41,7 +41,7 @@
    :git/tag "3.0.0"
    :git/url "https://github.com/funcool/datoteka"}
 
-  lambdaisland/uri {:mvn/version "1.16.134"
+  lambdaisland/uri {:mvn/version "1.19.155"
                     :exclusions [org.clojure/data.json]}
 
   frankiesardo/linked {:mvn/version "1.3.0"}
@@ -72,7 +72,7 @@
 
   :build
   {:extra-deps
-   {io.github.clojure/tools.build {:git/tag "v0.9.5" :git/sha "24f2894"}}
+   {io.github.clojure/tools.build {:git/tag "v0.10.0" :git/sha "3a2c484"}}
    :ns-default build}
 
   :test

@@ -16,7 +16,6 @@
    [app.config :as cf]
    [app.db :as db]
    [app.http.session :as session]
-   [app.main :as-alias main]
    [app.rpc.commands.auth :as auth]
    [app.rpc.commands.files-create :refer [create-file]]
    [app.rpc.commands.profile :as profile]
@@ -341,57 +340,57 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- resend-email-notification
-  [{:keys [::db/pool ::setup/props] :as cfg} {:keys [params] :as request}]
+  [cfg {:keys [params] :as request}]
+  (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
+                    (when-not (contains? params :force)
+                      (ex/raise :type :validation
+                                :code :missing-force
+                                :hint "missing force checkbox"))
 
-  (when-not (contains? params :force)
-    (ex/raise :type :validation
-              :code :missing-force
-              :hint "missing force checkbox"))
+                    (let [profile (some->> params
+                                           :email
+                                           (profile/clean-email)
+                                           (profile/get-profile-by-email conn))]
 
-  (let [profile (some->> params
-                         :email
-                         (profile/clean-email)
-                         (profile/get-profile-by-email pool))]
+                      (when-not profile
+                        (ex/raise :type :validation
+                                  :code :missing-profile
+                                  :hint "unable to find profile by email"))
 
-    (when-not profile
-      (ex/raise :type :validation
-                :code :missing-profile
-                :hint "unable to find profile by email"))
+                      (cond
+                        (contains? params :block)
+                        (do
+                          (db/update! conn :profile {:is-blocked true} {:id (:id profile)})
+                          (db/delete! conn :http-session {:profile-id (:id profile)})
 
-    (cond
-      (contains? params :block)
-      (do
-        (db/update! pool :profile {:is-blocked true} {:id (:id profile)})
-        (db/delete! pool :http-session {:profile-id (:id profile)})
+                          {::rres/status  200
+                           ::rres/headers {"content-type" "text/plain"}
+                           ::rres/body    (str/ffmt "PROFILE '%' BLOCKED" (:email profile))})
 
-        {::rres/status  200
-         ::rres/headers {"content-type" "text/plain"}
-         ::rres/body    (str/ffmt "PROFILE '%' BLOCKED" (:email profile))})
+                        (contains? params :unblock)
+                        (do
+                          (db/update! conn :profile {:is-blocked false} {:id (:id profile)})
+                          {::rres/status  200
+                           ::rres/headers {"content-type" "text/plain"}
+                           ::rres/body    (str/ffmt "PROFILE '%' UNBLOCKED" (:email profile))})
 
-      (contains? params :unblock)
-      (do
-        (db/update! pool :profile {:is-blocked false} {:id (:id profile)})
-        {::rres/status  200
-         ::rres/headers {"content-type" "text/plain"}
-         ::rres/body    (str/ffmt "PROFILE '%' UNBLOCKED" (:email profile))})
+                        (contains? params :resend)
+                        (if (:is-blocked profile)
+                          {::rres/status  200
+                           ::rres/headers {"content-type" "text/plain"}
+                           ::rres/body    "PROFILE ALREADY BLOCKED"}
+                          (do
+                            (#'auth/send-email-verification! cfg profile)
+                            {::rres/status  200
+                             ::rres/headers {"content-type" "text/plain"}
+                             ::rres/body    (str/ffmt "RESENDED FOR '%'" (:email profile))}))
 
-      (contains? params :resend)
-      (if (:is-blocked profile)
-        {::rres/status  200
-         ::rres/headers {"content-type" "text/plain"}
-         ::rres/body    "PROFILE ALREADY BLOCKED"}
-        (do
-          (auth/send-email-verification! pool props profile)
-          {::rres/status  200
-           ::rres/headers {"content-type" "text/plain"}
-           ::rres/body    (str/ffmt "RESENDED FOR '%'" (:email profile))}))
-
-      :else
-      (do
-        (db/update! pool :profile {:is-active true} {:id (:id profile)})
-        {::rres/status  200
-         ::rres/headers {"content-type" "text/plain"}
-         ::rres/body    (str/ffmt "PROFILE '%' ACTIVATED" (:email profile))}))))
+                        :else
+                        (do
+                          (db/update! conn :profile {:is-active true} {:id (:id profile)})
+                          {::rres/status  200
+                           ::rres/headers {"content-type" "text/plain"}
+                           ::rres/body    (str/ffmt "PROFILE '%' ACTIVATED" (:email profile))}))))))
 
 
 (defn- reset-file-version

@@ -221,20 +221,52 @@
         (t/is (= "mtma" (:penpot/mtm-campaign props)))))))
 
 (t/deftest prepare-register-and-register-profile-2
-  (with-redefs [app.rpc.commands.auth/register-retry-threshold (dt/duration 500)]
-    (with-mocks [mock {:target 'app.email/send! :return nil}]
-      (let [current-token (atom nil)]
+  ;; (with-redefs [app.rpc.commands.auth/verify-retry-threshold (dt/duration 500)]
+  (with-mocks [mock {:target 'app.email/send! :return nil}]
+    (let [current-token (atom nil)]
+      ;; PREPARE REGISTER
+      (let [data  {::th/type :prepare-register-profile
+                   :email "hello@example.com"
+                   :password "foobar"}
+            out   (th/command! data)
+            token (get-in out [:result :token])]
+        (t/is (th/success? out))
+        (reset! current-token token))
 
-        ;; PREPARE REGISTER
-        (let [data  {::th/type :prepare-register-profile
-                     :email "hello@example.com"
-                     :password "foobar"}
-              out   (th/command! data)
-              token (get-in out [:result :token])]
-          (t/is (string? token))
-          (reset! current-token token))
+      ;; DO REGISTRATION
+      (let [data  {::th/type :register-profile
+                   :token @current-token
+                   :fullname "foobar"
+                   :accept-terms-and-privacy true
+                   :accept-newsletter-subscription true}
+            out   (th/command! data)]
+        (t/is (nil? (:error out)))
+        (t/is (= 1 (:call-count @mock))))
 
-        ;; DO REGISTRATION: try correct register attempt 1
+      (th/reset-mock! mock)
+
+      ;; PREPARE REGISTER: second attempt
+      (let [data  {::th/type :prepare-register-profile
+                   :email "hello@example.com"
+                   :password "foobar"}
+            out   (th/command! data)
+            token (get-in out [:result :token])]
+        (t/is (th/success? out))
+        (reset! current-token token))
+
+      ;; DO REGISTRATION: second attempt
+      (let [data  {::th/type :register-profile
+                   :token @current-token
+                   :fullname "foobar"
+                   :accept-terms-and-privacy true
+                   :accept-newsletter-subscription true}
+            out   (th/command! data)]
+        (t/is (nil? (:error out)))
+        (t/is (= 0 (:call-count @mock))))
+
+      (with-mocks [_ {:target 'app.rpc.commands.auth/elapsed-verify-threshold?
+                      :return true}]
+        ;; DO REGISTRATION: third attempt
         (let [data  {::th/type :register-profile
                      :token @current-token
                      :fullname "foobar"
@@ -242,44 +274,57 @@
                      :accept-newsletter-subscription true}
               out   (th/command! data)]
           (t/is (nil? (:error out)))
-          (t/is (= 1 (:call-count @mock))))
+          (t/is (= 1 (:call-count @mock))))))))
 
-        (th/reset-mock! mock)
+(t/deftest prepare-register-and-register-profile-3
+  ;; (with-redefs [app.rpc.commands.auth/verify-retry-threshold (dt/duration 500)]
+  (with-mocks [mock {:target 'app.email/send! :return nil}]
+    (let [current-token (atom nil)]
+      ;; PREPARE REGISTER
+      (let [data  {::th/type :prepare-register-profile
+                   :email "hello@example.com"
+                   :password "foobar"}
+            out   (th/command! data)
+            token (get-in out [:result :token])]
+        (t/is (th/success? out))
+        (reset! current-token token))
 
-        ;; PREPARE REGISTER without waiting for threshold
-        (let [data  {::th/type :prepare-register-profile
-                     :email "hello@example.com"
-                     :password "foobar"}
-              out   (th/command! data)]
-          (t/is (not (th/success? out)))
-          (t/is (= :validation (-> out :error th/ex-type)))
-          (t/is (= :email-already-exists (-> out :error th/ex-code))))
+      ;; DO REGISTRATION
+      (let [data  {::th/type :register-profile
+                   :token @current-token
+                   :fullname "foobar"
+                   :accept-terms-and-privacy true
+                   :accept-newsletter-subscription true}
+            out   (th/command! data)]
+        (t/is (nil? (:error out)))
+        (t/is (= 1 (:call-count @mock))))
 
-        (th/sleep {:millis 500})
-        (th/reset-mock! mock)
+      (th/reset-mock! mock)
 
-        ;; PREPARE REGISTER waiting the threshold
-        (let [data  {::th/type :prepare-register-profile
-                     :email "hello@example.com"
-                     :password "foobar"}
-              out   (th/command! data)]
+      (th/db-update! :profile
+                     {:is-blocked true}
+                     {:email "hello@example.com"})
 
-          (t/is (th/success? out))
-          (t/is (= 0 (:call-count @mock)))
+      ;; PREPARE REGISTER: second attempt
+      (let [data  {::th/type :prepare-register-profile
+                   :email "hello@example.com"
+                   :password "foobar"}
+            out   (th/command! data)
+            token (get-in out [:result :token])]
+        (t/is (th/success? out))
+        (reset! current-token token))
 
-          (let [result (:result out)]
-            (t/is (contains? result :token))
-            (reset! current-token (:token result))))
-
-        ;; DO REGISTRATION: try correct register attempt 1
+      (with-mocks [_ {:target 'app.rpc.commands.auth/elapsed-verify-threshold?
+                      :return true}]
+        ;; DO REGISTRATION: second attempt
         (let [data  {::th/type :register-profile
                      :token @current-token
                      :fullname "foobar"
                      :accept-terms-and-privacy true
                      :accept-newsletter-subscription true}
               out   (th/command! data)]
-          (t/is (th/success? out))
-          (t/is (= 1 (:call-count @mock))))))))
+          (t/is (nil? (:error out)))
+          (t/is (= 0 (:call-count @mock))))))))
 
 
 (t/deftest prepare-and-register-with-invitation-and-disabled-registration-1
@@ -351,13 +396,13 @@
                  :email (:email profile)
                  :password "foobar"}
         out     (th/command! data)]
+    ;; (th/print-result! out)
+    (t/is (th/success? out))
+    (let [result (:result out)]
+      (t/is (contains? result :token)))))
 
-    (t/is (not (th/success? out)))
-    (let [edata (-> out :error ex-data)]
-      (t/is (= :validation (:type edata)))
-      (t/is (= :email-already-exists (:code edata))))))
+(t/deftest prepare-register-profile-with-bounced-email
 
-(t/deftest register-profile-with-bounced-email
   (let [pool  (:app.db/pool th/*system*)
         data  {::th/type :prepare-register-profile
                :email "user@example.com"
@@ -366,10 +411,9 @@
     (th/create-global-complaint-for pool {:type :bounce :email "user@example.com"})
 
     (let [out (th/command! data)]
-      (t/is (not (th/success? out)))
-      (let [edata (-> out :error ex-data)]
-        (t/is (= :validation (:type edata)))
-        (t/is (= :email-has-permanent-bounces (:code edata)))))))
+      (t/is (th/success? out))
+      (let [result (:result out)]
+        (t/is (contains? result :token))))))
 
 (t/deftest register-profile-with-complained-email
   (let [pool  (:app.db/pool th/*system*)
@@ -447,7 +491,7 @@
 
 (t/deftest request-profile-recovery
   (with-mocks [mock {:target 'app.email/send! :return nil}]
-    (let [profile1 (th/create-profile* 1)
+    (let [profile1 (th/create-profile* 1 {:is-active false})
           profile2 (th/create-profile* 2 {:is-active true})
           pool  (:app.db/pool th/*system*)
           data  {::th/type :request-profile-recovery}]
@@ -460,38 +504,47 @@
 
       ;; with valid email inactive user
       (let [data  (assoc data :email (:email profile1))
-            out   (th/command! data)
-            error (:error out)]
+            out   (th/command! data)]
         (t/is (= 0 (:call-count @mock)))
-        (t/is (th/ex-info? error))
-        (t/is (th/ex-of-type? error :validation))
-        (t/is (th/ex-of-code? error :profile-not-verified)))
+        (t/is (nil? (:result out)))
+        (t/is (nil? (:error out))))
+
+      (with-mocks [_ {:target 'app.rpc.commands.auth/elapsed-verify-threshold?
+                      :return true}]
+        ;; with valid email inactive user
+        (let [data  (assoc data :email (:email profile1))
+              out   (th/command! data)]
+          (t/is (= 1 (:call-count @mock)))
+          (t/is (nil? (:result out)))
+          (t/is (nil? (:error out)))))
+
+      (th/reset-mock! mock)
 
       ;; with valid email and active user
-      (let [data  (assoc data :email (:email profile2))
-            out   (th/command! data)]
-        ;; (th/print-result! out)
-        (t/is (nil? (:result out)))
-        (t/is (= 1 (:call-count @mock))))
+      (with-mocks [_ {:target 'app.rpc.commands.auth/elapsed-verify-threshold?
+                      :return true}]
+        (let [data  (assoc data :email (:email profile2))
+              out   (th/command! data)]
+          ;; (th/print-result! out)
+          (t/is (nil? (:result out)))
+          (t/is (= 1 (:call-count @mock))))
 
-      ;; with valid email and active user with global complaints
-      (th/create-global-complaint-for pool {:type :complaint :email (:email profile2)})
-      (let [data  (assoc data :email (:email profile2))
-            out   (th/command! data)]
-        ;; (th/print-result! out)
-        (t/is (nil? (:result out)))
-        (t/is (= 2 (:call-count @mock))))
+        ;; with valid email and active user with global complaints
+        (th/create-global-complaint-for pool {:type :complaint :email (:email profile2)})
+        (let [data  (assoc data :email (:email profile2))
+              out   (th/command! data)]
+          ;; (th/print-result! out)
+          (t/is (nil? (:result out)))
+          (t/is (= 2 (:call-count @mock))))
 
-      ;; with valid email and active user with global bounce
-      (th/create-global-complaint-for pool {:type :bounce :email (:email profile2)})
-      (let [data  (assoc data :email (:email profile2))
-            out   (th/command! data)
-            error (:error out)]
-        ;; (th/print-result! out)
-        (t/is (= 2 (:call-count @mock)))
-        (t/is (th/ex-info? error))
-        (t/is (th/ex-of-type? error :validation))
-        (t/is (th/ex-of-code? error :email-has-permanent-bounces))))))
+        ;; with valid email and active user with global bounce
+        (th/create-global-complaint-for pool {:type :bounce :email (:email profile2)})
+        (let [data  (assoc data :email (:email profile2))
+              out   (th/command! data)]
+          (t/is (nil? (:result out)))
+          (t/is (nil? (:error out)))
+          ;; (th/print-result! out)
+          (t/is (= 2 (:call-count @mock))))))))
 
 
 (t/deftest update-profile-password

@@ -150,8 +150,9 @@
                        (clean-props))
 
         token-id  (::actoken/id request)
-        context   (d/without-nils
-                   {:access-token-id (some-> token-id str)})]
+        context   (-> (::context resultm)
+                      (assoc :access-token-id (some-> token-id str))
+                      (d/without-nils))]
 
     {::type (or (::type resultm)
                 (::rpc/type cfg))
