@@ -8,7 +8,6 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
-   [app.common.math :as mth]
    [app.config :as cf]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
@@ -166,7 +165,7 @@
 
 (mf/defc templates-section
   {::mf/wrap-props false}
-  [{:keys [default-project-id profile project-id team-id content-width]}]
+  [{:keys [default-project-id profile project-id team-id]}]
   (let [templates      (mf/deref builtin-templates)
         templates      (mf/with-memo [templates]
                          (filterv #(not= (:id %) "tutorial-for-beginners") templates))
@@ -181,28 +180,29 @@
 
         props          (:props profile)
         collapsed      (:builtin-templates-collapsed-status props false)
-        card-offset*   (mf/use-state 0)
-        card-offset    (deref card-offset*)
+        can-move       (mf/use-state {:left false :right true})
 
-        card-width     275
         total          (count templates)
-        container-size (* (+ 2 total) card-width)
 
         ;; We need space for total plus the libraries&templates link
-        more-cards     (> (+ card-offset (* (+ 1 total) card-width)) content-width)
-        card-count     (mth/floor (/ content-width 275))
-        left-moves     (/ card-offset -275)
-        first-card     left-moves
-        last-card      (+ (- card-count 1) left-moves)
         content-ref    (mf/use-ref)
 
         move-left (fn [] (dom/scroll-by! (mf/ref-val content-ref) -300 0))
         move-right (fn [] (dom/scroll-by! (mf/ref-val content-ref) 300 0))
 
-        ;; TODO: Hacer que esta función detecte si etamos al final o al
-        ;; principio para hacer aparecer o desaparecer los botones del
-        ;; dashboard de templates
-        on-scroll (mf/use-fn #(js/console.log "scroll" %))
+        update-can-move
+        (fn [scroll-left scroll-available client-width]
+          (reset! can-move {:left (> scroll-left 0)
+                            :right (> scroll-available client-width)}))
+
+        on-scroll
+        (mf/use-fn
+         (fn [e]
+           (let [scroll (dom/get-target-scroll e)
+                 scroll-left (:scroll-left scroll)
+                 scroll-available (- (:scroll-width scroll) scroll-left)
+                 client-rect (dom/get-client-size (dom/get-target e))]
+             (update-can-move scroll-left scroll-available (unchecked-get client-rect "width")))))
 
         on-move-left
         (mf/use-fn #(move-left))
@@ -222,6 +222,12 @@
          (fn [template _event]
            (import-template! template team-id project-id default-project-id section)))]
 
+    (mf/with-effect [content-ref templates]
+      (let [content (mf/ref-val content-ref)]
+        (when (and (some? content) (some? templates))
+          (dom/scroll-to content #js {:behavior "instant" :left 0 :top 0})
+          (.dispatchEvent content (js/Event. "scroll")))))
+
     (mf/with-effect [profile collapsed]
       (when (and profile (not collapsed))
         (st/emit! (dd/fetch-builtin-templates))))
@@ -240,24 +246,23 @@
           :item (nth templates index)
           :index index
           :key index
-          :is-visible (and (>= index first-card)
-                           (<= index last-card))
+          :is-visible true
           :collapsed collapsed}])
 
       [:& card-item-link
-       {:is-visible (and (>= total first-card) (<= total last-card))
+       {:is-visible true
         :collapsed collapsed
         :section section
         :total total}]]
 
-     (when (< card-offset 0)
+     (when (:left @can-move)
        [:button {:class (stl/css :move-button :move-left)
                  :tab-index (if ^boolean collapsed "-1" "0")
                  :on-click on-move-left
                  :on-key-down on-move-left-key-down}
         arrow-icon])
 
-     (when more-cards
+     (when (:right @can-move)
        [:button {:class (stl/css :move-button :move-right)
                  :tab-index (if collapsed "-1" "0")
                  :on-click on-move-right
