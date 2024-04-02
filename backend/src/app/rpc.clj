@@ -201,7 +201,7 @@
 
 (defn- wrap
   [cfg f mdata]
-  (l/debug :hint "register method" :name (::sv/name mdata))
+  (l/trc :hint "register method" :name (::sv/name mdata))
   (let [f (wrap-all cfg f mdata)]
     (partial f cfg)))
 
