@@ -645,6 +645,12 @@
   (when (some? element)
     (.-scrollLeft element)))
 
+(defn scroll-to
+  ([^js element options]
+   (.scrollTo element options))
+  ([^js element x y]
+   (.scrollTo element x y)))
+
 (defn set-scroll-pos!
   [^js element scroll]
   (when (some? element)
