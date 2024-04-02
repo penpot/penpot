@@ -73,7 +73,6 @@
          (fn []
            (close-modals)
            (st/emit! (dw/set-options-mode :design)
-                     (dw/set-workspace-read-only false)
                      (dw/go-to-dashboard project))))
 
         nav-to-project
