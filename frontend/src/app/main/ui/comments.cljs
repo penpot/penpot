@@ -418,8 +418,7 @@
              :id (str "thread-" thread-id)
              :style {:left (str pos-x "px")
                      :top (str pos-y "px")
-                     :max-height max-height
-                     :overflow-y "scroll"}
+                     :max-height max-height}
              :on-click dom/stop-propagation}
 
        [:div {:class (stl/css :comments)}
