@@ -67,6 +67,7 @@
             (update :comment-threads assoc id (dissoc thread :comment))
             (update-in [:workspace-data :pages-index page-id :options :comment-threads-position] assoc id position)
             (update :comments-local assoc :open id)
+            (update :comments-local assoc :options nil)
             (update :comments-local dissoc :draft)
             (update :workspace-drawing dissoc :comment)
             (update-in [:comments id] assoc (:id comment) comment))))
@@ -120,6 +121,7 @@
             (update :comment-threads assoc id (dissoc thread :comment))
             (update-in [:viewer :pages page-id :options :comment-threads-position] assoc id position)
             (update :comments-local assoc :open id)
+            (update :comments-local assoc :options nil)
             (update :comments-local dissoc :draft)
             (update :workspace-drawing dissoc :comment)
             (update-in [:comments id] assoc (:id comment) comment))))
@@ -427,6 +429,7 @@
     (update [_ state]
       (-> state
           (update :comments-local assoc :open id)
+          (update :comments-local assoc :options nil)
           (update :workspace-drawing dissoc :comment)))))
 
 (defn close-thread
@@ -435,7 +438,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update :comments-local dissoc :open :draft)
+          (update :comments-local dissoc :open :draft :options)
           (update :workspace-drawing dissoc :comment)))))
 
 (defn update-filters
@@ -490,6 +493,19 @@
           (d/update-in-when [:workspace-drawing :comment] merge data)
           (d/update-in-when [:comments-local :draft] merge data)))))
 
+(defn toggle-comment-options
+  [comment]
+  (ptk/reify ::toggle-comment-options
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:comments-local :options] #(if (=  (:id comment) %) nil (:id comment))))))
+
+(defn hide-comment-options
+  []
+  (ptk/reify ::hide-comment-options
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:comments-local :options] (constantly nil)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers

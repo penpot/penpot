@@ -27,6 +27,8 @@
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
+(def comments-local-options (l/derived :options refs/comments-local))
+
 (mf/defc resizing-textarea
   {::mf/wrap-props false}
   [props]
@@ -248,25 +250,28 @@
   [{:keys [comment thread users origin] :as props}]
   (let [owner    (get users (:owner-id comment))
         profile  (mf/deref refs/profile)
-        options  (mf/use-state false)
+        options  (mf/deref comments-local-options)
         edition? (mf/use-state false)
 
         on-toggle-options
         (mf/use-fn
+         (mf/deps options)
          (fn [event]
            (dom/stop-propagation event)
-           (swap! options not)))
+           (st/emit! (dcm/toggle-comment-options comment))))
 
         on-hide-options
         (mf/use-fn
+         (mf/deps options)
          (fn [event]
            (dom/stop-propagation event)
-           (reset! options false)))
+           (st/emit! (dcm/hide-comment-options))))
 
         on-edit-clicked
         (mf/use-fn
+         (mf/deps options)
          (fn []
-           (reset! options false)
+           (st/emit! (dcm/hide-comment-options))
            (reset! edition? true)))
 
         on-delete-comment
@@ -281,7 +286,6 @@
                     (if (= origin :viewer)
                       (dcm/delete-comment-thread-on-viewer thread)
                       (dcm/delete-comment-thread-on-workspace thread))))
-
 
         on-delete-thread
         (mf/use-fn
@@ -337,7 +341,7 @@
                         :on-cancel on-cancel}]
          [:span {:class (stl/css :text)} (:content comment)])]]
 
-     [:& dropdown {:show @options
+     [:& dropdown {:show (= options (:id comment))
                    :on-close on-hide-options}
       [:ul {:class (stl/css :comment-options-dropdown)}
        [:li {:class (stl/css :context-menu-option)
