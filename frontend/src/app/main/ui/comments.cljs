@@ -360,7 +360,8 @@
   (l/derived (l/in [:comments thread-id]) st/state))
 
 (defn- offset-position [position viewport zoom bubble-margin]
-  (let [base-x (+ (* (:x position) zoom) (:offset-x viewport))
+  (let [viewport (or viewport {:offset-x 0 :offset-y 0 :width 0 :height 0})
+        base-x (+ (* (:x position) zoom) (:offset-x viewport))
         base-y (+ (* (:y position) zoom) (:offset-y viewport))
         w (:width viewport)
         h (:height viewport)
@@ -385,7 +386,7 @@
                        (some? position-modifier)
                        (gpt/transform position-modifier))
 
-        max-height   (int (* (:height viewport) 0.75))
+        max-height   (when (some? viewport) (int (* (:height viewport) 0.75)))
                           ;; We should probably look for a better way of doing this.
         bubble-margin {:x 24 :y 0}
         pos          (offset-position base-pos viewport zoom bubble-margin)
