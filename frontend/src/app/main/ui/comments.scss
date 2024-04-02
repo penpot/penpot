@@ -216,7 +216,8 @@
   .comment-options-dropdown {
     @extend .dropdown-wrapper;
     position: absolute;
-    width: $s-120;
+    width: fit-content;
+    max-width: $s-200;
     right: 0;
     left: unset;
     .context-menu-option {
