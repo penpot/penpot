@@ -35,12 +35,13 @@
     position: absolute;
     left: $s-4;
     bottom: $s-4;
-    height: $s-20;
+    height: calc($s-24 - $s-2);
     width: calc(100% - 2 * $s-4);
-    padding: $s-2;
+    padding: $s-2 $s-6;
     column-gap: $s-4;
-    border-radius: $br-2;
+    border-radius: $br-4;
     background-color: var(--assets-item-name-background-color);
+    border: $s-1 solid transparent;
     color: var(--assets-item-name-foreground-color);
     input {
       @include textEllipsis;
@@ -55,7 +56,7 @@
       height: 100%;
     }
     &.editing {
-      border: $s-1 solid var(--input-border-color-focus);
+      border-color: var(--input-border-color-focus);
       border-radius: $br-4;
       display: flex;
       align-items: center;
@@ -65,12 +66,24 @@
 
   &:hover {
     .cell-name {
-      display: block;
+      display: grid;
+      grid-template-columns: 1fr auto;
     }
   }
 
   &.selected {
-    border: $s-1 solid var(--assets-item-border-color);
+    border: $s-2 solid var(--assets-item-border-color);
+    &::before {
+      content: " ";
+      position: absolute;
+      z-index: $z-index-2;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border: $s-4 solid var(--assets-component-second-border-selected);
+      border-radius: $br-8;
+    }
   }
 }
 

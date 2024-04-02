@@ -141,14 +141,16 @@
         on-context-menu
         (mf/use-fn
          (mf/deps on-context-menu component-id)
-         (partial on-context-menu component-id))]
+         (partial on-context-menu component-id))
+
+        renaming? (= renaming (:id component))]
 
     [:div {:ref item-ref
            :class (stl/css-case :selected (contains? selected (:id component))
                                 :grid-cell listing-thumbs?
                                 :enum-item (not listing-thumbs?))
            :id (dm/str "component-shape-id-" (:id component))
-           :draggable (not read-only?)
+           :draggable (and (not read-only?) (not renaming?))
            :on-click on-component-click
            :on-double-click on-component-double-click
            :on-context-menu on-context-menu
@@ -160,22 +162,21 @@
      (when (and (some? root-shape)
                 (some? container))
        [:*
-        (let [renaming? (= renaming (:id component))]
-          [:*
-           [:& editable-label
-            {:class (stl/css-case :cell-name listing-thumbs?
-                                  :item-name (not listing-thumbs?)
-                                  :editing renaming?)
-             :value (cfh/merge-path-item (:path component) (:name component))
-             :tooltip (cfh/merge-path-item (:path component) (:name component))
-             :display-value (:name component)
-             :editing renaming?
-             :disable-dbl-click true
-             :on-change do-rename
-             :on-cancel cancel-rename}]
+        [:*
+         [:& editable-label
+          {:class (stl/css-case :cell-name listing-thumbs?
+                                :item-name (not listing-thumbs?)
+                                :editing renaming?)
+           :value (cfh/merge-path-item (:path component) (:name component))
+           :tooltip (cfh/merge-path-item (:path component) (:name component))
+           :display-value (:name component)
+           :editing renaming?
+           :disable-dbl-click true
+           :on-change do-rename
+           :on-cancel cancel-rename}]
 
-           (when ^boolean dragging?
-             [:div {:class (stl/css :dragging)}])])
+         (when ^boolean dragging?
+           [:div {:class (stl/css :dragging)}])]
 
         (when visible?
           [:& cmm/component-item-thumbnail {:file-id file-id

@@ -49,7 +49,7 @@
   gap: $s-24;
   height: fit-content;
   max-width: $s-412;
-  padding-bottom: $s-8;
+  padding-block-end: $s-8;
   position: relative;
   width: 100%;
 }
@@ -60,33 +60,32 @@
   left: $s-20;
   display: flex;
   justify-content: flex-start;
-  margin-bottom: $s-52;
   width: $s-120;
+  margin-block-end: $s-52;
 
   svg {
     width: $s-120;
     height: $s-40;
-    fill: $df-primary;
-    stroke: $df-primary;
+    fill: var(--main-icon-foreground);
   }
 }
 
 .terms-login {
-  font-size: $fs-11;
-  width: 100%;
+  @include bodySmallTypography;
   display: flex;
   gap: $s-4;
   justify-content: center;
+  width: 100%;
+}
 
-  a {
-    font-weight: $fw700;
-    color: $da-primary;
-    &:hover {
-      text-decoration: underline;
-    }
-  }
-  span {
-    border-bottom: $s-1 solid transparent;
-    color: $df-secondary;
+.and-text {
+  border-bottom: $s-1 solid transparent;
+  color: var(--title-foreground-color);
+}
+
+.auth-link {
+  color: var(--link-foreground-color);
+  &:hover {
+    text-decoration: underline;
   }
 }

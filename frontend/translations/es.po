@@ -3711,6 +3711,12 @@ msgstr "Desvincular todas las tipografías"
 msgid "workspace.libraries.typography"
 msgstr "%s tipografías"
 
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs
+msgid "workspace.assets.sidebar.components"
+msgid_plural "workspace.assets.sidebar.components"
+msgstr[0] "1 componente"
+msgstr[1] "%s componentes"
+
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.update"
 msgstr "Actualizar"
