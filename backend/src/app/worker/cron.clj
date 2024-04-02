@@ -11,7 +11,8 @@
    [app.common.logging :as l]
    [app.db :as db]
    [app.util.time :as dt]
-   [app.worker :as wrk]
+   [app.worker :as-alias wrk]
+   [app.worker.runner :refer [get-error-context]]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]
@@ -64,7 +65,7 @@
 
         (catch Throwable cause
           (let [elapsed (dt/format-duration (tpoint))]
-            (binding [l/*context* (wrk/get-error-context cause task)]
+            (binding [l/*context* (get-error-context cause task)]
               (l/err :hint "unhandled exception on running task"
                      :task-id id
                      :elapsed elapsed
@@ -98,11 +99,11 @@
 (s/def ::props (s/nilable map?))
 (s/def ::task keyword?)
 
-(s/def ::wrk/task
+(s/def ::task-item
   (s/keys :req-un [::cron ::task]
           :opt-un [::props ::id]))
 
-(s/def ::wrk/entries (s/coll-of (s/nilable ::wrk/task)))
+(s/def ::wrk/entries (s/coll-of (s/nilable ::task-item)))
 
 (defmethod ig/pre-init-spec ::wrk/cron [_]
   (s/keys :req [::db/pool ::wrk/entries ::wrk/registry]))

@@ -493,7 +493,7 @@
     ::mtx/metrics (ig/ref ::mtx/metrics)
     ::db/pool     (ig/ref ::db/pool)}
 
-   [::default ::wrk/worker]
+   [::default ::wrk/runner]
    {::wrk/parallelism (cf/get ::worker-default-parallelism 1)
     ::wrk/queue       :default
     ::rds/redis       (ig/ref ::rds/redis)
@@ -501,7 +501,7 @@
     ::mtx/metrics     (ig/ref ::mtx/metrics)
     ::db/pool         (ig/ref ::db/pool)}
 
-   [::webhook ::wrk/worker]
+   [::webhook ::wrk/runner]
    {::wrk/parallelism (cf/get ::worker-webhook-parallelism 1)
     ::wrk/queue       :webhooks
     ::rds/redis       (ig/ref ::rds/redis)

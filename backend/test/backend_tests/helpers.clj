@@ -156,8 +156,8 @@
                              :app.loggers.database/reporter
                              :app.worker/cron
                              :app.worker/dispatcher
-                             [:app.main/default :app.worker/worker]
-                             [:app.main/webhook :app.worker/worker]))
+                             [:app.main/default :app.worker/runner]
+                             [:app.main/webhook :app.worker/runner]))
           _      (ig/load-namespaces system)
           system (-> (ig/prep system)
                      (ig/init))]
