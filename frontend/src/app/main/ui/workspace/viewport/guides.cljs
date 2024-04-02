@@ -26,7 +26,7 @@
 (def guide-width 1)
 (def guide-opacity 0.7)
 (def guide-opacity-hover 1)
-(def guide-color colors/new-primary)
+(def guide-color colors/new-danger)
 (def guide-pill-width 34)
 (def guide-pill-height 20)
 (def guide-pill-corner-radius 4)
@@ -378,7 +378,7 @@
                     :transform (when (= axis :y) (str "rotate(-90 " text-x "," text-y ")"))
                     :style {:font-size (/ rulers/font-size zoom)
                             :font-family rulers/font-family
-                            :fill colors/black}}
+                            :fill colors/white}}
              ;; If the guide is associated to a frame we show the position relative to the frame
              (fmt/format-number (- pos (if (= axis :x) (:x frame) (:y frame))))]]))])))
 
