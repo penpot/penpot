@@ -23,6 +23,7 @@
     {{/isDebug}}
 
     <link rel="icon" href="images/favicon.png" />
+
     <script type="importmap">
       {"imports": {"plugins-runtime": "http://localhost:4200/index.mjs"}}
     </script>
@@ -58,10 +59,7 @@
 
     <script type="module">
       import * as runtime from "plugins-runtime";
-
-      // console.log(globalThis.app.plugins);
-      runtime.initialize(globalThis.app.plugins);
+      runtime.initialize(globalThis.app.plugins.api);
     </script>
-
   </body>
 </html>
