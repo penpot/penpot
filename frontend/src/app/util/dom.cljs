@@ -756,6 +756,12 @@
   []
   (.reload (.-location js/window)))
 
+(defn scroll-by!
+  ([element x y]
+   (.scrollBy ^js element x y))
+  ([x y]
+   (scroll-by! js/window x y)))
+
 (defn animate!
   ([item keyframes duration] (animate! item keyframes duration nil))
   ([item keyframes duration onfinish]

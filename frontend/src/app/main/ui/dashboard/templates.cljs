@@ -123,7 +123,9 @@
      [:div {:class (stl/css :template-card)}
       [:div {:class (stl/css :img-container)}
        [:img {:src (dm/str thb)
-              :alt (:name item)}]]
+              :alt (:name item)
+              :loading "lazy"
+              :decoding "async"}]]
       [:div {:class (stl/css :card-name)}
        [:span {:class (stl/css :card-text)} (:name item)]
        download-icon]]]))
@@ -194,48 +196,25 @@
         last-card      (+ (- card-count 1) left-moves)
         content-ref    (mf/use-ref)
 
+        move-left (fn [] (dom/scroll-by! (mf/ref-val content-ref) -300 0))
+        move-right (fn [] (dom/scroll-by! (mf/ref-val content-ref) 300 0))
+
+        ;; TODO: Hacer que esta función detecte si etamos al final o al
+        ;; principio para hacer aparecer o desaparecer los botones del
+        ;; dashboard de templates
+        on-scroll (mf/use-fn #(js/console.log "scroll" %))
+
         on-move-left
-        (mf/use-fn
-         (mf/deps card-offset card-width)
-         (fn [_event]
-           (when-not (zero? card-offset)
-             (dom/animate! (mf/ref-val content-ref)
-                           [#js {:left (dm/str card-offset "px")}
-                            #js {:left (dm/str (+ card-offset card-width) "px")}]
-                           #js {:duration 200 :easing "linear"})
-             (reset! card-offset* (+ card-offset card-width)))))
+        (mf/use-fn #(move-left))
 
         on-move-left-key-down
-        (mf/use-fn
-         (mf/deps on-move-left first-card)
-         (fn [event]
-           (when (kbd/enter? event)
-             (dom/stop-propagation event)
-             (on-move-left event)
-             (when-let [node (dom/get-element (dm/str "card-container-" first-card))]
-               (dom/focus! node)))))
+        (mf/use-fn #(move-left))
 
         on-move-right
-        (mf/use-fn
-         (mf/deps more-cards card-offset card-width)
-         (fn [_event]
-           (when more-cards
-             (swap! card-offset* inc)
-             (dom/animate! (mf/ref-val content-ref)
-                           [#js {:left (dm/str card-offset "px")}
-                            #js {:left (dm/str (- card-offset card-width) "px")}]
-                           #js {:duration 200 :easing "linear"})
-             (reset! card-offset* (- card-offset card-width)))))
+        (mf/use-fn #(move-right))
 
         on-move-right-key-down
-        (mf/use-fn
-         (mf/deps on-move-right last-card)
-         (fn [event]
-           (when (kbd/enter? event)
-             (dom/stop-propagation event)
-             (on-move-right event)
-             (when-let [node (dom/get-element (dm/str "card-container-" last-card))]
-               (dom/focus! node)))))
+        (mf/use-fn #(move-right))
 
         on-import-template
         (mf/use-fn
@@ -252,9 +231,8 @@
      [:& title {:collapsed collapsed}]
 
      [:div {:class (stl/css :content)
-            :ref content-ref
-            :style {:left card-offset
-                    :width (dm/str container-size "px")}}
+            :on-scroll on-scroll
+            :ref content-ref}
 
       (for [index (range (count templates))]
         [:& card-item
