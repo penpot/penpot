@@ -69,8 +69,8 @@
 ;; TASKS REGISTRY
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- wrap-task-handler
-  [metrics tname f]
+(defn- wrap-with-metrics
+  [f metrics tname]
   (let [labels (into-array String [tname])]
     (fn [params]
       (let [tp (dt/tpoint)]
@@ -90,10 +90,10 @@
 (defmethod ig/init-key ::registry
   [_ {:keys [::mtx/metrics ::tasks]}]
   (l/inf :hint "registry initialized" :tasks (count tasks))
-  (reduce-kv (fn [registry k v]
+  (reduce-kv (fn [registry k f]
                (let [tname (name k)]
                  (l/trc :hint "register task" :name tname)
-                 (assoc registry tname (wrap-task-handler metrics tname v))))
+                 (assoc registry tname (wrap-with-metrics f metrics tname))))
              {}
              tasks))
 
@@ -157,7 +157,7 @@
   (px/interrupt! thread))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; SCHEDULER
+;; DISPATCHER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- decode-task-row
@@ -252,7 +252,7 @@
 
     (if (db/read-only? pool)
       (l/wrn :hint "dispatcher: not started (db is read-only)")
-      (px/fn->thread dispatcher :name "penpot/worker/dispatcher" :virtual true))))
+      (px/fn->thread dispatcher :name "penpot/worker/dispatcher" :virtual false))))
 
 (defmethod ig/halt-key! ::dispatcher
   [_ thread]
@@ -579,29 +579,34 @@
     (some? (db/exec-one! conn [sql (d/name id)]))))
 
 (defn- execute-cron-task
-  [{:keys [::db/pool] :as cfg} {:keys [id] :as task}]
+  [cfg {:keys [id] :as task}]
   (px/thread
-    {:name (str "penpot/cront-task/" id)}
-    (try
-      (db/with-atomic [conn pool]
-        (db/exec-one! conn ["SET statement_timeout=0;"])
-        (db/exec-one! conn ["SET idle_in_transaction_session_timeout=0;"])
-        (when (lock-scheduled-task! conn id)
-          (l/dbg :hint "cron: execute task" :task-id id)
-          ((:fn task) task))
-        (db/rollback! conn))
+    {:name (str "penpot/cron-task/" id)}
+    (let [tpoint (dt/tpoint)]
+      (try
+        (db/tx-run! cfg (fn [{:keys [::db/conn]}]
+                          (db/exec-one! conn ["SET LOCAL statement_timeout=0;"])
+                          (db/exec-one! conn ["SET LOCAL idle_in_transaction_session_timeout=0;"])
+                          (when (lock-scheduled-task! conn id)
+                            (l/dbg :hint "cron: start task" :task-id id)
+                            ((:fn task) task)
+                            (let [elapsed (dt/format-duration (tpoint))]
+                              (l/dbg :hint "cron: end task" :task-id id :elapsed elapsed)))))
 
-      (catch InterruptedException _
-        (l/debug :hint "cron: task interrupted" :task-id id))
+        (catch InterruptedException _
+          (let [elapsed (dt/format-duration (tpoint))]
+            (l/debug :hint "cron: task interrupted" :task-id id :elapsed elapsed)))
 
-      (catch Throwable cause
-        (binding [l/*context* (get-error-context cause task)]
-          (l/err :hint "cron: unhandled exception on running task"
-                 :task-id id
-                 :cause cause)))
-      (finally
-        (when-not (px/interrupted? :current)
-          (schedule-cron-task cfg task))))))
+        (catch Throwable cause
+          (let [elapsed (dt/format-duration (tpoint))]
+            (binding [l/*context* (get-error-context cause task)]
+              (l/err :hint "cron: unhandled exception on running task"
+                     :task-id id
+                     :elapsed elapsed
+                     :cause cause))))
+        (finally
+          (when-not (px/interrupted? :current)
+            (schedule-cron-task cfg task)))))))
 
 (defn- ms-until-valid
   [cron]
@@ -618,8 +623,8 @@
     (l/dbg :hint "cron: schedule task" :task-id id
            :ts (dt/format-duration ts)
            :at (dt/format-instant (dt/in-future ts)))
-    (swap! running #(into #{ft} (filter p/pending?) %))))
 
+    (swap! running #(into #{ft} (filter p/pending?) %))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SUBMIT API
