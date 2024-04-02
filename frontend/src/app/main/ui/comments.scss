@@ -238,6 +238,7 @@
     margin-bottom: $s-8;
     padding: $s-8;
     color: var(--input-foreground-color-active);
+    resize: vertical;
     &:focus {
       border: $s-1 solid var(--input-border-color-active);
       outline: none;
