@@ -20,6 +20,8 @@
    :height                :size
    :min-width             :size
    :min-height            :size
+   :max-width             :size
+   :max-height            :size
    :background            :color
    :border                :border
    :border-radius         :string-or-size-array
