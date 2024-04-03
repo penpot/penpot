@@ -28,7 +28,6 @@
    [app.main.data.modal :as md]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.collapse :as dwc]
-   [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.libraries-helpers :as dwlh]
    [app.main.data.workspace.specialized-panel :as-alias dwsp]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -151,7 +150,7 @@
              objects (wsh/lookup-page-objects state page-id)]
          (rx/of
           (dwc/expand-all-parents [id] objects)
-          (dwe/clear-edition-mode)
+          :interrupt
           ::dwsp/interrupt))))))
 
 (defn select-prev-shape
