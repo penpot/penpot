@@ -299,12 +299,16 @@
 
     (cond-> shape
       (neg? dot-x)
-      (-> (cr/update! :flip-x not)
-          (cr/update! :rotation -))
+      (cr/update! :flip-x not)
+
+      (neg? dot-x)
+      (cr/update! :rotation -)
 
       (neg? dot-y)
-      (-> (cr/update! :flip-y not)
-          (cr/update! :rotation -)))))
+      (cr/update! :flip-y not)
+
+      (neg? dot-y)
+      (cr/update! :rotation -))))
 
 (defn- apply-transform-move
   "Given a new set of points transformed, set up the rectangle so it keeps
