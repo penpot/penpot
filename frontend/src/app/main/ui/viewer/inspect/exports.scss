@@ -16,8 +16,10 @@
 }
 
 .title-spacing-export-viewer {
-  @extend .attr-title;
   margin: 0;
+  color: var(--entry-foreground-color-hover);
+  margin-inline-start: calc(-1 * $s-8);
+  width: calc(100% + $s-8);
 }
 
 .add-export {
@@ -26,6 +28,7 @@
   width: $s-28;
   svg {
     @extend .button-icon;
+    stroke: var(--icon-foreground);
   }
 }
 
