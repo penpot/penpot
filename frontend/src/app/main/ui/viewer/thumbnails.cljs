@@ -107,7 +107,8 @@
 
 (mf/defc thumbnails-panel
   [{:keys [frames page index show? thumbnail-data] :as props}]
-  (let [expanded? (mf/use-state false)
+  (let [expanded-state (mf/use-state false)
+        expanded? (deref expanded-state)
         container (mf/use-ref)
 
         objects   (:objects page)
@@ -115,23 +116,27 @@
         selected  (mf/use-var false)
 
         on-item-click
-        (mf/use-callback
-         (mf/deps @expanded?)
+        (mf/use-fn
+         (mf/deps expanded?)
          (fn [_ index]
            (compare-and-set! selected false true)
            (st/emit! (dv/go-to-frame-by-index index))
-           (when @expanded?
-             (on-close))))]
+           (when expanded?
+             (on-close))))
+
+        toggle-expand
+        (mf/use-fn
+         #(swap! expanded-state not))]
     [:section {:class (stl/css-case :viewer-thumbnails true
-                                    :expanded @expanded?)
-            ;; This is better as an inline-style so it won't make a reflow of every frame inside
+                                    :expanded expanded?)
+               ;; This is better as an inline-style so it won't make a reflow of every frame inside
                :style {:display (when (not show?) "none")}
                :ref container}
 
-     [:& thumbnails-summary {:on-toggle-expand #(swap! expanded? not)
+     [:& thumbnails-summary {:on-toggle-expand toggle-expand
                              :on-close on-close
                              :total (count frames)}]
-     [:& thumbnails-content {:expanded? @expanded?
+     [:& thumbnails-content {:expanded? expanded?
                              :total (count frames)}
       (for [[i frame] (d/enumerate frames)]
         [:& thumbnail-item {:index i
