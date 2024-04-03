@@ -978,6 +978,29 @@
             (-> file-data
                 (update :pages-index update-vals fix-container))))
 
+
+        fix-copies-names
+        (fn [file-data]
+                  ;; Rename component heads to add the component path to the name
+          (letfn [(fix-container [container]
+                    (d/update-when container :objects #(cfh/reduce-objects % fix-shape %)))
+
+                  (fix-shape [objects shape]
+                    (let [root         (ctn/get-component-shape objects shape)
+                          libraries    (assoc-in libraries [(:id file-data) :data] file-data)
+                          library      (get libraries (:component-file root))
+                          component    (ctkl/get-component (:data library) (:component-id root) true)
+                          path         (str/trim (:path component))]
+                      (if (and (ctk/instance-head? shape)
+                               (some? component)
+                               (= (:name component) (:name shape))
+                               (not (str/empty? path)))
+                        (update objects (:id shape) assoc :name (str path " / " (:name component)))
+                        objects)))]
+
+            (-> file-data
+                (update :pages-index update-vals fix-container))))
+
         fix-copies-of-detached
         (fn [file-data]
                   ;; Find any copy that is referencing a  shape inside a component that have
@@ -1027,6 +1050,7 @@
         (fix-component-nil-objects)
         (fix-false-copies)
         (fix-component-root-without-component)
+        (fix-copies-names)
         (fix-copies-of-detached); <- Do not add fixes after this and fix-orphan-copies call
         )))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
