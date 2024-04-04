@@ -505,7 +505,9 @@
              ids     (if (nil? ids) selected ids)
              shapes  (into []
                            (comp (map (d/getf objects))
-                                 (remove ctk/in-component-copy-not-head?))
+                                 (remove #(let [parent (get objects (:parent-id %))]
+                                            (and (ctk/in-component-copy? parent)
+                                                 (ctl/any-layout? parent)))))
                            ids)
 
              duplicate-move-started? (get-in state [:workspace-local :duplicate-move-started?] false)
@@ -842,7 +844,13 @@
             frame    (get objects frame-id)
             layout?  (:layout frame)
 
-            shapes (->> ids (cfh/clean-loops objects) (keep lookup))
+            component-main-frame (ctn/find-component-main objects frame false)
+
+            shapes (->> ids
+                        (cfh/clean-loops objects)
+                        (keep lookup)
+                        ;;remove shapes inside copies, because we can't change the structure of copies
+                        (remove #(ctk/in-component-copy? (get objects (:parent-id %)))))
 
             moving-shapes
             (cond->> shapes
@@ -906,9 +914,8 @@
             (map :id moving-shapes)
 
             moving-shapes-children-ids
-            (->> moving-shapes
-                 (mapcat #(cfh/get-children-with-self objects (:id %)))
-                 (map :id))
+            (->> moving-shapes-ids
+                 (mapcat #(cfh/get-children-ids-with-self objects %)))
 
             child-heads
             (->> moving-shapes-ids
@@ -921,6 +928,12 @@
                 ;; Remove layout-item properties when moving a shape outside a layout
                 (cond-> (not (ctl/any-layout? objects frame-id))
                   (pcb/update-shapes moving-shapes-ids ctl/remove-layout-item-data))
+                ;; Remove the swap slots if it is moving to a different component
+                (pcb/update-shapes child-heads
+                                   (fn [shape]
+                                     (cond-> shape
+                                       (not= component-main-frame (ctn/find-component-main objects shape false))
+                                       (ctk/remove-swap-slot))))
                 ;; Remove component-root property when moving a shape inside a component
                 (cond-> (ctn/get-instance-root objects frame)
                   (pcb/update-shapes moving-shapes-children-ids #(dissoc % :component-root)))
