@@ -168,9 +168,10 @@
     [props]
     (let [shape         (unchecked-get props "shape")
           childs        (unchecked-get props "childs")
+          reverse?      (and (ctl/flex-layout? shape) (ctl/reverse? shape))
           childs        (cond-> childs
                           (ctl/any-layout? shape)
-                          (ctl/sort-layout-children-z-index))]
+                          (ctl/sort-layout-children-z-index reverse?))]
 
       [:> frame-container props
        [:g.frame-children

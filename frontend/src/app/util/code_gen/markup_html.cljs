@@ -25,7 +25,6 @@
   ([objects shape level]
    (when (and (some? shape) (some? (:selrect shape)))
      (let [indent (str/repeat "  " level)
-           maybe-reverse (if (ctl/any-layout? shape) reverse identity)
 
            shape-html
            (cond
@@ -65,15 +64,18 @@
                      indent)
 
              :else
-             (dm/fmt "%<div class=\"%\">\n%\n%</div>"
-                     indent
-                     (dm/str (d/name (:type shape)) " "
-                             (cgc/shape->selector shape))
-                     (->> (:shapes shape)
-                          (maybe-reverse)
-                          (map #(generate-html objects (get objects %) (inc level)))
-                          (str/join "\n"))
-                     indent))
+             (let [children (->> shape :shapes (map #(get objects %)))
+                   reverse? (ctl/any-layout? shape)
+                   ;; The order for layout elements is the reverse of SVG order
+                   children (cond-> children reverse? reverse)]
+               (dm/fmt "%<div class=\"%\">\n%\n%</div>"
+                       indent
+                       (dm/str (d/name (:type shape)) " "
+                               (cgc/shape->selector shape))
+                       (->> children
+                            (map #(generate-html objects % (inc level)))
+                            (str/join "\n"))
+                       indent)))
 
            shape-html
            (if (cgc/has-wrapper? objects shape)
