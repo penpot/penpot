@@ -872,10 +872,11 @@
 
                   (fix-shape [shape]
                     (if (or (nil? (:parent-id shape)) (ctk/instance-head? shape))
-                      (let [frame? (= :frame (:type shape))]
-                        (assoc shape
-                               :type :frame            ; Old groups must be converted
-                               :fills (or (:fills shape) []) ; to frames and conform to spec
+                      (let [frame?     (= :frame (:type shape))
+                            not-group? (not= :group (:type shape))]
+                        (assoc shape                         ; Old groups must be converted
+                               :type :frame                  ; to frames and conform to spec
+                               :fills (if not-group? (d/nilv (:fills shape) []) [])  ; Groups never should have fill
                                :shapes (or (:shapes shape) [])
                                :hide-in-viewer (if frame? (boolean (:hide-in-viewer shape)) true)
                                :show-content   (if frame? (boolean (:show-content shape)) true)
