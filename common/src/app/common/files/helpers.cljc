@@ -16,6 +16,8 @@
    [clojure.set :as set]
    [cuerdas.core :as str]))
 
+#?(:clj (set! *warn-on-reflection* true))
+
 (declare reduce-objects)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -327,12 +329,9 @@
   "Selects the shape that will be the base to add the shapes over"
   [objects selected]
   (let [;; Gets the tree-index for all the shapes
-        indexed-shapes (indexed-shapes objects)
-
+        indexed-shapes (indexed-shapes objects selected)
         ;; Filters the selected and retrieve a list of ids
-        sorted-ids (->> indexed-shapes
-                        (filter (comp selected second))
-                        (map second))]
+        sorted-ids     (map val indexed-shapes)]
 
     ;; The first id will be the top-most
     (get objects (first sorted-ids))))
@@ -486,43 +485,62 @@
 
     (reduce add-element (d/ordered-set) ids)))
 
-(defn indexed-shapes
-  "Retrieves a list with the indexes for each element in the layer tree.
-   This will be used for shift+selection."
-  [objects]
-  (letfn [(red-fn [cur-idx id]
-            (let [[prev-idx _] (first cur-idx)
-                  prev-idx (or prev-idx 0)
-                  cur-idx (conj cur-idx (d/vec2 (inc prev-idx) id))]
-              (rec-index cur-idx id)))
-          (rec-index [cur-idx id]
-            (let [object (get objects id)]
-              (reduce red-fn cur-idx (reverse (:shapes object)))))]
-    (into {} (rec-index '() uuid/zero))))
+(defn- indexed-shapes
+  "Retrieves a vector with the indexes for each element in the layer
+  tree. This will be used for shift+selection."
+  [objects selected]
+  (loop [index   1
+         result  (transient [])
+         ;; Flag to start adding elements to the index
+         add?    false
+         ;; Only add elements while we're in the selection, we finish when the selection is over
+         pending (set selected)
+         shapes  (-> objects
+                     (get uuid/zero)
+                     (get :shapes)
+                     (rseq))]
+
+    (let [shape-id (first shapes)]
+      (if (and (d/not-empty? pending) shape-id)
+        (let [shape   (get objects shape-id)
+              add?    (or add? (contains? selected shape-id))
+              pending (disj pending shape-id)
+              result  (if add?
+                        (conj! result (d/vec2 index shape-id))
+                        result)]
+          (if-let [children (get shape :shapes)]
+            (recur (inc index)
+                   result
+                   add?
+                   pending
+                   (concat (rseq children) (rest shapes)))
+            (recur (inc index)
+                   result
+                   add?
+                   pending
+                   (rest shapes))))
+        (persistent! result)))))
 
 (defn expand-region-selection
   "Given a selection selects all the shapes between the first and last in
    an indexed manner (shift selection)"
   [objects selection]
-  (let [indexed-shapes (indexed-shapes objects)
-        filter-indexes (->> indexed-shapes
-                            (filter (comp selection second))
-                            (map first))
-
-        from (apply min filter-indexes)
-        to   (apply max filter-indexes)]
-    (->> indexed-shapes
-         (filter (fn [[idx _]] (and (>= idx from) (<= idx to))))
-         (map second)
-         (into #{}))))
+  (let [selection      (if (set? selection) selection (set selection))
+        indexed-shapes (indexed-shapes objects selection)
+        indexes        (map key indexed-shapes)
+        from           (apply min indexes)
+        to             (apply max indexes)
+        xform          (comp
+                        (filter (fn [[idx _]] (and (>= idx from) (<= idx to))))
+                        (map val))]
+    (into #{} xform indexed-shapes)))
 
 (defn order-by-indexed-shapes
-  [objects ids]
-  (let [ids (if (set? ids) ids (set ids))]
-    (->> (indexed-shapes objects)
-         (filter (fn [o] (contains? ids (val o))))
-         (sort-by key)
-         (map val))))
+  "Retrieves a ordered vector for each element in the layer tree and
+  filted by selected set"
+  [objects selected]
+  (let [selected (if (set? selected) selected (set selected))]
+    (sequence (map val) (indexed-shapes objects selected))))
 
 (defn get-index-replacement
   "Given a collection of shapes, calculate their positions
