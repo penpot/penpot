@@ -249,14 +249,16 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (d/update-in-when state [:comments thread-id id] assoc :content content))
+      (-> state
+          (d/update-in-when [:comments thread-id id] assoc :content content)))
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [share-id (-> state :viewer-local :share-id)]
+      (let [file-id (:current-file-id state)
+            share-id (-> state :viewer-local :share-id)]
         (->> (rp/cmd! :update-comment {:id id :content content :share-id share-id})
              (rx/catch #(rx/throw {:type :comment-error}))
-             (rx/ignore))))))
+             (rx/map #(retrieve-comment-threads file-id)))))))
 
 (defn delete-comment-thread-on-workspace
   [{:keys [id] :as thread}]

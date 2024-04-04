@@ -66,8 +66,7 @@
 
   &:hover {
     .cell-name {
-      display: grid;
-      grid-template-columns: 1fr auto;
+      display: block;
     }
   }
 
