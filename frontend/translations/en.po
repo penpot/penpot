@@ -3023,6 +3023,9 @@ msgstr "Zoom lense increase"
 msgid "shortcuts.zoom-selected"
 msgstr "Zoom to selected"
 
+msgid "shortcuts.toggle-layout-grid"
+msgstr "Add/remove grid layout"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "team.webhooks.max-length"
 msgstr "The webhook name must contain at most 2048 characters."

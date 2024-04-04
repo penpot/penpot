@@ -3069,6 +3069,9 @@ msgstr "Incrementar zoom a objetivo"
 msgid "shortcuts.zoom-selected"
 msgstr "Zoom a selección"
 
+msgid "shortcuts.toggle-layout-grid"
+msgstr "Añadir/eliminar grid layout"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "team.webhooks.max-length"
 msgstr "El nombre del webhook debe contener como máximo 2048 caracteres."
