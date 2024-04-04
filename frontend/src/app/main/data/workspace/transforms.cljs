@@ -844,7 +844,11 @@
 
             component-main-frame (ctn/find-component-main objects frame false)
 
-            shapes (->> ids (cfh/clean-loops objects) (keep lookup))
+            shapes (->> ids
+                        (cfh/clean-loops objects)
+                        (keep lookup)
+                        ;;remove shapes inside copies, because we can't change the structure of copies
+                        (remove #(ctk/in-component-copy? (get objects (:parent-id %)))))
 
             moving-shapes
             (cond->> shapes
