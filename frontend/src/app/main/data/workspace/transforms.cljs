@@ -608,11 +608,11 @@
               (->> move-stream
                    (rx/last)
                    (rx/mapcat
-                    (fn [[_ target-frame drop-index cell-data]]
+                    (fn [[_ target-frame drop-index]]
                       (let [undo-id (js/Symbol)]
                         (rx/of (dwu/start-undo-transaction undo-id)
                                (dwm/apply-modifiers {:undo-transation? false})
-                               (move-shapes-to-frame ids target-frame drop-index cell-data)
+                               (move-shapes-to-frame ids target-frame drop-index nil)
                                (finish-transform)
                                (dwu/commit-undo-transaction undo-id))))))))))))))
 
