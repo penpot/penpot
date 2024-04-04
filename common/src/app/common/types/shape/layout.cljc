@@ -543,19 +543,21 @@
    (or (:layout-item-z-index shape) 0)))
 
 (defn- comparator-layout-z-index
-  [[idx-a child-a] [idx-b child-b]]
+  [reverse? [idx-a child-a] [idx-b child-b]]
   (cond
     (> (layout-z-index child-a) (layout-z-index child-b)) 1
     (< (layout-z-index child-a) (layout-z-index child-b)) -1
+    (and (< idx-a idx-b) reverse?) -1
+    (and (> idx-a idx-b) reverse?) 1
     (< idx-a idx-b) 1
     (> idx-a idx-b) -1
     :else 0))
 
 (defn sort-layout-children-z-index
-  [children]
+  [children reverse?]
   (->> children
        (d/enumerate)
-       (sort comparator-layout-z-index)
+       (sort (partial comparator-layout-z-index reverse?))
        (mapv second)))
 
 (defn change-h-sizing?
