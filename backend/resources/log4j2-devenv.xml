@@ -40,7 +40,7 @@
 
     <Logger name="app" level="all" additivity="false">
       <AppenderRef ref="main" level="trace" />
-      <AppenderRef ref="console" level="info" />
+      <AppenderRef ref="console" level="debug" />
     </Logger>
 
     <Logger name="user" level="trace" additivity="false">

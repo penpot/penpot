@@ -109,24 +109,29 @@
 }
 
 .content {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax($s-276, $s-276));
+  grid-auto-flow: column;
   pointer-events: all;
-  width: 200%;
   height: $s-228;
   margin-left: $s-6;
-  position: absolute;
   border-top-left-radius: $s-8;
   background-color: $db-quaternary;
+  overflow: scroll hidden;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+  scroll-snap-stop: always;
 }
 
 .card-container {
   width: $s-276;
   margin-top: $s-20;
-  display: inline-block;
   text-align: center;
   vertical-align: top;
   background-color: transparent;
   border: none;
   padding: 0;
+  scroll-snap-align: start;
 }
 
 .template-card {

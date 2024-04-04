@@ -32,6 +32,7 @@
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.grid :as ctg]
+   [app.common.types.modifiers :as ctm]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
@@ -978,6 +979,29 @@
             (-> file-data
                 (update :pages-index update-vals fix-container))))
 
+
+        fix-copies-names
+        (fn [file-data]
+                  ;; Rename component heads to add the component path to the name
+          (letfn [(fix-container [container]
+                    (d/update-when container :objects #(cfh/reduce-objects % fix-shape %)))
+
+                  (fix-shape [objects shape]
+                    (let [root         (ctn/get-component-shape objects shape)
+                          libraries    (assoc-in libraries [(:id file-data) :data] file-data)
+                          library      (get libraries (:component-file root))
+                          component    (ctkl/get-component (:data library) (:component-id root) true)
+                          path         (str/trim (:path component))]
+                      (if (and (ctk/instance-head? shape)
+                               (some? component)
+                               (= (:name component) (:name shape))
+                               (not (str/empty? path)))
+                        (update objects (:id shape) assoc :name (str path " / " (:name component)))
+                        objects)))]
+
+            (-> file-data
+                (update :pages-index update-vals fix-container))))
+
         fix-copies-of-detached
         (fn [file-data]
                   ;; Find any copy that is referencing a  shape inside a component that have
@@ -1027,8 +1051,9 @@
         (fix-component-nil-objects)
         (fix-false-copies)
         (fix-component-root-without-component)
-        (fix-copies-of-detached); <- Do not add fixes after this and fix-orphan-copies call
-        )))
+        (fix-copies-names)
+        (fix-copies-of-detached)))); <- Do not add fixes after this and fix-orphan-copies call
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; COMPONENTS MIGRATION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1077,8 +1102,8 @@
    {:type :frame
     :x (:x position)
     :y (:y position)
-    :width (+ width (* 2 grid-gap))
-    :height (+ height (* 2 grid-gap))
+    :width (+ width grid-gap)
+    :height (+ height grid-gap)
     :name name
     :frame-id uuid/zero
     :parent-id uuid/zero}))
@@ -1364,7 +1389,7 @@
     (sbuilder/create-svg-shapes svg-data position objects frame-id frame-id #{} false)))
 
 (defn- process-media-object
-  [fdata page-id frame-id mobj position]
+  [fdata page-id frame-id mobj position shape-cb]
   (let [page    (ctpl/get-page fdata page-id)
         file-id (get fdata :id)
 
@@ -1414,16 +1439,17 @@
                                      cfsh/prepare-create-artboard-from-selection)
         changes (fcb/concat-changes changes changes2)]
 
+    (shape-cb shape)
     (:redo-changes changes)))
 
 (defn- create-media-grid
-  [fdata page-id frame-id grid media-group]
+  [fdata page-id frame-id grid media-group shape-cb]
   (letfn [(process [fdata mobj position]
             (let [position (gpt/add position (gpt/point grid-gap grid-gap))
                   tp       (dt/tpoint)
                   err      (volatile! false)]
               (try
-                (let [changes (process-media-object fdata page-id frame-id mobj position)]
+                (let [changes (process-media-object fdata page-id frame-id mobj position shape-cb)]
                   (cp/process-changes fdata changes false))
 
                 (catch Throwable cause
@@ -1472,6 +1498,43 @@
                    (or (process fdata mobj position) fdata))
                  (assoc-in fdata [:options :components-v2] true)))))
 
+(defn- fix-graphics-size
+  [fdata new-grid page-id frame-id]
+  (let [modify-shape (fn [page shape-id modifiers]
+                       (ctn/update-shape page shape-id #(gsh/transform-shape % modifiers)))
+
+        resize-frame (fn [page]
+                       (let [{:keys [width height]} (meta new-grid)
+
+                             frame  (ctst/get-shape page frame-id)
+                             width  (+ width grid-gap)
+                             height (+ height grid-gap)
+
+                             modif-frame (ctm/resize nil
+                                                     (gpt/point (/ width (:width frame))
+                                                                (/ height (:height frame)))
+                                                     (gpt/point (:x frame) (:y frame)))]
+
+                         (modify-shape page frame-id modif-frame)))
+
+        move-components (fn [page]
+                          (let [frame (get (:objects page) frame-id)
+                                shapes (map (d/getf (:objects page)) (:shapes frame))]
+                            (->> (d/zip shapes new-grid)
+                                 (reduce (fn [page [shape position]]
+                                           (let [position (gpt/add position (gpt/point grid-gap grid-gap))
+                                                 modif-shape (ctm/move nil
+                                                                       (gpt/point (- (:x position) (:x (:selrect shape)))
+                                                                                  (- (:y position) (:y (:selrect shape)))))
+                                                 children-ids (cfh/get-children-ids-with-self (:objects page) (:id shape))]
+                                             (reduce #(modify-shape %1 %2 modif-shape)
+                                                     page
+                                                     children-ids)))
+                                         page))))]
+    (-> fdata
+        (ctpl/update-page page-id resize-frame)
+        (ctpl/update-page page-id move-components))))
+
 (defn- migrate-graphics
   [fdata]
   (if (empty? (:media fdata))
@@ -1509,11 +1572,32 @@
                                                                           (:id frame)
                                                                           (:id frame)
                                                                           nil
-                                                                          true))]
-            (recur (next groups)
-                   (create-media-grid fdata page-id (:id frame) grid assets)
-                   (gpt/add position (gpt/point 0 (+ height (* 2 grid-gap) frame-gap))))))))))
+                                                                          true))
+                new-shapes (volatile! [])
 
+                add-shape (fn [shape]
+                            (vswap! new-shapes conj shape))
+
+                fdata' (create-media-grid fdata page-id (:id frame) grid assets add-shape)
+
+                ;; When svgs had different width&height and viewport, sometimes the old graphics
+                ;; importer didn't calculate well the media object size. So, after migration we
+                ;; recalculate grid size from the actual size of the created shapes.
+                new-grid (ctst/generate-shape-grid @new-shapes position grid-gap)
+
+                {new-width :width new-height :height} (meta new-grid)
+
+                fdata'' (if-not (and (mth/close? width new-width) (mth/close? height new-height))
+                          (do
+                            (l/inf :hint "fixing graphics sizes"
+                                   :file-id (str (:id fdata))
+                                   :group group-name)
+                            (fix-graphics-size fdata' new-grid page-id (:id frame)))
+                          fdata')]
+
+            (recur (next groups)
+                   fdata''
+                   (gpt/add position (gpt/point 0 (+ height (* 2 grid-gap) frame-gap))))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PRIVATE HELPERS

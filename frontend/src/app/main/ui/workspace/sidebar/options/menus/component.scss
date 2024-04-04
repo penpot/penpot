@@ -56,7 +56,6 @@
     padding-right: 0.5rem;
     .component-name-wrapper {
       width: 100%;
-
       border-radius: $br-8;
     }
   }
@@ -93,6 +92,7 @@
   min-height: $s-32;
   padding: $s-8 0 $s-8 $s-2;
   border-radius: $br-8 0 0 $br-8;
+  overflow: hidden;
 }
 
 .component-name {
@@ -101,6 +101,11 @@
   direction: rtl;
   text-align: left;
   min-height: $s-16;
+}
+
+.component-name-inside {
+  direction: ltr;
+  unicode-bidi: bidi-override;
 }
 
 .component-parent-name {

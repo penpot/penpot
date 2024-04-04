@@ -51,7 +51,7 @@
   [_ f {:keys [::get-object ::key-fn ::reuse-key?] :as mdata}]
   (if (and (ifn? get-object) (ifn? key-fn))
     (do
-      (l/debug :hint "instrumenting method" :service (::sv/name mdata))
+      (l/trc :hint "instrumenting method" :service (::sv/name mdata))
       (fn [cfg {:keys [::key] :as params}]
         (if *enabled*
           (let [key' (when (or key reuse-key?)

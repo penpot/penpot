@@ -616,9 +616,10 @@
 
             [:div {:class (stl/css :name-wrapper)}
              [:div {:class (stl/css :component-name)}
-              (if multi
-                (tr "settings.multiple")
-                (cfh/last-path shape-name))]
+              [:span {:class (stl/css :component-name-inside)}
+               (if multi
+                 (tr "settings.multiple")
+                 (cfh/last-path shape-name))]]
 
              (when (and can-swap? (not multi))
                [:div {:class (stl/css :component-parent-name)}

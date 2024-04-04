@@ -189,6 +189,7 @@
   ;;   shortcuts.unmask
   ;;   shortcuts.v-distribute
   ;;   shortcuts.zoom-selected
+  ;;   shortcuts.toggle-layout-grid
   (let [translat-pre (case type
                        :sc      "shortcuts."
                        :sec     "shortcut-section."

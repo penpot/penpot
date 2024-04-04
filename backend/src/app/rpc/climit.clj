@@ -200,7 +200,7 @@
       (reduce (fn [handler [limit-id key-fn]]
                 (if-let [config (get config limit-id)]
                   (let [key-fn (or key-fn noop-fn)]
-                    (l/dbg :hint "instrumenting method"
+                    (l/trc :hint "instrumenting method"
                            :method label
                            :limit (id->str limit-id)
                            :timeout (:timeout config)

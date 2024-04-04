@@ -355,20 +355,22 @@
   (ptk/reify ::finalize-file
     ptk/UpdateEvent
     (update [_ state]
-      (dissoc state
-              :current-file-id
-              :current-project-id
-              :workspace-data
-              :workspace-editor-state
-              :workspace-file
-              :workspace-libraries
-              :workspace-ready?
-              :workspace-media-objects
-              :workspace-persistence
-              :workspace-presence
-              :workspace-project
-              :workspace-project
-              :workspace-undo))
+      (-> state
+          (dissoc
+           :current-file-id
+           :current-project-id
+           :workspace-data
+           :workspace-editor-state
+           :workspace-file
+           :workspace-libraries
+           :workspace-media-objects
+           :workspace-persistence
+           :workspace-presence
+           :workspace-project
+           :workspace-ready?
+           :workspace-undo)
+          (update :workspace-global dissoc :read-only?)
+          (assoc-in [:workspace-global :options-mode] :design)))
 
     ptk/WatchEvent
     (watch [_ _ _]

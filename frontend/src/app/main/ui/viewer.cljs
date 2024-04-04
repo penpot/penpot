@@ -613,6 +613,7 @@
                         :permissions permissions
                         :zoom zoom
                         :section section
+                        :shown-thumbnails (:show-thumbnails local)
                         :interactions-mode interactions-mode}]]))
 
 ;; --- Component: Viewer

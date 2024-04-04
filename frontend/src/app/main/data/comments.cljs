@@ -67,6 +67,7 @@
             (update :comment-threads assoc id (dissoc thread :comment))
             (update-in [:workspace-data :pages-index page-id :options :comment-threads-position] assoc id position)
             (update :comments-local assoc :open id)
+            (update :comments-local assoc :options nil)
             (update :comments-local dissoc :draft)
             (update :workspace-drawing dissoc :comment)
             (update-in [:comments id] assoc (:id comment) comment))))
@@ -120,6 +121,7 @@
             (update :comment-threads assoc id (dissoc thread :comment))
             (update-in [:viewer :pages page-id :options :comment-threads-position] assoc id position)
             (update :comments-local assoc :open id)
+            (update :comments-local assoc :options nil)
             (update :comments-local dissoc :draft)
             (update :workspace-drawing dissoc :comment)
             (update-in [:comments id] assoc (:id comment) comment))))
@@ -247,14 +249,16 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (d/update-in-when state [:comments thread-id id] assoc :content content))
+      (-> state
+          (d/update-in-when [:comments thread-id id] assoc :content content)))
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [share-id (-> state :viewer-local :share-id)]
+      (let [file-id (:current-file-id state)
+            share-id (-> state :viewer-local :share-id)]
         (->> (rp/cmd! :update-comment {:id id :content content :share-id share-id})
              (rx/catch #(rx/throw {:type :comment-error}))
-             (rx/ignore))))))
+             (rx/map #(retrieve-comment-threads file-id)))))))
 
 (defn delete-comment-thread-on-workspace
   [{:keys [id] :as thread}]
@@ -427,6 +431,7 @@
     (update [_ state]
       (-> state
           (update :comments-local assoc :open id)
+          (update :comments-local assoc :options nil)
           (update :workspace-drawing dissoc :comment)))))
 
 (defn close-thread
@@ -435,7 +440,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update :comments-local dissoc :open :draft)
+          (update :comments-local dissoc :open :draft :options)
           (update :workspace-drawing dissoc :comment)))))
 
 (defn update-filters
@@ -490,6 +495,19 @@
           (d/update-in-when [:workspace-drawing :comment] merge data)
           (d/update-in-when [:comments-local :draft] merge data)))))
 
+(defn toggle-comment-options
+  [comment]
+  (ptk/reify ::toggle-comment-options
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:comments-local :options] #(if (=  (:id comment) %) nil (:id comment))))))
+
+(defn hide-comment-options
+  []
+  (ptk/reify ::hide-comment-options
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:comments-local :options] (constantly nil)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers

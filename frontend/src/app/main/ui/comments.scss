@@ -142,10 +142,14 @@
 // thread-content
 .thread-content {
   position: absolute;
-  pointer-events: auto;
-  user-select: text;
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
   width: $s-284;
   padding: $s-12;
+  padding-inline-end: 0;
+
+  pointer-events: auto;
+  user-select: text;
   border-radius: $br-8;
   border: $s-2 solid var(--modal-border-color);
   background-color: var(--comment-modal-background-color);
@@ -216,7 +220,8 @@
   .comment-options-dropdown {
     @extend .dropdown-wrapper;
     position: absolute;
-    width: $s-120;
+    width: fit-content;
+    max-width: $s-200;
     right: 0;
     left: unset;
     .context-menu-option {
@@ -238,6 +243,7 @@
     margin-bottom: $s-8;
     padding: $s-8;
     color: var(--input-foreground-color-active);
+    resize: vertical;
     &:focus {
       border: $s-1 solid var(--input-border-color-active);
       outline: none;

@@ -335,8 +335,8 @@
 
         flip-x         (get shape :flip-x)
         flip-y         (get shape :flip-y)
-        half-flip?     (or (and (some? flip-x) (not (some? flip-y)))
-                           (and (some? flip-y) (not (some? flip-x))))]
+        half-flip?     (or (and flip-x (not flip-y))
+                           (and flip-y (not flip-x)))]
 
     (when (and (not ^boolean read-only?)
                (not (:transforming shape))
@@ -357,7 +357,7 @@
                           (and ^boolean half-flip?
                                (or (= position :top-right)
                                    (= position :bottom-left)))
-                          (- rotation 90)
+                          (+ rotation 90)
 
                           :else
                           rotation)

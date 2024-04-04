@@ -44,7 +44,7 @@
   (if (::enabled mdata)
     (let [max-retries (get mdata ::max-retries 3)
           matches?    (get mdata ::when always-false)]
-      (l/dbg :hint "wrapping retry" :name name :max-retries max-retries)
+      (l/trc :hint "wrapping retry" :name name :max-retries max-retries)
       (fn [cfg params]
         (-> cfg
             (assoc ::max-retries max-retries)
