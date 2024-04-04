@@ -505,7 +505,9 @@
              ids     (if (nil? ids) selected ids)
              shapes  (into []
                            (comp (map (d/getf objects))
-                                 (remove ctk/in-component-copy-not-head?))
+                                 (remove #(let [parent (get objects (:parent-id %))]
+                                            (and (ctk/in-component-copy? parent)
+                                                 (ctl/any-layout? parent)))))
                            ids)
 
              duplicate-move-started? (get-in state [:workspace-local :duplicate-move-started?] false)
