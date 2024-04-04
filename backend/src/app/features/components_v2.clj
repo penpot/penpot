@@ -1581,7 +1581,7 @@
                 fdata' (create-media-grid fdata page-id (:id frame) grid assets add-shape)
 
                 ;; When svgs had different width&height and viewport, sometimes the old graphics
-                ;; importer didn't calculat well the media object size. So, after migration we
+                ;; importer didn't calculate well the media object size. So, after migration we
                 ;; recalculate grid size from the actual size of the created shapes.
                 new-grid (ctst/generate-shape-grid @new-shapes position grid-gap)
 
