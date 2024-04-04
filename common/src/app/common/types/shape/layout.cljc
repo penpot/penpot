@@ -1294,11 +1294,14 @@
         (->> (range start-index (inc to-index))
              (map vector shape-ids)
              (reduce (fn [[parent cells] [shape-id idx]]
-                       (let [[parent cells] (free-cell-push parent cells idx)]
-                         [(update-in parent [:layout-grid-cells (get-in cells [idx :id])]
-                                     assoc :position :manual
-                                     :shapes [shape-id])
-                          cells]))
+                       ;; If the shape to put in a cell is the same that is already in the cell we do nothing
+                       (if (= shape-id (get-in parent [:layout-grid-cells (get-in cells [idx :id]) :shapes 0]))
+                         [parent cells]
+                         (let [[parent cells] (free-cell-push parent cells idx)]
+                           [(update-in parent [:layout-grid-cells (get-in cells [idx :id])]
+                                       assoc :position :manual
+                                       :shapes [shape-id])
+                            cells])))
                      [parent cells])
              (first)))
       parent)))
