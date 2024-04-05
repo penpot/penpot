@@ -483,8 +483,8 @@
 (defn- setup-image
   [{:keys [metadata] :as shape}]
   (-> shape
-      (assoc :proportion (/ (:width metadata)
-                            (:height metadata)))
+      (assoc :proportion (float (/ (:width metadata)
+                                   (:height metadata))))
       (assoc :proportion-lock true)))
 
 (defn setup-shape
