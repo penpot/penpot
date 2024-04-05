@@ -13,27 +13,27 @@
 (defn assign-proportions
   [shape]
   (let [{:keys [width height]} (:selrect shape)]
-    (assoc shape :proportion (/ width height))))
-
-;; --- Setup Proportions
-
+    (assoc shape :proportion (float (/ width height))))) ; Note: we need to convert explicitly to float.
+                                                         ; In Clojure (not clojurescript) when we divide
+;; --- Setup Proportions                                 ; two integers it does not create a float, but
+                                                         ; a clojure.lang.Ratio object.
 (defn setup-proportions-image
   [{:keys [metadata] :as shape}]
   (let [{:keys [width height]} metadata]
     (assoc shape
-           :proportion (/ width height)
+           :proportion (float (/ width height))
            :proportion-lock true)))
 
 (defn setup-proportions-size
   [{{:keys [width height]} :selrect :as shape}]
   (assoc shape
-         :proportion (/ width height)
+         :proportion (float (/ width height))
          :proportion-lock true))
 
 (defn setup-proportions-const
   [shape]
   (assoc shape
-         :proportion 1
+         :proportion 1.0
          :proportion-lock false))
 
 (defn setup-proportions

@@ -1255,7 +1255,7 @@
                           :frame-id frame-id
                           :parent-id frame-id})
                         (assoc
-                         :proportion (/ width height)
+                         :proportion (float (/ width height))
                          :proportion-lock true))
 
         img-shape   (cts/setup-shape
