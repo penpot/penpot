@@ -167,6 +167,7 @@
                                       {:label (tr "questions.never-used-one")  :area "image6" :value "never-used-a-tool" :icon i/curve}
                                       {:label (tr "questions.other") :value "other" :area "other"}]
                             :name :experience-design-tool
+                            :image true
                             :class (stl/css :image-radio)
                             :on-change on-design-tool-change}]
 
