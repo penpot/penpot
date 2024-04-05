@@ -30,11 +30,14 @@
     "translations:find-unused": "node ./scripts/find-unused-translations.js",
     "compile": "node ./scripts/compile.js",
     "watch": "node ./scripts/watch.js",
+    "e2e:server": "NODE_NO_WARNINGS=1 http-server ./resources/public -p 3500 -a 0.0.0.0",
+    "e2e:test": "playwright test",
     "storybook:compile": "gulp template:storybook && clojure -M:dev:shadow-cljs compile storybook",
     "storybook:watch": "npm run storybook:compile && concurrently \"clojure -M:dev:shadow-cljs watch storybook\" \"storybook dev -p 6006\"",
     "storybook:build": "npm run storybook:compile && storybook build"
   },
   "devDependencies": {
+    "@playwright/test": "^1.42.1",
     "@storybook/addon-essentials": "^7.6.17",
     "@storybook/addon-interactions": "^7.6.17",
     "@storybook/addon-links": "^7.6.17",
@@ -59,6 +62,7 @@
     "gulp-sass": "^5.1.0",
     "gulp-sourcemaps": "^3.0.0",
     "gulp-svg-sprite": "^2.0.3",
+    "http-server": "^14.1.1",
     "jsdom": "^24.0.0",
     "map-stream": "0.0.7",
     "marked": "^12.0.0",
