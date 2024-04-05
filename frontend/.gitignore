@@ -5,3 +5,8 @@
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

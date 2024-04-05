@@ -11,10 +11,11 @@ set -e;
 echo "[start-tmux.sh] Installing node dependencies"
 pushd ~/penpot/frontend/
 yarn install
+yarn run playwright install --with-deps chromium
 popd
 pushd ~/penpot/exporter/
 yarn install
-npx playwright install chromium
+yarn run playwright install --with-deps chromium
 popd
 
 tmux -2 new-session -d -s penpot
