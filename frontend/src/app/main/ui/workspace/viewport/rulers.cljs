@@ -197,6 +197,12 @@
         bs (* 4 zoom-inverse)]
     [:*
      [:g.viewport-frame-background
+      ;; Fix for a Firefox bug that shows some strange artifacts when creating shape
+      [:rect {:x 0 :y 0 :width 1 :height 1
+              :fill "none"
+              :stroke-width 0.1
+              :stroke "rgba(0,0,0,0)"}]
+
       ;; This goes behind because if it goes in front the background bleeds through
       [:path {:d (rulers-inside-path x1 y1 x2 y2 br bw)
               :fill "none"
