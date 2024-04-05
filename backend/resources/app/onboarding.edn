@@ -16,6 +16,9 @@
  {:id "black-white-mobile-templates"
   :name "Black & White Mobile Templates"
   :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Black-White-Mobile-Templates.penpot"}
+ {:id "avataaars"
+  :name "Avataaars"
+  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Avataaars-by-Pablo-Stanley.penpot"}
  {:id "ux-notes"
   :name "UX Notes"
   :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/UX-Notes.penpot"}
