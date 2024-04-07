@@ -1,0 +1,191 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+}
+
+.modal-container {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr $s-32 1fr;
+  gap: $s-24;
+  width: $s-908;
+  height: $s-632;
+  padding-inline: $s-100;
+  padding-block-start: $s-40;
+  padding-block-end: $s-72;
+  border-radius: $br-8;
+  background-color: var(--modal-background-color);
+  border: $s-2 solid var(--modal-border-color);
+}
+
+.paginator {
+  @include bodySmallTypography;
+  position: absolute;
+  top: $s-40;
+  right: $s-100;
+  padding: $s-4;
+  border-radius: $br-6;
+  color: var(--color-foreground-secondary);
+}
+
+// MODAL LEFT
+.modal-left {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: $s-32 auto auto 1fr;
+  gap: $s-16;
+  max-height: $s-512;
+  padding-block-start: $s-44;
+}
+
+.modal-title {
+  @include bigTitleTipography;
+  color: var(--modal-title-foreground-color);
+  margin-bottom: $s-8;
+}
+
+.modal-subtitle {
+  @include medTitleTipography;
+  color: var(--modal-title-foreground-color);
+}
+
+.modal-text {
+  @include bodyLargeTypography;
+  color: var(--modal-text-foreground-color);
+  margin: 0;
+}
+
+.modal-desc {
+  @include smallTitleTipography;
+  margin: 0;
+  color: var(--modal-title-foreground-color);
+}
+
+.team-features {
+  @include flexColumn;
+  gap: $s-16;
+  margin: 0;
+}
+
+.feature {
+  @include flexRow;
+  gap: $s-16;
+}
+
+.icon {
+  @include flexCenter;
+  height: $s-32;
+  width: $s-32;
+  border-radius: $br-circle;
+  border: $s-1 solid var(--color-accent-primary);
+  svg {
+    @extend .button-icon;
+    stroke: var(--color-accent-primary);
+  }
+}
+
+.action-buttons {
+  @extend .modal-action-btns;
+  justify-content: flex-end;
+}
+
+.accept-button {
+  @extend .modal-accept-btn;
+}
+
+.back-button {
+  @extend .modal-cancel-btn;
+}
+
+// SEPARATOR
+.separator {
+  width: $s-8;
+  height: $s-420;
+  border-radius: $br-8;
+  margin-block-start: $s-92;
+  opacity: 42%;
+  background-color: var(--modal-separator-backogrund-color);
+}
+
+// MODAL RIGHT TEAM
+.modal-right {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr auto;
+  gap: $s-24;
+  max-height: $s-512;
+  margin-block-start: $s-92;
+}
+
+.first-block,
+.second-block {
+  @include flexColumn;
+  gap: $s-16;
+}
+
+.modal-form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $s-16;
+}
+
+.team-name-input {
+  @extend .input-element-label;
+  label {
+    @include flexColumn;
+    @include bodySmallTypography;
+    align-items: flex-start;
+    width: 100%;
+    border: none;
+    background-color: transparent;
+    height: 100%;
+
+    input {
+      @include bodySmallTypography;
+      margin-top: $s-8;
+    }
+  }
+}
+
+// MODAL RIGHT INVITATIONS
+
+.modal-right-invitations {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto auto 1fr;
+  gap: $s-16;
+  max-height: $s-512;
+  margin-block-start: $s-92;
+}
+
+.modal-form-invitations {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr auto auto;
+  margin-block-end: $s-72;
+  gap: $s-8;
+}
+
+.role-title {
+  @include uppercaseTitleTipography;
+  margin-block-end: $s-8;
+  color: var(--modal-title-foreground-color);
+}
+
+.invitation-row {
+  margin: 0;
+  color: var(--modal-title-foreground-color);
+}
+
+.modal-hint {
+  @include bodySmallTypography;
+  color: var(--modal-text-foreground-color);
+  text-align: right;
+}

@@ -847,7 +847,7 @@ msgstr "電子郵件"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-go-to"
-msgstr "前往Twitter"
+msgstr "前往X"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-subtitle1"
@@ -855,7 +855,7 @@ msgstr "協助解你的決技術問題。"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-title"
-msgstr "Twitter支援帳戶"
+msgstr "X支援帳戶"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
@@ -1584,9 +1584,6 @@ msgstr "切換調色板"
 msgid "shortcuts.toggle-focus-mode"
 msgstr "切換專注模式"
 
-msgid "shortcuts.toggle-grid"
-msgstr "顯示/隱藏網格"
-
 msgid "shortcuts.toggle-history"
 msgstr "切換歷史記錄"
 
@@ -1714,10 +1711,6 @@ msgstr "檔案庫"
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.rename"
 msgstr "重新命名"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.shared"
-msgstr "共用"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.typography"
@@ -2117,10 +2110,6 @@ msgid "workspace.options.stroke.solid"
 msgstr "實線"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-center"
-msgstr "置中 (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.direction-ltr"
 msgstr "左至右"
 
@@ -2135,6 +2124,10 @@ msgstr "小寫"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.none"
 msgstr "無"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-center"
+msgstr "置中 (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.title"

@@ -10,8 +10,8 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.path :as gsp]
-   [app.common.path.commands :as upc]
-   [app.common.path.shapes-to-path :as ups]
+   [app.common.svg.path.command :as upc]
+   [app.common.svg.path.shapes-to-path :as ups]
    [app.main.data.workspace.path :as drp]
    [app.main.snap :as snap]
    [app.main.store :as st]
@@ -89,8 +89,8 @@
        :style {:stroke-width (/ point-radius-stroke-width zoom)
                :stroke (cond (or selected? hover?) pc/black-color
                              preview? pc/secondary-color
-                             :else pc/primary-color)
-               :fill (cond selected? pc/primary-color
+                             :else pc/accent-color)
+               :fill (cond selected? pc/accent-color
                            :else pc/white-color)}}]
      [:circle {:cx x
                :cy y
@@ -150,8 +150,8 @@
 
          :style {:stroke-width (/ handler-stroke-width zoom)
                  :stroke (cond (or selected? hover?) pc/black-color
-                               :else pc/primary-color)
-                 :fill (cond selected? pc/primary-color
+                               :else pc/accent-color)
+                 :fill (cond selected? pc/accent-color
                              :else pc/white-color)}}]
        [:circle {:cx x
                  :cy y
@@ -288,7 +288,7 @@
     [:g.path-editor {:ref editor-ref}
      [:path {:d (upf/format-path content)
              :style {:fill "none"
-                     :stroke pc/primary-color
+                     :stroke pc/accent-color
                      :strokeWidth (/ 1 zoom)}}]
      (when (and preview (not drag-handler))
        [:& path-preview {:command preview

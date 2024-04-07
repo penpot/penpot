@@ -5,11 +5,11 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.settings.options
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.spec :as us]
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as msg]
    [app.main.data.users :as du]
-   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
@@ -25,31 +25,32 @@
   (s/keys :opt-un [::lang ::theme]))
 
 (defn- on-success
-  [_]
-  (st/emit! (dm/success (tr "notifications.profile-saved"))))
+  [profile]
+  (st/emit! (msg/success (tr "notifications.profile-saved"))
+            (du/profile-fetched profile)))
 
 (defn- on-submit
   [form _event]
-  (let [data  (:clean-data @form)
-        mdata {:on-success (partial on-success form)}]
-    (st/emit! (du/update-profile (with-meta data mdata)))))
+  (let [data  (:clean-data @form)]
+    (st/emit! (du/update-profile data)
+              (du/persist-profile {:on-success on-success}))))
 
 (mf/defc options-form
+  {::mf/wrap-props false}
   []
   (let [profile (mf/deref refs/profile)
         initial (mf/with-memo [profile]
                   (update profile :lang #(or % "")))
         form    (fm/use-form :spec ::options-form
-                             :initial initial)
-        new-css-system (features/use-feature :new-css-system)]
+                             :initial initial)]
 
-    [:& fm/form {:class "options-form"
+    [:& fm/form {:class (stl/css :options-form)
                  :on-submit on-submit
                  :form form}
 
-     [:h2 (tr "labels.language")]
+     [:h3 (tr "labels.language")]
 
-     [:div.fields-row
+     [:div {:class (stl/css :fields-row)}
       [:& fm/select {:options (into [{:label "Auto (browser)" :value ""}]
                                     i18n/supported-locales)
                      :label (tr "dashboard.select-ui-language")
@@ -57,18 +58,19 @@
                      :name :lang
                      :data-test "setting-lang"}]]
 
-     (when new-css-system
-       [:h2 (tr "dashboard.theme-change")]
-       [:div.fields-row
-        [:& fm/select {:label (tr "dashboard.select-ui-theme")
-                       :name :theme
-                       :default "default"
-                       :options [{:label "Penpot Dark (default)" :value "default"}
-                                 {:label "Penpot Light" :value "light"}]
-                       :data-test "setting-theme"}]])
-     [:& fm/submit-button
+     [:h3 (tr "dashboard.theme-change")]
+     [:div {:class (stl/css :fields-row)}
+      [:& fm/select {:label (tr "dashboard.select-ui-theme")
+                     :name :theme
+                     :default "default"
+                     :options [{:label "Penpot Dark (default)" :value "default"}
+                               {:label "Penpot Light" :value "light"}]
+                     :data-test "setting-theme"}]]
+
+     [:> fm/submit-button*
       {:label (tr "dashboard.update-settings")
-       :data-test "submit-lang-change"}]]))
+       :data-test "submit-lang-change"
+       :class (stl/css :btn-primary)}]]))
 
 ;; --- Password Page
 
@@ -77,7 +79,8 @@
   (mf/use-effect
    #(dom/set-html-title (tr "title.settings.options")))
 
-  [:div.dashboard-settings
-   [:div.form-container
-    {:data-test "settings-form"}
+  [:div {:class (stl/css :dashboard-settings)}
+   [:div {:class (stl/css :form-container) :data-test "settings-form"}
+    [:h2 (tr "labels.settings")]
     [:& options-form {}]]])
+

@@ -8,7 +8,7 @@
   "A interface to webworkers exposed functionality."
   (:require
    [app.common.transit :as t]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [goog.events :as ev])
   (:import
    goog.net.WebSocket

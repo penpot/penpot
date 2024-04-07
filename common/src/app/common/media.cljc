@@ -10,7 +10,7 @@
    [cuerdas.core :as str]))
 
 ;; We have added ".ttf" as string to solve a problem with chrome input selector
-(def valid-font-types #{"font/ttf", ".ttf", "font/woff", "application/font-woff", "font/otf"})
+(def valid-font-types #{"font/ttf" ".ttf" "font/woff", "application/font-woff" "woff" "font/otf" ".otf" "font/opentype"})
 (def valid-image-types #{"image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"})
 (def str-image-types (str/join "," valid-image-types))
 (def str-font-types (str/join "," valid-font-types))
@@ -58,6 +58,7 @@
     "application/zip"    ".zip"
     "application/penpot" ".penpot"
     "application/pdf"    ".pdf"
+    "text/plain"         ".txt"
     nil))
 
 (s/def ::id uuid?)

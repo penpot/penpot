@@ -17,30 +17,31 @@
    [app.worker.selection]
    [app.worker.snaps]
    [app.worker.thumbnails]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [promesa.core :as p]))
 
 (log/setup! {:app :info})
 
 ;; --- Messages Handling
 
-(def schema:message
-  [:map {:title "WorkerMessage"}
-   [:sender-id ::sm/uuid]
-   [:payload
-    [:map
-     [:cmd :keyword]]]
-   [:buffer? {:optional true} :boolean]])
-
-(def message?
-  (sm/pred-fn schema:message))
+(def ^:private
+  schema:message
+  (sm/define
+    [:map {:title "WorkerMessage"}
+     [:sender-id ::sm/uuid]
+     [:payload
+      [:map
+       [:cmd :keyword]]]
+     [:buffer? {:optional true} :boolean]]))
 
 (def buffer (rx/subject))
 
 (defn- handle-message
   "Process the message and returns to the client"
   [{:keys [sender-id payload transfer] :as message}]
-  (dm/assert! (message? message))
+  (dm/assert!
+   "expected valid message"
+   (sm/check! schema:message message))
   (letfn [(post [msg]
             (let [msg (-> msg (assoc :reply-to sender-id) (wm/encode))]
               (.postMessage js/self msg)))
@@ -86,7 +87,9 @@
 (defn- drop-message
   "Sends to the client a notification that its messages have been dropped"
   [{:keys [sender-id] :as message}]
-  (dm/assert! (message? message))
+  (dm/assert!
+   "expected valid message"
+   (sm/check! schema:message message))
   (.postMessage js/self (wm/encode {:reply-to sender-id
                                     :dropped true})))
 
@@ -127,18 +130,18 @@
          ;; 1ms debounce, after 1ms without messages will process the buffer
          (rx/debounce 1)
 
-         (rx/subs (fn [[messages dropped last]]
+         (rx/subs! (fn [[messages dropped last]]
                     ;; Send back the dropped messages replies
-                    (doseq [msg dropped]
-                      (drop-message msg))
+                     (doseq [msg dropped]
+                       (drop-message msg))
 
                     ;; Process the message
-                    (doseq [msg (vals messages)]
-                      (handle-message msg))
+                     (doseq [msg (vals messages)]
+                       (handle-message msg))
 
                     ;; After process the buffer we send a clear
-                    (when-not (= last ::clear)
-                      (rx/push! buffer ::clear)))))))
+                     (when-not (= last ::clear)
+                       (rx/push! buffer ::clear)))))))
 
 (defonce process-message-sub (subscribe-buffer-messages))
 

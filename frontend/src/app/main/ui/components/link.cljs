@@ -6,16 +6,19 @@
 
 (ns app.main.ui.components.link
   (:require
+   [app.common.data :as d]
    [app.util.keyboard :as kbd]
    [rumext.v2 :as mf]))
 
-(mf/defc link [{:keys [action klass data-test keyboard-action children]}]
-  (let [keyboard-action (or keyboard-action action)]
+(mf/defc link
+  {::mf/wrap-props false}
+  [{:keys [action class data-test keyboard-action children]}]
+  (let [keyboard-action (d/nilv keyboard-action action)]
     [:a {:on-click action
-         :class klass
+         :class class
          :on-key-down (fn [event]
-                        (when (kbd/enter? event)
+                        (when ^boolean (kbd/enter? event)
                           (keyboard-action event)))
          :tab-index "0"
          :data-test data-test}
-   [:* children]]))
+     children]))

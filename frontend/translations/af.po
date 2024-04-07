@@ -1,0 +1,413 @@
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2023-10-13 18:01+0000\n"
+"Last-Translator: Hugo Vermaak <hugo@colossal.co.za>\n"
+"Language-Team: Afrikaans <https://hosted.weblate.org/projects/penpot/"
+"frontend/af/>\n"
+"Language: af\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 5.1-dev\n"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-30-days"
+msgstr "30 dae"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.add-shared"
+msgstr "Voeg by as Gedeelde Biblioteek"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.token-will-not-expire"
+msgstr "Die token het nie 'n verval datum nie"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-gitlab-submit"
+msgstr "GitLab"
+
+msgid "common.share-link.placeholder"
+msgstr "Deelbare skakel sal hier verskyn"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-title"
+msgstr "Wagwoord vergeet?"
+
+msgid "common.share-link.current-tag"
+msgstr "(huidige)"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.invalid-token-error"
+msgstr "Die hersteltoken is ongeldig."
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-title"
+msgstr "Wonderlik om jou weer te sien!"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create"
+msgstr "Genereer nuwe token"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "auth.notifications.team-invitation-accepted"
+msgstr "Het suksesvol by die span aangesluit"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "Span saam!"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-180-days"
+msgstr "180 dae"
+
+msgid "dashboard.export-frames"
+msgstr "Voer borde as PDF uit"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-profile"
+msgstr "Wil jy dit net probeer?"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-submit"
+msgstr "Herstel Wagwoord"
+
+#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
+msgid "dashboard.copy-suffix"
+msgstr "(kopieer)"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.errors-required-name"
+msgstr "Die naam word vereis"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.create-new-team"
+msgstr "Skep 'n nuwe span"
+
+msgid "common.share-link.destroy-link"
+msgstr "Vernietig skakel"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.copied-success"
+msgstr "Token gekopieer"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr "Gaan stap deur Penpot en leer sy hoofkenmerke ken."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.already-have-account"
+msgstr "Reeds 'n rekening?"
+
+msgid "common.share-link.view-all"
+msgstr "Kies Alles"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-your-email"
+msgstr ""
+"Gaan jou e-pos na en klik op die skakel om te verifieer en Penpot te begin "
+"gebruik."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "branding-illustrations-marketing-pieces"
+msgstr "...handelsmerk, illustrasies, bemarkingsstukke, ens."
+
+msgid "auth.terms-of-service"
+msgstr "Diensbepalings"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.demo-warning"
+msgstr ""
+"Dit is 'n DEMO-diens, MOENIE vir werklike werk gebruik nie, die projekte sal "
+"periodiek uitgevee word."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-90-days"
+msgstr "90 dae"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-title"
+msgstr "Skep 'n rekening"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-frames.title"
+msgstr "Voer as PDF uit"
+
+#: src/app/main/ui/auth.cljs
+msgid "auth.sidebar-tagline"
+msgstr "Die oopbron-oplossing vir ontwerp en prototipering."
+
+msgid "common.share-link.get-link"
+msgstr "Kry skakel"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register"
+msgstr "Nog nie 'n rekening nie?"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-ldap-submit"
+msgstr "LDAP"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-oidc-submit"
+msgstr "OpenID"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expired-on"
+msgstr "Het verval op %s"
+
+msgid "dashboard.export-multi"
+msgstr "Voer %s Penpot lêers uit"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-not-empty"
+msgstr "Wagwoord moet 'n ander karakter as spasie bevat."
+
+msgid "common.unpublish"
+msgstr "Depubliseer"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-60-days"
+msgstr "60 dae"
+
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr ""
+"Is jy seker jy wil hierdie skakel verwyder? As jy dit doen, is dit nie meer "
+"vir enigiemand beskikbaar nie"
+
+msgid "dashboard.download-binary-file"
+msgstr "Laai Penpot-lêer (.penpot) af"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.confirm-password"
+msgstr "Bevestig wagwoord"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.fullname"
+msgstr "Volle naam"
+
+msgid "common.share-link.permissions-hint"
+msgstr "Enigiemand met skakel sal toegang hê"
+
+msgid "common.share-link.permissions-can-comment"
+msgstr "Kan kommentaar lewer"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.token-will-expire"
+msgstr "Die token sal verval op %s"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "Spanbestuur"
+
+msgid "dashboard.download-standard-file"
+msgstr "Laai standaardlêer af (.svg + .json)"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "bladsy gedeel"
+msgstr[1] "%s bladsye gedeel"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-subtitle"
+msgstr "Dit is gratis, dit is oopbron"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-submit"
+msgstr "Meld aan"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.default-team-name"
+msgstr "Jou Penpot"
+
+msgid "common.share-link.permissions-can-inspect"
+msgstr "Kan kode inspekteer"
+
+msgid "common.share-link.team-members"
+msgstr "Slegs spanlede"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"Wanneer jy 'n nuwe rekening skep, stem jy in tot ons diensbepalings en "
+"privaatheidsbeleid."
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.new-password"
+msgstr "Tik 'n nuwe wagwoord in"
+
+msgid "common.share-link.title"
+msgstr "Deel prototipes"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate"
+msgstr "Dupliseer"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.verification-email-sent"
+msgstr "Ons het 'n verifikasie-e-pos aan gestuur"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.profile-not-verified"
+msgstr ""
+"Profiel is nie geverifieer nie, verifieer asseblief profiel voordat jy "
+"voortgaan."
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-subtitle"
+msgstr "Ons sal vir jou 'n e-pos stuur met instruksies"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.forgot-password"
+msgstr "Wagwoord vergeet?"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.recovery-token-sent"
+msgstr "Wagwoordherwinningskakel na jou inkassie gestuur."
+
+msgid "common.publish"
+msgstr "Publiseer"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.recovery-submit"
+msgstr "Verander jou wagwoord"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.change-email"
+msgstr "Verander e-pos"
+
+msgid "auth.privacy-policy"
+msgstr "Privaatheidsbeleid"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.password-changed-successfully"
+msgstr "Wagwoord suksesvol verander"
+
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.not-all-space"
+msgstr "Die naam moet 'n ander karakter as spasie bevat."
+
+msgid "common.share-link.permissions-pages"
+msgstr "Bladsye gedeel"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-account"
+msgstr "Skep demo rekening"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.title"
+msgstr "Koppelvlak Deurloop"
+
+msgid "common.share-link.manage-ops"
+msgstr "Bestuur toestemmings"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "Begin die tutoriaal"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-length-hint"
+msgstr "Ten minste 8 karakters"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr ""
+"Leer die basiese beginsels by Penpot terwyl jy pret het met hierdie "
+"praktiese tutoriaal."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.no-access-tokens"
+msgstr "Jy het tot dusver geen tokens nie."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal.description"
+msgstr ""
+"Persoonlike toegangtokens funksioneer soos 'n alternatief vir ons aanmeld-/"
+"wagwoord-verifikasiestelsel en kan gebruik word om 'n toepassing toe te laat "
+"om toegang tot die interne Penpot API te verkry"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr ""
+"Penpot is bedoel vir spanne. Nooi lede om saam te werk aan projekte en lêers"
+
+msgid "common.share-link.all-users"
+msgstr "Alle Penpot-gebruikers"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal"
+msgstr "Persoonlike toegangstokens"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expires-on"
+msgstr "Verval op %s"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.add-one"
+msgstr "Druk die knoppie \"Genereer nuwe token\" om een te genereer."
+
+#: src/app/main/ui/dashboard/grid.cljs
+#, markdown
+msgid "dashboard.empty-placeholder-drafts"
+msgstr ""
+"Lêers wat by biblioteke gevoeg is, sal hier verskyn. Probeer om jou lêers te "
+"deel of voeg by vanaf ons [Biblioteke en sjablone](https://penpot.app/"
+"libraries-templates.html)."
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-github-submit"
+msgstr "GitHub"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "Google"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.delete-team"
+msgstr "Verwyder span"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create.success"
+msgstr "Toegangstoken is suksesvol geskep."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-never"
+msgstr "Nooit"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.password"
+msgstr "Wagwoord"
+
+msgid "common.share-link.link-copied-success"
+msgstr "Skakel suksesvol gekopieer"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.email"
+msgstr "E-pos"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.register-submit"
+msgstr "Skep 'n rekening"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.no-expiration"
+msgstr "Geen verval datum nie"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.too-long"
+msgstr "Die naam moet hoogstens 250 karakters bevat."
+
+msgid "dashboard.export-binary-multi"
+msgstr "Laai %s Penpot lêers (.penpot) af"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "Begin die toer"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate-multi"
+msgstr "Dupliseer %s lêers"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.login-here"
+msgstr "Meld hier aan"

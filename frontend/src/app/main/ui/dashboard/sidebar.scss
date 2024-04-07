@@ -1,0 +1,382 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "common/refactor/common-refactor.scss" as *;
+@use "common/refactor/common-dashboard";
+
+// SIDEBAR COMPONENT
+.dashboard-sidebar {
+  grid-row: 1 / span 2;
+  grid-column: 1 / span 2;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  height: 100%;
+  width: 100%;
+  padding: $s-16 0 0 0;
+  margin: 0 $s-16 0 0;
+  border-right: $s-1 solid var(--panel-border-color);
+  background-color: var(--panel-background-color);
+  z-index: $z-index-1;
+}
+
+//SIDEBAR CONTENT COMPONENT
+.sidebar-content {
+  display: grid;
+  grid-template-rows: auto auto auto auto 1fr;
+  gap: $s-24;
+  height: 100%;
+  padding: 0;
+  overflow-y: auto;
+}
+
+// SIDEBAR TEAM SWITCH
+.sidebar-team-switch {
+  position: relative;
+  margin: $s-4 $s-16;
+}
+
+.switch-content {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  height: $s-48;
+  width: 100%;
+  border-radius: $br-8;
+  border: $s-1 solid var(--menu-background-color);
+  background-color: var(--menu-background-color);
+}
+
+.current-team {
+  @include buttonStyle;
+  display: grid;
+  align-items: center;
+  grid-template-columns: 1fr auto;
+  gap: $s-8;
+  height: 100%;
+  padding: 0 $s-12;
+}
+
+.team-name {
+  display: grid;
+  align-items: center;
+  grid-template-columns: auto 1fr;
+  gap: $s-12;
+  height: $s-40;
+}
+
+.team-text {
+  @include textEllipsis;
+  @include smallTitleTipography;
+  width: $s-144;
+  text-align: left;
+  color: var(--menu-foreground-color-hover);
+}
+
+// This icon still use the old svg
+.penpot-icon {
+  @include flexCenter;
+  svg {
+    fill: var(--icon-foreground);
+    width: $s-24;
+    height: $s-24;
+  }
+}
+
+.team-picture {
+  @include flexCenter;
+  border-radius: 50%;
+  height: $s-24;
+  width: $s-24;
+}
+
+.arrow-icon {
+  @extend .button-icon;
+  transform: rotate(90deg);
+  stroke: var(--icon-foreground);
+}
+
+.switch-options {
+  @include buttonStyle;
+  @include flexCenter;
+  max-width: $s-24;
+  min-width: $s-28;
+  height: 100%;
+  border-left: $s-1 solid var(--panel-background-color);
+  background-color: transparent;
+}
+
+.menu-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
+}
+
+// DROPDOWNS
+
+.teams-dropdown {
+  @extend .menu-dropdown;
+  left: 0;
+  top: $s-52;
+  height: fit-content;
+  max-height: $s-480;
+  min-width: $s-248;
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.team-dropdown-item {
+  @extend .menu-item-base;
+  display: grid;
+  grid-template-columns: $s-24 1fr auto;
+  gap: $s-8;
+  height: $s-40;
+}
+
+.action {
+  --sidebar-action-icon-color: var(--icon-foreground);
+  --sidebar-icon-backgroun-color: var(--color-background-secondary);
+  &:hover {
+    --sidebar-action-icon-color: var(--color-background-secondary);
+    --sidebar-icon-backgroun-color: var(--color-accent-primary);
+  }
+}
+
+.icon-wrapper {
+  @include flexCenter;
+  width: $s-24;
+  height: $s-24;
+  margin-right: $s-12;
+  border-radius: 50%;
+  background-color: var(--sidebar-icon-backgroun-color);
+}
+
+.add-icon {
+  @extend .button-icon;
+  width: $s-24;
+  height: $s-24;
+  stroke: var(--sidebar-action-icon-color);
+}
+
+.team-separator {
+  border-top: $s-1 solid var(--dropdown-separator-color);
+  margin: 0;
+}
+
+.tick-icon {
+  @extend .button-icon-small;
+  stroke: var(--icon-foreground);
+}
+
+.options-dropdown {
+  @extend .menu-dropdown;
+  right: $s-2;
+  top: $s-52;
+  max-height: $s-480;
+  &:not(.teams-dropdown) {
+    min-width: $s-160;
+  }
+}
+
+.team-options-item {
+  @extend .menu-item-base;
+  height: $s-40;
+}
+
+.team-option-separator {
+  height: $s-1;
+  margin: 0;
+  border-top: $s-1 solid var(--dropdown-separator-color);
+}
+
+// Sections
+.sidebar-nav {
+  margin: 0;
+  user-select: none;
+  overflow: none;
+}
+
+.pinned-projects {
+  overflow-y: auto;
+}
+
+.sidebar-nav-item {
+  cursor: pointer;
+  &:hover {
+    background-color: var(--sidebar-element-background-color-hover);
+    span {
+      color: var(--sidebar-element-foreground-color-hover);
+    }
+  }
+
+  &.current {
+    background-color: var(--sidebar-element-background-color-selected);
+    .element-title {
+      color: var(--sidebar-element-foreground-color-selected);
+    }
+  }
+}
+
+.recent-projects svg {
+  stroke: var(--main-icon-foreground);
+}
+
+.sidebar-link {
+  display: block;
+  padding: $s-8 $s-8 $s-8 $s-24;
+  font-weight: $fw400;
+  width: 100%;
+  &:hover {
+    text-decoration: none;
+  }
+}
+
+.project-element {
+  padding: $s-8 $s-8 $s-8 $s-24;
+}
+
+.element-title {
+  @include textEllipsis;
+  width: $s-256;
+  color: var(--sidebar-element-foreground-color);
+  font-size: $fs-14;
+}
+
+// Pinned projects
+
+.sidebar-empty-placeholder {
+  padding: $s-12;
+  color: var(--empty-message-foreground-color);
+  display: flex;
+  align-items: center;
+}
+
+.pin-icon {
+  @extend .button-icon-small;
+  stroke: var(--icon-foreground);
+  margin: 0 $s-12;
+}
+
+.empty-text {
+  font-size: $fs-12;
+}
+
+// Search
+
+.sidebar-search {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: center;
+  border: $s-1 solid transparent;
+  margin: 0 $s-16;
+  border-radius: $br-8;
+  background-color: var(--search-bar-input-background-color);
+}
+
+.input-text {
+  @include smallTitleTipography;
+  height: $s-40;
+  width: 100%;
+  padding: $s-6 $s-12;
+  margin: 0;
+  border: transparent;
+  border-radius: $br-8;
+  background: transparent;
+  color: var(--search-bar-foreground-color);
+
+  &:focus,
+  &:focus-within,
+  &:focus-visible {
+    outline: none;
+    border: $s-1 solid var(--search-bar-input-border-color-focus);
+  }
+  ::placeholder {
+    color: var(--search-bar-placeholder-foreground-color);
+  }
+}
+
+.search-btn {
+  @include buttonStyle;
+  @include flexCenter;
+  position: absolute;
+  right: 0;
+  height: $s-24;
+  width: $s-32;
+  padding: 0 $s-8;
+}
+
+.search-icon,
+.clear-search-btn {
+  @extend .button-icon;
+  --sidebar-search-foreground-color: var(--search-bar-icon-foreground-color);
+  stroke: var(--sidebar-search-foreground-color);
+}
+
+.clear-search-btn:hover {
+  --sidebar-search-foreground-color: var(--search-bar-icon-foreground-color-hover);
+}
+
+// Profile
+.profile-section {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  padding: $s-12 $s-16;
+  border-top: $s-1 solid var(--panel-border-color);
+  background-color: var(--profile-section-background-color);
+  cursor: pointer;
+}
+
+.profile {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: $s-8;
+  cursor: pointer;
+}
+
+.profile-fullname {
+  @include smallTitleTipography;
+  @include textEllipsis;
+  align-self: center;
+  max-width: $s-160;
+  color: var(--profile-foreground-color);
+}
+
+.profile-img {
+  height: $s-40;
+  width: $s-40;
+  border-radius: $br-circle;
+}
+
+.profile-dropdown {
+  @extend .menu-dropdown;
+  left: $s-16;
+  bottom: $s-72;
+  min-width: $s-252;
+  // TODO ADD animation fadeInUp
+}
+
+.profile-dropdown-item {
+  @extend .menu-item-base;
+  @include smallTitleTipography;
+  height: $s-40;
+  padding: $s-8 $s-16;
+}
+
+.profile-separator {
+  height: $s-6;
+}
+
+.item-with-icon {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: $s-8;
+}
+
+.exit-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
+}

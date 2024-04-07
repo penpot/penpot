@@ -5,17 +5,19 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.sidebar.options.rows.color-row
+  (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.colors :as cc]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.pages :as cp]
+   [app.common.types.shape.attrs :refer [default-color]]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :as cb]
-   [app.main.ui.components.color-input :refer [color-input]]
-   [app.main.ui.components.numeric-input :refer [numeric-input]]
+   [app.main.ui.components.color-input :refer [color-input*]]
+   [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
@@ -24,6 +26,10 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
+
+
+(def ^:private detach-icon
+  (i/icon-xref :detach (stl/css :detach-icon)))
 
 (defn opacity->string
   [opacity]
@@ -39,9 +45,9 @@
   (if (= v :multiple) nil v))
 
 (mf/defc color-row
-  [{:keys [index color disable-gradient disable-opacity on-change
-           on-reorder on-detach on-open on-close title on-remove
-           disable-drag on-focus on-blur select-only data-select-on-focus]}]
+  [{:keys [index color disable-gradient disable-opacity disable-image on-change
+           on-reorder on-detach on-open on-close on-remove
+           disable-drag on-focus on-blur select-only select-on-focus]}]
   (let [current-file-id (mf/use-ctx ctx/current-file-id)
         file-colors     (mf/deref refs/workspace-file-colors)
         shared-libs     (mf/deref refs/workspace-libraries)
@@ -52,6 +58,39 @@
                           (dm/get-in shared-libs [(:file-id color) :data :colors]))
 
         color-name       (dm/get-in src-colors [(:id color) :name])
+
+        multiple-colors? (uc/multiple? color)
+        library-color?    (and (:id color) color-name (not multiple-colors?))
+        gradient-color? (and (not multiple-colors?)
+                             (:gradient color)
+                             (get-in color [:gradient :type]))
+        image-color? (and (not multiple-colors?)
+                          (:image color))
+
+        editing-text*  (mf/use-state false)
+        editing-text?  (deref editing-text*)
+
+        opacity?
+        (and (not gradient-color?)
+             (not multiple-colors?)
+             (not library-color?)
+             (not disable-opacity))
+
+        on-focus
+        (mf/use-fn
+         (mf/deps on-focus)
+         (fn [event]
+           (reset! editing-text* true)
+           (when on-focus
+             (on-focus event))))
+
+        on-blur
+        (mf/use-fn
+         (mf/deps on-blur)
+         (fn [event]
+           (reset! editing-text* false)
+           (when on-blur
+             (on-blur event))))
 
         parse-color
         (mf/use-fn
@@ -79,7 +118,7 @@
                            (assoc :color new-value)
                            (dissoc :gradient))]
              (st/emit! (dwl/add-recent-color color)
-             (on-change color)))))
+                       (on-change color)))))
 
         handle-opacity-change
         (mf/use-fn
@@ -90,15 +129,15 @@
                               :id nil
                               :file-id nil)]
              (st/emit! (dwl/add-recent-color color)
-             (on-change color)))))
+                       (on-change color)))))
 
         handle-click-color
         (mf/use-fn
-         (mf/deps disable-gradient disable-opacity on-change on-close on-open)
+         (mf/deps disable-gradient disable-opacity disable-image on-change on-close on-open)
          (fn [color event]
            (let [color (cond
-                         (uc/multiple? color)
-                         {:color cp/default-color
+                         multiple-colors?
+                         {:color default-color
                           :opacity 1}
 
                          (= :multiple (:opacity color))
@@ -113,6 +152,7 @@
                         :y y
                         :disable-gradient disable-gradient
                         :disable-opacity disable-opacity
+                        :disable-image disable-image
                         ;; on-change second parameter means if the source is the color-picker
                         :on-change #(on-change (merge uc/empty-color %) true)
                         :on-close (fn [value opacity id file-id]
@@ -124,7 +164,6 @@
                (on-open (merge uc/empty-color color)))
 
              (modal/show! :colorpicker props))))
-
 
         prev-color (h/use-previous color)
 
@@ -149,73 +188,87 @@
       (when (not= prev-color color)
         (modal/update-props! :colorpicker {:data (parse-color color)})))
 
-    [:div.row-flex.color-data {:title title
-                               :class (dom/classnames
-                                       :dnd-over-top (= (:over dprops) :top)
-                                       :dnd-over-bot (= (:over dprops) :bot))
-                               :ref dref}
-     [:& cb/color-bullet {:color (cond-> color
-                                   (nil? color-name) (assoc
-                                                      :id nil
-                                                      :file-id nil))
-                          :on-click handle-click-color}]
+    [:div {:class (stl/css-case
+                   :color-data true
+                   :dnd-over-top (= (:over dprops) :top)
+                   :dnd-over-bot (= (:over dprops) :bot))
+           :ref dref}
+     [:div {:class (stl/css :color-info)}
+      [:div {:class (stl/css-case :color-name-wrapper true
+                                  :no-opacity (or disable-opacity
+                                                  (not opacity?))
+                                  :library-name-wrapper library-color?
+                                  :editing editing-text?
+                                  :gradient-name-wrapper gradient-color?)}
+       [:div {:class (stl/css :color-bullet-wrapper)}
+        [:& cb/color-bullet {:color (cond-> color
+                                      (nil? color-name) (assoc
+                                                         :id nil
+                                                         :file-id nil))
+                             :mini? true
+                             :on-click handle-click-color}]]
+       (cond
+              ;; Rendering a color with ID
+         library-color?
+         [:*
+          [:div {:class (stl/css :color-name)
+                 :title (str color-name)}
 
-     (cond
-       ;; Rendering a color with ID
-       (and (:id color) color-name (not (uc/multiple? color)))
-       [:*
-        [:div.color-info
-         [:div.color-name (str color-name)]]
-        (when on-detach
-          [:div.element-set-actions-button
-           {:on-pointer-enter #(reset! hover-detach true)
-            :on-pointer-leave #(reset! hover-detach false)
-            :on-click detach-value}
-           (if @hover-detach i/unchain i/chain)])
+           (str color-name)]
+          (when on-detach
+            [:button
+             {:class (stl/css :detach-btn)
+              :title (tr "settings.detach")
+              :on-pointer-enter #(reset! hover-detach true)
+              :on-pointer-leave #(reset! hover-detach false)
+              :on-click detach-value}
+             detach-icon])]
 
-        (when select-only
-          [:div.element-set-actions-button {:on-click handle-select}
-           i/pointer-inner])]
+              ;; Rendering a gradient
+         gradient-color?
+         [:*
+          [:div {:class (stl/css :color-name)}
+           (uc/gradient-type->string (get-in color [:gradient :type]))]]
 
-       ;; Rendering a gradient
-       (and (not (uc/multiple? color))
-            (:gradient color)
-            (get-in color [:gradient :type]))
-       [:*
-        [:div.color-info
-         [:div.color-name (uc/gradient-type->string (get-in color [:gradient :type]))]]
-        (when select-only
-          [:div.element-set-actions-button {:on-click handle-select}
-           i/pointer-inner])]
+              ;; Rendering an image
+         image-color?
+         [:*
+          [:div {:class (stl/css :color-name)}
+           (tr "media.image")]]
 
+              ;; Rendering a plain color
+         :else
+         [:span {:class (stl/css :color-input-wrapper)}
+          [:> color-input* {:value (if multiple-colors?
+                                     ""
+                                     (-> color :color cc/remove-hash))
+                            :placeholder (tr "settings.multiple")
+                            :className   (stl/css :color-input)
+                            :on-focus on-focus
+                            :on-blur on-blur
+                            :on-change handle-value-change}]])]
 
-       ;; Rendering a plain color/opacity
-       :else
-       [:*
-        [:div.color-info
-         [:> color-input {:value (if (uc/multiple? color)
-                                   ""
-                                   (-> color :color uc/remove-hash))
-                          :placeholder (tr "settings.multiple")
-                          :on-focus on-focus
-                          :on-blur on-blur
-                          :on-change handle-value-change}]]
+      (when opacity?
+        [:div {:class (stl/css :opacity-element-wrapper)}
+         [:span {:class (stl/css :icon-text)}
+          "%"]
+         [:> numeric-input* {:value (-> color :opacity opacity->string)
+                             :className (stl/css :opacity-input)
+                             :placeholder "--"
+                             :select-on-focus select-on-focus
+                             :on-focus on-focus
+                             :on-blur on-blur
+                             :on-change handle-opacity-change
+                             :default 100
+                             :min 0
+                             :max 100}]])]
 
-        (when (and (not disable-opacity)
-                   (not (:gradient color)))
-          [:div.input-element
-           {:class (dom/classnames :percentail (not= (:opacity color) :multiple))}
-           [:> numeric-input {:value (-> color :opacity opacity->string)
-                              :placeholder (tr "settings.multiple")
-                              :data-select-on-focus data-select-on-focus
-                              :on-focus on-focus
-                              :on-blur on-blur
-                              :on-change handle-opacity-change
-                              :min 0
-                              :max 100}]])
-        (when select-only
-          [:div.element-set-actions-button {:on-click handle-select}
-           i/pointer-inner])])
      (when (some? on-remove)
-       [:div.element-set-actions-button.remove {:on-click on-remove} i/minus])]))
+       [:button {:class (stl/css :remove-btn)
+                 :on-click on-remove} i/remove-icon])
+     (when select-only
+       [:button {:class (stl/css :select-btn)
+                 :title (tr "settings.select-this-color")
+                 :on-click handle-select}
+        i/move])]))
 

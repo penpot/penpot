@@ -4,7 +4,8 @@
   promesa.core/-> clojure.core/->
   promesa.exec.csp/go-loop clojure.core/loop
   rumext.v2/defc clojure.core/defn
-  rumext.v2/fnc clojure.core/fn
+  promesa.util/with-open clojure.core/with-open
+  app.common.schema.generators/let clojure.core/let
   app.common.data/export clojure.core/def
   app.common.data.macros/get-in clojure.core/get-in
   app.common.data.macros/with-open clojure.core/with-open
@@ -14,17 +15,28 @@
  :hooks
  {:analyze-call
   {app.common.data.macros/export hooks.export/export
-   potok.core/reify hooks.export/potok-reify
    app.util.services/defmethod hooks.export/service-defmethod
+   app.common.record/defrecord hooks.export/penpot-defrecord
    app.db/with-atomic hooks.export/penpot-with-atomic
+   potok.v2.core/reify hooks.export/potok-reify
+   rumext.v2/fnc hooks.export/rumext-fnc
+   rumext.v2/lazy-component hooks.export/rumext-lazycomponent
+   shadow.lazy/loadable hooks.export/rumext-lazycomponent
    }}
 
  :output
  {:exclude-files
   ["data_readers.clj"
-   "app/util/perf.cljs"
-   "app/common/logging.cljc"
-   "app/common/exceptions.cljc"]}
+   "src/app/util/perf.cljs"
+   "src/app/common/logging.cljc"
+   "src/app/common/exceptions.cljc"
+   "^(?:backend|frontend|exporter|common)/build.clj"
+   "^(?:backend|frontend|exporter|common)/deps.edn"
+   "^(?:backend|frontend|exporter|common)/scripts/"
+   "^(?:backend|frontend|exporter|common)/dev/"
+   "^(?:backend|frontend|exporter|common)/test/"]
+
+  :linter-name true}
 
  :linters
  {:unsorted-required-namespaces
@@ -60,4 +72,3 @@
    :exclude-destructured-keys-in-fn-args false
    }
   }}
-

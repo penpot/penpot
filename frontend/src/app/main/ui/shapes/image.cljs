@@ -6,7 +6,9 @@
 
 (ns app.main.ui.shapes.image
   (:require
+   [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
+   [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.custom-stroke :refer [shape-custom-strokes]]
    [app.util.object :as obj]
@@ -16,20 +18,25 @@
   {::mf/wrap-props false}
   [props]
 
-  (let [shape (unchecked-get props "shape")
-        {:keys [x y width height]} shape
+  (let [shape     (unchecked-get props "shape")
+
+        x         (dm/get-prop shape :x)
+        y         (dm/get-prop shape :y)
+        w         (dm/get-prop shape :width)
+        h         (dm/get-prop shape :height)
+
+        render-id (mf/use-ctx muc/render-id)
         transform (gsh/transform-str shape)
-        props (-> (attrs/extract-style-attrs shape)
-                  (obj/merge! (attrs/extract-border-radius-attrs shape))
-                  (obj/merge!
-                   #js {:x x
-                        :y y
-                        :transform transform
-                        :width width
-                        :height height}))
-        path? (some? (.-d props))]
+
+        props     (mf/with-memo [shape render-id]
+                    (-> #js {}
+                        (attrs/add-fill-props! shape render-id)
+                        (attrs/add-border-props! shape)
+                        (obj/merge! #js {:x x :y y :width w :height h :transform transform})))
+
+        path?     (some? (.-d props))]
 
     [:& shape-custom-strokes {:shape shape}
-     (if path?
+     (if ^boolean path?
        [:> :path props]
        [:> :rect props])]))

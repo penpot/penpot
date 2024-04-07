@@ -22,6 +22,7 @@
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
    [app.rpc.commands.profile :as profile]
+   [app.setup :as-alias setup]
    [app.tokens :as tokens]
    [app.util.json :as json]
    [app.util.time :as dt]
@@ -31,13 +32,13 @@
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]
-   [yetti.response :as-alias yrs]))
+   [ring.response :as-alias rres]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- obfuscate-string
+(defn obfuscate-string
   [s]
   (if (< (count s) 10)
     (apply str (take (count s) (repeat "*")))
@@ -353,8 +354,7 @@
           (get-name [props]
             (let [attr-kw (cf/get :oidc-name-attr "name")
                   attr-ph (parse-attr-path provider attr-kw)]
-              (get-in props attr-ph)))
-          ]
+              (get-in props attr-ph)))]
 
     (let [props (qualify-props provider info)
           email (get-email props)]
@@ -414,7 +414,7 @@
                    ::props]))
 
 (defn get-info
-  [{:keys [provider ::main/props] :as cfg} {:keys [params] :as request}]
+  [{:keys [provider ::setup/props] :as cfg} {:keys [params] :as request}]
   (when-let [error (get params :error)]
     (ex/raise :type :internal
               :code :error-on-retrieving-code
@@ -475,12 +475,13 @@
   [{:keys [::db/pool] :as cfg} info]
   (dm/with-open [conn (db/open pool)]
     (some->> (:email info)
+             (profile/clean-email)
              (profile/get-profile-by-email conn))))
 
 (defn- redirect-response
   [uri]
-  {::yrs/status 302
-   ::yrs/headers {"location" (str uri)}})
+  {::rres/status 302
+   ::rres/headers {"location" (str uri)}})
 
 (defn- generate-error-redirect
   [_ cause]
@@ -508,7 +509,7 @@
   (if profile
     (let [sxf    (session/create-fn cfg (:id profile))
           token  (or (:invitation-token info)
-                     (tokens/generate (::main/props cfg)
+                     (tokens/generate (::setup/props cfg)
                                       {:iss :auth
                                        :exp (dt/in-future "15m")
                                        :profile-id (:id profile)}))
@@ -536,7 +537,7 @@
                           :iss :prepared-register
                           :is-active true
                           :exp (dt/in-future {:hours 48}))
-            token  (tokens/generate (::main/props cfg) info)
+            token  (tokens/generate (::setup/props cfg) info)
             params (d/without-nils
                     {:token token
                      :fullname (:fullname info)})
@@ -551,14 +552,14 @@
 (defn- auth-handler
   [cfg {:keys [params] :as request}]
   (let [props (audit/extract-utm-params params)
-        state (tokens/generate (::main/props cfg)
+        state (tokens/generate (::setup/props cfg)
                                {:iss :oauth
                                 :invitation-token (:invitation-token params)
                                 :props props
                                 :exp (dt/in-future "4h")})
         uri   (build-auth-uri cfg state)]
-    {::yrs/status 200
-     ::yrs/body {:redirect-uri uri}}))
+    {::rres/status 200
+     ::rres/body {:redirect-uri uri}}))
 
 (defn- callback-handler
   [cfg request]
@@ -618,7 +619,7 @@
   [_]
   (s/keys :req [::session/manager
                 ::http/client
-                ::main/props
+                ::setup/props
                 ::db/pool
                 ::providers]))
 

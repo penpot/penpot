@@ -15,8 +15,8 @@
    [app.main.data.websocket :as ws]
    [app.main.errors]
    [app.main.features :as feat]
+   [app.main.rasterizer :as thr]
    [app.main.store :as st]
-   [app.main.thumbnail-renderer :as tr]
    [app.main.ui :as ui]
    [app.main.ui.alert]
    [app.main.ui.confirm]
@@ -28,10 +28,10 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n]
    [app.util.theme :as theme]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [debug]
    [features]
-   [potok.core :as ptk]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (log/setup! {:app :info})
@@ -45,10 +45,18 @@
 
 (declare reinit)
 
+(defonce app-root
+  (let [el (dom/get-element "app")]
+    (mf/create-root el)))
+
+(defonce modal-root
+  (let [el (dom/get-element "modal")]
+    (mf/create-root el)))
+
 (defn init-ui
   []
-  (mf/mount (mf/element ui/app) (dom/get-element "app"))
-  (mf/mount (mf/element modal)  (dom/get-element "modal")))
+  (mf/render! app-root (mf/element ui/app))
+  (mf/render! modal-root (mf/element modal)))
 
 (defn- initialize-profile
   "Event used mainly on application bootstrap; it fetches the profile
@@ -104,16 +112,22 @@
   (i18n/init! cf/translations)
   (theme/init! cf/themes)
   (cur/init-styles)
-  (tr/init!)
+  (thr/init!)
   (init-ui)
   (st/emit! (initialize)))
 
 (defn ^:export reinit
-  []
-  (mf/unmount (dom/get-element "app"))
-  (mf/unmount (dom/get-element "modal"))
-  (st/emit! (ev/initialize))
-  (init-ui))
+  ([]
+   (reinit false))
+  ([hard?]
+   ;; The hard flag will force to unmount the whole UI and will redraw every component
+   (when hard?
+     (mf/unmount! app-root)
+     (mf/unmount! modal-root)
+     (set! app-root (mf/create-root (dom/get-element "app")))
+     (set! modal-root (mf/create-root (dom/get-element "modal"))))
+   (st/emit! (ev/initialize))
+   (init-ui)))
 
 (defn ^:dev/after-load after-load
   []

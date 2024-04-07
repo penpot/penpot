@@ -15,7 +15,7 @@
    [app.util.globals :as globals]
    [app.util.time :as dt]
    [app.util.webapi :as wapi]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [promesa.core :as p]))
 
@@ -58,7 +58,7 @@
     :or {mode :cors
          headers {}
          credentials "same-origin"}}]
-  (rx/Observable.create
+  (rx/create
    (fn [subscriber]
      (let [controller    (js/AbortController.)
            signal        (.-signal ^js controller)
@@ -105,17 +105,22 @@
 
 (defn send!
   [{:keys [response-type] :or {response-type :text} :as params}]
-  (letfn [(on-response [response]
-            (let [body (case response-type
-                         :json (.json ^js response)
-                         :text (.text ^js response)
-                         :blob (.blob ^js response))]
-              (->> (rx/from body)
-                   (rx/map (fn [body]
-                             {::response response
-                              :status    (.-status ^js response)
-                              :headers   (parse-headers (.-headers ^js response))
-                              :body      body})))))]
+  (letfn [(on-response [^js response]
+            (if (= :stream response-type)
+              (rx/of {:status (.-status response)
+                      :headers (parse-headers (.-headers response))
+                      :body (.-body response)
+                      ::response response})
+              (let [body (case response-type
+                           :json   (.json ^js response)
+                           :text   (.text ^js response)
+                           :blob   (.blob ^js response))]
+                (->> (rx/from body)
+                     (rx/map (fn [body]
+                               {::response response
+                                :status    (.-status ^js response)
+                                :headers   (parse-headers (.-headers ^js response))
+                                :body      body}))))))]
     (->> (fetch params)
          (rx/mapcat on-response))))
 
@@ -146,9 +151,9 @@
 
 (defn conditional-error-decode-transit
   [{:keys [body status] :as response}]
-    (if (and (>= status 400) (string? body))
-      (assoc response :body (t/decode-str body))
-      response))
+  (if (and (>= status 400) (string? body))
+    (assoc response :body (t/decode-str body))
+    response))
 
 (defn success?
   [{:keys [status]}]
@@ -167,7 +172,7 @@
   (p/create
    (fn [resolve reject]
      (->> (rx/take 1 observable)
-          (rx/subs resolve reject)))))
+          (rx/subs! resolve reject)))))
 
 (defn fetch-data-uri
   ([uri]

@@ -17,7 +17,6 @@
    [app.storage.impl :as impl]
    [app.storage.tmp :as tmp]
    [app.util.time :as dt]
-   [app.worker :as wrk]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [datoteka.fs :as fs]
@@ -52,6 +51,7 @@
    software.amazon.awssdk.services.s3.model.DeleteObjectsRequest
    software.amazon.awssdk.services.s3.model.DeleteObjectsResponse
    software.amazon.awssdk.services.s3.model.GetObjectRequest
+   software.amazon.awssdk.services.s3.model.NoSuchKeyException
    software.amazon.awssdk.services.s3.model.ObjectIdentifier
    software.amazon.awssdk.services.s3.model.PutObjectRequest
    software.amazon.awssdk.services.s3.model.S3Error
@@ -77,9 +77,10 @@
 (s/def ::bucket ::us/string)
 (s/def ::prefix ::us/string)
 (s/def ::endpoint ::us/string)
+(s/def ::io-threads ::us/integer)
 
 (defmethod ig/pre-init-spec ::backend [_]
-  (s/keys :opt [::region ::bucket ::prefix ::endpoint ::wrk/executor]))
+  (s/keys :opt [::region ::bucket ::prefix ::endpoint ::io-threads]))
 
 (defmethod ig/prep-key ::backend
   [_ {:keys [::prefix ::region] :as cfg}]
@@ -114,8 +115,7 @@
                 ::client
                 ::presigner]
           :opt [::prefix
-                ::sto/id
-                ::wrk/executor]))
+                ::sto/id]))
 
 ;; --- API IMPL
 
@@ -127,17 +127,19 @@
 (defmethod impl/get-object-data :s3
   [backend object]
   (us/assert! ::backend backend)
-  (letfn [(no-such-key? [cause]
-            (instance? software.amazon.awssdk.services.s3.model.NoSuchKeyException cause))
-          (handle-not-found [cause]
-            (ex/raise :type :not-found
-                      :code :object-not-found
-                      :hint "s3 object not found"
-                      :cause cause))]
 
-    (-> (get-object-data backend object)
-        (p/catch no-such-key? handle-not-found)
-        (p/await!))))
+  (let [result (p/await (get-object-data backend object))]
+    (if (ex/exception? result)
+      (cond
+        (ex/instance? NoSuchKeyException result)
+        (ex/raise :type :not-found
+                  :code :object-not-found
+                  :hint "s3 object not found"
+                  :cause result)
+        :else
+        (throw result))
+
+      result)))
 
 (defmethod impl/get-object-bytes :s3
   [backend object]
@@ -161,7 +163,6 @@
 
 ;; --- HELPERS
 
-(def default-eventloop-threads 4)
 (def default-timeout
   (dt/duration {:seconds 30}))
 
@@ -171,35 +172,35 @@
   (Region/of (name region)))
 
 (defn- build-s3-client
-  [{:keys [::region ::endpoint ::wrk/executor]}]
-  (let [aconfig (-> (ClientAsyncConfiguration/builder)
-                    (.advancedOption SdkAdvancedAsyncClientOption/FUTURE_COMPLETION_EXECUTOR executor)
-                    (.build))
+  [{:keys [::region ::endpoint ::io-threads]}]
+  (let [executor (px/resolve-executor :virtual)
+        aconfig  (-> (ClientAsyncConfiguration/builder)
+                     (.advancedOption SdkAdvancedAsyncClientOption/FUTURE_COMPLETION_EXECUTOR executor)
+                     (.build))
 
-        sconfig (-> (S3Configuration/builder)
-                    (cond-> (some? endpoint) (.pathStyleAccessEnabled true))
-                    (.build))
+        sconfig  (-> (S3Configuration/builder)
+                     (cond-> (some? endpoint) (.pathStyleAccessEnabled true))
+                     (.build))
 
-        hclient (-> (NettyNioAsyncHttpClient/builder)
-                    (.eventLoopGroupBuilder (-> (SdkEventLoopGroup/builder)
-                                                (.numberOfThreads (int default-eventloop-threads))))
-                    (.connectionAcquisitionTimeout default-timeout)
-                    (.connectionTimeout default-timeout)
-                    (.readTimeout default-timeout)
-                    (.writeTimeout default-timeout)
-                    (.build))
+        thr-num  (or io-threads (min 16 (px/get-available-processors)))
+        hclient  (-> (NettyNioAsyncHttpClient/builder)
+                     (.eventLoopGroupBuilder (-> (SdkEventLoopGroup/builder)
+                                                 (.numberOfThreads (int thr-num))))
+                     (.connectionAcquisitionTimeout default-timeout)
+                     (.connectionTimeout default-timeout)
+                     (.readTimeout default-timeout)
+                     (.writeTimeout default-timeout)
+                     (.build))
 
-        client  (let [builder (S3AsyncClient/builder)
-                      builder (.serviceConfiguration ^S3AsyncClientBuilder builder ^S3Configuration sconfig)
-                      builder (.asyncConfiguration ^S3AsyncClientBuilder builder ^ClientAsyncConfiguration aconfig)
-                      builder (.httpClient ^S3AsyncClientBuilder builder ^NettyNioAsyncHttpClient hclient)
-                      builder (.region ^S3AsyncClientBuilder builder (lookup-region region))
-                      builder (cond-> ^S3AsyncClientBuilder builder
-                                (some? endpoint)
-                                (.endpointOverride (URI. endpoint)))]
-                  (.build ^S3AsyncClientBuilder builder))
-
-        ]
+        client   (let [builder (S3AsyncClient/builder)
+                       builder (.serviceConfiguration ^S3AsyncClientBuilder builder ^S3Configuration sconfig)
+                       builder (.asyncConfiguration ^S3AsyncClientBuilder builder ^ClientAsyncConfiguration aconfig)
+                       builder (.httpClient ^S3AsyncClientBuilder builder ^NettyNioAsyncHttpClient hclient)
+                       builder (.region ^S3AsyncClientBuilder builder (lookup-region region))
+                       builder (cond-> ^S3AsyncClientBuilder builder
+                                 (some? endpoint)
+                                 (.endpointOverride (URI. endpoint)))]
+                   (.build ^S3AsyncClientBuilder builder))]
 
     (reify
       clojure.lang.IDeref
@@ -226,6 +227,7 @@
   [id subscriber sem content]
   (px/thread
     {:name "penpot/s3/uploader"
+     :virtual true
      :daemon true}
     (l/trace :hint "start upload thread"
              :object-id (str id)
@@ -267,15 +269,15 @@
       (Optional/of (long (impl/get-size content))))
 
     (^void subscribe [_ ^Subscriber subscriber]
-     (let [sem (Semaphore. 0)
-           thr (upload-thread id subscriber sem content)]
-       (.onSubscribe subscriber
-                     (reify Subscription
-                       (cancel [_]
-                         (px/interrupt! thr)
-                         (.release sem 1))
-                       (request [_ n]
-                         (.release sem (int n)))))))))
+      (let [sem (Semaphore. 0)
+            thr (upload-thread id subscriber sem content)]
+        (.onSubscribe subscriber
+                      (reify Subscription
+                        (cancel [_]
+                          (px/interrupt! thr)
+                          (.release sem 1))
+                        (request [_ n]
+                          (.release sem (int n)))))))))
 
 
 (defn- put-object
@@ -299,7 +301,7 @@
   [path]
   (proxy [FilterInputStream] [(io/input-stream path)]
     (close []
-      (fs/delete path)
+      (ex/ignoring (fs/delete path))
       (proxy-super close))))
 
 (defn- get-object-data
@@ -313,7 +315,7 @@
     ;; to the filesystem and then read with buffered inputstream; if
     ;; not, read the contento into memory using bytearrays.
     (if (> ^long size (* 1024 1024 2))
-      (let [path (tmp/tempfile :prefix "penpot.storage.s3.")
+      (let [path (tmp/tempfile :prefix "penpot.storage.s3." :min-age "6h")
             rxf  (AsyncResponseTransformer/toFile ^Path path)]
         (->> (.getObject ^S3AsyncClient client
                          ^GetObjectRequest gor

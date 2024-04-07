@@ -2,7 +2,7 @@
 
 set -ex
 
-CURRENT_VERSION=$1;
+export CURRENT_VERSION=$1;
 
 yarn install
 rm -rf target
@@ -10,7 +10,7 @@ rm -rf target
 export NODE_ENV=production;
 
 # Build the application
-clojure -M:dev:shadow-cljs release main;
+clojure -J-Xms100M -J-Xmx1000M -J-XX:+UseSerialGC -M:dev:shadow-cljs release main;
 
 # Remove source
 rm -rf target/app;

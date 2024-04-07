@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-07-01 12:52+0000\n"
+"PO-Revision-Date: 2024-01-23 15:02+0000\n"
 "Last-Translator: \"Amerey.eu\" <info@amerey.eu>\n"
 "Language-Team: Czech <https://hosted.weblate.org/projects/penpot/frontend/cs/"
 ">\n"
@@ -8,8 +8,8 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
-"X-Generator: Weblate 5.0-dev\n"
+"Plural-Forms: nplurals=3; plural=((n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2);\n"
+"X-Generator: Weblate 5.4-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -39,7 +39,8 @@ msgstr ""
 "Toto je DEMO služba, NEPOUŽÍVEJTE ji pro skutečnou práci, projekty budou "
 "pravidelně mazány."
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+#: src/app/main/ui/auth/register.cljs,
+#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.email"
 msgstr "Email"
 
@@ -264,7 +265,8 @@ msgstr "Začít prohlídku"
 msgid "dasboard.walkthrough-hero.title"
 msgstr "Průvodce rozhraním"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.add-shared"
 msgstr "Přidat jako sdílenou knihovnu"
 
@@ -294,7 +296,8 @@ msgstr "Stáhnout soubor Penpot (.penpot)"
 msgid "dashboard.download-standard-file"
 msgstr "Stáhnout standardní soubor (.svg + .json)"
 
-#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/project_menu.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.duplicate"
 msgstr "Duplikovat"
 
@@ -303,12 +306,11 @@ msgid "dashboard.duplicate-multi"
 msgstr "Duplikovat %s soubory"
 
 #: src/app/main/ui/dashboard/grid.cljs
-#, markdown
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Zde se zobrazí soubory přidané do knihoven. Zkuste své soubory sdílet nebo "
-"je přidat z našich [Libraries & templates](https://penpot.app/libraries-"
-"templates.html)."
+"je přidat z našich [Libraries & "
+"templates](https://penpot.app/libraries-templates.html)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Stáhnout soubory %s Penpot (.penpot)"
@@ -404,7 +406,6 @@ msgstr[0] "Přidáno 1 písmo"
 msgstr[1] "%s písma přidány"
 msgstr[2] "%s písem přidáno"
 
-#, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
 "Jakékoli webové písmo, které sem nahrajete, bude přidáno do seznamu rodin "
@@ -413,7 +414,6 @@ msgstr ""
 "Můžete nahrávat písma v následujících formátech: **TTF, OTF a WOFF** (bude "
 "potřeba pouze jeden)."
 
-#, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Měli byste nahrávat pouze písma, která vlastníte nebo máte licenci k "
@@ -426,6 +426,15 @@ msgstr ""
 msgid "dashboard.fonts.upload-all"
 msgstr "Nahrát vše"
 
+msgid "dashboard.fonts.warning-text"
+msgstr ""
+"Zjistili jsme možný problém ve vašich písmech související s vertikálními "
+"metrikami pro různé operační systémy. Chcete-li to zkontrolovat, můžete "
+"použít služby vertikálních metrik písem, jako je [toto] "
+"(https://vertical-metrics.netlify.app/). Kromě toho doporučujeme použít "
+"[Transfonter](https://transfonter.org/) ke generování webových písem a "
+"opravě chyb. "
+
 msgid "dashboard.import"
 msgstr "Importovat Penpot soubory"
 
@@ -434,6 +443,9 @@ msgstr "Ups! Tento soubor se nepodařilo importovat"
 
 msgid "dashboard.import.import-error"
 msgstr "Při importu souboru došlo k problému. Soubor nebyl importován."
+
+msgid "dashboard.import.import-message"
+msgstr "Soubory %s byly úspěšně importovány."
 
 msgid "dashboard.import.import-warning"
 msgstr "Některé soubory obsahovaly neplatné objekty, které byly odstraněny."
@@ -463,7 +475,8 @@ msgstr "Nahrávání souboru: %s"
 msgid "dashboard.invite-profile"
 msgstr "Pozvat do týmu"
 
-#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.leave-team"
 msgstr "Odejít z týmu"
 
@@ -487,7 +500,8 @@ msgstr "načítání vašich souborů …"
 msgid "dashboard.loading-fonts"
 msgstr "načítání vašich písem …"
 
-#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/project_menu.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.move-to"
 msgstr "Přesunout do"
 
@@ -499,7 +513,8 @@ msgstr "Přesunout soubory %s do"
 msgid "dashboard.move-to-other-team"
 msgstr "Přesunout do jiného týmu"
 
-#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/files.cljs
+#: src/app/main/ui/dashboard/projects.cljs,
+#: src/app/main/ui/dashboard/files.cljs
 msgid "dashboard.new-file"
 msgstr "+ Nový soubor"
 
@@ -562,7 +577,8 @@ msgstr "Projekty"
 msgid "dashboard.remove-account"
 msgstr "Chcete odstranit svůj účet?"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.remove-shared"
 msgstr "Odstranit jako sdílenou knihovnu"
 
@@ -590,15 +606,24 @@ msgstr "Vyberte téma"
 msgid "dashboard.show-all-files"
 msgstr "Zobrazit všechny soubory"
 
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-delete-file"
+msgstr "Váš soubor byl úspěšně smazán"
+
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-delete-project"
 msgstr "Váš projekt byl úspěšně smazán"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-duplicate-file"
+msgstr "Váš soubor byl úspěšně duplikován"
 
 #: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-duplicate-project"
 msgstr "Váš projekt byl úspěšně duplikován"
 
-#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.success-move-file"
 msgstr "Váš soubor byl úspěšně přesunut"
 
@@ -634,13 +659,45 @@ msgstr "Výsledky vyhledávání"
 msgid "dashboard.type-something"
 msgstr "Zadejte výraz pro hledání"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.unpublish-shared"
 msgstr "Zrušit zveřejnění knihovny"
 
-#: src/app/main/ui/settings/password.cljs, src/app/main/ui/settings/options.cljs
+#: src/app/main/ui/settings/password.cljs,
+#: src/app/main/ui/settings/options.cljs
 msgid "dashboard.update-settings"
 msgstr "Aktualizovat nastavení"
+
+msgid "dashboard.webhooks.active"
+msgstr "Je aktivní"
+
+msgid "dashboard.webhooks.active.explain"
+msgstr "Když je tento webhook spuštěn, budou doručeny podrobnosti o události"
+
+msgid "dashboard.webhooks.content-type"
+msgstr "Typ obsahu"
+
+msgid "dashboard.webhooks.create"
+msgstr "Vytvořit webhook"
+
+msgid "dashboard.webhooks.create.success"
+msgstr "Webhook byl úspěšně vytvořen."
+
+msgid "dashboard.webhooks.description"
+msgstr ""
+"Webhooky jsou jednoduchým způsobem, jak umožnit jiným webům a aplikacím, "
+"aby byly upozorňovány na určité události v Penpotu. Na každou z vámi "
+"poskytnutých adres URL odešleme požadavek POST."
+
+msgid "dashboard.webhooks.empty.add-one"
+msgstr "Chcete-li webhook přidat, stiskněte tlačítko „Přidat webhook“."
+
+msgid "dashboard.webhooks.empty.no-webhooks"
+msgstr "Dosud nebyly vytvořeny žádné webhooky."
+
+msgid "dashboard.webhooks.update.success"
+msgstr "Webhook byl úspěšně aktualizován."
 
 #: src/app/main/ui/settings.cljs
 msgid "dashboard.your-account-title"
@@ -654,7 +711,11 @@ msgstr "E-mail"
 msgid "dashboard.your-name"
 msgstr "Vaše jméno"
 
-#: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/libraries.cljs, src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs,
+#: src/app/main/ui/dashboard/libraries.cljs,
+#: src/app/main/ui/dashboard/projects.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.your-penpot"
 msgstr "Váš Penpot"
 
@@ -699,7 +760,8 @@ msgstr "Písma %s se nepodařilo načíst"
 msgid "errors.clipboard-not-implemented"
 msgstr "Váš prohlížeč tuto operaci nedokáže provést"
 
-#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/change_email.cljs
+#: src/app/main/ui/auth/verify_token.cljs,
+#: src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-already-exists"
 msgstr "Již použitá e-mailová adresa"
 
@@ -710,9 +772,17 @@ msgstr "E-mail byl již ověřen."
 msgid "errors.email-as-password"
 msgstr "Jako heslo nelze použít váš e-mail"
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/auth/register.cljs,
+#: src/app/main/ui/auth/recovery_request.cljs,
+#: src/app/main/ui/settings/change_email.cljs,
+#: src/app/main/ui/dashboard/team.cljs
 msgid "errors.email-has-permanent-bounces"
 msgstr "E-mail «%s» má mnoho trvalých zpráv o nedoručitelnosti."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs,
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "errors.email-invalid"
+msgstr "Zadejte prosím platný email"
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-invalid-confirmation"
@@ -721,7 +791,18 @@ msgstr "Potvrzovací e-mail se musí shodovat"
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "E-mail «%s» byl nahlášen jako spam nebo byl trvale nedostupný."
 
-#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
+#: src/app/main/errors.cljs
+msgid "errors.feature-mismatch"
+msgstr ""
+"Vypadá to, že otevíráte soubor, který má povolenou funkci '%s', ale aktuální "
+"verze penpotu ji nepodporuje nebo je deaktivovaná."
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-not-supported"
+msgstr "Funkce '%s' není podporována."
+
+#: src/app/main/ui/auth/verify_token.cljs,
+#: src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.generic"
 msgstr "Něco se pokazilo."
 
@@ -740,6 +821,10 @@ msgstr "Tato pozvánka byla pravděpodobně zrušena nebo vypršela její platno
 msgid "errors.ldap-disabled"
 msgstr "Ověřování LDAP je vypnuto."
 
+#: src/app/main/errors.cljs
+msgid "errors.max-quote-reached"
+msgstr "Dosáhli jste '%s' kvóty. Kontaktujte podporu."
+
 #: src/app/main/data/workspace/persistence.cljs
 msgid "errors.media-too-large"
 msgstr "Obrázek je příliš velký na to, aby mohl být vložen."
@@ -748,7 +833,7 @@ msgstr "Obrázek je příliš velký na to, aby mohl být vložen."
 msgid "errors.media-type-mismatch"
 msgstr "Zdá se, že obsah obrázku neodpovídá příponě souboru."
 
-#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-not-allowed"
 msgstr "Zdá se, že toto není platný obrázek."
 
@@ -769,7 +854,9 @@ msgstr "Heslo by mělo mít nejméně 8 znaků"
 msgid "errors.profile-blocked"
 msgstr "Profil je zablokován"
 
-#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/auth/recovery_request.cljs,
+#: src/app/main/ui/settings/change_email.cljs,
+#: src/app/main/ui/dashboard/team.cljs
 msgid "errors.profile-is-muted"
 msgstr "Váš profil má ztlumené e-maily (zprávy o spamu nebo vysoká nedoručitelnost)."
 
@@ -788,13 +875,36 @@ msgstr "Člen, kterého se pokoušíte přiřadit, neexistuje."
 msgid "errors.team-leave.owner-cant-leave"
 msgstr "Vlastník nemůže opustit tým, musíte přeřadit roli vlastníka."
 
-#: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+#: src/app/main/data/media.cljs,
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/handoff/exports.cljs
 msgid "errors.unexpected-error"
 msgstr "Došlo k neočekávané chybě."
 
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "errors.unexpected-token"
 msgstr "Neznámý token"
+
+msgid "errors.webhooks.connection"
+msgstr "Chyba připojení, adresa URL není dostupná"
+
+msgid "errors.webhooks.invalid-uri"
+msgstr "Adresa URL neprošla ověřením."
+
+msgid "errors.webhooks.last-delivery"
+msgstr "Poslední dodávka nebyla úspěšná."
+
+msgid "errors.webhooks.ssl-validation"
+msgstr "Chyba při ověřování SSL."
+
+msgid "errors.webhooks.timeout"
+msgstr "Timeout"
+
+msgid "errors.webhooks.unexpected"
+msgstr "Při ověřování došlo k neočekávané chybě"
+
+msgid "errors.webhooks.unexpected-status"
+msgstr "Neočekávaný stav %s"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.wrong-credentials"
@@ -838,7 +948,7 @@ msgstr "E-mail"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-go-to"
-msgstr "Přejít na Twitter"
+msgstr "Přejít na X"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-subtitle1"
@@ -846,36 +956,228 @@ msgstr "Zde vám pomůžeme s vašimi technickými dotazy."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-title"
-msgstr "Účet podpory na Twitteru"
+msgstr "Účet podpory na Xu"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
 msgstr "Došlo k chybě"
 
-#: src/app/main/ui/handoff/attributes/image.cljs
-msgid "handoff.attributes.image.height"
+#: src/app/main/ui/inspect/attributes/blur.cljs
+msgid "inspect.attributes.blur"
+msgstr "Rozostření"
+
+#: src/app/main/ui/inspect/attributes/blur.cljs
+msgid "inspect.attributes.blur.value"
+msgstr "Hodnota"
+
+#: src/app/main/ui/inspect/attributes/common.cljs
+msgid "inspect.attributes.color.hex"
+msgstr "HEX"
+
+#: src/app/main/ui/inspect/attributes/common.cljs
+msgid "inspect.attributes.color.hsla"
+msgstr "HSLA"
+
+#: src/app/main/ui/inspect/attributes/common.cljs
+msgid "inspect.attributes.color.rgba"
+msgstr "RGBA"
+
+#: src/app/main/ui/inspect/attributes/fill.cljs
+msgid "inspect.attributes.fill"
+msgstr "Výplň"
+
+#: src/app/main/ui/inspect/attributes/image.cljs
+msgid "inspect.attributes.image.download"
+msgstr "Stáhnout zdrojový obrázek"
+
+#: src/app/main/ui/inspect/attributes/image.cljs
+msgid "inspect.attributes.image.height"
 msgstr "Výška"
 
-#: src/app/main/ui/handoff/attributes/layout.cljs
-msgid "handoff.attributes.layout.width"
+#: src/app/main/ui/inspect/attributes/image.cljs
+msgid "inspect.attributes.image.width"
 msgstr "Šířka"
 
-#, permanent
-msgid "handoff.attributes.stroke.alignment.inner"
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout"
+msgstr "Rozložení"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.height"
+msgstr "Výška"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.left"
+msgstr "Vlevo"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs,
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.radius"
+msgstr "Poloměr"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.rotation"
+msgstr "Otáčení"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.top"
+msgstr "Nahoře"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.width"
+msgstr "Šířka"
+
+#: src/app/main/ui/inspect/attributes/shadow.cljs
+msgid "inspect.attributes.shadow"
+msgstr "Stín"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.size"
+msgstr "Velikost a poloha"
+
+#: src/app/main/ui/inspect/attributes/stroke.cljs
+msgid "inspect.attributes.stroke"
+msgstr "Tah"
+
+msgid "inspect.attributes.stroke.alignment.center"
+msgstr "Střed"
+
+msgid "inspect.attributes.stroke.alignment.inner"
 msgstr "Uvnitř"
 
-#: src/app/main/ui/handoff/attributes/text.cljs
-msgid "handoff.attributes.typography.font-family"
+msgid "inspect.attributes.stroke.alignment.outer"
+msgstr "Venku"
+
+msgid "inspect.attributes.stroke.style.dotted"
+msgstr "Tečkovaná"
+
+msgid "inspect.attributes.stroke.style.mixed"
+msgstr "Smíšená"
+
+msgid "inspect.attributes.stroke.style.none"
+msgstr "Žádná"
+
+msgid "inspect.attributes.stroke.style.solid"
+msgstr "Plná"
+
+#: src/app/main/ui/inspect/attributes/stroke.cljs
+msgid "inspect.attributes.stroke.width"
+msgstr "Šířka"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography"
+msgstr "Typografie"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-family"
 msgstr "Rodina písem"
 
-msgid "handoff.attributes.typography.text-decoration.underline"
-msgstr "Podtrhnout"
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-size"
+msgstr "Velikost písma"
 
-msgid "handoff.tabs.code.selected.component"
-msgstr "Komponenta"
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-style"
+msgstr "Styl písma"
 
-msgid "handoff.tabs.code.selected.rect"
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-weight"
+msgstr "Tloušťka písma"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.letter-spacing"
+msgstr "Mezery mezi písmeny"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.line-height"
+msgstr "Výška řádku"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.text-decoration"
+msgstr "Dekorace textu"
+
+msgid "inspect.attributes.typography.text-decoration.none"
+msgstr "Žádná"
+
+msgid "inspect.attributes.typography.text-decoration.strikethrough"
+msgstr "Přeškrtnutí"
+
+msgid "inspect.attributes.typography.text-decoration.underline"
+msgstr "Podtržení"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.text-transform"
+msgstr "Transformace textu"
+
+msgid "inspect.attributes.typography.text-transform.lowercase"
+msgstr "Malá písmena"
+
+msgid "inspect.attributes.typography.text-transform.none"
+msgstr "Žádná"
+
+msgid "inspect.attributes.typography.text-transform.titlecase"
+msgstr "První písmena velká"
+
+msgid "inspect.attributes.typography.text-transform.uppercase"
+msgstr "Velká písmena"
+
+msgid "inspect.empty.help"
+msgstr ""
+"Pokud se chcete dozvědět více o inspektorovi designu, navštivte centrum "
+"nápovědy společnosti Penpot"
+
+msgid "inspect.empty.more-info"
+msgstr "Více informací o inspektorovi"
+
+msgid "inspect.empty.select"
+msgstr ""
+"Vyberte tvar, tabuli nebo skupinu, abyste mohli zkontrolovat jejich "
+"vlastnosti a kód"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs
+msgid "inspect.tabs.code"
+msgstr "Kód"
+
+msgid "inspect.tabs.code.selected.circle"
+msgstr "Kruh"
+
+msgid "inspect.tabs.code.selected.component"
+msgstr "Komponent"
+
+msgid "inspect.tabs.code.selected.curve"
+msgstr "Křivka"
+
+msgid "inspect.tabs.code.selected.frame"
+msgstr "Tabule"
+
+msgid "inspect.tabs.code.selected.group"
+msgstr "Skupina"
+
+msgid "inspect.tabs.code.selected.image"
+msgstr "Obrázek"
+
+msgid "inspect.tabs.code.selected.mask"
+msgstr "Maska"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs
+msgid "inspect.tabs.code.selected.multiple"
+msgstr "%s vybráno"
+
+msgid "inspect.tabs.code.selected.path"
+msgstr "Cesta"
+
+msgid "inspect.tabs.code.selected.rect"
 msgstr "Obdélník"
+
+msgid "inspect.tabs.code.selected.svg-raw"
+msgstr "SVG"
+
+msgid "inspect.tabs.code.selected.text"
+msgstr "Text"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs
+msgid "inspect.tabs.info"
+msgstr "Informace"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "label.shortcuts"
@@ -884,10 +1186,13 @@ msgstr "Zkratky"
 msgid "labels.accept"
 msgstr "Přijmout"
 
+msgid "labels.active"
+msgstr "Aktivní"
+
 msgid "labels.add-custom-font"
 msgstr "Přidat vlastní písmo"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.admin"
 msgstr "Správce"
 
@@ -939,11 +1244,16 @@ msgstr "Pokračovat s"
 msgid "labels.continue-with-penpot"
 msgstr "Můžete pokračovat s účtem Penpot"
 
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.copy-invitation-link"
+msgstr "Kopírovat odkaz"
+
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "labels.create"
 msgstr "Vytvořit"
 
-#: src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/dashboard/team_form.cljs
+#: src/app/main/ui/dashboard/team_form.cljs,
+#: src/app/main/ui/dashboard/team_form.cljs
 msgid "labels.create-team"
 msgstr "Vytvořit nový tým"
 
@@ -958,7 +1268,8 @@ msgstr "Vlastní písma"
 msgid "labels.dashboard"
 msgstr "Tabule"
 
-#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/project_menu.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.delete"
 msgstr "Smazat"
 
@@ -978,7 +1289,10 @@ msgstr "Smazat pozvánku"
 msgid "labels.delete-multi-files"
 msgstr "Smazat soubory %s"
 
-#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/projects.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs,
+#: src/app/main/ui/dashboard/files.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.drafts"
 msgstr "Pracovní verze"
 
@@ -989,7 +1303,7 @@ msgstr "Upravit"
 msgid "labels.edit-file"
 msgstr "Upravit soubor"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.editor"
 msgstr "Editor"
 
@@ -1024,7 +1338,9 @@ msgstr "Písma"
 msgid "labels.github-repo"
 msgstr "Úložiště Github"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/settings/sidebar.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.give-feedback"
 msgstr "Dát zpětnou vazbu"
 
@@ -1039,6 +1355,9 @@ msgstr "Centrum nápovědy"
 msgid "labels.hide-resolved-comments"
 msgstr "Skrýt vyřešené komentáře"
 
+msgid "labels.inactive"
+msgstr "Neaktivní"
+
 msgid "labels.installed-fonts"
 msgstr "Nainstalovaná písma"
 
@@ -1052,7 +1371,8 @@ msgstr ""
 msgid "labels.internal-error.main-message"
 msgstr "Interní chyba"
 
-#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.invitations"
 msgstr "Pozvánky"
 
@@ -1071,11 +1391,11 @@ msgstr "Přihlásit se ne registrovat"
 msgid "labels.logout"
 msgstr "Odhlásit se"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.member"
 msgstr "Člen"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.members"
 msgstr "Členové"
 
@@ -1083,7 +1403,8 @@ msgstr "Členové"
 msgid "labels.new-password"
 msgstr "Nové heslo"
 
-#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/dashboard/comments.cljs
+#: src/app/main/ui/workspace/comments.cljs,
+#: src/app/main/ui/dashboard/comments.cljs
 msgid "labels.no-comments-available"
 msgstr "Vše je aktuální! Zde se zobrazí upozornění na nové komentáře."
 
@@ -1092,7 +1413,6 @@ msgid "labels.no-invitations"
 msgstr "Nejsou žádné pozvánky."
 
 #: src/app/main/ui/dashboard/team.cljs
-#, markdown
 msgid "labels.no-invitations-hint"
 msgstr ""
 "Chcete-li do tohoto týmu pozvat další členy, stiskněte tlačítko „Pozvat do "
@@ -1141,7 +1461,8 @@ msgstr "nebo"
 msgid "labels.owner"
 msgstr "Majitel"
 
-#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/settings/sidebar.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.password"
 msgstr "Heslo"
 
@@ -1161,7 +1482,12 @@ msgstr "Projekty"
 msgid "labels.release-notes"
 msgstr "Poznámky k verzi"
 
-#: src/app/main/ui/workspace/libraries.cljs, src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/workspace.cljs
+msgid "labels.reload-file"
+msgstr "Znovu načíst soubor"
+
+#: src/app/main/ui/workspace/libraries.cljs,
+#: src/app/main/ui/dashboard/team.cljs
 msgid "labels.remove"
 msgstr "Odstranit"
 
@@ -1169,7 +1495,9 @@ msgstr "Odstranit"
 msgid "labels.remove-member"
 msgstr "Odebrat člena"
 
-#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs,
+#: src/app/main/ui/dashboard/project_menu.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.rename"
 msgstr "Přejmenovat"
 
@@ -1181,7 +1509,7 @@ msgstr "Přejmenovat tým"
 msgid "labels.resend-invitation"
 msgstr "Znovu poslat pozvánku"
 
-#: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
+#: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
 msgid "labels.retry"
 msgstr "Zkusit znovu"
 
@@ -1211,7 +1539,8 @@ msgstr "Provádíme plánovanou údržbu našich systémů."
 msgid "labels.service-unavailable.main-message"
 msgstr "Služba je nedostupná"
 
-#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.settings"
 msgstr "Nastavení"
 
@@ -1241,6 +1570,10 @@ msgstr "Status"
 msgid "labels.tutorials"
 msgstr "Tutoriály"
 
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.unpublish-multi-files"
+msgstr "Zrušit publikování %s souborů"
+
 #: src/app/main/ui/settings/profile.cljs
 msgid "labels.update"
 msgstr "Aktualizovat"
@@ -1258,15 +1591,21 @@ msgstr "Nahrát vlastní písma"
 msgid "labels.uploading"
 msgstr "Nahrávání…"
 
+msgid "labels.view-only"
+msgstr "POUZE ZOBRAZIT"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.viewer"
 msgstr "Prohlížeč"
+
+msgid "labels.webhooks"
+msgstr "Webhooks"
 
 #: src/app/main/ui/comments.cljs
 msgid "labels.write-new-comment"
 msgstr "Napsat nový komentář"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.you"
 msgstr "(vy)"
 
@@ -1274,21 +1613,24 @@ msgstr "(vy)"
 msgid "labels.your-account"
 msgstr "Váš účet"
 
-#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "media.loading"
 msgstr "Načítání obrázku…"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.accept"
 msgstr "Přidat jako sdílenou knihovnu"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.hint"
 msgstr ""
 "Po přidání jako Sdílené knihovny budou položky této knihovny k dispozici "
 "pro použití se zbytkem vašich souborů."
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.message"
 msgstr "Přidat „%s“ jako Sdílenou knihovnu"
 
@@ -1317,6 +1659,18 @@ msgstr "Změnit e-mail"
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.title"
 msgstr "Změňte svůj e-mail"
+
+msgid "modals.create-webhook.submit-label"
+msgstr "Vytvořit webhook"
+
+msgid "modals.create-webhook.title"
+msgstr "Vytvořit webhook"
+
+msgid "modals.create-webhook.url.label"
+msgstr "Adresa URL datové části"
+
+msgid "modals.create-webhook.url.placeholder"
+msgstr "https://example.com/postreceive"
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.cancel"
@@ -1406,28 +1760,24 @@ msgstr "Opravdu chcete smazat tento projekt?"
 msgid "modals.delete-project-confirm.title"
 msgstr "Smazat projekt"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.accept"
 msgid_plural "modals.delete-shared-confirm.accept"
 msgstr[0] "Smazat soubor"
 msgstr[1] "Smazat soubory"
 msgstr[2] "Smazat soubory"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
 msgid_plural "modals.delete-shared-confirm.message"
 msgstr[0] "Opravdu chcete smazat tento soubor?"
 msgstr[1] "Opravdu chcete smazat tyto soubory?"
 msgstr[2] "Opravdu chcete smazat tyto soubory?"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message"
-msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] "Tento soubor obsahuje knihovny, které se v tomto souboru používají:"
-msgstr[1] "Tento soubor obsahuje knihovny, které se používají v těchto souborech:"
-msgstr[2] "Tento soubor obsahuje knihovny, které se používají v těchto souborech:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
 msgid_plural "modals.delete-shared-confirm.title"
 msgstr[0] "Mazání souboru"
@@ -1460,12 +1810,32 @@ msgstr "Opravdu chcete tohoto člena smazat z týmu?"
 msgid "modals.delete-team-member-confirm.title"
 msgstr "Smazat člena týmu"
 
+msgid "modals.delete-webhook.accept"
+msgstr "Smazat webhook"
+
+msgid "modals.delete-webhook.message"
+msgstr "Opravdu chcete tento webhook smazat?"
+
+msgid "modals.delete-webhook.title"
+msgstr "Mazání webhooku"
+
+msgid "modals.edit-webhook.submit-label"
+msgstr "Upravit webhook"
+
+msgid "modals.edit-webhook.title"
+msgstr "Upravit webhook"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.invite-member-confirm.accept"
 msgstr "Poslat pozvánku"
 
 msgid "modals.invite-member.emails"
 msgstr "E-maily oddělené čárkou"
+
+msgid "modals.invite-member.repeated-invitation"
+msgstr ""
+"Některé e-maily jsou od současných členů týmu. Jejich pozvánky nebudou "
+"odeslány."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.invite-team-member.title"
@@ -1540,17 +1910,20 @@ msgstr ""
 msgid "modals.promote-owner-confirm.title"
 msgstr "Nový majitel týmu"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.accept"
 msgstr "Odebrat jako sdílenou knihovnu"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.hint"
 msgstr ""
 "Po odstranění jako Sdílené knihovny přestane být knihovna tohoto souboru k "
 "dispozici pro použití se zbytkem vašich souborů."
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.message"
 msgstr "Odebrat „%s“ jako sdílenou knihovnu"
 
@@ -1558,74 +1931,68 @@ msgstr "Odebrat „%s“ jako sdílenou knihovnu"
 msgid "modals.small-nudge"
 msgstr "Malé posunutí"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint"
-msgid_plural "modals.unpublish-shared-confirm.hint"
-msgstr[0] ""
-"Pokud zrušíte jeho publikování, tyto podklady již nebudou dostupné z jiných "
-"souborů. Aktiva, která již byla použita, zůstanou v tomto souboru (žádný "
-"návrh nebude porušen!)."
-msgstr[1] ""
-"Pokud jejich publikování zrušíte, tyto podklady již nebudou dostupné z "
-"jiných souborů. Aktiva, která již byla použita, zůstanou v tomto souboru ("
-"žádný návrh nebude porušen!)."
-msgstr[2] ""
-"Pokud jejich publikování zrušíte, tyto podklady již nebudou dostupné z "
-"jiných souborů. Aktiva, která již byla použita, zůstanou v tomto souboru ("
-"žádný návrh nebude porušen!)."
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgstr "Zrušit publikování"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "Opravdu chcete zrušit publikování této knihovny?"
 msgstr[1] "Opravdu chcete zrušit publikování těchto knihoven?"
 msgstr[2] "Opravdu chcete zrušit publikování těchto knihoven?"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message"
-msgid_plural "modals.unpublish-shared-confirm.scd-message"
-msgstr[0] "Používá se v tomto souboru:"
-msgstr[1] "Používá se v těchto souborech:"
-msgstr[2] "Používá se v těchto souborech:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.title"
 msgid_plural "modals.unpublish-shared-confirm.title"
 msgstr[0] "Zrušit publikování knihovny"
 msgstr[1] "Zrušit publikování knihoven"
 msgstr[2] "Zrušit publikování knihoven"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component-in-bulk.hint"
 msgstr ""
 "Chystáte se aktualizovat komponenty ve sdílené knihovně. To může ovlivnit "
 "další soubory, které jej používají."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component-in-bulk.message"
 msgstr "Aktualizujte komponenty ve sdílené knihovně"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.accept"
 msgstr "Aktualizovat"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.cancel"
 msgstr "Zrušit"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.hint"
 msgstr ""
 "Chystáte se aktualizovat komponentu ve sdílené knihovně. To může ovlivnit "
 "další soubory, které ji používají."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.message"
 msgstr "Aktualizovat komponentu ve sdílené knihovně"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "notifications.invitation-email-sent"
 msgstr "Pozvánka byla úspěšně odeslána"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "notifications.invitation-link-copied"
+msgstr "Odkaz na pozvánku zkopírován"
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "notifications.profile-deletion-not-allowed"
@@ -1704,12 +2071,6 @@ msgstr "Průvodce přispíváním"
 msgid "onboarding-v2.welcome.title"
 msgstr "Vítejte v Penpot!"
 
-msgid "onboarding.choice.team-up.create-later"
-msgstr "Vytvořte tým později"
-
-msgid "onboarding.choice.team-up.create-team"
-msgstr "Název vašeho týmu"
-
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "Po pojmenování svého týmu budete moci pozvat lidi, aby se přidali."
 
@@ -1723,12 +2084,6 @@ msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
 "Nezapomeňte zahrnout všechny. Vývojáře, designéry, manažéry... rozmanitost "
 "se počítá :)"
-
-msgid "onboarding.choice.team-up.invite-members-skip"
-msgstr "Vytvořte tým a pozvěte později"
-
-msgid "onboarding.choice.team-up.invite-members-submit"
-msgstr "Vytvořte tým a odešlete pozvánky"
 
 msgid "onboarding.choice.team-up.roles"
 msgstr "Pozvat s rolí:"
@@ -1744,9 +2099,6 @@ msgstr "Zásady ochrany osobních údajů."
 
 msgid "onboarding.newsletter.title"
 msgstr "Chcete dostávat novinky Penpot?"
-
-msgid "onboarding.slide.1.title"
-msgstr "Oživte své návrhy pomocí interakce"
 
 msgid "onboarding.team-modal.create-team"
 msgstr "Vytvořte tým"
@@ -1784,7 +2136,12 @@ msgstr "Penpot"
 msgid "profile.recovery.go-to-login"
 msgstr "Přejít na přihlášení"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs,
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs,
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs,
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs,
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "settings.multiple"
 msgstr "Smíšený"
 
@@ -1838,6 +2195,9 @@ msgstr "Cesty"
 msgid "shortcut-subsection.shape"
 msgstr "Tvary"
 
+msgid "shortcut-subsection.text-editor"
+msgstr "Texty"
+
 msgid "shortcut-subsection.tools"
 msgstr "Nástroje"
 
@@ -1856,8 +2216,14 @@ msgstr "Přidat uzel"
 msgid "shortcuts.align-bottom"
 msgstr "Zarovnat dolů"
 
+msgid "shortcuts.align-center"
+msgstr "Zarovnat na střed"
+
 msgid "shortcuts.align-hcenter"
 msgstr "Zarovnat vodorovně na střed"
+
+msgid "shortcuts.align-justify"
+msgstr "Zarovnat do bloku"
 
 msgid "shortcuts.align-left"
 msgstr "Zarovnat vlevo"
@@ -1873,6 +2239,9 @@ msgstr "Zarovnat na střed svisle"
 
 msgid "shortcuts.artboard-selection"
 msgstr "Vytvořit tabuli z výběru"
+
+msgid "shortcuts.bold"
+msgstr "Přepnout tučné písmo"
 
 msgid "shortcuts.bool-difference"
 msgstr "Rozdíl"
@@ -1964,6 +2333,12 @@ msgstr "Překlopit vodorovně"
 msgid "shortcuts.flip-vertical"
 msgstr "Překlopit svisle"
 
+msgid "shortcuts.font-size-dec"
+msgstr "Zmenšit velikost písma"
+
+msgid "shortcuts.font-size-inc"
+msgstr "Zvětšit velikost písma"
+
 msgid "shortcuts.go-to-drafts"
 msgstr "Přejít na koncepty"
 
@@ -1988,8 +2363,26 @@ msgstr "Přiblížit"
 msgid "shortcuts.insert-image"
 msgstr "Vložit obrázek"
 
+msgid "shortcuts.italic"
+msgstr "Přepnout kurzívu"
+
 msgid "shortcuts.join-nodes"
 msgstr "Propojit uzly"
+
+msgid "shortcuts.letter-spacing-dec"
+msgstr "Zmenšit mezery mezi písmeny"
+
+msgid "shortcuts.letter-spacing-inc"
+msgstr "Zvětšit mezery mezi písmeny"
+
+msgid "shortcuts.line-height-dec"
+msgstr "Snížit výšku řádku"
+
+msgid "shortcuts.line-height-inc"
+msgstr "Zvýšit výšku řádku"
+
+msgid "shortcuts.line-through"
+msgstr "Přepnout řádek"
 
 msgid "shortcuts.make-corner"
 msgstr "Udělat roh"
@@ -2078,6 +2471,9 @@ msgstr "Přejít do sekce komentářů"
 msgid "shortcuts.open-dashboard"
 msgstr "Přejít na nástěnku"
 
+msgid "shortcuts.open-inspect"
+msgstr "Přejděte do sekce inspektor"
+
 msgid "shortcuts.open-interactions"
 msgstr "Přejít do části interakce"
 
@@ -2107,6 +2503,12 @@ msgstr "Prohledat zkratky"
 
 msgid "shortcuts.select-all"
 msgstr "Vybrat vše"
+
+msgid "shortcuts.select-next"
+msgstr "Vybrat další vrstvu"
+
+msgid "shortcuts.select-prev"
+msgstr "Vybrat předchozí vrstvu"
 
 msgid "shortcuts.separate-nodes"
 msgstr "Rozdělit uzly"
@@ -2151,14 +2553,17 @@ msgstr "Přepnout paletu barev"
 msgid "shortcuts.toggle-focus-mode"
 msgstr "Přepnout režim soustředění"
 
-msgid "shortcuts.toggle-grid"
-msgstr "Zobrazit/skrýt mřížku"
+msgid "shortcuts.toggle-fullscreen"
+msgstr "Přepnout zobrazení na celou obrazovku"
 
 msgid "shortcuts.toggle-history"
 msgstr "Přepnout historii"
 
 msgid "shortcuts.toggle-layers"
 msgstr "Přepínání vrstev"
+
+msgid "shortcuts.toggle-layout-flex"
+msgstr "Přidat/odebrat flexibilní rozložení"
 
 msgid "shortcuts.toggle-lock"
 msgstr "Uzamknout vybrané"
@@ -2169,20 +2574,17 @@ msgstr "Uzamknout proporce"
 msgid "shortcuts.toggle-rules"
 msgstr "Zobrazit/skrýt pravítka"
 
-msgid "shortcuts.toggle-scale-text"
-msgstr "Přepnout měřítko textu"
-
-msgid "shortcuts.toggle-snap-grid"
-msgstr "Přichytit k mřížce"
-
-msgid "shortcuts.toggle-snap-guide"
-msgstr "Přichytit k vodicím lištám"
-
 msgid "shortcuts.toggle-textpalette"
 msgstr "Přepnout paletu textu"
 
+msgid "shortcuts.toggle-visibility"
+msgstr "Přepnout viditelnost"
+
 msgid "shortcuts.toggle-zoom-style"
 msgstr "Přepnout styl přiblížení"
+
+msgid "shortcuts.underline"
+msgstr "Přepnout podtržení"
 
 msgid "shortcuts.undo"
 msgstr "Zpět"
@@ -2195,6 +2597,12 @@ msgstr "Zrušit masku"
 
 msgid "shortcuts.v-distribute"
 msgstr "Rozmístit vertikálně"
+
+msgid "shortcuts.zoom-lense-decrease"
+msgstr "Zmenšení zoomu"
+
+msgid "shortcuts.zoom-lense-increase"
+msgstr "Zvětšení zoomu"
 
 msgid "shortcuts.zoom-selected"
 msgstr "Přiblížit na vybrané"
@@ -2255,6 +2663,9 @@ msgstr "Členové - %s - Penpot"
 msgid "title.team-settings"
 msgstr "Nastavení - %s - Penpot"
 
+msgid "title.team-webhooks"
+msgstr "Webhooks - %s - Penpot"
+
 #: src/app/main/ui/handoff.cljs, src/app/main/ui/viewer.cljs
 msgid "title.viewer"
 msgstr "%s - Režim zobrazení - Penpot"
@@ -2288,6 +2699,9 @@ msgstr "Nezobrazovat interakce"
 msgid "viewer.header.fullscreen"
 msgstr "Celá obrazovka"
 
+msgid "viewer.header.inspect-section"
+msgstr "Zkontrolovat (%s)"
+
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.interactions"
 msgstr "Interakce"
@@ -2310,6 +2724,9 @@ msgstr "Zobrazit interakce po kliknutí"
 #: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.sitemap"
 msgstr "Mapa stránek"
+
+msgid "webhooks.last-delivery.success"
+msgstr "Poslední doručení proběhlo úspěšně."
 
 #: src/app/main/ui/workspace/sidebar/align.cljs
 msgid "workspace.align.hcenter"
@@ -2351,11 +2768,13 @@ msgstr "Podklady"
 msgid "workspace.assets.box-filter-all"
 msgstr "Všechny podklady"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/assets.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.colors"
 msgstr "Barvy"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/assets.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.components"
 msgstr "Komponenty"
 
@@ -2369,19 +2788,27 @@ msgstr ""
 "Vaše položky budou automaticky pojmenovány jako „název skupiny / název "
 "položky“"
 
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.delete"
 msgstr "Delete"
 
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.duplicate"
 msgstr "Duplikovat"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.duplicate-main"
+msgstr "Duplikovat hlavní"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.edit"
 msgstr "Upravit"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/assets.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.graphics"
 msgstr "Grafika"
 
@@ -2404,7 +2831,9 @@ msgstr "místní knihovna"
 msgid "workspace.assets.not-found"
 msgstr "Nebyly nalezeny žádné podklady"
 
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.rename"
 msgstr "Přejmenovat"
 
@@ -2423,11 +2852,8 @@ msgstr[0] "%s položka vybrána"
 msgstr[1] "Počet vybraných položek: %s"
 msgstr[2] "Počet vybraných položek: %s"
 
+#: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.shared"
-msgstr "SDÍLENÉ"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.typography"
 msgstr "Typografie"
 
@@ -2455,9 +2881,14 @@ msgstr "Mezery mezi písmeny"
 msgid "workspace.assets.typography.line-height"
 msgstr "Výška řádku"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/handoff/attributes/text.cljs, src/app/main/ui/handoff/attributes/text.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs,
+#: src/app/main/ui/handoff/attributes/text.cljs,
+#: src/app/main/ui/handoff/attributes/text.cljs
 msgid "workspace.assets.typography.sample"
 msgstr "Ag"
+
+msgid "workspace.assets.typography.text-styles"
+msgstr "Styly textu"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.assets.typography.text-transform"
@@ -2479,11 +2910,13 @@ msgstr "Zapnout režim soustředění"
 msgid "workspace.focus.selection"
 msgstr "Výběr"
 
-#: src/app/main/data/workspace/libraries.cljs, src/app/main/ui/components/color_bullet.cljs
+#: src/app/main/data/workspace/libraries.cljs,
+#: src/app/main/ui/components/color_bullet.cljs
 msgid "workspace.gradients.linear"
 msgstr "Lineární přechod"
 
-#: src/app/main/data/workspace/libraries.cljs, src/app/main/ui/components/color_bullet.cljs
+#: src/app/main/data/workspace/libraries.cljs,
+#: src/app/main/ui/components/color_bullet.cljs
 msgid "workspace.gradients.radial"
 msgstr "Radiální přechod"
 
@@ -2491,13 +2924,12 @@ msgstr "Radiální přechod"
 msgid "workspace.header.menu.disable-dynamic-alignment"
 msgstr "Zakázat dynamické zarovnání"
 
+msgid "workspace.header.menu.disable-scale-content"
+msgstr "Zakázat proporcionální měřítko"
+
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-scale-text"
 msgstr "Zakázat měřítko textu"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.disable-snap-grid"
-msgstr "Zakázat přichycení k mřížce"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-snap-guides"
@@ -2510,13 +2942,12 @@ msgstr "Zakázat přichycení k pixelu"
 msgid "workspace.header.menu.enable-dynamic-alignment"
 msgstr "Povolit dynamické zarovnání"
 
+msgid "workspace.header.menu.enable-scale-content"
+msgstr "Povolit proporcionální měřítko"
+
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-scale-text"
 msgstr "Povolit měřítko textu"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.enable-snap-grid"
-msgstr "Přichytit k mřížce"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-snap-guides"
@@ -2528,10 +2959,6 @@ msgstr "Povolit přichycení k pixelu"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-artboard-names"
 msgstr "Skrýt názvy tabulí"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-grid"
-msgstr "Skrýt mřížky"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -2568,6 +2995,9 @@ msgstr "Předvolby"
 msgid "workspace.header.menu.option.view"
 msgstr "Pohled"
 
+msgid "workspace.header.menu.redo"
+msgstr "Znovu"
+
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.select-all"
 msgstr "Vybrat vše"
@@ -2575,10 +3005,6 @@ msgstr "Vybrat vše"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-artboard-names"
 msgstr "Zobrazit názvy tabulí"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-grid"
-msgstr "Zobrazit mřížku"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"
@@ -2594,6 +3020,9 @@ msgstr "Zobrazit pravítka"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-textpalette"
 msgstr "Zobrazit paletu písem"
+
+msgid "workspace.header.menu.undo"
+msgstr "Zpět"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.reset-zoom"
@@ -2647,7 +3076,8 @@ msgstr "Přidat"
 msgid "workspace.libraries.colors"
 msgstr "barvy %s"
 
-#: src/app/main/ui/workspace/colorpicker/libraries.cljs, src/app/main/ui/workspace/colorpalette.cljs
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs,
+#: src/app/main/ui/workspace/colorpalette.cljs
 msgid "workspace.libraries.colors.file-library"
 msgstr "Knihovna souborů"
 
@@ -2655,7 +3085,8 @@ msgstr "Knihovna souborů"
 msgid "workspace.libraries.colors.hsv"
 msgstr "HSV"
 
-#: src/app/main/ui/workspace/colorpicker/libraries.cljs, src/app/main/ui/workspace/colorpalette.cljs
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs,
+#: src/app/main/ui/workspace/colorpalette.cljs
 msgid "workspace.libraries.colors.recent-colors"
 msgstr "Nedávné barvy"
 
@@ -2806,15 +3237,18 @@ msgstr "Nahoře a dole"
 msgid "workspace.options.design"
 msgstr "Design"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export"
 msgstr "Exportovat"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-multiple"
 msgstr "Exportovat výběr"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/handoff/exports.cljs
 msgid "workspace.options.export-object"
 msgid_plural "workspace.options.export-object"
 msgstr[0] "Exportovat 1 prvek"
@@ -2825,19 +3259,23 @@ msgstr[2] "Exportovat %s prvků"
 msgid "workspace.options.export.suffix"
 msgstr "Přípona"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-complete"
 msgstr "Export byl dokončen"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-object"
 msgstr "Exportování…"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-object-error"
 msgstr "Export se nezdařil"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-object-slow"
 msgstr "Export je nečekaně pomalý"
 
@@ -2955,6 +3393,9 @@ msgstr "Ohraničení skupiny"
 msgid "workspace.options.height"
 msgstr "Výška"
 
+msgid "workspace.options.inspect"
+msgstr "Inspektor"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-action"
 msgstr "Akce"
@@ -2982,6 +3423,9 @@ msgstr "Push"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-animation-slide"
 msgstr "Slide"
+
+msgid "workspace.options.interaction-auto"
+msgstr "automaticky"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-background"
@@ -3132,6 +3576,10 @@ msgid "workspace.options.interaction-prev-screen"
 msgstr "Předchozí obrazovka"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-relative-to"
+msgstr "Relativní k"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-self"
 msgstr "já"
 
@@ -3244,12 +3692,56 @@ msgid "workspace.options.layout-item.advanced-ops"
 msgstr "Rozšířené možnosti"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.layout-min-h"
+msgid "workspace.options.layout-item.layout-item-max-h"
+msgstr "Maximální výška"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-item-max-w"
+msgstr "Maximální šířka"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-item-min-h"
 msgstr "Minimální výška"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-item-min-w"
+msgstr "Minimální šířka"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-item-max-h"
+msgstr "Maximální výška"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-item-max-w"
+msgstr "Maximální šířka"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-item-min-h"
+msgstr "Minimální výška"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-item-min-w"
+msgstr "Minimální šířka"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.bottom"
 msgstr "Dole"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.column"
+msgstr "Sloupec"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.column-reverse"
+msgstr "Reverzní sloupec"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.row"
+msgstr "Řádek"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.row-reverse"
+msgstr "Reverzní řada"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.gap"
@@ -3314,7 +3806,8 @@ msgstr "Více barev knihovny"
 msgid "workspace.options.opacity"
 msgstr "Průhlednost"
 
-#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs,
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.position"
 msgstr "Pozice"
 
@@ -3326,12 +3819,12 @@ msgid "workspace.options.radius"
 msgstr "Poloměr"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.radius.all-corners"
-msgstr "Všechny rohy"
+msgid "workspace.options.radius-bottom-left"
+msgstr "Dole vlevo"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.radius.single-corners"
-msgstr "Nezávislé rohy"
+msgid "workspace.options.radius-bottom-right"
+msgstr "Dole vpravo"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.radius-top-left"
@@ -3342,17 +3835,18 @@ msgid "workspace.options.radius-top-right"
 msgstr "Nahoře vpravo"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.radius-bottom-left"
-msgstr "Dole vlevo"
+msgid "workspace.options.radius.all-corners"
+msgstr "Všechny rohy"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.radius-bottom-right"
-msgstr "Dole vpravo"
+msgid "workspace.options.radius.single-corners"
+msgstr "Nezávislé rohy"
 
 msgid "workspace.options.recent-fonts"
 msgstr "Nedávné"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
+#: src/app/main/ui/handoff/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.retry"
 msgstr "Opakovat"
 
@@ -3425,7 +3919,8 @@ msgstr "Zobrazit v exportech"
 msgid "workspace.options.show-in-viewer"
 msgstr "Zobrazit v režimu zobrazení"
 
-#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs,
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.size"
 msgstr "Velikost"
 
@@ -3508,24 +4003,8 @@ msgid "workspace.options.text-options.align-bottom"
 msgstr "Zarovnat dolů"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-center"
-msgstr "Zarovnat doprostřed (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-justify"
-msgstr "Zarovnat (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-left"
-msgstr "Zarovnat vlevo (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
 msgstr "Zarovnat na střed"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-right"
-msgstr "Zarovnat vpravo (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-top"
@@ -3563,13 +4042,30 @@ msgstr "Výška řádku"
 msgid "workspace.options.text-options.lowercase"
 msgstr "Malá písmena"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs,
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.options.text-options.none"
 msgstr "Žádné"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.strikethrough"
 msgstr "Přeškrtnutí (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-center"
+msgstr "Zarovnat doprostřed (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-justify"
+msgstr "Zarovnat (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-left"
+msgstr "Zarovnat vlevo (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-right"
+msgstr "Zarovnat vpravo (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.title"
@@ -3639,6 +4135,10 @@ msgid "workspace.path.actions.snap-nodes"
 msgstr "Přichytit uzly (%s)"
 
 #: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.add-flex"
+msgstr "Přidat flexibilní rozložení"
+
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.back"
 msgstr "Poslat na konec"
 
@@ -3670,11 +4170,15 @@ msgstr "Smazat"
 msgid "workspace.shape.menu.delete-flow-start"
 msgstr "Smazat počáteční bod"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.detach-instance"
 msgstr "Odpojit instanci"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.detach-instances-in-bulk"
 msgstr "Odpojit instance"
 
@@ -3715,7 +4219,8 @@ msgstr "Posunout dopředu"
 msgid "workspace.shape.menu.front"
 msgstr "Posunout na začátek"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.go-main"
 msgstr "Přejít na hlavní soubor komponentu"
 
@@ -3737,18 +4242,26 @@ msgstr "Průnik"
 msgid "workspace.shape.menu.lock"
 msgstr "Zamknout"
 
-#: src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/context_menu.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.mask"
 msgstr "Maska"
 
-#: src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/context_menu.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.paste"
 msgstr "Vložit"
 
 msgid "workspace.shape.menu.path"
 msgstr "Cesta"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-flex"
+msgstr "Odstranit flexibilní rozložení"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.reset-overrides"
 msgstr "Obnovit"
 
@@ -3763,11 +4276,13 @@ msgstr "Vybrat vrstvu"
 msgid "workspace.shape.menu.show"
 msgstr "Zobrazit"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.show-in-assets"
 msgstr "Zobrazit na panelu prostředků"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.show-main"
 msgstr "Zobrazit hlavní komponent"
 
@@ -3795,11 +4310,15 @@ msgstr "Odemknout"
 msgid "workspace.shape.menu.unmask"
 msgstr "Zrušit masku"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.update-components-in-bulk"
 msgstr "Aktualizujte hlavní komponenty"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs,
+#: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.update-main"
 msgstr "Aktualizujte hlavní komponent"
 
@@ -3841,7 +4360,8 @@ msgstr "Tvary"
 msgid "workspace.sidebar.layers.texts"
 msgstr "Texty"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs, src/app/main/ui/handoff/attributes/svg.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs,
+#: src/app/main/ui/handoff/attributes/svg.cljs
 msgid "workspace.sidebar.options.svg-attrs.title"
 msgstr "Importované atributy SVG"
 
@@ -4035,624 +4555,577 @@ msgstr "Aktualizace"
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Kliknutím zavřete cestu"
 
-msgid "dashboard.webhooks.active.explain"
-msgstr "Když je tento webhook spuštěn, budou doručeny podrobnosti o události"
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-never"
+msgstr "Nikdy"
 
-msgid "dashboard.webhooks.content-type"
-msgstr "Typ obsahu"
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expired-on"
+msgstr "Platnost vypršela %s"
 
-msgid "dashboard.webhooks.create"
-msgstr "Vytvořit webhook"
-
-msgid "dashboard.webhooks.description"
-msgstr ""
-"Webhooky jsou jednoduchým způsobem, jak umožnit jiným webům a aplikacím, aby "
-"byly upozorňovány na určité události v Penpotu. Na každou z vámi "
-"poskytnutých adres URL odešleme požadavek POST."
-
-msgid "dashboard.webhooks.empty.add-one"
-msgstr "Chcete-li webhook přidat, stiskněte tlačítko „Přidat webhook“."
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.no-expiration"
+msgstr "Žádné datum vypršení platnosti"
 
 #: src/app/main/errors.cljs
-msgid "errors.feature-mismatch"
-msgstr ""
-"Vypadá to, že otevíráte soubor, který má povolenou funkci '%s', ale vaše "
-"rozhraní penpotu ji nepodporuje nebo ji má deaktivovanou."
+msgid "errors.version-not-supported"
+msgstr "Soubor má nekompatibilní číslo verze"
 
-msgid "errors.webhooks.connection"
-msgstr "Chyba připojení, adresa URL není dostupná"
+#: src/app/main/errors.cljs
+msgid "errors.team-feature-mismatch"
+msgstr "Zjištěna nekompatibilní funkce '%s'"
 
-#: src/app/main/ui/inspect/attributes/blur.cljs
-msgid "inspect.attributes.blur"
-msgstr "Rozostření"
+msgid "inspect.attributes.typography.text-transform.unset"
+msgstr "Nenastaveno"
 
-#: src/app/main/ui/inspect/attributes/blur.cljs
-msgid "inspect.attributes.blur.value"
-msgstr "Hodnota"
+msgid "labels.discard"
+msgstr "Zahodit"
 
-msgid "inspect.attributes.stroke.style.mixed"
-msgstr "Smíšená"
+msgid "labels.share"
+msgstr "Sdílet"
 
-msgid "inspect.attributes.stroke.style.none"
-msgstr "Žádná"
+msgid "labels.search"
+msgstr "Hledat"
 
-msgid "inspect.attributes.stroke.style.solid"
-msgstr "Plná"
-
-msgid "inspect.attributes.typography.text-transform.none"
-msgstr "Žádná"
-
-msgid "inspect.attributes.typography.text-decoration.underline"
-msgstr "Podtržení"
-
-msgid "inspect.attributes.typography.text-transform.titlecase"
-msgstr "První písmena velká"
-
-msgid "inspect.attributes.typography.text-transform.uppercase"
-msgstr "Velká písmena"
-
-msgid "inspect.empty.select"
-msgstr ""
-"Vyberte tvar, tabuli nebo skupinu, abyste mohli zkontrolovat jejich "
-"vlastnosti a kód"
-
-msgid "inspect.tabs.code.selected.rect"
-msgstr "Obdélník"
-
-msgid "inspect.tabs.code.selected.svg-raw"
-msgstr "SVG"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs
-msgid "inspect.tabs.info"
-msgstr "Informace"
-
-msgid "labels.view-only"
-msgstr "POUZE ZOBRAZIT"
-
-msgid "modals.create-webhook.title"
-msgstr "Vytvořit webhook"
-
-msgid "shortcuts.toggle-fullscreen"
-msgstr "Přepnout zobrazení na celou obrazovku"
-
-msgid "shortcuts.toggle-layout-flex"
-msgstr "Přidat/odebrat flexibilní rozložení"
-
-msgid "viewer.header.inspect-section"
-msgstr "Zkontrolovat (%s)"
-
-msgid "webhooks.last-delivery.success"
-msgstr "Poslední doručení proběhlo úspěšně."
-
-msgid "workspace.options.inspect"
-msgstr "Inspektor"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.layout-item-min-w"
-msgstr "Minimální šířka"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.layout-item-min-h"
-msgstr "Minimální výška"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.column"
-msgstr "Sloupec"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text2"
-msgstr "Tato aktualizace je jednorázová."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.title"
-msgstr "Aktualizace %s..."
-
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.add-flex"
-msgstr "Přidat flexibilní rozložení"
-
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.remove-flex"
-msgstr "Odstranit flexibilní rozložení"
-
-msgid "errors.webhooks.invalid-uri"
-msgstr "Adresa URL neprošla ověřením."
-
-msgid "errors.webhooks.ssl-validation"
-msgstr "Chyba při ověřování SSL."
-
-msgid "inspect.tabs.code.selected.text"
-msgstr "Text"
-
-msgid "modals.create-webhook.submit-label"
-msgstr "Vytvořit webhook"
-
-msgid "inspect.attributes.stroke.style.dotted"
-msgstr "Tečkovaná"
-
-msgid "shortcut-subsection.text-editor"
-msgstr "Texty"
-
-msgid "shortcuts.align-center"
-msgstr "Zarovnat na střed"
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.submit-label"
+msgstr "Vytvořit token"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint-many"
-msgid_plural "modals.delete-shared-confirm.hint-many"
-msgstr[0] ""
-"Pokud jej smažete, tyto položky již nebudou dostupné z jiných souborů. "
-"Položky, které již byly použity, zůstanou v těchto souborech (nebude porušen "
-"žádný návrh!)."
-msgstr[1] ""
-"Pokud je smažete, tyto položky již nebudou dostupné z jiných souborů. "
-"Položky, které již byly použity, zůstanou v těchto souborech (nebude porušen "
-"žádný návrh!)."
-msgstr[2] ""
-"Pokud je smažete, tyto položky již nebudou dostupné z jiných souborů. "
-"Položky, které již byly použity, zůstanou v těchto souborech (nebude porušen "
-"žádný návrh!)."
+msgid "modals.delete-shared-confirm.activated.scd-message"
+msgid_plural "modals.delete-shared-confirm.activated.scd-message"
+msgstr[0] "Tato knihovna je aktivována zde: "
+msgstr[1] "Tyto knihovny jsou aktivovány zde: "
+msgstr[2] "Tyto knihovny jsou aktivovány zde: "
 
-msgid "workspace.assets.duplicate-main"
-msgstr "Duplikovat hlavní"
+msgid "onboarding.choice.team-up.create-team-and-send-invites"
+msgstr "Vytvořte tým a odešlete pozvánky"
+
+msgid "onboarding.choice.team-up.create-team-without-inviting"
+msgstr "Vytvořte tým bez pozvánek"
+
+msgid "onboarding.choice.team-up.create-team-without-invite"
+msgstr "Vytvořte tým"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites-description"
+msgstr "Budete moci pozvat později"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.31-50"
+msgstr "31-50"
+
+msgid "onboarding.choice.team-up.continue-creating-team"
+msgstr "Pokračujte ve vytváření týmu"
+
+msgid "onboarding.choice.team-up.start-without-a-team"
+msgstr "Začněte bez týmu"
+
+msgid "onboarding.choice.team-up.start-without-a-team-description"
+msgstr "Později budete moci vytvořit tým."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.canva"
+msgstr "Canva"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
+msgid "settings.detach"
+msgstr "Odpojit"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "team.webhooks.max-length"
+msgstr "Název webhooku musí obsahovat maximálně 2048 znaků."
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom"
+msgstr "Přiblížení"
+
+msgid "workspace.layout_grid.editor.options.edit-grid"
+msgstr "Upravit mřížku"
+
+msgid "workspace.layout_grid.editor.options.exit"
+msgstr "Odejít"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.library-updates"
+msgstr "AKTUALIZACE KNIHOVNY"
+
+msgid "workspace.options.component.swap"
+msgstr "Vyměnit komponent"
+
+msgid "workspace.options.component.swap.empty"
+msgstr "V této knihovně zatím nejsou žádné položky"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-relative-to"
-msgstr "Relativní k"
+msgid "workspace.options.flows.flow"
+msgstr "Flow"
 
-msgid "dashboard.webhooks.active"
-msgstr "Je aktivní"
+msgid "workspace.top-bar.read-only.done"
+msgstr "Hotovo"
 
-msgid "dashboard.webhooks.empty.no-webhooks"
-msgstr "Dosud nebyly vytvořeny žádné webhooky."
-
-msgid "dashboard.webhooks.update.success"
-msgstr "Webhook byl úspěšně aktualizován."
-
-#: src/app/main/errors.cljs
-msgid "errors.max-quote-reached"
-msgstr "Dosáhli jste '%s' kvóty. Kontaktujte podporu."
-
-#: src/app/main/ui/inspect/attributes/common.cljs
-msgid "inspect.attributes.color.hsla"
-msgstr "HSLA"
-
-#: src/app/main/ui/inspect/attributes/common.cljs
-msgid "inspect.attributes.color.rgba"
-msgstr "RGBA"
-
-#: src/app/main/ui/inspect/attributes/image.cljs
-msgid "inspect.attributes.image.download"
-msgstr "Stáhnout zdrojový obrázek"
-
-#: src/app/main/ui/inspect/attributes/layout.cljs
-msgid "inspect.attributes.layout"
-msgstr "Rozložení"
-
-#: src/app/main/ui/inspect/attributes/layout.cljs
-msgid "inspect.attributes.layout.height"
-msgstr "Výška"
-
-#: src/app/main/ui/inspect/attributes/fill.cljs
-msgid "inspect.attributes.fill"
-msgstr "Výplň"
-
-msgid "inspect.attributes.typography.text-decoration.none"
-msgstr "Žádná"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs
-msgid "inspect.tabs.code"
-msgstr "Kód"
-
-msgid "inspect.tabs.code.selected.circle"
-msgstr "Kruh"
-
-msgid "inspect.tabs.code.selected.component"
-msgstr "Komponent"
-
-msgid "inspect.tabs.code.selected.curve"
-msgstr "Křivka"
-
-msgid "inspect.tabs.code.selected.frame"
-msgstr "Tabule"
-
-msgid "inspect.tabs.code.selected.group"
-msgstr "Skupina"
-
-msgid "inspect.tabs.code.selected.image"
+msgid "media.image"
 msgstr "Obrázek"
 
-msgid "inspect.tabs.code.selected.mask"
-msgstr "Maska"
+msgid "media.solid"
+msgstr "Plná"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs
-msgid "inspect.tabs.code.selected.multiple"
-msgstr "%s vybráno"
+msgid "media.linear"
+msgstr "Lineární"
 
-msgid "labels.inactive"
-msgstr "Neaktivní"
+msgid "media.radial"
+msgstr "Radiální"
 
-#: src/app/main/ui/inspect/attributes/layout.cljs
-msgid "inspect.attributes.layout.left"
-msgstr "Vlevo"
+msgid "media.gradient"
+msgstr "Přechod"
 
-#: src/app/main/ui/inspect/attributes/layout.cljs, src/app/main/ui/inspect/attributes/layout.cljs
-msgid "inspect.attributes.layout.radius"
-msgstr "Poloměr"
+msgid "media.choose-image"
+msgstr "Vyberte obrázek"
 
-#: src/app/main/ui/inspect/attributes/layout.cljs
-msgid "inspect.attributes.layout.top"
-msgstr "Nahoře"
+msgid "workspace.options.guides.title"
+msgstr "Vodítka"
 
-#, permanent
-msgid "inspect.attributes.stroke.alignment.center"
-msgstr "Střed"
-
-#, permanent
-msgid "inspect.attributes.stroke.alignment.outer"
-msgstr "Venku"
-
-#: src/app/main/ui/inspect/attributes/stroke.cljs
-msgid "inspect.attributes.stroke.width"
-msgstr "Šířka"
-
-#: src/app/main/ui/inspect/attributes/text.cljs
-msgid "inspect.attributes.typography"
-msgstr "Typografie"
-
-#: src/app/main/ui/inspect/attributes/text.cljs
-msgid "inspect.attributes.typography.font-family"
-msgstr "Rodina písem"
-
-#: src/app/main/ui/inspect/attributes/text.cljs
-msgid "inspect.attributes.typography.font-size"
-msgstr "Velikost písma"
-
-msgid "inspect.empty.more-info"
-msgstr "Více informací o inspektorovi"
-
-#: src/app/main/ui/workspace.cljs
-msgid "labels.reload-file"
-msgstr "Znovu načíst soubor"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "labels.unpublish-multi-files"
-msgstr "Zrušit publikování %s souborů"
-
-msgid "labels.webhooks"
-msgstr "Webhooks"
-
-msgid "modals.create-webhook.url.placeholder"
-msgstr "https://example.com/postreceive"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message-many"
-msgid_plural "modals.delete-shared-confirm.scd-message-many"
-msgstr[0] "Některé položky v knihovně tohoto souboru se používají zde:"
-msgstr[1] "Některá položky v knihovnách těchto souborů se používají zde:"
-msgstr[2] "Některá položky v knihovnách těchto souborů se používají zde:"
-
-msgid "modals.delete-webhook.accept"
-msgstr "Smazat webhook"
-
-msgid "modals.delete-webhook.message"
-msgstr "Opravdu chcete tento webhook smazat?"
-
-msgid "modals.delete-webhook.title"
-msgstr "Mazání webhooku"
-
-msgid "modals.edit-webhook.submit-label"
-msgstr "Upravit webhook"
-
-msgid "modals.edit-webhook.title"
-msgstr "Upravit webhook"
-
-msgid "modals.invite-member.repeated-invitation"
-msgstr ""
-"Některé e-maily jsou od současných členů týmu. Jejich pozvánky nebudou "
-"odeslány."
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "notifications.invitation-link-copied"
-msgstr "Odkaz na pozvánku zkopírován"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.no-files-message"
-msgid_plural "modals.unpublish-shared-confirm.no-files-message"
-msgstr[0] "Žádný z prostředků v této knihovně se nepoužívá."
-msgstr[1] "Žádné z prostředků v těchto knihovnách se nepoužívá."
-msgstr[2] "Žádné z prostředků v těchto knihovnách se nepoužívá."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message-many"
-msgid_plural "modals.unpublish-shared-confirm.scd-message-many"
-msgstr[0] "Některé položky v této knihovně se používají zde:"
-msgstr[1] "Některé položky v těchto knihovnách se používají zde:"
-msgstr[2] "Některé položky v těchto knihovnách se používají zde:"
-
-msgid "shortcuts.align-justify"
-msgstr "Zarovnat do bloku"
-
-msgid "shortcuts.font-size-dec"
-msgstr "Zmenšit velikost písma"
-
-msgid "shortcuts.font-size-inc"
-msgstr "Zvětšit velikost písma"
-
-msgid "shortcuts.italic"
-msgstr "Přepnout kurzívu"
-
-msgid "shortcuts.letter-spacing-dec"
-msgstr "Zmenšit mezery mezi písmeny"
-
-msgid "shortcuts.line-height-dec"
-msgstr "Snížit výšku řádku"
-
-msgid "shortcuts.line-height-inc"
-msgstr "Zvýšit výšku řádku"
-
-msgid "shortcuts.line-through"
-msgstr "Přepnout řádek"
-
-msgid "shortcuts.select-next"
-msgstr "Vybrat další vrstvu"
-
-msgid "shortcuts.select-prev"
-msgstr "Vybrat předchozí vrstvu"
-
-msgid "shortcuts.zoom-lense-decrease"
-msgstr "Zmenšení zoomu"
-
-msgid "shortcuts.zoom-lense-increase"
-msgstr "Zvětšení zoomu"
-
-msgid "shortcuts.underline"
-msgstr "Přepnout podtržení"
-
-msgid "workspace.header.menu.enable-scale-content"
-msgstr "Povolit proporcionální měřítko"
-
-msgid "workspace.header.menu.redo"
-msgstr "Znovu"
-
-msgid "workspace.header.menu.undo"
-msgstr "Zpět"
-
-msgid "workspace.options.interaction-auto"
-msgstr "automaticky"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.layout-item-max-h"
-msgstr "Maximální výška"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.layout-item-max-w"
-msgstr "Maximální šířka"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.layout-item-max-h"
-msgstr "Maximální výška"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.layout-item-max-w"
-msgstr "Maximální šířka"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.title.layout-item-min-w"
-msgstr "Minimální šířka"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.column-reverse"
-msgstr "Reverzní sloupec"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.row"
-msgstr "Řádek"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.row-reverse"
-msgstr "Reverzní řada"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-hint"
-msgstr ""
-"Chcete-li to zkusit znovu, můžete tento soubor znovu načíst. Pokud problém "
-"přetrvává, doporučujeme vám podívat se na seznam a zvážit odstranění "
-"poškozené grafiky."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-msg"
-msgstr "Některé grafiky nebylo možné aktualizovat."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.progress"
-msgstr "Převádí se %s/%s"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text1"
-msgstr ""
-"Grafiky knihovny jsou od nynějška komponenty, díky čemuž budou mnohem "
-"výkonnější."
-
+#: src/app/main/ui/auth/register.cljs
 #, markdown
-msgid "dashboard.fonts.warning-text"
+msgid "auth.terms-privacy-agreement-md"
 msgstr ""
-"Zjistili jsme možný problém ve vašich písmech související s vertikálními "
-"metrikami pro různé operační systémy. Chcete-li to zkontrolovat, můžete "
-"použít služby vertikálních metrik písem, jako je [toto] (https://vertical-"
-"metrics.netlify.app/). Kromě toho doporučujeme použít "
-"[Transfonter](https://transfonter.org/) ke generování webových písem a "
-"opravě chyb. "
+"Při vytváření nového účtu souhlasíte s našimi [smluvními podmínkami](%s) a ["
+"zásadami ochrany soukromí](%s)."
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
-msgstr "Zadejte prosím platný email"
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.copied-success"
+msgstr "Zkopírovaný token"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal.description"
+msgstr ""
+"Osobní přístupové tokeny fungují jako alternativa k našemu systému ověřování "
+"přihlašovacích údajů/hesel a lze je použít k tomu, aby aplikaci umožnily "
+"přístup k internímu rozhraní Penpot API"
 
 #: src/app/main/errors.cljs
-msgid "errors.feature-not-supported"
-msgstr "Funkce '%s' není podporována."
-
-msgid "dashboard.webhooks.create.success"
-msgstr "Webhook byl úspěšně vytvořen."
-
-msgid "errors.webhooks.last-delivery"
-msgstr "Poslední dodávka nebyla úspěšná."
-
-msgid "inspect.attributes.typography.text-transform.lowercase"
-msgstr "Malá písmena"
-
-msgid "errors.webhooks.unexpected"
-msgstr "Při ověřování došlo k neočekávané chybě"
-
-msgid "inspect.attributes.typography.text-decoration.strikethrough"
-msgstr "Přeškrtnutí"
-
-msgid "errors.webhooks.timeout"
-msgstr "Timeout"
-
-msgid "errors.webhooks.unexpected-status"
-msgstr "Neočekávaný stav %s"
-
-#: src/app/main/ui/inspect/attributes/text.cljs
-msgid "inspect.attributes.typography.text-decoration"
-msgstr "Dekorace textu"
-
-#: src/app/main/ui/inspect/attributes/text.cljs
-msgid "inspect.attributes.typography.text-transform"
-msgstr "Transformace textu"
-
-msgid "inspect.tabs.code.selected.path"
-msgstr "Cesta"
-
-msgid "labels.active"
-msgstr "Aktivní"
-
-msgid "inspect.empty.help"
+msgid "errors.file-feature-mismatch"
 msgstr ""
-"Pokud se chcete dozvědět více o inspektorovi designu, navštivte centrum "
-"nápovědy společnosti Penpot"
+"Zdá se, že existuje nesoulad mezi povolenými funkcemi a funkcemi souboru, "
+"který se pokoušíte otevřít. Před otevřením souboru je třeba provést migraci "
+"pro '%s'."
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.copy-invitation-link"
-msgstr "Kopírovat odkaz"
+msgid "errors.validation"
+msgstr "Chyba ověření"
 
-msgid "modals.create-webhook.url.label"
-msgstr "Adresa URL datové části"
+msgid "errors.paste-data-validation"
+msgstr "Neplatná data ve schránce"
 
-#: src/app/main/ui/inspect/attributes/layout.cljs
-msgid "inspect.attributes.layout.rotation"
-msgstr "Otáčení"
+msgid "onboarding.choice.team-up.continue-without-a-team"
+msgstr "Pokračovat bez týmu"
+
+msgid "onboarding.choice.team-up.create-team-and-invite"
+msgstr "Vytvořte tým a pozvěte"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.adobe-xd"
+msgstr "Adobe XD"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.developer"
+msgstr "Vývojář"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.figma"
+msgstr "Figma"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.invision"
+msgstr "InVision"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.leave-feedback-for-my-team-project"
+msgstr "Zanechte zpětnou vazbu pro můj týmový projekt"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.next"
+msgstr "Další"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.other"
+msgstr "Jiné (upřesněte)"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.personal-project"
+msgstr "Pracuji na osobním projektu"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.previous"
+msgstr "Předchozí"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.questions-how-are-you-planning-to-use-penpot"
+msgstr "Jak plánujete používat Penpot?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.role"
+msgstr "Jaká je vaše role?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.select-option"
+msgstr "Vyberte možnost"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.team-size"
+msgstr "Jaká je velikost vašeho týmu?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.test-penpot-to-see-if-its-a-fit-for-team"
+msgstr "Vyzkoušejte Penpot, abyste zjistili, zda je vhodný pro tým "
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.your-feedback-will-help-us"
+msgstr ""
+"Vaše zpětná vazba nám pomůže porozumět vašim zvykům a preferencím, abychom "
+"mohli i nadále dělat Penpot užitečným nástrojem."
+
+msgid "shortcuts.text-align-center"
+msgstr "Zarovnat na střed"
+
+msgid "workspace.layout_grid.editor.top-bar.locate"
+msgstr "Lokalizovat"
+
+msgid "workspace.layout_grid.editor.top-bar.done"
+msgstr "Hotovo"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.libraries.update.see-all-changes"
+msgstr "zobrazit všechny změny"
+
+msgid "workspace.options.component.annotation"
+msgstr "Anotace"
+
+msgid "workspace.shape.menu.create-multiple-components"
+msgstr "Vytvořte více komponent"
+
+#, markdown
+msgid "workspace.top-bar.read-only"
+msgstr "**Režim kontroly** (Pouze zobrazení)"
+
+msgid "modals.add-shared-confirm-empty.hint"
+msgstr ""
+"Vaše knihovna je prázdná. Po přidání jako sdílená knihovna budou položky, "
+"které vytvoříte, k dispozici pro použití se zbytkem vašich souborů. Opravdu "
+"ji chcete publikovat?"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.copy-token"
+msgstr "Kopírovat token"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.name.label"
+msgstr "Jméno"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.name.placeholder"
+msgstr "Název může pomoci zjistit, k čemu token slouží"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.message"
+msgstr "Opravdu chcete tento token smazat?"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.title"
+msgstr "Smazat token"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.no-files-message"
-msgid_plural "modals.delete-shared-confirm.no-files-message"
+msgid "modals.delete-unpublish-shared-confirm.activated.hint"
+msgid_plural "modals.delete-unpublish-shared-confirm.activated.hint"
 msgstr[0] ""
-"Žádné položky v knihovně tohoto souboru se nepoužívají. Budou odstraněny "
-"spolu se souborem."
+"Aktiva, která již byla v tomto souboru použita, tam zůstanou (nebude porušen "
+"žádný návrh)."
 msgstr[1] ""
-"Žádné položky v knihovně těchto souborů se nepoužívají. Budou odstraněny "
-"spolu se soubory."
+"Aktiva, která již byla v těchto souborech použita, tam zůstanou (nebude "
+"porušen žádný návrh)."
 msgstr[2] ""
-"Žádné položky v knihovně těchto souborů se nepoužívají. Budou odstraněny "
-"spolu se soubory."
+"Aktiva, která již byla v těchto souborech použita, tam zůstanou (nebude "
+"porušen žádný návrh)."
 
-#: src/app/main/ui/inspect/attributes/common.cljs
-msgid "inspect.attributes.color.hex"
-msgstr "HEX"
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.too-long"
+msgstr "Název musí obsahovat maximálně 250 znaků."
 
-#: src/app/main/ui/inspect/attributes/image.cljs
-msgid "inspect.attributes.image.height"
-msgstr "Výška"
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.not-all-space"
+msgstr "Název musí obsahovat jiný znak než mezeru."
 
-#: src/app/main/ui/inspect/attributes/image.cljs
-msgid "inspect.attributes.image.width"
-msgstr "Šířka"
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-not-empty"
+msgstr "Heslo musí obsahovat jiný znak než mezeru."
 
-#: src/app/main/ui/inspect/attributes/layout.cljs
-msgid "inspect.attributes.layout.width"
-msgstr "Šířka"
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.no-access-tokens"
+msgstr "Zatím nemáte žádné tokeny."
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow"
-msgstr "Stín"
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create.success"
+msgstr "Přístupový token byl úspěšně vytvořen."
 
-#: src/app/main/ui/inspect/attributes/layout.cljs
-msgid "inspect.attributes.size"
-msgstr "Velikost a poloha"
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expires-on"
+msgstr "Platnost vyprší %s"
 
-#: src/app/main/ui/inspect/attributes/stroke.cljs
-msgid "inspect.attributes.stroke"
-msgstr "Tah"
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-60-days"
+msgstr "60 dní"
 
-#, permanent
-msgid "inspect.attributes.stroke.alignment.inner"
-msgstr "Uvnitř"
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-30-days"
+msgstr "30 dní"
 
-#: src/app/main/ui/inspect/attributes/text.cljs
-msgid "inspect.attributes.typography.font-style"
-msgstr "Styl písma"
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-180-days"
+msgstr "180 dní"
 
-#: src/app/main/ui/inspect/attributes/text.cljs
-msgid "inspect.attributes.typography.font-weight"
-msgstr "Tloušťka písma"
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-90-days"
+msgstr "90 dní"
 
-#: src/app/main/ui/inspect/attributes/text.cljs
-msgid "inspect.attributes.typography.letter-spacing"
-msgstr "Mezery mezi písmeny"
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.errors-required-name"
+msgstr "Jméno je povinné"
 
-#: src/app/main/ui/inspect/attributes/text.cljs
-msgid "inspect.attributes.typography.line-height"
-msgstr "Výška řádku"
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.token-will-expire"
+msgstr "Platnost tokenu vyprší %s"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.token-will-not-expire"
+msgstr "Token nemá žádné datum vypršení platnosti"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.access-tokens"
+msgstr "Přístupové tokeny"
+
+msgid "workspace.options.component.edit-annotation"
+msgstr "Upravit anotaci"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.start-to-work-on-my-project"
+msgstr "Začněte pracovat na mém projektu"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.none"
+msgstr "Žádný"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.wireframes-user-journeys-flows-navigation-trees"
+msgstr "... drátové modely, cesty a toky uživatelů, navigační stromy atd."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint"
-msgid_plural "modals.delete-shared-confirm.hint"
-msgstr[0] ""
-"Pokud jej smažete, tyto položky již nebudou dostupné z jiných souborů. "
-"Položky, které již byly použity, zůstanou v tomto souboru (žádný návrh "
-"nebude neúplný!)."
-msgstr[1] ""
-"Pokud je smažete, tyto položky již nebudou dostupné z jiných souborů. "
-"Položky, které již byly použity, zůstanou v tomto souboru (žádný návrh "
-"nebude neúplný!)."
-msgstr[2] ""
-"Pokud je smažete, tyto položky již nebudou dostupné z jiných souborů. "
-"Položky, které již byly použity, zůstanou v tomto souboru (žádný návrh "
-"nebude neúplný!)."
+msgid "modals.delete-shared-confirm.activated.no-files-message"
+msgid_plural "modals.delete-shared-confirm.activated.no-files-message"
+msgstr[0] "Není aktivován v žádném souboru."
+msgstr[1] "Nejsou aktivovány v žádném souboru."
+msgstr[2] "Nejsou aktivovány v žádném souboru."
 
-msgid "shortcuts.bold"
-msgstr "Přepnout tučné písmo"
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create"
+msgstr "Generovat nový token"
 
-msgid "title.team-webhooks"
-msgstr "Webhooks - %s - Penpot"
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.add-one"
+msgstr ""
+"Pro vygenerování nového tokenu stiskněte tlačítko \"Vygenerovat nový token\"."
 
-msgid "shortcuts.letter-spacing-inc"
-msgstr "Zvětšit mezery mezi písmeny"
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal"
+msgstr "Osobní přístupové tokeny"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint-many"
-msgid_plural "modals.unpublish-shared-confirm.hint-many"
-msgstr[0] ""
-"Pokud zrušíte jeho publikování, tyto podklady již nebudou dostupné z jiných "
-"souborů. Položky, které již byl\\ použity, zůstanou v těchto souborech ("
-"nebude porušen žádný návrh!)."
-msgstr[1] ""
-"Pokud zrušíte jejich publikování, tyto podklady již nebudou dostupné z "
-"jiných souborů. Položky, které již byl\\ použity, zůstanou v těchto "
-"souborech (nebude porušen žádný návrh!)."
-msgstr[2] ""
-"Pokud zrušíte jejich publikování, tyto podklady již nebudou dostupné z "
-"jiných souborů. Položky, které již byl\\ použity, zůstanou v těchto "
-"souborech (nebude porušen žádný návrh!)."
+msgid "errors.cannot-upload"
+msgstr "Nelze nahrát soubor médií."
 
-msgid "workspace.assets.typography.text-styles"
-msgstr "Styly textu"
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.expiration-date.label"
+msgstr "Datum vypršení platnosti"
 
-msgid "shortcuts.open-inspect"
-msgstr "Přejděte do sekce inspektor"
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.accept"
+msgstr "Smazat token"
 
-msgid "workspace.header.menu.disable-scale-content"
-msgstr "Zakázat proporcionální měřítko"
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.title"
+msgstr "Vygenerujte přístupový token"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout-item.layout-item-min-h"
-msgstr "Minimální výška"
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.designer"
+msgstr "Designer"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.founder"
+msgstr "Zakladatel / viceprezident"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.lets-get-started"
+msgstr "Pusťme se do toho!"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.freelancer"
+msgstr "Jsem freelancer"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.manager"
+msgstr "Produktový nebo projektový manažer"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.marketing"
+msgstr "Marketing"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.more-than-50"
+msgstr "Více než 50"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.sketch"
+msgstr "Sketch"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.start"
+msgstr "Start"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.try-out-before-using-penpot-on-premise"
+msgstr "Před použitím Penpot on-premise si to vyzkoušejte"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.work-in-concept-ideas"
+msgstr "Práce v konceptech"
+
+msgid "shortcuts.select-parent-layer"
+msgstr "Vybrat nadřazenou vrstvu"
+
+msgid "workspace.options.component.copy"
+msgstr "Kopírovat"
+
+msgid "workspace.options.component.main"
+msgstr "Hlavní"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.circle-marker-short"
+msgstr "Kruh"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.diamond-marker-short"
+msgstr "Diamant"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.line-arrow-short"
+msgstr "Šipka"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square-marker-short"
+msgstr "Obdélník"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.triangle-arrow-short"
+msgstr "Trojúhelník"
+
+msgid "workspace.shape.menu.add-grid"
+msgstr "Přidat rozvržení mřížky"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.more-info"
+msgstr "Více informací"
+
+msgid "modals.delete-component-annotation.message"
+msgstr "Opravdu chcete smazat tuto anotaci?"
+
+msgid "modals.delete-component-annotation.title"
+msgstr "Smazat anotaci"
+
+msgid "modals.publish-empty-library.title"
+msgstr "Publikovat prázdnou knihovnu"
+
+msgid "modals.publish-empty-library.accept"
+msgstr "Publikovat"
+
+msgid "modals.publish-empty-library.message"
+msgstr "Vaše knihovna je prázdná. Opravdu to chcete publikovat?"
+
+msgid "shortcuts.text-align-justify"
+msgstr "Zarovnat do bloku"
+
+msgid "shortcuts.text-align-left"
+msgstr "Zarovnat vlevo"
+
+msgid "shortcuts.text-align-right"
+msgstr "Zarovnat vpravo"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "title.settings.access-tokens"
+msgstr "Profil – Přístupové tokeny"
+
+msgid "workspace.assets.open-library"
+msgstr "Otevřete soubor knihovny"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.shared-library"
+msgstr "Sdílená knihovna"
+
+#: src/app/main/ui/workspace/colorpalette.cljs
+msgid "workspace.libraries.colors.empty-palette"
+msgstr "Ve vaší knihovně zatím nejsou žádné barevné styly"
+
+#: src/app/main/ui/workspace/textpalette.cljs
+msgid "workspace.libraries.colors.empty-typography-palette"
+msgstr "Ve vaší knihovně zatím nejsou žádné typografické styly"
+
+msgid "workspace.options.component.create-annotation"
+msgstr "Vytvořte anotaci"
+
+msgid "workspace.shape.menu.create-annotation"
+msgstr "Vytvořit anotaci"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.describe-your-experience-working-on"
+msgstr "Jak byste nejlépe popsali své zkušenosti s prací na..."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.discover-more-about-penpot"
+msgstr "Zjistěte více o Penpot"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.get-the-code-from-my-team-project"
+msgstr "Získejte kód z mého týmového projektu "
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "branding-illustrations-marketing-pieces"
+msgstr "...branding, ilustrace, marketing atd."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.a-lot"
+msgstr "Hodně"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.interface-design-visual-assets-design-systems"
+msgstr "... design rozhraní, vizuální aktiva, návrhové systémy atd."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.some"
+msgstr "Nějaké"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "question.design-tool-more-experienced-with"
+msgstr "S jakým designovým nástrojem máte více zkušeností?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.11-30"
+msgstr "11-30"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.2-10"
+msgstr "2-10"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.student-teacher"
+msgstr "Student nebo učitel"
+
+msgid "workspace.layout_grid.editor.title"
+msgstr "Úprava mřížky"
+
+#: src/app/main/data/common.cljs
+msgid "notifications.by-code.upgrade-version"
+msgstr "K dispozici je nová verze, obnovte prosím stránku"

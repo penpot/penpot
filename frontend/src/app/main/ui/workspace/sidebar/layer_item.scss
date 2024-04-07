@@ -12,472 +12,246 @@
   align-items: center;
   width: 100%;
   background-color: var(--layer-row-background-color);
+  border: $s-2 solid transparent;
 
-  .element-list-body {
-    display: flex;
-    align-items: center;
-    height: $s-32;
-    width: calc(100% - (var(--depth) * var(--layer-indentation-size)));
-    padding-right: $s-12;
-
-    &.filtered {
-      width: calc(100% - $s-12);
-    }
-    .button-content {
-      display: flex;
-      height: 100%;
-      .toggle-content {
-        @include buttonStyle;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        align-items: center;
-        height: 100%;
-        width: $s-24;
-        padding: 0 4px 0 8px;
-        svg {
-          @extend .button-icon-small;
-        }
-        &.inverse {
-          svg {
-            transform: rotate(90deg);
-          }
-          .icon-shape {
-            transform: rotate(-90deg);
-          }
-        }
-      }
-      .icon-shape {
-        @include flexCenter;
-        @include buttonStyle;
-        position: relative;
-        justify-self: flex-end;
-        width: $s-16;
-        height: 100%;
-        width: $s-24;
-        padding: 0 $s-8 0 $s-4;
-        svg {
-          @extend .button-icon-small;
-        }
-
-        .absolute {
-          position: absolute;
-          background-color: var(--layer-row-foreground-color);
-          opacity: $op-4;
-          width: $s-12;
-          height: $s-12;
-          border-radius: $br-2;
-        }
-      }
-    }
-    .element-actions {
-      display: none;
-      height: 100%;
-      .toggle-element,
-      .block-element {
-        @include buttonStyle;
-        @include flexCenter;
-        height: 100%;
-        width: $s-24;
-        margin: 0;
-        display: none;
-        svg {
-          @extend .button-icon-small;
-        }
-      }
-      &.selected {
-        display: flex;
-        .toggle-element,
-        .block-element {
-          display: flex;
-          opacity: $op-0;
-          &.selected {
-            opacity: $op-10;
-          }
-        }
-      }
-    }
-  }
-  .element-children {
-    width: 100%;
-    ul {
-      margin-bottom: 0;
-    }
-    &.parent-selected {
-      .layer-row {
-        background-color: var(--layer-child-row-background-color);
-      }
-    }
-  }
-  &.hidden {
-    .element-list-body {
-      .button-content {
-        .toggle-content {
-          svg {
-            opacity: $op-7;
-          }
-        }
-        .icon-shape {
-          svg {
-            opacity: $op-7;
-          }
-          .absolute {
-            opacity: $op-1;
-          }
-        }
-      }
-      .element-actions {
-        .toggle-element,
-        .block-element {
-          svg {
-            opacity: $op-7;
-          }
-        }
-      }
-    }
-  }
+  &.highlight,
   &:hover {
     --context-hover-color: var(--layer-row-foreground-color-hover);
     --context-hover-opacity: $op-10;
     background-color: var(--layer-row-background-color-hover);
+    color: var(--layer-row-foreground-color-hover);
+    box-shadow: $s-16 $s-0 $s-0 $s-0 var(--layer-row-background-color-hover);
     &.hidden {
       opacity: $op-10;
     }
-    .element-list-body {
-      .button-content {
-        .toggle-content {
-          background-color: var(--layer-row-background-color-hover);
-          svg {
-            opacity: $op-10;
-            stroke: var(--layer-row-foreground-color-hover);
-          }
-        }
-        .icon-shape {
-          opacity: $op-10;
-          svg {
-            stroke: var(--layer-row-foreground-color-hover);
-          }
-          & .absolute {
-            opacity: $op-4;
-            background-color: var(--layer-row-foreground-color-hover);
-          }
-        }
-      }
-      .element-actions {
-        display: flex;
-        .toggle-element,
-        .block-element {
-          display: flex;
-          svg {
-            opacity: $op-10;
-            stroke: var(--layer-row-foreground-color-hover);
-          }
-        }
-        &.selected {
-          .toggle-element,
-          .block-element {
-            opacity: $op-10;
-          }
-        }
-      }
-    }
-    .element-children {
-      .layer-row {
-        background-color: transparent;
-        color: var(--layer-row-foreground-color-hover);
-        &:hover {
-          background-color: var(--layer-row-background-color-hover);
-        }
-      }
-    }
   }
+
   &.selected {
     background-color: var(--layer-row-background-color-selected);
-    .element-list-body {
-      .button-content {
-        .toggle-content {
-          background-color: var(--layer-row-background-color-selected);
-          svg {
-            stroke: var(--layer-row-foreground-color-selected);
-          }
-        }
-        .icon-shape {
-          svg {
-            stroke: var(--layer-row-foreground-color-selected);
-          }
-          .absolute {
-            background-color: var(--layer-row-foreground-color-selected);
-          }
-        }
-      }
-      .element-actions {
-        .toggle-element,
-        .block-element {
-          display: flex;
-          svg {
-            stroke: var(--layer-row-foreground-color-selected);
-          }
-        }
-        &.selected {
-          .toggle-element,
-          .block-element {
-            display: flex;
-            opacity: $op-10;
-            &.selected {
-              opacity: $op-10;
-            }
-          }
-        }
-      }
-    }
-    .element-children {
-      background-color: transparent;
-      color: var(--layer-row-foreground-color-selected);
-      &:hover {
-        background-color: var(--layer-row-background-color-selected);
-      }
-    }
-    &:hover {
-      background-color: var(--layer-row-background-color-selected);
-    }
+    box-shadow: $s-16 $s-0 $s-0 $s-0 var(--layer-row-background-color-selected);
   }
-  &.type-comp {
-    .button-content {
-      .toggle-content {
-        svg {
-          stroke: var(--layer-row-component-foreground-color);
-        }
-      }
-      .icon-shape {
-        svg {
-          stroke: var(--layer-row-component-foreground-color);
-        }
-        .absolute {
-          background-color: var(--layer-row-component-foreground-color);
-        }
-      }
-    }
-    .element-actions {
-      .toggle-element,
-      .block-element {
-        svg {
-          stroke: var(--layer-row-component-foreground-color);
-        }
-      }
-    }
-    .element-children {
-      color: var(--layer-row-component-foreground-color);
-    }
-    &.hidden {
-      .element-list-body {
-        .button-content {
-          .toggle-content {
-            opacity: $op-7;
-          }
-          .icon-shape {
-            opacity: $op-7;
-            .absolute {
-              opacity: $op-1;
-            }
-          }
-        }
-        .element-actions {
-          .toggle-element,
-          .block-element {
-            svg {
-              opacity: $op-7;
-            }
-          }
-        }
-      }
-      &:hover {
-        .element-list-body {
-          .button-content {
-            .toggle-content {
-              opacity: $op-10;
-              svg {
-                stroke: var(--layer-row-foreground-color-hover);
-              }
-            }
-            .icon-shape {
-              opacity: $op-10;
-              svg {
-                stroke: var(--layer-row-foreground-color-hover);
-              }
-              & .absolute {
-                opacity: $op-4;
-              }
-            }
-          }
-          .element-actions {
-            .toggle-element,
-            .block-element {
-              svg {
-                opacity: $op-10;
-                stroke: var(--layer-row-foreground-color-hover);
-              }
-            }
-          }
-        }
-      }
-    }
+
+  &.selected.highlight,
+  &.selected:hover {
+    background-color: var(--layer-row-background-color-selected);
   }
-  &.type-comp.selected {
-    .button-content {
-      .toggle-content {
-        svg {
-          stroke: var(--layer-row-component-foreground-color);
-        }
-      }
-      .icon-shape {
-        svg {
-          stroke: var(--layer-row-component-foreground-color);
-        }
-        .absolute {
-          background-color: var(--layer-row-component-foreground-color);
-        }
-      }
-    }
-    .element-actions {
-      .toggle-element,
-      .block-element {
-        svg {
-          stroke: var(--layer-row-component-foreground-color);
-        }
-      }
-    }
-    .element-children {
-      color: var(--layer-row-component-foreground-color);
-    }
-    &.hidden {
-      .element-list-body {
-        .button-content {
-          .toggle-content {
-            opacity: $op-7;
-          }
-          .icon-shape {
-            opacity: $op-7;
-            .absolute {
-              opacity: $op-1;
-            }
-          }
-        }
-        .element-actions {
-          .toggle-element,
-          .block-element {
-            svg {
-              opacity: $op-7;
-            }
-          }
-        }
-      }
-      &:hover {
-        .element-list-body {
-          .button-content {
-            .toggle-content {
-              opacity: $op-10;
-              svg {
-                stroke: var(--layer-row-foreground-color-hover);
-              }
-            }
-            .icon-shape {
-              opacity: $op-10;
-              & .absolute {
-                opacity: $op-4;
-              }
-            }
-          }
-          .element-actions {
-            .toggle-element,
-            .block-element {
-              svg {
-                opacity: $op-10;
-                stroke: var(--layer-row-foreground-color-hover);
-              }
-            }
-          }
-        }
-      }
-    }
-    &:hover {
-      .element-list-body {
-        .button-content {
-          .toggle-content {
-            svg {
-              stroke: var(--layer-row-foreground-color-hover);
-            }
-          }
-          .icon-shape {
-            svg {
-              stroke: var(--layer-row-foreground-color-hover);
-            }
-          }
-        }
-        .element-actions {
-          .toggle-element,
-          .block-element {
-            svg {
-              stroke: var(--layer-row-foreground-color-hover);
-            }
-          }
-        }
-      }
-    }
+
+  .parent-selected & {
+    background-color: var(--layer-child-row-background-color);
+    box-shadow: $s-16 $s-0 $s-0 $s-0 var(--layer-child-row-background-color);
   }
-  &:global(.sticky) {
-    position: sticky;
-    top: 0px;
-    z-index: 3;
+
+  .parent-selected &.highlight,
+  .parent-selected &:hover {
+    background-color: var(--layer-row-background-color-hover);
+    box-shadow: $s-16 $s-0 $s-0 $s-0 var(--layer-row-background-color-hover);
+  }
+
+  &.dnd-over-bot {
+    border-bottom: $s-2 solid var(--layer-row-foreground-color-hover);
+  }
+  &.dnd-over-top {
+    border-top: $s-2 solid var(--layer-row-foreground-color-hover);
+  }
+  &.dnd-over {
+    border: $s-2 solid var(--layer-row-foreground-color-hover);
   }
 }
-.parent-selected .layer-row {
-  background-color: var(--layer-child-row-background-color);
-  &:hover {
-    background-color: var(--layer-row-background-color-hover);
-    &.hidden {
+
+.element-children {
+  .layer-row.highlight &,
+  .layer-row:hover & {
+    background-color: var(--layer-row-background-color-selected);
+    box-shadow: $s-16 $s-0 $s-0 $s-0 var(--layer-row-background-color-selected);
+  }
+  .layer-row.type-comp & {
+    color: var(--layer-row-component-foreground-color);
+  }
+  .layer-row.selected & {
+    background-color: transparent;
+    color: var(--layer-row-foreground-color-selected);
+  }
+}
+
+.element-list-body {
+  align-items: center;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  column-gap: $s-4;
+  height: $s-32;
+  width: calc(100% - (var(--depth) * var(--layer-indentation-size)));
+  cursor: pointer;
+
+  &.filtered {
+    width: calc(100% - $s-12);
+  }
+}
+
+.element-actions {
+  display: none;
+  height: 100%;
+  &.selected {
+    display: flex;
+  }
+  .layer-row.highlight &,
+  .layer-row:hover & {
+    display: flex;
+  }
+}
+
+.button-content {
+  display: flex;
+  height: 100%;
+}
+
+.icon-shape {
+  @include flexCenter;
+  @include buttonStyle;
+  position: relative;
+  justify-self: flex-end;
+  width: $s-16;
+  height: 100%;
+  width: $s-24;
+  padding-inline-start: $s-4;
+  svg {
+    @extend .button-icon-small;
+    stroke: var(--icon-foreground);
+
+    .layer-row.selected & {
+      stroke: var(--layer-row-foreground-color-selected);
+    }
+    .layer-row.type-comp & {
+      stroke: var(--layer-row-component-foreground-color);
+    }
+  }
+  .inverse & {
+    transform: rotate(-90deg);
+  }
+  .layer-row.hidden & {
+    opacity: $op-7;
+  }
+  .layer-row.highlight &,
+  .layer-row:hover & {
+    opacity: $op-10;
+    svg {
+      stroke: var(--layer-row-foreground-color-hover);
+    }
+  }
+}
+
+.absolute {
+  position: absolute;
+  background-color: var(--layer-row-foreground-color);
+  opacity: $op-4;
+  width: $s-12;
+  height: $s-12;
+  border-radius: $br-2;
+
+  .layer-row.hidden & {
+    opacity: $op-1;
+  }
+  .layer-row.type-comp & {
+    background-color: var(--layer-row-component-foreground-color);
+  }
+  .layer-row.highlight &,
+  .layer-row:hover & {
+    opacity: $op-4;
+    background-color: var(--layer-row-foreground-color-hover);
+  }
+  .layer-row.selected & {
+    background-color: var(--layer-row-foreground-color-selected);
+  }
+}
+
+.toggle-content {
+  @include buttonStyle;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  height: 100%;
+  width: $s-24;
+  padding-inline-start: $s-8;
+
+  svg {
+    @extend .button-icon-small;
+    stroke: var(--icon-foreground);
+
+    .layer-row.hidden & {
+      opacity: $op-7;
+    }
+    .layer-row.selected & {
+      stroke: var(--layer-row-foreground-color-selected);
+    }
+    .layer-row.type-comp & {
+      stroke: var(--layer-row-component-foreground-color);
+    }
+    .layer-row.highlight &,
+    .layer-row:hover & {
+      opacity: $op-10;
+      stroke: var(--layer-row-foreground-color-hover);
+    }
+  }
+
+  .layer-row.selected & {
+    background-color: var(--layer-row-background-color-selected);
+  }
+  &.inverse svg {
+    transform: rotate(90deg);
+  }
+}
+
+.toggle-element,
+.block-element {
+  @include buttonStyle;
+  @include flexCenter;
+  height: 100%;
+  width: $s-24;
+  margin: 0;
+  display: none;
+
+  svg {
+    @extend .button-icon-small;
+    stroke: var(--icon-foreground);
+
+    .layer-row.hidden & {
+      opacity: $op-7;
+    }
+    .type-comp & {
+      stroke: var(--layer-row-component-foreground-color);
+    }
+  }
+
+  .element-actions.selected & {
+    display: flex;
+    opacity: $op-0;
+
+    &.selected {
       opacity: $op-10;
     }
-    .element-list-body {
-      .button-content {
-        .toggle-content {
-          background-color: var(--layer-row-background-color-hover);
-          svg {
-            stroke: var(--layer-row-foreground-color-hover);
-          }
-        }
-        .icon-shape {
-          svg {
-            stroke: var(--layer-row-foreground-color-hover);
-          }
-          .absolute {
-            background-color: var(--layer-row-foreground-color-hover);
-          }
-        }
-      }
-      .element-actions {
-        .toggle-element,
-        .block-element {
-          display: flex;
-          svg {
-            stroke: var(--layer-row-foreground-color-hover);
-          }
-        }
-        &.selected {
-          .toggle-element,
-          .block-element {
-            opacity: $op-10;
-          }
-        }
-      }
+  }
+
+  .layer-row.highlight &,
+  .layer-row:hover & {
+    display: flex;
+    svg {
+      opacity: $op-10;
+      stroke: var(--layer-row-foreground-color-hover);
     }
-    .element-children :global(.layer-row) {
-      background-color: transparent;
-      color: var(--layer-row-foreground-color-hover);
-      &:hover {
-        background-color: var(--layer-row-background-color-hover);
-      }
+  }
+  .layer-row.selected & {
+    display: flex;
+    svg {
+      stroke: var(--layer-row-foreground-color-selected);
     }
   }
 }
+
+:global(.sticky) {
+  position: sticky;
+  top: $s-0;
+  z-index: $z-index-4;
+}
+
 .tab-indentation {
   display: block;
   height: $s-16;

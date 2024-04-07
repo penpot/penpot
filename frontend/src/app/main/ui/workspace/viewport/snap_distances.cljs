@@ -7,23 +7,26 @@
 (ns app.main.ui.workspace.viewport.snap-distances
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cph]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.types.shape.layout :as ctl]
    [app.main.refs :as refs]
    [app.main.snap :as ams]
    [app.main.ui.formats :as fmt]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [clojure.set :as set]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(def ^:private line-color "var(--color-snap)")
+(def ^:private line-color "var(--color-accent-quaternary)")
 (def ^:private segment-gap 2)
 (def ^:private segment-gap-side 5)
 
 (defn selected->cross-selrec [frame selrect coord]
-  (let [areas (gsh/selrect->areas (:selrect frame) selrect)]
+  (let [areas (gsh/get-areas (:selrect frame) selrect)]
     (if (= :x coord)
       [(gsh/pad-selrec (:left areas))
        (gsh/pad-selrec (:right areas))]
@@ -33,12 +36,12 @@
 (defn half-point
   "Calculates the middle point of the overlap between two selrects in the opposite axis"
   [coord sr1 sr2]
-  (let [c1 (max (get sr1 (if (= :x coord) :y1 :x1))
-                (get sr2 (if (= :x coord) :y1 :x1)))
-        c2 (min (get sr1 (if (= :x coord) :y2 :x2))
-                (get sr2 (if (= :x coord) :y2 :x2)))
-        half-point (+ c1 (/ (- c2 c1) 2))]
-    half-point))
+  (let [c1 (mth/max (get sr1 (if (= :x coord) :y1 :x1))
+                    (get sr2 (if (= :x coord) :y1 :x1)))
+        c2 (mth/min (get sr1 (if (= :x coord) :y2 :x2))
+                    (get sr2 (if (= :x coord) :y2 :x2)))]
+
+    (+ c1 (/ (- c2 c1) 2))))
 
 (def pill-text-width-letter 6)
 (def pill-text-width-margin 6)
@@ -50,10 +53,10 @@
 (mf/defc shape-distance-segment
   "Displays a segment between two selrects with the distance between them"
   [{:keys [sr1 sr2 coord zoom]}]
-  (let [from-c (min (get sr1 (if (= :x coord) :x2 :y2))
-                    (get sr2 (if (= :x coord) :x2 :y2)))
-        to-c   (max (get sr1 (if (= :x coord) :x1 :y1))
-                    (get sr2 (if (= :x coord) :x1 :y1)))
+  (let [from-c (mth/min (get sr1 (if (= :x coord) :x2 :y2))
+                        (get sr2 (if (= :x coord) :x2 :y2)))
+        to-c   (mth/max (get sr1 (if (= :x coord) :x1 :y1))
+                        (get sr2 (if (= :x coord) :x1 :y1)))
 
         distance (- to-c from-c)
         distance-str (fmt/format-number distance)
@@ -82,7 +85,7 @@
         [:text {:x (if (= coord :x) x (+ x (/ width 2)))
                 :y (- (+ y (/ (/ pill-text-height zoom) 2) (- (/ 6 zoom))) (if (= coord :x) (/ 2 zoom) 0))
                 :font-size (/ pill-text-font-size zoom)
-                :fill "var(--color-white)"
+                :fill "var(--app-white)"
                 :text-anchor "middle"}
          (fmt/format-number distance)]])
 
@@ -130,7 +133,8 @@
         (and (>= s1c1 s2c1) (<= s1c1 s2c2))
         (and (>= s1c2 s2c1) (<= s1c2 s2c2)))))
 
-(defn calculate-segments [coord selrect lt-shapes gt-shapes]
+(defn calculate-segments
+  [coord selrect lt-shapes gt-shapes]
   (let [distance-to-selrect
         (fn [shape]
           (let [sr (:selrect shape)]
@@ -156,10 +160,13 @@
         ;; Left/Top shapes and right/bottom shapes (depends on `coord` parameter)
 
         ;; Gets the distance to the current selection
-        distances-xf (comp (map distance-to-selrect) (filter pos?))
+        distances-xf (comp (filter some?)
+                           (map distance-to-selrect)
+                           (filter pos?))
+
         lt-distances (into #{} distances-xf lt-shapes)
         gt-distances (into #{} distances-xf gt-shapes)
-        distances (set/union lt-distances gt-distances)
+        distances    (set/union lt-distances gt-distances)
 
         ;; We'll show the distances that match a distance from the selrect
         show-candidate? #(check-in-set % distances)
@@ -200,6 +207,26 @@
 
     segments-to-display))
 
+(defn- query-worker
+  [page-id coord [selrect selected frame]]
+  (let [lt-side (if (= coord :x) :left :top)
+        gt-side (if (= coord :x) :right :bottom)
+
+        vbox  (deref refs/vbox)
+        frame-sr (when-not (cph/root? frame) (dm/get-prop frame :selrect))
+        bounds (d/nilv (grc/clip-rect frame-sr vbox) vbox)
+        areas (gsh/get-areas bounds selrect)
+
+        query-side
+        (fn [side]
+          (let [rect (get areas side)]
+            (if (and (> (:width rect) 0) (> (:height rect) 0))
+              (ams/select-shapes-area page-id (:id frame) selected @refs/workspace-page-objects rect)
+              (rx/of nil))))]
+
+    (rx/combine-latest (query-side lt-side)
+                       (query-side gt-side))))
+
 (mf/defc shape-distance
   {::mf/wrap-props false}
   [props]
@@ -211,51 +238,46 @@
         selected   (unchecked-get props "selected")
 
         subject    (mf/use-memo #(rx/subject))
-        to-measure (mf/use-state [])
 
-        query-worker
-        (fn [[selrect selected frame]]
-          (let [lt-side (if (= coord :x) :left :top)
-                gt-side (if (= coord :x) :right :bottom)
 
-                vbox (gsh/rect->selrect @refs/vbox)
-                areas (gsh/selrect->areas
-                       (or (gsh/clip-selrect (:selrect frame) vbox) vbox)
-                       selrect)
+        lt-shapes* (mf/use-state nil)
+        lt-shapes  (deref lt-shapes*)
 
-                query-side (fn [side]
-                             (let [rect (get areas side)]
-                               (if (and (> (:width rect) 0) (> (:height rect) 0))
-                                 (ams/select-shapes-area page-id (:id frame) selected @refs/workspace-page-objects rect)
-                                 (rx/of nil))))]
-            (rx/combine-latest (query-side lt-side)
-                               (query-side gt-side))))
+        gt-shapes* (mf/use-state nil)
+        gt-shapes  (deref gt-shapes*)
 
-        [lt-shapes gt-shapes] @to-measure
+        segments-to-display
+        (mf/with-memo [lt-shapes gt-shapes selrect]
+          (calculate-segments coord selrect lt-shapes gt-shapes))]
 
-        segments-to-display (mf/use-memo
-                             (mf/deps @to-measure)
-                             #(calculate-segments coord selrect lt-shapes gt-shapes))]
-
-    (mf/use-effect
-     (fn []
-       (let [sub (->> subject
-                      (rx/throttle 100)
-                      (rx/switch-map query-worker)
-                      (rx/subs #(reset! to-measure %)))]
-         ;; On unmount dispose
-         #(rx/dispose! sub))))
+    (mf/with-effect [page-id]
+      (let [sub (->> subject
+                     (rx/throttle 100)
+                     ;; NOTE: we don't put coord on deps because we
+                     ;; know it is a static value and will not go to
+                     ;; change
+                     (rx/switch-map (partial query-worker page-id coord))
+                     (rx/subs! (fn [[lt-shapes gt-shapes]]
+                                 (reset! lt-shapes* lt-shapes)
+                                 (reset! gt-shapes* gt-shapes))))]
+        ;; On unmount dispose
+        #(rx/dispose! sub)))
 
     (mf/use-effect
      (mf/deps selrect)
      #(rx/push! subject [selrect selected frame]))
 
     (for [[sr1 sr2] segments-to-display]
-      [:& shape-distance-segment {:key (str/join "-" [(:x sr1) (:y sr1) (:x sr2) (:y sr2)])
-                                  :sr1 sr1
-                                  :sr2 sr2
-                                  :coord coord
-                                  :zoom zoom}])))
+      [:& shape-distance-segment
+       {:key (str/ffmt "%-%-%-%"
+                       (dm/get-prop sr1 :x)
+                       (dm/get-prop sr1 :y)
+                       (dm/get-prop sr2 :x)
+                       (dm/get-prop sr2 :y))
+        :sr1 sr1
+        :sr2 sr2
+        :coord coord
+        :zoom zoom}])))
 
 (mf/defc snap-distances
   {::mf/wrap-props false}
@@ -266,7 +288,7 @@
         selected-shapes (unchecked-get props "selected-shapes")
         frame-id        (-> selected-shapes first :frame-id)
         frame           (mf/deref (refs/object-by-id frame-id))
-        selrect         (gsh/selection-rect selected-shapes)]
+        selrect         (gsh/shapes->rect selected-shapes)]
 
     (when-not (ctl/any-layout? frame)
       [:g.distance

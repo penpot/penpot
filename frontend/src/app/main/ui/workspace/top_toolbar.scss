@@ -1,0 +1,100 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.main-toolbar {
+  cursor: initial;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  height: $s-56;
+  padding: $s-8 $s-16;
+  border-radius: $s-8;
+  border: $s-2 solid var(--panel-border-color);
+  z-index: $z-index-3;
+  background-color: var(--color-background-primary);
+  transition:
+    top 0.3s,
+    height 0.3s,
+    opacity 0.3s;
+
+  --toolbar-position-y: #{$s-28};
+  --toolbar-offset-y: 0px;
+  top: calc(var(--toolbar-position-y) + var(--toolbar-offset-y));
+}
+
+.main-toolbar-no-rulers {
+  --toolbar-position-y: 0px;
+  --toolbar-offset-y: #{$s-8};
+}
+
+.main-toolbar-hidden {
+  --toolbar-offset-y: -#{$s-4};
+  height: $s-16;
+  z-index: $z-index-1;
+  border-radius: 0 0 $s-8 $s-8;
+  border-block-start: 0;
+  .main-toolbar-options {
+    opacity: $op-0;
+  }
+}
+
+.main-toolbar-options {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  opacity: $op-10;
+  transition: opacity 0.3s ease;
+  li {
+    position: relative;
+  }
+}
+
+.main-toolbar-options-button {
+  @extend .button-tertiary;
+  height: $s-36;
+  width: $s-36;
+  flex-shrink: 0;
+  border-radius: $s-8;
+  margin: 0 $s-2;
+
+  svg {
+    @extend .button-icon;
+    stroke: var(--color-foreground-secondary);
+  }
+
+  &.selected {
+    @extend .button-icon-selected;
+  }
+}
+
+.toolbar-handler {
+  @include flexCenter;
+  @include buttonStyle;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: $s-12;
+  width: 100%;
+
+  .toolbar-handler-btn {
+    height: $s-4;
+    width: 100%;
+    max-width: $s-64;
+    padding: 0;
+    border-radius: $s-4;
+    background-color: var(--palette-handler-background-color);
+  }
+}
+
+ul.main-toolbar-panels {
+  display: none;
+}

@@ -1,0 +1,112 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "common/refactor/common-refactor.scss" as *;
+
+.dashboard-comments-section {
+  @include flexCenter;
+  position: relative;
+  border-radius: $br-8;
+}
+
+.thread-groups {
+  height: calc(100% - $s-32);
+  overflow-y: scroll;
+  max-height: $s-440;
+  overflow: auto;
+}
+
+.thread-group {
+  display: flex;
+  flex-direction: column;
+  font-size: $fs-12;
+}
+
+.thread-groups-placeholder {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  font-size: $fs-12;
+  padding: $s-24;
+  text-align: center;
+  color: $df-secondary;
+}
+
+.comments-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
+  height: $s-24;
+  width: $s-24;
+  margin-bottom: $s-24;
+}
+
+.comment-button {
+  @include buttonStyle;
+  @include flexCenter;
+  border-radius: $br-8;
+  height: $s-32;
+  width: $s-32;
+  --comment-icon-small-foreground-color: var(--icon-foreground);
+
+  &.unread,
+  &.open {
+    --comment-icon-small-foreground-color: var(--icon-foreground-selected);
+  }
+
+  &:hover {
+    background-color: $db-quaternary;
+    --comment-icon-small-foreground-color: var(--icon-foreground-active);
+  }
+}
+
+.comments-icon-small {
+  @extend .button-icon;
+  stroke: var(--comment-icon-small-foreground-color);
+}
+
+.dropdown {
+  @include menuShadow;
+  background-color: $db-tertiary;
+  border-radius: $br-8;
+  border: $s-1 solid transparent;
+  bottom: $s-4;
+  height: 40vh;
+  max-height: $s-480;
+  min-height: $s-200;
+  position: absolute;
+  width: 100%;
+  z-index: $z-index-4;
+
+  hr {
+    margin: 0;
+    border-color: $df-secondary;
+  }
+}
+
+.header {
+  display: flex;
+  height: $s-40;
+  align-items: center;
+  padding: 0 $s-12;
+}
+
+.header-title {
+  color: $df-secondary;
+  font-size: $fs-11;
+  line-height: 1.28;
+  flex-grow: 1;
+  text-transform: uppercase;
+}
+
+.close-btn {
+  @include buttonStyle;
+  @include flexCenter;
+}
+
+.close-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
+}

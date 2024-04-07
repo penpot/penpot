@@ -1,0 +1,65 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.title-name {
+  @include uppercaseTitleTipography;
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  width: 100%;
+}
+
+.section-icon {
+  @include flexCenter;
+  padding-right: $s-2;
+  svg {
+    @include flexCenter;
+    height: $s-16;
+    width: $s-16;
+    fill: none;
+    stroke: currentColor;
+  }
+}
+
+.section-name {
+  display: flex;
+  align-items: center;
+  margin: 0 $s-2;
+}
+
+.num-assets {
+  @include flexCenter;
+  height: 100%;
+  padding-left: $s-8;
+}
+
+.title-spacing {
+  margin-bottom: $s-4;
+}
+
+.asset-section.opened {
+  margin-bottom: $s-12;
+}
+
+.drag-counter {
+  @include bodySmallTypography;
+  @include textEllipsis;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: calc($s-24 - $s-2);
+  background-color: var(--assets-item-name-background-color);
+  color: var(--assets-item-name-foreground-color);
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin: $s-4;
+  padding-inline: $s-4;
+  z-index: 2;
+}

@@ -23,32 +23,31 @@
    [clojure.spec.alpha :as s]
    [datoteka.fs :as fs]
    [integrant.core :as ig]
-   [promesa.core :as p]
    [promesa.exec :as px]
    [promesa.exec.bulkhead :as pbh])
   (:import
-   clojure.lang.ExceptionInfo))
+   clojure.lang.ExceptionInfo
+   java.util.concurrent.atomic.AtomicLong))
 
 (set! *warn-on-reflection* true)
 
-(defn- create-bulkhead-cache
-  [{:keys [::wrk/executor]} config]
-  (letfn [(load-fn [key]
-            (let [config (get config (nth key 0))]
-              (l/trace :hint "insert into cache" :key key)
-              (pbh/create :permits (or (:permits config) (:concurrency config))
-                          :queue (or (:queue config) (:queue-size config))
-                          :timeout (:timeout config)
-                          :executor executor
-                          :type (:type config :semaphore))))
+(defn- id->str
+  ([id]
+   (-> (str id)
+       (subs 1)))
+  ([id key]
+   (if key
+     (str (-> (str id) (subs 1)) "/" key)
+     (id->str id))))
 
-          (on-remove [_ _ cause]
-            (l/trace :hint "evict from cache" :key key :reason (str cause)))]
-
-    (cache/create :executor :same-thread
+(defn- create-cache
+  [{:keys [::wrk/executor]}]
+  (letfn [(on-remove [key _ cause]
+            (let [[id skey] key]
+              (l/trc :hint "disposed" :id (id->str id skey) :reason (str cause))))]
+    (cache/create :executor executor
                   :on-remove on-remove
-                  :keepalive "5m"
-                  :load-fn load-fn)))
+                  :keepalive "5m")))
 
 (s/def ::config/permits ::us/integer)
 (s/def ::config/queue ::us/integer)
@@ -65,160 +64,200 @@
 
 (s/def ::path ::fs/path)
 (defmethod ig/pre-init-spec ::rpc/climit [_]
-  (s/keys :req [::wrk/executor ::mtx/metrics ::path]))
+  (s/keys :req [::mtx/metrics ::wrk/executor ::path]))
 
 (defmethod ig/init-key ::rpc/climit
-  [_ {:keys [::path ::mtx/metrics ::wrk/executor] :as cfg}]
+  [_ {:keys [::path ::mtx/metrics] :as cfg}]
   (when (contains? cf/flags :rpc-climit)
     (when-let [params (some->> path slurp edn/read-string)]
-      (l/info :hint "initializing concurrency limit" :config (str path))
+      (l/inf :hint "initializing concurrency limit" :config (str path))
       (us/verify! ::config params)
-      {::cache (create-bulkhead-cache cfg params)
+      {::cache (create-cache cfg)
        ::config params
-       ::wrk/executor executor
        ::mtx/metrics metrics})))
 
 (s/def ::cache cache/cache?)
 (s/def ::instance
-  (s/keys :req [::cache ::config ::wrk/executor]))
+  (s/keys :req [::cache ::config]))
 
 (s/def ::rpc/climit
   (s/nilable ::instance))
+
+(defn- create-limiter
+  [config [id skey]]
+  (l/trc :hint "created" :id (id->str id skey))
+  (pbh/create :permits (or (:permits config) (:concurrency config))
+              :queue (or (:queue config) (:queue-size config))
+              :timeout (:timeout config)
+              :type :semaphore))
+
+(defmacro ^:private measure-and-log!
+  [metrics mlabels stats id action limit-id limit-label profile-id elapsed]
+  `(let [mpermits# (:max-permits ~stats)
+         mqueue#   (:max-queue ~stats)
+         permits#  (:permits ~stats)
+         queue#    (:queue ~stats)
+         queue#    (- queue# mpermits#)
+         queue#    (if (neg? queue#) 0 queue#)
+         level#    (if (pos? queue#) :warn :trace)]
+
+     (mtx/run! ~metrics
+               :id :rpc-climit-queue
+               :val queue#
+               :labels ~mlabels)
+
+     (mtx/run! ~metrics
+               :id :rpc-climit-permits
+               :val permits#
+               :labels ~mlabels)
+
+     (l/log level#
+            :hint ~action
+            :req ~id
+            :id ~limit-id
+            :label ~limit-label
+            :profile-id (str ~profile-id)
+            :permits permits#
+            :queue queue#
+            :max-permits mpermits#
+            :max-queue mqueue#
+            ~@(if (some? elapsed)
+                [:elapsed `(dt/format-duration ~elapsed)]
+                []))))
+
+(def ^:private idseq (AtomicLong. 0))
+
+(defn- invoke
+  [limiter metrics limit-id limit-key limit-label profile-id f params]
+  (let [tpoint    (dt/tpoint)
+        mlabels   (into-array String [(id->str limit-id)])
+        limit-id  (id->str limit-id limit-key)
+        stats     (pbh/get-stats limiter)
+        id        (.incrementAndGet ^AtomicLong idseq)]
+
+    (try
+      (measure-and-log! metrics mlabels stats id "enqueued" limit-id limit-label profile-id nil)
+      (px/invoke! limiter (fn []
+                            (let [elapsed (tpoint)
+                                  stats   (pbh/get-stats limiter)]
+                              (measure-and-log! metrics mlabels stats id "acquired" limit-id limit-label profile-id elapsed)
+                              (mtx/run! metrics
+                                        :id :rpc-climit-timing
+                                        :val (inst-ms elapsed)
+                                        :labels mlabels)
+                              (apply f params))))
+
+      (catch ExceptionInfo cause
+        (let [{:keys [type code]} (ex-data cause)]
+          (if (= :bulkhead-error type)
+            (let [elapsed (tpoint)]
+              (measure-and-log! metrics mlabels stats id "reject" limit-id limit-label profile-id elapsed)
+              (ex/raise :type :concurrency-limit
+                        :code code
+                        :hint "concurrency limit reached"
+                        :cause cause))
+            (throw cause))))
+
+      (finally
+        (let [elapsed (tpoint)
+              stats (pbh/get-stats limiter)]
+          (measure-and-log! metrics mlabels stats id "finished" limit-id limit-label profile-id elapsed))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; MIDDLEWARE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private noop-fn (constantly nil))
+(def ^:private global-limits
+  [[:root/global noop-fn]
+   [:root/by-profile ::rpc/profile-id]])
+
+(defn- get-limits
+  [cfg]
+  (when-let [ref (get cfg ::id)]
+    (cond
+      (keyword? ref)
+      [[ref]]
+
+      (and (vector? ref)
+           (keyword (first ref)))
+      [ref]
+
+      (and (vector? ref)
+           (vector? (first ref)))
+      (rseq ref)
+
+      :else
+      (throw (IllegalArgumentException. "unable to normalize limit")))))
+
+(defn wrap
+  [{:keys [::rpc/climit ::mtx/metrics]} handler mdata]
+  (let [cache  (::cache climit)
+        config (::config climit)
+        label  (::sv/name mdata)]
+
+    (if climit
+      (reduce (fn [handler [limit-id key-fn]]
+                (if-let [config (get config limit-id)]
+                  (let [key-fn (or key-fn noop-fn)]
+                    (l/trc :hint "instrumenting method"
+                           :method label
+                           :limit (id->str limit-id)
+                           :timeout (:timeout config)
+                           :permits (:permits config)
+                           :queue (:queue config)
+                           :keyed (not= key-fn noop-fn))
+
+                    (if (and (= key-fn ::rpc/profile-id)
+                             (false? (::rpc/auth mdata true)))
+
+                      ;; We don't enforce by-profile limit on methods that does
+                      ;; not require authentication
+                      handler
+
+                      (fn [cfg params]
+                        (let [limit-key  (key-fn params)
+                              cache-key  [limit-id limit-key]
+                              limiter    (cache/get cache cache-key (partial create-limiter config))
+                              profile-id (if (= key-fn ::rpc/profile-id)
+                                           limit-key
+                                           (get params ::rpc/profile-id))]
+                          (invoke limiter metrics limit-id limit-key label profile-id handler [cfg params])))))
+
+                  (do
+                    (l/wrn :hint "no config found for specified queue" :id (id->str limit-id))
+                    handler)))
+
+              handler
+              (concat global-limits (get-limits mdata)))
+      handler)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PUBLIC API
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- build-exec-chain
+  [{:keys [::label ::profile-id ::rpc/climit ::mtx/metrics] :as cfg} f]
+  (let [config (get climit ::config)
+        cache  (get climit ::cache)]
+    (reduce (fn [handler [limit-id limit-key :as ckey]]
+              (if-let [config (get config limit-id)]
+                (fn [& params]
+                  (let [limiter (cache/get cache ckey (partial create-limiter config))]
+                    (invoke limiter metrics limit-id limit-key label profile-id handler params)))
+
+                (do
+                  (l/wrn :hint "config not found" :label label :id limit-id)
+                  f)))
+            f
+            (get-limits cfg))))
+
 (defn invoke!
-  [cache metrics id key f]
-  (let [limiter (cache/get cache [id key])
-        tpoint  (dt/tpoint)
-        labels  (into-array String [(name id)])
-
-        wrapped
-        (fn []
-          (let [elapsed (tpoint)
-                stats   (pbh/get-stats limiter)]
-            (l/trace :hint "executed"
-                     :id (name id)
-                     :key key
-                     :fnh (hash f)
-                     :permits (:permits stats)
-                     :queue (:queue stats)
-                     :max-permits (:max-permits stats)
-                     :max-queue (:max-queue stats)
-                     :elapsed (dt/format-duration elapsed))
-            (mtx/run! metrics
-                      :id :rpc-climit-timing
-                      :val (inst-ms elapsed)
-                      :labels labels)
-            (try
-              (f)
-              (finally
-                (let [elapsed (tpoint)]
-                  (l/trace :hint "finished"
-                           :id (name id)
-                           :key key
-                           :fnh (hash f)
-                           :permits (:permits stats)
-                           :queue (:queue stats)
-                           :max-permits (:max-permits stats)
-                           :max-queue (:max-queue stats)
-                           :elapsed (dt/format-duration elapsed)))))))
-        measure!
-        (fn [stats]
-          (mtx/run! metrics
-                    :id :rpc-climit-queue
-                    :val (:queue stats)
-                    :labels labels)
-          (mtx/run! metrics
-                    :id :rpc-climit-permits
-                    :val (:permits stats)
-                    :labels labels))]
-
-    (try
-      (let [stats (pbh/get-stats limiter)]
-        (measure! stats)
-        (l/trace :hint "enqueued"
-                 :id (name id)
-                 :key key
-                 :fnh (hash f)
-                 :permits (:permits stats)
-                 :queue (:queue stats)
-                 :max-permits (:max-permits stats)
-                 :max-queue (:max-queue stats))
-        (pbh/invoke! limiter wrapped))
-      (catch ExceptionInfo cause
-        (let [{:keys [type code]} (ex-data cause)]
-          (if (= :bulkhead-error type)
-            (ex/raise :type :concurrency-limit
-                      :code code
-                      :hint "concurrency limit reached")
-            (throw cause))))
-
-      (finally
-        (measure! (pbh/get-stats limiter))))))
-
-
-(defn run!
-  [{:keys [::id ::cache ::mtx/metrics]} f]
-  (if (and cache id)
-    (invoke! cache metrics id nil f)
-    (f)))
-
-(defn submit!
-  [{:keys [::id ::cache ::wrk/executor ::mtx/metrics]} f]
-  (let [f (partial px/submit! executor (px/wrap-bindings f))]
-    (if (and cache id)
-      (p/await! (invoke! cache metrics id nil f))
-      (p/await! (f)))))
-
-(defn configure
-  ([{:keys [::rpc/climit]} id]
-   (us/assert! ::rpc/climit climit)
-   (assoc climit ::id id))
-  ([{:keys [::rpc/climit]} id executor]
-   (us/assert! ::rpc/climit climit)
-   (-> climit
-       (assoc ::id id)
-       (assoc ::wrk/executor executor))))
-
-(defmacro with-dispatch!
-  "Dispatch blocking operation to a separated thread protected with the
-  specified concurrency limiter. If climit is not active, the function
-  will be scheduled to execute without concurrency monitoring."
-  [instance & body]
-  (if (vector? instance)
-    `(-> (app.rpc.climit/configure ~@instance)
-         (app.rpc.climit/run! (^:once fn* [] ~@body)))
-    `(run! ~instance (^:once fn* [] ~@body))))
-
-(defmacro with-dispatch
-  "Dispatch blocking operation to a separated thread protected with
-  the specified semaphore.
-  DEPRECATED"
-  [& params]
-  `(with-dispatch! ~@params))
-
-(def noop-fn (constantly nil))
-
-(defn wrap
-  [{:keys [::rpc/climit ::mtx/metrics]} f {:keys [::id ::key-fn] :or {key-fn noop-fn} :as mdata}]
-  (if (and (some? climit) (some? id))
-    (if-let [config (get-in climit [::config id])]
-      (let [cache (::cache climit)]
-        (l/debug :hint "wrap: instrumenting method"
-                 :limit (name id)
-                 :service-name (::sv/name mdata)
-                 :timeout (:timeout config)
-                 :permits (:permits config)
-                 :queue (:queue config)
-                 :keyed? (some? key-fn))
-        (fn [cfg params]
-          (invoke! cache metrics id (key-fn params) (partial f cfg params))))
-
-      (do
-        (l/warn :hint "no config found for specified queue" :id id)
-        f))
-
-    f))
+  "Run a function in context of climit.
+  Intended to be used in virtual threads."
+  [{:keys [::executor] :as cfg} f & params]
+  (let [f (if (some? executor)
+            (fn [& params] (px/await! (px/submit! executor (fn [] (apply f params)))))
+            f)
+        f (build-exec-chain cfg f)]
+    (apply f params)))

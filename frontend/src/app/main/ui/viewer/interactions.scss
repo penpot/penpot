@@ -1,0 +1,92 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "common/refactor/common-refactor.scss" as *;
+
+.view-options {
+  @include bodySmallTypography;
+  display: flex;
+  align-items: center;
+  position: relative;
+  gap: $s-4;
+  height: $s-32;
+  border-radius: $br-8;
+  background-color: var(--input-background-color);
+  padding: $s-8;
+  cursor: pointer;
+}
+.dropdown-title {
+  @include bodySmallTypography;
+  flex-grow: 1;
+  color: var(--input-foreground-color-active);
+}
+
+.label {
+  flex-grow: 1;
+  color: var(--input-foreground-color);
+}
+
+.dropdown {
+  @extend .menu-dropdown;
+  right: $s-2;
+  top: calc($s-2 + $s-48);
+  width: $s-272;
+  padding: $s-6;
+  max-height: calc(100vh - 3 * ($s-2 + $s-48));
+  overflow: auto;
+}
+
+.dropdown-element {
+  @extend .dropdown-element-base;
+  min-height: $s-32;
+  .icon {
+    @include flexCenter;
+    height: 100%;
+    width: $s-16;
+    svg {
+      @extend .button-icon-small;
+      stroke: var(--icon-foreground);
+    }
+  }
+  &:hover .label {
+    color: var(--input-foreground-color-active);
+  }
+}
+
+.dropdown-element.selected {
+  .label {
+    color: var(--input-foreground-color-active);
+  }
+  .icon svg {
+    stroke: var(--input-foreground-color);
+  }
+}
+
+.icon,
+.icon-dropdown {
+  @include flexCenter;
+  height: 100%;
+  width: $s-16;
+  svg {
+    @extend .button-icon-small;
+    stroke: var(--icon-foreground);
+  }
+}
+
+.icon-dropdown svg {
+  transform: rotate(90deg);
+}
+
+// breakpoint 1013px
+
+.fixed {
+  position: fixed;
+  pointer-events: none;
+
+  :global(.frame-children) g {
+    pointer-events: auto;
+  }
+}

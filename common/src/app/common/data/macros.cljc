@@ -7,14 +7,14 @@
 #_:clj-kondo/ignore
 (ns app.common.data.macros
   "Data retrieval & manipulation specific macros."
-  (:refer-clojure :exclude [get-in select-keys str with-open])
+  (:refer-clojure :exclude [get-in select-keys str with-open min max])
   #?(:cljs (:require-macros [app.common.data.macros]))
   (:require
    #?(:clj [clojure.core :as c]
       :cljs [cljs.core :as c])
    [app.common.data :as d]
-   [cuerdas.core :as str]
-   [cljs.analyzer.api :as aapi]))
+   [cljs.analyzer.api :as aapi]
+   [cuerdas.core :as str]))
 
 (defmacro select-keys
   "A macro version of `select-keys`. Useful when keys vector is known
@@ -24,7 +24,7 @@
   keys in contrast to clojure.core/select-keys"
   [target keys]
   (assert (vector? keys) "keys expected to be a vector")
-  `{ ~@(mapcat (fn [key] [key (list `c/get target key)]) keys) ~@[] })
+  `{~@(mapcat (fn [key] [key (list `c/get target key)]) keys) ~@[]})
 
 (defmacro get-in
   "A macro version of `get-in`. Useful when the keys vector is known at
@@ -120,13 +120,9 @@
   "A macro based, optimized variant of `get` that access the property
   directly on CLJS, on CLJ works as get."
   [obj prop]
-  ;; `(do
-  ;;    (when-not (record? ~obj)
-  ;;      (js/console.trace (pr-str ~obj)))
-  ;;    (c/get ~obj ~prop)))
   (if (:ns &env)
-    (list (symbol ".") (with-meta obj {:tag 'js}) (symbol (str "-" (c/name prop))))
-    `(c/get ~obj ~prop)))
+    (list 'js* (c/str "(~{}?." (str/snake prop) "?? ~{})") obj (list 'cljs.core/get obj prop))
+    (list `c/get obj prop)))
 
 (def ^:dynamic *assert-context* nil)
 
@@ -144,7 +140,7 @@
                 :else
                 (str "expr assert: " (pr-str expr)))]
      (when *assert*
-       `(binding [*assert-context* true]
+       `(binding [*assert-context* ~hint]
           (when-not ~expr
             (let [hint#   ~hint
                   params# {:type :assertion
@@ -154,7 +150,7 @@
 
 (defmacro verify!
   ([expr]
-   `(assert! nil ~expr))
+   `(verify! nil ~expr))
   ([hint expr]
    (let [hint (cond
                 (vector? hint)
@@ -165,7 +161,7 @@
 
                 :else
                 (str "expr assert: " (pr-str expr)))]
-     `(binding [*assert-context* true]
+     `(binding [*assert-context* ~hint]
         (when-not ~expr
           (let [hint#   ~hint
                 params# {:type :assertion

@@ -10,10 +10,8 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as log]
-   [app.config :as cf]
    [app.util.object :as obj]
-   [app.util.thumbnails :as th]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [promesa.core :as p]))
 
@@ -57,6 +55,14 @@
   ([content mtype]
    (js/Blob. #js [content] #js {:type mtype})))
 
+(defn create-blob-from-canvas
+  ([canvas]
+   (create-blob-from-canvas canvas nil))
+  ([canvas options]
+   (if (obj/in? canvas "convertToBlob")
+     (.convertToBlob canvas options)
+     (p/create (fn [resolve _] (.toBlob #(resolve %) canvas options))))))
+
 (defn revoke-uri
   [url]
   (when ^boolean (str/starts-with? url "blob:")
@@ -74,16 +80,22 @@
 
 (defn data-uri->blob
   [data-uri]
-  (let [[mtype b64-data] (str/split data-uri ";base64,")
+  (let [[mtype b64-data] (str/split data-uri ";base64," 2)
         mtype   (subs mtype (inc (str/index-of mtype ":")))
         decoded (.atob js/window b64-data)
         size    (.-length ^js decoded)
         content (js/Uint8Array. size)]
 
-    (doseq [i (range 0 size)]
-      (aset content i (.charCodeAt ^js decoded i)))
+    (loop [i 0]
+      (when (< i size)
+        (aset content i (.charCodeAt ^js decoded i))
+        (recur (inc i))))
 
     (create-blob content mtype)))
+
+(defn get-current-selected-text
+  []
+  (.. js/window getSelection toString))
 
 (defn write-to-clipboard
   [data]
@@ -93,44 +105,47 @@
 
 (defn read-from-clipboard
   []
-  (let [cboard (unchecked-get js/navigator "clipboard")]
-    (if (.-readText ^js cboard)
-      (rx/from (.readText ^js cboard))
-      (throw (ex-info "This browser does not implement read from clipboard protocol"
-                      {:not-implemented true})))))
+  (try
+    (let [cboard (unchecked-get js/navigator "clipboard")]
+      (if (.-readText ^js cboard)
+        (rx/from (.readText ^js cboard))
+        (rx/throw (ex-info "This browser does not implement read from clipboard protocol"
+                           {:not-implemented true}))))
+    (catch :default cause
+      (rx/throw cause))))
 
 (defn read-image-from-clipboard
   []
-  (let [cboard (unchecked-get js/navigator "clipboard")
-        read-item (fn [item]
-                    (let [img-type (->> (.-types ^js item)
-                                        (d/seek #(str/starts-with? % "image/")))]
-                      (if img-type
-                        (rx/from (.getType ^js item img-type))
-                        (rx/empty))))]
-    (->> (rx/from (.read ^js cboard)) ;; Get a stream of item lists
-         (rx/mapcat identity)     ;; Convert each item into an emission
-         (rx/switch-map read-item))))
+  (try
+    (let [cboard (unchecked-get js/navigator "clipboard")
+          read-item (fn [item]
+                      (let [img-type (->> (.-types ^js item)
+                                          (d/seek #(str/starts-with? % "image/")))]
+                        (if img-type
+                          (rx/from (.getType ^js item img-type))
+                          (rx/empty))))]
+      (->> (rx/from (.read ^js cboard)) ;; Get a stream of item lists
+           (rx/mapcat identity)     ;; Convert each item into an emission
+           (rx/switch-map read-item)))
+    (catch :default cause
+      (rx/throw cause))))
 
 (defn read-from-paste-event
   [event]
   (let [target (.-target ^js event)]
-    (when (and (not (.-isContentEditable target)) ;; ignore when pasting into
-               (not= (.-tagName target) "INPUT")) ;; an editable control
+    (when (and (not (.-isContentEditable ^js target)) ;; ignore when pasting into
+               (not= (.-tagName ^js target) "INPUT")) ;; an editable control
       (.. ^js event getBrowserEvent -clipboardData))))
 
 (defn extract-text
   [clipboard-data]
-  (when clipboard-data
-    (.getData clipboard-data "text")))
+  (.getData clipboard-data "text"))
 
 (defn extract-images
+  "Get image files from clipboard data. Returns a native js array."
   [clipboard-data]
-  (when clipboard-data
-    (let [file-list (-> (.-files ^js clipboard-data))]
-      (->> (range (.-length ^js file-list))
-           (map #(.item ^js file-list %))
-           (filter #(str/starts-with? (.-type %) "image/"))))))
+  (let [files (obj/into-array (.-files ^js clipboard-data))]
+    (.filter ^js files #(str/starts-with? (obj/get % "type") "image/"))))
 
 (defn create-canvas-element
   [width height]
@@ -152,15 +167,19 @@
    (js/createImageBitmap image options)))
 
 (defn create-image
-  [src width height]
-  (p/create
-   (fn [resolve reject]
-     (let [img (.createElement js/document "img")]
-       (obj/set! img "width" width)
-       (obj/set! img "height" height)
-       (obj/set! img "src" src)
-       (obj/set! img "onload" #(resolve img))
-       (obj/set! img "onerror" reject)))))
+  ([src]
+   (create-image src nil nil))
+  ([src width height]
+   (p/create
+    (fn [resolve reject]
+      (let [img (.createElement js/document "img")]
+        (when-not (nil? width)
+          (obj/set! img "width" width))
+        (when-not (nil? height)
+          (obj/set! img "height" height))
+        (obj/set! img "src" src)
+        (obj/set! img "onload" #(resolve img))
+        (obj/set! img "onerror" reject))))))
 
 ;; Why this? Because as described in https://bugs.chromium.org/p/chromium/issues/detail?id=1463435
 ;; the createImageBitmap seems to apply premultiplied alpha multiples times on the same image
@@ -169,23 +188,10 @@
   ([image]
    (create-image-bitmap-with-workaround image nil))
   ([^js image options]
-   (let [width (.-value (.-baseVal (.-width image)))
-         height (.-value (.-baseVal (.-height image)))
-         [width height] (th/get-proportional-size width height)
-
-         image-source
-         (if (cf/check-browser? :safari)
-           (let [src (.-baseVal (.-href image))]
-             (create-image src width height))
-           (p/resolved image))]
-
-     (-> image-source
-         (p/then
-          (fn [html-img]
-            (let [offscreen-canvas (create-offscreen-canvas width height)
-                  offscreen-context (.getContext offscreen-canvas "2d")]
-              (.drawImage offscreen-context html-img 0 0)
-              (create-image-bitmap offscreen-canvas options))))))))
+   (let [offscreen-canvas (create-offscreen-canvas (.-width image) (.-height image))
+         offscreen-context (.getContext offscreen-canvas "2d")]
+     (.drawImage offscreen-context image 0 0)
+     (create-image-bitmap offscreen-canvas options))))
 
 (defn request-fullscreen
   [el]
@@ -241,7 +247,7 @@
                   (fn [blob]
                     (->> (read-file-as-data-url blob)
                          (rx/catch (fn [err] (reject err)))
-                         (rx/subs (fn [result] (resolve result)))))))
+                         (rx/subs! (fn [result] (resolve result)))))))
 
        (catch :default e (reject e))))))
 

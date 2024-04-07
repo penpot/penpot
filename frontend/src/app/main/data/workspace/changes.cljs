@@ -9,20 +9,20 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.files.changes :as cpc]
+   [app.common.files.changes-builder :as pcb]
+   [app.common.files.helpers :as cph]
    [app.common.logging :as log]
-   [app.common.pages :as cp]
-   [app.common.pages.changes :as cpc]
-   [app.common.pages.changes-builder :as pcb]
-   [app.common.pages.helpers :as cph]
    [app.common.schema :as sm]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.store :as st]
    [app.main.worker :as uw]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 ;; Change this to :info :debug or :trace to debug this module
 (log/set-level! :warn)
@@ -52,9 +52,13 @@
 
 (defn update-shapes
   ([ids update-fn] (update-shapes ids update-fn nil))
-  ([ids update-fn {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id ignore-remote? ignore-touched undo-group]
-                   :or {reg-objects? false save-undo? true stack-undo? false ignore-remote? false ignore-touched false}}]
-   (dm/assert! (sm/coll-of-uuid? ids))
+  ([ids update-fn {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id ignore-remote? ignore-touched undo-group with-objects?]
+                   :or {reg-objects? false save-undo? true stack-undo? false ignore-remote? false ignore-touched false with-objects? false}}]
+
+   (dm/assert!
+    "expected a valid coll of uuid's"
+    (sm/check-coll-of-uuid! ids))
+
    (dm/assert! (fn? update-fn))
 
    (ptk/reify ::update-shapes
@@ -67,14 +71,15 @@
              update-layout-ids
              (->> ids
                   (map (d/getf objects))
-                  (filter #(some update-layout-attr? (pcb/changed-attrs % update-fn {:attrs attrs})))
+                  (filter #(some update-layout-attr? (pcb/changed-attrs % objects update-fn {:attrs attrs :with-objects? with-objects?})))
                   (map :id))
 
              changes   (reduce
                         (fn [changes id]
                           (let [opts {:attrs attrs
                                       :ignore-geometry? (get ignore-tree id)
-                                      :ignore-touched ignore-touched}]
+                                      :ignore-touched ignore-touched
+                                      :with-objects? with-objects?}]
                             (pcb/update-shapes changes [id] update-fn (d/without-nils opts))))
                         (-> (pcb/empty-changes it page-id)
                             (pcb/set-save-undo? save-undo?)
@@ -83,6 +88,9 @@
                             (cond-> undo-group
                               (pcb/set-undo-group undo-group)))
                         ids)
+             grid-ids (->> ids (filter (partial ctl/grid-layout? objects)))
+             changes (pcb/update-shapes changes grid-ids ctl/assign-cell-positions {:with-objects? true})
+             changes (pcb/reorder-grid-children changes ids)
              changes (add-undo-group changes state)]
          (rx/concat
           (if (seq (:redo-changes changes))
@@ -93,7 +101,7 @@
 
           ;; Update layouts for properties marked
           (if (d/not-empty? update-layout-ids)
-            (rx/of (ptk/data-event :layout/update update-layout-ids))
+            (rx/of (ptk/data-event :layout/update {:ids update-layout-ids}))
             (rx/empty))))))))
 
 (defn send-update-indices
@@ -177,9 +185,11 @@
   [{:keys [redo-changes undo-changes
            origin save-undo? file-id undo-group tags stack-undo?]
     :or {save-undo? true stack-undo? false tags #{} undo-group (uuid/next)}}]
-  (let [error   (volatile! nil)
-        page-id (:current-page-id @st/state)
-        frames  (changed-frames redo-changes (wsh/lookup-page-objects @st/state))]
+  (let [error        (volatile! nil)
+        page-id      (:current-page-id @st/state)
+        frames       (changed-frames redo-changes (wsh/lookup-page-objects @st/state))
+        undo-changes (vec undo-changes)
+        redo-changes (vec redo-changes)]
     (ptk/reify ::commit-changes
       cljs.core/IDeref
       (-deref [_]
@@ -210,12 +220,12 @@
           (try
             (dm/assert!
              "expect valid vector of changes"
-             (and (cpc/changes? redo-changes)
-                  (cpc/changes? undo-changes)))
+             (and (cpc/check-changes! redo-changes)
+                  (cpc/check-changes! undo-changes)))
 
             (update-in state path (fn [file]
                                     (-> file
-                                        (cp/process-changes redo-changes false)
+                                        (cpc/process-changes redo-changes false)
                                         (ctst/update-object-indices page-id))))
 
             (catch :default err

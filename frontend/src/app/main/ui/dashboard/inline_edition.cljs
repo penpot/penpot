@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.dashboard.inline-edition
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
@@ -59,13 +60,14 @@
          (dom/focus! node)
          (dom/select-text! node))))
 
-    [:div.edit-wrapper
-     [:input.element-title {:value @name
-                            :ref input-ref
-                            :on-click on-click
-                            :on-change on-input
-                            :on-key-down on-keyup
-                            :on-blur on-blur}]
-     [:span.close {:on-click on-cancel} i/close]]))
-
+    [:div {:class (stl/css :edit-wrapper)}
+     [:input {:class (stl/css :element-title)
+              :value @name
+              :ref input-ref
+              :on-click on-click
+              :on-change on-input
+              :on-key-down on-keyup
+              :on-blur on-blur}]
+     [:span {:class (stl/css :close)
+             :on-click on-cancel} i/close]]))
 

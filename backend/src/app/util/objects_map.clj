@@ -335,8 +335,7 @@
   Iterable
   (iterator [this]
     (when-not loaded? (load! this))
-    (ObjectsMapIterator. (.iterator ^Iterable positions) this))
-  )
+    (ObjectsMapIterator. (.iterator ^Iterable positions) this)))
 
 (defn create
   ([]

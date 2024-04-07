@@ -9,22 +9,24 @@
   (:require
    ["jszip" :as zip]
    [app.common.data :as d]
-   [app.common.file-builder :as fb]
+   [app.common.files.builder :as fb]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.path :as gpa]
    [app.common.logging :as log]
    [app.common.media :as cm]
+   [app.common.pprint :as pp]
    [app.common.text :as ct]
    [app.common.uuid :as uuid]
    [app.main.repo :as rp]
    [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.import.parser :as cip]
    [app.util.json :as json]
+   [app.util.sse :as sse]
    [app.util.webapi :as wapi]
    [app.util.zip :as uz]
    [app.worker.impl :as impl]
-   [beicon.core :as rx]
+   [app.worker.import.parser :as parser]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [tubax.core :as tubax]))
 
@@ -126,17 +128,20 @@
 
 (defn create-file
   "Create a new file on the back-end"
-  [context]
+  [context features]
   (let [resolve-fn (:resolve context)
-        file-id    (resolve-fn (:file-id context))
-        features   (into #{} (:features context))]
+        file-id    (resolve-fn (:file-id context))]
     (rp/cmd! :create-temp-file
              {:id file-id
               :name (:name context)
               :is-shared (:shared context)
               :project-id (:project-id context)
               :create-page false
-              :features features})))
+
+              ;; If the features object exists send that. Otherwise we remove the components/v2 because
+              ;; if the features attribute doesn't exist is a version < 2.0. The other features will
+              ;; be kept so the shapes are created full featured
+              :features (d/nilv (:features context) (disj features "components/v2"))})))
 
 (defn link-file-libraries
   "Create a new file on the back-end"
@@ -146,14 +151,15 @@
         libraries (->> context :libraries (mapv resolve))]
     (->> (rx/from libraries)
          (rx/map #(hash-map :file-id file-id :library-id %))
-         (rx/flat-map (partial rp/cmd! :link-file-to-library)))))
+         (rx/merge-map (partial rp/cmd! :link-file-to-library)))))
 
 (defn send-changes
   "Creates batches of changes to be sent to the backend"
   [context file]
   (let [file-id    (:id file)
         session-id (uuid/next)
-        batches    (->> (fb/generate-changes file)
+        changes    (fb/generate-changes file)
+        batches    (->> changes
                         (partition change-batch-size change-batch-size nil)
                         (mapv vec))
 
@@ -196,9 +202,10 @@
            :content blob
            :is-local true}))
        (rx/tap #(progress! context :upload-media name))
-       (rx/flat-map #(rp/cmd! :upload-file-media-object %))))
+       (rx/merge-map #(rp/cmd! :upload-file-media-object %))))
 
-(defn resolve-text-content [node context]
+(defn resolve-text-content
+  [node context]
   (let [resolve (:resolve context)]
     (->> node
          (ct/transform-nodes
@@ -229,7 +236,16 @@
         (d/update-when :shape-ref resolve)
 
         (cond-> (= type :text)
-          (d/update-when :content resolve-text-content context)))))
+          (d/update-when :content resolve-text-content context))
+
+        (cond-> (and (= type :frame) (= :grid (:layout data)))
+          (update
+           :layout-grid-cells
+           (fn [cells]
+             (->> (vals cells)
+                  (reduce (fn [cells {:keys [id shapes]}]
+                            (assoc-in cells [id :shapes] (mapv resolve shapes)))
+                          cells))))))))
 
 (defn- translate-frame
   [data type file]
@@ -248,8 +264,8 @@
 
 (defn process-import-node
   [context file node]
-  (let [type         (cip/get-type node)
-        close?       (cip/close? node)]
+  (let [type         (parser/get-type node)
+        close?       (parser/close? node)]
     (if close?
       (case type
         :frame    (fb/close-artboard file)
@@ -259,11 +275,11 @@
         #_default file)
 
       (let [resolve      (:resolve context)
-            old-id       (cip/get-id node)
-            interactions (->> (cip/parse-interactions node)
+            old-id       (parser/get-id node)
+            interactions (->> (parser/parse-interactions node)
                               (mapv #(update % :destination resolve)))
 
-            data         (-> (cip/parse-data type node)
+            data         (-> (parser/parse-data type node)
                              (resolve-data-ids type context)
                              (cond-> (some? old-id)
                                (assoc :id (resolve old-id)))
@@ -308,43 +324,72 @@
 
 (defn resolve-media
   [context file-id node]
-  (if (and (not (cip/close? node))
-           (cip/has-image? node))
-    (let [name     (cip/get-image-name node)
-          image-data (cip/get-image-data node)
-          image-fill (cip/get-image-fill node)]
-      (->> (upload-media-files context file-id name image-data)
-           (rx/catch #(do (.error js/console "Error uploading media: " name)
-                          (rx/of node)))
-           (rx/map
-            (fn [media]
-              (-> node
-                  (assoc-in [:attrs :penpot:media-id]     (:id media))
-                  (assoc-in [:attrs :penpot:media-width]  (:width media))
-                  (assoc-in [:attrs :penpot:media-height] (:height media))
-                  (assoc-in [:attrs :penpot:media-mtype]  (:mtype media))
+  (if (or (and (not (parser/close? node))
+               (parser/has-image? node))
+          (parser/has-stroke-images? node)
+          (parser/has-fill-images? node))
+    (let [name               (parser/get-image-name node)
+          has-image          (parser/has-image? node)
+          image-data         (parser/get-image-data node)
+          image-fill         (parser/get-image-fill node)
+          fill-images-data   (->> (parser/get-fill-images-data node)
+                                  (map #(assoc % :type :fill)))
+          stroke-images-data (->> (parser/get-stroke-images-data node)
+                                  (map #(assoc % :type :stroke)))
 
-                  (assoc-in [:attrs :penpot:fill-color]  (:fill image-fill))
-                  (assoc-in [:attrs :penpot:fill-color-ref-file]  (:fill-color-ref-file image-fill))
-                  (assoc-in [:attrs :penpot:fill-color-ref-id]  (:fill-color-ref-id image-fill))
-                  (assoc-in [:attrs :penpot:fill-opacity]  (:fill-opacity image-fill))
-                  (assoc-in [:attrs :penpot:fill-color-gradient]  (:fill-color-gradient image-fill)))))))
+          images-data        (concat
+                              fill-images-data
+                              stroke-images-data
+                              (when has-image
+                                [{:href image-data}]))]
+      (->> (rx/from images-data)
+           (rx/mapcat (fn [image-data]
+                        (->> (upload-media-files context file-id name (:href image-data))
+                             (rx/catch #(do (.error js/console "Error uploading media: " name)
+                                            (rx/of node)))
+                             (rx/map (fn [data]
+                                       (let [data
+                                             (cond-> data
+                                               (some? (:keep-aspect-ratio image-data))
+                                               (assoc :keep-aspect-ratio (:keep-aspect-ratio image-data)))]
+                                         [(:id image-data) data]))))))
+           (rx/reduce (fn [acc [id data]] (assoc acc id data)) {})
+           (rx/map
+            (fn [images]
+              (let [media (get images nil)]
+                (-> node
+                    (assoc :images images)
+                    (cond-> (some? media)
+                      (->
+                       (assoc-in [:attrs :penpot:media-id]     (:id media))
+                       (assoc-in [:attrs :penpot:media-width]  (:width media))
+                       (assoc-in [:attrs :penpot:media-height] (:height media))
+                       (assoc-in [:attrs :penpot:media-mtype]  (:mtype media))
+                       (cond-> (some? (:keep-aspect-ratio media))
+                         (assoc-in [:attrs :penpot:media-keep-aspect-ratio] (:keep-aspect-ratio media)))
+                       (assoc-in [:attrs :penpot:fill-color]           (:fill image-fill))
+                       (assoc-in [:attrs :penpot:fill-color-ref-file]  (:fill-color-ref-file image-fill))
+                       (assoc-in [:attrs :penpot:fill-color-ref-id]    (:fill-color-ref-id image-fill))
+                       (assoc-in [:attrs :penpot:fill-opacity]         (:fill-opacity image-fill))
+                       (assoc-in [:attrs :penpot:fill-color-gradient]  (:fill-color-gradient image-fill))))))))))
 
     ;; If the node is not an image just return the node
     (->> (rx/of node)
          (rx/observe-on :async))))
 
 (defn media-node? [node]
-  (and (cip/shape? node)
-       (cip/has-image? node)
-       (not (cip/close? node))))
+  (or (and (parser/shape? node)
+           (parser/has-image? node)
+           (not (parser/close? node)))
+      (parser/has-stroke-images? node)
+      (parser/has-fill-images? node)))
 
 (defn import-page
   [context file [page-id page-name content]]
-  (let [nodes (->> content cip/node-seq)
+  (let [nodes (->> content parser/node-seq)
         file-id (:id file)
         resolve (:resolve context)
-        page-data (-> (cip/parse-page-data content)
+        page-data (-> (parser/parse-page-data content)
                       (assoc :name page-name)
                       (assoc :id (resolve page-id)))
         flows     (->> (get-in page-data [:options :flows])
@@ -370,39 +415,40 @@
              (rx/mapcat
               (fn [node]
                 (->> (resolve-media context file-id node)
-                     (rx/map (fn [result] [node result])))))
+                     (rx/map (fn [result]
+                               [node result])))))
              (rx/reduce conj {}))]
 
     (->> pre-process-images
-         (rx/flat-map
+         (rx/merge-map
           (fn  [pre-proc]
             (->> (rx/from nodes)
-                 (rx/filter cip/shape?)
+                 (rx/filter parser/shape?)
                  (rx/map (fn [node] (or (get pre-proc node) node)))
                  (rx/reduce (partial process-import-node context) file)
                  (rx/map (comp fb/close-page setup-interactions))))))))
 
 (defn import-component [context file node]
   (let [resolve            (:resolve context)
-        content            (cip/find-node node :g)
+        content            (parser/find-node node :g)
         file-id            (:id file)
-        old-id             (cip/get-id node)
+        old-id             (parser/get-id node)
         id                 (resolve old-id)
         path               (get-in node [:attrs :penpot:path] "")
-        type               (cip/get-type content)
+        type               (parser/get-type content)
         main-instance-id   (resolve (uuid (get-in node [:attrs :penpot:main-instance-id] "")))
         main-instance-page (resolve (uuid (get-in node [:attrs :penpot:main-instance-page] "")))
-        data               (-> (cip/parse-data type content)
+        data               (-> (parser/parse-data type content)
                                (assoc :path path)
                                (assoc :id id)
                                (assoc :main-instance-id main-instance-id)
                                (assoc :main-instance-page main-instance-page))
 
         file               (-> file (fb/start-component data type))
-        children           (cip/node-seq node)]
+        children           (parser/node-seq node)]
 
     (->> (rx/from children)
-         (rx/filter cip/shape?)
+         (rx/filter parser/shape?)
          (rx/skip 1)       ;; Skip the outer component and the respective closint tag
          (rx/skip-last 1)  ;; because they are handled in start-component an finish-component
          (rx/mapcat (partial resolve-media context file-id))
@@ -411,18 +457,18 @@
 
 (defn import-deleted-component [context file node]
   (let [resolve            (:resolve context)
-        content            (cip/find-node node :g)
+        content            (parser/find-node node :g)
         file-id            (:id file)
-        old-id             (cip/get-id node)
+        old-id             (parser/get-id node)
         id                 (resolve old-id)
         path               (get-in node [:attrs :penpot:path] "")
         main-instance-id   (resolve (uuid (get-in node [:attrs :penpot:main-instance-id] "")))
         main-instance-page (resolve (uuid (get-in node [:attrs :penpot:main-instance-page] "")))
         main-instance-x    (get-in node [:attrs :penpot:main-instance-x] "")
         main-instance-y    (get-in node [:attrs :penpot:main-instance-y] "")
-        type               (cip/get-type content)
+        type               (parser/get-type content)
 
-        data (-> (cip/parse-data type content)
+        data (-> (parser/parse-data type content)
                  (assoc :path path)
                  (assoc :id id)
                  (assoc :main-instance-id main-instance-id)
@@ -432,10 +478,10 @@
 
         file         (-> file (fb/start-component data))
         component-id (:current-component-id file)
-        children     (cip/node-seq node)]
+        children     (parser/node-seq node)]
 
     (->> (rx/from children)
-         (rx/filter cip/shape?)
+         (rx/filter parser/shape?)
          (rx/skip 1)
          (rx/skip-last 1)
          (rx/mapcat (partial resolve-media context file-id))
@@ -476,7 +522,7 @@
                             (assoc :id (resolve id)))]
               (fb/add-library-color file color)))]
       (->> (get-file context :colors)
-           (rx/flat-map (comp d/kebab-keys cip/string->uuid))
+           (rx/merge-map (comp d/kebab-keys parser/string->uuid))
            (rx/reduce add-color file)))
 
     (rx/of file)))
@@ -486,7 +532,7 @@
   (if (:has-typographies context)
     (let [resolve (:resolve context)]
       (->> (get-file context :typographies)
-           (rx/flat-map (comp d/kebab-keys cip/string->uuid))
+           (rx/merge-map (comp d/kebab-keys parser/string->uuid))
            (rx/map (fn [[id typography]]
                      (-> typography
                          (d/kebab-keys)
@@ -500,10 +546,12 @@
   (if (:has-media context)
     (let [resolve (:resolve context)]
       (->> (get-file context :media-list)
-           (rx/flat-map (comp d/kebab-keys cip/string->uuid))
+           (rx/merge-map (comp d/kebab-keys parser/string->uuid))
            (rx/mapcat
             (fn [[id media]]
-              (let [media (assoc media :id (resolve id))]
+              (let [media (-> media
+                              (assoc :id (resolve id))
+                              (update :name str))]
                 (->> (get-file context :media id media)
                      (rx/map (fn [blob]
                                (let [content (.slice blob 0 (.-size blob) (:mtype media))]
@@ -515,7 +563,7 @@
                      (rx/tap #(progress! context :upload-media (:name %)))
                      (rx/merge-map #(rp/cmd! :upload-file-media-object %))
                      (rx/map (constantly media))
-                     (rx/catch #(do (.error js/console (str "Error uploading media: " (:name media)) )
+                     (rx/catch #(do (.error js/console (str "Error uploading media: " (:name media)))
                                     (rx/empty)))))))
            (rx/reduce fb/add-library-media file)))
     (rx/of file)))
@@ -524,11 +572,11 @@
   [context file]
   (if (:has-components context)
     (let [split-components
-          (fn [content] (->> (cip/node-seq content)
+          (fn [content] (->> (parser/node-seq content)
                              (filter #(= :symbol (:tag %)))))]
 
       (->> (get-file context :components)
-           (rx/flat-map split-components)
+           (rx/merge-map split-components)
            (rx/concat-reduce (partial import-component context) file)))
     (rx/of file)))
 
@@ -536,11 +584,11 @@
   [context file]
   (if (:has-deleted-components context)
     (let [split-components
-          (fn [content] (->> (cip/node-seq content)
+          (fn [content] (->> (parser/node-seq content)
                              (filter #(= :symbol (:tag %)))))]
 
       (->> (get-file context :deleted-components)
-           (rx/flat-map split-components)
+           (rx/merge-map split-components)
            (rx/concat-reduce (partial import-deleted-component context) file)))
     (rx/of file)))
 
@@ -551,34 +599,34 @@
         context (assoc context :progress progress-str)]
     [progress-str
      (->> (rx/of file)
-          (rx/flat-map (partial process-pages context))
+          (rx/merge-map (partial process-pages context))
           (rx/tap #(progress! context :process-colors))
-          (rx/flat-map (partial process-library-colors context))
+          (rx/merge-map (partial process-library-colors context))
           (rx/tap #(progress! context :process-typographies))
-          (rx/flat-map (partial process-library-typographies context))
+          (rx/merge-map (partial process-library-typographies context))
           (rx/tap #(progress! context :process-media))
-          (rx/flat-map (partial process-library-media context))
+          (rx/merge-map (partial process-library-media context))
           (rx/tap #(progress! context :process-components))
-          (rx/flat-map (partial process-library-components context))
+          (rx/merge-map (partial process-library-components context))
           (rx/tap #(progress! context :process-deleted-components))
-          (rx/flat-map (partial process-deleted-components context))
-          (rx/flat-map (partial send-changes context))
+          (rx/merge-map (partial process-deleted-components context))
+          (rx/merge-map (partial send-changes context))
           (rx/tap #(rx/end! progress-str)))]))
 
 (defn create-files
-  [context files]
+  [{:keys [system-features] :as context} files]
 
   (let [data (group-by :file-id files)]
     (rx/concat
      (->> (rx/from files)
           (rx/map #(merge context %))
-          (rx/flat-map (fn [context]
-                         (->> (create-file context)
-                              (rx/map #(vector % (first (get data (:file-id context)))))))))
+          (rx/merge-map (fn [context]
+                          (->> (create-file context system-features)
+                               (rx/map #(vector % (first (get data (:file-id context)))))))))
 
      (->> (rx/from files)
           (rx/map #(merge context %))
-          (rx/flat-map link-file-libraries)
+          (rx/merge-map link-file-libraries)
           (rx/ignore)))))
 
 (defn parse-mtype [ba]
@@ -590,10 +638,10 @@
       "other")))
 
 (defmethod impl/handler :analyze-import
-  [{:keys [files]}]
+  [{:keys [files features]}]
 
   (->> (rx/from files)
-       (rx/flat-map
+       (rx/merge-map
         (fn [file]
           (let [st (->> (http/send!
                          {:uri (:uri file)
@@ -608,10 +656,19 @@
             (->> (rx/merge
                   (->> st
                        (rx/filter (fn [data] (= "application/zip" (:type data))))
-                       (rx/flat-map #(zip/loadAsync (:body %)))
-                       (rx/flat-map #(get-file {:zip %} :manifest))
-                       (rx/map (comp d/kebab-keys cip/string->uuid))
-                       (rx/map #(hash-map :uri (:uri file) :data % :type "application/zip")))
+                       (rx/merge-map #(zip/loadAsync (:body %)))
+                       (rx/merge-map #(get-file {:zip %} :manifest))
+                       (rx/map (comp d/kebab-keys parser/string->uuid))
+                       (rx/map
+                        (fn [data]
+                          ;; Checks if the file is exported with components v2 and the current team only
+                          ;; supports components v1
+                          (let [has-file-v2?
+                                (->> (:files data)
+                                     (d/seek (fn [[_ file]] (contains? (set (:features file)) "components/v2"))))]
+                            (if (and has-file-v2? (not (contains? features "components/v2")))
+                              {:uri (:uri file) :error "dashboard.import.analyze-error.components-v2"}
+                              (hash-map :uri (:uri file) :data data :type "application/zip"))))))
                   (->> st
                        (rx/filter (fn [data] (= "application/octet-stream" (:type data))))
                        (rx/map (fn [_]
@@ -631,56 +688,77 @@
                              (let [error (or (.-message data) (tr "dashboard.import.analyze-error"))]
                                (rx/of {:uri (:uri file) :error error}))))))))))
 
+
 (defmethod impl/handler :import-files
-  [{:keys [project-id files]}]
+  [{:keys [project-id files features]}]
 
   (let [context {:project-id project-id
-                 :resolve    (resolve-factory)}
+                 :resolve    (resolve-factory)
+                 :system-features features}
         zip-files (filter #(= "application/zip" (:type %)) files)
         binary-files (filter #(= "application/octet-stream" (:type %)) files)]
 
-    (->> (rx/merge
-          (->> (create-files context zip-files)
-               (rx/flat-map
-                (fn [[file data]]
-                  (->> (uz/load-from-url (:uri data))
-                       (rx/map #(-> context (assoc :zip %) (merge data)))
-                       (rx/merge-map
-                        (fn [context]
-                          ;; process file retrieves a stream that will emit progress notifications
-                          ;; and other that will emit the files once imported
-                          (let [[progress-stream file-stream] (process-file context file)]
-                            (rx/merge progress-stream
-                                      (->> file-stream
-                                           (rx/map
-                                            (fn [file]
+    (rx/merge
+     (->> (create-files context zip-files)
+          (rx/merge-map
+           (fn [[file data]]
+             (->> (uz/load-from-url (:uri data))
+                  (rx/map #(-> context (assoc :zip %) (merge data)))
+                  (rx/merge-map
+                   (fn [context]
+                     ;; process file retrieves a stream that will emit progress notifications
+                     ;; and other that will emit the files once imported
+                     (let [[progress-stream file-stream] (process-file context file)]
+                       (rx/merge progress-stream
+                                 (->> file-stream
+                                      (rx/map
+                                       (fn [file]
+                                         {:status :import-finish
+                                          :errors (:errors file)
+                                          :file-id (:file-id data)})))))))
+                  (rx/catch (fn [cause]
+                              (log/error :hint (ex-message cause)
+                                         :file-id (:file-id data)
+                                         :cause cause)
+                              (rx/of {:status :import-error
+                                      :file-id (:file-id data)
+                                      :error (ex-message cause)
+                                      :error-data (ex-data cause)})))))))
+
+     (->> (rx/from binary-files)
+          (rx/merge-map
+           (fn [data]
+             (->> (http/send!
+                   {:uri (:uri data)
+                    :response-type :blob
+                    :method :get})
+                  (rx/map :body)
+                  (rx/mapcat (fn [file]
+                               (->> (rp/cmd! ::sse/import-binfile
+                                             {:name (str/replace (:name data) #".penpot$" "")
+                                              :file file
+                                              :project-id project-id})
+                                    (rx/tap (fn [event]
+                                              (let [payload (sse/get-payload event)
+                                                    type    (sse/get-type event)]
+                                                (if (= type "progress")
+                                                  (log/dbg :hint "import-binfile: progress" :section (:section payload) :name (:name payload))
+                                                  (log/dbg :hint "import-binfile: end")))))
+                                    (rx/filter sse/end-of-stream?)
+                                    (rx/map (fn [_]
                                               {:status :import-finish
-                                               :errors (:errors file)
-                                               :file-id (:file-id data)})))))))
-                       (rx/catch (fn [cause]
-                                   (log/error :hint (ex-message cause) :file-id (:file-id data) :cause cause)
-                                   (rx/of {:status :import-error
-                                           :file-id (:file-id data)
-                                           :error (ex-message cause)
-                                           :error-data (ex-data cause)})))))))
+                                               :file-id (:file-id data)})))))
+                  (rx/catch (fn [cause]
+                              (log/error :hint "unexpected error on import process"
+                                         :project-id project-id
+                                         ::log/sync? true)
+                              (let [edata (if (map? cause) cause (ex-data cause))]
+                                (println "Error data:")
+                                (pp/pprint (dissoc edata :explain) {:level 3 :length 10})
 
-          (->> (rx/from binary-files)
-               (rx/flat-map
-                (fn [data]
-                  (->> (http/send!
-                        {:uri (:uri data)
-                         :response-type :blob
-                         :method :get})
-                       (rx/map :body)
-                       (rx/mapcat #(rp/cmd! :import-binfile {:file %
-                                                                 :project-id project-id}))
-                       (rx/map
-                        (fn [_]
-                          {:status :import-finish
-                           :file-id (:file-id data)})))))))
+                                (when (string? (:explain edata))
+                                  (js/console.log (:explain edata)))
 
-         (rx/catch (fn [cause]
-                     (log/error :hint "unexpected error on import process"
-                                :project-id project-id
-                                :cause cause))))))
+                                (rx/of {:status :import-error
+                                        :file-id (:file-id data)})))))))))))
 

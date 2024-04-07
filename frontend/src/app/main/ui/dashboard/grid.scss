@@ -1,0 +1,380 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+$thumbnail-default-width: $s-252; // Default width
+$thumbnail-default-height: $s-168; // Default width
+
+.dashboard-grid {
+  font-size: $fs-14;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 $s-16;
+}
+
+.grid-row {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: calc($s-12 + var(--th-width, #{$thumbnail-default-width}));
+  width: 100%;
+  gap: $s-24;
+}
+
+.grid-item {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  margin: $s-12 0;
+  position: relative;
+  text-align: center;
+
+  a,
+  button {
+    width: 100%;
+    font-weight: $fw400;
+  }
+  button {
+    background-color: transparent;
+    border: none;
+    padding: 0 $s-6;
+  }
+
+  .grid-item-th {
+    border-radius: $br-8;
+    text-align: initial;
+    width: var(--th-width, #{$thumbnail-default-width});
+    height: var(--th-height, #{$thumbnail-default-height});
+    background-size: cover;
+    overflow: hidden;
+
+    img {
+      object-fit: contain;
+    }
+  }
+
+  &.dragged {
+    border-radius: $br-4;
+    outline: $br-4 solid $da-primary;
+    text-align: initial;
+    width: calc(var(--th-width) + $s-12);
+    height: var(--th-height, #{$thumbnail-default-height});
+  }
+
+  &.overlay {
+    border-radius: $br-4;
+    border: $s-2 solid $da-tertiary;
+    height: 100%;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    width: 100%;
+    z-index: $z-index-1;
+  }
+
+  &:hover .overlay {
+    display: block;
+    opacity: 1;
+  }
+
+  .info-wrapper {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    cursor: pointer;
+    max-width: var(--th-width, $thumbnail-default-width);
+  }
+
+  .item-info {
+    display: grid;
+    padding: $s-8;
+    text-align: left;
+    width: 100%;
+    font-size: $fs-12;
+
+    h3 {
+      border: $s-1 solid transparent;
+      color: $df-primary;
+      font-size: $fs-16;
+      font-weight: $fw400;
+      height: $s-28;
+      line-height: 1.92;
+      max-width: $s-260;
+      overflow: hidden;
+      padding-right: $s-8;
+      padding: 0;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      width: 100%;
+
+      @media #{$bp-max-1366} {
+        max-width: $s-232;
+      }
+    }
+
+    .date {
+      color: $df-secondary;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      width: 100%;
+      white-space: nowrap;
+      max-width: $s-260;
+      &::first-letter {
+        text-transform: capitalize;
+      }
+      @media #{$bp-max-1366} {
+        max-width: $s-232;
+      }
+    }
+  }
+
+  .item-badge {
+    background-color: $da-primary;
+    border: none;
+    border-radius: $br-6;
+    position: absolute;
+    top: $s-12;
+    right: $s-12;
+    height: $s-32;
+    width: $s-32;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    svg {
+      stroke: $db-secondary;
+      fill: none;
+      height: $s-16;
+      width: $s-16;
+    }
+  }
+
+  &.add-file {
+    border: $s-1 dashed $df-secondary;
+    justify-content: center;
+    box-shadow: none;
+
+    span {
+      color: $db-primary;
+      font-size: $fs-14;
+    }
+
+    &:hover {
+      background-color: $df-primary;
+      border: $s-2 solid $da-tertiary;
+    }
+  }
+}
+
+.drag-counter {
+  position: absolute;
+  top: $s-4;
+  left: $s-4;
+  width: $s-32;
+  height: $s-32;
+  background-color: $da-tertiary;
+  border-radius: $br-circle;
+  color: $db-secondary;
+  font-size: $fs-16;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+// PROJECTS, ELEMENTS & ICONS GRID
+.project-th {
+  background-color: transparent;
+  border-radius: $br-8;
+  padding-top: $s-6;
+
+  &:hover,
+  &:focus,
+  &:focus-within {
+    background-color: $db-tertiary;
+    .project-th-actions {
+      opacity: 1;
+    }
+    a {
+      text-decoration: none;
+    }
+  }
+
+  .selected {
+    .grid-item-th {
+      outline: $s-4 solid $da-tertiary;
+    }
+  }
+}
+
+.project-th-actions {
+  align-items: center;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  opacity: 0;
+  right: $s-6;
+  width: $s-32;
+
+  span {
+    color: $db-secondary;
+  }
+}
+
+.project-th-icon {
+  align-items: center;
+  display: flex;
+  margin-right: $s-8;
+  margin-top: 0;
+}
+
+.menu {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  height: $s-32;
+  justify-content: center;
+  margin-right: 0;
+  margin-top: $s-20;
+  width: 100%;
+  --menu-icon-color: var(--button-tertiary-foreground-color-rest);
+
+  &:hover,
+  &:focus {
+    --menu-icon-color: var(--button-tertiary-foreground-color-hover);
+  }
+}
+
+.menu-icon {
+  stroke: var(--menu-icon-color);
+  fill: none;
+  margin-right: 0;
+  height: $s-16;
+  width: $s-16;
+}
+
+.project-th-actions.force-display {
+  opacity: 1;
+}
+
+.grid-item-th {
+  border-radius: $br-4;
+  cursor: pointer;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  flex-direction: row;
+
+  .img-th {
+    height: auto;
+    width: 100%;
+  }
+
+  svg {
+    height: 100%;
+    width: 100%;
+  }
+
+  :global(svg#loader-pencil) {
+    stroke: $db-quaternary;
+    width: calc(var(--th-width, #{$thumbnail-default-width}) * 0.25);
+  }
+}
+
+// LIBRARY VIEW
+.library {
+  height: $s-580;
+}
+
+.grid-item.project-th.library {
+  height: $s-612;
+}
+
+.grid-item-th.library {
+  background-color: $db-tertiary;
+  flex-direction: column;
+  height: 90%;
+  justify-content: flex-start;
+  max-height: $s-580;
+  padding: $s-32;
+
+  .asset-section {
+    font-size: $fs-12;
+    color: $df-secondary;
+
+    &:not(:first-child) {
+      margin-top: $s-16;
+    }
+  }
+
+  .asset-title {
+    display: flex;
+    font-size: $fs-12;
+    text-transform: uppercase;
+
+    .num-assets {
+      color: $df-secondary;
+    }
+  }
+
+  .asset-list-item {
+    align-items: center;
+    border-radius: $br-4;
+    border: $s-1 solid transparent;
+    color: $df-primary;
+    display: flex;
+    font-size: $fs-12;
+    margin-top: $s-4;
+    padding: $s-2;
+    position: relative;
+
+    .name-block {
+      color: $df-secondary;
+      width: calc(100% - $s-24 - $s-8);
+    }
+
+    .item-name {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    svg {
+      background-color: var(--color-canvas);
+      border-radius: $br-4;
+      border: $s-2 solid transparent;
+      height: $s-24;
+      margin-right: $s-8;
+      width: $s-24;
+    }
+
+    .color-name {
+      color: $df-primary;
+    }
+
+    .color-value {
+      color: $df-secondary;
+      margin-left: $s-4;
+      text-transform: uppercase;
+    }
+
+    .typography-sample {
+      height: $s-20;
+      margin-right: $s-4;
+      width: $s-20;
+    }
+  }
+}
+
+.color-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: $s-8;
+}

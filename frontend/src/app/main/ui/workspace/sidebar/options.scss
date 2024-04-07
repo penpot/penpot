@@ -1,0 +1,40 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.tool-window {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  padding-left: $s-12;
+}
+
+.tab-spacing {
+  margin-right: $s-12;
+}
+
+.content-class {
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: calc(100vh - $s-96);
+  scrollbar-gutter: stable;
+}
+
+.element-options {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: $s-8;
+  padding-top: $s-8;
+}
+
+.inspect {
+  scrollbar-gutter: unset;
+}

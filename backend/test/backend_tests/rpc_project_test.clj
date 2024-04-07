@@ -6,12 +6,12 @@
 
 (ns backend-tests.rpc-project-test
   (:require
-   [backend-tests.helpers :as th]
    [app.common.uuid :as uuid]
    [app.db :as db]
-   [app.rpc :as-alias rpc]
    [app.http :as http]
+   [app.rpc :as-alias rpc]
    [app.util.time :as dt]
+   [backend-tests.helpers :as th]
    [clojure.test :as t]))
 
 (t/use-fixtures :once th/state-init)
@@ -104,8 +104,7 @@
       ;; (th/print-result! out)
       (t/is (nil? (:error out)))
       (let [result (:result out)]
-        (t/is (= 1 (count result)))))
-  ))
+        (t/is (= 1 (count result)))))))
 
 (t/deftest permissions-checks-create-project
   (let [profile1 (th/create-profile* 1)
@@ -173,14 +172,13 @@
 
 
 (t/deftest test-deletion
-  (let [task     (:app.tasks.objects-gc/handler th/*system*)
-        profile1 (th/create-profile* 1)
+  (let [profile1 (th/create-profile* 1)
         project  (th/create-project* 1 {:team-id (:default-team-id profile1)
                                         :profile-id (:id profile1)})]
 
     ;; project is not deleted because it does not meet all
     ;; conditions to be deleted.
-    (let [result (task {:min-age (dt/duration 0)})]
+    (let [result (th/run-task! :objects-gc {:min-age 0})]
       (t/is (= 0 (:processed result))))
 
     ;; query the list of projects
@@ -188,6 +186,7 @@
                 ::rpc/profile-id (:id profile1)
                 :team-id (:default-team-id profile1)}
           out  (th/command! data)]
+
       ;; (th/print-result! out)
       (t/is (nil? (:error out)))
       (let [result (:result out)]
@@ -211,7 +210,7 @@
         (t/is (= 1 (count result)))))
 
     ;; run permanent deletion (should be noop)
-    (let [result (task {:min-age (dt/duration {:minutes 1})})]
+    (let [result (th/run-task! :objects-gc {:min-age (dt/duration {:minutes 1})})]
       (t/is (= 0 (:processed result))))
 
     ;; query the list of files of a after soft deletion
@@ -225,7 +224,7 @@
         (t/is (= 0 (count result)))))
 
     ;; run permanent deletion
-    (let [result (task {:min-age (dt/duration 0)})]
+    (let [result (th/run-task! :objects-gc {:min-age 0})]
       (t/is (= 1 (:processed result))))
 
     ;; query the list of files of a after hard deletion
@@ -237,5 +236,4 @@
       (let [error (:error out)
             error-data (ex-data error)]
         (t/is (th/ex-info? error))
-        (t/is (= (:type error-data) :not-found))))
-    ))
+        (t/is (= (:type error-data) :not-found))))))

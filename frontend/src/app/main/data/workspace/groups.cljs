@@ -8,27 +8,24 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.changes-builder :as pcb]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.changes-builder :as pcb]
-   [app.common.pages.helpers :as cph]
    [app.common.types.component :as ctk]
-   [app.common.types.pages-list :as ctpl]
+   [app.common.types.container :as ctn]
    [app.common.types.shape :as cts]
-   [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
-   [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.selection :as dws]
-   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 (defn shapes-for-grouping
   [objects selected]
   (->> selected
-       (cph/order-by-indexed-shapes objects)
+       (cfh/order-by-indexed-shapes objects)
        reverse
        (map #(get objects %))))
 
@@ -41,8 +38,8 @@
   group, one (or many) groups can become empty because they have had a
   single shape which is moved to the created group."
   [objects parent-id shapes]
-  (let [ids     (cph/clean-loops objects (into #{} (map :id) shapes))
-        parents (into #{} (map #(cph/get-parent-id objects %)) ids)]
+  (let [ids     (cfh/clean-loops objects (into #{} (map :id) shapes))
+        parents (into #{} (map #(cfh/get-parent-id objects %)) ids)]
     (loop [current-id (first parents)
            to-check (rest parents)
            removed-id? ids
@@ -58,7 +55,7 @@
                    (empty? (remove removed-id? (:shapes group))))
 
             ;; Adds group to the remove and check its parent
-            (let [to-check (concat to-check [(cph/get-parent-id objects current-id)]) ]
+            (let [to-check (concat to-check [(cfh/get-parent-id objects current-id)])]
               (recur (first to-check)
                      (rest to-check)
                      (conj removed-id? current-id)
@@ -80,26 +77,42 @@
                     (:name (first shapes))
                     base-name)
 
-        selrect   (gsh/selection-rect shapes)
+        selrect   (gsh/shapes->rect shapes)
         group-idx (->> shapes
                        last
                        :id
-                       (cph/get-position-on-parent objects)
+                       (cfh/get-position-on-parent objects)
                        inc)
-        group     (-> (cts/make-minimal-group frame-id selrect gname)
-                      (cts/setup-shape selrect)
-                      (assoc :shapes (mapv :id shapes)
-                             :parent-id parent-id
-                             :frame-id frame-id
-                             :index group-idx))
+
+        group     (cts/setup-shape {:type :group
+                                    :name gname
+                                    :shapes (mapv :id shapes)
+                                    :selrect selrect
+                                    :x (:x selrect)
+                                    :y (:y selrect)
+                                    :width (:width selrect)
+                                    :height (:height selrect)
+                                    :parent-id parent-id
+                                    :frame-id frame-id
+                                    :index group-idx})
 
         ;; Shapes that are in a component, but are not root, must be detached,
         ;; because they will be now children of a non instance group.
-        shapes-to-detach (filter ctk/in-component-copy-not-root? shapes)
+        shapes-to-detach (filter ctk/in-component-copy-not-head? shapes)
 
         ;; Look at the `get-empty-groups-after-group-creation`
         ;; docstring to understand the real purpose of this code
         ids-to-delete (get-empty-groups-after-group-creation objects parent-id shapes)
+
+        target-cell
+        (when (ctl/grid-layout? objects parent-id)
+          (ctl/get-cell-by-shape-id (get objects parent-id) (-> shapes last :id)))
+
+        grid-parents
+        (into []
+              (comp (map :parent-id)
+                    (filter (partial ctl/grid-layout? objects)))
+              shapes)
 
         changes   (-> (pcb/empty-changes it page-id)
                       (pcb/with-objects objects)
@@ -107,6 +120,12 @@
                       (pcb/update-shapes (map :id shapes) ctl/remove-layout-item-data)
                       (pcb/change-parent (:id group) (reverse shapes))
                       (pcb/update-shapes (map :id shapes-to-detach) ctk/detach-shape)
+                      (cond-> target-cell
+                        (pcb/update-shapes
+                         [parent-id]
+                         (fn [parent]
+                           (assoc-in parent [:layout-grid-cells (:id target-cell) :shapes] [(:id group)]))))
+                      (pcb/update-shapes grid-parents ctl/assign-cells {:with-objects? true})
                       (pcb/remove-objects ids-to-delete))]
 
     [group changes]))
@@ -114,9 +133,9 @@
 (defn remove-group-changes
   [it page-id group objects]
   (let [children (->> (:shapes group)
-                      (cph/order-by-indexed-shapes objects)
+                      (cfh/order-by-indexed-shapes objects)
                       (mapv #(get objects %)))
-        parent-id (cph/get-parent-id objects (:id group))
+        parent-id (cfh/get-parent-id objects (:id group))
         parent    (get objects parent-id)
 
         index-in-parent
@@ -129,7 +148,7 @@
         ;; Shapes that are in a component (including root) must be detached,
         ;; because cannot be easyly synchronized back to the main component.
         shapes-to-detach (filter ctk/in-component-copy?
-                                 (cph/get-children-with-self objects (:id group)))]
+                                 (cfh/get-children-with-self objects (:id group)))]
 
     (-> (pcb/empty-changes it page-id)
         (pcb/with-objects objects)
@@ -140,11 +159,11 @@
 (defn remove-frame-changes
   [it page-id frame objects]
   (let [children (->> (:shapes frame)
-                      (cph/order-by-indexed-shapes objects)
+                      (cfh/order-by-indexed-shapes objects)
                       (mapv #(get objects %)))
-        parent-id     (cph/get-parent-id objects (:id frame))
+        parent-id     (cfh/get-parent-id objects (:id frame))
         idx-in-parent (->> (:id frame)
-                           (cph/get-position-on-parent objects)
+                           (cfh/get-position-on-parent objects)
                            inc)]
 
     (-> (pcb/empty-changes it page-id)
@@ -154,45 +173,6 @@
         (pcb/change-parent parent-id children idx-in-parent)
         (pcb/remove-objects [(:id frame)]))))
 
-
-(defn- clone-component-shapes-changes
-  [changes shape objects]
-  (let [shape-parent-id (:parent-id shape)
-        new-shape-id (uuid/next)
-        [_ new-shapes _]
-        (ctst/clone-object shape
-                      shape-parent-id
-                      objects
-                      (fn [object _]
-                        (cond-> object
-                          (= new-shape-id (:parent-id object))
-                          (assoc :parent-id shape-parent-id)))
-                      (fn [object _] object)
-                      new-shape-id
-                      false)
-
-        new-shapes (->> new-shapes
-                        (filter #(not= (:id %) new-shape-id)))]
-    (reduce
-     (fn [changes shape]
-       (pcb/add-object changes shape))
-     changes
-     new-shapes)))
-
-(defn remove-component-changes
-  [it page-id shape objects file-data file]
-  (let [page (ctpl/get-page file-data page-id)
-        components-v2 (dm/get-in file-data [:options :components-v2])
-        ;; In order to ungroup a component, we first make a clone of its shapes,
-        ;; and then we delete it
-        changes (-> (pcb/empty-changes it page-id)
-                    (pcb/with-objects objects)
-                    (pcb/with-library-data file-data)
-                    (pcb/with-page page)
-                    (clone-component-shapes-changes shape objects)
-                    (dwsh/delete-shapes-changes file page objects [(:id shape)] it components-v2))]
-    ;; TODO: Should we call detach-comment-thread ?
-    changes))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GROUPS
@@ -204,14 +184,17 @@
     (watch [it state _]
       (let [page-id  (:current-page-id state)
             objects  (wsh/lookup-page-objects state page-id)
-            selected (wsh/lookup-selected state)
-            selected (cph/clean-loops objects selected)
-            shapes   (shapes-for-grouping objects selected)]
+            selected (->> (wsh/lookup-selected state)
+                          (cfh/clean-loops objects)
+                          (remove #(ctn/has-any-copy-parent? objects (get objects %))))
+            shapes   (shapes-for-grouping objects selected)
+            parents  (into #{} (map :parent-id) shapes)]
         (when-not (empty? shapes)
           (let [[group changes]
                 (prepare-create-group it objects page-id shapes "Group" false)]
             (rx/of (dch/commit-changes changes)
-                   (dws/select-shapes (d/ordered-set (:id group))))))))))
+                   (dws/select-shapes (d/ordered-set (:id group)))
+                   (ptk/data-event :layout/update {:ids parents}))))))))
 
 (def ungroup-selected
   (ptk/reify ::ungroup-selected
@@ -219,29 +202,32 @@
     (watch [it state _]
       (let [page-id   (:current-page-id state)
             objects   (wsh/lookup-page-objects state page-id)
-            file-data (get state :workspace-data)
-            file      (wsh/get-local-file state)
 
             prepare
             (fn [shape-id]
-              (let [shape (get objects shape-id)]
-                (cond
-                  (ctk/main-instance? shape)
-                  (remove-component-changes it page-id shape objects file-data file)
+              (let [shape (get objects shape-id)
+                    changes
+                    (cond
+                      (or (cfh/group-shape? shape) (cfh/bool-shape? shape))
+                      (remove-group-changes it page-id shape objects)
 
-                  (or (cph/group-shape? shape) (cph/bool-shape? shape))
-                  (remove-group-changes it page-id shape objects)
+                      (cfh/frame-shape? shape)
+                      (remove-frame-changes it page-id shape objects))]
 
-                  (cph/frame-shape? shape)
-                  (remove-frame-changes it page-id shape objects))))
+                (cond-> changes
+                  (ctl/grid-layout? objects (:parent-id shape))
+                  (pcb/update-shapes [(:parent-id shape)] ctl/assign-cells {:with-objects? true}))))
 
-            selected (wsh/lookup-selected state)
+            selected (->> (wsh/lookup-selected state)
+                          (remove #(ctn/has-any-copy-parent? objects (get objects %)))
+                          ;; components can't be ungrouped
+                          (remove #(ctk/instance-head? (get objects %))))
             changes-list (sequence
                           (keep prepare)
                           selected)
 
             parents (into #{}
-                          (comp (map #(cph/get-parent objects %))
+                          (comp (map #(cfh/get-parent objects %))
                                 (keep :id))
                           selected)
 
@@ -255,11 +241,12 @@
                      :origin it}
             undo-id (js/Symbol)]
 
-        (rx/of (dwu/start-undo-transaction undo-id)
-               (dch/commit-changes changes)
-               (ptk/data-event :layout/update parents)
-               (dwu/commit-undo-transaction undo-id)
-               (dws/select-shapes child-ids))))))
+        (when-not (empty? selected)
+          (rx/of (dwu/start-undo-transaction undo-id)
+                 (dch/commit-changes changes)
+                 (ptk/data-event :layout/update {:ids parents})
+                 (dwu/commit-undo-transaction undo-id)
+                 (dws/select-shapes child-ids)))))))
 
 (def mask-group
   (ptk/reify ::mask-group
@@ -267,8 +254,9 @@
     (watch [it state _]
       (let [page-id     (:current-page-id state)
             objects     (wsh/lookup-page-objects state page-id)
-            selected    (wsh/lookup-selected state)
-            selected    (cph/clean-loops objects selected)
+            selected    (->> (wsh/lookup-selected state)
+                             (cfh/clean-loops objects)
+                             (remove #(ctn/has-any-copy-parent? objects (get objects %))))
             shapes      (shapes-for-grouping objects selected)
             first-shape (first shapes)]
         (when-not (empty? shapes)
@@ -290,7 +278,7 @@
                              (pcb/update-shapes [(:id group)]
                                                 (fn [group]
                                                   (assoc group
-                                                         :masked-group? true
+                                                         :masked-group true
                                                          :selrect (:selrect first-shape)
                                                          :points (:points first-shape)
                                                          :transform (:transform first-shape)
@@ -301,7 +289,7 @@
             (rx/of (dwu/start-undo-transaction undo-id)
                    (dch/commit-changes changes)
                    (dws/select-shapes (d/ordered-set (:id group)))
-                   (ptk/data-event :layout/update [(:id group)])
+                   (ptk/data-event :layout/update {:ids [(:id group)]})
                    (dwu/commit-undo-transaction undo-id))))))))
 
 (def unmask-group
@@ -319,7 +307,7 @@
                               (-> changes
                                   (pcb/update-shapes [(:id mask)]
                                                      (fn [shape]
-                                                       (dissoc shape :masked-group?)))
+                                                       (dissoc shape :masked-group)))
                                   (pcb/resize-parents [(:id mask)])))
                             (-> (pcb/empty-changes it page-id)
                                 (pcb/with-objects objects))

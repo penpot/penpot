@@ -1,30 +1,33 @@
-[{:id "material-design-3"
-  :name "Material Design 3"
-  :file-uri "https://github.com/penpot/penpot-files/raw/main/Material%20Design%203.penpot"}
- {:id "tutorial-for-beginners"
+[{:id "tutorial-for-beginners"
   :name "Tutorial for beginners"
   :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/tutorial-for-beginners.penpot"}
- {:id "penpot-design-system"
-  :name "Penpot Design System"
-  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Penpot-Design-system.penpot"}
- {:id "flex-layout-playground"
-  :name "Flex Layout Playground"
-  :file-uri "https://github.com/penpot/penpot-files/raw/main/Flex%20Layout%20Playground.penpot"}
+ {:id "lucide-icons"
+  :name "Lucide Icons"
+  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Lucide-icons.penpot"}
+ {:id "font-awesome"
+  :name "Font Awesome"
+  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Font-Awesome.penpot"}
+ {:id "plants-app"
+  :name "Plants app"
+  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Plants-app.penpot"}
  {:id "wireframing-kit"
   :name "Wireframing Kit"
   :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/wireframing-kit.penpot"}
- {:id "ant-design"
-  :name "Ant Design UI Kit (lite)"
-  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Ant-Design-UI-Kit-Lite.penpot"}
- {:id "cocomaterial"
-  :name "Cocomaterial"
-  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Cocomaterial.penpot"}
- {:id "circum-icons"
-  :name "Circum Icons pack"
-  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/CircumIcons.penpot"}
- {:id "coreui"
-  :name "CoreUI"
-  :file-uri "https://github.com/penpot/penpot-files/raw/main/CoreUI%20DesignSystem%20(DEMO).penpot"}
+ {:id "black-white-mobile-templates"
+  :name "Black & White Mobile Templates"
+  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Black-White-Mobile-Templates.penpot"}
+ {:id "avataaars"
+  :name "Avataaars"
+  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Avataaars-by-Pablo-Stanley.penpot"}
+ {:id "ux-notes"
+  :name "UX Notes"
+  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/UX-Notes.penpot"}
  {:id "whiteboarding-kit"
   :name "Whiteboarding Kit"
-  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Whiteboarding-mapping-kit.penpot"}]
+  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Whiteboarding-mapping-kit.penpot"}
+ {:id "open-color-scheme"
+  :name "Open Color Scheme"
+  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Open-Color-Scheme.penpot"}
+ {:id "flex-layout-playground"
+  :name "Flex Layout Playground"
+  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Flex-Layout-Playground.penpot"}]

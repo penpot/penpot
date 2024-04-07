@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.colorpicker.gradients
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
    [cuerdas.core :as str]
@@ -20,17 +21,21 @@
 
 (mf/defc gradients
   [{:keys [stops editing-stop on-select-stop]}]
-  [:div.gradient-stops
-   [:div.gradient-background-wrapper
-    [:div.gradient-background {:style {:background (gradient->string stops)}}]]
+  [:div {:class (stl/css :gradient-stops)}
+   [:div {:class (stl/css :gradient-background-wrapper)}
+    [:div {:class (stl/css :gradient-background)
+           :style {:background (gradient->string stops)}}]]
 
-   [:div.gradient-stop-wrapper
+   [:div {:class (stl/css :gradient-stop-wrapper)}
     (for [{:keys [offset hex r g b alpha] :as value} stops]
-      [:div.gradient-stop
-       {:class (when (= editing-stop offset) "active")
-        :on-click (partial on-select-stop offset)
-        :style {:left (dm/str (* offset 100) "%")}
-        :key (dm/str offset)}
+      [:button {:class (stl/css-case :gradient-stop true
+                                     :selected (= editing-stop offset))
+                :data-value (str offset)
+                :on-click on-select-stop
+                :style {:left (dm/str (* offset 100) "%")}
+                :key (dm/str offset)}
 
-       [:div.gradient-stop-color {:style {:background-color hex}}]
-       [:div.gradient-stop-alpha {:style {:background-color (str/ffmt "rgba(%1, %2, %3, %4)" r g b alpha)}}]])]])
+       [:div {:class (stl/css :gradient-stop-color)
+              :style {:background-color hex}}]
+       [:div {:class (stl/css :gradient-stop-alpha)
+              :style {:background-color (str/ffmt "rgba(%1, %2, %3, %4)" r g b alpha)}}]])]])

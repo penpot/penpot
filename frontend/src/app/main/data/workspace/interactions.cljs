@@ -8,10 +8,9 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.changes-builder :as pcb]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
-   [app.common.pages :as cp]
-   [app.common.pages.changes-builder :as pcb]
-   [app.common.pages.helpers :as cph]
    [app.common.types.page :as ctp]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.interactions :as ctsi]
@@ -20,30 +19,36 @@
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.streams :as ms]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [app.util.mouse :as mse]
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 ;; --- Flows
 
 (defn add-flow
   [starting-frame]
+
+  (dm/assert!
+   "expect uuid"
+   (uuid? starting-frame))
+
   (ptk/reify ::add-flow
     ptk/WatchEvent
     (watch [it state _]
       (let [page    (wsh/lookup-page state)
 
             flows   (get-in page [:options :flows] [])
-            unames  (into #{} (map :name flows))
-            name    (cp/generate-unique-name unames "Flow 1")
+            unames  (cfh/get-used-names flows)
+            name    (cfh/generate-unique-name unames "Flow 1")
 
             new-flow {:id (uuid/next)
                       :name name
                       :starting-frame starting-frame}]
 
         (rx/of (dch/commit-changes
-                 (-> (pcb/empty-changes it)
-                     (pcb/with-page page)
-                     (pcb/update-page-option :flows ctp/add-flow new-flow))))))))
+                (-> (pcb/empty-changes it)
+                    (pcb/with-page page)
+                    (pcb/update-page-option :flows ctp/add-flow new-flow))))))))
 
 (defn add-flow-selected-frame
   []
@@ -61,9 +66,9 @@
     (watch [it state _]
       (let [page (wsh/lookup-page state)]
         (rx/of (dch/commit-changes
-                 (-> (pcb/empty-changes it)
-                     (pcb/with-page page)
-                     (pcb/update-page-option :flows ctp/remove-flow flow-id))))))))
+                (-> (pcb/empty-changes it)
+                    (pcb/with-page page)
+                    (pcb/update-page-option :flows ctp/remove-flow flow-id))))))))
 
 (defn rename-flow
   [flow-id name]
@@ -72,12 +77,12 @@
   (ptk/reify ::rename-flow
     ptk/WatchEvent
     (watch [it state _]
-      (let [page (wsh/lookup-page state) ]
+      (let [page (wsh/lookup-page state)]
         (rx/of (dch/commit-changes
-                 (-> (pcb/empty-changes it)
-                     (pcb/with-page page)
-                     (pcb/update-page-option :flows ctp/update-flow flow-id
-                                             #(ctp/rename-flow % name)))))))))
+                (-> (pcb/empty-changes it)
+                    (pcb/with-page page)
+                    (pcb/update-page-option :flows ctp/update-flow flow-id
+                                            #(ctp/rename-flow % name)))))))))
 
 (defn start-rename-flow
   [id]
@@ -100,7 +105,7 @@
   "Check if some frame is origin or destination of any navigate interaction
   in the page"
   [objects frame-id]
-  (let [children (cph/get-children-with-self objects frame-id)]
+  (let [children (cfh/get-children-with-self objects frame-id)]
     (or (some ctsi/flow-origin? (map :interactions children))
         (some #(ctsi/flow-to? % frame-id) (map :interactions (vals objects))))))
 
@@ -112,7 +117,7 @@
      (watch [_ state _]
        (let [page-id  (:current-page-id state)
              objects  (wsh/lookup-page-objects state page-id)
-             frame    (cph/get-root-frame objects (:id shape))
+             frame    (cfh/get-root-frame objects (:id shape))
              flows    (get-in state [:workspace-data
                                      :pages-index
                                      page-id
@@ -120,16 +125,16 @@
                                      :flows] [])
              flow     (ctp/get-frame-flow flows (:id frame))]
          (rx/concat
-           (rx/of (dch/update-shapes [(:id shape)]
-                    (fn [shape]
-                      (let [new-interaction (-> ctsi/default-interaction
-                                                (ctsi/set-destination destination)
-                                                (assoc :position-relative-to (:id shape)))]
-                        (update shape :interactions
-                                ctsi/add-interaction new-interaction)))))
-           (when (and (not (connected-frame? objects (:id frame)))
-                      (nil? flow))
-             (rx/of (add-flow (:id frame))))))))))
+          (rx/of (dch/update-shapes [(:id shape)]
+                                    (fn [shape]
+                                      (let [new-interaction (-> ctsi/default-interaction
+                                                                (ctsi/set-destination destination)
+                                                                (assoc :position-relative-to (:id shape)))]
+                                        (update shape :interactions
+                                                ctsi/add-interaction new-interaction)))))
+          (when (and (not (connected-frame? objects (:id frame)))
+                     (nil? flow))
+            (rx/of (add-flow (:id frame))))))))))
 
 (defn remove-interaction
   [shape index]
@@ -137,9 +142,9 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of (dch/update-shapes [(:id shape)]
-               (fn [shape]
-                 (update shape :interactions
-                         ctsi/remove-interaction index)))))))
+                                (fn [shape]
+                                  (update shape :interactions
+                                          ctsi/remove-interaction index)))))))
 
 (defn update-interaction
   [shape index update-fn]
@@ -147,9 +152,9 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of (dch/update-shapes [(:id shape)]
-               (fn [shape]
-                 (update shape :interactions
-                        ctsi/update-interaction index update-fn)))))))
+                                (fn [shape]
+                                  (update shape :interactions
+                                          ctsi/update-interaction index update-fn)))))))
 
 (defn remove-all-interactions-nav-to
   "Remove all interactions that navigate to the given frame."
@@ -188,13 +193,13 @@
     (watch [_ state stream]
       (let [initial-pos @ms/mouse-position
             selected (wsh/lookup-selected state)
-            stopper (rx/filter ms/mouse-up? stream)]
+            stopper  (mse/drag-stopper stream)]
         (when (= 1 (count selected))
           (rx/concat
-            (->> ms/mouse-position
-                 (rx/take-until stopper)
-                 (rx/map #(move-edit-interaction initial-pos %)))
-            (rx/of (finish-edit-interaction index initial-pos))))))))
+           (->> ms/mouse-position
+                (rx/take-until stopper)
+                (rx/map #(move-edit-interaction initial-pos %)))
+           (rx/of (finish-edit-interaction index initial-pos))))))))
 
 (defn- get-target-frame
   [state position]
@@ -203,10 +208,12 @@
         from-id (-> state wsh/lookup-selected first)
         from-shape (wsh/lookup-shape state from-id)
 
-        from-frame-id (if (cph/frame-shape? from-shape)
+        from-frame-id (if (cfh/frame-shape? from-shape)
                         from-id (:frame-id from-shape))
 
-        target-frame (ctst/frame-by-position objects position)]
+        target-frame
+        (->> (ctst/get-frames-by-position objects position)
+             (last))]
 
     (when (and (not= (:id target-frame) uuid/zero)
                (not= (:id target-frame) from-frame-id))
@@ -250,33 +257,33 @@
             undo-id (js/Symbol)]
 
         (rx/of
-          (dwu/start-undo-transaction undo-id)
+         (dwu/start-undo-transaction undo-id)
 
-          (when (:hide-in-viewer target-frame)
+         (when (:hide-in-viewer target-frame)
             ; If the target frame is hidden, we need to unhide it so
             ; users can navigate to it.
-            (dch/update-shapes [(:id target-frame)]
-                               #(dissoc % :hide-in-viewer)))
+           (dch/update-shapes [(:id target-frame)]
+                              #(dissoc % :hide-in-viewer)))
 
-          (cond
-            (or (nil? shape)
+         (cond
+           (or (nil? shape)
                 ;; Didn't changed the position for the interaction
-                (= position initial-pos)
+               (= position initial-pos)
                 ;; New interaction but invalid target
-                (and (nil? index) (nil? target-frame)))
-            nil
+               (and (nil? index) (nil? target-frame)))
+           nil
 
             ;; Dropped interaction in an invalid target. We remove it
-            (and (some? index) (nil? target-frame))
-            (remove-interaction shape index)
+           (and (some? index) (nil? target-frame))
+           (remove-interaction shape index)
 
-            (nil? index)
-            (add-new-interaction shape (:id target-frame))
+           (nil? index)
+           (add-new-interaction shape (:id target-frame))
 
-            :else
-            (update-interaction shape index change-interaction))
+           :else
+           (update-interaction shape index change-interaction))
 
-          (dwu/commit-undo-transaction undo-id))))))
+         (dwu/commit-undo-transaction undo-id))))))
 
 ;; --- Overlays
 
@@ -296,7 +303,7 @@
     (watch [_ state stream]
       (let [initial-pos @ms/mouse-position
             selected (wsh/lookup-selected state)
-            stopper (rx/filter ms/mouse-up? stream)]
+            stopper  (mse/drag-stopper stream)]
         (when (= 1 (count selected))
           (let [page-id     (:current-page-id state)
                 objects     (wsh/lookup-page-objects state page-id)
@@ -307,16 +314,16 @@
                 overlay-pos (-> shape
                                 (get-in [:interactions index])
                                 :overlay-position)
-                orig-frame  (cph/get-frame objects shape)
+                orig-frame  (cfh/get-frame objects shape)
                 frame-pos   (gpt/point (:x orig-frame) (:y orig-frame))
                 offset      (-> initial-pos
                                 (gpt/subtract overlay-pos)
                                 (gpt/subtract frame-pos))]
             (rx/concat
-              (->> ms/mouse-position
-                   (rx/take-until stopper)
-                   (rx/map #(move-overlay-pos % frame-pos offset)))
-              (rx/of (finish-move-overlay-pos index frame-pos offset)))))))))
+             (->> ms/mouse-position
+                  (rx/take-until stopper)
+                  (rx/map #(move-overlay-pos % frame-pos offset)))
+             (rx/of (finish-move-overlay-pos index frame-pos offset)))))))))
 
 (defn move-overlay-pos
   [pos frame-pos offset]
@@ -329,33 +336,33 @@
         (assoc-in state [:workspace-local :move-overlay-to] pos)))))
 
 (defn finish-move-overlay-pos
- [index frame-pos offset]
- (ptk/reify ::finish-move-overlay-pos
+  [index frame-pos offset]
+  (ptk/reify ::finish-move-overlay-pos
     ptk/UpdateEvent
     (update [_ state]
       (-> state
           (d/dissoc-in [:workspace-local :move-overlay-to])
           (d/dissoc-in [:workspace-local :move-overlay-index])))
 
-   ptk/WatchEvent
-   (watch [_ state _]
-     (let [pos         @ms/mouse-position
-           overlay-pos (-> pos
-                           (gpt/subtract frame-pos)
-                           (gpt/subtract offset))
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [pos         @ms/mouse-position
+            overlay-pos (-> pos
+                            (gpt/subtract frame-pos)
+                            (gpt/subtract offset))
 
-           page-id     (:current-page-id state)
-           objects     (wsh/lookup-page-objects state page-id)
-           shape       (->> state
-                            wsh/lookup-selected
-                            first
-                            (get objects))
+            page-id     (:current-page-id state)
+            objects     (wsh/lookup-page-objects state page-id)
+            shape       (->> state
+                             wsh/lookup-selected
+                             first
+                             (get objects))
 
-           interactions (:interactions shape)
+            interactions (:interactions shape)
 
-           new-interactions
-           (update interactions index
-                   #(ctsi/set-overlay-position % overlay-pos))]
+            new-interactions
+            (update interactions index
+                    #(ctsi/set-overlay-position % overlay-pos))]
 
-       (rx/of (dch/update-shapes [(:id shape)] #(merge % {:interactions new-interactions})))))))
+        (rx/of (dch/update-shapes [(:id shape)] #(merge % {:interactions new-interactions})))))))
 

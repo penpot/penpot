@@ -37,7 +37,6 @@
 
   (:require
    [app.common.fressian :as fres]
-   [app.common.logging :as l]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
    [app.util.time :as dt]
@@ -60,10 +59,15 @@
 
 (declare create)
 
+(defn create-tracked
+  []
+  (atom {}))
+
 (defprotocol IPointerMap
   (get-id [_])
   (load! [_])
   (modified? [_])
+  (loaded? [_])
   (clone [_]))
 
 (deftype PointerMap [id mdata
@@ -73,8 +77,6 @@
 
   IPointerMap
   (load! [_]
-    (l/trace :hint "pointer-map:load" :id id)
-
     (when-not *load-fn*
       (throw (UnsupportedOperationException. "load is not supported when *load-fn* is not bind")))
 
@@ -86,6 +88,7 @@
     (or odata {}))
 
   (modified? [_] modified?)
+  (loaded? [_] loaded?)
   (get-id [_] id)
 
   (clone [this]
@@ -162,32 +165,36 @@
 
   (assoc [this key val]
     (when-not loaded? (load! this))
-    (let [odata (assoc odata key val)
-          mdata (assoc mdata :created-at (dt/now))
-          id    (if modified? id (uuid/next))
-          pmap  (PointerMap. id
-                             mdata
-                             odata
-                             true
-                             true)]
-      (some-> *tracked* (swap! assoc id pmap))
-      pmap))
+    (let [odata' (assoc odata key val)]
+      (if (identical? odata odata')
+        this
+        (let [mdata (assoc mdata :created-at (dt/now))
+              id    (if modified? id (uuid/next))
+              pmap  (PointerMap. id
+                                 mdata
+                                 odata'
+                                 true
+                                 true)]
+          (some-> *tracked* (swap! assoc id pmap))
+          pmap))))
 
   (assocEx [_ _ _]
     (throw (UnsupportedOperationException. "method not implemented")))
 
   (without [this key]
     (when-not loaded? (load! this))
-    (let [odata (dissoc odata key)
-          mdata (assoc mdata :created-at (dt/now))
-          id    (if modified? id (uuid/next))
-          pmap  (PointerMap. id
-                             mdata
-                             odata
-                             true
-                             true)]
-      (some-> *tracked* (swap! assoc id pmap))
-      pmap))
+    (let [odata' (dissoc odata key)]
+      (if (identical? odata odata')
+        this
+        (let [mdata (assoc mdata :created-at (dt/now))
+              id    (if modified? id (uuid/next))
+              pmap  (PointerMap. id
+                                 mdata
+                                 odata'
+                                 true
+                                 true)]
+          (some-> *tracked* (swap! assoc id pmap))
+          pmap))))
 
   Counted
   (count [this]
@@ -221,7 +228,15 @@
     (do
       (some-> *tracked* (swap! assoc (get-id data) data))
       data)
-    (into (create) data)))
+    (let [mdata (assoc (meta data) :created-at (dt/now))
+          id    (uuid/next)
+          pmap  (PointerMap. id
+                             mdata
+                             data
+                             true
+                             true)]
+      (some-> *tracked* (swap! assoc id pmap))
+      pmap)))
 
 (fres/add-handlers!
  {:name "penpot/pointer-map/v1"

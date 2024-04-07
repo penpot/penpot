@@ -5,12 +5,13 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.viewer.interactions
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.helpers :as cph]
    [app.common.types.modifiers :as ctm]
    [app.common.types.page :as ctp]
    [app.common.uuid :as uuid]
@@ -34,98 +35,138 @@
                     (gpt/add delta)
                     (gpt/negate))
         update-fn #(d/update-when %1 %2 gsh/transform-shape (ctm/move-modifiers vector))]
-    (->> (cph/get-children-ids objects frame-id)
+    (->> (cfh/get-children-ids objects frame-id)
          (into [frame-id])
          (reduce update-fn objects))))
+
+(defn get-fixed-ids
+  [objects]
+  (let [fixed-ids (filter cfh/fixed-scroll? (vals objects))
+
+        ;; we have to consider the children if the fixed element is a group
+        fixed-children-ids
+        (into #{} (mapcat #(cfh/get-children-ids objects (:id %)) fixed-ids))
+
+        parent-children-ids
+        (->> fixed-ids
+             (mapcat #(cons (:id %) (cfh/get-parent-ids objects (:id %))))
+             (remove #(= % uuid/zero)))
+
+        fixed-ids
+        (concat fixed-children-ids parent-children-ids)]
+    fixed-ids))
 
 (mf/defc viewport-svg
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   [props]
-  (let [page    (unchecked-get props "page")
-        frame   (unchecked-get props "frame")
-        base    (unchecked-get props "base")
-        offset  (unchecked-get props "offset")
-        size    (unchecked-get props "size")
-        delta   (or (unchecked-get props "delta") (gpt/point 0 0))
+  (let [page      (unchecked-get props "page")
+        frame     (unchecked-get props "frame")
+        base      (unchecked-get props "base")
+        offset    (unchecked-get props "offset")
+        size      (unchecked-get props "size")
+        fixed?    (unchecked-get props "fixed?")
+        delta     (or (unchecked-get props "delta") (gpt/point 0 0))
+        vbox      (:vbox size)
 
-        vbox    (:vbox size)
+        frame     (cond-> frame fixed? (assoc :fixed-scroll true))
 
-        fixed-ids (filter :fixed-scroll (vals (:objects page)))
+        objects   (:objects page)
+        objects   (cond-> objects fixed? (assoc-in [(:id frame) :fixed-scroll] true))
 
-        ;; we have con consider the children if the fixed element is a group
-        fixed-children-ids (into #{} (mapcat #(cph/get-children-ids (:objects page) (:id %)) fixed-ids))
+        fixed-ids (get-fixed-ids objects)
 
-        parent-children-ids (->> fixed-ids
-                                 (mapcat #(cons (:id %) (cph/get-parent-ids (:objects page) (:id %))))
-                                 (remove #(= % uuid/zero)))
+        not-fixed-ids
+        (->> (remove (set fixed-ids) (keys objects))
+             (remove #(= % uuid/zero)))
 
-        fixed-ids (concat fixed-children-ids parent-children-ids)
+        calculate-objects
+        (fn [ids]
+          (->> ids
+               (map (d/getf objects))
+               (concat [frame])
+               (d/index-by :id)
+               (prepare-objects frame size delta)))
 
-        not-fixed-ids (->> (remove (set fixed-ids) (keys (:objects page)))
-                           (remove #(= % uuid/zero)))
+        objects-fixed
+        (mf/with-memo [fixed-ids page frame size delta]
+          (calculate-objects fixed-ids))
 
-        calculate-objects (fn [ids] (->> ids
-                                         (map (d/getf (:objects page)))
-                                         (concat [frame])
-                                         (d/index-by :id)
-                                         (prepare-objects frame size delta)))
+        objects-not-fixed
+        (mf/with-memo [not-fixed-ids page frame size delta]
+          (calculate-objects not-fixed-ids))
 
-        objects-fixed (mf/with-memo [fixed-ids page frame size delta]
-                        (calculate-objects fixed-ids))
+        all-objects
+        (mf/with-memo [objects-fixed objects-not-fixed]
+          (merge objects-fixed objects-not-fixed))
 
-        objects-not-fixed (mf/with-memo [not-fixed-ids page frame size delta]
-                            (calculate-objects not-fixed-ids))
+        wrapper-fixed
+        (mf/with-memo [page frame size]
+          (shapes/frame-container-factory (assoc objects-fixed ::fixed true) all-objects))
 
-        all-objects (mf/with-memo [objects-fixed objects-not-fixed]
-                      (merge objects-fixed objects-not-fixed))
-
-        wrapper-fixed (mf/with-memo [page frame size]
-                        (shapes/frame-container-factory objects-fixed all-objects))
-
-        wrapper-not-fixed (mf/with-memo [objects-not-fixed]
-                            (shapes/frame-container-factory objects-not-fixed all-objects))
+        wrapper-not-fixed
+        (mf/with-memo [objects-not-fixed]
+          (shapes/frame-container-factory objects-not-fixed all-objects))
 
         ;; Retrieve frames again with correct modifier
         frame   (get all-objects (:id frame))
         base    (get all-objects (:id base))
 
-        non-delay-interactions (->> (:interactions frame)
-                                    (filterv #(not= (:event-type %) :after-delay)))
+        non-delay-interactions
+        (->> (:interactions frame)
+             (filterv #(not= (:event-type %) :after-delay)))
 
-        fixed-frame (-> frame
-                        (dissoc :fills)
-                        (assoc :interactions non-delay-interactions))]
+        fixed-frame
+        (-> frame
+            (dissoc :fills)
+            (assoc :interactions non-delay-interactions))]
 
     [:& (mf/provider shapes/base-frame-ctx) {:value base}
      [:& (mf/provider shapes/frame-offset-ctx) {:value offset}
-      ;; We have two different svgs for fixed and not fixed elements so we can emulate the sticky css attribute in svg
-      [:svg.not-fixed {:view-box vbox
-                       :width (:width size)
-                       :height (:height size)
-                       :version "1.1"
-                       :xmlnsXlink "http://www.w3.org/1999/xlink"
-                       :xmlns "http://www.w3.org/2000/svg"
-                       :fill "none"}
-       [:& wrapper-not-fixed {:shape frame :view-box vbox}]]
-      [:svg.fixed {:view-box vbox
-                   :width (:width size)
-                   :height (:height size)
-                   :version "1.1"
-                   :xmlnsXlink "http://www.w3.org/1999/xlink"
-                   :xmlns "http://www.w3.org/2000/svg"
-                   :fill "none"
-                   :style {:width (:width size)
-                           :height (:height size)}}
-       [:& wrapper-fixed {:shape fixed-frame :view-box vbox}]]]]))
+      (if fixed?
+        [:svg {:class (stl/css :fixed)
+               :view-box vbox
+               :width (:width size)
+               :height (:height size)
+               :version "1.1"
+               :xmlnsXlink "http://www.w3.org/1999/xlink"
+               :xmlns "http://www.w3.org/2000/svg"
+               :fill "none"}
+         [:& wrapper-not-fixed {:shape frame :view-box vbox}]]
+
+        [:*
+         ;; We have two different svgs for fixed and not fixed elements so we can emulate the sticky css attribute in svg
+         [:svg {:class (stl/css :fixed)
+                :view-box vbox
+                :width (:width size)
+                :height (:height size)
+                :version "1.1"
+                :xmlnsXlink "http://www.w3.org/1999/xlink"
+                :xmlns "http://www.w3.org/2000/svg"
+                :fill "none"
+                :style {:width (:width size)
+                        :height (:height size)
+                        :z-index 1}}
+          [:& wrapper-fixed {:shape fixed-frame :view-box vbox}]]
+
+         [:svg {:class (stl/css :not-fixed)
+                :view-box vbox
+                :width (:width size)
+                :height (:height size)
+                :version "1.1"
+                :xmlnsXlink "http://www.w3.org/1999/xlink"
+                :xmlns "http://www.w3.org/2000/svg"
+                :fill "none"}
+          [:& wrapper-not-fixed {:shape frame :view-box vbox}]]])]]))
 
 (mf/defc viewport
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   [props]
   (let [;; NOTE: with `use-equal-memo` hook we ensure that all values
-        ;; conserves the reference identity for avoid unnecessary dummy
-        ;; rerenders.
+        ;; conserves the reference identity for avoid unnecessary
+        ;; dummy rerenders.
+
         mode   (h/use-equal-memo (unchecked-get props "interactions-mode"))
         offset (h/use-equal-memo (unchecked-get props "frame-offset"))
         size   (h/use-equal-memo (unchecked-get props "size"))
@@ -133,7 +174,8 @@
 
         page   (unchecked-get props "page")
         frame  (unchecked-get props "frame")
-        base   (unchecked-get props "base-frame")]
+        base   (unchecked-get props "base-frame")
+        fixed? (unchecked-get props "fixed?")]
 
     (mf/with-effect [mode]
       (let [on-click
@@ -173,7 +215,8 @@
                       :base base
                       :offset offset
                       :size size
-                      :delta delta}]))
+                      :delta delta
+                      :fixed? fixed?}]))
 
 (mf/defc flows-menu
   {::mf/wrap [mf/memo]}
@@ -181,33 +224,44 @@
   (let [flows        (dm/get-in page [:options :flows])
         frames       (:frames page)
         frame        (get frames index)
-        current-flow (mf/use-state
-                       (ctp/get-frame-flow flows (:id frame)))
+        current-flow* (mf/use-state
+                       #(ctp/get-frame-flow flows (:id frame)))
 
-        show-dropdown?  (mf/use-state false)
-        toggle-dropdown (mf/use-fn #(swap! show-dropdown? not))
-        hide-dropdown   (mf/use-fn #(reset! show-dropdown? false))
+        current-flow  (deref current-flow*)
+
+        show-dropdown?*  (mf/use-state false)
+        show-dropdown?   (deref show-dropdown?*)
+        toggle-dropdown  (mf/use-fn #(swap! show-dropdown?* not))
+        hide-dropdown    (mf/use-fn #(reset! show-dropdown?* false))
 
         select-flow
         (mf/use-callback
-         (fn [flow]
-           (reset! current-flow flow)
-           (st/emit! (dv/go-to-frame (:starting-frame flow)))))]
+         (fn [event]
+           (let [flow (-> (dom/get-current-target event)
+                          (dom/get-data "value")
+                          (d/read-string))]
+             (reset! current-flow* flow)
+             (st/emit! (dv/go-to-frame (:starting-frame flow))))))]
 
     (when (seq flows)
-      [:div.view-options {:on-click toggle-dropdown}
-       [:span.icon i/play]
-       [:span.label (:name @current-flow)]
-       [:span.icon i/arrow-down]
-       [:& dropdown {:show @show-dropdown?
+      [:div {:on-click toggle-dropdown
+             :class (stl/css :view-options)}
+       [:span {:class (stl/css :icon)} i/play]
+       [:span {:class (stl/css :dropdown-title)} (:name current-flow)]
+       [:span {:class (stl/css :icon-dropdown)}  i/arrow]
+       [:& dropdown {:show show-dropdown?
                      :on-close hide-dropdown}
-        [:ul.dropdown.with-check
+        [:ul {:class (stl/css :dropdown)}
          (for [[index flow] (d/enumerate flows)]
            [:li {:key (dm/str "flow-" (:id flow) "-" index)
-                 :class (dom/classnames :selected (= (:id flow) (:id @current-flow)))
-                 :on-click #(select-flow flow)}
-            [:span.icon i/tick]
-            [:span.label (:name flow)]])]]])))
+                 :class (stl/css-case :dropdown-element true
+                                      :selected (= (:id flow) (:id current-flow)))
+                         ;; This is not a best practise, is not very performant Do not reproduce
+                 :data-value (pr-str flow)
+                 :on-click select-flow}
+            [:span {:class (stl/css :label)} (:name flow)]
+            (when (= (:id flow) (:id current-flow))
+              [:span {:class (stl/css :icon)} i/tick])])]]])))
 
 (mf/defc interactions-menu
   [{:keys [interactions-mode]}]
@@ -217,54 +271,82 @@
 
         select-mode
         (mf/use-fn
-          (fn [event]
-            (let [mode (some-> (dom/get-current-target event)
-                         (dom/get-data "mode")
-                         (keyword))]
-              (dom/stop-propagation event)
-              (st/emit! (dv/set-interactions-mode mode)))))]
-
-    [:div.view-options {:on-click toggle-dropdown}
-     [:span.label (tr "viewer.header.interactions")]
-     [:span.icon i/arrow-down]
+         (fn [event]
+           (let [mode (some-> (dom/get-current-target event)
+                              (dom/get-data "mode")
+                              (keyword))]
+             (dom/stop-propagation event)
+             (st/emit! (dv/set-interactions-mode mode)))))]
+    [:div {:on-click toggle-dropdown
+           :class (stl/css :view-options)}
+     [:span {:class (stl/css :dropdown-title)} (tr "viewer.header.interactions")]
+     [:span {:class (stl/css :icon-dropdown)} i/arrow]
      [:& dropdown {:show @show-dropdown?
                    :on-close hide-dropdown}
-      [:ul.dropdown.with-check
-       [:li {:class (dom/classnames :selected (= interactions-mode :hide))
+      [:ul {:class (stl/css :dropdown)}
+       [:li {:class (stl/css-case :dropdown-element true
+                                  :selected (= interactions-mode :hide))
              :on-click select-mode
-             :data-mode :hide}
-        [:span.icon i/tick]
-        [:span.label (tr "viewer.header.dont-show-interactions")]]
+             :data-mode "hide"}
 
-       [:li {:class (dom/classnames :selected (= interactions-mode :show))
+        [:span {:class (stl/css :label)} (tr "viewer.header.dont-show-interactions")]
+        (when (= interactions-mode :hide)
+          [:span {:class (stl/css :icon)}  i/tick])]
+
+       [:li {:class (stl/css-case :dropdown-element true
+                                  :selected (= interactions-mode :show))
              :on-click select-mode
-             :data-mode :show}
-        [:span.icon i/tick]
-        [:span.label (tr "viewer.header.show-interactions")]]
+             :data-mode "show"}
+        [:span {:class (stl/css :label)} (tr "viewer.header.show-interactions")]
+        (when (= interactions-mode :show)
+          [:span {:class (stl/css :icon)}  i/tick])]
 
-       [:li {:class (dom/classnames :selected (= interactions-mode :show-on-click))
+
+
+       [:li {:class (stl/css-case :dropdown-element true
+                                  :selected (= interactions-mode :show-on-click))
              :on-click select-mode
-             :data-mode :show-on-click}
-        [:span.icon i/tick]
-        [:span.label (tr "viewer.header.show-interactions-on-click")]]]]]))
+             :data-mode "show-on-click"}
 
+        [:span {:class (stl/css :label)} (tr "viewer.header.show-interactions-on-click")]
+        (when (= interactions-mode :show-on-click)
+          [:span {:class (stl/css :icon)}  i/tick])]]]]))
 
 (defn animate-go-to-frame
   [animation current-viewport orig-viewport current-size orig-size wrapper-size]
   (case (:animation-type animation)
 
+    ;; Why use three keyframes instead of two?
+    ;; If we use two keyframes, the first frame
+    ;; will disappear while the second frame
+    ;; is still appearing.
+    ;; ___  ___
+    ;;    \/
+    ;; ___/\___
+    ;;     ^ in here we have 50% opacity of both frames so the background
+    ;;       is visible.
+    ;;
+    ;; This solution waits until the second frame
+    ;; has appeared to disappear the first one.
+    ;; ________
+    ;;   /\
+    ;; _/  \___
+    ;;    ^ in here we have 100% opacity of the first frame and 0% opacity.
     :dissolve
     (do (dom/animate! orig-viewport
                       [#js {:opacity "100%"}
-                       #js {:opacity "0"}]
-                      #js {:duration (:duration animation)
-                           :easing (name (:easing animation))}
-                      #(st/emit! (dv/complete-animation)))
+                       #js {:opacity "0%"}
+                       #js {:opacity "0%"}]
+                      #js {:delay (/ (:duration animation) 3)
+                           :duration (/ (* 2 (:duration animation)) 3)
+                           :easing (name (:easing animation))})
         (dom/animate! current-viewport
-                      [#js {:opacity "0"}
+                      [#js {:opacity "0%"}
+                       #js {:opacity "100%"}
                        #js {:opacity "100%"}]
                       #js {:duration (:duration animation)
-                           :easing (name (:easing animation))}))
+                           :easing (name (:easing animation))}
+                      #(st/emit! (dv/complete-animation))))
 
     :slide
     (case (:way animation)

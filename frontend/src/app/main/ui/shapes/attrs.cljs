@@ -9,27 +9,27 @@
    [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
+   [app.common.svg :as csvg]
    [app.common.types.shape :refer [stroke-caps-line stroke-caps-marker]]
    [app.common.types.shape.radius :as ctsr]
-   [app.main.ui.context :as muc]
    [app.util.object :as obj]
-   [app.util.svg :as usvg]
-   [cuerdas.core :as str]
-   [rumext.v2 :as mf]))
+   [cuerdas.core :as str]))
 
-(defn- stroke-type->dasharray
-  [width style]
-  (let [values (case style
-                 :mixed [5 5 1 5]
-                 ;; We want 0 so they are circles
-                 :dotted [(- width) 5]
-                 :dashed [10 10]
-                 nil)]
+(defn- calculate-dasharray
+  [style width]
+  (let [w+5  (+ 5 width)
+        w+1  (+ 1 width)
+        w+10 (+ 10 width)]
+    (case style
+      :mixed  (str/concat "" w+5 "," w+5 "," w+1 "," w+5)
+      :dotted (str/concat "0," w+5)
+      :dashed (str/concat "" w+10 "," w+10)
+      "")))
 
-    (->> values (map #(+ % width)) (str/join ","))))
-
-(defn extract-border-radius [{:keys [x y width height] :as shape}]
+(defn get-border-props
+  [shape]
   (case (ctsr/radius-mode shape)
     :radius-1
     (let [radius (gsh/shape-corners-1 shape)]
@@ -37,6 +37,10 @@
 
     :radius-4
     (let [[r1 r2 r3 r4] (gsh/shape-corners-4 shape)
+          x      (dm/get-prop shape :x)
+          y      (dm/get-prop shape :y)
+          width  (dm/get-prop shape :width)
+          height (dm/get-prop shape :height)
           top    (- width r1 r2)
           right  (- height r2 r3)
           bottom (- width r3 r4)
@@ -53,194 +57,204 @@
                "a" r1 "," r1 " 0 0 1 " r1 "," (- r1) " "
                "z")})))
 
+(defn add-border-props!
+  [props shape]
+  (obj/merge! props (get-border-props shape)))
 
-(defn add-border-radius [attrs shape]
-  (obj/merge! attrs (extract-border-radius shape)))
-
-(defn add-fill
-  ([attrs fill-data render-id type]
-   (add-fill attrs fill-data render-id nil type))
-
+(defn add-fill!
   ([attrs fill-data render-id index type]
-   (let [fill-attrs
-         (cond
-           (contains? fill-data :fill-image)
-           (let [fill-image-id (str "fill-image-" render-id)]
-             {:fill (str "url(#" fill-image-id ")")})
+   (add-fill! attrs fill-data render-id index type "none"))
+  ([attrs fill-data render-id index type fill-default]
+   (let [index (if (some? index) (dm/str "-" index) "")]
+     (cond
+       (contains? fill-data :fill-image)
+       (let [id (dm/str "fill-image-" render-id)]
+         (obj/set! attrs "fill" (dm/str "url(#" id ")")))
 
-           (and (contains? fill-data :fill-color-gradient) (some? (:fill-color-gradient fill-data)))
-           (let [fill-color-gradient-id (str "fill-color-gradient_" render-id (if index (str "_" index) ""))]
-             {:fill (str "url(#" fill-color-gradient-id ")")})
+       (some? (:fill-color-gradient fill-data))
+       (let [id (dm/str "fill-color-gradient-" render-id index)]
+         (obj/set! attrs "fill" (dm/str "url(#" id ")")))
 
-           (contains? fill-data :fill-color)
-           {:fill (:fill-color fill-data)}
+       (contains? fill-data :fill-color)
+       (obj/set! attrs "fill" (:fill-color fill-data))
 
-           :else
-           {:fill "none"})
+       :else
+       (obj/set! attrs "fill" fill-default))
 
-         fill-attrs (cond-> fill-attrs
-                      (contains? fill-data :fill-opacity)
-                      (assoc :fillOpacity (:fill-opacity fill-data))
+     (when (contains? fill-data :fill-opacity)
+       (obj/set! attrs "fillOpacity" (:fill-opacity fill-data)))
 
-                      ;; Old texts with only an opacity set are black by default
-                      (and (= type :text) (nil? (:fill-color-gradient fill-data)) (nil? (:fill-color fill-data)))
-                      (assoc :fill "black"))]
+     (when (and (= :text type)
+                (nil? (:fill-color-gradient fill-data))
+                (nil? (:fill-color fill-data)))
+       (obj/set! attrs "fill" "black"))
 
-     (obj/merge! attrs (clj->js fill-attrs)))))
+     attrs)))
 
-(defn add-stroke [attrs stroke-data render-id index]
-  (let [stroke-style (:stroke-style stroke-data :solid)
-        stroke-color-gradient-id (str "stroke-color-gradient_" render-id "_" index)
-        stroke-width (:stroke-width stroke-data 1)]
-    (if (not= stroke-style :none)
-      (let [stroke-attrs
-            (cond-> {:strokeWidth stroke-width}
-              (:stroke-color-gradient stroke-data)
-              (assoc :stroke (str/format "url(#%s)" stroke-color-gradient-id))
+(defn add-stroke!
+  [attrs data render-id index open-path?]
+  (let [style (:stroke-style data :solid)]
+    (when-not (= style :none)
+      (let [width       (:stroke-width data 1)
+            gradient    (:stroke-color-gradient data)
+            color       (:stroke-color data)
+            opacity     (:stroke-opacity data)]
 
-              (and (not (:stroke-color-gradient stroke-data))
-                   (:stroke-color stroke-data nil))
-              (assoc :stroke (:stroke-color stroke-data nil))
+        (obj/set! attrs "strokeWidth" width)
 
-              (and (not (:stroke-color-gradient stroke-data))
-                   (:stroke-opacity stroke-data nil))
-              (assoc :strokeOpacity (:stroke-opacity stroke-data nil))
+        (when (some? gradient)
+          (let [gradient-id (dm/str "stroke-color-gradient-" render-id "-" index)]
+            (obj/set! attrs "stroke" (str/ffmt "url(#%)" gradient-id))))
 
-              (not= stroke-style :svg)
-              (assoc :strokeDasharray (stroke-type->dasharray stroke-width stroke-style))
+        (when-not (some? gradient)
+          (when (some? color)
+            (obj/set! attrs "stroke" color))
+          (when (some? opacity)
+            (obj/set! attrs "strokeOpacity" opacity)))
 
-              ;; For simple line caps we use svg stroke-line-cap attribute. This
-              ;; only works if all caps are the same and we are not using the tricks
-              ;; for inner or outer strokes.
-              (and (stroke-caps-line (:stroke-cap-start stroke-data))
-                   (= (:stroke-cap-start stroke-data) (:stroke-cap-end stroke-data))
-                   (not (#{:inner :outer} (:stroke-alignment stroke-data)))
-                   (not= :dotted stroke-style))
-              (assoc :strokeLinecap (:stroke-cap-start stroke-data))
+        (when (not= style :svg)
+          (obj/set! attrs "strokeDasharray" (calculate-dasharray style width)))
 
-              (= :dotted stroke-style)
-              (assoc :strokeLinecap "round")
+        ;; For simple line caps we use svg stroke-line-cap attribute. This
+        ;; only works if all caps are the same and we are not using the tricks
+        ;; for inner or outer strokes.
+        (let [caps-start (:stroke-cap-start data)
+              caps-end   (:stroke-cap-end data)
+              alignment  (:stroke-alignment data)]
+          (cond
+            (and (contains? stroke-caps-line caps-start)
+                 (= caps-start caps-end)
+                 (or open-path?
+                     (and (not= :inner alignment)
+                          (not= :outer alignment)))
+                 (not= :dotted style))
+            (obj/set! attrs "strokeLinecap" (name caps-start))
 
-              ;; For other cap types we use markers.
-              (and (or (stroke-caps-marker (:stroke-cap-start stroke-data))
-                       (and (stroke-caps-line (:stroke-cap-start stroke-data))
-                            (not= (:stroke-cap-start stroke-data) (:stroke-cap-end stroke-data))))
-                   (not (#{:inner :outer} (:stroke-alignment stroke-data))))
-              (assoc :markerStart
-                     (str/format "url(#marker-%s-%s)" render-id (name (:stroke-cap-start stroke-data))))
+            (= :dotted style)
+            (obj/set! attrs "strokeLinecap" "round"))
 
-              (and (or (stroke-caps-marker (:stroke-cap-end stroke-data))
-                       (and (stroke-caps-line (:stroke-cap-end stroke-data))
-                            (not= (:stroke-cap-start stroke-data) (:stroke-cap-end stroke-data))))
-                   (not (#{:inner :outer} (:stroke-alignment stroke-data))))
-              (assoc :markerEnd
-                     (str/format "url(#marker-%s-%s)" render-id (name (:stroke-cap-end stroke-data)))))]
+          (when (or open-path?
+                    (and (not= :inner alignment)
+                         (not= :outer alignment)))
 
-        (obj/merge! attrs (clj->js stroke-attrs)))
-      attrs)))
+            ;; For other cap types we use markers.
+            (when (or (contains? stroke-caps-marker caps-start)
+                      (and (contains? stroke-caps-line caps-start)
+                           (not= caps-start caps-end)))
+              (obj/set! attrs "markerStart" (str/ffmt "url(#marker-%-%)" render-id (name caps-start))))
 
-(defn add-layer-props [attrs shape]
-  (cond-> attrs
-    (:opacity shape)
-    (obj/set! "opacity" (:opacity shape))))
+            (when (or (contains? stroke-caps-marker caps-end)
+                      (and (contains? stroke-caps-line caps-end)
+                           (not= caps-start caps-end)))
+              (obj/set! attrs "markerEnd" (str/ffmt "url(#marker-%-%)" render-id (name caps-end))))))))
 
-(defn extract-svg-attrs
-  [render-id svg-defs svg-attrs]
-  (if (and (empty? svg-defs) (empty? svg-attrs))
-    [#js {} #js {}]
-    (let [replace-id (fn [id]
-                       (if (contains? svg-defs id)
-                         (str render-id "-" id)
-                         id))
-          svg-attrs (-> svg-attrs
-                        (usvg/clean-attrs)
-                        (usvg/update-attr-ids replace-id)
-                        (dissoc :id))
+    attrs))
 
-          attrs  (-> svg-attrs (dissoc :style) (clj->js))
-          styles (-> svg-attrs (:style {}) (clj->js))]
-      [attrs styles])))
+(defn get-svg-props
+  [shape render-id]
+  (let [attrs (get shape :svg-attrs {})
+        defs  (get shape :svg-defs {})]
+    (if (and (empty? defs)
+             (empty? attrs))
+      #js {}
+      (-> attrs
+          (csvg/update-attr-ids
+           (fn [id]
+             (if (contains? defs id)
+               (dm/str render-id "-" id)
+               id)))
+          (dissoc :id)
+          (obj/map->obj)))))
 
-(defn add-style-attrs
-  ([props shape]
-   (let [render-id (mf/use-ctx muc/render-id)]
-     (add-style-attrs props shape render-id)))
+(defn get-fill-style
+  ([fill-data index render-id type]
+   (add-fill! #js {} fill-data render-id index type))
+  ([fill-data index render-id type fill-default]
+   (add-fill! #js {} fill-data render-id index type fill-default)))
 
+(defn add-fill-props!
   ([props shape render-id]
-   (let [svg-defs  (:svg-defs shape {})
-         svg-attrs (:svg-attrs shape {})
+   (add-fill-props! props shape 0 render-id))
 
-         [svg-attrs svg-styles]
-         (extract-svg-attrs render-id svg-defs svg-attrs)
+  ([props shape position render-id]
+   (let [shape-fills  (get shape :fills)
+         shape-shadow (get shape :shadow)
+         shape-blur   (get shape :blur)
 
-         styles (-> (obj/get props "style" (obj/create))
-                    (obj/merge! svg-styles)
-                    (add-layer-props shape))
+         svg-attrs    (get-svg-props shape render-id)
+         svg-styles   (obj/get svg-attrs "style")
 
-         styles (cond (or (some? (:fill-image shape))
-                          (= :image (:type shape))
-                          (> (count (:fills shape)) 1)
-                          (some #(some? (:fill-color-gradient %)) (:fills shape)))
-                      (obj/set! styles "fill" (str "url(#fill-0-" render-id ")"))
+         shape-type   (dm/get-prop shape :type)
 
-                      ;; imported svgs can have fill and fill-opacity attributes
-                      (and (some? svg-styles) (obj/contains? svg-styles "fill"))
-                      (-> styles
-                          (obj/set! "fill" (obj/get svg-styles "fill"))
-                          (obj/set! "fillOpacity" (obj/get svg-styles "fillOpacity")))
+         style        (-> (obj/get props "style")
+                          (obj/clone)
+                          (obj/merge! svg-styles))
 
-                      (and (some? svg-attrs) (obj/contains? svg-attrs "fill"))
-                      (-> styles
-                          (obj/set! "fill" (obj/get svg-attrs "fill"))
-                          (obj/set! "fillOpacity" (obj/get svg-attrs "fillOpacity")))
+         url-fill?    (or ^boolean (some? (:fill-image shape))
+                          ^boolean (cfh/image-shape? shape)
+                          ^boolean (> (count shape-fills) 1)
+                          ^boolean (some? (some :fill-color-gradient shape-fills))
+                          ^boolean (some? (some :fill-image shape-fills)))
 
-                      ;; If the shape comes from an imported SVG (we know because it has
-                      ;; the :svg-attrs atribute), and it does not have an own fill, we
-                      ;; set a default black fill. This will be inherited by child nodes,
-                      ;; and is for emulating the behavior of standard SVG, in that a node
-                      ;; that has no explicit fill has a default fill of black.
-                      ;; This may be reset to normal if a Penpot frame shape appears below
-                      ;; (see main.ui.shapes.frame/frame-container).
-                      (and (contains? shape :svg-attrs)
-                           (#{:svg-raw :group} (:type shape))
-                           (empty? (:fills shape)))
-                      (-> styles
-                          (obj/set! "fill" (or (obj/get (:wrapper-styles shape) "fill") clr/black)))
+         props        (if (cfh/frame-shape? shape)
+                        props
+                        (if (or (some? (->> shape-shadow (remove :hidden) seq))
+                                (and (some? shape-blur) (not ^boolean (:hidden shape-blur))))
+                          (obj/set! props "filter" (dm/fmt "url(#filter-%)" render-id))
+                          props))]
 
-                      (d/not-empty? (:fills shape))
-                      (add-fill styles (d/without-nils (get-in shape [:fills 0])) render-id 0 (:type shape))
+     (cond
+       ;; If the shape comes from an imported SVG (we know because
+       ;; it has the :svg-attrs atribute), and it does not have an
+       ;; own fill, we set a default black fill. This will be
+       ;; inherited by child nodes, and is for emulating the
+       ;; behavior of standard SVG, in that a node that has no
+       ;; explicit fill has a default fill of black. This may be
+       ;; reset to normal if a Penpot frame shape appears below
+       ;; (see main.ui.shapes.frame/frame-container).
+       (and ^boolean (contains? shape :svg-attrs)
+            ^boolean (or ^boolean (= :svg-raw shape-type)
+                         ^boolean (= :group shape-type))
+            ^boolean (empty? shape-fills))
+       (let [wstyle (get shape :wrapper-styles)
+             fill   (obj/get wstyle "fill")
+             fill   (d/nilv fill clr/black)]
+         (obj/set! style "fill" fill))
 
-                      :else
-                      styles)]
+       ^boolean url-fill?
+       (do
+         (obj/unset! style "fill")
+         (obj/unset! style "fillOpacity")
+         (obj/set! props "fill" (dm/fmt "url(#fill-%-%)" position render-id)))
+
+       (and ^boolean (some? svg-styles)
+            ^boolean (obj/contains? svg-styles "fill"))
+       (let [fill    (obj/get svg-styles "fill")
+             opacity (obj/get svg-styles "fillOpacity")]
+         (when (some? fill)
+           (obj/set! style "fill" fill))
+         (when (some? opacity)
+           (obj/set! style "fillOpacity" opacity)))
+
+       (and ^boolean (some? svg-attrs)
+            ^boolean (empty? shape-fills))
+       (let [fill    (obj/get svg-attrs "fill")
+             opacity (obj/get svg-attrs "fillOpacity")]
+         (when (some? fill)
+           (obj/set! style "fill" fill))
+         (when (some? opacity)
+           (obj/set! style "fillOpacity" opacity)))
+
+       ^boolean (d/not-empty? shape-fills)
+       (let [fill (nth shape-fills 0)
+             svg-fill (obj/get svg-attrs "fill")
+             fill-default (d/nilv svg-fill "none")]
+         (obj/merge! style (get-fill-style fill render-id 0 shape-type fill-default)))
+
+       (and ^boolean (cfh/path-shape? shape)
+            ^boolean (empty? shape-fills))
+       (obj/set! style "fill" "none"))
 
      (-> props
          (obj/merge! svg-attrs)
-         (add-border-radius shape)
-         (obj/set! "style" styles)))))
-
-(defn extract-style-attrs
-  ([shape]
-   (-> (obj/create)
-       (add-style-attrs shape)))
-  ([shape render-id]
-   (-> (obj/create)
-       (add-style-attrs shape render-id))))
-
-(defn extract-fill-attrs
-  [fill-data render-id index type]
-  (let [fill-styles (-> (obj/get fill-data "style" (obj/create))
-                        (add-fill fill-data render-id index type))]
-    (-> (obj/create)
-        (obj/set! "style" fill-styles))))
-
-(defn extract-stroke-attrs
-  [stroke-data index render-id]
-  (let [stroke-styles (-> (obj/get stroke-data "style" (obj/create))
-                          (add-stroke stroke-data render-id index))]
-    (-> (obj/create)
-        (obj/set! "style" stroke-styles))))
-
-(defn extract-border-radius-attrs
-  [shape]
-  (-> (obj/create)
-      (add-border-radius shape)))
+         (obj/set! "style" style)))))

@@ -9,24 +9,37 @@
    [app.config :as cf]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.auth :refer [auth]]
-   [app.main.ui.auth.verify-token :refer [verify-token]]
    [app.main.ui.context :as ctx]
    [app.main.ui.cursors :as c]
-   [app.main.ui.dashboard :refer [dashboard]]
    [app.main.ui.debug.components-preview :as cm]
+   [app.main.ui.frame-preview :as frame-preview]
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
-   [app.main.ui.onboarding]
-   [app.main.ui.onboarding.questions]
-   [app.main.ui.releases]
-   [app.main.ui.settings :as settings]
+   [app.main.ui.onboarding :refer [onboarding-modal]]
+   [app.main.ui.releases :refer [release-notes-modal]]
    [app.main.ui.static :as static]
-   [app.main.ui.viewer :as viewer]
-   [app.main.ui.workspace :as workspace]
    [app.util.dom :as dom]
+   [app.util.i18n :refer [tr]]
    [app.util.router :as rt]
    [rumext.v2 :as mf]))
+
+(def auth-page
+  (mf/lazy-component app.main.ui.auth/auth))
+
+(def verify-token-page
+  (mf/lazy-component app.main.ui.auth.verify-token/verify-token))
+
+(def viewer-page
+  (mf/lazy-component app.main.ui.viewer/viewer))
+
+(def dashboard-page
+  (mf/lazy-component app.main.ui.dashboard/dashboard))
+
+(def settings-page
+  (mf/lazy-component app.main.ui.settings/settings))
+
+(def workspace-page
+  (mf/lazy-component app.main.ui.workspace/workspace))
 
 (mf/defc on-main-error
   [{:keys [error] :as props}]
@@ -35,7 +48,8 @@
   [:span "Internal application error"])
 
 (mf/defc main-page
-  {::mf/wrap [#(mf/catch % {:fallback on-main-error})]}
+  {::mf/wrap [#(mf/catch % {:fallback on-main-error})]
+   ::mf/props :obj}
   [{:keys [route profile]}]
   (let [{:keys [data params]} route]
     [:& (mf/provider ctx/current-route) {:value route}
@@ -46,17 +60,17 @@
         :auth-register-success
         :auth-recovery-request
         :auth-recovery)
-       [:& auth {:route route}]
+       [:? [:& auth-page {:route route}]]
 
        :auth-verify-token
-       [:& verify-token {:route route}]
+       [:? [:& verify-token-page {:route route}]]
 
        (:settings-profile
         :settings-password
         :settings-options
         :settings-feedback
         :settings-access-tokens)
-       [:& settings/settings {:route route}]
+       [:? [:& settings-page {:route route}]]
 
        :debug-icons-preview
        (when *assert*
@@ -65,11 +79,6 @@
           [:& c/debug-preview]
           [:h1 "Icons"]
           [:& i/debug-icons-preview]])
-
-       :debug-components-preview
-       [:div.debug-preview
-        [:h1 "Components preview"]
-        [:& cm/components-preview]]
 
        (:dashboard-search
         :dashboard-projects
@@ -81,57 +90,71 @@
         :dashboard-team-invitations
         :dashboard-team-webhooks
         :dashboard-team-settings)
-
-       [:*
-        #_[:div.modal-wrapper
-           #_[:& app.main.ui.releases/release-notes-modal {:version "1.16"}]
-           #_[:& app.main.ui.onboarding/onboarding-templates-modal]
-           #_[:& app.main.ui.onboarding/onboarding-modal]
-           #_[:& app.main.ui.onboarding/onboarding-team-modal]]
-        (when-let [props (some-> profile (get :props {}))]
+       [:?
+        #_[:& app.main.ui.releases/release-notes-modal {:version "1.19"}]
+        #_[:& app.main.ui.onboarding/onboarding-templates-modal]
+        #_[:& app.main.ui.onboarding/onboarding-modal]
+        #_[:& app.main.ui.onboarding.team-choice/onboarding-team-modal]
+        (when-let [props (get profile :props)]
           (cond
-            (and (not (:onboarding-questions-answered props false))
-                 (not (:onboarding-viewed props false)))
-            [:& app.main.ui.onboarding.questions/questions]
+            (and (not (:onboarding-viewed props))
+                 (contains? cf/flags :onboarding))
+            [:& onboarding-modal {}]
 
-            (not (:onboarding-viewed props))
-            [:& app.main.ui.onboarding/onboarding-modal {}]
-
-            (and (:onboarding-viewed props)
+            (and (contains? cf/flags :onboarding)
+                 (:onboarding-viewed props)
                  (not= (:release-notes-viewed props) (:main cf/version))
                  (not= "0.0" (:main cf/version)))
-            [:& app.main.ui.releases/release-notes-modal {:version (:main cf/version)}]))
+            [:& release-notes-modal {:version (:main cf/version)}]))
 
-        [:& dashboard {:route route :profile profile}]]
+        [:& dashboard-page {:route route :profile profile}]]
 
        :viewer
        (let [{:keys [query-params path-params]} route
-             {:keys [index share-id section page-id interactions-mode frame-id] :or {section :interactions interactions-mode :show-on-click}} query-params
+             {:keys [index share-id section page-id interactions-mode frame-id]
+              :or {section :interactions interactions-mode :show-on-click}} query-params
              {:keys [file-id]} path-params]
-         (if (:token query-params)
-           [:& viewer/breaking-change-notice]
-           [:& viewer/viewer-page {:page-id page-id
-                                   :file-id file-id
-                                   :section section
-                                   :index index
-                                   :share-id share-id
-                                   :interactions-mode (keyword interactions-mode)
-                                   :interactions-show? (case (keyword interactions-mode)
-                                                         :hide false
-                                                         :show true
-                                                         :show-on-click false)
-                                   :frame-id frame-id}]))
+         [:? {}
+          (if (:token query-params)
+            [:> static/error-container {}
+             [:div.image i/detach]
+             [:div.main-message (tr "viewer.breaking-change.message")]
+             [:div.desc-message (tr "viewer.breaking-change.description")]]
+
+            [:& viewer-page
+             {:page-id page-id
+              :file-id file-id
+              :section section
+              :index index
+              :share-id share-id
+              :interactions-mode (keyword interactions-mode)
+              :interactions-show? (case (keyword interactions-mode)
+                                    :hide false
+                                    :show true
+                                    :show-on-click false)
+              :frame-id frame-id}])])
 
        :workspace
        (let [project-id (some-> params :path :project-id uuid)
              file-id    (some-> params :path :file-id uuid)
              page-id    (some-> params :query :page-id uuid)
              layout     (some-> params :query :layout keyword)]
-         [:& workspace/workspace {:project-id project-id
-                                  :file-id file-id
-                                  :page-id page-id
-                                  :layout-name layout
-                                  :key file-id}])
+         [:? {}
+          [:& workspace-page {:project-id project-id
+                              :file-id file-id
+                              :page-id page-id
+                              :layout-name layout
+                              :key file-id}]])
+
+
+       :debug-components-preview
+       [:div.debug-preview
+        [:h1 "Components preview"]
+        [:& cm/components-preview]]
+
+       :frame-preview
+       [:& frame-preview/frame-preview]
+
        nil)]))
 
 (mf/defc app
@@ -149,6 +172,6 @@
       (if edata
         [:& static/exception-page {:data edata}]
         [:*
-         [:& msgs/notifications]
+         [:& msgs/notifications-hub]
          (when route
            [:& main-page {:route route :profile profile}])])]]))

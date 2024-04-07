@@ -6,6 +6,7 @@
 
 (ns backend-tests.rpc-management-test
   (:require
+   [app.common.pprint :as pp]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.http :as http]
@@ -15,7 +16,7 @@
    [backend-tests.storage-test :refer [configure-storage-backend]]
    [buddy.core.bytes :as b]
    [clojure.test :as t]
-   [datoteka.core :as fs]))
+   [datoteka.fs :as fs]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
@@ -68,12 +69,12 @@
         (t/is (not= (:id file1) (:id result)))
 
         ;; Check that the new file has a correct file library relation
-        (let [[item :as rows] (db/query th/*pool* :file-library-rel {:file-id (:id result)})]
+        (let [[item :as rows] (th/db-query :file-library-rel {:file-id (:id result)})]
           (t/is (= 1 (count rows)))
           (t/is (= (:id file2) (:library-file-id item))))
 
         ;; Check that the new file has a correct file media objects
-        (let [[item :as rows] (db/query th/*pool* :file-media-object {:file-id (:id result)})]
+        (let [[item :as rows] (th/db-query :file-media-object {:file-id (:id result)})]
           (t/is (= 1 (count rows)))
 
           ;; Check that both items have different ids
@@ -90,10 +91,8 @@
           (t/is (not (contains? (get-in result [:data :media]) (:id mobj)))))
 
         ;; Check the total number of files
-        (let [rows (db/query th/*pool* :file {:project-id (:id project)})]
-          (t/is (= 3 (count rows))))
-
-        ))))
+        (let [rows (th/db-query :file {:project-id (:id project)})]
+          (t/is (= 3 (count rows))))))))
 
 (t/deftest duplicate-file-with-deleted-relations
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -140,18 +139,16 @@
         (t/is (not= (:id file1) (:id result)))
 
         ;; Check that there are no relation to a deleted library
-        (let [[item :as rows] (db/query th/*pool* :file-library-rel {:file-id (:id result)})]
+        (let [[item :as rows] (th/db-query :file-library-rel {:file-id (:id result)})]
           (t/is (= 0 (count rows))))
 
         ;; Check that the new file has no media objects
-        (let [[item :as rows] (db/query th/*pool* :file-media-object {:file-id (:id result)})]
+        (let [[item :as rows] (th/db-query :file-media-object {:file-id (:id result)})]
           (t/is (= 0 (count rows))))
 
         ;; Check the total number of files
-        (let [rows (db/query th/*pool* :file {:project-id (:id project)})]
-          (t/is (= 3 (count rows))))
-
-        ))))
+        (let [rows (th/db-query :file {:project-id (:id project)})]
+          (t/is (= 3 (count rows))))))))
 
 (t/deftest duplicate-project
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -199,16 +196,16 @@
         (t/is (not= (:id project) (:id result)))
 
         ;; Check the total number of projects (previously is 2, now is 3)
-        (let [rows (db/query th/*pool* :project {:team-id (:default-team-id profile)})]
+        (let [rows (th/db-query :project {:team-id (:default-team-id profile)})]
           (t/is (= 3 (count rows))))
 
         ;; Check that the new project has the same files
-        (let [p1-files (db/query th/*pool* :file
-                                 {:project-id (:id project)}
-                                 {:order-by [:name]})
-              p2-files (db/query th/*pool* :file
-                                 {:project-id (:id result)}
-                                 {:order-by [:name]})]
+        (let [p1-files (th/db-query :file
+                                    {:project-id (:id project)}
+                                    {:order-by [:name]})
+              p2-files (th/db-query :file
+                                    {:project-id (:id result)}
+                                    {:order-by [:name]})]
           (t/is (= (count p1-files)
                    (count p2-files)))
 
@@ -223,9 +220,7 @@
 
             (when (= (:id fa) (:id file2))
               (t/is (false? (b/equals? (:data fa)
-                                       (:data fb))))))
-
-          )))))
+                                       (:data fb)))))))))))
 
 (t/deftest duplicate-project-with-deleted-files
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -265,16 +260,16 @@
         (t/is (not= (:id project) (:id result)))
 
         ;; Check the total number of projects (previously is 2, now is 3)
-        (let [rows (db/query th/*pool* :project {:team-id (:default-team-id profile)})]
+        (let [rows (th/db-query :project {:team-id (:default-team-id profile)})]
           (t/is (= 3 (count rows))))
 
         ;; Check that the new project has only the second file
-        (let [p1-files (db/query th/*pool* :file
-                                 {:project-id (:id project)}
-                                 {:order-by [:name]})
-              p2-files (db/query th/*pool* :file
-                                 {:project-id (:id result)}
-                                 {:order-by [:name]})]
+        (let [p1-files (th/db-query :file
+                                    {:project-id (:id project)}
+                                    {:order-by [:name]})
+              p2-files (th/db-query :file
+                                    {:project-id (:id result)}
+                                    {:order-by [:name]})]
           (t/is (= (count (rest p1-files))
                    (count p2-files)))
 
@@ -289,9 +284,7 @@
 
             (when (= (:id fa) (:id file2))
               (t/is (false? (b/equals? (:data fa)
-                                       (:data fb))))))
-
-          )))))
+                                       (:data fb)))))))))))
 
 (t/deftest move-file-on-same-team
   (let [profile  (th/create-profile* 1 {:is-active true})
@@ -325,11 +318,11 @@
       (t/is (th/ex-of-code? error :cant-move-to-same-project)))
 
     ;; initially project1 should have 2 files
-    (let [rows (db/query th/*pool* :file {:project-id (:id project1)})]
+    (let [rows (th/db-query :file {:project-id (:id project1)})]
       (t/is (= 2 (count rows))))
 
     ;; initially project2 should be empty
-    (let [rows (db/query th/*pool* :file {:project-id (:id project2)})]
+    (let [rows (th/db-query :file {:project-id (:id project2)})]
       (t/is (= 0 (count rows))))
 
     ;; move a file1 to project2 (in the same team)
@@ -344,23 +337,22 @@
       (t/is (nil? (:result out)))
 
       ;; project1 now should contain 1 file
-      (let [rows (db/query th/*pool* :file {:project-id (:id project1)})]
+      (let [rows (th/db-query :file {:project-id (:id project1)})]
         (t/is (= 1 (count rows))))
 
       ;; project2 now should contain 1 file
-      (let [rows (db/query th/*pool* :file {:project-id (:id project2)})]
+      (let [rows (th/db-query :file {:project-id (:id project2)})]
         (t/is (= 1 (count rows))))
 
       ;; file1 should be still linked to file2
-      (let [[item :as rows] (db/query th/*pool* :file-library-rel {:file-id (:id file1)})]
+      (let [[item :as rows] (th/db-query :file-library-rel {:file-id (:id file1)})]
         (t/is (= 1 (count rows)))
         (t/is (= (:file-id item) (:id file1)))
         (t/is (= (:library-file-id item) (:id file2))))
 
       ;; should be no libraries on file2
-      (let [rows (db/query th/*pool* :file-library-rel {:file-id (:id file2)})]
-        (t/is (= 0 (count rows))))
-      )))
+      (let [rows (th/db-query :file-library-rel {:file-id (:id file2)})]
+        (t/is (= 0 (count rows)))))))
 
 
 ;; TODO: move a library to other team
@@ -392,27 +384,27 @@
     ;; --- initial data checks
 
     ;; the project1 should have 3 files
-    (let [rows (db/query th/*pool* :file {:project-id (:id project1)})]
+    (let [rows (th/db-query :file {:project-id (:id project1)})]
       (t/is (= 3 (count rows))))
 
     ;; should be no files on project2
-    (let [rows (db/query th/*pool* :file {:project-id (:id project2)})]
+    (let [rows (th/db-query :file {:project-id (:id project2)})]
       (t/is (= 0 (count rows))))
 
     ;; the file1 should be linked to file2
-    (let [[item :as rows] (db/query th/*pool* :file-library-rel {:file-id (:id file1)})]
+    (let [[item :as rows] (th/db-query :file-library-rel {:file-id (:id file1)})]
       (t/is (= 1 (count rows)))
       (t/is (= (:file-id item) (:id file1)))
       (t/is (= (:library-file-id item) (:id file2))))
 
     ;; the file2 should be linked to file3
-    (let [[item :as rows] (db/query th/*pool* :file-library-rel {:file-id (:id file2)})]
+    (let [[item :as rows] (th/db-query :file-library-rel {:file-id (:id file2)})]
       (t/is (= 1 (count rows)))
       (t/is (= (:file-id item) (:id file2)))
       (t/is (= (:library-file-id item) (:id file3))))
 
     ;; should be no libraries on file3
-    (let [rows (db/query th/*pool* :file-library-rel {:file-id (:id file3)})]
+    (let [rows (th/db-query :file-library-rel {:file-id (:id file3)})]
       (t/is (= 0 (count rows))))
 
     ;; move to other project in other team
@@ -426,27 +418,26 @@
       (t/is (nil? (:result out)))
 
       ;; project1 now should have 2 file
-      (let [[item1 item2 :as rows] (db/query th/*pool* :file {:project-id (:id project1)}
-                                             {:order-by [:created-at]})]
+      (let [[item1 item2 :as rows] (th/db-query :file {:project-id (:id project1)}
+                                                {:order-by [:created-at]})]
         ;; (clojure.pprint/pprint rows)
         (t/is (= 2 (count rows)))
         (t/is (= (:id item1) (:id file2))))
 
       ;; project2 now should have 1 file
-      (let [[item :as rows] (db/query th/*pool* :file {:project-id (:id project2)})]
+      (let [[item :as rows] (th/db-query :file {:project-id (:id project2)})]
         (t/is (= 1 (count rows)))
         (t/is (= (:id item) (:id file1))))
 
       ;; the moved file1 should not have any link to libraries
-      (let [rows (db/query th/*pool* :file-library-rel {:file-id (:id file1)})]
+      (let [rows (th/db-query :file-library-rel {:file-id (:id file1)})]
         (t/is (zero? (count rows))))
 
       ;; the file2 should still be linked to file3
-      (let [[item :as rows] (db/query th/*pool* :file-library-rel {:file-id (:id file2)})]
+      (let [[item :as rows] (th/db-query :file-library-rel {:file-id (:id file2)})]
         (t/is (= 1 (count rows)))
         (t/is (= (:file-id item) (:id file2)))
-        (t/is (= (:library-file-id item) (:id file3))))
-      )))
+        (t/is (= (:library-file-id item) (:id file3)))))))
 
 
 (t/deftest move-library-to-other-team
@@ -471,21 +462,21 @@
     ;; --- initial data checks
 
     ;; the project1 should have 2 files
-    (let [rows (db/query th/*pool* :file {:project-id (:id project1)})]
+    (let [rows (th/db-query :file {:project-id (:id project1)})]
       (t/is (= 2 (count rows))))
 
     ;; should be no files on project2
-    (let [rows (db/query th/*pool* :file {:project-id (:id project2)})]
+    (let [rows (th/db-query :file {:project-id (:id project2)})]
       (t/is (= 0 (count rows))))
 
     ;; the file1 should be linked to file2
-    (let [[item :as rows] (db/query th/*pool* :file-library-rel {:file-id (:id file1)})]
+    (let [[item :as rows] (th/db-query :file-library-rel {:file-id (:id file1)})]
       (t/is (= 1 (count rows)))
       (t/is (= (:file-id item) (:id file1)))
       (t/is (= (:library-file-id item) (:id file2))))
 
     ;; should be no libraries on file2
-    (let [rows (db/query th/*pool* :file-library-rel {:file-id (:id file2)})]
+    (let [rows (th/db-query :file-library-rel {:file-id (:id file2)})]
       (t/is (= 0 (count rows))))
 
     ;; move the library to other project
@@ -499,25 +490,23 @@
       (t/is (nil? (:result out)))
 
       ;; project1 now should have 1 file
-      (let [[item :as rows] (db/query th/*pool* :file {:project-id (:id project1)}
-                                      {:order-by [:created-at]})]
+      (let [[item :as rows] (th/db-query :file {:project-id (:id project1)}
+                                         {:order-by [:created-at]})]
         (t/is (= 1 (count rows)))
         (t/is (= (:id item) (:id file1))))
 
       ;; project2 now should have 1 file
-      (let [[item :as rows] (db/query th/*pool* :file {:project-id (:id project2)})]
+      (let [[item :as rows] (th/db-query :file {:project-id (:id project2)})]
         (t/is (= 1 (count rows)))
         (t/is (= (:id item) (:id file2))))
 
       ;; the file1 should not have any link to libraries
-      (let [rows (db/query th/*pool* :file-library-rel {:file-id (:id file1)})]
+      (let [rows (th/db-query :file-library-rel {:file-id (:id file1)})]
         (t/is (zero? (count rows))))
 
       ;; the file2 should not have any link to libraries
-      (let [rows (db/query th/*pool* :file-library-rel {:file-id (:id file2)})]
-        (t/is (zero? (count rows))))
-
-      )))
+      (let [rows (th/db-query :file-library-rel {:file-id (:id file2)})]
+        (t/is (zero? (count rows)))))))
 
 (t/deftest move-project
   (let [profile  (th/create-profile* 1 {:is-active true})
@@ -549,16 +538,17 @@
     ;; --- initial data checks
 
     ;; the project1 should have 2 files
-    (let [rows (db/query th/*pool* :file {:project-id (:id project1)})]
+    (let [rows (th/db-query :file {:project-id (:id project1)})]
       (t/is (= 2 (count rows))))
 
     ;; the project2 should have 1 file
-    (let [rows (db/query th/*pool* :file {:project-id (:id project2)})]
+    (let [rows (th/db-query :file {:project-id (:id project2)})]
       (t/is (= 1 (count rows))))
 
     ;; the file1 should be linked to file2 and file3
-    (let [[item1 item2 :as rows] (db/query th/*pool* :file-library-rel {:file-id (:id file1)}
-                                           {:order-by [:created-at]})]
+    (let [[item1 item2 :as rows] (th/db-query :file-library-rel
+                                              {:file-id (:id file1)}
+                                              {:order-by [:created-at]})]
       (t/is (= 2 (count rows)))
       (t/is (= (:file-id item1) (:id file1)))
       (t/is (= (:library-file-id item1) (:id file2)))
@@ -566,15 +556,14 @@
       (t/is (= (:library-file-id item2) (:id file3))))
 
     ;; the file2 should not be linked to any file
-    (let [[rows] (db/query th/*pool* :file-library-rel {:file-id (:id file2)})]
+    (let [[rows] (th/db-query :file-library-rel {:file-id (:id file2)})]
       (t/is (= 0 (count rows))))
 
     ;; the file3 should not be linked to any file
-    (let [[rows] (db/query th/*pool* :file-library-rel {:file-id (:id file3)})]
+    (let [[rows] (th/db-query :file-library-rel {:file-id (:id file3)})]
       (t/is (= 0 (count rows))))
 
     ;; move project1 to other team
-    ;; TODO: correct team change of project
     (let [data {::th/type :move-project
                 ::rpc/profile-id (:id profile)
                 :project-id (:id project1)
@@ -585,26 +574,28 @@
       (t/is (nil? (:result out)))
 
       ;; project1 now should still have 2 files
-      (let [[item1 item2 :as rows] (db/query th/*pool* :file {:project-id (:id project1)}
-                                             {:order-by [:created-at]})]
+      (let [[item1 item2 :as rows] (th/db-query :file
+                                                {:project-id (:id project1)}
+                                                {:order-by [:created-at]})]
         ;; (clojure.pprint/pprint rows)
         (t/is (= 2 (count rows)))
         (t/is (= (:id item1) (:id file1)))
         (t/is (= (:id item2) (:id file2))))
 
       ;; project2 now should still have 1 file
-      (let [[item :as rows] (db/query th/*pool* :file {:project-id (:id project2)})]
+      (let [[item :as rows] (th/db-query :file {:project-id (:id project2)})]
+        ;; (pp/pprint rows)
         (t/is (= 1 (count rows)))
         (t/is (= (:id item) (:id file3))))
 
       ;; the file1 should be linked to file2 but not file3
-      (let [[item1 :as rows] (db/query th/*pool* :file-library-rel {:file-id (:id file1)}
-                                       {:order-by [:created-at]})]
+      (let [[item1 :as rows] (th/db-query :file-library-rel
+                                          {:file-id (:id file1)}
+                                          {:order-by [:created-at]})]
+
         (t/is (= 1 (count rows)))
         (t/is (= (:file-id item1) (:id file1)))
-        (t/is (= (:library-file-id item1) (:id file2))))
-
-      )))
+        (t/is (= (:library-file-id item1) (:id file2)))))))
 
 (t/deftest clone-template
   (let [prof    (th/create-profile* 1 {:is-active true})
@@ -618,13 +609,15 @@
 
     (t/is (nil? (:error out)))
     (let [result (:result out)]
-      (t/is (set? result))
-      (t/is (uuid? (first result)))
-      (t/is (= 1 (count result))))))
+      (t/is (fn? result))
 
-(t/deftest retrieve-list-of-buitin-templates
+      (let [events (th/consume-sse result)]
+        (t/is (= 6 (count events)))
+        (t/is (= :end (first (last events))))))))
+
+(t/deftest get-list-of-buitin-templates
   (let [prof (th/create-profile* 1 {:is-active true})
-        data {::th/type :retrieve-list-of-builtin-templates
+        data {::th/type :get-builtin-templates
               ::rpc/profile-id (:id prof)}
         out  (th/command! data)]
     ;; (th/print-result! out)

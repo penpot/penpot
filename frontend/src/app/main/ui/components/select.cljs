@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.components.select
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -14,14 +15,15 @@
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
+
 (defn- as-key-value
   [item]
   (if (map? item)
-    [(:value item) (:label item)]
-    [item item]))
+    [(:value item) (:label item) (:icon item)]
+    [item item item]))
 
 (mf/defc select
-  [{:keys [default-value options class is-open? on-change on-pointer-enter-option on-pointer-leave-option]}]
+  [{:keys [default-value options class dropdown-class is-open? on-change on-pointer-enter-option on-pointer-leave-option disabled]}]
   (let [label-index    (mf/with-memo [options]
                          (into {} (map as-key-value) options))
 
@@ -36,7 +38,17 @@
         current-label  (get label-index current-value)
         is-open?       (:is-open? state)
 
-        open-dropdown  (mf/use-fn #(swap! state* assoc :is-open? true))
+        dropdown-element* (mf/use-ref nil)
+        dropdown-direction* (mf/use-state "down")
+        dropdown-direction-change* (mf/use-ref 0)
+
+        open-dropdown
+        (mf/use-fn
+         (mf/deps disabled)
+         (fn []
+           (when-not disabled
+             (swap! state* assoc :is-open? true))))
+
         close-dropdown (mf/use-fn #(swap! state* assoc :is-open? false))
 
         select-item
@@ -74,21 +86,44 @@
     (mf/with-effect [default-value]
       (swap! state* assoc :current-value default-value))
 
-    [:div.custom-select {:on-click open-dropdown :class class}
-     [:span current-label]
-     [:span.dropdown-button i/arrow-down]
-     [:& dropdown {:show is-open? :on-close close-dropdown}
-      [:ul.custom-select-dropdown
-       (for [[index item] (d/enumerate options)]
-         (if (= :separator item)
-           [:hr {:key (dm/str current-id "-" index)}]
-           (let [[value label] (as-key-value item)]
-             [:li.checked-element
-              {:key (dm/str current-id "-" index)
-               :class (when (= value current-value) "is-selected")
-               :data-value (pr-str value)
-               :on-pointer-enter highlight-item
-               :on-pointer-leave unhighlight-item
-               :on-click select-item}
-              [:span.check-icon i/tick]
-              [:span label]])))]]]))
+    (mf/with-effect [is-open? dropdown-element*]
+      (let [dropdown-element (mf/ref-val dropdown-element*)]
+        (when (and (= 0 (mf/ref-val dropdown-direction-change*)) dropdown-element)
+          (let [is-outside? (dom/is-element-outside? dropdown-element)]
+            (reset! dropdown-direction* (if is-outside? "up" "down"))
+            (mf/set-ref-val! dropdown-direction-change* (inc (mf/ref-val dropdown-direction-change*)))))))
+
+    (let [selected-option (first (filter #(= (:value %) default-value) options))
+          current-icon (:icon selected-option)
+          current-icon-ref (i/key->icon current-icon)]
+      [:div {:on-click open-dropdown
+             :class (dm/str (stl/css-case :custom-select true
+                                          :disabled disabled
+                                          :icon (some? current-icon-ref))
+                            " " class)}
+       (when (and current-icon current-icon-ref)
+         [:span {:class (stl/css :current-icon)} current-icon-ref])
+       [:span {:class (stl/css :current-label)} current-label]
+       [:span {:class (stl/css :dropdown-button)} i/arrow]
+       [:& dropdown {:show is-open? :on-close close-dropdown}
+        [:ul {:ref dropdown-element* :data-direction @dropdown-direction*
+              :class (dm/str dropdown-class " " (stl/css :custom-select-dropdown))}
+         (for [[index item] (d/enumerate options)]
+           (if (= :separator item)
+             [:li {:class (dom/classnames (stl/css :separator) true)
+                   :key (dm/str current-id "-" index)}]
+             (let [[value label icon] (as-key-value item)
+                   icon-ref (i/key->icon icon)]
+               [:li
+                {:key (dm/str current-id "-" index)
+                 :class (stl/css-case
+                         :checked-element true
+                         :disabled (:disabled item)
+                         :is-selected (= value current-value))
+                 :data-value (pr-str value)
+                 :on-pointer-enter highlight-item
+                 :on-pointer-leave unhighlight-item
+                 :on-click select-item}
+                (when (and icon icon-ref) [:span {:class (stl/css :icon)} icon-ref])
+                [:span {:class (stl/css :label)} label]
+                [:span {:class (stl/css :check-icon)} i/tick]])))]]])))

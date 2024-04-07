@@ -6,7 +6,8 @@
 
 (ns frontend-tests.util-snap-data-test
   (:require
-   [app.common.file-builder :as fb]
+   [app.common.files.builder :as fb]
+   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.util.snap-data :as sd]
    [cljs.pprint :refer [pprint]]
@@ -180,17 +181,17 @@
                    (fb/close-artboard))
 
           shape-id (:last-id file)
-          page (fb/get-current-page file)
+          page     (fb/get-current-page file)
 
           ;; frame-id (:last-id file)
-          data (-> (sd/make-snap-data)
-                   (sd/add-page page))
+          data     (-> (sd/make-snap-data)
+                       (sd/add-page page))
 
-          file (-> file
-                   (fb/delete-object shape-id))
+          file     (-> file
+                       (fb/delete-object shape-id))
 
           new-page (fb/get-current-page file)
-          data (sd/update-page data page new-page)
+          data     (sd/update-page data page new-page)
 
           result-x (sd/query data (:id page) uuid/zero :x [0 100])
           result-y (sd/query data (:id page) uuid/zero :y [0 100])]
@@ -332,18 +333,20 @@
                      :height 100})
                    (fb/close-artboard))
 
-          frame-id (:last-id file)
-          page     (fb/get-current-page file)
-          data (-> (sd/make-snap-data) (sd/add-page page))
+          frame-id  (:last-id file)
+          page      (fb/get-current-page file)
+          data      (-> (sd/make-snap-data) (sd/add-page page))
 
-          frame (fb/lookup-shape file frame-id)
+          frame     (fb/lookup-shape file frame-id)
           new-frame (-> frame
-                        (assoc :x 200 :y 200))
+                        (dissoc :selrect :points)
+                        (assoc :x 200 :y 200)
+                        (cts/setup-shape))
 
-          file (fb/update-object file frame new-frame)
-          new-page (fb/get-current-page file)
+          file      (fb/update-object file frame new-frame)
+          new-page  (fb/get-current-page file)
 
-          data (sd/update-page data page new-page)
+          data      (sd/update-page data page new-page)
 
           result-zero-x-1 (sd/query data (:id page) uuid/zero :x [0 100])
           result-frame-x-1 (sd/query data (:id page) frame-id :x [0 100])
@@ -371,6 +374,7 @@
 
           shape (fb/lookup-shape file shape-id)
           new-shape (-> shape
+                        (dissoc :selrect :points)
                         (assoc :x 200 :y 200))
 
           file (fb/update-object file shape new-shape)
@@ -414,8 +418,7 @@
           result-zero-x-2 (sd/query data (:id page) uuid/zero :x [0 200])
           result-zero-y-2 (sd/query data (:id page) uuid/zero :y [0 200])
           result-frame-x-2 (sd/query data (:id page) frame-id :x [0 200])
-          result-frame-y-2 (sd/query data (:id page) frame-id :y [0 200])
-          ]
+          result-frame-y-2 (sd/query data (:id page) frame-id :y [0 200])]
 
       (t/is (some? data))
 
@@ -427,5 +430,4 @@
       (t/is (= (count result-zero-x-2) 1))
       (t/is (= (count result-zero-y-2) 0))
       (t/is (= (count result-frame-x-2) 1))
-      (t/is (= (count result-frame-y-2) 0))))
-  )
+      (t/is (= (count result-frame-y-2) 0)))))

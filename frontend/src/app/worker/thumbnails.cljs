@@ -14,12 +14,9 @@
    [app.main.fonts :as fonts]
    [app.main.render :as render]
    [app.util.http :as http]
-   [app.util.time :as ts]
-   [app.util.webapi :as wapi]
    [app.worker.impl :as impl]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [okulary.core :as l]
-   [promesa.core :as p]
    [rumext.v2 :as mf]))
 
 (log/set-level! :trace)
@@ -62,36 +59,34 @@
 
 (defn- render-thumbnail
   [{:keys [page file-id revn] :as params}]
-  (binding [fonts/loaded-hints (l/atom #{})]
-    (let [objects  (:objects page)
-          frame    (some->> page :thumbnail-frame-id (get objects))
-          element  (if frame
-                     (mf/element render/frame-svg #js {:objects objects :frame frame :show-thumbnails? true})
-                     (mf/element render/page-svg #js {:data page :thumbnails? true :render-embed? true}))
-          data     (rds/renderToStaticMarkup element)]
+  (try
+    (binding [fonts/loaded-hints (l/atom #{})]
+      (let [objects  (:objects page)
+            frame    (some->> page :thumbnail-frame-id (get objects))
+            background-color (dm/get-in page [:options :background])
+            element  (if frame
+                       (mf/element render/frame-svg #js
+                                                     {:objects objects
+                                                      :frame frame
+                                                      :use-thumbnails true
+                                                      :background-color background-color
+                                                      :aspect-ratio (/ 2 3)})
 
-      {:data data
-       :fonts @fonts/loaded-hints
-       :file-id file-id
-       :revn revn})))
+                       (mf/element render/page-svg #js
+                                                    {:data page
+                                                     :use-thumbnails true
+                                                     :embed true
+                                                     :aspect-ratio (/ 2 3)}))
+            data     (rds/renderToStaticMarkup element)]
+        {:data data
+         :fonts @fonts/loaded-hints
+         :file-id file-id
+         :revn revn}))
+    (catch :default cause
+      (js/console.error "unexpected error on rendering thumbnail" cause)
+      nil)))
 
 (defmethod impl/handler :thumbnails/generate-for-file
   [{:keys [file-id revn features] :as message} _]
   (->> (request-data-for-thumbnail file-id revn features)
        (rx/map render-thumbnail)))
-
-(defmethod impl/handler :thumbnails/render-offscreen-canvas
-  [_ ibpm]
-  (let [canvas (js/OffscreenCanvas. (.-width ^js ibpm) (.-height ^js ibpm))
-        ctx    (.getContext ^js canvas "bitmaprenderer")
-        tp     (ts/tpoint-ms)]
-
-    (.transferFromImageBitmap ^js ctx ibpm)
-
-    (->> (.convertToBlob ^js canvas #js {:type "image/png"})
-         (p/fmap (fn [blob]
-                   {:result (wapi/create-uri blob)}))
-         (p/fnly (fn [_]
-                   (log/debug :hint "generated thumbnail" :elapsed (dm/str (tp) "ms"))
-                   (.close ^js ibpm))))))
-

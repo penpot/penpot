@@ -1,0 +1,79 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+  &.transparent {
+    background-color: transparent;
+  }
+}
+
+.modal-container {
+  @extend .modal-container-base;
+}
+
+.modal-header {
+  margin-bottom: $s-24;
+}
+
+.modal-title {
+  @include headlineMediumTypography;
+  color: var(--modal-title-foreground-color);
+}
+
+.modal-close-btn {
+  @extend .modal-close-btn-base;
+}
+
+.modal-content {
+  @include bodyLargeTypography;
+  margin-bottom: $s-24;
+}
+
+.modal-item-element {
+  @include flexRow;
+}
+
+.modal-component-icon {
+  @include flexCenter;
+  height: $s-16;
+  width: $s-16;
+  svg {
+    @extend .button-icon-small;
+    stroke: var(--color);
+  }
+}
+.modal-component-name {
+  @include bodyLargeTypography;
+}
+
+.modal-hint {
+  @extend .modal-hint-base;
+}
+
+.action-buttons {
+  @extend .modal-action-btns;
+}
+
+.cancel-button {
+  @extend .modal-cancel-btn;
+}
+
+.accept-btn {
+  @extend .modal-accept-btn;
+  &.danger {
+    @extend .modal-danger-btn;
+  }
+}
+
+.modal-scd-msg,
+.modal-subtitle,
+.modal-msg {
+  @include bodyLargeTypography;
+  color: var(--modal-text-foreground-color);
+}

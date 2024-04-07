@@ -1,0 +1,100 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "common/refactor/common-refactor.scss" as *;
+
+.exception-layout {
+  width: 100%;
+  height: 100%;
+  background-color: $db-secondary;
+}
+
+.deco-before,
+.deco-after {
+  position: absolute;
+  left: calc(50% - $s-40);
+
+  svg {
+    position: absolute;
+    fill: $df-secondary;
+    height: 1537px;
+    width: $s-80;
+  }
+}
+
+.deco-before {
+  height: 34vh;
+  top: 0;
+  svg {
+    bottom: 0;
+  }
+}
+
+.deco-after {
+  height: 34vh;
+  bottom: 0;
+  svg {
+    top: 0;
+  }
+}
+
+.exception-header {
+  padding: $s-24 $s-32;
+  position: fixed;
+  background: none;
+  border: none;
+  cursor: pointer;
+  svg {
+    fill: $df-primary;
+    width: $s-48;
+    height: auto;
+  }
+}
+
+.exception-content {
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  width: 100%;
+
+  .container {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: $s-16;
+    height: 34vh;
+    justify-content: center;
+    margin-top: 33vh;
+    text-align: center;
+    width: $s-640;
+  }
+}
+
+.main-message {
+  @include bigTitleTipography;
+  color: $df-primary;
+}
+
+.desc-message {
+  @include bigTitleTipography;
+  color: $df-secondary;
+}
+
+.sign-info {
+  text-align: center;
+  button {
+    @extend .button-primary;
+    text-transform: uppercase;
+    padding: $s-8 $s-16;
+    font-size: $fs-11;
+  }
+}
+
+.image {
+  svg {
+    fill: $df-primary;
+  }
+}

@@ -1,0 +1,78 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.flow-element {
+  display: flex;
+  align-items: center;
+
+  .element-label {
+  }
+
+  .flow-name {
+    cursor: pointer;
+  }
+
+  & input.element-name {
+    background: transparent;
+  }
+}
+
+.flow-badge {
+  cursor: pointer;
+  display: flex;
+  .content {
+    @include bodySmallTypography;
+    display: flex;
+    align-items: center;
+    height: $s-24;
+    border-radius: $br-6;
+    background-color: var(--flow-tag-background-color);
+    svg {
+      @extend .button-icon;
+      height: $s-24;
+      width: $s-12;
+      stroke: var(--icon-foreground);
+      margin: 0 $s-8;
+    }
+
+    span {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: $s-8;
+      color: var(--flow-tag-foreground-color);
+    }
+  }
+
+  &.selected .content,
+  &:hover .content {
+    background-color: var(--flow-tag-background-color-hover);
+    svg {
+      stroke: var(--flow-tag-foreground-color-hover);
+    }
+
+    span {
+      color: var(--flow-tag-foreground-color-hover);
+    }
+  }
+}
+
+.workspace-frame-label-wrapper {
+  pointer-events: none;
+}
+
+.workspace-frame-label {
+  font-size: $fs-12;
+  color: black;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  max-width: fit-content;
+  pointer-events: all;
+}

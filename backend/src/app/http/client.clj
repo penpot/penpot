@@ -8,7 +8,6 @@
   "Http client abstraction layer."
   (:require
    [app.common.spec :as us]
-   [app.worker :as wrk]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [java-http-clj.core :as http]
@@ -21,12 +20,11 @@
   (s/keys :req [::client]))
 
 (defmethod ig/pre-init-spec ::client [_]
-  (s/keys :req [::wrk/executor]))
+  (s/keys :req []))
 
 (defmethod ig/init-key ::client
-  [_ {:keys [::wrk/executor] :as cfg}]
-  (http/build-client {:executor executor
-                      :connect-timeout 30000 ;; 10s
+  [_ _]
+  (http/build-client {:connect-timeout 30000 ;; 10s
                       :follow-redirects :always}))
 
 (defn send!
@@ -57,8 +55,8 @@
   convention."
   ([cfg-or-client request]
    (let [client (resolve-client cfg-or-client)]
-     (send! client request {})))
+     (send! client request {:sync? true})))
   ([cfg-or-client request options]
    (let [client (resolve-client cfg-or-client)]
-     (send! client request options))))
+     (send! client request (merge {:sync? true} options)))))
 

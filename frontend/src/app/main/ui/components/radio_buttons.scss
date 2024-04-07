@@ -1,0 +1,78 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.radio-btn-wrapper {
+  @include flexCenter;
+  border-radius: $br-8;
+  height: $s-32;
+  background-color: var(--input-background-color);
+}
+
+.radio-icon {
+  --radio-icon-border-color: var(--radio-btn-border-color);
+
+  @include buttonStyle;
+  @include flexCenter;
+  @include focusRadio;
+  height: $s-32;
+  flex-grow: 1;
+  border-radius: $s-8;
+  box-sizing: border-box;
+  border: $br-2 solid var(--radio-icon-border-color);
+
+  input {
+    display: none;
+  }
+  svg {
+    @extend .button-icon;
+    stroke: var(--radio-btn-foreground-color);
+  }
+  .title-name {
+    @include uppercaseTitleTipography;
+    color: var(--radio-btn-foreground-color);
+  }
+  &:hover {
+    svg {
+      stroke: var(--radio-btn-foreground-color-selected);
+    }
+  }
+}
+
+.checked {
+  --radio-icon-border-color: var(--radio-btn-border-color-selected);
+
+  background-color: var(--radio-btn-background-color-selected);
+  svg {
+    stroke: var(--radio-btn-foreground-color-selected);
+  }
+  .title-name {
+    color: var(--radio-btn-foreground-color-selected);
+  }
+}
+
+.disabled {
+  cursor: default;
+  background-color: transparent;
+  border: $s-2 solid transparent;
+  svg {
+    stroke: var(--button-foreground-color-disabled);
+  }
+  .title-name {
+    color: var(--button-foreground-color-disabled);
+  }
+  &:hover {
+    background-color: transparent;
+    border: $s-2 solid transparent;
+    svg {
+      stroke: var(--button-foreground-color-disabled);
+    }
+    .title-name {
+      color: var(--button-foreground-color-disabled);
+    }
+  }
+}

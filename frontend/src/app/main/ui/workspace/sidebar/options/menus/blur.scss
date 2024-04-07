@@ -1,0 +1,108 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.element-set {
+  margin: 0;
+}
+
+.title-spacing-blur {
+  padding-left: $s-2;
+  margin: 0;
+}
+
+.add-blur {
+  @extend .button-tertiary;
+  height: $s-32;
+  width: $s-28;
+  svg {
+    @extend .button-icon;
+  }
+}
+
+.element-set-content {
+  @include flexColumn;
+  margin-bottom: $s-8;
+}
+
+.first-row {
+  @include flexRow;
+  width: 100%;
+  .blur-info {
+    display: flex;
+    align-items: center;
+    gap: $s-1;
+    flex-grow: 1;
+    border-radius: $br-8;
+    background-color: var(--input-details-color);
+    .show-more {
+      @extend .button-secondary;
+      height: $s-32;
+      width: $s-28;
+      border-radius: $br-8 0 0 $br-8;
+      box-sizing: border-box;
+      border: $s-1 solid var(--button-secondary-background-color-rest);
+      svg {
+        @extend .button-icon;
+      }
+      &.selected {
+        background-color: var(--button-radio-background-color-active);
+        svg {
+          stroke: var(--button-radio-foreground-color-active);
+        }
+      }
+    }
+    .label {
+      @include bodySmallTypography;
+      flex-grow: 1;
+      display: flex;
+      align-items: center;
+      height: $s-32;
+      padding: 0 $s-8;
+      border-radius: 0 $br-8 $br-8 0;
+      background-color: var(--input-background-color);
+      color: var(--menu-foreground-color);
+      box-sizing: border-box;
+      border: $s-1 solid var(--input-border-color);
+    }
+  }
+  .actions {
+    @include flexRow;
+    .action-btn {
+      @extend .button-tertiary;
+      box-sizing: border-box;
+      height: $s-32;
+      width: $s-28;
+      svg {
+        @extend .button-icon;
+      }
+    }
+  }
+
+  &.hidden {
+    .blur-info {
+      @include hiddenElement;
+      .show-more {
+        @include hiddenElement;
+        border: $s-1 solid var(--input-border-color-disabled);
+      }
+      .label {
+        @include hiddenElement;
+        border: $s-1 solid var(--input-border-color-disabled);
+      }
+    }
+  }
+}
+
+.second-row {
+  @extend .input-element;
+  width: $s-92;
+  .label {
+    padding-left: $s-8;
+    width: $s-60;
+  }
+}

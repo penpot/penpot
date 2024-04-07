@@ -9,8 +9,8 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.transit :as t]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 (defrecord BroadcastMessage [id type data]
   cljs.core/IDeref

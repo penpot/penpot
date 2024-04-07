@@ -8,14 +8,18 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.files.features :as feat]
+   [app.common.features :as cfeat]
    [app.common.time :as dt]
-   [app.common.types.component :as ctk]))
+   [app.common.types.component :as ctk]
+   [clojure.set :as set]))
 
 (defn components
-  [file-data]
-  (d/removem (fn [[_ component]] (:deleted component))
-             (:components file-data)))
+  ([file-data] (components file-data nil))
+  ([file-data {:keys [include-deleted?] :or {include-deleted? false}}]
+   (if include-deleted?
+     (:components file-data)
+     (d/removem (fn [[_ component]] (:deleted component))
+                (:components file-data)))))
 
 (defn components-seq
   [file-data]
@@ -37,46 +41,59 @@
       (cond-> (update-in fdata [:components id] assoc :main-instance-id main-instance-id :main-instance-page main-instance-page)
         annotation (update-in [:components id] assoc :annotation annotation))
 
-      (let [wrap-object-fn feat/*wrap-with-objects-map-fn*]
+      (let [wrap-object-fn cfeat/*wrap-with-objects-map-fn*]
         (assoc-in fdata [:components id :objects]
                   (->> shapes
                        (d/index-by :id)
                        (wrap-object-fn)))))))
 
 (defn mod-component
-  [file-data {:keys [id name path objects annotation]}]
-  (let [wrap-objects-fn feat/*wrap-with-objects-map-fn*]
+  [file-data {:keys [id name path main-instance-id main-instance-page objects annotation modified-at]}]
+  (let [wrap-objects-fn cfeat/*wrap-with-objects-map-fn*]
     (d/update-in-when file-data [:components id]
                       (fn [component]
-                        (let [objects (some-> objects wrap-objects-fn)]
-                          (cond-> component
-                            (some? name)
-                            (assoc :name name)
+                        (let [objects  (some-> objects wrap-objects-fn)
+                              new-comp (cond-> component
+                                         (some? name)
+                                         (assoc :name name)
 
-                            (some? path)
-                            (assoc :path path)
+                                         (some? path)
+                                         (assoc :path path)
 
-                            (some? objects)
-                            (assoc :objects objects)
+                                         (some? main-instance-id)
+                                         (assoc :main-instance-id main-instance-id)
 
-                            (some? annotation)
-                            (assoc :annotation annotation)
+                                         (some? main-instance-page)
+                                         (assoc :main-instance-page main-instance-page)
 
-                            (nil? annotation)
-                            (dissoc :annotation)
+                                         (some? objects)
+                                         (assoc :objects objects)
 
-                            :always
-                            (touch)))))))
+                                         (some? modified-at)
+                                         (assoc :modified-at modified-at)
+
+                                         (some? annotation)
+                                         (assoc :annotation annotation)
+
+                                         (nil? annotation)
+                                         (dissoc :annotation))
+                              diff     (set/difference
+                                        (ctk/diff-components component new-comp)
+                                        #{:annotation :modified-at})] ;; The set of properties that doesn't mark a component as touched
+
+                          (if (empty? diff)
+                            new-comp
+                            (touch new-comp)))))))
 
 (defn get-component
   ([file-data component-id]
    (get-component file-data component-id false))
 
   ([file-data component-id include-deleted?]
-  (let [component (get-in file-data [:components component-id])]
-    (when (or include-deleted?
-              (not (:deleted component)))
-      component))))
+   (let [component (get-in file-data [:components component-id])]
+     (when (or include-deleted?
+               (not (:deleted component)))
+       component))))
 
 (defn get-deleted-component
   [file-data component-id]
@@ -113,7 +130,9 @@
     (let [component (get-component (:data library) (:component-id shape))]
       (if (< (:modified-at component) since-date)  ;; Note that :modified-at may be nil
         []
-        [[(:id shape) (:component-id shape) :component]]))
+        [{:shape-id (:id shape)
+          :asset-id (:component-id shape)
+          :asset-type :component}]))
     []))
 
 (defn get-component-annotation

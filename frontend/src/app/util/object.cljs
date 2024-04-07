@@ -6,16 +6,23 @@
 
 (ns app.util.object
   "A collection of helpers for work with javascript objects."
-  (:refer-clojure :exclude [set! new get get-in merge clone contains?])
+  (:refer-clojure :exclude [set! new get get-in merge clone contains? array? into-array])
   (:require
-   ["lodash/omit" :as omit]
    [cuerdas.core :as str]))
+
+(defn array?
+  [o]
+  (.isArray js/Array o))
+
+(defn into-array
+  [o]
+  (js/Array.from o))
 
 (defn create [] #js {})
 
 (defn get
   ([obj k]
-   (when-not (nil? obj)
+   (when (some? obj)
      (unchecked-get obj k)))
   ([obj k default]
    (let [result (get obj k)]
@@ -23,7 +30,8 @@
 
 (defn contains?
   [obj k]
-  (some? (unchecked-get obj k)))
+  (when (some? obj)
+    (js/Object.hasOwn obj k)))
 
 (defn get-keys
   [obj]
@@ -42,15 +50,6 @@
        (recur (first keys)
               (rest keys)
               (unchecked-get res key))))))
-
-#_:clj-kondo/ignore
-(defn without
-  [obj keys]
-  (let [keys (cond
-               (vector? keys) (into-array keys)
-               (array? keys) keys
-               :else (throw (js/Error. "unexpected input")))]
-    (omit obj keys)))
 
 (defn clone
   [a]
@@ -73,6 +72,11 @@
   (unchecked-set obj key value)
   obj)
 
+(defn unset!
+  [obj key]
+  (js-delete obj key)
+  obj)
+
 (defn update!
   [obj key f & args]
   (let [found (get obj key ::not-found)]
@@ -82,10 +86,16 @@
       obj)))
 
 (defn- props-key-fn
-  [key]
-  (if (or (= key :class) (= key :class-name))
-    "className"
-    (str/camel (name key))))
+  [k]
+  (if (or (keyword? k) (symbol? k))
+    (let [nword (name k)]
+      (cond
+        (= nword "class") "className"
+        (str/starts-with? nword "--") nword
+        (str/starts-with? nword "data-") nword
+        (str/starts-with? nword "aria-") nword
+        :else (str/camel nword)))
+    k))
 
 (defn clj->props
   [props]
@@ -94,3 +104,29 @@
 (defn ^boolean in?
   [obj prop]
   (js* "~{} in ~{}" prop obj))
+
+(defn map->obj
+  [x]
+  (cond
+    (nil? x)
+    nil
+
+    (keyword? x)
+    (name x)
+
+    (map? x)
+    (reduce-kv (fn [m k v]
+                 (let [k (if (keyword? k) (name k) k)]
+                   (unchecked-set m k (^function map->obj v))
+                   m))
+               #js {}
+               x)
+
+    (coll? x)
+    (reduce (fn [arr v]
+              (.push arr v)
+              arr)
+            (array)
+            x)
+
+    :else x))

@@ -8,13 +8,13 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.geom.shapes :as gsh]
+   [app.common.files.helpers :as cfh]
+   [app.common.geom.grid :as gg]
+   [app.common.geom.rect :as grc]
    [app.common.math :as mth]
-   [app.common.pages.helpers :as cph]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.refs :as refs]
-   [app.util.geom.grid :as gg]
    [rumext.v2 :as mf]))
 
 (mf/defc square-grid [{:keys [frame zoom grid] :as props}]
@@ -117,10 +117,10 @@
   (reduce
    (fn [sr parent]
      (cond-> sr
-       (and (not (cph/root? parent))
-            (cph/frame-shape? parent)
+       (and (not (cfh/root? parent))
+            (cfh/frame-shape? parent)
             (not (:show-content parent)))
-       (gsh/clip-selrect (:selrect parent))))
+       (grc/clip-rect (:selrect parent))))
    selrect
    parents))
 
@@ -173,7 +173,7 @@
     [:g.grid-display {:style {:pointer-events "none"}}
      (for [frame frames]
        (when (and #_(not (is-transform? frame))
-                  (not (ctst/rotated-frame? frame))
+              (not (ctst/rotated-frame? frame))
                   (or (empty? focus) (contains? focus (:id frame))))
          [:& grid-display-frame {:key (str "grid-" (:id frame))
                                  :zoom zoom

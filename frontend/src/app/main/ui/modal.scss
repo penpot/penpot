@@ -1,0 +1,9 @@
+@import "refactor/common-refactor.scss";
+
+:global(:root) {
+  --s-4: 0.25rem;
+}
+
+.modal-wrapper {
+  @extend .new-scrollbar;
+}

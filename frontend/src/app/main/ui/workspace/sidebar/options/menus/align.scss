@@ -1,0 +1,41 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.align-options {
+  display: flex;
+  gap: $s-4;
+  height: $s-32;
+  margin: 0 calc(-1 * $s-2);
+}
+.align-group {
+  @include flexRow;
+}
+
+.align-button {
+  @extend .button-tertiary;
+  height: $s-28;
+  width: $s-28;
+  padding: 0;
+  border-radius: $br-8;
+  svg {
+    @extend .button-icon;
+    stroke: var(--icon-foreground);
+  }
+  &.disabled {
+    cursor: default;
+    svg {
+      stroke: var(--button-foreground-color-disabled);
+    }
+    &:hover {
+      background-color: var(--panel-background-color);
+      svg {
+        stroke: var(--button-foreground-color-disabled);
+      }
+    }
+  }
+}

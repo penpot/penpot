@@ -1,0 +1,73 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.element-set {
+  margin: 0;
+}
+
+.title-spacing-svg-attrs {
+  padding-left: $s-2;
+  margin: 0;
+}
+
+.element-set-content {
+  @include flexColumn;
+  margin: $s-4 0 0 0;
+}
+
+.attr-content {
+  display: flex;
+  gap: $s-4;
+}
+
+.attr-name {
+  @include bodySmallTypography;
+  @include twoLineTextEllipsis;
+  width: $s-88;
+  margin: auto $s-4;
+  margin-right: 0;
+  display: inline-block;
+  color: var(--title-foreground-color);
+}
+
+.attr-input {
+  @extend .input-element;
+  width: $s-124;
+}
+
+.attr-actions {
+  display: flex;
+  gap: $s-4;
+}
+
+.attr-action-btn {
+  @extend .button-tertiary;
+  width: $s-28;
+  height: $s-32;
+  svg {
+    @extend .button-icon;
+  }
+}
+
+.attr-nested-content {
+  display: grid;
+  row-gap: $s-4;
+}
+
+.attr-title {
+  @include bodySmallTypography;
+  font-size: $fs-10;
+  text-transform: uppercase;
+  margin-inline-start: $s-4;
+  color: $df-primary;
+}
+
+.attr-row {
+  display: flex;
+  gap: $s-4;
+}

@@ -1,0 +1,146 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.assets-bar {
+  display: grid;
+  height: 100%;
+  grid-auto-rows: max-content;
+  // TODO: ugly hack :( Fix this! we shouldn't be hardcoding this height
+  max-height: calc(100vh - $s-80);
+  scrollbar-gutter: stable;
+  overflow-y: auto;
+  padding-top: $s-8;
+}
+
+.libraries-button {
+  @extend .button-secondary;
+  @include uppercaseTitleTipography;
+  gap: $s-2;
+  height: $s-32;
+  width: 100%;
+  margin-bottom: $s-4;
+  border-radius: $s-8;
+  .libraries-icon {
+    @include flexCenter;
+    width: $s-24;
+    height: 100%;
+    svg {
+      @include flexCenter;
+      @extend .button-icon;
+      stroke: var(--icon-foreground);
+    }
+  }
+  &:hover {
+    background-color: var(--button-secondary-background-color-hover);
+    color: var(--button-secondary-foreground-color-hover);
+    border: $s-1 solid var(--button-secondary-border-color-hover);
+    svg {
+      stroke: var(--button-secondary-foreground-color-hover);
+    }
+  }
+  &:focus {
+    background-color: var(--button-secondary-background-color-focus);
+    color: var(--button-secondary-foreground-color-focus);
+    border: $s-1 solid var(--button-secondary-border-color-focus);
+    svg {
+      stroke: var(--button-secondary-foreground-color-focus);
+    }
+  }
+}
+
+.section-button {
+  @include flexCenter;
+  @include buttonStyle;
+  height: $s-32;
+  width: $s-32;
+  margin: 0;
+  border: $s-1 solid var(--input-border-color-rest);
+  border-radius: $br-8 $br-2 $br-2 $br-8;
+  background-color: var(--input-background-color-rest);
+  svg {
+    height: $s-16;
+    width: $s-16;
+    stroke: var(--icon-foreground);
+  }
+  &:focus {
+    border: $s-1 solid var(--input-border-color-focus);
+    outline: 0;
+    background-color: var(--input-background-color-focus);
+    color: var(--input-foreground-color-focus);
+    svg {
+      background-color: var(--input-background-color-focus);
+    }
+  }
+  &:hover {
+    border: $s-1 solid var(--input-border-color-hover);
+    background-color: var(--input-background-color-hover);
+    svg {
+      background-color: var(--input-background-color-hover);
+      stroke: var(--button-foreground-hover);
+    }
+    &:focus {
+      border: $s-1 solid var(--input-border-color-focus);
+      outline: 0;
+      background-color: var(--input-background-color-focus);
+      color: var(--input-foreground-color-focus);
+      svg {
+        background-color: var(--input-background-color-focus);
+      }
+    }
+  }
+
+  &.opened {
+    @extend .button-icon-selected;
+  }
+}
+
+.sections-container {
+  @include menuShadow;
+  @include flexColumn;
+  position: absolute;
+  top: $s-84;
+  left: $s-12;
+  width: $s-192;
+  padding: $s-4;
+  border-radius: $br-8;
+  background-color: var(--menu-background-color);
+  z-index: $z-index-2;
+}
+
+.section-item {
+  @include bodySmallTypography;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: $s-6;
+  border-radius: $br-8;
+}
+
+.section-btn {
+  @include buttonStyle;
+}
+
+.assets-header {
+  padding: 0 0 $s-24 $s-12;
+}
+
+.search-wrapper {
+  display: flex;
+  gap: $s-4;
+}
+
+.sort-button {
+  @extend .button-tertiary;
+  width: $s-32;
+  border-radius: $br-8;
+  svg {
+    @extend .button-icon-small;
+    stroke: var(--icon-foreground);
+  }
+}

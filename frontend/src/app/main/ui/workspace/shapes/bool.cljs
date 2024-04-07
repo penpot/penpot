@@ -6,47 +6,40 @@
 
 (ns app.main.ui.workspace.shapes.bool
   (:require
-   [app.main.data.workspace :as dw]
+   [app.common.data.macros :as dm]
    [app.main.refs :as refs]
-   [app.main.store :as st]
-   [app.main.streams :as ms]
    [app.main.ui.shapes.bool :as bool]
    [app.main.ui.shapes.shape :refer [shape-container]]
-   [app.util.dom :as dom]
+   [app.main.ui.workspace.shapes.common :refer [check-shape-props]]
+   [app.main.ui.workspace.shapes.debug :as wsd]
    [rumext.v2 :as mf]))
-
-(defn use-double-click [{:keys [id]}]
-  (mf/use-callback
-   (mf/deps id)
-   (fn [event]
-     (dom/stop-propagation event)
-     (dom/prevent-default event)
-     (st/emit! (dw/select-inside-group id @ms/mouse-position)))))
 
 (defn bool-wrapper-factory
   [shape-wrapper]
-  (let [shape-component (bool/bool-shape shape-wrapper)]
+  (let [bool-shape (bool/bool-shape shape-wrapper)]
     (mf/fnc bool-wrapper
-      {::mf/wrap [#(mf/memo' % (mf/check-props ["shape"]))]
+      {::mf/wrap [#(mf/memo' % check-shape-props)]
        ::mf/wrap-props false}
       [props]
-      (let [shape         (unchecked-get props "shape")
-            child-sel-ref (mf/use-memo
-                           (mf/deps (:id shape))
-                           #(refs/is-child-selected? (:id shape)))
+      (let [shape      (unchecked-get props "shape")
+            shape-id   (dm/get-prop shape :id)
 
-            childs-ref    (mf/use-memo
-                           (mf/deps (:id shape))
-                           #(refs/select-bool-children (:id shape)))
+            child-sel* (mf/with-memo [shape-id]
+                         (refs/is-child-selected? shape-id))
 
-            child-sel?    (mf/deref child-sel-ref)
-            childs        (mf/deref childs-ref)
+            childs*    (mf/with-memo [shape-id]
+                         (refs/select-bool-children shape-id))
 
-            shape         (cond-> shape
-                            child-sel?
-                            (dissoc :bool-content))]
+            child-sel? (mf/deref child-sel*)
+            childs     (mf/deref childs*)
+
+            shape      (cond-> shape
+                         ^boolean child-sel?
+                         (dissoc :bool-content))]
 
         [:> shape-container {:shape shape}
-         [:& shape-component {:shape shape
-                              :childs childs}]]))))
+         [:& bool-shape {:shape shape
+                         :childs childs}]
+         (when *assert*
+           [:& wsd/shape-debug {:shape shape}])]))))
 

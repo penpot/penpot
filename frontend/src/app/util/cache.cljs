@@ -7,7 +7,7 @@
 (ns app.util.cache
   (:require
    [app.util.time :as dt]
-   [beicon.core :as rx]))
+   [beicon.v2.core :as rx]))
 
 (defonce cache (atom {}))
 (defonce pending (atom {}))

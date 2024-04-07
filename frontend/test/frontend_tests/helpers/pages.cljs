@@ -7,10 +7,12 @@
 (ns frontend-tests.helpers.pages
   (:require
    [app.common.data :as d]
+   [app.common.files.changes :as cp]
+   [app.common.files.changes-builder :as pcb]
+   [app.common.files.helpers :as cfh]
+   [app.common.files.libraries-helpers :as cflh]
+   [app.common.files.shapes-helpers :as cfsh]
    [app.common.geom.point :as gpt]
-   [app.common.pages :as cp]
-   [app.common.pages.changes-builder :as pcb]
-   [app.common.pages.helpers :as cph]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.groups :as dwg]
@@ -34,7 +36,7 @@
                     :pages []
                     :pages-index {}}
    :workspace-libraries {}
-   :features {:components-v2 true}})
+   :features/team #{"components/v2"}})
 
 (def ^:private idmap (atom {}))
 
@@ -58,7 +60,7 @@
 (defn get-children
   [state label]
   (let [page (current-page state)]
-    (cph/get-children (:objects page) (id label))))
+    (cfh/get-children (:objects page) (id label))))
 
 (defn sample-page
   ([state] (sample-page state {}))
@@ -79,8 +81,8 @@
   ([state label type] (sample-shape state type {}))
   ([state label type props]
    (let [page  (current-page state)
-         frame (cph/get-frame (:objects page))
-         shape (cts/make-shape type {:x 0 :y 0 :width 1 :height 1} props)]
+         frame (cfh/get-frame (:objects page))
+         shape (cts/setup-shape (merge {:type type :x 0 :y 0 :width 1 :height 1} props))]
      (swap! idmap assoc label (:id shape))
      (update state :workspace-data
              cp/process-changes
@@ -113,7 +115,7 @@
      (if (empty? shapes)
        state
        (let [[frame changes]
-             (dwsh/prepare-create-artboard-from-selection changes
+             (cfsh/prepare-create-artboard-from-selection changes
                                                           nil
                                                           nil
                                                           (:objects page)
@@ -133,17 +135,17 @@
         shapes  (dwg/shapes-for-grouping objects shape-ids)
 
         [group component-id changes]
-        (dwlh/generate-add-component nil
+        (cflh/generate-add-component nil
                                      shapes
                                      (:objects page)
                                      (:id page)
                                      current-file-id
                                      true
                                      dwg/prepare-create-group
-                                     dwsh/prepare-create-artboard-from-selection)]
+                                     cfsh/prepare-create-artboard-from-selection)]
 
     (swap! idmap assoc instance-label (:id group)
-                       component-label component-id)
+           component-label component-id)
     (update state :workspace-data
             cp/process-changes (:redo-changes changes))))
 
@@ -153,12 +155,14 @@
   ([state label component-id file-id]
    (let [page      (current-page state)
          libraries (wsh/get-libraries state)
+         objects (:objects page)
 
          changes   (-> (pcb/empty-changes nil (:id page))
-                       (pcb/with-objects (:objects page)))
+                       (pcb/with-objects objects))
 
          [new-shape changes]
          (dwlh/generate-instantiate-component changes
+                                              objects
                                               file-id
                                               component-id
                                               (gpt/point 100 100)

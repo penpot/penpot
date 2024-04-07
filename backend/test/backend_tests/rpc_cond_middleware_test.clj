@@ -6,6 +6,7 @@
 
 (ns backend-tests.rpc-cond-middleware-test
   (:require
+   [app.common.features :as cfeat]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.http :as http]
@@ -14,7 +15,7 @@
    [backend-tests.helpers :as th]
    [backend-tests.storage-test :refer [configure-storage-backend]]
    [clojure.test :as t]
-   [datoteka.core :as fs]))
+   [datoteka.fs :as fs]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
@@ -27,19 +28,22 @@
                                     :project-id (:id project)})
         params  {::th/type :get-file
                  :id (:id file1)
-                 ::rpc/profile-id (:id profile)}]
+                 ::rpc/profile-id (:id profile)
+                 :features cfeat/supported-features}]
 
     (binding [cond/*enabled* true]
-      (let [{:keys [error result]} (th/command! params)]
+      (let [{:keys [error result] :as out} (th/command! params)]
+        ;; NOTE: Fails on print because fipps used for pretty print
+        ;; tries to load pointers
+        ;; (th/print-result! out)
         (t/is (nil? error))
         (t/is (map? result))
         (t/is (contains? (meta result) :app.http/headers))
         (t/is (contains? (meta result) :app.rpc.cond/key))
 
-        (let [etag                   (-> result meta :app.http/headers (get "etag"))
+        (let [etag (-> result meta :app.http/headers (get "etag"))
               {:keys [error result]} (th/command! (assoc params ::cond/key etag))]
           (t/is (nil? error))
           (t/is (fn? result))
-          (t/is (= 304 (-> (result nil) :yetti.response/status))))
-        ))))
+          (t/is (= 304 (-> (result nil) :ring.response/status))))))))
 

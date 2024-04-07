@@ -1,0 +1,115 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+// TODO: we should be using subgrid in the common "assets component" to avoid
+// using this SCSS variable here (we cannot use a CSS var in this CSS module because
+// the elements are not part of the same cascade).
+$assets-button-width: $s-28;
+
+.assets-btn {
+  @extend .button-tertiary;
+  height: $s-32;
+  width: $assets-button-width;
+  padding: 0;
+  border-radius: $br-8;
+  svg {
+    @extend .button-icon;
+    stroke: var(--icon-foreground);
+  }
+}
+
+.colors-group {
+  margin-top: $s-4;
+}
+
+.asset-list {
+  padding: 0 0 0 $s-4;
+}
+
+.asset-list-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr #{$assets-button-width};
+  align-items: center;
+  height: $s-32;
+  padding: $s-8;
+  padding-inline-end: 0;
+  margin-bottom: $s-4;
+  border-radius: $br-8;
+  background-color: var(--assets-item-background-color);
+  cursor: pointer;
+
+  &.selected {
+    border: $s-1 solid var(--assets-item-border-color);
+  }
+
+  &.editing {
+    border: $s-1 solid var(--input-border-color-focus);
+    input.element-name {
+      @include textEllipsis;
+      @include bodySmallTypography;
+      @include removeInputStyle;
+      flex-grow: 1;
+      max-width: calc(var(--parent-size) - (var(--depth) * var(--layer-indentation-size)));
+      margin: 0;
+      color: var(--layer-row-foreground-color);
+    }
+  }
+  &:hover {
+    background-color: var(--assets-item-background-color-hover);
+  }
+}
+
+.bullet-block {
+  @include flexCenter;
+  height: 100%;
+  justify-content: flex-start;
+  margin-inline-end: $s-4;
+}
+
+.name-block {
+  @include bodySmallTypography;
+  @include textEllipsis;
+  margin: 0;
+  color: var(--assets-item-name-foreground-color);
+}
+
+.default-name {
+  margin-inline-start: $s-4;
+  color: var(--assets-item-name-foreground-color-rest);
+}
+
+.default-name-with-color {
+  margin-left: $s-6;
+}
+
+.element-name {
+  @include textEllipsis;
+  color: var(--color-foreground-primary);
+}
+
+.grid-placeholder {
+  height: $s-2;
+  margin-bottom: $s-2;
+  background-color: var(--color-accent-primary);
+}
+
+.drop-space {
+  height: $s-12;
+}
+
+.dragging {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: $s-8;
+  background-color: var(--assets-item-background-color-drag);
+  border: $s-2 solid var(--assets-item-border-color-drag);
+}

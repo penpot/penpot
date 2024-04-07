@@ -1,0 +1,31 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.hsva-selector {
+  @include flexColumn;
+  padding: $s-4;
+  grid-row-gap: $s-8;
+  margin-bottom: $s-8;
+}
+
+.hsva-row {
+  display: flex;
+  align-items: center;
+}
+
+.hsva-selector-label {
+  @include uppercaseTitleTipography;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: $s-32;
+}
+
+.hsva-bar {
+  width: $s-228;
+}

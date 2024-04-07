@@ -29,11 +29,14 @@
   ([table key-map opts]
    (let [opts (merge default-opts opts)
          opts (cond-> opts
-                (:on-conflict-do-nothing opts)
+                (::db/on-conflict-do-nothing? opts)
+                (assoc :suffix "ON CONFLICT DO NOTHING")
+
+                (::on-conflict-do-nothing opts)
                 (assoc :suffix "ON CONFLICT DO NOTHING"))]
      (sql/for-insert table key-map opts))))
 
-(defn insert-multi
+(defn insert-many
   [table cols rows opts]
   (let [opts (merge default-opts opts)]
     (sql/for-insert-multi table cols rows opts)))
@@ -44,22 +47,30 @@
   ([table where-params opts]
    (let [opts (merge default-opts opts)
          opts (cond-> opts
-                (::db/for-update? opts) (assoc :suffix "FOR UPDATE")
-                (::db/for-share? opts)  (assoc :suffix "FOR KEY SHARE")
-                (:for-update opts)      (assoc :suffix "FOR UPDATE")
-                (:for-key-share opts)   (assoc :suffix "FOR KEY SHARE"))]
+                (::order-by opts)   (assoc :order-by (::order-by opts))
+                (::columns opts)    (assoc :columns (::columns opts))
+                (::for-update opts) (assoc :suffix "FOR UPDATE")
+                (::for-share opts)  (assoc :suffix "FOR SHARE"))]
      (sql/for-query table where-params opts))))
 
 (defn update
   ([table key-map where-params]
    (update table key-map where-params nil))
   ([table key-map where-params opts]
-   (let [opts (merge default-opts opts)]
+   (let [opts (into default-opts opts)
+         keys (::db/return-keys opts)
+         opts (if (vector? keys)
+                (assoc opts :suffix (str "RETURNING " (sql/as-cols keys opts)))
+                opts)]
      (sql/for-update table key-map where-params opts))))
 
 (defn delete
   ([table where-params]
    (delete table where-params nil))
   ([table where-params opts]
-   (let [opts (merge default-opts opts)]
+   (let [opts (merge default-opts opts)
+         keys (::db/return-keys opts)
+         opts (if (vector? keys)
+                (assoc opts :suffix (str "RETURNING " (sql/as-cols keys opts)))
+                opts)]
      (sql/for-delete table where-params opts))))

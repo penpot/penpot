@@ -172,7 +172,8 @@
     (.listen server port)
     (l/info :hint "welcome to penpot"
             :module "exporter"
-            :version (:full @cf/version))
+            :flags cf/flags
+            :version (:full cf/version))
     (l/info :hint "starting http server" :port port)
     (reset! instance server)))
 

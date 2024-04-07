@@ -8,13 +8,16 @@
   (:refer-clojure :exclude [deref merge parse-uuid])
   #?(:cljs (:require-macros [app.common.schema :refer [ignoring]]))
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.pprint :as pp]
    [app.common.schema.generators :as sg]
    [app.common.schema.openapi :as-alias oapi]
    [app.common.schema.registry :as sr]
+   [app.common.time :as tm]
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
-   [clojure.test.check.generators :as tgen]
+   [clojure.core :as c]
    [cuerdas.core :as str]
    [malli.core :as m]
    [malli.dev.pretty :as mdp]
@@ -24,25 +27,44 @@
    [malli.transform :as mt]
    [malli.util :as mu]))
 
-(defn validate
-  [s value]
-  (m/validate s value {:registry sr/default-registry}))
+(defprotocol ILazySchema
+  (-get-schema [_])
+  (-get-validator [_])
+  (-get-explainer [_])
+  (-get-decoder [_])
+  (-get-encoder [_])
+  (-validate [_ o])
+  (-explain [_ o])
+  (-decode [_ o]))
 
-(defn explain
-  [s value]
-  (m/explain s value {:registry sr/default-registry}))
-
-(defn explain-data
-  [s value]
-  (mu/explain-data s value {:registry sr/default-registry}))
+(def default-options
+  {:registry sr/default-registry})
 
 (defn schema?
   [o]
   (m/schema? o))
 
+(defn lazy-schema?
+  [s]
+  (satisfies? ILazySchema s))
+
 (defn schema
   [s]
-  (m/schema s {:registry sr/default-registry}))
+  (if (lazy-schema? s)
+    (-get-schema s)
+    (m/schema s default-options)))
+
+(defn validate
+  [s value]
+  (if (lazy-schema? s)
+    (-validate s value)
+    (m/validate s value default-options)))
+
+(defn explain
+  [s value]
+  (if (lazy-schema? s)
+    (-explain s value)
+    (m/explain s value default-options)))
 
 (defn humanize
   [exp]
@@ -56,7 +78,7 @@
 
 (defn form
   [s]
-  (m/form s {:registry sr/default-registry}))
+  (m/form s default-options))
 
 (defn merge
   [& items]
@@ -101,51 +123,79 @@
       :encoders (mt/-string-encoders)}
      {:name :collections
       :decoders coders
-      :encoders coders}
-
-     )))
+      :encoders coders})))
 
 (defn validator
   [s]
-  (-> s schema m/validator))
+  (if (lazy-schema? s)
+    (-get-validator s)
+    (-> s schema m/validator)))
 
 (defn explainer
   [s]
-  (-> s schema m/explainer))
-
-(defn lazy-validator
-  [s]
-  (let [vfn (delay (validator s))]
-    (fn [v] (@vfn v))))
-
-(defn lazy-explainer
-  [s]
-  (let [vfn (delay (explainer s))]
-    (fn [v] (@vfn v))))
+  (if (lazy-schema? s)
+    (-get-explainer s)
+    (-> s schema m/explainer)))
 
 (defn encode
   ([s val transformer]
-   (m/encode s val {:registry sr/default-registry} transformer))
+   (m/encode s val default-options transformer))
   ([s val options transformer]
    (m/encode s val options transformer)))
 
 (defn decode
   ([s val transformer]
-   (m/decode s val {:registry sr/default-registry} transformer))
+   (m/decode s val default-options transformer))
   ([s val options transformer]
    (m/decode s val options transformer)))
 
-(defn decoder
+(defn encoder
+  ([s]
+   (if (lazy-schema? s)
+     (-get-decoder s)
+     (encoder s default-options default-transformer)))
   ([s transformer]
-   (m/decoder s  {:registry sr/default-registry} transformer))
+   (m/encoder s default-options transformer))
+  ([s options transformer]
+   (m/encoder s options transformer)))
+
+(defn decoder
+  ([s]
+   (if (lazy-schema? s)
+     (-get-decoder s)
+     (decoder s default-options default-transformer)))
+  ([s transformer]
+   (m/decoder s default-options transformer))
   ([s options transformer]
    (m/decoder s options transformer)))
 
-(defn humanize-data
-  [explain-data]
-  (-> explain-data
-      (update :schema form)
-      (update :errors (fn [errors] (map #(update % :schema form) errors)))))
+(defn lazy-validator
+  [s]
+  (let [vfn (delay (validator (if (delay? s) (deref s) s)))]
+    (fn [v] (@vfn v))))
+
+(defn lazy-explainer
+  [s]
+  (let [vfn (delay (explainer (if (delay? s) (deref s) s)))]
+    (fn [v] (@vfn v))))
+
+(defn lazy-decoder
+  [s transformer]
+  (let [vfn (delay (decoder (if (delay? s) (deref s) s) transformer))]
+    (fn [v] (@vfn v))))
+
+(defn humanize-explain
+  [{:keys [schema errors value]} & {:keys [length level]}]
+  (let [errors (mapv #(update % :schema form) errors)]
+    (with-out-str
+      (println "Schema: ")
+      (println (pp/pprint-str (form schema) {:width 100 :level 15 :length 20}))
+      (println "Errors:")
+      (println (pp/pprint-str errors {:width 100 :level 15 :length 20}))
+      (println "Value:")
+      (println (pp/pprint-str value {:width 160
+                                     :level (d/nilv level 8)
+                                     :length (d/nilv length 12)})))))
 
 (defn pretty-explain
   [s d]
@@ -183,46 +233,86 @@
   ([s] (lookup sr/default-registry s))
   ([registry s] (schema (mr/schema registry s))))
 
-(defn pred-fn
+(defn fast-check!
+  "A fast path for checking process, assumes the ILazySchema protocol
+  implemented on the provided `s` schema. Sould not be used directly."
+  [s value]
+  (when-not ^boolean (-validate s value)
+    (let [hint    (d/nilv dm/*assert-context* "check error")
+          explain (-explain s value)]
+      (throw (ex-info hint {:type :assertion
+                            :code :data-validation
+                            :hint hint
+                            ::explain explain}))))
+  true)
+
+(declare define)
+
+(defn check-fn
+  "Create a predefined check function"
   [s]
-  (let [s    (schema s)
-        v-fn (lazy-validator s)
-        e-fn (lazy-explainer s)]
-    (fn [v]
-      (let [result (v-fn v)]
-        (when (and (not result) (true? dm/*assert-context*))
-          (let [hint (str "schema assert: " (pr-str (form s)))
-                exp  (e-fn v)]
-            (throw (ex-info hint {:type :assertion
-                                  :code :data-validation
-                                  :hint hint
-                                  ::explain exp}))))
-         result))))
+  (let [schema (if (lazy-schema? s) s (define s))]
+    (partial fast-check! schema)))
+
+(defn check!
+  "A helper intended to be used on assertions for validate/check the
+  schema over provided data. Raises an assertion exception, should be
+  used together with `dm/assert!` or `dm/verify!`."
+  [s value]
+  (if (lazy-schema? s)
+    (fast-check! s value)
+    (do
+      (when-not ^boolean (m/validate s value default-options)
+        (let [hint    (d/nilv dm/*assert-context* "check error")
+              explain (explain s value)]
+          (throw (ex-info hint {:type :assertion
+                                :code :data-validation
+                                :hint hint
+                                ::explain explain}))))
+      true)))
 
 
-(defn valid?
-  [s v]
-  (let [result (validate s v)]
-    (when (and (not result) (true? dm/*assert-context*))
-      (let [hint (str "schema assert: " (pr-str (form s)))
-            exp  (explain s v)]
-        (throw (ex-info hint {:type :assertion
-                              :code :data-validation
-                              :hint hint
-                              ::explain exp}))))
-    result))
+(defn fast-validate!
+  "A fast path for validation process, assumes the ILazySchema protocol
+  implemented on the provided `s` schema. Sould not be used directly."
+  ([s value] (fast-validate! s value nil))
+  ([s value options]
+   (when-not ^boolean (-validate s value)
+     (let [explain (-explain s value)
+           options (into {:type :validation
+                          :code :data-validation
+                          ::explain explain}
+                         options)
+           hint    (get options :hint "schema validation error")]
+       (throw (ex-info hint options))))))
 
-(defn assert-fn
+(defn validate-fn
+  "Create a predefined validate function"
   [s]
-  (let [f (pred-fn s)]
-    (fn [v]
-      (dm/assert! (f v)))))
+  (let [schema (if (lazy-schema? s) s (define s))]
+    (partial fast-validate! schema)))
 
-(defmacro verify-fn
-  [s]
-  (let [f (pred-fn s)]
-    (fn [v]
-      (dm/verify! (f v)))))
+(defn validate!
+  "A generic validation function for predefined schemas."
+  ([s value] (validate! s value nil))
+  ([s value options]
+   (if (lazy-schema? s)
+     (fast-validate! s value options)
+     (when-not ^boolean (m/validate s value default-options)
+       (let [explain (explain s value)
+             options (into {:type :validation
+                            :code :data-validation
+                            ::explain explain}
+                           options)
+             hint    (get options :hint "schema validation error")]
+         (throw (ex-info hint options)))))))
+
+(defn conform!
+  [schema value]
+  (assert (lazy-schema? schema) "expected `schema` to satisfy ILazySchema protocol")
+  (let [params (-decode schema value)]
+    (fast-validate! schema params nil)
+    params))
 
 (defn register! [type s]
   (let [s (if (map? s) (simple-schema s) s)]
@@ -232,22 +322,84 @@
   (register! type s)
   nil)
 
-;; --- GENERATORS
+(defn define! [id s]
+  (register! id s)
+  nil)
 
-;; FIXME: replace with sg/subseq
-(defn gen-set-from-choices
-  [choices]
-  (->> tgen/nat
-       (tgen/fmap (fn [i]
-                    (into #{}
-                          (map (fn [_] (rand-nth choices)))
-                          (range i))))))
+(defn define
+  "Create ans instance of ILazySchema"
+  [s & {:keys [transformer] :as options}]
+  (let [schema      (delay (schema s))
+        validator   (delay (m/validator @schema))
+        explainer   (delay (m/explainer @schema))
 
+        options     (c/merge default-options (dissoc options :transformer))
+        transformer (or transformer default-transformer)
+        decoder     (delay (m/decoder @schema options transformer))
+        encoder     (delay (m/encoder @schema options transformer))]
+
+    (reify
+      m/AST
+      (-to-ast [_ options] (m/-to-ast @schema options))
+
+      m/EntrySchema
+      (-entries [_] (m/-entries @schema))
+      (-entry-parser [_] (m/-entry-parser @schema))
+
+      m/Cached
+      (-cache [_] (m/-cache @schema))
+
+      m/LensSchema
+      (-keep [_] (m/-keep @schema))
+      (-get [_ key default] (m/-get @schema key default))
+      (-set [_ key value] (m/-set @schema key value))
+
+      m/Schema
+      (-validator [_]
+        (m/-validator @schema))
+      (-explainer [_ path]
+        (m/-explainer @schema path))
+      (-parser [_]
+        (m/-parser @schema))
+      (-unparser [_]
+        (m/-unparser @schema))
+      (-transformer [_ transformer method options]
+        (m/-transformer @schema transformer method options))
+      (-walk [_ walker path options]
+        (m/-walk @schema walker path options))
+      (-properties [_]
+        (m/-properties @schema))
+      (-options [_]
+        (m/-options @schema))
+      (-children [_]
+        (m/-children @schema))
+      (-parent [_]
+        (m/-parent @schema))
+      (-form [_]
+        (m/-form @schema))
+
+      ILazySchema
+      (-get-schema [_]
+        @schema)
+      (-get-validator [_]
+        @validator)
+      (-get-explainer [_]
+        @explainer)
+      (-get-encoder [_]
+        @encoder)
+      (-get-decoder [_]
+        @decoder)
+      (-validate [_ o]
+        (@validator o))
+      (-explain [_ o]
+        (@explainer o))
+      (-decode [_ o]
+        (@decoder o)))))
 
 ;; --- BUILTIN SCHEMAS
 
-(def! :merge (mu/-merge))
-(def! :union (mu/-union))
+(define! :merge (mu/-merge))
+(define! :union (mu/-union))
 
 (def uuid-rx
   #"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
@@ -258,7 +410,7 @@
     (some->> (re-matches uuid-rx s) uuid/uuid)
     s))
 
-(def! ::uuid
+(define! ::uuid
   {:type ::uuid
    :pred uuid?
    :type-properties
@@ -279,7 +431,7 @@
     s))
 
 ;; FIXME: add proper email generator
-(def! ::email
+(define! ::email
   {:type ::email
    :pred (fn [s]
            (and (string? s)
@@ -300,7 +452,7 @@
    (remove str/empty?)
    (remove str/blank?)))
 
-(def! ::set-of-strings
+(define! ::set-of-strings
   {:type ::set-of-strings
    :pred #(and (set? %) (every? string? %))
    :type-properties
@@ -316,7 +468,23 @@
                     (let [v (if (string? v) (str/split v #"[\s,]+") v)]
                       (into #{} non-empty-strings-xf v)))}})
 
-(def! ::set-of-emails
+(define! ::set-of-keywords
+  {:type ::set-of-keywords
+   :pred #(and (set? %) (every? keyword? %))
+   :type-properties
+   {:title "set[string]"
+    :description "Set of Strings"
+    :error/message "should be a set of strings"
+    :gen/gen (-> :keyword sg/generator sg/set)
+    ::oapi/type "array"
+    ::oapi/format "set"
+    ::oapi/items {:type "string" :format "keyword"}
+    ::oapi/unique-items true
+    ::oapi/decode (fn [v]
+                    (let [v (if (string? v) (str/split v #"[\s,]+") v)]
+                      (into #{} (comp non-empty-strings-xf (map keyword)) v)))}})
+
+(define! ::set-of-emails
   {:type ::set-of-emails
    :pred #(and (set? %) (every? string? %))
    :type-properties
@@ -332,7 +500,7 @@
                (let [v (if (string? v) (str/split v #"[\s,]+") v)]
                  (into #{} (keep parse-email) v)))}})
 
-(def! ::set-of-uuid
+(define! ::set-of-uuid
   {:type ::set-of-uuid
    :pred #(and (set? %) (every? uuid? %))
    :type-properties
@@ -348,7 +516,7 @@
                     (let [v (if (string? v) (str/split v #"[\s,]+") v)]
                       (into #{} (keep parse-uuid) v)))}})
 
-(def! ::coll-of-uuid
+(define! ::coll-of-uuid
   {:type ::set-of-uuid
    :pred (partial every? uuid?)
    :type-properties
@@ -364,7 +532,7 @@
                     (let [v (if (string? v) (str/split v #"[\s,]+") v)]
                       (into [] (keep parse-uuid) v)))}})
 
-(def! ::one-of
+(define! ::one-of
   {:type ::one-of
    :min 1
    :max 1
@@ -387,7 +555,7 @@
 ;; Integer/MIN_VALUE
 (def min-safe-int -2147483648)
 
-(def! ::safe-int
+(define! ::safe-int
   {:type ::safe-int
    :pred #(and (int? %) (>= max-safe-int %) (>= % min-safe-int))
    :type-properties
@@ -402,7 +570,7 @@
                       (parse-long s)
                       s))}})
 
-(def! ::safe-number
+(define! ::safe-number
   {:type ::safe-number
    :pred #(and (number? %) (>= max-safe-int %) (>= % min-safe-int))
    :type-properties
@@ -418,7 +586,7 @@
                       (parse-double s)
                       s))}})
 
-(def! ::safe-double
+(define! ::safe-double
   {:type ::safe-double
    :pred #(and (double? %) (>= max-safe-int %) (>= % min-safe-int))
    :type-properties
@@ -433,7 +601,7 @@
                       (parse-double s)
                       s))}})
 
-(def! ::contains-any
+(define! ::contains-any
   {:type ::contains-any
    :min 1
    :max 1
@@ -451,21 +619,22 @@
                  {:title "contains"
                   :description "contains predicate"}}))})
 
-(def! ::inst
+(define! ::inst
   {:type ::inst
    :pred inst?
    :type-properties
    {:title "inst"
     :description "Satisfies Inst protocol"
     :error/message "expected to be number in safe range"
-    :gen/gen (sg/small-int)
+    :gen/gen (->> (sg/small-int)
+                  (sg/fmap (fn [v] (tm/instant v))))
     ::oapi/type "number"
     ::oapi/format "int64"}})
 
-(def! ::fn
+(define! ::fn
   [:schema fn?])
 
-(def! ::word-string
+(define! ::word-string
   {:type ::word-string
    :pred #(and (string? %) (not (str/blank? %)))
    :property-pred (m/-min-max-pred count)
@@ -477,7 +646,7 @@
     ::oapi/type "string"
     ::oapi/format "string"}})
 
-(def! ::uri
+(define! ::uri
   {:type ::uri
    :pred u/uri?
    :type-properties
@@ -491,20 +660,23 @@
 
 ;; ---- PREDICATES
 
-(def safe-int?
-  (pred-fn ::safe-int))
+(def valid-safe-number?
+  (lazy-validator ::safe-number))
 
-(def set-of-strings?
-  (pred-fn ::set-of-strings))
+(def check-safe-int!
+  (check-fn ::safe-int))
 
-(def set-of-emails?
-  (pred-fn ::set-of-emails))
+(def check-set-of-strings!
+  (check-fn ::set-of-strings))
 
-(def set-of-uuid?
-  (pred-fn ::set-of-uuid))
+(def check-email!
+  (check-fn ::email))
 
-(def coll-of-uuid?
-  (pred-fn ::coll-of-uuid))
+(def check-coll-of-uuid!
+  (check-fn ::coll-of-uuid))
 
-(def email?
-  (pred-fn ::email))
+(def check-set-of-uuid!
+  (check-fn ::set-of-uuid))
+
+(def check-set-of-emails!
+  (check-fn ::set-of-emails))

@@ -1,0 +1,60 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.sub-actions {
+  cursor: initial;
+  pointer-events: initial;
+  position: absolute;
+  top: $s-12;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  height: $s-56;
+  padding: $s-8 $s-16;
+  border-radius: $s-8;
+  gap: $s-16;
+  border: $s-2 solid var(--panel-border-color);
+  z-index: $z-index-3;
+  background-color: var(--color-background-primary);
+  transition:
+    top 0.3s,
+    height 0.3s,
+    opacity 0.3s;
+}
+
+.sub-actions-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  opacity: $op-10;
+  transition: opacity 0.3s ease;
+}
+
+.topbar-btn {
+  --pathbar-icon-color: var(--color-foreground-secondary);
+  @extend .button-tertiary;
+  height: $s-36;
+  width: $s-36;
+  flex-shrink: 0;
+  background-color: transparent;
+  border-radius: $s-8;
+  border: none;
+  margin: 0 $s-2;
+
+  &.is-toggled {
+    --pathbar-icon-color: var(--button-radio-foreground-color-active);
+    background-color: var(--button-radio-background-color-active);
+  }
+
+  .pathbar-icon {
+    @extend .button-icon;
+    stroke: var(--pathbar-icon-color);
+  }
+}

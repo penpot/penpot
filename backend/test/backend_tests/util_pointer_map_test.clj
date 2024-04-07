@@ -55,8 +55,7 @@
       (t/is (pmap/pointer-map? obj2))
       (t/is (identical? tmp obj2))
       (t/is (= 0 (count obj1)))
-      (t/is (= 0 (count obj2)))))
-  )
+      (t/is (= 0 (count obj2))))))
 
 
 (t/deftest internal-tracking
@@ -118,7 +117,5 @@
         (t/is (not (contains? obj1 :b)))
         (t/is (= 1 (get obj1 :a)))
         (t/is (= nil (get obj1 :b)))
-        (t/is (= ::empty (get obj1 :b ::empty))))))
-
-  )
+        (t/is (= ::empty (get obj1 :b ::empty)))))))
 

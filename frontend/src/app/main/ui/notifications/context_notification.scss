@@ -1,0 +1,88 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.context-notification {
+  --context-notification-bg-color: var(--alert-background-color-default);
+  --context-notification-fg-color: var(--alert-text-foreground-color-default);
+  --context-notification-icon-color: var(--alert-icon-foreground-color-default);
+  --context-notification-border-color: var(--alert-border-color-default);
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: $s-16 1fr;
+  gap: $s-8;
+  min-height: $s-32;
+  height: fit-content;
+  width: 100%;
+  padding: $s-8;
+  border: $s-1 solid var(--context-notification-border-color);
+  border-radius: $br-8;
+  background-color: var(--context-notification-bg-color);
+}
+
+.warning {
+  --context-notification-bg-color: var(--alert-background-color-warning);
+  --context-notification-fg-color: var(--alert-text-foreground-color-warning);
+  --context-notification-icon-color: var(--alert-icon-foreground-color-warning);
+  --context-notification-border-color: var(--alert-border-color-warning);
+}
+
+.success {
+  --context-notification-bg-color: var(--alert-background-color-success);
+  --context-notification-fg-color: var(--alert-text-foreground-color-success);
+  --context-notification-icon-color: var(--alert-icon-foreground-color-success);
+  --context-notification-border-color: var(--alert-border-color-success);
+}
+
+.info {
+  --context-notification-bg-color: var(--alert-background-color-info);
+  --context-notification-fg-color: var(--alert-text-foreground-color-info);
+  --context-notification-icon-color: var(--alert-icon-foreground-color-info);
+  --context-notification-border-color: var(--alert-border-color-info);
+}
+
+.default {
+  --context-notification-bg-color: var(--alert-background-color-default);
+  --context-notification-fg-color: var(--alert-text-foreground-color-default);
+  --context-notification-icon-color: var(--alert-icon-foreground-color-default);
+  --context-notification-border-color: var(--alert-border-color-default);
+}
+
+.error {
+  --context-notification-bg-color: var(--alert-background-color-error);
+  --context-notification-fg-color: var(--alert-text-foreground-color-error);
+  --context-notification-icon-color: var(--alert-icon-foreground-color-error);
+  --context-notification-border-color: var(--alert-border-color-error);
+}
+
+.icon {
+  @extend .button-icon;
+  align-self: self-start;
+  stroke: var(--context-notification-icon-color);
+}
+
+.context-text {
+  @include bodySmallTypography;
+  align-self: center;
+  color: var(--context-notification-fg-color);
+  margin: auto 0;
+}
+
+// The second rule only applies when the element receives embedded
+// links within the content by means of the dangerouslySetInnerHTML.
+// Only in this case the contain-html class will be used.
+
+.link,
+.contain-html .context-text a {
+  @include bodySmallTypography;
+  align-self: center;
+  display: inline;
+  text-align: left;
+  height: $s-16;
+  margin: 0;
+  color: var(--modal-link-foreground-color);
+}

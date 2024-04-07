@@ -18,6 +18,7 @@
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
    [app.rpc.quotes :as quotes]
+   [app.setup :as-alias setup]
    [app.tokens :as tokens]
    [app.tokens.spec.team-invitation :as-alias spec.team-invitation]
    [app.util.services :as sv]
@@ -38,24 +39,25 @@
    ::doc/module :auth}
   [{:keys [::db/pool] :as cfg} {:keys [token] :as params}]
   (db/with-atomic [conn pool]
-    (let [claims (tokens/verify (::main/props cfg) {:token token})
+    (let [claims (tokens/verify (::setup/props cfg) {:token token})
           cfg    (assoc cfg :conn conn)]
       (process-token cfg params claims))))
 
 (defmethod process-token :change-email
   [{:keys [conn] :as cfg} _params {:keys [profile-id email] :as claims}]
-  (when (profile/get-profile-by-email conn email)
-    (ex/raise :type :validation
-              :code :email-already-exists))
+  (let [email (profile/clean-email email)]
+    (when (profile/get-profile-by-email conn email)
+      (ex/raise :type :validation
+                :code :email-already-exists))
 
-  (db/update! conn :profile
-              {:email email}
-              {:id profile-id})
+    (db/update! conn :profile
+                {:email email}
+                {:id profile-id})
 
-  (rph/with-meta claims
-    {::audit/name "update-profile-email"
-     ::audit/props {:email email}
-     ::audit/profile-id profile-id}))
+    (rph/with-meta claims
+      {::audit/name "update-profile-email"
+       ::audit/props {:email email}
+       ::audit/profile-id profile-id})))
 
 (defmethod process-token :verify-email
   [{:keys [conn] :as cfg} _ {:keys [profile-id] :as claims}]
@@ -105,7 +107,7 @@
                           ::quotes/team-id team-id})
 
     ;; Insert the invited member to the team
-    (db/insert! conn :team-profile-rel params {:on-conflict-do-nothing true})
+    (db/insert! conn :team-profile-rel params {::db/on-conflict-do-nothing? true})
 
     ;; If profile is not yet verified, mark it as verified because
     ;; accepting an invitation link serves as verification.

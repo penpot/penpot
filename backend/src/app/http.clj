@@ -23,15 +23,15 @@
    [app.metrics :as mtx]
    [app.rpc :as-alias rpc]
    [app.rpc.doc :as-alias rpc.doc]
-   [app.worker :as wrk]
+   [app.setup :as-alias setup]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [promesa.exec :as px]
    [reitit.core :as r]
    [reitit.middleware :as rr]
-   [yetti.adapter :as yt]
-   [yetti.request :as yrq]
-   [yetti.response :as-alias yrs]))
+   [ring.request :as rreq]
+   [ring.response :as-alias rres]
+   [yetti.adapter :as yt]))
 
 (declare router-handler)
 
@@ -53,8 +53,8 @@
   [_ cfg]
   (merge {::port 6060
           ::host "0.0.0.0"
-          ::max-body-size (* 1024 1024 30)             ; 30 MiB
-          ::max-multipart-body-size (* 1024 1024 120)} ; 120 MiB
+          ::max-body-size (* 1024 1024 30)             ; default 30 MiB
+          ::max-multipart-body-size (* 1024 1024 120)} ; default 120 MiB
          (d/without-nils cfg)))
 
 (defmethod ig/pre-init-spec ::server [_]
@@ -63,8 +63,7 @@
                 ::max-multipart-body-size
                 ::router
                 ::handler
-                ::io-threads
-                ::wrk/executor]))
+                ::io-threads]))
 
 (defmethod ig/init-key ::server
   [_ {:keys [::handler ::router ::host ::port] :as cfg}]
@@ -75,11 +74,9 @@
                  :http/max-multipart-body-size (::max-multipart-body-size cfg)
                  :xnio/io-threads (or (::io-threads cfg)
                                       (max 3 (px/get-available-processors)))
-                 :xnio/worker-threads (or (::worker-threads cfg)
-                                          (max 6 (px/get-available-processors)))
-                 :xnio/dispatch true
-                 :socket/backlog 4069
-                 :ring/async true}
+                 :xnio/dispatch :virtual
+                 :ring/compat :ring2
+                 :socket/backlog 4069}
 
         handler (cond
                   (some? router)
@@ -102,13 +99,13 @@
   (yt/stop! server))
 
 (defn- not-found-handler
-  [_ respond _]
-  (respond {::yrs/status 404}))
+  [_]
+  {::rres/status 404})
 
 (defn- router-handler
   [router]
   (letfn [(resolve-handler [request]
-            (if-let [match (r/match-by-path router (yrq/path request))]
+            (if-let [match (r/match-by-path router (rreq/path request))]
               (let [params  (:path-params match)
                     result  (:result match)
                     handler (or (:handler result) not-found-handler)
@@ -120,18 +117,15 @@
             (let [{:keys [body] :as response} (errors/handle cause request)]
               (cond-> response
                 (map? body)
-                (-> (update ::yrs/headers assoc "content-type" "application/transit+json")
-                    (assoc ::yrs/body (t/encode-str body {:type :json-verbose}))))))]
+                (-> (update ::rres/headers assoc "content-type" "application/transit+json")
+                    (assoc ::rres/body (t/encode-str body {:type :json-verbose}))))))]
 
-    (fn [request respond _]
-      (let [handler  (resolve-handler request)
-            exchange (yrq/exchange request)]
-        (handler
-         (fn [response]
-           (yt/dispatch! exchange (partial respond response)))
-         (fn [cause]
-           (let [response (on-error cause request)]
-             (yt/dispatch! exchange (partial respond response)))))))))
+    (fn [request]
+      (let [handler (resolve-handler request)]
+        (try
+          (handler)
+          (catch Throwable cause
+            (on-error cause request)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HTTP ROUTER
@@ -143,7 +137,7 @@
                 ::rpc/routes
                 ::rpc.doc/routes
                 ::oidc/routes
-                ::main/props
+                ::setup/props
                 ::assets/routes
                 ::debug/routes
                 ::db/pool
@@ -160,8 +154,7 @@
                       [session/soft-auth cfg]
                       [actoken/soft-auth cfg]
                       [mw/errors errors/handle]
-                      [mw/restrict-methods]
-                      [mw/with-dispatch :vthread]]}
+                      [mw/restrict-methods]]}
 
      (::mtx/routes cfg)
      (::assets/routes cfg)

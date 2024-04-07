@@ -9,15 +9,16 @@
   data resources."
   (:refer-clojure :exclude [read-string hash-map merge name update-vals
                             parse-double group-by iteration concat mapcat
-                            parse-uuid])
+                            parse-uuid max min])
   #?(:cljs
      (:require-macros [app.common.data]))
 
   (:require
-   #?(:cljs [cljs.reader :as r]
-      :clj [clojure.edn :as r])
    #?(:cljs [cljs.core :as c]
       :clj [clojure.core :as c])
+   #?(:cljs [cljs.reader :as r]
+      :clj [clojure.edn :as r])
+   #?(:cljs [goog.array :as garray])
    [app.common.math :as mth]
    [clojure.set :as set]
    [cuerdas.core :as str]
@@ -55,6 +56,14 @@
   [o]
   #?(:cljs (instance? lkm/LinkedMap o)
      :clj (instance? LinkedMap o)))
+
+(defn vec2
+  "Creates a optimized vector compatible type of length 2 backed
+  internally with MapEntry impl because it has faster access method
+  for its fields."
+  [o1 o2]
+  #?(:clj (clojure.lang.MapEntry. o1 o2)
+     :cljs (cljs.core/->MapEntry o1 o2 nil)))
 
 #?(:clj
    (defmethod print-method clojure.lang.PersistentQueue [q, w]
@@ -145,10 +154,6 @@
      (transient-concat c1 more)
      (transient-concat [] (cons c1 more)))))
 
-(defn preconj
-  [coll elem]
-  (into [elem] coll))
-
 (defn enumerate
   ([items] (enumerate items 0))
   ([items start]
@@ -219,29 +224,71 @@
   [coll]
   (into [] (remove nil?) coll))
 
+
 (defn without-nils
   "Given a map, return a map removing key-value
   pairs when value is `nil`."
-  ([] (remove (comp nil? val)))
+  ([]
+   (remove (comp nil? val)))
   ([data]
-   (into {} (without-nils) data)))
+   (reduce-kv (fn [data k v]
+                (if (nil? v)
+                  (dissoc data k)
+                  data))
+              data
+              data)))
 
 (defn without-qualified
   ([]
    (remove (comp qualified-keyword? key)))
   ([data]
-   (into {} (without-qualified) data)))
+   (reduce-kv (fn [data k _]
+                (if (qualified-keyword? k)
+                  (dissoc data k)
+                  data))
+              data
+              data)))
 
 (defn without-keys
   "Return a map without the keys provided
   in the `keys` parameter."
   [data keys]
-  (persistent!
-   (reduce dissoc!
-           (if (editable-collection? data)
-             (transient data)
-             (transient {}))
-           keys)))
+  (if (editable-collection? data)
+    (persistent! (reduce dissoc! (transient data) keys))
+    (reduce dissoc data keys)))
+
+(defn patch-object
+  "Changes is some attributes that need to change in object.
+  When the attribute is nil it will be removed.
+
+  For example
+    - object:  {:a 1 :b {:foo 1 :bar 2} :c 10}
+    - changes: {:a 2 :b {:foo nil :k 3}}
+    - result:  {:a 2 :b {:bar 2 :k 3} :c 10}
+  "
+  ([changes]
+   #(patch-object % changes))
+
+  ([object changes]
+   (if object
+     (->> changes
+          (reduce-kv
+           (fn [object key value]
+             (cond
+               (map? value)
+               (let [current (get object key)]
+                 (assoc object key (patch-object current value)))
+
+               (and (nil? value) (record? object))
+               (assoc object key nil)
+
+               (nil? value)
+               (dissoc object key value)
+
+               :else
+               (assoc object key value)))
+           object))
+     changes)))
 
 (defn remove-at-index
   "Takes a vector and returns a vector with an element in the
@@ -262,12 +309,24 @@
 (defn zip [col1 col2]
   (map vector col1 col2))
 
+(defn zip-all
+  "Return a zip of both collections, extended to the lenght of the longest one,
+   and padding the shorter one with nils as needed."
+  [col1 col2]
+  (let [diff (- (count col1) (count col2))]
+    (cond (pos? diff)  (zip col1 (c/concat col2 (repeat nil)))
+          (neg? diff)  (zip (c/concat col1 (repeat nil)) col2)
+          :else        (zip col1 col2))))
+
 (defn mapm
   "Map over the values of a map"
   ([mfn]
-   (map (fn [[key val]] [key (mfn key val)])))
+   (map (fn [[key val]] (vec2 key (mfn key val)))))
   ([mfn coll]
-   (into {} (mapm mfn) coll)))
+   (reduce-kv (fn [coll k v]
+                (assoc coll k (mfn k v)))
+              coll
+              coll)))
 
 (defn removev
   "Returns a vector of the items in coll for which (fn item) returns logical false"
@@ -343,6 +402,13 @@
   "Returns a function to access a map"
   [coll]
   (partial get coll))
+
+(defn update-vals
+  [m f]
+  (reduce-kv (fn [acc k v]
+               (assoc acc k (f v)))
+             m
+             m))
 
 (defn update-in-when
   [m key-seq f & args]
@@ -481,6 +547,13 @@
   (->> (apply c/iteration args)
        (concat-all)))
 
+(defn add-at-index
+  "Insert an element in a vector at an arbitrary index"
+  [coll index element]
+  (assert (vector? coll))
+  (let [[before after] (split-at index coll)]
+    (concat-vec [] before [element] after)))
+
 (defn insert-at-index
   "Insert a list of elements at the given index of a previous list.
   Replace all existing elems."
@@ -546,8 +619,8 @@
 (defn num-string? [v]
   ;; https://stackoverflow.com/questions/175739/built-in-way-in-javascript-to-check-if-a-string-is-a-valid-number
   #?(:cljs (and (string? v)
-               (not (js/isNaN v))
-               (not (js/isNaN (parse-double v))))
+                (not (js/isNaN v))
+                (not (js/isNaN (parse-double v))))
 
      :clj  (not= (parse-double v :nan) :nan)))
 
@@ -590,23 +663,47 @@
   ([a]
    (mth/finite? a))
   ([a b]
-   (and (mth/finite? a)
-        (mth/finite? b)))
+   (and ^boolean (mth/finite? a)
+        ^boolean (mth/finite? b)))
   ([a b c]
-   (and (mth/finite? a)
-        (mth/finite? b)
-        (mth/finite? c)))
+   (and ^boolean (mth/finite? a)
+        ^boolean (mth/finite? b)
+        ^boolean (mth/finite? c)))
   ([a b c d]
-   (and (mth/finite? a)
-        (mth/finite? b)
-        (mth/finite? c)
-        (mth/finite? d)))
+   (and ^boolean (mth/finite? a)
+        ^boolean (mth/finite? b)
+        ^boolean (mth/finite? c)
+        ^boolean (mth/finite? d)))
   ([a b c d & others]
-   (and (mth/finite? a)
-        (mth/finite? b)
-        (mth/finite? c)
-        (mth/finite? d)
-        (every? mth/finite? others))))
+   (and ^boolean (mth/finite? a)
+        ^boolean (mth/finite? b)
+        ^boolean (mth/finite? c)
+        ^boolean (mth/finite? d)
+        ^boolean (every? mth/finite? others))))
+
+(defn safe+
+  [a b]
+  (if (mth/finite? a) (+ a b) a))
+
+(defn max
+  ([a] a)
+  ([a b] (mth/max a b))
+  ([a b c] (mth/max a b c))
+  ([a b c d] (mth/max a b c d))
+  ([a b c d e] (mth/max a b c d e))
+  ([a b c d e f] (mth/max a b c d e f))
+  ([a b c d e f & other]
+   (reduce max (mth/max a b c d e f) other)))
+
+(defn min
+  ([a] a)
+  ([a b] (mth/min a b))
+  ([a b c] (mth/min a b c))
+  ([a b c d] (mth/min a b c d))
+  ([a b c d e] (mth/min a b c d e))
+  ([a b c d e f] (mth/min a b c d e f))
+  ([a b c d e f & other]
+   (reduce min (mth/min a b c d e f) other)))
 
 (defn check-num
   "Function that checks if a number is nil or nan. Will return 0 when not
@@ -619,20 +716,19 @@
 
 (defn name
   "Improved version of name that won't fail if the input is not a keyword"
-  ([maybe-keyword] (name maybe-keyword nil))
-  ([maybe-keyword default-value]
-   (cond
-     (keyword? maybe-keyword)
-     (c/name maybe-keyword)
+  [maybe-keyword]
+  (cond
+    (nil? maybe-keyword)
+    nil
 
-     (string? maybe-keyword)
-     maybe-keyword
+    (keyword? maybe-keyword)
+    (c/name maybe-keyword)
 
-     (nil? maybe-keyword) default-value
+    (string? maybe-keyword)
+    maybe-keyword
 
-     :else
-     (or default-value
-         (str maybe-keyword)))))
+    :else
+    (str maybe-keyword)))
 
 (defn prefix-keyword
   "Given a keyword and a prefix will return a new keyword with the prefix attached
@@ -759,49 +855,46 @@
         (toString 16)
         (padStart 2 "0"))))
 
+(defn unstable-sort
+  ([items]
+   (unstable-sort compare items))
+  ([comp-fn items]
+   #?(:cljs
+      (let [items (to-array items)]
+        (garray/sort items comp-fn)
+        (seq items))
+      :clj
+      (sort comp-fn items))))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; String Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def stylize-re1 (re-pattern "(?u)(\\p{Lu}+[\\p{Ll}\\u0027\\p{Ps}\\p{Pe}]*)"))
-(def stylize-re2 (re-pattern "(?u)[^\\p{L}\\p{N}\\u0027\\p{Ps}\\p{Pe}\\?!]+"))
+(def ^:const trail-zeros-regex-1 #"\.0+$")
+(def ^:const trail-zeros-regex-2 #"(\.\d*[^0])0+$")
 
-(defn- stylize-split
-  [s]
-  (some-> s
-          (name)
-          (str/replace stylize-re1 "-$1")
-          (str/split stylize-re2)
-          (seq)))
+#?(:cljs
+   (defn format-precision
+     "Creates a number with predetermined precision and then removes the trailing 0.
+  Examples:
+    12.0123, 0 => 12
+    12.0123, 1 => 12
+    12.0123, 2 => 12.01"
+     [num precision]
 
-(defn- stylize-join
-  ([coll every-fn join-with]
-   (when (seq coll)
-     (str/join join-with (map every-fn coll))))
-  ([[fst & rst] first-fn rest-fn join-with]
-   (when (string? fst)
-     (str/join join-with (cons (first-fn fst) (map rest-fn rst))))))
-
-(defn stylize
-  ([s every-fn join-with]
-   (stylize s every-fn every-fn join-with))
-  ([s first-fn rest-fn join-with]
-    (let [remove-empty #(seq (remove empty? %))]
-      (some-> (stylize-split s)
-              (remove-empty)
-              (stylize-join first-fn rest-fn join-with)))))
-
-(defn camel
-  "Output will be: lowerUpperUpperNoSpaces
-  accepts strings and keywords"
-  [s]
-  (stylize s str/lower str/capital ""))
-
-(defn kebab
-  "Output will be: lower-cased-and-separated-with-dashes
-  accepts strings and keywords"
-  [s]
-  (stylize s str/lower "-"))
+     (if (number? num)
+       (try
+         (let [num-str (mth/to-fixed num precision)
+               ;; Remove all trailing zeros after the comma 100.00000
+               num-str (str/replace num-str trail-zeros-regex-1 "")]
+           ;; Remove trailing zeros after a decimal number: 0.001|00|
+           (if-let [m (re-find trail-zeros-regex-2 num-str)]
+             (str/replace num-str (first m) (second m))
+             num-str))
+         (catch :default _
+           (str num)))
+       (str num))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Util protocols
@@ -815,3 +908,25 @@
    (extend-protocol ICloseable
      AutoCloseable
      (close! [this] (.close this))))
+
+(defn take-until
+  "Returns a lazy sequence of successive items from coll until
+  (pred item) returns true, including that item"
+  ([pred]
+   (halt-when pred (fn [r h] (conj r h))))
+
+  ([pred coll]
+   (transduce (take-until pred) conj [] coll)))
+
+(defn safe-subvec
+  "Wrapper around subvec so it doesn't throw an exception but returns nil instead"
+  ([v start]
+   (when (and (some? v)
+              (> start 0) (< start (count v)))
+     (subvec v start)))
+  ([v start end]
+   (let [size (count v)]
+     (when (and (some? v)
+                (>= start 0) (< start size)
+                (>= end 0) (<= start end) (<= end size))
+       (subvec v start end)))))

@@ -3,63 +3,95 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
-   [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.rect :as gsr]
-   [app.common.perf :as perf]
+   [app.common.geom.matrix :as gmt]
+   [app.common.geom.shapes.transforms :as gst]
+   [app.common.record :as cr]
+   [app.common.geom.rect :as grc]
+   [app.common.geom.rect_impl :as grci]
    [app.common.types.modifiers :as ctm]
-   [clojure.spec.alpha :as s]
-   [clojure.test.check.generators :as gen]))
+   [app.common.types.shape :as cts]
+   [app.util.perf :as perf]))
 
-(def points
-  (gen/sample (s/gen ::gpt/point) 20))
-
-(defn bench-points
+(defn random
   []
-  #_(perf/benchmark
-     :f #(gpt/center-points-old points)
-     :samples 20
-     :max-iterations 500000
-     :name "base")
-  (perf/benchmark
-   :f #(gpt/center-points points)
-   :max-iterations 500000
-   :samples 20
-   :name "optimized"))
+  (js/Math.random))
 
-(def modifiers
-  (-> (ctm/empty)
-      (ctm/move (gpt/point 100 200))
-      (ctm/resize (gpt/point 100 200) (gpt/point 2.0 0.5))
-      (ctm/move (gpt/point -100 -200))
-      (ctm/resize (gpt/point 100 200) (gpt/point 2.0 0.5))
-      (ctm/rotation (gpt/point 0 0) -100)
-      (ctm/resize (gpt/point 100 200) (gpt/point 2.0 0.5))))
-
-(defn bench-modifiers
+(defn force-gc
   []
-  (perf/benchmark
-   :f #(ctm/modifiers->transform modifiers)
-   :max-iterations 50000
-   :samples 20
-   :name "current")
+  (js/gc))
 
-  #_(perf/benchmark
-   :f #(ctm/modifiers->transform-2 modifiers)
-   :max-iterations 50000
-   :samples 20
-   :name "optimized"))
+;; (defn bench-modifiers
+;;   []
+;;   (println "")
+;;   (println "===> BENCH MODIFIERS <===")
+;;   (let [modifiers (-> (ctm/empty)
+;;                       (ctm/move (gpt/point 100 200))
+;;                       (ctm/resize (gpt/point 100 200) (gpt/point 2.0 0.5))
+;;                       (ctm/move (gpt/point -100 -200))
+;;                       (ctm/resize (gpt/point 100 200) (gpt/point 2.0 0.5))
+;;                       (ctm/rotation (gpt/point 0 0) -100)
+;;                       (ctm/resize (gpt/point 100 200) (gpt/point 2.0 0.5)))]
+;;     (perf/benchmark
+;;      :gc force-gc
+;;      :iterations 50000
+;;      :name "modifiers->transform:old"
+;;      :run-fn #(ctm/modifiers->transform-old modifiers))
 
-;; (ctm/modifiers->transform-2 modifiers)
+;;     (perf/benchmark
+;;      :gc force-gc
+;;      :iterations 50000
+;;      :name "modifiers->transform:new"
+;;      :run-fn #(ctm/modifiers->transform modifiers))))
+
+
+;; (defn bench-apply-transform
+;;   []
+;;   (println "")
+;;   (println "===> BENCH APPLY TRANFORM <===")
+;;   (let [modifiers (-> (ctm/empty)
+;;                       (ctm/move (gpt/point 100 200))
+;;                       (ctm/resize (gpt/point 100 200) (gpt/point 2.0 0.5))
+;;                       (ctm/move (gpt/point -100 -200))
+;;                       (ctm/resize (gpt/point 100 200) (gpt/point 2.0 0.5))
+;;                       (ctm/rotation (gpt/point 0 0) -100)
+;;                       (ctm/resize (gpt/point 100 200) (gpt/point 2.0 0.5)))
+;;         transform (ctm/modifiers->transform modifiers)
+
+;;         shape     (cts/setup-shape {:type :rect
+;;                                     :x 0
+;;                                     :y 0
+;;                                     :width 10
+;;                                     :height 10})]
+
+;;     ;; (app.common.pprint/pprint shape)
+
+;;     (perf/benchmark
+;;      :gc force-gc
+;;      :iterations 400
+;;      :name "apply-transform:old"
+;;      :run-fn #(gst/apply-transform shape modifiers))
+
+;;     (perf/benchmark
+;;      :gc force-gc
+;;      :iterations 400
+;;      :name "apply-transform:new"
+;;      :run-fn #(gst/apply-transform' shape modifiers))
+;;     ))
+
 
 (defn ^:dev/after-load after-load
   []
-  #_(bench-modifiers))
+  ;; (bench-apply-transform)
+  ;; (let [o (grc/make-rect 1 1 10 10)]
+  ;;   (prn o)
+  ;;   (prn (-> o
+  ;;            (cr/assoc! :x 40)
+  ;;            (grc/update-rect! :size)))
+  ;;   )
+  )
 
 (defn main
-  [& [name]]
-  (case name
-    "points" (bench-points)
-    "modifiers" (bench-modifiers)
-    (println "available: points"))
-  #_(.exit js/process 0))
-
+  [& params]
+  ;; (bench-apply-transform)
+  ;; (bench-apply-transform)
+  nil)

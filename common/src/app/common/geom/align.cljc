@@ -6,7 +6,10 @@
 
 (ns app.common.geom.align
   (:require
-   [app.common.geom.shapes :as gsh]))
+   [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
+   [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.points :as gpo]))
 
 ;; --- Alignment
 
@@ -22,10 +25,27 @@
   the shape with the given rectangle. If the shape is a group,
   move also all of its recursive children."
   [shape rect axis]
-  (let [wrapper-rect (gsh/selection-rect [shape])
+  (let [wrapper-rect (gsh/shapes->rect [shape])
         align-pos (calc-align-pos wrapper-rect rect axis)
-        delta {:x (- (:x align-pos) (:x wrapper-rect))
-               :y (- (:y align-pos) (:y wrapper-rect))}]
+        delta (gpt/point (- (:x align-pos) (:x wrapper-rect))
+                         (- (:y align-pos) (:y wrapper-rect)))]
+    (gsh/move shape delta)))
+
+(defn align-to-parent
+  "Does the same calc as align-to-rect but relative to a parent shape."
+  [shape parent axis]
+  (let [parent-bounds (:points parent)
+        wrapper-rect
+        (-> (gsh/transform-points (:points shape) (gsh/shape->center parent) (:transform-inverse parent))
+            (grc/points->rect))
+
+        align-pos (calc-align-pos wrapper-rect (:selrect parent) axis)
+
+        xv   #(gpo/start-hv parent-bounds %)
+        yv   #(gpo/start-vv parent-bounds %)
+
+        delta (-> (xv (- (:x align-pos) (:x wrapper-rect)))
+                  (gpt/add (yv (- (:y align-pos) (:y wrapper-rect)))))]
     (gsh/move shape delta)))
 
 (defn calc-align-pos
@@ -44,8 +64,8 @@
                :y (:y wrapper-rect)})
 
     :vtop (let [top (:y rect)]
-             {:x (:x wrapper-rect)
-              :y top})
+            {:x (:x wrapper-rect)
+             :y top})
 
     :vcenter (let [center (+ (:y rect) (/ (:height rect) 2))]
                {:x (:x wrapper-rect)
@@ -70,32 +90,34 @@
         other-coord (if (= axis :horizontal) :y :x)
         size (if (= axis :horizontal) :width :height)
         ;; The rectangle that wraps the whole selection
-        wrapper-rect (gsh/selection-rect shapes)
+        wrapper-rect (gsh/shapes->rect shapes)
         ;; Sort shapes by the center point in the given axis
-        sorted-shapes (sort-by #(coord (gsh/center-shape %)) shapes)
+        sorted-shapes (sort-by #(coord (gsh/shape->center %)) shapes)
         ;; Each shape wrapped in its own rectangle
-        wrapped-shapes (map #(gsh/selection-rect [%]) sorted-shapes)
+        wrapped-shapes (map #(gsh/shapes->rect [%]) sorted-shapes)
         ;; The total space between shapes
         space (reduce - (size wrapper-rect) (map size wrapped-shapes))
         unit-space (/ space (- (count wrapped-shapes) 1))
+
         ;; Calculate the distance we need to move each shape.
         ;; The new position of each one is the position of the
         ;; previous one plus its size plus the unit space.
-        deltas (loop [shapes' wrapped-shapes
-                      start-pos (coord wrapper-rect)
-                      deltas []]
+        deltas
+        (loop [shapes' wrapped-shapes
+               start-pos (coord wrapper-rect)
+               deltas []]
 
-                 (let [first-shape (first shapes')
-                       delta (- start-pos (coord first-shape))
-                       new-pos (+ start-pos (size first-shape) unit-space)]
+          (let [first-shape (first shapes')
+                delta (- start-pos (coord first-shape))
+                new-pos (+ start-pos (size first-shape) unit-space)]
 
-                   (if (= (count shapes') 1)
-                     (conj deltas delta)
-                     (recur (rest shapes')
-                            new-pos
-                            (conj deltas delta)))))]
+            (if (= (count shapes') 1)
+              (conj deltas delta)
+              (recur (rest shapes')
+                     new-pos
+                     (conj deltas delta)))))]
 
-    (map #(gsh/move %1 {coord %2 other-coord 0})
+    (map #(gsh/move %1 (assoc (gpt/point) coord %2 other-coord 0))
          sorted-shapes deltas)))
 
 ;; Adjust to viewport
@@ -103,28 +125,32 @@
 (defn adjust-to-viewport
   ([viewport srect] (adjust-to-viewport viewport srect nil))
   ([viewport srect {:keys [padding] :or {padding 0}}]
-   (let [gprop (/ (:width viewport) (:height viewport))
-         srect (-> srect
-                   (update :x #(- % padding))
-                   (update :y #(- % padding))
-                   (update :width #(+ % padding padding))
-                   (update :height #(+ % padding padding)))
-         width (:width srect)
+   (let [gprop  (/ (:width viewport)
+                   (:height viewport))
+         srect  (-> srect
+                    (update :x #(- % padding))
+                    (update :y #(- % padding))
+                    (update :width #(+ % padding padding))
+                    (update :height #(+ % padding padding)))
+         width  (:width srect)
          height (:height srect)
-         lprop (/ width height)]
+         lprop  (/ width height)]
      (cond
-      (> gprop lprop)
-      (let [width'  (* (/ width lprop) gprop)
-            padding (/ (- width' width) 2)]
-        (-> srect
-            (update :x #(- % padding))
-            (assoc :width width')))
+       (> gprop lprop)
+       (let [width'  (* (/ width lprop) gprop)
+             padding (/ (- width' width) 2)]
+         (-> srect
+             (update :x #(- % padding))
+             (assoc :width width')
+             (grc/update-rect :position)))
 
-      (< gprop lprop)
-      (let [height' (/ (* height lprop) gprop)
-            padding (/ (- height' height) 2)]
-        (-> srect
-            (update :y #(- % padding))
-            (assoc :height height')))
+       (< gprop lprop)
+       (let [height' (/ (* height lprop) gprop)
+             padding (/ (- height' height) 2)]
+         (-> srect
+             (update :y #(- % padding))
+             (assoc :height height')
+             (grc/update-rect :position)))
 
-      :else srect))))
+       :else
+       (grc/update-rect srect :position)))))

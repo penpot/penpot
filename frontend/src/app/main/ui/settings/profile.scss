@@ -1,0 +1,331 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "common/refactor/common-refactor" as *;
+
+.dashboard-settings {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  a:not(.button-primary) {
+    color: $df-secondary;
+  }
+}
+
+.form-container {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  max-width: $s-500;
+  margin-bottom: $s-32;
+  width: $s-580;
+  margin: $s-80 auto $s-120 auto;
+  justify-content: center;
+
+  form {
+    display: flex;
+    flex-direction: column;
+
+    .btn-secondary {
+      width: 100%;
+      font-size: $fs-11;
+      text-transform: uppercase;
+      background-color: $db-tertiary;
+      color: $df-primary;
+      &:hover {
+        color: $da-primary;
+        background-color: $db-quaternary;
+      }
+    }
+    hr {
+      display: none;
+    }
+  }
+
+  .fields-row {
+    --input-height: #{$s-40};
+    margin-bottom: $s-20;
+    flex-direction: column;
+
+    .options {
+      display: flex;
+      justify-content: flex-end;
+      font-size: $fs-14;
+      margin-top: $s-12;
+    }
+  }
+
+  .field {
+    margin-bottom: $s-20;
+  }
+
+  .field-title {
+    color: $df-primary;
+
+    &:not(:first-child) {
+      margin-top: $s-64;
+    }
+  }
+
+  .field-text {
+    color: $df-secondary;
+  }
+
+  .custom-input,
+  .custom-select {
+    flex-direction: column-reverse;
+    label {
+      position: relative;
+      text-transform: uppercase;
+      color: $df-primary;
+      font-size: $fs-11;
+      margin-bottom: $s-12;
+      margin-left: calc(-1 * $s-4);
+    }
+    input,
+    select {
+      background-color: $db-tertiary;
+      border-radius: $br-8;
+      border-color: transparent;
+      color: $df-primary;
+      padding: 0 $s-16;
+      &:focus {
+        outline: $s-1 solid $da-primary;
+      }
+      ::placeholder {
+        color: $df-secondary;
+      }
+    }
+    .help-icon {
+      bottom: $s-12;
+      top: auto;
+      svg {
+        fill: $df-secondary;
+      }
+    }
+    &.disabled {
+      input {
+        background-color: var(--input-background-color-disabled);
+        border-color: $db-quaternary;
+        color: $df-secondary;
+      }
+    }
+    .input-container {
+      background-color: $db-tertiary;
+      border-radius: $br-8;
+      border-color: transparent;
+      margin-top: $s-24;
+      .main-content {
+        label {
+          position: absolute;
+          top: calc(-1 * $s-24);
+        }
+        span {
+          color: $df-primary;
+        }
+      }
+      &:focus {
+        border: $s-1 solid $da-primary;
+      }
+    }
+    textarea {
+      border-radius: $br-8;
+      padding: $s-12 $s-16;
+      background-color: $db-tertiary;
+      color: $df-primary;
+      border: none;
+      &:focus {
+        outline: $s-1 solid $da-primary;
+      }
+    }
+  }
+
+  &.two-columns {
+    max-width: $s-520;
+    justify-content: space-between;
+    flex-direction: row;
+  }
+
+  h1 {
+    font-size: $fs-36;
+    color: $db-tertiary;
+    margin-bottom: $s-20;
+  }
+
+  .subtitle {
+    font-size: $fs-24;
+    color: $db-tertiary;
+    margin-bottom: $s-20;
+  }
+
+  .notification-icon {
+    justify-content: center;
+    display: flex;
+    margin-bottom: $s-48;
+
+    svg {
+      fill: $db-primary;
+      height: 40%;
+      width: 40%;
+    }
+  }
+
+  .notification-text {
+    font-size: $fs-16;
+    color: $db-primary;
+    margin-bottom: $s-20;
+  }
+
+  .notification-text-email {
+    background: $df-primary;
+    border-radius: $br-4;
+    color: $db-primary;
+    font-size: $fs-16;
+    font-weight: $fw500;
+    margin: $s-24 0 $s-40 0;
+    padding: $s-16;
+    text-align: center;
+  }
+
+  h2 {
+    font-size: $fs-24;
+    font-weight: $fw400;
+    color: $df-primary;
+    display: flex;
+    align-items: center;
+    margin: $s-16 0;
+  }
+
+  h3 {
+    font-size: $fs-12;
+    font-weight: $fw400;
+    color: $df-primary;
+    display: flex;
+    align-items: center;
+    margin: $s-8 0;
+    text-transform: uppercase;
+  }
+
+  a:not(.button-primary) {
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  p {
+    color: $db-primary;
+  }
+
+  hr {
+    border-color: $df-secondary;
+  }
+
+  .links {
+    margin-top: $s-12;
+  }
+}
+
+form.avatar-form {
+  display: flex;
+  flex-direction: column;
+  width: $s-148;
+  height: $s-148;
+  margin: $s-16 0;
+
+  img {
+    border-radius: 50%;
+    flex-shrink: 0;
+    height: 100%;
+    margin-right: $s-16;
+    width: 100%;
+  }
+}
+
+.image-change-field {
+  position: relative;
+  width: 100%;
+  height: 100%;
+
+  .update-overlay {
+    opacity: 0;
+    cursor: pointer;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    font-size: $fs-24;
+    color: $df-primary;
+    line-height: 6;
+    text-align: center;
+    background: $da-tertiary;
+    z-index: $z-index-modal;
+  }
+
+  input[type="file"] {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    top: 0;
+    z-index: $z-index-modal;
+  }
+
+  &:hover {
+    .update-overlay {
+      opacity: 0.8;
+    }
+  }
+}
+
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  max-width: $s-368;
+  width: 100%;
+}
+
+.newsletter-subs {
+  border-bottom: $s-1 solid $df-secondary;
+  border-top: $s-1 solid $df-secondary;
+  padding: $s-32 0;
+  margin-bottom: $s-32;
+
+  .newsletter-title {
+    font-family: "worksans", sans-serif;
+    color: $df-secondary;
+    font-size: $fs-14;
+  }
+
+  label {
+    font-family: "worksans", sans-serif;
+    color: $db-primary;
+    font-size: $fs-12;
+    margin-right: calc(-1 * $s-16);
+    margin-bottom: $s-12;
+  }
+
+  .info {
+    color: $df-secondary;
+    font-size: $fs-12;
+    margin-bottom: $s-8;
+  }
+
+  .input-checkbox label {
+    align-items: flex-start;
+  }
+}
+
+.btn-secondary {
+  @extend .button-secondary;
+  height: $s-32;
+}
+
+.btn-primary {
+  @extend .button-primary;
+  height: $s-32;
+}

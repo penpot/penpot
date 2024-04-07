@@ -5,9 +5,9 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.dashboard.templates
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
-   [app.common.math :as mth]
    [app.config :as cf]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
@@ -21,8 +21,14 @@
    [app.util.keyboard :as kbd]
    [app.util.router :as rt]
    [okulary.core :as l]
-   [potok.core :as ptk]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
+
+(def ^:private arrow-icon
+  (i/icon-xref :arrow (stl/css :arrow-icon)))
+
+(def ^:private download-icon
+  (i/icon-xref :download (stl/css :download-icon)))
 
 (def builtin-templates
   (l/derived :builtin-templates st/state))
@@ -73,12 +79,18 @@
              (dom/prevent-default event)
              (on-click event))))]
 
-    [:div.title
+    [:div {:class (stl/css :title)}
      [:button {:tab-index "0"
+               :class (stl/css :title-btn)
                :on-click on-click
                :on-key-down on-key-down}
-      [:span (tr "dashboard.libraries-and-templates")]
-      [:span.icon (if ^boolean collapsed i/arrow-up i/arrow-down)]]]))
+      [:span {:class (stl/css :title-text)}
+       (tr "dashboard.libraries-and-templates")]
+      (if ^boolean collapsed
+        [:span {:class (stl/css :title-icon :title-icon-collapsed)}
+         arrow-icon]
+        [:span {:class (stl/css :title-icon)}
+         arrow-icon])]]))
 
 (mf/defc card-item
   {::mf/wrap-props false}
@@ -100,18 +112,22 @@
              (dom/stop-propagation event)
              (on-import item event))))]
 
-    [:a.card-container
-     {:tab-index (if (or (not is-visible) collapsed) "-1" "0")
-      :id id
-      :data-index index
-      :on-click on-click
-      :on-key-down on-key-down}
-     [:div.template-card
-      [:div.img-container
+    [:a {:class (stl/css :card-container)
+         :tab-index (if (or (not is-visible) collapsed) "-1" "0")
+         :id id
+         :data-index index
+         :on-click on-click
+         :on-mouse-down dom/prevent-default
+         :on-key-down on-key-down}
+     [:div {:class (stl/css :template-card)}
+      [:div {:class (stl/css :img-container)}
        [:img {:src (dm/str thb)
-              :alt (:name item)}]]
-      [:div.card-name [:span (:name item)]
-        [:span.icon i/download]]]]))
+              :alt (:name item)
+              :loading "lazy"
+              :decoding "async"}]]
+      [:div {:class (stl/css :card-name)}
+       [:span {:class (stl/css :card-text)} (:name item)]
+       download-icon]]]))
 
 (mf/defc card-item-link
   {::mf/wrap-props false}
@@ -134,22 +150,22 @@
              (dom/stop-propagation event)
              (on-click event))))]
 
-    [:div.card-container
-     [:div.template-card
-      [:div.img-container
+    [:div {:class (stl/css :card-container)}
+     [:div {:class (stl/css :template-card)}
+      [:div {:class (stl/css :img-container)}
        [:a {:id id
             :tab-index (if (or (not is-visible) collapsed) "-1" "0")
             :href "https://penpot.app/libraries-templates.html"
             :target "_blank"
             :on-click on-click
             :on-key-down on-key-down}
-        [:div.template-link
-         [:div.template-link-title (tr "dashboard.libraries-and-templates")]
-         [:div.template-link-text (tr "dashboard.libraries-and-templates.explore")]]]]]]))
+        [:div {:class (stl/css :template-link)}
+         [:div {:class (stl/css :template-link-title)} (tr "dashboard.libraries-and-templates")]
+         [:div {:class (stl/css :template-link-text)} (tr "dashboard.libraries-and-templates.explore")]]]]]]))
 
 (mf/defc templates-section
   {::mf/wrap-props false}
-  [{:keys [default-project-id profile project-id team-id content-width]}]
+  [{:keys [default-project-id profile project-id team-id]}]
   (let [templates      (mf/deref builtin-templates)
         templates      (mf/with-memo [templates]
                          (filterv #(not= (:id %) "tutorial-for-beginners") templates))
@@ -164,83 +180,65 @@
 
         props          (:props profile)
         collapsed      (:builtin-templates-collapsed-status props false)
-        card-offset*   (mf/use-state 0)
-        card-offset    (deref card-offset*)
+        can-move       (mf/use-state {:left false :right true})
 
-        card-width     275
         total          (count templates)
-        container-size (* (+ 2 total) card-width)
 
         ;; We need space for total plus the libraries&templates link
-        more-cards     (> (+ card-offset (* (+ 1 total) card-width)) content-width)
-        card-count     (mth/floor (/ content-width 275))
-        left-moves     (/ card-offset -275)
-        first-card     left-moves
-        last-card      (+ (- card-count 1) left-moves)
         content-ref    (mf/use-ref)
 
-        on-move-left
+        move-left (fn [] (dom/scroll-by! (mf/ref-val content-ref) -300 0))
+        move-right (fn [] (dom/scroll-by! (mf/ref-val content-ref) 300 0))
+
+        update-can-move
+        (fn [scroll-left scroll-available client-width]
+          (reset! can-move {:left (> scroll-left 0)
+                            :right (> scroll-available client-width)}))
+
+        on-scroll
         (mf/use-fn
-         (mf/deps card-offset card-width)
-         (fn [_event]
-           (when-not (zero? card-offset)
-             (dom/animate! (mf/ref-val content-ref)
-                           [#js {:left (dm/str card-offset "px")}
-                            #js {:left (dm/str (+ card-offset card-width) "px")}]
-                           #js {:duration 200 :easing "linear"})
-             (reset! card-offset* (+ card-offset card-width)))))
+         (fn [e]
+           (let [scroll (dom/get-target-scroll e)
+                 scroll-left (:scroll-left scroll)
+                 scroll-available (- (:scroll-width scroll) scroll-left)
+                 client-rect (dom/get-client-size (dom/get-target e))]
+             (update-can-move scroll-left scroll-available (unchecked-get client-rect "width")))))
+
+        on-move-left
+        (mf/use-fn #(move-left))
 
         on-move-left-key-down
-        (mf/use-fn
-         (mf/deps on-move-left first-card)
-         (fn [event]
-           (when (kbd/enter? event)
-             (dom/stop-propagation event)
-             (on-move-left event)
-             (when-let [node (dom/get-element (dm/str "card-container-" first-card))]
-               (dom/focus! node)))))
+        (mf/use-fn #(move-left))
 
         on-move-right
-        (mf/use-fn
-         (mf/deps more-cards card-offset card-width)
-         (fn [_event]
-           (when more-cards
-             (swap! card-offset* inc)
-             (dom/animate! (mf/ref-val content-ref)
-                           [#js {:left (dm/str card-offset "px")}
-                            #js {:left (dm/str (- card-offset card-width) "px")}]
-                           #js {:duration 200 :easing "linear"})
-             (reset! card-offset* (- card-offset card-width)))))
+        (mf/use-fn #(move-right))
 
         on-move-right-key-down
-        (mf/use-fn
-         (mf/deps on-move-right last-card)
-         (fn [event]
-           (when (kbd/enter? event)
-             (dom/stop-propagation event)
-             (on-move-right event)
-             (when-let [node (dom/get-element (dm/str "card-container-" last-card))]
-               (dom/focus! node)))))
+        (mf/use-fn #(move-right))
 
         on-import-template
         (mf/use-fn
          (mf/deps default-project-id project-id section templates team-id)
          (fn [template _event]
-           (import-template! template team-id project-id default-project-id section)))
+           (import-template! template team-id project-id default-project-id section)))]
 
-        ]
+    (mf/with-effect [content-ref templates]
+      (let [content (mf/ref-val content-ref)]
+        (when (and (some? content) (some? templates))
+          (dom/scroll-to content #js {:behavior "instant" :left 0 :top 0})
+          (.dispatchEvent content (js/Event. "scroll")))))
 
     (mf/with-effect [profile collapsed]
       (when (and profile (not collapsed))
         (st/emit! (dd/fetch-builtin-templates))))
 
-    [:div.dashboard-templates-section
-     {:class (when ^boolean collapsed "collapsed")}
+    [:div {:class (stl/css-case :dashboard-templates-section true
+                                :collapsed collapsed)}
      [:& title {:collapsed collapsed}]
 
-     [:div.content {:ref content-ref
-                    :style {:left card-offset
-                            :width (dm/str container-size "px")}}
+     [:div {:class (stl/css :content)
+            :on-scroll on-scroll
+            :ref content-ref}
 
       (for [index (range (count templates))]
         [:& card-item
@@ -248,28 +246,26 @@
           :item (nth templates index)
           :index index
           :key index
-          :is-visible (and (>= index first-card)
-                           (<= index last-card))
+          :is-visible true
           :collapsed collapsed}])
 
       [:& card-item-link
-       {:is-visible (and (>= total first-card) (<= total last-card))
+       {:is-visible true
         :collapsed collapsed
         :section section
         :total total}]]
 
-     (when (< card-offset 0)
-       [:button.button.left
-        {:tab-index (if ^boolean collapsed "-1" "0")
-         :on-click on-move-left
-         :on-key-down on-move-left-key-down}
-        i/go-prev])
+     (when (:left @can-move)
+       [:button {:class (stl/css :move-button :move-left)
+                 :tab-index (if ^boolean collapsed "-1" "0")
+                 :on-click on-move-left
+                 :on-key-down on-move-left-key-down}
+        arrow-icon])
 
-     (when more-cards
-       [:button.button.right
-        {:tab-index (if collapsed "-1" "0")
-         :on-click on-move-right
-         :aria-label (tr "labels.next")
-         :on-key-down  on-move-right-key-down}
-        i/go-next])]))
-
+     (when (:right @can-move)
+       [:button {:class (stl/css :move-button :move-right)
+                 :tab-index (if collapsed "-1" "0")
+                 :on-click on-move-right
+                 :aria-label (tr "labels.next")
+                 :on-key-down  on-move-right-key-down}
+        arrow-icon])]))

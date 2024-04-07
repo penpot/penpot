@@ -8,7 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [clojure.set :as set]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 ;; --- Manage shape's highlight status
 

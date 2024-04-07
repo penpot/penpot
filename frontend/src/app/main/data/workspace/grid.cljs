@@ -9,11 +9,11 @@
    [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.pages.changes-builder :as pcb]
+   [app.common.files.changes-builder :as pcb]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.state-helpers :as wsh]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Grid
@@ -76,6 +76,6 @@
     (watch [it state _]
       (let [page (wsh/lookup-page state)]
         (rx/of (dch/commit-changes
-                 (-> (pcb/empty-changes it)
-                     (pcb/with-page page)
-                     (pcb/set-page-option [:saved-grids type] params))))))))
+                (-> (pcb/empty-changes it)
+                    (pcb/with-page page)
+                    (pcb/set-page-option [:saved-grids type] params))))))))

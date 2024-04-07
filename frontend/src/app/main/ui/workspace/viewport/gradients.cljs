@@ -15,21 +15,21 @@
    [app.main.data.workspace.colors :as dc]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.streams :as ms]
    [app.util.dom :as dom]
-   [beicon.core :as rx]
+   [app.util.mouse :as mse]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (def gradient-line-stroke-width 2)
-(def gradient-line-stroke-color "var(--color-white)")
+(def gradient-line-stroke-color "var(--app-white)")
 (def gradient-square-width 15)
 (def gradient-square-radius 2)
 (def gradient-square-stroke-width 2)
 (def gradient-width-handler-radius 5)
-(def gradient-width-handler-color "var(--color-white)")
-(def gradient-square-stroke-color "var(--color-white)")
-(def gradient-square-stroke-color-selected "var(--color-select)")
+(def gradient-width-handler-color "var(--app-white)")
+(def gradient-square-stroke-color "var(--app-white)")
+(def gradient-square-stroke-color-selected "var(--color-accent-tertiary)")
 
 (mf/defc shadow [{:keys [id x y width height offset]}]
   [:filter {:id id
@@ -109,7 +109,7 @@
            :rx (/ gradient-square-radius zoom)
            :width (/ gradient-square-width zoom)
            :height (/ gradient-square-width zoom)
-           :stroke (if selected "var(--color-primary)" "var(--color-white)")
+           :stroke (if selected "var(--color-accent-tertiary)" "var(--app-white)")
            :stroke-width (/ gradient-square-stroke-width zoom)
            :fill (:value color)
            :fill-opacity (:opacity color)
@@ -154,14 +154,14 @@
      (mf/deps @moving-point from-p to-p width-p)
      (fn []
        (let [subs (->> st/stream
-                       (rx/filter ms/pointer-event?)
-                       (rx/filter #(= :viewport (:source %)))
-                       (rx/map :pt)
-                       (rx/subs
+                       (rx/filter mse/pointer-event?)
+                       (rx/filter #(= :viewport (mse/get-pointer-source %)))
+                       (rx/map mse/get-pointer-position)
+                       (rx/subs!
                         (fn [pt]
                           (case @moving-point
-                            :from-p (when on-change-start (on-change-start pt))
-                            :to-p (when on-change-finish (on-change-finish pt))
+                            :from-p  (when on-change-start (on-change-start pt))
+                            :to-p    (when on-change-finish (on-change-finish pt))
                             :width-p (when on-change-width
                                        (let [width-v (gpt/unit (gpt/to-vec from-p width-p))
                                              distance (gpt/point-line-distance pt from-p to-p)
@@ -173,13 +173,13 @@
          (fn [] (rx/dispose! subs)))))
     [:g.gradient-handlers
      [:defs
-      [:& gradient-line-drop-shadow-filter {:id "gradient_line_drop_shadow" :from-p from-p :to-p to-p :zoom zoom}]
-      [:& gradient-line-drop-shadow-filter {:id "gradient_width_line_drop_shadow" :from-p from-p :to-p width-p :zoom zoom}]
-      [:& gradient-square-drop-shadow-filter {:id "gradient_square_from_drop_shadow" :point from-p :zoom zoom}]
-      [:& gradient-square-drop-shadow-filter {:id "gradient_square_to_drop_shadow" :point to-p :zoom zoom}]
-      [:& gradient-width-handler-shadow-filter {:id "gradient_width_handler_drop_shadow" :point width-p :zoom zoom}]]
+      [:& gradient-line-drop-shadow-filter {:id "gradient-line-drop-shadow" :from-p from-p :to-p to-p :zoom zoom}]
+      [:& gradient-line-drop-shadow-filter {:id "gradient-width-line-drop-shadow" :from-p from-p :to-p width-p :zoom zoom}]
+      [:& gradient-square-drop-shadow-filter {:id "gradient-square-from-drop-shadow" :point from-p :zoom zoom}]
+      [:& gradient-square-drop-shadow-filter {:id "gradient-square-to-drop-shadow" :point to-p :zoom zoom}]
+      [:& gradient-width-handler-shadow-filter {:id "gradient-width-handler-drop-shadow" :point width-p :zoom zoom}]]
 
-     [:g {:filter "url(#gradient_line_drop_shadow)"}
+     [:g {:filter "url(#gradient-line-drop-shadow)"}
       [:line {:x1 (:x from-p)
               :y1 (:y from-p)
               :x2 (:x to-p)
@@ -188,7 +188,7 @@
               :stroke-width (/ gradient-line-stroke-width zoom)}]]
 
      (when width-p
-       [:g {:filter "url(#gradient_width_line_drop_shadow)"}
+       [:g {:filter "url(#gradient-width-line-drop-shadow)"}
         [:line {:x1 (:x from-p)
                 :y1 (:y from-p)
                 :x2 (:x width-p)
@@ -197,7 +197,7 @@
                 :stroke-width (/ gradient-line-stroke-width zoom)}]])
 
      (when width-p
-       [:g {:filter "url(#gradient_width_handler_drop_shadow)"}
+       [:g {:filter "url(#gradient-width-handler-drop-shadow)"}
         [:circle {:data-allow-click-modal "colorpicker"
                   :cx (:x width-p)
                   :cy (:y width-p)
@@ -208,7 +208,7 @@
 
      [:& gradient-color-handler
       {:selected (or (not editing) (= editing 0))
-       :filter-id "gradient_square_from_drop_shadow"
+       :filter-id "gradient-square-from-drop-shadow"
        :zoom zoom
        :point from-p
        :color from-color
@@ -219,7 +219,7 @@
 
      [:& gradient-color-handler
       {:selected (= editing 1)
-       :filter-id "gradient_square_to_drop_shadow"
+       :filter-id "gradient-square-to-drop-shadow"
        :zoom zoom
        :point to-p
        :color to-color
@@ -250,7 +250,7 @@
 
         width-v (-> gradient-vec
                     (gpt/normal-left)
-                    (gpt/multiply (gpt/point (* (:width gradient) (/ gradient-length (/ height 2) ))))
+                    (gpt/multiply (gpt/point (* (:width gradient) (/ gradient-length (/ height 2)))))
                     (gpt/multiply (gpt/point (/ width 2))))
 
         width-p (gpt/add from-p width-v)

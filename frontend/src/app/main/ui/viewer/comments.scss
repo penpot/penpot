@@ -1,0 +1,119 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "common/refactor/common-refactor.scss" as *;
+
+// COMMENT DROPDOWN ON HEADER
+.view-options {
+  @include bodySmallTypography;
+  display: flex;
+  align-items: center;
+  position: relative;
+  gap: $s-4;
+  height: $s-32;
+  padding: $s-8;
+  border-radius: $br-8;
+  background-color: var(--input-background-color);
+  cursor: pointer;
+}
+
+.dropdown {
+  @extend .menu-dropdown;
+  right: $s-2;
+  top: calc($s-2 + $s-48);
+  width: $s-272;
+  padding: $s-6;
+}
+
+.dropdown-title {
+  @include bodySmallTypography;
+  flex-grow: 1;
+  color: var(--input-foreground-color-active);
+}
+
+.label {
+  flex-grow: 1;
+  color: var(--input-foreground-color);
+}
+
+.icon,
+.icon-dropdown {
+  @include flexCenter;
+  height: 100%;
+  width: $s-16;
+  svg {
+    @extend .button-icon-small;
+    stroke: var(--icon-foreground);
+  }
+}
+
+.icon-dropdown svg {
+  transform: rotate(90deg);
+}
+
+.dropdown-element {
+  @extend .dropdown-element-base;
+  .icon {
+    @include flexCenter;
+    height: 100%;
+    width: $s-16;
+    svg {
+      @extend .button-icon-small;
+      stroke: var(--icon-foreground);
+    }
+  }
+  &:hover .label {
+    color: var(--input-foreground-color-active);
+  }
+}
+
+.dropdown-element.selected {
+  .label {
+    color: var(--input-foreground-color-active);
+  }
+  .icon svg {
+    stroke: var(--input-foreground-color);
+  }
+}
+
+.separator {
+  height: $s-8;
+}
+
+// FLOATING COMMENT
+.viewer-comments-container {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  height: 100%;
+  z-index: $z-index-1;
+}
+
+.threads {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+}
+
+//COMMENT SIDEBAR
+.comments-sidebar {
+  position: absolute;
+  right: 0;
+  top: $s-44;
+  width: $s-276;
+  height: calc(100vh - $s-48);
+  z-index: $z-index-10;
+  background-color: var(--panel-background-color);
+}
+
+.settings-bar-inside {
+  overflow-y: auto;
+}
+
+.comments-section {
+  background-color: var(--panel-background-color);
+}

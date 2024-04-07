@@ -15,7 +15,7 @@
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [cuerdas.core :as str]
-   [datoteka.core :as fs]
+   [datoteka.fs :as fs]
    [datoteka.io :as io]
    [mockery.core :refer [with-mocks]]))
 
@@ -50,8 +50,7 @@
     (t/is (= "data" (:other (meta object))))
     (t/is (= "text/plain" (:content-type (meta object))))
     (t/is (= "content" (slurp (sto/get-object-data storage object))))
-    (t/is (= "content" (slurp (sto/get-object-path storage object))))
-    ))
+    (t/is (= "content" (slurp (sto/get-object-path storage object))))))
 
 (t/deftest put-and-retrieve-expired-object
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -59,8 +58,7 @@
         content (sto/content "content")
         object  (sto/put-object! storage {::sto/content content
                                           ::sto/expired-at (dt/in-future {:seconds 1})
-                                          :content-type "text/plain"
-                                          })]
+                                          :content-type "text/plain"})]
 
     (t/is (sto/object? object))
     (t/is (dt/instant? (:expired-at object)))
@@ -71,8 +69,7 @@
     (t/is (nil? (sto/get-object storage (:id object))))
     (t/is (nil? (sto/get-object-data storage object)))
     (t/is (nil? (sto/get-object-url storage object)))
-    (t/is (nil? (sto/get-object-path storage object)))
-    ))
+    (t/is (nil? (sto/get-object-path storage object)))))
 
 (t/deftest put-and-delete-object
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -92,8 +89,7 @@
 
     ;; But you can't retrieve the object again because in database is
     ;; marked as deleted/expired.
-    (t/is (nil? (sto/get-object storage (:id object))))
-    ))
+    (t/is (nil? (sto/get-object storage (:id object))))))
 
 (t/deftest test-deleted-gc-task
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -103,16 +99,13 @@
         content3 (sto/content "content3")
         object1  (sto/put-object! storage {::sto/content content1
                                            ::sto/expired-at (dt/now)
-                                           :content-type "text/plain"
-                                           })
+                                           :content-type "text/plain"})
         object2  (sto/put-object! storage {::sto/content content2
                                            ::sto/expired-at (dt/in-past {:hours 2})
-                                           :content-type "text/plain"
-                                           })
+                                           :content-type "text/plain"})
         object3  (sto/put-object! storage {::sto/content content3
                                            ::sto/expired-at (dt/in-past {:hours 1})
-                                           :content-type "text/plain"
-                                           })]
+                                           :content-type "text/plain"})]
 
 
     (th/sleep 200)
@@ -120,7 +113,7 @@
     (let [res (th/run-task! :storage-gc-deleted {})]
       (t/is (= 1 (:deleted res))))
 
-    (let [res (db/exec-one! th/*pool* ["select count(*) from storage_object;"])]
+    (let [res (th/db-exec-one! ["select count(*) from storage_object;"])]
       (t/is (= 2 (:count res))))))
 
 (t/deftest test-touched-gc-task-1
@@ -163,31 +156,34 @@
 
       (t/is (= (:media-id result-1) (:media-id result-2)))
 
-      ;; now we proceed to manually delete one file-media-object
-      (db/exec-one! th/*pool* ["delete from file_media_object where id = ?" (:id result-1)])
+      (th/db-update! :file-media-object
+                     {:deleted-at (dt/now)}
+                     {:id (:id result-1)})
+
+      ;; run the objects gc task for permanent deletion
+      (let [res (th/run-task! :objects-gc {:min-age 0})]
+        (t/is (= 1 (:processed res))))
 
       ;; check that we still have all the storage objects
-      (let [res (db/exec-one! th/*pool* ["select count(*) from storage_object"])]
+      (let [res (th/db-exec-one! ["select count(*) from storage_object"])]
         (t/is (= 2 (:count res))))
 
       ;; now check if the storage objects are touched
-      (let [res (db/exec-one! th/*pool* ["select count(*) from storage_object where touched_at is not null"])]
+      (let [res (th/db-exec-one! ["select count(*) from storage_object where touched_at is not null"])]
         (t/is (= 2 (:count res))))
 
       ;; run the touched gc task
-      (let [task (:app.storage/gc-touched-task th/*system*)
-            res  (task {})]
+      (let [res (th/run-task! :storage-gc-touched {})]
         (t/is (= 2 (:freeze res)))
         (t/is (= 0 (:delete res))))
 
       ;; now check that there are no touched objects
-      (let [res (db/exec-one! th/*pool* ["select count(*) from storage_object where touched_at is not null"])]
+      (let [res (th/db-exec-one! ["select count(*) from storage_object where touched_at is not null"])]
         (t/is (= 0 (:count res))))
 
       ;; now check that all objects are marked to be deleted
-      (let [res (db/exec-one! th/*pool* ["select count(*) from storage_object where deleted_at is not null"])]
-        (t/is (= 0 (:count res))))
-      )))
+      (let [res (th/db-exec-one! ["select count(*) from storage_object where deleted_at is not null"])]
+        (t/is (= 0 (:count res)))))))
 
 
 (t/deftest test-touched-gc-task-2
@@ -239,31 +235,35 @@
     (t/is (nil? (:error out2)))
 
     ;; run the touched gc task
-    (let [task (:app.storage/gc-touched-task th/*system*)
-          res  (task {})]
+    (let [res (th/run-task! :storage-gc-touched {})]
       (t/is (= 5 (:freeze res)))
       (t/is (= 0 (:delete res)))
 
       (let [result-1 (:result out1)
             result-2 (:result out2)]
 
-        ;; now we proceed to manually delete one team-font-variant
-        (db/exec-one! th/*pool* ["delete from team_font_variant where id = ?" (:id result-2)])
+        (th/db-update! :team-font-variant
+                       {:deleted-at (dt/now)}
+                       {:id (:id result-2)})
+
+        ;; run the objects gc task for permanent deletion
+        (let [res (th/run-task! :objects-gc {:min-age 0})]
+          (t/is (= 1 (:processed res))))
 
         ;; revert touched state to all storage objects
-        (db/exec-one! th/*pool* ["update storage_object set touched_at=now()"])
+        (th/db-exec-one! ["update storage_object set touched_at=now()"])
 
         ;; Run the task again
-        (let [res  (task {})]
+        (let [res (th/run-task! :storage-gc-touched {})]
           (t/is (= 2 (:freeze res)))
           (t/is (= 3 (:delete res))))
 
         ;; now check that there are no touched objects
-        (let [res (db/exec-one! th/*pool* ["select count(*) from storage_object where touched_at is not null"])]
+        (let [res (th/db-exec-one! ["select count(*) from storage_object where touched_at is not null"])]
           (t/is (= 0 (:count res))))
 
         ;; now check that all objects are marked to be deleted
-        (let [res (db/exec-one! th/*pool* ["select count(*) from storage_object where deleted_at is not null"])]
+        (let [res (th/db-exec-one! ["select count(*) from storage_object where deleted_at is not null"])]
           (t/is (= 3 (:count res))))))))
 
 (t/deftest test-touched-gc-task-3
@@ -297,28 +297,28 @@
           result-2 (:result out2)]
 
       ;; now we proceed to manually mark all storage objects touched
-      (db/exec-one! th/*pool* ["update storage_object set touched_at=now()"])
+      (th/db-exec! ["update storage_object set touched_at=now()"])
 
       ;; run the touched gc task
-      (let [task (:app.storage/gc-touched-task th/*system*)
-            res  (task {})]
+      (let [res (th/run-task! "storage-gc-touched" {:min-age 0})]
         (t/is (= 2 (:freeze res)))
         (t/is (= 0 (:delete res))))
 
       ;; check that we have all object in the db
-      (let [res (db/exec-one! th/*pool* ["select count(*) from storage_object where deleted_at is null"])]
-        (t/is (= 2 (:count res)))))
+      (let [rows (th/db-exec! ["select * from storage_object"])]
+        (t/is (= 2 (count rows)))))
 
-    ;; now we proceed to manually delete all team_font_variant
-    (db/exec-one! th/*pool* ["delete from file_media_object"])
+    ;; now we proceed to manually delete all file_media_object
+    (th/db-exec! ["update file_media_object set deleted_at = now()"])
+
+    (let [res (th/run-task! "objects-gc" {:min-age 0})]
+      (t/is (= 2 (:processed res))))
 
     ;; run the touched gc task
-    (let [task (:app.storage/gc-touched-task th/*system*)
-          res  (task {})]
+    (let [res (th/run-task! "storage-gc-touched" {:min-age 0})]
       (t/is (= 0 (:freeze res)))
       (t/is (= 2 (:delete res))))
 
     ;; check that we have all no objects
-    (let [res (db/exec-one! th/*pool* ["select count(*) from storage_object where deleted_at is null"])]
-      (t/is (= 0 (:count res))))))
-
+    (let [rows (th/db-exec! ["select * from storage_object where deleted_at is null"])]
+      (t/is (= 0 (count rows))))))

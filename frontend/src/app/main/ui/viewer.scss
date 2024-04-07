@@ -1,0 +1,219 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "common/refactor/common-refactor.scss" as *;
+
+.viewer-layout {
+  height: 100vh;
+  display: grid;
+  grid-template-rows: $s-48 auto;
+  grid-template-columns: 1fr;
+  user-select: none;
+}
+
+.viewer-content {
+  overflow: hidden;
+  grid-row: 2 / span 1;
+  display: grid;
+  grid-template-rows: $s-252 auto;
+  grid-template-columns: 1fr;
+  background-color: var(--viewer-background-color);
+}
+
+.empty-state {
+  @include bodySmallTypography;
+  color: var(--empty-message-foreground-color);
+  display: grid;
+  place-items: center;
+  height: 100%;
+  width: 100%;
+}
+
+.viewer-header {
+  grid-row: 1 / span 1;
+}
+
+.inspect-layout {
+  display: grid;
+  grid-template-rows: $s-48 auto;
+  grid-template-columns: 1fr;
+  height: 100vh;
+  margin-top: 0;
+  user-select: none;
+}
+
+.thumbnails-close {
+  @include buttonStyle;
+  grid-row: 1 / span 2;
+  grid-column: 1 / span 1;
+  z-index: $z-index-10;
+  background-color: var(--overlay-color);
+}
+
+.thumbnails-close.invisible {
+  display: none;
+}
+
+.viewer-section {
+  @extend .new-scrollbar;
+  grid-row: 1 / span 2;
+  grid-column: 1 / span 1;
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  height: calc(100vh - $s-48);
+  flex-flow: wrap;
+  overflow: auto;
+}
+
+.inspect-layout .viewer-section {
+  flex-wrap: nowrap;
+  margin-top: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.viewer-go-prev,
+.viewer-go-next {
+  @extend .button-secondary;
+  @include flexCenter;
+  position: absolute;
+  right: $s-8;
+  height: $s-64;
+  width: $s-32;
+  top: calc(50vh - $s-32);
+  z-index: $z-index-2;
+  background-color: var(--viewer-controls-background-color);
+  transition: transform 400ms ease 300ms;
+  svg {
+    @extend .button-icon;
+    stroke: var(--icon-foreground);
+  }
+}
+
+.viewer-go-next.comment-sidebar {
+  right: $s-280;
+}
+
+.viewer-go-prev {
+  left: $s-8;
+  right: unset;
+  svg {
+    transform: rotate(180deg);
+  }
+}
+
+.viewer-bottom {
+  position: fixed;
+  bottom: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 100%;
+  height: $s-40;
+  padding-right: 0 $s-8 $s-40 $s-8;
+  transition: transform 400ms ease 300ms;
+  z-index: $z-index-2;
+}
+
+.reset-button {
+  @extend .button-secondary;
+  @include flexCenter;
+  height: $s-32;
+  width: $s-28;
+  margin-left: $s-8;
+  background-color: var(--viewer-controls-background-color);
+  svg {
+    @extend .button-icon;
+    stroke: var(--icon-foreground);
+  }
+}
+
+.counter {
+  @include flexCenter;
+  @include bodySmallTypography;
+  border-radius: $br-8;
+  width: $s-64;
+  height: $s-32;
+  color: var(--viewer-thumbnails-control-foreground-color);
+  background-color: var(--viewer-controls-background-color);
+}
+
+.viewer-wrapper {
+  position: relative;
+  margin: 0 auto;
+}
+
+.viewer-clipper {
+  display: grid;
+  grid-template-rows: 1fr;
+  grid-template-columns: 1fr;
+  justify-items: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.viewer-overlay-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+
+  &.visible {
+    background-color: rgb(0, 0, 0, 0.2);
+  }
+}
+
+.viewer-overlay {
+  position: absolute;
+}
+
+.viewport-container {
+  clip-path: inset(0 0 0 0);
+  grid-column: 1 / 1;
+  grid-row: 1 / 1;
+
+  .not-fixed {
+    position: absolute;
+  }
+
+  .fixed {
+    position: fixed;
+    pointer-events: none;
+
+    .frame-children g {
+      pointer-events: auto;
+    }
+  }
+}
+
+.loader-content {
+  @extend .loader-base;
+}
+
+/** FULLSCREEN */
+[data-fullscreen="true"] .viewer-bottom {
+  transform: translateY($s-40);
+}
+
+[data-force-visible="true"] .viewer-bottom {
+  transform: translateY(0);
+}
+
+[data-fullscreen="true"] .viewer-go-next {
+  transform: translateX($s-40);
+}
+
+[data-fullscreen="true"] .viewer-go-prev {
+  transform: translateX(-$s-40);
+}
+
+[data-force-visible="true"] .viewer-go-next {
+  transform: translateX(0);
+}
+
+[data-force-visible="true"] .viewer-go-prev {
+  transform: translateX(0);
+}

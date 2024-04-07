@@ -6,26 +6,29 @@
 
 (ns app.main.ui.shapes.text.styles
   (:require
+   [app.common.colors :as cc]
    [app.common.data :as d]
    [app.common.text :as txt]
    [app.common.transit :as transit]
    [app.main.fonts :as fonts]
+   [app.main.ui.formats :as fmt]
    [app.util.color :as uc]
    [app.util.object :as obj]
    [cuerdas.core :as str]))
 
 (defn generate-root-styles
-  [{:keys [width height]} node]
-  (let [valign (:vertical-align node "top")
-        base   #js {:height height
-                    :width  width
-                    :fontFamily "sourcesanspro"
-                    :display "flex"
-                    :whiteSpace "break-spaces"}]
-    (cond-> base
-      (= valign "top")     (obj/set! "alignItems" "flex-start")
-      (= valign "center")  (obj/set! "alignItems" "center")
-      (= valign "bottom")  (obj/set! "alignItems" "flex-end"))))
+  ([props node]
+   (generate-root-styles props node false))
+  ([{:keys [width height]} node code?]
+   (let [valign (:vertical-align node "top")
+         base   #js {:height (when-not code? (fmt/format-pixels height))
+                     :width  (when-not code? (fmt/format-pixels width))
+                     :display "flex"
+                     :whiteSpace "break-spaces"}]
+     (cond-> base
+       (= valign "top")     (obj/set! "alignItems" "flex-start")
+       (= valign "center")  (obj/set! "alignItems" "center")
+       (= valign "bottom")  (obj/set! "alignItems" "flex-end")))))
 
 (defn generate-paragraph-set-styles
   [{:keys [grow-type] :as shape}]
@@ -48,7 +51,8 @@
   [_shape data]
   (let [line-height (:line-height data 1.2)
         text-align  (:text-align data "start")
-        base        #js {:fontSize (str (:font-size data (:font-size txt/default-text-attrs)) "px")
+        base        #js {;; Fix a problem when exporting HTML
+                         :fontSize 0 ;;(str (:font-size data (:font-size txt/default-text-attrs)) "px")
                          :lineHeight (:line-height data (:line-height txt/default-text-attrs))
                          :margin 0}]
     (cond-> base
@@ -72,17 +76,25 @@
          font-size       (:font-size data)
          fill-color      (or (-> data :fills first :fill-color) (:fill-color data))
          fill-opacity    (or (-> data :fills first :fill-opacity) (:fill-opacity data))
+         fill-gradient   (or (-> data :fills first :fill-color-gradient) (:fill-color-gradient data))
 
-         [r g b a]       (uc/hex->rgba fill-color fill-opacity)
+         [r g b a]       (cc/hex->rgba fill-color fill-opacity)
          text-color      (when (and (some? fill-color) (some? fill-opacity))
                            (str/format "rgba(%s, %s, %s, %s)" r g b a))
+
+         gradient?       (some? fill-gradient)
+
+         text-color      (if gradient?
+                           (uc/color->background {:gradient fill-gradient})
+                           text-color)
 
          fontsdb         (deref fonts/fontsdb)
 
          base            #js {:textDecoration text-decoration
                               :textTransform text-transform
-                              :color (if show-text? text-color "transparent")
-                              :caretColor (or text-color "black")
+                              :color (if (and show-text? (not gradient?)) text-color "transparent")
+                              :background (when (and show-text? gradient?) text-color)
+                              :caretColor (if (and (not gradient?) text-color) text-color "black")
                               :overflowWrap "initial"
                               :lineBreak "auto"
                               :whiteSpace "break-spaces"

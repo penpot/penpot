@@ -203,10 +203,10 @@
              :name (:name entry)
              :suffix (:suffix entry)})]
 
-  (let [xform (comp
-               (map #(assoc % :token token))
-               (assoc-file-name))]
-    (->> (sequence xform exports)
-         (d/group-by (juxt :scale :type))
-         (map second)
-         (into [] (mapcat process-group))))))
+    (let [xform (comp
+                 (map #(assoc % :token token))
+                 (assoc-file-name))]
+      (->> (sequence xform exports)
+           (d/group-by (juxt :scale :type))
+           (map second)
+           (into [] (mapcat process-group))))))

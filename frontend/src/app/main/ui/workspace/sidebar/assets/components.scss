@@ -1,0 +1,217 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.drop-space {
+  height: $s-12;
+}
+
+.asset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax($s-96, 1fr));
+  max-width: 100%;
+  gap: $s-4;
+  margin-inline: $s-8;
+}
+
+.grid-cell {
+  @include flexCenter;
+  position: relative;
+  aspect-ratio: 1 / 1;
+  padding: $s-8;
+  border-radius: $br-8;
+  background-color: var(--assets-component-background-color);
+  overflow: hidden;
+  cursor: pointer;
+
+  .cell-name {
+    @include bodySmallTypography;
+    @include textEllipsis;
+    display: none;
+    position: absolute;
+    left: $s-4;
+    bottom: $s-4;
+    height: calc($s-24 - $s-2);
+    width: calc(100% - 2 * $s-4);
+    padding: $s-2 $s-6;
+    column-gap: $s-4;
+    border-radius: $br-4;
+    background-color: var(--assets-item-name-background-color);
+    border: $s-1 solid transparent;
+    color: var(--assets-item-name-foreground-color);
+    input {
+      @include textEllipsis;
+      @include bodySmallTypography;
+      @include removeInputStyle;
+      height: auto;
+      padding: 0;
+    }
+    span {
+      display: flex;
+      align-items: center;
+      height: 100%;
+    }
+    &.editing {
+      border-color: var(--input-border-color-focus);
+      border-radius: $br-4;
+      display: flex;
+      align-items: center;
+      background-color: var(--input-background-color);
+    }
+  }
+
+  &:hover {
+    .cell-name {
+      display: block;
+    }
+  }
+
+  &.selected {
+    border: $s-2 solid var(--assets-item-border-color);
+    &::before {
+      content: " ";
+      position: absolute;
+      z-index: $z-index-2;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border: $s-4 solid var(--assets-component-second-border-selected);
+      border-radius: $br-8;
+    }
+  }
+}
+
+.component-group {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $s-4;
+}
+
+.thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  border: 0;
+}
+
+.grid-placeholder {
+  width: 100%;
+  border-radius: $br-8;
+  background-color: var(--assets-item-background-color-drag);
+  border: $s-2 solid var(--assets-item-border-color-drag);
+}
+
+.enum-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: $s-8;
+  height: $s-44;
+
+  padding: $s-2;
+  border-radius: $br-8;
+  background-color: var(--assets-item-background-color);
+  cursor: pointer;
+
+  &:not(:last-child) {
+    margin-bottom: $s-4;
+  }
+  &:hover {
+    background-color: var(--assets-item-background-color-hover);
+    .item-name {
+      color: var(--assets-item-name-foreground-color-hover);
+      &.editing {
+        background: var(--input-background-color);
+        input {
+          color: var(--input-foreground-color-active);
+        }
+        span svg {
+          stroke: var(--input-foreground-color-active);
+        }
+      }
+    }
+  }
+  &.selected {
+    border: $s-1 solid var(--assets-item-border-color);
+  }
+}
+
+.item-name {
+  @include bodySmallTypography;
+  @include textEllipsis;
+  order: 2;
+  color: var(--assets-item-name-foreground-color);
+  input {
+    @include textEllipsis;
+    @include bodySmallTypography;
+    @include removeInputStyle;
+    height: $s-32;
+    padding: $s-4;
+  }
+  span {
+    display: flex;
+    place-items: center;
+    padding-inline-end: $s-4;
+  }
+
+  &.editing {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    column-gap: $s-8;
+    border: $s-1 solid var(--input-border-color-focus);
+    border-radius: $br-8;
+    background-color: var(--input-background-color);
+  }
+}
+
+.asset-list-thumbnail {
+  @include flexCenter;
+  flex-shrink: 0;
+  padding: $s-2;
+  height: $s-36;
+  width: $s-36;
+  border-radius: $br-6;
+  background-color: var(--assets-component-background-color);
+}
+
+.grid-placeholder {
+  height: $s-2;
+  width: 100%;
+  background-color: var(--color-accent-primary);
+}
+
+.listing-options {
+  display: flex;
+  align-items: center;
+}
+
+.add-component {
+  @extend .button-tertiary;
+  height: $s-32;
+  width: $s-28;
+  margin-left: $s-2;
+  border-radius: $br-8;
+  svg {
+    @extend .button-icon;
+    stroke: var(--icon-foreground);
+  }
+}
+
+.dragging {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: $s-8;
+  background-color: var(--assets-item-background-color-drag);
+  border: $s-2 solid var(--assets-item-border-color-drag);
+}

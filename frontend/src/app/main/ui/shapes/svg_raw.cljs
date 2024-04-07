@@ -8,82 +8,89 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
-   [app.main.ui.shapes.attrs :as usa]
+   [app.common.svg :as csvg]
+   [app.main.ui.context :as muc]
+   [app.main.ui.shapes.attrs :as attrs]
    [app.util.object :as obj]
-   [app.util.svg :as usvg]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 ;; Graphic tags
-(defonce graphic-element?
+(def graphic-element
   #{:svg :circle :ellipse :image :line :path :polygon :polyline :rect :symbol :text :textPath :use})
 
 ;; Context to store a re-mapping of the ids
 (def svg-ids-ctx (mf/create-context nil))
 
-(defn set-styles [attrs shape]
-  (let [custom-attrs (-> (usa/extract-style-attrs shape)
-                         (obj/without ["transform"]))
-
-        attrs (or attrs {})
-        attrs (cond-> attrs
-                (string? (:style attrs)) usvg/clean-attrs)
-        style (obj/merge! (clj->js (:style attrs {}))
-                          (obj/get custom-attrs "style"))]
-    (-> (clj->js attrs)
-        (obj/merge! custom-attrs)
-        (obj/set! "style" style))))
-
-(defn translate-shape [attrs shape]
-  (let [transform (dm/str (usvg/svg-transform-matrix shape)
-                          " "
-                          (:transform attrs ""))]
-    (cond-> attrs
-      (and (:svg-viewbox shape) (graphic-element? (-> shape :content :tag)))
-      (assoc :transform transform))))
-
 (mf/defc svg-root
   {::mf/wrap-props false}
   [props]
 
-  (let [shape    (unchecked-get props "shape")
-        children (unchecked-get props "children")
-        {:keys [x y width height]} shape
-        {:keys [attrs] :as content} (:content shape)
+  (let [shape       (unchecked-get props "shape")
+        children    (unchecked-get props "children")
 
-        ids-mapping (mf/use-memo #(usvg/generate-id-mapping content))
+        x           (dm/get-prop shape :x)
+        y           (dm/get-prop shape :y)
+        w           (dm/get-prop shape :width)
+        h           (dm/get-prop shape :height)
 
-        attrs (-> (set-styles attrs shape)
-                  (obj/set! "x" x)
-                  (obj/set! "y" y)
-                  (obj/set! "width" width)
-                  (obj/set! "height" height)
-                  (obj/set! "preserveAspectRatio" "none"))]
+        ids-mapping (mf/with-memo [shape]
+                      (csvg/generate-id-mapping (:content shape)))
+
+        render-id   (mf/use-ctx muc/render-id)
+
+        props       (mf/with-memo [shape render-id]
+                      (-> #js {}
+                          (attrs/add-fill-props! shape render-id)
+                          (obj/unset! "transform")
+                          (obj/set! "x" x)
+                          (obj/set! "y" y)
+                          (obj/set! "width" w)
+                          (obj/set! "height" h)
+                          (obj/set! "preserveAspectRatio" "none")))]
 
     [:& (mf/provider svg-ids-ctx) {:value ids-mapping}
      [:g.svg-raw {:transform (gsh/transform-str shape)}
-      [:> "svg" attrs children]]]))
+      [:> "svg" props children]]]))
 
 (mf/defc svg-element
   {::mf/wrap-props false}
   [props]
-  (let [shape    (unchecked-get props "shape")
-        children (unchecked-get props "children")
-
-        {:keys [content]} shape
-        {:keys [attrs tag]} content
+  (let [shape       (unchecked-get props "shape")
+        children    (unchecked-get props "children")
 
         ids-mapping (mf/use-ctx svg-ids-ctx)
+        render-id   (mf/use-ctx muc/render-id)
 
-        attrs (mf/use-memo #(usvg/replace-attrs-ids attrs ids-mapping))
+        tag         (-> shape :content :tag)
 
-        attrs (translate-shape attrs shape)
-        element-id (get-in content [:attrs :id])
-        attrs (cond-> (set-styles attrs shape)
-                (and element-id (contains? ids-mapping element-id))
-                (obj/set! "id" (get ids-mapping element-id)))]
-    [:> (name tag) attrs children]))
+        shape
+        (mf/with-memo [shape ids-mapping]
+          (let [tag (-> shape :content :tag)]
+            (-> shape
+                (update :svg-attrs csvg/replace-attrs-ids ids-mapping)
+                (update :svg-attrs (fn [attrs]
+                                     (if (contains? graphic-element tag)
+                                       (assoc attrs :transform (str/ffmt "% %"
+                                                                         (csvg/svg-transform-matrix shape)
+                                                                         (:transform attrs "")))
+                                       (dissoc attrs :transform)))))))
 
-(defn svg-raw-shape [shape-wrapper]
+        props
+        (mf/with-memo [shape render-id]
+          (let [element-id (dm/get-in shape [:svg-attrs :id])
+                props      (attrs/add-fill-props! #js {} shape render-id)]
+
+            (when (and (some? element-id)
+                       (contains? ids-mapping element-id))
+              (obj/set! props "id" (get ids-mapping element-id)))
+
+            props))]
+
+    [:> (name tag) props children]))
+
+(defn svg-raw-shape
+  [shape-wrapper]
   (mf/fnc svg-raw-shape
     {::mf/wrap-props false}
     [props]
@@ -91,28 +98,26 @@
     (let [shape  (unchecked-get props "shape")
           childs (unchecked-get props "childs")
 
-          {:keys [content]} shape
-          {:keys [tag]} content
+          content (get shape :content)
+          tag     (get content :tag)
 
           svg-root?  (and (map? content) (= tag :svg))
           svg-tag?   (map? content)
           svg-leaf?  (string? content)
-          valid-tag? (contains? usvg/svg-tags-list tag)]
+          valid-tag? (contains? csvg/svg-tags tag)]
 
       (cond
-        svg-root?
+        ^boolean svg-root?
         [:& svg-root {:shape shape}
          (for [item childs]
            [:& shape-wrapper {:shape item :key (dm/str (:id item))}])]
 
-        (and svg-tag? valid-tag?)
+        (and ^boolean svg-tag?
+             ^boolean valid-tag?)
         [:& svg-element {:shape shape}
          (for [item childs]
            [:& shape-wrapper {:shape item :key (dm/str (:id item))}])]
 
-        svg-leaf?
-        content
-
-        :else nil))))
-
+        ^boolean svg-leaf?
+        content))))
 

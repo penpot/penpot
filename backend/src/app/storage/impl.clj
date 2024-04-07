@@ -9,9 +9,8 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
-   [app.db :as-alias db]
+   [app.db :as db]
    [app.storage :as-alias sto]
-   [app.worker :as-alias wrk]
    [buddy.core.codecs :as bc]
    [buddy.core.hash :as bh]
    [clojure.java.io :as jio]
@@ -22,6 +21,13 @@
    java.nio.file.Files
    java.nio.file.Path
    java.util.UUID))
+
+(defn decode-row
+  "Decode the storage-object row fields"
+  [{:keys [metadata] :as row}]
+  (cond-> row
+    (some? metadata)
+    (assoc :metadata (db/decode-transit-pgobject metadata))))
 
 ;; --- API Definition
 
@@ -201,7 +207,7 @@
     (str "blake2b:" result)))
 
 (defn resolve-backend
-  [{:keys [::db/pool ::wrk/executor] :as storage} backend-id]
+  [{:keys [::db/pool] :as storage} backend-id]
   (let [backend (get-in storage [::sto/backends backend-id])]
     (when-not backend
       (ex/raise :type :internal
@@ -209,7 +215,6 @@
                 :hint (dm/fmt "backend '%' not configured" backend-id)))
     (-> backend
         (assoc ::sto/id backend-id)
-        (assoc ::wrk/executor executor)
         (assoc ::db/pool pool))))
 
 (defrecord StorageObject [id size created-at expired-at touched-at backend])

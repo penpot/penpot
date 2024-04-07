@@ -1,0 +1,118 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.slider-selector {
+  --gradient-direction: 90deg;
+  --background-repeat: left;
+
+  &.vertical {
+    --gradient-direction: 0deg;
+    --background-repeat: top;
+  }
+  position: relative;
+  align-self: center;
+  height: $s-24;
+  width: $s-200;
+  border: $s-2 solid var(--colorpicker-details-color);
+  border-radius: $br-6;
+  background: linear-gradient(
+    var(--gradient-direction),
+    rgba(var(--color), 0) 0%,
+    rgba(var(--color), 1) 100%
+  );
+  cursor: pointer;
+
+  &.vertical {
+    width: $s-24;
+    height: $s-200;
+  }
+
+  &.hue {
+    background: linear-gradient(
+      var(--gradient-direction),
+      #f00 0%,
+      #ff0 17%,
+      #0f0 33%,
+      #0ff 50%,
+      #00f 67%,
+      #f0f 83%,
+      #f00 100%
+    );
+  }
+
+  &.saturation {
+    background: linear-gradient(
+      var(--gradient-direction),
+      var(--saturation-grad-from) 0%,
+      var(--saturation-grad-to) 100%
+    );
+  }
+
+  &.opacity {
+    background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAExJREFUSIljvHnz5n8GLEBNTQ2bMMOtW7ewiuNSz4RVlIpg1IKBt4Dx////WFMRqakFl/qhH0SjFhAELNRKLaNl0Qi2YLQsGrWAcgAA0gAgQPhT2rAAAAAASUVORK5CYII=")
+      var(--background-repeat) center;
+
+    &::after {
+      content: "";
+      position: absolute;
+      border-radius: $br-6;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        var(--gradient-direction),
+        rgba(var(--color), 0) 0%,
+        rgba(var(--color), 1) 100%
+      );
+    }
+  }
+
+  &.value {
+    background: linear-gradient(var(--gradient-direction), #000 0%, #fff 100%);
+  }
+
+  .handler {
+    position: absolute;
+    left: 50%;
+    width: calc($s-8 + $s-2);
+    height: calc($s-24 + $s-1);
+    border-radius: $br-4;
+    z-index: $z-index-1;
+    transform: translate(-4px, -3px);
+    background-color: var(--colorpicker-handlers-color);
+  }
+
+  &.vertical .handler {
+    height: calc($s-8 + $s-2);
+    width: calc($s-24 + $s-1);
+    transform: translate(-12px, 5px);
+  }
+}
+
+.opacity-wrapper {
+  background-color: var(--colorpicker-background-color);
+  border-radius: $br-8;
+}
+
+.slider-selector.hue {
+  grid-area: hue;
+}
+
+.slider-selector.opacity {
+  grid-area: opacity;
+}
+
+.slider-selector.value {
+  background: linear-gradient(var(--gradient-direction), var(--hue-from, #000) 0%, var(--hue-to, #fff) 100%);
+}
+.slider-selector.saturation {
+  background: linear-gradient(
+    var(--gradient-direction),
+    var(--saturation-grad-from) 0%,
+    var(--saturation-grad-to) 100%
+  );
+}

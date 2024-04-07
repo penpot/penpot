@@ -7,10 +7,12 @@
 (ns app.main.repo
   (:require
    [app.common.data :as d]
+   [app.common.transit :as t]
    [app.common.uri :as u]
    [app.config :as cf]
    [app.util.http :as http]
-   [beicon.core :as rx]
+   [app.util.sse :as sse]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]))
 
 (defn handle-response
@@ -21,44 +23,53 @@
     (rx/of nil)
 
     (= 502 status)
-    (rx/throw {:type :bad-gateway})
+    (rx/throw (ex-info "http error" {:type :bad-gateway}))
 
     (= 503 status)
-    (rx/throw {:type :service-unavailable})
+    (rx/throw (ex-info "http error" {:type :service-unavailable}))
 
     (= 0 (:status response))
-    (rx/throw {:type :offline})
+    (rx/throw (ex-info "http error" {:type :offline}))
 
     (= 200 status)
     (rx/of body)
 
     (= 413 status)
-    (rx/throw {:type :validation
-               :code :request-body-too-large})
+    (rx/throw (ex-info "http error"
+                       {:type :validation
+                        :code :request-body-too-large}))
 
     (and (>= status 400) (map? body))
-    (rx/throw body)
+    (rx/throw (ex-info "http error" body))
 
     :else
-    (rx/throw {:type :unexpected-error
+    (rx/throw
+     (ex-info "http error"
+              {:type :unexpected-error
                :status status
-               :data body})))
+               :data body}))))
 
 (def default-options
   {:update-file {:query-params [:id]}
    :get-raw-file {:rename-to :get-file :raw-transit? true}
-   :upsert-file-object-thumbnail {:query-params [:file-id :object-id]}
-   :create-file-object-thumbnail {:query-params [:file-id :object-id]
-                                  :form-data? true}
+
+   :create-file-object-thumbnail
+   {:query-params [:file-id :object-id :tag]
+    :form-data? true}
 
    :create-file-thumbnail
    {:query-params [:file-id :revn]
     :form-data? true}
 
+   ::sse/clone-template
+   {:response-type ::sse/stream}
+
+   ::sse/import-binfile
+   {:response-type ::sse/stream
+    :form-data? true}
+
    :export-binfile {:response-type :blob}
-   :import-binfile {:form-data? true}
-   :retrieve-list-of-builtin-templates {:query-params :all}
-   })
+   :retrieve-list-of-builtin-templates {:query-params :all}})
 
 (defn- send!
   "A simple helper for a common case of sending and receiving transit
@@ -84,9 +95,9 @@
                     :else :post)
 
         request   {:method method
-                   :uri (u/join cf/public-uri "api/rpc/command/" (name id))
+                   :uri (u/join cf/public-uri "api/rpc/command/" nid)
                    :credentials "include"
-                   :headers {"accept" "application/transit+json"}
+                   :headers {"accept" "application/transit+json,text/event-stream,*/*"}
                    :body (when (= method :post)
                            (if form-data?
                              (http/form-data params)
@@ -96,11 +107,21 @@
                             (if query-params
                               (select-keys params query-params)
                               nil))
-                   :response-type (or response-type :text)}]
 
-    (->> (http/send! request)
-         (rx/map decode-fn)
-         (rx/mapcat handle-response))))
+                   :response-type
+                   (if (= response-type ::sse/stream)
+                     :stream
+                     (or response-type :text))}
+
+        result    (->> (http/send! request)
+                       (rx/map decode-fn)
+                       (rx/mapcat handle-response))]
+
+    (cond->> result
+      (= ::sse/stream response-type)
+      (rx/mapcat (fn [body]
+                   (-> (sse/create-stream body)
+                       (sse/read-stream t/decode-str)))))))
 
 (defmulti cmd! (fn [id _] id))
 

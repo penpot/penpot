@@ -1,0 +1,286 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "common/refactor/common-refactor.scss" as *;
+@use "common/refactor/common-dashboard";
+
+.dashboard-fonts {
+  border-top: $s-1 solid $db-quaternary;
+  display: flex;
+  flex-direction: column;
+  padding-left: $s-120;
+  overflow-y: auto;
+  padding-bottom: $s-120;
+
+  .btn-primary {
+    font-size: $fs-11;
+    height: $s-32;
+    min-width: $s-100;
+  }
+}
+
+.dashboard-installed-fonts {
+  max-width: $s-1000;
+  width: 100%;
+  display: flex;
+  margin-top: $s-24;
+  flex-direction: column;
+
+  h3 {
+    font-size: $fs-14;
+    color: $df-secondary;
+    margin: $s-4;
+  }
+
+  .font-item {
+    color: $db-secondary;
+  }
+}
+
+.installed-fonts-header {
+  align-items: center;
+  color: $df-secondary;
+  display: flex;
+  font-size: $fs-12;
+  height: $s-40;
+  padding-left: $s-24;
+  text-transform: uppercase;
+
+  > .family {
+    min-width: $s-200;
+    width: $s-200;
+  }
+
+  > .variants {
+    padding-left: $s-12;
+  }
+}
+
+.search-input {
+  display: flex;
+  flex-grow: 1;
+  justify-content: flex-end;
+
+  input {
+    background-color: $db-tertiary;
+    border-color: transparent;
+    border-radius: $br-8;
+    border: $s-1 solid transparent;
+    color: $df-primary;
+    font-size: $fs-14;
+    height: $s-32;
+    margin: 0;
+    padding: 0 $s-8;
+    width: $s-152;
+
+    &:focus {
+      outline: $s-1 solid $da-primary;
+    }
+    &::placeholder {
+      color: $df-secondary;
+    }
+  }
+}
+
+.font-item {
+  align-items: center;
+  background-color: $db-tertiary;
+  border-radius: $br-4;
+  color: $df-secondary;
+  display: flex;
+  font-size: $fs-14;
+  justify-content: space-between;
+  margin-top: $s-4;
+  max-width: $s-1000;
+  padding: $s-12 $s-24;
+  width: 100%;
+
+  input {
+    border: $s-1 solid transparent;
+    margin: 0;
+    padding: $s-8;
+
+    background-color: $db-tertiary;
+    border-radius: $br-8;
+    color: $df-primary;
+    font-size: $fs-14;
+
+    &:focus {
+      outline: $s-1 solid $da-primary;
+    }
+  }
+
+  > .family {
+    min-width: $s-200;
+    width: $s-200;
+  }
+
+  > .filenames {
+    min-width: $s-200;
+  }
+
+  > .variants {
+    font-size: $fs-14;
+    display: flex;
+    flex-wrap: wrap;
+    flex-grow: 1;
+    padding-left: $s-16;
+
+    .variant {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: $s-8 $s-12;
+      cursor: pointer;
+
+      .icon {
+        display: flex;
+        height: $s-16;
+        width: $s-16;
+        margin-left: $s-6;
+        align-items: center;
+        svg {
+          fill: none;
+          width: $s-12;
+          height: $s-12;
+          transform: rotate(45deg);
+        }
+      }
+
+      &:hover {
+        .icon svg {
+          stroke: $df-secondary;
+        }
+      }
+    }
+  }
+
+  .table-field {
+    color: $df-primary;
+    .variant {
+      background-color: $db-quaternary;
+      border-radius: $br-8;
+      margin-right: $s-4;
+      padding-right: $s-4;
+    }
+  }
+
+  .filenames {
+    display: flex;
+    flex-direction: column;
+    font-size: $fs-12;
+  }
+
+  .options {
+    display: flex;
+    justify-content: flex-end;
+    min-width: $s-180;
+
+    .icon {
+      width: $s-24;
+      cursor: pointer;
+      display: flex;
+      margin-left: $s-12;
+      justify-content: center;
+      align-items: center;
+      svg {
+        width: $s-16;
+        height: $s-16;
+        stroke: $df-secondary;
+        fill: none;
+      }
+
+      &.failure {
+        margin-right: $s-12;
+        svg {
+          stroke: var(--element-foreground-warning);
+        }
+      }
+
+      &.close {
+        background: none;
+        border: none;
+        svg {
+          stroke: $df-secondary;
+        }
+      }
+    }
+  }
+}
+
+.dashboard-fonts-upload {
+  max-width: $s-1000;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+
+  .upload-button {
+    width: $s-100;
+  }
+
+  .btn-secondary {
+    margin-left: $s-12;
+  }
+}
+
+.dashboard-fonts-hero {
+  font-size: $fs-14;
+  padding: $s-32 0;
+  margin-top: $s-80;
+  display: flex;
+  justify-content: space-between;
+
+  .btn-primary {
+    height: $s-40;
+    width: 100%;
+  }
+
+  .desc {
+    display: flex;
+    flex-direction: column;
+    gap: $s-24;
+    color: $db-secondary;
+    width: $s-500;
+
+    h2 {
+      color: $df-primary;
+      font-weight: 400;
+    }
+    p {
+      color: $df-secondary;
+      font-size: $fs-16;
+    }
+  }
+
+  .btn-primary {
+    flex-shrink: 0;
+  }
+}
+
+.fonts-placeholder {
+  align-items: center;
+  border-radius: $br-8;
+  border: $s-1 solid $db-quaternary;
+  display: flex;
+  flex-direction: column;
+  height: $s-160;
+  justify-content: center;
+  margin-top: $s-16;
+  max-width: $s-1000;
+  width: 100%;
+
+  .icon svg {
+    stroke: $df-secondary;
+    fill: none;
+    width: $s-32;
+    height: $s-32;
+  }
+
+  .label {
+    color: $df-secondary;
+    font-size: $fs-14;
+  }
+}

@@ -1,0 +1,53 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "common/refactor/common-refactor.scss" as *;
+
+.edit-wrapper {
+  border-radius: $br-4;
+  display: flex;
+  padding-right: $s-24;
+  position: relative;
+  margin-right: $s-24;
+}
+
+input.element-title {
+  background-color: var(--input-background-color-active);
+  border-radius: $br-8;
+  color: $df-primary;
+  font-size: $fs-16;
+  height: $s-32;
+  margin: 0;
+  border: none;
+  padding: $s-6;
+  width: 100%;
+
+  &:focus-visible {
+    border: $s-1 solid $da-primary;
+    outline: none;
+  }
+}
+
+.close {
+  cursor: pointer;
+  position: absolute;
+
+  top: $s-1;
+  right: calc(-1 * $s-8);
+
+  svg {
+    fill: $df-secondary;
+    height: $s-16;
+    transform: rotate(45deg) translateY(7px);
+    width: $s-16;
+    margin: 0;
+  }
+  &:hover {
+    svg {
+      fill: var(--element-foreground-warning);
+    }
+  }
+}

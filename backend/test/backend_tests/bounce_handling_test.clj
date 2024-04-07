@@ -28,7 +28,7 @@
 (defn bounce-report
   [{:keys [token email] :or {email "user@example.com"}}]
   {"notificationType" "Bounce",
-   "bounce" {"feedbackId""010701776d7dd251-c08d280d-9f47-41aa-b959-0094fec779d9-000000",
+   "bounce" {"feedbackId" "010701776d7dd251-c08d280d-9f47-41aa-b959-0094fec779d9-000000",
              "bounceType" "Permanent",
              "bounceSubType" "General",
              "bouncedRecipients" [{"emailAddress" email,
@@ -102,7 +102,7 @@
 (t/deftest test-parse-bounce-report
   (let [profile (th/create-profile* 1)
         props   (:app.setup/props th/*system*)
-        cfg     {:app.main/props props}
+        cfg     {:app.setup/props props}
         report  (bounce-report {:token (tokens/generate props
                                                         {:iss :profile-identity
                                                          :profile-id (:id profile)})})
@@ -113,13 +113,12 @@
     (t/is (= "permanent" (:kind result)))
     (t/is (= "general" (:category result)))
     (t/is (= ["user@example.com"] (mapv :email (:recipients result))))
-    (t/is (= (:id profile) (:profile-id result)))
-    ))
+    (t/is (= (:id profile) (:profile-id result)))))
 
 (t/deftest test-parse-complaint-report
   (let [profile (th/create-profile* 1)
         props   (:app.setup/props th/*system*)
-        cfg     {:app.main/props props}
+        cfg     {:app.setup/props props}
         report  (complaint-report {:token (tokens/generate props
                                                            {:iss :profile-identity
                                                             :profile-id (:id profile)})})
@@ -129,26 +128,24 @@
     (t/is (= "abuse" (:kind result)))
     (t/is (= nil (:category result)))
     (t/is (= ["user@example.com"] (into [] (:recipients result))))
-    (t/is (= (:id profile) (:profile-id result)))
-    ))
+    (t/is (= (:id profile) (:profile-id result)))))
 
 (t/deftest test-parse-complaint-report-without-token
   (let [props   (:app.setup/props th/*system*)
-        cfg     {:app.main/props props}
+        cfg     {:app.setup/props props}
         report  (complaint-report {:token ""})
         result  (#'awsns/parse-notification cfg report)]
     (t/is (= "complaint" (:type result)))
     (t/is (= "abuse" (:kind result)))
     (t/is (= nil (:category result)))
     (t/is (= ["user@example.com"] (into [] (:recipients result))))
-    (t/is (= nil (:profile-id result)))
-    ))
+    (t/is (= nil (:profile-id result)))))
 
 (t/deftest test-process-bounce-report
   (let [profile (th/create-profile* 1)
         props   (:app.setup/props th/*system*)
         pool    (:app.db/pool th/*system*)
-        cfg     {:app.main/props props :app.db/pool pool}
+        cfg     {:app.setup/props props :app.db/pool pool}
         report  (bounce-report {:token (tokens/generate props
                                                         {:iss :profile-identity
                                                          :profile-id (:id profile)})})
@@ -169,15 +166,13 @@
       (t/is (= "user@example.com" (get-in rows [0 :email]))))
 
     (let [prof (db/get-by-id pool :profile (:id profile))]
-      (t/is (false? (:is-muted prof))))
-
-    ))
+      (t/is (false? (:is-muted prof))))))
 
 (t/deftest test-process-complaint-report
   (let [profile (th/create-profile* 1)
         props   (:app.setup/props th/*system*)
         pool    (:app.db/pool th/*system*)
-        cfg     {:app.main/props props
+        cfg     {:app.setup/props props
                  :app.db/pool pool}
         report  (complaint-report {:token (tokens/generate props
                                                            {:iss :profile-identity
@@ -201,15 +196,13 @@
 
 
     (let [prof (db/get-by-id pool :profile (:id profile))]
-      (t/is (false? (:is-muted prof))))
-
-    ))
+      (t/is (false? (:is-muted prof))))))
 
 (t/deftest test-process-bounce-report-to-self
   (let [profile (th/create-profile* 1)
         props   (:app.setup/props th/*system*)
         pool    (:app.db/pool th/*system*)
-        cfg     {:app.main/props props :app.db/pool pool}
+        cfg     {:app.setup/props props :app.db/pool pool}
         report  (bounce-report {:email (:email profile)
                                 :token (tokens/generate props
                                                         {:iss :profile-identity
@@ -231,7 +224,7 @@
   (let [profile (th/create-profile* 1)
         props   (:app.setup/props th/*system*)
         pool    (:app.db/pool th/*system*)
-        cfg     {:app.main/props props :app.db/pool pool}
+        cfg     {:app.setup/props props :app.db/pool pool}
         report  (complaint-report {:email (:email profile)
                                    :token (tokens/generate props
                                                            {:iss :profile-identity

@@ -1,4 +1,4 @@
-; This Source Code Form is subject to the terms of the Mozilla Public
+;; This Source Code Form is subject to the terms of the Mozilla Public
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
@@ -8,24 +8,28 @@
   (:require
    [app.common.colors :as clr]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
+   [app.common.files.changes-builder :as pcb]
+   [app.common.files.helpers :as cfh]
+   [app.common.files.shapes-helpers :as cfsh]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes :as gsh]
-   [app.common.math :as mth]
-   [app.common.pages.helpers :as cph]
+   [app.common.geom.shapes.flex-layout :as flex]
+   [app.common.geom.shapes.grid-layout :as grid]
    [app.common.types.component :as ctc]
    [app.common.types.modifiers :as ctm]
-   [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
-   [app.main.data.workspace.changes :as dwc]
+   [app.main.data.events :as ev]
+   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.colors :as cl]
+   [app.main.data.workspace.grid-layout.editor :as dwge]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.selection :as dwse]
-   [app.main.data.workspace.shapes :as dws]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 (def layout-keys
   [:layout
@@ -52,152 +56,45 @@
    :layout-padding-type    :simple
    :layout-padding         {:p1 0 :p2 0 :p3 0 :p4 0}})
 
-(def initial-grid-layout ;; TODO
+(def initial-grid-layout
   {:layout :grid
    :layout-grid-dir        :row
    :layout-gap-type        :multiple
    :layout-gap             {:row-gap 0 :column-gap 0}
    :layout-align-items     :start
-   :layout-align-content   :stretch
    :layout-justify-items   :start
-   :layout-justify-content :start
+   :layout-align-content   :stretch
+   :layout-justify-content :stretch
    :layout-padding-type    :simple
    :layout-padding         {:p1 0 :p2 0 :p3 0 :p4 0}
+   :layout-grid-cells      {}
    :layout-grid-rows       []
    :layout-grid-columns    []})
 
 (defn get-layout-initializer
   [type from-frame?]
-  (let [initial-layout-data
+  (let [[initial-layout-data calculate-params]
         (case type
-          :flex initial-flex-layout
-          :grid initial-grid-layout)]
-    (fn [shape]
-      (-> shape
-          (merge initial-layout-data)
-          (cond-> (= type :grid) ctl/assign-cells)
-          ;; If the original shape is not a frame we set clip content and show-viewer to false
-          (cond-> (not from-frame?)
-            (assoc :show-content true :hide-in-viewer true))))))
+          :flex [initial-flex-layout flex/calculate-params]
+          :grid [initial-grid-layout grid/calculate-params])]
 
+    (fn [shape objects]
+      (let [shape
+            (-> shape
+                (merge initial-layout-data)
 
-(defn shapes->flex-params
-  "Given the shapes calculate its flex parameters (horizontal vs vertical, gaps, etc)"
-  ([objects shapes]
-   (shapes->flex-params objects shapes nil))
-  ([objects shapes parent]
-   (let [points
-         (->> shapes
-              (map :id)
-              (ctt/sort-z-index objects)
-              (map (comp gsh/center-shape (d/getf objects))))
+                ;; If the original shape is not a frame we set clip content and show-viewer to false
+                (cond-> (not from-frame?)
+                  (assoc :show-content true :hide-in-viewer true)))
 
-         start (first points)
-         end (reduce (fn [acc p] (gpt/add acc (gpt/to-vec start p))) points)
-
-         angle (gpt/signed-angle-with-other
-                (gpt/to-vec start end)
-                (gpt/point 1 0))
-
-         angle (mod angle 360)
-
-         t1 (min (abs (-  angle 0)) (abs (-  angle 360)))
-         t2 (abs (- angle 90))
-         t3 (abs (- angle 180))
-         t4 (abs (- angle 270))
-
-         tmin (min t1 t2 t3 t4)
-
-         direction
-         (cond
-           (mth/close? tmin t1) :row
-           (mth/close? tmin t2) :column-reverse
-           (mth/close? tmin t3) :row-reverse
-           (mth/close? tmin t4) :column)
-
-         selrects (->> shapes
-                       (mapv :selrect))
-         min-x (->> selrects
-                    (mapv #(min (:x1 %) (:x2 %)))
-                    (apply min))
-         max-x (->> selrects
-                    (mapv #(max (:x1 %) (:x2 %)))
-                    (apply max))
-         all-width (->> selrects
-                        (map :width)
-                        (reduce +))
-         column-gap (if (and (> (count shapes) 1)
-                             (or (= direction :row) (= direction :row-reverse)))
-                      (/ (- (- max-x min-x) all-width)
-                         (dec (count shapes)))
-                      0)
-
-         min-y (->> selrects
-                    (mapv #(min (:y1 %) (:y2 %)))
-                    (apply min))
-         max-y (->> selrects
-                    (mapv #(max (:y1 %) (:y2 %)))
-                    (apply max))
-         all-height (->> selrects
-                         (map :height)
-                         (reduce +))
-         row-gap (if (and (> (count shapes) 1)
-                          (or (= direction :column) (= direction :column-reverse)))
-                   (/ (- (- max-y min-y) all-height)
-                      (dec (count shapes)))
-                   0)
-
-         layout-gap {:row-gap (max row-gap 0) :column-gap (max column-gap 0)}
-
-         parent-selrect (:selrect parent)
-         padding (when (and (not (nil? parent)) (> (count shapes) 0))
-                   {:p1 (min (- min-y (:y1 parent-selrect)) (- (:y2 parent-selrect) max-y))
-                    :p2 (min (- min-x (:x1 parent-selrect)) (- (:x2 parent-selrect) max-x))})]
-
-     (cond-> {:layout-flex-dir direction :layout-gap layout-gap}
-       (not (nil? padding))
-       (assoc :layout-padding {:p1 (:p1 padding) :p2 (:p2 padding) :p3 (:p1 padding) :p4 (:p2 padding)})))))
-
-(defn shapes->grid-params
-  "Given the shapes calculate its flex parameters (horizontal vs vertical, gaps, etc)"
-  ([objects shapes]
-   (shapes->flex-params objects shapes nil))
-  ([_objects _shapes _parent]
-   {}))
-
-(defn create-layout-from-id
-  [ids type from-frame?]
-  (ptk/reify ::create-layout-from-id
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [objects         (wsh/lookup-page-objects state)
-            children-ids    (into [] (mapcat #(get-in objects [% :shapes])) ids)
-            children-shapes (map (d/getf objects) children-ids)
-            parent          (get objects (first ids))
-            layout-params   (when (d/not-empty? children-shapes)
-                              (case type
-                                :flex (shapes->flex-params objects children-shapes parent)
-                                :grid (shapes->grid-params objects children-shapes parent)))
-            undo-id         (js/Symbol)]
-        (rx/of (dwu/start-undo-transaction undo-id)
-               (dwc/update-shapes ids (get-layout-initializer type from-frame?))
-               (dwc/update-shapes
-                ids
-                (fn [shape]
-                  (-> shape
-                      (cond-> (not from-frame?)
-                        (assoc :layout-item-h-sizing :auto
-                               :layout-item-v-sizing :auto))
-                      (merge layout-params))))
-               (ptk/data-event :layout/update ids)
-               (dwc/update-shapes children-ids #(dissoc % :constraints-h :constraints-v))
-               (dwu/commit-undo-transaction undo-id))))))
-
+            params (calculate-params objects (cfh/get-immediate-children objects (:id shape)) shape)]
+        (cond-> (merge shape params)
+          (= type :grid) (-> (ctl/assign-cells objects) ctl/reorder-grid-children))))))
 
 ;; Never call this directly but through the data-event `:layout/update`
 ;; Otherwise a lot of cycle dependencies could be generated
 (defn- update-layout-positions
-  [ids]
+  [{:keys [ids undo-group]}]
   (ptk/reify ::update-layout-positions
     ptk/WatchEvent
     (watch [_ state _]
@@ -206,7 +103,8 @@
         (if (d/not-empty? ids)
           (let [modif-tree (dwm/create-modif-tree ids (ctm/reflow-modifiers))]
             (rx/of (dwm/apply-modifiers {:modifiers modif-tree
-                                         :stack-undo? true})))
+                                         :stack-undo? true
+                                         :undo-group undo-group})))
           (rx/empty))))))
 
 (defn initialize
@@ -225,6 +123,25 @@
   []
   (ptk/reify ::finalize))
 
+(defn create-layout-from-id
+  [id type from-frame?]
+  (dm/assert!
+   "expected uuid for `id`"
+   (uuid? id))
+
+  (ptk/reify ::create-layout-from-id
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects            (wsh/lookup-page-objects state)
+            parent             (get objects id)
+            undo-id            (js/Symbol)
+            layout-initializer (get-layout-initializer type from-frame?)]
+
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dch/update-shapes [id] layout-initializer {:with-objects? true})
+               (dch/update-shapes (dm/get-prop parent :shapes) #(dissoc % :constraints-h :constraints-v))
+               (ptk/data-event :layout/update {:ids [id]})
+               (dwu/commit-undo-transaction undo-id))))))
 
 (defn create-layout-from-selection
   [type]
@@ -237,87 +154,66 @@
             selected        (wsh/lookup-selected state)
             selected-shapes (map (d/getf objects) selected)
             single?         (= (count selected-shapes) 1)
-            has-group?      (->> selected-shapes (d/seek cph/group-shape?))
+            has-group?      (->> selected-shapes (d/seek cfh/group-shape?))
             is-group?       (and single? has-group?)
-            has-mask?       (->> selected-shapes (d/seek cph/mask-shape?))
+            has-mask?       (->> selected-shapes (d/seek cfh/mask-shape?))
             is-mask?        (and single? has-mask?)
             has-component?  (some true? (map ctc/instance-root? selected-shapes))
-            is-component?   (and single? has-component?)]
+            is-component?   (and single? has-component?)
 
-        (if (and (not is-component?) is-group? (not is-mask?))
-          (let [new-shape-id (uuid/next)
-                parent-id    (:parent-id (first selected-shapes))
-                shapes-ids   (:shapes (first selected-shapes))
-                ordered-ids  (into (d/ordered-set) shapes-ids)
-                undo-id      (js/Symbol)
-                group-index  (cph/get-index-replacement selected objects)]
-            (rx/of
-             (dwu/start-undo-transaction undo-id)
-             (dwse/select-shapes ordered-ids)
-             (dws/create-artboard-from-selection new-shape-id parent-id group-index)
-             (cl/remove-all-fills [new-shape-id] {:color clr/black
-                                                  :opacity 1})
-             (create-layout-from-id [new-shape-id] type false)
-             (dwc/update-shapes
-              [new-shape-id]
-              (fn [shape]
-                (-> shape
-                    (assoc :layout-item-h-sizing :auto
-                           :layout-item-v-sizing :auto))))
-             ;; Set the children to fixed to remove strange interactions
-             (dwc/update-shapes
-              selected
-              (fn [shape]
-                (-> shape
-                    (assoc :layout-item-h-sizing :fix
-                           :layout-item-v-sizing :fix))))
+            new-shape-id (uuid/next)
+            undo-id      (js/Symbol)]
 
-             (ptk/data-event :layout/update [new-shape-id])
-             (dws/delete-shapes page-id selected)
-             (dwu/commit-undo-transaction undo-id)))
+        (rx/concat
+         (rx/of (dwu/start-undo-transaction undo-id))
+         (if (and is-group? (not is-component?) (not is-mask?))
+           ;; Create layout from a group:
+           ;;  When creating a layout from a group we remove the group and create the layout with its children
+           (let [parent-id    (:parent-id (first selected-shapes))
+                 shapes-ids   (:shapes (first selected-shapes))
+                 ordered-ids  (into (d/ordered-set) shapes-ids)
+                 group-index  (cfh/get-index-replacement selected objects)]
+             (rx/of
+              (dwse/select-shapes ordered-ids)
+              (dwsh/create-artboard-from-selection new-shape-id parent-id group-index (:name (first selected-shapes)))
+              (cl/remove-all-fills [new-shape-id] {:color clr/black :opacity 1})
+              (create-layout-from-id new-shape-id type false)
+              (dch/update-shapes [new-shape-id] #(assoc % :layout-item-h-sizing :auto :layout-item-v-sizing :auto))
+              (dch/update-shapes selected #(assoc % :layout-item-h-sizing :fix :layout-item-v-sizing :fix))
+              (dwsh/delete-shapes page-id selected)
+              (ptk/data-event :layout/update {:ids [new-shape-id]})
+              (dwu/commit-undo-transaction undo-id)))
 
-          (let [new-shape-id (uuid/next)
-                undo-id      (js/Symbol)
-                flex-params     (shapes->flex-params objects selected-shapes)]
-            (rx/of
-             (dwu/start-undo-transaction undo-id)
-             (dws/create-artboard-from-selection new-shape-id)
-             (cl/remove-all-fills [new-shape-id] {:color clr/black
-                                                  :opacity 1})
-             (create-layout-from-id [new-shape-id] type false)
-             (dwc/update-shapes
-              [new-shape-id]
-              (fn [shape]
-                (-> shape
-                    (merge flex-params)
-                    (assoc :layout-item-h-sizing :auto
-                           :layout-item-v-sizing :auto))))
-             ;; Set the children to fixed to remove strange interactions
-             (dwc/update-shapes
-              selected
-              (fn [shape]
-                (-> shape
-                    (assoc :layout-item-h-sizing :fix
-                           :layout-item-v-sizing :fix))))
+           ;; Create Layout from selection
+           (rx/of
+            (dwsh/create-artboard-from-selection new-shape-id)
+            (cl/remove-all-fills [new-shape-id] {:color clr/black :opacity 1})
+            (create-layout-from-id new-shape-id type false)
+            (dch/update-shapes [new-shape-id] #(assoc % :layout-item-h-sizing :auto :layout-item-v-sizing :auto))
+            (dch/update-shapes selected #(assoc % :layout-item-h-sizing :fix :layout-item-v-sizing :fix))))
 
-             (ptk/data-event :layout/update [new-shape-id])
-             (dwu/commit-undo-transaction undo-id))))))))
+         (rx/of (ptk/data-event :layout/update {:ids [new-shape-id]})
+                (dwu/commit-undo-transaction undo-id)))))))
 
 (defn remove-layout
   [ids]
-  (ptk/reify ::remove-layout
+  (ptk/reify ::remove-shape-layout
     ptk/WatchEvent
     (watch [_ _ _]
       (let [undo-id (js/Symbol)]
         (rx/of
          (dwu/start-undo-transaction undo-id)
-         (dwc/update-shapes ids #(apply dissoc % layout-keys))
-         (ptk/data-event :layout/update ids)
+         (dch/update-shapes ids #(apply dissoc % layout-keys))
+         (ptk/data-event :layout/update {:ids ids})
          (dwu/commit-undo-transaction undo-id))))))
 
 (defn create-layout
   [type]
-  (ptk/reify ::create-layout
+  (ptk/reify ::create-shape-layout
+    ev/Event
+    (-data [_]
+      {:layout (d/name type)})
+
     ptk/WatchEvent
     (watch [_ state _]
       (let [page-id          (:current-page-id state)
@@ -331,26 +227,27 @@
         (rx/of
          (dwu/start-undo-transaction undo-id)
          (if (and single? is-frame?)
-           (create-layout-from-id [(first selected)] type true)
+           (create-layout-from-id (first selected) type true)
            (create-layout-from-selection type))
          (dwu/commit-undo-transaction undo-id))))))
 
-(defn toggle-layout-flex
-  []
-  (ptk/reify ::toggle-layout-flex
+(defn toggle-layout
+  [type]
+  (ptk/reify ::toggle-shape-layout
     ptk/WatchEvent
-    (watch [_ state _]
-      (let [page-id          (:current-page-id state)
-            objects          (wsh/lookup-page-objects state page-id)
+    (watch [it state _]
+      (let [objects          (wsh/lookup-page-objects state)
             selected         (wsh/lookup-selected state)
             selected-shapes  (map (d/getf objects) selected)
             single?          (= (count selected-shapes) 1)
-            has-flex-layout? (and single? (ctl/flex-layout? objects (:id (first selected-shapes))))]
+            has-layout?      (and single?
+                                  (ctl/any-layout? objects (:id (first selected-shapes))))]
 
         (when (not= 0 (count selected))
-          (if has-flex-layout?
-            (rx/of (remove-layout selected))
-            (rx/of (create-layout :flex))))))))
+          (let [event (if has-layout?
+                        (remove-layout selected)
+                        (create-layout type))]
+            (rx/of (with-meta event (meta it)))))))))
 
 (defn update-layout
   [ids changes]
@@ -359,109 +256,184 @@
     (watch [_ _ _]
       (let [undo-id (js/Symbol)]
         (rx/of (dwu/start-undo-transaction undo-id)
-               (dwc/update-shapes ids #(d/deep-merge % changes))
-               (ptk/data-event :layout/update ids)
+               (dch/update-shapes ids (d/patch-object changes))
+               (ptk/data-event :layout/update {:ids ids})
                (dwu/commit-undo-transaction undo-id))))))
-
-#_(defn update-grid-cells
-    [parent objects]
-    (let [children (cph/get-immediate-children objects (:id parent))
-          layout-grid-rows (:layout-grid-rows parent)
-          layout-grid-columns (:layout-grid-columns parent)
-          num-rows (count layout-grid-columns)
-          num-columns (count layout-grid-columns)
-          layout-grid-cells (:layout-grid-cells parent)
-
-          allocated-shapes
-          (into #{} (mapcat :shapes) (:layout-grid-cells parent))
-
-          no-cell-shapes
-          (->> children (:shapes parent) (remove allocated-shapes))
-
-          layout-grid-cells
-          (for [[row-idx row] (d/enumerate layout-grid-rows)
-                [col-idx col] (d/enumerate layout-grid-columns)]
-
-            (let [shape (nth children (+ (* row-idx num-columns) col-idx) nil)
-                  cell-data {:id (uuid/next)
-                             :row (inc row-idx)
-                             :column (inc col-idx)
-                             :row-span 1
-                             :col-span 1
-                             :shapes (when shape [(:id shape)])}]
-              [(:id cell-data) cell-data]))]
-      (assoc parent :layout-grid-cells (into {} layout-grid-cells))))
-
-#_(defn check-grid-cells-update
-    [ids]
-    (ptk/reify ::check-grid-cells-update
-      ptk/WatchEvent
-      (watch [_ state _]
-        (let [objects (wsh/lookup-page-objects state)
-              undo-id (js/Symbol)]
-          (rx/of (dwc/update-shapes
-                  ids
-                  (fn [shape]
-                    (-> shape
-                        (update-grid-cells objects)))))))))
 
 (defn add-layout-track
-  [ids type value]
-  (assert (#{:row :column} type))
-  (ptk/reify ::add-layout-column
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (let [undo-id (js/Symbol)]
-        (rx/of (dwu/start-undo-transaction undo-id)
-               (dwc/update-shapes
-                ids
-                (fn [shape]
-                  (case type
-                    :row    (ctl/add-grid-row shape value)
-                    :column (ctl/add-grid-column shape value))))
-               (ptk/data-event :layout/update ids)
-               (dwu/commit-undo-transaction undo-id))))))
+  ([ids type value]
+   (add-layout-track ids type value nil))
+  ([ids type value index]
+   (assert (#{:row :column} type))
+   (ptk/reify ::add-layout-track
+     ptk/WatchEvent
+     (watch [_ _ _]
+       (let [undo-id (js/Symbol)]
+         (rx/of (dwu/start-undo-transaction undo-id)
+                (dch/update-shapes
+                 ids
+                 (fn [shape]
+                   (case type
+                     :row    (ctl/add-grid-row shape value index)
+                     :column (ctl/add-grid-column shape value index))))
+                (ptk/data-event :layout/update {:ids ids})
+                (dwu/commit-undo-transaction undo-id)))))))
 
 (defn remove-layout-track
+  [ids type index & {:keys [with-shapes?] :or {with-shapes? false}}]
+  (assert (#{:row :column} type))
+
+  (ptk/reify ::remove-layout-track
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [undo-id (js/Symbol)]
+        (let [objects (wsh/lookup-page-objects state)
+
+              shapes-to-delete
+              (when with-shapes?
+                (->> ids
+                     (mapcat
+                      (fn [id]
+                        (let [shape (get objects id)]
+                          (if (= type :column)
+                            (ctl/shapes-by-column shape index)
+                            (ctl/shapes-by-row shape index)))))
+                     (into #{})))]
+          (rx/of (dwu/start-undo-transaction undo-id)
+                 (if shapes-to-delete
+                   (dwsh/delete-shapes shapes-to-delete)
+                   (rx/empty))
+                 (dch/update-shapes
+                  ids
+                  (fn [shape objects]
+                    (case type
+                      :row    (ctl/remove-grid-row shape index objects)
+                      :column (ctl/remove-grid-column shape index objects)))
+                  {:with-objects? true})
+                 (ptk/data-event :layout/update {:ids ids})
+                 (dwu/commit-undo-transaction undo-id)))))))
+
+(defn duplicate-layout-track
   [ids type index]
   (assert (#{:row :column} type))
 
-  (ptk/reify ::remove-layout-column
+  (ptk/reify ::duplicate-layout-track
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [file-id      (:current-file-id state)
+            page         (wsh/lookup-page state)
+            objects      (:objects page)
+            libraries    (wsh/get-libraries state)
+            library-data (wsh/get-file state file-id)
+            shape-id     (first ids)
+            base-shape   (get objects shape-id)
+
+            shapes-by-track
+            (if (= type :column)
+              (ctl/shapes-by-column base-shape index false)
+              (ctl/shapes-by-row base-shape index false))
+
+            ;; Change to set in order to use auxiliary functions
+            selected (set shapes-by-track)
+
+            changes
+            (->> (dwse/prepare-duplicate-changes objects page selected (gpt/point 0 0) it libraries library-data file-id)
+                 (dwse/duplicate-changes-update-indices objects selected))
+
+            ;; Creates a map with shape-id => duplicated-shape-id
+            ids-map
+            (->> changes
+                 :redo-changes
+                 (filter #(= (:type %) :add-obj))
+                 (filter #(selected (:old-id %)))
+                 (map #(vector (:old-id %) (get-in % [:obj :id])))
+                 (into {}))
+
+            changes
+            (-> changes
+                (pcb/update-shapes
+                 ids
+                 (fn [shape objects]
+                   ;; The duplication could have altered the grid so we restore the values, we'll calculate the good ones now
+                   (let [shape (merge shape (select-keys base-shape [:layout-grid-cells :layout-grid-columns :layout-grid-rows]))]
+                     (case type
+                       :row    (ctl/duplicate-row shape objects index ids-map)
+                       :column (ctl/duplicate-column shape objects index ids-map))))
+                 {:with-objects? true}))
+
+            undo-id (js/Symbol)]
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dch/commit-changes changes)
+               (ptk/data-event :layout/update {:ids ids})
+               (dwu/commit-undo-transaction undo-id))))))
+
+(defn reorder-layout-track
+  [ids type from-index to-index move-content?]
+  (assert (#{:row :column} type))
+
+  (ptk/reify ::reorder-layout-track
     ptk/WatchEvent
     (watch [_ _ _]
       (let [undo-id (js/Symbol)]
         (rx/of (dwu/start-undo-transaction undo-id)
-               (dwc/update-shapes
+               (dch/update-shapes
                 ids
                 (fn [shape]
                   (case type
-                    :row    (ctl/remove-grid-row shape index)
-                    :column (ctl/remove-grid-column shape index))))
-               (ptk/data-event :layout/update ids)
+                    :row    (ctl/reorder-grid-row shape from-index to-index move-content?)
+                    :column (ctl/reorder-grid-column shape from-index to-index move-content?))))
+               (ptk/data-event :layout/update {:ids ids})
                (dwu/commit-undo-transaction undo-id))))))
+
+(defn hover-layout-track
+  [ids type index hover?]
+  (assert (#{:row :column} type))
+
+  (ptk/reify ::hover-layout-track
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [objects (wsh/lookup-page-objects state)
+            shape (get objects (first ids))
+
+            highlighted
+            (when hover?
+              (->> (if (= type :row)
+                     (ctl/shapes-by-row shape index)
+                     (ctl/shapes-by-column shape index))
+                   (set)))]
+        (cond-> state
+          hover?
+          (update-in [:workspace-grid-edition (first ids) :hover-track] (fnil conj #{}) [type index])
+
+          (not hover?)
+          (update-in [:workspace-grid-edition (first ids) :hover-track] (fnil disj #{}) [type index])
+
+          :always
+          (assoc-in [:workspace-local :highlighted] highlighted))))))
 
 (defn change-layout-track
   [ids type index props]
   (assert (#{:row :column} type))
-  (ptk/reify ::change-layout-column
+  (ptk/reify ::change-layout-track
     ptk/WatchEvent
     (watch [_ _ _]
       (let [undo-id (js/Symbol)
-            property (case :row :layout-grid-rows
-                           :column :layout-grid-columns)]
+            property (case type
+                       :row :layout-grid-rows
+                       :column :layout-grid-columns)]
         (rx/of (dwu/start-undo-transaction undo-id)
-               (dwc/update-shapes
+               (dch/update-shapes
                 ids
                 (fn [shape]
                   (-> shape
                       (update-in [property index] merge props))))
-               (ptk/data-event :layout/update ids)
+               (ptk/data-event :layout/update {:ids ids})
                (dwu/commit-undo-transaction undo-id))))))
 
 (defn fix-child-sizing
   [objects parent-changes shape]
 
-  (let [parent (-> (cph/get-parent objects (:id shape))
+  (let [parent (-> (cfh/get-parent objects (:id shape))
                    (d/deep-merge parent-changes))
 
         auto-width? (ctl/auto-width? parent)
@@ -472,7 +444,7 @@
         all-children (->> parent
                           :shapes
                           (map (d/getf objects))
-                          (remove ctl/layout-absolute?))]
+                          (remove ctl/position-absolute?))]
 
     (cond-> shape
       ;; If the parent is hug width and the direction column
@@ -496,7 +468,7 @@
       (assoc :layout-item-v-sizing :fix))))
 
 (defn fix-parent-sizing
-  [objects ids-set changes parent]
+  [parent objects ids-set changes]
 
   (let [auto-width? (ctl/auto-width? parent)
         auto-height? (ctl/auto-height? parent)
@@ -538,12 +510,220 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [objects (wsh/lookup-page-objects state)
-            children-ids (->> ids (mapcat #(cph/get-children-ids objects %)))
-            parent-ids (->> ids (map #(cph/get-parent-id objects %)))
+            children-ids (->> ids (mapcat #(cfh/get-children-ids objects %)))
+            parent-ids (->> ids (map #(cfh/get-parent-id objects %)))
             undo-id (js/Symbol)]
         (rx/of (dwu/start-undo-transaction undo-id)
-               (dwc/update-shapes ids #(d/deep-merge (or % {}) changes))
-               (dwc/update-shapes children-ids (partial fix-child-sizing objects changes))
-               (dwc/update-shapes parent-ids (partial fix-parent-sizing objects (set ids) changes))
-               (ptk/data-event :layout/update ids)
+               (dch/update-shapes ids (d/patch-object changes))
+               (dch/update-shapes children-ids (partial fix-child-sizing objects changes))
+               (dch/update-shapes
+                parent-ids
+                (fn [parent objects]
+                  (-> parent
+                      (fix-parent-sizing objects (set ids) changes)
+                      (cond-> (ctl/grid-layout? parent)
+                        (ctl/assign-cells objects))))
+                {:with-objects? true})
+               (ptk/data-event :layout/update {:ids ids})
                (dwu/commit-undo-transaction undo-id))))))
+
+(defn update-grid-cells
+  [layout-id ids props]
+  (ptk/reify ::update-grid-cells
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [undo-id (js/Symbol)]
+        (rx/of
+         (dwu/start-undo-transaction undo-id)
+
+         (dch/update-shapes
+          [layout-id]
+          (fn [shape]
+            (->> ids
+                 (reduce
+                  (fn [shape cell-id]
+                    (d/update-in-when
+                     shape
+                     [:layout-grid-cells cell-id]
+                     d/patch-object props))
+                  shape))))
+         (ptk/data-event :layout/update {:ids [layout-id]})
+         (dwu/commit-undo-transaction undo-id))))))
+
+(defn change-cells-mode
+  [layout-id ids mode]
+
+  (ptk/reify ::change-cells-mode
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [undo-id (js/Symbol)]
+        (rx/of
+         (dwu/start-undo-transaction undo-id)
+         (dch/update-shapes
+          [layout-id]
+          (fn [shape objects]
+            (case mode
+              :auto
+              ;; change the manual cells and move to auto
+              (->> ids
+                   (reduce
+                    (fn [shape cell-id]
+                      (let [cell (get-in shape [:layout-grid-cells cell-id])]
+                        (cond-> shape
+                          (or (contains? #{:area :manual} (:position cell))
+                              (> (:row-span cell) 1)
+                              (> (:column-span cell) 1))
+                          (-> (d/update-in-when [:layout-grid-cells cell-id] assoc :shapes [] :position :auto)
+                              (d/update-in-when [:layout-grid-cells cell-id] dissoc :area-name)
+                              (ctl/resize-cell-area (:row cell) (:column cell) (:row cell) (:column cell) 1 1)
+                              (ctl/assign-cells objects)))))
+                    shape))
+
+              :manual
+              (->> ids
+                   (reduce
+                    (fn [shape cell-id]
+                      (let [cell (get-in shape [:layout-grid-cells cell-id])]
+                        (cond-> shape
+                          (contains? #{:area :auto} (:position cell))
+                          (-> (d/assoc-in-when [:layout-grid-cells cell-id :position] :manual)
+                              (d/update-in-when [:layout-grid-cells cell-id] dissoc :area-name)
+                              (ctl/assign-cells objects)))))
+                    shape))
+
+              :area
+              ;; Create area with the selected cells
+              (let [{:keys [first-row first-column last-row last-column]}
+                    (ctl/cells-coordinates (->> ids (map #(get-in shape [:layout-grid-cells %]))))
+
+                    target-cell
+                    (ctl/get-cell-by-position shape first-row first-column)
+
+                    shape
+                    (-> shape
+                        (ctl/resize-cell-area
+                         (:row target-cell) (:column target-cell)
+                         first-row
+                         first-column
+                         (inc (- last-row first-row))
+                         (inc (- last-column first-column)))
+                        (ctl/assign-cells objects))]
+
+                (-> shape
+                    (d/update-in-when [:layout-grid-cells (:id target-cell)] assoc :position :area)))))
+          {:with-objects? true})
+         (dwge/clean-selection layout-id)
+         (ptk/data-event :layout/update {:ids [layout-id]})
+         (dwu/commit-undo-transaction undo-id))))))
+
+(defn merge-cells
+  [layout-id ids]
+
+  (ptk/reify ::merge-cells
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [undo-id (js/Symbol)]
+        (rx/of
+         (dwu/start-undo-transaction undo-id)
+         (dch/update-shapes
+          [layout-id]
+          (fn [shape objects]
+            (let [cells (->> ids (map #(get-in shape [:layout-grid-cells %])))
+
+                  {:keys [first-row first-column last-row last-column]}
+                  (ctl/cells-coordinates cells)
+
+                  target-cell
+                  (ctl/get-cell-by-position shape first-row first-column)]
+              (-> shape
+                  (ctl/resize-cell-area
+                   (:row target-cell) (:column target-cell)
+                   first-row
+                   first-column
+                   (inc (- last-row first-row))
+                   (inc (- last-column first-column)))
+                  (ctl/assign-cells objects))))
+          {:with-objects? true})
+         (dwge/clean-selection layout-id)
+         (ptk/data-event :layout/update {:ids [layout-id]})
+         (dwu/commit-undo-transaction undo-id))))))
+
+(defn update-grid-cell-position
+  [layout-id cell-id props]
+
+  (ptk/reify ::update-grid-cell-position
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [undo-id (js/Symbol)]
+        (rx/of
+         (dwu/start-undo-transaction undo-id)
+         (dch/update-shapes
+          [layout-id]
+          (fn [shape objects]
+            (let [prev-data (-> (dm/get-in shape [:layout-grid-cells cell-id])
+                                (select-keys [:row :column :row-span :column-span]))
+
+                  new-data (merge prev-data props)]
+              (-> shape
+                  (ctl/resize-cell-area (:row prev-data) (:column prev-data)
+                                        (:row new-data) (:column new-data)
+                                        (:row-span new-data) (:column-span new-data))
+                  (ctl/assign-cells objects))))
+          {:with-objects? true})
+         (ptk/data-event :layout/update {:ids [layout-id]})
+         (dwu/commit-undo-transaction undo-id))))))
+
+
+(defn create-cell-board
+  [layout-id cell-ids]
+  (ptk/reify ::create-cell-board
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [page-id (:current-page-id state)
+            objects (wsh/lookup-page-objects state)
+            frame-id (uuid/next)
+
+            undo-id (js/Symbol)
+
+            shape (get objects layout-id)
+            cells      (->> cell-ids (map #(get-in shape [:layout-grid-cells %])))
+            selected   (into #{} (mapcat :shapes) cells)
+
+            {:keys [first-row first-column last-row last-column]} (ctl/cells-coordinates cells)
+
+            target-cell (ctl/get-cell-by-position shape first-row first-column)
+
+            [_ changes]
+            (-> (pcb/empty-changes it page-id)
+                (pcb/with-objects objects)
+                (cond-> (d/not-empty? selected)
+                  (cfsh/prepare-create-artboard-from-selection
+                   frame-id layout-id objects selected 0 nil true (:id target-cell)))
+
+                (cond-> (empty? (seq selected))
+                  (cfsh/prepare-create-empty-artboard
+                   frame-id layout-id objects 0 nil true (:id target-cell))))
+
+            changes
+            (-> changes
+                (pcb/update-shapes
+                 [frame-id]
+                 (fn [shape]
+                   (-> shape
+                       (assoc :layout-item-h-sizing :fill)
+                       (assoc :layout-item-v-sizing :fill))))
+                (pcb/update-shapes
+                 [layout-id]
+                 (fn [shape]
+                   (let [new-row-span (inc (- last-row first-row))
+                         new-col-span (inc (- last-column first-column))]
+                     (-> shape
+                         (ctl/resize-cell-area
+                          (:row target-cell) (:column target-cell)
+                          first-row first-column new-row-span new-col-span))))))]
+
+        (rx/of
+         (dwu/start-undo-transaction undo-id)
+         (dch/commit-changes changes)
+         (ptk/data-event :layout/update {:ids [layout-id]})
+         (dwu/commit-undo-transaction undo-id))))))

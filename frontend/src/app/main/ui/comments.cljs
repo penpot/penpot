@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.comments
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -26,28 +27,22 @@
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
+(def comments-local-options (l/derived :options refs/comments-local))
+
 (mf/defc resizing-textarea
-  {::mf/wrap-props false
-   ::mf/forward-ref true}
-  [props ref]
+  {::mf/wrap-props false}
+  [props]
   (let [value            (d/nilv (unchecked-get props "value") "")
         on-focus         (unchecked-get props "on-focus")
         on-blur          (unchecked-get props "on-blur")
         placeholder      (unchecked-get props "placeholder")
         on-change        (unchecked-get props "on-change")
         on-esc           (unchecked-get props "on-esc")
+        on-ctrl-enter    (unchecked-get props "on-ctrl-enter")
         autofocus?       (unchecked-get props "autofocus")
         select-on-focus? (unchecked-get props "select-on-focus")
 
         local-ref   (mf/use-ref)
-        ref         (or ref local-ref)
-
-        on-key-down
-        (mf/use-fn
-         (fn [event]
-           (when (and (kbd/esc? event)
-                      (fn? on-esc))
-             (on-esc event))))
 
         on-change*
         (mf/use-fn
@@ -55,6 +50,17 @@
          (fn [event]
            (let [content (dom/get-target-val event)]
              (on-change content))))
+
+        on-key-down
+        (mf/use-fn
+         (mf/deps on-esc on-ctrl-enter on-change*)
+         (fn [event]
+           (cond
+             (and (kbd/esc? event) (fn? on-esc)) (on-esc event)
+             (and (kbd/mod? event) (kbd/enter? event) (fn? on-ctrl-enter))
+             (do
+               (on-change* event)
+               (on-ctrl-enter event)))))
 
         on-focus*
         (mf/use-fn
@@ -69,29 +75,29 @@
                ;; In webkit browsers the mouseup event will be called after the on-focus causing and unselect
                (.addEventListener target "mouseup" dom/prevent-default #js {:once true})))))]
 
-
-
     (mf/use-layout-effect
      nil
      (fn []
-       (let [node (mf/ref-val ref)]
+       (let [node (mf/ref-val local-ref)]
          (set! (.-height (.-style node)) "0")
          (set! (.-height (.-style node)) (str (+ 2 (.-scrollHeight node)) "px")))))
 
-    [:textarea
-     {:ref ref
-      :auto-focus autofocus?
-      :on-key-down on-key-down
-      :on-focus on-focus*
-      :on-blur on-blur
-      :value value
-      :placeholder placeholder
-      :on-change on-change*}]))
+    [:textarea {:ref local-ref
+                :auto-focus autofocus?
+                :on-key-down on-key-down
+                :on-focus on-focus*
+                :on-blur on-blur
+                :value value
+                :placeholder placeholder
+                :on-change on-change*}]))
 
 (mf/defc reply-form
   [{:keys [thread] :as props}]
   (let [show-buttons? (mf/use-state false)
         content       (mf/use-state "")
+
+        disabled? (or (fm/all-spaces? @content)
+                      (str/empty-or-nil? @content))
 
         on-focus
         (mf/use-fn
@@ -116,25 +122,28 @@
          (fn []
            (st/emit! (dcm/add-comment thread @content))
            (on-cancel)))]
-
-    [:div.reply-form
+    [:div {:class (stl/css :reply-form)}
      [:& resizing-textarea {:value @content
                             :placeholder "Reply"
                             :on-blur on-blur
                             :on-focus on-focus
+                            :select-on-focus? false
+                            :on-ctrl-enter on-submit
                             :on-change on-change}]
      (when (or @show-buttons? (seq @content))
-       [:div.buttons
-        [:input.btn-primary
-         {:type "button"
-          :value "Post"
-          :on-click on-submit
-          :disabled (or (fm/all-spaces? @content)
-                        (str/empty-or-nil? @content))}]
+       [:div {:class (stl/css :buttons-wrapper)}
         [:input.btn-secondary
          {:type "button"
+          :class (stl/css :cancel-btn)
           :value "Cancel"
-          :on-click on-cancel}]])]))
+          :on-click on-cancel}]
+        [:input
+         {:type "button"
+          :class (stl/css-case :post-btn true
+                               :global/disabled disabled?)
+          :value "Post"
+          :on-click on-submit
+          :disabled disabled?}]])]))
 
 (mf/defc draft-thread
   [{:keys [draft zoom on-cancel on-submit position-modifier]}]
@@ -145,6 +154,9 @@
 
         pos-x    (* (:x position) zoom)
         pos-y    (* (:y position) zoom)
+
+        disabled? (or (fm/all-spaces? content)
+                      (str/empty-or-nil? content))
 
         on-esc
         (mf/use-fn
@@ -167,32 +179,37 @@
          (partial on-submit draft))]
 
     [:*
-     [:div.thread-bubble
-      {:style {:top (str pos-y "px")
+     [:div
+      {:class (stl/css :floating-thread-bubble)
+       :style {:top (str pos-y "px")
                :left (str pos-x "px")}
        :on-click dom/stop-propagation}
-      [:span "?"]]
-     [:div.thread-content
-      {:style {:top (str (- pos-y 14) "px")
-               :left (str (+ pos-x 14) "px")}
-       :on-click dom/stop-propagation}
-      [:div.reply-form
+      "?"]
+     [:div {:class (stl/css :thread-content)
+            :style {:top (str (- pos-y 24) "px")
+                    :left (str (+ pos-x 28) "px")}
+            :on-click dom/stop-propagation}
+      [:div {:class (stl/css :reply-form)}
        [:& resizing-textarea {:placeholder (tr "labels.write-new-comment")
                               :value (or content "")
                               :autofocus true
+                              :select-on-focus? false
                               :on-esc on-esc
-                              :on-change on-change}]
-       [:div.buttons
-        [:input.btn-primary
-         {:on-click on-submit
-          :type "button"
-          :value "Post"
-          :disabled (or (fm/all-spaces? content)
-                        (str/empty-or-nil? content))}]
-        [:input.btn-secondary
-         {:on-click on-esc
-          :type "button"
-          :value "Cancel"}]]]]]))
+                              :on-change on-change
+                              :on-ctrl-enter on-submit}]
+       [:div {:class (stl/css :buttons-wrapper)}
+
+        [:input {:on-click on-esc
+                 :class (stl/css :cancel-btn)
+                 :type "button"
+                 :value "Cancel"}]
+
+        [:input {:on-click on-submit
+                 :type "button"
+                 :value "Post"
+                 :class (stl/css-case :post-btn true
+                                      :global/disabled disabled?)
+                 :disabled disabled?}]]]]]))
 
 (mf/defc edit-form
   [{:keys [content on-submit on-cancel] :as props}]
@@ -205,39 +222,56 @@
         on-submit*
         (mf/use-fn
          (mf/deps @content)
-         (fn [] (on-submit @content)))]
+         (fn [] (on-submit @content)))
 
+        disabled? (or (fm/all-spaces? @content)
+                      (str/empty-or-nil? @content))]
 
-    [:div.reply-form.edit-form
+    [:div {:class (stl/css :edit-form)}
      [:& resizing-textarea {:value @content
                             :autofocus true
                             :select-on-focus true
+                            :select-on-focus? false
+                            :on-ctrl-enter on-submit*
                             :on-change on-change}]
-     [:div.buttons
-      [:input.btn-primary {:type "button"
-                           :value "Post"
-                           :on-click on-submit*
-                           :disabled (or (fm/all-spaces? @content)
-                                         (str/empty-or-nil? @content))}]
-      [:input.btn-secondary {:type "button" :value "Cancel" :on-click on-cancel}]]]))
+     [:div {:class (stl/css :buttons-wrapper)}
+      [:input  {:type "button"
+                :value "Cancel"
+                :class (stl/css :cancel-btn)
+                :on-click on-cancel}]
+      [:input {:type "button"
+               :class (stl/css-case :post-btn true
+                                    :global/disabled disabled?)
+               :value "Post"
+               :on-click on-submit*
+               :disabled disabled?}]]]))
 
 (mf/defc comment-item
   [{:keys [comment thread users origin] :as props}]
   (let [owner    (get users (:owner-id comment))
         profile  (mf/deref refs/profile)
-        options  (mf/use-state false)
+        options  (mf/deref comments-local-options)
         edition? (mf/use-state false)
 
-        on-show-options
-        (mf/use-fn #(reset! options true))
+        on-toggle-options
+        (mf/use-fn
+         (mf/deps options)
+         (fn [event]
+           (dom/stop-propagation event)
+           (st/emit! (dcm/toggle-comment-options comment))))
 
         on-hide-options
-        (mf/use-fn #(reset! options false))
+        (mf/use-fn
+         (mf/deps options)
+         (fn [event]
+           (dom/stop-propagation event)
+           (st/emit! (dcm/hide-comment-options))))
 
         on-edit-clicked
         (mf/use-fn
+         (mf/deps options)
          (fn []
-           (reset! options false)
+           (st/emit! (dcm/hide-comment-options))
            (reset! edition? true)))
 
         on-delete-comment
@@ -253,16 +287,15 @@
                       (dcm/delete-comment-thread-on-viewer thread)
                       (dcm/delete-comment-thread-on-workspace thread))))
 
-
         on-delete-thread
         (mf/use-fn
          (mf/deps thread)
          #(st/emit! (modal/show
-                      {:type :confirm
-                       :title (tr "modals.delete-comment-thread.title")
-                       :message (tr "modals.delete-comment-thread.message")
-                       :accept-label (tr "modals.delete-comment-thread.accept")
-                       :on-accept delete-thread})))
+                     {:type :confirm
+                      :title (tr "modals.delete-comment-thread.title")
+                      :message (tr "modals.delete-comment-thread.message")
+                      :accept-label (tr "modals.delete-comment-thread.accept")
+                      :on-accept delete-thread})))
 
         on-submit
         (mf/use-fn
@@ -281,59 +314,87 @@
            (dom/stop-propagation event)
            (st/emit! (dcm/update-comment-thread (update thread :is-resolved not)))))]
 
-    [:div.comment-container
-     [:div.comment
-      [:div.author
-       [:div.avatar
+    [:div {:class (stl/css :comment-container)}
+     [:div {:class (stl/css :comment)}
+      [:div {:class (stl/css :author)}
+       [:div {:class (stl/css :avatar)}
         [:img {:src (cfg/resolve-profile-photo-url owner)}]]
-       [:div.name
-        [:div.fullname (:fullname owner)]
-        [:div.timeago (dt/timeago (:modified-at comment))]]
+       [:div {:class (stl/css :name)}
+        [:div {:class (stl/css :fullname)} (:fullname owner)]
+        [:div {:class (stl/css :timeago)} (dt/timeago (:modified-at comment))]]
 
        (when (some? thread)
-         [:div.options-resolve {:on-click toggle-resolved}
-          (if (:is-resolved thread)
-            [:span i/checkbox-checked]
-            [:span i/checkbox-unchecked])])
+         [:div {:class (stl/css :options-resolve-wrapper)
+                :on-click toggle-resolved}
+          [:span {:class (stl/css-case :options-resolve true
+                                       :global/checked (:is-resolved thread))} i/tick]])
 
        (when (= (:id profile) (:id owner))
-         [:div.options
-          [:div.options-icon {:on-click on-show-options} i/actions]])]
+         [:div {:class (stl/css :options)
+                :on-click on-toggle-options}
+          i/menu])]
 
-      [:div.content
+      [:div {:class (stl/css :content)}
        (if @edition?
          [:& edit-form {:content (:content comment)
                         :on-submit on-submit
                         :on-cancel on-cancel}]
-         [:span.text (:content comment)])]]
+         [:span {:class (stl/css :text)} (:content comment)])]]
 
-     [:& dropdown {:show @options
+     [:& dropdown {:show (= options (:id comment))
                    :on-close on-hide-options}
-      [:ul.dropdown.comment-options-dropdown
-       [:li {:on-click on-edit-clicked} (tr "labels.edit")]
+      [:ul {:class (stl/css :comment-options-dropdown)}
+       [:li {:class (stl/css :context-menu-option)
+             :on-click on-edit-clicked}
+        (tr "labels.edit")]
        (if thread
-         [:li {:on-click on-delete-thread} (tr "labels.delete-comment-thread")]
-         [:li {:on-click on-delete-comment} (tr "labels.delete-comment")])]]]))
+         [:li {:class (stl/css :context-menu-option)
+               :on-click on-delete-thread}
+          (tr "labels.delete-comment-thread")]
+         [:li {:class (stl/css :context-menu-option)
+               :on-click on-delete-comment}
+          (tr "labels.delete-comment")])]]]))
 
 (defn make-comments-ref
   [thread-id]
   (l/derived (l/in [:comments thread-id]) st/state))
 
+(defn- offset-position [position viewport zoom bubble-margin]
+  (let [viewport (or viewport {:offset-x 0 :offset-y 0 :width 0 :height 0})
+        base-x (+ (* (:x position) zoom) (:offset-x viewport))
+        base-y (+ (* (:y position) zoom) (:offset-y viewport))
+        w (:width viewport)
+        h (:height viewport)
+        comment-width 284 ;; TODO: this is the width set via CSS in an outer container…
+                          ;; We should probably do this in a different way.
+        orientation-left? (>= (+ base-x comment-width (:x bubble-margin)) w)
+        orientation-top? (>= base-y (/ h 2))
+        h-dir (if orientation-left? :left :right)
+        v-dir (if orientation-top? :top :bottom)
+        x (:x position)
+        y (:y position)]
+    {:x x :y y :h-dir h-dir :v-dir v-dir}))
+
 (mf/defc thread-comments
   {::mf/wrap [mf/memo]}
-  [{:keys [thread zoom users origin position-modifier]}]
+  [{:keys [thread zoom users origin position-modifier viewport]}]
   (let [ref          (mf/use-ref)
-
-
         thread-id    (:id thread)
         thread-pos   (:position thread)
 
-        pos          (cond-> thread-pos
+        base-pos     (cond-> thread-pos
                        (some? position-modifier)
                        (gpt/transform position-modifier))
 
-        pos-x        (+ (* (:x pos) zoom) 14)
-        pos-y        (- (* (:y pos) zoom) 14)
+        max-height   (when (some? viewport) (int (* (:height viewport) 0.75)))
+                          ;; We should probably look for a better way of doing this.
+        bubble-margin {:x 24 :y 0}
+        pos          (offset-position base-pos viewport zoom bubble-margin)
+
+        margin-x     (* (:x bubble-margin) (if (= (:h-dir pos) :left) -1 1))
+        margin-y     (* (:y bubble-margin) (if (= (:v-dir pos) :top) -1 1))
+        pos-x        (+ (* (:x pos) zoom) margin-x)
+        pos-y        (- (* (:y pos) zoom) margin-y)
 
         comments-ref (mf/with-memo [thread-id]
                        (make-comments-ref thread-id))
@@ -356,19 +417,22 @@
         (dom/scroll-into-view-if-needed! node)))
 
     (when (some? comment)
-      [:div.thread-content
-       {:style {:top (str pos-y "px")
-                :left (str pos-x "px")}
-        :on-click dom/stop-propagation}
+      [:div {:class (stl/css-case :thread-content true
+                                  :thread-content-left (= (:h-dir pos) :left)
+                                  :thread-content-top (= (:v-dir pos) :top))
+             :id (str "thread-" thread-id)
+             :style {:left (str pos-x "px")
+                     :top (str pos-y "px")
+                     :max-height max-height}
+             :on-click dom/stop-propagation}
 
-       [:div.comments
+       [:div {:class (stl/css :comments)}
         [:& comment-item {:comment comment
                           :users users
                           :thread thread
                           :origin origin}]
         (for [item (rest comments)]
           [:* {:key (dm/str (:id item))}
-           [:hr]
            [:& comment-item {:comment item
                              :users users
                              :origin origin}]])
@@ -487,18 +551,17 @@
            (dom/stop-propagation event)
            (when (= origin :viewer)
              (on-click thread))))]
-
-    [:div.thread-bubble
-     {:style {:top (str pos-y "px")
-              :left (str pos-x "px")}
-      :on-pointer-down on-pointer-down*
-      :on-pointer-up on-pointer-up*
-      :on-pointer-move on-pointer-move*
-      :on-click on-click*
-      :on-lost-pointer-capture on-lost-pointer-capture
-      :class (dom/classnames
-              :resolved (:is-resolved thread)
-              :unread (pos? (:count-unread-comments thread)))}
+    [:div {:style {:top (str pos-y "px")
+                   :left (str pos-x "px")}
+           :on-pointer-down on-pointer-down*
+           :on-pointer-up on-pointer-up*
+           :on-pointer-move on-pointer-move*
+           :on-click on-click*
+           :on-lost-pointer-capture on-lost-pointer-capture
+           :class (stl/css-case
+                   :floating-thread-bubble true
+                   :resolved (:is-resolved thread)
+                   :unread (pos? (:count-unread-comments thread)))}
      [:span (:seqn thread)]]))
 
 (mf/defc comment-thread
@@ -513,45 +576,49 @@
            (when (fn? on-click)
              (on-click item))))]
 
-    [:div.comment {:on-click on-click*}
-     [:div.author
-      [:div.thread-bubble
-       {:class (dom/classnames
-                :resolved (:is-resolved item)
-                :unread (pos? (:count-unread-comments item)))}
+    [:div {:class (stl/css :comment)
+           :on-click on-click*}
+     [:div {:class (stl/css :author)}
+      [:div {:class (stl/css-case :thread-bubble true
+                                  :resolved (:is-resolved item)
+                                  :unread (pos? (:count-unread-comments item)))}
        (:seqn item)]
-      [:div.avatar
+      [:div {:class (stl/css :avatar)}
        [:img {:src (cfg/resolve-profile-photo-url owner)}]]
-      [:div.name
-       [:div.fullname (:fullname owner) ", "]
-       [:div.timeago (dt/timeago (:modified-at item))]]]
-     [:div.content
-      [:span.text (:content item)]]
-     [:div.content.replies
+      [:div {:class (stl/css :name)}
+       [:div {:class (stl/css :fullname)} (:fullname owner)]
+       [:div {:class (stl/css :timeago)} (dt/timeago (:modified-at item))]]]
+     [:div {:class (stl/css :content)}
+      (:content item)]
+     [:div {:class (stl/css :replies)}
       (let [unread (:count-unread-comments item ::none)
             total  (:count-comments item 1)]
         [:*
          (when (> total 1)
            (if (= total 2)
-             [:span.total-replies "1 reply"]
-             [:span.total-replies (str (dec total) " replies")]))
+             [:span {:class (stl/css :total-replies)} "1 reply"]
+             [:span {:class (stl/css :total-replies)} (str (dec total) " replies")]))
 
          (when (and (> total 1) (> unread 0))
            (if (= unread 1)
-             [:span.new-replies "1 new reply"]
-             [:span.new-replies (str unread " new replies")]))])]]))
+             [:span {:class (stl/css :new-replies)} "1 new reply"]
+             [:span {:class (stl/css :new-replies)} (str unread " new replies")]))])]]))
 
 (mf/defc comment-thread-group
   [{:keys [group users on-thread-click]}]
-  [:div.thread-group
+  [:div {:class (stl/css :thread-group)}
    (if (:file-name group)
-     [:div.section-title
-      [:span.label.filename (:file-name group) ", "]
-      [:span.label (:page-name group)]]
-     [:div.section-title
-      [:span.icon i/file-html]
-      [:span.label (:page-name group)]])
-   [:div.threads
+     [:div {:class (stl/css :section-title)
+            :title (str (:file-name group) ", " (:page-name group))}
+      [:span {:class (stl/css :file-name)} (:file-name group) ", "]
+      [:span {:class (stl/css :page-name)} (:page-name group)]]
+
+     [:div {:class (stl/css :section-title)
+            :title (:page-name group)}
+      [:span {:class (stl/css :icon)} i/document]
+      [:span {:class (stl/css :page-name)} (:page-name group)]])
+
+   [:div {:class (stl/css :threads)}
     (for [item (:items group)]
       [:& comment-thread
        {:item item

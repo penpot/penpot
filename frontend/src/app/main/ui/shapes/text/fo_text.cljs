@@ -6,12 +6,11 @@
 
 (ns app.main.ui.shapes.text.fo-text
   (:require
-   [app.common.colors :as clr]
+   [app.common.colors :as cc]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
-   [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.text.styles :as sts]
-   [app.util.color :as uc]
    [app.util.object :as obj]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -85,9 +84,9 @@
   [colors]
   (assert (set? colors))
   (loop [current-rgb [0 0 0]]
-    (let [current-hex (uc/rgb->hex current-rgb)]
+    (let [current-hex (cc/rgb->hex current-rgb)]
       (if (contains? colors current-hex)
-        (recur (uc/next-rgb current-rgb))
+        (recur (cc/next-rgb current-rgb))
         current-hex))))
 
 (defn- fill->color
@@ -122,7 +121,7 @@
              (filter some?))
 
         colors (->> color-data
-                    (into #{clr/black}
+                    (into #{cc/black}
                           (comp (filter #(= :solid (:type %)))
                                 (map :hex))))
 
@@ -170,16 +169,16 @@
     [colors color-mapping color-mapping-inverse]))
 
 (mf/defc text-shape
-  {::mf/wrap-props false
+  {::mf/props :obj
    ::mf/forward-ref true}
-  [props ref]
-  (let [shape (obj/get props "shape")
-        transform (gsh/transform-str shape)
-
-        {:keys [id x y width height content]} shape
-        grow-type (obj/get props "grow-type") ;; This is only needed in workspace
-        ;; We add 8px to add a padding for the exporter
-        ;; width (+ width 8)
+  [{:keys [shape grow-type]} ref]
+  (let [transform (gsh/transform-str shape)
+        id        (dm/get-prop shape :id)
+        x         (dm/get-prop shape :x)
+        y         (dm/get-prop shape :y)
+        width     (dm/get-prop shape :width)
+        height    (dm/get-prop shape :height)
+        content   (get shape :content)
 
         [colors _color-mapping color-mapping-inverse] (retrieve-colors shape)]
 
@@ -187,17 +186,16 @@
      {:x x
       :y y
       :id id
-      :data-colors (->> colors (str/join ","))
+      :data-colors (str/join "," colors)
       :data-mapping (-> color-mapping-inverse clj->js js/JSON.stringify)
       :transform transform
       :width  (if (#{:auto-width} grow-type) 100000 width)
       :height (if (#{:auto-height :auto-width} grow-type) 100000 height)
-      :style  (-> (obj/create) (attrs/add-layer-props shape))
       :ref ref}
      ;; We use a class here because react has a bug that won't use the appropriate selector for
      ;; `background-clip`
      [:style ".text-node { background-clip: text;
-                           -webkit-background-clip: text;" ]
+                           -webkit-background-clip: text; }"]
      [:& render-node {:index 0
                       :shape shape
                       :node content}]]))

@@ -7,14 +7,16 @@
 (ns app.util.router
   (:refer-clojure :exclude [resolve])
   (:require
+   [app.common.data.macros :as dm]
    [app.common.uri :as u]
    [app.config :as cf]
+   [app.main.data.events :as ev]
    [app.util.browser-history :as bhistory]
    [app.util.dom :as dom]
    [app.util.timers :as ts]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [goog.events :as e]
-   [potok.core :as ptk]
+   [potok.v2.core :as ptk]
    [reitit.core :as r]))
 
 ;; --- Router API
@@ -59,8 +61,13 @@
 (defn navigated
   [match]
   (ptk/reify ::navigated
-    IDeref
-    (-deref [_] match)
+    ev/Event
+    (-data [_]
+      (let [route  (dm/get-in match [:data :name])
+            params (get match :path-params)]
+        (assoc params
+               ::ev/name "navigate"
+               :route (name route))))
 
     ptk/UpdateEvent
     (update [_ state]
@@ -149,14 +156,14 @@
 
     ptk/EffectEvent
     (effect [_ state stream]
-      (let [stoper  (rx/filter (ptk/type? ::initialize-history) stream)
+      (let [stopper (rx/filter (ptk/type? ::initialize-history) stream)
             history (:history state)
             router  (:router state)]
         (ts/schedule #(on-change router (.getToken ^js history)))
         (->> (rx/create (fn [subs]
-                           (let [key (e/listen history "navigate" (fn [o] (rx/push! subs (.-token ^js o))))]
-                             (fn []
-                               (bhistory/disable! history)
-                               (e/unlistenByKey key)))))
-              (rx/take-until stoper)
-              (rx/subs #(on-change router %)))))))
+                          (let [key (e/listen history "navigate" (fn [o] (rx/push! subs (.-token ^js o))))]
+                            (fn []
+                              (bhistory/disable! history)
+                              (e/unlistenByKey key)))))
+             (rx/take-until stopper)
+             (rx/subs! #(on-change router %)))))))

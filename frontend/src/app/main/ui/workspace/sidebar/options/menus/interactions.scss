@@ -1,0 +1,374 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.interactions-content {
+  display: flex;
+  flex-direction: column;
+  gap: $s-8;
+}
+
+.interaction-options {
+  @include flexColumn;
+}
+
+.add-interaction-btn {
+  @extend .button-tertiary;
+  height: $s-32;
+  width: $s-28;
+  svg {
+    @extend .button-icon;
+    stroke: var(--icon-foreground);
+  }
+}
+
+.help-content {
+  padding: $s-32 0;
+  width: $s-200;
+  margin: 0 auto;
+}
+
+.help-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: $s-40;
+  gap: $s-12;
+}
+
+.interactions-help-icon {
+  @include flexCenter;
+  width: $s-48;
+  height: $s-48;
+  border-radius: $br-circle;
+  background-color: var(--pill-background-color);
+  svg {
+    @extend .button-icon;
+    stroke: var(--icon-foreground);
+    height: $s-32;
+    width: $s-32;
+  }
+}
+
+.after {
+  @include bodySmallTypography;
+  margin-top: $s-1;
+}
+
+.interactions-help {
+  @include bodySmallTypography;
+  text-align: center;
+  color: var(--title-foreground-color);
+}
+
+.element-set {
+  @include flexColumn;
+}
+
+.add-flow-btn {
+  @extend .button-tertiary;
+  height: $s-32;
+  width: $s-28;
+  svg {
+    @extend .button-icon;
+  }
+}
+
+.interactions-info {
+  flex-grow: 1;
+  display: grid;
+}
+
+.trigger-name {
+  color: var(--color-foreground-primary);
+}
+
+.action-summary {
+  color: var(--color-foreground-secondary);
+  @include textEllipsis;
+}
+
+.groups {
+  @include flexColumn($s-12);
+}
+
+.element-set-options-group-open {
+  @include flexColumn;
+}
+
+.extended-options {
+  @include flexColumn;
+}
+
+.property-list {
+  list-style: none;
+  margin: 0;
+  display: grid;
+  row-gap: $s-16;
+  margin-block: calc(#{$s-16} - #{$s-4});
+}
+
+.property-row {
+  @extend .attr-row;
+  height: auto;
+  &.big-row {
+    height: 100%;
+  }
+  .interaction-name {
+    @include twoLineTextEllipsis;
+    @include bodySmallTypography;
+    padding-left: $s-4;
+    width: $s-92;
+    margin: auto 0;
+    grid-area: name;
+    color: var(--title-foreground-color);
+  }
+  .select-wrapper {
+    display: flex;
+    align-items: center;
+    grid-area: content;
+    .easing-select {
+      width: $s-156;
+      padding: 0 $s-8;
+      .dropdown-upwards {
+        bottom: $s-36;
+        width: $s-156;
+        top: unset;
+      }
+    }
+  }
+  .input-element-wrapper {
+    @extend .input-element;
+    grid-area: content;
+  }
+  .buttons-wrapper {
+    grid-area: content;
+    .right svg {
+      transform: rotate(-90deg);
+    }
+    .left svg {
+      transform: rotate(90deg);
+    }
+    .up svg {
+      transform: rotate(180deg);
+    }
+  }
+  .inputs-wrapper {
+    grid-area: content;
+    @include flexRow;
+    .radio-btn {
+      @extend .input-checkbox;
+    }
+  }
+}
+
+.position-btns-wrapper {
+  grid-area: content;
+  display: grid;
+  grid-template-areas:
+    "topleft top topright"
+    "left center right"
+    "bottomleft bottom bottomright";
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  width: $s-84;
+  height: $s-84;
+  border-radius: $br-8;
+  background-color: var(--color-background-tertiary);
+  .center-btn {
+    grid-area: center;
+  }
+  .top-left-btn {
+    grid-area: topleft;
+  }
+  .top-right-btn {
+    grid-area: topright;
+  }
+  .top-center-btn {
+    grid-area: top;
+  }
+  .bottom-left-btn {
+    grid-area: bottomleft;
+  }
+  .bottom-right-btn {
+    grid-area: bottomright;
+  }
+  .bottom-center-btn {
+    grid-area: bottom;
+  }
+}
+
+.direction-btn {
+  @extend .button-tertiary;
+  height: $s-28;
+  width: $s-28;
+
+  &.active {
+    @extend .button-icon-selected;
+  }
+}
+
+.checkbox-option {
+  @extend .input-checkbox;
+  grid-area: content;
+  line-height: 1.2;
+  label {
+    align-items: start;
+  }
+}
+
+.interactions-summary {
+  @extend .asset-element;
+  height: $s-44;
+  padding: 0;
+  gap: $s-8;
+
+  .remove-btn {
+    @extend .button-tertiary;
+    height: $s-32;
+    width: $s-28;
+    svg {
+      @extend .button-icon-small;
+    }
+  }
+}
+
+.extend-btn {
+  @extend .button-tertiary;
+  --button-tertiary-border-width: var(--expand-button-icon-border-width);
+  height: 100%;
+  width: $s-28;
+  border-end-end-radius: 0;
+  border-start-end-radius: 0;
+  padding: 0;
+  svg {
+    @extend .button-icon;
+  }
+  position: relative;
+  &:after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-inline-end: $s-1 solid var(--panel-background-color);
+  }
+  &.extended {
+    @extend .button-icon-selected;
+    --button-tertiary-border-width: var(--expand-button-icon-border-width-selected);
+  }
+}
+
+.corner-icon {
+  fill: none;
+  stroke: currentColor;
+  width: $s-12;
+  height: $s-12;
+}
+
+.flow-element {
+  @include flexRow;
+}
+
+.flow-info {
+  display: flex;
+  align-items: center;
+  gap: $s-2;
+  border-radius: $s-8;
+  background-color: var(--input-details-color);
+  height: $s-32;
+  width: 100%;
+  flex-grow: 1;
+}
+
+.flow-name-wrapper {
+  @include bodySmallTypography;
+  @include focusInput;
+  display: flex;
+  align-items: center;
+  gap: $s-4;
+  flex-grow: 1;
+  height: $s-32;
+  width: 100%;
+  border-radius: $br-8;
+  padding: 0;
+  margin-right: 0;
+  background-color: var(--input-background-color);
+  border: $s-1 solid var(--input-border-color);
+  color: var(--input-foreground-color);
+  .start-flow-btn {
+    @include buttonStyle;
+    height: $s-32;
+    width: $s-28;
+    padding: 0 $s-2 0 $s-8;
+    border-radius: $br-8 0 0 $br-8;
+    background-color: transparent;
+    svg {
+      @extend .button-icon;
+      stroke: var(--icon-foreground);
+      &:hover {
+        stroke: var(--input-foreground-color-active);
+      }
+    }
+  }
+
+  .flow-input {
+    @extend .input-base;
+    background-color: transparent;
+    height: $s-28;
+  }
+
+  .flow-input-wrapper {
+    @include bodySmallTypography;
+    display: flex;
+    align-items: center;
+    height: $s-28;
+    padding: 0;
+    width: 100%;
+    margin: 0;
+    flex-grow: 1;
+    background-color: transparent;
+    color: var(--input-foreground-color);
+    border-radius: $br-8;
+  }
+
+  &:hover {
+    background-color: var(--input-background-color-hover);
+    border: $s-1 solid var(--input-border-color-hover);
+    &:active {
+      background-color: var(--input-background-color-hover);
+      .flow-input-wrapper {
+        background-color: var(--input-background-color-hover);
+      }
+    }
+  }
+
+  &:focus,
+  &:focus-within {
+    background-color: var(--input-background-color-focus);
+    border: $s-1 solid var(--input-border-color-focus);
+    &:hover {
+      border: $s-1 solid var(--input-border-color-focus);
+    }
+  }
+
+  &.editing {
+    background-color: var(--input-background-color-active);
+    border: $s-1 solid var(--input-border-color-active);
+  }
+}
+
+.remove-flow-btn {
+  @extend .button-tertiary;
+  height: $s-32;
+  width: $s-28;
+  min-width: $s-28;
+  svg {
+    @extend .button-icon;
+  }
+}

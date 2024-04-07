@@ -8,9 +8,10 @@
   (:refer-clojure :exclude [update])
   (:require
    [app.common.uuid :as uuid]
+   [app.main.data.events :as ev]
    [app.main.store :as st]
    [cljs.core :as c]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (defonce components (atom {}))
 
@@ -23,9 +24,11 @@
    (show (uuid/next) type props))
   ([id type props]
    (ptk/reify ::show-modal
-     IDeref
-     (-deref [_]
-       (merge (dissoc props :type) {:name type}))
+     ev/Event
+     (-data [_]
+       (-> props
+           (dissoc :type)
+           (assoc :name type)))
 
      ptk/UpdateEvent
      (update [_ state]

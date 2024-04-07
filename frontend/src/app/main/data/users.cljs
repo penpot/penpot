@@ -16,26 +16,29 @@
    [app.main.data.events :as ev]
    [app.main.data.media :as di]
    [app.main.data.websocket :as ws]
+   [app.main.features :as features]
    [app.main.repo :as rp]
    [app.util.i18n :as i18n]
    [app.util.router :as rt]
    [app.util.storage :refer [storage]]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 ;; --- SCHEMAS
 
-(def schema:profile
-  [:map {:title "Profile"}
-   [:id ::sm/uuid]
-   [:created-at {:optional true} :any]
-   [:fullname {:optional true} :string]
-   [:email {:optional true} :string]
-   [:lang {:optional true} :string]
-   [:theme {:optional true} :string]])
+(def ^:private
+  schema:profile
+  (sm/define
+    [:map {:title "Profile"}
+     [:id ::sm/uuid]
+     [:created-at {:optional true} :any]
+     [:fullname {:optional true} :string]
+     [:email {:optional true} :string]
+     [:lang {:optional true} :string]
+     [:theme {:optional true} :string]]))
 
-(def profile?
-  (sm/pred-fn schema:profile))
+(def check-profile!
+  (sm/check-fn schema:profile))
 
 ;; --- HELPERS
 
@@ -50,27 +53,28 @@
 
 (defn set-current-team!
   [team-id]
-  (swap! storage assoc ::current-team-id team-id))
+  (if (nil? team-id)
+    (swap! storage dissoc ::current-team-id)
+    (swap! storage assoc ::current-team-id team-id)))
 
 ;; --- EVENT: fetch-teams
 
 (defn teams-fetched
   [teams]
-  (let [teams (d/index-by :id teams)
-        ids   (into #{} (keys teams))]
+  (ptk/reify ::teams-fetched
+    IDeref
+    (-deref [_] teams)
 
-    (ptk/reify ::teams-fetched
-      IDeref
-      (-deref [_] teams)
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state :teams (d/index-by :id teams)))
 
-      ptk/UpdateEvent
-      (update [_ state]
-        (assoc state :teams teams))
+    ptk/EffectEvent
+    (effect [_ _ _]
+      ;; Check if current team-id is part of available teams
+      ;; if not, dissoc it from storage.
 
-      ptk/EffectEvent
-      (effect [_ _ _]
-        ;; Check if current team-id is part of available teams
-        ;; if not, dissoc it from storage.
+      (let [ids (into #{} (map :id) teams)]
         (when-let [ctid (::current-team-id @storage)]
           (when-not (contains? ids ctid)
             (swap! storage dissoc ::current-team-id)))))))
@@ -82,6 +86,23 @@
     (watch [_ _ _]
       (->> (rp/cmd! :get-teams)
            (rx/map teams-fetched)))))
+
+(defn set-current-team
+  [team]
+  (ptk/reify ::set-current-team
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc :team team)
+          (assoc :current-team-id (:id team))))
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (features/initialize (:features team #{}))))
+
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (set-current-team! (:id team)))))
 
 ;; --- EVENT: fetch-profile
 
@@ -112,8 +133,8 @@
         (when profile
           (swap! storage assoc :profile profile)
           (i18n/set-locale! (:lang profile))
-        (when (not= previous-email email)
-          (swap! storage dissoc ::current-team-id)))))))
+          (when (not= previous-email email)
+            (set-current-team! nil)))))))
 
 (defn fetch-profile
   []
@@ -140,8 +161,16 @@
                 (rt/nav' :dashboard-projects {:team-id team-id}))))]
 
     (ptk/reify ::logged-in
-      IDeref
-      (-deref [_] profile)
+      ev/Event
+      (-data [_]
+        {::ev/name "signing"
+         ::ev/type "identify"
+         :email (:email profile)
+         :auth-backend (:auth-backend profile)
+         :fullname (:fullname profile)
+         :is-muted (:is-muted profile)
+         :default-team-id (:default-team-id profile)
+         :default-project-id (:default-project-id profile)})
 
       ptk/WatchEvent
       (watch [_ _ _]
@@ -208,9 +237,14 @@
   (ptk/reify ::login-from-token
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (logged-in
-              (with-meta profile
-                {::ev/source "login-with-token"}))))))
+      (->> (rx/of (logged-in (with-meta profile {::ev/source "login-with-token"})))
+           ;; NOTE: we need this to be asynchronous because the effect
+           ;; should be called before proceed with the login process
+           (rx/observe-on :async)))
+
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (set-current-team! nil))))
 
 (defn login-from-register
   "Event used mainly for mark current session as logged-in in after the
@@ -255,12 +289,16 @@
      (effect [_ _ _]
        ;; We prefer to keek some stuff in the storage like the current-team-id and the profile
        (swap! storage dissoc :redirect-url)
+       (set-current-team! nil)
        (i18n/reset-locale)))))
 
 (defn logout
   ([] (logout {}))
   ([params]
    (ptk/reify ::logout
+     ev/Event
+     (-data [_] {})
+
      ptk/WatchEvent
      (watch [_ _ _]
        (->> (rp/cmd! :logout)
@@ -270,28 +308,62 @@
 
 ;; --- Update Profile
 
-(defn update-profile
-  [data]
-  (dm/assert! (profile? data))
-  (ptk/reify ::update-profile
+(defn persist-profile
+  [& {:as opts}]
+  (ptk/reify ::persist-profile
     ptk/WatchEvent
-    (watch [_ _ stream]
-      (let [mdata      (meta data)
-            on-success (:on-success mdata identity)
-            on-error   (:on-error mdata rx/throw)]
-        (->> (rp/cmd! :update-profile (dissoc data :props))
-             (rx/mapcat
-              (fn [_]
-                (rx/merge
-                 (->> stream
-                      (rx/filter (ptk/type? ::profile-fetched))
-                      (rx/take 1)
-                      (rx/tap on-success)
-                      (rx/ignore))
-                 (rx/of (profile-fetched data)))))
+    (watch [_ state _]
+      (let [on-success (:on-success opts identity)
+            on-error   (:on-error opts rx/throw)
+            profile    (:profile state)]
+
+        (->> (rp/cmd! :update-profile (dissoc profile :props))
+             (rx/tap on-success)
              (rx/catch on-error))))))
 
+(defn update-profile
+  [data]
+  (dm/assert!
+   "expected valid profile data"
+   (check-profile! data))
 
+  (ptk/reify ::update-profile
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [data     (dissoc data :props)
+            profile  (:profile state)
+            profile' (d/deep-merge profile data)]
+
+        (rx/concat
+         (rx/of #(assoc % :profile profile'))
+
+         (when (not= (:theme profile) (:theme profile'))
+           (rx/of (ptk/data-event ::ev/event
+                                  {::ev/name "activate-theme"
+                                   ::ev/origin "settings"
+                                   :theme (:theme profile')}))))))))
+
+;; --- Toggle Theme
+
+(defn toggle-theme
+  []
+  (ptk/reify ::toggle-theme
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:profile :theme]
+                 (fn [current]
+                   (if (= current "default")
+                     "light"
+                     "default"))))
+
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [profile (get state :profile)
+            origin  (::ev/origin (meta it))]
+        (rx/of (ptk/data-event ::ev/event {:theme (:theme profile)
+                                           ::ev/name "activate-theme"
+                                           ::ev/origin origin})
+               (persist-profile))))))
 
 ;; --- Request Email Change
 
@@ -299,6 +371,10 @@
   [{:keys [email] :as data}]
   (dm/assert! ::us/email email)
   (ptk/reify ::request-email-change
+    ev/Event
+    (-data [_]
+      {:email email})
+
     ptk/WatchEvent
     (watch [_ _ _]
       (let [{:keys [on-error on-success]
@@ -326,10 +402,17 @@
    ;; Social registered users don't have old-password
    [:password-old {:optional true} [:maybe :string]]])
 
+
 (defn update-password
   [data]
-  (dm/assert! (sm/valid? schema:update-password data))
+  (dm/assert!
+   "expected valid parameters"
+   (sm/check! schema:update-password data))
+
   (ptk/reify ::update-password
+    ev/Event
+    (-data [_] {})
+
     ptk/WatchEvent
     (watch [_ _ _]
       (let [{:keys [on-error on-success]
@@ -384,7 +467,6 @@
         (->> (rp/cmd! :update-profile-props {:props props})
              (rx/map (constantly (fetch-profile))))))))
 
-
 ;; --- Update Photo
 
 (defn update-photo
@@ -394,6 +476,9 @@
    (di/blob? file))
 
   (ptk/reify ::update-photo
+    ev/Event
+    (-data [_] {})
+
     ptk/WatchEvent
     (watch [_ _ _]
       (let [on-success di/notify-finished-loading
@@ -409,7 +494,7 @@
              (rx/map di/validate-file)
              (rx/map prepare)
              (rx/mapcat #(rp/cmd! :update-profile-photo %))
-             (rx/do on-success)
+             (rx/tap on-success)
              (rx/map (constantly (fetch-profile)))
              (rx/catch on-error))))))
 
@@ -459,14 +544,19 @@
 
 ;; --- EVENT: request-profile-recovery
 
-(def schema:request-profile-recovery
-  [:map {:closed true}
-   [:email ::sm/email]])
+(def ^:private
+  schema:request-profile-recovery
+  (sm/define
+    [:map {:title "request-profile-recovery" :closed true}
+     [:email ::sm/email]]))
 
-;; FIXME: check if we can use schema for proper filter
 (defn request-profile-recovery
   [data]
-  (dm/assert! (sm/valid? schema:request-profile-recovery data))
+
+  (dm/assert!
+   "expected valid parameters"
+   (sm/check! schema:request-profile-recovery data))
+
   (ptk/reify ::request-profile-recovery
     ptk/WatchEvent
     (watch [_ _ _]
@@ -480,14 +570,19 @@
 
 ;; --- EVENT: recover-profile (Password)
 
-(def schema:recover-profile
-  [:map {:closed true}
-   [:password :string]
-   [:token :string]])
+(def ^:private
+  schema:recover-profile
+  (sm/define
+    [:map {:title "recover-profile" :closed true}
+     [:password :string]
+     [:token :string]]))
 
 (defn recover-profile
   [data]
-  (dm/assert! (sm/valid? schema:recover-profile data))
+  (dm/assert!
+   "expected valid arguments"
+   (sm/check! schema:recover-profile data))
+
   (ptk/reify ::recover-profile
     ptk/WatchEvent
     (watch [_ _ _]

@@ -5,74 +5,107 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.sidebar.options.menus.align
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
+   [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
 (mf/defc align-options
   []
-  (let [selected (mf/deref refs/selected-shapes)
-
+  (let [selected            (mf/deref refs/selected-shapes)
         ;; don't need to watch objects, only read the value
-        objects  (deref refs/workspace-page-objects)
+        objects             (deref refs/workspace-page-objects)
 
-        disabled (not (dw/can-align? selected objects))
+        disabled-align      (not (dw/can-align? selected objects))
+        disabled-distribute (not (dw/can-distribute? selected))
 
-        disabled-distribute (not(dw/can-distribute? selected))]
+        align-objects
+        (mf/use-fn
+         (fn [event]
+           (let [value (-> (dom/get-current-target event)
+                           (dom/get-data "value")
+                           (keyword))]
+             (st/emit! (dw/align-objects value)))))
 
-    [:div.align-options
-     [:div.align-group
-      [:div.align-button.tooltip.tooltip-bottom
-       {:alt (tr "workspace.align.hleft" (sc/get-tooltip :align-left))
-        :class (when disabled "disabled")
-        :on-click #(st/emit! (dw/align-objects :hleft))}
-       i/shape-halign-left]
+        distribute-objects
+        (mf/use-fn
+         (fn [event]
+           (let [value (-> (dom/get-current-target event)
+                           (dom/get-data "value")
+                           (keyword))]
+             (st/emit! (dw/distribute-objects value)))))]
 
-      [:div.align-button.tooltip.tooltip-bottom
-       {:alt (tr "workspace.align.hcenter" (sc/get-tooltip :align-hcenter))
-        :class (when disabled "disabled")
-        :on-click  #(st/emit! (dw/align-objects :hcenter))}
-       i/shape-halign-center]
+    (when (not  (and disabled-align disabled-distribute))
+      [:div {:class (stl/css :align-options)}
+       [:div {:class (stl/css :align-group)}
+        [:button {:class (stl/css-case :align-button true
+                                       :disabled disabled-align)
+                  :disabled disabled-align
+                  :title (tr "workspace.align.hleft" (sc/get-tooltip :align-left))
+                  :data-value "hleft"
+                  :on-click align-objects}
+         i/align-left]
 
-      [:div.align-button.tooltip.tooltip-bottom
-       {:alt (tr "workspace.align.hright" (sc/get-tooltip :align-right))
-        :class (when disabled "disabled")
-        :on-click  #(st/emit! (dw/align-objects :hright))}
-       i/shape-halign-right]
+        [:button {:class (stl/css-case :align-button true
+                                       :disabled disabled-align)
+                  :disabled disabled-align
+                  :title (tr "workspace.align.hcenter" (sc/get-tooltip :align-hcenter))
+                  :data-value "hcenter"
+                  :on-click align-objects}
+         i/align-horizontal-center]
 
-      [:div.align-button.tooltip.tooltip-bottom
-       {:alt (tr "workspace.align.hdistribute" (sc/get-tooltip :h-distribute))
-        :class (when disabled-distribute "disabled")
-        :on-click #(st/emit! (dw/distribute-objects :horizontal))}
-       i/shape-hdistribute]]
+        [:button {:class (stl/css-case :align-button true
+                                       :disabled disabled-align)
+                  :disabled disabled-align
+                  :title (tr "workspace.align.hright" (sc/get-tooltip :align-right))
+                  :data-value "hright"
+                  :on-click align-objects}
+         i/align-right]
 
-     [:div.align-group
-      [:div.align-button.tooltip.tooltip-bottom-left
-       {:alt (tr "workspace.align.vtop" (sc/get-tooltip :align-top))
-        :class (when disabled "disabled")
-        :on-click  #(st/emit! (dw/align-objects :vtop))}
-       i/shape-valign-top]
+        [:button {:class (stl/css-case :align-button true
+                                       :disabled disabled-distribute)
+                  :disabled disabled-distribute
+                  :title (tr "workspace.align.hdistribute" (sc/get-tooltip :h-distribute))
+                  :data-value "horizontal"
+                  :on-click distribute-objects}
+         i/distribute-horizontally]]
 
-      [:div.align-button.tooltip.tooltip-bottom-left
-       {:alt (tr "workspace.align.vcenter" (sc/get-tooltip :align-vcenter))
-        :class (when disabled "disabled")
-        :on-click  #(st/emit! (dw/align-objects :vcenter))}
-       i/shape-valign-center]
+       [:div {:class (stl/css :align-group)}
+        [:button {:class (stl/css-case :align-button true
+                                       :disabled disabled-align)
+                  :disabled disabled-align
+                  :title (tr "workspace.align.vtop" (sc/get-tooltip :align-top))
+                  :data-value "vtop"
+                  :on-click  align-objects}
+         i/align-top]
 
-      [:div.align-button.tooltip.tooltip-bottom-left
-       {:alt (tr "workspace.align.vbottom" (sc/get-tooltip :align-bottom))
-        :class (when disabled "disabled")
-        :on-click  #(st/emit! (dw/align-objects :vbottom))}
-       i/shape-valign-bottom]
+        [:button {:class (stl/css-case :align-button true
+                                       :disabled disabled-align)
+                  :disabled disabled-align
+                  :title (tr "workspace.align.vcenter" (sc/get-tooltip :align-vcenter))
+                  :data-value "vcenter"
+                  :on-click  align-objects}
+         i/align-vertical-center]
 
-      [:div.align-button.tooltip.tooltip-bottom-left
-       {:alt (tr "workspace.align.vdistribute" (sc/get-tooltip :v-distribute))
-        :class (when disabled-distribute "disabled")
-        :on-click #(st/emit! (dw/distribute-objects :vertical))}
-       i/shape-vdistribute]]]))
+        [:button {:class (stl/css-case :align-button true
+                                       :disabled disabled-align)
+                  :disabled disabled-align
+                  :title (tr "workspace.align.vbottom" (sc/get-tooltip :align-bottom))
+                  :data-value "vbottom"
+                  :on-click  align-objects}
+         i/align-bottom]
+
+        [:button {:title (tr "workspace.align.vdistribute" (sc/get-tooltip :v-distribute))
+                  :class (stl/css-case :align-button true
+                                       :disabled disabled-distribute)
+                  :disabled disabled-distribute
+                  :data-value "vertical"
+                  :on-click distribute-objects}
+         i/distribute-vertical-spacing]]])))
 

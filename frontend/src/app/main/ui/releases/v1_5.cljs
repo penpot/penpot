@@ -12,10 +12,10 @@
 (defmethod c/render-release-notes "1.5"
   [{:keys [slide klass next finish navigate version]}]
   (mf/html
-   (case @slide
+   (case slide
      :start
      [:div.modal-overlay
-      [:div.animated {:class @klass}
+      [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
          [:img {:src "images/login-on.jpg" :border "0" :alt "What's new Alpha release 1.5.0"}]]
@@ -33,7 +33,7 @@
 
      0
      [:div.modal-overlay
-      [:div.animated {:class @klass}
+      [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
          [:img {:src "images/features/path-tool.gif" :border "0" :alt "New path tool"}]]
@@ -46,13 +46,13 @@
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
           [:& c/navigation-bullets
-           {:slide @slide
+           {:slide slide
             :navigate navigate
             :total 3}]]]]]]
 
      1
      [:div.modal-overlay
-      [:div.animated {:class @klass}
+      [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
          [:img {:src "images/features/assets-organiz.gif" :border "0" :alt "Manage libraries"}]]
@@ -65,13 +65,13 @@
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
           [:& c/navigation-bullets
-           {:slide @slide
+           {:slide slide
             :navigate navigate
             :total 3}]]]]]]
 
      2
      [:div.modal-overlay
-      [:div.animated {:class @klass}
+      [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
          [:img {:src "images/features/smart-inputs.gif" :border "0" :alt "Smart inputs"}]]
@@ -84,7 +84,7 @@
          [:div.modal-navigation
           [:button.btn-secondary {:on-click finish} "Start!"]
           [:& c/navigation-bullets
-           {:slide @slide
+           {:slide slide
             :navigate navigate
             :total 3}]]]]]])))
 

@@ -51,4 +51,6 @@
   (->> (ctc/get-all-colors shape)
        (keep #(get-ref-color (:data library) %))
        (remove #(< (:modified-at %) since-date))  ;; Note that :modified-at may be nil
-       (map #(vector (:id shape) (:id %) :color))))
+       (map (fn [color] {:shape-id (:id shape)
+                         :asset-id (:id color)
+                         :asset-type :color}))))

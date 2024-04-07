@@ -6,7 +6,7 @@
 
 (ns app.common.types.shape.radius
   (:require
-    [app.common.pages.common :refer [editable-attrs]]))
+   [app.common.types.shape.attrs :refer [editable-attrs]]))
 
 ;; There are some shapes that admit border radius, as rectangles
 ;; frames and images. Those shapes may define the radius of the corners in two modes:
@@ -51,19 +51,14 @@
 (defn switch-to-radius-1
   [shape]
   (let [r (if (all-equal? shape) (:r1 shape) 0)]
-    (cond-> shape
-      (:r1 shape)
-      (-> (assoc :rx r :ry r)
-          (dissoc :r1 :r2 :r3 :r4)))))
+    (-> shape
+        (assoc :rx r :ry r)
+        (dissoc :r1 :r2 :r3 :r4))))
 
 (defn switch-to-radius-4
   [shape]
-  (cond-> shape
-    (:rx shape)
-    (-> (assoc :r1 (:rx shape)
-               :r2 (:rx shape)
-               :r3 (:rx shape)
-               :r4 (:rx shape))
+  (let [rx (:rx shape 0)]
+    (-> (assoc shape :r1 rx :r2 rx :r3 rx :r4 rx)
         (dissoc :rx :ry))))
 
 (defn set-radius-1

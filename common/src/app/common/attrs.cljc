@@ -6,8 +6,9 @@
 
 (ns app.common.attrs
   (:require
-    [app.common.geom.shapes.transforms :as gtr]
-    [app.common.math :as mth]))
+   [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
+   [app.common.text :as txt]))
 
 (defn- get-attr
   [obj attr]
@@ -24,7 +25,8 @@
         value
         (if-let [points (:points obj)]
           (if (not= points :multiple)
-            (let [rect (gtr/selection-rect [obj])]
+            ;; FIXME: consider using gsh/shape->rect ??
+            (let [rect (gsh/shapes->rect [obj])]
               (if (= attr :ox) (:x rect) (:y rect)))
             :multiple)
           (get obj attr ::unset)))
@@ -112,3 +114,15 @@
 
        (persistent! result)))))
 
+(defn get-text-attrs-multi
+  "Gets the multi attributes for a text shape. Splits the content by type and gets the attributes depending
+  on the node type"
+  [{:keys [content]} defaults attrs]
+  (let [root-attrs (->> attrs (filter (set txt/root-attrs)))
+        paragraph-attrs (->> attrs (filter (set txt/paragraph-attrs)))
+        text-node-attrs (->> attrs (filter (set txt/text-node-attrs)))]
+    (merge
+     defaults
+     (get-attrs-multi (->> (txt/node-seq txt/is-root-node? content)) root-attrs)
+     (get-attrs-multi (->> (txt/node-seq txt/is-paragraph-node? content)) paragraph-attrs)
+     (get-attrs-multi (->> (txt/node-seq txt/is-text-node? content)) text-node-attrs))))

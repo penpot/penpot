@@ -44,11 +44,16 @@ def send_eval(expr):
         s.send(b":repl/quit\n\n")
 
         with s.makefile() as f:
-            result = json.load(f)
-            tag = result.get("tag", None)
-            if tag != "ret":
-                raise RuntimeError("unexpected response from PREPL")
-            return result.get("val", None), result.get("exception", None)
+            while True:
+                line = f.readline()
+                result = json.loads(line)
+                tag = result.get("tag", None)
+                if tag == "ret":
+                    return result.get("val", None), result.get("exception", None)
+                elif tag == "out":
+                    print(result.get("val"), end="")
+                else:
+                    raise RuntimeError("unexpected response from PREPL")
 
 def encode(val):
     return json.dumps(json.dumps(val))
@@ -60,7 +65,7 @@ def print_error(res):
 
 def run_cmd(params):
     try:
-        expr = "(app.srepl.ext/run-json-cmd {})".format(encode(params))
+        expr = "(app.srepl.cli/exec {})".format(encode(params))
         res, failed = send_eval(expr)
         if failed:
             print_error(res)
@@ -140,12 +145,22 @@ def derive_password(password):
     res = run_cmd(params)
     print(f"Derived password: \"{res}\"")
 
+
+def migrate_components_v2():
+    params = {
+        "cmd": "migrate-v2",
+        "params": {}
+    }
+
+    run_cmd(params)
+
 available_commands = (
     "create-profile",
     "update-profile",
     "delete-profile",
     "search-profile",
     "derive-password",
+    "migrate-components-v2",
 )
 
 parser = argparse.ArgumentParser(
@@ -217,3 +232,8 @@ elif args.action == "search-profile":
         email = input("Email: ")
 
     search_profile(email)
+
+elif args.action == "migrate-components-v2":
+    migrate_components_v2()
+
+

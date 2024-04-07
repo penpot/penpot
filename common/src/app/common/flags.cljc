@@ -33,5 +33,3 @@
 
             :else
             (recur (rest flags) result)))))))
-
-

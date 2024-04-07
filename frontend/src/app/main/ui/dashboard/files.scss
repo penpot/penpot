@@ -1,0 +1,37 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "common/refactor/common-refactor.scss" as *;
+@use "common/refactor/common-dashboard";
+
+.dashboard-container {
+  flex: 1 0 0;
+  margin-right: $s-16;
+  overflow-y: auto;
+  width: 100%;
+  border-top: $s-1 solid $db-quaternary;
+
+  &.dashboard-projects {
+    user-select: none;
+  }
+  &.dashboard-shared {
+    width: calc(100vw - $s-320);
+    margin-right: $s-52;
+  }
+
+  &.search {
+    margin-top: $s-12;
+  }
+}
+
+.new-file {
+  margin-inline-end: $s-8;
+}
+
+.menu-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
+}

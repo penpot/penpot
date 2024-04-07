@@ -6,16 +6,16 @@
 
 (ns app.main.data.workspace.path.tools
   (:require
-   [app.common.path.shapes-to-path :as upsp]
-   [app.common.path.subpaths :as ups]
+   [app.common.svg.path.shapes-to-path :as upsp]
+   [app.common.svg.path.subpath :as ups]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.path.changes :as changes]
    [app.main.data.workspace.path.state :as st]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.util.path.tools :as upt]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 (defn process-path-tool
   "Generic function that executes path transformations with the content and selected nodes"
@@ -40,7 +40,7 @@
               (rx/of (dch/update-shapes [id] upsp/convert-to-path))
               (rx/of (dch/commit-changes changes)
                      (when (empty? new-content)
-                       dwe/clear-edition-mode))))))))))
+                       (dwe/clear-edition-mode)))))))))))
 
 (defn make-corner
   ([]

@@ -6,13 +6,13 @@
 
 (ns common-tests.types-test
   (:require
-   [clojure.test :as t]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
    [app.common.transit :as transit]
-   [app.common.types.shape :as cts]
+   [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
-   [app.common.types.file :as ctf]))
+   [app.common.types.shape :as cts]
+   [clojure.test :as t]))
 
 (t/deftest transit-encode-decode-with-shape
   (sg/check!
@@ -24,7 +24,8 @@
 (t/deftest types-shape-spec
   (sg/check!
    (sg/for [fdata (sg/generator ::cts/shape)]
-     (t/is (sm/validate ::cts/shape fdata)))))
+     (binding [app.common.data.macros/*assert-context* true]
+       (t/is (sm/validate ::cts/shape fdata))))))
 
 (t/deftest types-page-spec
   (-> (sg/for [fdata (sg/generator ::ctp/page)]

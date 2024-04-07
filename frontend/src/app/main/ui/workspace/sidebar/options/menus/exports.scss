@@ -1,0 +1,102 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.element-set {
+  margin: 0;
+}
+
+.title-spacing-export {
+  padding-left: $s-2;
+  margin: 0;
+}
+
+.add-export {
+  @extend .button-tertiary;
+  height: $s-32;
+  width: $s-28;
+  svg {
+    @extend .button-icon;
+  }
+}
+
+.element-set-content {
+  @include flexColumn;
+  margin: $s-4 0 $s-8 0;
+}
+
+.multiple-exports {
+  @include flexRow;
+  .label {
+    @extend .mixed-bar;
+  }
+  .actions {
+    @include flexRow;
+    .action-btn {
+      @extend .button-tertiary;
+      height: $s-32;
+      width: $s-28;
+      svg {
+        @extend .button-icon;
+      }
+    }
+  }
+}
+
+.element-group {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  column-gap: $s-4;
+
+  .action-btn {
+    @extend .button-tertiary;
+    height: $s-32;
+    width: $s-28;
+    svg {
+      @extend .button-icon;
+    }
+  }
+}
+
+.input-wrapper {
+  grid-column: span 7;
+  display: grid;
+  grid-template-columns: subgrid;
+}
+
+.format-select {
+  grid-column: span 2;
+  padding: 0;
+
+  .dropdown-upwards {
+    bottom: $s-36;
+    width: $s-80;
+    top: unset;
+  }
+}
+
+.size-select {
+  grid-column: span 2;
+  padding: 0;
+  .dropdown-upwards {
+    bottom: $s-36;
+    top: unset;
+    width: $s-80;
+  }
+}
+
+.suffix-input {
+  grid-column: span 3;
+  @extend .input-element;
+}
+
+.export-btn {
+  @extend .button-secondary;
+  @include uppercaseTitleTipography;
+  height: $s-32;
+  width: $s-252;
+}

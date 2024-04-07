@@ -7,9 +7,10 @@
 (ns app.main.data.workspace.edition
   (:require
    [app.common.data.macros :as dm]
+   [app.main.data.workspace.path.common :as dwpc]
    [app.main.data.workspace.state-helpers :as wsh]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 (defn interrupt? [e] (= e :interrupt))
 
@@ -26,7 +27,8 @@
         (if (contains? objects id)
           (-> state
               (assoc-in [:workspace-local :selected] #{id})
-              (assoc-in [:workspace-local :edition] id))
+              (assoc-in [:workspace-local :edition] id)
+              (dissoc :workspace-grid-edition))
           state)))
 
     ptk/WatchEvent
@@ -34,14 +36,23 @@
       (->> stream
            (rx/filter interrupt?)
            (rx/take 1)
-           (rx/map (constantly clear-edition-mode))))))
+           (rx/map clear-edition-mode)))))
 
 ;; If these event change modules review /src/app/main/data/workspace/path/undo.cljs
-(def clear-edition-mode
+(defn clear-edition-mode
+  []
   (ptk/reify ::clear-edition-mode
     ptk/UpdateEvent
     (update [_ state]
+      (-> state
+          (update :workspace-local dissoc :edition)
+          (update :workspace-drawing dissoc :tool :object :lock)
+          (dissoc :workspace-grid-edition)))
+
+    ptk/WatchEvent
+    (watch [_ state _]
       (let [id (get-in state [:workspace-local :edition])]
-        (-> state
-            (update :workspace-local dissoc :edition)
-            (cond-> (some? id) (update-in [:workspace-local :edit-path] dissoc id)))))))
+        (rx/concat
+         (when (some? id)
+           (dwpc/finish-path)))))))
+

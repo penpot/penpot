@@ -10,7 +10,7 @@
   position: relative;
   visibility: hidden;
   opacity: $op-0;
-  z-index: $z-index-2;
+  z-index: $z-index-4;
 
   &.is-open {
     position: relative;
@@ -23,6 +23,7 @@
   }
 
   .context-menu-items {
+    @include menuShadow;
     position: absolute;
     top: $s-12;
     left: calc(-1 * $s-6);
@@ -31,8 +32,8 @@
     margin: $s-0;
     padding: $s-4;
     border-radius: $br-8;
+    border: $s-2 solid var(--panel-border-color);
     background-color: var(--menu-background-color);
-    box-shadow: 0px 0px $s-12 0px var(--menu-shadow-color);
     overflow: auto;
     & .separator {
       height: $s-12;
@@ -45,7 +46,7 @@
     .context-menu-item {
       display: flex;
       .context-menu-action {
-        @include titleTipography;
+        @include bodySmallTypography;
         display: flex;
         align-items: center;
         justify-content: flex-start;
@@ -72,6 +73,9 @@
           display: flex;
           align-items: center;
           font-weight: $fw700;
+          background: none;
+          border: none;
+          cursor: pointer;
           .submenu-icon-back svg {
             @extend .button-icon-small;
             stroke: var(--menu-foreground-color);
@@ -82,12 +86,12 @@
       &:hover .context-menu-action {
         background-color: var(--menu-background-color-hover);
         text-decoration: none;
-        color: var(--menu-foreground-color-hover);
+        color: var(--menu-foreground-color);
         &.submenu .submenu-icon svg {
-          stroke: var(--menu-foreground-color-hover);
+          stroke: var(--menu-foreground-color);
         }
         &.submenu-back .submenu-icon-back svg {
-          stroke: var(--menu-foreground-color-hover);
+          stroke: var(--menu-foreground-color);
         }
       }
       &:focus {
@@ -105,6 +109,21 @@
           }
 
           &.submenu-back .submenu-icon-back svg {
+            stroke: var(--menu-foreground-color-focus);
+          }
+        }
+      }
+      &.selected {
+        .context-menu-action {
+          justify-content: space-between;
+          color: var(--menu-foreground-color-focus);
+        }
+        .selected-icon {
+          @extend .button-tag;
+          border-radius: $br-8;
+          height: 100%;
+          svg {
+            @extend .button-icon-small;
             stroke: var(--menu-foreground-color-focus);
           }
         }

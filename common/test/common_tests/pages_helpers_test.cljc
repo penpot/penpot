@@ -6,14 +6,14 @@
 
 (ns common-tests.pages-helpers-test
   (:require
-   [clojure.test :as t]
+   [app.common.files.helpers :as cfh]
    [clojure.pprint :refer [pprint]]
-   [app.common.pages.helpers :as cph]))
+   [clojure.test :as t]))
 
 (t/deftest parse-path-name
-  (t/is (= ["foo" "bar"] (cph/parse-path-name "foo/bar")))
-  (t/is (= ["" "foo"] (cph/parse-path-name "foo")))
-  (t/is (= ["" "foo"] (cph/parse-path-name "/foo")))
-  (t/is (= ["" ""] (cph/parse-path-name "")))
-  (t/is (= ["" ""] (cph/parse-path-name nil))))
+  (t/is (= ["foo" "bar"] (cfh/parse-path-name "foo/bar")))
+  (t/is (= ["" "foo"] (cfh/parse-path-name "foo")))
+  (t/is (= ["" "foo"] (cfh/parse-path-name "/foo")))
+  (t/is (= ["" ""] (cfh/parse-path-name "")))
+  (t/is (= ["" ""] (cfh/parse-path-name nil))))
 

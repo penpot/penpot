@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.text-palette
-  (:require-macros [app.main.style :refer [css]])
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.main.data.workspace.texts :as dwt]
@@ -14,7 +14,6 @@
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
-   [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.object :as obj]
    [cuerdas.core :as str]
@@ -42,11 +41,11 @@
                        :attrs attrs}))
                    selected-ids))))]
     [:div {:on-click handle-click
-           :class (dom/classnames (css :typography-item) true
-                                  (css :mid-item) (<= size 72)
-                                  (css :small-item) (<= size 64))}
+           :class (stl/css-case :typography-item true
+                                :mid-item (<= size 72)
+                                :small-item (<= size 64))}
      [:div
-      {:class (dom/classnames (css :typography-name) true)
+      {:class (stl/css :typography-name)
        :title (:name typography)
        :style {:font-family (:font-family typography)
                :font-weight (:font-weight typography)
@@ -54,9 +53,9 @@
       (:name typography)]
      (when-not name-only?
        [:*
-        [:div {:class (dom/classnames (css :typography-font) true)}
+        [:div {:class (stl/css :typography-font)}
          (:name font-data)]
-        [:div {:class (dom/classnames (css :typography-data) true)}
+        [:div {:class (stl/css :typography-data)}
          (str (:font-size typography) "px | " (:name variant-data))]])]))
 
 (mf/defc palette
@@ -132,26 +131,25 @@
       (when (not= 0 (:offset @state))
         (swap! state assoc :offset 0)))
 
-    [:div {:class (dom/classnames (css :text-palette) true)
+    [:div {:class (stl/css :text-palette)
            :style #js {"--height" (str size "px")}}
-     
      (when show-arrows?
-       [:button {:class (dom/classnames (css :left-arrow) true)
+       [:button {:class (stl/css :left-arrow)
                  :disabled (= offset 0)
-                 :on-click on-left-arrow-click} i/arrow-refactor])
+                 :on-click on-left-arrow-click} i/arrow])
 
-     [:div {:class (dom/classnames (css :text-palette-content) true)
+     [:div {:class (stl/css :text-palette-content)
             :ref container
             :on-wheel on-wheel}
       (if (empty? current-typographies)
-        [:div {:class (dom/classnames (css :text-palette-empty) true)
+        [:div {:class (stl/css :text-palette-empty)
                :style {:position "absolute"
                        :left "50%"
                        :top "50%"
                        :transform "translate(-50%, -50%)"}}
          (tr "workspace.libraries.colors.empty-typography-palette")]
         [:div
-         {:class (dom/classnames  (css :text-palette-inside) true)
+         {:class (stl/css :text-palette-inside)
           :style {:position "relative"
                   :max-width (str width "px")
                   :right (str (* offset-step offset) "px")}}
@@ -164,9 +162,9 @@
              :size size}])])]
 
      (when show-arrows?
-       [:button {:class (dom/classnames (css :right-arrow) true)
+       [:button {:class (stl/css :right-arrow)
                  :disabled (= offset max-offset)
-                 :on-click on-right-arrow-click} i/arrow-refactor])]))
+                 :on-click on-right-arrow-click} i/arrow])]))
 
 (mf/defc text-palette
   {::mf/wrap [mf/memo]}

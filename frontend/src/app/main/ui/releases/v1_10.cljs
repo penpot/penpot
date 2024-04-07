@@ -13,7 +13,7 @@
   [{:keys [klass finish version]}]
   (mf/html
    [:div.modal-overlay
-    [:div.animated {:class @klass}
+    [:div.animated {:class klass}
      [:div.modal-container.onboarding.feature
       [:div.modal-left
        [:img {:src "images/beta-on.jpg" :border "0" :alt "Penpot is now BETA"}]]

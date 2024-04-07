@@ -4,56 +4,249 @@
 //
 // Copyright (c) KALEIDOS INC
 
+// SCROLLBAR
+.new-scrollbar {
+  ::-webkit-scrollbar {
+    background-color: transparent;
+    cursor: pointer;
+    height: $s-12;
+    width: $s-12;
+  }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background-color: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(170, 181, 186, 0.3);
+    background-clip: content-box;
+    border: $s-2 solid transparent;
+    border-radius: $br-8;
+    &:hover {
+      background-color: rgba(170, 181, 186, 0.7);
+      outline: none;
+    }
+  }
+
+  ::selection {
+    background: var(--text-editor-selection-background-color);
+    color: var(--text-editor-selection-foreground-color);
+  }
+
+  ::placeholder,
+  ::-webkit-input-placeholder {
+    @include bodySmallTypography;
+    color: var(--input-placeholder-color);
+  }
+}
+
+// BUTTONS
 .button-primary {
   @include buttonStyle;
   @include flexCenter;
-  &:hover {
-    background-color: var(--button-background-hover);
-    svg {
-      stroke: var(--button-foreground-hover);
-    }
+  @include focusPrimary;
+  @include headlineSmallTypography;
+  background-color: var(--button-primary-background-color-rest);
+  border: $s-1 solid var(--button-primary-border-color-rest);
+  color: var(--button-primary-foreground-color-rest);
+  border-radius: $br-8;
+  min-height: $s-32;
+  svg,
+  span svg {
+    stroke: var(--button-primary-foreground-color-rest);
   }
-  &:focus {
-    outline: none;
-    border: 1px solid var(--button-border-focus);
-    background-color: var(--button-background-focus);
-    svg {
-      stroke: var(--button-foreground-focus);
+  &:hover {
+    background-color: var(--button-primary-background-color-hover);
+    border: $s-1 solid var(--button-primary-border-color-hover);
+    color: var(--button-primary-foreground-color-hover);
+    svg,
+    span svg {
+      stroke: var(--button-primary-foreground-color-hover);
     }
+    text-decoration: none;
   }
   &:active {
-    border: 1px solid var(--button-border-focus);
+    background-color: var(--button-primary-background-color-active);
+    border: $s-1 solid var(--button-primary-border-color-active);
+    color: var(--button-primary-foreground-color-active);
     outline: none;
+    svg,
+    span svg {
+      stroke: var(--button-primary-foreground-color-active);
+    }
   }
-  &:focus-visible {
-    border: none;
-    outline: none;
+  &:global(.disabled),
+  &[disabled],
+  &:disabled {
+    background-color: var(--button-background-color-disabled);
+    border: $s-1 solid var(--button-border-color-disabled);
+    color: var(--button-foreground-color-disabled);
+    cursor: unset;
   }
 }
 
 .button-secondary {
   @include buttonStyle;
   @include flexCenter;
+  @include focusSecondary;
+  border-radius: $br-8;
+  background-color: var(--button-secondary-background-color-rest);
+  border: $s-1 solid var(--button-secondary-border-color-rest);
+  color: var(--button-secondary-foreground-color-rest);
+  svg,
+  span svg {
+    stroke: var(--button-secondary-foreground-color-rest);
+  }
+  &:hover {
+    background-color: var(--button-secondary-background-color-hover);
+    border: $s-1 solid var(--button-secondary-border-color-hover);
+    color: var(--button-secondary-foreground-color-hover);
+    text-decoration: none;
+    svg,
+    span svg {
+      stroke: var(--button-secondary-foreground-color-hover);
+    }
+  }
+  &:active {
+    outline: none;
+    background-color: var(--button-secondary-background-color-active);
+    border: $s-1 solid var(--button-secondary-border-color-active);
+    color: var(--button-secondary-foreground-color-active);
+    svg,
+    span svg {
+      stroke: var(--button-secondary-foreground-color-active);
+    }
+  }
+  &:global(.disabled),
+  &[disabled],
+  &:disabled {
+    background-color: var(--button-background-color-disabled);
+    border: $s-1 solid var(--button-border-color-disabled);
+    color: var(--button-foreground-color-disabled);
+    cursor: unset;
+  }
+}
+
+.button-tertiary {
+  @include buttonStyle;
+  @include flexCenter;
+  @include focusTertiary;
+  --button-tertiary-border-width: #{$s-2};
+  border-radius: $br-8;
+  color: var(--button-tertiary-foreground-color-rest);
+  background-color: transparent;
+  border: var(--button-tertiary-border-width) solid transparent;
+  display: grid;
+  place-content: center;
+  svg,
+  span svg {
+    stroke: var(--button-tertiary-foreground-color-rest);
+  }
+  &:hover {
+    background-color: var(--button-tertiary-background-color-hover);
+    color: var(--button-tertiary-foreground-color-hover);
+    border-color: var(--button-secondary-border-color-hover);
+    svg,
+    span svg {
+      stroke: var(--button-tertiary-foreground-color-hover);
+    }
+  }
+  &:active {
+    outline: none;
+    border-color: transparent;
+    background-color: var(--button-tertiary-background-color-active);
+    color: var(--button-tertiary-foreground-color-active);
+    svg,
+    span svg {
+      stroke: var(--button-tertiary-foreground-color-active);
+    }
+  }
+
+  &:global(.disabled),
+  &[disabled],
+  &:disabled {
+    color: var(--button-foreground-color-disabled);
+    cursor: unset;
+    pointer-events: none;
+
+    svg,
+    span svg {
+      stroke: var(--button-foreground-color-disabled);
+    }
+  }
+}
+
+.button-icon-selected {
+  outline: none;
+  border-color: var(--button-icon-border-color-selected);
+  background-color: var(--button-icon-background-color-selected);
+  color: var(--button-icon-foreground-color-selected);
+  svg {
+    stroke: var(--button-icon-foreground-color-selected);
+  }
+}
+
+.button-radio {
+  @include buttonStyle;
+  @include flexCenter;
+  @include focusRadio;
+  border-radius: $br-8;
+  color: var(--button-radio-foreground-color-rest);
+  border-color: $s-1 solid var(--button-radio-background-color-rest);
+  svg,
+  span svg {
+    stroke: var(--button-radio-foreground-color-rest);
+  }
+  &:hover {
+    background-color: var(--button-radio-background-color-rest);
+    color: var(--button-radio-foreground-color-hover);
+    border: $s-1 solid transparent;
+    svg,
+    span svg {
+      stroke: var(--button-radio-foreground-color-hover);
+    }
+  }
+  &:active {
+    outline: none;
+    border: $s-1 solid transparent;
+    background-color: var(--button-radio-background-color-active);
+    color: var(--button-radio-foreground-color-active);
+    svg,
+    span svg {
+      stroke: var(--button-radio-foreground-color-active);
+    }
+  }
+}
+
+.button-warning {
+  @include buttonStyle;
+  @include flexCenter;
+  background-color: var(--button-warning-background-color-rest);
+  border: $s-1 solid var(--button-warning-border-color-rest);
+  color: var(--button-warning-foreground-color-rest);
+}
+
+.button-disabled {
+  @include buttonStyle;
+  @include flexCenter;
+  background-color: var(--button-background-color-disabled);
+  border: $s-1 solid var(--button-border-color-disabled);
+  color: var(--button-foreground-color-disabled);
+  cursor: unset;
+}
+
+.button-tag {
+  @include buttonStyle;
+  @include flexCenter;
+  @include focus;
   &:hover {
     svg {
       stroke: var(--title-foreground-color-hover);
     }
   }
-  &:focus {
-    outline: none;
-    border: 1px solid var(--button-border-focus);
-    background-color: var(--button-background-focus);
-    svg {
-      stroke: var(--button-foreground-focus);
-    }
-  }
   &:active {
     border: none;
     background-color: transparent;
-  }
-  &:focus-visible {
-    border: none;
-    outline: none;
   }
 }
 
@@ -63,7 +256,6 @@
   width: $s-16;
   color: transparent;
   fill: none;
-  stroke: var(--icon-foreground);
   stroke-width: 1px;
 }
 
@@ -72,4 +264,666 @@
   height: $s-12;
   width: $s-12;
   stroke-width: 1.33px;
+}
+
+.button-constraint {
+  @include buttonStyle;
+  width: $s-32;
+  height: $s-4;
+  border-radius: $br-8;
+  background-color: var(--button-constraint-background-color-rest);
+  padding: 0;
+  margin: 0;
+  &:hover {
+    outline: $s-4 solid var(--button-constraint-border-color-hover);
+    background-color: var(--button-constraint-background-color-hover);
+  }
+}
+
+// INPUTS
+.input-base {
+  @include removeInputStyle;
+  @include bodySmallTypography;
+  @include textEllipsis;
+  // @include focusInput;
+  height: $s-28;
+  width: 100%;
+  flex-grow: 1;
+  margin: $s-2 0;
+  padding: 0 0 0 $s-6;
+  border-radius: $br-8;
+  color: var(--input-foreground-color-active);
+  &[disabled] {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+}
+
+.input-icon {
+  @include flexCenter;
+  min-width: $s-12;
+  height: $s-32;
+  svg {
+    @extend .button-icon-small;
+  }
+}
+
+.input-label {
+  @include headlineSmallTypography;
+  @include flexCenter;
+  width: $s-20;
+  padding-left: $s-8;
+  height: $s-32;
+  color: var(--input-foreground-color);
+}
+
+.input-element {
+  @include bodySmallTypography;
+  @include focusInput;
+  display: flex;
+  align-items: center;
+  height: $s-32;
+  border-radius: $br-8;
+  background-color: var(--input-background-color);
+  border: $s-1 solid var(--input-border-color);
+  color: var(--input-foreground-color);
+  span,
+  label {
+    @extend .input-label;
+    svg {
+      @extend .button-icon-small;
+      stroke: var(--input-foreground-color);
+    }
+  }
+
+  input {
+    @extend .input-base;
+  }
+
+  ::placeholder {
+    color: var(--input-placeholder-color);
+  }
+
+  &:hover {
+    border: $s-1 solid var(--input-border-color-hover);
+    background-color: var(--input-background-color-hover);
+    span {
+      color: var(--input-foreground-color-hover);
+    }
+    input {
+      color: var(--input-foreground-color-hover);
+    }
+  }
+  &:active {
+    border: $s-1 solid var(--input-border-color-active);
+    background-color: var(--input-background-color-active);
+    span {
+      color: var(--input-foreground-color-active);
+    }
+    input {
+      color: var(--input-foreground-color-active);
+    }
+  }
+  &:focus,
+  &:focus-within {
+    border: $s-1 solid var(--input-border-color-focus);
+    background-color: var(--input-background-color-focus);
+    span {
+      color: var(--input-foreground-color-focus);
+    }
+    input {
+      color: var(--input-foreground-color-focus);
+    }
+    &:hover {
+      border: $s-1 solid var(--input-border-color-focus);
+      background-color: var(--input-background-color-focus);
+      span {
+        color: var(--input-foreground-color-focus);
+      }
+      input {
+        color: var(--input-foreground-color-focus);
+      }
+    }
+  }
+}
+
+.input-element-label {
+  @include bodySmallTypography;
+  display: flex;
+  align-items: flex-start;
+  padding: 0;
+  input {
+    @extend .input-base;
+    padding-left: $s-8;
+    display: flex;
+    align-items: flex-start;
+    height: $s-32;
+    box-sizing: border-box;
+    width: 100%;
+    margin: 0;
+    border-radius: $br-8;
+    border: $s-1 solid var(--input-border-color);
+    color: var(--input-foreground-color-active);
+    background-color: var(--input-background-color);
+  }
+  ::placeholder {
+    @include bodySmallTypography;
+    color: var(--input-placeholder-color);
+  }
+  &:hover {
+    input {
+      color: var(--input-foreground-color-active);
+      background-color: var(--input-background-color-hover);
+    }
+  }
+
+  &:focus-within,
+  &:active {
+    input {
+      color: var(--input-foreground-color-active);
+      background-color: var(--input-background-color-active);
+      border: $s-1 solid var(--input-border-color-active);
+    }
+  }
+}
+
+.disabled-input {
+  background-color: var(--input-background-color-disabled);
+  border: $s-1 solid var(--input-border-color-disabled);
+  color: var(--input-foreground-color-disabled);
+  input {
+    pointer-events: none;
+    cursor: default;
+    color: var(--input-foreground-color-disabled);
+  }
+  span svg {
+    stroke: var(--input-foreground-color-disabled);
+  }
+}
+
+.checkbox-icon {
+  @include flexCenter;
+  width: $s-16;
+  height: $s-16;
+  min-width: $s-16;
+  min-height: $s-16;
+  background-color: var(--input-checkbox-background-color-rest);
+  border: $s-1 solid var(--input-checkbox-border-color-rest);
+  border-radius: $br-4;
+  svg {
+    width: $s-16;
+    height: $s-16;
+    display: none;
+    stroke: var(--input-checkbox-inactive-foreground-color);
+  }
+  &:hover {
+    border-color: var(--input-checkbox-border-color-hover);
+  }
+  &:focus {
+    border-color: var(--input-checkbox-border-color-focus);
+  }
+
+  &:global(.checked) {
+    border-color: var(--input-checkbox-border-color-active);
+    background-color: var(--input-checkbox-background-color-active);
+    svg {
+      @extend .button-icon-small;
+      stroke: var(--input-checkbox-foreground-color-active);
+    }
+  }
+
+  &:global(.intermediate) {
+    background-color: var(--input-checkbox-background-color-intermediate);
+    border-color: var(--input-checkbox-border-color-intermediate);
+    svg {
+      @extend .button-icon-small;
+      stroke: var(--input-checkbox-foreground-color-intermediate);
+    }
+  }
+
+  &:global(.unchecked) {
+    background-color: var(--input-checkbox-background-color-rest);
+    border: $s-1 solid var(--input-checkbox-background-color-rest);
+    svg {
+      display: none;
+    }
+  }
+}
+
+.input-checkbox {
+  display: flex;
+  align-items: center;
+  label {
+    @include bodySmallTypography;
+    display: flex;
+    align-items: center;
+    gap: $s-6;
+    cursor: pointer;
+    color: var(--input-checkbox-text-foreground-color);
+    span {
+      @extend .checkbox-icon;
+    }
+    input {
+      margin: 0;
+    }
+    &:hover {
+      span {
+        border-color: var(--input-checkbox-border-color-hover);
+      }
+    }
+
+    &:focus,
+    &:focus-within {
+      span {
+        border-color: var(--input-checkbox-border-color-focus);
+      }
+    }
+  }
+}
+
+.input-with-label {
+  display: flex;
+  flex-direction: column;
+  label {
+    @include bodySmallTypography;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    min-height: $s-16;
+    color: var(--input-foreground-color-active);
+  }
+
+  input {
+    @extend .input-base;
+    @include bodySmallTypography;
+    border-radius: $br-8;
+    height: $s-32;
+    min-height: $s-32;
+    margin-top: $s-8;
+    background-color: var(--input-background-color);
+    border: $s-1 solid var(--input-border-color);
+    color: var(--input-foreground-color-active);
+    &:focus-within,
+    &:active {
+      input {
+        color: var(--input-foreground-color-active);
+      }
+      background-color: var(--input-background-color-active);
+      border: $s-1 solid var(--input-border-color-active);
+    }
+  }
+  &:global(.disabled) {
+    @extend .disabled-input;
+  }
+
+  &:global(.invalid) {
+    input {
+      border: $s-1 solid var(--input-border-color-error);
+    }
+  }
+}
+
+//MODALS
+.modal-background {
+  @include menuShadow;
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  padding: $s-12;
+  border-radius: $br-8;
+  z-index: $z-index-10;
+  color: var(--modal-title-foreground-color);
+  background-color: var(--modal-background-color);
+}
+
+.modal-overlay-base {
+  @include flexCenter;
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 100%;
+  z-index: $z-index-modal;
+  background-color: var(--overlay-color);
+}
+
+.modal-container-base {
+  position: relative;
+  padding: $s-32;
+  border-radius: $br-8;
+  background-color: var(--modal-background-color);
+  border: $s-2 solid var(--modal-border-color);
+  min-width: $s-364;
+  min-height: $s-192;
+  max-width: $s-512;
+  max-height: $s-512;
+}
+
+.modal-close-btn-base {
+  @extend .button-tertiary;
+  position: absolute;
+  top: $s-8;
+  right: $s-6;
+  height: $s-32;
+  width: $s-28;
+  svg {
+    @extend .button-icon;
+  }
+}
+
+.modal-hint-base {
+  @include bodySmallTypography;
+  color: var(--modal-title-foreground-color);
+  border-top: $s-1 solid var(--modal-hint-border-color);
+  border-bottom: $s-1 solid var(--modal-hint-border-color);
+}
+
+.modal-action-btns {
+  display: flex;
+  justify-content: flex-end;
+  gap: $s-16;
+}
+
+.modal-cancel-btn {
+  @extend .button-secondary;
+  @include uppercaseTitleTipography;
+  padding: $s-8 $s-24;
+  border-radius: $br-8;
+  height: $s-32;
+  margin: 0;
+}
+
+.modal-accept-btn {
+  @extend .button-primary;
+  @include uppercaseTitleTipography;
+  padding: $s-8 $s-24;
+  border-radius: $br-8;
+  height: $s-32;
+  margin: 0;
+}
+
+.modal-danger-btn {
+  @extend .button-primary;
+  @include uppercaseTitleTipography;
+  padding: $s-8 $s-24;
+  border-radius: $br-8;
+  height: $s-32;
+  margin: 0;
+  background-color: var(--modal-button-background-color-error);
+  border: $s-1 solid var(--modal-button-background-color-error);
+  color: var(--modal-button-foreground-color-error);
+}
+
+.loader-base {
+  @include flexCenter;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 100vw;
+  z-index: $z-index-alert;
+  background-color: var(--loader-background);
+  :global(svg#loader-pencil) {
+    height: $s-100;
+    width: $s-100;
+    animation: loaderColor 5s infinite ease;
+    fill: var(--icon-foreground);
+  }
+}
+// UI ELEMENTS
+.asset-element {
+  @include bodySmallTypography;
+  display: flex;
+  align-items: center;
+  height: $s-32;
+  border-radius: $br-8;
+  padding: $s-8 $s-12;
+  background-color: var(--assets-item-background-color);
+  color: var(--assets-item-name-foreground-color-hover);
+  &:hover {
+    background-color: var(--assets-item-background-color-hover);
+    color: var(--assets-item-name-foreground-color-hover);
+  }
+}
+
+.shortcut-base {
+  @include flexCenter;
+  gap: $s-2;
+  color: var(--menu-shortcut-foreground-color);
+}
+
+.shortcut-key-base {
+  @include bodySmallTypography;
+  @include flexCenter;
+  height: $s-20;
+  padding: $s-2 $s-6;
+  border-radius: $br-6;
+  background-color: var(--menu-shortcut-background-color);
+}
+
+.user-icon {
+  @include flexCenter;
+  @include bodySmallTypography;
+  height: $s-24;
+  width: $s-24;
+  border-radius: $br-circle;
+  margin-left: calc(-1 * $s-4);
+  img {
+    border-radius: $br-circle;
+    border: $s-2 solid var(--user-count-foreground-color);
+  }
+}
+
+.mixed-bar {
+  @include bodySmallTypography;
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  border-radius: $br-8;
+  height: $s-32;
+  padding: $s-8;
+  background-color: var(--input-background-color);
+  color: var(--input-foreground-color-active);
+}
+
+.link {
+  background: unset;
+  border: none;
+  color: var(--link-foreground-color);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.colorpicker-handler {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: $s-24;
+  height: $s-24;
+  border: $s-2 solid var(--colorpicker-details-color);
+  border-radius: $br-circle;
+  transform: translate(calc(-1 * $s-12), calc(-1 * $s-12));
+  z-index: $z-index-1;
+  &:hover,
+  &:active {
+    border-color: var(--colorpicker-details-color-selected);
+  }
+}
+
+.empty-icon {
+  @include flexCenter;
+  height: $s-48;
+  width: $s-48;
+  border-radius: $br-circle;
+  background-color: var(--empty-message-background-color);
+  svg {
+    @extend .button-icon;
+    height: $s-28;
+    width: $s-28;
+    stroke: var(--empty-message-foreground-color);
+  }
+}
+
+.attr-title {
+  div {
+    margin-left: 0;
+    color: var(--entry-foreground-color-hover);
+  }
+  button {
+    @extend .button-tertiary;
+    display: none;
+    svg {
+      @extend .button-icon-small;
+      stroke: var(--icon-foreground);
+    }
+  }
+  &:hover {
+    button {
+      display: flex;
+    }
+  }
+}
+
+.attr-row {
+  display: grid;
+  grid-template-areas: "name content";
+  grid-template-columns: $s-92 1fr;
+  gap: $s-4;
+  height: $s-32;
+  :global(.attr-label) {
+    @include bodySmallTypography;
+    @include twoLineTextEllipsis;
+    width: $s-92;
+    margin: auto 0;
+    color: var(--entry-foreground-color);
+    grid-area: name;
+  }
+
+  :global(.attr-value) {
+    grid-area: content;
+    display: flex;
+    color: var(--entry-foreground-color-hover);
+    @include bodySmallTypography;
+  }
+}
+
+.copy-button-children {
+  @include bodySmallTypography;
+  color: var(--color-foreground-primary);
+  text-align: left;
+  margin: 0;
+  padding: 0;
+  height: fit-content;
+  &:hover {
+    div {
+      color: var(--entry-foreground-color-hover);
+    }
+  }
+}
+
+.comment-bubbles {
+  @include bodySmallTypography;
+  @include flexCenter;
+  height: $s-32;
+  width: $s-32;
+  border-radius: $br-circle;
+  background-color: var(--comment-bullet-background-color-rest);
+  border: $s-1 solid var(--comment-bullet-border-color-rest);
+  color: var(--comment-bullet-foreground-color-rest);
+}
+
+.resolved-comment-bubble {
+  background-color: var(--comment-bullet-background-color-resolved);
+  border: $s-1 solid var(--comment-bullet-border-color-resolved);
+  color: var(--comment-bullet-foreground-color-resolved);
+}
+.unread-comment-bubble {
+  background-color: var(--comment-bullet-background-color-unread);
+  border: $s-1 solid var(--comment-bullet-border-color-unread);
+  color: var(--comment-bullet-foreground-color-unread);
+}
+
+// SELECTS AND DROPDOWNS
+.menu-dropdown {
+  @include menuShadow;
+  @include flexColumn;
+  position: absolute;
+  padding: $s-4;
+  border-radius: $br-8;
+  z-index: $z-index-10;
+  color: var(--title-foreground-color-hover);
+  background-color: var(--menu-background-color);
+  border: $s-2 solid var(--panel-border-color);
+  margin: 0;
+}
+
+.menu-item-base {
+  @include bodySmallTypography;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: $s-28;
+  width: 100%;
+  padding: $s-6;
+  border-radius: $br-8;
+  cursor: pointer;
+  &:hover {
+    background-color: var(--menu-background-color-hover);
+  }
+}
+
+.dropdown-element-base {
+  @include bodySmallTypography;
+  display: flex;
+  align-items: center;
+  gap: $s-8;
+  height: $s-32;
+  padding: 0 $s-8;
+  border-radius: $br-6;
+  cursor: pointer;
+  color: var(--menu-foreground-color-rest);
+
+  span {
+    @include flexCenter;
+    @include textEllipsis;
+    svg {
+      @extend .button-icon-small;
+      stroke: var(--icon-foreground);
+    }
+  }
+  &:hover {
+    background-color: var(--menu-background-color-hover);
+    color: var(--menu-foreground-color);
+    span svg {
+      stroke: var(--menu-foreground-color-hover);
+    }
+  }
+}
+
+.dropdown-wrapper {
+  @include menuShadow;
+  position: absolute;
+  top: $s-32;
+  left: 0;
+  width: 100%;
+  max-height: $s-300;
+  padding: $s-2;
+  margin: 0;
+  margin-top: $s-1;
+  border-radius: $br-8;
+  z-index: $z-index-4;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background-color: var(--menu-background-color);
+  color: var(--menu-foreground-color);
+  border: $s-2 solid var(--panel-border-color);
+}
+
+.select-wrapper {
+  @include bodySmallTypography;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: normal;
+  width: 100%;
 }

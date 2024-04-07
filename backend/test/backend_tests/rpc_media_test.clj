@@ -12,7 +12,7 @@
    [app.storage :as sto]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
-   [datoteka.core :as fs]))
+   [datoteka.fs :as fs]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
@@ -88,8 +88,7 @@
         (t/is (sto/object? mobj1))
         (t/is (sto/object? mobj2))
         (t/is (= 312043 (:size mobj1)))
-        (t/is (= 3887   (:size mobj2)))))
-    ))
+        (t/is (= 3887   (:size mobj2)))))))
 
 
 (t/deftest media-object-upload-idempotency
@@ -208,8 +207,7 @@
         (t/is (sto/object? mobj1))
         (t/is (sto/object? mobj2))
         (t/is (= 312043 (:size mobj1)))
-        (t/is (= 3887   (:size mobj2)))))
-    ))
+        (t/is (= 3887   (:size mobj2)))))))
 
 
 (t/deftest media-object-upload-idempotency-command

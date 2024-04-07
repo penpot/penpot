@@ -21,7 +21,6 @@
    [app.http.session :as-alias session]
    [app.http.session.tasks :as-alias session.tasks]
    [app.http.websocket :as http.ws]
-   [app.loggers.audit.tasks :as-alias audit.tasks]
    [app.loggers.webhooks :as-alias webhooks]
    [app.metrics :as-alias mtx]
    [app.metrics.definition :as-alias mdef]
@@ -33,11 +32,18 @@
    [app.srepl :as-alias srepl]
    [app.storage :as-alias sto]
    [app.storage.fs :as-alias sto.fs]
+   [app.storage.gc-deleted :as-alias sto.gc-deleted]
+   [app.storage.gc-touched :as-alias sto.gc-touched]
    [app.storage.s3 :as-alias sto.s3]
+   [app.svgo :as-alias svgo]
    [app.util.time :as dt]
    [app.worker :as-alias wrk]
+   [cider.nrepl :refer [cider-nrepl-handler]]
+   [clojure.test :as test]
+   [clojure.tools.namespace.repl :as repl]
    [cuerdas.core :as str]
    [integrant.core :as ig]
+   [nrepl.server :as nrepl]
    [promesa.exec :as px])
   (:gen-class))
 
@@ -155,12 +161,6 @@
    {::mdef/name "penpot_executors_running_threads"
     ::mdef/help "Current number of threads with state RUNNING."
     ::mdef/labels ["name"]
-    ::mdef/type :gauge}
-
-   :executors-queued-submissions
-   {::mdef/name "penpot_executors_queued_submissions"
-    ::mdef/help "Current number of queued submissions."
-    ::mdef/labels ["name"]
     ::mdef/type :gauge}})
 
 (def system-config
@@ -175,13 +175,12 @@
 
    ;; Default thread pool for IO operations
    ::wrk/executor
-   {::wrk/parallelism (cf/get :default-executor-parallelism
-                              (+ 3 (* (px/get-available-processors) 3)))}
+   {}
 
    ::wrk/monitor
    {::mtx/metrics  (ig/ref ::mtx/metrics)
-    ::wrk/name     "default"
-    ::wrk/executor (ig/ref ::wrk/executor)}
+    ::wrk/executor (ig/ref ::wrk/executor)
+    ::wrk/name     "default"}
 
    :app.migrations/migrations
    {::db/pool (ig/ref ::db/pool)}
@@ -204,15 +203,15 @@
    :app.storage.tmp/cleaner
    {::wrk/executor (ig/ref ::wrk/executor)}
 
-   ::sto/gc-deleted-task
+   ::sto.gc-deleted/handler
    {::db/pool      (ig/ref ::db/pool)
     ::sto/storage  (ig/ref ::sto/storage)}
 
-   ::sto/gc-touched-task
+   ::sto.gc-touched/handler
    {::db/pool (ig/ref ::db/pool)}
 
    ::http.client/client
-   {::wrk/executor (ig/ref ::wrk/executor)}
+   {}
 
    ::session/manager
    {::db/pool (ig/ref ::db/pool)}
@@ -221,16 +220,14 @@
    {::db/pool (ig/ref ::db/pool)}
 
    ::http.awsns/routes
-   {::props              (ig/ref ::setup/props)
+   {::setup/props        (ig/ref ::setup/props)
     ::db/pool            (ig/ref ::db/pool)
-    ::http.client/client (ig/ref ::http.client/client)
-    ::wrk/executor       (ig/ref ::wrk/executor)}
+    ::http.client/client (ig/ref ::http.client/client)}
 
    ::http/server
    {::http/port                    (cf/get :http-server-port)
     ::http/host                    (cf/get :http-server-host)
     ::http/router                  (ig/ref ::http/router)
-    ::wrk/executor                 (ig/ref ::wrk/executor)
     ::http/io-threads              (cf/get :http-server-io-threads)
     ::http/max-body-size           (cf/get :http-server-max-body-size)
     ::http/max-multipart-body-size (cf/get :http-server-max-multipart-body-size)}
@@ -264,7 +261,7 @@
    ::oidc/routes
    {::http.client/client (ig/ref ::http.client/client)
     ::db/pool            (ig/ref ::db/pool)
-    ::props              (ig/ref ::setup/props)
+    ::setup/props        (ig/ref ::setup/props)
     ::oidc/providers     {:google (ig/ref ::oidc.providers/google)
                           :github (ig/ref ::oidc.providers/github)
                           :gitlab (ig/ref ::oidc.providers/gitlab)
@@ -276,7 +273,7 @@
     ::db/pool            (ig/ref ::db/pool)
     ::rpc/routes         (ig/ref ::rpc/routes)
     ::rpc.doc/routes     (ig/ref ::rpc.doc/routes)
-    ::props              (ig/ref ::setup/props)
+    ::setup/props        (ig/ref ::setup/props)
     ::mtx/routes         (ig/ref ::mtx/routes)
     ::oidc/routes        (ig/ref ::oidc/routes)
     ::http.debug/routes  (ig/ref ::http.debug/routes)
@@ -284,11 +281,11 @@
     ::http.ws/routes     (ig/ref ::http.ws/routes)
     ::http.awsns/routes  (ig/ref ::http.awsns/routes)}
 
-   :app.http.debug/routes
+   ::http.debug/routes
    {::db/pool         (ig/ref ::db/pool)
-    ::wrk/executor    (ig/ref ::wrk/executor)
     ::session/manager (ig/ref ::session/manager)
-    ::sto/storage     (ig/ref ::sto/storage)}
+    ::sto/storage     (ig/ref ::sto/storage)
+    ::setup/props     (ig/ref ::setup/props)}
 
    ::http.ws/routes
    {::db/pool         (ig/ref ::db/pool)
@@ -300,8 +297,7 @@
    {::http.assets/path  (cf/get :assets-path)
     ::http.assets/cache-max-age (dt/duration {:hours 24})
     ::http.assets/cache-max-agesignature-max-age (dt/duration {:hours 24 :minutes 5})
-    ::sto/storage  (ig/ref ::sto/storage)
-    ::wrk/executor (ig/ref ::wrk/executor)}
+    ::sto/storage  (ig/ref ::sto/storage)}
 
    :app.rpc/climit
    {::mtx/metrics  (ig/ref ::mtx/metrics)
@@ -320,14 +316,12 @@
     ::mtx/metrics        (ig/ref ::mtx/metrics)
     ::mbus/msgbus        (ig/ref ::mbus/msgbus)
     ::rds/redis          (ig/ref ::rds/redis)
+    ::svgo/optimizer     (ig/ref ::svgo/optimizer)
 
     ::rpc/climit         (ig/ref ::rpc/climit)
     ::rpc/rlimit         (ig/ref ::rpc/rlimit)
     ::setup/templates    (ig/ref ::setup/templates)
-    ::props              (ig/ref ::setup/props)
-
-    :pool                (ig/ref ::db/pool)
-    }
+    ::setup/props        (ig/ref ::setup/props)}
 
    :app.rpc.doc/routes
    {:methods (ig/ref :app.rpc/methods)}
@@ -335,24 +329,24 @@
    :app.rpc/routes
    {::rpc/methods     (ig/ref :app.rpc/methods)
     ::db/pool         (ig/ref ::db/pool)
-    ::wrk/executor    (ig/ref ::wrk/executor)
     ::session/manager (ig/ref ::session/manager)
-    ::props           (ig/ref ::setup/props)}
+    ::setup/props     (ig/ref ::setup/props)}
 
    ::wrk/registry
    {::mtx/metrics (ig/ref ::mtx/metrics)
     ::wrk/tasks
     {:sendmail           (ig/ref ::email/handler)
      :objects-gc         (ig/ref :app.tasks.objects-gc/handler)
+     :orphan-teams-gc    (ig/ref :app.tasks.orphan-teams-gc/handler)
      :file-gc            (ig/ref :app.tasks.file-gc/handler)
      :file-xlog-gc       (ig/ref :app.tasks.file-xlog-gc/handler)
-     :storage-gc-deleted (ig/ref ::sto/gc-deleted-task)
-     :storage-gc-touched (ig/ref ::sto/gc-touched-task)
      :tasks-gc           (ig/ref :app.tasks.tasks-gc/handler)
      :telemetry          (ig/ref :app.tasks.telemetry/handler)
+     :storage-gc-deleted (ig/ref ::sto.gc-deleted/handler)
+     :storage-gc-touched (ig/ref ::sto.gc-touched/handler)
      :session-gc         (ig/ref ::session.tasks/gc)
-     :audit-log-archive  (ig/ref ::audit.tasks/archive)
-     :audit-log-gc       (ig/ref ::audit.tasks/gc)
+     :audit-log-archive  (ig/ref :app.loggers.audit.archive-task/handler)
+     :audit-log-gc       (ig/ref :app.loggers.audit.gc-task/handler)
 
      :process-webhook-event
      (ig/ref ::webhooks/process-event-handler)
@@ -380,6 +374,9 @@
    {::db/pool     (ig/ref ::db/pool)
     ::sto/storage (ig/ref ::sto/storage)}
 
+   :app.tasks.orphan-teams-gc/handler
+   {::db/pool     (ig/ref ::db/pool)}
+
    :app.tasks.file-gc/handler
    {::db/pool     (ig/ref ::db/pool)
     ::sto/storage (ig/ref ::sto/storage)}
@@ -390,7 +387,7 @@
    :app.tasks.telemetry/handler
    {::db/pool            (ig/ref ::db/pool)
     ::http.client/client (ig/ref ::http.client/client)
-    ::props              (ig/ref ::setup/props)}
+    ::setup/props        (ig/ref ::setup/props)}
 
    [::srepl/urepl ::srepl/server]
    {::srepl/port (cf/get :urepl-port 6062)
@@ -404,18 +401,21 @@
 
    ::setup/props
    {::db/pool    (ig/ref ::db/pool)
-    ::key        (cf/get :secret-key)
+    ::setup/key  (cf/get :secret-key)
 
     ;; NOTE: this dependency is only necessary for proper initialization ordering, props
     ;; module requires the migrations to run before initialize.
     ::migrations (ig/ref :app.migrations/migrations)}
 
-   ::audit.tasks/archive
-   {::props              (ig/ref ::setup/props)
+   ::svgo/optimizer
+   {}
+
+   :app.loggers.audit.archive-task/handler
+   {::setup/props        (ig/ref ::setup/props)
     ::db/pool            (ig/ref ::db/pool)
     ::http.client/client (ig/ref ::http.client/client)}
 
-   ::audit.tasks/gc
+   :app.loggers.audit.gc-task/handler
    {::db/pool (ig/ref ::db/pool)}
 
    ::webhooks/process-event-handler
@@ -434,20 +434,18 @@
 
    ::sto/storage
    {::db/pool      (ig/ref ::db/pool)
-    ::wrk/executor (ig/ref ::wrk/executor)
     ::sto/backends
     {:assets-s3 (ig/ref [::assets :app.storage.s3/backend])
      :assets-fs (ig/ref [::assets :app.storage.fs/backend])}}
 
    [::assets :app.storage.s3/backend]
-   {::sto.s3/region   (cf/get :storage-assets-s3-region)
-    ::sto.s3/endpoint (cf/get :storage-assets-s3-endpoint)
-    ::sto.s3/bucket   (cf/get :storage-assets-s3-bucket)
-    ::wrk/executor    (ig/ref ::wrk/executor)}
+   {::sto.s3/region     (cf/get :storage-assets-s3-region)
+    ::sto.s3/endpoint   (cf/get :storage-assets-s3-endpoint)
+    ::sto.s3/bucket     (cf/get :storage-assets-s3-bucket)
+    ::sto.s3/io-threads (cf/get :storage-assets-s3-io-threads)}
 
    [::assets :app.storage.fs/backend]
-   {::sto.fs/directory (cf/get :storage-assets-fs-directory)}
-   })
+   {::sto.fs/directory (cf/get :storage-assets-fs-directory)}})
 
 
 (def worker-config
@@ -463,6 +461,9 @@
 
      {:cron #app/cron "0 0 0 * * ?" ;; daily
       :task :objects-gc}
+
+     {:cron #app/cron "0 0 0 * * ?" ;; daily
+      :task :orphan-teams-gc}
 
      {:cron #app/cron "0 0 0 * * ?" ;; daily
       :task :storage-gc-deleted}
@@ -492,7 +493,7 @@
     ::mtx/metrics (ig/ref ::mtx/metrics)
     ::db/pool     (ig/ref ::db/pool)}
 
-   [::default ::wrk/worker]
+   [::default ::wrk/runner]
    {::wrk/parallelism (cf/get ::worker-default-parallelism 1)
     ::wrk/queue       :default
     ::rds/redis       (ig/ref ::rds/redis)
@@ -500,7 +501,7 @@
     ::mtx/metrics     (ig/ref ::mtx/metrics)
     ::db/pool         (ig/ref ::db/pool)}
 
-   [::webhook ::wrk/worker]
+   [::webhook ::wrk/runner]
    {::wrk/parallelism (cf/get ::worker-webhook-parallelism 1)
     ::wrk/queue       :webhooks
     ::rds/redis       (ig/ref ::rds/redis)
@@ -521,22 +522,65 @@
                                    (merge worker-config))
                                  (ig/prep)
                                  (ig/init))))
-  (l/info :hint "welcome to penpot"
-          :flags (str/join "," (map name cf/flags))
-          :worker? (contains? cf/flags :backend-worker)
-          :version (:full cf/version)))
+  (l/inf :hint "welcome to penpot"
+         :flags (str/join "," (map name cf/flags))
+         :worker? (contains? cf/flags :backend-worker)
+         :version (:full cf/version)))
 
 (defn stop
   []
   (alter-var-root #'system (fn [sys]
                              (when sys (ig/halt! sys))
                              nil)))
+(defn restart
+  []
+  (stop)
+  (repl/refresh :after 'app.main/start))
+
+(defn restart-all
+  []
+  (stop)
+  (repl/refresh-all :after 'app.main/start))
+
+(defmacro run-bench
+  [& exprs]
+  `(do
+     (require 'criterium.core)
+     (criterium.core/with-progress-reporting (crit/quick-bench (do ~@exprs) :verbose))))
+
+(defn run-tests
+  ([] (run-tests #"^backend-tests.*-test$"))
+  ([o]
+   (repl/refresh)
+   (cond
+     (instance? java.util.regex.Pattern o)
+     (test/run-all-tests o)
+
+     (symbol? o)
+     (if-let [sns (namespace o)]
+       (do (require (symbol sns))
+           (test/test-vars [(resolve o)]))
+       (test/test-ns o)))))
+
+(repl/disable-reload! (find-ns 'integrant.core))
 
 (defn -main
   [& _args]
   (try
-    (start)
+    (let [p (promise)]
+      (when (contains? cf/flags :nrepl-server)
+        (l/inf :hint "start nrepl server" :port 6064)
+        (nrepl/start-server :bind "0.0.0.0" :port 6064 :handler cider-nrepl-handler))
+
+      (start)
+      (deref p))
     (catch Throwable cause
-      (l/error :hint (ex-message cause)
-               :cause cause)
+      (binding [*out* *err*]
+        (println "==== ERROR ===="))
+      (.printStackTrace cause)
+      (when-let [cause' (ex-cause cause)]
+        (binding [*out* *err*]
+          (println "==== CAUSE ===="))
+        (.printStackTrace cause'))
+      (px/sleep 500)
       (System/exit -1))))

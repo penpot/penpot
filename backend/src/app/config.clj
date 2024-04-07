@@ -79,6 +79,8 @@
 
    :telemetry-uri "https://telemetry.penpot.app/"
 
+   :media-max-file-size (* 1024 1024 30) ; 30MiB
+
    :ldap-user-query "(|(uid=:username)(mail=:username))"
    :ldap-attrs-username "uid"
    :ldap-attrs-email "mail"
@@ -203,6 +205,7 @@
 (s/def ::storage-assets-s3-bucket ::us/string)
 (s/def ::storage-assets-s3-region ::us/keyword)
 (s/def ::storage-assets-s3-endpoint ::us/string)
+(s/def ::storage-assets-s3-io-threads ::us/integer)
 (s/def ::telemetry-uri ::us/string)
 (s/def ::telemetry-with-taiga ::us/boolean)
 (s/def ::tenant ::us/string)
@@ -294,6 +297,7 @@
                    ::redis-uri
                    ::registration-domain-whitelist
                    ::rpc-rlimit-config
+                   ::rpc-climit-config
 
                    ::semaphore-process-font
                    ::semaphore-process-image
@@ -319,6 +323,7 @@
                    ::storage-assets-s3-bucket
                    ::storage-assets-s3-region
                    ::storage-assets-s3-endpoint
+                   ::storage-assets-s3-io-threads
                    ::telemetry-enabled
                    ::telemetry-uri
                    ::telemetry-referer

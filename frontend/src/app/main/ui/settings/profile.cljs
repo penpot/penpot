@@ -5,17 +5,17 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.settings.profile
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.spec :as us]
    [app.config :as cf]
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
    [app.main.data.users :as du]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.components.forms :as fm]
-   [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [cljs.spec.alpha :as s]
@@ -27,15 +27,12 @@
 (s/def ::profile-form
   (s/keys :req-un [::fullname ::email]))
 
-(defn- on-success
-  [_]
-  (st/emit! (dm/success (tr "notifications.profile-saved"))))
-
 (defn- on-submit
   [form _event]
-  (let [data  (:clean-data @form)
-        mdata {:on-success (partial on-success form)}]
-    (st/emit! (du/update-profile (with-meta data mdata)))))
+  (let [data  (:clean-data @form)]
+    (st/emit! (du/update-profile data)
+              (du/persist-profile)
+              (msg/success (tr "notifications.profile-saved")))))
 
 ;; --- Profile Form
 
@@ -45,37 +42,46 @@
         form    (fm/use-form :spec ::profile-form
                              :initial profile
                              :validators [(fm/validate-length :fullname fm/max-length-allowed (tr "auth.name.too-long"))
-                                          (fm/validate-not-empty :fullname (tr "auth.name.not-all-space"))])]
+                                          (fm/validate-not-empty :fullname (tr "auth.name.not-all-space"))])
+
+        handle-show-change-email
+        (mf/use-callback
+         #(modal/show! :change-email {}))
+
+        handle-show-delete-account
+        (mf/use-callback
+         #(modal/show! :delete-account {}))]
 
     [:& fm/form {:on-submit on-submit
                  :form form
-                 :class "profile-form"}
-     [:div.fields-row
+                 :class (stl/css :profile-form)}
+     [:div {:class (stl/css :fields-row)}
       [:& fm/input
        {:type "text"
         :name :fullname
         :label (tr "dashboard.your-name")}]]
 
-     [:div.fields-row
+     [:div {:class (stl/css :fields-row)
+            :on-click handle-show-change-email}
       [:& fm/input
        {:type "email"
         :name :email
         :disabled true
-        :help-icon i/at
         :label (tr "dashboard.your-email")}]
 
-      [:div.options
+      [:div {:class (stl/css :options)}
        [:div.change-email
-        [:a {:on-click #(modal/show! :change-email {})}
+        [:a {:on-click handle-show-change-email}
          (tr "dashboard.change-email")]]]]
 
-     [:& fm/submit-button
+     [:> fm/submit-button*
       {:label (tr "dashboard.save-settings")
-       :disabled (empty? (:touched @form))}]
+       :disabled (empty? (:touched @form))
+       :class (stl/css :btn-primary)}]
 
-     [:div.links
-      [:div.link-item
-       [:a {:on-click #(modal/show! :delete-account {})
+     [:div {:class (stl/css :links)}
+      [:div {:class (stl/css :link-item)}
+       [:a {:on-click handle-show-delete-account
             :data-test "remove-acount-btn"}
         (tr "dashboard.remove-account")]]]]))
 
@@ -91,9 +97,10 @@
         (fn [file]
           (st/emit! (du/update-photo file)))]
 
-    [:form.avatar-form
-     [:div.image-change-field
-      [:span.update-overlay {:on-click on-image-click} (tr "labels.update")]
+    [:form {:class (stl/css :avatar-form)}
+     [:div {:class (stl/css :image-change-field)}
+      [:span {:class (stl/css :update-overlay)
+              :on-click on-image-click} (tr "labels.update")]
       [:img {:src photo}]
       [:& file-uploader {:accept "image/jpeg,image/png"
                          :multi false
@@ -106,8 +113,9 @@
 (mf/defc profile-page []
   (mf/with-effect []
     (dom/set-html-title (tr "title.settings.profile")))
-  [:div.dashboard-settings
-   [:div.form-container.two-columns
+  [:div {:class (stl/css :dashboard-settings)}
+   [:div {:class (stl/css :form-container)}
+    [:h2 (tr "labels.profile")]
     [:& profile-photo-form]
     [:& profile-form]]])
 

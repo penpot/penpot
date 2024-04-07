@@ -1,0 +1,164 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.element-set {
+  margin: 0;
+}
+
+.element-set-content {
+  display: flex;
+  gap: $s-4;
+}
+
+.constraints-widget {
+  background-color: var(--constraint-widget-background-color);
+  display: grid;
+  grid-template-columns: $s-24 $s-60 $s-24;
+  grid-template-rows: $s-24 $s-60 $s-24;
+  grid-template-areas:
+    "top top top"
+    "left center right"
+    "bottom bottom bottom";
+  height: $s-108;
+  width: $s-108;
+  border-radius: $br-8;
+}
+
+.constraints-top,
+.constraints-left,
+.constraints-center,
+.constraints-right,
+.constraints-bottom {
+  @include flexCenter;
+  grid-area: top;
+  .constraint-btn,
+  .constraint-btn-special,
+  .constraint-btn-rotated {
+    @include buttonStyle;
+    @include flexCenter;
+    width: 100%;
+    height: 100%;
+    .resalted-area {
+      width: $s-32;
+      height: $s-3;
+      border-radius: $br-8;
+      background-color: var(--button-constraint-background-color-rest);
+      padding: 0;
+      margin: 0;
+    }
+    &.active .resalted-area {
+      outline: $s-4 solid var(--button-constraint-border-color-hover);
+      background-color: var(--button-constraint-background-color-hover);
+    }
+    &:hover .resalted-area,
+    &:focus .resalted-area {
+      outline: $s-4 solid var(--button-constraint-border-color-hover);
+      background-color: var(--button-constraint-background-color-hover);
+    }
+  }
+}
+.constraints-left {
+  grid-area: left;
+  .constraint-btn-rotated {
+    height: $s-60;
+    width: $s-24;
+    .resalted-area {
+      height: $s-32;
+      width: $s-3;
+    }
+  }
+}
+.constraints-center {
+  grid-area: center;
+  position: relative;
+  background-color: var(--constraint-center-area-background-color);
+  border-radius: $br-8;
+  .constraint-btn {
+    width: $s-60;
+    height: $s-24;
+    .resalted-area {
+      width: $s-32;
+      height: $s-3;
+    }
+  }
+  .constraint-btn-special {
+    position: absolute;
+    height: $s-60;
+    width: $s-24;
+    .resalted-area {
+      height: $s-32;
+      width: $s-3;
+    }
+  }
+}
+
+.constraints-right {
+  grid-area: right;
+  .constraint-btn-rotated {
+    height: $s-72;
+    width: $s-24;
+    .resalted-area {
+      height: $s-32;
+      width: $s-3;
+    }
+  }
+}
+
+.constraints-bottom {
+  grid-area: bottom;
+}
+
+.contraints-selects {
+  @include flexColumn;
+}
+
+.horizontal-select,
+.vertical-select {
+  width: $s-124;
+  padding: 0;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  margin-bottom: $s-8;
+  margin-top: $s-8;
+  padding-left: 0;
+  input {
+    margin: 0;
+  }
+
+  label {
+    @include bodySmallTypography;
+    display: flex;
+    align-items: center;
+    gap: $s-2;
+    cursor: pointer;
+    color: var(--input-checkbox-text-foreground-color);
+    .check-mark {
+      @include flexCenter;
+      width: $s-16;
+      height: $s-16;
+      border-radius: $br-6;
+      background-color: var(--input-checkbox-inactive-background-color);
+      &.checked {
+        background-color: var(--input-checkbox-background-color-active);
+        svg {
+          @extend .button-icon-small;
+          stroke: var(--input-details-color);
+        }
+      }
+      &:hover {
+        border-color: var(--input-checkbox-border-color-hover);
+      }
+      &:focus {
+        border-color: var(--input-checkbox-border-color-focus);
+      }
+    }
+  }
+}

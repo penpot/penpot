@@ -1,0 +1,257 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.element-set {
+  margin: 0;
+}
+
+.title-spacing-board-grid {
+  padding-left: $s-2;
+  margin: 0;
+}
+
+.add-grid {
+  @extend .button-tertiary;
+  height: $s-32;
+  width: $s-28;
+  svg {
+    @extend .button-icon;
+  }
+}
+
+.element-set-content {
+  @include flexColumn;
+  margin: $s-4 0 $s-8 0;
+}
+
+.grid-title {
+  @include flexRow;
+}
+
+.option-row {
+  display: flex;
+  align-items: center;
+  gap: $s-1;
+  border-radius: $br-8;
+  background-color: var(--input-details-color);
+  .show-options {
+    @extend .button-secondary;
+    height: $s-32;
+    width: $s-28;
+    border-radius: $br-8 0 0 $br-8;
+    box-sizing: border-box;
+    border: $s-1 solid var(--input-border-color);
+    svg {
+      @extend .button-icon;
+    }
+    &.selected {
+      @extend .button-icon-selected;
+    }
+  }
+  .type-select-wrapper {
+    width: $s-96;
+    padding: 0;
+    border-radius: 0;
+    height: $s-32;
+    .grid-type-select {
+      border-radius: 0;
+      height: 100%;
+      box-sizing: border-box;
+      border: $s-1 solid var(--input-border-color);
+      &:hover {
+        border: $s-1 solid var(--input-border-color-hover);
+      }
+    }
+  }
+  .grid-size {
+    @extend .asset-element;
+    width: $s-60;
+    margin: 0;
+    padding: 0;
+    padding-left: $s-8;
+    border-radius: 0 $br-8 $br-8 0;
+    .numeric-input {
+      @extend .input-base;
+    }
+  }
+  .editable-select-wrapper {
+    @extend .asset-element;
+    width: $s-60;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    border-radius: 0 $br-8 $br-8 0;
+    .column-select {
+      height: $s-32;
+      border-radius: 0 $br-8 $br-8 0;
+      box-sizing: border-box;
+      border: $s-1 solid var(--input-border-color);
+      .numeric-input {
+        @extend .input-base;
+        margin: 0;
+        padding: 0;
+      }
+      span {
+        @include flexCenter;
+        svg {
+          @extend .button-icon;
+        }
+      }
+    }
+  }
+
+  &.hidden {
+    .show-options {
+      @include hiddenElement;
+      border: $s-1 solid var(--input-border-color-disabled);
+    }
+    .type-select-wrapper,
+    .editable-select-wrapper {
+      @include hiddenElement;
+      .column-select,
+      .grid-type-select {
+        @include hiddenElement;
+        border: $s-1 solid var(--input-border-color-disabled);
+      }
+      .column-select {
+        @include hiddenElement;
+        border-radius: 0 $br-8 $br-8 0;
+        .numeric-input {
+          @include hiddenElement;
+        }
+      }
+    }
+    .grid-size {
+      @include hiddenElement;
+      border: $s-1 solid var(--input-border-color-disabled);
+      .icon {
+        stroke: var(--input-foreground-color-disabled);
+      }
+      .numeric-input {
+        color: var(--input-foreground-color-disabled);
+      }
+    }
+    .actions {
+      .hidden-btn,
+      .lock-btn {
+        background-color: transparent;
+        svg {
+          stroke: var(--input-foreground-color-disabled);
+        }
+      }
+    }
+  }
+}
+
+.actions {
+  @include flexRow;
+}
+
+.action-btn {
+  @extend .button-tertiary;
+  height: $s-32;
+  width: $s-28;
+  svg {
+    @extend .button-icon;
+  }
+}
+
+.grid-advanced-options {
+  @include flexColumn;
+  margin-top: $s-4;
+}
+
+.column-row,
+.square-row {
+  @include flexColumn;
+  position: relative;
+}
+
+.advanced-row {
+  position: relative;
+  display: flex;
+  gap: $s-4;
+  .orientation-select-wrapper {
+    width: $s-92;
+    padding: 0;
+  }
+  .color-wrapper {
+    width: $s-156;
+  }
+  .show-more-options {
+    @extend .button-tertiary;
+    height: $s-32;
+    width: $s-32;
+    svg {
+      @extend .button-icon;
+    }
+    &.selected {
+      @extend .button-icon-selected;
+    }
+  }
+  .height {
+    @extend .input-element;
+    width: $s-108;
+    .icon-text {
+      padding-top: $s-1;
+    }
+  }
+  .gutter,
+  .margin {
+    @extend .input-element;
+    width: $s-108;
+    .icon {
+      &.rotated svg {
+        transform: rotate(90deg);
+      }
+    }
+  }
+
+  .more-options {
+    @include menuShadow;
+    @include flexColumn;
+    position: absolute;
+    top: calc($s-2 + $s-28);
+    right: 0;
+    width: $s-156;
+    max-height: $s-300;
+    padding: $s-2;
+    margin: 0 0 $s-40 0;
+    margin-top: $s-4;
+    border-radius: $br-8;
+    z-index: $z-index-4;
+    overflow-y: auto;
+    background-color: var(--menu-background-color);
+    .option-btn {
+      @include buttonStyle;
+      display: flex;
+      align-items: center;
+      height: $s-32;
+      padding: 0 $s-8;
+      border-radius: $br-6;
+      color: var(--menu-foreground-color);
+
+      &:hover {
+        background-color: var(--menu-background-color-hover);
+        color: var(--menu-foreground-color-hover);
+      }
+    }
+  }
+}
+
+.second-row {
+  @extend .dropdown-wrapper;
+  left: unset;
+  right: 0;
+  width: $s-108;
+  .btn-options {
+    @include buttonStyle;
+    @extend .dropdown-element-base;
+    width: 100%;
+  }
+}

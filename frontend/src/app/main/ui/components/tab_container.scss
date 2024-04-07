@@ -7,68 +7,72 @@
 
 .tab-container {
   display: grid;
-  grid-template-rows: auto 1fr;
-  grid-template-columns: 100%;
+  grid-template-rows: $s-32 1fr;
   height: 100%;
-
-  .tab-container-content {
-    overflow-y: auto;
-    overflow-x: hidden;
-  }
-
-  .tab-element {
-    height: 100%;
-  }
 }
+
 .tab-container-tabs {
   display: flex;
   align-items: center;
   flex-direction: row;
   gap: $s-2;
-  height: $s-32;
-  margin: $s-4 $s-4 0 $s-4;
-  padding: $s-2 $s-2 $s-2 0;
   border-radius: $br-8;
-  background: var(--color-background-secondary);
+  background: var(--tabs-background-color);
   cursor: pointer;
-  font-size: $fs12;
+  font-size: $fs-12;
+  height: 100%;
   .tab-container-tab-wrapper {
     @include flexCenter;
     flex-direction: row;
     height: 100%;
     width: 100%;
-    gap: $s-2;
     .tab-container-tab-title {
       @include flexCenter;
-      @include tabTitleTipography;
-      height: $s-28;
+      @include headlineSmallTypography;
+      height: 100%;
       width: 100%;
+      padding: 0 $s-8;
       margin: 0;
-      border-radius: $br-5;
+      border-radius: $br-8;
       background-color: transparent;
       color: var(--tab-foreground-color);
+      white-space: nowrap;
+      border: $s-2 solid var(--tab-border-color);
+      svg {
+        @extend .button-icon;
+        stroke: var(--tab-foreground-color);
+      }
 
       &.current,
       &.current:hover {
         background: var(--tab-background-color-selected);
+        border-color: var(--tab-border-color-selected);
         color: var(--tab-foreground-color-selected);
+        svg {
+          stroke: var(--tab-foreground-color-selected);
+        }
       }
       &:hover {
         color: var(--tab-foreground-color-hover);
+        svg {
+          stroke: var(--tab-foreground-color-hover);
+        }
       }
     }
   }
+
   .collapse-sidebar {
     @include flexCenter;
     @include buttonStyle;
     height: 100%;
     width: $s-24;
-    padding: 0;
+    min-width: $s-24;
+    padding: 0 $s-6;
     border-radius: $br-5;
     svg {
       @include flexCenter;
-      height: 12px;
-      width: 16px;
+      height: $s-16;
+      width: $s-16;
       stroke: var(--icon-foreground);
       transform: rotate(180deg);
       fill: none;
@@ -83,7 +87,15 @@
     &.collapsed {
       svg {
         transform: rotate(0deg);
+        padding: 0 0 0 $s-6;
       }
     }
   }
+}
+
+.tab-container-content {
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
 }

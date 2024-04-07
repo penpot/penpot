@@ -8,7 +8,7 @@
   (:require
    [app.common.uuid :as uuid]
    [app.main.render :as r]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [promesa.core :as p]))
 
 (defn render-page-export
@@ -22,7 +22,7 @@
      (fn [resolve reject]
        (->> (r/render-page data)
             (rx/take 1)
-            (rx/subs resolve reject))) )))
+            (rx/subs! resolve reject))))))
 
 (defn exports []
   #js {:renderPage render-page-export})

@@ -7,8 +7,9 @@
 (ns app.main.data.workspace.path.common
   (:require
    [app.common.schema :as sm]
+   [app.common.svg.path.subpath :as ups]
    [app.main.data.workspace.path.state :as st]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (def valid-commands
   #{:move-to
@@ -22,23 +23,27 @@
     :elliptical-arc
     :close-path})
 
-(def schema:content
-  [:vector {:title "PathContent"}
-   [:map {:title "PathContentEntry"}
-    [:command [::sm/one-of valid-commands]]
-    ;; FIXME: remove the `?` from prop name
-    [:relative? {:optional true} :boolean]
-    [:params {:optional true}
-     [:map {:title "PathContentEntryParams"}
-      [:x :double]
-      [:y :double]
-      [:c1x {:optional true} :double]
-      [:c1y {:optional true} :double]
-      [:c2x {:optional true} :double]
-      [:c2y {:optional true} :double]]]]])
+;; FIXME: should this schema be defined on common.types ?
 
-(def content?
-  (sm/pred-fn schema:content))
+(def ^:private
+  schema:path-content
+  (sm/define
+    [:vector {:title "PathContent"}
+     [:map {:title "PathContentEntry"}
+      [:command [::sm/one-of valid-commands]]
+      ;; FIXME: remove the `?` from prop name
+      [:relative? {:optional true} :boolean]
+      [:params {:optional true}
+       [:map {:title "PathContentEntryParams"}
+        [:x :double]
+        [:y :double]
+        [:c1x {:optional true} :double]
+        [:c1y {:optional true} :double]
+        [:c2x {:optional true} :double]
+        [:c2y {:optional true} :double]]]]]))
+
+(def check-path-content!
+  (sm/check-fn schema:path-content))
 
 (defn init-path []
   (ptk/reify ::init-path))
@@ -48,10 +53,11 @@
   (dissoc state :last-point :prev-handler :drag-handler :preview))
 
 (defn finish-path
-  [_source]
+  []
   (ptk/reify ::finish-path
     ptk/UpdateEvent
     (update [_ state]
       (let [id (st/get-path-id state)]
         (-> state
-            (update-in [:workspace-local :edit-path id] clean-edit-state))))))
+            (update-in [:workspace-local :edit-path id] clean-edit-state)
+            (update-in (st/get-path-location state :content) ups/close-subpaths))))))

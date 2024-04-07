@@ -1,0 +1,75 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.element-set {
+  margin: 0;
+}
+
+.element-title {
+  margin: 0;
+}
+
+.add-typography {
+  @extend .button-tertiary;
+  height: $s-32;
+  width: $s-28;
+  svg {
+    @extend .button-icon;
+  }
+}
+
+.element-content {
+  @include flexColumn;
+  margin-top: $s-4;
+}
+
+.multiple-typography {
+  @extend .mixed-bar;
+}
+
+.multiple-text {
+  @include bodySmallTypography;
+  flex-grow: 1;
+  color: var(--input-foreground-color-active);
+}
+
+.multiple-typography-button {
+  @extend .button-tertiary;
+  height: $s-32;
+  width: $s-28;
+  svg {
+    @extend .button-icon;
+  }
+}
+
+.text-align-options {
+  display: flex;
+  gap: $s-4;
+}
+
+.align-options,
+.text-direction-options,
+.vertical-align-options,
+.grow-options,
+.text-decoration-options {
+  height: $s-32;
+}
+
+.more-options {
+  @extend .button-tertiary;
+  height: $s-32;
+  width: $s-28;
+  svg {
+    @extend .button-icon;
+  }
+}
+
+.text-decoration-options {
+  display: flex;
+  gap: $s-4;
+}

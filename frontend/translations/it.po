@@ -398,7 +398,6 @@ msgid_plural "dashboard.fonts.fonts-added"
 msgstr[0] "1 font aggiunto"
 msgstr[1] "%s font aggiunti"
 
-#, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
 "Qualsiasi font web caricato qui verrà aggiunto alla lista dei font family "
@@ -407,7 +406,6 @@ msgstr ""
 "**singolo font family**. È possibile caricare font con i seguenti "
 "formati:**TTF, OTF e WOFF**(uno solo di questi è necessario)."
 
-#, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "È consigliabile caricare unicamente font di cui si è proprietari o dei "
@@ -844,7 +842,7 @@ msgstr "E-mail"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-go-to"
-msgstr "Vai su Twitter"
+msgstr "Vai su X"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-subtitle1"
@@ -852,7 +850,7 @@ msgstr "Siamo qui per aiutarti con le tue domande tecniche."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-title"
-msgstr "Account di supporto Twitter"
+msgstr "Account di supporto X"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
@@ -926,10 +924,6 @@ msgstr "Larghezza"
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow"
 msgstr "Ombra"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.spread"
-msgstr "S"
 
 #: src/app/main/ui/inspect/attributes/stroke.cljs
 msgid "inspect.attributes.stroke"
@@ -1279,7 +1273,6 @@ msgid "labels.no-invitations"
 msgstr "Non ci sono inviti."
 
 #: src/app/main/ui/dashboard/team.cljs
-#, markdown
 msgid "labels.no-invitations-hint"
 msgstr ""
 "Premi il pulsante \"Invita nel team\" per invitare altri membri in questo "
@@ -1611,13 +1604,6 @@ msgstr[1] "Eliminare questi file?"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message"
-msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] "Questo file contiene librerie usate nel file:"
-msgstr[1] "Questo file contiene librerie usate nei file:"
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
 msgid_plural "modals.delete-shared-confirm.title"
 msgstr[0] "Eliminazione del file"
@@ -1749,28 +1735,10 @@ msgstr "Annulla pubblicazione"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint"
-msgid_plural "modals.unpublish-shared-confirm.hint"
-msgstr[0] ""
-"Se annulli la pubblicazione, gli elementi diventeranno parte della libreria "
-"di questo file."
-msgstr[1] ""
-"Se annulli la pubblicazione, gli elementi diventeranno parte della libreria "
-"di questi file."
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "Annullare la pubblicazione di questa libreria?"
 msgstr[1] "Annullare la pubblicazione di queste librerie?"
-
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message"
-msgid_plural "modals.unpublish-shared-confirm.scd-message"
-msgstr[0] "È utilizzata in questo file:"
-msgstr[1] "È utilizzata in questi file:"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -1876,12 +1844,6 @@ msgstr "Guida alla contribuzione"
 msgid "onboarding-v2.welcome.title"
 msgstr "Benvenuti su Penpot!"
 
-msgid "onboarding.choice.team-up.create-later"
-msgstr "Crea un team più tardi"
-
-msgid "onboarding.choice.team-up.create-team"
-msgstr "Il nome del tuo team"
-
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "Dopo aver nominato il tuo team, potrai invitare persone ad unirsi ad esso."
 
@@ -1896,17 +1858,8 @@ msgstr ""
 "Non dimenticarti di includere ogni tipo di persona. Programmatori, "
 "designers, responsabili... la diversità si somma :)"
 
-msgid "onboarding.choice.team-up.invite-members-skip"
-msgstr "Crea un team e invita più tardi"
-
-msgid "onboarding.choice.team-up.invite-members-submit"
-msgstr "Crea un team e manda inviti"
-
 msgid "onboarding.choice.team-up.roles"
 msgstr "Invita con il ruolo:"
-
-msgid "onboarding.contrib.desc2.1"
-msgstr "Puoi accedere al"
 
 msgid "onboarding.newsletter.accept"
 msgstr "Si, iscrivimi"
@@ -1922,9 +1875,35 @@ msgstr "Condizioni sulla Privacy."
 msgid "onboarding.newsletter.title"
 msgstr "Vuoi ricevere le news di Pentot?"
 
-msgid "onboarding.slide.0.title"
-msgstr "Librerie di design, stili e componenti"
-
 #: src/app/main/ui/dashboard/team.cljs
 msgid "title.team-invitations"
 msgstr "Inviti - %s - Penpot"
+
+#~ msgid "dashboard.newsletter-title"
+#~ msgstr "Iscrizione alla newsletter"
+
+#~ msgid "feedback.chat-subtitle"
+#~ msgstr "Hai voglia di parlare? Chatta con noi su Gitter"
+
+#~ msgid "inspect.attributes.shadow.shorthand.offset-x"
+#~ msgstr "X"
+
+#~ msgid "labels.images"
+#~ msgstr "Immagini"
+
+#~ msgid "labels.skip"
+#~ msgstr "Saltare"
+
+#~ msgid "onboarding.contrib.alt"
+#~ msgstr "Open Source"
+
+#~ msgid "onboarding.contrib.link"
+#~ msgstr "progetto su github"
+
+#~ msgid "onboarding.slide.0.desc1"
+#~ msgstr ""
+#~ "Crea splendide interfacce utente in collaborazione con tutti i membri del "
+#~ "team."
+
+#~ msgid "onboarding.slide.1.desc1"
+#~ msgstr "Crea interazioni complete per imitare al meglio il prodotto finale."

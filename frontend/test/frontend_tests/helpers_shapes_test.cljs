@@ -9,9 +9,8 @@
    [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
-   [app.common.pages.helpers :as cph]
    [app.main.data.workspace.libraries :as dwl]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cljs.pprint :refer [pprint]]
    [cljs.test :as t :include-macros true]
    [clojure.stacktrace :as stk]
@@ -19,7 +18,7 @@
    [frontend-tests.helpers.libraries :as thl]
    [frontend-tests.helpers.pages :as thp]
    [linked.core :as lks]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (t/use-fixtures :each
   {:before thp/reset-idmap!})
@@ -47,13 +46,13 @@
             color {:color clr/white}
 
             store (the/prepare-store state done
-              (fn [new-state]
-                (t/is (= (get-in new-state [:workspace-data
-                                            :recent-colors])
-                         [color]))))]
+                                     (fn [new-state]
+                                       (t/is (= (get-in new-state [:workspace-data
+                                                                   :recent-colors])
+                                                [color]))))]
 
         (ptk/emit!
-          store
-          (dwl/add-recent-color color)
-          :the/end)))))
+         store
+         (dwl/add-recent-color color)
+         :the/end)))))
 

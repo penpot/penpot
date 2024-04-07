@@ -5,11 +5,13 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.colorpicker.harmony
+  (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.colors :as cc]
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]
    [app.main.ui.workspace.colorpicker.slider-selector :refer [slider-selector]]
-   [app.util.color :as uc]
    [app.util.dom :as dom]
    [app.util.object :as obj]
    [cuerdas.core :as str]
@@ -57,13 +59,13 @@
     (gpt/point x y)))
 
 (mf/defc harmony-selector [{:keys [color disable-opacity on-change on-start-drag on-finish-drag]}]
-  (let [canvas-ref (mf/use-ref nil)
+  (let [canvas-ref     (mf/use-ref nil)
+        canvas-side    192
         {hue :h saturation :s value :v alpha :alpha} color
 
-        canvas-side 152
-        pos-current (color->point canvas-side hue saturation)
+        pos-current    (color->point canvas-side hue saturation)
         pos-complement (color->point canvas-side (mod (+ hue 180) 360) saturation)
-        dragging? (mf/use-state false)
+        dragging?      (mf/use-state false)
 
         calculate-pos (fn [ev]
                         (let [{:keys [left right top bottom]} (-> ev dom/get-target dom/get-bounding-rect)
@@ -75,10 +77,10 @@
                               py (- (* 2 py) 1)
 
                               angle (mth/degrees (mth/atan2 px py))
-                              new-hue (mod (- angle 90 ) 360)
+                              new-hue (mod (- angle 90) 360)
                               new-saturation (mth/clamp (mth/distance [px py] [0 0]) 0 1)
-                              hex (uc/hsv->hex [new-hue new-saturation value])
-                              [r g b] (uc/hex->rgb hex)]
+                              hex (cc/hsv->hex [new-hue new-saturation value])
+                              [r g b] (cc/hex->rgb hex)]
                           (on-change {:hex hex
                                       :r r :g g :b b
                                       :h new-hue
@@ -103,49 +105,38 @@
              (on-finish-drag))))
 
         on-change-value (fn [new-value]
-                          (let [hex (uc/hsv->hex [hue saturation new-value])
-                                [r g b] (uc/hex->rgb hex)]
+                          (let [hex (cc/hsv->hex [hue saturation new-value])
+                                [r g b] (cc/hex->rgb hex)]
                             (on-change {:hex hex
                                         :r r :g g :b b
                                         :v new-value})))
         on-complement-click (fn [_]
                               (let [new-hue (mod (+ hue 180) 360)
-                                    hex (uc/hsv->hex [new-hue saturation value])
-                                    [r g b] (uc/hex->rgb hex)]
+                                    hex (cc/hsv->hex [new-hue saturation value])
+                                    [r g b] (cc/hex->rgb hex)]
                                 (on-change {:hex hex
                                             :r r :g g :b b
                                             :h new-hue
                                             :s saturation})))
 
-        on-change-opacity (fn [new-alpha] (on-change {:alpha new-alpha}))]
+        on-change-opacity (fn [new-alpha] (on-change {:alpha new-alpha}))
+
+        ;; This colors are to display the value slider
+        [h1 s1 l1] (cc/hsv->hsl [hue saturation 0])
+        [h2 s2 l2] (cc/hsv->hsl [hue saturation 255])]
 
     (mf/use-effect
      (mf/deps canvas-ref)
      (fn [] (when canvas-ref
               (create-color-wheel (mf/ref-val canvas-ref)))))
 
-    [:div.harmony-selector
-     [:div.hue-wheel-wrapper
-      [:canvas.hue-wheel
-       {:ref canvas-ref
-        :width canvas-side
-        :height canvas-side
-        :on-pointer-down handle-start-drag
-        :on-pointer-up handle-stop-drag
-        :on-lost-pointer-capture handle-stop-drag
-        :on-click calculate-pos
-        :on-pointer-move #(when @dragging? (calculate-pos %))}]
-      [:div.handler {:style {:pointer-events "none"
-                             :left (:x pos-current)
-                             :top (:y pos-current)}}]
-      [:div.handler.complement {:style {:left (:x pos-complement)
-                                        :top (:y pos-complement)
-                                        :cursor "pointer"}
-                                :on-click on-complement-click}]]
-     [:div.handlers-wrapper
-      [:& slider-selector {:class "value"
+    [:div {:class (stl/css :harmony-selector)
+           :style {"--hue-from" (dm/str "hsl(" h1 ", " (* s1 100) "%, " (* l1 100) "%)")
+                   "--hue-to" (dm/str "hsl(" h2 ", " (* s2 100) "%, " (* l2 100) "%)")}}
+     [:div {:class (stl/css :handlers-wrapper)}
+      [:& slider-selector {:type :value
                            :vertical? true
-                           :reverse? true
+                           :reverse? false
                            :value value
                            :max-value 255
                            :vertical true
@@ -153,11 +144,32 @@
                            :on-start-drag on-start-drag
                            :on-finish-drag on-finish-drag}]
       (when (not disable-opacity)
-        [:& slider-selector {:class "opacity"
-                             :vertical? true
-                             :value alpha
-                             :max-value 1
-                             :vertical true
-                             :on-change on-change-opacity
-                             :on-start-drag on-start-drag
-                             :on-finish-drag on-finish-drag}])]]))
+        [[:& slider-selector {:type :opacity
+                              :vertical? true
+                              :value alpha
+                              :max-value 1
+                              :vertical true
+                              :on-change on-change-opacity
+                              :on-start-drag on-start-drag
+                              :on-finish-drag on-finish-drag}]])]
+
+     [:div {:class (stl/css :hue-wheel-wrapper)}
+      [:canvas {:class (stl/css :hue-wheel)
+                :ref canvas-ref
+                :width canvas-side
+                :height canvas-side
+                :on-pointer-down handle-start-drag
+                :on-pointer-up handle-stop-drag
+                :on-lost-pointer-capture handle-stop-drag
+                :on-click calculate-pos
+                :on-pointer-move #(when @dragging? (calculate-pos %))}]
+      [:div {:class (stl/css :handler)
+             :style {:pointer-events "none"
+                     :left (:x pos-current)
+                     :top (:y pos-current)}}]
+      [:div {:class (stl/css-case :handler true
+                                  :complement true)
+             :style {:left (:x pos-complement)
+                     :top (:y pos-complement)
+                     :cursor "pointer"}
+             :on-click on-complement-click}]]]))

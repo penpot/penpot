@@ -1,0 +1,4884 @@
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2024-01-02 16:16+0000\n"
+"Last-Translator: Alejandro Alonso <alejandro.alonso@kaleidos.net>\n"
+"Language-Team: Hausa <https://hosted.weblate.org/projects/penpot/frontend/ha/"
+">\n"
+"Language: ha\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 5.4-dev\n"
+
+msgid "shortcut-subsection.navigation-dashboard"
+msgstr "shawagi"
+
+msgid "shortcuts.insert-image"
+msgstr "sa hoto"
+
+msgid "shortcuts.bold"
+msgstr "fito da shi barobaro"
+
+msgid "shortcuts.open-viewer"
+msgstr "tafi sashin da masu kallo suke hulda"
+
+msgid "onboarding-v2.before-start.title"
+msgstr "kafin ka fara"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-out"
+msgstr "fita"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.create-group-hint"
+msgstr ""
+"abubuwanka za a samu su suna nan take kamar \"sunan kungiya/ sunan abubuwan\""
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.use-default"
+msgstr "yi amfani da tsoho"
+
+#, permanent
+msgid "inspect.attributes.stroke.alignment.outer"
+msgstr "daga waje"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.edit"
+msgstr "gyara"
+
+#: src/app/main/ui/inspect/attributes/image.cljs
+msgid "inspect.attributes.image.height"
+msgstr "tsawo"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography"
+msgstr "tsara rubutu"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.try-out-before-using-penpot-on-premise"
+msgstr "jaraba kafin ka yi aiki da fenfot"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.delete-team-member-confirm.title"
+msgstr "cire memban tawaga"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.move"
+msgstr "motsa (%s)"
+
+msgid "shortcuts.make-curve"
+msgstr "kirkiri lankwasa"
+
+msgid "shortcuts.snap-nodes"
+msgstr "yanke kauri"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.work-in-concept-ideas"
+msgstr "yin aikin kan tunani mai kyau"
+
+#: src/app/main/ui/workspace/colorpalette.cljs
+msgid "workspace.libraries.colors.empty-palette"
+msgstr "Babu salon kaloli a ma'ajiya yanzu"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.title"
+msgid_plural "modals.delete-shared-confirm.title"
+msgstr[0] "goge kundi"
+msgstr[1] "goge kundaye"
+
+msgid "dashboard.fonts.empty-placeholder"
+msgstr "fonts da ka xora nan za ya bayyana."
+
+# SUBSECTIONS
+msgid "shortcut-subsection.alignment"
+msgstr "kwaskwarima"
+
+msgid "errors.webhooks.unexpected"
+msgstr "matsalar da ba zata ba lokacin farfaxowa"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-30-days"
+msgstr "kwanaki 30"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "settings.multiple"
+msgstr "gauraya"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "errors.member-is-muted"
+msgstr "bayanan da ka nema imel din su ya suma (bayanan matsaloli)."
+
+msgid "workspace.options.component.copy"
+msgstr "Kwafa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.column"
+msgstr "shafi"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.add-shared"
+msgstr "tura tamkar fenfot"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interactions"
+msgstr "yayin hulda"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.auth-provider-not-configured"
+msgstr "manhajar tantancewar ba ta tsaru ba."
+
+msgid "workspace.undo.entry.multiple.circle"
+msgstr "da'ira"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.message"
+msgstr "ka tabbata kana son goge wannan alamar?"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.bad-gateway.desc-message"
+msgstr ""
+"ka jinkirta kaxan sannan ka qara gwadawa; mu na aiki daidai domin tattala "
+"aikinmu."
+
+#: src/app/main/ui/inspect/attributes/fill.cljs
+msgid "inspect.attributes.fill"
+msgstr "cika"
+
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+msgid "media.loading"
+msgstr "xora hoto â€¦"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.access-tokens"
+msgstr "lambobi masu xauke da bayani"
+
+msgid "shortcuts.open-color-picker"
+msgstr "abin daukan kala"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-action"
+msgstr "aiki"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.token-will-not-expire"
+msgstr "lambar tsaron ba ta da lokacin daina aiki"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-object"
+msgstr "Ana fitarwa"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "label.shortcuts"
+msgstr "yanke"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.colors"
+msgstr "%s kala"
+
+msgid "shortcuts.delete"
+msgstr "goge"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-bottom-center"
+msgstr "kasa tsakiya"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.in-this-file"
+msgstr "Ma'adana a wanna fiyal"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-gitlab-submit"
+msgstr "wurin nazari"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.team-info"
+msgstr "bayanin tawaga"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.top"
+msgstr "sama"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.your-feedback-will-help-us"
+msgstr ""
+"bayaninka za ya sanya mu fahimci kwarewarka da xabi'unka ta haka ne za mu "
+"mayar maka da fenfot kayan aikin da ka ke jin daxin aiki da shi."
+
+msgid "shortcuts.move-unit-down"
+msgstr "Matsa da sashin kasa"
+
+msgid "common.share-link.placeholder"
+msgstr "hanya mai kyau za ta bayyana a nan"
+
+msgid "dashboard.import.import-message"
+msgid_plural "dashboard.import.import-message"
+msgstr[0] "an shigar kundi 1."
+msgstr[1] "%s kundaye sun shiga."
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.hleft"
+msgstr "Daidaita hagu (%s)"
+
+msgid "labels.accept"
+msgstr "karva"
+
+msgid "workspace.shape.menu.transform-to-path"
+msgstr "sauya zuwa hanya"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-title"
+msgstr "an manta lambar tsaro?"
+
+msgid "shortcut-subsection.edit"
+msgstr "Tace"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.auto"
+msgstr "da kanshi"
+
+msgid "shortcuts.draw-rect"
+msgstr "Ractangula"
+
+msgid "onboarding.choice.team-up.invite-members-info"
+msgstr ""
+"ka tuna da kowa. masu qirqira, masu tsarawa, shuwagabanniS... daban-daban ya "
+"qara :)"
+
+msgid "modals.invite-member.repeated-invitation"
+msgstr ""
+"waxansu imel daga membobin qungiyar na yanzu. ba za a aikawa da gayyatarsu "
+"ba ."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-push"
+msgstr "Tura"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "notifications.profile-deletion-not-allowed"
+msgstr "ba za ka iya goge kundin ba. ka jira umarnin tawaga ka fin ka ci gaba."
+
+msgid "workspace.options.inspect"
+msgstr "Duba"
+
+msgid "inspect.attributes.typography.text-decoration.strikethrough"
+msgstr "zana layi tsakiyar rubutu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-top-center"
+msgstr "sama tsakiya"
+
+msgid "shortcuts.move-nodes"
+msgstr "matsa a hade"
+
+#: src/app/main/ui/settings.cljs
+msgid "dashboard.your-account-title"
+msgstr "gidanka"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.search-placeholder"
+msgstr "nema â€¦"
+
+msgid "shortcuts.redo"
+msgstr "gyara"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.multiply"
+msgstr "sau"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.left"
+msgstr "Hagu"
+
+msgid "dashboard.webhooks.active"
+msgstr "ya na amfani"
+
+msgid "common.share-link.current-tag"
+msgstr "(yanzu)"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
+msgid "errors.email-invalid"
+msgstr "sanya imel mai amfani"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.type.stretch"
+msgstr "mikewa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.letter-spacing"
+msgstr "tazarar harafi"
+
+msgid "shortcuts.bring-backward"
+msgstr "komawa baya"
+
+msgid "shortcuts.show-shortcuts"
+msgstr "nuna / boye yanken"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dashboard.new-project"
+msgstr "+ sabon aiki"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.invalid-token-error"
+msgstr "lambar tsaron da ka sanya ba daidai ba ce."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.developer"
+msgstr "ma su qirqira"
+
+msgid "labels.show-comments-list"
+msgstr "jerin ire-iren yabo"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.dont-show-interactions"
+msgstr "Karka/ki nuna hulda"
+
+msgid "dashboard.export.options.detach.message"
+msgstr ""
+"manhajar tura kundi ba ta shiga cikin fitarwa, wani amfaniqarawa a taska. "
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-title"
+msgstr "na ji daxin sake haxuwa da kai!"
+
+msgid "shortcut-subsection.shape"
+msgstr "Siffa"
+
+#: src/app/main/ui/inspect.cljs, src/app/main/ui/viewer.cljs
+msgid "title.viewer"
+msgstr "%s - duba kumburi - Mazubin biruka"
+
+msgid "dashboard.export.options.merge.title"
+msgstr "tura taska ya qunshi bayanan da ke cikin kundin taskoki"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "title.team-members"
+msgstr "Yan kungiya - %s - Mazubin biruka"
+
+msgid "shortcuts.align-justify"
+msgstr "Tabbataccan tsari"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.direction-rtl"
+msgstr "RTL"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.manager"
+msgstr "shugaban aiki"
+
+msgid "workspace.options.component.create-annotation"
+msgstr "Kirkiri sharhin rubuta"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.rotation"
+msgstr "jujjuyawa"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-other-team"
+msgstr "tura ma sauran tawaga"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.num-of-members"
+msgstr "%s memba"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.admin"
+msgstr "shugaba"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.grow-auto-width"
+msgstr "sarrafaffen fadi"
+
+msgid "errors.team-leave.member-does-not-exists"
+msgstr "mamban da ka ke son sanyawa ba ya a ciki."
+
+msgid "workspace.options.shadow-options.color"
+msgstr "inuwar kala"
+
+#, markdown
+msgid "dashboard.fonts.warning-text"
+msgstr ""
+"matsalolin lasisi daga sama zuwa qasa magwajin da ke aiki iri-iri. domin "
+"bincikawa za ka iya amfani da aikin ma'aunin sama da qasa [shi ne "
+"haka](https://ma'aunin sama da qasa.matattarar bayanai.app/). bugu da qari, "
+"mun aminta da amfani da [taransifota](https://taransifota.org/) domin samo "
+"webfonts da adana kurakurai. "
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create"
+msgstr "samo sabuwar lambar tsaro"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "notifications.invitation-email-sent"
+msgstr "an aika da saqon"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-reassign.select-member-to-promote"
+msgstr "zavi memba domin havakawa"
+
+msgid "shortcuts.draw-text"
+msgstr "rubutaccan sako"
+
+msgid "viewer.header.inspect-section"
+msgstr "Duba (%s)"
+
+msgid "workspace.shape.menu.flatten"
+msgstr "mikad da abu"
+
+msgid "shortcuts.delete-node"
+msgstr "fita da ga cikin net wok"
+
+msgid "onboarding-v2.before-start.desc3"
+msgstr "za ka iya kallon koyarwarmu da mutanenmu ke yi."
+
+msgid "workspace.header.menu.hide-pixel-grid"
+msgstr "boye pixel akwati"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "auth.notifications.team-invitation-accepted"
+msgstr "ka zama dan tawaga"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.feedback-sent"
+msgstr "aika bayani"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "haxin guiwa!"
+
+msgid "workspace.undo.entry.multiple.page"
+msgstr "shafi"
+
+msgid "shortcuts.ungroup"
+msgstr "Fita daka rukuni"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.bad-gateway.main-message"
+msgstr "akwai matsala"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.remove-shared-confirm.hint"
+msgstr ""
+"idan ba ka cire taskar shirye-shirye ba, kundin taskar na wannan kundin zai "
+"tsaya kasancewar za ka iya amfani da shi a cikin kundayenka."
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.empty"
+msgstr "babu labaran da su ka canja a yanzu"
+
+msgid "dashboard.libraries-and-templates"
+msgstr "taska da shaidar kamfanoni"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin-simple"
+msgstr "Samfarin gefe"
+
+msgid "workspace.undo.entry.multiple.rect"
+msgstr "rectangles"
+
+#: src/app/main/data/common.cljs
+msgid "notifications.by-code.upgrade-version"
+msgstr "akwai sabon yayi, fatan za a sabunta fage"
+
+msgid "shortcuts.go-to-drafts"
+msgstr "ta fi rumbu"
+
+msgid "onboarding.welcome.alt"
+msgstr "fenfot"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.bottom"
+msgstr "Kasa"
+
+msgid "shortcuts.zoom-selected"
+msgstr "Zuko wanda aka zaba"
+
+msgid "modals.delete-component-annotation.message"
+msgstr "ka tabbata kana son goge wannan bayanin?"
+
+msgid "inspect.attributes.stroke.style.none"
+msgstr "babu"
+
+msgid "errors.auth.unable-to-login"
+msgstr "lokacin ya qare ko ba a tantance ka ba."
+
+msgid "workspace.options.grid.params.color"
+msgstr "Kala"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.type.top"
+msgstr "sama"
+
+msgid "shortcuts.add-node"
+msgstr "kara Girma"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.group"
+msgstr "rukuni"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.accept"
+msgid_plural "modals.delete-shared-confirm.accept"
+msgstr[0] "goge kundi"
+msgstr[1] "goge kundaye"
+
+#: src/app/main/ui/inspect/attributes/stroke.cljs
+msgid "inspect.attributes.stroke"
+msgstr "yankewa"
+
+msgid "onboarding.team-modal.create-team-feature-5"
+msgstr "100% kyauta!"
+
+#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs
+msgid "workspace.options.size-presets"
+msgstr "yanayin girman yanayin"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.sitemap"
+msgstr "taswirar wuri"
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/dashboard/comments.cljs
+msgid "labels.no-comments-available"
+msgstr "an dakatar da kai duka! Alamar  sabon sharhi za ta fito nan."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.feedback-disabled"
+msgstr "kasa samun bayani"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgid_plural "modals.unpublish-shared-confirm.accept"
+msgstr[0] "maras wallafa"
+msgstr[1] "maras wallafa"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.marketing"
+msgstr "kasuwanci"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.update"
+msgstr "Sabuntawa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin"
+msgstr "gefe"
+
+msgid "shortcuts.align-hcenter"
+msgstr "tsarin tsakiya ko ina"
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
+msgid "labels.show-all-comments"
+msgstr "fito da yabo"
+
+#: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.logout"
+msgstr "fita"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-180-days"
+msgstr "kwanaki 180"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.color-burn"
+msgstr "kala konanniya"
+
+msgid "workspace.options.opacity"
+msgstr "dishi dishi"
+
+msgid "shortcuts.prev-frame"
+msgstr "allon da ya gabata"
+
+msgid "workspace.options.component.edit-annotation"
+msgstr "Tace sharhin rubutu"
+
+msgid "dashboard.import.progress.upload-data"
+msgstr "xora bayani akan sabis (%s/%s)"
+
+msgid "shortcuts.draw-curve"
+msgstr "Ratse"
+
+#: src/app/main/ui/workspace/comments.cljs
+msgid "labels.all"
+msgstr "duk"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.file"
+msgstr "fayil"
+
+#: src/app/main/ui/inspect/attributes/common.cljs
+msgid "inspect.attributes.color.hsla"
+msgstr "HSLA"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "errors.registration-disabled"
+msgstr "rigitar ba ta yi ba."
+
+msgid "workspace.undo.entry.multiple.media"
+msgstr "kadarar zane"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.get-the-code-from-my-team-project"
+msgstr "sami lambar kowane aiki "
+
+msgid "workspace.options.show-in-viewer"
+msgstr "fito da kaurin sosai"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.lowercase"
+msgstr "yanayin kasa"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "errors.password-invalid-confirmation"
+msgstr "tabbata labar tsaro ta yi daidai"
+
+msgid "workspace.undo.entry.multiple.group"
+msgstr "rukunis"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.updates"
+msgstr "sabuntawa"
+
+msgid "dashboard.export-frames"
+msgstr "Allon fitarwa na PDF"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs
+msgid "modals.delete-page.title"
+msgstr "goge shafi"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.service-unavailable.main-message"
+msgstr "ba sabis"
+
+msgid "shortcuts.opacity-2"
+msgstr "Saita dishi dishi zuwa kashi 20"
+
+msgid "workspace.shape.menu.create-multiple-components"
+msgstr "kirkiri abubuwa da yawa"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.rename-group"
+msgstr "sake sunan kungiyar"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-profile"
+msgstr "ka na son gwadawa ne kawai?"
+
+msgid "webhooks.last-delivery.success"
+msgstr "Sakon karshe ya isa."
+
+msgid "shortcuts.bool-intersection"
+msgstr "ma'aunin abubuwa daban daban"
+
+msgid "workspace.options.stroke-width"
+msgstr "gigciye fadin"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-ease-out"
+msgstr "sauki waje"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.not-found.desc-message"
+msgstr "babu wannan fagen, ko ba ka da izinin shiga."
+
+msgid "workspace.options.x"
+msgstr "X layi"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.members"
+msgstr "mambobi"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "dashboard.notifications.email-verified-successfully"
+msgstr "an tantance adireshinka na imel"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.show-interactions"
+msgstr "Nuna hulda"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.hint"
+msgstr ""
+"idan ka canza wurin mallaka, ba za ka iya sauya matsayin shugaba ba, gazawar "
+"wasu dokokin wannan tawaagar. "
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-self"
+msgstr "kai/ni"
+
+msgid "errors.webhooks.invalid-uri"
+msgstr "URL bai gyaru ba."
+
+msgid "modals.create-webhook.url.placeholder"
+msgstr "https://misali.com/postreceive"
+
+msgid "shortcuts.draw-nodes"
+msgstr "samar da hanya"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.you"
+msgstr "(kai)"
+
+msgid "dashboard.options"
+msgstr "zavi"
+
+msgid "workspace.shape.menu.path"
+msgstr "hanya"
+
+msgid "onboarding.templates.title"
+msgstr "fara tsarawa"
+
+msgid "labels.go-back"
+msgstr "koma baya"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.message"
+msgid_plural "modals.unpublish-shared-confirm.message"
+msgstr[0] "ka tabbata ka na son rufe taskar nan?"
+msgstr[1] "ka tabbata ka na son rufe taskokin nan?"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "errors.wrong-old-password"
+msgstr "tsohuwar lambar tsaro ba daidai ba ce"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.unpublish-shared"
+msgstr "wallafa taska"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.personal-project"
+msgstr "ina aikin kaina"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.offsety"
+msgstr "Y"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.size"
+msgstr "wurin daxa girma"
+
+#: src/app/main/ui/inspect.cljs, src/app/main/ui/viewer.cljs
+msgid "viewer.frame-not-found"
+msgstr "Ba'a sami allon ba."
+
+msgid "workspace.focus.focus-mode"
+msgstr "tsarin maida hankali"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-submit"
+msgstr "gano lambar tsaro"
+
+msgid "shortcuts.cut"
+msgstr "cire"
+
+#: src/app/main/ui/confirm.cljs
+msgid "ds.component-subtitle"
+msgstr "zamanantar da sassa:"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.delete"
+msgstr "goge"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs
+msgid "workspace.options.component"
+msgstr "Bangarori"
+
+#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
+msgid "dashboard.copy-suffix"
+msgstr "(kwafi)"
+
+msgid "labels.export"
+msgstr "fitarwa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-ms"
+msgstr "ms"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.right"
+msgstr "dama"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component.cancel"
+msgstr "soke"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.libraries.colors.save-color"
+msgstr "Adana salon kala"
+
+msgid "shortcuts.opacity-8"
+msgstr "seta dishi dishin zuwa kashi 8o"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.ellipse"
+msgstr "siffar kwai (%s)"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.search"
+msgstr "nemo kadarar"
+
+msgid "shortcuts.or"
+msgstr " ko "
+
+msgid "shortcuts.opacity-5"
+msgstr "Saita dishi dishi zuwa kashi 50"
+
+msgid "onboarding-v2.newsletter.desc"
+msgstr ""
+"domin jin daxin fenfot , sai ka biya kuxi domin labarai da ci gaban da ake "
+"samu."
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.nudge-title"
+msgstr "adadin jan hankali"
+
+msgid "workspace.sidebar.layers.groups"
+msgstr "rukuni"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square-marker-short"
+msgstr "Rectangle"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "labels.new-password"
+msgstr "sabuwar lambar tsaro"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.errors-required-name"
+msgstr "ana buqatar suna"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-top-left"
+msgstr "sama hagu"
+
+msgid "shortcut-section.dashboard"
+msgstr "allon kallo"
+
+msgid "dashboard.webhooks.active.explain"
+msgstr "idan an sami sauyi a nan ake kawo shi"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.create-new-team"
+msgstr "yi sabuwar tawaga"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.color-palette"
+msgstr "farantin kala (%s)"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.activated.scd-message"
+msgid_plural "modals.delete-shared-confirm.activated.scd-message"
+msgstr[0] "za a iya buxe wannan taskirar a nan: "
+msgstr[1] "za a iya buxe taskirorin nan a nan: "
+
+msgid "shortcuts.move-fast-left"
+msgstr "Matsa hagu da sauri"
+
+msgid "workspace.undo.entry.multiple.frame"
+msgstr "allo"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "labels.update"
+msgstr "sabunta"
+
+msgid "labels.num-of-frames"
+msgid_plural "labels.num-of-frames"
+msgstr[0] "allo 1"
+msgstr[1] "alluna %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-item-min-h"
+msgstr "tsaho mafi kankanta"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.add-shared-confirm.message"
+msgstr "qara â€œ%sâ€ xakin ajiya"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.loading-files"
+msgstr "aikin dora kundaye â€¦"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component-in-bulk.hint"
+msgstr ""
+"ka kusa sabunta taskar ajiyar shir-shirye. zai iya shafar sauran kundayen da "
+"ke amfani da ita."
+
+msgid "workspace.path.actions.add-node"
+msgstr "kara kauri (%s)"
+
+msgid "workspace.options.component.main"
+msgstr "Ainahin"
+
+#: src/app/main/ui/workspace/sidebar/options.cljs
+msgid "workspace.options.design"
+msgstr "zane"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dashboard.projects-title"
+msgstr "aiki"
+
+msgid "workspace.undo.entry.single.frame"
+msgstr "allo"
+
+msgid "shortcuts.flip-vertical"
+msgstr "kifa ta tsaye"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow-starts"
+msgstr "gudun farko"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-position"
+msgstr "Mataki"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-dynamic-alignment"
+msgstr "bada damar daidaitawa mai canjawa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.more-colors"
+msgstr "kaloli masu yawa"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-confirm.accept"
+msgstr "goge kundi"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.freelancer"
+msgstr "ni mai zaman kansa ne"
+
+msgid "shortcuts.paste"
+msgstr "manna"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-bottom"
+msgstr "jerin kasa"
+
+msgid "labels.fonts"
+msgstr "Font"
+
+msgid "shortcuts.not-found"
+msgstr "babu gajeriyar hanya"
+
+msgid "common.share-link.destroy-link"
+msgstr "tarwatsa hanya"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.hint"
+msgstr ""
+"ka tabbata memban tawaga kaxai, za ya iya goge tawaga tare da  aikinta da "
+"kundaye."
+
+#: src/app/main/ui/settings/password.cljs
+msgid "labels.old-password"
+msgstr "tsohuwar lambar tsaro"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.new"
+msgstr "sabo %s"
+
+msgid "onboarding-v2.welcome.desc3.title"
+msgstr "gudunmawar jagora"
+
+msgid "shortcuts.toggle-assets"
+msgstr "Danna kadara"
+
+msgid "onboarding-v2.newsletter.updates"
+msgstr ""
+"aiko man da sabbin abubuwan da aka yi (sabbib fasali, fitowa, gyara...)."
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.create-artboard-from-selection"
+msgstr "zababban allo"
+
+msgid "onboarding.newsletter.title"
+msgstr "ka buqatar labaran fenfot?"
+
+msgid "errors.team-leave.insufficient-members"
+msgstr "ba sauran masu fita daga tawaga, ba bu tabbacin gogewa."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.copied-success"
+msgstr "kwafar lambar tsaro"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.fix-when-scrolling"
+msgstr "gyara nemowa"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.description"
+msgstr "bayani"
+
+msgid "labels.installed-fonts"
+msgstr "sanya fenfot"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-right"
+msgstr "saman dama"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-in"
+msgstr "ciki"
+
+msgid "modals.publish-empty-library.title"
+msgstr "wallafa taska maras komai"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-toggle-overlay"
+msgstr "Juya mai murfi"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr "bincika manhaja domin sanin manyan sassanta."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.figma"
+msgstr "Figma"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.triangle-arrow"
+msgstr "Triangle mashi"
+
+msgid "modals.leave-and-reassign.forbidden"
+msgstr ""
+"ba za ku iya bari ba idan ba wani memba da zai ingata wa mai shi. ku na iya "
+"goge tawaga."
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-scale-text"
+msgstr "kashe sikelin rubutu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.rows"
+msgstr "jere"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.tutorials"
+msgstr "koyarwa"
+
+msgid "workspace.undo.entry.multiple.curve"
+msgstr "kwana"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-snap-guides"
+msgstr "kashe tsinkewa zuwa mai jagora"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.already-have-account"
+msgstr "ka na da taska?"
+
+msgid "dashboard.import.progress.process-typographies"
+msgstr "kula da rubutu"
+
+msgid "shortcuts.opacity-1"
+msgstr "saita dishi dishi zuwa kashi 10"
+
+msgid "workspace.path.actions.snap-nodes"
+msgstr "tsinke kauri (%s)"
+
+msgid "shortcuts.bring-front"
+msgstr "kawo zuwa gaba"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.typography"
+msgstr "rubutun rubutu"
+
+msgid "common.share-link.view-all"
+msgstr "zavi duka"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.give-feedback"
+msgstr "bada bayani"
+
+msgid "shortcuts.bool-exclude"
+msgstr "kebentaccan ma'auni"
+
+msgid "workspace.undo.entry.multiple.multiple"
+msgstr "abu"
+
+msgid "dashboard.export-standard-multi"
+msgstr "Sauke %s cikakken kundi (.svg + .json)"
+
+#: src/app/main/data/workspace/persistence.cljs
+msgid "errors.media-too-large"
+msgstr "hoton da za ka sanya ya yi girma."
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.invitations"
+msgstr "gayyata"
+
+msgid "shortcut-subsection.navigation-viewer"
+msgstr "shawagi"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-your-email"
+msgstr ""
+"bincika taskarka ta imel,ka danna alamar mahaxa domin tabbatarwa,sannan ka "
+"fara amfani da fenfot."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-slide"
+msgstr "Ja"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-item-min-w"
+msgstr "fadi mafi kankanta"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-item-min-h"
+msgstr "tsawo mafi kankanta"
+
+msgid "workspace.sidebar.layers.masks"
+msgstr "takunkumi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.screen"
+msgstr "allo"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.libraries.update.see-all-changes"
+msgstr "Aga duka canjin"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.inner-shadow"
+msgstr "Inuwar ciki"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.frame"
+msgstr "allo (%s)"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "branding-illustrations-marketing-pieces"
+msgstr "...branding, illustrations, marketing pieces, etc."
+
+msgid "onboarding.team-modal.create-team-feature-4"
+msgstr "Unlimited members"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
+msgid "workspace.options.export.suffix"
+msgstr "Kari na bayan baki"
+
+msgid "errors.webhooks.connection"
+msgstr "hadin bai yi ba, ba a iya samun  URL"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.confirm-email"
+msgstr "tantance sabon imel"
+
+msgid "auth.terms-of-service"
+msgstr "dokokin aiki"
+
+msgid "dashboard.export.options.all.message"
+msgstr "manhajar tura kundi ta kunshi fitarwa, tattali mahaxarsu."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
+msgid "workspace.options.group-fill"
+msgstr "Cika rukuni"
+
+msgid "shortcuts.stop-measure"
+msgstr "dena aunawa"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.write-new-comment"
+msgstr "rubuta s abon yabo"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-subtitle1"
+msgstr ""
+"mun yi farin ciki da samunka a nan. idan ka na da buqatar taimako sai ka "
+"tuntuvi na gaba da kai matsayi."
+
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "bincika su da kyau kasan ta yadda za ka bayar da gudunmawa"
+
+#: src/app/main/ui/workspace/textpalette.cljs
+msgid "workspace.libraries.colors.empty-typography-palette"
+msgstr "Babu rubutun rubutu a ma'ajiya yanzu"
+
+#: src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.paste"
+msgstr "manna"
+
+msgid "labels.edit-file"
+msgstr "gyara kundi"
+
+msgid "onboarding.templates.subtitle"
+msgstr "ga wasu hotunan talla nan."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
+msgid "workspace.options.selection-fill"
+msgstr "cika zabi"
+
+msgid "inspect.tabs.code.selected.curve"
+msgstr "lankwasa"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.unsaved"
+msgstr "Canja canjan da ba'a adana ba"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-middle"
+msgstr "jerin tsakiya"
+
+msgid "viewer.breaking-change.description"
+msgstr ""
+"Wannan mahadar da aka raba yanxu batada ingaci. Ka/ki kirkiri wata ko ka/ki "
+"tamayi maishi a baka/ki sabuwa."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.color-dodge"
+msgstr "kala gudajjiya"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.saving"
+msgstr "Adanawa"
+
+msgid "shortcuts.next-frame"
+msgstr "wani tsari"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.library"
+msgstr "ma'adana"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-background"
+msgstr "kara mai rufin bayan"
+
+msgid "workspace.sidebar.layers.search"
+msgstr "nemo shimfida"
+
+msgid "inspect.attributes.stroke.style.solid"
+msgstr "tauri"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.demo-warning"
+msgstr ""
+"wannan aikin gwaji ne kawai,kar ka yi amfani da shi a aikin gaske,lokaci "
+"zuwa lokaci za ya ringa vacewa ne."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-90-days"
+msgstr "kwanaki 90"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "title.dashboard.search"
+msgstr "nema - %s - Mazubin biruka"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.unknown"
+msgstr "yanayi fiye da %s"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.delete-team-confirm.accept"
+msgstr "goge tawaga"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.height"
+msgstr "tsawo"
+
+msgid "shortcuts.zoom-lense-increase"
+msgstr "Zuko karuwar ido"
+
+msgid "workspace.shape.menu.add-grid"
+msgstr "kara akwatin tsari"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.interactions"
+msgstr "Hulda"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/inspect/attributes/text.cljs, src/app/main/ui/inspect/attributes/text.cljs
+msgid "workspace.assets.typography.sample"
+msgstr "Ag"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.dismiss-all"
+msgstr "goge duka"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-unpublish-shared-confirm.activated.hint"
+msgid_plural "modals.delete-unpublish-shared-confirm.activated.hint"
+msgstr[0] ""
+"duk aikin da aka yi a wannan kundin, nan  za a same shi (ba zanen da za a "
+"iya tsinkawa)."
+msgstr[1] ""
+"duk aikin da aka yi a waxancan kundayen, can za a same su (ba zane da za iya "
+"tsinkawa)."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-complete"
+msgstr "An gama fitarwa"
+
+msgid "labels.continue-with-penpot"
+msgstr "za ka iya ci gaba a idanka na fenfot"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-size"
+msgstr "girman salo"
+
+msgid "shortcuts.hide-ui"
+msgstr "fito / boye UI"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-title"
+msgstr "qirqiri sabon kundi"
+
+#: src/app/main/ui/dashboard/libraries.cljs
+msgid "dashboard.libraries-title"
+msgstr "taskoki"
+
+msgid "inspect.tabs.code.selected.rect"
+msgstr "rektangul"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-frames.title"
+msgstr "Fitarwa a PDF"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "labels.create"
+msgstr "yi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-delay"
+msgstr "jinkiri"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-multiple.selected"
+msgstr "%s of %s tubullan da aka zava"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-confirm.accept"
+msgstr "barin tawaga"
+
+#: src/app/main/ui/components/color_input.cljs
+msgid "errors.invalid-color"
+msgstr "launin bai yi ba"
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.small-nudge"
+msgstr "qaramin jan hankali"
+
+msgid "shortcuts.duplicate"
+msgstr "maimaita"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.saved"
+msgstr "An adana"
+
+msgid "shortcuts.create-new-project"
+msgstr "samar da sabo abu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.luminosity"
+msgstr "warewa"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.share.copy-link"
+msgstr "Kwafi mahada"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.color"
+msgstr "kala"
+
+msgid "onboarding.team-modal.create-team-feature-1"
+msgstr "aiyuka da kundaye da yawa"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs
+msgid "shortcuts.title"
+msgstr "allon harufa yanke"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.flip-vertical"
+msgstr "kifa ta kwance"
+
+#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.position"
+msgstr "matsayi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square"
+msgstr "murabba'i"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-justify"
+msgstr "tabbatarwa (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.space-between"
+msgstr "sarari tsakani"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.open-in-new-tab"
+msgstr "buxe kundi a sabon wurin buxewa"
+
+#: src/app/main/ui/auth.cljs
+msgid "auth.sidebar-tagline"
+msgstr "samun hanyar magance matsalar zane-zane."
+
+#: src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.create-team"
+msgstr "yi sabuwar tawaga"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.uppercase"
+msgstr "yanayin sama"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.assets"
+msgstr "kadara"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom"
+msgstr "Zuko"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.edit"
+msgstr "tace"
+
+msgid "dashboard.import.import-error"
+msgstr "akwi matsala a kundin. ba a shio da kundin ba."
+
+msgid "onboarding-v2.newsletter.privacy1"
+msgstr "mu na kula da sirri, a nan za ka karanta na mu "
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-move-project"
+msgstr "an tura aikinka"
+
+msgid "workspace.options.component.annotation"
+msgstr "Yin sharhin rubutu"
+
+msgid "shortcuts.toggle-layers"
+msgstr "Danna shimfida"
+
+msgid "labels.uploading"
+msgstr "ana dorawaâ€¦"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-preserve-scroll"
+msgstr "adana komawa sama da kasa"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.delete-team-member-confirm.accept"
+msgstr "goge memba"
+
+msgid "workspace.undo.entry.single.typography"
+msgstr "rubutun rubuta kadara"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.selection-color"
+msgstr "zababbabbin kaloli"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.more-lib-colors"
+msgstr "Ma'ajiyar kaloli masu yawa"
+
+msgid "inspect.tabs.code.selected.image"
+msgstr "hoto"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.create-group"
+msgstr "kirkiri rukuni"
+
+msgid "modals.delete-webhook.accept"
+msgstr "goge webhook"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-member-confirm.accept"
+msgstr "aika saqon"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.member"
+msgstr "mamba"
+
+msgid "onboarding.newsletter.policy"
+msgstr "dokoki."
+
+#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/change_email.cljs
+msgid "errors.email-already-exists"
+msgstr "an yi amfani da imel"
+
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+msgid "errors.media-type-not-allowed"
+msgstr "wannan hoton ba ya aiki."
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.text-transform"
+msgstr "masarrafin rubu,manya ko qanana"
+
+msgid "dashboard.webhooks.create"
+msgstr "yin webhook"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.type.bottom"
+msgstr "Kasa"
+
+msgid "common.share-link.get-link"
+msgstr "samun hanya"
+
+msgid "shortcuts.open-comments"
+msgstr "tafi inda 'yan kallo za su bayyana ra'ayi"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.subtitle"
+msgstr ""
+"bayyana dalilin imel dinka, faiyace idan akwai matsala, an shawarwari ko "
+"hasashe. tawaga ko mamba za a kula da kai."
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-multi-confirm.title"
+msgstr "gogewa %s kundaye"
+
+msgid "workspace.header.menu.disable-snap-pixel-grid"
+msgstr "kashe tsinkewa zuwa pixel"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-ease-in"
+msgstr "sauki ciki"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-family"
+msgstr "gidan salo"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register"
+msgstr "ba ka da kunxi har yanzu?"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.password"
+msgstr "lambar tsaro"
+
+#: src/app/main/ui/workspace/libraries.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.remove"
+msgstr "cire"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.solid"
+msgstr "mai tauri"
+
+#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "errors.generic"
+msgstr "wata matsala ta faru."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.some"
+msgstr "wasu"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.there-are-updates"
+msgstr "a kwai na zamani a rababban ma'ajiya"
+
+#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.leave-team"
+msgstr "fita tawaga"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.delete"
+msgstr "gogagge %s"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.line-height"
+msgstr "tsawon layi"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs
+msgid "inspect.tabs.code"
+msgstr "lamba"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.top"
+msgstr "sama"
+
+msgid "shortcuts.bring-back"
+msgstr "tura zuwa baya"
+
+msgid "shortcuts.text-align-justify"
+msgstr "jera da inganci"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius.single-corners"
+msgstr "kwanar da take cin gashin kanta"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.unexpected-token"
+msgstr "tukuicin da ba a san da shi ba"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.dotted"
+msgstr "digo digo"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-artboard-names"
+msgstr "Boye allom suna"
+
+msgid "dashboard.export.options.merge.message"
+msgstr ""
+"za ka iya fitar da kundi tare da haxe muhimman abubuwa, na waje a "
+"kunditaskira."
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.backward"
+msgstr "tura zuwa baya"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-ldap-submit"
+msgstr "LDAP"
+
+msgid "onboarding-v2.newsletter.privacy2"
+msgstr ""
+"za mu aika maka da imel mai amfani. za ka iya biya a kowane lokaci za ka iya "
+"ta kowace hanyar biyanmu."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.copy-invitation-link"
+msgstr "kwafar hanya"
+
+#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.rename"
+msgstr "sake suna"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.select-a-shape"
+msgstr "zabi surar allo, ko rukuni ta hadu da daya allon."
+
+msgid "onboarding.newsletter.accept"
+msgstr "haka, za a biya"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke"
+msgstr "gigciye"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.leftright"
+msgstr "hagu & dama"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-rules"
+msgstr "Nuna ma'auni"
+
+msgid "shortcuts.toggle-focus-mode"
+msgstr "Danna yanayin maida hankali"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
+msgid "workspace.options.export"
+msgstr "fitarwa"
+
+msgid "workspace.layout_grid.editor.title"
+msgstr "tace akwati"
+
+msgid "workspace.undo.entry.single.page"
+msgstr "shafi"
+
+msgid "dashboard.export.explain"
+msgstr "za ka iya fitar da kundi daya ko fiye ta hanyar tura taska. \"me \"*?"
+
+msgid "shortcuts.open-interactions"
+msgstr "tafi sashin da masu kallo suke hulda"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-multi-confirm.message"
+msgstr "ka tabbata kana son goge %s kundaye?"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "team.webhooks.max-length"
+msgstr "Sunan shafin yanar gizon zai kunshi a mafi yawa haruffa 2048."
+
+msgid "shortcuts.show-pixel-grid"
+msgstr "nuna / boye akwatin  pixel"
+
+msgid "modals.delete-font.title"
+msgstr "goge font"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-oidc-submit"
+msgstr "shaidar buxewa"
+
+msgid "inspect.attributes.typography.text-decoration.underline"
+msgstr "jan layi"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expired-on"
+msgstr "gama aiki  kan %s"
+
+#, markdown
+msgid "dashboard.fonts.hero-text2"
+msgstr ""
+"za ka iya xora fonts dinka ne domin ka sami dammar amfani da fenfot. gano "
+"akwai qarin abubuwan das u ka dace da dokokin fpntaiki](https://fenfot.app/"
+"dokoki.html). Za ka so bayani game da[ffonts](https://www.rubutu.com/faq)."
+
+msgid "workspace.sidebar.layers.images"
+msgstr "hoto"
+
+msgid "dashboard.webhooks.content-type"
+msgstr "irin ra'ayi"
+
+msgid "workspace.header.menu.show-pixel-grid"
+msgstr "Nuna akwatin pixel"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.expiration-date.label"
+msgstr "lokacin daina aiki"
+
+msgid "shortcuts.h-distribute"
+msgstr "raba ta tsaye"
+
+msgid "workspace.header.menu.undo"
+msgstr "Cire"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.more-than-50"
+msgstr "fiye da 50"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.show-interactions-on-click"
+msgstr "Nuna hulda da an danna"
+
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs, src/app/main/ui/workspace/colorpalette.cljs
+msgid "workspace.libraries.colors.file-library"
+msgstr "F"
+
+msgid "dashboard.export-multi"
+msgstr "fitar da fenfot %s kundaye"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.email-already-validated"
+msgstr "an farfaxo da imel."
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-weight"
+msgstr "kaurin salon"
+
+msgid "shortcuts.artboard-selection"
+msgstr "kirkiri allo daga zabi"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.show-all-files"
+msgstr "duk kundaye"
+
+msgid "errors.team-leave.owner-cant-leave"
+msgstr "mai abu ba ya barin tawaga, dole adubi matsayin mai abu."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.type.left"
+msgstr "Hagu"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.select-ui-language"
+msgstr "zavavven harshen UI"
+
+msgid "workspace.undo.entry.single.color"
+msgstr "kalar kadara"
+
+#: src/app/main/data/workspace.cljs
+msgid "errors.clipboard-not-implemented"
+msgstr "manhajar binciken nan ba ta iya yin wannan aikin"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-not-empty"
+msgstr "dole lambar tsaro ta qunshi wasu alamomi, sannan tazara."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.line-height"
+msgstr "tsahon layi"
+
+#: src/app/main/ui/confirm.cljs, src/app/main/ui/confirm.cljs
+msgid "ds.confirm-title"
+msgstr "ka tabbata?"
+
+msgid "labels.search-font"
+msgstr "neman font"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.ungroup"
+msgstr "raba rukunin"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.next"
+msgstr "na gaba"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.grow-auto-height"
+msgstr "sarrafaffan tsaho"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.profile"
+msgstr "kundi"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.team-size"
+msgstr "bayyana yawan tawagarka?"
+
+msgid "workspace.focus.focus-on"
+msgstr "maida hankali"
+
+msgid "inspect.tabs.code.selected.frame"
+msgstr "hukuma"
+
+msgid "viewer.header.comments-section"
+msgstr "Bayyana ra'ayi(%s)"
+
+msgid "labels.webhooks"
+msgstr "Webhooks"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.unlock"
+msgstr "bude"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-right"
+msgstr "kasan dama"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-open-overlay"
+msgstr "bude mai rufi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-dissolve"
+msgstr "narkewa"
+
+msgid "onboarding-v2.newsletter.news"
+msgstr "aiko man da bayanin fenfot (rubutun blog, bidiyon koyarwa, kallo...)."
+
+msgid "common.unpublish"
+msgstr "maras wallafa"
+
+msgid "workspace.undo.entry.single.rect"
+msgstr "rectangle"
+
+msgid "shortcuts.toggle-visibility"
+msgstr "Nuna/boye"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.settings"
+msgstr "gyara"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-full-screen"
+msgstr "Cika allon"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.cut"
+msgstr "cire"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.wireframes-user-journeys-flows-navigation-trees"
+msgstr "... jagora, yawan amfani da shiga, leqe-leqe, dss."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-60-days"
+msgstr "kwanaki 60"
+
+msgid "shortcut-section.viewer"
+msgstr "Dankallo"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.unpublish-multi-files"
+msgstr "kundayen da ba a wallafa ba %s"
+
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr ""
+"ka tabbata ka na son rufe wannan hanyar? idan ka rufe ba mai iya sake bi"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "modals.delete-project-confirm.accept"
+msgstr "goge aiki"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "generic.error"
+msgstr "afkuwar matsala"
+
+msgid "workspace.header.menu.disable-scale-content"
+msgstr "kashe sikelin rabo"
+
+msgid "dashboard.export.options.detach.title"
+msgstr "lura da bayanan da ke cikin manhajar tura kundi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-object-slow"
+msgstr "Fitarwa ba tsammani ta sami tsaiko"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "dashboard.export-shapes"
+msgstr "Fitarwa"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.lock"
+msgstr "kulle"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.help-center"
+msgstr "sashen taimako"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.modify"
+msgstr "gyaggyarawa %s"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.a-lot"
+msgstr "da yawa"
+
+msgid "dashboard.download-binary-file"
+msgstr "sauke manhajar fenfot(.manhajar fenfot)"
+
+msgid "dashboard.fonts.deleted-placeholder"
+msgstr "rashin font"
+
+msgid "shortcuts.opacity-6"
+msgstr "Saita dishi dishi zuwa kashi 60"
+
+#: src/app/main/ui/inspect/attributes/common.cljs
+msgid "inspect.attributes.color.hex"
+msgstr "HEX"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.expired-invitation"
+msgstr "daina aiki"
+
+msgid "onboarding.team-modal.create-team-desc"
+msgstr ""
+"tawaga na ba ka damar haduwa da masu amfani da fenfot domin yi aiki daya "
+"akan kundaye."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "errors.email-has-permanent-bounces"
+msgstr "imel Â«%sÂ» na da bayanan matsaloli na dindindin."
+
+msgid "errors.webhooks.unexpected-status"
+msgstr "matsayin da ba zato %s"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.typography"
+msgstr "%s Rubutun rubutu"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.your-email"
+msgstr "imel"
+
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment-thread.title"
+msgstr "goge tattaunawa"
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.big-nudge"
+msgstr "jan hankali"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-confirm.message"
+msgstr "ka tabbata ka na son barin wannan tawagar?"
+
+msgid "dashboard.webhooks.empty.no-webhooks"
+msgstr "ba a gina wani webhooks ba."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-team-member.title"
+msgstr "gayyato membobi zuwa ga tawaga"
+
+msgid "shortcut-section.workspace"
+msgstr "fagen aiki"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-confirm.title"
+msgstr "barin tawaga"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.start"
+msgstr "fara"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.resend-invitation"
+msgstr "sake aika saqon gayyata"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.difference"
+msgstr "banbanci"
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
+msgid "labels.hide-resolved-comments"
+msgstr "voye saqon da aka buxa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin-all"
+msgstr "gefen duka"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.github-repo"
+msgstr "taskar rubuce-rubuce"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.strikethrough"
+msgstr "gigciye ta cikinsa (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.darken"
+msgstr "kara masa duhu"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.confirm-password"
+msgstr "tabbatar da kalmar buxewa"
+
+msgid "shortcuts.open-workspace"
+msgstr "tafi fagen aiki"
+
+msgid "labels.and"
+msgstr "da"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.top"
+msgstr "sama"
+
+msgid "shortcut-subsection.main-menu"
+msgstr "Babbar kumshiya"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.fullname"
+msgstr "cikakken suna"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.reset-overrides"
+msgstr "sake saita sokewa"
+
+msgid "common.share-link.permissions-hint"
+msgstr "duk wanda ya mallaki mataki,za ya iya shiga"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.remove-shared-confirm.accept"
+msgstr "cire taskar shiye-shirye"
+
+msgid "workspace.undo.entry.multiple.typography"
+msgstr "rubutun rubuta kadara"
+
+msgid "shortcuts.align-center"
+msgstr "tsarin tsakiya"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-center"
+msgstr "jerin tsakiya (%s)"
+
+msgid "dashboard.webhooks.description"
+msgstr ""
+"Webhooks hanyar sanar da manhajoji da addireshi intanet idan wani ya faru a "
+"Penpot. za a tura maka da saqon talla  URLs ka samar da."
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.text-palette"
+msgstr "rubutub rubutu (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.titlecase"
+msgstr "yanayin lakani"
+
+msgid "workspace.sidebar.layers.frames"
+msgstr "allo"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fit"
+msgstr "dace - ja sikeli ya dace da shi"
+
+#: src/app/main/ui/dashboard/files.cljs
+msgid "title.dashboard.files"
+msgstr "%s - Tukunyar aje biro"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-object-error"
+msgstr "An gaza fitarwa"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-ok"
+msgstr "haka"
+
+msgid "shortcuts.escape"
+msgstr "kubuta"
+
+msgid "shortcuts.copy"
+msgstr "kwafi"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.libraries.colors.hsv"
+msgstr "HSV"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.delete-flow-start"
+msgstr "goge kwararar farko"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-bottom-left"
+msgstr "kasa hagu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.diamond-marker-short"
+msgstr "mai daraja"
+
+msgid "dashboard.export.detail"
+msgstr "*akwai sassan,hotuna,launuka,da/kozane-zane."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.add-shared-confirm.hint"
+msgstr ""
+"idan ka aje a wurin ajiyar tawaga, turken kundin xakin ajiyar za ya kasance "
+"za a iya amfani da shi a sauran kundaye."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-offset-effect"
+msgstr "cire tasiri"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to"
+msgstr "tura a"
+
+msgid "modals.create-webhook.title"
+msgstr "qirqirar webhook"
+
+#: src/app/main/ui/inspect/attributes/common.cljs
+msgid "inspect.attributes.color.rgba"
+msgstr "RGBA"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.mixed"
+msgstr "gauraya"
+
+msgid "shortcuts.detach-component"
+msgstr "rarraba abubuwan da su ke a ware"
+
+msgid "shortcuts.reset-zoom"
+msgstr "zake zukowa"
+
+msgid "onboarding-v2.welcome.desc3"
+msgstr ""
+"wurin da za ka san yadda za ka hada-hannu da fassara, neman fasali, manyan "
+"gudunmawa, magance matsalaâ€¦"
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.hright"
+msgstr "Daidaita dama (%s)"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.status"
+msgstr "daraja"
+
+msgid "common.share-link.permissions-can-comment"
+msgstr "sharhi"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.libraries.colors.rgba"
+msgstr "RGBA"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.row"
+msgstr "jerawa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-navigate-to"
+msgstr "kewayawa zuwa"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.questions-how-are-you-planning-to-use-penpot"
+msgstr "ya kake tunanin aiki da fenfot?"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.inner"
+msgstr "ciki"
+
+msgid "onboarding-v2.before-start.desc1"
+msgstr ""
+"ya kamata kasan akwai kayayyaki da yawa da za su iya taimaka maka ka sami "
+"damar fara aiki da fenfot, kamar jagoran mai amfani tasharmu ta youtub."
+
+msgid "shortcut-subsection.general-viewer"
+msgstr "gamayya"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.team-members"
+msgstr "mambobin tawaga"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-file-prefix"
+msgstr "sabon kundi"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.token-will-expire"
+msgstr "lambar tsaron za ta gama aiki %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.underline"
+msgstr "ja layi (%s)"
+
+msgid "onboarding.choice.team-up.create-team-desc"
+msgstr "bayan ka yi wa tawagarka suna, za ka iya gaiyato mutane ku hadu."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to"
+msgstr ""
+"za ka iya daidaita kayan zanenka ta hanyar (amfani da madannin qasa sashen "
+"dama)."
+
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment-thread.accept"
+msgstr "goge fira"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-duplicate-project"
+msgstr "an kwafi aikinka"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.cancel"
+msgstr "sokewa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-close-overlay-dest"
+msgstr "kulle mai rufi %s"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.accept"
+msgstr "goge alama"
+
+#: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/libraries.cljs, src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.your-penpot"
+msgstr "fenfot na ka"
+
+msgid "shortcuts.bring-forward"
+msgstr "tura gaba"
+
+msgid "workspace.header.menu.redo"
+msgstr "sake"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.detach-instance"
+msgstr "raba yanayin abin"
+
+msgid "shortcuts.opacity-9"
+msgstr "Seta dish dishi zuwa 90"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-right"
+msgstr "jera dama (%s)"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-textpalette"
+msgstr "Nuna launukan tsarin rubutu"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.flip-horizontal"
+msgstr "kifa ta tsaye"
+
+msgid "labels.continue"
+msgstr "ci gaba"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.hard-light"
+msgstr "Haske mai muya"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-item-max-w"
+msgstr "fadi mafi yawa"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.management"
+msgstr "shuwagabannin tawaga"
+
+msgid "inspect.tabs.code.selected.component"
+msgstr "bangare"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.column-reverse"
+msgstr "sake shafi"
+
+msgid "dashboard.download-standard-file"
+msgstr "sauke cikakken kundi(.svg + .json)"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.internal-error.desc-message"
+msgstr ""
+"an sami matsala. sake gwadawa idan matsalar ba ta kauce ba, tuntubi sashen "
+"taimako."
+
+msgid "labels.font-variants"
+msgstr "salo"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-reassign.title"
+msgstr "kafin ka fita"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.front"
+msgstr "kawo zuwa gaba"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-center"
+msgstr "tsakiya"
+
+#: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
+msgid "errors.unexpected-error"
+msgstr "afkuwar kuskuren da ba a zata ba."
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.no-shared-libraries-available"
+msgstr "Babu rababbun ma'adanai wanda aka samu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.square"
+msgstr "murabba'i"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.fullscreen"
+msgstr "Cika fuskar"
+
+msgid "workspace.undo.entry.single.multiple"
+msgstr "wani abu"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.role"
+msgstr "matsayi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.add-interaction"
+msgstr "Danna wannan madannin + domin saka hulda."
+
+msgid "workspace.shape.menu.difference"
+msgstr "bambanci"
+
+msgid "workspace.assets.duplicate-main"
+msgstr "maimaita ainihin"
+
+msgid "shortcuts.fit-all"
+msgstr "fitar da abubuwan da zai dace da ko wane abu"
+
+msgid "workspace.undo.entry.multiple.path"
+msgstr "hanya"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-bottom-right"
+msgstr "kasa dama"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.duplicate"
+msgstr "maimaita"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.show-main"
+msgstr "nuna ainihin wurin"
+
+msgid "onboarding-v2.before-start.desc2.title"
+msgstr "xanjagora"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.describe-your-experience-working-on"
+msgstr "ta  ya za ka bayyana kwarewarka akai..."
+
+msgid "shortcut-subsection.zoom-viewer"
+msgstr "Zukowa"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.remove-shared"
+msgstr "cire matattarar kundate"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.select-option"
+msgstr "dauki wanda kake so"
+
+msgid "shortcuts.v-distribute"
+msgstr "Rarraba ta tsaye"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "tura shafi 1"
+msgstr[1] "%s an tura shafi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.grid-title"
+msgstr "Akwati"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.offsetx"
+msgstr "X"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-go-to"
+msgstr "je ka tiwita"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.none"
+msgstr "ba komai"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.exclusion"
+msgstr "warewa"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.title"
+msgstr "labari"
+
+msgid "workspace.options.recent-fonts"
+msgstr "da dimi dimi"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.new-email"
+msgstr "sabon imel"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.search-shared-libraries"
+msgstr "Duba rabbaun ma'adanai"
+
+msgid "shortcuts.text-align-left"
+msgstr "jera hagu"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-subtitle"
+msgstr "kyauta ne,an buxe hanyar samu"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-textpalette"
+msgstr "boye launukan yanayin tsarin rubutu"
+
+msgid "labels.view-only"
+msgstr "gani kaxai"
+
+msgid "workspace.undo.entry.single.component"
+msgstr "bangarori"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.row"
+msgstr "layuka"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.upload-all"
+msgstr "xora duka"
+
+msgid "inspect.attributes.typography.text-transform.none"
+msgstr "babu"
+
+msgid "workspace.assets.local-library"
+msgstr "dakin karatun gida"
+
+msgid "shortcuts.move-fast-right"
+msgstr "matsa dama da sauri"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.unmask"
+msgstr "bude takunkumi"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-submit"
+msgstr "shiga ciki"
+
+msgid "shortcuts.toggle-textpalette"
+msgstr "Juya zuwa launukan rubutu"
+
+#: src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.update-team"
+msgstr "sabunta tawaga"
+
+#: src/app/main/ui/workspace/sidebar/options/page.cljs
+msgid "workspace.options.canvas-background"
+msgstr "bayan zane"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.align-top"
+msgstr "jerin sama"
+
+msgid "shortcuts.font-size-dec"
+msgstr "rage girman rubutu"
+
+msgid "dashboard.webhooks.empty.add-one"
+msgstr "danna qasa \"sanya webhook\" qara xaya."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.default-team-name"
+msgstr "manhajar fenfot"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-while-pressing"
+msgstr "yayin dannawa"
+
+msgid "shortcuts.open-dashboard"
+msgstr "tafi gaban allon"
+
+#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "errors.profile-is-muted"
+msgstr "bayananka su na da imel maras motsi (baiyana matsaloli)."
+
+msgid "shortcuts.start-measure"
+msgstr "fara aunawa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.type.center"
+msgstr "Tsakiya"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.submit-label"
+msgstr "yi sabuwar alama"
+
+msgid "workspace.sidebar.collapse"
+msgstr "ruguza a'ajiyar bayani"
+
+msgid "common.share-link.permissions-can-inspect"
+msgstr "iya bincka lamba"
+
+msgid "workspace.options.height"
+msgstr "Tsawo"
+
+msgid "shortcuts.draw-ellipse"
+msgstr "siffar kwai"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.designer"
+msgstr "ma su tsarawa"
+
+#, markdown
+msgid "dashboard.fonts.hero-text1"
+msgstr ""
+"duk wani adireshi da ka xora a nan dangin font ne a wannan tawagar za a sami "
+"kundayen da ke xauke da kayan rubutu. Da fontfont iri daya ne ake kasawa**"
+"gwaurayen font**. Za ka iya xora font ta waxannan hanyoyin: **TTF, OTF and "
+"WOFF** (xaya kawai ake buqata)."
+
+#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.drafts"
+msgstr "adana"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "title.dashboard.projects"
+msgstr "tsare tsare - %s - Mazubin biruka"
+
+#: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
+msgid "labels.retry"
+msgstr "sake gwadawa"
+
+msgid "modals.delete-webhook.title"
+msgstr "gogewa webhook"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.update-main"
+msgstr "sabunta ainihin wurin"
+
+msgid "shortcuts.toggle-rules"
+msgstr "Nuna / boye magwaji"
+
+msgid "shortcuts.draw-path"
+msgstr "Hanya"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs
+msgid "inspect.tabs.code.selected.multiple"
+msgstr "%s zavavve"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.flow-start"
+msgstr "fara malala"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.none"
+msgstr "babu"
+
+msgid "inspect.attributes.typography.text-transform.titlecase"
+msgstr "yadda ake rubuta batu"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.lets-get-started"
+msgstr "za mu fara!"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-flex"
+msgstr "cire sassaukan tsari"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs
+msgid "modals.delete-page.body"
+msgstr "ka tabbata kana son goge wannan shafin?"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow-start"
+msgstr "Gudun farko"
+
+msgid "shortcuts.move"
+msgstr "matsa"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-confirm.message"
+msgstr "ka tabbata kana son goge wannan kundin?"
+
+msgid "shortcuts.opacity-3"
+msgstr "Seta dashi dashi zuwa kashi 50"
+
+msgid "common.share-link.team-members"
+msgstr "memba kaxai"
+
+msgid "workspace.sidebar.layers.components"
+msgstr "bangare"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-ease"
+msgstr "sauki"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.name.placeholder"
+msgstr "sunan zai iya taimakawa wajen sanin menene alama"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "labels.confirm-password"
+msgstr "tabbatar da lambar tsaro"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs, src/app/main/ui/inspect/attributes/svg.cljs
+msgid "workspace.sidebar.options.svg-attrs.title"
+msgstr "shigo da shi SVG halaye"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to-link"
+msgstr "bayanin yadda ake fitarwa daga fenfot"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.comments"
+msgstr "ra'ayi (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-none"
+msgstr "Babu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.columns"
+msgstr "shafi"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.accept"
+msgstr "canza wurin mallaka"
+
+msgid "workspace.viewport.click-to-close-path"
+msgstr "latsa kusa da hanya"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.adobe-xd"
+msgstr "Adobe XD"
+
+msgid "labels.close"
+msgstr "rufewa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.lighten"
+msgstr "kara masa haske"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
+msgid "workspace.options.export-multiple"
+msgstr "Fitar da zababbun"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
+msgid "settings.detach"
+msgstr "cire"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.hide"
+msgstr "boye"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.sketch"
+msgstr "zana"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "errors.email-invalid-confirmation"
+msgstr "tabbata imel xinka ya yi daidai"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.title"
+msgstr "Fitar da zavi"
+
+msgid "onboarding-v2.welcome.desc2.title"
+msgstr "hulxa da kai cikin mutane"
+
+msgid "dashboard.import.progress.process-page"
+msgstr "fejin kasuwar duniya: %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.set-default"
+msgstr "saita a tsoho"
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-mismatch"
+msgstr ""
+"tamkar ka buxe wani kundi da ke da muhimmanci '%s' bayar da dama qarin da ka "
+"yi ma fenfot xinka bai karbu ba ko ba zai yi aiki ba."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.retry"
+msgstr "sake"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-palette"
+msgstr "nuna launukan kala"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-relative-to"
+msgstr "alaka zuwa"
+
+msgid "errors.webhooks.ssl-validation"
+msgstr "kuskure kan farfaxo da SSL."
+
+msgid "shortcuts.create-component"
+msgstr "samar da abubuwa iri- iri"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.update-components-in-bulk"
+msgstr "sabunta ainihin wurin"
+
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"lokacin qirqirar kundi, sai ka amincewa da yanayi aikin da "
+"qa'idojinmuqa'idoji."
+
+msgid "modals.delete-font-variant.title"
+msgstr "goge salon font"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.sidebar.history"
+msgstr "labari (%s)"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.no-libraries-need-sync"
+msgstr "Babu rabben ma'adanai da suke bukatar sabuntawa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.title"
+msgstr "Dishi dishi"
+
+msgid "dashboard.export.options.all.title"
+msgstr "fitar da manhajar tura kundi"
+
+msgid "workspace.options.clip-content"
+msgstr "Matse abun ciki"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.editor"
+msgstr "maigyara"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.new-password"
+msgstr "sanya sabuwar lambar tsaro"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.path"
+msgstr "hanya (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius.all-corners"
+msgstr "duka kwanar"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-top-right"
+msgstr "sama dama"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.sending"
+msgstr "aikawaâ€¦"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.select-layer"
+msgstr "zabi shimfida"
+
+msgid "workspace.undo.entry.single.image"
+msgstr "hoto"
+
+msgid "workspace.shape.menu.intersection"
+msgstr "mahada"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-trigger"
+msgstr "Jawo"
+
+#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/files.cljs
+msgid "dashboard.new-file"
+msgstr "+ sabon kundi"
+
+#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/auth.cljs
+msgid "title.default"
+msgstr "Mazubin biruka - Tsara yanci ga tawaga"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-title"
+msgstr "natsu"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.shortcuts"
+msgstr "yanke (%s)"
+
+#: src/app/main/ui/inspect/attributes/shadow.cljs
+msgid "inspect.attributes.shadow"
+msgstr "inuwa"
+
+msgid "common.share-link.title"
+msgstr "fenfot"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding"
+msgstr "filla filla"
+
+msgid "shortcuts.toggle-history"
+msgstr "Danna tarihi"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.select-ui-theme"
+msgstr "zaven batu"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate"
+msgstr "kwafi"
+
+msgid "title.team-webhooks"
+msgstr "gidan yanar gizo - %s - Mazubin biruka"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.library-updates"
+msgstr "sabunta ma'adana"
+
+#: src/app/main/ui/dashboard/team.cljs
+#, markdown
+msgid "labels.no-invitations-hint"
+msgstr "danna **gayyato mutane** wurin da ake nemo mutane a wannan tawaga."
+
+msgid "inspect.tabs.code.selected.mask"
+msgstr "marfi"
+
+msgid "modals.edit-webhook.submit-label"
+msgstr "gyara webhook"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.none"
+msgstr "babu"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-rules"
+msgstr "boye ma'auni"
+
+msgid "dashboard.webhooks.create.success"
+msgstr "an gina Webhook."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.go-to-edit"
+msgstr "tafi zuwa salon dakin karatu don a tace"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.confirm"
+msgstr "haka, goge asusu"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.no-matches-for"
+msgstr "Babu daidaituwa da aka samu na “%s“"
+
+msgid "shortcuts.move-unit-right"
+msgstr "Matsa da sashin dama"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.projects"
+msgstr "aiyuka"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.verification-email-sent"
+msgstr "mun aika maka da saqon tantancewa ta imel"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.your-name"
+msgstr "sunanka"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout"
+msgstr "shiri"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-none"
+msgstr "(ba'a saita ba )"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing"
+msgstr "saukakawa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.triangle-arrow-short"
+msgstr "Triangle"
+
+msgid "workspace.path.actions.draw-nodes"
+msgstr "zane da kauri (%s)"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-scale-text"
+msgstr "bada damar sikelin rubutu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.row-reverse"
+msgstr "jera sauyin fasali"
+
+msgid "errors.email-spam-or-permanent-bounces"
+msgstr "saqonni marasa amfani na imel Â«%sÂ»."
+
+msgid "labels.add-custom-font"
+msgstr "inganta font"
+
+#: src/app/main/ui/dashboard/libraries.cljs
+msgid "title.dashboard.shared-libraries"
+msgstr "Rababban dakin karatu- %s - Mazubin biruka"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
+msgid "workspace.options.export-object"
+msgid_plural "workspace.options.export-object"
+msgstr[0] "Fitarwa 1 Sashi"
+msgstr[1] "Fitarwa %s sashi-sashi"
+
+msgid "errors.bad-font"
+msgstr "ba za a iya xora fonts %s ba"
+
+msgid "shortcuts.align-bottom"
+msgstr "tsarin kasa"
+
+msgid "shortcuts.align-top"
+msgstr "tsarin sama"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component.message"
+msgstr "sabunta sashe a babbar taska"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.profile-not-verified"
+msgstr "ba a tantance bayananka ba,sai an tantance a ci gaba."
+
+#: src/app/main/ui/inspect/attributes/layout.cljs, src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.radius"
+msgstr "tsakiya"
+
+msgid "workspace.undo.entry.single.media"
+msgstr "kadarar zanen hotuna"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-title"
+msgstr "wurin karvar qorafin tiwita"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.packed"
+msgstr "cushe"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.name.label"
+msgstr "suna"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-style"
+msgstr "tsarin salo"
+
+msgid "dashboard.import.analyze-error"
+msgstr "kash! mun gaza shigo da kundinka"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-subtitle"
+msgstr "za mu aika maka da saqon qa'idoji ta imel"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.activated.no-files-message"
+msgid_plural "modals.delete-shared-confirm.activated.no-files-message"
+msgstr[0] "ba zai yi aiki a kowane kundi ba."
+msgstr[1] "ba za su yi aiki a kowane kundi ba."
+
+#: src/app/main/ui/settings/password.cljs
+msgid "title.settings.password"
+msgstr "Nambobin sirri - Mazubin biruka"
+
+msgid "workspace.header.menu.enable-snap-pixel-grid"
+msgstr "Bda damar tsinkewa zuwa akwatin pixel"
+
+msgid "shortcuts.add-comment"
+msgstr "Bayyana Ra'ayi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-mouse-enter"
+msgstr "linzamin kwamfuter ya shiga"
+
+msgid "workspace.undo.entry.single.circle"
+msgstr "da'ira"
+
+msgid "labels.back"
+msgstr "baya"
+
+msgid "viewer.header.interactions-section"
+msgstr "Hulda (%s)"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.forgot-password"
+msgstr "ka manta lambar tsaro?"
+
+msgid "shortcut-subsection.tools"
+msgstr "Kayan aiki"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.recovery-token-sent"
+msgstr "an aika maka da saqon matakan da za a bi domin dawo da lambar tsaronka."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.title.group"
+msgstr "rukunin inuwa"
+
+msgid "modals.publish-empty-library.message"
+msgstr "ba komai a taskarka. ka na son wallafa ta?"
+
+#: src/app/main/ui/workspace/comments.cljs
+msgid "labels.only-yours"
+msgstr "naka kawai"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.title.group"
+msgstr "rukunin shafi"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.reset-zoom"
+msgstr "Kara saitawa"
+
+msgid "shortcuts.opacity-7"
+msgstr "Saita dishi dishi zuwa kashi 70"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.assets"
+msgstr "kadara"
+
+#: src/app/main/ui/inspect/attributes/image.cljs
+msgid "inspect.attributes.image.width"
+msgstr "faxi"
+
+msgid "shortcuts.snap-pixel-grid"
+msgstr "yanke zuwa ga akwatin  pixel"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.ldap-disabled"
+msgstr "LDAP ya gaza tantancewa."
+
+msgid "workspace.assets.open-library"
+msgstr "bude fiyal din dakin karatu"
+
+#: src/app/main/data/workspace/libraries.cljs, src/app/main/ui/components/color_bullet.cljs
+msgid "workspace.gradients.linear"
+msgstr "a layi mikakke"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.title-selection"
+msgstr "zababbun rubutu"
+
+msgid "modals.delete-component-annotation.title"
+msgstr "goge bayani"
+
+msgid "shortcuts.select-parent-layer"
+msgstr "zabi ainihin shafi"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-reassign.promote-and-leave"
+msgstr "inganta sannan ka bari"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.libraries.text.multiple-typography"
+msgstr "Rubutun rubutu dayawa"
+
+msgid "dashboard.import.progress.upload-media"
+msgstr "xora kundaye: %s"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-multi-confirm.accept"
+msgstr "goge kundaye"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.shared-library"
+msgstr "rababben dakin karatu"
+
+msgid "labels.share-prototype"
+msgstr "tura manhajar rubutu"
+
+msgid "shortcuts.export-shapes"
+msgstr "samar da sabbabbin abubuwa"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "notifications.invitation-link-copied"
+msgstr "kwafar hanyar gayya"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "dashboard.notifications.password-saved"
+msgstr "an tsare maka shaidar tsaro!"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.group-name"
+msgstr "sunan kungiya"
+
+msgid "shortcuts.search-placeholder"
+msgstr "takaitaccen sako yanken"
+
+msgid "inspect.tabs.code.selected.svg-raw"
+msgstr "SVG"
+
+#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.size"
+msgstr "girma"
+
+msgid "workspace.undo.entry.multiple.component"
+msgstr "bangare"
+
+msgid "workspace.focus.selection"
+msgstr "zaba"
+
+msgid "workspace.path.actions.merge-nodes"
+msgstr "hade kauri (%s)"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.info"
+msgstr ""
+"za mu aika maka da imel ta wannan imel xin â€œ%sâ€ domin tantance shaidarka."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.remove-member"
+msgstr "cire mamba"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.create-component"
+msgstr "kirkiri abubuwa"
+
+msgid "common.publish"
+msgstr "wallafawa"
+
+msgid "shortcuts.select-next"
+msgstr "zabi wani shafi"
+
+msgid "workspace.undo.entry.multiple.color"
+msgstr "kadarar kala"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "title.settings.options"
+msgstr "Saiti - Mazubin biruka"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.no-invitations"
+msgstr "ba saqon da ba a buxa ba."
+
+msgid "workspace.header.menu.enable-scale-content"
+msgstr "bada damar sikelin rabo"
+
+msgid "modals.delete-font-variant.message"
+msgstr ""
+"ka tabbata kana son goge wannan salon font din? ba zai xoru ba idan an yi "
+"amfani da shi a kundi."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.group-stroke"
+msgstr "Ja layi a rukuni"
+
+msgid "workspace.shape.menu.union"
+msgstr "hadakan"
+
+msgid "workspace.shape.menu.thumbnail-set"
+msgstr "kara kamar girman babban  yatsa"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.recovery-submit"
+msgstr "canza lambar tsaro"
+
+#: src/app/main/ui/confirm.cljs
+msgid "ds.confirm-cancel"
+msgstr "goge"
+
+#: src/app/main/ui/inspect/attributes/image.cljs
+msgid "inspect.attributes.image.download"
+msgstr "sauke hanyar hoto"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fill"
+msgstr "cike - cika sikeli"
+
+msgid "errors.bad-font-plural"
+msgstr "ba za a iya xora fonts %s ba"
+
+msgid "inspect.empty.help"
+msgstr "domin neman qarin bayani game da fenfot a tuntubi sashen agaji"
+
+msgid "workspace.sidebar.layers.texts"
+msgstr "rubutu"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "title.settings.profile"
+msgstr "Karin bayani - Mazubin biruka"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.delete"
+msgstr "goge"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-left"
+msgstr "jera hagu (%s)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.your-account"
+msgstr "fagenka"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.dismiss"
+msgstr "watsar"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "title.settings.feedback"
+msgstr "bada martani - Mazubin biruka"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.duplicate"
+msgstr "maimaita"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.change-email"
+msgstr "canza imel"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.delete-team-confirm.title"
+msgstr "gogewar tawaga"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.more-info"
+msgstr "bayanai masu yawa"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.forward"
+msgstr "kawo ta gaba"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.title"
+msgstr "imel"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.font-size"
+msgstr "girma"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.message"
+msgstr ""
+"kai ke da wannan tawagar yanzu. ka tabbata kana son yin %s sabon mai tawaga?"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-palette"
+msgstr "farantin launuka"
+
+msgid "shortcuts.group"
+msgstr "rukuni"
+
+msgid "auth.privacy-policy"
+msgstr "matakan kaxaita"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.password-changed-successfully"
+msgstr "ka canza lambar tsaro"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-while-hovering"
+msgstr "yayin shawagi"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.show"
+msgstr "nuna"
+
+msgid "workspace.shape.menu.hide-ui"
+msgstr "nuna / boye UI"
+
+msgid "shortcuts.move-fast-up"
+msgstr "Matsa sama da sauri"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-project-prefix"
+msgstr "sabon aiki"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.center"
+msgstr "tsakiya"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "title.team-settings"
+msgstr "Saiti - %s - Mazubin biruka"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-manual"
+msgstr "Yi da kanka"
+
+msgid "labels.save"
+msgstr "ajiye"
+
+msgid "dashboard.import.progress.process-media"
+msgstr "kammala aiki"
+
+#: src/app/main/ui/confirm.cljs
+msgid "ds.confirm-ok"
+msgstr "haka"
+
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.not-all-space"
+msgstr "dole suna ya qumshi waxansu alamimon rubutu, sannan tazara."
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "modals.delete-project-confirm.message"
+msgstr "ka tabbata kana son goge wannan aikin?"
+
+msgid "shortcuts.line-height-inc"
+msgstr "kara tsawon layi"
+
+msgid "onboarding-v2.before-start.desc2"
+msgstr ""
+"cikakken bayanin yadda za a yi amfani da fenfot. daga rubutu  zuwa tsara ko "
+"rarraba iri."
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.sidebar.layers"
+msgstr "shafi"
+
+msgid "shortcuts.select-all"
+msgstr "zabi duka"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.graphics"
+msgstr "%s zane zane"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-mouse-leave"
+msgstr "linzamin kwamfutar ya fita"
+
+msgid "labels.log-or-sign"
+msgstr "yi ko shiga"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.other"
+msgstr "idan akwai qari (bayyana)"
+
+msgid "workspace.assets.typography.text-styles"
+msgstr "salon rubutu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.circle-marker"
+msgstr "da'irar kasuwa"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.searching-for"
+msgstr "neman â€œ%sâ€œâ€¦"
+
+msgid "inspect.attributes.typography.text-decoration.none"
+msgstr "babu"
+
+msgid "labels.discard"
+msgstr "vatar"
+
+msgid "shortcuts.font-size-inc"
+msgstr "kara gaban yanayi"
+
+msgid "common.share-link.permissions-pages"
+msgstr "tura shafuka"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-item-min-w"
+msgstr "fadi mafi kankanta"
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.hcenter"
+msgstr "Daidaita tsakiya a kwance (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.gap"
+msgstr "Gibi"
+
+msgid "inspect.tabs.code.selected.group"
+msgstr "qungiya"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square-marker"
+msgstr "murabba'in kasuwa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.column"
+msgstr "shafi"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.delete-comment-thread"
+msgstr "goge rubutu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation"
+msgstr "hotuna masu motsi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.drop-shadow"
+msgstr "ajiye inuwa"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.test-penpot-to-see-if-its-a-fit-for-team"
+msgstr "jaraba fenfot ka ga ko ta yi daidai da tawaga "
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.student-teacher"
+msgstr "malami ko dalibi"
+
+msgid "workspace.undo.entry.single.curve"
+msgstr "lankwasa"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.not-found.main-message"
+msgstr "alama!"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.overlay"
+msgstr "mai rufi"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.2-10"
+msgstr "2-10"
+
+msgid "onboarding.team-modal.create-team"
+msgstr "yin tawaga"
+
+msgid "dashboard.import.progress.process-colors"
+msgstr "aikin rini"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-account"
+msgstr "qirqiri taskar gwaji"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.title"
+msgstr "ma'aunin karvuwar aiki"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.margin"
+msgstr "gefe"
+
+msgid "onboarding-v2.welcome.title"
+msgstr "barka da zuwa fenfot!"
+
+#, permanent
+msgid "inspect.attributes.stroke.alignment.center"
+msgstr "tsakiya"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "dashboard.notifications.email-changed-successfully"
+msgstr "ka zamanantar da adireshinka na imel"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.leave-feedback-for-my-team-project"
+msgstr "barin aikin tawaga"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.add-shared-confirm.accept"
+msgstr "qara yin wurin ajiyar tawaga"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-ease-in-out"
+msgstr "sauki ciki waje"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-snap-guides"
+msgstr "Tsinke zuwa mai jagora"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-linear"
+msgstr "mikakke"
+
+#: src/app/main/ui/inspect/attributes/blur.cljs
+msgid "inspect.attributes.blur.value"
+msgstr "muhimmanci"
+
+msgid "common.share-link.manage-ops"
+msgstr "amincewar shugaba"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "fara jagoranci"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-on-click"
+msgstr "da an danna"
+
+msgid "onboarding.choice.team-up.invite-members"
+msgstr "gayyato mambobi"
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.hdistribute"
+msgstr "rarraba filin kwance (%s)"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-length-hint"
+msgstr "aqalla a sami alamoni 8"
+
+msgid "modals.delete-webhook.message"
+msgstr "ka tabbata ka na son goge webhook?"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-confirm.title"
+msgstr "goge kundi"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "modals.delete-project-confirm.title"
+msgstr "goge aikin"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-navigate-to-dest"
+msgstr "kewayawa zywa: %s"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.selected-count"
+msgid_plural "workspace.assets.selected-count"
+msgstr[0] "%s"
+msgstr[1] "%s zababbun abubuwan"
+
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr "akwai matsala wurin shigo da fejin talla. fejin tallar ba ya xauko."
+
+# SECTIONS
+msgid "shortcut-section.basics"
+msgstr "shikashikai"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-go-to"
+msgstr "je ka taskar fenfot"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.libraries-and-templates"
+msgstr "taskoki  & allunan talla"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.wrong-credentials"
+msgstr "kuskuren imel ko lambar tsaro."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.spread"
+msgstr "bazu"
+
+msgid "shortcuts.open-inspect"
+msgstr "tafi sashin da 'yan kallo za su duba"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr "ka san dokokin fenfot lokacin da ka ke tare da masoya koyarwa."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.31-50"
+msgstr "31-50"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.bottom"
+msgstr "kasa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-duration"
+msgstr "tsahon lokaci"
+
+msgid "shortcuts.go-to-libs"
+msgstr "ta fi zuwa rabbabben ma'ajiya"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.advanced-ops"
+msgstr "zabi na ci gaba"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "notifications.validation-email-sent"
+msgstr "an aika da imel din tantancewa %s. bincika imel xinka!"
+
+msgid "shortcuts.toggle-zoom-style"
+msgstr "Danna salon zukowa"
+
+msgid "shortcut-subsection.zoom-workspace"
+msgstr "Zukowa"
+
+msgid "shortcuts.increase-zoom"
+msgstr "zuko ciki"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-close-outside"
+msgstr "rufe yayin matsewa ta waje"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.blur"
+msgstr "dishi dishi"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.no-access-tokens"
+msgstr "ba ka da wasu lambobin tsaro yanzu."
+
+msgid "workspace.path.actions.separate-nodes"
+msgstr "raba kauri (%s)"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.title-search"
+msgstr "neman sakamako"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.invision"
+msgstr "teburin aiki"
+
+#: src/app/main/ui/workspace.cljs
+msgid "labels.reload-file"
+msgstr "qara dora kundi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.font-id"
+msgstr "tsarin haruffa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.selection-stroke"
+msgstr "gigciye zabi"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal.description"
+msgstr ""
+"lambarka ta shiga na a matsayin zabin hanyar shiga/lambar tsaronmuza a iya "
+"amfani tsarin tantancewa,domin shiga manhajar cikin fenfot API"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.title"
+msgstr "mallakar tawaga"
+
+msgid "dashboard.import"
+msgstr "shigo da kundin fenfot"
+
+#: src/app/main/ui/workspace/sidebar/options.cljs
+msgid "workspace.options.prototype"
+msgstr "samfur"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.right"
+msgstr "dama"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-delete-project"
+msgstr "ka goge aikinka"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr "fenfot ta menbobin tawaga ce. kirawo kowa domin yin aiki tarekundaye"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "profile.recovery.go-to-login"
+msgstr "je ka hanyar shiga"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.theme-change"
+msgstr "batun UI"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.use-play-button"
+msgstr "yi amfani da madanneta ta sama ki tafi da samfuri."
+
+msgid "modals.delete-font.message"
+msgstr ""
+"ka tabbata kana son goge wannan font xin ? ba zai yi aiki ba idan an yi "
+"amfani da shi a kundi."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.hue"
+msgstr "Haske haske"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-artboard-names"
+msgstr "Nuna sunayen allo"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.save-error"
+msgstr "an samu kuskure wajen adanawa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.dashed"
+msgstr "layin raba abu"
+
+msgid "common.share-link.all-users"
+msgstr "duk fenfot"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal"
+msgstr "mallakar lambobin shiga na sirri"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "dashboard.password-change"
+msgstr "sauya lambar tsaro"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.canva"
+msgstr "Canva"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
+msgid "workspace.options.fill"
+msgstr "Cikawa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.left"
+msgstr "hagu"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.discover-more-about-penpot"
+msgstr "qara samun bayanin fenfot"
+
+msgid "workspace.shape.menu.thumbnail-remove"
+msgstr "cire girman babban danyatsa"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.width"
+msgstr "fadi"
+
+msgid "inspect.empty.select"
+msgstr "zabar zubi, hukumar masu sa ido akan bangarorinsu da lambobinsu"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expires-on"
+msgstr "gama aiki kan %s"
+
+msgid "shortcuts.toggle-layout-flex"
+msgstr "Tara/fitar da lankwasashhiyar shimfida"
+
+msgid "labels.or"
+msgstr "ko"
+
+msgid "onboarding.choice.team-up.roles"
+msgstr "gayyata tare da bayar da matsayi:"
+
+msgid "labels.font-providers"
+msgstr "ma su fenfot"
+
+msgid "shortcuts.italic"
+msgstr "juya zuwa kwantaccen rubuyu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.space-around"
+msgstr "kewayayyen sarrari"
+
+msgid "errors.webhooks.timeout"
+msgstr "dakatarwa"
+
+msgid "errors.profile-blocked"
+msgstr "bayanan a rufe suke"
+
+msgid "workspace.options.width"
+msgstr "fadi"
+
+msgid "shortcuts.letter-spacing-dec"
+msgstr "rage filin harafin"
+
+msgid "errors.webhooks.last-delivery"
+msgstr "saqon qarshe bai je ba."
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-move-files"
+msgstr "an tura kundayenka"
+
+msgid "shortcut-subsection.general-dashboard"
+msgstr "gamayya"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "errors.password-too-short"
+msgstr "lambar tsaro dole ta kai yawan alamu 8"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.title"
+msgstr "ka tabbata ka na son goge asusunka?"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.title"
+msgstr "jagoranci"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.rect"
+msgstr "Rectangle (%s)"
+
+msgid "labels.continue-with"
+msgstr "ci gaba da"
+
+msgid "inspect.attributes.typography.text-transform.lowercase"
+msgstr "qananan baqaqe"
+
+msgid "workspace.undo.entry.single.group"
+msgstr "rukuni"
+
+msgid "inspect.attributes.stroke.style.dotted"
+msgstr "xige-xige"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-item-max-w"
+msgstr "fadi mafi yawa"
+
+msgid "shortcuts.align-right"
+msgstr "tsarin dama"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.previous"
+msgstr "can baya"
+
+msgid "modals.invite-member.emails"
+msgstr "imel, rabawar waqafi"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.sitemap"
+msgstr "taswirar wuri"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-dynamic-alignment"
+msgstr "kashe daidaitawa mai canjawa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-left"
+msgstr "kasan hagu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.type.right"
+msgstr "Dama"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-close-overlay"
+msgstr "kulle mai rufi"
+
+msgid "errors.invite-invalid.info"
+msgstr "za a iya soke gayyata ko ta ki aiki."
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.fonts-added"
+msgid_plural "dashboard.fonts.fonts-added"
+msgstr[0] "an qara font 1"
+msgstr[1] "%s an qara fonts da yawa"
+
+msgid "modals.create-webhook.submit-label"
+msgstr "qirqirar webhook"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.add-one"
+msgstr ""
+"danna maddanin qasa\"danna qasa\n"
+"emo sabuwar lambar tsaro\" samar da wani."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.title"
+msgstr "goge alama"
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.vtop"
+msgstr "Daidaita sama(%s)"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.viewer"
+msgstr "ma su kallo"
+
+msgid "shortcuts.toggle-alignment"
+msgstr "Danna a jere"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.invite-profile"
+msgstr "neman mutane"
+
+#: src/app/main/ui/dashboard/grid.cljs
+#, markdown
+msgid "dashboard.empty-placeholder-drafts"
+msgstr ""
+"nan za a sami kundayen da aka sanya a taska. gwada sanya na ka kundin \"a "
+"taskirarmumaginar kundi](https://manhajar fenfot/taskokin maginar kundaye."
+"html)."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.diamond-marker"
+msgstr "darajar kasuwa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.soft-light"
+msgstr "haske mai sauki"
+
+msgid "shortcuts.decrease-zoom"
+msgstr "fito da shi waje"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding-simple"
+msgstr "sassaukan ciko"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.gutter"
+msgstr "mahada"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.group"
+msgstr "rukuni"
+
+msgid "dashboard.webhooks.update.success"
+msgstr "sabunta Webhook."
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-github-submit"
+msgstr "matattarar manazarta"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.letter-spacing"
+msgstr "tazarar harafi"
+
+msgid "inspect.tabs.code.selected.text"
+msgstr "rubutu"
+
+msgid "shortcuts.opacity-4"
+msgstr "Saita dishi dishi zuwa kashi 40"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.title.multiple"
+msgstr "zabin dishi dishi"
+
+msgid "shortcuts.align-vcenter"
+msgstr "tsarin tsakiya a tsaye"
+
+msgid "workspace.shape.menu.create-annotation"
+msgstr "kirkiri hoto mai motsi"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-selected"
+msgstr "zuko zababbe"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.delete-team-confirm.message"
+msgstr ""
+"ka tabbata kana son goge wannan tawagar? Duk  aiyukanka na kundayen da suka "
+"danganci tawagar za su yi gogewar dindindin."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-open-overlay-dest"
+msgstr "bude mai rufi: %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.type"
+msgstr "Nau'i"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-open-url"
+msgstr "bude URL"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.delete-invitation"
+msgstr "goge gayyata"
+
+msgid "workspace.path.actions.delete-node"
+msgstr "goge kauri (%s)"
+
+msgid "shortcuts.letter-spacing-inc"
+msgstr "kara filin harafin"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-destination"
+msgstr "makoma"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "Gugul"
+
+msgid "onboarding.newsletter.acceptance-message"
+msgstr ""
+"an aika maka da saqon buqatar biya, za mu aika maka da saqon imel tabbatar "
+"da shi."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.go-main"
+msgstr "tafi ainihin wurin fal"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.start-to-work-on-my-project"
+msgstr "fara aiki na"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.delete-team"
+msgstr "goge tawaga"
+
+msgid "shortcuts.draw-frame"
+msgstr "Allo"
+
+msgid "shortcuts.text-align-center"
+msgstr "jera tsakiya"
+
+msgid "shortcuts.undo"
+msgstr "Cire"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.line-arrow-short"
+msgstr "mashi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component.accept"
+msgstr "sabunta"
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.vcenter"
+msgstr "Daidaita a kwance tsakiya (%s)"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-subtitle1"
+msgstr "tambayoyin da ke buqatar amsa."
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.remove-account"
+msgstr "ka na son cire taskarka?"
+
+msgid "labels.font-family"
+msgstr "ire-iren font"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.viewer"
+msgstr "yanayin kallo (%s)"
+
+msgid "workspace.path.actions.make-curve"
+msgstr "Ta lankwasa (%s)"
+
+msgid "workspace.options.search-font"
+msgstr "nemo jerin harufa"
+
+msgid "onboarding.team-modal.create-team-feature-3"
+msgstr "aiyukan shugaba"
+
+msgid "workspace.path.actions.move-nodes"
+msgstr "tafi da kauri (%s)"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-title"
+msgstr "dangin fenfot"
+
+msgid "workspace.path.actions.join-nodes"
+msgstr "hada kauri (%s)"
+
+msgid "shortcuts.merge-nodes"
+msgstr "hada da kauri"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "question.design-tool-more-experienced-with"
+msgstr "wane kayan zane ka fi iya aiki da shi?"
+
+msgid "shortcuts.bool-difference"
+msgstr "ma'auni mabanbanci"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-url"
+msgstr "URL"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create.success"
+msgstr "ka sami lambar tsaron da aka yi."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.community"
+msgstr "matattara"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.move"
+msgstr "motsa abun"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.title.multiple"
+msgstr "dayawa"
+
+msgid "shortcuts.make-corner"
+msgstr "kirkiri kwana"
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
+msgid "labels.show-your-comments"
+msgstr "bayyana na ka ra’ayin"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.role"
+msgstr "mi ne ne matsayinka?"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.letter-spacing"
+msgstr "fili a tsakanin haruffa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.direction-ltr"
+msgstr "LTR"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.shared-libraries"
+msgstr "taskoki"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "title.team-invitations"
+msgstr "Gayyata - %s - Mazubin biruka"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.pin-unpin"
+msgstr "rufewa/buxewa"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.num-of-files"
+msgid_plural "labels.num-of-files"
+msgstr[0] "kundi 1"
+msgstr[1] "kundaye %s"
+
+msgid "labels.custom-fonts"
+msgstr "kwalliya da fenfot"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "labels.comments"
+msgstr "yabo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.height"
+msgstr "tsawo"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.delete"
+msgstr "goge"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.show-in-assets"
+msgstr "nuna ta kusuwar kadara"
+
+msgid "workspace.undo.entry.multiple.shape"
+msgstr "siffa"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs
+msgid "inspect.tabs.info"
+msgstr "bayani"
+
+msgid "workspace.options.interaction-auto"
+msgstr "da kanshi"
+
+msgid "onboarding.team-modal.create-team-feature-2"
+msgstr "ma su yin shiri dayawa lokaci xaya"
+
+msgid "modals.add-shared-confirm-empty.hint"
+msgstr ""
+"xakin ba komai. wurin ajiyar tawaga, turken da ka yi za ya yi aiki a sauran "
+"kundaye. ka tabbata kai ne ka ke son wallafa shi?"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.dashboard"
+msgstr "dashbod"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.title.multiple"
+msgstr "inuwar zabi"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.save-settings"
+msgstr "wurin ajiyar saiti"
+
+#: src/app/main/errors.cljs
+msgid "errors.max-quote-reached"
+msgstr "kammala adadin '%s' madogara. gyara."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-prev-screen"
+msgstr "allon daya gabata"
+
+msgid "labels.active"
+msgstr "mai amfani"
+
+msgid "shortcuts.text-align-right"
+msgstr "jera dama"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.add"
+msgstr "tarawa"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.text-decoration"
+msgstr "kwalliyar rubutu"
+
+msgid "dashboard.import.import-warning"
+msgstr "wasu kundayen na dauke da abubuwan da ba su da amfani."
+
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+msgid "errors.media-type-mismatch"
+msgstr "hoton da aka sanya bai yi daidai da kundin da ake son faxaxawa ba."
+
+msgid "shortcuts.opacity-0"
+msgstr "Saita dishi dishi zuwa kashi  100"
+
+msgid "shortcuts.clear-undo"
+msgstr "goge sake"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.text"
+msgstr "rubutu (%s)"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.update"
+msgstr "sabintawas"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.copy"
+msgstr "kwafi"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.curve"
+msgstr "kwana(%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding-all"
+msgstr "duka gefan"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.title"
+msgstr "rubutu"
+
+#: src/app/main/ui/inspect.cljs, src/app/main/ui/viewer.cljs
+msgid "viewer.empty-state"
+msgstr "Babu allon da aka samu a wannan fejin."
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.file-library"
+msgstr "Ma'adanar fiyal"
+
+msgid "inspect.tabs.code.selected.path"
+msgstr "hanya"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.left"
+msgstr "hagu"
+
+msgid "shortcut-subsection.navigation-workspace"
+msgstr "shawagi"
+
+msgid "shortcuts.bool-union"
+msgstr "ma'auni hadaka"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.submit"
+msgstr "sake imel"
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-not-supported"
+msgstr "sassa '%s' ba za su yi aiki ba."
+
+#: src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.rename-team"
+msgstr "sake suna tawaga"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.title.group"
+msgstr "rukuni"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.team-projects"
+msgstr "aiyukan tawaga"
+
+msgid "shortcuts.underline"
+msgstr "Danna ta layi a kasa"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-never"
+msgstr "bai yiwuwa"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.libraries.colors.rgb-complementary"
+msgstr "Jituwar RGB"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.edit"
+msgstr "Tace"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.delete-team-member-confirm.message"
+msgstr "ka tabbata kana son cire wannan memban a wannan tawaar?"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component.hint"
+msgstr ""
+"ka kusa sabunta sashe a babbar taska. wannan za ya iya aiki a sauran "
+"kundayen da ke amfani da ita."
+
+#: src/app/main/ui/static.cljs
+msgid "labels.internal-error.main-message"
+msgstr "kuskuren ciki"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.title"
+msgstr "sake imel xinka"
+
+msgid "shortcut-subsection.modify-layers"
+msgstr "gyara shimfida"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.release-notes"
+msgstr "bayar da bayani"
+
+msgid "shortcuts.unmask"
+msgstr "Cire takunkumi"
+
+msgid "workspace.options.y"
+msgstr "Y layi"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.remove-shared-confirm.message"
+msgstr "cire â€œ%sâ€ a taskar shirye-shirye"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.round"
+msgstr "da'ira"
+
+msgid "shortcuts.toggle-lock"
+msgstr "Rufe/bude"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.password"
+msgstr "lambar tsaro"
+
+msgid "viewer.breaking-change.message"
+msgstr "Sannu!"
+
+msgid "shortcut-subsection.panels"
+msgstr "allon sarrarfav naura"
+
+msgid "inspect.tabs.code.selected.circle"
+msgstr "da'ira"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.info"
+msgstr "idan ka cire asusunka za ka iya rasa aikin da ka kammala."
+
+msgid "dashboard.loading-fonts"
+msgstr "xora abin adonka â€¦"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-reassign.hint1"
+msgstr ""
+"kai ne mai wannan tawagar. zabi wani memba da za ya iya inganta wa mai shi "
+"kafin ka fita."
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-multi"
+msgstr "tura %s kundaye a"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.topbottom"
+msgstr "sama & kasa"
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.vdistribute"
+msgstr "rarraba filin tsaye (%s)"
+
+msgid "shortcuts.separate-nodes"
+msgstr "raba kauri"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.message"
+msgstr "ka tabbata ka na son fita daga  %s tawaga?"
+
+msgid "shortcut-subsection.path-editor"
+msgstr "Hanya"
+
+msgid "common.share-link.link-copied-success"
+msgstr "an samo kwafi"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.founder"
+msgstr "mawallafi/VP"
+
+#: src/app/main/ui/inspect/attributes/stroke.cljs
+msgid "inspect.attributes.stroke.width"
+msgstr "fadi"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.message"
+msgid_plural "modals.delete-shared-confirm.message"
+msgstr[0] "ka tabbata kana son goge wannan kundin?"
+msgstr[1] "ka tabbata kana son goge waxannan kundayen?"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.title"
+msgstr "shafi"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "title.dashboard.fonts"
+msgstr "jerin harufa - %s - Mazubin biruka"
+
+msgid "workspace.undo.entry.multiple.text"
+msgstr "rubutu"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.email"
+msgstr "imel"
+
+msgid "workspace.sidebar.layers.shapes"
+msgstr "Siffa"
+
+#: src/app/main/ui/workspace/colorpicker/libraries.cljs, src/app/main/ui/workspace/colorpalette.cljs
+msgid "workspace.libraries.colors.recent-colors"
+msgstr "kalar yanzu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.add-flow-start"
+msgstr "Kara gudun farko"
+
+msgid "inspect.attributes.typography.text-transform.uppercase"
+msgstr "manyan baqaqe"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
+msgid "workspace.options.show-fill-on-export"
+msgstr "fito da shi a ga"
+
+msgid "labels.inactive"
+msgstr "maras amfani"
+
+msgid "dashboard.export.title"
+msgstr "fitar da kundayr"
+
+msgid "modals.publish-empty-library.accept"
+msgstr "wallafa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.center"
+msgstr "Tsakiya"
+
+msgid "shortcuts.toggle-lock-size"
+msgstr "Rufe rabo"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.delete-comment"
+msgstr "goge yabo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-item-max-h"
+msgstr "tsawo mafi yawa"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.register-submit"
+msgstr "qirqiri kundi"
+
+msgid "onboarding-v2.before-start.desc3.title"
+msgstr "koyarwa ta hoto mai motsi"
+
+msgid "shortcuts.thumbnail-set"
+msgstr "saita babban yatsa"
+
+msgid "workspace.shape.menu.restore-main"
+msgstr "saita ainihin wurin"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.no-projects-placeholder"
+msgstr "nan za a ga bayanin aiki"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.libraries"
+msgstr "ma'adanai"
+
+msgid "onboarding-v2.welcome.desc1"
+msgstr ""
+"fenfot ne ke yin kelaidos kamar yadda mutane ke yi, mutane na taimakon "
+"junansu. kowa za ya iya hada hannu da:"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.title"
+msgstr "samar da alamar shiga"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.no-expiration"
+msgstr "ba lokacin daina amfani"
+
+msgid "shortcuts.go-to-search"
+msgstr "gajeran sako"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.too-long"
+msgstr "suna dole ya qunshi alamomin rubutu 250."
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.libraries"
+msgstr "dakunan karatu"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.components"
+msgstr "Bangarori"
+
+#, permanent
+msgid "inspect.attributes.stroke.alignment.inner"
+msgstr "daga ciki"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.select-all"
+msgstr "zabi duka"
+
+msgid "labels.upload-custom-fonts"
+msgstr "Upload custom fonts"
+
+msgid "shortcuts.flip-horizontal"
+msgstr "kifa shi dai dai"
+
+msgid "dashboard.import.progress.process-components"
+msgstr "aikin sassa"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/settings/options.cljs
+msgid "dashboard.update-settings"
+msgstr "zamanartarwa wurin gyara"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints"
+msgstr "Takura"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.saturation"
+msgstr "jikewa"
+
+msgid "workspace.sidebar.expand"
+msgstr "kara yankin ma'agiyar bayani"
+
+#: src/app/main/ui/inspect/attributes/blur.cljs
+msgid "inspect.attributes.blur"
+msgstr "xige-xige"
+
+#: src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.mask"
+msgstr "takunkumik"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "title.dashboard.font-providers"
+msgstr "samar da jerin harufa - %s - Mazubin biruka"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.num-of-projects"
+msgid_plural "labels.num-of-projects"
+msgstr[0] "aiki"
+msgstr[1] "aiyuka %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.libraries.text.multiple-typography-tooltip"
+msgstr "Cire mahadar duka rabutun rubutu"
+
+msgid "shortcuts.start-editing"
+msgstr "fara gyarawa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-toggle-overlay-dest"
+msgstr "Juya mai murfi: %s"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.graphics"
+msgstr "zane zane"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.pending-invitation"
+msgstr "tukuna"
+
+msgid "workspace.path.actions.make-corner"
+msgstr "ta kwana (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.line-height"
+msgstr "tsawon layi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.circle-marker-short"
+msgstr "da'ira"
+
+msgid "modals.create-webhook.url.label"
+msgstr "farashin URL"
+
+msgid "workspace.options.stroke-color"
+msgstr "gigciye kalar"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.11-30"
+msgstr "11-30"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.copy-token"
+msgstr "kwafar kyauta"
+
+msgid "dashboard.export-binary-multi"
+msgstr "sauke %s kundayen manhajar fenfot(.penpot)"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.components"
+msgstr "%s bangarori"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.title"
+msgid_plural "modals.unpublish-shared-confirm.title"
+msgstr[0] "rufe taska"
+msgstr[1] "rufe taskoki"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.no-elements"
+msgstr "ba wasu abubuwan da ake daidaitawa wajen tsara fitarwa."
+
+#: src/app/main/data/workspace/libraries.cljs, src/app/main/ui/components/color_bullet.cljs
+msgid "workspace.gradients.radial"
+msgstr "a da'ira"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.cancel"
+msgstr "ajiye asusu da soke shi"
+
+msgid "shortcuts.move-unit-left"
+msgstr "Matsa da sashin hagu"
+
+msgid "inspect.attributes.stroke.style.mixed"
+msgstr "gauraya"
+
+msgid "shortcuts.toggle-colorpalette"
+msgstr "Danna launukan kala"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke.outer"
+msgstr "waje"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-left"
+msgstr "saman hagu"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "fara koyarwa"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.box-filter-all"
+msgstr "duka kadara"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.invite-invalid"
+msgstr "gaiyar ba ta yi ba"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.normal"
+msgstr "na kullum"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.delete-multi-files"
+msgstr "goge %s kundaye"
+
+msgid "shortcuts.join-nodes"
+msgstr "hada abubuwan"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.preferences"
+msgstr "fifiko"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.service-unavailable.desc-message"
+msgstr "mu na cikin kula a tsarinka."
+
+#: src/app/main/ui/workspace/sidebar/align.cljs
+msgid "workspace.align.vbottom"
+msgstr "Daidaita kasa (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.font-variant-id"
+msgstr "bambanci"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "labels.language"
+msgstr "harshe"
+
+msgid "shortcut-subsection.text-editor"
+msgstr "Rubutu"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.shared-libraries"
+msgstr "Rabban ma'adanai"
+
+msgid "workspace.shape.menu.exclude"
+msgstr "kebe"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-delete-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "an goge kundinka"
+msgstr[1] "an goge kundayenka"
+
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment-thread.message"
+msgstr "ka tabbata ka na son goge fira? duk sharhi a nan za a goge matsaloli."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.rotation"
+msgstr "juyawa"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.interface-design-visual-assets-design-systems"
+msgstr "... zane-zane, kayan kallo, tsarin qira, etc."
+
+msgid "shortcuts.move-unit-up"
+msgstr "Matsa da sashin samu"
+
+msgid "labels.upload"
+msgstr "xorawa"
+
+msgid "onboarding-v2.welcome.desc2"
+msgstr ""
+"wurin da kowa zai iya koyo, fahimtar ta juna a kan fenfot, kasancewarta "
+"manyan tawagar fenfot da sauran mutane."
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.rename"
+msgstr "sake suna"
+
+msgid "shortcuts.zoom-lense-decrease"
+msgstr "Zuko raguwar ido"
+
+msgid "modals.edit-webhook.title"
+msgstr "gyara webhook"
+
+msgid "workspace.undo.entry.single.shape"
+msgstr "siffa"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs
+msgid "workspace.sidebar.sitemap"
+msgstr "shafi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.width"
+msgstr "fadi"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.send"
+msgstr "aika"
+
+#: src/app/main/ui/workspace.cljs
+msgid "title.workspace"
+msgstr "%s - Mazubin biruka"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.no-matches-for"
+msgstr "ba wanda ya yi daidai da â€œ%sâ€œ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.assets.typography.text-transform"
+msgstr "canja rubutu"
+
+msgid "errors.email-as-password"
+msgstr "ba za ka iya amfani da imel ba a matsayin lambar tsaro ba"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate-multi"
+msgstr "kwafi %s kundaye"
+
+msgid "shortcuts.line-height-dec"
+msgstr "rage tsawon layi"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.view"
+msgstr "gani"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.detach-instances-in-bulk"
+msgstr "raba yanayin abin"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.scale"
+msgstr "maauni"
+
+msgid "inspect.empty.more-info"
+msgstr "qarin bayani a fagen lura"
+
+#: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/options.cljs
+msgid "notifications.profile-saved"
+msgstr "an ajiye bayanai!"
+
+msgid "workspace.focus.focus-off"
+msgstr "karka maida hankali"
+
+msgid "shortcuts.toggle-fullscreen"
+msgstr "Danna fuskar ta cika duka"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "title.settings.access-tokens"
+msgstr "karin bayani - Shiga alama"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-duplicate-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "an kwafi kundinka"
+msgstr[1] "an kwafi kundayenka"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.colors"
+msgstr "kala"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.owner"
+msgstr "mai"
+
+msgid "shortcuts.select-prev"
+msgstr "zabi shafin da ya gabata"
+
+#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-move-file"
+msgstr "an tura aikinka"
+
+msgid "workspace.options.radius"
+msgstr "digon tsakiyar da'ira"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.back"
+msgstr "tura zuwa baya"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.line-arrow"
+msgstr "layin mashiw"
+
+msgid "shortcuts.align-left"
+msgstr "tsarin hagu"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.edit"
+msgstr "tace"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.ungroup"
+msgstr "kashe daga kungiya"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.not-found"
+msgstr "ba'a samu kadara ba"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fit-all"
+msgstr "zuko yayi daidai da ko'ina"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.login-here"
+msgstr "shiga nan"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.subject"
+msgstr "shugabanci"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-after-delay"
+msgstr "Bayan jinkiri"
+
+#: src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.create-team.placeholder"
+msgstr "shigar da sabon sunan tawaga"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-item-max-h"
+msgstr "tsawo mafi yawa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.title"
+msgstr "inuwa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.size"
+msgstr "girma"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.help-info"
+msgstr "taimako & bayani"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.title-group"
+msgstr "rukunin rubutu"
+
+msgid "workspace.undo.entry.single.text"
+msgstr "sako"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.type-something"
+msgstr "rubuta neman sakamako"
+
+msgid "shortcuts.mask"
+msgstr "takunkumi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.grow-fixed"
+msgstr "dasa"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.image"
+msgstr "hoto (%s)"
+
+msgid "shortcuts.line-through"
+msgstr "danna layin duk"
+
+msgid "workspace.undo.entry.single.path"
+msgstr "hanya"
+
+msgid "errors.cannot-upload"
+msgstr "kasa xora xan aiken kundi."
+
+msgid "onboarding.choice.team-up.create-team-placeholder"
+msgstr "sanya sunan tawaga"
+
+msgid "shortcuts.move-fast-down"
+msgstr "Matsa kasa da sauri"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.add-flex"
+msgstr "kara sassaukan tsarit"

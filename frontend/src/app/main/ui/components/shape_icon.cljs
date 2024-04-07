@@ -7,13 +7,14 @@
 (ns app.main.ui.components.shape-icon
   (:require
    [app.common.types.component :as ctk]
+   [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
    [app.main.ui.icons :as i]
    [rumext.v2 :as mf]))
 
-
 (mf/defc element-icon
-  [{:keys [shape main-instance?] :as props}]
+  {::mf/wrap-props false}
+  [{:keys [shape main-instance?]}]
   (if (ctk/instance-head? shape)
     (if main-instance?
       i/component
@@ -21,28 +22,44 @@
     (case (:type shape)
       :frame (cond
                (and (ctl/flex-layout? shape) (ctl/col? shape))
-               i/layout-columns
+               i/flex-horizontal
 
                (and (ctl/flex-layout? shape) (ctl/row? shape))
-               i/layout-rows
+               i/flex-vertical
 
-               ;; TODO: GRID ICON
+               (ctl/grid-layout? shape)
+               i/flex-grid
 
                :else
-               i/artboard)
-      :image i/image
-      :line i/line
-      :circle i/circle
-      :path i/curve
-      :rect i/box
+               i/board)
+      ;; TODO -> THUMBNAIL ICON
+      :image i/img
+      :line (if (cts/has-images? shape) i/img i/path)
+      :circle (if (cts/has-images? shape) i/img i/elipse)
+      :path (if (cts/has-images? shape) i/img i/path)
+      :rect (if (cts/has-images? shape) i/img i/rectangle)
       :text i/text
-      :group (if (:masked-group? shape)
+      :group (if (:masked-group shape)
                i/mask
-               i/folder)
+               i/group)
       :bool (case (:bool-type shape)
-              :difference   i/bool-difference
-              :exclude      i/bool-exclude
-              :intersection i/bool-intersection
-              #_:default    i/bool-union)
-      :svg-raw i/file-svg
+              :difference   i/boolean-difference
+              :exclude      i/boolean-exclude
+              :intersection i/boolean-intersection
+              #_:default    i/boolean-union)
+      :svg-raw i/img
+      nil)))
+
+
+(mf/defc element-icon-by-type
+  [{:keys [type main-instance?] :as props}]
+  (if main-instance?
+    i/component
+    (case type
+      :frame i/board
+      :image i/img
+      :shape i/path
+      :text i/text
+      :mask i/mask
+      :group i/group
       nil)))

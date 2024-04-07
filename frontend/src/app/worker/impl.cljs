@@ -7,8 +7,8 @@
 (ns app.worker.impl
   (:require
    [app.common.data.macros :as dm]
+   [app.common.files.changes :as ch]
    [app.common.logging :as log]
-   [app.common.pages.changes :as ch]
    [app.config :as cf]
    [okulary.core :as l]))
 

@@ -8,9 +8,75 @@
   (:require
    [app.common.colors :as clr]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.transit :as t]
    [clojure.walk :as walk]
    [cuerdas.core :as str]))
+
+;; -- Attrs
+
+(def text-typography-attrs
+  [:typography-ref-id
+   :typography-ref-file])
+
+(def text-fill-attrs
+  [:fill-color
+   :fill-opacity
+   :fill-color-ref-id
+   :fill-color-ref-file
+   :fill-color-gradient])
+
+(def text-font-attrs
+  [:font-id
+   :font-family
+   :font-variant-id
+   :font-size
+   :font-weight
+   :font-style])
+
+(def text-align-attrs
+  [:text-align])
+
+(def text-direction-attrs
+  [:text-direction])
+
+(def text-spacing-attrs
+  [:line-height
+   :letter-spacing])
+
+(def text-valign-attrs
+  [:vertical-align])
+
+(def text-decoration-attrs
+  [:text-decoration])
+
+(def text-transform-attrs
+  [:text-transform])
+
+(def text-fills
+  [:fills])
+
+(def shape-attrs
+  [:grow-type])
+
+(def root-attrs
+  text-valign-attrs)
+
+(def paragraph-attrs
+  (d/concat-vec
+   text-align-attrs
+   text-direction-attrs))
+
+(def text-node-attrs
+  (d/concat-vec
+   text-typography-attrs
+   text-font-attrs
+   text-spacing-attrs
+   text-decoration-attrs
+   text-transform-attrs
+   text-fills))
+
+(def text-all-attrs (d/concat-set shape-attrs root-attrs paragraph-attrs text-node-attrs))
 
 (def default-text-attrs
   {:typography-ref-file nil
@@ -55,6 +121,19 @@
         (transform item)
         item))
     root)))
+
+(defn xform-nodes
+  "The same as transform but instead of receiving a funcion, receives
+  a transducer."
+  [xf root]
+  (let [rf (fn [_ v] v)]
+    (walk/postwalk
+     (fn [item]
+       (let [rf (xf rf)]
+         (if (map? item)
+           (d/nilv (rf nil item) item)
+           item)))
+     root)))
 
 (defn node-seq
   ([root] (node-seq identity root))
@@ -165,6 +244,21 @@
              (run! #(.appendCodePoint sb (int %)) (subvec cpoints start end))
              (.toString sb))))
 
+(defn- fix-gradients
+  "Conversion from draft doesn't convert correctly the fills gradient types. This
+  function change the type from string to keyword of the gradient type"
+  [data]
+  (letfn [(fix-type [type]
+            (cond-> type
+              (string? type) keyword))
+
+          (update-fill [fill]
+            (d/update-in-when fill [:fill-color-gradient :type] fix-type))
+
+          (update-all-fills [fills]
+            (mapv update-fill fills))]
+    (d/update-when data :fills update-all-fills)))
+
 (defn convert-from-draft
   [content]
   (letfn [(extract-text [cpoints part]
@@ -172,7 +266,9 @@
                   end   (inc (first (last part)))
                   text  (code-points->text cpoints start end)
                   attrs (second (first part))]
-              (assoc attrs :text text)))
+              (-> attrs
+                  (fix-gradients)
+                  (assoc :text text))))
 
           (split-texts [text styles]
             (let [cpoints  (text->code-points text)
@@ -189,7 +285,8 @@
             (let [key    (get block :key)
                   text   (get block :text)
                   styles (get block :inlineStyleRanges)
-                  data   (get block :data)]
+                  data   (->> (get block :data)
+                              fix-gradients)]
               (-> data
                   (assoc :key key)
                   (assoc :type "paragraph")
@@ -252,3 +349,50 @@
 
     {:blocks (reduce #(conj %1 (build-block %2)) [] (node-seq #(= (:type %) "paragraph") root))
      :entityMap {}}))
+
+(defn content->text+styles
+  "Given a root node of a text content extracts the texts with its associated styles"
+  [node]
+  (letfn
+   [(rec-style-text-map [acc node style]
+      (let [node-style (merge style (select-keys node text-all-attrs))
+            head (or (-> acc first) [{} ""])
+            [head-style head-text] head
+
+            new-acc
+            (cond
+              (:children node)
+              (reduce #(rec-style-text-map %1 %2 node-style) acc (:children node))
+
+              (not= head-style node-style)
+              (cons [node-style (:text node "")] acc)
+
+              :else
+              (cons [node-style (dm/str head-text "" (:text node))] (rest acc)))
+
+               ;; We add an end-of-line when finish a paragraph
+            new-acc
+            (if (= (:type node) "paragraph")
+              (let [[hs ht] (first new-acc)]
+                (cons [hs (dm/str ht "\n")] (rest new-acc)))
+              new-acc)]
+        new-acc))]
+
+    (-> (rec-style-text-map [] node {})
+        reverse)))
+
+(defn index-content
+  "Adds a property `$id` that identifies the current node inside"
+  ([content]
+   (index-content content nil 0))
+  ([node path index]
+   (let [cur-path (if path (dm/str path "-") (dm/str ""))
+         cur-path (dm/str cur-path (d/name (:type node :text)) "-" index)]
+     (-> node
+         (assoc :$id cur-path)
+         (update :children
+                 (fn [children]
+                   (->> children
+                        (d/enumerate)
+                        (mapv (fn [[idx node]]
+                                (index-content node cur-path idx))))))))))

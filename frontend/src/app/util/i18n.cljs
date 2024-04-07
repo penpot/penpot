@@ -7,6 +7,7 @@
 (ns app.util.i18n
   "A i18n foundation."
   (:require
+   [app.common.data :as d]
    [app.common.logging :as log]
    [app.config :as cfg]
    [app.util.dom :as dom]
@@ -29,6 +30,7 @@
    {:label "Euskera (community)" :value "eu"}
    {:label "Français (community)" :value "fr"}
    {:label "Gallego (Community)" :value "gl"}
+   {:label "Hausa (Community)" :value "ha"}
    {:label "Hrvatski (Community)" :value "hr"}
    {:label "Italiano (community)" :value "it"}
    {:label "Norsk - Bokmål (community)" :value "nb_no"}
@@ -175,8 +177,12 @@
   {::mf/wrap-props false}
   [props]
   (let [label    (obj/get props "label")
-        tag-name (obj/get props "tag-name" "p")]
-    [:> tag-name {:dangerouslySetInnerHTML #js {:__html (tr label)}}]))
+        class    (obj/get props "class")
+        tag-name (obj/get props "tag-name" "p")
+        params   (obj/get props "params" [])
+        html (apply tr (d/concat-vec [label] params))]
+    [:> tag-name {:dangerouslySetInnerHTML #js {:__html html}
+                  :className class}]))
 
 ;; DEPRECATED
 (defn use-locale

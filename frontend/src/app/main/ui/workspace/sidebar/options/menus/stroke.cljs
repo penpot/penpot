@@ -5,12 +5,14 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.sidebar.options.menus.stroke
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.data.workspace.colors :as dc]
    [app.main.store :as st]
+   [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.rows.stroke-row :refer [stroke-row]]
@@ -40,62 +42,68 @@
                 :group (tr "workspace.options.group-stroke")
                 (tr "workspace.options.stroke"))
 
-        handle-change-stroke-color
-        (mf/use-callback
+        state*          (mf/use-state true)
+        open?           (deref state*)
+
+        toggle-content  (mf/use-fn #(swap! state* not))
+        open-content    (mf/use-fn #(reset! state* true))
+
+        strokes         (:strokes values)
+        has-strokes?    (or (= :multiple strokes) (some? (seq strokes)))
+
+
+        on-color-change
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [index color]
+           (st/emit! (dc/change-stroke ids color index))))
+
+
+        on-remove
+        (mf/use-fn
          (mf/deps ids)
          (fn [index]
-           (fn [color]
+           (st/emit! (dc/remove-stroke ids index))))
+
+        handle-remove-all
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [_]
+           (st/emit! (dc/remove-all-strokes ids))))
+
+        on-color-detach
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [index color]
+           (let [color (-> color
+                           (assoc :id nil :file-id nil))]
              (st/emit! (dc/change-stroke ids color index)))))
 
-        handle-remove
-        (mf/use-callback
-         (mf/deps ids)
-         (fn [index]
-           (fn []
-             (st/emit! (dc/remove-stroke ids index)))))
-
-        handle-remove-remove-all
-        (fn [_]
-          (st/emit! (dc/remove-all-strokes ids)))
-
-        handle-detach
-        (mf/use-callback
-         (mf/deps ids)
-         (fn [index]
-           (fn [color]
-             (let [color (-> color
-                             (assoc :id nil :file-id nil))]
-               (st/emit! (dc/change-stroke ids color index))))))
-
         handle-reorder
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps ids)
          (fn [new-index]
            (fn [index]
              (st/emit! (dc/reorder-strokes ids index new-index)))))
 
         on-stroke-style-change
-        (fn [index]
-          (fn [event]
-            (let [value (-> (dom/get-target event)
-                            (dom/get-value)
-                            (d/read-string))]
-              (st/emit! (dc/change-stroke ids {:stroke-style value} index)))))
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [index value]
+           (st/emit! (dc/change-stroke ids {:stroke-style value} index))))
 
         on-stroke-alignment-change
-        (fn [index]
-          (fn [event]
-            (let [value (-> (dom/get-target event)
-                            (dom/get-value)
-                            (d/read-string))]
-              (when-not (str/empty? value)
-                (st/emit! (dc/change-stroke ids {:stroke-alignment value} index))))))
+        (fn [index value]
+          (when-not (str/empty? value)
+            (st/emit! (dc/change-stroke ids {:stroke-alignment value} index))))
+
+
 
         on-stroke-width-change
-        (fn [index]
-          (fn [value]
-            (when-not (str/empty? value)
-              (st/emit! (dc/change-stroke ids {:stroke-width value} index)))))
+        (fn [index value]
+          (when-not (str/empty? value)
+            (st/emit! (dc/change-stroke ids {:stroke-width value} index))))
+
 
         open-caps-select
         (fn [caps-state]
@@ -139,56 +147,64 @@
                                                :stroke-cap-end stroke-cap-start} index)))))
         on-add-stroke
         (fn [_]
-          (st/emit! (dc/add-stroke ids {:stroke-style :solid
+          (st/emit! (dc/add-stroke ids {:stroke-alignment :inner
+                                        :stroke-style :solid
                                         :stroke-color clr/black
                                         :stroke-opacity 1
-                                        :stroke-width 1})))
+                                        :stroke-width 1}))
+          (when (not (some? (seq strokes))) (open-content)))
 
         disable-drag    (mf/use-state false)
 
         on-focus (fn [_]
-                     (reset! disable-drag true))
+                   (reset! disable-drag true))
 
         on-blur (fn [_]
                   (reset! disable-drag false))]
 
-    [:div.element-set
-     [:div.element-set-title
-      [:span label]
-      [:div.add-page {:on-click on-add-stroke} i/close]]
+    [:div {:class (stl/css :element-set)}
+     [:div {:class (stl/css :element-title)}
+      [:& title-bar {:collapsable  has-strokes?
+                     :collapsed    (not open?)
+                     :on-collapsed toggle-content
+                     :title        label
+                     :class        (stl/css-case :title-spacing-stroke (not has-strokes?))}
 
-     [:div.element-set-content
-      (cond
-        (= :multiple (:strokes values))
-        [:div.element-set-options-group
-         [:div.element-set-label (tr "settings.multiple")]
-         [:div.element-set-actions
-          [:div.element-set-actions-button {:on-click handle-remove-remove-all}
-           i/minus]]]
-
-
-        (seq (:strokes values))
-        [:& h/sortable-container {}
-         (for [[index value] (d/enumerate (:strokes values []))]
-           [:& stroke-row {:key (dm/str "stroke-" index)
-                           :stroke value
-                           :title (tr "workspace.options.stroke-color")
-                           :index index
-                           :show-caps show-caps
-                           :on-color-change handle-change-stroke-color
-                           :on-color-detach handle-detach
-                           :on-stroke-width-change on-stroke-width-change
-                           :on-stroke-style-change on-stroke-style-change
-                           :on-stroke-alignment-change on-stroke-alignment-change
-                           :open-caps-select open-caps-select
-                           :close-caps-select close-caps-select
-                           :on-stroke-cap-start-change on-stroke-cap-start-change
-                           :on-stroke-cap-end-change on-stroke-cap-end-change
-                           :on-stroke-cap-switch on-stroke-cap-switch
-                           :on-remove handle-remove
-                           :on-reorder (handle-reorder index)
-                           :disable-drag disable-drag
-                           :on-focus on-focus
-                           :data-select-on-focus (not @disable-drag)
-                           :on-blur on-blur
-                           :disable-stroke-style disable-stroke-style}])])]]))
+       [:button {:class (stl/css :add-stroke)
+                 :on-click on-add-stroke} i/add]]]
+     (when open?
+       [:div {:class (stl/css-case :element-content true
+                                   :empty-content (not has-strokes?))}
+        (cond
+          (= :multiple strokes)
+          [:div {:class (stl/css :element-set-options-group)}
+           [:div {:class (stl/css :group-label)}
+            (tr "settings.multiple")]
+           [:button {:on-click handle-remove-all
+                     :class (stl/css :remove-btn)}
+            i/remove-icon]]
+          (seq strokes)
+          [:& h/sortable-container {}
+           (for [[index value] (d/enumerate (:strokes values []))]
+             [:& stroke-row {:key (dm/str "stroke-" index)
+                             :stroke value
+                             :title (tr "workspace.options.stroke-color")
+                             :index index
+                             :show-caps show-caps
+                             :on-color-change on-color-change
+                             :on-color-detach on-color-detach
+                             :on-stroke-width-change on-stroke-width-change
+                             :on-stroke-style-change on-stroke-style-change
+                             :on-stroke-alignment-change on-stroke-alignment-change
+                             :open-caps-select open-caps-select
+                             :close-caps-select close-caps-select
+                             :on-stroke-cap-start-change on-stroke-cap-start-change
+                             :on-stroke-cap-end-change on-stroke-cap-end-change
+                             :on-stroke-cap-switch on-stroke-cap-switch
+                             :on-remove on-remove
+                             :on-reorder (handle-reorder index)
+                             :disable-drag disable-drag
+                             :on-focus on-focus
+                             :select-on-focus (not @disable-drag)
+                             :on-blur on-blur
+                             :disable-stroke-style disable-stroke-style}])])])]))

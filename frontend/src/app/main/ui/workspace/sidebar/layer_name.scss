@@ -8,7 +8,7 @@
 
 .element-name {
   @include textEllipsis;
-  @include titleTipography;
+  @include bodySmallTypography;
   flex-grow: 1;
   color: var(--context-hover-color, var(--layer-row-foreground-color));
   &.selected {
@@ -27,15 +27,17 @@
 }
 .element-name-input {
   @include textEllipsis;
-  @include titleTipography;
+  @include bodySmallTypography;
+  @include removeInputStyle;
   flex-grow: 1;
   height: $s-28;
   max-width: calc(var(--parent-size) - (var(--depth) * var(--layer-indentation-size)));
   margin: 0;
   padding-left: $s-6;
   border-radius: $br-8;
-  border: 1px solid var(--input-border-color-focus);
-  outline: none;
-  background-color: transparent;
+  border: $s-1 solid var(--input-border-color-focus);
   color: var(--layer-row-foreground-color);
+}
+.element-name-touched {
+  color: var(--layer-row-component-foreground-color);
 }

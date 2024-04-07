@@ -9,9 +9,9 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
-   [app.common.pages.helpers :as cph]
    [app.common.types.shape.interactions :as ctsi]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
@@ -55,11 +55,11 @@
         dest-x-center (+ dest-x-left (/ (:width dest-rect) 2))
 
         orig-pos (if (<= orig-x-right dest-x-left) :right
-                   (if (>= orig-x-left dest-x-right) :left
-                     (if (<= orig-x-center dest-x-center) :left :right)))
+                     (if (>= orig-x-left dest-x-right) :left
+                         (if (<= orig-x-center dest-x-center) :left :right)))
         dest-pos (if (<= orig-x-right dest-x-left) :left
-                   (if (>= orig-x-left dest-x-right) :right
-                     (if (<= orig-x-center dest-x-center) :left :right)))
+                     (if (>= orig-x-left dest-x-right) :right
+                         (if (<= orig-x-center dest-x-center) :left :right)))
 
         orig-x (if (= orig-pos :right) orig-x-right orig-x-left)
         dest-x (if (= dest-pos :right) dest-x-right dest-x-left)
@@ -84,11 +84,11 @@
         dest-y (:y dest-point)
 
         orig-pos (if (<= orig-x-right dest-x) :right
-                   (if (>= orig-x-left dest-x) :left
-                     (if (<= orig-x-center dest-x) :right :left)))
+                     (if (>= orig-x-left dest-x) :left
+                         (if (<= orig-x-center dest-x) :right :left)))
         dest-pos (if (<= orig-x-right dest-x) :left
-                   (if (>= orig-x-left dest-x) :right
-                     (if (<= orig-x-center dest-x) :right :left)))
+                     (if (>= orig-x-left dest-x) :right
+                         (if (<= orig-x-center dest-x) :right :left)))
 
         orig-x (if (= orig-pos :right) orig-x-right orig-x-left)
         orig-y (+ (:y orig-rect) (/ (:height orig-rect) 2))]
@@ -121,21 +121,21 @@
                      nil)
         inv-zoom (/ 1 zoom)]
     [:*
-      [:circle {:cx 0
-                :cy 0
-                :r (if (some? action-type) 11 4)
-                :fill stroke
-                :transform (str
-                             "scale(" inv-zoom ", " inv-zoom ") "
-                             "translate(" (* zoom x) ", " (* zoom y) ")")}]
-      (when icon-pdata
-        [:path {:fill stroke
-                :stroke-width 2
-                :stroke "var(--color-white)"
-                :d icon-pdata
-                :transform (str
-                             "scale(" inv-zoom ", " inv-zoom ") "
-                             "translate(" (* zoom x) ", " (* zoom y) ")")}])]))
+     [:circle {:cx 0
+               :cy 0
+               :r (if (some? action-type) 11 4)
+               :fill stroke
+               :transform (str
+                           "scale(" inv-zoom ", " inv-zoom ") "
+                           "translate(" (* zoom x) ", " (* zoom y) ")")}]
+     (when icon-pdata
+       [:path {:fill stroke
+               :stroke-width 2
+               :stroke "var(--app-white)"
+               :d icon-pdata
+               :transform (str
+                           "scale(" inv-zoom ", " inv-zoom ") "
+                           "translate(" (* zoom x) ", " (* zoom y) ")")}])]))
 
 
 (mf/defc interaction-path
@@ -164,7 +164,7 @@
 
     (if-not selected?
       [:g {:on-pointer-down #(on-pointer-down % index orig-shape)}
-       [:path {:stroke "var(--color-gray-20)"
+       [:path {:stroke "var(--df-secondary)"
                :fill "none"
                :pointer-events "visible"
                :stroke-width (/ 2 zoom)
@@ -173,13 +173,13 @@
          [:& interaction-marker {:index index
                                  :x dest-x
                                  :y dest-y
-                                 :stroke "var(--color-gray-20)"
+                                 :stroke "var(--df-secondary)"
                                  :action-type action-type
                                  :arrow-dir arrow-dir
                                  :zoom zoom}])]
 
       [:g {:on-pointer-down #(on-pointer-down % index orig-shape)}
-       [:path {:stroke "var(--color-primary)"
+       [:path {:stroke "var(--color-accent-tertiary)"
                :fill "none"
                :pointer-events "visible"
                :stroke-width (/ 2 zoom)
@@ -188,17 +188,17 @@
        (when dest-shape
          [:& outline {:zoom zoom
                       :shape dest-shape
-                      :color "var(--color-primary)"}])
+                      :color "var(--color-accent-tertiary)"}])
 
        [:& interaction-marker {:index index
                                :x orig-x
                                :y orig-y
-                               :stroke "var(--color-primary)"
+                               :stroke "var(--color-accent-tertiary)"
                                :zoom zoom}]
        [:& interaction-marker {:index index
                                :x dest-x
                                :y dest-y
-                               :stroke "var(--color-primary)"
+                               :stroke "var(--color-accent-tertiary)"
                                :action-type action-type
                                :arrow-dir arrow-dir
                                :zoom zoom}]])))
@@ -212,7 +212,7 @@
     [:g {:on-pointer-down #(on-pointer-down % index shape)}
      [:& interaction-marker {:x handle-x
                              :y handle-y
-                             :stroke "var(--color-primary)"
+                             :stroke "var(--color-accent-tertiary)"
                              :action-type :navigate
                              :arrow-dir :right
                              :zoom zoom}]]))
@@ -225,7 +225,7 @@
           (st/emit! (dw/start-move-overlay-pos index)))]
 
     (when dest-shape
-      (let [orig-frame (cph/get-frame objects orig-shape)
+      (let [orig-frame (cfh/get-frame objects orig-shape)
             marker-x   (+ (:x orig-frame) (:x position))
             marker-y   (+ (:y orig-frame) (:y position))
             width      (:width dest-shape)
@@ -240,7 +240,10 @@
 
             dest-shape-id (:id dest-shape)
 
-            thumbnail-data-ref (mf/use-memo (mf/deps page-id dest-shape-id) #(refs/thumbnail-frame-data page-id dest-shape-id))
+            ;; FIXME: broken
+            thumbnail-data-ref (mf/use-memo
+                                (mf/deps page-id dest-shape-id)
+                                #(refs/workspace-thumbnail-by-id dest-shape-id))
             thumbnail-data     (mf/deref thumbnail-data-ref)
 
             dest-shape (cond-> dest-shape
@@ -249,12 +252,12 @@
         [:g {:on-pointer-down start-move-position
              :on-pointer-enter #(reset! hover-disabled? true)
              :on-pointer-leave #(reset! hover-disabled? false)}
-         [:g {:transform (gmt/translate-matrix (gpt/point (- marker-x dest-x) (- marker-y dest-y))) }
+         [:g {:transform (gmt/translate-matrix (gpt/point (- marker-x dest-x) (- marker-y dest-y)))}
           [:& (mf/provider muc/render-thumbnails) {:value true}
            [:& (mf/provider embed/context) {:value false}
             [:& shape-wrapper {:shape dest-shape}]]]]
-         [:path {:stroke "var(--color-primary)"
-                 :fill "var(--color-black)"
+         [:path {:stroke "var(--color-accent-tertiary)"
+                 :fill "var(--app-black)"
                  :fill-opacity 0.5
                  :stroke-width 1
                  :d (dm/str "M" marker-x " " marker-y " "
@@ -268,7 +271,7 @@
          [:circle {:cx (+ marker-x (/ width 2))
                    :cy (+ marker-y (/ height 2))
                    :r 8
-                   :fill "var(--color-primary)"}]]))))
+                   :fill "var(--color-accent-tertiary)"}]]))))
 
 (mf/defc interactions
   [{:keys [current-transform objects zoom selected hover-disabled? page-id] :as props}]
@@ -358,7 +361,7 @@
                                          :objects objects
                                          :hover-disabled? hover-disabled?}]))])))
           (when (and shape
-                     (not (cph/unframed-shape? shape))
+                     (not (cfh/unframed-shape? shape))
                      (not (#{:move :rotate} current-transform)))
             [:& interaction-handle {:key (:id shape)
                                     :index nil

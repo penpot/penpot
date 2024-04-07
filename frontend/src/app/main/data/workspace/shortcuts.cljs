@@ -8,7 +8,9 @@
   (:require
    [app.main.data.events :as ev]
    [app.main.data.exports :as de]
+   [app.main.data.preview :as dp]
    [app.main.data.shortcuts :as ds]
+   [app.main.data.users :as du]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as mdc]
    [app.main.data.workspace.common :as dwc]
@@ -54,8 +56,8 @@
                           :subsections [:edit]
                           :fn #(emit-when-no-readonly dwc/redo)}
 
-   :clear-undo           {:tooltip (ds/alt "Z")
-                          :command "alt+z"
+   :clear-undo           {:tooltip (ds/alt "Q")
+                          :command "alt+q"
                           :subsections [:edit]
                           :fn #(emit-when-no-readonly dwu/reinitialize-undo)}
 
@@ -67,8 +69,9 @@
    :cut                  {:tooltip (ds/meta "X")
                           :command (ds/c-mod "x")
                           :subsections [:edit]
-                          :fn #(emit-when-no-readonly (dw/copy-selected)
-                                 (dw/delete-selected))}
+                          :fn #(emit-when-no-readonly
+                                (dw/copy-selected)
+                                (dw/delete-selected))}
 
    :paste                {:tooltip (ds/meta "V")
                           :disabled true
@@ -219,8 +222,16 @@
    :toggle-layout-flex   {:tooltip (ds/shift "A")
                           :command "shift+a"
                           :subsections [:modify-layers]
-                          :fn #(emit-when-no-readonly (dwsl/toggle-layout-flex))}
+                          :fn #(emit-when-no-readonly
+                                (with-meta (dwsl/toggle-layout :flex)
+                                  {::ev/origin "workspace:shortcuts"}))}
 
+   :toggle-layout-grid   {:tooltip (ds/meta-shift "A")
+                          :command (ds/c-mod "shift+a")
+                          :subsections [:modify-layers]
+                          :fn #(emit-when-no-readonly
+                                (with-meta (dwsl/toggle-layout :grid)
+                                  {::ev/origin "workspace:shortcuts"}))}
    ;; TOOLS
 
    :draw-frame           {:tooltip "B"
@@ -247,7 +258,7 @@
                           :command "t"
                           :subsections [:tools]
                           :fn #(emit-when-no-readonly dwtxt/start-edit-if-selected
-                                 (dwd/select-for-drawing :text))}
+                                                      (dwd/select-for-drawing :text))}
 
    :draw-path            {:tooltip "P"
                           :command "p"
@@ -284,10 +295,10 @@
                           :subsections [:tools]
                           :fn #(emit-when-no-readonly (dw/toggle-proportion-lock))}
 
-   :toggle-scale-text   {:tooltip "K"
-                         :command "k"
-                         :subsections [:tools]
-                         :fn #(emit-when-no-readonly (toggle-layout-flag :scale-text))}
+   :scale                {:tooltip "K"
+                          :command "k"
+                          :subsections [:tools]
+                          :fn #(emit-when-no-readonly (toggle-layout-flag :scale-text))}
 
    :open-color-picker    {:tooltip "I"
                           :command "i"
@@ -343,29 +354,22 @@
 
    ;; MAIN MENU
 
-   :toggle-rules         {:tooltip (ds/meta-shift "R")
+   :toggle-rulers        {:tooltip (ds/meta-shift "R")
                           :command (ds/c-mod "shift+r")
                           :subsections [:main-menu]
-                          :fn #(st/emit! (toggle-layout-flag :rules))}
+                          :fn #(st/emit! (toggle-layout-flag :rulers))}
 
    :select-all           {:tooltip (ds/meta "A")
                           :command (ds/c-mod "a")
                           :subsections [:main-menu]
                           :fn #(st/emit! (dw/select-all))}
 
-   :toggle-grid          {:tooltip (ds/meta "'")
+   :toggle-guides        {:tooltip (ds/meta "'")
                           ;;https://github.com/ccampbell/mousetrap/issues/85
                           :command [(ds/c-mod "'") (ds/c-mod "219")]
                           :show-command (ds/c-mod "'")
                           :subsections [:main-menu]
-                          :fn #(st/emit! (toggle-layout-flag :display-grid))}
-
-   :toggle-snap-grid     {:tooltip (ds/meta-shift "'")
-                          ;;https://github.com/ccampbell/mousetrap/issues/85
-                          :command [(ds/c-mod "shift+'") (ds/c-mod "shift+219")]
-                          :show-command (ds/c-mod "shift+'")
-                          :subsections [:main-menu]
-                          :fn #(st/emit! (toggle-layout-flag :snap-grid))}
+                          :fn #(st/emit! (toggle-layout-flag :display-guides))}
 
    :toggle-alignment     {:tooltip (ds/meta "\\")
                           :command (ds/c-mod "\\")
@@ -391,12 +395,19 @@
                           :command (ds/c-mod "shift+e")
                           :subsections [:basics :main-menu]
                           :fn #(st/emit!
-                                 (de/show-workspace-export-dialog))}
+                                (de/show-workspace-export-dialog))}
 
-   :toggle-snap-guide    {:tooltip (ds/meta-shift "G")
-                          :command (ds/c-mod "shift+g")
-                          :subsections [:main-menu]
-                          :fn #(st/emit! (toggle-layout-flag :snap-guides))}
+   :toggle-snap-ruler-guide {:tooltip (ds/meta-shift "G")
+                             :command (ds/c-mod "shift+g")
+                             :subsections [:main-menu]
+                             :fn #(st/emit! (toggle-layout-flag :snap-ruler-guides))}
+
+   :toggle-snap-guides      {:tooltip (ds/meta-shift "'")
+                             ;;https://github.com/ccampbell/mousetrap/issues/85
+                             :command [(ds/c-mod "shift+'") (ds/c-mod "shift+219")]
+                             :show-command (ds/c-mod "shift+'")
+                             :subsections [:main-menu]
+                             :fn #(st/emit! (toggle-layout-flag :snap-guides))}
 
    :show-shortcuts       {:tooltip "?"
                           :command "?"
@@ -405,34 +416,34 @@
 
    ;; PANELS
 
-   :toggle-layers       {:tooltip (ds/alt "L")
-                         :command (ds/a-mod "l")
-                         :subsections [:panels]
-                         :fn #(st/emit! (dw/go-to-layout :layers))}
+   :toggle-layers        {:tooltip (ds/alt "L")
+                          :command (ds/a-mod "l")
+                          :subsections [:panels]
+                          :fn #(st/emit! (dw/go-to-layout :layers))}
 
-   :toggle-assets       {:tooltip (ds/alt "I")
-                         :command (ds/a-mod "i")
-                         :subsections [:panels]
-                         :fn #(st/emit! (dw/go-to-layout :assets))}
+   :toggle-assets        {:tooltip (ds/alt "I")
+                          :command (ds/a-mod "i")
+                          :subsections [:panels]
+                          :fn #(st/emit! (dw/go-to-layout :assets))}
 
-   :toggle-history      {:tooltip (ds/alt "H")
-                         :command (ds/a-mod "h")
-                         :subsections [:panels]
-                         :fn #(emit-when-no-readonly (dw/go-to-layout :document-history))}
+   :toggle-history       {:tooltip (ds/alt "H")
+                          :command (ds/a-mod "h")
+                          :subsections [:panels]
+                          :fn #(emit-when-no-readonly (dw/go-to-layout :document-history))}
 
-   :toggle-colorpalette {:tooltip (ds/alt "P")
-                         :command (ds/a-mod "p")
-                         :subsections [:panels]
-                         :fn #(do (r/set-resize-type! :bottom)
-                                (emit-when-no-readonly (dw/remove-layout-flag :textpalette)
-                                  (toggle-layout-flag :colorpalette)))}
+   :toggle-colorpalette  {:tooltip (ds/alt "P")
+                          :command (ds/a-mod "p")
+                          :subsections [:panels]
+                          :fn #(do (r/set-resize-type! :bottom)
+                                   (emit-when-no-readonly (dw/remove-layout-flag :textpalette)
+                                                          (toggle-layout-flag :colorpalette)))}
 
-   :toggle-textpalette  {:tooltip (ds/alt "T")
-                         :command (ds/a-mod "t")
-                         :subsections [:panels]
-                         :fn #(do (r/set-resize-type! :bottom)
-                                (emit-when-no-readonly (dw/remove-layout-flag :colorpalette)
-                                  (toggle-layout-flag :textpalette)))}
+   :toggle-textpalette   {:tooltip (ds/alt "T")
+                          :command (ds/a-mod "t")
+                          :subsections [:panels]
+                          :fn #(do (r/set-resize-type! :bottom)
+                                   (emit-when-no-readonly (dw/remove-layout-flag :colorpalette)
+                                                          (toggle-layout-flag :textpalette)))}
 
    :hide-ui              {:tooltip "\\"
                           :command "\\"
@@ -471,10 +482,10 @@
                           :subsections [:zoom-workspace]
                           :fn identity}
 
-   :zoom-lense-decrease {:tooltip (ds/alt "Z")
-                         :command "alt+z"
-                         :subsections [:zoom-workspace]
-                         :fn identity}
+   :zoom-lense-decrease  {:tooltip (ds/alt "Z")
+                          :command "alt+z"
+                          :subsections [:zoom-workspace]
+                          :fn identity}
 
    ;; NAVIGATION
 
@@ -534,8 +545,19 @@
    :bool-exclude         {:tooltip (ds/meta (ds/alt "E"))
                           :command (ds/c-mod "alt+e")
                           :subsections [:shape]
-                          :fn #(emit-when-no-readonly (dw/create-bool :exclude))}}
-                       )
+                          :fn #(emit-when-no-readonly (dw/create-bool :exclude))}
+
+   ;; PREVIEW
+   :preview-frame        {:tooltip (ds/meta (ds/alt ds/enter))
+                          :command (ds/c-mod "alt+enter")
+                          :fn #(emit-when-no-readonly (dp/open-preview-selected))}
+
+   ;; THEME
+   :toggle-theme         {:tooltip (ds/alt "M")
+                          :command (ds/a-mod "m")
+                          :subsections [:basics]
+                          :fn #(st/emit! (with-meta (du/toggle-theme)
+                                           {::ev/origin "workspace:shortcut"}))}})
 
 (def opacity-shortcuts
   (into {} (->>

@@ -1,0 +1,76 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+.tool-window {
+  padding: 0 0 $s-24 $s-12;
+  display: grid;
+  grid-auto-rows: max-content;
+  gap: $s-4;
+  height: 100%;
+}
+
+.file-name {
+  @include bodySmallTypography;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  flex-grow: 100;
+  height: 100%;
+}
+
+.special-title {
+  @include textEllipsis;
+  color: var(--title-foreground-color-hover);
+  margin-left: $s-2;
+  text-align: left;
+}
+
+.file-link {
+  @extend .button-tertiary;
+  height: $s-32;
+  width: $s-28;
+  border-radius: $br-8;
+  svg {
+    @extend .button-icon;
+    stroke: var(--icon-foreground);
+    fill: var(--title-foreground-color-hover);
+  }
+}
+
+.library-content {
+  width: 100%;
+  display: grid;
+  grid-auto-rows: max-content;
+  gap: $s-4;
+}
+
+.asset-title {
+  margin-left: $s-28;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $s-8;
+}
+
+.no-found-icon {
+  @include flexCenter;
+  background-color: var(--not-found-background-color);
+  border-radius: $br-circle;
+  height: $s-48;
+  width: $s-48;
+  svg {
+    @extend .button-icon;
+    height: $s-24;
+    width: $s-24;
+    stroke: var(--not-found-foreground-color);
+  }
+}
+
+.no-found-text {
+  @include bodySmallTypography;
+  color: var(--not-found-foreground-color);
+}

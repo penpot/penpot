@@ -1,0 +1,56 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.grid-cell-menu-container {
+  @include flexColumn;
+  margin-top: $s-8;
+  gap: $s-16;
+}
+
+.grid-cell-menu-title {
+  font-size: $fs-11;
+}
+
+.row {
+  @include flexRow;
+}
+
+.cell-mode :global(label) {
+  padding: 0 $s-12;
+}
+
+.edit-grid-btn {
+  @extend .button-secondary;
+  @include uppercaseTitleTipography;
+  width: 100%;
+  padding: $s-8;
+}
+
+.area-input {
+  @extend .input-element;
+  width: 100%;
+  padding: $s-8;
+}
+
+.grid-coord-group {
+  @include flexRow;
+  border-radius: $br-8;
+  padding-left: $s-4;
+  background-color: var(--input-background-color);
+}
+
+.icon svg {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
+}
+
+.coord-input {
+  @extend .input-element;
+  border-radius: 0 $br-8 $br-8 0;
+  border-left: $s-1 solid var(--panel-background-color);
+}

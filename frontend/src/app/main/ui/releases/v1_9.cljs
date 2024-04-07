@@ -12,10 +12,10 @@
 (defmethod c/render-release-notes "1.9"
   [{:keys [slide klass next finish navigate version]}]
   (mf/html
-   (case @slide
+   (case slide
      :start
      [:div.modal-overlay
-      [:div.animated {:class @klass}
+      [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
          [:img {:src "images/login-on.jpg" :border "0" :alt "What's new Alpha release 1.9"}]]
@@ -33,7 +33,7 @@
 
      0
      [:div.modal-overlay
-      [:div.animated {:class @klass}
+      [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
          [:img {:src "images/features/advanced-proto.gif" :border "0" :alt "Advanced interactions"}]]
@@ -46,13 +46,13 @@
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
           [:& c/navigation-bullets
-           {:slide @slide
+           {:slide slide
             :navigate navigate
             :total 4}]]]]]]
 
      1
      [:div.modal-overlay
-      [:div.animated {:class @klass}
+      [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
          [:img {:src "images/features/flows-proto.gif" :border "0" :alt "Multiple flows"}]]
@@ -65,13 +65,13 @@
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
           [:& c/navigation-bullets
-           {:slide @slide
+           {:slide slide
             :navigate navigate
             :total 4}]]]]]]
 
      2
      [:div.modal-overlay
-      [:div.animated {:class @klass}
+      [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
          [:img {:src "images/features/booleans.gif" :border "0" :alt "Boolean shapes"}]]
@@ -84,13 +84,13 @@
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
           [:& c/navigation-bullets
-           {:slide @slide
+           {:slide slide
             :navigate navigate
             :total 4}]]]]]]
 
      3
      [:div.modal-overlay
-      [:div.animated {:class @klass}
+      [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
          [:img {:src "images/features/libraries-feature.gif" :border "0" :alt "Libraries & templates"}]]
@@ -103,6 +103,6 @@
          [:div.modal-navigation
           [:button.btn-secondary {:on-click finish} "Start!"]
           [:& c/navigation-bullets
-           {:slide @slide
+           {:slide slide
             :navigate navigate
             :total 4}]]]]]])))

@@ -1,27 +1,33 @@
 {
-  "name": "uxbox-exporter",
+  "name": "exporter",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "license": "MPL-2.0",
+  "author": "Kaleidos INC",
+  "private": true,
+  "packageManager": "yarn@4.0.2",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/penpot/penpot"
   },
-  "author": "UXBOX LABS SL",
-  "license": "SEE LICENSE IN <LICENSE>",
   "dependencies": {
-    "archiver": "^5.3.1",
-    "cookies": "^0.8.0",
+    "archiver": "^6.0.1",
+    "cookies": "^0.9.1",
     "generic-pool": "^3.9.0",
-    "inflation": "^2.0.0",
-    "ioredis": "^5.2.4",
-    "luxon": "^3.1.1",
-    "playwright": "^1.29.1",
-    "raw-body": "^2.5.1",
+    "inflation": "^2.1.0",
+    "ioredis": "^5.3.2",
+    "luxon": "^3.4.4",
+    "playwright": "^1.40.1",
+    "raw-body": "^2.5.2",
     "xml-js": "^1.6.11",
     "xregexp": "^5.1.1"
   },
   "devDependencies": {
-    "shadow-cljs": "^2.20.16",
+    "shadow-cljs": "2.27.4",
     "source-map-support": "^0.5.21"
+  },
+  "scripts": {
+    "fmt:clj:check": "cljfmt check --parallel=false src/",
+    "fmt:clj": "cljfmt fix --parallel=true src/",
+    "lint:clj": "clj-kondo --parallel --lint src/"
   }
 }

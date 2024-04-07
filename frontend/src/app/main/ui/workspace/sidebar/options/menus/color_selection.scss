@@ -1,0 +1,40 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.element-set {
+  margin: 0;
+}
+
+.title-spacing-selected-colors {
+  padding-left: $s-2;
+  margin: 0;
+}
+
+.add-fill {
+  @extend .button-tertiary;
+  height: $s-32;
+  width: $s-28;
+  svg {
+    @extend .button-icon;
+  }
+}
+
+.element-content {
+  @include flexColumn;
+  margin-bottom: $s-8;
+}
+
+.selected-color-group {
+  @include flexColumn;
+}
+
+.more-colors-btn {
+  @extend .button-secondary;
+  @include uppercaseTitleTipography;
+  height: $s-32;
+}

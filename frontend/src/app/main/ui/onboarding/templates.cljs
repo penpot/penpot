@@ -16,7 +16,7 @@
    [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.webapi :as wapi]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
 (mf/defc template-item
@@ -39,13 +39,12 @@
         (fn []
           (reset! downloading? true)
           (->> (http/send! {:method :get :uri link :response-type :blob :mode :no-cors})
-               (rx/subs (fn [{:keys [body] :as response}]
-                          (open-import-modal {:name name :uri (wapi/create-uri body)}))
-                        (fn [error]
-                          (js/console.log "error" error))
-                        (fn []
-                          (reset! downloading? false)))))
-        ]
+               (rx/subs! (fn [{:keys [body] :as response}]
+                           (open-import-modal {:name name :uri (wapi/create-uri body)}))
+                         (fn [error]
+                           (js/console.log "error" error))
+                         (fn []
+                           (reset! downloading? false)))))]
 
     [:div.template-item
      [:div.template-item-content

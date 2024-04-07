@@ -1,0 +1,178 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.colorpicker-tooltip {
+  @extend .modal-background;
+  left: calc(10 * $s-140);
+  width: auto;
+}
+
+.colorpicker {
+  border-radius: $br-8;
+  width: $s-260;
+  & > * {
+    width: $s-260;
+  }
+}
+
+.top-actions {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: row-reverse;
+  justify-content: space-between;
+  height: $s-40;
+}
+
+.picker-btn {
+  @include buttonStyle;
+  @include flexCenter;
+  border-radius: $br-8;
+  background-color: transparent;
+  border: $s-1 solid transparent;
+  height: $s-20;
+  width: $s-20;
+  border-radius: $br-4;
+  padding: 0;
+  margin-top: $s-4;
+  svg {
+    @extend .button-icon;
+    stroke: var(--button-tertiary-foreground-color-rest);
+  }
+  &:hover {
+    svg {
+      stroke: var(--button-tertiary-foreground-color-focus);
+    }
+  }
+  &:focus,
+  &:focus-visible {
+    outline: none;
+    svg {
+      stroke: var(--button-secondary-foreground-color-hover);
+    }
+  }
+  &:active {
+    outline: none;
+    border: $s-1 solid transparent;
+    svg {
+      stroke: var(--button-tertiary-foreground-color-active);
+    }
+  }
+  &.selected {
+    svg {
+      stroke: var(--button-tertiary-foreground-color-active);
+    }
+  }
+}
+
+.gradient-buttons {
+  display: flex;
+  align-items: center;
+  gap: $s-8;
+}
+
+.gradient-btn {
+  @extend .button-tertiary;
+  height: $s-20;
+  width: $s-20;
+  border-radius: $br-4;
+  border: $s-2 solid transparent;
+  &:hover {
+    border: $s-2 solid var(--colorpicker-details-color-selected);
+  }
+}
+
+.linear-gradient-btn {
+  background: linear-gradient(180deg, var(--color-foreground-secondary), transparent);
+  &.selected {
+    background: linear-gradient(to bottom, rgba(126, 255, 245, 1) 0%, rgba(126, 255, 245, 0.2) 100%);
+    border: $s-2 solid var(--colorpicker-details-color-selected);
+  }
+}
+
+.radial-gradient-btn {
+  background: radial-gradient(transparent, var(--color-foreground-secondary));
+  &.selected {
+    background: radial-gradient(rgba(126, 255, 245, 1) 0%, rgba(126, 255, 245, 0.2) 100%);
+    border: $s-2 solid var(--colorpicker-details-color-selected);
+  }
+}
+
+.actions {
+  display: flex;
+  gap: $s-4;
+}
+
+.accept-color {
+  @include uppercaseTitleTipography;
+  @extend .button-secondary;
+  width: 100%;
+  height: $s-32;
+  margin-top: $s-8;
+}
+
+.picker-detail-wrapper {
+  @include flexCenter;
+  position: relative;
+  margin: $s-12 0 $s-8 0;
+}
+
+.center-circle {
+  width: $s-24;
+  height: $s-24;
+  border: $s-2 solid var(--colorpicker-details-color);
+  border-radius: $br-circle;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(calc(-1 * $s-12), calc(-1 * $s-12));
+}
+
+.picker-detail {
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+
+.select {
+  width: $s-116;
+}
+
+.select-image {
+  margin-top: $s-4;
+}
+
+.content {
+  border-radius: $br-8;
+  display: flex;
+  justify-content: center;
+  background-image: url("/images/colorpicker-no-image.png");
+  background-position: center;
+  background-size: auto $s-140;
+  height: $s-140;
+  margin-bottom: $s-6;
+  margin-right: $s-1;
+  img {
+    height: fit-content;
+    width: fit-content;
+    max-height: 100%;
+    max-width: 100%;
+    margin: auto;
+  }
+}
+
+.choose-image {
+  @extend .button-secondary;
+  @include uppercaseTitleTipography;
+  width: 100%;
+  margin-top: $s-12;
+  height: $s-32;
+}
+
+.checkbox-option {
+  @extend .input-checkbox;
+  margin: $s-16 0 0 0;
+}

@@ -29,7 +29,7 @@
    [app.util.services :as-alias sv]
    [buddy.core.codecs :as bc]
    [buddy.core.hash :as bh]
-   [yetti.response :as yrs]))
+   [ring.response :as-alias rres]))
 
 (def
   ^{:dynamic true
@@ -51,13 +51,13 @@
   [_ f {:keys [::get-object ::key-fn ::reuse-key?] :as mdata}]
   (if (and (ifn? get-object) (ifn? key-fn))
     (do
-      (l/debug :hint "instrumenting method" :service (::sv/name mdata))
+      (l/trc :hint "instrumenting method" :service (::sv/name mdata))
       (fn [cfg {:keys [::key] :as params}]
         (if *enabled*
           (let [key' (when (or key reuse-key?)
                        (some->> (get-object cfg params) (key-fn params) (fmt-key)))]
             (if (and (some? key) (= key key'))
-              (fn [_] {::yrs/status 304})
+              (fn [_] {::rres/status 304})
               (let [result (f cfg params)
                     etag   (or (and reuse-key? key')
                                (some-> result meta ::key fmt-key)

@@ -10,7 +10,9 @@
    [app.common.media :as cm]
    [app.common.text :as ct]
    [app.common.types.components-list :as ctkl]
+   [app.common.types.file :as ctf]
    [app.config :as cfg]
+   [app.main.features.pointer-map :as fpmap]
    [app.main.render :as r]
    [app.main.repo :as rp]
    [app.util.http :as http]
@@ -18,14 +20,14 @@
    [app.util.webapi :as wapi]
    [app.util.zip :as uz]
    [app.worker.impl :as impl]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]))
 
 (def ^:const current-version 2)
 
 (defn create-manifest
   "Creates a manifest entry for the given files"
-  [team-id file-id export-type files components-v2]
+  [team-id file-id export-type files features]
   (letfn [(format-page [manifest page]
             (-> manifest
                 (assoc (str (:id page))
@@ -38,10 +40,7 @@
                                  (mapv str))
                   index     (->> (get-in file [:data :pages-index])
                                  (vals)
-                                 (reduce format-page {}))
-                  features  (cond-> []
-                              components-v2
-                              (conj "components/v2"))]
+                                 (reduce format-page {}))]
               (-> manifest
                   (assoc (str (:id file))
                          {:name                 name
@@ -140,7 +139,7 @@
 
    (->> (rx/from (vals media))
         (rx/map #(assoc % :file-id file-id))
-        (rx/flat-map
+        (rx/merge-map
          (fn [media]
            (let [file-path (str/concat file-id "/media/" (:id media) (cm/mtype->extension (:mtype media)))]
              (->> (http/send!
@@ -161,71 +160,14 @@
        (rx/map #(vector (str (:id file) "/deleted-components.svg") %))))
 
 (defn fetch-file-with-libraries
-  [file-id components-v2]
-  (let [features (cond-> #{} components-v2 (conj "components/v2"))]
-    (->> (rx/zip (rp/cmd! :get-file {:id file-id :features features})
-                 (rp/cmd! :get-file-libraries {:file-id file-id}))
-         (rx/map
-          (fn [[file file-libraries]]
-            (let [libraries-ids (->> file-libraries (map :id) (filterv #(not= (:id file) %)))]
-              (assoc file :libraries libraries-ids)))))))
-
-(defn get-component-ref-file
-  [objects shape]
-
-  (cond
-    (contains? shape :component-file)
-    (get shape :component-file)
-
-    (contains? shape :shape-ref)
-    (recur objects (get objects (:parent-id shape)))
-
-    :else
-    nil))
-
-(defn detach-external-references
-  [file file-id]
-  (let [detach-text
-        (fn [content]
-          (->> content
-               (ct/transform-nodes
-                #(cond-> %
-                   (not= file-id (:fill-color-ref-file %))
-                   (dissoc :fill-color-ref-id :fill-color-ref-file)
-
-                   (not= file-id (:typography-ref-file %))
-                   (dissoc :typography-ref-id :typography-ref-file)))))
-
-        detach-shape
-        (fn [objects shape]
-          (cond-> shape
-            (not= file-id (:fill-color-ref-file shape))
-            (dissoc :fill-color-ref-id :fill-color-ref-file)
-
-            (not= file-id (:stroke-color-ref-file shape))
-            (dissoc :stroke-color-ref-id :stroke-color-ref-file)
-
-            (not= file-id (get-component-ref-file objects shape))
-            (dissoc :component-id :component-file :shape-ref :component-root?)
-
-            (= :text (:type shape))
-            (update :content detach-text)))
-
-        detach-objects
-        (fn [objects]
-          (->> objects
-               (d/mapm #(detach-shape objects %2))))
-
-        detach-pages
-        (fn [pages-index]
-          (->> pages-index
-               (d/mapm
-                (fn [_ data]
-                  (-> data
-                      (update :objects detach-objects))))))]
-
-    (-> file
-        (update-in [:data :pages-index] detach-pages))))
+  [file-id features]
+  (->> (rx/zip (->> (rp/cmd! :get-file {:id file-id :features features})
+                    (rx/mapcat fpmap/resolve-file))
+               (rp/cmd! :get-file-libraries {:file-id file-id}))
+       (rx/map
+        (fn [[file file-libraries]]
+          (let [libraries-ids (->> file-libraries (map :id) (filterv #(not= (:id file) %)))]
+            (assoc file :libraries libraries-ids))))))
 
 (defn make-local-external-references
   [file file-id]
@@ -287,8 +229,7 @@
 
                            (contains? node :typography-ref-id)
                            (conj {:id (:typography-ref-id node)
-                                  :file-id (:typography-ref-file node)})
-                           )))
+                                  :file-id (:typography-ref-file node)}))))
 
                (into [])))
 
@@ -359,12 +300,11 @@
                     (update file-id make-local-external-references file-id)
                     (update file-id dissoc :libraries)))
     :detach (-> (select-keys files [file-id])
-                (update file-id detach-external-references file-id)
+                (update file-id ctf/detach-external-references file-id)
                 (update file-id dissoc :libraries))))
 
 (defn collect-files
-  [file-id export-type components-v2]
-
+  [file-id export-type features]
   (letfn [(fetch-dependencies [[files pending]]
             (if (empty? pending)
               ;; When not pending, we finish the generation
@@ -377,7 +317,7 @@
                   ;; The file is already in the result
                   (rx/of [files pending])
 
-                  (->> (fetch-file-with-libraries next components-v2)
+                  (->> (fetch-file-with-libraries next features)
                        (rx/map
                         (fn [file]
                           [(-> files
@@ -393,56 +333,55 @@
            (rx/map #(process-export file-id export-type %))))))
 
 (defn export-file
-  [team-id file-id export-type components-v2]
-
-  (let [files-stream (->> (collect-files file-id export-type components-v2)
+  [team-id file-id export-type features]
+  (let [files-stream (->> (collect-files file-id export-type features)
                           (rx/share))
 
         manifest-stream
         (->> files-stream
-             (rx/map #(create-manifest team-id file-id export-type % components-v2))
+             (rx/map #(create-manifest team-id file-id export-type % features))
              (rx/map #(vector "manifest.json" %)))
 
         render-stream
         (->> files-stream
-             (rx/flat-map vals)
-             (rx/flat-map process-pages)
+             (rx/merge-map vals)
+             (rx/merge-map process-pages)
              (rx/observe-on :async)
-             (rx/flat-map get-page-data)
+             (rx/merge-map get-page-data)
              (rx/share))
 
         colors-stream
         (->> files-stream
-             (rx/flat-map vals)
+             (rx/merge-map vals)
              (rx/map #(vector (:id %) (get-in % [:data :colors])))
              (rx/filter #(d/not-empty? (second %)))
              (rx/map parse-library-color))
 
         typographies-stream
         (->> files-stream
-             (rx/flat-map vals)
+             (rx/merge-map vals)
              (rx/map #(vector (:id %) (get-in % [:data :typographies])))
              (rx/filter #(d/not-empty? (second %)))
              (rx/map parse-library-typographies))
 
         media-stream
         (->> files-stream
-             (rx/flat-map vals)
+             (rx/merge-map vals)
              (rx/map #(vector (:id %) (get-in % [:data :media])))
              (rx/filter #(d/not-empty? (second %)))
-             (rx/flat-map parse-library-media))
+             (rx/merge-map parse-library-media))
 
         components-stream
         (->> files-stream
-             (rx/flat-map vals)
+             (rx/merge-map vals)
              (rx/filter #(d/not-empty? (ctkl/components-seq (:data %))))
-             (rx/flat-map parse-library-components))
+             (rx/merge-map parse-library-components))
 
         deleted-components-stream
         (->> files-stream
-             (rx/flat-map vals)
+             (rx/merge-map vals)
              (rx/filter #(d/not-empty? (get-in % [:data :deleted-components])))
-             (rx/flat-map parse-deleted-components))
+             (rx/merge-map parse-deleted-components))
 
         pages-stream
         (->> render-stream
@@ -465,9 +404,9 @@
            typographies-stream)
           (rx/reduce conj [])
           (rx/with-latest-from files-stream)
-          (rx/flat-map (fn [[data files]]
-                         (->> (uz/compress-files data)
-                              (rx/map #(vector (get files file-id) %)))))))))
+          (rx/merge-map (fn [[data files]]
+                          (->> (uz/compress-files data)
+                               (rx/map #(vector (get files file-id) %)))))))))
 
 (defmethod impl/handler :export-binary-file
   [{:keys [files export-type] :as message}]
@@ -475,8 +414,8 @@
        (rx/mapcat
         (fn [file]
           (->> (rp/cmd! :export-binfile {:file-id (:id file)
-                                         :include-libraries? (= export-type :all)
-                                         :embed-assets? (= export-type :merge)})
+                                         :include-libraries (= export-type :all)
+                                         :embed-assets (= export-type :merge)})
                (rx/map #(hash-map :type :finish
                                   :file-id (:id file)
                                   :filename (:name file)
@@ -490,12 +429,12 @@
                           :file-id (:id file)}))))))))
 
 (defmethod impl/handler :export-standard-file
-  [{:keys [team-id files export-type components-v2] :as message}]
+  [{:keys [team-id files export-type features] :as message}]
 
   (->> (rx/from files)
        (rx/mapcat
         (fn [file]
-          (->> (export-file team-id (:id file) export-type components-v2)
+          (->> (export-file team-id (:id file) export-type features)
                (rx/map
                 (fn [value]
                   (if (contains? value :type)
@@ -507,8 +446,8 @@
                        :mtype "application/zip"
                        :description "Penpot export (*.zip)"
                        :uri (wapi/create-uri export-blob)}))))
-               (rx/catch
-                   (fn [err]
-                     (rx/of {:type :error
-                             :error (str err)
-                             :file-id (:id file)}))))))))
+               (rx/catch (fn [err]
+                           (js/console.error err)
+                           (rx/of {:type :error
+                                   :error (str err)
+                                   :file-id (:id file)}))))))))

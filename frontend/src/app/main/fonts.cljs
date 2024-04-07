@@ -17,8 +17,7 @@
    [app.util.globals :as globals]
    [app.util.http :as http]
    [app.util.object :as obj]
-   [beicon.core :as rx]
-   [clojure.set :as set]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [lambdaisland.uri :as u]
    [okulary.core :as l]
@@ -144,7 +143,7 @@
       (->> (fetch-gfont-css url)
            (rx/map process-gfont-css)
            (rx/tap #(on-loaded id))
-           (rx/subs (partial add-font-css! id)))
+           (rx/subs! (partial add-font-css! id)))
       nil)))
 
 ;; --- LOADER: CUSTOM
@@ -196,38 +195,40 @@
    (if-not (exists? js/window)
     ;; If we are in the worker environment, we just mark it as loaded
     ;; without really loading it.
-    (do
-      (swap! loaded-hints conj {:font-id font-id :font-variant-id variant-id})
-      (p/resolved font-id))
+     (do
+       (swap! loaded-hints conj {:font-id font-id :font-variant-id variant-id})
+       (p/resolved font-id))
 
-    (let [font (get @fontsdb font-id)]
-      (cond
-        (nil? font)
-        (p/resolved font-id)
+     (let [font (get @fontsdb font-id)]
+       (cond
+         (nil? font)
+         (p/resolved font-id)
 
         ;; Font already loaded, we just continue
-        (contains? @loaded font-id)
-        (p/resolved font-id)
+         (contains? @loaded font-id)
+         (p/resolved font-id)
 
         ;; Font is currently downloading. We attach the caller to the promise
-        (contains? @loading font-id)
-        (p/resolved (get @loading font-id))
+         (contains? @loading font-id)
+         (get @loading font-id)
 
         ;; First caller, we create the promise and then wait
-        :else
-        (let [on-load (fn [resolve]
-                        (swap! loaded conj font-id)
-                        (swap! loading dissoc font-id)
-                        (resolve font-id))
+         :else
+         (let [on-load (fn [resolve]
+                         (swap! loaded conj font-id)
+                         (swap! loading dissoc font-id)
+                         (resolve font-id))
 
-              load-p (p/create
-                      (fn [resolve _]
-                        (-> font
-                            (assoc ::on-loaded (partial on-load resolve))
-                            (load-font))))]
+               load-p (-> (p/create
+                           (fn [resolve _]
+                             (-> font
+                                 (assoc ::on-loaded (partial on-load resolve))
+                                 (load-font))))
+                          ;; We need to wait for the font to be loaded
+                          (p/then (partial p/delay 120)))]
 
-          (swap! loading assoc font-id load-p)
-          load-p))))))
+           (swap! loading assoc font-id load-p)
+           load-p))))))
 
 (defn ready
   [cb]
@@ -246,16 +247,42 @@
       (get-default-variant font)))
 
 ;; Font embedding functions
+(defn get-node-fonts
+  "Extracts the fonts used by some node"
+  [node]
+  (let [nodes  (.from js/Array (dom/query-all node "[style*=font]"))
+        result (.reduce nodes (fn [obj node]
+                                (let [style (.-style node)
+                                      font-family (.-fontFamily style)
+                                      [_ font] (first
+                                                (filter (fn [[_ {:keys [id family]}]]
+                                                          (or (= family font-family)
+                                                              (= id font-family)))
+                                                        @fontsdb))
+                                      font-id (:id font)
+                                      font-variant (get-variant font (.-fontVariant style))
+                                      font-variant-id (:id font-variant)]
+                                  (obj/set!
+                                   obj
+                                   (dm/str font-id ":" font-variant-id)
+                                   {:font-id font-id
+                                    :font-variant-id font-variant-id})))
+                        #js {})]
+    (.values js/Object result)))
 
 (defn get-content-fonts
   "Extracts the fonts used by the content of a text shape"
-  [{font-id :font-id children :children :as content}]
-  (let [current-font
-        (if (some? font-id)
-          #{(select-keys content [:font-id :font-variant-id])}
-          #{(select-keys txt/default-text-attrs [:font-id :font-variant-id])})
-        children-font (->> children (mapv get-content-fonts))]
-    (reduce set/union (conj children-font current-font))))
+  [content]
+  (->> (txt/node-seq content)
+       (filter txt/is-text-node?)
+       (reduce
+        (fn [result {:keys [font-id] :as node}]
+          (let [current-font
+                (if (some? font-id)
+                  (select-keys node [:font-id :font-variant-id])
+                  (select-keys txt/default-text-attrs [:font-id :font-variant-id]))]
+            (conj result current-font)))
+        #{})))
 
 (defn fetch-font-css
   "Given a font and the variant-id, retrieves the fontface CSS"
@@ -296,4 +323,26 @@
   [font-refs]
   (->> (rx/from font-refs)
        (rx/mapcat fetch-font-css)
+       (rx/reduce (fn [acc css] (dm/str acc "\n" css)) "")))
+
+(defonce font-styles (js/Map.))
+
+(defn get-font-style-id
+  [{:keys [font-id font-variant-id]
+    :or   {font-variant-id "regular"}}]
+  (dm/fmt "%:%" font-id font-variant-id))
+
+(defn get-font-styles-by-font-ref
+  [font-ref]
+  (let [id (get-font-style-id font-ref)]
+    (if (.has font-styles id)
+      (rx/of (.get font-styles id))
+      (->> (rx/of font-ref)
+           (rx/mapcat fetch-font-css)
+           (rx/tap (fn [css] (.set font-styles id css)))))))
+
+(defn render-font-styles-cached
+  [font-refs]
+  (->> (rx/from font-refs)
+       (rx/merge-map get-font-styles-by-font-ref)
        (rx/reduce (fn [acc css] (dm/str acc "\n" css)) "")))

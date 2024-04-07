@@ -1,0 +1,104 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.shape-info {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--panel-background-color);
+  color: $df-primary;
+  font-size: $fs-12;
+  user-select: text;
+}
+
+.shape-info-title {
+  @include flexCenter;
+  @include uppercaseTitleTipography;
+  position: relative;
+  height: $s-32;
+  min-height: $s-32;
+  margin: $s-8 $s-8 0 $s-8;
+  border-radius: $br-8;
+  background-color: var(--panel-title-background-color);
+
+  span {
+    @include flexCenter;
+    flex-grow: 1;
+    color: var(--title-foreground-color-hover);
+  }
+}
+
+.close-button {
+  @extend .button-tertiary;
+  position: absolute;
+  right: $s-2;
+  top: $s-2;
+  height: $s-28;
+  width: $s-28;
+  border-radius: $br-6;
+  svg {
+    @extend .button-icon;
+    stroke: var(--icon-foreground);
+  }
+}
+
+.attrs-container {
+  padding: $s-16 $s-8;
+  overflow: hidden;
+}
+
+.shape-title {
+  font-size: $fs-14;
+  padding-bottom: $s-4;
+  background: $db-quaternary;
+  color: $df-primary;
+  padding: $s-8;
+  border-radius: $s-8;
+  display: flex;
+  gap: $s-4;
+}
+.shape-name {
+  flex: 1;
+}
+
+.attrs-container-attr {
+  display: grid;
+  grid-template-columns: 25% auto;
+  padding: $s-4 0;
+
+  &.vertical-layout {
+    grid-template-columns: auto;
+    grid-template-rows: auto 1fr;
+  }
+}
+
+.shape-attrs {
+  overflow: auto;
+  height: calc(100% - 8px);
+  padding-bottom: 8px;
+}
+
+.shape-link {
+  color: $df-primary;
+  text-decoration: underline;
+}
+
+.shape-list {
+  display: flex;
+  flex-direction: column;
+  gap: $s-4;
+}
+
+.point-list {
+  display: flex;
+  gap: $s-8;
+}
+
+.cell-container {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+}

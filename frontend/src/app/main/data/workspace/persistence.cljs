@@ -7,9 +7,8 @@
 (ns app.main.data.workspace.persistence
   (:require
    [app.common.data.macros :as dm]
+   [app.common.files.changes :as cpc]
    [app.common.logging :as log]
-   [app.common.pages :as cp]
-   [app.common.pages.changes :as cpc]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
@@ -17,11 +16,10 @@
    [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.store :as st]
-   [app.util.router :as rt]
    [app.util.time :as dt]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [okulary.core :as l]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (log/set-level! :info)
 
@@ -39,7 +37,7 @@
     ptk/WatchEvent
     (watch [_ _ stream]
       (log/debug :hint "initialize persistence")
-      (let [stoper   (rx/filter (ptk/type? ::initialize-persistence) stream)
+      (let [stopper   (rx/filter (ptk/type? ::initialize-persistence) stream)
             commits  (l/atom [])
             saving?  (l/atom false)
 
@@ -55,7 +53,7 @@
 
             on-dirty
             (fn []
-              ;; Enable reload stoper
+              ;; Enable reload stopper
               (swap! st/ongoing-tasks conj :workspace-change)
               (st/emit! (update-persistence-status {:status :pending})))
 
@@ -66,7 +64,7 @@
 
             on-saved
             (fn []
-              ;; Disable reload stoper
+              ;; Disable reload stopper
               (swap! st/ongoing-tasks disj :workspace-change)
               (st/emit! (update-persistence-status {:status :saved}))
               (reset! saving? false))]
@@ -84,7 +82,7 @@
                             (assoc :file-id file-id))))
               (rx/observe-on :async)
               (rx/tap #(swap! commits conj %))
-              (rx/take-until (rx/delay 100 stoper))
+              (rx/take-until (rx/delay 100 stopper))
               (rx/finalize (fn []
                              (log/debug :hint "finalize persistence: changes watcher"))))
 
@@ -117,7 +115,7 @@
                                    (rx/tap on-saved)
                                    (rx/ignore)))
                              (rx/empty))))
-              (rx/take-until (rx/delay 100 stoper))
+              (rx/take-until (rx/delay 100 stopper))
               (rx/finalize (fn []
                              (log/debug :hint "finalize persistence: save loop"))))
 
@@ -128,7 +126,7 @@
               (rx/filter library-file?)
               (rx/filter (complement #(empty? (:changes %))))
               (rx/map persist-synchronous-changes)
-              (rx/take-until (rx/delay 100 stoper))
+              (rx/take-until (rx/delay 100 stopper))
               (rx/finalize (fn []
                              (log/debug :hint "finalize persistence: synchronous save loop")))))))))
 
@@ -139,14 +137,9 @@
   (ptk/reify ::persist-changes
     ptk/WatchEvent
     (watch [_ state _]
-      (let [;; this features set does not includes the ffeat/enabled
-            ;; because they are already available on the backend and
-            ;; this request provides a set of features to enable in
-            ;; this request.
-            features (cond-> #{}
-                       (features/active-feature? state :components-v2)
-                       (conj "components/v2"))
-            sid      (:session-id state)
+      (let [sid      (:session-id state)
+
+            features (features/get-team-enabled-features state)
             params   {:id file-id
                       :revn file-revn
                       :session-id sid
@@ -168,8 +161,9 @@
                              (rx/merge
                               (->> (rx/from frame-updates)
                                    (rx/mapcat (fn [[page-id frames]]
-                                                (->> frames (map #(vector page-id %)))))
-                                   (rx/map (fn [[page-id frame-id]] (dwt/update-thumbnail file-id page-id frame-id))))
+                                                (->> frames (map (fn [frame-id] [file-id page-id frame-id])))))
+                                   (rx/map (fn [data]
+                                             (ptk/data-event ::dwt/update data))))
 
                               (->> (rx/from (concat lagged commits))
                                    (rx/merge-map
@@ -182,19 +176,11 @@
 
                              (rx/of (shapes-changes-persisted-finished))))))
              (rx/catch (fn [cause]
-                         (cond
-                           (= :authentication (:type cause))
-                           (rx/throw cause)
-
-                           (instance? js/TypeError cause)
+                         (if (instance? js/TypeError cause)
                            (->> (rx/timer 2000)
                                 (rx/map (fn [_]
                                           (persist-changes file-id file-revn changes pending-commits))))
-
-                           :else
-                           (rx/concat
-                            (rx/of (rt/assign-exception cause))
-                            (rx/throw cause))))))))))
+                           (rx/throw cause)))))))))
 
 ;; Event to be thrown after the changes have been persisted
 (defn shapes-changes-persisted-finished
@@ -207,9 +193,8 @@
   (ptk/reify ::persist-synchronous-changes
     ptk/WatchEvent
     (watch [_ state _]
-      (let [features (cond-> #{}
-                       (features/active-feature? state :components-v2)
-                       (conj "components/v2"))
+      (let [features (features/get-team-enabled-features state)
+
             sid      (:session-id state)
             file     (dm/get-in state [:workspace-libraries file-id])
 
@@ -240,10 +225,10 @@
   (= (ptk/type event) ::changes-persisted))
 
 (defn shapes-changes-persisted
-  [file-id {:keys [revn changes]}]
+  [file-id {:keys [revn changes] persisted-session-id :session-id}]
   (dm/assert! (uuid? file-id))
   (dm/assert! (int? revn))
-  (dm/assert! (cpc/changes? changes))
+  (dm/assert! (cpc/check-changes! changes))
 
   (ptk/reify ::shapes-changes-persisted
     ptk/UpdateEvent
@@ -251,26 +236,28 @@
       ;; NOTE: we don't set the file features context here because
       ;; there are no useful context for code that need to be executed
       ;; on the frontend side
-
-      (if-let [current-file-id (:current-file-id state)]
-        (if (= file-id current-file-id)
-          (let [changes (group-by :page-id changes)]
+      (let [current-file-id (:current-file-id state)
+            current-session-id (:session-id state)]
+        (if (and (some? current-file-id)
+                 ;; If the remote change is from teh current session we skip
+                 (not= persisted-session-id current-session-id))
+          (if (= file-id current-file-id)
+            (let [changes (group-by :page-id changes)]
+              (-> state
+                  (update-in [:workspace-file :revn] max revn)
+                  (update :workspace-data
+                          (fn [file]
+                            (loop [fdata file
+                                   entries (seq changes)]
+                              (if-let [[page-id changes] (first entries)]
+                                (recur (-> fdata
+                                           (cpc/process-changes changes)
+                                           (cond-> (some? page-id)
+                                             (ctst/update-object-indices page-id)))
+                                       (rest entries))
+                                fdata))))))
             (-> state
-                (update-in [:workspace-file :revn] max revn)
-                (update :workspace-data (fn [file]
-                                          (loop [fdata file
-                                                 entries (seq changes)]
-                                            (if-let [[page-id changes] (first entries)]
-                                              (recur (-> fdata
-                                                         (cp/process-changes changes)
-                                                         (ctst/update-object-indices page-id))
-                                                     (rest entries))
-                                              fdata))))))
-          (-> state
-              (update-in [:workspace-libraries file-id :revn] max revn)
-              (update-in [:workspace-libraries file-id :data] cp/process-changes changes)))
+                (update-in [:workspace-libraries file-id :revn] max revn)
+                (update-in [:workspace-libraries file-id :data] cpc/process-changes changes)))
 
-        state))))
-
-
-
+          state)))))

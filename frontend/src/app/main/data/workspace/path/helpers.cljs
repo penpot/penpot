@@ -8,27 +8,30 @@
   (:require
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.path.commands :as upc]
-   [app.common.path.subpaths :as ups]
+   [app.common.svg.path.command :as upc]
    [app.main.data.workspace.path.common :as common]
-   [app.main.streams :as ms]
-   [potok.core :as ptk]))
+   [app.util.mouse :as mse]
+   [potok.v2.core :as ptk]))
 
-(defn end-path-event? [event]
-  (or (= (ptk/type event) ::common/finish-path)
-      (= (ptk/type event) :app.main.data.workspace.path.shortcuts/esc-pressed)
-      (= :app.main.data.workspace.common/clear-edition-mode (ptk/type event))
-      (= :app.main.data.workspace/finalize-page (ptk/type event))
-      (= event :interrupt) ;; ESC
-      (ms/mouse-double-click? event)))
+(defn end-path-event?
+  [event]
+  (let [type (ptk/type event)]
+    (or (= type ::common/finish-path)
+        (= type :app.main.data.workspace.path.shortcuts/esc-pressed)
+        (= type :app.main.data.workspace.common/clear-edition-mode)
+        (= type :app.main.data.workspace/finalize-page)
+        (= event :interrupt) ;; ESC
+        (and ^boolean (mse/mouse-event? event)
+             ^boolean (mse/mouse-double-click-event? event)))))
 
 (defn content-center
   [content]
   (-> content
       gsh/content->selrect
-      gsh/center-selrect))
+      grc/rect->center))
 
 (defn content->points+selrect
   "Given the content of a shape, calculate its points and selrect"
@@ -45,7 +48,7 @@
           flip-y (gmt/scale (gpt/point 1 -1))
           :always (gmt/multiply (:transform-inverse shape (gmt/matrix))))
 
-        center (or (gsh/center-shape shape)
+        center (or (gsh/shape->center shape)
                    (content-center content))
 
         base-content (gsh/transform-content
@@ -54,16 +57,16 @@
 
         ;; Calculates the new selrect with points given the old center
         points (-> (gsh/content->selrect base-content)
-                   (gsh/rect->points)
+                   (grc/rect->points)
                    (gsh/transform-points center transform))
 
-        points-center (gsh/center-points points)
+        points-center (gsh/points->center points)
 
         ;; Points is now the selrect but the center is different so we can create the selrect
         ;; through points
         selrect (-> points
                     (gsh/transform-points points-center transform-inverse)
-                    (gsh/points->selrect))]
+                    (grc/points->rect))]
     [points selrect]))
 
 (defn update-selrect
@@ -113,7 +116,6 @@
   (let [command (next-node shape position prev-point prev-handler)]
     (-> shape
         (update :content (fnil conj []) command)
-        (update :content ups/close-subpaths)
         (update-selrect))))
 
 (defn angle-points [common p1 p2]
@@ -127,7 +129,7 @@
     (let [;; To match the angle, the angle should be matching (angle between points 180deg)
           angle-handlers (angle-points node handler opposite)
 
-          match-angle? (and match-angle? (<= (mth/abs (- 180 angle-handlers) ) 0.1))
+          match-angle? (and match-angle? (<= (mth/abs (- 180 angle-handlers)) 0.1))
 
           ;; To match distance the distance should be matching
           match-distance? (and match-distance? (mth/almost-zero? (- (gpt/distance node handler)

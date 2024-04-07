@@ -6,39 +6,88 @@
 
 @import "refactor/common-refactor.scss";
 
-$width-settings-bar: 256px;
-$width-settings-bar-min: 255px;
-$width-settings-bar-max: 500px;
+$width-settings-bar: $s-276;
+$width-settings-bar-max: $s-500;
 
 .left-settings-bar {
+  display: grid;
+  grid-template-areas:
+    "header header"
+    "content resize";
+  grid-template-rows: $s-52 1fr;
+  grid-template-columns: 1fr 0;
   position: relative;
   grid-area: left-sidebar;
   min-width: $width-settings-bar;
-  max-width: 500px;
+  max-width: $width-settings-bar-max;
   width: var(--width, $width-settings-bar);
-  height: 100%;
-  border-radius: $br-8;
-  background-color: var(--color-background-primary);
+  background-color: var(--panel-background-color);
+  height: 100vh;
+  max-height: 100vh;
 
   .resize-area {
-    position: absolute;
-    right: -8px;
-    z-index: $z-index-10;
-    width: $s-8;
-    height: 100%;
-    cursor: ew-resize;
+    grid-area: resize;
   }
+}
+
+.layers-tab {
+  padding-top: $s-4;
+}
+
+.left-header {
+  grid-area: header;
+}
+
+.settings-bar-content {
+  grid-area: content;
+  right: calc(-1 * $s-8);
+}
+
+.resize-area {
+  position: absolute;
+  top: 0;
+  left: unset;
+  z-index: $z-index-4;
+  width: $s-8;
+  cursor: ew-resize;
+  height: 100%;
+}
+
+.tab-spacing {
+  margin-inline: $s-12;
+}
+
+.right-settings-bar {
+  grid-area: right-sidebar;
+  width: $width-settings-bar;
+  background-color: var(--panel-background-color);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  z-index: 0;
+  &.not-expand {
+    max-width: $width-settings-bar;
+  }
+  &.expanded {
+    width: var(--width, $width-settings-bar);
+  }
+
   .settings-bar-inside {
     display: grid;
     grid-template-columns: 100%;
     grid-template-rows: 100%;
-    height: calc(100% - 2px);
-    .layers-tab {
-      display: grid;
-      grid-template-rows: auto 1fr;
-      grid-template-columns: 100%;
-      height: 100%;
-      overflow: hidden;
-    }
+
+    height: calc(100vh - $s-52);
+    overflow: hidden;
   }
+}
+
+.resize-area-horiz {
+  position: absolute;
+  // top: calc($s-88 + var(--height, 200px));
+  left: 0;
+  width: 100%;
+  // height: $s-8;
+  border-bottom: $s-2 solid var(--resize-area-border-color);
+  cursor: ns-resize;
 }

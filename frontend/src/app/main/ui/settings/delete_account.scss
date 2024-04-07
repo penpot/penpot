@@ -1,0 +1,60 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+}
+
+.modal-container {
+  @extend .modal-container-base;
+  min-width: $s-408;
+}
+
+.modal-header {
+  margin-bottom: $s-24;
+}
+
+.modal-title {
+  @include uppercaseTitleTipography;
+  color: var(--modal-title-foreground-color);
+}
+
+.modal-close-btn {
+  @extend .modal-close-btn-base;
+}
+
+.modal-content {
+  @include flexColumn;
+  @include bodySmallTypography;
+  gap: $s-24;
+  margin-bottom: $s-24;
+}
+
+.fields-row {
+  @include flexColumn;
+}
+
+.select-title {
+  @include bodySmallTypography;
+  color: var(--modal-title-foreground-color);
+}
+
+.action-buttons {
+  @extend .modal-action-btns;
+}
+
+.cancel-button {
+  @extend .modal-cancel-btn;
+}
+
+.accept-button {
+  @extend .modal-accept-btn;
+  &.danger {
+    @extend .modal-danger-btn;
+  }
+}

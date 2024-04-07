@@ -1,0 +1,29 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "common/refactor/common-refactor" as *;
+@use "./profile";
+
+.feedback-form {
+  textarea {
+    border-radius: $br-8;
+    padding: $br-12;
+    background-color: $db-tertiary;
+    color: $df-primary;
+    border: none;
+
+    ::placeholder {
+      color: $db-disabled;
+    }
+    &:focus {
+      outline: $s-1 solid $da-primary;
+    }
+  }
+}
+
+.feedback-button-link {
+  @extend .button-primary;
+}

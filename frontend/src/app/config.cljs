@@ -11,6 +11,7 @@
    [app.common.uri :as u]
    [app.common.version :as v]
    [app.util.avatars :as avatars]
+   [app.util.extends]
    [app.util.globals :refer [global location]]
    [app.util.navigator :as nav]
    [app.util.object :as obj]
@@ -21,7 +22,7 @@
 ;; --- Auxiliar Functions
 
 (def valid-browsers
-  #{:chrome :firefox :safari :edge :other})
+  #{:chrome :firefox :safari :safari-16 :safari-17 :edge :other})
 
 (def valid-platforms
   #{:windows :linux :macos :other})
@@ -32,13 +33,17 @@
         check-chrome? (fn [] (str/includes? user-agent "chrom"))
         check-firefox? (fn [] (str/includes? user-agent "firefox"))
         check-edge? (fn [] (str/includes? user-agent "edg"))
-        check-safari? (fn [] (str/includes? user-agent "safari"))]
+        check-safari? (fn [] (str/includes? user-agent "safari"))
+        check-safari-16? (fn [] (and (check-safari?) (str/includes? user-agent "version/16")))
+        check-safari-17? (fn [] (and (check-safari?) (str/includes? user-agent "version/17")))]
     (cond
-      (check-edge?)    :edge
-      (check-chrome?)  :chrome
-      (check-firefox?) :firefox
-      (check-safari?)  :safari
-      :else            :other)))
+      (check-edge?)      :edge
+      (check-chrome?)    :chrome
+      (check-firefox?)   :firefox
+      (check-safari-16?) :safari-16
+      (check-safari-17?) :safari-17
+      (check-safari?)    :safari
+      :else              :other)))
 
 (defn- parse-platform
   []
@@ -59,7 +64,10 @@
     :webworker))
 
 (def default-flags
-  [:enable-newsletter-subscription
+  [:enable-onboarding
+   :enable-onboarding-team
+   :enable-onboarding-questions
+   :enable-onboarding-newsletter
    :enable-dashboard-templates-section
    :enable-google-fonts-provider])
 
@@ -82,7 +90,7 @@
       date)))
 
 
-;; --- Globar Config Vars
+;; --- Global Config Vars
 
 (def default-theme  "default")
 (def default-language "en")
@@ -97,8 +105,10 @@
 (def browser              (parse-browser))
 (def platform             (parse-platform))
 
-(def terms-of-service-uri (obj/get global "penpotTermsOfServiceURI" nil))
-(def privacy-policy-uri   (obj/get global "penpotPrivacyPolicyURI" nil))
+(def terms-of-service-uri (obj/get global "penpotTermsOfServiceURI" "https://penpot.app/terms"))
+(def privacy-policy-uri   (obj/get global "penpotPrivacyPolicyURI" "https://penpot.app/privacy"))
+(def flex-help-uri        (obj/get global "penpotGridHelpURI" "https://help.penpot.app/user-guide/flexible-layouts/"))
+(def grid-help-uri        (obj/get global "penpotGridHelpURI" "https://help.penpot.app/user-guide/flexible-layouts/"))
 
 (defn- normalize-uri
   [uri-str]
@@ -113,8 +123,8 @@
   (normalize-uri (or (obj/get global "penpotPublicURI")
                      (obj/get location "origin"))))
 
-(def thumbnail-renderer-uri
-  (or (some-> (obj/get global "penpotThumbnailRendererURI") normalize-uri)
+(def rasterizer-uri
+  (or (some-> (obj/get global "penpotRasterizerURI") normalize-uri)
       public-uri))
 
 (def worker-uri
@@ -124,16 +134,18 @@
 
 (defn ^boolean check-browser? [candidate]
   (dm/assert! (contains? valid-browsers candidate))
-  (= candidate browser))
+  (if (= candidate :safari)
+    (contains? #{:safari :safari-16 :safari-17} browser)
+    (= candidate browser)))
 
 (defn ^boolean check-platform? [candidate]
   (dm/assert! (contains? valid-platforms candidate))
   (= candidate platform))
 
 (defn resolve-profile-photo-url
-  [{:keys [photo-id fullname name] :as profile}]
+  [{:keys [photo-id fullname name color] :as profile}]
   (if (nil? photo-id)
-    (avatars/generate {:name (or fullname name)})
+    (avatars/generate {:name (or fullname name) :color color})
     (dm/str (u/join public-uri "assets/by-id/" photo-id))))
 
 (defn resolve-team-photo-url

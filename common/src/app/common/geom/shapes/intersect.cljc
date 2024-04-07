@@ -7,11 +7,13 @@
 (ns app.common.geom.shapes.intersect
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.path :as gpp]
-   [app.common.geom.shapes.rect :as gpr]
    [app.common.geom.shapes.text :as gte]
    [app.common.math :as mth]))
 
@@ -32,10 +34,10 @@
 (defn on-segment?
   "Given three colinear points p, q, r checks if q lies on segment pr"
   [{qx :x qy :y} {px :x py :y} {rx :x ry :y}]
-  (and (<= qx (max px rx))
-       (>= qx (min px rx))
-       (<= qy (max py ry))
-       (>= qy (min py ry))))
+  (and (<= qx (mth/max px rx))
+       (>= qx (mth/min px rx))
+       (<= qy (mth/max py ry))
+       (>= qy (mth/min py ry))))
 
 ;; Based on solution described here
 ;; https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
@@ -53,16 +55,16 @@
      (and (not= o1 o2) (not= o3 o4))
 
      ;; p1, q1 and p2 colinear and p2 lies on p1q1
-     (and (= o1 :coplanar) (on-segment? p2 p1 q1))
+     (and (= o1 :coplanar) ^boolean (on-segment? p2 p1 q1))
 
      ;; p1, q1 and q2 colinear and q2 lies on p1q1
-     (and (= o2 :coplanar) (on-segment? q2 p1 q1))
+     (and (= o2 :coplanar) ^boolean (on-segment? q2 p1 q1))
 
      ;; p2, q2 and p1 colinear and p1 lies on p2q2
-     (and (= o3 :coplanar) (on-segment? p1 p2 q2))
+     (and (= o3 :coplanar) ^boolean (on-segment? p1 p2 q2))
 
      ;; p2, q2 and p1 colinear and q1 lies on p2q2
-     (and (= o4 :coplanar) (on-segment? q1 p2 q2)))))
+     (and (= o4 :coplanar) ^boolean (on-segment? q1 p2 q2)))))
 
 (defn points->lines
   "Given a set of points for a polygon will return
@@ -71,12 +73,10 @@
    (points->lines points true))
 
   ([points closed?]
-   (map vector
-        points
-        (-> (rest points)
-            (vec)
-            (cond-> closed?
-              (conj (first points)))))))
+   (map vector points
+        (cond-> (rest points)
+          (true? closed?)
+          (concat (list (first points)))))))
 
 (defn intersects-lines?
   "Checks if two sets of lines intersect in any point"
@@ -116,7 +116,7 @@
   ;; Cast a ray from the point in any direction and count the intersections
   ;; if it's odd the point is inside the polygon
   (->> lines
-       (filter #(intersect-ray? p %))
+       (filterv #(intersect-ray? p %))
        (count)
        (odd?)))
 
@@ -163,7 +163,7 @@
   "Checks if the given rect intersects with the selrect"
   [rect points]
 
-  (let [rect-points  (gpr/rect->points rect)
+  (let [rect-points  (grc/rect->points rect)
         rect-lines   (points->lines rect-points)
         points-lines (points->lines points)]
 
@@ -173,25 +173,27 @@
 
 (defn overlaps-path?
   "Checks if the given rect overlaps with the path in any point"
-  [shape rect]
+  [shape rect include-content?]
 
   (when (d/not-empty? (:content shape))
-    (let [ ;; If paths are too complex the intersection is too expensive
+    (let [;; If paths are too complex the intersection is too expensive
           ;; we fallback to check its bounding box otherwise the performance penalty
           ;; is too big
           ;; TODO: Look for ways to optimize this operation
           simple? (> (count (:content shape)) 100)
 
-          rect-points  (gpr/rect->points rect)
+          rect-points  (grc/rect->points rect)
           rect-lines   (points->lines rect-points)
           path-lines   (if simple?
                          (points->lines (:points shape))
                          (gpp/path->lines shape))
           start-point (-> shape :content (first) :params (gpt/point))]
 
-      (or (is-point-inside-nonzero? (first rect-points) path-lines)
-          (is-point-inside-nonzero? start-point rect-lines)
-          (intersects-lines? rect-lines path-lines)))))
+      (or (intersects-lines? rect-lines path-lines)
+          (if include-content?
+            (or (is-point-inside-nonzero? (first rect-points) path-lines)
+                (is-point-inside-nonzero? start-point rect-lines))
+            false)))))
 
 (defn is-point-inside-ellipse?
   "checks if a point is inside an ellipse"
@@ -268,7 +270,7 @@
   "Checks if the given rect overlaps with an ellipse"
   [shape rect]
 
-  (let [rect-points  (gpr/rect->points rect)
+  (let [rect-points  (grc/rect->points rect)
         rect-lines   (points->lines rect-points)
         {:keys [x y width height]} shape
 
@@ -289,7 +291,7 @@
   [{:keys [position-data] :as shape} rect]
 
   (if (and (some? position-data) (d/not-empty? position-data))
-    (let [center    (gco/center-shape shape)
+    (let [center (gco/shape->center shape)
 
           transform-rect
           (fn [rect-points]
@@ -297,7 +299,7 @@
 
       (->> position-data
            (map (comp transform-rect
-                      gpr/rect->points
+                      grc/rect->points
                       gte/position-data->rect))
            (some #(overlaps-rect-points? rect %))))
     (overlaps-rect-points? rect (:points shape))))
@@ -305,42 +307,58 @@
 (defn overlaps?
   "General case to check for overlapping between shapes and a rectangle"
   [shape rect]
-  (let [stroke-width (/ (or (:stroke-width shape) 0) 2)
-        rect (-> rect
-                 (update :x - stroke-width)
-                 (update :y - stroke-width)
-                 (update :width + (* 2 stroke-width))
-                 (update :height + (* 2 stroke-width)))]
+  (let [swidth (/ (or (:stroke-width shape) 0) 2)
+        rect   (-> rect
+                   (update :x - swidth)
+                   (update :y - swidth)
+                   (update :width + (* 2 swidth))
+                   (update :height + (* 2 swidth)))]
     (or (not shape)
-        (let [path? (= :path (:type shape))
-              circle? (= :circle (:type shape))
-              text? (= :text (:type shape))]
-          (cond
-            path?
-            (and (overlaps-rect-points? rect (:points shape))
-                 (overlaps-path? shape rect))
+        (cond
+          (cfh/path-shape? shape)
+          (and (overlaps-rect-points? rect (:points shape))
+               (overlaps-path? shape rect true))
 
-            circle?
-            (and (overlaps-rect-points? rect (:points shape))
-                 (overlaps-ellipse? shape rect))
+          (cfh/circle-shape? shape)
+          (and (overlaps-rect-points? rect (:points shape))
+               (overlaps-ellipse? shape rect))
 
-            text?
-            (overlaps-text? shape rect)
+          (cfh/text-shape? shape)
+          (overlaps-text? shape rect)
 
-            :else
-            (overlaps-rect-points? rect (:points shape)))))))
+          :else
+          (overlaps-rect-points? rect (:points shape))))))
 
 (defn has-point-rect?
   [rect point]
-  (let [lines (gpr/rect->lines rect)]
+  (let [lines (grc/rect->lines rect)]
     (is-point-inside-evenodd? point lines)))
 
-(defn has-point?
-  "Check if the shape contains a point"
+(defn slow-has-point?
   [shape point]
-  (let [lines (points->lines (:points shape))]
-    ;; TODO: Will only work for simple shapes
+  (let [lines (points->lines (dm/get-prop shape :points))]
     (is-point-inside-evenodd? point lines)))
+
+(defn fast-has-point?
+  [shape point]
+  (let [x1 (dm/get-prop shape :x)
+        y1 (dm/get-prop shape :y)
+        x2 (+ x1 (dm/get-prop shape :width))
+        y2 (+ y1 (dm/get-prop shape :height))
+        px (dm/get-prop point :x)
+        py (dm/get-prop point :y)]
+    (and (>= px x1)
+         (<= px x2)
+         (>= py y1)
+         (<= py y2))))
+
+(defn has-point?
+  [shape point]
+  (if (or ^boolean (cfh/path-shape? shape)
+          ^boolean (cfh/bool-shape? shape)
+          ^boolean (cfh/circle-shape? shape))
+    (slow-has-point? shape point)
+    (fast-has-point? shape point)))
 
 (defn rect-contains-shape?
   [rect shape]

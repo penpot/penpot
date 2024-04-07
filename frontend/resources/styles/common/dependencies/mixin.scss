@@ -116,7 +116,9 @@ $bp-min-2556: "(min-width: 2556px)";
   $filepath: "/fonts/" + $file;
   @font-face {
     font-family: "#{$style-name}";
-    src: url($filepath + ".woff2") format("woff2"), url($filepath + ".ttf") format("truetype");
+    src:
+      url($filepath + ".woff2") format("woff2"),
+      url($filepath + ".ttf") format("truetype");
     font-weight: unquote($weight);
     font-style: unquote($style);
   }

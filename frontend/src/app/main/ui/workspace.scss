@@ -1,3 +1,9 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
 @import "refactor/common-refactor.scss";
 
 // Work Sans
@@ -6,33 +12,53 @@
 @include font-face("worksans", "WorkSans-Bold", bold);
 
 // Space mono
-@include font-face("spacemono", "SpaceMono-Regular", normal);
+@include font-face("robotomono", "RobotoMono-Regular", normal);
 
 :global(:root) {
   --s-4: 0.25rem;
-  --layer-indentation-size: calc(var(--s-4) * 5);
+  --layer-indentation-size: calc(var(--s-4) * 6);
 }
 
 .workspace {
-  ::-webkit-scrollbar {
-    background-color: transparent;
-    cursor: pointer;
-    height: $s-12;
-    width: $s-12;
-  }
-  ::-webkit-scrollbar-track,
-  ::-webkit-scrollbar-corner {
-    background-color: transparent;
-  }
+  @extend .new-scrollbar;
+  width: 100vw;
+  height: 100vh;
+  max-height: 100vh;
+  user-select: none;
+  display: grid;
+  grid-template-areas: "left-sidebar viewport right-sidebar";
+  grid-template-rows: 1fr;
+  grid-template-columns: auto 1fr auto;
+  overflow: hidden;
 
-  ::-webkit-scrollbar-thumb {
-    background-color: rgba(170, 181, 186, 0.3);
-    background-clip: content-box;
-    border: $s-2 solid transparent;
-    border-radius: $br-8;
-    &:hover {
-      background-color: rgba(170, 181, 186, 0.7);
-      outline: none;
+  .workspace-loader {
+    @include flexCenter;
+    grid-area: viewport;
+    background-color: var(--loader-background);
+    :global(svg#loader-pencil) {
+      fill: var(--icon-foreground);
     }
   }
+}
+
+.workspace-content {
+  grid-area: viewport;
+}
+
+.history-debug-overlay {
+  bottom: 0;
+  max-height: $s-500;
+  width: $s-500;
+  overflow-y: auto;
+  position: absolute;
+  z-index: $z-index-modal;
+}
+
+.workspace-viewport {
+  overflow: hidden;
+  transition: none;
+  display: grid;
+  grid-template-rows: $s-20 1fr;
+  grid-template-columns: $s-20 1fr;
+  flex: 1;
 }

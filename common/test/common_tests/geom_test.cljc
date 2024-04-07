@@ -6,10 +6,10 @@
 
 (ns common-tests.geom-test
   (:require
-   [clojure.test :as t]
-   [app.common.math :as mth]
+   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
-   [app.common.geom.matrix :as gmt]))
+   [app.common.math :as mth]
+   [clojure.test :as t]))
 
 (t/deftest point-constructors-test
   (t/testing "Create point with both coordinates"

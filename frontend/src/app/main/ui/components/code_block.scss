@@ -1,0 +1,16 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.code-display {
+  user-select: text;
+  border-radius: $br-8;
+  margin-top: $s-8;
+  padding: $s-12;
+  background-color: var(--menu-background-color);
+  overflow: auto;
+}

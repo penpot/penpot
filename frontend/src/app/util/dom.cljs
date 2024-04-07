@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.logging :as log]
    [app.common.media :as cm]
    [app.util.globals :as globals]
@@ -16,7 +17,22 @@
    [app.util.webapi :as wapi]
    [cuerdas.core :as str]
    [goog.dom :as dom]
-   [promesa.core :as p]))
+   [promesa.core :as p])
+  (:import goog.events.BrowserEvent))
+
+(extend-type BrowserEvent
+  cljs.core/IDeref
+  (-deref [it] (.getBrowserEvent it)))
+
+(declare get-window-size)
+
+(defn browser-event?
+  [o]
+  (instance? BrowserEvent o))
+
+(defn native-event?
+  [o]
+  (instance? js/Event o))
 
 (log/set-level! :warn)
 
@@ -311,6 +327,11 @@
     (.removeChild ^js el child))
   el)
 
+(defn remove!
+  [^js el]
+  (when (some? el)
+    (.remove ^js el)))
+
 (defn get-first-child
   [^js el]
   (when (some? el)
@@ -367,11 +388,19 @@
           y (.-offsetY event)]
       (gpt/point x y))))
 
+(defn get-delta-position
+  [event]
+  (let [e (if (browser-event? event)
+            (deref event)
+            event)
+        x (.-deltaX ^js e)
+        y (.-deltaY ^js e)]
+    (gpt/point x y)))
+
 (defn get-client-size
   [^js node]
   (when (some? node)
-    {:width (.-clientWidth ^js node)
-     :height (.-clientHeight ^js node)}))
+    (grc/make-rect 0 0 (.-clientWidth node) (.-clientHeight node))))
 
 (defn get-bounding-rect
   [node]
@@ -383,18 +412,46 @@
      :width (.-width ^js rect)
      :height (.-height ^js rect)}))
 
+(defn is-bounding-rect-outside?
+  [rect]
+  (let [{:keys [left top right bottom]} rect
+        {:keys [width height]} (get-window-size)]
+    (or (< left 0)
+        (< top 0)
+        (> right width)
+        (> bottom height))))
+
+(defn is-element-outside?
+  [element]
+  (is-bounding-rect-outside? (get-bounding-rect element)))
+
 (defn bounding-rect->rect
   [rect]
   (when (some? rect)
-    {:x      (or (.-left rect)   (:left rect)   0)
-     :y      (or (.-top rect)    (:top rect)    0)
-     :width  (or (.-width rect)  (:width rect)  1)
-     :height (or (.-height rect) (:height rect) 1)}))
+    (grc/make-rect
+     (or (.-left rect)   (:left rect)   0)
+     (or (.-top rect)    (:top rect)    0)
+     (or (.-width rect)  (:width rect)  1)
+     (or (.-height rect) (:height rect) 1))))
 
 (defn get-window-size
   []
   {:width (.-innerWidth ^js js/window)
    :height (.-innerHeight ^js js/window)})
+
+(defn get-computed-styles
+  [node]
+  (js/getComputedStyle node))
+
+(defn get-property-value
+  [o prop]
+  (.getPropertyValue ^js o prop))
+
+(defn get-css-variable
+  ([variable element]
+   (.getPropertyValue (.getComputedStyle js/window element) variable))
+  ([variable]
+   (.getPropertyValue (.getComputedStyle js/window (.-documentElement js/document)) variable)))
 
 (defn focus!
   [^js node]
@@ -467,6 +524,10 @@
     (.setAttribute node property value))
   node)
 
+(defn get-text [^js node]
+  (when (some? node)
+    (.-textContent node)))
+
 (defn set-text! [^js node text]
   (when (some? node)
     (set! (.-textContent node) text))
@@ -506,6 +567,11 @@
                         []
                         (partition 2 params))))
 
+(defn ^boolean id?
+  [node id]
+  (when (some? node)
+    (= (.-id ^js node) id)))
+
 (defn ^boolean class? [node class-name]
   (when (some? node)
     (let [class-list (.-classList ^js node)]
@@ -533,11 +599,31 @@
   (when (some? node)
     (= (get-active) node)))
 
-(defn get-data [^js node ^string attr]
+(defn get-data
+  [^js node ^string attr]
+  ;; NOTE: we use getAttribute instead of .dataset for performance
+  ;; reasons. The getAttribute is x2 faster than dataset. See more on:
+  ;; https://www.measurethat.net/Benchmarks/Show/14432/0/getattribute-vs-dataset
   (when (some? node)
     (.getAttribute node (dm/str "data-" attr))))
 
-(defn set-data! [^js node ^string attr value]
+(defn- resolve-node
+  [event]
+  (cond
+    (instance? js/Element event)
+    event
+
+    :else
+    (get-current-target event)))
+
+(defn get-boolean-data
+  [node attr]
+  (some-> (resolve-node node)
+          (get-data attr)
+          (parse-boolean)))
+
+(defn set-data!
+  [^js node ^string attr value]
   (when (some? node)
     (.setAttribute node (dm/str "data-" attr) (dm/str value))))
 
@@ -558,6 +644,12 @@
   [^js element]
   (when (some? element)
     (.-scrollLeft element)))
+
+(defn scroll-to
+  ([^js element options]
+   (.scrollTo element options))
+  ([^js element x y]
+   (.scrollTo element x y)))
 
 (defn set-scroll-pos!
   [^js element scroll]
@@ -669,6 +761,12 @@
 (defn reload-current-window
   []
   (.reload (.-location js/window)))
+
+(defn scroll-by!
+  ([element x y]
+   (.scrollBy ^js element x y))
+  ([x y]
+   (scroll-by! js/window x y)))
 
 (defn animate!
   ([item keyframes duration] (animate! item keyframes duration nil))

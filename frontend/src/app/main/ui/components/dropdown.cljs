@@ -10,6 +10,7 @@
    [app.util.dom :as dom]
    [app.util.globals :as globals]
    [app.util.keyboard :as kbd]
+   [app.util.timers :as tm]
    [goog.events :as events]
    [goog.object :as gobj]
    [rumext.v2 :as mf])
@@ -18,24 +19,26 @@
 (mf/defc dropdown'
   {::mf/wrap-props false}
   [props]
-  (let [children (gobj/get props "children")
-        on-close (gobj/get props "on-close")
-        ref      (gobj/get props "container")
+  (let [children      (gobj/get props "children")
+        on-close      (gobj/get props "on-close")
+        container-ref (gobj/get props "container")
+        listening-ref (mf/use-ref nil)
 
         on-click
         (fn [event]
-          (let [target (dom/get-target event)
+          (when (mf/ref-val listening-ref)
+            (let [target (dom/get-target event)
 
-                ;; MacOS ctrl+click sends two events: context-menu and click.
-                ;; In order to not have two handlings we ignore ctrl+click for this platform
-                mac-ctrl-click? (and (cfg/check-platform? :macos) (kbd/ctrl? event))]
-            (when (and (not mac-ctrl-click?)
-                       (not (.-data-no-close ^js target)))
-              (if ref
-                (let [parent (mf/ref-val ref)]
-                  (when-not (or (not parent) (.contains parent target))
-                    (on-close)))
-                (on-close)))))
+                  ;; MacOS ctrl+click sends two events: context-menu and click.
+                  ;; In order to not have two handlings we ignore ctrl+click for this platform
+                  mac-ctrl-click? (and (cfg/check-platform? :macos) (kbd/ctrl? event))]
+              (when (and (not mac-ctrl-click?)
+                         (not (.-data-no-close ^js target)))
+                (if container-ref
+                  (let [parent (mf/ref-val container-ref)]
+                    (when-not (or (not parent) (.contains parent target))
+                      (on-close)))
+                  (on-close))))))
 
         on-keyup
         (fn [event]
@@ -47,8 +50,8 @@
           (let [keys [(events/listen globals/document EventType.CLICK on-click)
                       (events/listen globals/document EventType.CONTEXTMENU on-click)
                       (events/listen globals/document EventType.KEYUP on-keyup)]]
-            #(doseq [key keys]
-               (events/unlistenByKey key))))]
+            (tm/schedule #(mf/set-ref-val! listening-ref true))
+            #(run! events/unlistenByKey keys)))]
 
     (mf/use-effect on-mount)
     children))

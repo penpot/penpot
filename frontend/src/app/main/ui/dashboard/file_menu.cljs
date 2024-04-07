@@ -6,9 +6,10 @@
 
 (ns app.main.ui.dashboard.file-menu
   (:require
+   [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -17,8 +18,8 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
-   [beicon.core :as rx]
-   [potok.core :as ptk]
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (defn get-project-name
@@ -53,12 +54,14 @@
           projects))
 
 (mf/defc file-menu
-  [{:keys [files show? on-edit on-menu-close top left navigate? origin parent-id] :as props}]
+  {::mf/wrap-props false}
+  [{:keys [files show? on-edit on-menu-close top left navigate? origin parent-id]}]
   (assert (seq files) "missing `files` prop")
   (assert (boolean? show?) "missing `show?` prop")
   (assert (fn? on-edit) "missing `on-edit` prop")
   (assert (fn? on-menu-close) "missing `on-menu-close` prop")
   (assert (boolean? navigate?) "missing `navigate?` prop")
+
   (let [is-lib-page?     (= :libraries origin)
         is-search-page?  (= :search origin)
         top              (or top 0)
@@ -74,6 +77,7 @@
         other-teams      (remove #(= (:id %) current-team-id) (vals @teams))
         current-projects (remove #(= (:id %) (:project-id file))
                                  (:projects current-team))
+
         on-new-tab
         (fn [_]
           (let [path-params  {:project-id (:project-id file)
@@ -84,17 +88,17 @@
         on-duplicate
         (fn [_]
           (apply st/emit! (map dd/duplicate-file files))
-          (st/emit! (dm/success (tr "dashboard.success-duplicate-file" (i18n/c (count files))))))
+          (st/emit! (msg/success (tr "dashboard.success-duplicate-file" (i18n/c (count files))))))
 
-        delete-fn
+        on-delete-accept
         (fn [_]
           (apply st/emit! (map dd/delete-file files))
-          (st/emit! (dm/success (tr "dashboard.success-delete-file" (i18n/c (count files))))))
+          (st/emit! (msg/success (tr "dashboard.success-delete-file" (i18n/c (count files))))
+                    (dd/clear-selected-files)))
 
         on-delete
         (fn [event]
           (dom/stop-propagation event)
-
           (let [num-shared (filter #(:is-shared %) files)]
 
             (if (< 0 (count num-shared))
@@ -102,7 +106,7 @@
                          {:type :delete-shared-libraries
                           :origin :delete
                           :ids (into #{} (map :id) files)
-                          :on-accept delete-fn
+                          :on-accept on-delete-accept
                           :count-libraries (count num-shared)}))
 
               (if multi?
@@ -111,32 +115,47 @@
                             :title (tr "modals.delete-file-multi-confirm.title" file-count)
                             :message (tr "modals.delete-file-multi-confirm.message" file-count)
                             :accept-label (tr "modals.delete-file-multi-confirm.accept" file-count)
-                            :on-accept delete-fn}))
+                            :on-accept on-delete-accept}))
                 (st/emit! (modal/show
                            {:type :confirm
                             :title (tr "modals.delete-file-confirm.title")
                             :message (tr "modals.delete-file-confirm.message")
                             :accept-label (tr "modals.delete-file-confirm.accept")
-                            :on-accept delete-fn}))))))
+                            :on-accept on-delete-accept}))))))
 
         on-move-success
         (fn [team-id project-id]
           (if multi?
-            (st/emit! (dm/success (tr "dashboard.success-move-files")))
-            (st/emit! (dm/success (tr "dashboard.success-move-file"))))
+            (st/emit! (msg/success (tr "dashboard.success-move-files")))
+            (st/emit! (msg/success (tr "dashboard.success-move-file"))))
           (if (or navigate? (not= team-id current-team-id))
             (st/emit! (dd/go-to-files team-id project-id))
             (st/emit! (dd/fetch-recent-files team-id)
                       (dd/clear-selected-files))))
+
+        on-move-accept
+        (fn [params team-id project-id]
+          (st/emit! (dd/move-files
+                     (with-meta params
+                       {:on-success #(on-move-success team-id project-id)}))))
 
         on-move
         (fn [team-id project-id]
           (let [params  {:ids (into #{} (map :id) files)
                          :project-id project-id}]
             (fn []
-              (st/emit! (dd/move-files
-                         (with-meta params
-                           {:on-success #(on-move-success team-id project-id)}))))))
+
+              (let [num-shared (filter #(:is-shared %) files)]
+                (if (and (< 0 (count num-shared))
+                         (not= team-id current-team-id))
+                  (st/emit! (modal/show
+                             {:type :delete-shared-libraries
+                              :origin :move
+                              :ids (into #{} (map :id) files)
+                              :on-accept #(on-move-accept params team-id project-id)
+                              :count-libraries (count num-shared)}))
+
+                  (on-move-accept params team-id project-id))))))
 
         add-shared
         #(st/emit! (dd/set-file-shared (assoc file :is-shared true)))
@@ -147,19 +166,10 @@
          (fn [_]
            (run! #(st/emit! (dd/set-file-shared (assoc % :is-shared false))) files)))
 
-
         on-add-shared
         (fn [event]
           (dom/stop-propagation event)
-          (st/emit! (modal/show
-                     {:type :confirm
-                      :message ""
-                      :title (tr "modals.add-shared-confirm.message" (:name file))
-                      :hint (tr "modals.add-shared-confirm.hint")
-                      :cancel-label :omit
-                      :accept-label (tr "modals.add-shared-confirm.accept")
-                      :accept-style :primary
-                      :on-accept add-shared})))
+          (st/emit! (dcm/show-shared-dialog (:id file) add-shared)))
 
         on-del-shared
         (fn [event]
@@ -173,38 +183,26 @@
                       :count-libraries file-count})))
 
         on-export-files
-        (fn [event-name binary?]
-          (st/emit! (ptk/event ::ev/event {::ev/name event-name
-                                           ::ev/origin "dashboard"
-                                           :num-files (count files)}))
-
-          (->> (rx/from files)
-               (rx/flat-map
-                (fn [file]
-                  (->> (rp/cmd! :has-file-libraries {:file-id (:id file)})
-                       (rx/map #(assoc file :has-libraries? %)))))
-               (rx/reduce conj [])
-               (rx/subs
-                (fn [files]
-                  (st/emit!
-                   (modal/show
-                    {:type :export
-                     :team-id current-team-id
-                     :has-libraries? (->> files (some :has-libraries?))
-                     :files files
-                     :binary? binary?}))))))
+        (mf/use-fn
+         (mf/deps files)
+         (fn [binary?]
+           (let [evname (if binary?
+                          "export-binary-files"
+                          "export-standard-files")]
+             (st/emit! (ptk/event ::ev/event {::ev/name evname
+                                              ::ev/origin "dashboard"
+                                              :num-files (count files)})
+                       (dcm/export-files files binary?)))))
 
         on-export-binary-files
-        (mf/use-callback
-         (mf/deps files current-team-id)
-         (fn [_]
-           (on-export-files "export-binary-files" true)))
+        (mf/use-fn
+         (mf/deps on-export-files)
+         (partial on-export-files true))
 
         on-export-standard-files
-        (mf/use-callback
-         (mf/deps files current-team-id)
-         (fn [_]
-           (on-export-files "export-standard-files" false)))
+        (mf/use-fn
+         (mf/deps on-export-files)
+         (partial on-export-files false))
 
         ;; NOTE: this is used for detect if component is still mounted
         mounted-ref (mf/use-ref true)]
@@ -215,8 +213,8 @@
        (when show?
          (->> (rp/cmd! :get-all-projects)
               (rx/map group-by-team)
-              (rx/subs #(when (mf/ref-val mounted-ref)
-                          (reset! teams %)))))))
+              (rx/subs! #(when (mf/ref-val mounted-ref)
+                           (reset! teams %)))))))
 
     (when current-team
       (let [sub-options (concat (vec (for [project current-projects]

@@ -6,41 +6,36 @@
 
 (ns app.common.geom.shapes.text
   (:require
+   [app.common.data.macros :as dm]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes.common :as gco]
-   [app.common.geom.shapes.rect :as gpr]
    [app.common.geom.shapes.transforms :as gtr]))
 
 (defn position-data->rect
   [{:keys [x y width height]}]
-  {:x x
-   :y (- y height)
-   :width width
-   :height height})
+  (grc/make-rect x (- y height) width height))
 
-(defn position-data-selrect
+(defn shape->rect
   [shape]
-  (let [points    (->> shape
-                       :position-data
-                       (mapcat (comp gpr/rect->points position-data->rect)))]
-    (if (empty? points)
-      (:selrect shape)
-      (-> points (gpr/points->selrect)))))
+  (let [points (->> (:position-data shape)
+                    (mapcat (comp grc/rect->points position-data->rect)))]
+    (if (seq points)
+      (grc/points->rect points)
+      (dm/get-prop shape :selrect))))
 
-(defn position-data-bounding-box
+(defn shape->bounds
   [shape]
-  (let [points    (->> shape
-                       :position-data
-                       (mapcat (comp gpr/rect->points position-data->rect)))
-        transform (gtr/transform-matrix shape)]
+  (let [points (->> (:position-data shape)
+                    (mapcat (comp grc/rect->points position-data->rect)))]
     (-> points
-        (gco/transform-points transform)
-        (gpr/points->selrect ))))
+        (gco/transform-points (gtr/transform-matrix shape))
+        (grc/points->rect))))
 
 (defn overlaps-position-data?
   "Checks if the given position data is inside the shape"
   [{:keys [points]} position-data]
-  (let [bounding-box (gpr/points->selrect points)
+  (let [bounding-box (grc/points->rect points)
         fix-rect #(assoc % :y (- (:y %) (:height %)))]
     (->> position-data
-         (some #(gpr/overlaps-rects? bounding-box (fix-rect %)))
+         (some #(grc/overlaps-rects? bounding-box (fix-rect %)))
          (boolean))))

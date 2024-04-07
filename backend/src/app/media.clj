@@ -14,11 +14,11 @@
    [app.common.schema.generators :as sg]
    [app.common.schema.openapi :as-alias oapi]
    [app.common.spec :as us]
+   [app.common.svg :as csvg]
    [app.config :as cf]
    [app.db :as-alias db]
    [app.storage :as-alias sto]
    [app.storage.tmp :as tmp]
-   [app.util.svg :as svg]
    [app.util.time :as dt]
    [buddy.core.bytes :as bb]
    [buddy.core.codecs :as bc]
@@ -31,9 +31,6 @@
    org.im4java.core.ConvertCmd
    org.im4java.core.IMOperation
    org.im4java.core.Info))
-
-(def default-max-file-size
-  (* 1024 1024 30)) ; 30 MiB
 
 (s/def ::path fs/path?)
 (s/def ::filename string?)
@@ -83,13 +80,14 @@
 
 (defn validate-media-size!
   [upload]
-  (when (> (:size upload) (cf/get :media-max-file-size default-max-file-size))
-    (ex/raise :type :restriction
-              :code :media-max-file-size-reached
-              :hint (str/ffmt "the uploaded file size % is greater than the maximum %"
-                              (:size upload)
-                              default-max-file-size)))
-  upload)
+  (let [max-size (cf/get :media-max-file-size)]
+    (when (> (:size upload) max-size)
+      (ex/raise :type :restriction
+                :code :media-max-file-size-reached
+                :hint (str/ffmt "the uploaded file size % is greater than the maximum %"
+                                (:size upload)
+                                max-size)))
+    upload))
 
 (defmulti process :cmd)
 (defmulti process-error class)
@@ -201,7 +199,7 @@
   (us/assert ::input input)
   (let [{:keys [path mtype]} input]
     (if (= mtype "image/svg+xml")
-      (let [info (some-> path slurp svg/pre-process svg/parse get-basic-info-from-svg)]
+      (let [info (some-> path slurp csvg/parse get-basic-info-from-svg)]
         (when-not info
           (ex/raise :type :validation
                     :code :invalid-svg-file

@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.modal
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.modal :as dm]
    [app.main.store :as st]
@@ -45,9 +46,9 @@
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
   [props]
-  (let [data        (unchecked-get props "data")
-        wrapper-ref (mf/use-ref nil)
-        components  (mf/deref dm/components)
+  (let [data           (unchecked-get props "data")
+        wrapper-ref    (mf/use-ref nil)
+        components     (mf/deref dm/components)
 
         allow-click-outside (:allow-click-outside data)
 
@@ -66,21 +67,22 @@
                    (events/listen js/document EventType.KEYDOWN     handle-keydown)
 
                    ;; Changing to js/document breaks the color picker
-                   (events/listen (dom/get-root) EventType.POINTERDOWN       handle-click-outside)
+                   (events/listen (dom/get-root) EventType.POINTERDOWN handle-click-outside)
 
                    (events/listen js/document EventType.CONTEXTMENU handle-click-outside)]]
          #(doseq [key keys]
             (events/unlistenByKey key)))))
 
     (when-let [component (get components (:type data))]
-      [:div.modal-wrapper {:ref wrapper-ref}
+      [:div {:ref wrapper-ref
+             :class (stl/css :modal-wrapper)}
        (mf/element component (:props data))])))
-
 
 (def modal-ref
   (l/derived ::dm/modal st/state))
 
 (mf/defc modal
+  {::mf/wrap-props false}
   []
   (let [modal (mf/deref modal-ref)]
     (when modal

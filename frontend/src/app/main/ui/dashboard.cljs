@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.dashboard
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.spec :as us]
@@ -14,7 +15,6 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
-   [app.main.ui.dashboard.export]
    [app.main.ui.dashboard.files :refer [files-section]]
    [app.main.ui.dashboard.fonts :refer [fonts-page font-providers-page]]
    [app.main.ui.dashboard.import]
@@ -29,6 +29,7 @@
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [goog.events :as events]
+   [okulary.core :as l]
    [rumext.v2 :as mf]))
 
 (defn ^boolean uuid-str?
@@ -42,7 +43,7 @@
         team-id     (get-in route [:params :path :team-id])
         project-id  (get-in route [:params :path :project-id])]
     (cond->
-      {:search-term search-term}
+     {:search-term search-term}
 
       (uuid-str? team-id)
       (assoc :team-id (uuid team-id))
@@ -57,12 +58,14 @@
         project-id         (:id project)
         team-id            (:id team)
 
+        dashboard-local     (mf/deref refs/dashboard-local)
+        file-menu-open?     (:menu-open dashboard-local)
+
         default-project-id
         (mf/with-memo [projects]
           (->> (vals projects)
                (d/seek :is-default)
                (:id)))
-
 
         on-resize
         (mf/use-fn
@@ -81,7 +84,10 @@
 
     (mf/use-effect on-resize)
 
-    [:div.dashboard-content {:on-click clear-selected-fn :ref container}
+
+    [:div {:class (stl/css :dashboard-content)
+           :style {:pointer-events (when file-menu-open? "none")}
+           :on-click clear-selected-fn :ref container}
      (case section
        :dashboard-projects
        [:*
@@ -136,27 +142,32 @@
 
        nil)]))
 
+(def dashboard-initialized
+  (l/derived :current-team-id st/state))
+
 (mf/defc dashboard
   [{:keys [route profile] :as props}]
-  (let [section      (get-in route [:data :name])
-        params       (parse-params route)
+  (let [section        (get-in route [:data :name])
+        params         (parse-params route)
 
-        project-id   (:project-id params)
-        team-id      (:team-id params)
-        search-term  (:search-term params)
+        project-id     (:project-id params)
+        team-id        (:team-id params)
+        search-term    (:search-term params)
 
-        teams        (mf/deref refs/teams)
-        team         (get teams team-id)
+        teams          (mf/deref refs/teams)
+        team           (get teams team-id)
 
-        projects     (mf/deref refs/dashboard-projects)
-        project      (get projects project-id)]
+        projects       (mf/deref refs/dashboard-projects)
+        project        (get projects project-id)
+
+        initialized?   (mf/deref dashboard-initialized)]
 
     (hooks/use-shortcuts ::dashboard sc/shortcuts)
 
-    (mf/with-effect [profile team-id]
+    (mf/with-effect [team-id]
       (st/emit! (dd/initialize {:id team-id}))
       (fn []
-        (dd/finalize {:id team-id})))
+        (st/emit! (dd/finalize {:id team-id}))))
 
     (mf/with-effect []
       (let [key (events/listen goog/global "keydown"
@@ -169,15 +180,16 @@
 
     [:& (mf/provider ctx/current-team-id) {:value team-id}
      [:& (mf/provider ctx/current-project-id) {:value project-id}
-      ;; NOTE: dashboard events and other related functions assumes
-      ;; that the team is a implicit context variable that is
-      ;; available using react context or accessing
-      ;; the :current-team-id on the state. We set the key to the
-      ;; team-id because we want to completely refresh all the
-      ;; components on team change. Many components assumes that the
-      ;; team is already set so don't put the team into mf/deps.
-      (when team
-        [:main.dashboard-layout {:key (:id team)}
+            ;; NOTE: dashboard events and other related functions assumes
+            ;; that the team is a implicit context variable that is
+            ;; available using react context or accessing
+            ;; the :current-team-id on the state. We set the key to the
+            ;; team-id because we want to completely refresh all the
+            ;; components on team change. Many components assumes that the
+            ;; team is already set so don't put the team into mf/deps.
+      (when (and team initialized?)
+        [:main {:class (stl/css :dashboard)
+                :key (:id team)}
          [:& sidebar
           {:team team
            :projects projects
@@ -185,7 +197,7 @@
            :profile profile
            :section section
            :search-term search-term}]
-         (when (and team (seq projects))
+         (when (and team profile (seq projects))
            [:& dashboard-content
             {:projects projects
              :profile profile
@@ -193,3 +205,4 @@
              :section section
              :search-term search-term
              :team team}])])]]))
+

@@ -6,11 +6,17 @@ Debug Main Page
 
 {% block content %}
 <nav>
-  <h1>Debug INDEX:</h1>
-  <div>[<a href="/dbg/error">ERRORS</a>]</div>
+  <div class="title">
+    <h1>ADMIN DEBUG INTERFACE</h1>
+  </div>
 </nav>
-<main class="index">
+<main class="dashboard">
   <section class="widget">
+    <fieldset>
+      <legend>Error reports</legend>
+      <desc><a href="/dbg/error">CLICK HERE TO SEE THE ERROR REPORTS</a> </desc>
+    </fieldset>
+
     <fieldset>
       <legend>Download file data:</legend>
       <desc>Given an FILE-ID, downloads the file data as file. The file data is encoded using transit.</desc>
@@ -37,9 +43,42 @@ Debug Main Page
           <input type="checkbox" name="reuseid" />
         </div>
 
-        <input type="submit" value="Upload" />
+        <div class="row">
+          <input type="submit" value="Upload" />
+        </div>
       </form>
     </fieldset>
+
+    <fieldset>
+      <legend>Profile Management</legend>
+      <form method="post" action="/dbg/actions/resend-email-verification">
+        <div class="row">
+          <input type="email" name="email" placeholder="example@example.com" value="" />
+        </div>
+
+        <div class="row">
+          <label for="force-verify">Are you sure?</label>
+          <input id="force-verify" type="checkbox" name="force" />
+          <br />
+          <small>
+            This is a just a security double check for prevent non intentional submits.
+          </small>
+        </div>
+
+        <div class="row">
+          <input type="submit" name="resend" value="Resend Verification" />
+          <input type="submit" name="verify" value="Verify" />
+        </div>
+
+        <div class="row">
+          <input type="submit" class="danger" name="block" value="Block" />
+          <input type="submit" class="danger" name="unblock" value="Unblock" />
+        </div>
+      </form>
+    </fieldset>
+
+
+
   </section>
 
   <section class="widget">
@@ -107,18 +146,37 @@ Debug Main Page
         </div>
 
         <div class="row">
-          <label>Ignore index errors?</label>
-          <input type="checkbox" name="ignore-index-errors" checked/>
-          <br />
-          <small>
-            Do not break on index lookup errors (remap operation).
-            Useful when importing a broken file that has broken
-            relations or missing pieces.
-          </small>
+          <input type="submit" name="upload" value="Upload" />
+        </div>
+      </form>
+    </fieldset>
+  </section>
+
+  <section class="widget">
+    <fieldset>
+      <legend>Reset file version</legend>
+      <desc>Allows reset file data version to a specific number/</desc>
+
+      <form method="post" action="/dbg/actions/reset-file-version">
+        <div class="row">
+          <input type="text" style="width:300px" name="file-id" placeholder="file-id" />
+        </div>
+        <div class="row">
+          <input type="number" style="width:100px" name="version" placeholder="version" value="32" />
         </div>
 
         <div class="row">
-          <input type="submit" name="upload" value="Upload" />
+          <label for="force-version">Are you sure?</label>
+          <input id="force-version" type="checkbox" name="force" />
+          <br />
+          <small>
+            This is a just a security double check for prevent non intentional submits.
+          </small>
+        </div>
+
+
+        <div class="row">
+          <input type="submit" value="Submit" />
         </div>
       </form>
     </fieldset>

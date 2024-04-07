@@ -1,0 +1,27 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.workspace-comments-container {
+  width: 100%;
+  height: 100%;
+  grid-column: 1 / span 2;
+  grid-row: 1 / span 2;
+  z-index: 1000;
+  pointer-events: none;
+  overflow: hidden;
+  user-select: text;
+  position: absolute;
+}
+
+.threads {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}

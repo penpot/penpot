@@ -7,20 +7,24 @@
 (ns app.main.data.workspace.path.changes
   (:require
    [app.common.data.macros :as dm]
-   [app.common.pages.changes-builder :as pcb]
+   [app.common.files.changes-builder :as pcb]
    [app.main.data.workspace.changes :as dch]
-   [app.main.data.workspace.path.common :refer [content?]]
+   [app.main.data.workspace.path.common :refer [check-path-content!]]
    [app.main.data.workspace.path.helpers :as helpers]
    [app.main.data.workspace.path.state :as st]
    [app.main.data.workspace.state-helpers :as wsh]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 (defn generate-path-changes
   "Generates changes to update the new content of the shape"
   [it objects page-id shape old-content new-content]
-  (dm/assert! (content? old-content))
-  (dm/assert! (content? new-content))
+
+  (dm/assert!
+   "expected valid path content"
+   (and (check-path-content! old-content)
+        (check-path-content! new-content)))
+
   (let [shape-id (:id shape)
 
         [old-points old-selrect]

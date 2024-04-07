@@ -8,11 +8,11 @@
   "Performance profiling for react components."
   (:require-macros [app.util.perf])
   (:require
-   [app.common.math :as mth]
-   [rumext.v2 :as mf]
-   [goog.functions :as f]
    ["react" :as react]
-   ["tdigest" :as td]))
+   ["tdigest" :as td]
+   [app.common.math :as mth]
+   [goog.functions :as f]
+   [rumext.v2 :as mf]))
 
 ;; For use it, just wrap the component you want to profile with
 ;; `perf/profiler` component and pass a label for debug purpose.
@@ -107,26 +107,40 @@
       children)))
 
 (defn benchmark
-  [& {:keys [f warmup iterations name]
+  [& {:keys [run-fn chk-fn iterations name gc]
       :or {iterations 10000}}]
-  (let [end-mark (str name ":end")]
+  (let [end-mark  (str name ":end")
+        blackhole (volatile! nil)]
     (println "=> benchmarking:" name)
-    (println "--> warming up:" iterations)
-    (loop [i iterations]
+    (when gc
+      (println "-> force gc: true"))
+
+    (println "--> warming up:  " (* iterations 2))
+    (when (fn? gc) (gc))
+    (loop [i (* iterations 2)]
       (when (pos? i)
-        (f)
+        (vreset! blackhole (run-fn))
         (recur (dec i))))
     (println "--> benchmarking:" iterations)
+    (when (fn? gc) (gc))
     (js/performance.mark name)
     (loop [i iterations]
       (when (pos? i)
-        (f)
+        (vreset! blackhole (run-fn))
         (recur (dec i))))
     (js/performance.measure end-mark name)
+
+    (when (fn? chk-fn)
+      (when-not (chk-fn @blackhole)
+        (println "--> EE: failed chk-fn")))
+
+
     (let [[result] (js/performance.getEntriesByName end-mark)
           duration (mth/precision (.-duration ^js result) 4)
           avg      (mth/precision (/ duration iterations) 4)]
-      (println "--> TOTAL:" (str duration "ms") "AVG:" (str avg "ms"))
+      (println "--> TOTAL:" (str duration " ms"))
+      (println "--> AVG  :" (str avg " ms"))
+      (println "")
       (js/performance.clearMarks name)
       (js/performance.clearMeasures end-mark)
       #js {:duration duration

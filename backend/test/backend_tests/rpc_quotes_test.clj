@@ -14,7 +14,7 @@
    [app.rpc.quotes :as-alias quotes]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
-   [datoteka.core :as fs]
+   [datoteka.fs :as fs]
    [mockery.core :refer [with-mocks]]))
 
 (t/use-fixtures :once th/state-init)
@@ -123,9 +123,7 @@
                       :quote 5})
 
       (check-ok! 4)
-      (check-ko! 5)
-
-      )))
+      (check-ko! 5))))
 
 (t/deftest invitations-per-team-quote
   (with-mocks [mock {:target 'app.config/get
@@ -268,7 +266,7 @@
                                            :team-id (:default-team-id profile-2)})
           data      {::th/type :create-file
                      ::rpc/profile-id (:id profile-1)
-                      :project-id (:id project-1)}
+                     :project-id (:id project-1)}
           check-ok! (fn [n]
                       (let [data (assoc data :name (str "file" n))
                             out  (th/command! data)]
@@ -339,6 +337,4 @@
                       :quote 4})
 
       (check-ok! 4)
-      (check-ko! 5)
-
-      )))
+      (check-ko! 5))))

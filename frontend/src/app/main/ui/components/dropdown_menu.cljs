@@ -11,31 +11,18 @@
    [app.util.dom :as dom]
    [app.util.globals :as globals]
    [app.util.keyboard :as kbd]
+   [app.util.object :as obj]
    [goog.events :as events]
    [goog.object :as gobj]
    [rumext.v2 :as mf])
   (:import goog.events.EventType))
 
-(mf/defc dropdown-menu-item
+(mf/defc dropdown-menu-item*
   {::mf/wrap-props false}
   [props]
-
-  (let [children    (gobj/get props "children")
-        on-click    (gobj/get props "on-click")
-        on-key-down (gobj/get props "on-key-down")
-        id          (gobj/get props "id")
-        klass       (gobj/get props "klass")
-        key         (gobj/get props "unique-key")
-        data-test   (gobj/get props "data-test")]
-    [:li {:id id
-          :class klass
-          :tab-index "0"
-          :on-key-down on-key-down
-          :on-click on-click
-          :key key
-          :role "menuitem"
-          :data-test data-test}
-     children]))
+  (let [props (-> (obj/clone props)
+                  (obj/set! "role" "menuitem"))]
+    [:> :li props]))
 
 (mf/defc dropdown-menu'
   {::mf/wrap-props false}
@@ -45,7 +32,7 @@
         ref        (gobj/get props "container")
         ids        (gobj/get props "ids")
         list-class (gobj/get props "list-class")
-        ids (filter some? ids)
+        ids        (filter some? ids)
         on-click
         (fn [event]
           (let [target (dom/get-target event)
@@ -82,7 +69,7 @@
                     actual-index (d/index-of ids actual-id)
                     previous-id (if (= 0 actual-index)
                                   (last ids)
-                                  (nth ids (- actual-index 1)))]
+                                  (get ids (- actual-index 1) (last ids)))]
                 (dom/focus! (dom/get-element previous-id))))
 
             (when (kbd/down-arrow? event)
@@ -91,25 +78,22 @@
                     actual-index (d/index-of ids actual-id)
                     next-id (if (= (- len 1) actual-index)
                               (first ids)
-                              (nth ids (+ 1 actual-index)))]
-                (dom/focus! (dom/get-element next-id))))
+                              (get ids (+ 1 actual-index) (first ids)))
+                    node-item (dom/get-element next-id)]
+                (dom/focus! node-item)))
 
             (when (kbd/tab? event)
-              (on-close))))
+              (on-close))))]
 
-        on-mount
-        (fn []
-          (let [keys [(events/listen globals/document EventType.CLICK on-click)
-                      (events/listen globals/document EventType.CONTEXTMENU on-click)
-                      (events/listen globals/document EventType.KEYUP on-keyup)
-                      (events/listen globals/document EventType.KEYDOWN on-key-down)]]
-            #(doseq [key keys]
-               (events/unlistenByKey key))))]
+    (mf/with-effect []
+      (let [keys [(events/listen globals/document EventType.CLICK on-click)
+                  (events/listen globals/document EventType.CONTEXTMENU on-click)
+                  (events/listen globals/document EventType.KEYUP on-keyup)
+                  (events/listen globals/document EventType.KEYDOWN on-key-down)]]
+        #(doseq [key keys]
+           (events/unlistenByKey key))))
 
-    (mf/use-effect on-mount)
-    [:ul {:class list-class
-          :role "menu"}
-     children]))
+    [:ul {:class list-class :role "menu"} children]))
 
 (mf/defc dropdown-menu
   {::mf/wrap-props false}
@@ -117,5 +101,10 @@
   (assert (fn? (gobj/get props "on-close")) "missing `on-close` prop")
   (assert (boolean? (gobj/get props "show")) "missing `show` prop")
 
-  (when (gobj/get props "show")
-    (mf/element dropdown-menu' props)))
+  (let [ids (obj/get props "ids")
+        ids (d/nilv ids (->> (obj/get props "children")
+                             (keep #(obj/get-in % ["props" "id"]))))]
+    (when (gobj/get props "show")
+      (mf/element
+       dropdown-menu'
+       (mf/spread-props props {:ids ids})))))

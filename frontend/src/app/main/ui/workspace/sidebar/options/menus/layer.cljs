@@ -5,13 +5,14 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.sidebar.options.menus.layer
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.changes :as dch]
    [app.main.store :as st]
-   [app.main.ui.components.numeric-input :refer [numeric-input]]
+   [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [tr]]
@@ -22,21 +23,23 @@
 
 (defn opacity->string
   [opacity]
-  (if (= opacity :multiple)
-    ""
+  (if (not= opacity :multiple)
     (dm/str (-> opacity
                 (d/coalesce 1)
-                (* 100)))))
+                (* 100)))
+    :multiple))
 
 (mf/defc layer-menu
   {::mf/wrap-props false}
   [props]
   (let [ids                (unchecked-get props "ids")
-        type               (unchecked-get props "type")
         values             (unchecked-get props "values")
 
+        hidden?            (:hidden values)
+        blocked?           (:blocked values)
+
         current-blend-mode (or (:blend-mode values) :normal)
-        current-opacity    (:opacity values)
+        current-opacity    (opacity->string (:opacity values))
 
         state*             (mf/use-state
                             {:selected-blend-mode current-blend-mode
@@ -59,9 +62,9 @@
          (mf/deps on-change)
          (fn [value]
            (swap! state* assoc
-             :selected-blend-mode value
-             :option-highlighted? false
-             :preview-complete? true)
+                  :selected-blend-mode value
+                  :option-highlighted? false
+                  :preview-complete? true)
            (st/emit! (dw/unset-preview-blend-mode ids))
            (on-change :blend-mode value)))
 
@@ -70,8 +73,8 @@
          (mf/deps on-change current-blend-mode)
          (fn [value]
            (swap! state* assoc
-             :preview-complete? false
-             :option-highlighted? true)
+                  :preview-complete? false
+                  :option-highlighted? true)
            (st/emit! (dw/set-preview-blend-mode ids value))))
 
         handle-blend-mode-leave
@@ -142,45 +145,46 @@
                      preview-complete?))
         (swap! state* assoc :selected-blend-mode current-blend-mode)))
 
-    [:div.element-set
-     [:div.element-set-title
-      [:span
-       (case type
-         :multiple (tr "workspace.options.layer-options.title.multiple")
-         :group (tr "workspace.options.layer-options.title.group")
-         (tr "workspace.options.layer-options.title"))]]
-
-     [:div.element-set-content
-      [:div.row-flex
+    [:div {:class (stl/css :element-set)}
+     [:div {:class (stl/css-case :element-set-content true
+                                 :hidden hidden?)}
+      [:div {:class (stl/css :select)}
        [:& select
-        {:class "flex-grow no-check"
-         :default-value selected-blend-mode
+        {:default-value selected-blend-mode
          :options options
          :on-change handle-change-blend-mode
          :is-open? option-highlighted?
+         :class (stl/css-case :hidden-select hidden?)
          :on-pointer-enter-option handle-blend-mode-enter
-         :on-pointer-leave-option handle-blend-mode-leave}]
+         :on-pointer-leave-option handle-blend-mode-leave}]]
+      [:div {:class (stl/css :input)
+             :title (tr "workspace.options.opacity")}
+       [:span {:class (stl/css :icon)} "%"]
+       [:> numeric-input*
+        {:value current-opacity
+         :placeholder "--"
+         :on-change handle-opacity-change
+         :min 0
+         :max 100
+         :className (stl/css :numeric-input)}]]
 
-       [:div.input-element {:title (tr "workspace.options.opacity")
-                            :class "percentail"}
-        [:> numeric-input
-         {:value (opacity->string current-opacity)
-          :placeholder (tr "settings.multiple")
-          :on-change handle-opacity-change
-          :min 0
-          :max 100}]]
 
-       [:div.element-set-actions.layer-actions
-        (cond
-          (or (= :multiple (:hidden values)) (not (:hidden values)))
-          [:div.element-set-actions-button {:on-click handle-set-hidden} i/eye]
+      [:div {:class (stl/css :actions)}
+       (cond
+         (or (= :multiple hidden?) (not hidden?))
+         [:button {:on-click handle-set-hidden
+                   :class (stl/css :hidden-btn)} i/shown]
 
-          :else
-          [:div.element-set-actions-button {:on-click handle-set-visible} i/eye-closed])
+         :else
+         [:button {:on-click handle-set-visible
+                   :class (stl/css :hidden-btn)} i/hide])
 
-        (cond
-          (or (= :multiple (:blocked values)) (not (:blocked values)))
-          [:div.element-set-actions-button {:on-click handle-set-blocked} i/unlock]
+       (cond
+         (or (= :multiple blocked?) (not blocked?))
+         [:button {:on-click handle-set-blocked
+                   :class (stl/css :lock-btn)} i/unlock]
 
-          :else
-          [:div.element-set-actions-button {:on-click handle-set-unblocked} i/lock])]]]]))
+         :else
+         [:button {:on-click handle-set-unblocked
+                   :class (stl/css-case :lock-btn true
+                                        :locked blocked?)} i/lock])]]]))

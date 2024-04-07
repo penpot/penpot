@@ -914,15 +914,15 @@ msgstr "E-mail"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-go-to"
-msgstr "Ir ao Twitter"
+msgstr "Ir ao X"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-subtitle1"
-msgstr "Precisa de ajuda com dúvidas mais técnicas? Veja o nosso Twitter."
+msgstr "Precisa de ajuda com dúvidas mais técnicas? Veja o nosso X."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-title"
-msgstr "Conta de suporte no Twitter"
+msgstr "Conta de suporte no X"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
@@ -1713,52 +1713,10 @@ msgstr[0] "Excluir arquivo"
 msgstr[1] "Excluir arquivos"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint"
-msgid_plural "modals.delete-shared-confirm.hint"
-msgstr[0] ""
-"Se você deletar, este item será movido para a biblioteca local deste "
-"arquivo. Itens não utilizados serão perdidos."
-msgstr[1] ""
-"Se você deletar, estes itens serão movidos para a biblioteca local deste "
-"arquivo. Itens não utilizados serão perdidos."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.hint-many"
-msgid_plural "modals.delete-shared-confirm.hint-many"
-msgstr[0] ""
-"Se você deletar, este item será movido para as bibliotecas locais deste "
-"arquivo. Itens não utilizados serão perdidos."
-msgstr[1] ""
-"Se você deletar, estes itens serão movidos para as bibliotecas locais deste "
-"arquivo. Itens não utilizados serão perdidos."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.message"
 msgid_plural "modals.delete-shared-confirm.message"
 msgstr[0] "Tem certeza de que deseja excluir este arquivo?"
 msgstr[1] "Tem certeza de que deseja excluir estes arquivos?"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.no-files-message"
-msgid_plural "modals.delete-shared-confirm.no-files-message"
-msgstr[0] ""
-"Nenhum item da biblioteca deste arquivo está em uso. Eles serão deletados "
-"junto com o arquivo."
-msgstr[1] ""
-"Nenhum item das bibliotecas destes arquivos estão em uso. Eles serão "
-"deletados junto com os arquivos."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message"
-msgid_plural "modals.delete-shared-confirm.scd-message"
-msgstr[0] "Alguns itens da biblioteca deste arquivo estão sendo usados aqui:"
-msgstr[1] "Alguns itens das bibliotecas deste arquivo estão sendo usados aqui:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-shared-confirm.scd-message-many"
-msgid_plural "modals.delete-shared-confirm.scd-message-many"
-msgstr[0] "Alguns itens da biblioteca deste arquivo estão sendo usados aqui:"
-msgstr[1] "Alguns itens das bibliotecas deste arquivo estão sendo usados aqui:"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.title"
@@ -1911,48 +1869,10 @@ msgstr[0] "Despublicar"
 msgstr[1] "Despublicar"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint"
-msgid_plural "modals.unpublish-shared-confirm.hint"
-msgstr[0] ""
-"Se você cancelar a publicação, os recursos serão movidos para a biblioteca "
-"desse arquivo."
-msgstr[1] ""
-"Se você cancelar as publicações, os recursos serão movidos para a "
-"biblioteca desse arquivo."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.hint-many"
-msgid_plural "modals.unpublish-shared-confirm.hint-many"
-msgstr[0] ""
-"Se você cancelar a publicação deste item, os componentes dele serão movidos "
-"para a biblioteca local deste arquivo."
-msgstr[1] ""
-"Se você cancelar a publicação destes itens, os componentes dele serão "
-"movidos para a biblioteca local destes arquivos."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "Tem certeza de que deseja cancelar a publicação desta biblioteca?"
 msgstr[1] "Tem certeza de que deseja cancelar a publicação dessas bibliotecas?"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.no-files-message"
-msgid_plural "modals.unpublish-shared-confirm.no-files-message"
-msgstr[0] "Nenhum dos itens desta biblioteca está em uso."
-msgstr[1] "Nenhum dos itens destas bibliotecas estão em uso."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message"
-msgid_plural "modals.unpublish-shared-confirm.scd-message"
-msgstr[0] "Alguns dos recursos dessa biblioteca estão em uso aqui:"
-msgstr[1] "Alguns dos recursos dessas bibliotecas estão em uso aqui:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.scd-message-many"
-msgid_plural "modals.unpublish-shared-confirm.scd-message-many"
-msgstr[0] "Alguns itens nesta biblioteca estão em uso aqui:"
-msgstr[1] "Alguns itens nestas bibliotecas estão em uso aqui:"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.title"
@@ -2082,12 +2002,6 @@ msgstr "Guia do contribuidor"
 msgid "onboarding-v2.welcome.title"
 msgstr "Bem-vindo ao Penpot!"
 
-msgid "onboarding.choice.team-up.create-later"
-msgstr "Criar uma equipe depois"
-
-msgid "onboarding.choice.team-up.create-team"
-msgstr "Nome da sua equipe"
-
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "Depois de nomear sua equipe, você poderá convidar pessoas para participar."
 
@@ -2101,12 +2015,6 @@ msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
 "Lembre-se de incluir todos. Desenvolvedores, designers, gerentes... a "
 "diversidade soma :)"
-
-msgid "onboarding.choice.team-up.invite-members-skip"
-msgstr "Crie a equipe e convide membros depois"
-
-msgid "onboarding.choice.team-up.invite-members-submit"
-msgstr "Crie uma equipe e envie convites"
 
 msgid "onboarding.choice.team-up.roles"
 msgstr "Convide com a função:"
@@ -2534,9 +2442,6 @@ msgstr "Entrar/Sair do modo de foco"
 msgid "shortcuts.toggle-fullscreen"
 msgstr "Entrar/Sair da tela cheia"
 
-msgid "shortcuts.toggle-grid"
-msgstr "Mostrar/Esconder grade"
-
 msgid "shortcuts.toggle-history"
 msgstr "Mostrar/Esconder histórico"
 
@@ -2554,15 +2459,6 @@ msgstr "Fixar proporções"
 
 msgid "shortcuts.toggle-rules"
 msgstr "Mostrar/ocultar réguas"
-
-msgid "shortcuts.toggle-scale-text"
-msgstr "Alternar escalonamento de texto"
-
-msgid "shortcuts.toggle-snap-grid"
-msgstr "Aderir a grade"
-
-msgid "shortcuts.toggle-snap-guide"
-msgstr "Aderir as réguas"
 
 msgid "shortcuts.toggle-textpalette"
 msgstr "Mostrar/Esconder paleta de tipografias"
@@ -2819,10 +2715,6 @@ msgid_plural "workspace.assets.selected-count"
 msgstr[0] "%s item selecionado"
 msgstr[1] "%s itens selecionados"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.shared"
-msgstr "Compartilhados"
-
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.typography"
 msgstr "Tipografias"
@@ -2895,10 +2787,6 @@ msgid "workspace.header.menu.disable-scale-text"
 msgstr "Desativar escalonamento de texto"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.disable-snap-grid"
-msgstr "Desativar aderência a grade"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-snap-guides"
 msgstr "Desativar aderência as réguas"
 
@@ -2914,10 +2802,6 @@ msgid "workspace.header.menu.enable-scale-text"
 msgstr "Ativar escalonamento de texto"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.enable-snap-grid"
-msgstr "Aderir a grade de pixels"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-snap-guides"
 msgstr "Aderir as réguas"
 
@@ -2927,10 +2811,6 @@ msgstr "Habilitar aderência a grade de pixels"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-artboard-names"
 msgstr "Esconder nomes das telas"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-grid"
-msgstr "Ocultar grades"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -2974,10 +2854,6 @@ msgstr "Selecionar tudo"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-artboard-names"
 msgstr "Mostrar nomes das telas"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-grid"
-msgstr "Mostrar grade"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"
@@ -3686,10 +3562,6 @@ msgid "workspace.options.layout.direction.column"
 msgstr "Coluna"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.reverse-row"
-msgstr "Linha invertida"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.direction.row"
 msgstr "Linha"
 
@@ -3768,12 +3640,12 @@ msgid "workspace.options.radius"
 msgstr "Raio"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.radius.all-corners"
-msgstr "Todos os cantos"
+msgid "workspace.options.radius-bottom-left"
+msgstr "Inferior esquerdo"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.radius.single-corners"
-msgstr "Cantos individuais"
+msgid "workspace.options.radius-bottom-right"
+msgstr "Inferior direito"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.radius-top-left"
@@ -3784,12 +3656,12 @@ msgid "workspace.options.radius-top-right"
 msgstr "Superior (a direita)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.radius-bottom-left"
-msgstr "Inferior esquerdo"
+msgid "workspace.options.radius.all-corners"
+msgstr "Todos os cantos"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
-msgid "workspace.options.radius-bottom-right"
-msgstr "Inferior direito"
+msgid "workspace.options.radius.single-corners"
+msgstr "Cantos individuais"
 
 msgid "workspace.options.recent-fonts"
 msgstr "Recente"
@@ -3952,24 +3824,8 @@ msgid "workspace.options.text-options.align-bottom"
 msgstr "Alinhar a base"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-center"
-msgstr "Alinhar ao centro (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-justify"
-msgstr "Justificar (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-left"
-msgstr "Alinhar a esquerda (%s)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-middle"
 msgstr "Alinhar no meio"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-msgid "workspace.options.text-options.text-align-right"
-msgstr "Alinhar a direita (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.align-top"
@@ -4014,6 +3870,22 @@ msgstr "Nenhum"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.strikethrough"
 msgstr "Rasurado (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-center"
+msgstr "Alinhar ao centro (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-justify"
+msgstr "Justificar (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-left"
+msgstr "Alinhar a esquerda (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+msgid "workspace.options.text-options.text-align-right"
+msgstr "Alinhar a direita (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.title"
@@ -4081,35 +3953,6 @@ msgstr "Separar pontos (%s)"
 
 msgid "workspace.path.actions.snap-nodes"
 msgstr "Aderir aos pontos (%s)"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-hint"
-msgstr ""
-"Para tentar novamente, recarregue este arquivo. Se o problema persistir, "
-"sugerimos olhar a lista e considerar excluir gráficos que não estejam "
-"funcionando."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.error-msg"
-msgstr "Alguns gráficos não puderam ser atualizados."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.progress"
-msgstr "Convertendo %s/%s"
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text1"
-msgstr ""
-"A partir de agora os gráficos da biblioteca são Componentes, o que os "
-"tornarão bem mais poderosos."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.text2"
-msgstr "Essa atualização acontecerá apenas uma vez."
-
-#: src/app/main/ui/workspace.cljs
-msgid "workspace.remove-graphics.title"
-msgstr "Atualizando %s..."
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.add-flex"

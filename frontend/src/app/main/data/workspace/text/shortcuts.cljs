@@ -7,6 +7,7 @@
 (ns app.main.data.workspace.text.shortcuts
   (:require
    [app.common.data :as d]
+   [app.common.text :as txt]
    [app.main.data.shortcuts :as ds]
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.undo :as dwu]
@@ -76,11 +77,11 @@
                                                             (or (= variant-id "remove-bold")
                                                                 (= variant-id "toggle-bold")))
                                         add-italic?      (and (not italic?)
-                                                            (or (= variant-id "add-italic")
-                                                                (= variant-id "toggle-italic")))
+                                                              (or (= variant-id "add-italic")
+                                                                  (= variant-id "toggle-italic")))
                                         remove-italic?   (and italic?
-                                                            (or (= variant-id "remove-italic")
-                                                                (= variant-id "toggle-italic")))]
+                                                              (or (= variant-id "remove-italic")
+                                                                  (= variant-id "toggle-italic")))]
                                     (cond
                                       (and add-bold? italic?) ;; it is italic, set it to bold+italic
                                       (choose-bold-italic)
@@ -116,19 +117,18 @@
     (d/merge
      (dwt/current-root-values
       {:shape shape
-       :attrs dwt/root-attrs})
+       :attrs txt/root-attrs})
      (dwt/current-paragraph-values
       {:editor-state editor-state
        :shape shape
-       :attrs dwt/paragraph-attrs})
+       :attrs txt/paragraph-attrs})
      (dwt/current-text-values
       {:editor-state editor-state
        :shape shape
-       :attrs dwt/text-attrs}))))
+       :attrs txt/text-node-attrs}))))
 
 (defn- update-attrs [shape props]
-  (let [
-        text-values    (calculate-text-values shape)
+  (let [text-values    (calculate-text-values shape)
         font-size      (d/parse-double (:font-size text-values))
         line-height    (d/parse-double (:line-height text-values))
         letter-spacing (d/parse-double (:letter-spacing text-values))
@@ -166,8 +166,7 @@
         all-underline? (every? #(= (:text-decoration %) "underline") text-values)
         all-line-through? (every? #(= (:text-decoration %) "line-through") text-values)
         all-bold? (every? #(is-bold? (:font-variant-id %)) text-values)
-        all-italic? (every? #(is-italic? (:font-variant-id %)) text-values)
-        ]
+        all-italic? (every? #(is-italic? (:font-variant-id %)) text-values)]
     (cond
       (= (:text-decoration props) "toggle-underline")
       (if all-underline?
@@ -197,9 +196,9 @@
                                (blend-props text-shapes props)
                                props)]
     (when (and (not read-only?) text-shapes)
-        (st/emit! (dwu/start-undo-transaction undo-id))
-        (run! #(update-attrs % props) text-shapes)
-        (st/emit! (dwu/commit-undo-transaction undo-id)))))
+      (st/emit! (dwu/start-undo-transaction undo-id))
+      (run! #(update-attrs % props) text-shapes)
+      (st/emit! (dwu/commit-undo-transaction undo-id)))))
 
 (def shortcuts
   {:text-align-left    {:tooltip (ds/meta (ds/alt "L"))
@@ -229,13 +228,13 @@
                    :subsections [:text-editor]
                    :fn #(update-attrs-when-no-readonly {:text-decoration "toggle-line-through"})}
 
-   :font-size-inc {:tooltip (ds/meta-shift ds/up-arrow)
-                   :command (ds/c-mod "shift+up")
+   :font-size-inc {:tooltip (ds/meta-shift ds/right-arrow)
+                   :command (ds/c-mod "shift+right")
                    :subsections [:text-editor]
                    :fn #(update-attrs-when-no-readonly {:font-size-inc true})}
 
-   :font-size-dec {:tooltip (ds/meta-shift ds/down-arrow)
-                   :command (ds/c-mod "shift+down")
+   :font-size-dec {:tooltip (ds/meta-shift ds/left-arrow)
+                   :command (ds/c-mod "shift+left")
                    :subsections [:text-editor]
                    :fn #(update-attrs-when-no-readonly {:font-size-dec true})}
 

@@ -5,84 +5,59 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.dashboard.search
+  (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.math :as mth]
    [app.main.data.dashboard :as dd]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.grid :refer [grid]]
+   [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.webapi :as wapi]
-   [beicon.core :as rx]
    [rumext.v2 :as mf]))
 
 (mf/defc search-page
   [{:keys [team search-term] :as props}]
-
-  (mf/use-effect
-   (mf/deps team)
-   (fn []
-     (when team
-       (let [tname (if (:is-default team)
-                     (tr "dashboard.your-penpot")
-                     (:name team))]
-         (dom/set-html-title (tr "title.dashboard.search" tname))))))
-
-  (mf/use-effect
-   (mf/deps search-term)
-   (fn []
-     (st/emit! (dd/search {:search-term search-term})
-               (dd/clear-selected-files))))
-
   (let [result (mf/deref refs/dashboard-search-result)
-        width            (mf/use-state nil)
-        rowref           (mf/use-ref)
-        itemsize       (if (>= @width 1030)
-                         280
-                         230)
+        [rowref limit] (hooks/use-dynamic-grid-item-width)]
 
-        ratio          (if (some? @width) (/ @width itemsize) 0)
-        nitems         (mth/floor ratio)
-        limit          (min 10 nitems)
-        limit          (max 1 limit)]
     (mf/use-effect
+     (mf/deps team)
      (fn []
-       (let [node (mf/ref-val rowref)
-             mnt? (volatile! true)
-             sub  (->> (wapi/observe-resize node)
-                       (rx/observe-on :af)
-                       (rx/subs (fn [entries]
-                                  (let [row (first entries)
-                                        row-rect (.-contentRect ^js row)
-                                        row-width (.-width ^js row-rect)]
-                                    (when @mnt?
-                                      (reset! width row-width))))))]
-         (fn []
-           (vreset! mnt? false)
-           (rx/dispose! sub)))))
+       (when team
+         (let [tname (if (:is-default team)
+                       (tr "dashboard.your-penpot")
+                       (:name team))]
+           (dom/set-html-title (tr "title.dashboard.search" tname))))))
+
+    (mf/use-effect
+     (mf/deps search-term)
+     (fn []
+       (st/emit! (dd/search {:search-term search-term})
+                 (dd/clear-selected-files))))
     [:*
-     [:header.dashboard-header
-      [:div.dashboard-title#dashboard-search-title
+     [:header {:class (stl/css :dashboard-header)}
+      [:div#dashboard-search-title {:class (stl/css :dashboard-title)}
        [:h1 (tr "dashboard.title-search")]]]
 
-     [:section.dashboard-container.search.no-bg {:ref rowref}
+     [:section {:class (stl/css :dashboard-container :search :no-bg)
+                :ref rowref}
       (cond
         (empty? search-term)
-        [:div.grid-empty-placeholder.search
-         [:div.icon i/search]
-         [:div.text (tr "dashboard.type-something")]]
+        [:div {:class (stl/css :grid-empty-placeholder :search)}
+         [:div {:class (stl/css :icon)} i/search]
+         [:div {:class (stl/css :text)} (tr "dashboard.type-something")]]
 
         (nil? result)
-        [:div.grid-empty-placeholder.search
-         [:div.icon i/search]
-         [:div.text (tr "dashboard.searching-for" search-term)]]
+        [:div {:class (stl/css :grid-empty-placeholder :search)}
+         [:div {:class (stl/css :icon)} i/search]
+         [:div {:class (stl/css :text)} (tr "dashboard.searching-for" search-term)]]
 
         (empty? result)
-        [:div.grid-empty-placeholder.search
-         [:div.icon i/search]
-         [:div.text (tr "dashboard.no-matches-for" search-term)]]
+        [:div {:class (stl/css :grid-empty-placeholder :search)}
+         [:div {:class (stl/css :icon)} i/search]
+         [:div {:class (stl/css :text)} (tr "dashboard.no-matches-for" search-term)]]
 
         :else
         [:& grid {:files result

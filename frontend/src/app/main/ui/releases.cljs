@@ -26,6 +26,7 @@
    [app.main.ui.releases.v1-7]
    [app.main.ui.releases.v1-8]
    [app.main.ui.releases.v1-9]
+   [app.main.ui.releases.v2-0]
    [app.util.object :as obj]
    [app.util.timers :as tm]
    [rumext.v2 :as mf]))
@@ -33,40 +34,41 @@
 ;;; --- RELEASE NOTES MODAL
 
 (mf/defc release-notes
-  [{:keys [version] :as props}]
-  (let [slide (mf/use-state :start)
-        klass (mf/use-state "fadeInDown")
+  {::mf/props :obj}
+  [{:keys [version]}]
+  (let [slide* (mf/use-state :start)
+        slide  (deref slide*)
+
+        klass* (mf/use-state "fadeInDown")
+        klass  (deref klass*)
 
         navigate
-        (mf/use-callback #(reset! slide %))
+        (mf/use-fn #(reset! slide* %))
 
         next
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps slide)
          (fn []
-           (if (= @slide :start)
+           (if (= slide :start)
              (navigate 0)
-             (navigate (inc @slide)))))
+             (navigate (inc slide)))))
 
         finish
-        (mf/use-callback
+        (mf/use-fn
+         (mf/deps version)
          #(st/emit! (modal/hide)
                     (du/mark-onboarding-as-viewed {:version version})))]
 
-    (mf/use-effect
-     (mf/deps)
-     (fn []
-       #(st/emit! (du/mark-onboarding-as-viewed {:version version}))))
+    (mf/with-effect []
+      #(st/emit! (du/mark-onboarding-as-viewed {:version version})))
 
-    (mf/use-layout-effect
-     (mf/deps @slide)
-     (fn []
-       (when (not= :start @slide)
-         (reset! klass "fadeIn"))
-       (let [sem (tm/schedule 300 #(reset! klass nil))]
-         (fn []
-           (reset! klass nil)
-           (tm/dispose! sem)))))
+    (mf/with-effect [slide]
+      (when (not= :start slide)
+        (reset! klass* "fadeIn"))
+      (let [sem (tm/schedule 300 #(reset! klass* nil))]
+        (fn []
+          (reset! klass* nil)
+          (tm/dispose! sem))))
 
     (rc/render-release-notes
      {:next next
@@ -89,4 +91,4 @@
 
 (defmethod rc/render-release-notes "0.0"
   [params]
-  (rc/render-release-notes (assoc params :version "1.18")))
+  (rc/render-release-notes (assoc params :version "2.0")))

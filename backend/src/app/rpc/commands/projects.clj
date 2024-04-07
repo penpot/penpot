@@ -9,6 +9,7 @@
    [app.common.data.macros :as dm]
    [app.common.spec :as us]
    [app.db :as db]
+   [app.db.sql :as-alias sql]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as webhooks]
    [app.rpc :as-alias rpc]
@@ -50,11 +51,11 @@
         is-owner (boolean (some :is-owner rows))
         is-admin (boolean (some :is-admin rows))
         can-edit (boolean (some :can-edit rows))]
-     (when (seq rows)
-       {:is-owner is-owner
-        :is-admin (or is-owner is-admin)
-        :can-edit (or is-owner is-admin can-edit)
-        :can-read true})))
+    (when (seq rows)
+      {:is-owner is-owner
+       :is-admin (or is-owner is-admin)
+       :can-edit (or is-owner is-admin can-edit)
+       :can-read true})))
 
 (def has-edit-permissions?
   (perms/make-edition-predicate-fn get-permissions))
@@ -189,8 +190,8 @@
                   {:project-id (:id project)
                    :profile-id profile-id
                    :team-id team-id
-                   :is-pinned true})
-      (assoc project :is-pinned true))))
+                   :is-pinned false})
+      (assoc project :is-pinned false))))
 
 
 ;; --- MUTATION: Toggle Project Pin
@@ -233,7 +234,7 @@
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id name] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id id)
-    (let [project (db/get-by-id conn :project id ::db/for-update? true)]
+    (let [project (db/get-by-id conn :project id ::sql/for-update true)]
       (db/update! conn :project
                   {:name name}
                   {:id id})
@@ -259,7 +260,8 @@
     (check-edition-permissions! conn profile-id id)
     (let [project (db/update! conn :project
                               {:deleted-at (dt/now)}
-                              {:id id :is-default false})]
+                              {:id id :is-default false}
+                              {::db/return-keys true})]
       (rph/with-meta (rph/wrap)
         {::audit/props {:team-id (:team-id project)
                         :name (:name project)

@@ -12,6 +12,7 @@
    [app.common.logging :as log]
    [app.common.media :as cm]
    [app.common.uuid :as uuid]
+   [app.main.data.events :as ev]
    [app.main.data.messages :as msg]
    [app.main.fonts :as fonts]
    [app.main.repo :as rp]
@@ -19,9 +20,9 @@
    [app.util.i18n :refer [tr]]
    [app.util.storage :refer [storage]]
    [app.util.webapi :as wa]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; General purpose events & IMPL
@@ -236,12 +237,19 @@
 (defn add-font
   [font]
   (ptk/reify ::add-font
-    IDeref
-    (-deref [_] (select-keys font [:font-family :font-style :font-weight]))
-
     ptk/UpdateEvent
     (update [_ state]
-      (update state :dashboard-fonts assoc (:id font) font))))
+      (update state :dashboard-fonts assoc (:id font) font))
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [team-id (:current-team-id state)]
+        (rx/of (ptk/data-event ::ev/event {::ev/name "add-font"
+                                           :team-id team-id
+                                           :font-id (:id font)
+                                           :font-family (:font-family font)
+                                           :font-style (:font-style font)
+                                           :font-weight (:font-weight font)}))))))
 
 (defn update-font
   [{:keys [id name] :as params}]
@@ -271,6 +279,10 @@
   [font-id]
   (dm/assert! (uuid? font-id))
   (ptk/reify ::delete-font
+    ev/Event
+    (-data [_]
+      {:id font-id})
+
     ptk/UpdateEvent
     (update [_ state]
       (update state :dashboard-fonts
@@ -280,8 +292,12 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [team-id (:current-team-id state)]
-        (->> (rp/cmd! :delete-font {:id font-id :team-id team-id})
-             (rx/ignore))))))
+        (rx/concat
+         (->> (rp/cmd! :delete-font {:id font-id :team-id team-id})
+              (rx/ignore))
+         (rx/of (ptk/data-event ::ev/event {::ev/name "delete-font"
+                                            :team-id team-id
+                                            :font-id font-id})))))))
 
 (defn delete-font-variant
   [id]
@@ -297,8 +313,13 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [team-id (:current-team-id state)]
-        (->> (rp/cmd! :delete-font-variant {:id id :team-id team-id})
-             (rx/ignore))))))
+        (rx/concat
+         (->> (rp/cmd! :delete-font-variant {:id id :team-id team-id})
+              (rx/ignore))
+         (rx/of (ptk/data-event ::ev/event {::ev/name "delete-font-variant"
+                                            :id id
+                                            :team-id team-id})))))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace related events
@@ -318,9 +339,12 @@
         (swap! storage assoc ::recent-fonts most-recent-fonts)))))
 
 (defn load-recent-fonts
-  []
+  [fonts]
   (ptk/reify ::load-recent-fonts
     ptk/UpdateEvent
     (update [_ state]
-      (let [saved-recent-fonts (::recent-fonts @storage)]
+      (let [fonts-map (d/index-by :id fonts)
+            saved-recent-fonts (->> (::recent-fonts @storage)
+                                    (keep #(get fonts-map (:id %)))
+                                    (into #{}))]
         (assoc-in state [:workspace-data :recent-fonts] saved-recent-fonts)))))

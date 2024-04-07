@@ -6,11 +6,14 @@
 
 (ns app.main.data.workspace.drawing.box
   (:require
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.shapes.flex-layout :as gsl]
+   [app.common.geom.shapes.flex-layout :as gslf]
+   [app.common.geom.shapes.grid-layout :as gslg]
    [app.common.math :as mth]
-   [app.common.pages.helpers :as cph]
+   [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
@@ -21,8 +24,10 @@
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.snap :as snap]
    [app.main.streams :as ms]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [app.util.array :as array]
+   [app.util.mouse :as mse]
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 (defn adjust-ratio
   [point initial]
@@ -39,91 +44,96 @@
       (> dy dx)
       (assoc :x (- (:x point) (* sx (- dy dx)))))))
 
-(defn resize-shape [{:keys [x y width height] :as shape} initial point lock?]
+(defn resize-shape [{:keys [x y width height] :as shape} initial point lock? mod?]
   (if (and (some? x) (some? y) (some? width) (some? height))
-    (let [draw-rect (gsh/make-rect initial (cond-> point lock? (adjust-ratio initial)))
-          shape-rect (gsh/make-rect x y width height)
+    (let [draw-rect  (grc/make-rect initial (cond-> point lock? (adjust-ratio initial)))
+          shape-rect (grc/make-rect x y width height)
 
-          scalev (gpt/point (/ (:width draw-rect) (:width shape-rect))
-                            (/ (:height draw-rect) (:height shape-rect)))
+          scalev     (gpt/point (/ (:width draw-rect)
+                                   (:width shape-rect))
+                                (/ (:height draw-rect)
+                                   (:height shape-rect)))
 
-          movev (gpt/to-vec (gpt/point shape-rect) (gpt/point draw-rect))]
+          movev      (gpt/to-vec (gpt/point shape-rect)
+                                 (gpt/point draw-rect))]
 
       (-> shape
           (assoc :click-draw? false)
+          (vary-meta merge {:mod? mod?})
           (gsh/transform-shape (-> (ctm/empty)
                                    (ctm/resize scalev (gpt/point x y))
                                    (ctm/move movev)))))
     shape))
 
-(defn update-drawing [state initial point lock?]
-  (update-in state [:workspace-drawing :object] resize-shape initial point lock?))
+(defn update-drawing [state initial point lock? mod?]
+  (update-in state [:workspace-drawing :object] resize-shape initial point lock? mod?))
 
 (defn move-drawing
   [{:keys [x y]}]
   (fn [state]
     (update-in state [:workspace-drawing :object] gsh/absolute-move (gpt/point x y))))
 
-(defn handle-drawing-box []
-  (ptk/reify ::handle-drawing-box
+(defn handle-drawing
+  [type]
+  (ptk/reify ::handle-drawing
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [stoper? #(or (ms/mouse-up? %) (= % :interrupt))
-            stoper  (rx/filter stoper? stream)
-            layout  (get state :workspace-layout)
-            zoom       (get-in state [:workspace-local :zoom] 1)
-            snap-pixel? (contains? layout :snap-pixel-grid)
+      (let [stopper      (mse/drag-stopper stream)
+            layout       (get state :workspace-layout)
+            zoom         (dm/get-in state [:workspace-local :zoom] 1)
 
-            snap-precision (if (>= zoom zoom-half-pixel-precision) 0.5 1)
-            initial (cond-> @ms/mouse-position snap-pixel? (gpt/round-step snap-precision))
+            snap-pixel?  (contains? layout :snap-pixel-grid)
+            snap-prec    (if (>= zoom zoom-half-pixel-precision) 0.5 1)
+            initial      (cond-> @ms/mouse-position snap-pixel? (gpt/round-step snap-prec))
 
-            page-id    (:current-page-id state)
-            objects    (wsh/lookup-page-objects state page-id)
-            focus      (:workspace-focus-selected state)
+            page-id      (:current-page-id state)
+            objects      (wsh/lookup-page-objects state page-id)
+            focus        (:workspace-focus-selected state)
 
-            fid        (ctst/top-nested-frame objects initial)
+            fid          (->> (ctst/top-nested-frame objects initial)
+                              (ctn/get-first-not-copy-parent objects) ;; We don't want to change the structure of component copies
+                              :id)
 
             flex-layout? (ctl/flex-layout? objects fid)
-            drop-index   (when flex-layout? (gsl/get-drop-index fid objects initial))
+            grid-layout? (ctl/grid-layout? objects fid)
 
-            shape   (get-in state [:workspace-drawing :object])
-            shape   (-> shape
-                        (cts/setup-shape {:x (:x initial)
-                                          :y (:y initial)
-                                          :width 0.01
-                                          :height 0.01})
-                        (cond-> (and (cph/frame-shape? shape)
-                                     (not= fid uuid/zero))
-                          (assoc :fills [] :hide-in-viewer true))
+            drop-index   (when flex-layout? (gslf/get-drop-index fid objects initial))
+            drop-cell    (when grid-layout? (gslg/get-drop-cell fid objects initial))
 
-                        (assoc :frame-id fid)
+            shape        (-> (cts/setup-shape {:type type
+                                               :x (:x initial)
+                                               :y (:y initial)
+                                               :frame-id fid
+                                               :parent-id fid
+                                               :initialized? true
+                                               :click-draw? true
+                                               :hide-in-viewer (and (= type :frame) (not= fid uuid/zero))})
+                             (cond-> (some? drop-index)
+                               (with-meta {:index drop-index}))
+                             (cond-> (some? drop-cell)
+                               (with-meta {:cell drop-cell})))]
 
-                        (cond-> (some? drop-index)
-                          (with-meta {:index drop-index}))
-
-                        (assoc :initialized? true)
-                        (assoc :click-draw? true))]
         (rx/concat
          ;; Add shape to drawing state
-         (rx/of #(assoc-in state [:workspace-drawing :object] shape))
-
+         (rx/of #(update % :workspace-drawing assoc :object shape))
          ;; Initial SNAP
-         (->>
-          (rx/concat
-           (->> (snap/closest-snap-point page-id [shape] objects layout zoom focus initial)
-                (rx/map move-drawing))
+         (->> (rx/concat
+               (->> (snap/closest-snap-point page-id [shape] objects layout zoom focus initial)
+                    (rx/map move-drawing))
 
-           (->> ms/mouse-position
-                (rx/filter #(> (gpt/distance % initial) (/ 2 zoom)))
-                (rx/with-latest vector ms/mouse-position-shift)
-                (rx/switch-map
-                 (fn [[point :as current]]
-                   (->> (snap/closest-snap-point page-id [shape] objects layout zoom focus point)
-                        (rx/map #(conj current %)))))
-                (rx/map
-                 (fn [[_ shift? point]]
-                   #(update-drawing % initial (cond-> point snap-pixel? (gpt/round-step snap-precision)) shift?)))))
-          (rx/take-until stoper))
+               (->> ms/mouse-position
+                    (rx/filter #(> (gpt/distance % initial) (/ 2 zoom)))
+                    ;; Take until before the snap calculation otherwise we could cancel the snap in the worker
+                    ;; and its a problem for fast moving drawing
+                    (rx/take-until stopper)
+                    (rx/with-latest-from ms/mouse-position-shift ms/mouse-position-mod)
+                    (rx/switch-map
+                     (fn [[point :as current]]
+                       (->> (snap/closest-snap-point page-id [shape] objects layout zoom focus point)
+                            (rx/map (partial array/conj current)))))
+                    (rx/map
+                     (fn [[_ shift? mod? point]]
+                       #(update-drawing % initial (cond-> point snap-pixel? (gpt/round-step snap-prec)) shift? mod?))))))
 
          (->> (rx/of (common/handle-finish-drawing))
               (rx/delay 100)))))))

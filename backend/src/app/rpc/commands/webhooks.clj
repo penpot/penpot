@@ -95,7 +95,8 @@
                    :mtype mtype
                    :error-code nil
                    :error-count 0}
-                  {:id id})
+                  {:id id}
+                  {::db/return-keys true})
       (decode-row)))
 
 (sv/defmethod ::create-webhook

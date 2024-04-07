@@ -7,10 +7,10 @@
 (ns app.main.ui.workspace.viewport.guides
   (:require
    [app.common.colors :as colors]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.pages.helpers :as cph]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
@@ -19,14 +19,14 @@
    [app.main.streams :as ms]
    [app.main.ui.css-cursors :as cur]
    [app.main.ui.formats :as fmt]
-   [app.main.ui.workspace.viewport.rules :as rules]
+   [app.main.ui.workspace.viewport.rulers :as rulers]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
 (def guide-width 1)
 (def guide-opacity 0.7)
 (def guide-opacity-hover 1)
-(def guide-color colors/primary)
+(def guide-color colors/new-danger)
 (def guide-pill-width 34)
 (def guide-pill-height 20)
 (def guide-pill-corner-radius 4)
@@ -129,7 +129,7 @@
 
 (defn guide-area-axis
   [pos vbox zoom frame axis]
-  (let [rules-pos (/ rules/rules-pos zoom)
+  (let [rulers-pos (/ rulers/rulers-pos zoom)
         guide-active-area (/ guide-active-area zoom)]
     (cond
       (and (some? frame) (= axis :x))
@@ -146,12 +146,12 @@
 
       (= axis :x)
       {:x (- pos (/ guide-active-area 2))
-       :y (+ (:y vbox) rules-pos)
+       :y (+ (:y vbox) rulers-pos)
        :width guide-active-area
        :height (:height vbox)}
 
       :else
-      {:x (+ (:x vbox) rules-pos)
+      {:x (+ (:x vbox) rulers-pos)
        :y (- pos (/ guide-active-area 2))
        :width (:width vbox)
        :height guide-active-area})))
@@ -198,23 +198,23 @@
 
 (defn guide-pill-axis
   [pos vbox zoom axis]
-  (let [rules-pos (/ rules/rules-pos zoom)
+  (let [rulers-pos (/ rulers/rulers-pos zoom)
         guide-pill-width (/ guide-pill-width zoom)
         guide-pill-height (/ guide-pill-height zoom)]
 
     (if (= axis :x)
       {:rect-x      (- pos (/ guide-pill-width 2))
-       :rect-y      (+ (:y vbox) rules-pos (- (/ guide-pill-width 2)) (/ 3 zoom))
+       :rect-y      (+ (:y vbox) rulers-pos (- (/ guide-pill-width 2)) (/ 3 zoom))
        :rect-width  guide-pill-width
        :rect-height guide-pill-height
        :text-x      pos
-       :text-y      (+ (:y vbox) rules-pos (- (/ 3 zoom)))}
+       :text-y      (+ (:y vbox) rulers-pos (- (/ 3 zoom)))}
 
-      {:rect-x      (+ (:x vbox) rules-pos (- (/ guide-pill-height 2)) (- (/ 4 zoom)))
+      {:rect-x      (+ (:x vbox) rulers-pos (- (/ guide-pill-height 2)) (- (/ 4 zoom)))
        :rect-y      (- pos (/ guide-pill-width 2))
        :rect-width  guide-pill-height
        :rect-height guide-pill-width
-       :text-x      (+ (:x vbox) rules-pos (- (/ 3 zoom)))
+       :text-x      (+ (:x vbox) rulers-pos (- (/ 3 zoom)))
        :text-y      pos})))
 
 (defn guide-inside-vbox?
@@ -222,7 +222,7 @@
    (partial guide-inside-vbox? zoom vbox))
 
   ([zoom {:keys [x y width height]} {:keys [axis position]}]
-   (let [rule-area-size (/ rules/rule-area-size zoom)
+   (let [rule-area-size (/ rulers/ruler-area-size zoom)
          x1 x
          x2 (+ x width)
          y1 y
@@ -250,11 +250,11 @@
   [guide frame]
 
   (if (= :x (:axis guide))
-    (and (>= (:position guide) (:x frame) )
-         (<= (:position guide) (+ (:x frame) (:width frame)) ))
+    (and (>= (:position guide) (:x frame))
+         (<= (:position guide) (+ (:x frame) (:width frame))))
 
-    (and (>= (:position guide) (:y frame) )
-         (<= (:position guide) (+ (:y frame) (:height frame)) ))))
+    (and (>= (:position guide) (:y frame))
+         (<= (:position guide) (+ (:y frame) (:height frame))))))
 
 (mf/defc guide
   {::mf/wrap [mf/memo]}
@@ -293,7 +293,7 @@
              (not (is-guide-inside-frame? (assoc guide :position pos) frame)))]
 
     (when (or (nil? frame)
-              (and (cph/root-frame? frame)
+              (and (cfh/root-frame? frame)
                    (not (ctst/rotated-frame? frame))))
       [:g.guide-area {:opacity (when frame-guide-outside? 0)}
        (when-not disabled-guides?
@@ -376,9 +376,9 @@
                     :text-anchor "middle"
                     :dominant-baseline "middle"
                     :transform (when (= axis :y) (str "rotate(-90 " text-x "," text-y ")"))
-                    :style {:font-size (/ rules/font-size zoom)
-                            :font-family rules/font-family
-                            :fill colors/black}}
+                    :style {:font-size (/ rulers/font-size zoom)
+                            :font-family rulers/font-family
+                            :fill colors/white}}
              ;; If the guide is associated to a frame we show the position relative to the frame
              (fmt/format-number (- pos (if (= axis :x) (:x frame) (:y frame))))]]))])))
 

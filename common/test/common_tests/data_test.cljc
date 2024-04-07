@@ -30,8 +30,7 @@
            (d/remove-at-index [5 1 2 3 4] 0)))
 
   (t/is (= [1 2 3 4]
-           (d/remove-at-index [1 5 2 3 4] 1)))
-  )
+           (d/remove-at-index [1 5 2 3 4] 1))))
 
 (t/deftest with-next
   (t/is (= [[0 1] [1 2] [2 3] [3 4] [4 nil]]

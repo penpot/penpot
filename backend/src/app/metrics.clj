@@ -94,7 +94,7 @@
         writer   (StringWriter.)]
     (TextFormat/write004 writer samples)
     {:headers {"content-type" TextFormat/CONTENT_TYPE_004}
-              :body (.toString writer)}))
+     :body (.toString writer)}))
 
 
 

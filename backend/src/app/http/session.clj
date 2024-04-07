@@ -15,11 +15,13 @@
    [app.db.sql :as sql]
    [app.http.session.tasks :as-alias tasks]
    [app.main :as-alias main]
+   [app.setup :as-alias setup]
    [app.tokens :as tokens]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]
+   [ring.request :as rreq]
    [yetti.request :as yrq]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -137,12 +139,12 @@
 (declare ^:private gen-token)
 
 (defn create-fn
-  [{:keys [::manager ::main/props]} profile-id]
+  [{:keys [::manager ::setup/props]} profile-id]
   (us/assert! ::manager manager)
   (us/assert! ::us/uuid profile-id)
 
   (fn [request response]
-    (let [uagent  (yrq/get-header request "user-agent")
+    (let [uagent  (rreq/get-header request "user-agent")
           params  {:profile-id profile-id
                    :user-agent uagent
                    :created-at (dt/now)}
@@ -195,7 +197,7 @@
          (neg? (compare default-renewal-max-age elapsed)))))
 
 (defn- wrap-soft-auth
-  [handler {:keys [::manager ::main/props]}]
+  [handler {:keys [::manager ::setup/props]}]
   (us/assert! ::manager manager)
   (letfn [(handle-request [request]
             (try
@@ -209,9 +211,8 @@
                 (l/trace :hint "exception on decoding malformed token" :cause cause)
                 request)))]
 
-    (fn [request respond raise]
-      (let [request (handle-request request)]
-        (handler request respond raise)))))
+    (fn [request]
+      (handler (handle-request request)))))
 
 (defn- wrap-authz
   [handler {:keys [::manager]}]
@@ -221,12 +222,15 @@
           request  (cond-> request
                      (some? session)
                      (assoc ::profile-id (:profile-id session)
-                            ::id (:id session)))]
+                            ::id (:id session)))
+          response (handler request)]
 
-      (cond-> (handler request)
-        (renew-session? session)
-        (-> (assign-auth-token-cookie session)
-            (assign-authenticated-cookie session))))))
+      (if (renew-session? session)
+        (let [session (update! manager session)]
+          (-> response
+              (assign-auth-token-cookie session)
+              (assign-authenticated-cookie session)))
+        response))))
 
 (def soft-auth
   {:name ::soft-auth
@@ -245,6 +249,7 @@
         renewal    (dt/plus created-at default-renewal-max-age)
         expires    (dt/plus created-at max-age)
         secure?    (contains? cf/flags :secure-session-cookies)
+        strict?    (contains? cf/flags :strict-session-cookies)
         cors?      (contains? cf/flags :cors)
         name       (cf/get :auth-token-cookie-name default-auth-token-cookie-name)
         comment    (str "Renewal at: " (dt/format-instant renewal :rfc1123))
@@ -253,7 +258,7 @@
                     :expires expires
                     :value token
                     :comment comment
-                    :same-site (if cors? :none :lax)
+                    :same-site (if cors? :none (if strict? :strict :lax))
                     :secure secure?}]
     (update response :cookies assoc name cookie)))
 

@@ -9,14 +9,13 @@
   (:require
    ["process" :as process]
    [app.common.data :as d]
-   [app.common.spec :as us]
+   [app.common.flags :as flags]
+   [app.common.schema :as sm]
    [app.common.version :as v]
    [cljs.core :as c]
-   [cljs.pprint]
-   [cljs.spec.alpha :as s]
    [cuerdas.core :as str]))
 
-(def defaults
+(def ^:private defaults
   {:public-uri "http://localhost:3449"
    :tenant "default"
    :host "localhost"
@@ -25,22 +24,22 @@
    :tempdir "/tmp/penpot-exporter"
    :redis-uri "redis://redis/0"})
 
-(s/def ::http-server-port ::us/integer)
-(s/def ::http-server-host ::us/string)
-(s/def ::public-uri ::us/uri)
-(s/def ::tenant ::us/string)
-(s/def ::host ::us/string)
-(s/def ::browser-pool-max ::us/integer)
-(s/def ::browser-pool-min ::us/integer)
+(def ^:private
+  schema:config
+  (sm/define
+    [:map {:title "config"}
+     [:public-uri {:optional true} ::sm/uri]
+     [:host {:optional true} :string]
+     [:tenant {:optional true} :string]
+     [:flags {:optional true} ::sm/set-of-keywords]
+     [:redis-uri {:optional true} :string]
+     [:tempdir {:optional true} :string]
+     [:browser-pool-max {:optional true} :int]
+     [:browser-pool-min {:optional true} :int]]))
 
-(s/def ::config
-  (s/keys :opt-un [::public-uri
-                   ::host
-                   ::tenant
-                   ::http-server-port
-                   ::http-server-host
-                   ::browser-pool-max
-                   ::browser-pool-min]))
+(defn- parse-flags
+  [config]
+  (flags/parse (:flags config)))
 
 (defn- read-env
   [prefix]
@@ -59,24 +58,30 @@
 
 (defn- prepare-config
   []
-  (try
-    (let [env  (read-env "penpot")
-          env  (d/without-nils env)
-          data (merge defaults env)]
-      (us/conform ::config data))
-    (catch :default cause
-      (js/console.log (us/pretty-explain (ex-data cause)))
-      (throw cause))))
+  (let [env  (read-env "penpot")
+        env  (d/without-nils env)
+        data (merge defaults env)]
+
+    (try
+      (sm/conform! schema:config data)
+      (catch :default cause
+        (if-let [explain (some->> cause ex-data ::sm/explain)]
+          (println (sm/humanize-explain explain))
+          (js/console.error cause))
+        (process/exit -1)))))
 
 (def config
-  (atom (prepare-config)))
+  (prepare-config))
 
 (def version
-  (atom (v/parse "%version%")))
+  (v/parse "%version%"))
+
+(def flags
+  (parse-flags config))
 
 (defn get
   "A configuration getter."
   ([key]
-   (c/get @config key))
+   (c/get config key))
   ([key default]
-   (c/get @config key default)))
+   (c/get config key default)))

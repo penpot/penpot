@@ -6,13 +6,15 @@
 
 (ns app.main.data.workspace.path.selection
   (:require
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
-   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.path.state :as st]
    [app.main.streams :as ms]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [app.util.mouse :as mse]
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 (defn path-pointer-enter [position]
   (ptk/reify ::path-pointer-enter
@@ -42,20 +44,27 @@
       (let [id (st/get-path-id state)]
         (update-in state [:workspace-local :edit-path id :hover-handlers] disj [index prefix])))))
 
-(defn select-node-area [shift?]
+(defn select-node-area
+  [shift?]
   (ptk/reify ::select-node-area
     ptk/UpdateEvent
     (update [_ state]
-      (let [selrect (get-in state [:workspace-local :selrect])
-            id (get-in state [:workspace-local :edition])
-            content (st/get-path state :content)
-            selected-point? #(gsh/has-point-rect? selrect %)
-            selected-points (or (get-in state [:workspace-local :edit-path id :selected-points]) #{})
-            positions (into (if shift? selected-points #{})
-                            (comp (filter #(not (= (:command %) :close-path)))
+      (let [selrect         (dm/get-in state [:workspace-local :selrect])
+            id              (dm/get-in state [:workspace-local :edition])
+            content         (st/get-path state :content)
+
+            selected-point? (if (some? selrect)
+                              (partial gsh/has-point-rect? selrect)
+                              (constantly false))
+
+            selected-points (dm/get-in state [:workspace-local :edit-path id :selected-points])
+            selected-points (or selected-points #{})
+
+            xform           (comp (filter #(not (= (:command %) :close-path)))
                                   (map (comp gpt/point :params))
                                   (filter selected-point?))
-                            content)]
+            positions       (into (if shift? selected-points #{}) xform content)]
+
         (cond-> state
           (some? id)
           (assoc-in [:workspace-local :edit-path id :selected-points] positions))))))
@@ -109,16 +118,15 @@
     (ptk/reify ::handle-area-selection
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [zoom (get-in state [:workspace-local :zoom] 1)
-              stop? (fn [event] (or (dwc/interrupt? event) (ms/mouse-up? event)))
-              stoper (->> stream (rx/filter stop?))
-              from-p @ms/mouse-position]
+        (let [zoom    (get-in state [:workspace-local :zoom] 1)
+              stopper (mse/drag-stopper stream)
+              from-p  @ms/mouse-position]
           (rx/concat
            (->> ms/mouse-position
-                (rx/take-until stoper)
-                (rx/map #(gsh/points->rect [from-p %]))
+                (rx/map #(grc/points->rect [from-p %]))
                 (rx/filter (partial valid-rect? zoom))
-                (rx/map update-area-selection))
+                (rx/map update-area-selection)
+                (rx/take-until stopper))
 
            (rx/of (select-node-area shift?)
                   (clear-area-selection))))))))

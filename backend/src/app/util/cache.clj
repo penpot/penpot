@@ -9,61 +9,71 @@
   (:refer-clojure :exclude [get])
   (:require
    [app.util.time :as dt]
-   [promesa.core :as p]
    [promesa.exec :as px])
   (:import
    com.github.benmanes.caffeine.cache.AsyncCache
-   com.github.benmanes.caffeine.cache.AsyncLoadingCache
-   com.github.benmanes.caffeine.cache.CacheLoader
+   com.github.benmanes.caffeine.cache.Cache
    com.github.benmanes.caffeine.cache.Caffeine
    com.github.benmanes.caffeine.cache.RemovalListener
+   com.github.benmanes.caffeine.cache.stats.CacheStats
    java.time.Duration
    java.util.concurrent.Executor
    java.util.function.Function))
 
 (set! *warn-on-reflection* true)
 
-(defn create-listener
+(defprotocol ICache
+  (get [_ k] [_ k load-fn] "get cache entry")
+  (invalidate! [_] [_ k] "invalidate cache"))
+
+(defprotocol ICacheStats
+  (stats [_] "get stats"))
+
+(defn- create-listener
   [f]
   (reify RemovalListener
     (onRemoval [_ key val cause]
       (when val
         (f key val cause)))))
 
-(defn create-loader
-  [f]
-  (reify CacheLoader
-    (load [_ key]
-      (f key))))
+(defn- get-stats
+  [^Cache cache]
+  (let [^CacheStats stats (.stats cache)]
+    {:hit-rate (.hitRate stats)
+     :hit-count (.hitCount stats)
+     :req-count (.requestCount stats)
+     :miss-count (.missCount stats)
+     :miss-rate  (.missRate stats)}))
 
 (defn create
-  [& {:keys [executor on-remove load-fn keepalive]}]
-  (as-> (Caffeine/newBuilder) builder
-    (if on-remove (.removalListener builder (create-listener on-remove)) builder)
-    (if executor (.executor builder ^Executor (px/resolve-executor executor)) builder)
-    (if keepalive (.expireAfterAccess builder ^Duration (dt/duration keepalive)) builder)
-    (if load-fn
-      (.buildAsync builder ^CacheLoader (create-loader load-fn))
-      (.buildAsync builder))))
+  [& {:keys [executor on-remove max-size keepalive]}]
+  (let [cache (as-> (Caffeine/newBuilder) builder
+                (if (fn? on-remove) (.removalListener builder (create-listener on-remove)) builder)
+                (if executor  (.executor builder ^Executor (px/resolve-executor executor)) builder)
+                (if keepalive (.expireAfterAccess builder ^Duration (dt/duration keepalive)) builder)
+                (if (int? max-size) (.maximumSize builder (long max-size)) builder)
+                (.recordStats builder)
+                (.buildAsync builder))
+        cache (.synchronous ^AsyncCache cache)]
+    (reify
+      ICache
+      (get [_ k]
+        (.getIfPresent ^Cache cache ^Object k))
+      (get [_ k load-fn]
+        (.get ^Cache cache
+              ^Object k
+              ^Function (reify Function
+                          (apply [_ k]
+                            (load-fn k)))))
+      (invalidate! [_]
+        (.invalidateAll ^Cache cache))
+      (invalidate! [_ k]
+        (.invalidateAll ^Cache cache ^Object k))
 
-(defn invalidate-all!
-  [^AsyncCache cache]
-  (.invalidateAll (.synchronous cache)))
-
-(defn get
-  ([cache key]
-   (assert (instance? AsyncLoadingCache cache) "should be AsyncLoadingCache instance")
-   (p/await! (.get ^AsyncLoadingCache cache ^Object key)))
-  ([cache key not-found-fn]
-   (assert (instance? AsyncCache cache) "should be AsyncCache instance")
-   (p/await! (.get ^AsyncCache cache
-                   ^Object key
-                   ^Function (reify
-                               Function
-                               (apply [_ key]
-                                 (not-found-fn key)))))))
+      ICacheStats
+      (stats [_]
+        (get-stats cache)))))
 
 (defn cache?
   [o]
-  (or (instance? AsyncCache o)
-      (instance? AsyncLoadingCache o)))
+  (satisfies? ICache o))

@@ -6,9 +6,24 @@
 
 (ns app.common.math
   "A collection of math utils."
-  (:refer-clojure :exclude [abs])
+  (:refer-clojure :exclude [abs min max])
   #?(:cljs
-     (:require [goog.math :as math])))
+     (:require-macros [app.common.math :refer [min max]]))
+  (:require
+   #?(:cljs [goog.math :as math])
+   [clojure.core :as c]))
+
+(defmacro min
+  [& params]
+  (if (:ns &env)
+    `(js/Math.min ~@params)
+    `(c/min ~@params)))
+
+(defmacro max
+  [& params]
+  (if (:ns &env)
+    `(js/Math.max ~@params)
+    `(c/max ~@params)))
 
 (def PI
   #?(:cljs (.-PI js/Math)
@@ -118,9 +133,10 @@
 (defn ceil
   "Returns the smallest integer greater than
   or equal to a given number."
+  ^double
   [v]
   #?(:cljs (js/Math.ceil v)
-     :clj (Math/ceil v)))
+     :clj (Math/ceil ^double v)))
 
 (defn precision
   [v n]
@@ -177,7 +193,7 @@
 (defn round-to-zero
   "Given a number if it's close enough to zero round to the zero to avoid precision problems"
   [num]
-  (if (almost-zero? num)
+  (if (< (abs num) 1e-4)
     0
     num))
 
@@ -198,10 +214,12 @@
 
 (defn max-abs
   [a b]
-  (max (abs a) (abs b)))
+  (max (abs a)
+       (abs b)))
 
 (defn sign
   "Get the sign (+1 / -1) for the number"
   [n]
   (if (neg? n) -1 1))
+
 

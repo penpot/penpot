@@ -1,18 +1,26 @@
 {
-  "name": "uxbox-back",
-  "version": "0.1.0",
-  "description": "The Open-Source prototyping tool",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build-emails": "./scripts/build-email-templates.sh"
-  },
+  "name": "backend",
+  "version": "1.0.0",
+  "license": "MPL-2.0",
+  "author": "Kaleidos INC",
+  "private": true,
+  "packageManager": "yarn@4.0.2",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/uxbox/uxbox.git"
+    "url": "https://github.com/penpot/penpot"
   },
-  "author": "Uxbox",
-  "license": "SEE LICENSE IN <LICENSE>",
+  "dependencies": {
+    "luxon": "^3.4.2",
+    "sax": "^1.2.4"
+  },
   "devDependencies": {
-    "mjml": "^4.6.3"
+    "nodemon": "^3.0.1",
+    "source-map-support": "^0.5.21",
+    "ws": "^8.13.0"
+  },
+  "scripts": {
+    "fmt:clj:check": "cljfmt check --parallel=false src/ test/",
+    "fmt:clj": "cljfmt fix --parallel=true src/ test/",
+    "lint:clj": "clj-kondo --parallel --lint src/"
   }
 }

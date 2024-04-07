@@ -3,7 +3,7 @@
  {penpot/common       {:local/root "../common"}
   org.clojure/clojure {:mvn/version "1.11.1"}
   binaryage/devtools  {:mvn/version "RELEASE"}
-  metosin/reitit-core {:mvn/version "0.5.18"}
+  metosin/reitit-core {:mvn/version "0.6.0"}
   funcool/beicon      {:mvn/version "2021.07.05-1"}
   }
  :aliases
@@ -15,7 +15,7 @@
 
   :dev
   {:extra-deps
-   {thheller/shadow-cljs {:mvn/version "2.20.16"}}}
+   {thheller/shadow-cljs {:mvn/version "2.27.4"}}}
 
   :shadow-cljs
   {:main-opts ["-m" "shadow.cljs.devtools.cli"]}

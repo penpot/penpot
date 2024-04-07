@@ -31,17 +31,17 @@
 
           request (volatile! nil)
           handler (#'app.http.access-token/wrap-soft-auth
-                   (fn [req & _] (vreset! request req))
+                   (fn [req] (vreset! request req))
                    system)]
 
       (with-mocks [m1 {:target 'app.http.access-token/get-token
                        :return nil}]
-        (handler {} nil nil)
+        (handler {})
         (t/is (= {} @request)))
 
       (with-mocks [m1 {:target 'app.http.access-token/get-token
                        :return (:token token)}]
-        (handler {} nil nil)
+        (handler {})
 
         (let [token-id (get @request :app.http.access-token/id)]
           (t/is (= token-id (:id token))))))))

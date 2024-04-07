@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.common :as gco]
@@ -16,11 +17,9 @@
    [app.common.geom.shapes.effects :as gse]
    [app.common.geom.shapes.strokes :as gss]
    [app.common.math :as mth]
-   [app.common.pages.helpers :as cph]
    [app.common.text :as txt]
    [app.common.types.shape.layout :as ctl]
-   #?(:cljs [cljs.core :as c]
-      :clj [clojure.core :as c])))
+   [clojure.core :as c]))
 
 ;; --- Modifiers
 
@@ -43,27 +42,27 @@
 ;;     * change-properties
 
 (defrecord Modifiers
-    [last-order ;; Last `order` attribute in the geometry list
-     geometry-parent
-     geometry-child
-     structure-parent
-     structure-child])
+           [last-order ;; Last `order` attribute in the geometry list
+            geometry-parent
+            geometry-child
+            structure-parent
+            structure-child])
 
 (defrecord GeometricOperation
-    [order ;; Need the order to keep consistent between geometry-parent and geometry-child
-     type
-     vector
-     origin
-     transform
-     transform-inverse
-     rotation
-     center])
+           [order ;; Need the order to keep consistent between geometry-parent and geometry-child
+            type
+            vector
+            origin
+            transform
+            transform-inverse
+            rotation
+            center])
 
 (defrecord StructureOperation
-    [type
-     property
-     value
-     index])
+           [type
+            property
+            value
+            index])
 
 ;; Record constructors
 
@@ -106,18 +105,17 @@
   [property value]
   (StructureOperation. :change-property property value nil))
 
-
 ;; Private aux functions
 
 (defn- move-vec?
   [vector]
-  (or (not (mth/almost-zero? (dm/get-prop vector :x)))
-      (not (mth/almost-zero? (dm/get-prop vector :y)))))
+  (or (not ^boolean (mth/almost-zero? (dm/get-prop vector :x)))
+      (not ^boolean (mth/almost-zero? (dm/get-prop vector :y)))))
 
 (defn- resize-vec?
   [vector]
-  (or (not (mth/almost-zero? (- (dm/get-prop vector :x) 1)))
-      (not (mth/almost-zero? (- (dm/get-prop vector :y) 1)))))
+  (or (not ^boolean (mth/almost-zero? (- (dm/get-prop vector :x) 1)))
+      (not ^boolean (mth/almost-zero? (- (dm/get-prop vector :y) 1)))))
 
 (defn- mergeable-move?
   [op1 op2]
@@ -128,22 +126,24 @@
 (defn- mergeable-resize?
   [op1 op2]
   (let [type-op1          (dm/get-prop op1 :type)
-        transform-op1     (or (dm/get-prop op1 :transform) (gmt/matrix))
-        transform-inv-op1 (or (dm/get-prop op1 :transform-inverse) (gmt/matrix))
+        transform-op1     (d/nilv (dm/get-prop op1 :transform) gmt/base)
+        transform-inv-op1 (d/nilv (dm/get-prop op1 :transform-inverse) gmt/base)
         origin-op1        (dm/get-prop op1 :origin)
 
         type-op2          (dm/get-prop op2 :type)
-        transform-op2     (or (dm/get-prop op2 :transform) (gmt/matrix))
-        transform-inv-op2 (or (dm/get-prop op2 :transform-inverse) (gmt/matrix))
+        transform-op2     (d/nilv (dm/get-prop op2 :transform) gmt/base)
+        transform-inv-op2 (d/nilv (dm/get-prop op2 :transform-inverse) gmt/base)
         origin-op2        (dm/get-prop op2 :origin)]
-    (and (= :resize type-op1) (= :resize type-op2)
+
+    (and (= :resize type-op1)
+         (= :resize type-op2)
 
          ;; Same origin
-         (gpt/close? origin-op1 origin-op2)
+         ^boolean (gpt/close? origin-op1 origin-op2)
 
          ;; Same transforms
-         (gmt/close? transform-op1 transform-op2)
-         (gmt/close? transform-inv-op1 transform-inv-op2))))
+         ^boolean (gmt/close? transform-op1 transform-op2)
+         ^boolean (gmt/close? transform-inv-op1 transform-inv-op2))))
 
 (defn- merge-move
   [op1 op2]
@@ -155,14 +155,15 @@
 (defn- merge-resize
   [op1 op2]
   (let [op1-vector (dm/get-prop op1 :vector)
-        op1-x (dm/get-prop op1-vector :x)
-        op1-y (dm/get-prop op1-vector :y)
+        op1-x      (dm/get-prop op1-vector :x)
+        op1-y      (dm/get-prop op1-vector :y)
 
         op2-vector (dm/get-prop op2 :vector)
-        op2-x (dm/get-prop op2-vector :x)
-        op2-y (dm/get-prop op2-vector :y)
+        op2-x      (dm/get-prop op2-vector :x)
+        op2-y      (dm/get-prop op2-vector :y)
 
-        vector (gpt/point (* op1-x op2-x) (* op1-y op2-y))]
+        vector     (gpt/point (* op1-x op2-x)
+                              (* op1-y op2-y))]
     (assoc op1 :vector vector)))
 
 (defn- maybe-add-move
@@ -198,10 +199,7 @@
   [vector]
   (let [x (dm/get-prop vector :x)
         y (dm/get-prop vector :y)]
-    (and (some? x)
-         (some? y)
-         (not (mth/nan? x))
-         (not (mth/nan? y)))))
+    (d/num? x y)))
 
 ;; Public builder API
 
@@ -245,8 +243,11 @@
    (move modifiers (gpt/point x y)))
 
   ([modifiers vector]
-   (assert (valid-vector? vector) (dm/str "Invalid move vector: " (:x vector) "," (:y vector)))
-   (let [modifiers (or modifiers (empty))
+   (dm/assert!
+    ["Invalid move vector: %1,%2" (:x vector) (:y vector)]
+    (valid-vector? vector))
+
+   (let [modifiers (or ^boolean modifiers (empty))
          order     (inc (dm/get-prop modifiers :last-order))
          modifiers (assoc modifiers :last-order order)]
      (cond-> modifiers
@@ -256,7 +257,7 @@
 (defn resize
   ([modifiers vector origin]
    (assert (valid-vector? vector) (dm/str "Invalid resize vector: " (:x vector) "," (:y vector)))
-   (let [modifiers (or modifiers (empty))
+   (let [modifiers (or ^boolean modifiers (empty))
          order     (inc (dm/get-prop modifiers :last-order))
          modifiers (assoc modifiers :last-order order)]
      (cond-> modifiers
@@ -412,7 +413,7 @@
 
 (defn rotation-modifiers
   [shape center angle]
-  (let [shape-center (gco/center-shape shape)
+  (let [shape-center (gco/shape->center shape)
         ;; Translation caused by the rotation
         move-vec
         (gpt/transform
@@ -502,7 +503,7 @@
 
         shape-transform (:transform shape)
         shape-transform-inv (:transform-inverse shape)
-        shape-center (gco/center-shape shape)
+        shape-center (gco/shape->center shape)
         {sr-width :width sr-height :height} (:selrect shape)
 
         origin (cond-> (gpt/point (:selrect shape))
@@ -594,7 +595,71 @@
 
 ;; Main transformation functions
 
+(defn transform-move!
+  "Transforms a matrix by the translation modifier"
+  [matrix modifier]
+  (-> (dm/get-prop modifier :vector)
+      (gmt/translate-matrix)
+      (gmt/multiply! matrix)))
+
+
+(defn transform-resize!
+  "Transforms a matrix by the resize modifier"
+  [matrix modifier]
+  (let [tf     (dm/get-prop modifier :transform)
+        tfi    (dm/get-prop modifier :transform-inverse)
+        vector (dm/get-prop modifier :vector)
+        origin (dm/get-prop modifier :origin)
+        origin (if ^boolean (some? tfi)
+                 (gpt/transform origin tfi)
+                 origin)]
+
+    (gmt/multiply!
+     (-> (gmt/matrix)
+         (cond-> ^boolean (some? tf)
+           (gmt/multiply! tf))
+         (gmt/translate! origin)
+         (gmt/scale! vector)
+         (gmt/translate! (gpt/negate origin))
+         (cond-> ^boolean (some? tfi)
+           (gmt/multiply! tfi)))
+     matrix)))
+
+(defn transform-rotate!
+  "Transforms a matrix by the rotation modifier"
+  [matrix modifier]
+  (let [center   (dm/get-prop modifier :center)
+        rotation (dm/get-prop modifier :rotation)]
+    (gmt/multiply!
+     (-> (gmt/matrix)
+         (gmt/translate! center)
+         (gmt/multiply! (gmt/rotate-matrix rotation))
+         (gmt/translate! (gpt/negate center)))
+     matrix)))
+
+(defn transform!
+  "Returns a matrix transformed by the modifier"
+  [matrix modifier]
+  (let [type (dm/get-prop modifier :type)]
+    (case type
+      :move (transform-move! matrix modifier)
+      :resize (transform-resize! matrix modifier)
+      :rotation (transform-rotate! matrix modifier))))
+
+(defn modifiers->transform1
+  "A multiplatform version of modifiers->transform."
+  [modifiers]
+  (reduce transform! (gmt/matrix) modifiers))
+
 (defn modifiers->transform
+  "Given a set of modifiers returns its transformation matrix"
+  [modifiers]
+  (let [modifiers (concat (dm/get-prop modifiers :geometry-parent)
+                          (dm/get-prop modifiers :geometry-child))
+        modifiers (sort-by #(dm/get-prop % :order) modifiers)]
+    (modifiers->transform1 modifiers)))
+
+(defn modifiers->transform-old
   "Given a set of modifiers returns its transformation matrix"
   [modifiers]
   (let [modifiers (->> (concat (dm/get-prop modifiers :geometry-parent)
@@ -672,27 +737,32 @@
 
           (apply-scale-content
             [shape value]
-            (cond-> shape
-              (cph/text-shape? shape)
-              (update-text-content scale-text-content value)
+            ;; Scale can only be positive
+            (let [value (mth/abs value)]
+              (cond-> shape
+                (cfh/text-shape? shape)
+                (update-text-content scale-text-content value)
 
-              :always
-              (gsc/update-corners-scale value)
+                :always
+                (gsc/update-corners-scale value)
 
-              (d/not-empty? (:strokes shape))
-              (gss/update-strokes-width value)
+                (d/not-empty? (:strokes shape))
+                (gss/update-strokes-width value)
 
-              (d/not-empty? (:shadow shape))
-              (gse/update-shadows-scale value)
+                (d/not-empty? (:shadow shape))
+                (gse/update-shadows-scale value)
 
-              (some? (:blur shape))
-              (gse/update-blur-scale value)
+                (some? (:blur shape))
+                (gse/update-blur-scale value)
 
-              (ctl/flex-layout? shape)
-              (ctl/update-flex-scale value)
+                (ctl/flex-layout? shape)
+                (ctl/update-flex-scale value)
 
-              :always
-              (ctl/update-flex-child value)))]
+                (ctl/grid-layout? shape)
+                (ctl/update-grid-scale value)
+
+                :always
+                (ctl/update-flex-child value))))]
 
     (let [remove-children
           (fn [shapes children-to-remove]
@@ -709,14 +779,19 @@
 
                 :add-children
                 (let [value (dm/get-prop operation :value)
-                      index (dm/get-prop operation :index)]
-                  (if (some? index)
-                    (update shape :shapes
-                            (fn [shapes]
-                              (if (vector? shapes)
-                                (d/insert-at-index shapes index value)
-                                (d/concat-vec shapes value))))
-                    (update shape :shapes d/concat-vec value)))
+                      index (dm/get-prop operation :index)
+
+                      shape
+                      (if (some? index)
+                        (update shape :shapes
+                                (fn [shapes]
+                                  (if (vector? shapes)
+                                    (d/insert-at-index shapes index value)
+                                    (d/concat-vec shapes value))))
+                        (update shape :shapes d/concat-vec value))]
+
+                  ;; Remove duplication
+                  (update shape :shapes #(into [] (apply d/ordered-set %))))
 
                 :remove-children
                 (let [value (dm/get-prop operation :value)]

@@ -1,0 +1,53 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.active-users,
+.active-users-opened {
+  @include buttonStyle;
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+  align-items: center;
+  margin: 0;
+  padding: 0 $s-4;
+  border-radius: $br-8;
+  .active-users-list {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    margin: 0;
+
+    .users-num {
+      @extend .user-icon;
+      background-color: var(--user-count-background-color);
+      color: var(--user-count-foreground-color);
+      z-index: $z-index-2;
+      border: $s-2 solid var(--user-count-foreground-color);
+    }
+    .session-icon {
+      @extend .user-icon;
+    }
+  }
+}
+
+.active-users-opened {
+  position: absolute;
+  right: calc(-1 * $s-2);
+  top: calc(-1 * $s-2);
+  padding: $s-8;
+  margin: calc(-1 * $s-2) calc(-1 * $s-4) 0 0;
+  background-color: var(--menu-background-color);
+  z-index: $z-index-4;
+  .active-users-list {
+    gap: $s-4;
+    .users-num,
+    .session-icon {
+      margin-left: 0;
+    }
+  }
+}

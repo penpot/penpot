@@ -6,8 +6,6 @@
 
 (ns app.main.ui.dashboard.project-menu
   (:require
-   [app.common.data.macros :as dm]
-   [app.common.schema :as sm]
    [app.main.data.dashboard :as dd]
    [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
@@ -21,19 +19,8 @@
    [app.util.router :as rt]
    [rumext.v2 :as mf]))
 
-(def schema:project-menu
-  [:map {:title "UIProjectMenu"}
-   [:project some?]
-   [:show? :boolean]
-   [:on-menu-close {:optional true} ::sm/fn]
-   [:on-error {:optional true} ::sm/fn]
-   [:top {:optional true} [:maybe :double]]
-   [:left {:optional true} [:maybe :double]]
-   [:on-import {:optional true} ::sm/fn]])
-
 (mf/defc project-menu
   [{:keys [project show? on-edit on-menu-close top left on-import] :as props}]
-  (dm/assert! (sm/valid? schema:project-menu props))
   (let [top  (or top 0)
         left (or left 0)
 
@@ -95,40 +82,40 @@
            (when (fn? on-import) (on-import))))
 
         options [(when-not (:is-default project)
-                     {:option-name    (tr "labels.rename")
-                      :id             "project-menu-rename"
-                      :option-handler on-edit
-                      :data-test      "project-rename"})
-                   (when-not (:is-default project)
-                     {:option-name    (tr "dashboard.duplicate")
-                      :id             "project-menu-duplicated"
-                      :option-handler on-duplicate
-                      :data-test      "project-duplicate"})
-                   (when-not (:is-default project)
-                     {:option-name    (tr "dashboard.pin-unpin")
-                      :id             "project-menu-pin"
-                      :option-handler toggle-pin})
+                   {:option-name    (tr "labels.rename")
+                    :id             "project-menu-rename"
+                    :option-handler on-edit
+                    :data-test      "project-rename"})
+                 (when-not (:is-default project)
+                   {:option-name    (tr "dashboard.duplicate")
+                    :id             "project-menu-duplicated"
+                    :option-handler on-duplicate
+                    :data-test      "project-duplicate"})
+                 (when-not (:is-default project)
+                   {:option-name    (tr "dashboard.pin-unpin")
+                    :id             "project-menu-pin"
+                    :option-handler toggle-pin})
 
-                   (when (and (seq teams) (not (:is-default project)))
-                     {:option-name    (tr "dashboard.move-to")
-                      :id             "project-menu-move-to"
-                      :sub-options     (for [team teams]
-                                         {:option-name    (:name team)
-                                          :id             (:name team)
-                                          :option-handler (on-move (:id team))})
-                      :data-test      "project-move-to"})
-                   (when (some? on-import)
-                     {:option-name    (tr "dashboard.import")
-                      :id             "project-menu-import"
-                      :option-handler on-import-files
-                      :data-test      "file-import"})
-                   (when-not (:is-default project)
-                     {:option-name    :separator})
-                   (when-not (:is-default project)
-                     {:option-name    (tr "labels.delete")
-                      :id             "project-menu-delete"
-                      :option-handler on-delete
-                      :data-test      "project-delete"})]]
+                 (when (and (seq teams) (not (:is-default project)))
+                   {:option-name    (tr "dashboard.move-to")
+                    :id             "project-menu-move-to"
+                    :sub-options     (for [team teams]
+                                       {:option-name    (:name team)
+                                        :id             (:name team)
+                                        :option-handler (on-move (:id team))})
+                    :data-test      "project-move-to"})
+                 (when (some? on-import)
+                   {:option-name    (tr "dashboard.import")
+                    :id             "project-menu-import"
+                    :option-handler on-import-files
+                    :data-test      "file-import"})
+                 (when-not (:is-default project)
+                   {:option-name    :separator})
+                 (when-not (:is-default project)
+                   {:option-name    (tr "labels.delete")
+                    :id             "project-menu-delete"
+                    :option-handler on-delete
+                    :data-test      "project-delete"})]]
 
     [:*
      [:& udi/import-form {:ref file-input

@@ -19,6 +19,8 @@
    [promesa.exec :as px]
    [promesa.exec.csp :as sp]))
 
+(def default-tmp-dir "/tmp/penpot")
+
 (declare ^:private remove-temp-file)
 (declare ^:private io-loop)
 
@@ -29,10 +31,11 @@
 
 (defmethod ig/prep-key ::cleaner
   [_ cfg]
-  (assoc cfg ::min-age (dt/duration "30m")))
+  (assoc cfg ::min-age (dt/duration "60m")))
 
 (defmethod ig/init-key ::cleaner
   [_ cfg]
+  (fs/create-dir default-tmp-dir)
   (px/fn->thread (partial io-loop cfg)
                  {:name "penpot/storage/tmp-cleaner" :virtual true}))
 
@@ -42,14 +45,15 @@
 
 (defn- io-loop
   [{:keys [::min-age] :as cfg}]
-  (l/info :hint "started tmp file cleaner")
+  (l/inf :hint "started tmp cleaner" :default-min-age (dt/format-duration min-age))
   (try
     (loop []
-      (when-let [path (sp/take! queue)]
-        (l/debug :hint "schedule tempfile deletion" :path path
+      (when-let [[path min-age'] (sp/take! queue)]
+        (let [min-age (or min-age' min-age)]
+          (l/dbg :hint "schedule tempfile deletion" :path path
                  :expires-at (dt/plus (dt/now) min-age))
-        (px/schedule! (inst-ms min-age) (partial remove-temp-file cfg path))
-        (recur)))
+          (px/schedule! (inst-ms min-age) (partial remove-temp-file cfg path))
+          (recur))))
     (catch InterruptedException _
       (l/trace :hint "cleaner interrupted"))
     (finally
@@ -57,11 +61,11 @@
 
 (defn- remove-temp-file
   "Permanently delete tempfile"
-  [{:keys [::wrk/executor path]}]
+  [{:keys [::wrk/executor]} path]
   (when (fs/exists? path)
     (px/run! executor
              (fn []
-               (l/debug :hint "permanently delete tempfile" :path path)
+               (l/dbg :hint "permanently delete tempfile" :path path)
                (fs/delete path)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -69,18 +73,14 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn tempfile
-  "Returns a tmpfile candidate (without creating it)"
-  [& {:keys [suffix prefix]
+  [& {:keys [suffix prefix min-age]
       :or {prefix "penpot."
            suffix ".tmp"}}]
-  (let [candidate (fs/tempfile :suffix suffix :prefix prefix)]
-    (sp/offer! queue candidate)
-    candidate))
-
-(defn create-tempfile
-  [& {:keys [suffix prefix]
-      :or {prefix "penpot."
-           suffix ".tmp"}}]
-  (let [path (fs/create-tempfile :suffix suffix :prefix prefix)]
-    (sp/offer! queue path)
+  (let [path (fs/create-tempfile
+              :perms "rw-r--r--"
+              :dir default-tmp-dir
+              :suffix suffix
+              :prefix prefix)]
+    (fs/delete-on-exit! path)
+    (sp/offer! queue [path (some-> min-age dt/duration)])
     path))

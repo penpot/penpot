@@ -311,6 +311,12 @@
                     ^String (::password cfg))
 
           (let [^MimeMessage message (create-smtp-message cfg session params)]
+            (l/dbg :hint "sendmail"
+                   :id (:id params)
+                   :to (:to params)
+                   :subject (str/trim (:subject params))
+                   :body (str/join "," (map :type (:body params))))
+
             (.sendMessage ^Transport transport
                           ^MimeMessage message
                           (.getAllRecipients message))))))

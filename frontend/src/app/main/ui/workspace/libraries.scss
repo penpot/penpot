@@ -1,0 +1,325 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+// Library modal
+.modal-overlay {
+  @extend .modal-overlay-base;
+}
+
+.modal-dialog {
+  @extend .modal-container-base;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: $s-520;
+  max-height: $s-520;
+  width: $s-712;
+  max-width: $s-712;
+}
+
+.close-btn {
+  @extend .modal-close-btn-base;
+}
+
+.close-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
+}
+
+.modal-title {
+  @include headlineMediumTypography;
+  margin-block-end: $s-16;
+  color: var(--modal-title-foreground-color);
+}
+
+// Tabs content
+.libraries-content,
+.updates-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $s-32;
+  max-height: $s-400;
+  padding-block-start: $s-16;
+}
+
+.lib-section,
+.update-section,
+.shared-section {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: $s-8;
+}
+
+.shared-section {
+  grid-template-rows: auto auto 1fr;
+}
+
+.title-spacing-lib {
+  margin: 0 0 0 calc(-1 * $s-8);
+}
+
+.section-list,
+.section-list-shared {
+  display: grid;
+  grid-auto-rows: min-content;
+  gap: $s-8;
+  max-height: $s-320;
+  overflow-y: auto;
+}
+
+.section-list-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: $s-8;
+}
+
+.item-content {
+  height: fit-content;
+}
+
+.item-publish,
+.item-unpublish {
+  @extend .button-primary;
+  @include uppercaseTitleTipography;
+  height: $s-32;
+  min-width: $s-92;
+  padding: $s-8 $s-24;
+  margin: 0;
+  border-radius: $br-8;
+}
+
+.item-unpublish {
+  @extend .button-secondary;
+}
+
+.item-button,
+.item-button-shared {
+  @extend .button-secondary;
+  height: $s-32;
+  width: $s-32;
+  margin-inline-start: $s-2;
+  margin-inline-end: $s-8;
+  padding: $s-8;
+}
+
+.detach-icon,
+.add-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
+}
+
+.section-list-shared {
+  max-height: $s-272;
+}
+
+.section-title {
+  @include headlineSmallTypography;
+  margin-block-end: $s-12;
+  color: var(--title-foreground-color);
+}
+
+.search-icon {
+  @include flexCenter;
+  width: $s-20;
+  padding: 0 0 0 $s-8;
+  svg {
+    @extend .button-icon-small;
+    stroke: var(--icon-foreground);
+  }
+}
+
+// empty state
+.section-list-empty {
+  @include bodyMediumTypography;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  justify-items: center;
+  gap: $s-8;
+  text-align: center;
+  height: fit-content;
+  margin-block: $s-16;
+  color: var(--modal-title-foreground-color);
+}
+
+.empty-state-icon {
+  @include flexCenter;
+  width: $s-48;
+  height: $s-48;
+  border-radius: $br-circle;
+  background-color: var(--pill-background-color);
+}
+
+.library-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
+  height: $s-32;
+  width: $s-32;
+}
+
+// Update library tab
+.libraries-updates-see-all {
+  @extend .link;
+  direction: rtl;
+  grid-column: span 3;
+  margin-block-start: $s-8;
+  margin-inline-start: $s-8;
+  margin: 0;
+}
+
+.updates-content {
+  grid-template-columns: 1fr;
+}
+
+.libraries-updates {
+  display: grid;
+  grid-column: span 3;
+  grid-template-columns: repeat(auto-fill, minmax($s-160, 1fr));
+  gap: $s-24;
+  margin-block-start: $s-16;
+}
+
+.libraries-updates-column {
+  display: grid;
+  gap: $s-4;
+}
+
+.libraries-updates-item {
+  @include bodyLargeTypography;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: $s-8;
+  color: var(--library-content-foreground-color);
+}
+
+.component-svg {
+  background-color: var(--color-canvas);
+  border-radius: $br-4;
+  border: $s-2 solid transparent;
+  height: $s-24;
+  width: $s-24;
+  min-height: $s-24;
+  min-width: $s-24;
+}
+
+.name-block {
+  color: var(--library-content-foreground-color);
+  width: $s-168;
+}
+
+.ellipsis {
+  padding-inline-start: calc($s-24 + #{$s-8});
+}
+
+.item-name {
+  @include bodyLargeTypography;
+  @include textEllipsis;
+  margin: 0;
+  max-width: $s-244;
+  color: var(--library-name-foreground-color);
+}
+
+.item-update {
+  @extend .button-primary;
+  @include headlineSmallTypography;
+  height: $s-32;
+  min-width: $s-92;
+  padding: $s-8 $s-24;
+  margin-inline-end: $s-2;
+  border-radius: $br-8;
+  &:disabled {
+    @extend .button-disabled;
+  }
+}
+
+.item-contents {
+  @include bodyMediumTypography;
+  color: var(--library-content-foreground-color);
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0;
+}
+
+.element-count {
+  white-space: nowrap;
+
+  &:not(:last-child)::after {
+    content: "·";
+    margin-inline: $s-4;
+  }
+}
+
+// Modal Component v2 update
+.modal-v2-info {
+  width: $s-664;
+  height: fit-content;
+  max-height: fit-content;
+}
+
+.modal-v2-title {
+  @include headlineMediumTypography;
+  color: var(--modal-title-foreground-color);
+}
+
+.info-content {
+  display: grid;
+  grid-template-rows: repeat(4, 1fr);
+  margin-top: $s-32;
+  gap: $s-24;
+}
+
+.info-block {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: $s-20;
+  grid-template:
+    "icon title"
+    "icon content";
+}
+
+.info-icon {
+  grid-area: icon;
+  width: $s-52;
+  height: $s-52;
+  margin-top: $s-8;
+  border-radius: $br-circle;
+  background: $db-quaternary;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  svg {
+    width: $s-32;
+    height: $s-32;
+    fill: var(--icon-foreground-active);
+  }
+}
+
+.info-block-title {
+  @include bodyLargeTypography;
+  grid-area: title;
+  color: var(--modal-title-foreground-color);
+}
+
+.info-block-content {
+  @include bodyMediumTypography;
+  grid-area: content;
+  color: var(--library-content-foreground-color);
+}
+
+.info-bottom {
+  display: flex;
+  justify-content: flex-end;
+  margin-block-start: $s-24;
+  margin-inline-end: $s-8;
+}
+
+.primary-button {
+  @extend .button-primary;
+  @include headlineSmallTypography;
+  padding: $s-0 $s-16;
+}

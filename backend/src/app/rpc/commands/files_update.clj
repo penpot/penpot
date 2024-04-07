@@ -6,18 +6,19 @@
 
 (ns app.rpc.commands.files-update
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
-   [app.common.files.features :as ffeat]
+   [app.common.features :as cfeat]
+   [app.common.files.changes :as cpc]
+   [app.common.files.migrations :as fmg]
+   [app.common.files.validate :as val]
    [app.common.logging :as l]
-   [app.common.pages :as cp]
-   [app.common.pages.changes :as cpc]
-   [app.common.pages.migrations :as pmg]
    [app.common.schema :as sm]
-   [app.common.schema.generators :as smg]
-   [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.features.fdata :as feat.fdata]
+   [app.http.errors :as errors]
    [app.loggers.audit :as audit]
    [app.loggers.webhooks :as webhooks]
    [app.metrics :as mtx]
@@ -25,72 +26,39 @@
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as climit]
    [app.rpc.commands.files :as files]
+   [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
    [app.util.blob :as blob]
-   [app.util.objects-map :as omap]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [clojure.spec.alpha :as s]))
-
-;; --- SPECS
-
-(s/def ::changes
-  (s/coll-of map? :kind vector?))
-
-(s/def ::hint-origin ::us/keyword)
-(s/def ::hint-events
-  (s/every ::us/keyword :kind vector?))
-
-(s/def ::change-with-metadata
-  (s/keys :req-un [::changes]
-          :opt-un [::hint-origin
-                   ::hint-events]))
-
-(s/def ::changes-with-metadata
-  (s/every ::change-with-metadata :kind vector?))
-
-(s/def ::session-id ::us/uuid)
-(s/def ::revn ::us/integer)
-(s/def ::update-file
-  (s/and
-   (s/keys :req [::rpc/profile-id]
-           :req-un [::files/id ::session-id ::revn]
-           :opt-un [::changes ::changes-with-metadata ::features])
-   (fn [o]
-     (or (contains? o :changes)
-         (contains? o :changes-with-metadata)))))
-
+   [app.worker :as-alias wrk]
+   [clojure.set :as set]
+   [promesa.exec :as px]))
 
 ;; --- SCHEMA
 
-(sm/def! ::changes
-  [:vector ::cpc/change])
-
-(sm/def! ::change-with-metadata
-  [:map {:title "ChangeWithMetadata"}
-   [:changes ::changes]
-   [:hint-origin {:optional true} :keyword]
-   [:hint-events {:optional true} [:vector :string]]])
-
-(sm/def! ::update-file-params
-  [:map {:title "UpdateFileParams"}
+(def ^:private
+  schema:update-file
+  [:map {:title "update-file"}
    [:id ::sm/uuid]
    [:session-id ::sm/uuid]
    [:revn {:min 0} :int]
-   [:features {:optional true
-               :gen/max 3
-               :gen/gen (smg/subseq files/supported-features)}
-    ::sm/set-of-strings]
-   [:changes {:optional true} ::changes]
+   [:features {:optional true} ::cfeat/features]
+   [:changes {:optional true} [:vector ::cpc/change]]
    [:changes-with-metadata {:optional true}
-    [:vector ::change-with-metadata]]])
+    [:vector [:map
+              [:changes [:vector ::cpc/change]]
+              [:hint-origin {:optional true} :keyword]
+              [:hint-events {:optional true} [:vector :string]]]]]
+   [:skip-validate {:optional true} :boolean]])
 
-(sm/def! ::update-file-result
-  [:vector {:title "UpdateFileResults"}
-   [:map {:title "UpdateFileResult"}
-    [:changes ::changes]
+(def ^:private
+  schema:update-file-result
+  [:vector {:title "update-file-result"}
+   [:map
+    [:changes [:vector ::cpc/change]]
     [:file-id ::sm/uuid]
     [:id ::sm/uuid]
     [:revn {:min 0} :int]
@@ -102,14 +70,26 @@
 ;; to all clients using it.
 
 (def ^:private library-change-types
-  #{:add-color :mod-color :del-color
-    :add-media :mod-media :del-media
-    :add-component :mod-component :del-component
-    :add-typography :mod-typography :del-typography})
+  #{:add-color
+    :mod-color
+    :del-color
+    :add-media
+    :mod-media
+    :del-media
+    :add-component
+    :mod-component
+    :del-component
+    :restore-component
+    :add-typography
+    :mod-typography
+    :del-typography})
 
 (def ^:private file-change-types
-  #{:add-obj :mod-obj :del-obj
-    :reg-objects :mov-objects})
+  #{:add-obj
+    :mod-obj
+    :del-obj
+    :reg-objects
+    :mov-objects})
 
 (defn- library-change?
   [{:keys [type] :as change}]
@@ -136,24 +116,18 @@
 
 (defn- wrap-with-pointer-map-context
   [f]
-  (fn [{:keys [::db/conn] :as cfg} {:keys [id] :as file}]
-    (binding [pmap/*tracked* (atom {})
-              pmap/*load-fn* (partial files/load-pointer conn id)
-              ffeat/*wrap-with-pointer-map-fn* pmap/wrap]
+  (fn [cfg {:keys [id] :as file}]
+    (binding [pmap/*tracked* (pmap/create-tracked)
+              pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
       (let [result (f cfg file)]
-        (files/persist-pointers! conn id)
+        (feat.fdata/persist-pointers! cfg id)
         result))))
-
-(defn- wrap-with-objects-map-context
-  [f]
-  (fn [cfg file]
-    (binding [ffeat/*wrap-with-objects-map-fn* omap/wrap]
-      (f cfg file))))
 
 (declare get-lagged-changes)
 (declare send-notifications!)
 (declare update-file)
 (declare update-file*)
+(declare update-file-data)
 (declare take-snapshot?)
 
 ;; If features are specified from params and the final feature
@@ -161,79 +135,85 @@
 ;; database.
 
 (sv/defmethod ::update-file
-  {::climit/id :update-file-by-id
-   ::climit/key-fn :id
+  {::climit/id [[:update-file/by-profile ::rpc/profile-id]
+                [:update-file/global]]
    ::webhooks/event? true
    ::webhooks/batch-timeout (dt/duration "2m")
    ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
 
-   ::sm/params ::update-file-params
-   ::sm/result ::update-file-result
-
+   ::sm/params schema:update-file
+   ::sm/result schema:update-file-result
    ::doc/module :files
    ::doc/added "1.17"}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
-  (db/with-atomic [conn pool]
-    (files/check-edition-permissions! conn profile-id id)
-    (db/xact-lock! conn id)
-    (let [cfg    (assoc cfg ::db/conn conn)
-          params (assoc params :profile-id profile-id)
-          tpoint (dt/tpoint)]
-      (-> (update-file cfg params)
-          (rph/with-defer #(let [elapsed (tpoint)]
-                             (l/trace :hint "update-file" :time (dt/format-duration elapsed))))))))
+  [cfg {:keys [::rpc/profile-id id] :as params}]
+  (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
+                    (files/check-edition-permissions! conn profile-id id)
+                    (db/xact-lock! conn id)
+
+                    (let [file     (get-file conn id)
+                          team     (teams/get-team conn
+                                                   :profile-id profile-id
+                                                   :team-id (:team-id file))
+
+                          features (-> (cfeat/get-team-enabled-features cf/flags team)
+                                       (cfeat/check-client-features! (:features params))
+                                       (cfeat/check-file-features! (:features file) (:features params)))
+
+                          params   (assoc params
+                                          :profile-id profile-id
+                                          :features features
+                                          :team team
+                                          :file file)
+
+                          tpoint   (dt/tpoint)]
+
+                      ;; When newly computed features does not match exactly with
+                      ;; the features defined on team row, we update it.
+                      (when (not= features (:features team))
+                        (let [features (db/create-array conn "text" features)]
+                          (db/update! conn :team
+                                      {:features features}
+                                      {:id (:id team)})))
+
+                      (binding [l/*context* (some-> (meta params)
+                                                    (get :app.http/request)
+                                                    (errors/request->context))]
+                        (-> (update-file cfg params)
+                            (rph/with-defer #(let [elapsed (tpoint)]
+                                               (l/trace :hint "update-file" :time (dt/format-duration elapsed))))))))))
 
 (defn update-file
-  [{:keys [::db/conn ::mtx/metrics] :as cfg} {:keys [profile-id id changes changes-with-metadata] :as params}]
-  (let [file     (get-file conn id)
-        features (->> (concat (:features file)
-                              (:features params))
-                      (into (files/get-default-features))
-                      (files/check-features-compatibility!))]
+  [{:keys [::mtx/metrics] :as cfg}
+   {:keys [file features changes changes-with-metadata] :as params}]
+  (let [features  (-> features
+                      (set/difference cfeat/frontend-only-features)
+                      (set/union (:features file)))
 
-    (files/check-edition-permissions! conn profile-id (:id file))
+        update-fn (cond-> update-file*
+                    (contains? features "fdata/pointer-map")
+                    (wrap-with-pointer-map-context))
 
-    (binding [ffeat/*current*  features
-              ffeat/*previous* (:features file)]
+        changes   (if changes-with-metadata
+                    (->> changes-with-metadata (mapcat :changes) vec)
+                    (vec changes))]
 
-      (let [update-fn (cond-> update-file*
-                        (contains? features "storage/pointer-map")
-                        (wrap-with-pointer-map-context)
+    (when (> (:revn params)
+             (:revn file))
+      (ex/raise :type :validation
+                :code :revn-conflict
+                :hint "The incoming revision number is greater that stored version."
+                :context {:incoming-revn (:revn params)
+                          :stored-revn (:revn file)}))
 
-                        (contains? features "fdata/pointer-map")
-                        (wrap-with-pointer-map-context)
+    (mtx/run! metrics {:id :update-file-changes :inc (count changes)})
 
-                        (contains? features "storage/objects-map")
-                        (wrap-with-objects-map-context)
-
-                        (contains? features "fdata/objects-map")
-                        (wrap-with-objects-map-context))
-
-            file      (assoc file :features features)
-            changes   (if changes-with-metadata
-                        (->> changes-with-metadata (mapcat :changes) vec)
-                        (vec changes))
-
-            params    (-> params
-                          (assoc :file file)
-                          (assoc :changes changes)
-                          (assoc ::created-at (dt/now)))]
-
-        (when (> (:revn params)
-                 (:revn file))
-          (ex/raise :type :validation
-                    :code :revn-conflict
-                    :hint "The incoming revision number is greater that stored version."
-                    :context {:incoming-revn (:revn params)
-                              :stored-revn (:revn file)}))
-
-        (mtx/run! metrics {:id :update-file-changes :inc (count changes)})
-
-        (when (not= features (:features file))
-          (let [features (db/create-array conn "text" features)]
-            (db/update! conn :file
-                        {:features features}
-                        {:id id})))
+    (binding [cfeat/*current*  features
+              cfeat/*previous* (:features file)]
+      (let [file   (assoc file :features features)
+            params (-> params
+                       (assoc :file file)
+                       (assoc :changes changes)
+                       (assoc ::created-at (dt/now)))]
 
         (-> (update-fn cfg params)
             (vary-meta assoc ::audit/replace-props
@@ -243,25 +223,13 @@
                         :project-id (:project-id file)
                         :team-id    (:team-id file)}))))))
 
-(defn- update-file-data
-  [file changes]
-  (-> file
-      (update :revn inc)
-      (update :data (fn [data]
-                      (-> data
-                          (blob/decode)
-                          (assoc :id (:id file))
-                          (pmg/migrate-data)
-                          (cp/process-changes changes)
-                          (blob/encode))))))
-
 (defn- update-file*
-  [{:keys [::db/conn] :as cfg} {:keys [profile-id file changes session-id ::created-at] :as params}]
-  (let [;; Process the file data in the CLIMIT context; scheduling it
-        ;; to be executed on a separated executor for avoid to do the
-        ;; CPU intensive operation on vthread.
-        file (-> (climit/configure cfg :update-file)
-                 (climit/submit! (partial update-file-data file changes)))]
+  [{:keys [::db/conn ::wrk/executor] :as cfg}
+   {:keys [profile-id file changes session-id ::created-at skip-validate] :as params}]
+  (let [;; Process the file data on separated thread for avoid to do
+        ;; the CPU intensive operation on vthread.
+        file     (px/invoke! executor (partial update-file-data cfg file changes skip-validate))
+        features (db/create-array conn "text" (:features file))]
 
     (db/insert! conn :file-change
                 {:id (uuid/next)
@@ -273,11 +241,14 @@
                  :features (db/create-array conn "text" (:features file))
                  :data (when (take-snapshot? file)
                          (:data file))
-                 :changes (blob/encode changes)})
+                 :changes (blob/encode changes)}
+                {::db/return-keys false})
 
     (db/update! conn :file
                 {:revn (:revn file)
                  :data (:data file)
+                 :version (:version file)
+                 :features features
                  :data-backend nil
                  :modified-at created-at
                  :has-media-trimmed false}
@@ -293,6 +264,89 @@
 
       ;; Retrieve and return lagged data
       (get-lagged-changes conn params))))
+
+(defn- soft-validate-file-schema!
+  [file]
+  (try
+    (val/validate-file-schema! file)
+    (catch Throwable cause
+      (l/error :hint "file schema validation error" :cause cause))))
+
+(defn- soft-validate-file!
+  [file libs]
+  (try
+    (val/validate-file! file libs)
+    (catch Throwable cause
+      (l/error :hint "file validation error"
+               :cause cause))))
+
+(defn- update-file-data
+  [{:keys [::db/conn] :as cfg} file changes skip-validate]
+  (let [file (update file :data (fn [data]
+                                  (-> data
+                                      (blob/decode)
+                                      (assoc :id (:id file)))))
+
+        ;; For avoid unnecesary overhead of creating multiple pointers
+        ;; and handly internally with objects map in their worst
+        ;; case (when probably all shapes and all pointers will be
+        ;; readed in any case), we just realize/resolve them before
+        ;; applying the migration to the file
+        file (if (fmg/need-migration? file)
+               (-> file
+                   (update :data feat.fdata/process-pointers deref)
+                   (update :data feat.fdata/process-objects (partial into {}))
+                   (fmg/migrate-file))
+               file)
+
+        ;; WARNING: this ruins performance; maybe we need to find
+        ;; some other way to do general validation
+        libs (when (and (or (contains? cf/flags :file-validation)
+                            (contains? cf/flags :soft-file-validation))
+                        (not skip-validate))
+               (->> (files/get-file-libraries conn (:id file))
+                    (into [file] (map (fn [{:keys [id]}]
+                                        (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)
+                                                  pmap/*tracked* nil]
+                                          ;; We do not resolve the objects maps here
+                                          ;; because there is a lower probability that all
+                                          ;; shapes needed to be loded into memory, so we
+                                          ;; leeave it on lazy status
+                                          (-> (files/get-file cfg id :migrate? false)
+                                              (update :data feat.fdata/process-pointers deref) ; ensure all pointers resolved
+                                              (update :data feat.fdata/process-objects (partial into {}))
+                                              (fmg/migrate-file))))))
+                    (d/index-by :id)))
+
+
+        file (-> (files/check-version! file)
+                 (update :revn inc)
+                 (update :data cpc/process-changes changes)
+                 (update :data d/without-nils))]
+
+    (when (contains? cf/flags :soft-file-validation)
+      (soft-validate-file! file libs))
+
+    (when (contains? cf/flags :soft-file-schema-validation)
+      (soft-validate-file-schema! file))
+
+    (when (and (contains? cf/flags :file-validation)
+               (not skip-validate))
+      (val/validate-file! file libs))
+
+    (when (and (contains? cf/flags :file-schema-validation)
+               (not skip-validate))
+      (val/validate-file-schema! file))
+
+    (cond-> file
+      (contains? cfeat/*current* "fdata/objects-map")
+      (feat.fdata/enable-objects-map)
+
+      (contains? cfeat/*current* "fdata/pointer-map")
+      (feat.fdata/enable-pointer-map)
+
+      :always
+      (update :data blob/encode))))
 
 (defn- take-snapshot?
   "Defines the rule when file `data` snapshot should be saved."
@@ -321,7 +375,7 @@
        (vec)))
 
 (defn- send-notifications!
-  [{:keys [::db/conn] :as cfg} {:keys [file changes session-id] :as params}]
+  [cfg {:keys [file team changes session-id] :as params}]
   (let [lchanges (filter library-change? changes)
         msgbus   (::mbus/msgbus cfg)]
 
@@ -335,14 +389,12 @@
                          :changes changes})
 
     (when (and (:is-shared file) (seq lchanges))
-      (let [team-id (or (:team-id file)
-                        (files/get-team-id conn (:project-id file)))]
-        (mbus/pub! msgbus
-                   :topic team-id
-                   :message {:type :library-change
-                             :profile-id (:profile-id params)
-                             :file-id (:id file)
-                             :session-id session-id
-                             :revn (:revn file)
-                             :modified-at (dt/now)
-                             :changes lchanges})))))
+      (mbus/pub! msgbus
+                 :topic (:id team)
+                 :message {:type :library-change
+                           :profile-id (:profile-id params)
+                           :file-id (:id file)
+                           :session-id session-id
+                           :revn (:revn file)
+                           :modified-at (dt/now)
+                           :changes lchanges}))))

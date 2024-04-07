@@ -5,9 +5,10 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.settings.password
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.spec :as us]
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as msg]
    [app.main.data.users :as udu]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
@@ -18,7 +19,7 @@
 
 (defn- on-error
   [form error]
-  (case (:code error)
+  (case (:code (ex-data error))
     :old-password-not-match
     (swap! form assoc-in [:errors :password-old]
            {:message (tr "errors.wrong-old-password")})
@@ -27,7 +28,7 @@
            {:message (tr "errors.email-as-password")})
 
     (let [msg (tr "generic.error")]
-      (st/emit! (dm/error msg)))))
+      (st/emit! (msg/error msg)))))
 
 (defn- on-success
   [form]
@@ -36,7 +37,7 @@
         msg (tr "dashboard.notifications.password-saved")]
     (dom/clean-value! password-old-node)
     (dom/focus! password-old-node)
-    (st/emit! (dm/success msg))))
+    (st/emit! (msg/success msg))))
 
 (defn- on-submit
   [form event]
@@ -76,32 +77,35 @@
                                        (fm/validate-not-empty :password-2 (tr "auth.password-not-empty"))
                                        password-equality]
                           :initial initial)]
-    [:& fm/form {:class "password-form"
+    [:& fm/form {:class (stl/css :password-form)
                  :on-submit on-submit
                  :form form}
-     [:h2 (t locale "dashboard.password-change")]
-     [:div.fields-row
+
+     [:div {:class (stl/css :fields-row)}
       [:& fm/input
        {:type "password"
         :name :password-old
         :auto-focus? true
         :label (t locale "labels.old-password")}]]
 
-     [:div.fields-row
+     [:div {:class (stl/css :fields-row)}
       [:& fm/input
        {:type "password"
         :name :password-1
+        :show-success? true
         :label (t locale "labels.new-password")}]]
 
-     [:div.fields-row
+     [:div {:class (stl/css :fields-row)}
       [:& fm/input
        {:type "password"
         :name :password-2
+        :show-success? true
         :label (t locale "labels.confirm-password")}]]
 
-     [:& fm/submit-button
-      {:label (t locale "dashboard.update-settings")
-       :data-test "submit-password"}]]))
+     [:> fm/submit-button*
+      {:label (t locale "dashboard.password-change")
+       :data-test "submit-password"
+       :class (stl/css :update-btn)}]]))
 
 ;; --- Password Page
 
@@ -110,6 +114,7 @@
   (mf/use-effect
    #(dom/set-html-title (tr "title.settings.password")))
 
-  [:section.dashboard-settings.form-container
-   [:div.form-container
+  [:section {:class (stl/css :dashboard-settings)}
+   [:div {:class (stl/css :form-container)}
+    [:h2 (t locale "dashboard.password-change")]
     [:& password-form {:locale locale}]]])

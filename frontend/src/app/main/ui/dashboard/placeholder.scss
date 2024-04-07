@@ -1,0 +1,93 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "common/refactor/common-refactor.scss" as *;
+@use "./grid.scss" as g;
+
+.grid-empty-placeholder {
+  border-radius: $br-12;
+  display: grid;
+  padding: $s-12 0;
+
+  &.loader {
+    justify-items: center;
+  }
+
+  .icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    svg {
+      width: $s-64;
+      height: $s-64;
+      stroke: $df-secondary;
+      fill: none;
+    }
+  }
+
+  &.libs {
+    background-image: url(/images/ph-left.svg), url(/images/ph-right.svg);
+    background-position:
+      15% bottom,
+      85% top;
+    background-repeat: no-repeat;
+    align-items: center;
+    border: $s-1 solid $db-quaternary;
+    border-radius: $br-4;
+    display: flex;
+    flex-direction: column;
+    height: $s-200;
+    margin: $s-16;
+    padding: $s-48;
+    justify-content: center;
+
+    .text {
+      a {
+        color: $df-primary;
+      }
+      p {
+        max-width: $s-360;
+        text-align: center;
+        font-size: $fs-16;
+      }
+    }
+  }
+
+  .create-new {
+    background-color: $db-tertiary;
+    border-radius: $br-8;
+    color: $df-primary;
+    cursor: pointer;
+    height: $s-160;
+    margin: $s-8;
+    text-transform: uppercase;
+    border: $s-2 solid transparent;
+    width: var(--th-width, #{g.$thumbnail-default-width});
+    height: var(--th-height, #{g.$thumbnail-default-height});
+
+    svg {
+      width: $s-32;
+      height: $s-32;
+      stroke: $df-secondary;
+    }
+
+    &:hover {
+      border: $s-2 solid $da-tertiary;
+      background-color: $db-quaternary;
+      color: $da-primary;
+
+      svg {
+        stroke: $da-tertiary;
+      }
+    }
+  }
+
+  .text {
+    margin-top: $s-12;
+    color: $df-secondary;
+    font-size: $fs-16;
+  }
+}

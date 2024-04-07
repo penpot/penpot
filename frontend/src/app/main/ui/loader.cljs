@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.loader
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.main.store :as st]
    [app.main.ui.icons :as i]
@@ -15,4 +16,5 @@
 (mf/defc loader
   []
   (when (mf/deref st/loader)
-    [:div.loader-content i/loader-pencil]))
+    [:div {:class (stl/css :loader-content)}
+     i/loader-pencil]))

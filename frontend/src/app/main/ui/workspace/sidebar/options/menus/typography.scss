@@ -1,0 +1,452 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.typography-entry {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  height: $s-32;
+  width: 100%;
+  border-radius: $br-8;
+  background-color: var(--assets-item-background-color);
+  color: var(--assets-item-name-foreground-color-hover);
+  &:hover,
+  &:focus-within {
+    background-color: var(--assets-item-background-color-hover);
+    color: var(--assets-item-name-foreground-color-hover);
+  }
+
+  &.selected {
+    border: $s-1 solid var(--assets-item-border-color);
+  }
+
+  .element-set-actions {
+    display: flex;
+    visibility: hidden;
+    .element-set-actions-button,
+    .menu-btn {
+      @extend .button-tertiary;
+      height: $s-32;
+      width: $s-28;
+      svg {
+        @extend .button-icon;
+      }
+      &:active {
+        background-color: transparent;
+      }
+    }
+  }
+
+  &:hover {
+    background-color: var(--assets-item-background-color-hover);
+    .element-set-actions {
+      visibility: visible;
+    }
+  }
+}
+
+.typography-selection-wrapper {
+  display: grid;
+  grid-template-columns: $s-24 auto 1fr;
+  flex: 1;
+  height: 100%;
+  width: 100%;
+  padding: 0 $s-12;
+
+  &.is-selectable {
+    cursor: pointer;
+  }
+}
+
+.typography-sample {
+  @include flexCenter;
+  min-width: $s-24;
+  height: $s-32;
+  color: var(--assets-item-name-foreground-color);
+}
+
+.typography-name,
+.typography-font {
+  @include bodySmallTypography;
+  @include textEllipsis;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-left: $s-6;
+  color: var(--assets-item-name-foreground-color);
+}
+
+.typography-font {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 0;
+  color: var(--assets-item-name-foreground-color-rest);
+}
+
+.font-name-wrapper {
+  @include bodySmallTypography;
+  display: flex;
+  align-items: center;
+  height: $s-32;
+  width: 100%;
+  border-radius: $br-8;
+  border: $s-1 solid transparent;
+  box-sizing: border-box;
+  background-color: var(--assets-item-background-color);
+  margin-bottom: $s-4;
+  padding: $s-8 $s-0 $s-8 $s-12;
+
+  .typography-sample-input {
+    @include flexCenter;
+    width: $s-24;
+    height: 100%;
+    font-size: $fs-16;
+    color: var(--assets-item-name-foreground-color-hover);
+  }
+  .adv-typography-name {
+    @include removeInputStyle;
+    font-size: $fs-12;
+    color: var(--input-foreground-color-active);
+    flex-grow: 1;
+    padding-left: $s-6;
+    margin: 0;
+  }
+  .action-btn {
+    @extend .button-tertiary;
+    @include flexCenter;
+    width: $s-28;
+    height: $s-28;
+    svg {
+      @extend .button-icon-small;
+      stroke: var(--icon-foreground);
+    }
+    &:active {
+      background-color: transparent;
+    }
+  }
+  &:focus-within {
+    border: $s-1 solid var(--input-border-color-active);
+    .adv-typography-name {
+      color: var(--input-foreground-color-active);
+    }
+  }
+  &:hover {
+    background-color: var(--assets-item-background-color-hover);
+  }
+}
+
+.advanced-options-wrapper {
+  height: 100%;
+  width: 100%;
+  background-color: var(--assets-title-background-color);
+}
+
+.typography-info-wrapper {
+  @include flexColumn;
+  margin-bottom: $s-12;
+  .typography-name-wrapper {
+    @extend .asset-element;
+    display: grid;
+    grid-template-columns: $s-24 auto 1fr $s-28;
+    flex: 1;
+    height: $s-32;
+    width: 100%;
+    padding: 0 0 0 $s-12;
+    background-color: var(--assets-item-background-color-hover);
+    margin-bottom: $s-4;
+    .typography-sample {
+      @include flexCenter;
+      min-width: $s-24;
+      font-size: $fs-16;
+      height: $s-32;
+      padding: 0;
+      color: var(--assets-item-name-foreground-color-hover);
+    }
+    .typography-name {
+      @include bodySmallTypography;
+      @include textEllipsis;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      margin-left: $s-6;
+      color: var(--assets-item-name-foreground-color-hover);
+    }
+    .typography-font {
+      @include bodySmallTypography;
+      @include textEllipsis;
+      margin-left: $s-6;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      min-width: 0;
+      color: var(--assets-item-name-foreground-color);
+    }
+    .action-btn {
+      @extend .button-tertiary;
+      width: $s-28;
+      height: $s-32;
+      svg {
+        @extend .button-icon;
+      }
+      &:active {
+        background-color: transparent;
+      }
+    }
+  }
+
+  .info-row {
+    display: grid;
+    grid-template-columns: 50% 50%;
+    height: $s-32;
+    --calcualted-width: calc(var(--width) - $s-48);
+    padding-left: $s-2;
+    .info-label {
+      @include bodySmallTypography;
+      @include textEllipsis;
+      width: calc(var(--calcualted-width) / 2);
+      padding-top: $s-8;
+      color: var(--assets-item-name-foreground-color);
+    }
+    .info-content {
+      @include bodySmallTypography;
+      @include textEllipsis;
+      padding-top: $s-8;
+      width: calc(var(--calcualted-width) / 2);
+      color: var(--assets-item-name-foreground-color-hover);
+    }
+  }
+
+  .link-btn {
+    @include uppercaseTitleTipography;
+    @extend .button-secondary;
+    width: 100%;
+    height: $s-32;
+    border-radius: $br-8;
+    &:hover {
+      background-color: var(--button-secondary-background-color-hover);
+      color: var(--button-secondary-foreground-color-hover);
+      border: $s-1 solid var(--button-secondary-border-color-hover);
+      text-decoration: none;
+      svg {
+        stroke: var(--button-secondary-foreground-color-hover);
+      }
+    }
+    &:focus {
+      background-color: var(--button-secondary-background-color-focus);
+      color: var(--button-secondary-foreground-color-focus);
+      border: $s-1 solid var(--button-secondary-border-color-focus);
+      svg {
+        stroke: var(--button-secondary-foreground-color-focus);
+      }
+    }
+  }
+}
+
+.text-options {
+  @include flexColumn;
+  &:not(.text-options-full-size) {
+    position: relative;
+  }
+  .font-option {
+    @include bodySmallTypography;
+    @extend .asset-element;
+    padding: $s-8 0 $s-8 $s-8;
+    cursor: pointer;
+    .name {
+      flex-grow: 1;
+    }
+    .icon {
+      @include flexCenter;
+      height: $s-28;
+      width: $s-28;
+      svg {
+        @extend .button-icon-small;
+        stroke: var(--icon-foreground);
+        transform: rotate(90deg);
+      }
+    }
+  }
+  .font-modifiers {
+    display: flex;
+    gap: $s-4;
+    .font-size-options {
+      @extend .asset-element;
+      @include bodySmallTypography;
+      flex-grow: 1;
+      width: $s-60;
+      margin: 0;
+      padding: 0;
+      border: $s-1 solid var(--input-border-color);
+      position: relative;
+
+      .icon {
+        @include flexCenter;
+        height: $s-28;
+        min-width: $s-28;
+        svg {
+          @extend .button-icon-small;
+          stroke: var(--icon-foreground);
+          transform: rotate(90deg);
+        }
+      }
+    }
+    .font-variant-options {
+      padding: 0;
+      flex-grow: 2;
+    }
+  }
+  .typography-variations {
+    @include flexRow;
+    .spacing-options {
+      @include flexRow;
+      .line-height,
+      .letter-spacing {
+        @extend .input-element;
+        .icon {
+          @include flexCenter;
+          width: $s-28;
+          svg {
+            @extend .button-icon-small;
+          }
+        }
+      }
+    }
+    .text-transform {
+      @extend .asset-element;
+      width: fit-content;
+      padding: 0;
+      background-color: var(--radio-btns-background-color);
+      &:hover {
+        background-color: var(--radio-btns-background-color);
+      }
+    }
+  }
+}
+
+.font-size-select {
+  @include removeInputStyle;
+  @include bodySmallTypography;
+  height: $s-32;
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: $s-8;
+  .numeric-input {
+    @extend .input-base;
+    padding: 0;
+  }
+}
+
+.font-selector {
+  @include flexCenter;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  width: 100%;
+  z-index: $z-index-4;
+}
+
+.show-recent {
+  border-radius: $br-8 $br-8 0 0;
+  background: var(--dropdown-background-color);
+  border: $s-1 solid var(--color-background-quaternary);
+  border-block-end: none;
+}
+
+.font-selector-dropdown {
+  width: 100%;
+  &:not(.font-selector-dropdown-full-size) {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    height: 100%;
+  }
+  .header {
+    display: grid;
+    row-gap: $s-2;
+    .title {
+      @include uppercaseTitleTipography;
+      color: var(--title-foreground-color);
+      margin: 0;
+      padding: $s-12;
+    }
+  }
+}
+
+.font-wrapper {
+  padding-bottom: $s-4;
+  cursor: pointer;
+}
+
+.font-item {
+  @extend .asset-element;
+  margin-bottom: $s-4;
+  border-radius: $br-8;
+  display: flex;
+  .icon {
+    @include flexCenter;
+    height: $s-28;
+    width: $s-28;
+    svg {
+      @extend .button-icon-small;
+      stroke: var(--icon-foreground);
+    }
+  }
+  &.selected {
+    color: var(--assets-item-name-foreground-color-hover);
+    .icon {
+      svg {
+        stroke: var(--assets-item-name-foreground-color-hover);
+      }
+    }
+  }
+
+  .label {
+    @include bodySmallTypography;
+    flex-grow: 1;
+  }
+}
+
+.font-selector-dropdown-full-size {
+  height: calc(100vh - 48px); // TODO: ugly hack :( Find a workaround for this.
+  display: grid;
+  grid-template-rows: auto 1fr;
+  padding: $s-2 $s-12 $s-12 $s-12;
+}
+
+.fonts-list {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 100%;
+  width: 100%;
+  height: 100%;
+  padding: $s-2;
+  border-radius: $br-8;
+  background-color: var(--dropdown-background-color);
+  overflow: hidden;
+  &:not(.fonts-list-full-size) {
+    margin-block-start: $s-2;
+  }
+}
+
+.fonts-list-full-size {
+  border-start-start-radius: 0;
+  border-start-end-radius: 0;
+  border: $s-1 solid var(--color-background-quaternary);
+
+  // TODO: this should belong to typography-entry , but atm we don't have a clear
+  // way of accessing whether we are in fullsize mode or not
+  .selected {
+    padding-inline-end: 0;
+  }
+}

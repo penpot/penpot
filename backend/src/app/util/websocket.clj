@@ -15,8 +15,9 @@
    [app.util.time :as dt]
    [promesa.exec :as px]
    [promesa.exec.csp :as sp]
-   [yetti.request :as yr]
-   [yetti.util :as yu]
+   [promesa.util :as pu]
+   [ring.request :as rreq]
+   [ring.websocket :as rws]
    [yetti.websocket :as yws])
   (:import
    java.nio.ByteBuffer))
@@ -50,7 +51,7 @@
 
 (declare start-io-loop!)
 
-(defn handler
+(defn listener
   "A WebSocket upgrade handler factory. Returns a handler that can be
   used to upgrade to websocket connection. This handler implements the
   basic custom protocol on top of websocket connection with all the
@@ -61,166 +62,158 @@
   It also accepts some options that allows you parametrize the
   protocol behavior. The options map will be used as-as for the
   initial data of the `ws` data structure"
-  [& {:keys [::on-rcv-message
-             ::on-snd-message
-             ::on-connect
-             ::input-buff-size
-             ::output-buff-size
-             ::idle-timeout]
-      :or {input-buff-size 64
-           output-buff-size 64
-           idle-timeout 60000
-           on-connect identity
-           on-snd-message identity-3
-           on-rcv-message identity-3}
-      :as options}]
+  [request & {:keys [::on-rcv-message
+                     ::on-snd-message
+                     ::on-connect
+                     ::input-buff-size
+                     ::output-buff-size
+                     ::idle-timeout]
+              :or {input-buff-size 64
+                   output-buff-size 64
+                   idle-timeout 60000
+                   on-connect identity
+                   on-snd-message identity-3
+                   on-rcv-message identity-3}
+              :as options}]
 
   (assert (fn? on-rcv-message) "'on-rcv-message' should be a function")
   (assert (fn? on-snd-message) "'on-snd-message' should be a function")
   (assert (fn? on-connect) "'on-connect' should be a function")
 
-  (fn [{:keys [::yws/channel] :as request}]
-    (let [input-ch   (sp/chan :buf input-buff-size)
-          output-ch  (sp/chan :buf output-buff-size)
-          hbeat-ch   (sp/chan :buf (sp/sliding-buffer 6))
-          close-ch   (sp/chan)
+  (let [input-ch   (sp/chan :buf input-buff-size)
+        output-ch  (sp/chan :buf output-buff-size)
+        hbeat-ch   (sp/chan :buf (sp/sliding-buffer 6))
+        close-ch   (sp/chan)
+        ip-addr    (parse-client-ip request)
+        uagent     (rreq/get-header request "user-agent")
+        id         (uuid/next)
+        state      (atom {})
+        beats      (atom #{})
+        options    (-> options
+                       (update ::handler wrap-handler)
+                       (assoc ::id id)
+                       (assoc ::state state)
+                       (assoc ::beats beats)
+                       (assoc ::created-at (dt/now))
+                       (assoc ::input-ch input-ch)
+                       (assoc ::heartbeat-ch hbeat-ch)
+                       (assoc ::output-ch output-ch)
+                       (assoc ::close-ch close-ch)
+                       (assoc ::remote-addr ip-addr)
+                       (assoc ::user-agent uagent))]
 
-          ip-addr    (parse-client-ip request)
-          uagent     (yr/get-header request "user-agent")
-          id         (uuid/next)
-          state      (atom {})
-          beats      (atom #{})
-
-          options    (-> options
-                         (update ::handler wrap-handler)
-                         (assoc ::id id)
-                         (assoc ::state state)
-                         (assoc ::beats beats)
-                         (assoc ::created-at (dt/now))
-                         (assoc ::input-ch input-ch)
-                         (assoc ::heartbeat-ch hbeat-ch)
-                         (assoc ::output-ch output-ch)
-                         (assoc ::close-ch close-ch)
+    {:on-open
+     (fn on-open [channel]
+       (l/dbg :fn "on-open" :conn-id (str id))
+       (let [options (-> options
                          (assoc ::channel channel)
-                         (assoc ::remote-addr ip-addr)
-                         (assoc ::user-agent uagent)
                          (on-connect))
+             timeout (dt/duration idle-timeout)]
 
-          on-ws-open
-          (fn [channel]
-            (l/trace :fn "on-ws-open" :conn-id id)
-            (let [timeout (dt/duration idle-timeout)
-                  name    (str "penpot/websocket/io-loop/" id)]
-              (yws/idle-timeout! channel timeout)
-              (px/fn->thread (partial start-io-loop! options)
-                             {:name name :virtual true})))
+         (yws/set-idle-timeout! channel timeout)
+         (px/submit! :vthread (partial start-io-loop! options))))
 
-          on-ws-terminate
-          (fn [_ code reason]
-            (l/trace :fn "on-ws-terminate"
-                     :conn-id id
-                     :code code
-                     :reason reason)
-            (sp/close! close-ch))
+     :on-close
+     (fn on-close [_channel code reason]
+       (l/dbg :fn "on-close"
+              :conn-id (str id)
+              :code code
+              :reason reason)
+       (sp/close! close-ch))
 
-          on-ws-error
-          (fn [_ cause]
-            (sp/close! close-ch cause))
+     :on-error
+     (fn on-error [_channel cause]
+       (sp/close! close-ch cause))
 
-          on-ws-message
-          (fn [_ message]
-            (sp/offer! input-ch message)
-            (swap! state assoc ::last-activity-at (dt/now)))
+     :on-message
+     (fn on-message [_channel message]
+       (when (string? message)
+         (sp/offer! input-ch message)
+         (swap! state assoc ::last-activity-at (dt/now))))
 
-          on-ws-pong
-          (fn [_ buffers]
-            ;; (l/trace :fn "on-ws-pong" :buffers (pr-str buffers))
-            (sp/put! hbeat-ch (yu/copy-many buffers)))]
-
-      (yws/on-close! channel (fn [_]
-                               (sp/close! close-ch)))
-
-      {:on-open on-ws-open
-       :on-error on-ws-error
-       :on-close on-ws-terminate
-       :on-text on-ws-message
-       :on-pong on-ws-pong})))
+     :on-pong
+     (fn on-pong [_channel data]
+       (sp/put! hbeat-ch data))}))
 
 (defn- handle-ping!
   [{:keys [::id ::beats ::channel] :as wsp} beat-id]
-  (l/trace :hint "ping" :beat beat-id :conn-id id)
-  (yws/ping! channel (encode-beat beat-id))
+  (l/trc :hint "send ping" :beat beat-id :conn-id (str id))
+  (rws/ping channel (encode-beat beat-id))
   (let [issued (swap! beats conj (long beat-id))]
     (not (>= (count issued) max-missed-heartbeats))))
 
 (defn- start-io-loop!
-  [{:keys [::id ::close-ch ::input-ch ::output-ch ::heartbeat-ch ::channel ::handler ::beats ::on-rcv-message ::on-snd-message] :as wsp}]
-  (px/thread
-    {:name (str "penpot/websocket/io-loop/" id)
-     :virtual true}
-    (try
-      (handler wsp {:type :open})
-      (loop [i 0]
-        (let [ping-ch (sp/timeout-chan heartbeat-interval)
-              [msg p] (sp/alts! [close-ch input-ch output-ch heartbeat-ch ping-ch])]
-          (when (yws/connected? channel)
-            (cond
-              (identical? p ping-ch)
-              (if (handle-ping! wsp i)
-                (recur (inc i))
-                (yws/close! channel 8802 "missing to many pings"))
+  [{:keys [::id ::close-ch ::input-ch ::output-ch ::heartbeat-ch
+           ::channel ::handler ::beats ::on-rcv-message ::on-snd-message]
+    :as wsp}]
+  (try
+    (handler wsp {:type :open})
+    (loop [i 0]
+      (let [ping-ch (sp/timeout-chan heartbeat-interval)
+            [msg p] (sp/alts! [close-ch input-ch output-ch heartbeat-ch ping-ch])]
+        (when (rws/open? channel)
+          (cond
+            (identical? p ping-ch)
+            (if (handle-ping! wsp i)
+              (recur (inc i))
+              (do
+                (l/trc :hint "closing" :reason "missing to many pings")
+                (rws/close channel 8802 "missing to many pings")))
 
-              (or (identical? p close-ch) (nil? msg))
-              (do :nothing)
+            (or (identical? p close-ch) (nil? msg))
+            (do :nothing)
 
-              (identical? p heartbeat-ch)
-              (let [beat (decode-beat msg)]
-                ;; (l/trace :hint "pong" :beat beat :conn-id id)
-                (swap! beats disj beat)
-                (recur i))
+            (identical? p heartbeat-ch)
+            (let [beat (decode-beat msg)]
+              (l/trc :hint "pong received" :beat beat :conn-id (str id))
+              (swap! beats disj beat)
+              (recur i))
 
-              (identical? p input-ch)
-              (let [message (t/decode-str msg)
-                    message (on-rcv-message message)
-                    {:keys [request-id] :as response} (handler wsp message)]
-                (when (map? response)
-                  (sp/put! output-ch
-                           (cond-> response
-                             (some? request-id)
-                             (assoc :request-id request-id))))
-                (recur i))
+            (identical? p input-ch)
+            (let [message (t/decode-str msg)
+                  message (on-rcv-message message)
+                  {:keys [request-id] :as response} (handler wsp message)]
+              (when (map? response)
+                (sp/put! output-ch
+                         (cond-> response
+                           (some? request-id)
+                           (assoc :request-id request-id))))
+              (recur i))
 
-              (identical? p output-ch)
-              (let [message (on-snd-message msg)
-                    message (t/encode-str message {:type :json-verbose})]
-                ;; (l/trace :hint "writing message to output" :message msg)
-                (yws/send! channel message)
-                (recur i))))))
+            (identical? p output-ch)
+            (let [message (on-snd-message msg)
+                  message (t/encode-str message {:type :json-verbose})]
+              (rws/send channel message)
+              (recur i))))))
 
-      (catch java.nio.channels.ClosedChannelException _)
-      (catch java.net.SocketException _)
-      (catch java.io.IOException _)
+    (catch InterruptedException _cause
+      (l/dbg :hint "websocket thread interrumpted" :conn-id id))
 
-      (catch InterruptedException _
-        (l/debug :hint "websocket thread interrumpted" :conn-id id))
-
-      (catch Throwable cause
-        (l/error :hint "unhandled exception on websocket thread"
+    (catch Throwable cause
+      (let [cause (pu/unwrap-exception cause)]
+        (if (or (instance? java.nio.channels.ClosedChannelException cause)
+                (instance? java.net.SocketException cause)
+                (instance? java.io.IOException cause))
+          nil
+          (l/err :hint "unhandled exception on websocket thread"
                  :conn-id id
-                 :cause cause))
-
-      (finally
+                 :cause cause))))
+    (finally
+      (try
         (handler wsp {:type :close})
 
-        (when (yws/connected? channel)
+        (when (rws/open? channel)
           ;; NOTE: we need to ignore all exceptions here because
           ;; there can be a race condition that first returns that
           ;; channel is connected but on closing, will raise that
           ;; channel is already closed.
           (ex/ignoring
-           (yws/close! channel 8899 "terminated")))
+           (rws/close channel 8899 "terminated")))
 
         (when-let [on-disconnect (::on-disconnect wsp)]
           (on-disconnect))
 
-        (l/trace :hint "websocket thread terminated" :conn-id id)))))
+        (catch Throwable cause
+          (throw cause)))
+
+      (l/trc :hint "websocket thread terminated" :conn-id id))))

@@ -18,6 +18,7 @@
    [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
+   [app.setup :as-alias setup]
    [app.tokens :as tokens]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
@@ -40,7 +41,7 @@
   {::rpc/auth false
    ::doc/added "1.15"
    ::doc/module :auth}
-  [{:keys [::main/props ::ldap/provider] :as cfg} params]
+  [{:keys [::setup/props ::ldap/provider] :as cfg} params]
   (when-not provider
     (ex/raise :type :restriction
               :code :ldap-not-initialized
@@ -78,13 +79,13 @@
                             ::audit/profile-id (:id profile)}))))))
 
 (defn- login-or-register
-  [{:keys [::db/pool] :as cfg} info]
-  (db/with-atomic [conn pool]
-    (or (some->> (:email info)
-                 (profile/get-profile-by-email conn)
-                 (profile/decode-row))
-        (->> (assoc info :is-active true :is-demo false)
-             (auth/create-profile! conn)
-             (auth/create-profile-rels! conn)
-             (profile/strip-private-attrs)))))
-
+  [cfg info]
+  (db/tx-run! cfg
+              (fn [{:keys [::db/conn] :as cfg}]
+                (or (some->> (:email info)
+                             (profile/clean-email)
+                             (profile/get-profile-by-email conn))
+                    (->> (assoc info :is-active true :is-demo false)
+                         (auth/create-profile! conn)
+                         (auth/create-profile-rels! conn)
+                         (profile/strip-private-attrs))))))

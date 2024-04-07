@@ -16,7 +16,7 @@
    [app.util.time :as dt]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
-   [datoteka.core :as fs]
+   [datoteka.fs :as fs]
    [mockery.core :refer [with-mocks]]))
 
 (t/use-fixtures :once th/state-init)
@@ -100,9 +100,7 @@
 
         (let [edata (-> out :error ex-data)]
           (t/is (= :validation (:type edata)))
-          (t/is (= :member-is-muted (:code edata)))))
-
-      )))
+          (t/is (= :member-is-muted (:code edata))))))))
 
 
 (t/deftest invitation-tokens
@@ -159,9 +157,7 @@
           (t/is (= :editor (:role claims)))
           (t/is (= (:id team) (:team-id claims)))
           (t/is (= (first (:emails data)) (:member-email claims)))
-          (t/is (= (:id profile2) (:member-id claims)))))
-
-      )))
+          (t/is (= (:id profile2) (:member-id claims))))))))
 
 
 (t/deftest accept-invitation-tokens
@@ -243,9 +239,7 @@
           (t/is (not (th/success? out)))
           (let [edata (-> out :error ex-data)]
             (t/is (= :validation (:type edata)))
-            (t/is (= :invalid-token (:code edata))))))
-
-      )))
+            (t/is (= :invalid-token (:code edata)))))))))
 
 (t/deftest create-team-invitations-with-email-verification-disabled
   (with-mocks [mock {:target 'app.email/send! :return nil}]
@@ -274,77 +268,6 @@
                                  :profile-id (:id profile2)})]
           (t/is (= 1 (count members)))
           (t/is (true? (-> members first :can-edit))))))))
-
-(t/deftest team-deletion
-  (let [profile1 (th/create-profile* 1 {:is-active true})
-        team     (th/create-team* 1 {:profile-id (:id profile1)})
-        pool     (:app.db/pool th/*system*)
-        data     {::th/type :delete-team
-                  ::rpc/profile-id (:id profile1)
-                  :team-id (:id team)}]
-
-    ;; team is not deleted because it does not meet all
-    ;; conditions to be deleted.
-    (let [result (th/run-task! :objects-gc {:min-age (dt/duration 0)})]
-      (t/is (= 0 (:processed result))))
-
-    ;; query the list of teams
-    (let [data {::th/type :get-teams
-                ::rpc/profile-id (:id profile1)}
-          out  (th/command! data)]
-      ;; (th/print-result! out)
-      (t/is (th/success? out))
-      (let [result (:result out)]
-        (t/is (= 2 (count result)))
-        (t/is (= (:id team) (get-in result [1 :id])))
-        (t/is (= (:default-team-id profile1) (get-in result [0 :id])))))
-
-    ;; Request team to be deleted
-    (let [params {::th/type :delete-team
-                  ::rpc/profile-id (:id profile1)
-                  :id (:id team)}
-          out    (th/command! params)]
-      (t/is (th/success? out)))
-
-    ;; query the list of teams after soft deletion
-    (let [data {::th/type :get-teams
-                ::rpc/profile-id (:id profile1)}
-          out  (th/command! data)]
-      ;; (th/print-result! out)
-      (t/is (th/success? out))
-      (let [result (:result out)]
-        (t/is (= 1 (count result)))
-        (t/is (= (:default-team-id profile1) (get-in result [0 :id])))))
-
-    ;; run permanent deletion (should be noop)
-    (let [result (th/run-task! :objects-gc {:min-age (dt/duration {:minutes 1})})]
-      (t/is (= 0 (:processed result))))
-
-    ;; query the list of projects after hard deletion
-    (let [data {::th/type :get-projects
-                ::rpc/profile-id (:id profile1)
-                :team-id (:id team)}
-          out  (th/command! data)]
-      ;; (th/print-result! out)
-      (t/is (not (th/success? out)))
-      (let [edata (-> out :error ex-data)]
-        (t/is (= :not-found (:type edata)))))
-
-    ;; run permanent deletion
-    (let [result (th/run-task! :objects-gc {:min-age (dt/duration 0)})]
-      (t/is (= 1 (:processed result))))
-
-    ;; query the list of projects of a after hard deletion
-    (let [data {::th/type :get-projects
-                ::rpc/profile-id (:id profile1)
-                :team-id (:id team)}
-          out  (th/command! data)]
-      ;; (th/print-result! out)
-
-      (t/is (not (th/success? out)))
-      (let [edata (-> out :error ex-data)]
-        (t/is (= :not-found (:type edata)))))
-    ))
 
 (t/deftest query-team-invitations
   (let [prof (th/create-profile* 1 {:is-active true})
@@ -425,3 +348,118 @@
       (t/is (th/success? out))
       (t/is (nil? (:result out)))
       (t/is (nil? res)))))
+
+
+(t/deftest team-deletion-1
+  (let [profile1 (th/create-profile* 1 {:is-active true})
+        team     (th/create-team* 1 {:profile-id (:id profile1)})
+        pool     (:app.db/pool th/*system*)
+        data     {::th/type :delete-team
+                  ::rpc/profile-id (:id profile1)
+                  :team-id (:id team)}]
+
+    ;; team is not deleted because it does not meet all
+    ;; conditions to be deleted.
+    (let [result (th/run-task! :objects-gc {:min-age (dt/duration 0)})]
+      (t/is (= 0 (:processed result))))
+
+    ;; query the list of teams
+    (let [data {::th/type :get-teams
+                ::rpc/profile-id (:id profile1)}
+          out  (th/command! data)]
+      ;; (th/print-result! out)
+      (t/is (th/success? out))
+      (let [result (:result out)]
+        (t/is (= 2 (count result)))
+        (t/is (= (:id team) (get-in result [1 :id])))
+        (t/is (= (:default-team-id profile1) (get-in result [0 :id])))))
+
+    ;; Request team to be deleted
+    (let [params {::th/type :delete-team
+                  ::rpc/profile-id (:id profile1)
+                  :id (:id team)}
+          out    (th/command! params)]
+      (t/is (th/success? out)))
+
+    ;; query the list of teams after soft deletion
+    (let [data {::th/type :get-teams
+                ::rpc/profile-id (:id profile1)}
+          out  (th/command! data)]
+      ;; (th/print-result! out)
+      (t/is (th/success? out))
+      (let [result (:result out)]
+        (t/is (= 1 (count result)))
+        (t/is (= (:default-team-id profile1) (get-in result [0 :id])))))
+
+    ;; run permanent deletion (should be noop)
+    (let [result (th/run-task! :objects-gc {:min-age (dt/duration {:minutes 1})})]
+      (t/is (= 0 (:processed result))))
+
+    ;; query the list of projects after hard deletion
+    (let [data {::th/type :get-projects
+                ::rpc/profile-id (:id profile1)
+                :team-id (:id team)}
+          out  (th/command! data)]
+      ;; (th/print-result! out)
+      (t/is (not (th/success? out)))
+      (let [edata (-> out :error ex-data)]
+        (t/is (= :not-found (:type edata)))))
+
+    ;; run permanent deletion
+    (let [result (th/run-task! :objects-gc {:min-age (dt/duration 0)})]
+      (t/is (= 2 (:processed result))))
+
+    ;; query the list of projects of a after hard deletion
+    (let [data {::th/type :get-projects
+                ::rpc/profile-id (:id profile1)
+                :team-id (:id team)}
+          out  (th/command! data)]
+      ;; (th/print-result! out)
+
+      (t/is (not (th/success? out)))
+      (let [edata (-> out :error ex-data)]
+        (t/is (= :not-found (:type edata)))))))
+
+
+(t/deftest team-deletion-2
+  (let [storage (-> (:app.storage/storage th/*system*)
+                    (assoc ::sto/backend :assets-fs))
+        prof    (th/create-profile* 1)
+
+        team     (th/create-team* 1 {:profile-id (:id prof)})
+
+        proj    (th/create-project* 1 {:profile-id (:id prof)
+                                       :team-id (:id team)})
+        file    (th/create-file* 1 {:profile-id (:id prof)
+                                    :project-id (:default-project-id team)
+                                    :is-shared false})
+
+        mfile   {:filename "sample.jpg"
+                 :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                 :mtype "image/jpeg"
+                 :size 312043}]
+
+
+    (let [params {::th/type :upload-file-media-object
+                  ::rpc/profile-id (:id prof)
+                  :file-id (:id file)
+                  :is-local true
+                  :name "testfile"
+                  :content mfile}
+
+          out      (th/command! params)]
+      (t/is (nil? (:error out))))
+
+    (let [params {::th/type :delete-team
+                  ::rpc/profile-id (:id prof)
+                  :id (:id team)}
+          out      (th/command! params)]
+      #_(th/print-result! out)
+      (t/is (nil? (:error out))))
+
+    (let [rows (th/db-exec! ["select * from team where id = ?" (:id team)])]
+      (t/is (= 1 (count rows)))
+      (t/is (dt/instant? (:deleted-at (first rows)))))
+
+    (let [result (th/run-task! :objects-gc {:min-age 0})]
+      (t/is (= 5 (:processed result))))))

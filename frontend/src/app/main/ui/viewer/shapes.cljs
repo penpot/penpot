@@ -7,8 +7,9 @@
 (ns app.main.ui.viewer.shapes
   "The main container for a frame in viewer mode"
   (:require
+   [app.common.data :as d]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
-   [app.common.pages.helpers :as cph]
    [app.common.types.shape.interactions :as ctsi]
    [app.main.data.viewer :as dv]
    [app.main.refs :as refs]
@@ -39,9 +40,9 @@
 (defn- find-relative-to-base-frame
   [shape objects overlays-ids base-frame]
   (cond
-    (cph/frame-shape? shape) shape
-    (or (empty? overlays-ids) (nil? shape) (cph/root? shape)) base-frame
-    :else (find-relative-to-base-frame (cph/get-parent objects (:id shape)) objects overlays-ids base-frame)))
+    (cfh/frame-shape? shape) shape
+    (or (empty? overlays-ids) (nil? shape) (cfh/root? shape)) base-frame
+    :else (find-relative-to-base-frame (cfh/get-parent objects (:id shape)) objects overlays-ids base-frame)))
 
 (defn- activate-interaction
   [interaction shape base-frame frame-offset objects overlays]
@@ -69,6 +70,7 @@
           background-overlay         (:background-overlay interaction)
           overlays-ids               (set (map :id overlays))
           relative-to-base-frame     (find-relative-to-base-frame relative-to-shape objects overlays-ids base-frame)
+          fixed-base?                (cfh/fixed? objects relative-to-id)
           [position snap-to]         (ctsi/calc-overlay-position interaction
                                                                  shape
                                                                  objects
@@ -82,7 +84,8 @@
                                    snap-to
                                    close-click-outside
                                    background-overlay
-                                   (:animation interaction)))))
+                                   (:animation interaction)
+                                   fixed-base?))))
 
     :toggle-overlay
     (let [dest-frame-id              (:destination interaction)
@@ -95,6 +98,7 @@
           relative-to-shape          (or (get objects relative-to-id) base-frame)
           overlays-ids               (set (map :id overlays))
           relative-to-base-frame     (find-relative-to-base-frame relative-to-shape objects overlays-ids base-frame)
+          fixed-base?                (cfh/fixed? objects (:id base-frame))
           [position snap-to]         (ctsi/calc-overlay-position interaction
                                                                  shape
                                                                  objects
@@ -111,7 +115,8 @@
                                      snap-to
                                      close-click-outside
                                      background-overlay
-                                     (:animation interaction)))))
+                                     (:animation interaction)
+                                     fixed-base?))))
 
     :close-overlay
     (let [dest-frame-id (or (:destination interaction)
@@ -147,10 +152,11 @@
                                        (if (= (:type shape) :frame) ;; manual interactions are always from "self"
                                          (:frame-id shape)
                                          (:id shape))
-                                        (:position-relative-to interaction))
+                                       (:position-relative-to interaction))
           relative-to-shape          (or (get objects relative-to-id) base-frame)
           overlays-ids               (set (map :id overlays))
           relative-to-base-frame     (find-relative-to-base-frame relative-to-shape objects overlays-ids base-frame)
+          fixed-base?                (cfh/fixed? objects (:id base-frame))
           [position snap-to]         (ctsi/calc-overlay-position interaction
                                                                  shape
                                                                  objects
@@ -167,7 +173,8 @@
                                      snap-to
                                      close-click-outside
                                      background-overlay
-                                     (:animation interaction)))))
+                                     (:animation interaction)
+                                     fixed-base?))))
 
 
     :close-overlay
@@ -183,6 +190,7 @@
           background-overlay         (:background-overlay interaction)
           overlays-ids               (set (map :id overlays))
           relative-to-base-frame     (find-relative-to-base-frame relative-to-shape objects overlays-ids base-frame)
+          fixed-base?                (cfh/fixed? objects (:id base-frame))
           [position snap-to]         (ctsi/calc-overlay-position interaction
                                                                  shape
                                                                  objects
@@ -196,7 +204,8 @@
                                    snap-to
                                    close-click-outside
                                    background-overlay
-                                   (:animation interaction)))))
+                                   (:animation interaction)
+                                   fixed-base?))))
     nil))
 
 (defn- on-pointer-down
@@ -256,20 +265,17 @@
 
 (mf/defc interaction
   [{:keys [shape interactions interactions-show?]}]
-  (let [{:keys [x y width height]} (:selrect shape)
-        frame? (= :frame (:type shape))]
+  (let [{:keys [x y width height]} (:selrect shape)]
     (when-not (empty? interactions)
       [:rect {:x (- x 1)
               :y (- y 1)
               :width (+ width 2)
               :height (+ height 2)
-              :fill "var(--color-primary)"
-              :stroke "var(--color-primary)"
+              :fill "var(--color-accent-tertiary)"
+              :stroke "var(--color-accent-tertiary)"
               :stroke-width (if interactions-show? 1 0)
               :fill-opacity (if interactions-show? 0.2 0)
-              :style {:pointer-events (when frame? "none")}
               :transform (gsh/transform-str shape)}])))
-
 
 
 ;; TODO: use-memo use-fn
@@ -278,68 +284,68 @@
   "Wrap some svg shape and add interaction controls"
   [component]
   (mf/fnc generic-wrapper
-          {::mf/wrap-props false}
-          [props]
-          (let [shape              (unchecked-get props "shape")
-                childs             (unchecked-get props "childs")
-                frame              (unchecked-get props "frame")
-                objects            (unchecked-get props "objects")
-                all-objects        (or (unchecked-get props "all-objects") objects)
-                base-frame         (mf/use-ctx base-frame-ctx)
-                frame-offset       (mf/use-ctx frame-offset-ctx)
-                interactions-show? (mf/deref viewer-interactions-show?)
-                overlays           (mf/deref refs/viewer-overlays)
-                interactions       (:interactions shape)
-                svg-element?       (and (= :svg-raw (:type shape))
-                                        (not= :svg (get-in shape [:content :tag])))
+    {::mf/wrap-props false}
+    [props]
+    (let [shape              (unchecked-get props "shape")
+          childs             (unchecked-get props "childs")
+          frame              (unchecked-get props "frame")
+          objects            (unchecked-get props "objects")
+          all-objects        (or (unchecked-get props "all-objects") objects)
+          base-frame         (mf/use-ctx base-frame-ctx)
+          frame-offset       (mf/use-ctx frame-offset-ctx)
+          interactions-show? (mf/deref viewer-interactions-show?)
+          overlays           (mf/deref refs/viewer-overlays)
+          interactions       (:interactions shape)
+          svg-element?       (and (= :svg-raw (:type shape))
+                                  (not= :svg (get-in shape [:content :tag])))
 
-                ;; The objects parameter has the shapes that we must draw. It may be a subset of
-                ;; all-objects in some cases (e.g. if there are fixed elements). But for interactions
-                ;; handling we need access to all objects inside the page.
+          ;; The objects parameter has the shapes that we must draw. It may be a subset of
+          ;; all-objects in some cases (e.g. if there are fixed elements). But for interactions
+          ;; handling we need access to all objects inside the page.
 
-                on-pointer-down
-                (mf/use-fn (mf/deps shape base-frame frame-offset all-objects)
-                           #(on-pointer-down % shape base-frame frame-offset all-objects overlays))
+          on-pointer-down
+          (mf/use-fn (mf/deps shape base-frame frame-offset all-objects)
+                     #(on-pointer-down % shape base-frame frame-offset all-objects overlays))
 
-                on-pointer-up
-                (mf/use-fn (mf/deps shape base-frame frame-offset all-objects)
-                           #(on-pointer-up % shape base-frame frame-offset all-objects overlays))
+          on-pointer-up
+          (mf/use-fn (mf/deps shape base-frame frame-offset all-objects)
+                     #(on-pointer-up % shape base-frame frame-offset all-objects overlays))
 
-                on-pointer-enter
-                (mf/use-fn (mf/deps shape base-frame frame-offset all-objects)
-                           #(on-pointer-enter % shape base-frame frame-offset all-objects overlays))
+          on-pointer-enter
+          (mf/use-fn (mf/deps shape base-frame frame-offset all-objects)
+                     #(on-pointer-enter % shape base-frame frame-offset all-objects overlays))
 
-                on-pointer-leave
-                (mf/use-fn (mf/deps shape base-frame frame-offset all-objects)
-                           #(on-pointer-leave % shape base-frame frame-offset all-objects overlays))]
+          on-pointer-leave
+          (mf/use-fn (mf/deps shape base-frame frame-offset all-objects)
+                     #(on-pointer-leave % shape base-frame frame-offset all-objects overlays))]
 
-            (mf/with-effect []
-              (let [sems (on-load shape base-frame frame-offset objects overlays)]
-                (partial run! tm/dispose! sems)))
+      (mf/with-effect []
+        (let [sems (on-load shape base-frame frame-offset objects overlays)]
+          (partial run! tm/dispose! sems)))
 
-            (if-not svg-element?
-              [:> shape-container {:shape shape
-                                   :cursor (when (ctsi/actionable? interactions) "pointer")
-                                   :on-pointer-down on-pointer-down
-                                   :on-pointer-up on-pointer-up
-                                   :on-pointer-enter on-pointer-enter
-                                   :on-pointer-leave on-pointer-leave}
+      (if-not svg-element?
+        [:> shape-container {:shape shape
+                             :cursor (when (ctsi/actionable? interactions) "pointer")
+                             :on-pointer-down on-pointer-down
+                             :on-pointer-up on-pointer-up
+                             :on-pointer-enter on-pointer-enter
+                             :on-pointer-leave on-pointer-leave}
 
-               [:& component {:shape shape
-                              :frame frame
-                              :childs childs
-                              :is-child-selected? true
-                              :objects objects}]
+         [:& component {:shape shape
+                        :frame frame
+                        :childs childs
+                        :is-child-selected? true
+                        :objects objects}]
 
-               [:& interaction {:shape shape
-                                :interactions interactions
-                                :interactions-show? interactions-show?}]]
+         [:& interaction {:shape shape
+                          :interactions interactions
+                          :interactions-show? interactions-show?}]]
 
         ;; Don't wrap svg elements inside a <g> otherwise some can break
-              [:& component {:shape shape
-                             :frame frame
-                             :childs childs
-                             :objects objects}]))))
+        [:& component {:shape shape
+                       :frame frame
+                       :childs childs
+                       :objects objects}]))))
 
 (defn frame-wrapper
   [shape-container]
@@ -382,60 +388,59 @@
 (defn frame-container-factory
   [objects all-objects]
   (let [shape-container (shape-container-factory objects all-objects)
-        frame-wrapper   (frame-wrapper shape-container)]
+        frame-wrapper   (frame-wrapper shape-container)
+        lookup-xf       (keep (d/getf objects))]
     (mf/fnc frame-container
-            {::mf/wrap-props false}
-            [props]
-            (let [shape     (obj/get props "shape")
-                  childs    (mapv #(get objects %) (:shapes shape))
-                  props     (obj/merge! #js {} props
-                                        #js {:shape shape
-                                             :childs childs
-                                             :objects objects
-                                             :all-objects all-objects})]
-
-              [:> frame-wrapper props]))))
+      {::mf/wrap-props false}
+      [props]
+      (let [shape  (unchecked-get props "shape")
+            childs (into [] lookup-xf (:shapes shape))
+            props  (obj/merge props
+                              #js {:childs childs
+                                   :objects objects
+                                   :all-objects all-objects})]
+        [:> frame-wrapper props]))))
 
 (defn group-container-factory
   [objects all-objects]
   (let [shape-container (shape-container-factory objects all-objects)
         group-wrapper (group-wrapper shape-container)]
     (mf/fnc group-container
-            {::mf/wrap-props false}
-            [props]
-            (let [childs   (mapv #(get objects %) (:shapes (unchecked-get props "shape")))
-                  props    (obj/merge! #js {} props
-                                       #js {:childs childs
-                                            :objects objects})]
-              (when (not-empty childs)
-                [:> group-wrapper props])))))
+      {::mf/wrap-props false}
+      [props]
+      (let [childs   (mapv #(get objects %) (:shapes (unchecked-get props "shape")))
+            props    (obj/merge! #js {} props
+                                 #js {:childs childs
+                                      :objects objects})]
+        (when (not-empty childs)
+          [:> group-wrapper props])))))
 
 (defn bool-container-factory
   [objects all-objects]
   (let [shape-container (shape-container-factory objects all-objects)
         bool-wrapper (bool-wrapper shape-container)]
     (mf/fnc bool-container
-            {::mf/wrap-props false}
-            [props]
-            (let [childs (->> (cph/get-children-ids objects (:id (unchecked-get props "shape")))
-                              (select-keys objects))
-                  props  (obj/merge! #js {} props
-                                     #js {:childs childs
-                                          :objects objects})]
-              [:> bool-wrapper props]))))
+      {::mf/wrap-props false}
+      [props]
+      (let [childs (->> (cfh/get-children-ids objects (:id (unchecked-get props "shape")))
+                        (select-keys objects))
+            props  (obj/merge! #js {} props
+                               #js {:childs childs
+                                    :objects objects})]
+        [:> bool-wrapper props]))))
 
 (defn svg-raw-container-factory
   [objects all-objects]
   (let [shape-container (shape-container-factory objects all-objects)
         svg-raw-wrapper (svg-raw-wrapper shape-container)]
     (mf/fnc svg-raw-container
-            {::mf/wrap-props false}
-            [props]
-            (let [childs (mapv #(get objects %) (:shapes (unchecked-get props "shape")))
-                  props  (obj/merge! #js {} props
-                                     #js {:childs childs
-                                          :objects objects})]
-              [:> svg-raw-wrapper props]))))
+      {::mf/wrap-props false}
+      [props]
+      (let [childs (mapv #(get objects %) (:shapes (unchecked-get props "shape")))
+            props  (obj/merge! #js {} props
+                               #js {:childs childs
+                                    :objects objects})]
+        [:> svg-raw-wrapper props]))))
 
 (defn shape-container-factory
   [objects all-objects]
@@ -445,42 +450,42 @@
         image-wrapper  (image-wrapper)
         circle-wrapper (circle-wrapper)]
     (mf/fnc shape-container
-            {::mf/wrap-props false
-             ::mf/wrap [mf/memo]}
-            [props]
-            (let [shape   (unchecked-get props "shape")
-                  frame   (unchecked-get props "frame")
+      {::mf/wrap-props false
+       ::mf/wrap [mf/memo]}
+      [props]
+      (let [shape   (unchecked-get props "shape")
+            frame   (unchecked-get props "frame")
 
-                  group-container
-                  (mf/with-memo [objects]
-                    (group-container-factory objects all-objects))
+            group-container
+            (mf/with-memo [objects]
+              (group-container-factory objects all-objects))
 
-                  frame-container
-                  (mf/with-memo [objects]
-                    (frame-container-factory objects all-objects))
+            frame-container
+            (mf/with-memo [objects]
+              (frame-container-factory objects all-objects))
 
-                  bool-container
-                  (mf/with-memo [objects]
-                    (bool-container-factory objects all-objects))
+            bool-container
+            (mf/with-memo [objects]
+              (bool-container-factory objects all-objects))
 
-                  svg-raw-container
-                  (mf/with-memo [objects]
-                    (svg-raw-container-factory objects all-objects))]
-              (when (and shape (not (:hidden shape)))
-          (let [shape (-> shape
-                          #_(gsh/transform-shape)
-                                (gsh/translate-to-frame frame))
+            svg-raw-container
+            (mf/with-memo [objects]
+              (svg-raw-container-factory objects all-objects))]
+        (when (and shape (not (:hidden shape)))
+          (let [shape (if frame
+                        (gsh/translate-to-frame shape frame)
+                        shape)
 
-                      opts #js {:shape shape
-                                :objects objects
-                                :all-objects all-objects}]
-                  (case (:type shape)
-                    :frame   [:> frame-container opts]
-                    :text    [:> text-wrapper opts]
-                    :rect    [:> rect-wrapper opts]
-                    :path    [:> path-wrapper opts]
-                    :image   [:> image-wrapper opts]
-                    :circle  [:> circle-wrapper opts]
-                    :group   [:> group-container {:shape shape :frame frame :objects objects}]
-                    :bool    [:> bool-container {:shape shape :frame frame :objects objects}]
-                    :svg-raw [:> svg-raw-container {:shape shape :frame frame :objects objects}])))))))
+                opts #js {:shape shape
+                          :objects objects
+                          :all-objects all-objects}]
+            (case (:type shape)
+              :frame   [:> frame-container opts]
+              :text    [:> text-wrapper opts]
+              :rect    [:> rect-wrapper opts]
+              :path    [:> path-wrapper opts]
+              :image   [:> image-wrapper opts]
+              :circle  [:> circle-wrapper opts]
+              :group   [:> group-container {:shape shape :frame frame :objects objects}]
+              :bool    [:> bool-container {:shape shape :frame frame :objects objects}]
+              :svg-raw [:> svg-raw-container {:shape shape :frame frame :objects objects}])))))))

@@ -10,7 +10,7 @@
    [app.common.uuid :as uuid]
    [app.util.object :as obj]
    [app.worker.messages :as wm]
-   [beicon.core :as rx]))
+   [beicon.v2.core :as rx]))
 
 (declare handle-response)
 (defrecord Worker [instance stream])

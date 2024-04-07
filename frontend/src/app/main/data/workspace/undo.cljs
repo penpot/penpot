@@ -8,12 +8,12 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.changes :as cpc]
    [app.common.logging :as log]
-   [app.common.pages.changes :as cpc]
    [app.common.schema :as sm]
    [app.util.time :as dt]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 (def discard-transaction-time-millis (* 20 1000))
 
@@ -24,13 +24,15 @@
 ;; Undo / Redo
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def schema:undo-entry
-  [:map
-   [:undo-changes [:vector ::cpc/change]]
-   [:redo-changes [:vector ::cpc/change]]])
+(def ^:private
+  schema:undo-entry
+  (sm/define
+    [:map {:title "undo-entry"}
+     [:undo-changes [:vector ::cpc/change]]
+     [:redo-changes [:vector ::cpc/change]]]))
 
-(def undo-entry?
-  (sm/pred-fn schema:undo-entry))
+(def check-undo-entry!
+  (sm/check-fn schema:undo-entry))
 
 (def MAX-UNDO-SIZE 50)
 
@@ -62,13 +64,13 @@
           items (conj-undo-entry items entry)]
       (-> state
           (update :workspace-undo assoc :items items
-                                        :index (min (inc index)
-                                                    (dec MAX-UNDO-SIZE)))))
+                  :index (min (inc index)
+                              (dec MAX-UNDO-SIZE)))))
     state))
 
 (defn- stack-undo-entry
   [state {:keys [undo-changes redo-changes] :as entry}]
-    (let [index (get-in state [:workspace-undo :index] -1)]
+  (let [index (get-in state [:workspace-undo :index] -1)]
     (if (>= index 0)
       (update-in state [:workspace-undo :items index]
                  (fn [item]
@@ -84,29 +86,33 @@
       (update-in [:workspace-undo :transaction :redo-changes] #(into % redo-changes))
       (cond->
        (nil? (get-in state [:workspace-undo :transaction :undo-group]))
-       (assoc-in [:workspace-undo :transaction :undo-group] undo-group))
+        (assoc-in [:workspace-undo :transaction :undo-group] undo-group))
       (assoc-in [:workspace-undo :transaction :tags] tags)))
 
 (defn append-undo
   [entry stack?]
-  (dm/assert! (boolean? stack?))
-  (dm/assert! (undo-entry? entry))
+  (dm/assert!
+   "expected valid undo entry"
+   (check-undo-entry! entry))
+
+  (dm/assert!
+   (boolean? stack?))
 
   (ptk/reify ::append-undo
     ptk/UpdateEvent
     (update [_ state]
-     (cond
-       (and (get-in state [:workspace-undo :transaction])
-            (or (not stack?)
-                (d/not-empty? (get-in state [:workspace-undo :transaction :undo-changes]))
-                (d/not-empty? (get-in state [:workspace-undo :transaction :redo-changes]))))
-       (accumulate-undo-entry state entry)
+      (cond
+        (and (get-in state [:workspace-undo :transaction])
+             (or (not stack?)
+                 (d/not-empty? (get-in state [:workspace-undo :transaction :undo-changes]))
+                 (d/not-empty? (get-in state [:workspace-undo :transaction :redo-changes]))))
+        (accumulate-undo-entry state entry)
 
-       stack?
-       (stack-undo-entry state entry)
+        stack?
+        (stack-undo-entry state entry)
 
-       :else
-       (add-undo-entry state entry)))))
+        :else
+        (add-undo-entry state entry)))))
 
 (def empty-tx
   {:undo-changes [] :redo-changes []})

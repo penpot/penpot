@@ -1,0 +1,137 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.element-options {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  padding-bottom: $s-16;
+}
+
+.download-button {
+  @extend .button-secondary;
+  @include uppercaseTitleTipography;
+  height: $s-32;
+  width: 100%;
+  margin: $s-8 0;
+}
+
+.code-block {
+  @include codeTypography;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  padding: 0 $s-4 $s-8 0;
+
+  pre {
+    border-radius: $br-8;
+    padding: $s-16;
+    overflow: auto;
+    height: 100%;
+  }
+
+  // Overrides background setted in the theme
+  :global(.hljs) {
+    background: $db-tertiary;
+  }
+
+  &.collapsed {
+    height: initial;
+  }
+}
+
+.code-row-lang {
+  display: grid;
+  grid-template-columns: $s-12 1fr $s-60;
+  gap: $s-4;
+  width: 100%;
+}
+
+.code-lang {
+  @include uppercaseTitleTipography;
+  display: flex;
+  align-items: center;
+}
+
+.action-btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $s-4;
+}
+
+.expand-button,
+.css-copy-btn,
+.html-copy-btn {
+  @extend .button-tertiary;
+  height: $s-32;
+  width: $s-28;
+  svg {
+    @extend .button-icon;
+    stroke: var(--icon-foreground);
+  }
+}
+
+.code-lang-options {
+  max-width: $s-108;
+}
+.code-lang-select {
+  @include uppercaseTitleTipography;
+  width: $s-72;
+  border: $s-1 solid transparent;
+  background-color: transparent;
+  color: var(--menu-foreground-color-disabled);
+}
+.code-lang-option {
+  @include uppercaseTitleTipography;
+  width: $s-72;
+  height: $s-32;
+  padding: $s-8;
+  color: var(--menu-foreground-color-disabled);
+}
+
+.code-row-display {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding-bottom: $s-8;
+}
+
+.toggle-btn {
+  @include buttonStyle;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  color: var(--title-foreground-color);
+  stroke: var(--title-foreground-color);
+  .collapsabled-icon {
+    @include flexCenter;
+    height: $s-24;
+    border-radius: $br-8;
+    svg {
+      @extend .button-icon-small;
+      transform: rotate(90deg);
+      stroke: var(--icon-foreground);
+    }
+    &.rotated svg {
+      transform: rotate(0deg);
+    }
+  }
+  &:hover {
+    color: var(--title-foreground-color-hover);
+    stroke: var(--title-foreground-color-hover);
+    .title {
+      color: var(--title-foreground-color-hover);
+      stroke: var(--title-foreground-color-hover);
+    }
+    .collapsabled-icon svg {
+      stroke: var(--title-foreground-color-hover);
+    }
+  }
+}

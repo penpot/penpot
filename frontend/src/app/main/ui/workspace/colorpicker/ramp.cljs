@@ -5,11 +5,12 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.colorpicker.ramp
+  (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.colors :as cc]
    [app.common.math :as mth]
-   [app.main.ui.components.color-bullet :refer [color-bullet]]
+   [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.workspace.colorpicker.slider-selector :refer [slider-selector]]
-   [app.util.color :as uc]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
@@ -37,17 +38,17 @@
          (fn [event]
            (dom/release-pointer event)
            (reset! dragging? false)
-           (on-finish-drag)))
-        ]
-    [:div.value-saturation-selector
-     {:on-pointer-down handle-start-drag
-      :on-pointer-up handle-stop-drag
-      :on-lost-pointer-capture handle-stop-drag
-      :on-click calculate-pos
-      :on-pointer-move #(when @dragging? (calculate-pos %))}
-     [:div.handler {:style {:pointer-events "none"
-                            :left (str (* 100 saturation) "%")
-                            :top (str (* 100 (- 1 (/ value 255))) "%")}}]]))
+           (on-finish-drag)))]
+    [:div {:class (stl/css :value-saturation-selector)
+           :on-pointer-down handle-start-drag
+           :on-pointer-up handle-stop-drag
+           :on-lost-pointer-capture handle-stop-drag
+           :on-click calculate-pos
+           :on-pointer-move #(when @dragging? (calculate-pos %))}
+     [:div {:class (stl/css :handler)
+            :style {:pointer-events "none"
+                    :left (str (* 100 saturation) "%")
+                    :top (str (* 100 (- 1 (/ value 255))) "%")}}]]))
 
 
 (mf/defc ramp-selector [{:keys [color disable-opacity on-change on-start-drag on-finish-drag]}]
@@ -56,8 +57,8 @@
 
         on-change-value-saturation
         (fn [new-saturation new-value]
-          (let [hex (uc/hsv->hex [hue new-saturation new-value])
-                [r g b] (uc/hex->rgb hex)]
+          (let [hex (cc/hsv->hex [hue new-saturation new-value])
+                [r g b] (cc/hex->rgb hex)]
             (on-change {:hex hex
                         :r r :g g :b b
                         :s new-saturation
@@ -65,15 +66,15 @@
 
         on-change-hue
         (fn [new-hue]
-          (let [hex (uc/hsv->hex [new-hue saturation value])
-                [r g b] (uc/hex->rgb hex)]
+          (let [hex (cc/hsv->hex [new-hue saturation value])
+                [r g b] (cc/hex->rgb hex)]
             (on-change {:hex hex
                         :r r :g g :b b
-                        :h new-hue} )))
+                        :h new-hue})))
 
         on-change-opacity
         (fn [new-opacity]
-          (on-change {:alpha new-opacity} ))]
+          (on-change {:alpha new-opacity}))]
     [:*
      [:& value-saturation-selector
       {:hue hue
@@ -83,20 +84,23 @@
        :on-start-drag on-start-drag
        :on-finish-drag on-finish-drag}]
 
-     [:div.shade-selector
-      [:& color-bullet {:color {:color hex
-                                :opacity alpha}}]
-      [:& slider-selector {:class "hue"
-                           :max-value 360
-                           :value hue
-                           :on-change on-change-hue
-                           :on-start-drag on-start-drag
-                           :on-finish-drag on-finish-drag}]
+     [:div {:class (stl/css :shade-selector)
+            :style #js {"--bullet-size" "52px"}}
+      [:& cb/color-bullet {:color {:color hex
+                                   :opacity alpha}
+                           :area true}]
+      [:div {:class (stl/css :sliders-wrapper)}
+       [:& slider-selector {:type :hue
+                            :max-value 360
+                            :value hue
+                            :on-change on-change-hue
+                            :on-start-drag on-start-drag
+                            :on-finish-drag on-finish-drag}]
 
-      (when (not disable-opacity)
-        [:& slider-selector {:class "opacity"
-                             :max-value 1
-                             :value alpha
-                             :on-change on-change-opacity
-                             :on-start-drag on-start-drag
-                             :on-finish-drag on-finish-drag}])]]))
+       (when (not disable-opacity)
+         [:& slider-selector {:type :opacity
+                              :max-value 1
+                              :value alpha
+                              :on-change on-change-opacity
+                              :on-start-drag on-start-drag
+                              :on-finish-drag on-finish-drag}])]]]))

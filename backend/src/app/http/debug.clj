@@ -7,6 +7,8 @@
 (ns app.http.debug
   (:refer-clojure :exclude [error-handler])
   (:require
+   [app.binfile.v1 :as bf.v1]
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.pprint :as pp]
@@ -14,10 +16,14 @@
    [app.config :as cf]
    [app.db :as db]
    [app.http.session :as session]
-   [app.rpc.commands.binfile :as binf]
+   [app.main :as-alias main]
+   [app.rpc.commands.auth :as auth]
    [app.rpc.commands.files-create :refer [create-file]]
    [app.rpc.commands.profile :as profile]
+   [app.setup :as-alias setup]
+   [app.srepl.helpers :as srepl]
    [app.storage :as-alias sto]
+   [app.storage.tmp :as tmp]
    [app.util.blob :as blob]
    [app.util.template :as tmpl]
    [app.util.time :as dt]
@@ -28,54 +34,40 @@
    [integrant.core :as ig]
    [markdown.core :as md]
    [markdown.transformers :as mdt]
-   [yetti.request :as yrq]
-   [yetti.response :as yrs]))
+   [ring.request :as rreq]
+   [ring.response :as rres]))
 
 ;; (selmer.parser/cache-off!)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; HELPERS
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn authorized?
-  [pool {:keys [::session/profile-id]}]
-  (or (= "devenv" (cf/get :host))
-      (let [profile (ex/ignoring (profile/get-profile pool profile-id))
-            admins  (or (cf/get :admins) #{})]
-        (contains? admins (:email profile)))))
-
-(defn prepare-response
-  [body]
-  (let [headers {"content-type" "application/transit+json"}]
-    {::yrs/status 200
-     ::yrs/body body
-     ::yrs/headers headers}))
-
-(defn prepare-download-response
-  [body filename]
-  (let [headers {"content-disposition" (str "attachment; filename=" filename)
-                 "content-type" "application/octet-stream"}]
-    {::yrs/status 200
-     ::yrs/body body
-     ::yrs/headers headers}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INDEX
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn index-handler
-  [{:keys [::db/pool]} request]
-  (when-not (authorized? pool request)
-    (ex/raise :type :authentication
-              :code :only-admins-allowed))
-  {::yrs/status  200
-   ::yrs/headers {"content-type" "text/html"}
-   ::yrs/body    (-> (io/resource "app/templates/debug.tmpl")
-                     (tmpl/render {}))})
+  [_cfg _request]
+  {::rres/status  200
+   ::rres/headers {"content-type" "text/html"}
+   ::rres/body    (-> (io/resource "app/templates/debug.tmpl")
+                      (tmpl/render {}))})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FILE CHANGES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn prepare-response
+  [body]
+  (let [headers {"content-type" "application/transit+json"}]
+    {::rres/status 200
+     ::rres/body body
+     ::rres/headers headers}))
+
+(defn prepare-download-response
+  [body filename]
+  (let [headers {"content-disposition" (str "attachment; filename=" filename)
+                 "content-type" "application/octet-stream"}]
+    {::rres/status 200
+     ::rres/body body
+     ::rres/headers headers}))
 
 (def sql:retrieve-range-of-changes
   "select revn, changes from file_change where file_id=? and revn >= ? and revn <= ? order by revn")
@@ -85,10 +77,6 @@
 
 (defn- retrieve-file-data
   [{:keys [::db/pool]} {:keys [params ::session/profile-id] :as request}]
-  (when-not (authorized? pool request)
-    (ex/raise :type :authentication
-              :code :only-admins-allowed))
-
   (let [file-id  (some-> params :file-id parse-uuid)
         revn     (some-> params :revn parse-long)
         filename (str file-id)]
@@ -111,15 +99,18 @@
 
         (contains? params :clone)
         (let [profile    (profile/get-profile pool profile-id)
-              project-id (:default-project-id profile)
-              data       (blob/decode data)]
-          (create-file pool {:id (uuid/next)
-                             :name (str "Cloned file: " filename)
-                             :project-id project-id
-                             :profile-id profile-id
-                             :data data})
-          {::yrs/status 201
-           ::yrs/body "OK CREATED"})
+              project-id (:default-project-id profile)]
+
+          (db/run! pool (fn [{:keys [::db/conn] :as cfg}]
+                          (create-file cfg {:id file-id
+                                            :name (str "Cloned file: " filename)
+                                            :project-id project-id
+                                            :profile-id profile-id})
+                          (db/update! conn :file
+                                      {:data data}
+                                      {:id file-id})
+                          {::rres/status 201
+                           ::rres/body "OK CREATED"})))
 
         :else
         (prepare-response (blob/decode data))))))
@@ -133,38 +124,41 @@
   [{:keys [::db/pool]} {:keys [::session/profile-id params] :as request}]
   (let [profile    (profile/get-profile pool profile-id)
         project-id (:default-project-id profile)
-        data       (some-> params :file :path io/read-as-bytes blob/decode)]
+        data       (some-> params :file :path io/read-as-bytes)]
 
     (if (and data project-id)
-      (let [fname      (str "Imported file *: " (dt/now))
-            overwrite? (contains? params :overwrite?)
-            file-id    (or (and overwrite? (ex/ignoring (-> params :file :filename parse-uuid)))
-                           (uuid/next))]
+      (let [fname     (str "Imported file *: " (dt/now))
+            reuse-id? (contains? params :reuseid)
+            file-id   (or (and reuse-id? (ex/ignoring (-> params :file :filename parse-uuid)))
+                          (uuid/next))]
 
-        (if (and overwrite? file-id
+        (if (and reuse-id? file-id
                  (is-file-exists? pool file-id))
           (do
             (db/update! pool :file
-                        {:data (blob/encode data)}
+                        {:data data
+                         :deleted-at nil}
                         {:id file-id})
-            {::yrs/status 200
-             ::yrs/body "OK UPDATED"})
+            {::rres/status 200
+             ::rres/body "OK UPDATED"})
 
-          (do
-            (create-file pool {:id file-id
-                               :name fname
-                               :project-id project-id
-                               :profile-id profile-id
-                               :data data})
-            {::yrs/status 201
-             ::yrs/body "OK CREATED"})))
+          (db/run! pool (fn [{:keys [::db/conn] :as cfg}]
+                          (create-file cfg {:id file-id
+                                            :name fname
+                                            :project-id project-id
+                                            :profile-id profile-id})
+                          (db/update! conn :file
+                                      {:data data}
+                                      {:id file-id})
+                          {::rres/status 201
+                           ::rres/body "OK CREATED"}))))
 
-      {::yrs/status 500
-       ::yrs/body "ERROR"})))
+      {::rres/status 500
+       ::rres/body "ERROR"})))
 
 (defn file-data-handler
   [cfg request]
-  (case (yrq/method request)
+  (case (rreq/method request)
     :get (retrieve-file-data cfg request)
     :post (upload-file-data cfg request)
     (ex/raise :type :http
@@ -172,10 +166,6 @@
 
 (defn file-changes-handler
   [{:keys [::db/pool]} {:keys [params] :as request}]
-  (when-not (authorized? pool request)
-    (ex/raise :type :authentication
-              :code :only-admins-allowed))
-
   (letfn [(retrieve-changes [file-id revn]
             (if (str/includes? revn ":")
               (let [[start end] (->> (str/split revn #":")
@@ -242,24 +232,19 @@
             (-> (io/resource "app/templates/error-report.v3.tmpl")
                 (tmpl/render (-> content
                                  (assoc :id id)
-                                 (assoc :created-at (dt/format-instant created-at :rfc1123))))))
-          ]
-
-    (when-not (authorized? pool request)
-      (ex/raise :type :authentication
-                :code :only-admins-allowed))
+                                 (assoc :created-at (dt/format-instant created-at :rfc1123))))))]
 
     (if-let [report (get-report request)]
       (let [result (case (:version report)
                      1 (render-template-v1 report)
                      2 (render-template-v2 report)
                      3 (render-template-v3 report))]
-        {::yrs/status 200
-         ::yrs/body result
-         ::yrs/headers {"content-type" "text/html; charset=utf-8"
-                        "x-robots-tag" "noindex"}})
-      {::yrs/status 404
-       ::yrs/body "not found"})))
+        {::rres/status 200
+         ::rres/body result
+         ::rres/headers {"content-type" "text/html; charset=utf-8"
+                         "x-robots-tag" "noindex"}})
+      {::rres/status 404
+       ::rres/body "not found"})))
 
 (def sql:error-reports
   "SELECT id, created_at,
@@ -269,17 +254,14 @@
     LIMIT 200")
 
 (defn error-list-handler
-  [{:keys [::db/pool]} request]
-  (when-not (authorized? pool request)
-    (ex/raise :type :authentication
-              :code :only-admins-allowed))
+  [{:keys [::db/pool]} _request]
   (let [items (->> (db/exec! pool [sql:error-reports])
                    (map #(update % :created-at dt/format-instant :rfc1123)))]
-    {::yrs/status 200
-     ::yrs/body (-> (io/resource "app/templates/error-list.tmpl")
-                    (tmpl/render {:items items}))
-     ::yrs/headers {"content-type" "text/html; charset=utf-8"
-                    "x-robots-tag" "noindex"}}))
+    {::rres/status 200
+     ::rres/body (-> (io/resource "app/templates/error-list.tmpl")
+                     (tmpl/render {:items items}))
+     ::rres/headers {"content-type" "text/html; charset=utf-8"
+                     "x-robots-tag" "noindex"}}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; EXPORT/IMPORT
@@ -288,9 +270,10 @@
 (defn export-handler
   [{:keys [::db/pool] :as cfg} {:keys [params ::session/profile-id] :as request}]
 
-  (let [file-ids (->> (:file-ids params)
-                      (remove empty?)
-                      (mapv parse-uuid))
+  (let [file-ids (into #{}
+                       (comp (remove empty?)
+                             (map parse-uuid))
+                       (:file-ids params))
         libs?    (contains? params :includelibs)
         clone?   (contains? params :clone)
         embed?   (contains? params :embedassets)]
@@ -299,31 +282,30 @@
       (ex/raise :type :validation
                 :code :missing-arguments))
 
-    (let [path (-> cfg
-                   (assoc ::binf/file-ids file-ids)
-                   (assoc ::binf/embed-assets? embed?)
-                   (assoc ::binf/include-libraries? libs?)
-                   (binf/export-to-tmpfile!))]
+    (let [path (tmp/tempfile :prefix "penpot.export.")]
+      (with-open [output (io/output-stream path)]
+        (-> cfg
+            (assoc ::bf.v1/ids file-ids)
+            (assoc ::bf.v1/embed-assets embed?)
+            (assoc ::bf.v1/include-libraries libs?)
+            (bf.v1/export-files! output)))
+
       (if clone?
         (let [profile    (profile/get-profile pool profile-id)
-              project-id (:default-project-id profile)]
-          (binf/import!
-           (assoc cfg
-                  ::binf/input path
-                  ::binf/overwrite? false
-                  ::binf/ignore-index-errors? true
-                  ::binf/profile-id profile-id
-                  ::binf/project-id project-id))
+              project-id (:default-project-id profile)
+              cfg        (assoc cfg
+                                ::bf.v1/overwrite false
+                                ::bf.v1/profile-id profile-id
+                                ::bf.v1/project-id project-id)]
+          (bf.v1/import-files! cfg path)
+          {::rres/status  200
+           ::rres/headers {"content-type" "text/plain"}
+           ::rres/body    "OK CLONED"})
 
-          {::yrs/status  200
-           ::yrs/headers {"content-type" "text/plain"}
-           ::yrs/body    "OK CLONED"})
-
-        {::yrs/status  200
-         ::yrs/body    (io/input-stream path)
-         ::yrs/headers {"content-type" "application/octet-stream"
-                        "content-disposition" (str "attachmen; filename=" (first file-ids) ".penpot")}}))))
-
+        {::rres/status  200
+         ::rres/body    (io/input-stream path)
+         ::rres/headers {"content-type" "application/octet-stream"
+                         "content-disposition" (str "attachmen; filename=" (first file-ids) ".penpot")}}))))
 
 
 (defn import-handler
@@ -336,26 +318,108 @@
   (let [profile    (profile/get-profile pool profile-id)
         project-id (:default-project-id profile)
         overwrite? (contains? params :overwrite)
-        migrate?   (contains? params :migrate)
-        ignore-index-errors? (contains? params :ignore-index-errors)]
+        migrate?   (contains? params :migrate)]
 
     (when-not project-id
       (ex/raise :type :validation
                 :code :missing-project
                 :hint "project not found"))
 
-    (binf/import!
-     (assoc cfg
-            ::binf/input (-> params :file :path)
-            ::binf/overwrite? overwrite?
-            ::binf/migrate? migrate?
-            ::binf/ignore-index-errors? ignore-index-errors?
-            ::binf/profile-id profile-id
-            ::binf/project-id project-id))
+    (let [path (-> params :file :path)
+          cfg  (assoc cfg
+                      ::bf.v1/overwrite overwrite?
+                      ::bf.v1/migrate migrate?
+                      ::bf.v1/profile-id profile-id
+                      ::bf.v1/project-id project-id)]
+      (bf.v1/import-files! cfg path)
+      {::rres/status  200
+       ::rres/headers {"content-type" "text/plain"}
+       ::rres/body    "OK"})))
 
-    {::yrs/status  200
-     ::yrs/headers {"content-type" "text/plain"}
-     ::yrs/body    "OK"}))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ACTIONS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- resend-email-notification
+  [{:keys [::db/pool ::setup/props] :as cfg} {:keys [params] :as request}]
+
+  (when-not (contains? params :force)
+    (ex/raise :type :validation
+              :code :missing-force
+              :hint "missing force checkbox"))
+
+  (let [profile (some->> params
+                         :email
+                         (profile/clean-email)
+                         (profile/get-profile-by-email pool))]
+
+    (when-not profile
+      (ex/raise :type :validation
+                :code :missing-profile
+                :hint "unable to find profile by email"))
+
+    (cond
+      (contains? params :block)
+      (do
+        (db/update! pool :profile {:is-blocked true} {:id (:id profile)})
+        (db/delete! pool :http-session {:profile-id (:id profile)})
+
+        {::rres/status  200
+         ::rres/headers {"content-type" "text/plain"}
+         ::rres/body    (str/ffmt "PROFILE '%' BLOCKED" (:email profile))})
+
+      (contains? params :unblock)
+      (do
+        (db/update! pool :profile {:is-blocked false} {:id (:id profile)})
+        {::rres/status  200
+         ::rres/headers {"content-type" "text/plain"}
+         ::rres/body    (str/ffmt "PROFILE '%' UNBLOCKED" (:email profile))})
+
+      (contains? params :resend)
+      (if (:is-blocked profile)
+        {::rres/status  200
+         ::rres/headers {"content-type" "text/plain"}
+         ::rres/body    "PROFILE ALREADY BLOCKED"}
+        (do
+          (auth/send-email-verification! pool props profile)
+          {::rres/status  200
+           ::rres/headers {"content-type" "text/plain"}
+           ::rres/body    (str/ffmt "RESENDED FOR '%'" (:email profile))}))
+
+      :else
+      (do
+        (db/update! pool :profile {:is-active true} {:id (:id profile)})
+        {::rres/status  200
+         ::rres/headers {"content-type" "text/plain"}
+         ::rres/body    (str/ffmt "PROFILE '%' ACTIVATED" (:email profile))}))))
+
+
+(defn- reset-file-version
+  [cfg {:keys [params] :as request}]
+  (let [file-id (some-> params :file-id d/parse-uuid)
+        version (some-> params :version d/parse-integer)]
+
+    (when-not (contains? params :force)
+      (ex/raise :type :validation
+                :code :missing-force
+                :hint "missing force checkbox"))
+
+    (when (nil? file-id)
+      (ex/raise :type :validation
+                :code :invalid-file-id
+                :hint "provided invalid file id"))
+
+    (when (nil? version)
+      (ex/raise :type :validation
+                :code :invalid-version
+                :hint "provided invalid version"))
+
+    (db/tx-run! cfg srepl/process-file! file-id #(assoc % :version version))
+
+    {::rres/status  200
+     ::rres/headers {"content-type" "text/plain"}
+     ::rres/body    "OK"}))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; OTHER SMALL VIEWS/HANDLERS
@@ -366,13 +430,13 @@
   [{:keys [::db/pool]} _]
   (try
     (db/exec-one! pool ["select count(*) as count from server_prop;"])
-    {::yrs/status 200
-     ::yrs/body "OK"}
+    {::rres/status 200
+     ::rres/body "OK"}
     (catch Throwable cause
       (l/warn :hint "unable to execute query on health handler"
               :cause cause)
-      {::yrs/status 503
-       ::yrs/body "KO"})))
+      {::rres/status 503
+       ::rres/body "KO"})))
 
 (defn changelog-handler
   [_ _]
@@ -381,15 +445,22 @@
           (md->html [text]
             (md/md-to-html-string text :replacement-transformers (into [transform-emoji] mdt/transformer-vector)))]
     (if-let [clog (io/resource "changelog.md")]
-      {::yrs/status 200
-       ::yrs/headers {"content-type" "text/html; charset=utf-8"}
-       ::yrs/body (-> clog slurp md->html)}
-      {::yrs/status 404
-       ::yrs/body "NOT FOUND"})))
+      {::rres/status 200
+       ::rres/headers {"content-type" "text/html; charset=utf-8"}
+       ::rres/body (-> clog slurp md->html)}
+      {::rres/status 404
+       ::rres/body "NOT FOUND"})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INIT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn authorized?
+  [pool {:keys [::session/profile-id]}]
+  (or (= "devenv" (cf/get :host))
+      (let [profile (ex/ignoring (profile/get-profile pool profile-id))
+            admins  (or (cf/get :admins) #{})]
+        (contains? admins (:email profile)))))
 
 (def with-authorization
   {:compile
@@ -414,6 +485,10 @@
     ["/changelog" {:handler (partial changelog-handler cfg)}]
     ["/error/:id" {:handler (partial error-handler cfg)}]
     ["/error" {:handler (partial error-list-handler cfg)}]
+    ["/actions/resend-email-verification"
+     {:handler (partial resend-email-notification cfg)}]
+    ["/actions/reset-file-version"
+     {:handler (partial reset-file-version cfg)}]
     ["/file/export" {:handler (partial export-handler cfg)}]
     ["/file/import" {:handler (partial import-handler cfg)}]
     ["/file/data" {:handler (partial file-data-handler cfg)}]

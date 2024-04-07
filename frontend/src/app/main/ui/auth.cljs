@@ -5,7 +5,9 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.auth
+  (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data.macros :as dm]
    [app.config :as cf]
    [app.main.ui.auth.login :refer [login-page]]
    [app.main.ui.auth.recovery :refer [recovery-page]]
@@ -23,32 +25,35 @@
         show-privacy? (some? cf/privacy-policy-uri)]
 
     (when show-all?
-      [:div.terms-login
+      [:div {:class (stl/css :terms-login)}
        (when show-terms?
-         [:a {:href cf/terms-of-service-uri :target "_blank"} (tr "auth.terms-of-service")])
+         [:a {:href cf/terms-of-service-uri :target "_blank" :class (stl/css :auth-link)}
+          (tr "auth.terms-of-service")])
 
        (when show-all?
-         [:span (tr "labels.and")])
+         [:span {:class (stl/css :and-text)}
+          (dm/str "  " (tr "labels.and") "  ")])
 
        (when show-privacy?
-         [:a {:href cf/privacy-policy-uri :target "_blank"} (tr "auth.privacy-policy")])])))
+         [:a {:href cf/privacy-policy-uri :target "_blank" :class (stl/css :auth-link)}
+          (tr "auth.privacy-policy")])])))
 
 (mf/defc auth
-  [{:keys [route] :as props}]
-  (let [section (get-in route [:data :name])
+  {::mf/props :obj}
+  [{:keys [route]}]
+  (let [section (dm/get-in route [:data :name])
         params  (:query-params route)]
 
-    (mf/use-effect
-     #(dom/set-html-title (tr "title.default")))
+    (mf/with-effect []
+      (dom/set-html-title (tr "title.default")))
 
-    [:main.auth
-     [:section.auth-sidebar
-      [:a.logo {:href "#/"}
-       [:span {:aria-hidden true} i/logo]
-       [:span.hidden-name "Home"]]
-      [:span.tagline (tr "auth.sidebar-tagline")]]
+    [:main {:class (stl/css :auth-section)}
+     [:a {:href "#/" :class (stl/css :logo-btn)} i/logo]
+     [:div {:class (stl/css :login-illustration)}
+      i/login-illustration]
 
-     [:section.auth-content
+     [:section {:class (stl/css :auth-content)}
+
       (case section
         :auth-register
         [:& register-page {:params params}]
@@ -68,5 +73,5 @@
         :auth-recovery
         [:& recovery-page {:params params}])
 
-      [:& terms-login {}]]]))
-
+      (when (= section :auth-register)
+        [:& terms-login])]]))

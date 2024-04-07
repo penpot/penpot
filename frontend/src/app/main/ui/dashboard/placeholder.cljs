@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.dashboard.placeholder
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [tr]]
@@ -19,23 +20,26 @@
            (create-fn "dashboard:empty-folder-placeholder")))]
     (cond
       (true? dragging?)
-      [:ul.grid-row.no-wrap
-       {:style {:grid-template-columns (str "repeat(" limit ", 1fr)")}}
-       [:li.grid-item]]
+      [:ul
+       {:class (stl/css :grid-row :no-wrap)
+        :style {:grid-template-columns (str "repeat(" limit ", 1fr)")}}
+       [:li {:class (stl/css :grid-item :grid-empty-placeholder :dragged)}]]
 
       (= :libraries origin)
-      [:div.grid-empty-placeholder.libs {:data-test "empty-placeholder"}
-       [:div.text
+      [:div {:class (stl/css :grid-empty-placeholder :libs)
+             :data-test "empty-placeholder"}
+       [:div {:class (stl/css :text)}
         [:& i18n/tr-html {:label "dashboard.empty-placeholder-drafts"}]]]
 
       :else
-      [:div.grid-empty-placeholder
-       {:style {:grid-template-columns (str "repeat(" limit ", 1fr)")}}
-       [:button.create-new {:on-click on-click} (tr "dashboard.new-file")]])))
+      [:div
+       {:class (stl/css :grid-empty-placeholder)}
+       [:button {:class (stl/css :create-new)
+                 :on-click on-click}
+        i/add]])))
 
 (mf/defc loading-placeholder
   []
-  [:div.grid-empty-placeholder.loader
-   [:div.icon i/loader]
-   [:div.text (tr "dashboard.loading-files")]])
-
+  [:div {:class (stl/css :grid-empty-placeholder :loader)}
+   [:div {:class (stl/css :icon)} i/loader]
+   [:div {:class (stl/css :text)} (tr "dashboard.loading-files")]])

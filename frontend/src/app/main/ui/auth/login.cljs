@@ -5,12 +5,13 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.auth.login
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.logging :as log]
    [app.common.spec :as us]
    [app.config :as cf]
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as msg]
    [app.main.data.users :as du]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -18,12 +19,12 @@
    [app.main.ui.components.forms :as fm]
    [app.main.ui.components.link :as lk]
    [app.main.ui.icons :as i]
-   [app.main.ui.messages :as msgs]
+   [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as k]
    [app.util.router :as rt]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cljs.spec.alpha :as s]
    [rumext.v2 :as mf]))
 
@@ -34,23 +35,30 @@
          :login-with-gitlab
          :login-with-oidc]))
 
+(mf/defc demo-warning
+  {::mf/props :obj}
+  []
+  [:& context-notification
+   {:type :warning
+    :content (tr "auth.demo-warning")}])
+
 (defn- login-with-oidc
   [event provider params]
   (dom/prevent-default event)
   (->> (rp/cmd! :login-with-oidc (assoc params :provider provider))
-       (rx/subs (fn [{:keys [redirect-uri] :as rsp}]
-                  (if redirect-uri
-                    (.replace js/location redirect-uri)
-                    (log/error :hint "unexpected response from OIDC method"
-                               :resp (pr-str rsp))))
-                (fn [{:keys [type code] :as error}]
-                  (cond
-                    (and (= type :restriction)
-                         (= code :provider-not-configured))
-                    (st/emit! (dm/error (tr "errors.auth-provider-not-configured")))
+       (rx/subs! (fn [{:keys [redirect-uri] :as rsp}]
+                   (if redirect-uri
+                     (.replace js/location redirect-uri)
+                     (log/error :hint "unexpected response from OIDC method"
+                                :resp (pr-str rsp))))
+                 (fn [{:keys [type code] :as error}]
+                   (cond
+                     (and (= type :restriction)
+                          (= code :provider-not-configured))
+                     (st/emit! (msg/error (tr "errors.auth-provider-not-configured")))
 
-                    :else
-                    (st/emit! (dm/error (tr "errors.generic"))))))))
+                     :else
+                     (st/emit! (msg/error (tr "errors.generic"))))))))
 
 (defn- login-with-ldap
   [event params]
@@ -58,21 +66,21 @@
   (dom/stop-propagation event)
   (let [{:keys [on-error]} (meta params)]
     (->> (rp/cmd! :login-with-ldap params)
-         (rx/subs (fn [profile]
-                    (if-let [token (:invitation-token profile)]
-                      (st/emit! (rt/nav :auth-verify-token {} {:token token}))
-                      (st/emit! (du/login-from-token {:profile profile}))))
-                  (fn [{:keys [type code] :as error}]
-                    (cond
-                      (and (= type :restriction)
-                           (= code :ldap-not-initialized))
-                      (st/emit! (dm/error (tr "errors.ldap-disabled")))
+         (rx/subs! (fn [profile]
+                     (if-let [token (:invitation-token profile)]
+                       (st/emit! (rt/nav :auth-verify-token {} {:token token}))
+                       (st/emit! (du/login-from-token {:profile profile}))))
+                   (fn [{:keys [type code] :as error}]
+                     (cond
+                       (and (= type :restriction)
+                            (= code :ldap-not-initialized))
+                       (st/emit! (msg/error (tr "errors.ldap-disabled")))
 
-                      (fn? on-error)
-                      (on-error error)
+                       (fn? on-error)
+                       (on-error error)
 
-                      :else
-                      (st/emit! (dm/error (tr "errors.generic")))))))))
+                       :else
+                       (st/emit! (msg/error (tr "errors.generic")))))))))
 
 (s/def ::email ::us/email)
 (s/def ::password ::us/not-empty-string)
@@ -91,35 +99,35 @@
                      (assoc :message (tr "errors.email-invalid"))))))
 
 (mf/defc login-form
-  [{:keys [params on-success-callback] :as props}]
+  [{:keys [params on-success-callback origin] :as props}]
   (let [initial (mf/use-memo (mf/deps params) (constantly params))
-
         error   (mf/use-state false)
         form    (fm/use-form :spec ::login-form
                              :validators [handle-error-messages]
                              :initial initial)
 
         on-error
-        (fn [cause]
-          (cond
-            (and (= :restriction (:type cause))
-                 (= :profile-blocked (:code cause)))
-            (reset! error (tr "errors.profile-blocked"))
+        (fn [err]
+          (let [cause (ex-data err)]
+            (cond
+              (and (= :restriction (:type cause))
+                   (= :profile-blocked (:code cause)))
+              (reset! error (tr "errors.profile-blocked"))
 
-            (and (= :restriction (:type cause))
-                 (= :admin-only-profile (:code cause)))
-            (reset! error (tr "errors.profile-blocked"))
+              (and (= :restriction (:type cause))
+                   (= :admin-only-profile (:code cause)))
+              (reset! error (tr "errors.profile-blocked"))
 
-            (and (= :validation (:type cause))
-                 (= :wrong-credentials (:code cause)))
-            (reset! error (tr "errors.wrong-credentials"))
+              (and (= :validation (:type cause))
+                   (= :wrong-credentials (:code cause)))
+              (reset! error (tr "errors.wrong-credentials"))
 
-            (and (= :validation (:type cause))
-                 (= :account-without-password (:code cause)))
-            (reset! error (tr "errors.wrong-credentials"))
+              (and (= :validation (:type cause))
+                   (= :account-without-password (:code cause)))
+              (reset! error (tr "errors.wrong-credentials"))
 
-            :else
-            (reset! error (tr "errors.generic"))))
+              :else
+              (reset! error (tr "errors.generic")))))
 
         on-success-default
         (fn [data]
@@ -149,133 +157,156 @@
            (let [params (:clean-data @form)]
              (login-with-ldap event (with-meta params
                                       {:on-error on-error
-                                       :on-success on-success})))))]
+                                       :on-success on-success})))))
+
+        on-recovery-request
+        (mf/use-fn
+         #(st/emit! (rt/nav :auth-recovery-request)))]
+
     [:*
      (when-let [message @error]
-       [:& msgs/inline-banner
+       [:& context-notification
         {:type :warning
          :content message
-         :on-close #(reset! error nil)
          :data-test "login-banner"
          :role "alert"}])
 
-     [:& fm/form {:on-submit on-submit :form form}
-      [:div.fields-row
+     [:& fm/form {:on-submit on-submit
+                  :class (stl/css :login-form)
+                  :form form}
+      [:div {:class (stl/css :fields-row)}
        [:& fm/input
         {:name :email
          :type "email"
-         :help-icon i/at
-         :label (tr "auth.email")}]]
+         :label (tr "auth.email")
+         :class (stl/css :form-field)}]]
 
-      [:div.fields-row
+      [:div {:class (stl/css :fields-row)}
        [:& fm/input
         {:type "password"
          :name :password
-         :help-icon i/eye
-         :label (tr "auth.password")}]]
+         :label (tr "auth.password")
+         :class (stl/css :form-field)}]]
 
-      [:div.buttons-stack
+      (when (and (not= origin :viewer)
+                 (or (contains? cf/flags :login)
+                     (contains? cf/flags :login-with-password)))
+        [:div {:class (stl/css :fields-row :forgot-password)}
+         [:& lk/link {:action on-recovery-request
+                      :class (stl/css :forgot-pass-link)
+                      :data-test "forgot-password"}
+          (tr "auth.forgot-password")]])
+
+      [:div {:class (stl/css :buttons-stack)}
        (when (or (contains? cf/flags :login)
                  (contains? cf/flags :login-with-password))
-         [:& fm/submit-button
+         [:> fm/submit-button*
           {:label (tr "auth.login-submit")
-           :data-test "login-submit"}])
+           :data-test "login-submit"
+           :class (stl/css :login-button)}])
 
        (when (contains? cf/flags :login-with-ldap)
-         [:& fm/submit-button
+         [:> fm/submit-button*
           {:label (tr "auth.login-with-ldap-submit")
+           :class (stl/css :login-ldap-button)
            :on-click on-submit-ldap}])]]]))
 
 (mf/defc login-buttons
   [{:keys [params] :as props}]
-  [:div.auth-buttons
-   (when (contains? cf/flags :login-with-google)
-     [:& bl/button-link {:action #(login-with-oidc % :google params)
-                         :icon i/brand-google
-                         :name (tr "auth.login-with-google-submit")
-                         :klass "btn-google-auth"}])
+  (let [login-with-google (mf/use-fn (mf/deps params) #(login-with-oidc % :google params))
+        login-with-github (mf/use-fn (mf/deps params) #(login-with-oidc % :github params))
+        login-with-gitlab (mf/use-fn (mf/deps params) #(login-with-oidc % :gitlab params))
+        login-with-oidc   (mf/use-fn (mf/deps params) #(login-with-oidc % :oidc params))]
 
-   (when (contains? cf/flags :login-with-github)
-     [:& bl/button-link {:action #(login-with-oidc % :github params)
-                         :icon i/brand-github
-                         :name (tr "auth.login-with-github-submit")
-                         :klass "btn-github-auth"}])
+    [:div {:class (stl/css :auth-buttons)}
+     (when (contains? cf/flags :login-with-google)
+       [:& bl/button-link {:on-click login-with-google
+                           :icon i/brand-google
+                           :label (tr "auth.login-with-google-submit")
+                           :class (stl/css :login-btn :btn-google-auth)}])
 
-   (when (contains? cf/flags :login-with-gitlab)
-     [:& bl/button-link {:action #(login-with-oidc % :gitlab params)
-                         :icon i/brand-gitlab
-                         :name (tr "auth.login-with-gitlab-submit")
-                         :klass "btn-gitlab-auth"}])
+     (when (contains? cf/flags :login-with-github)
+       [:& bl/button-link {:on-click login-with-github
+                           :icon i/brand-github
+                           :label (tr "auth.login-with-github-submit")
+                           :class (stl/css :login-btn :btn-github-auth)}])
 
-   (when (contains? cf/flags :login-with-oidc)
-     [:& bl/button-link {:action #(login-with-oidc % :oidc params)
-                         :icon i/brand-openid
-                         :name (tr "auth.login-with-oidc-submit")
-                         :klass "btn-github-auth"}])])
+     (when (contains? cf/flags :login-with-gitlab)
+       [:& bl/button-link {:on-click login-with-gitlab
+                           :icon i/brand-gitlab
+                           :label (tr "auth.login-with-gitlab-submit")
+                           :class (stl/css :login-btn :btn-gitlab-auth)}])
+
+     (when (contains? cf/flags :login-with-oidc)
+       [:& bl/button-link {:on-click login-with-oidc
+                           :icon i/brand-openid
+                           :label (tr "auth.login-with-oidc-submit")
+                           :class (stl/css :login-btn :btn-oidc-auth)}])]))
 
 (mf/defc login-button-oidc
   [{:keys [params] :as props}]
-  (when (contains? cf/flags :login-with-oidc)
-    [:div.link-entry.link-oidc
-     [:a {:tab-index "0"
-          :on-key-down (fn [event]
-                        (when (k/enter? event)
-                          (login-with-oidc event :oidc params)))
-          :on-click #(login-with-oidc % :oidc params)}
-      (tr "auth.login-with-oidc-submit")]]))
+  (let [login-oidc
+        (mf/use-fn
+         (mf/deps params)
+         (fn [event]
+           (login-with-oidc event :oidc params)))
+
+        handle-key-down
+        (mf/use-fn
+         (fn [event]
+           (when (k/enter? event)
+             (login-oidc event))))]
+    (when (contains? cf/flags :login-with-oidc)
+      [:button {:tab-index "0"
+                :class (stl/css :link-entry :link-oidc)
+                :on-key-down handle-key-down
+                :on-click login-oidc}
+       (tr "auth.login-with-oidc-submit")])))
 
 (mf/defc login-methods
-  [{:keys [params on-success-callback] :as props}]
+  [{:keys [params on-success-callback origin] :as props}]
   [:*
    (when show-alt-login-buttons?
      [:*
-      [:span.separator
-       [:span.line]
-       [:span.text (tr "labels.continue-with")]
-       [:span.line]]
-
       [:& login-buttons {:params params}]
 
       (when (or (contains? cf/flags :login)
                 (contains? cf/flags :login-with-password)
                 (contains? cf/flags :login-with-ldap))
-        [:span.separator
-         [:span.line]
-         [:span.text (tr "labels.or")]
-         [:span.line]])])
+        [:hr {:class (stl/css :separator)}])])
 
    (when (or (contains? cf/flags :login)
              (contains? cf/flags :login-with-password)
              (contains? cf/flags :login-with-ldap))
-     [:& login-form {:params params :on-success-callback on-success-callback}])])
+     [:& login-form {:params params :on-success-callback on-success-callback :origin origin}])])
 
 (mf/defc login-page
   [{:keys [params] :as props}]
-  [:div.generic-form.login-form
-   [:div.form-container
-    [:h1 {:data-test "login-title"} (tr "auth.login-title")]
+  (let [go-register
+        (mf/use-fn
+         #(st/emit! (rt/nav :auth-register {} params)))]
 
-    [:& login-methods {:params params}]
+    [:div {:class (stl/css :auth-form-wrapper)}
+     [:h1 {:class (stl/css :auth-title)
+           :data-test "login-title"} (tr "auth.login-account-title")]
 
-    [:div.links
-     (when (or (contains? cf/flags :login)
-               (contains? cf/flags :login-with-password))
-       [:div.link-entry
-        [:& lk/link {:action #(st/emit! (rt/nav :auth-recovery-request))
-                     :data-test "forgot-password"}
-         (tr "auth.forgot-password")]])
+     [:p {:class (stl/css :auth-tagline)}
+      (tr "auth.login-tagline")]
 
-     (when (contains? cf/flags :registration)
-       [:div.link-entry
-        [:span (tr "auth.register") " "]
-        [:& lk/link {:action #(st/emit! (rt/nav :auth-register {} params))
-                     :data-test "register-submit"}
-         (tr "auth.register-submit")]])]
+     (when (contains? cf/flags :demo-warning)
+       [:& demo-warning])
 
-    (when (contains? cf/flags :demo-users)
-      [:div.links.demo
-       [:div.link-entry
-        [:span (tr "auth.create-demo-profile") " "]
-        [:& lk/link {:action #(st/emit! (du/create-demo-profile))
-                     :data-test "demo-account-link"}
-         (tr "auth.create-demo-account")]]])]])
+     [:& login-methods {:params params}]
+
+     [:hr {:class (stl/css :separator)}]
+
+     [:div {:class (stl/css :links)}
+      (when (contains? cf/flags :registration)
+        [:div {:class (stl/css :register)}
+         [:span {:class (stl/css :register-text)}
+          (tr "auth.register") " "]
+         [:& lk/link {:action go-register
+                      :class (stl/css :register-link)
+                      :data-test "register-submit"}
+          (tr "auth.register-submit")]])]]))
+

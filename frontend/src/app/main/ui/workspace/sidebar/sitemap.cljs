@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.sidebar.sitemap
-  (:require-macros [app.main.style :refer [css]])
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -13,10 +13,11 @@
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.icons :as i]
+   [app.main.ui.notifications.badge :refer [badge-notification]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -26,16 +27,17 @@
 
 ;; --- Page Item
 
-(mf/defc page-item [{:keys [page index deletable? selected? editing?] :as props}]
+(mf/defc page-item
+  {::mf/wrap-props false}
+  [{:keys [page index deletable? selected? editing? hovering?]}]
   (let [input-ref            (mf/use-ref)
         id                   (:id page)
-        new-css-system       (mf/use-ctx ctx/new-css-system)
-        delete-fn            (mf/use-callback (mf/deps id) #(st/emit! (dw/delete-page id)))
-        navigate-fn          (mf/use-callback (mf/deps id) #(st/emit! :interrupt (dw/go-to-page id)))
+        delete-fn            (mf/use-fn (mf/deps id) #(st/emit! (dw/delete-page id)))
+        navigate-fn          (mf/use-fn (mf/deps id) #(st/emit! :interrupt (dw/go-to-page id)))
         workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
 
         on-delete
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps id)
          #(st/emit! (modal/show
                      {:type :confirm
@@ -44,7 +46,7 @@
                       :on-accept delete-fn})))
 
         on-double-click
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps workspace-read-only?)
          (fn [event]
            (dom/prevent-default event)
@@ -53,16 +55,15 @@
              (st/emit! (dw/start-rename-page-item id)))))
 
         on-blur
-        (mf/use-callback
+        (mf/use-fn
          (fn [event]
-           (let [target (dom/event->target event)
-                 name   (str/trim (dom/get-value target))]
+           (let [name   (str/trim (dom/get-target-val event))]
              (when-not (str/empty? name)
                (st/emit! (dw/rename-page id name)))
              (st/emit! (dw/stop-rename-page-item)))))
 
         on-key-down
-        (mf/use-callback
+        (mf/use-fn
          (fn [event]
            (cond
              (kbd/enter? event)
@@ -72,7 +73,7 @@
              (st/emit! (dw/stop-rename-page-item)))))
 
         on-drop
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps id index)
          (fn [side {:keys [id] :as data}]
            (let [index (if (= :bot side) (inc index) index)]
@@ -88,7 +89,7 @@
          :draggable? (not workspace-read-only?))
 
         on-context-menu
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps id workspace-read-only?)
          (fn [event]
            (dom/prevent-default event)
@@ -115,62 +116,40 @@
            (dom/select-text! edit-input))
          nil)))
 
-    [:*
-     [:li {:class (if new-css-system
-                    (dom/classnames
-                     (css :page-element) true
-                     (css :selected) selected?
-                     (css :dnd-over-top) (= (:over dprops) :top)
-                     (css :dnd-over-bot) (= (:over dprops) :bot))
-                    (dom/classnames
-                     :selected selected?
-                     :dnd-over-top (= (:over dprops) :top)
-                     :dnd-over-bot (= (:over dprops) :bot)))
-           :ref dref}
-      [:div
-       {:class (if new-css-system
-                 (dom/classnames
-                  (css :element-list-body) true
-                  (css :selected) selected?)
-                 (dom/classnames
-                  :element-list-body true
-                  :selected selected?))
-        :data-test (dm/str "page-" id)
-        :tab-index "0"
-        :on-click navigate-fn
-        :on-double-click on-double-click
-        :on-context-menu on-context-menu}
-       [:div {:class (if new-css-system
-                       (dom/classnames (css :page-icon) true)
-                       (dom/classnames :page-icon true))}
-        (if new-css-system
-          i/document-refactor
-          i/file-html)]
-       (if editing?
-         [:*
-          [:input {:class  (if new-css-system
-                             (dom/classnames (css :element-name) true)
-                             (dom/classnames :element-name true))
-                   :type "text"
-                   :ref input-ref
-                   :on-blur on-blur
-                   :on-key-down on-key-down
-                   :auto-focus true
-                   :default-value (:name page "")}]]
-         [:*
-          [:span {:class (if new-css-system
-                           (dom/classnames (css :page-name) true)
-                           (dom/classnames :page-name true))}
-           (:name page)]
-          [:div
-           {:class (if new-css-system
-                     (dom/classnames (css :page-actions) true)
-                     (dom/classnames :page-actions true))}
-           (when (and deletable? (not workspace-read-only?))
-             [:button {:on-click on-delete}
-              (if new-css-system
-                i/delete-refactor
-                i/trash)])]])]]]))
+    [:li {:class (stl/css-case
+                  :page-element true
+                  :selected selected?
+                  :dnd-over-top (= (:over dprops) :top)
+                  :dnd-over-bot (= (:over dprops) :bot))
+          :ref dref}
+     [:div {:class (stl/css-case
+                    :element-list-body true
+                    :hover hovering?
+                    :selected selected?)
+            :data-test (dm/str "page-" id)
+            :tab-index "0"
+            :on-click navigate-fn
+            :on-double-click on-double-click
+            :on-context-menu on-context-menu}
+      [:div {:class (stl/css :page-icon)}
+       i/document]
+
+      (if editing?
+        [:*
+         [:input {:class  (stl/css :element-name)
+                  :type "text"
+                  :ref input-ref
+                  :on-blur on-blur
+                  :on-key-down on-key-down
+                  :auto-focus true
+                  :default-value (:name page "")}]]
+        [:*
+         [:span {:class (stl/css :page-name)}
+          (:name page)]
+         [:div {:class  (stl/css :page-actions)}
+          (when (and deletable? (not workspace-read-only?))
+            [:button {:on-click on-delete}
+             i/delete])]])]]))
 
 ;; --- Page Item Wrapper
 
@@ -182,7 +161,8 @@
              st/state =))
 
 (mf/defc page-item-wrapper
-  [{:keys [page-id index deletable? selected? editing?] :as props}]
+  {::mf/wrap-props false}
+  [{:keys [page-id index deletable? selected? editing?]}]
   (let [page-ref (mf/use-memo (mf/deps page-id) #(make-page-ref page-id))
         page     (mf/deref page-ref)]
     [:& page-item {:page page
@@ -194,16 +174,13 @@
 ;; --- Pages List
 
 (mf/defc pages-list
-  [{:keys [file] :as props}]
+  {::mf/wrap-props false}
+  [{:keys [file]}]
   (let [pages           (:pages file)
         deletable?      (> (count pages) 1)
         editing-page-id (mf/deref refs/editing-page-item)
-        current-page-id (mf/use-ctx ctx/current-page-id)
-        new-css-system  (mf/use-ctx ctx/new-css-system)]
-    [:ul
-     {:class (if new-css-system
-               (dom/classnames (css :pages-list) true)
-               (dom/classnames :pages-list true))}
+        current-page-id (mf/use-ctx ctx/current-page-id)]
+    [:ul {:class (stl/css :page-list)}
      [:& hooks/sortable-container {}
       (for [[index page-id] (d/enumerate pages)]
         [:& page-item-wrapper
@@ -217,70 +194,37 @@
 ;; --- Sitemap Toolbox
 
 (mf/defc sitemap
-  []
-  (let [{:keys [on-pointer-down on-lost-pointer-capture on-pointer-move parent-ref size]}
-        (use-resize-hook :sitemap 200 38 400 :y false nil)
+  {::mf/wrap-props false}
+  [{:keys [size show-pages? toggle-pages]}]
+  (let [file           (mf/deref refs/workspace-file)
+        file-id        (get file :id)
+        project-id     (get file :project-id)
 
-        file                 (mf/deref refs/workspace-file)
-        create               (mf/use-callback
-                              (mf/deps file)
-                              (fn [event]
-                                (let [node (dom/get-current-target event)]
-                                  (st/emit! (dw/create-page {:file-id (:id file)
-                                                             :project-id (:project-id file)}))
-                                  (dom/blur! node))))
-        show-pages?          (mf/use-state true)
-        size                 (if @show-pages? size 32)
-        toggle-pages         (mf/use-callback #(reset! show-pages? not))
-        workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
-        new-css-system       (mf/use-ctx ctx/new-css-system)]
+        on-create      (mf/use-fn
+                        (mf/deps file-id project-id)
+                        (fn [event]
+                          (st/emit! (dw/create-page {:file-id file-id :project-id project-id}))
+                          (-> event dom/get-current-target dom/blur!)))
+        size           (if show-pages? size 32)
+        read-only?     (mf/use-ctx ctx/workspace-read-only?)]
 
-    (if new-css-system
-      [:div {:class (dom/classnames (css :sitemap) true)
-             :ref parent-ref
-             :style #js {"--height" (str size "px")}}
-       [:div {:class (dom/classnames (css :pages-tool-bar) true)}
+    [:div {:class (stl/css :sitemap)
+           :style #js {"--height" (str size "px")}}
 
-        [:button {:class (dom/classnames (css :page-tool-bar-title) true)
-                  :on-click toggle-pages}
-         [:span {:class (dom/classnames (css :collapsable-button) true)
-                 :style {:transform (when (not @show-pages?) "rotate(-90deg)")}}
-          i/arrow-refactor]
-         (tr "workspace.sidebar.sitemap")]
-        (if workspace-read-only?
-          [:div
-           {:class  (dom/classnames (css :view-only-mode) true)}
-           (tr "labels.view-only")]
-          [:*
-           [:button {:class (dom/classnames (css :add-page) true)
-                     :on-click create}
-            i/add-refactor]])]
+     [:& title-bar {:collapsable   true
+                    :collapsed     (not show-pages?)
+                    :on-collapsed  toggle-pages
+                    :all-clickable true
+                    :title         (tr "workspace.sidebar.sitemap")
+                    :class         (stl/css :title-spacing-sitemap)}
 
-       [:div {:class (dom/classnames (css :tool-window-content) true)}
-        [:& pages-list {:file file :key (:id file)}]]
+      (if ^boolean read-only?
+        [:& badge-notification {:is-focus true
+                                :size :small
+                                :content (tr "labels.view-only")}]
+        [:button {:class (stl/css :add-page)
+                  :on-click on-create}
+         i/add])]
 
-       (when @show-pages?
-         [:div {:class (dom/classnames (css :resize-area) true)
-                :on-pointer-down on-pointer-down
-                :on-lost-pointer-capture on-lost-pointer-capture
-                :on-pointer-move on-pointer-move}])]
-
-
-
-      [:div#sitemap.tool-window {:ref parent-ref
-                                 :style #js {"--height" (str size "px")}}
-       [:div.tool-window-bar
-        [:span.pages-title (tr "workspace.sidebar.sitemap")]
-        (if workspace-read-only?
-          [:div.view-only-mode (tr "labels.view-only")]
-          [:div.add-page {:on-click create} i/close])
-        [:div.collapse-pages {:on-click toggle-pages
-                              :style {:transform (when (not @show-pages?) "rotate(-90deg)")}} i/arrow-slide]]
-
-       [:div.tool-window-content
-        [:& pages-list {:file file :key (:id file)}]]
-
-       (when @show-pages?
-         [:div.resize-area {:on-pointer-down on-pointer-down
-                            :on-lost-pointer-capture on-lost-pointer-capture
-                            :on-pointer-move on-pointer-move}])])))
+     [:div {:class (stl/css :tool-window-content)}
+      [:& pages-list {:file file :key (:id file)}]]]))

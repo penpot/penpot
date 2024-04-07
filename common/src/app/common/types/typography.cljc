@@ -6,8 +6,8 @@
 
 (ns app.common.types.typography
   (:require
-    [app.common.schema :as sm]
-    [app.common.text :as txt]))
+   [app.common.schema :as sm]
+   [app.common.text :as txt]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMA
@@ -29,8 +29,8 @@
    [:modified-at {:optional true} ::sm/inst]
    [:path {:optional true} [:maybe :string]]])
 
-(def typography?
-  (sm/pred-fn ::typography))
+(def check-typography!
+  (sm/check-fn ::typography))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS
@@ -44,8 +44,8 @@
             :content
             ;; Check if any node in the content has a reference for the library
             (txt/node-seq
-              #(and (some? (:typography-ref-id %))
-                    (= (:typography-ref-file %) library-id))))))
+             #(and (some? (:typography-ref-id %))
+                   (= (:typography-ref-file %) library-id))))))
 
 (defn uses-library-typography?
   "Check if the shape uses the given library typography."
@@ -55,8 +55,8 @@
             :content
             ;; Check if any node in the content has a reference for the library
             (txt/node-seq
-              #(and (= (:typography-ref-id %) typography-id)
-                    (= (:typography-ref-file %) library-id))))))
+             #(and (= (:typography-ref-id %) typography-id)
+                   (= (:typography-ref-file %) library-id))))))
 
 (defn remap-typographies
   "Change the shape so that any use of the given typography now points to

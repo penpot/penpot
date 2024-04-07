@@ -1,3 +1,4 @@
+
 ;; This Source Code Form is subject to the terms of the Mozilla Public
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -7,7 +8,8 @@
 (ns app.main.ui.hooks
   "A collection of general purpose react hooks."
   (:require
-   [app.common.pages :as cp]
+   [app.common.files.focus :as cpf]
+   [app.common.math :as mth]
    [app.main.broadcast :as mbc]
    [app.main.data.shortcuts :as dsc]
    [app.main.refs :as refs]
@@ -16,17 +18,26 @@
    [app.util.dom.dnd :as dnd]
    [app.util.storage :refer [storage]]
    [app.util.timers :as ts]
-   [beicon.core :as rx]
+   [app.util.webapi :as wapi]
+   [beicon.v2.core :as rx]
+   [beicon.v2.operators :as rxo]
    [goog.functions :as f]
    [rumext.v2 :as mf]))
+
+(def ^:private render-id 0)
+
+(defn use-render-id
+  "Get a stable, DOM usable identifier across all react rerenders"
+  []
+  (mf/useMemo #(js* "\"render-\" + (++~{})" render-id) #js []))
 
 (defn use-rxsub
   [ob]
   (let [[state reset-state!] (mf/useState #(if (satisfies? IDeref ob) @ob nil))]
     (mf/useEffect
      (fn []
-       (let [sub (rx/subscribe ob #(reset-state! %))]
-         #(rx/cancel! sub)))
+       (let [sub (rx/sub! ob #(reset-state! %))]
+         #(rx/dispose! sub)))
      #js [ob])
     state))
 
@@ -38,13 +49,6 @@
      (st/emit! (dsc/push-shortcuts key shortcuts))
      (fn []
        (st/emit! (dsc/pop-shortcuts key))))))
-
-(defn invisible-image
-  []
-  (let [img (js/Image.)
-        imd "data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs="]
-    (set! (.-src img) imd)
-    img))
 
 (defn- set-timer
   [state ms func]
@@ -96,7 +100,7 @@
 
         cleanup
         (fn []
-          (some-> (:subscr @state) rx/unsub!)
+          (some-> (:subscr @state) rx/dispose!)
           (swap! state (fn [state]
                          (-> state
                              (cancel-timer)
@@ -111,11 +115,13 @@
         on-drag-start
         (fn [event]
           (if (or disabled (not draggable?))
-            (dom/prevent-default event)
+            (do
+              (dom/stop-propagation event)
+              (dom/prevent-default event))
             (do
               (dom/stop-propagation event)
               (dnd/set-data! event data-type data)
-              (dnd/set-drag-image! event (invisible-image))
+              (dnd/set-drag-image! event (dnd/invisible-image))
               (dnd/set-allowed-effect! event "move")
               (when (fn? on-drag)
                 (on-drag data)))))
@@ -159,7 +165,7 @@
             (cleanup)
             (rx/push! global-drag-end nil)
             (when (fn? on-drop)
-              (on-drop side drop-data))))
+              (on-drop side drop-data event))))
 
         on-drag-end
         (fn [event]
@@ -171,7 +177,9 @@
         on-mount
         (fn []
           (let [dom (mf/ref-val ref)]
-            (.setAttribute dom "draggable" draggable?)
+            ;; In firefox it needs to be draggable for problems with event handling.
+            ;; It will stop the drag operation in on-drag-start
+            (.setAttribute dom "draggable" (and draggable? (not disabled)))
 
             ;; Register all events in the (default) bubble mode, so that they
             ;; are captured by the most leaf item. The handler will stop
@@ -201,11 +209,15 @@
   ([stream on-subscribe]
    (use-stream stream (mf/deps) on-subscribe))
   ([stream deps on-subscribe]
+   (use-stream stream deps on-subscribe nil))
+  ([stream deps on-subscribe on-dispose]
    (mf/use-effect
     deps
     (fn []
-      (let [sub (->> stream (rx/subs on-subscribe))]
-        #(rx/dispose! sub))))))
+      (let [sub (->> stream (rx/subs! on-subscribe))]
+        #(do
+           (rx/dispose! sub)
+           (when on-dispose (on-dispose))))))))
 
 ;; https://reactjs.org/docs/hooks-faq.html#how-to-get-the-previous-props-or-state
 (defn use-previous
@@ -225,6 +237,13 @@
     (mf/with-effect [value]
       (reset! ptr value))
     ptr))
+
+(defn use-update-ref
+  [value]
+  (let [ref (mf/use-ref value)]
+    (mf/with-effect [value]
+      (mf/set-ref-val! ref value))
+    ref))
 
 (defn use-ref-callback
   "Returns a stable callback pointer what calls the interned
@@ -248,16 +267,15 @@
       (mf/set-ref-val! ref val))
     (mf/ref-val ref)))
 
+;; FIXME: rename to use-focus-objects
 (defn with-focus-objects
   ([objects]
    (let [focus (mf/deref refs/workspace-focus-selected)]
      (with-focus-objects objects focus)))
 
   ([objects focus]
-   (let [objects (mf/use-memo
-                  (mf/deps focus objects)
-                  #(cp/focus-objects objects focus))]
-     objects)))
+   (mf/with-memo [focus objects]
+     (cpf/focus-objects objects focus))))
 
 (defn use-debounce
   [ms value]
@@ -296,11 +314,14 @@
           (fn [entries _]
             (run! (partial rx/push! intersection-subject) (seq entries)))
           #js {:rootMargin "0px"
-               :threshold 1.0})))
+               :threshold #js [0 1.0]})))
 
 (defn use-visible
   [ref & {:keys [once?]}]
-  (let [[state update-state!] (mf/useState false)]
+  (let [state (mf/useState false)
+        update-state! (aget state 1)
+        state         (aget state 0)]
+
     (mf/with-effect [once?]
       (let [node   (mf/ref-val ref)
             stream (->> intersection-subject
@@ -308,16 +329,17 @@
                                      (let [target (unchecked-get entry "target")]
                                        (identical? target node))))
                         (rx/map (fn [entry]
-                                  (let [ratio (unchecked-get entry "intersectionRatio")
-                                        intersecting? (unchecked-get entry "isIntersecting")]
-                                    (or intersecting? (> ratio 0.5)))))
-                        (rx/dedupe))
-            stream (if once?
-                     (->> stream
-                          (rx/filter identity)
-                          (rx/take 1))
-                     stream)
-            subs (rx/subscribe stream update-state!)]
+                                  (let [ratio         (unchecked-get entry "intersectionRatio")
+                                        intersecting? (unchecked-get entry "isIntersecting")
+                                        intersecting? (or ^boolean intersecting?
+                                                          ^boolean (> ratio 0.5))]
+                                    (when (and (true? intersecting?) (true? once?))
+                                      (.unobserve ^js @intersection-observer node))
+
+                                    intersecting?)))
+
+                        (rx/pipe (rxo/distinct-contiguous)))
+            subs (rx/sub! stream update-state!)]
         (.observe ^js @intersection-observer node)
         (fn []
           (.unobserve ^js @intersection-observer node)
@@ -325,3 +347,49 @@
 
     state))
 
+(defn use-dynamic-grid-item-width
+  ([] (use-dynamic-grid-item-width nil))
+  ([itemsize]
+   (let [width*   (mf/use-state nil)
+         width    (deref width*)
+
+         rowref   (mf/use-ref)
+
+         itemsize (cond
+                    (some? itemsize) itemsize
+                    (>= width 1030)  280
+                    :else            230)
+
+         ratio    (if (some? width) (/ width itemsize) 0)
+         nitems   (mth/floor ratio)
+         limit    (mth/min 10 nitems)
+         limit    (mth/max 1 limit)
+
+         th-size (when width
+                   (mth/floor (- (/ (- width 32 (* (dec limit) 24)) limit) 12)))
+
+         ;; Need an even value
+         th-size (if (odd? (int th-size)) (- th-size 1) th-size)]
+
+     (mf/with-effect
+       [th-size]
+       (when th-size
+         (let [node (mf/ref-val rowref)]
+           (.setProperty (.-style node) "--th-width" (str th-size "px"))
+           (.setProperty (.-style node) "--th-height" (str (mth/ceil (* th-size (/ 2 3))) "px")))))
+
+     (mf/with-effect []
+       (let [node (mf/ref-val rowref)
+             mnt? (volatile! true)
+             sub  (->> (wapi/observe-resize node)
+                       (rx/subs! (fn [entries]
+                                   (let [row       (first entries)
+                                         row-rect  (.-contentRect ^js row)
+                                         row-width (.-width ^js row-rect)]
+                                     (when @mnt?
+                                       (reset! width* row-width))))))]
+         (fn []
+           (vreset! mnt? false)
+           (rx/dispose! sub))))
+
+     [rowref limit])))

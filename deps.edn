@@ -1,0 +1,6 @@
+;; This file exists to make clojure-lsp serve the whole repository
+{:deps
+ {dev/frontend {:local/root "frontend"}
+  dev/backend {:local/root "backend"}
+  dev/common {:local/root "common"}
+  dev/exporter {:local/root "exporter"}}}

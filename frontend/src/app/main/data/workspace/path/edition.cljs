@@ -8,12 +8,12 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.path :as upg]
-   [app.common.pages.helpers :as cph]
-   [app.common.path.commands :as upc]
-   [app.common.path.shapes-to-path :as upsp]
-   [app.common.path.subpaths :as ups]
+   [app.common.svg.path.command :as upc]
+   [app.common.svg.path.shapes-to-path :as upsp]
+   [app.common.svg.path.subpath :as ups]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.path.changes :as changes]
@@ -25,9 +25,10 @@
    [app.main.data.workspace.path.undo :as undo]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.streams :as ms]
+   [app.util.mouse :as mse]
    [app.util.path.tools :as upt]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 (defn modify-handler [id index prefix dx dy match-opposite?]
   (ptk/reify ::modify-handler
@@ -66,7 +67,7 @@
           (let [changes (changes/generate-path-changes it objects page-id shape (:content shape) new-content)]
             (if (empty? new-content)
               (rx/of (dch/commit-changes changes)
-                     dwe/clear-edition-mode)
+                     (dwe/clear-edition-mode))
               (rx/of (dch/commit-changes changes)
                      (selection/update-selection point-change)
                      (fn [state] (update-in state [:workspace-local :edit-path id] dissoc :content-modifiers :moving-nodes :moving-handler))))))))))
@@ -149,7 +150,8 @@
   (ptk/reify ::drag-selected-points
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [stopper (->> stream (rx/filter ms/mouse-up?))
+      (let [stopper (mse/drag-stopper stream)
+
             id (dm/get-in state [:workspace-local :edition])
 
             selected-points (dm/get-in state [:workspace-local :edit-path id :selected-points] #{})
@@ -262,8 +264,6 @@
          (rx/concat
           (rx/of (dch/update-shapes [id] upsp/convert-to-path))
           (->> (streams/move-handler-stream handler point handler opposite points)
-               (rx/take-until (->> stream (rx/filter #(or (ms/mouse-up? %)
-                                                          (streams/finish-edition? %)))))
                (rx/map
                 (fn [{:keys [x y alt? shift?]}]
                   (let [pos (cond-> (gpt/point x y)
@@ -274,7 +274,13 @@
                      prefix
                      (+ start-delta-x (- (:x pos) (:x handler)))
                      (+ start-delta-y (- (:y pos) (:y handler)))
-                     (not alt?))))))
+                     (not alt?)))))
+               (rx/take-until
+                (rx/merge
+                 (mse/drag-stopper stream)
+                 (->> stream
+                      (rx/filter streams/finish-edition?)))))
+
           (rx/concat (rx/of (apply-content-modifiers)))))))))
 
 (declare stop-path-edit)
@@ -288,7 +294,7 @@
             edit-path (dm/get-in state [:workspace-local :edit-path id])
             content (st/get-path state :content)
             state (cond-> state
-                    (cph/path-shape? objects id)
+                    (cfh/path-shape? objects id)
                     (st/set-content (ups/close-subpaths content)))]
         (cond-> state
           (or (not edit-path) (= :draw (:edit-mode edit-path)))
@@ -308,8 +314,8 @@
                                       (= (ptk/type %) ::start-path-edit))))
             interrupt (->> stream (rx/filter #(= % :interrupt)) (rx/take 1))]
         (rx/concat
-         (rx/of (undo/start-path-undo))
-         (rx/of (drawing/change-edit-mode mode))
+         (rx/of (undo/start-path-undo)
+                (drawing/change-edit-mode mode))
          (->> interrupt
               (rx/map #(stop-path-edit id))
               (rx/take-until stopper)))))))
@@ -322,7 +328,7 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (ptk/data-event :layout/update [id])))))
+      (rx/of (ptk/data-event :layout/update {:ids [id]})))))
 
 (defn split-segments
   [{:keys [from-p to-p t]}]

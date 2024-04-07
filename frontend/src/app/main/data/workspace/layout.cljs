@@ -7,10 +7,12 @@
 (ns app.main.data.workspace.layout
   "Workspace layout management events and helpers."
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.main.data.events :as ev]
    [app.util.storage :refer [storage]]
    [clojure.set :as set]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (def valid-flags
   #{:sitemap
@@ -20,13 +22,13 @@
     :document-history
     :colorpalette
     :element-options
-    :rules
-    :display-grid
-    :snap-grid
+    :rulers
+    :display-guides
+    :snap-guides
     :scale-text
     :dynamic-alignment
     :display-artboard-names
-    :snap-guides
+    :snap-ruler-guides
     :show-pixel-grid
     :snap-pixel-grid})
 
@@ -50,12 +52,12 @@
   #{:sitemap
     :layers
     :element-options
-    :rules
-    :display-grid
-    :snap-grid
+    :rulers
+    :display-guides
+    :snap-guides
     :dynamic-alignment
     :display-artboard-names
-    :snap-guides
+    :snap-ruler-guides
     :show-pixel-grid
     :snap-pixel-grid})
 
@@ -80,8 +82,8 @@
 (defn toggle-layout-flag
   [flag & {:keys [force?] :as opts}]
   (ptk/reify ::toggle-layout-flag
-    IDeref
-    (-deref [_] {:name flag})
+    ev/Event
+    (-data [_] {:name flag})
 
     ptk/UpdateEvent
     (update [_ state]
@@ -114,8 +116,16 @@
 
 (defn set-options-mode
   [mode]
-  (dm/assert! (contains? valid-options-mode mode))
+  (dm/assert!
+   "expected valid options mode"
+   (contains? valid-options-mode mode))
+
   (ptk/reify ::set-options-mode
+    ev/Event
+    (-data [_]
+      {::ev/origin "workspace:sidebar"
+       :mode (d/name mode)})
+
     ptk/UpdateEvent
     (update [_ state]
       (assoc-in state [:workspace-global :options-mode] mode))))

@@ -1,0 +1,335 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+// PROGRESS WIDGET
+.export-progress-widget {
+  @include flexCenter;
+  width: $s-28;
+  height: $s-28;
+}
+
+// PROGRESS MODAL
+.export-progress-modal {
+  --export-modal-bg-color: var(--alert-background-color-default);
+  --export-modal-fg-color: var(--alert-text-foreground-color-default);
+  --export-modal-icon-color: var(--alert-icon-foreground-color-default);
+  --export-modal-border-color: var(--alert-border-color-default);
+  position: absolute;
+  right: $s-16;
+  top: $s-48;
+  display: grid;
+  grid-template-columns: $s-24 1fr $s-24;
+  grid-template-areas:
+    "icon text close"
+    "bar bar bar";
+  gap: $s-4 $s-8;
+  padding-block-start: $s-8;
+  background-color: var(--export-modal-bg-color);
+  border: $s-1 solid var(--export-modal-border-color);
+  border-radius: $br-8;
+  z-index: $z-index-modal;
+  overflow: hidden;
+}
+
+.has-error {
+  --export-modal-bg-color: var(--alert-background-color-error);
+  --export-modal-fg-color: var(--alert-text-foreground-color-error);
+  --export-modal-icon-color: var(--alert-icon-foreground-color-error);
+  --export-modal-border-color: var(--alert-border-color-error);
+  grid-template-areas: "icon text close";
+  gap: $s-8;
+  padding-block: $s-8;
+}
+
+.icon {
+  @extend .button-icon;
+  grid-area: icon;
+  align-self: center;
+  margin-inline-start: $s-8;
+  stroke: var(--export-modal-icon-color);
+}
+
+.export-progress-title {
+  @include bodyMediumTypography;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: $s-8;
+  grid-area: text;
+  align-self: center;
+  padding: 0;
+  margin: 0;
+  color: var(--export-modal-fg-color);
+}
+
+.progress {
+  @include bodyMediumTypography;
+  padding-left: $s-8;
+  margin: 0;
+  align-self: center;
+  color: var(--modal-text-foreground-color);
+}
+
+.retry-btn {
+  @include buttonStyle;
+  @include bodySmallTypography;
+  display: inline;
+  text-align: left;
+  color: var(--modal-link-foreground-color);
+  margin: 0;
+  padding: 0;
+}
+
+.progress-close-button {
+  @include buttonStyle;
+  padding: 0;
+  margin-inline-end: $s-8;
+}
+
+.close-icon {
+  @extend .button-icon;
+  stroke: var(--export-modal-icon-color);
+}
+
+.progress-bar {
+  margin-top: 0;
+  grid-area: bar;
+}
+
+// EXPORT MODAL
+.modal-overlay {
+  @extend .modal-overlay-base;
+  &.transparent {
+    background-color: transparent;
+  }
+}
+
+.modal-container {
+  @extend .modal-container-base;
+  max-height: calc(10 * $s-80);
+}
+
+.modal-header {
+  margin-bottom: $s-24;
+}
+
+.modal-title {
+  @include headlineMediumTypography;
+  color: var(--modal-title-foreground-color);
+}
+
+.modal-close-btn {
+  @extend .modal-close-btn-base;
+}
+
+.modal-content,
+.no-selection {
+  @include bodySmallTypography;
+  margin-bottom: $s-24;
+  .modal-hint {
+    @include bodySmallTypography;
+    color: var(--modal-text-foreground-color);
+  }
+  .modal-link {
+    @include bodyLargeTypography;
+    text-decoration: none;
+    cursor: pointer;
+    color: var(--modal-link-foreground-color);
+  }
+  .selection-header {
+    @include flexRow;
+    height: $s-32;
+    margin-bottom: $s-4;
+    .selection-btn {
+      @include buttonStyle;
+      @extend .input-checkbox;
+      @include flexCenter;
+      height: $s-24;
+      width: $s-24;
+      padding: 0;
+      margin-left: $s-16;
+      span {
+        @extend .checkbox-icon;
+      }
+    }
+    .selection-title {
+      @include bodyLargeTypography;
+      color: var(--modal-text-foreground-color);
+    }
+  }
+  .selection-wrapper {
+    position: relative;
+    width: 100%;
+    height: fit-content;
+  }
+  .selection-shadow {
+    width: 100%;
+    height: 100%;
+    &:after {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 50px;
+      background: linear-gradient(to top, rgba(24, 24, 26, 1) 0%, rgba(24, 24, 26, 0) 100%);
+      content: "";
+      pointer-events: none;
+    }
+  }
+  .selection-list {
+    @include flexColumn;
+    max-height: $s-400;
+    overflow-y: auto;
+    padding-bottom: $s-12;
+    .selection-row {
+      @include flexRow;
+      background-color: var(--entry-background-color);
+      min-height: $s-40;
+      border-radius: $br-8;
+      .selection-btn {
+        @include buttonStyle;
+        display: grid;
+        grid-template-columns: min-content auto 1fr auto auto;
+        align-items: center;
+        width: 100%;
+        height: 10%;
+        gap: $s-8;
+        padding: 0 $s-16;
+        .checkbox-wrapper {
+          @extend .input-checkbox;
+          @include flexCenter;
+          height: $s-24;
+          width: $s-24;
+          padding: 0;
+          .checkobox-tick {
+            @extend .checkbox-icon;
+          }
+        }
+        .selection-name {
+          @include bodyLargeTypography;
+          @include textEllipsis;
+          flex-grow: 1;
+          color: var(--modal-text-foreground-color);
+          text-align: start;
+        }
+        .selection-scale {
+          @include bodyLargeTypography;
+          @include textEllipsis;
+          min-width: $s-108;
+          padding: $s-12;
+          color: var(--modal-text-foreground-color);
+        }
+        .selection-extension {
+          @include bodyLargeTypography;
+          @include textEllipsis;
+          min-width: $s-72;
+          padding: $s-12;
+          color: var(--modal-text-foreground-color);
+        }
+      }
+      .image-wrapper {
+        @include flexCenter;
+        min-height: $s-32;
+        min-width: $s-32;
+        background-color: var(--app-white);
+        border-radius: $br-6;
+        margin: auto 0;
+        img,
+        svg {
+          object-fit: contain;
+          max-height: $s-40;
+        }
+      }
+    }
+  }
+}
+
+.action-buttons {
+  @extend .modal-action-btns;
+}
+.cancel-button {
+  @extend .modal-cancel-btn;
+}
+.accept-btn {
+  @extend .modal-accept-btn;
+  &.danger {
+    @extend .modal-danger-btn;
+  }
+}
+
+.modal-scd-msg,
+.modal-subtitle,
+.modal-msg {
+  @include bodyLargeTypography;
+  color: var(--modal-text-foreground-color);
+}
+
+.export-option {
+  @extend .input-checkbox;
+  width: 100%;
+  align-items: flex-start;
+  label {
+    align-items: flex-start;
+    .modal-subtitle {
+      @include bodyLargeTypography;
+      color: var(--modal-title-foreground-color);
+    }
+  }
+  span {
+    margin-top: $s-8;
+  }
+}
+
+.option-content {
+  @include flexColumn;
+  @include bodyLargeTypography;
+}
+
+.file-entry {
+  .file-name {
+    @include flexRow;
+    .file-icon {
+      @include flexCenter;
+      height: $s-16;
+      width: $s-16;
+
+      svg {
+        @extend .button-icon-small;
+        stroke: var(--input-foreground);
+      }
+    }
+    .file-name-label {
+      @include bodyLargeTypography;
+    }
+  }
+  &.loading {
+    .file-name {
+      color: var(--modal-text-foreground-color);
+      .file-icon svg:global(#loader-pencil) {
+        color: var(--modal-text-foreground-color);
+        stroke: var(--modal-text-foreground-color);
+        fill: var(--modal-text-foreground-color);
+      }
+    }
+  }
+  &.error {
+    .file-name {
+      color: var(--modal-text-foreground-color);
+      .file-icon svg {
+        stroke: var(--modal-text-foreground-color);
+      }
+    }
+  }
+  &.success {
+    .file-name {
+      color: var(--modal-text-foreground-color);
+      .file-icon svg {
+        stroke: var(--modal-text-foreground-color);
+      }
+    }
+  }
+}

@@ -8,10 +8,10 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.media :as cm]
-   [app.main.data.messages :as dm]
+   [app.main.data.messages :as msg]
    [app.main.store :as st]
    [app.util.i18n :refer [tr]]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]))
 
@@ -46,13 +46,14 @@
 
 (defn notify-start-loading
   []
-  (st/emit! (dm/show {:content (tr "media.loading")
-                      :type :info
-                      :timeout nil})))
+  (st/emit! (msg/show {:content (tr "media.loading")
+                       :notification-type :toast
+                       :type :info
+                       :timeout nil})))
 
 (defn notify-finished-loading
   []
-  (st/emit! dm/hide))
+  (st/emit! msg/hide))
 
 (defn process-error
   [error]
@@ -68,4 +69,4 @@
 
               :else
               (tr "errors.unexpected-error"))]
-    (rx/of (dm/error msg))))
+    (rx/of (msg/error msg))))

@@ -5,11 +5,14 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.viewer.inspect.exports
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.main.data.exports :as de]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.components.select :refer [select]]
+   [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr c]]
@@ -83,33 +86,45 @@
         (mf/use-callback
          (mf/deps shapes)
          (fn [index event]
-           (let [target  (dom/get-target event)
-                 value   (dom/get-value target)
-                 value   (d/parse-double value)]
-             (swap! exports assoc-in [index :scale] value))))
+           (let [scale (d/parse-double event)]
+             (swap! exports assoc-in [index :scale] scale))))
 
         on-suffix-change
         (mf/use-callback
          (mf/deps shapes)
-         (fn [index event]
-           (let [target  (dom/get-target event)
-                 value   (dom/get-value target)]
+         (fn [event]
+           (let [value (dom/get-target-val event)
+                 index (-> (dom/get-current-target event)
+                           (dom/get-data "value")
+                           (d/parse-integer))]
              (swap! exports assoc-in [index :suffix] value))))
 
         on-type-change
         (mf/use-callback
          (mf/deps shapes)
          (fn [index event]
-           (let [target  (dom/get-target event)
-                 value   (dom/get-value target)
-                 value   (keyword value)]
-             (swap! exports assoc-in [index :type] value))))
+           (let [type (keyword event)]
+             (swap! exports assoc-in [index :type] type))))
+
         manage-key-down
         (mf/use-callback
          (fn [event]
            (let [esc?   (kbd/esc? event)]
              (when esc?
-               (dom/blur! (dom/get-target event))))))]
+               (dom/blur! (dom/get-target event))))))
+
+        size-options [{:value "0.5" :label "0.5x"}
+                      {:value "0.75" :label "0.75x"}
+                      {:value "1" :label "1x"}
+                      {:value "1.5" :label "1.5x"}
+                      {:value "2" :label "2x"}
+                      {:value "4" :label "4x"}
+                      {:value "6" :label "6x"}]
+
+        format-options [{:value "png" :label "PNG"}
+                        {:value "jpeg" :label "JPG"}
+                        {:value "svg" :label "SVG"}
+                        {:value "pdf" :label "PDF"}]]
 
     (mf/use-effect
      (mf/deps shapes)
@@ -118,46 +133,64 @@
                            flatten
                            distinct
                            vec))))
+    [:div {:class (stl/css :element-set)}
+     [:div {:class (stl/css :element-title)}
+      [:& title-bar {:collapsable false
+                     :title       (tr "workspace.options.export")
+                     :class       (stl/css :title-spacing-export-viewer)}
+       [:button {:class (stl/css :add-export)
+                 :on-click add-export} i/add]]]
 
-    [:div.element-set.exports-options
-     [:div.element-set-title
-      [:span (tr "workspace.options.export")]
-      [:div.add-page {:on-click add-export} i/close]]
+     (cond
+       (= :multiple exports)
+       [:div {:class (stl/css :multiple-exports)}
+        [:div {:class (stl/css :label)} (tr "settings.multiple")]
+        [:div {:class (stl/css :actions)}
+         [:button {:class (stl/css :action-btn)
+                   :on-click ()}
+          i/remove-icon]]]
 
-     (when (seq @exports)
-       [:div.element-set-content
+       (seq @exports)
+       [:div {:class (stl/css :element-set-content)}
         (for [[index export] (d/enumerate @exports)]
-          [:div.element-set-options-group
-           {:key index}
-           (when (scale-enabled? export)
-             [:select.input-select {:on-change (partial on-scale-change index)
-                                    :value (:scale export)}
-              [:option {:value "0.5"}  "0.5x"]
-              [:option {:value "0.75"} "0.75x"]
-              [:option {:value "1"} "1x"]
-              [:option {:value "1.5"} "1.5x"]
-              [:option {:value "2"} "2x"]
-              [:option {:value "4"} "4x"]
-              [:option {:value "6"} "6x"]])
+          [:div {:class (stl/css :element-group)
+                 :key index}
+           [:div {:class (stl/css :input-wrapper)}
+            [:div  {:class (stl/css :format-select)}
+             [:& select
+              {:default-value (d/name (:type export))
+               :options format-options
+               :dropdown-class (stl/css :dropdown-upwards)
+               :on-change (partial on-type-change index)}]]
+            (when (scale-enabled? export)
+              [:div {:class (stl/css :size-select)}
+               [:& select
+                {:default-value (str (:scale export))
+                 :options size-options
+                 :dropdown-class (stl/css :dropdown-upwards)
+                 :on-change (partial on-scale-change index)}]])
+            [:label {:class (stl/css :suffix-input)
+                     :for "suffix-export-input"}
+             [:input {:class (stl/css :type-input)
+                      :id "suffix-export-input"
+                      :type "text"
+                      :value (:suffix export)
+                      :placeholder (tr "workspace.options.export.suffix")
+                      :data-value (str index)
+                      :on-change on-suffix-change
+                      :on-key-down manage-key-down}]]]
 
-           [:input.input-text {:value (:suffix export)
-                               :placeholder (tr "workspace.options.export.suffix")
-                               :on-change (partial on-suffix-change index)
-                               :on-key-down manage-key-down}]
-           [:select.input-select {:value (d/name (:type export))
-                                  :on-change (partial on-type-change index)}
-            [:option {:value "png"} "PNG"]
-            [:option {:value "jpeg"} "JPEG"]
-            [:option {:value "svg"} "SVG"]
-            [:option {:value "pdf"} "PDF"]]
-           [:div.delete-icon {:on-click (partial delete-export index)}
-            i/minus]])
-
-        [:div.btn-icon-dark.download-button
-         {:on-click (when-not in-progress? on-download)
-          :class (dom/classnames :btn-disabled in-progress?)
-          :disabled in-progress?}
-         (if in-progress?
-           (tr "workspace.options.exporting-object")
-           (tr "workspace.options.export-object" (c (count shapes))))]])]))
+           [:button {:class (stl/css :action-btn)
+                     :on-click (partial delete-export index)}
+            i/remove-icon]])])
+     (when (or (= :multiple exports) (seq @exports))
+       [:button
+        {:on-click (when-not in-progress? on-download)
+         :class (stl/css-case
+                 :export-btn true
+                 :btn-disabled in-progress?)
+         :disabled in-progress?}
+        (if in-progress?
+          (tr "workspace.options.exporting-object")
+          (tr "workspace.options.export-object" (c (count shapes))))])]))
 

@@ -11,12 +11,9 @@
     <Logger name="io.lettuce" level="error" />
     <Logger name="com.zaxxer.hikari" level="error" />
     <Logger name="org.postgresql" level="error" />
-
-    <Logger name="app.util" level="info" />
     <Logger name="app" level="info" additivity="false">
-      <AppenderRef ref="console" />
+      <AppenderRef ref="console" level="info" />
     </Logger>
-
     <Root level="info">
       <AppenderRef ref="console" />
     </Root>

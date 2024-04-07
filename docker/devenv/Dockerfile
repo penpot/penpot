@@ -3,10 +3,11 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-ENV NODE_VERSION=v18.16.1 \
-    CLOJURE_VERSION=1.11.1.1347 \
-    CLJKONDO_VERSION=2023.05.26 \
-    BABASHKA_VERSION=1.3.181 \
+ENV NODE_VERSION=v20.11.1 \
+    CLOJURE_VERSION=1.11.1.1435 \
+    CLJKONDO_VERSION=2024.02.12 \
+    BABASHKA_VERSION=1.3.188 \
+    CLJFMT_VERSION=0.12.0 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
@@ -104,12 +105,12 @@ RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         ESUM='b16c0271899de1f0e277dc0398bfff11b54511765f104fa938929ac484dc926d'; \
-         BINARY_URL='https://github.com/adoptium/temurin20-binaries/releases/download/jdk-20.0.1%2B9/OpenJDK20U-jdk_aarch64_linux_hotspot_20.0.1_9.tar.gz'; \
+         ESUM='3ce6a2b357e2ef45fd6b53d6587aa05bfec7771e7fb982f2c964f6b771b7526a'; \
+         BINARY_URL='https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.2%2B13/OpenJDK21U-jdk_aarch64_linux_hotspot_21.0.2_13.tar.gz'; \
          ;; \
        amd64|x86_64) \
-         ESUM='43ad054f135a7894dc87ad5d10ad45d8e82846186515892acdbc17c2c5cd27e4'; \
-         BINARY_URL='https://github.com/adoptium/temurin20-binaries/releases/download/jdk-20.0.1%2B9/OpenJDK20U-jdk_x64_linux_hotspot_20.0.1_9.tar.gz'; \
+         ESUM='454bebb2c9fe48d981341461ffb6bf1017c7b7c6e15c6b0c29b959194ba3aaa5'; \
+         BINARY_URL='https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.2%2B13/OpenJDK21U-jdk_x64_linux_hotspot_21.0.2_13.tar.gz'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -157,7 +158,7 @@ RUN set -eux; \
     cd /usr/local/nodejs; \
     tar -xf /tmp/nodejs.tar.xz --strip-components=1; \
     chown -R root /usr/local/nodejs; \
-    /usr/local/nodejs/bin/npm install -g yarn; \
+    corepack enable; \
     rm -rf /tmp/nodejs.tar.xz;
 
 RUN set -ex; \
@@ -184,10 +185,10 @@ RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         BINARY_URL="https://github.com/babashka/babashka/releases/download/v$BABASHKA_VERSION/babashka-$BABASHKA_VERSION-linux-aarch64.tar.gz"; \
+         BINARY_URL="https://github.com/babashka/babashka/releases/download/v$BABASHKA_VERSION/babashka-$BABASHKA_VERSION-linux-aarch64-static.tar.gz"; \
          ;; \
        amd64|x86_64) \
-         BINARY_URL="https://github.com/babashka/babashka/releases/download/v$BABASHKA_VERSION/babashka-$BABASHKA_VERSION-linux-amd64.tar.gz"; \
+         BINARY_URL="https://github.com/babashka/babashka/releases/download/v$BABASHKA_VERSION/babashka-$BABASHKA_VERSION-linux-amd64-static.tar.gz"; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -200,6 +201,25 @@ RUN set -ex; \
     tar -xf /tmp/babashka.tar.gz; \
     rm -rf /tmp/babashka.tar.gz;
 
+RUN set -ex; \
+    ARCH="$(dpkg --print-architecture)"; \
+    case "${ARCH}" in \
+       aarch64|arm64) \
+         BINARY_URL="https://github.com/weavejester/cljfmt/releases/download/${CLJFMT_VERSION}/cljfmt-${CLJFMT_VERSION}-linux-aarch64.tar.gz"; \
+         ;; \
+       amd64|x86_64) \
+         BINARY_URL="https://github.com/weavejester/cljfmt/releases/download/${CLJFMT_VERSION}/cljfmt-${CLJFMT_VERSION}-linux-amd64.tar.gz"; \
+         ;; \
+       *) \
+         echo "Unsupported arch: ${ARCH}"; \
+         exit 1; \
+         ;; \
+    esac; \
+    cd /tmp; \
+    curl -LfsSo /tmp/cljfmt.tar.gz ${BINARY_URL}; \
+    cd /usr/local/bin; \
+    tar -xf /tmp/cljfmt.tar.gz; \
+    rm -rf /tmp/cljfmt.tar.gz;
 
 # Install minio client
 RUN set -ex; \

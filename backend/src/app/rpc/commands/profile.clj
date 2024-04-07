@@ -8,12 +8,12 @@
   (:require
    [app.auth :as auth]
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.db.sql :as-alias sql]
    [app.email :as eml]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
@@ -23,11 +23,14 @@
    [app.rpc.climit :as climit]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
+   [app.setup :as-alias setup]
    [app.storage :as sto]
    [app.tokens :as tokens]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [cuerdas.core :as str]))
+   [app.worker :as-alias wrk]
+   [cuerdas.core :as str]
+   [promesa.exec :as px]))
 
 (declare check-profile-existence!)
 (declare decode-row)
@@ -37,30 +40,39 @@
 (declare strip-private-attrs)
 (declare verify-password)
 
-(def schema:profile
-  [:map {:title "Profile"}
-   [:id ::sm/uuid]
-   [:fullname [::sm/word-string {:max 250}]]
-   [:email ::sm/email]
-   [:is-active {:optional true} :boolean]
-   [:is-blocked {:optional true} :boolean]
-   [:is-demo {:optional true} :boolean]
-   [:is-muted {:optional true} :boolean]
-   [:created-at {:optional true} ::sm/inst]
-   [:modified-at {:optional true} ::sm/inst]
-   [:default-project-id {:optional true} ::sm/uuid]
-   [:default-team-id {:optional true} ::sm/uuid]
-   [:props {:optional true}
-    [:map-of {:title "ProfileProps"} :keyword :any]]])
+(defn clean-email
+  "Clean and normalizes email address string"
+  [email]
+  (let [email (str/lower email)
+        email (if (str/starts-with? email "mailto:")
+                (subs email 7)
+                email)]
+    email))
 
-(def profile?
-  (sm/pred-fn schema:profile))
+(def ^:private
+  schema:profile
+  (sm/define
+    [:map {:title "Profile"}
+     [:id ::sm/uuid]
+     [:fullname [::sm/word-string {:max 250}]]
+     [:email ::sm/email]
+     [:is-active {:optional true} :boolean]
+     [:is-blocked {:optional true} :boolean]
+     [:is-demo {:optional true} :boolean]
+     [:is-muted {:optional true} :boolean]
+     [:created-at {:optional true} ::sm/inst]
+     [:modified-at {:optional true} ::sm/inst]
+     [:default-project-id {:optional true} ::sm/uuid]
+     [:default-team-id {:optional true} ::sm/uuid]
+     [:props {:optional true}
+      [:map-of {:title "ProfileProps"} :keyword :any]]]))
 
 ;; --- QUERY: Get profile (own)
 
 (sv/defmethod ::get-profile
   {::rpc/auth false
    ::doc/added "1.18"
+   ::sm/params [:map]
    ::sm/result schema:profile}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id]}]
   ;; We need to return the anonymous profile object in two cases, when
@@ -81,11 +93,13 @@
 
 ;; --- MUTATION: Update Profile (own)
 
-(def schema:update-profile
-  [:map {:title "update-profile"}
-   [:fullname [::sm/word-string {:max 250}]]
-   [:lang {:optional true} [:string {:max 5}]]
-   [:theme {:optional true} [:string {:max 250}]]])
+(def ^:private
+  schema:update-profile
+  (sm/define
+    [:map {:title "update-profile"}
+     [:fullname [::sm/word-string {:max 250}]]
+     [:lang {:optional true} [:string {:max 5}]]
+     [:theme {:optional true} [:string {:max 250}]]]))
 
 (sv/defmethod ::update-profile
   {::doc/added "1.0"
@@ -93,23 +107,18 @@
    ::sm/result schema:profile}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id fullname lang theme] :as params}]
 
-  (dm/assert!
-   "expected valid profile data"
-   (profile? params))
-
   (db/with-atomic [conn pool]
     ;; NOTE: we need to retrieve the profile independently if we use
     ;; it or not for explicit locking and avoid concurrent updates of
     ;; the same row/object.
-    (let [profile (-> (db/get-by-id conn :profile profile-id ::db/for-update? true)
+    (let [profile (-> (db/get-by-id conn :profile profile-id ::sql/for-update true)
                       (decode-row))
 
           ;; Update the profile map with direct params
           profile (-> profile
                       (assoc :fullname fullname)
                       (assoc :lang lang)
-                      (assoc :theme theme))
-          ]
+                      (assoc :theme theme))]
 
       (db/update! conn :profile
                   {:fullname fullname
@@ -130,32 +139,32 @@
 (declare update-profile-password!)
 (declare invalidate-profile-session!)
 
-(def schema:update-profile-password
-  [:map {:title "update-profile-password"}
-   [:password [::sm/word-string {:max 500}]]
-   ;; Social registered users don't have old-password
-   [:old-password {:optional true} [:maybe [::sm/word-string {:max 500}]]]])
+(def ^:private
+  schema:update-profile-password
+  (sm/define
+    [:map {:title "update-profile-password"}
+     [:password [::sm/word-string {:max 500}]]
+     ;; Social registered users don't have old-password
+     [:old-password {:optional true} [:maybe [::sm/word-string {:max 500}]]]]))
 
 (sv/defmethod ::update-profile-password
-  {:doc/added "1.0"
+  {::doc/added "1.0"
    ::sm/params schema:update-profile-password
-   ::sm/result :nil}
+   ::climit/id :auth/global}
+  [cfg {:keys [::rpc/profile-id password] :as params}]
 
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id password] :as params}]
-  (db/with-atomic [conn pool]
-    (let [cfg        (assoc cfg ::db/conn conn)
-          profile    (validate-password! cfg (assoc params :profile-id profile-id))
-          session-id (::session/id params)]
+  (db/tx-run! cfg (fn [cfg]
+                    (let [profile    (validate-password! cfg (assoc params :profile-id profile-id))
+                          session-id (::session/id params)]
 
-      (when (= (str/lower (:email profile))
-               (str/lower (:password params)))
-        (ex/raise :type :validation
-                  :code :email-as-password
-                  :hint "you can't use your email as password"))
+                      (when (= (:email profile) (str/lower (:password params)))
+                        (ex/raise :type :validation
+                                  :code :email-as-password
+                                  :hint "you can't use your email as password"))
 
-      (update-profile-password! conn (assoc profile :password password))
-      (invalidate-profile-session! cfg profile-id session-id)
-      nil)))
+                      (update-profile-password! cfg (assoc profile :password password))
+                      (invalidate-profile-session! cfg profile-id session-id)
+                      nil))))
 
 (defn- invalidate-profile-session!
   "Removes all sessions except the current one."
@@ -165,7 +174,7 @@
 
 (defn- validate-password!
   [{:keys [::db/conn] :as cfg} {:keys [profile-id old-password] :as params}]
-  (let [profile (db/get-by-id conn :profile profile-id ::db/for-update? true)]
+  (let [profile (db/get-by-id conn :profile profile-id ::sql/for-update true)]
     (when (and (not= (:password profile) "!")
                (not (:valid (verify-password cfg old-password (:password profile)))))
       (ex/raise :type :validation
@@ -173,20 +182,23 @@
     profile))
 
 (defn update-profile-password!
-  [conn {:keys [id password] :as profile}]
+  [{:keys [::db/conn] :as cfg} {:keys [id password] :as profile}]
   (when-not (db/read-only? conn)
     (db/update! conn :profile
-                {:password (auth/derive-password password)}
-                {:id id})))
+                {:password (derive-password cfg password)}
+                {:id id})
+    nil))
 
 ;; --- MUTATION: Update Photo
 
 (declare upload-photo)
 (declare update-profile-photo)
 
-(def schema:update-profile-photo
-  [:map {:title "update-profile-photo"}
-   [:file ::media/upload]])
+(def ^:private
+  schema:update-profile-photo
+  (sm/define
+    [:map {:title "update-profile-photo"}
+     [:file ::media/upload]]))
 
 (sv/defmethod ::update-profile-photo
   {:doc/added "1.1"
@@ -200,8 +212,9 @@
 
 (defn update-profile-photo
   [{:keys [::db/pool ::sto/storage] :as cfg} {:keys [profile-id file] :as params}]
+
   (let [photo   (upload-photo cfg params)
-        profile (db/get-by-id pool :profile profile-id ::db/for-update? true)]
+        profile (db/get-by-id pool :profile profile-id ::sql/for-update true)]
 
     ;; Schedule deletion of old photo
     (when-let [id (:photo-id profile)]
@@ -237,9 +250,12 @@
      :content-type (:mtype thumb)}))
 
 (defn upload-photo
-  [{:keys [::sto/storage] :as cfg} {:keys [file]}]
-  (let [params (-> (climit/configure cfg :process-image)
-                   (climit/submit! (partial generate-thumbnail! file)))]
+  [{:keys [::sto/storage ::wrk/executor] :as cfg} {:keys [file]}]
+  (let [params (-> cfg
+                   (assoc ::climit/id :process-image/global)
+                   (assoc ::climit/label "upload-photo")
+                   (assoc ::climit/executor executor)
+                   (climit/invoke! generate-thumbnail! file))]
     (sto/put-object! storage params)))
 
 
@@ -248,9 +264,11 @@
 (declare ^:private request-email-change!)
 (declare ^:private change-email-immediately!)
 
-(def schema:request-email-change
-  [:map {:title "request-email-change"}
-   [:email ::sm/email]])
+(def ^:private
+  schema:request-email-change
+  (sm/define
+    [:map {:title "request-email-change"}
+     [:email ::sm/email]]))
 
 (sv/defmethod ::request-email-change
   {::doc/added "1.0"
@@ -261,7 +279,7 @@
           cfg     (assoc cfg ::conn conn)
           params  (assoc params
                          :profile profile
-                         :email (str/lower email))]
+                         :email (clean-email email))]
       (if (contains? cf/flags :smtp)
         (request-email-change! cfg params)
         (change-email-immediately! cfg params)))))
@@ -279,12 +297,12 @@
 
 (defn- request-email-change!
   [{:keys [::conn] :as cfg} {:keys [profile email] :as params}]
-  (let [token   (tokens/generate (::main/props cfg)
+  (let [token   (tokens/generate (::setup/props cfg)
                                  {:iss :change-email
                                   :exp (dt/in-future "15m")
                                   :profile-id (:id profile)
                                   :email email})
-        ptoken  (tokens/generate (::main/props cfg)
+        ptoken  (tokens/generate (::setup/props cfg)
                                  {:iss :profile-identity
                                   :profile-id (:id profile)
                                   :exp (dt/in-future {:days 30})})]
@@ -315,16 +333,18 @@
 
 ;; --- MUTATION: Update Profile Props
 
-(def schema:update-profile-props
-  [:map {:title "update-profile-props"}
-   [:props [:map-of :keyword :any]]])
+(def ^:private
+  schema:update-profile-props
+  (sm/define
+    [:map {:title "update-profile-props"}
+     [:props [:map-of :keyword :any]]]))
 
 (sv/defmethod ::update-profile-props
   {::doc/added "1.0"
    ::sm/params schema:update-profile-props}
   [{:keys [::db/pool]} {:keys [::rpc/profile-id props]}]
   (db/with-atomic [conn pool]
-    (let [profile (get-profile conn profile-id ::db/for-update? true)
+    (let [profile (get-profile conn profile-id ::sql/for-update true)
           props   (reduce-kv (fn [props k v]
                                ;; We don't accept namespaced keys
                                (if (simple-ident? k)
@@ -398,10 +418,9 @@
                    where email = ?
                      and deleted_at is null) as val")
 
-(defn check-profile-existence!
+(defn- check-profile-existence!
   [conn {:keys [email] :as params}]
-  (let [email  (str/lower email)
-        result (db/exec-one! conn [sql:profile-existence email])]
+  (let [result (db/exec-one! conn [sql:profile-existence email])]
     (when (:val result)
       (ex/raise :type :validation
                 :code :email-already-exists))
@@ -416,7 +435,7 @@
 (defn get-profile-by-email
   "Returns a profile looked up by email or `nil` if not match found."
   [conn email]
-  (->> (db/exec! conn [sql:profile-by-email (str/lower email)])
+  (->> (db/exec! conn [sql:profile-by-email (clean-email email)])
        (map decode-row)
        (first)))
 
@@ -431,15 +450,13 @@
   (into {} (filter (fn [[k _]] (simple-ident? k))) props))
 
 (defn derive-password
-  [cfg password]
+  [{:keys [::wrk/executor]} password]
   (when password
-    (-> (climit/configure cfg :derive-password)
-        (climit/submit! (partial auth/derive-password password)))))
+    (px/invoke! executor (partial auth/derive-password password))))
 
 (defn verify-password
-  [cfg password password-data]
-  (-> (climit/configure cfg :derive-password)
-      (climit/submit! (partial auth/verify-password password password-data))))
+  [{:keys [::wrk/executor]} password password-data]
+  (px/invoke! executor (partial auth/verify-password password password-data)))
 
 (defn decode-row
   [{:keys [props] :as row}]

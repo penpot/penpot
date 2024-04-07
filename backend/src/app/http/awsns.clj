@@ -13,6 +13,7 @@
    [app.db.sql :as sql]
    [app.http.client :as http]
    [app.main :as-alias main]
+   [app.setup :as-alias setup]
    [app.tokens :as tokens]
    [app.worker :as-alias wrk]
    [clojure.spec.alpha :as s]
@@ -20,8 +21,8 @@
    [integrant.core :as ig]
    [jsonista.core :as j]
    [promesa.exec :as px]
-   [yetti.request :as yrq]
-   [yetti.response :as-alias yrs]))
+   [ring.request :as rreq]
+   [ring.response :as-alias rres]))
 
 (declare parse-json)
 (declare handle-request)
@@ -30,16 +31,15 @@
 
 (defmethod ig/pre-init-spec ::routes [_]
   (s/keys :req [::http/client
-                ::main/props
-                ::db/pool
-                ::wrk/executor]))
+                ::setup/props
+                ::db/pool]))
 
 (defmethod ig/init-key ::routes
-  [_ {:keys [::wrk/executor] :as cfg}]
+  [_ cfg]
   (letfn [(handler [request]
-            (let [data (-> request yrq/body slurp)]
-              (px/run! executor #(handle-request cfg data)))
-            {::yrs/status 200})]
+            (let [data (-> request rreq/body slurp)]
+              (px/run! :vthread (partial handle-request cfg data)))
+            {::rres/status 200})]
     ["/sns" {:handler handler
              :allowed-methods #{:post}}]))
 
@@ -107,7 +107,7 @@
   [cfg headers]
   (let [tdata (get headers "x-penpot-data")]
     (when-not (str/empty? tdata)
-      (let [result (tokens/verify (::main/props cfg) {:token tdata :iss :profile-identity})]
+      (let [result (tokens/verify (::setup/props cfg) {:token tdata :iss :profile-identity})]
         (:profile-id result)))))
 
 (defn- parse-notification

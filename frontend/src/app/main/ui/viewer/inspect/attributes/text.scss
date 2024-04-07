@@ -1,0 +1,52 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.attributes-block {
+  @include flexColumn;
+}
+
+.title-spacing-text {
+  @extend .attr-title;
+}
+
+.attributes-content {
+  @include flexColumn;
+}
+
+.text-row {
+  @extend .attr-row;
+  :global(.attr-value) {
+    align-items: center;
+  }
+}
+
+.button-children {
+  @extend .copy-button-children;
+}
+
+.attributes-content-row {
+  max-width: $s-240;
+  min-height: calc($s-2 + $s-32);
+  border-radius: $br-8;
+  border: $s-1 solid var(--menu-border-color-disabled);
+  margin-top: $s-4;
+  .content {
+    @include bodySmallTypography;
+    width: 100%;
+    padding: $s-4 0;
+    color: var(--color-foreground-secondary);
+  }
+
+  &:hover {
+    border: $s-1 solid var(--color-background-tertiary);
+    background-color: var(--menu-background-color);
+    .content {
+      color: var(--menu-foreground-color-hover);
+    }
+  }
+}

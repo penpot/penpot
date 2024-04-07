@@ -6,149 +6,183 @@
 
 (ns app.srepl.helpers
   "A  main namespace for server repl."
-  #_:clj-kondo/ignore
+  (:refer-clojure :exclude [parse-uuid])
   (:require
-   [app.auth :refer [derive-password]]
    [app.common.data :as d]
-   [app.common.exceptions :as ex]
-   [app.common.files.features :as ffeat]
-   [app.common.logging :as l]
-   [app.common.pages :as cp]
-   [app.common.pages.migrations :as pmg]
-   [app.common.pprint :refer [pprint]]
-   [app.common.spec :as us]
-   [app.common.uuid :as uuid]
-   [app.config :as cfg]
+   [app.common.files.migrations :as fmg]
+   [app.common.files.validate :as cfv]
    [app.db :as db]
-   [app.db.sql :as sql]
-   [app.main :refer [system]]
+   [app.features.components-v2 :as feat.comp-v2]
+   [app.features.fdata :as feat.fdata]
+   [app.main :as main]
    [app.rpc.commands.files :as files]
+   [app.rpc.commands.files-snapshot :as fsnap]
    [app.util.blob :as blob]
-   [app.util.objects-map :as omap]
-   [app.util.pointer-map :as pmap]
-   [app.util.time :as dt]
-   [clojure.spec.alpha :as s]
-   [clojure.stacktrace :as strace]
-   [clojure.walk :as walk]
-   [cuerdas.core :as str]
-   [expound.alpha :as expound]))
+   [app.util.pointer-map :as pmap]))
 
-(def ^:dynamic *conn* nil)
+(def ^:dynamic *system* nil)
 
-(defn reset-password!
-  "Reset a password to a specific one for a concrete user or all users
-  if email is `:all` keyword."
-  [system & {:keys [email password] :or {password "123123"} :as params}]
-  (us/verify! (contains? params :email) "`email` parameter is mandatory")
-  (db/with-atomic [conn (:app.db/pool system)]
-    (let [password (derive-password password)]
-      (if (= email :all)
-        (db/exec! conn ["update profile set password=?" password])
-        (let [email (str/lower email)]
-          (db/exec! conn ["update profile set password=? where email=?" password email]))))))
+(defn println!
+  [& params]
+  (locking println
+    (apply println params)))
+
+(defn parse-uuid
+  [v]
+  (if (string? v)
+    (d/parse-uuid v)
+    v))
+
+(defn get-file
+  "Get the migrated data of one file."
+  ([id] (get-file (or *system* main/system) id nil))
+  ([system id & {:keys [raw?] :as opts}]
+   (db/run! system
+            (fn [system]
+              (let [file (files/get-file system id :migrate? false)]
+                (if raw?
+                  file
+                  (binding [pmap/*load-fn* (partial feat.fdata/load-pointer system id)]
+                    (-> file
+                        (update :data feat.fdata/process-pointers deref)
+                        (update :data feat.fdata/process-objects (partial into {}))
+                        (fmg/migrate-file)))))))))
+
+(defn update-file!
+  [system {:keys [id] :as file}]
+  (let [conn (db/get-connection system)
+        file (if (contains? (:features file) "fdata/objects-map")
+               (feat.fdata/enable-objects-map file)
+               file)
+
+        file (if (contains? (:features file) "fdata/pointer-map")
+               (binding [pmap/*tracked* (pmap/create-tracked)]
+                 (let [file (feat.fdata/enable-pointer-map file)]
+                   (feat.fdata/persist-pointers! system id)
+                   file))
+               file)
+
+        file (-> file
+                 (update :features db/encode-pgarray conn "text")
+                 (update :data blob/encode))]
+
+    (db/update! conn :file
+                {:revn (:revn file)
+                 :data (:data file)
+                 :version (:version file)
+                 :features (:features file)
+                 :deleted-at (:deleted-at file)
+                 :created-at (:created-at file)
+                 :modified-at (:modified-at file)
+                 :data-backend nil
+                 :has-media-trimmed false}
+                {:id (:id file)})))
+
+(defn update-team!
+  [system {:keys [id] :as team}]
+  (let [conn   (db/get-connection system)
+        params (-> team
+                   (update :features db/encode-pgarray conn "text")
+                   (dissoc :id))]
+    (db/update! conn :team
+                params
+                {:id id})
+    team))
+
+(defn get-raw-file
+  "Get the migrated data of one file."
+  ([id] (get-raw-file (or *system* main/system) id))
+  ([system id]
+   (db/run! system
+            (fn [system]
+              (files/get-file system id :migrate? false)))))
 
 (defn reset-file-data!
   "Hardcode replace of the data of one file."
   [system id data]
-  (db/with-atomic [conn (:app.db/pool system)]
-    (db/update! conn :file
-                {:data data}
-                {:id id})))
+  (db/tx-run! system
+              (fn [system]
+                (db/update! system :file
+                            {:data data}
+                            {:id id}))))
 
-(defn get-file
-  "Get the migrated data of one file."
-  [system id]
-  (db/with-atomic [conn (:app.db/pool system)]
-    (binding [pmap/*load-fn* (partial files/load-pointer conn id)]
-      (-> (db/get-by-id conn :file id)
-          (update :data blob/decode)
-          (update :data pmg/migrate-data)
-          (files/process-pointers deref)))))
 
-(defn update-file!
-  "Apply a function to the data of one file. Optionally save the changes or not.
-  The function receives the decoded and migrated file data."
-  [system & {:keys [update-fn id save? migrate? inc-revn?]
-             :or {save? false migrate? true inc-revn? true}}]
-  (db/with-atomic [conn (:app.db/pool system)]
-    (let [file (-> (db/get-by-id conn :file id {::db/for-update? true})
-                   (update :features db/decode-pgarray #{}))]
-      (binding [*conn* conn
-                pmap/*tracked* (atom {})
-                pmap/*load-fn* (partial files/load-pointer conn id)
-                ffeat/*wrap-with-pointer-map-fn*
-                (if (contains? (:features file) "storage/pointer-map") pmap/wrap identity)
-                ffeat/*wrap-with-objects-map-fn*
-                (if (contains? (:features file) "storage/objectd-map") omap/wrap identity)]
-        (let [file (-> file
-                       (update :data blob/decode)
-                       (cond-> migrate? (update :data pmg/migrate-data))
-                       (update-fn)
-                       (cond-> inc-revn? (update :revn inc)))]
-          (when save?
-            (let [features (db/create-array conn "text" (:features file))
-                  data     (blob/encode (:data file))]
-              (db/update! conn :file
-                          {:data data
-                           :revn (:revn file)
-                           :features features}
-                          {:id id})
+(def ^:private sql:snapshots-with-file
+  "WITH files AS (
+     SELECT f.id AS file_id,
+            (SELECT fc.id
+               FROM file_change AS fc
+              WHERE fc.label = ?
+                AND fc.file_id = f.id
+              ORDER BY fc.created_at DESC
+              LIMIT 1) AS id
+       FROM file AS f
+   ) SELECT * FROM files
+      WHERE file_id = ANY(?)
+        AND id IS NOT NULL")
 
-              (when (contains? (:features file) "storage/pointer-map")
-                (files/persist-pointers! conn id))))
+(defn get-file-snapshots
+  "Get a seq parirs of file-id and snapshot-id for a set of files
+   and specified label"
+  [conn label ids]
+  (db/exec! conn [sql:snapshots-with-file label
+                  (db/create-array conn "uuid" ids)]))
 
-          (dissoc file :data))))))
+(defn take-team-snapshot!
+  [system team-id label]
+  (let [conn (db/get-connection system)]
+    (->> (feat.comp-v2/get-and-lock-team-files conn team-id)
+         (map (fn [file-id]
+                {:file-id file-id
+                 :label label}))
+         (reduce (fn [result params]
+                   (fsnap/take-file-snapshot! conn params)
+                   (inc result))
+                 0))))
 
-(def ^:private sql:retrieve-files-chunk
-  "SELECT id, name, created_at, data FROM file
-    WHERE created_at < ? AND deleted_at is NULL
-    ORDER BY created_at desc LIMIT ?")
+(defn restore-team-snapshot!
+  [system team-id label]
+  (let [conn (db/get-connection system)
+        ids  (->> (feat.comp-v2/get-and-lock-team-files conn team-id)
+                  (into #{}))
 
-(defn analyze-files
-  "Apply a function to all files in the database, reading them in
-  batches. Do not change data.
+        snap (get-file-snapshots conn label ids)
 
-  The `on-file` parameter should be a function that receives the file
-  and the previous state and returns the new state."
-  [system & {:keys [chunk-size max-items start-at on-file on-error on-end]
-             :or {chunk-size 10 max-items Long/MAX_VALUE}}]
-  (letfn [(get-chunk [conn cursor]
-            (let [rows (db/exec! conn [sql:retrieve-files-chunk cursor chunk-size])]
-              [(some->> rows peek :created-at) (seq rows)]))
+        ids' (into #{} (map :file-id) snap)
+        team (-> (feat.comp-v2/get-team conn team-id)
+                 (update :features disj "components/v2"))]
 
-          (get-candidates [conn]
-            (->> (d/iteration (partial get-chunk conn)
-                              :vf second
-                              :kf first
-                              :initk (or start-at (dt/now)))
-                 (take max-items)
-                 (map #(update % :data blob/decode))))
+    (when (not= ids ids')
+      (throw (RuntimeException. "no uniform snapshot available")))
 
-          (on-error* [file cause]
-            (println "unexpected exception happened on processing file: " (:id file))
-            (strace/print-stack-trace cause))]
+    (feat.comp-v2/update-team! conn team)
+    (reduce (fn [result params]
+              (fsnap/restore-file-snapshot! conn params)
+              (inc result))
+            0
+            snap)))
 
-    (db/with-atomic [conn (:app.db/pool system)]
-      (loop [state {}
-             files (get-candidates conn)]
-        (if-let [file (first files)]
-          (let [state' (try
-                         (on-file file state)
-                         (catch Throwable cause
-                           (let [on-error (or on-error on-error*)]
-                             (on-error file cause))))]
-            (recur (or state' state) (rest files)))
+(defn process-file!
+  [system file-id update-fn & {:keys [label validate? with-libraries?] :or {validate? true} :as opts}]
 
-          (if (fn? on-end)
-            (on-end state)
-            state))))))
+  (when (string? label)
+    (fsnap/take-file-snapshot! system {:file-id file-id :label label}))
 
-(defn update-pages
-  "Apply a function to all pages of one file. The function receives a page and returns an updated page."
-  [data f]
-  (update data :pages-index update-vals f))
+  (let [conn  (db/get-connection system)
+        file  (get-file system file-id opts)
+        libs  (when with-libraries?
+                (->> (files/get-file-libraries conn file-id)
+                     (into [file] (map (fn [{:keys [id]}]
+                                         (get-file system id))))
+                     (d/index-by :id)))
 
-(defn update-shapes
-  "Apply a function to all shapes of one page The function receives a shape and returns an updated shape"
-  [page f]
-  (update page :objects update-vals f))
+        file' (if with-libraries?
+                (update-fn file libs opts)
+                (update-fn file opts))]
+
+    (when (and (some? file')
+               (not (identical? file file')))
+      (when validate? (cfv/validate-file-schema! file'))
+      (let [file' (update file' :revn inc)]
+        (update-file! system file')
+        true))))

@@ -17,7 +17,8 @@
 (def ^:private
   sql:delete-files-xlog
   "delete from file_change
-    where created_at < now() - ?::interval")
+    where created_at < now() - ?::interval
+      and label is NULL")
 
 (defmethod ig/pre-init-spec ::handler [_]
   (s/keys :req [::db/pool]))

@@ -27,15 +27,16 @@
    [app.rpc.helpers :as rph]
    [app.rpc.retry :as retry]
    [app.rpc.rlimit :as rlimit]
+   [app.setup :as-alias setup]
    [app.storage :as-alias sto]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [app.worker :as-alias wrk]
    [clojure.spec.alpha :as s]
+   [cuerdas.core :as str]
    [integrant.core :as ig]
    [promesa.core :as p]
-   [yetti.request :as yrq]
-   [yetti.response :as yrs]))
+   [ring.request :as rreq]
+   [ring.response :as rres]))
 
 (s/def ::profile-id ::us/uuid)
 
@@ -58,36 +59,45 @@
 
 (defn- handle-response
   [request result]
-  (if (fn? result)
-    (result request)
-    (let [mdata (meta result)]
-      (-> {::yrs/status  (::http/status mdata 200)
-           ::yrs/headers (::http/headers mdata {})
-           ::yrs/body    (rph/unwrap result)}
-          (handle-response-transformation request mdata)
-          (handle-before-comple-hook mdata)))))
+  (let [mdata    (meta result)
+        response (if (fn? result)
+                   (result request)
+                   (let [result (rph/unwrap result)]
+                     {::rres/status  (::http/status mdata 200)
+                      ::rres/headers (::http/headers mdata {})
+                      ::rres/body    result}))]
+    (-> response
+        (handle-response-transformation request mdata)
+        (handle-before-comple-hook mdata))))
 
 (defn- rpc-handler
   "Ring handler that dispatches cmd requests and convert between
   internal async flow into ring async flow."
-  [methods {:keys [params path-params] :as request}]
-  (let [type       (keyword (:type path-params))
-        etag       (yrq/get-header request "if-none-match")
-        profile-id (or (::session/profile-id request)
-                       (::actoken/profile-id request))
+  [methods {:keys [params path-params method] :as request}]
+  (let [handler-name (:type path-params)
+        etag         (rreq/get-header request "if-none-match")
+        profile-id   (or (::session/profile-id request)
+                         (::actoken/profile-id request))
 
-        data       (-> params
-                       (assoc ::request-at (dt/now))
-                       (assoc ::session/id (::session/id request))
-                       (assoc ::cond/key etag)
-                       (cond-> (uuid? profile-id)
-                         (assoc ::profile-id profile-id)))
+        data         (-> params
+                         (assoc ::request-at (dt/now))
+                         (assoc ::session/id (::session/id request))
+                         (assoc ::cond/key etag)
+                         (cond-> (uuid? profile-id)
+                           (assoc ::profile-id profile-id)))
 
-        data       (vary-meta data assoc ::http/request request)
-        method     (get methods type default-handler)]
+        data         (vary-meta data assoc ::http/request request)
+        handler-fn   (get methods (keyword handler-name) default-handler)]
+
+    (when (and (or (= method :get)
+                   (= method :head))
+               (not (str/starts-with? handler-name "get-")))
+      (ex/raise :type :restriction
+                :code :method-not-allowed
+                :hint "method not allowed for this request"))
 
     (binding [cond/*enabled* true]
-      (let [response (method data)]
+      (let [response (handler-fn data)]
         (handle-response request response)))))
 
 (defn- wrap-metrics
@@ -141,31 +151,33 @@
 (defn- wrap-params-validation
   [_ f mdata]
   (if-let [schema (::sm/params mdata)]
-    (let [schema  (sm/schema schema)
-          valid?  (sm/validator schema)
-          explain (sm/explainer schema)
-          decode  (sm/decoder schema sm/default-transformer)]
-
+    (let [validate (sm/validator schema)
+          explain  (sm/explainer schema)
+          decode   (sm/decoder schema)]
       (fn [cfg params]
         (let [params (decode params)]
-          (if (valid? params)
+          (if (validate params)
             (f cfg params)
-            (ex/raise :type :validation
-                      :code :params-validation
-                      ::sm/explain (explain params))))))
+
+            (let [params (d/without-qualified params)]
+              (ex/raise :type :validation
+                        :code :params-validation
+                        ::sm/explain (explain params)))))))
     f))
 
 (defn- wrap-output-validation
   [_ f mdata]
   (if (contains? cf/flags :rpc-output-validation)
     (or (when-let [schema (::sm/result mdata)]
-          (let [schema  (sm/schema schema)
-                valid?  (sm/validator schema)
-                explain (sm/explainer schema)]
+          (let [schema   (if (sm/lazy-schema? schema)
+                           schema
+                           (sm/define schema))
+                validate (sm/validator schema)
+                explain  (sm/explainer schema)]
             (fn [cfg params]
               (let [response (f cfg params)]
                 (when (map? response)
-                  (when-not (valid? response)
+                  (when-not (validate response)
                     (ex/raise :type :validation
                               :code :data-validation
                               ::sm/explain (explain response))))
@@ -189,7 +201,7 @@
 
 (defn- wrap
   [cfg f mdata]
-  (l/debug :hint "register method" :name (::sv/name mdata))
+  (l/trc :hint "register method" :name (::sv/name mdata))
   (let [f (wrap-all cfg f mdata)]
     (partial f cfg)))
 
@@ -214,6 +226,7 @@
           'app.rpc.commands.files-share
           'app.rpc.commands.files-temp
           'app.rpc.commands.files-update
+          'app.rpc.commands.files-snapshot
           'app.rpc.commands.files-thumbnails
           'app.rpc.commands.ldap
           'app.rpc.commands.management
@@ -236,11 +249,9 @@
                 ::ldap/provider
                 ::sto/storage
                 ::mtx/metrics
-                ::main/props
-                ::wrk/executor]
+                ::setup/props]
           :opt [::climit
-                ::rlimit]
-          :req-un [::db/pool]))
+                ::rlimit]))
 
 (defmethod ig/init-key ::methods
   [_ cfg]
@@ -255,8 +266,7 @@
 (defmethod ig/pre-init-spec ::routes [_]
   (s/keys :req [::methods
                 ::db/pool
-                ::main/props
-                ::wrk/executor
+                ::setup/props
                 ::session/manager]))
 
 (defmethod ig/init-key ::routes

@@ -8,21 +8,22 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.files.features :as ffeat]
+   [app.common.features :as cfeat]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
-   [app.common.pages.helpers :as cph]
    [app.common.schema :as sm]
    [app.common.transit :as t]
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.interactions :as ctsi]
    [app.main.data.comments :as dcm]
+   [app.main.data.events :as ev]
    [app.main.data.fonts :as df]
    [app.main.features :as features]
    [app.main.repo :as rp]
    [app.util.globals :as ug]
    [app.util.router :as rt]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 ;; --- Local State Initialization
 
@@ -46,32 +47,39 @@
 (declare zoom-to-fill)
 (declare zoom-to-fit)
 
-(def schema:initialize
-  [:map
-   [:file-id ::sm/uuid]
-   [:share-id {:optional true} [:maybe ::sm/uuid]]
-   [:page-id {:optional true} ::sm/uuid]])
+(def ^:private
+  schema:initialize
+  (sm/define
+    [:map {:title "initialize"}
+     [:file-id ::sm/uuid]
+     [:share-id {:optional true} [:maybe ::sm/uuid]]
+     [:page-id {:optional true} ::sm/uuid]]))
 
 (defn initialize
   [{:keys [file-id share-id interactions-show?] :as params}]
-  (dm/assert! (sm/valid? schema:initialize params))
+  (dm/assert!
+   "expected valid params"
+   (sm/check! schema:initialize params))
+
   (ptk/reify ::initialize
     ptk/UpdateEvent
     (update [_ state]
       (-> state
           (assoc :current-file-id file-id)
           (update :viewer-local
-            (fn [lstate]
-              (if (nil? lstate)
-                default-local-state
-                lstate)))
+                  (fn [lstate]
+                    (if (nil? lstate)
+                      default-local-state
+                      lstate)))
           (assoc-in [:viewer-local :share-id] share-id)
           (assoc-in [:viewer-local :interactions-show?] interactions-show?)))
 
     ptk/WatchEvent
-    (watch [_ _ _]
+    (watch [_ state _]
       (rx/of (fetch-bundle (d/without-nils params))
-             (fetch-comment-threads params)))
+             ;; Only fetch threads for logged-in users
+             (when (some? (:profile state))
+               (fetch-comment-threads params))))
 
     ptk/EffectEvent
     (effect [_ _ _]
@@ -92,28 +100,30 @@
 
 ;; --- Data Fetching
 
-(def schema:fetch-bundle
-  [:map
-   [:page-id ::sm/uuid]
-   [:file-id ::sm/uuid]
-   [:share-id {:optional true} ::sm/uuid]])
-
-(def ^:private valid-fetch-bundle-params?
-  (sm/pred-fn schema:fetch-bundle))
+(def ^:private
+  schema:fetch-bundle
+  (sm/define
+    [:map {:title "fetch-bundle"}
+     [:page-id ::sm/uuid]
+     [:file-id ::sm/uuid]
+     [:share-id {:optional true} ::sm/uuid]]))
 
 (defn- fetch-bundle
   [{:keys [file-id share-id] :as params}]
-  (dm/assert! (valid-fetch-bundle-params? params))
+
+  (dm/assert!
+   "expected valid params"
+   (sm/check! schema:fetch-bundle params))
 
   (ptk/reify ::fetch-bundle
     ptk/WatchEvent
-    (watch [_ state _]
-      (let [features (cond-> ffeat/enabled
-                       (features/active-feature? state :components-v2)
-                       (conj "components/v2")
-
-                       :always
-                       (conj "storage/pointer-map"))
+    (watch [_ _ _]
+      (let [;; NOTE: in viewer we don't have access to the team when
+            ;; user is not logged-in, so we can't know which features
+            ;; are active from team, so in this case it is necesary
+            ;; report the whole set of supported features instead of
+            ;; the enabled ones.
+            features cfeat/supported-features
             params'  (cond-> {:file-id file-id :features features}
                        (uuid? share-id)
                        (assoc :share-id share-id))
@@ -151,8 +161,9 @@
                      (rx/map (fn [data]
                                (update bundle :file assoc :data data))))))
              (rx/mapcat
-              (fn [{:keys [fonts] :as bundle}]
+              (fn [{:keys [fonts team] :as bundle}]
                 (rx/of (df/fonts-fetched fonts)
+                       (features/initialize (:features team))
                        (bundle-fetched (merge bundle params))))))))))
 
 (declare go-to-frame)
@@ -194,10 +205,10 @@
                     "fill" zoom-to-fill
                     nil))
            (rx/of
-             (cond
-               (some? frame-id) (go-to-frame (uuid frame-id))
-               (some? index) (go-to-frame-by-index index)
-               :else (go-to-frame-auto)))))))))
+            (cond
+              (some? frame-id) (go-to-frame (uuid frame-id))
+              (some? index) (go-to-frame-by-index index)
+              :else (go-to-frame-auto)))))))))
 
 (defn fetch-comment-threads
   [{:keys [file-id page-id share-id] :as params}]
@@ -289,9 +300,9 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [srect     (as-> (get-in state [:route :query-params :page-id]) %
-                            (get-in state [:viewer :pages % :frames])
-                            (nth % (get-in state [:route :query-params :index]))
-                            (get % :selrect))
+                        (get-in state [:viewer :pages % :frames])
+                        (nth % (get-in state [:route :query-params :index]))
+                        (get % :selrect))
             orig-size (get-in state [:viewer-local :viewport-size])
             wdiff     (/ (:width orig-size) (:width srect))
             hdiff     (/ (:height orig-size) (:height srect))
@@ -485,9 +496,11 @@
    (go-to-frame frame-id nil))
 
   ([frame-id animation]
-   (dm/assert! (uuid? frame-id))
-   (dm/assert! (or (nil? animation)
-                   (ctsi/animation? animation)))
+   (dm/assert!
+    "expected valid parameters"
+    (and (uuid? frame-id)
+         (or (nil? animation)
+             (ctsi/check-animation! animation))))
 
    (ptk/reify ::go-to-frame
      ptk/UpdateEvent
@@ -504,9 +517,9 @@
 
            (some? animation)
            (assoc-in [:viewer-animations (:id frame)]
-                  {:kind :go-to-frame
-                   :orig-frame-id (:id frame)
-                   :animation animation}))))
+                     {:kind :go-to-frame
+                      :orig-frame-id (:id frame)
+                      :animation animation}))))
 
      ptk/WatchEvent
      (watch [_ state _]
@@ -534,6 +547,11 @@
 (defn go-to-section
   [section]
   (ptk/reify ::go-to-section
+    ev/Event
+    (-data [_]
+      {::ev/origin "viewer"
+       :section (name section)})
+
     ptk/UpdateEvent
     (update [_ state]
       (assoc state :viewer-overlays []))
@@ -548,7 +566,7 @@
 ;; --- Overlays
 
 (defn- open-overlay*
-  [state frame position snap-to close-click-outside background-overlay animation]
+  [state frame position snap-to close-click-outside background-overlay animation fixed-source?]
   (cond-> state
     :always
     (update :viewer-overlays conj
@@ -558,7 +576,8 @@
              :snap-to snap-to
              :close-click-outside close-click-outside
              :background-overlay background-overlay
-             :animation animation})
+             :animation animation
+             :fixed-source? fixed-source?})
 
     (some? animation)
     (assoc-in [:viewer-animations (:id frame)]
@@ -578,7 +597,7 @@
                :animation animation})))
 
 (defn open-overlay
-  [frame-id position snap-to close-click-outside background-overlay animation]
+  [frame-id position snap-to close-click-outside background-overlay animation fixed-source?]
   (dm/assert! (uuid? frame-id))
   (dm/assert! (gpt/point? position))
   (dm/assert! (or (nil? close-click-outside)
@@ -586,7 +605,7 @@
   (dm/assert! (or (nil? background-overlay)
                   (boolean? background-overlay)))
   (dm/assert! (or (nil? animation)
-                  (ctsi/animation? animation)))
+                  (ctsi/check-animation! animation)))
   (ptk/reify ::open-overlay
     ptk/UpdateEvent
     (update [_ state]
@@ -603,12 +622,13 @@
                          snap-to
                          close-click-outside
                          background-overlay
-                         animation)
+                         animation
+                         fixed-source?)
           state)))))
 
 
 (defn toggle-overlay
-  [frame-id position snap-to close-click-outside background-overlay animation]
+  [frame-id position snap-to close-click-outside background-overlay animation fixed-source?]
   (dm/assert! (uuid? frame-id))
   (dm/assert! (gpt/point? position))
   (dm/assert! (or (nil? close-click-outside)
@@ -616,7 +636,7 @@
   (dm/assert! (or (nil? background-overlay)
                   (boolean? background-overlay)))
   (dm/assert! (or (nil? animation)
-                  (ctsi/animation? animation)))
+                  (ctsi/check-animation! animation)))
 
   (ptk/reify ::toggle-overlay
     ptk/UpdateEvent
@@ -634,7 +654,8 @@
                          snap-to
                          close-click-outside
                          background-overlay
-                         animation)
+                         animation
+                         fixed-source?)
           (close-overlay* state
                           (:id frame)
                           (ctsi/invert-direction animation)))))))
@@ -644,7 +665,7 @@
   ([frame-id animation]
    (dm/assert! (uuid? frame-id))
    (dm/assert! (or (nil? animation)
-                   (ctsi/animation? animation)))
+                   (ctsi/check-animation! animation)))
 
    (ptk/reify ::close-overlay
      ptk/UpdateEvent
@@ -693,7 +714,7 @@
                           (conj id))]
         (-> state
             (assoc-in [:viewer-local :selected]
-                      (cph/expand-region-selection objects selection)))))))
+                      (cfh/expand-region-selection objects selection)))))))
 
 (defn select-all
   []

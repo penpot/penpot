@@ -13,6 +13,12 @@
   [file-data id]
   (dm/get-in file-data [:pages-index id]))
 
+(defn get-last-page
+  [file-data]
+  (let [id (-> file-data :pages last)]
+    (when id
+      (get-page file-data id))))
+
 (defn add-page
   [file-data {:keys [id index] :as page}]
   (-> file-data
@@ -27,8 +33,8 @@
       (update :pages-index assoc id (dissoc page :index))))
 
 (defn pages-seq
-  [file-data]
-  (vals (:pages-index file-data)))
+  [fdata]
+  (-> fdata :pages-index vals seq))
 
 (defn update-page
   [file-data page-id f]

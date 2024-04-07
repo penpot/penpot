@@ -1,0 +1,62 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.gradient-stops {
+  display: flex;
+  height: $s-20;
+  width: 100%;
+  margin: $s-12 0;
+  background-color: var(--colorpicker-handlers-color);
+  border-radius: $br-6;
+}
+
+.gradient-background-wrapper {
+  height: 100%;
+  width: 100%;
+  border-radius: $br-6;
+  background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAExJREFUSIljvHnz5n8GLEBNTQ2bMMOtW7ewiuNSz4RVlIpg1IKBt4Dx////WFMRqakFl/qhH0SjFhAELNRKLaNl0Qi2YLQsGrWAcgAA0gAgQPhT2rAAAAAASUVORK5CYII=")
+    left center;
+}
+
+.gradient-background {
+  height: 100%;
+  width: 100%;
+  border-radius: $br-6;
+  border: $s-2 solid var(--colorpicker-details-color);
+}
+
+.gradient-stop-wrapper {
+  position: absolute;
+  width: calc(100% - $s-40);
+  left: $s-20;
+}
+
+.gradient-stop {
+  position: absolute;
+  display: grid;
+  grid-template-columns: 50% 50%;
+  padding: 0;
+  width: $s-16;
+  height: $s-24;
+  border-radius: $br-4;
+  margin-top: calc(-1 * $s-2);
+  margin-left: calc(-1 * $s-8);
+  border: $s-2 solid var(--colorpicker-handlers-color);
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADFJREFUOE9jZGBgEAFifOANPknGUQMYhkkYEEgG+NMJKAwIAbwJbdQABnBCIgRoG4gAIF8IsXB/Rs4AAAAASUVORK5CYII=");
+  background-position: left center;
+  background-size: 8px;
+  &.selected {
+    border: $s-2 solid var(--colorpicker-details-color-selected);
+  }
+}
+
+.gradient-stop-color,
+.gradient-stop-alpha {
+  width: 100%;
+  height: 100%;
+}

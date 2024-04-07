@@ -5,12 +5,13 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.schema.generators
-  (:refer-clojure :exclude [set subseq uuid for])
+  (:refer-clojure :exclude [set subseq uuid for filter map let])
   #?(:cljs (:require-macros [app.common.schema.generators]))
   (:require
    [app.common.schema.registry :as sr]
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
+   [clojure.core :as c]
    [clojure.test.check :as tc]
    [clojure.test.check.generators :as tg]
    [clojure.test.check.properties :as tp]
@@ -36,9 +37,13 @@
   [& params]
   `(tp/for-all ~@params))
 
+(defmacro let
+  [& params]
+  `(tg/let ~@params))
+
 (defn check!
   [p & {:keys [num] :or {num 20} :as options}]
-  (tc/quick-check num p (assoc options :reporter-fn default-reporter-fn)))
+  (tc/quick-check num p (assoc options :reporter-fn default-reporter-fn :max-size 50)))
 
 (defn sample
   ([g]
@@ -58,6 +63,10 @@
   ([s opts]
    (mg/generator s (assoc opts :registry sr/default-registry))))
 
+(defn filter
+  [pred gen]
+  (tg/such-that pred gen 100))
+
 (defn small-double
   [& {:keys [min max] :or {min -100 max 100}}]
   (tg/double* {:min min, :max max, :infinite? false, :NaN? false}))
@@ -69,20 +78,19 @@
 (defn word-string
   []
   (->> (tg/such-that #(re-matches #"\w+" %)
-                       tg/string-alphanumeric
-                       50)
+                     tg/string-alphanumeric
+                     50)
        (tg/such-that (complement str/blank?))))
 
 (defn uri
   []
   (tg/let [scheme (tg/elements ["http" "https"])
-             domain (as-> (word-string) $
-                      (tg/such-that (fn [x] (> (count x) 5)) $ 100)
-                      (tg/fmap str/lower $))
-             ext    (tg/elements ["net" "com" "org" "app" "io"])]
+           domain (as-> (word-string) $
+                    (tg/such-that (fn [x] (> (count x) 5)) $ 100)
+                    (tg/fmap str/lower $))
+           ext    (tg/elements ["net" "com" "org" "app" "io"])]
     (u/uri (str scheme "://" domain "." ext))))
 
-;; FIXME: revisit
 (defn uuid
   []
   (->> tg/small-integer
@@ -98,11 +106,11 @@
   ([dest elements]
    (->> (apply tg/tuple (repeat (count elements) tg/boolean))
         (tg/fmap (fn [bools]
-                     (into dest
-                           (comp
-                            (filter first)
-                            (map second))
-                           (map list bools elements)))))))
+                   (into dest
+                         (comp
+                          (c/filter first)
+                          (c/map second))
+                         (c/map list bools elements)))))))
 
 (defn set
   [g]
@@ -119,6 +127,10 @@
 (defn fmap
   [f g]
   (tg/fmap f g))
+
+(defn mcat
+  [f g]
+  (tg/bind g f))
 
 (defn tuple
   [& opts]

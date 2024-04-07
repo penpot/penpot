@@ -8,9 +8,11 @@
   (:require
    [app.common.logging :as log]
    [app.util.object :as obj]
-   [beicon.core :as rx]
+   [app.util.timers :as tm]
+   [beicon.v2.core :as rx]
+   [beicon.v2.operators :as rxo]
    [okulary.core :as l]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (log/set-level! :info)
 
@@ -41,7 +43,7 @@
                    (when (and *debug-events*
                               (ptk/event? e)
                               (not (debug-exclude-events (ptk/type e))))
-                     (.log js/console (str "[stream]: " (ptk/repr-event e)) )))))
+                     (.log js/console (str "[stream]: " (ptk/repr-event e)))))))
 
 (defonce state
   (ptk/store {:resolve ptk/resolve
@@ -56,25 +58,25 @@
 
 (defonce last-events
   (let [buffer  (atom [])
-        allowed #{:app.main.data.workspace/initialize-page
-                  :app.main.data.workspace/finalize-page
-                  :app.main.data.workspace/initialize-file
-                  :app.main.data.workspace/finalize-file}]
+        omitset #{:potok.v2.core/undefined
+                  :app.main.data.workspace.persistence/update-persistence-status
+                  :app.main.data.websocket/send-message
+                  :app.main.data.workspace.notifications/handle-pointer-send
+                  :app.util.router/assign-exception}]
     (->> (rx/merge
           (->> stream
                (rx/filter (ptk/type? :app.main.data.workspace.changes/commit-changes))
-               (rx/map #(-> % deref :hint-origin str))
-               (rx/dedupe))
-          (->> stream
-               (rx/map ptk/type)
-               (rx/filter #(contains? allowed %))
-               (rx/map str)))
+               (rx/map #(-> % deref :hint-origin)))
+          (rx/map ptk/type stream))
+         (rx/filter #(not (contains? omitset %)))
+         (rx/map str)
+         (rx/pipe (rxo/distinct-contiguous))
          (rx/scan (fn [buffer event]
                     (cond-> (conj buffer event)
-                      (> (count buffer) 20)
+                      (> (count buffer) 50)
                       (pop)))
                   #queue [])
-         (rx/subs #(reset! buffer (vec %))))
+         (rx/subs! #(reset! buffer (vec %))))
     buffer))
 
 (defn emit!
@@ -85,6 +87,10 @@
   ([event & events]
    (apply ptk/emit! state (cons event events))
    nil))
+
+(defn async-emit!
+  [& params]
+  (tm/schedule #(apply emit! params)))
 
 (defonce ongoing-tasks (l/atom #{}))
 

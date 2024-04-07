@@ -12,10 +12,10 @@
 (defmethod c/render-release-notes "1.17"
   [{:keys [slide klass next finish navigate version]}]
   (mf/html
-   (case @slide
+   (case slide
      :start
      [:div.modal-overlay
-      [:div.animated {:class @klass}
+      [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
          [:img {:src "images/onboarding-version.jpg" :border "0" :alt "What's new release 1.17"}]]
@@ -33,7 +33,7 @@
 
      0
      [:div.modal-overlay
-      [:div.animated {:class @klass}
+      [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
          [:img {:src "images/features/1.17-flex-layout.gif" :border "0" :alt "Flex-Layout"}]]
@@ -46,13 +46,13 @@
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
           [:& c/navigation-bullets
-           {:slide @slide
+           {:slide slide
             :navigate navigate
             :total 4}]]]]]]
 
      1
      [:div.modal-overlay
-      [:div.animated {:class @klass}
+      [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
          [:img {:src "images/features/1.17-inspect.gif" :border "0" :alt "Inspect at the workspace"}]]
@@ -60,18 +60,18 @@
          [:div.modal-title
           [:h2 "Inspect at the workspace"]]
          [:div.modal-content
-          [:p "Now you can inspect designs to get measures, properties and production-ready code right at the workspace, so designers and developers can share the same space while working."] 
+          [:p "Now you can inspect designs to get measures, properties and production-ready code right at the workspace, so designers and developers can share the same space while working."]
           [:p "Also, inspect mode provides a safer view-only mode and other improvements."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
           [:& c/navigation-bullets
-           {:slide @slide
+           {:slide slide
             :navigate navigate
             :total 4}]]]]]]
 
      2
      [:div.modal-overlay
-      [:div.animated {:class @klass}
+      [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
          [:img {:src "images/features/1.17-webhook.gif" :border "0" :alt "Webhooks"}]]
@@ -84,13 +84,13 @@
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
           [:& c/navigation-bullets
-           {:slide @slide
+           {:slide slide
             :navigate navigate
             :total 4}]]]]]]
 
      3
      [:div.modal-overlay
-      [:div.animated {:class @klass}
+      [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
          [:img {:src "images/features/1.17-ally.gif" :border "0" :alt "Accessibility improvements"}]]
@@ -103,6 +103,6 @@
          [:div.modal-navigation
           [:button.btn-secondary {:on-click finish} "Start!"]
           [:& c/navigation-bullets
-           {:slide @slide
+           {:slide slide
             :navigate navigate
             :total 4}]]]]]])))

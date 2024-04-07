@@ -6,7 +6,16 @@
 
 @import "refactor/common-refactor.scss";
 
+.palette-wrapper {
+  position: absolute;
+  width: 100vw;
+  left: 0;
+  bottom: 0;
+  padding-bottom: $s-4;
+}
+
 .palettes {
+  z-index: $z-index-2;
   position: relative;
   right: 0;
   grid-area: color-palette;
@@ -22,14 +31,15 @@
   padding: $s-0 $s-0 $s-8 $s-8;
   border-radius: $br-8;
   background-color: var(--palette-background-color);
-  transition: right 1s ease, opacity 1s ease;
+  border: $s-2 solid var(--panel-border-color);
+  transition:
+    right 0.3s,
+    opacity 0.2s,
+    width 0.3s;
   &.wide {
     width: 100%;
   }
-  &.mid-palette,
-  &.small-palette {
-    grid-template-columns: $s-64 auto 1fr;
-  }
+
   .resize-area {
     grid-area: resize;
     height: $s-8;
@@ -46,7 +56,8 @@
     width: $s-32;
     margin: $s-0;
     list-style: none;
-    z-index: $z-index-1;
+    z-index: $z-index-2;
+    gap: $s-2;
     &.mid-palette,
     &.small-palette {
       display: flex;
@@ -57,32 +68,25 @@
       opacity: $op-10;
       transition: opacity 1s ease;
       .palette-btn {
-        @extend .button-primary;
+        @extend .button-tertiary;
         height: $s-32;
         width: $s-32;
         border-radius: $br-8;
-        border: $s-2 solid transparent;
         background-clip: padding-box;
         padding: 0;
         svg {
           @extend .button-icon-small;
+          stroke: var(--icon-foreground);
         }
         &.selected {
-          border: $s-2 solid var(--palette-btn-border-color-selected);
-          background-color: var(--palette-btn-background-color-selected);
-          color: var(--palette-btn-foreground-color-selected);
-          svg {
-            stroke: var(--palette-btn-foreground-color-selected);
-          }
-        }
-        &:hover {
-          border: $s-2 solid transparent;
+          @extend .button-icon-selected;
         }
       }
     }
   }
+
   .palette-actions {
-    @extend .button-primary;
+    @extend .button-tertiary;
     grid-area: actions;
     height: calc(var(--height) - $s-16);
     width: $s-32;
@@ -90,44 +94,73 @@
     margin-left: $s-4;
     border-radius: $br-8;
     background-color: var(--palette-background-color);
-    z-index: $z-index-1;
+    z-index: $z-index-2;
     svg {
       @extend .button-icon;
+      stroke: var(--icon-foreground);
     }
   }
   .palette {
     grid-area: palette;
     width: 100%;
+    min-width: 0;
+  }
+}
+
+.handler {
+  @include buttonStyle;
+  @include flexCenter;
+  width: $s-12;
+  height: 100%;
+  .handler-btn {
+    width: $s-4;
+    height: 100%;
+    max-height: $s-40;
+    margin: $s-8 $s-4;
+    padding: 0;
+    border-radius: $s-4;
+    background-color: var(--palette-handler-background-color);
+  }
+}
+
+.mid-palette,
+.small-palette {
+  grid-template-columns: $s-64 auto 1fr;
+}
+
+.hidden-bts {
+  right: $s-2;
+  z-index: $z-index-1;
+  width: 22px;
+  grid-template-columns: $s-8 auto 1fr;
+  padding: 0;
+  border-inline-start: 0;
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+  .palette-btn-list {
+    opacity: $op-0;
+    visibility: hidden;
+    width: 0;
+    .palette-item {
+      opacity: $op-0;
+      visibility: hidden;
+      z-index: 0;
+    }
+  }
+  .resize-area {
+    visibility: hidden;
+    z-index: 0;
+    width: 0;
+  }
+  .palette-actions {
+    visibility: hidden;
+    z-index: 0;
+  }
+  .palette {
+    visibility: hidden;
+    z-index: 0;
   }
   .handler {
-    @include buttonStyle;
-    @include flexCenter;
-    width: $s-12;
-    height: 100%;
-
-    .handler-btn {
-      width: $s-4;
-      height: 100%;
-      max-height: $s-40;
-      margin: $s-8 $s-4;
-      padding: 0;
-      border-radius: $s-4;
-      background-color: var(--palette-handler-background-color);
-    }
-  }
-  &.hidden-bts {
-    right: $s-40;
-    z-index: 0;
-    &.small-palette,
-    &.mid-palette {
-      right: $s-72;
-    }
-    .palette-btn-list {
-      .palette-item {
-        opacity: $op-0;
-        visibility: hidden;
-        z-index: 0;
-      }
-    }
+    padding-bottom: $s-8;
   }
 }

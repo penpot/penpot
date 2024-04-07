@@ -1,0 +1,198 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+}
+
+.modal-container {
+  @extend .modal-container-base;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  margin-bottom: $s-24;
+}
+
+.modal-title {
+  @include uppercaseTitleTipography;
+  color: var(--modal-title-foreground-color);
+}
+
+.modal-close-btn {
+  @extend .modal-close-btn-base;
+}
+
+.modal-content {
+  @include bodySmallTypography;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $s-16;
+  margin-bottom: $s-24;
+  min-height: 40px;
+}
+
+.action-buttons {
+  @extend .modal-action-btns;
+}
+
+.cancel-button {
+  @extend .modal-cancel-btn;
+}
+.accept-btn {
+  @extend .modal-accept-btn;
+  &.danger {
+    @extend .modal-danger-btn;
+  }
+}
+
+.modal-scd-msg,
+.modal-subtitle,
+.modal-msg {
+  @include bodySmallTypography;
+  color: var(--modal-text-foreground-color);
+  line-height: 1.5;
+}
+
+.file-entry {
+  .file-name {
+    @include flexRow;
+    margin-bottom: $s-8;
+    .file-icon {
+      @include flexCenter;
+      height: $s-24;
+      width: $s-16;
+      svg {
+        @extend .button-icon;
+        stroke: var(--icon-foreground);
+      }
+      &.icon-fill svg {
+        fill: var(--icon-foreground);
+      }
+    }
+    .file-name-edit {
+      @extend .input-element;
+      flex-grow: 1;
+    }
+    .file-name-label {
+      @include bodySmallTypography;
+      display: flex;
+      align-items: center;
+      gap: $s-12;
+      flex-grow: 1;
+      .icon {
+        @include flexCenter;
+        height: $s-16;
+        width: $s-16;
+        svg {
+          @extend .button-icon-small;
+          stroke: var(--icon-foreground);
+        }
+      }
+    }
+    .edit-entry-buttons {
+      @include flexRow;
+      button {
+        @extend .button-tertiary;
+        width: $s-28;
+        height: $s-32;
+        svg {
+          @extend .button-icon;
+          stroke: var(--icon-foreground);
+        }
+      }
+    }
+  }
+  .error-message,
+  .progress-message {
+    height: $s-32;
+    color: var(--modal-text-foreground-color);
+  }
+
+  .linked-library {
+    display: flex;
+    align-items: center;
+    gap: $s-12;
+    color: var(--modal-text-foreground-color);
+    .linked-library-tag {
+      @include flexCenter;
+      height: $s-24;
+      width: $s-24;
+      svg {
+        @extend .button-icon;
+        stroke: var(--icon-foreground);
+      }
+      &.error {
+        svg {
+          stroke: var(--element-foreground-error);
+        }
+      }
+    }
+  }
+
+  &.loading {
+    .file-name {
+      color: var(--modal-text-foreground-color);
+      .file-icon {
+        :global(#loader-pencil) {
+          color: var(--modal-text-foreground-color);
+          stroke: var(--modal-text-foreground-color);
+          fill: var(--modal-text-foreground-color);
+        }
+      }
+    }
+  }
+  &.warning {
+    .file-name {
+      color: var(--element-foreground-warning);
+      .file-icon svg {
+        stroke: var(--element-foreground-warning);
+      }
+      .file-icon.icon-fill svg {
+        fill: var(--element-foreground-warning);
+      }
+    }
+  }
+  &.success {
+    .file-name {
+      color: var(--modal-text-foreground-color);
+      .file-icon svg {
+        stroke: var(--modal-text-foreground-color);
+      }
+      .file-icon.icon-fill svg {
+        fill: var(--modal-text-foreground-color);
+      }
+    }
+  }
+  &.error {
+    .file-name {
+      color: var(--modal-text-foreground-color);
+      .file-icon svg {
+        stroke: var(--modal-text-foreground-color);
+      }
+      .file-icon.icon-fill svg {
+        fill: var(--modal-text-foreground-color);
+      }
+    }
+  }
+  &.editable {
+    .file-name {
+      color: var(--modal-text-foreground-color);
+      .file-icon svg {
+        stroke: var(--modal-text-foreground-color);
+      }
+      .file-icon.icon-fill svg {
+        fill: var(--modal-text-foreground-color);
+      }
+    }
+  }
+}

@@ -116,29 +116,50 @@ nav > div:not(:last-child) {
   width: unset;
 }
 
-.index {
+.dashboard {
   margin-top: 40px;
   display: flex;
 }
 
-.index > section {
-  padding: 10px;
-  background-color: #e3e3e3;
+.widget {
   max-width: 400px;
   margin: 5px;
   height: fit-content;
 }
 
-.index fieldset:not(:first-child) {
+.widget input[type=submit] {
+  outline: none;
+  border: 1px solid gray;
+  border-radius: 2px;
+  padding: 3px 5px;
+}
+
+.widget input[type=submit].danger {
+  outline: none;
+  border: 1px solid red;
+  border-radius: 2px;
+  padding: 3px 5px;
+}
+
+
+
+.widget > fieldset {
+  padding: 10px;
+  background-color: #f9f9f9;
+}
+
+.widget > fieldset:not(:last-child) {
+  margin-bottom: 10px;
+}
+
+
+
+.dashboard fieldset:not(:first-child) {
   margin-top: 15px;
 }
 
-/* .index > section:not(:last-child) { */
-/*   margin-bottom: 10px; */
-/* } */
 
-
-.index > section > h2 {
+.widget > h2 {
   margin-top: 0px;
 }
 

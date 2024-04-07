@@ -11,8 +11,8 @@
    [app.common.uri :as u]
    [app.config :as cf]
    [app.util.websocket :as ws]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 (l/set-level! :error)
 
@@ -44,16 +44,16 @@
   (ptk/reify ::initialize
     ptk/WatchEvent
     (watch [_ state stream]
-      (l/trace :hint "event:initialize" :fn "watch")
+      (l/trace :hint "initialize" :fn "watch")
       (let [sid (:session-id state)
             uri (prepare-uri {:session-id sid})
             ws  (ws/create uri)]
 
         (vreset! ws-conn ws)
 
-        (let [stoper  (rx/merge
-                       (rx/filter (ptk/type? ::finalize) stream)
-                       (rx/filter (ptk/type? ::initialize) stream))]
+        (let [stopper  (rx/merge
+                        (rx/filter (ptk/type? ::finalize) stream)
+                        (rx/filter (ptk/type? ::initialize) stream))]
 
           (->> (rx/merge
                 (rx/of #(assoc % :ws-conn ws))
@@ -64,7 +64,7 @@
                 (->> (ws/get-rcv-stream ws)
                      (rx/filter ws/opened-event?)
                      (rx/map (fn [_] (ptk/data-event ::opened {})))))
-               (rx/take-until stoper)))))))
+               (rx/take-until stopper)))))))
 
 ;; --- Finalize Websocket
 

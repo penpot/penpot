@@ -37,6 +37,6 @@
       :width width
       :height height
       :transform transform
-      :style {:stroke "var(--color-select)"
+      :style {:stroke "var(--color-accent-tertiary)"
               :stroke-width (/ 1 zoom)
               :fill "none"}}]))

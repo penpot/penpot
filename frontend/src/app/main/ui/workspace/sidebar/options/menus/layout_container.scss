@@ -1,0 +1,362 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.element-set {
+  margin: 0;
+  .element-title {
+    .title-spacing-layout {
+      padding-left: $s-2;
+      margin: 0;
+    }
+
+    .title-actions {
+      position: relative;
+      display: flex;
+      gap: $s-4;
+      height: $s-32;
+      padding: 0;
+      margin: 0;
+      .layout-options {
+        width: $s-92;
+      }
+      .layout-option {
+        white-space: nowrap;
+      }
+      .remove-layout,
+      .add-layout {
+        @extend .button-tertiary;
+        border-radius: $br-8;
+        height: $s-32;
+        width: $s-28;
+        svg {
+          @extend .button-icon;
+          stroke: var(--icon-foreground);
+        }
+      }
+    }
+  }
+  .flex-layout-menu {
+    margin-bottom: $s-8;
+    .first-row {
+      display: flex;
+      gap: $s-4;
+      margin-bottom: $s-12;
+      margin-top: $s-4;
+      .wrap-button {
+        @extend .button-tertiary;
+        border-radius: $br-8;
+        height: $s-32;
+        width: $s-28;
+        svg {
+          @extend .button-icon;
+          stroke: var(--icon-foreground);
+        }
+        &.selected {
+          @extend .button-icon-selected;
+        }
+      }
+    }
+    .second-row,
+    .third-row {
+      margin-bottom: $s-12;
+    }
+    .forth-row {
+      @include flexColumn;
+    }
+    .help-button-wrapper {
+      position: relative;
+      .help-button {
+        position: absolute;
+        top: 0;
+        right: 0;
+      }
+    }
+  }
+}
+
+.gap-group {
+  display: flex;
+  gap: $s-4;
+  .column-gap {
+    @extend .input-element;
+    width: $s-108;
+    &.disabled {
+      @extend .disabled-input;
+    }
+  }
+  .row-gap {
+    @extend .input-element;
+    width: $s-108;
+    &.disabled {
+      @extend .disabled-input;
+    }
+  }
+}
+
+.padding-group {
+  display: flex;
+  gap: $s-4;
+
+  .padding-inputs {
+    display: flex;
+    gap: $s-4;
+  }
+
+  .paddings-simple {
+    display: flex;
+    gap: $s-4;
+
+    .padding-simple {
+      @extend .input-element;
+      max-width: $s-108;
+    }
+  }
+
+  .paddings-multiple {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: $s-4;
+
+    .padding-multiple {
+      @extend .input-element;
+      max-width: $s-108;
+    }
+  }
+
+  .padding-toggle {
+    @extend .button-tertiary;
+    height: $s-32;
+    width: $s-28;
+    border-radius: $br-8;
+    svg {
+      @extend .button-icon;
+      stroke: var(--icon-foreground);
+    }
+    &.selected {
+      @extend .button-icon-selected;
+    }
+  }
+}
+
+.grid-layout-menu {
+  @include flexColumn;
+  gap: $s-8;
+
+  .row {
+    @include flexRow;
+  }
+
+  .first-row {
+    margin-bottom: $s-8;
+  }
+
+  .grid-layout-align {
+    @include flexColumn;
+    gap: $s-4;
+    align-items: flex-start;
+    position: relative;
+
+    .locate-button {
+      position: absolute;
+      top: 0;
+      right: 0;
+    }
+  }
+
+  .grid-layout-menu-title {
+    flex: 1;
+    font-size: $fs-11;
+    color: var(--title-foreground-color-hover);
+  }
+
+  .edit-mode-btn {
+    @extend .button-secondary;
+    @include uppercaseTitleTipography;
+    width: 100%;
+    padding: $s-8;
+  }
+
+  .exit-btn {
+    @extend .button-secondary;
+    @include uppercaseTitleTipography;
+    padding: $s-8 $s-20;
+  }
+
+  .grid-tracks-info-container {
+    @include flexColumn;
+    margin-top: $s-4;
+  }
+
+  .padding-section {
+    margin-top: $s-8;
+  }
+
+  .grid-tracks-row {
+    @include flexColumn;
+    margin: $s-8 0;
+    gap: $s-12;
+  }
+
+  .edit-grid-wrapper {
+    @include flexRow;
+  }
+}
+
+.track-info {
+  display: flex;
+
+  &.dnd-over-top {
+    border-top: $s-2 solid var(--button-foreground-hover);
+  }
+
+  &.dnd-over-bot {
+    border-bottom: $s-2 solid var(--button-foreground-hover);
+  }
+
+  .track-info-container {
+    display: flex;
+  }
+
+  .track-info-dir-icon {
+    cursor: pointer;
+    border-radius: $br-8 0 0 $br-8;
+    background-color: var(--input-background-color);
+    padding: 0 $s-8;
+    svg {
+      @extend .button-icon;
+      stroke: var(--icon-foreground);
+      height: 100%;
+    }
+    &:hover svg {
+      stroke: var(--icon-foreground-hover);
+    }
+  }
+
+  .track-info-value {
+    @extend .input-element;
+    border-radius: 0;
+    border-right: $s-1 solid var(--panel-background-color);
+  }
+
+  .track-info-unit-selector {
+    border-radius: 0 $br-8 $br-8 0;
+    width: $s-96;
+  }
+
+  .remove-track-btn {
+    @extend .button-tertiary;
+    padding: $s-8;
+
+    svg {
+      @extend .button-icon;
+      width: $s-12;
+      height: $s-12;
+      stroke: var(--icon-foreground);
+      fill: var(--icon-foreground);
+    }
+  }
+}
+
+.grid-tracks {
+  width: 100%;
+  margin-top: $s-8;
+
+  .grid-track-header {
+    @include flexRow;
+    font-size: $fs-12;
+    border-radius: $br-8;
+    overflow: hidden;
+    background: var(--button-secondary-background-color-rest);
+    height: $s-52;
+  }
+
+  .track-title {
+    @include flexColumn;
+    flex-grow: 1;
+    padding: $s-8;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  .track-name {
+    color: $df-primary;
+  }
+
+  .track-detail {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    width: 100%;
+    color: $df-secondary;
+  }
+
+  .expand-icon {
+    @extend .button-secondary;
+    height: $s-52;
+
+    border-radius: $s-8 0 0 $s-8;
+    border-right: $s-1 solid var(--panel-background-color);
+    svg {
+      @extend .button-icon;
+      stroke: var(--icon-foreground);
+      fill: var(--icon-foreground);
+    }
+    &:hover,
+    &:active {
+      svg {
+        stroke: var(--button-foreground-hover);
+        fill: var(--button-foreground-hover);
+      }
+    }
+  }
+
+  .columns-info {
+  }
+
+  .add-column {
+    @extend .button-tertiary;
+    height: $s-52;
+
+    svg {
+      @extend .button-icon;
+      height: $s-12;
+      width: $s-12;
+      stroke: var(--icon-foreground);
+      fill: var(--icon-foreground);
+    }
+  }
+}
+
+.locate-button,
+.help-button {
+  @extend .button-tertiary;
+  padding: $s-8;
+  svg {
+    fill: none;
+    width: $s-16;
+    height: $s-16;
+  }
+}
+
+.layout-options {
+  @extend .dropdown-wrapper;
+  @include flexColumn;
+  right: 0;
+  left: initial;
+
+  button {
+    @include buttonStyle;
+    padding: $s-8;
+    color: $df-primary;
+    border-radius: $br-6;
+
+    &:hover {
+      background: $db-quaternary;
+    }
+  }
+}

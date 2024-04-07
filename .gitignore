@@ -1,7 +1,16 @@
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
 *-init.clj
+*.css.json
 *.jar
 *.orig
 *.penpot
+*.css.json
 .calva
 .clj-kondo
 .cpcache
@@ -14,6 +23,7 @@
 /*.jpg
 /*.md
 /*.png
+/*.svg
 /*.sql
 /*.txt
 /*.yml
@@ -57,3 +67,4 @@
 /web
 clj-profiler/
 node_modules
+frontend/.storybook/preview-body.html

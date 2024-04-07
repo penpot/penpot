@@ -401,7 +401,6 @@ msgid_plural "dashboard.fonts.fonts-added"
 msgstr[0] "Engadiuse 1 fonte"
 msgstr[1] "Engadíronse % fontes"
 
-#, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
 "Calquera fonte que cargues aquí engadirase na listaxe de familias de fontes "
@@ -410,7 +409,6 @@ msgstr ""
 "Podes cargar fontes cos seguintes formatos: **TTF, OFT e WOFF** (só se "
 "precisa un)."
 
-#, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Só debes cargar fontes da túa propiedade ou das que teñas licenza para usar "
@@ -560,7 +558,8 @@ msgstr "Proxectos"
 msgid "dashboard.remove-account"
 msgstr "Queres borrar a túa conta?"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.remove-shared"
 msgstr "Eliminar das bibliotecas compartidas"
 
@@ -604,7 +603,8 @@ msgstr "Duplicouse o ficheiro"
 msgid "dashboard.success-duplicate-project"
 msgstr "Duplicouse o proxecto"
 
-#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.success-move-file"
 msgstr "Moveuse o ficheiro"
 
@@ -640,11 +640,13 @@ msgstr "Resultados da procura"
 msgid "dashboard.type-something"
 msgstr "Escribe algo para procurar"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.unpublish-shared"
 msgstr "Cancelar publicación da Biblioteca"
 
-#: src/app/main/ui/settings/password.cljs, src/app/main/ui/settings/options.cljs
+#: src/app/main/ui/settings/password.cljs,
+#: src/app/main/ui/settings/options.cljs
 msgid "dashboard.update-settings"
 msgstr "Actualizar configuración"
 
@@ -660,7 +662,11 @@ msgstr "Correo electrónico"
 msgid "dashboard.your-name"
 msgstr "Nome"
 
-#: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/libraries.cljs, src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs,
+#: src/app/main/ui/dashboard/libraries.cljs,
+#: src/app/main/ui/dashboard/projects.cljs,
+#: src/app/main/ui/dashboard/sidebar.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.your-penpot"
 msgstr "O teu Penpot"
 
@@ -768,10 +774,6 @@ msgstr "Ancho"
 #: src/app/main/ui/inspect/attributes/shadow.cljs
 msgid "inspect.attributes.shadow"
 msgstr "Sombra"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow.shorthand.spread"
-msgstr "S"
 
 #: src/app/main/ui/inspect/attributes/stroke.cljs
 msgid "inspect.attributes.stroke"
@@ -1234,10 +1236,6 @@ msgstr "Bibliotecas"
 msgid "workspace.assets.rename"
 msgstr "Mudar o nome"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.shared"
-msgstr "COMPARTIDA"
-
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.typography"
@@ -1491,3 +1489,21 @@ msgstr "Nada"
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.edit"
 msgstr "Editar"
+
+#~ msgid "dashboard.newsletter-title"
+#~ msgstr "Subscrición ao boletín"
+
+#~ msgid "inspect.attributes.shadow.shorthand.offset-x"
+#~ msgstr "X"
+
+#~ msgid "labels.images"
+#~ msgstr "Imaxes"
+
+#~ msgid "labels.next"
+#~ msgstr "Seguinte"
+
+#~ msgid "labels.start"
+#~ msgstr "Comezar"
+
+#~ msgid "workspace.options.blur-options.background-blur"
+#~ msgstr "Fondo"

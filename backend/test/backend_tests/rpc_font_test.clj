@@ -92,3 +92,188 @@
         :font-family
         :font-weight
         :font-style))))
+
+(t/deftest font-deletion-1
+  (let [prof    (th/create-profile* 1 {:is-active true})
+        team-id (:default-team-id prof)
+        proj-id (:default-project-id prof)
+        font-id (uuid/custom 10 1)
+
+        data1   (-> (io/resource "backend_tests/test_files/font-1.woff")
+                    io/input-stream
+                    io/read-as-bytes)
+
+        data2   (-> (io/resource "backend_tests/test_files/font-2.woff")
+                    io/input-stream
+                    io/read-as-bytes)]
+
+    ;; Create front variant
+    (let [params  {::th/type :create-font-variant
+                   ::rpc/profile-id (:id prof)
+                   :team-id team-id
+                   :font-id font-id
+                   :font-family "somefont"
+                   :font-weight 400
+                   :font-style "normal"
+                   :data {"font/woff" data1}}
+          out     (th/command! params)]
+      ;; (th/print-result! out)
+      (t/is (nil? (:error out))))
+
+    (let [params  {::th/type :create-font-variant
+                   ::rpc/profile-id (:id prof)
+                   :team-id team-id
+                   :font-id font-id
+                   :font-family "somefont"
+                   :font-weight 500
+                   :font-style "normal"
+                   :data {"font/woff" data2}}
+          out     (th/command! params)]
+      ;; (th/print-result! out)
+      (t/is (nil? (:error out))))
+
+    (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
+      (t/is (= 6 (:freeze res))))
+
+    (let [params {::th/type :delete-font
+                  ::rpc/profile-id (:id prof)
+                  :team-id team-id
+                  :id font-id}
+          out    (th/command! params)]
+      ;; (th/print-result! out)
+      (t/is (nil? (:error out)))
+      (t/is (nil? (:result out))))
+
+    (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
+      (t/is (= 6 (:freeze res)))
+      (t/is (= 0 (:delete res))))
+
+    (let [res (th/run-task! :objects-gc {:min-age 0})]
+      (t/is (= 2 (:processed res))))
+
+    (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
+      (t/is (= 0 (:freeze res)))
+      (t/is (= 6 (:delete res))))))
+
+(t/deftest font-deletion-2
+  (let [prof    (th/create-profile* 1 {:is-active true})
+        team-id (:default-team-id prof)
+        proj-id (:default-project-id prof)
+        font-id (uuid/custom 10 1)
+
+        data1   (-> (io/resource "backend_tests/test_files/font-1.woff")
+                    io/input-stream
+                    io/read-as-bytes)
+
+        data2   (-> (io/resource "backend_tests/test_files/font-2.woff")
+                    io/input-stream
+                    io/read-as-bytes)]
+
+    ;; Create front variant
+    (let [params  {::th/type :create-font-variant
+                   ::rpc/profile-id (:id prof)
+                   :team-id team-id
+                   :font-id font-id
+                   :font-family "somefont"
+                   :font-weight 400
+                   :font-style "normal"
+                   :data {"font/woff" data1}}
+          out     (th/command! params)]
+      ;; (th/print-result! out)
+      (t/is (nil? (:error out))))
+
+    (let [params  {::th/type :create-font-variant
+                   ::rpc/profile-id (:id prof)
+                   :team-id team-id
+                   :font-id (uuid/custom 10 2)
+                   :font-family "somefont"
+                   :font-weight 400
+                   :font-style "normal"
+                   :data {"font/woff" data2}}
+          out     (th/command! params)]
+      ;; (th/print-result! out)
+      (t/is (nil? (:error out))))
+
+    (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
+      (t/is (= 6 (:freeze res))))
+
+    (let [params {::th/type :delete-font
+                  ::rpc/profile-id (:id prof)
+                  :team-id team-id
+                  :id font-id}
+          out    (th/command! params)]
+      ;; (th/print-result! out)
+      (t/is (nil? (:error out)))
+      (t/is (nil? (:result out))))
+
+    (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
+      (t/is (= 3 (:freeze res)))
+      (t/is (= 0 (:delete res))))
+
+    (let [res (th/run-task! :objects-gc {:min-age 0})]
+      (t/is (= 1 (:processed res))))
+
+    (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
+      (t/is (= 0 (:freeze res)))
+      (t/is (= 3 (:delete res))))))
+
+(t/deftest font-deletion-3
+  (let [prof    (th/create-profile* 1 {:is-active true})
+        team-id (:default-team-id prof)
+        proj-id (:default-project-id prof)
+        font-id (uuid/custom 10 1)
+
+        data1   (-> (io/resource "backend_tests/test_files/font-1.woff")
+                    io/input-stream
+                    io/read-as-bytes)
+
+        data2   (-> (io/resource "backend_tests/test_files/font-2.woff")
+                    io/input-stream
+                    io/read-as-bytes)
+        params1 {::th/type :create-font-variant
+                 ::rpc/profile-id (:id prof)
+                 :team-id team-id
+                 :font-id font-id
+                 :font-family "somefont"
+                 :font-weight 400
+                 :font-style "normal"
+                 :data {"font/woff" data1}}
+
+        params2 {::th/type :create-font-variant
+                 ::rpc/profile-id (:id prof)
+                 :team-id team-id
+                 :font-id font-id
+                 :font-family "somefont"
+                 :font-weight 500
+                 :font-style "normal"
+                 :data {"font/woff" data2}}
+
+        out1    (th/command! params1)
+        out2    (th/command! params2)]
+
+    ;; (th/print-result! out1)
+    (t/is (nil? (:error out1)))
+    (t/is (nil? (:error out2)))
+
+    (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
+      (t/is (= 6 (:freeze res))))
+
+    (let [params {::th/type :delete-font-variant
+                  ::rpc/profile-id (:id prof)
+                  :team-id team-id
+                  :id (-> out1 :result :id)}
+          out    (th/command! params)]
+      ;; (th/print-result! out)
+      (t/is (nil? (:error out)))
+      (t/is (nil? (:result out))))
+
+    (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
+      (t/is (= 3 (:freeze res)))
+      (t/is (= 0 (:delete res))))
+
+    (let [res (th/run-task! :objects-gc {:min-age 0})]
+      (t/is (= 1 (:processed res))))
+
+    (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
+      (t/is (= 0 (:freeze res)))
+      (t/is (= 3 (:delete res))))))

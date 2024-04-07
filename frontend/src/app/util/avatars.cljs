@@ -11,14 +11,18 @@
 
 (defn generate*
   [{:keys [name color size]
-    :or {color "#000000" size 128}}]
+    :or {size 128}}]
 
   (let [parts   (str/words (str/upper name))
         letters (if (= 1 (count parts))
                   (ffirst parts)
                   (str (ffirst parts) (first (second parts))))
         canvas  (.createElement js/document "canvas")
-        context (.getContext canvas "2d")]
+        context (.getContext canvas "2d")
+        text-color (if color
+                     "#2e3434"
+                     "#fff")
+        color (or color "#000000")]
 
     (obj/set! canvas "width" size)
     (obj/set! canvas "height" size)
@@ -28,7 +32,7 @@
 
     (obj/set! context "font" (str (/ size 2) "px Arial"))
     (obj/set! context "textAlign" "center")
-    (obj/set! context "fillStyle" "#ffffff")
+    (obj/set! context "fillStyle" text-color)
     (.fillText context letters (/ size 2) (/ size 1.5))
 
     (.toDataURL canvas)))

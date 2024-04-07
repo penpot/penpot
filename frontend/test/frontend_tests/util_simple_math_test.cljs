@@ -6,10 +6,10 @@
 
 (ns frontend-tests.util-simple-math-test
   (:require
-   [cljs.test :as t :include-macros true]
-   [cljs.pprint :refer [pprint]]
    [app.common.math :as cm]
-   [app.util.simple-math :as sm]))
+   [app.util.simple-math :as sm]
+   [cljs.pprint :refer [pprint]]
+   [cljs.test :as t :include-macros true]))
 
 (t/deftest test-parser-inst
   (t/testing "Evaluate an empty string"
@@ -86,7 +86,5 @@
   (t/testing "Evaluate a complex operation with decimals"
     (let [result1 (sm/expr-eval "(20.333 + 10%) * (1 / 3)" 20)
           result2 (sm/expr-eval "(20,333 + 10%) * (1 / 3)" 20)]
-      (t/is (cm/close? result1 result2 7.44433333))))
-
-  )
+      (t/is (cm/close? result1 result2 7.44433333)))))
 

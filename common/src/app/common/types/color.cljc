@@ -6,14 +6,14 @@
 
 (ns app.common.types.color
   (:require
-    [app.common.data :as d]
-    [app.common.schema :as sm]
-    [app.common.schema.openapi :as-alias oapi]
-    [app.common.text :as txt]
-    [app.common.types.color.generic :as-alias color-generic]
-    [app.common.types.color.gradient :as-alias color-gradient]
-    [app.common.types.color.gradient.stop :as-alias color-gradient-stop]
-    [clojure.test.check.generators :as tgen]))
+   [app.common.data :as d]
+   [app.common.schema :as sm]
+   [app.common.schema.openapi :as-alias oapi]
+   [app.common.text :as txt]
+   [app.common.types.color.generic :as-alias color-generic]
+   [app.common.types.color.gradient :as-alias color-gradient]
+   [app.common.types.color.gradient.stop :as-alias color-gradient-stop]
+   [clojure.test.check.generators :as tgen]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMAS
@@ -34,7 +34,7 @@
             (.. g (toString 16) (padStart 2 "0"))
             (.. b (toString 16) (padStart 2 "0"))))))
 
-(sm/def! ::rgb-color
+(sm/define! ::rgb-color
   {:type ::rgb-color
    :pred #(and (string? %) (some? (re-matches rgb-color-re %)))
    :type-properties
@@ -46,9 +46,18 @@
     ::oapi/type "integer"
     ::oapi/format "int64"}})
 
-(sm/def! ::gradient
+(sm/define! ::image-color
+  [:map {:title "ImageColor"}
+   [:name {:optional true} :string]
+   [:width :int]
+   [:height :int]
+   [:mtype {:optional true} [:maybe :string]]
+   [:id ::sm/uuid]
+   [:keep-aspect-ratio {:optional true} :boolean]])
+
+(sm/define! ::gradient
   [:map {:title "Gradient"}
-   [:type [::sm/one-of #{:linear :radial "linear" "radial"}]]
+   [:type [::sm/one-of #{:linear :radial}]]
    [:start-x ::sm/safe-number]
    [:start-y ::sm/safe-number]
    [:end-x ::sm/safe-number]
@@ -61,34 +70,36 @@
       [:opacity {:optional true} [:maybe ::sm/safe-number]]
       [:offset ::sm/safe-number]]]]])
 
-(sm/def! ::color
-  [:map
-   [:id {:optional true} ::sm/uuid]
-   [:name {:optional true} :string]
-   [:path {:optional true} [:maybe :string]]
-   [:value {:optional true} [:maybe :string]]
-   [:color {:optional true} [:maybe ::rgb-color]]
-   [:opacity {:optional true} [:maybe ::sm/safe-number]]
-   [:modified-at {:optional true} ::sm/inst]
-   [:ref-id {:optional true} ::sm/uuid]
-   [:ref-file {:optional true} ::sm/uuid]
-   [:gradient {:optional true} [:maybe ::gradient]]])
-
-
-;; FIXME: incomplete schema
-(sm/def! ::recent-color
+(sm/define! ::color
   [:and
-   [:map {:title "RecentColot"}
+   [:map {:title "Color"}
+    [:id {:optional true} ::sm/uuid]
+    [:name {:optional true} :string]
+    [:path {:optional true} [:maybe :string]]
+    [:value {:optional true} [:maybe :string]]
+    [:color {:optional true} [:maybe ::rgb-color]]
+    [:opacity {:optional true} [:maybe ::sm/safe-number]]
+    [:modified-at {:optional true} ::sm/inst]
+    [:ref-id {:optional true} ::sm/uuid]
+    [:ref-file {:optional true} ::sm/uuid]
+    [:gradient {:optional true} [:maybe ::gradient]]
+    [:image {:optional true} [:maybe ::image-color]]]
+   [::sm/contains-any {:strict true} [:color :gradient :image]]])
+
+(sm/define! ::recent-color
+  [:and
+   [:map {:title "RecentColor"}
     [:opacity {:optional true} [:maybe ::sm/safe-number]]
     [:color {:optional true} [:maybe ::rgb-color]]
-    [:gradient {:optional true} [:maybe ::gradient]]]
-   [::sm/contains-any {:strict true} [:color :gradient]]])
+    [:gradient {:optional true} [:maybe ::gradient]]
+    [:image {:optional true} [:maybe ::image-color]]]
+   [::sm/contains-any {:strict true} [:color :gradient :image]]])
 
-(def color?
-  (sm/pred-fn ::color))
+(def check-color!
+  (sm/check-fn ::color))
 
-(def recent-color?
-  (sm/pred-fn ::recent-color))
+(def check-recent-color!
+  (sm/check-fn ::recent-color))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS
@@ -102,17 +113,19 @@
    {:color (:fill-color fill)
     :opacity (:fill-opacity fill)
     :gradient (:fill-color-gradient fill)
+    :image (:fill-image fill)
     :ref-id (:fill-color-ref-id fill)
     :ref-file (:fill-color-ref-file fill)}))
 
 (defn set-fill-color
-  [shape position color opacity gradient]
+  [shape position color opacity gradient image]
   (update-in shape [:fills position]
              (fn [fill]
                (d/without-nils (assoc fill
                                       :fill-color color
                                       :fill-opacity opacity
-                                      :fill-color-gradient gradient)))))
+                                      :fill-color-gradient gradient
+                                      :fill-image image)))))
 
 (defn attach-fill-color
   [shape position ref-id ref-file]
@@ -133,17 +146,19 @@
   (d/without-nils {:color (:stroke-color stroke)
                    :opacity (:stroke-opacity stroke)
                    :gradient (:stroke-color-gradient stroke)
+                   :image (:stroke-image stroke)
                    :ref-id (:stroke-color-ref-id stroke)
                    :ref-file (:stroke-color-ref-file stroke)}))
 
 (defn set-stroke-color
-  [shape position color opacity gradient]
+  [shape position color opacity gradient image]
   (update-in shape [:strokes position]
              (fn [stroke]
                (d/without-nils (assoc stroke
                                       :stroke-color color
                                       :stroke-opacity opacity
-                                      :stroke-color-gradient gradient)))))
+                                      :stroke-color-gradient gradient
+                                      :stroke-image image)))))
 
 (defn attach-stroke-color
   [shape position ref-id ref-file]
@@ -336,9 +351,16 @@
                           position
                           (:color library-color)
                           (:opacity library-color)
-                          (:gradient library-color))
+                          (:gradient library-color)
+                          (:image library-color))
                   (detach-fn shape position)))
               shape))]
 
     (process-shape-colors shape sync-color)))
 
+(defn eq-recent-color?
+  [c1 c2]
+  (or (= c1 c2)
+      (and (some? (:color c1))
+           (some? (:color c2))
+           (= (:color c1) (:color c2)))))

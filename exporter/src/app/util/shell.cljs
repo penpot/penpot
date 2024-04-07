@@ -9,7 +9,6 @@
   (:require
    ["child_process" :as proc]
    ["fs" :as fs]
-   ["os" :as os]
    ["path" :as path]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]

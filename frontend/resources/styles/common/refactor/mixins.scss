@@ -4,10 +4,34 @@
 //
 // Copyright (c) KALEIDOS INC
 
+@mixin font-face($style-name, $file, $weight: unquote("normal"), $style: unquote("normal")) {
+  $filepath: "/fonts/" + $file;
+  @font-face {
+    font-family: "#{$style-name}";
+    src:
+      url($filepath + ".woff2") format("woff2"),
+      url($filepath + ".ttf") format("truetype");
+    font-weight: unquote($weight);
+    font-style: unquote($style);
+  }
+}
+
 @mixin flexCenter {
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+@mixin flexColumn($gap: $s-4) {
+  display: flex;
+  flex-direction: column;
+  gap: #{$gap};
+}
+
+@mixin flexRow {
+  display: flex;
+  align-items: center;
+  gap: $s-4;
 }
 
 @mixin buttonStyle {
@@ -16,7 +40,13 @@
   cursor: pointer;
 }
 
-@mixin tabTitleTipography {
+@mixin removeInputStyle {
+  border: none;
+  background: none;
+  outline: none;
+}
+
+@mixin uppercaseTitleTipography {
   font-family: "worksans", sans-serif;
   font-size: $fs-11;
   font-weight: $fw500;
@@ -24,19 +54,85 @@
   text-transform: uppercase;
 }
 
-@mixin titleTipography {
+@mixin bigTitleTipography {
   font-family: "worksans", sans-serif;
+  font-size: $fs-24;
+  font-weight: $fw400;
+  line-height: 1.2;
+}
+
+@mixin medTitleTipography {
+  font-family: "worksans", sans-serif;
+  font-size: $fs-20;
+  font-weight: $fw400;
+  line-height: 1.2;
+}
+
+@mixin smallTitleTipography {
+  font-family: "worksans", sans-serif;
+  font-size: $fs-14;
+  font-weight: $fw400;
+  line-height: 1.2;
+}
+
+@mixin headlineLargeTypography {
+  font-family: "worksans", sans-serif;
+  font-size: $fs-18;
+  line-height: 1.2;
+  text-transform: uppercase;
+  font-weight: $fw400;
+}
+
+@mixin headlineMediumTypography {
+  font-family: "worksans", sans-serif;
+  font-size: $fs-16;
+  line-height: 1.4;
+  text-transform: uppercase;
+  font-weight: $fw400;
+}
+
+@mixin headlineSmallTypography {
+  font-family: "worksans", sans-serif;
+  font-size: $fs-12;
+  line-height: 1.2;
+  text-transform: uppercase;
+  font-weight: $fw500;
+}
+
+@mixin bodyLargeTypography {
+  font-family: "worksans", sans-serif;
+  font-size: $fs-16;
+  line-height: 1.5;
+  font-weight: $fw400;
+}
+
+@mixin bodyMediumTypography {
+  font-family: "worksans", sans-serif;
+  font-size: $fs-14;
+  line-height: 1.4;
+  font-weight: $fw400;
+}
+
+@mixin bodySmallTypography {
+  font-family: "worksans", sans-serif;
+  font-size: $fs-12;
+  font-weight: $fw400;
+  line-height: 1.4;
+}
+
+@mixin codeTypography {
+  font-family: "robotomono", monospace;
   font-size: $fs-12;
   font-weight: $fw400;
   line-height: 1.2;
 }
 
 @mixin textEllipsis {
+  display: block;
   max-width: 99%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  display: block;
 }
 
 @mixin twoLineTextEllipsis {
@@ -46,4 +142,42 @@
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+}
+
+@mixin inspectValue {
+  @include bodySmallTypography;
+  display: inline-block;
+  width: fit-content;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  color: var(--menu-foreground-color);
+}
+
+@mixin copyWrapperBase {
+  position: relative;
+  min-height: $s-32;
+  width: $s-144;
+  max-width: $s-144;
+  padding: calc($s-8 - $s-1) 0 calc($s-8 - $s-1) calc($s-8 - $s-1);
+  border-radius: $s-8;
+  box-sizing: border-box;
+}
+
+@mixin hiddenElement {
+  cursor: default;
+  pointer-events: none;
+  box-sizing: border-box;
+  color: var(--input-foreground-color-disabled);
+  stroke: var(--input-foreground-color-disabled);
+  background-color: transparent;
+}
+
+@keyframes spin-animation {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(359deg);
+  }
 }

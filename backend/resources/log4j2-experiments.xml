@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="info" monitorInterval="30">
+  <Appenders>
+    <Console name="console" target="SYSTEM_OUT">
+      <PatternLayout pattern="[%d{YYYY-MM-dd HH:mm:ss.SSS}] %level{length=1} %logger{36} - %msg%n"
+                     alwaysWriteExceptions="true" />
+    </Console>
+
+    <RollingFile name="main" fileName="logs/main.log" filePattern="logs/main-%i.log">
+      <PatternLayout pattern="[%d{YYYY-MM-dd HH:mm:ss.SSS}] %level{length=1} %logger{36} - %msg%n"
+                     alwaysWriteExceptions="true" />
+      <Policies>
+        <SizeBasedTriggeringPolicy size="50M"/>
+      </Policies>
+      <DefaultRolloverStrategy max="9"/>
+    </RollingFile>
+
+    <RollingFile name="reports" fileName="logs/reports.log" filePattern="logs/reports-%i.log">
+      <PatternLayout pattern="[%d{YYYY-MM-dd HH:mm:ss.SSS}] %level{length=1} %logger{36} - %msg%n"
+                     alwaysWriteExceptions="true" />
+      <Policies>
+        <SizeBasedTriggeringPolicy size="100M"/>
+      </Policies>
+      <DefaultRolloverStrategy max="9"/>
+    </RollingFile>
+  </Appenders>
+
+  <Loggers>
+    <Logger name="io.lettuce" level="error" />
+    <Logger name="com.zaxxer.hikari" level="error"/>
+    <Logger name="org.postgresql" level="error" />
+
+    <Logger name="app.rpc.commands.binfile" level="debug" />
+    <Logger name="app.storage.tmp" level="info" />
+    <Logger name="app.worker" level="trace" />
+    <Logger name="app.msgbus" level="info" />
+    <Logger name="app.http.websocket" level="info" />
+    <Logger name="app.http.sse" level="info" />
+    <Logger name="app.util.websocket" level="info" />
+    <Logger name="app.redis" level="info" />
+    <Logger name="app.rpc.rlimit" level="info" />
+    <Logger name="app.rpc.climit" level="debug" />
+    <Logger name="app.common.files.migrations" level="info" />
+
+    <Logger name="app.loggers" level="debug" additivity="false">
+      <AppenderRef ref="main" level="debug" />
+    </Logger>
+
+    <Logger name="app.features" level="all" additivity="true">
+      <AppenderRef ref="reports" level="warn" />
+    </Logger>
+
+    <Logger name="app" level="all" additivity="false">
+      <AppenderRef ref="main" level="trace" />
+    </Logger>
+
+    <Logger name="user" level="trace" additivity="false">
+      <AppenderRef ref="main" level="trace" />
+    </Logger>
+
+    <Root level="info">
+      <AppenderRef ref="main" />
+    </Root>
+  </Loggers>
+</Configuration>

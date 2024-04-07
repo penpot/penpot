@@ -1,7 +1,6 @@
 {:deps {:aliases [:dev]}
  :http {:port 3448}
  :nrepl {:port 3447 :host "0.0.0.0"}
- :jvm-opts ["-Xmx700m" "-Xms100m" "-XX:+UseSerialGC" "-XX:-OmitStackTraceInFastThrow"]
  :dev-http {8888 "classpath:public"}
 
  :builds
@@ -10,16 +9,43 @@
    :output-dir "resources/public/js/"
    :asset-path "/js"
    :devtools {:browser-inject :main
-              :watch-dir "resources/public"}
+              :watch-dir "resources/public"
+              :reload-strategy :full}
    :build-options {:manifest-name "manifest.json"}
-
+   :module-loader true
    :modules
-   {:shared {:entries []}
+   {:shared
+    {:entries []}
 
     :main
     {:entries [app.main]
      :depends-on #{:shared}
      :init-fn app.main/init}
+
+    :util-highlight
+    {:entries [app.util.code-highlight]
+     :depends-on #{:main}}
+
+    :main-auth
+    {:entries [app.main.ui.auth
+               app.main.ui.auth.verify-token]
+     :depends-on #{:main}}
+
+    :main-viewer
+    {:entries [app.main.ui.viewer]
+     :depends-on #{:main :main-auth}}
+
+    :main-workspace
+    {:entries [app.main.ui.workspace]
+     :depends-on #{:main}}
+
+    :main-dashboard
+    {:entries [app.main.ui.dashboard]
+     :depends-on #{:main}}
+
+    :main-settings
+    {:entries [app.main.ui.settings]
+     :depends-on #{:main}}
 
     :render
     {:entries [app.render]
@@ -31,10 +57,10 @@
      :web-worker true
      :depends-on #{:shared}}
 
-    :thumbnail-renderer
-    {:entries [app.thumbnail-renderer]
+    :rasterizer
+    {:entries [app.rasterizer]
      :depends-on #{:shared}
-     :init-fn app.thumbnail-renderer/init}}
+     :init-fn app.rasterizer/init}}
 
    :compiler-options
    {:output-feature-set :es2020
@@ -47,14 +73,41 @@
     :compiler-options
     {:fn-invoke-direct true
      :optimizations #shadow/env ["PENPOT_BUILD_OPTIMIZATIONS" :as :keyword :default :advanced]
+     :output-wrapper true
+     :rename-prefix-namespace "PENPOT"
      :source-map true
      :elide-asserts true
      :anon-fn-naming-policy :off
      :source-map-detail-level :all}}}
 
-  :lib-penpot
+  ;; FIXME: maybe rename to :components ? (there are nothing storybook
+  ;; related, is just an ESM export of components that will be used
+  ;; initially on storybook but not limited to storybook)
+  :storybook
   {:target :esm
-   :output-dir "resources/public/libs"
+   :output-dir "target/storybook/"
+   :js-options {:js-provider :import}
+
+   :modules
+   {:base
+    {:entries []}
+
+    :icons
+    {:exports {default app.main.ui.icons/default}
+     :depends-on #{:base}}
+
+    :components
+    {:exports {:default app.main.ui.components/default}
+     :depends-on #{:base}}}
+
+   :compiler-options
+   {:output-feature-set :es2020
+    :output-wrapper false
+    :warnings {:fn-deprecated false}}}
+
+  :lib-penpot
+   {:target :esm
+    :output-dir "resources/public/libs"
 
    :modules
    {:penpot {:exports {:renderPage app.libs.render/render-page-export
@@ -92,7 +145,7 @@
 
   :test
   {:target :node-test
-   :output-to "target/tests.js"
+   :output-to "target/tests.cjs"
    :output-dir "target/test/"
    :ns-regexp "^frontend-tests.*-test$"
    :autorun true

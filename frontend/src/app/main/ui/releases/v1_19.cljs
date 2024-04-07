@@ -12,10 +12,10 @@
 (defmethod c/render-release-notes "1.19"
   [{:keys [slide klass next finish navigate version]}]
   (mf/html
-   (case @slide
+   (case slide
      :start
      [:div.modal-overlay
-      [:div.animated {:class @klass}
+      [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
          [:img {:src "images/onboarding-version.jpg"
@@ -42,7 +42,7 @@
 
      0
      [:div.modal-overlay
-      [:div.animated {:class @klass}
+      [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
          [:img {:src "images/features/1.19-contributions.png"
@@ -73,13 +73,13 @@
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]
           [:& c/navigation-bullets
-           {:slide @slide
+           {:slide slide
             :navigate navigate
             :total 2}]]]]]]
 
      1
      [:div.modal-overlay
-      [:div.animated {:class @klass}
+      [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
          [:img {:src "images/features/1.19-tokens.gif"
@@ -100,7 +100,7 @@
          [:div.modal-navigation
           [:button.btn-secondary {:on-click finish} "Start!"]
           [:& c/navigation-bullets
-           {:slide @slide
+           {:slide slide
             :navigate navigate
             :total 2}]]]]]])))
 

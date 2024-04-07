@@ -5,13 +5,12 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.components.context-menu-a11y
-  (:require-macros [app.main.style :refer [css]])
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.refs :as refs]
    [app.main.ui.components.dropdown :refer [dropdown']]
-   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -66,14 +65,14 @@
         left           (gobj/get props "left" 0)
         fixed?         (gobj/get props "fixed?" false)
         min-width?     (gobj/get props "min-width?" false)
-        workspace?     (gobj/get props "workspace?" false)
         origin         (gobj/get props "origin")
         route          (mf/deref refs/route)
-        new-css-system (mf/use-ctx ctx/new-css-system)
         in-dashboard?  (= :dashboard-projects (:name (:data route)))
         local          (mf/use-state {:offset-y 0
                                       :offset-x 0
                                       :levels nil})
+        width          (gobj/get props "width" "initial")
+
 
         on-local-close
         (mf/use-callback
@@ -194,53 +193,38 @@
 
     (when (and open? (some? (:levels @local)))
       [:> dropdown' props
-
        (let [level (-> @local :levels peek)
              original-options (:options level)
              parent-original (:parent-option level)]
-         [:div {:class (if (and new-css-system workspace?)
-                         (dom/classnames (css :is-selectable) is-selectable
-                                         (css :context-menu) true
-                                         (css :is-open) open?
-                                         (css :fixed) fixed?)
-                         (dom/classnames :is-selectable is-selectable
-                                         :context-menu true
-                                         :is-open open?
-                                         :fixed fixed?))
+         [:div {:class (stl/css-case :is-selectable is-selectable
+                                     :context-menu true
+                                     :is-open open?
+                                     :fixed fixed?)
                 :style {:top (+ top (:offset-y @local))
                         :left (+ left (:offset-x @local))}
                 :on-key-down (on-key-down original-options parent-original)}
           (let [level (-> @local :levels peek)]
-            [:ul {:class (if (and new-css-system workspace?)
-                           (dom/classnames (css :min-width) min-width?
-                                           (css :context-menu-items) true)
-                           (dom/classnames :min-width min-width?
-                                           :context-menu-items true))
+            [:ul {:class (stl/css-case :min-width min-width?
+                                       :context-menu-items true)
+                  :style {:width width}
                   :role "menu"
                   :ref check-menu-offscreen}
              (when-let [parent-option (:parent-option level)]
                [:*
                 [:& context-menu-a11y-item
                  {:id "go-back-sub-option"
-                  :class (dom/classnames (css :context-menu-item) (and new-css-system workspace?))
+                  :class (stl/css :context-menu-item)
                   :tab-index "0"
                   :on-key-down (fn [event]
                                  (dom/prevent-default event))}
-                 [:div {:class (if (and new-css-system workspace?)
-                                 (dom/classnames (css :context-menu-action) true
-                                                 (css :submenu-back) true)
-                                 (dom/classnames :context-menu-action true
-                                                 :submenu-back true))
-                        :data-no-close true
-                        :on-click exit-submenu}
-                  [:span {:class (dom/classnames (css :submenu-icon-back) (and new-css-system workspace?))}
-                   (if (and new-css-system workspace?)
-                     i/arrow-refactor
-                     i/arrow-slide)]
+                 [:button {:class (stl/css :context-menu-action :submenu-back)
+                           :data-no-close true
+                           :on-click exit-submenu}
+                  [:span {:class (stl/css :submenu-icon-back)} i/arrow]
                   parent-option]]
-                [:li {:class (if (and new-css-system workspace?)
-                               (dom/classnames (css :separator) true)
-                               (dom/classnames :separator true))}]])
+
+                [:li {:class (stl/css :separator)}]])
+
              (for [[index option] (d/enumerate (:options level))]
                (let [option-name (:option-name option)
                      id (:id option)
@@ -250,45 +234,37 @@
                  (when option-name
                    (if (= option-name :separator)
                      [:li {:key (dm/str "context-item-" index)
-                           :class (if (and new-css-system workspace?)
-                                    (dom/classnames (css :separator) true)
-                                    (dom/classnames :separator true))}]
+                           :class (stl/css :separator)}]
                      [:& context-menu-a11y-item
                       {:id id
                        :key id
-                       :class (if (and new-css-system workspace?)
-                                (dom/classnames (css :is-selected) (and selected (= option-name selected))
-                                                (css :context-menu-item) true)
-                                (dom/classnames :is-selected (and selected (= option-name selected))))
+                       :class (stl/css-case
+                               :is-selected (and selected (= option-name selected))
+                               :selected (and selected (= data-test selected))
+                               :context-menu-item true)
                        :key-index (dm/str "context-item-" index)
                        :tab-index "0"
                        :on-key-down (fn [event]
                                       (dom/prevent-default event))}
                       (if-not sub-options
-                        [:a {:class (if (and new-css-system workspace?)
-                                      (dom/classnames (css :context-menu-action) true)
-                                      (dom/classnames :context-menu-action true))
+                        [:a {:class (stl/css :context-menu-action)
                              :on-click #(do (dom/stop-propagation %)
                                             (on-close)
                                             (option-handler %))
                              :data-test data-test}
                          (if (and in-dashboard? (= option-name "Default"))
                            (tr "dashboard.default-team-name")
-                           option-name)]
-                        [:a {:class (if (and new-css-system workspace?)
-                                      (dom/classnames (css :context-menu-action) true
-                                                      (css :submenu) true)
-                                      (dom/classnames :context-menu-action true
-                                                      :submenu true))
+                           option-name)
+
+                         (when (and selected (= data-test selected))
+                           [:span {:class (stl/css :selected-icon)} i/tick])]
+
+                        [:a {:class (stl/css :context-menu-action :submenu)
                              :data-no-close true
                              :on-click (enter-submenu option-name sub-options)
                              :data-test data-test}
                          option-name
-                         [:span {:class (dom/classnames (css :submenu-icon) (and new-css-system workspace?))}
-                          (if (and new-css-system workspace?)
-                            i/arrow-refactor
-                            i/arrow-slide)]])]))))])])])))
-
+                         [:span {:class (stl/css :submenu-icon)} i/arrow]])]))))])])])))
 
 (mf/defc context-menu-a11y
   {::mf/wrap-props false}

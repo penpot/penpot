@@ -28,51 +28,51 @@
 (t/use-fixtures :each thf/reset-idmap!)
 
 #_(t/deftest test-absorb-components
-  (let [library-id      (uuid/custom 1 1)
-        library-page-id (uuid/custom 2 2)
-        file-id         (uuid/custom 3 3)
-        file-page-id    (uuid/custom 4 4)
+    (let [library-id      (uuid/custom 1 1)
+          library-page-id (uuid/custom 2 2)
+          file-id         (uuid/custom 3 3)
+          file-page-id    (uuid/custom 4 4)
 
-        library (-> (thf/sample-file library-id library-page-id {:is-shared true})
-                    (thf/sample-shape :group1
-                                      :group
-                                      library-page-id
-                                      {:name "Group1"})
-                    (thf/sample-shape :shape1
-                                      :rect
-                                      library-page-id
-                                      {:name "Rect1"
-                                       :parent-id (thf/id :group1)})
-                    (thf/sample-component :component1
-                                          library-page-id
-                                          (thf/id :group1)))
+          library (-> (thf/sample-file library-id library-page-id {:is-shared true})
+                      (thf/sample-shape :group1
+                                        :group
+                                        library-page-id
+                                        {:name "Group1"})
+                      (thf/sample-shape :shape1
+                                        :rect
+                                        library-page-id
+                                        {:name "Rect1"
+                                         :parent-id (thf/id :group1)})
+                      (thf/sample-component :component1
+                                            library-page-id
+                                            (thf/id :group1)))
 
-        file (-> (thf/sample-file file-id file-page-id)
-                 (thf/sample-instance :instance1
-                                      file-page-id
-                                      library
-                                      (thf/id :component1)))
+          file (-> (thf/sample-file file-id file-page-id)
+                   (thf/sample-instance :instance1
+                                        file-page-id
+                                        library
+                                        (thf/id :component1)))
 
-        absorbed-file (ctf/update-file-data
-                        file
-                        #(ctf/absorb-assets % (:data library)))
+          absorbed-file (ctf/update-file-data
+                         file
+                         #(ctf/absorb-assets % (:data library)))
 
-        pages      (ctpl/pages-seq (ctf/file-data absorbed-file))
-        components (ctkl/components-seq (ctf/file-data absorbed-file))
-        shapes-1   (ctn/shapes-seq (first pages))
-        shapes-2   (ctn/shapes-seq (second pages))
+          pages      (ctpl/pages-seq (ctf/file-data absorbed-file))
+          components (ctkl/components-seq (ctf/file-data absorbed-file))
+          shapes-1   (ctn/shapes-seq (first pages))
+          shapes-2   (ctn/shapes-seq (second pages))
 
-        [[p-group p-shape] [c-group1 c-shape1] component1]
-        (thk/resolve-instance-and-main
-          (first pages)
-          (:id (second shapes-1))
-          {file-id absorbed-file})
+          [[p-group p-shape] [c-group1 c-shape1] component1]
+          (thk/resolve-instance-and-main
+           (first pages)
+           (:id (second shapes-1))
+           {file-id absorbed-file})
 
-        [[lp-group lp-shape] [c-group2 c-shape2] component2]
-        (thk/resolve-instance-and-main
-          (second pages)
-          (:id (second shapes-2))
-          {file-id absorbed-file})]
+          [[lp-group lp-shape] [c-group2 c-shape2] component2]
+          (thk/resolve-instance-and-main
+           (second pages)
+           (:id (second shapes-2))
+           {file-id absorbed-file})]
 
     ;; Uncomment to debug
 
@@ -100,20 +100,20 @@
     ;;                {file-id absorbed-file}
     ;;                false)
 
-    (t/is (= (count pages) 2))
-    (t/is (= (:name (first pages)) "Page 1"))
-    (t/is (= (:name (second pages)) "Library backup"))
+      (t/is (= (count pages) 2))
+      (t/is (= (:name (first pages)) "Page 1"))
+      (t/is (= (:name (second pages)) "Main components"))
 
-    (t/is (= (count components) 1))
+      (t/is (= (count components) 1))
 
-    (t/is (= (:name p-group) "Group1"))
-    (t/is (ctk/instance-of? p-group file-id (:id component1)))
-    (t/is (not (:main-instance? p-group)))
-    (t/is (not (ctk/main-instance-of? (:id p-group) file-page-id component1)))
-    (t/is (ctk/is-main-of? c-group1 p-group))
+      (t/is (= (:name p-group) "Group1"))
+      (t/is (ctk/instance-of? p-group file-id (:id component1)))
+      (t/is (not (:main-instance? p-group)))
+      (t/is (not (ctk/main-instance-of? (:id p-group) file-page-id component1)))
+      (t/is (ctk/is-main-of? c-group1 p-group))
 
-    (t/is (= (:name p-shape) "Rect1"))
-    (t/is (ctk/is-main-of? c-shape1 p-shape))))
+      (t/is (= (:name p-shape) "Rect1"))
+      (t/is (ctk/is-main-of? c-shape1 p-shape))))
 
 
 (t/deftest test-absorb-colors
@@ -137,8 +137,8 @@
                                              :fill-color-ref-file library-id}]}))
 
         absorbed-file (ctf/update-file-data
-                        file
-                        #(ctf/absorb-assets % (:data library)))
+                       file
+                       #(ctf/absorb-assets % (:data library)))
 
         colors (ctcl/colors-seq (ctf/file-data absorbed-file))
         page   (ctpl/get-page (ctf/file-data absorbed-file) file-page-id)
@@ -187,11 +187,10 @@
                                                                                   :text-decoration "none"
                                                                                   :letter-spacing "0"
                                                                                   :fills [{:fill-color "#000000"
-                                                                                           :fill-opacity 1}]}]
-                                                                      }]}]}}))
+                                                                                           :fill-opacity 1}]}]}]}]}}))
         absorbed-file (ctf/update-file-data
-                        file
-                        #(ctf/absorb-assets % (:data library)))
+                       file
+                       #(ctf/absorb-assets % (:data library)))
 
         typographies (ctyl/typographies-seq (ctf/file-data absorbed-file))
         page         (ctpl/get-page (ctf/file-data absorbed-file) file-page-id)

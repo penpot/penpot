@@ -12,8 +12,11 @@
   others are defined using a generic wrapper implemented in
   common."
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.pages.helpers :as cph]
+   [app.common.files.helpers :as cfh]
+   [app.common.geom.rect :as grc]
+   [app.common.geom.shapes :as gsh]
    [app.common.uuid :as uuid]
    [app.main.ui.context :as ctx]
    [app.main.ui.shapes.circle :as circle]
@@ -34,95 +37,104 @@
 (declare group-wrapper)
 (declare svg-raw-wrapper)
 (declare bool-wrapper)
-(declare root-frame-wrapper)
 (declare nested-frame-wrapper)
+(declare root-frame-wrapper)
 
 (def circle-wrapper (common/generic-wrapper-factory circle/circle-shape))
 (def image-wrapper (common/generic-wrapper-factory image/image-shape))
 (def rect-wrapper (common/generic-wrapper-factory rect/rect-shape))
+
+(defn- make-is-frame-overlap
+  [vbox objects]
+  (fn [shape]
+    (let [bounds
+          (if (dm/get-prop shape :show-content)
+            (let [children (->> (cfh/get-children-ids objects (dm/get-prop shape :id))
+                                (map (d/getf objects)))]
+              (gsh/shapes->rect (cons shape children)))
+            (dm/get-prop shape :selrect))]
+      (grc/overlaps-rects? vbox bounds))))
 
 (mf/defc root-shape
   "Draws the root shape of the viewport and recursively all the shapes"
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   [props]
-  (let [objects       (obj/get props "objects")
-        active-frames (obj/get props "active-frames")
-        shapes        (cph/get-immediate-children objects)
+  (let [objects        (obj/get props "objects")
+        active-frames  (obj/get props "active-frames")
+        shapes         (cfh/get-immediate-children objects)
+        vbox           (mf/use-ctx ctx/current-vbox)
 
-        ;; We group the objects together per frame-id so if an object of a different
-        ;; frame changes won't affect the rendering frame
-        frame-objects
-        (mf/use-memo
-         (mf/deps objects)
-         #(cph/objects-by-frame objects))]
+        frame-overlap? (mf/with-memo [vbox objects]
+                         #(make-is-frame-overlap vbox objects))
+
+        shapes         (mf/with-memo [shapes vbox frame-overlap?]
+                         (cond->> shapes
+                           (some? vbox)
+                           (filter frame-overlap?)))]
 
     [:g {:id (dm/str "shape-" uuid/zero)}
      [:& (mf/provider ctx/active-frames) {:value active-frames}
       ;; Render font faces only for shapes that are part of the root
       ;; frame but don't belongs to any other frame.
       (let [xform (comp
-                   (remove cph/frame-shape?)
-                   (mapcat #(cph/get-children-with-self objects (:id %))))]
+                   (remove cfh/frame-shape?)
+                   (mapcat #(cfh/get-children-with-self objects (:id %))))]
         [:& ff/fontfaces-style {:shapes (into [] xform shapes)}])
 
       [:g.frame-children
        (for [shape shapes]
-         [:g.ws-shape-wrapper {:key (:id shape)}
-          (cond
-            (not (cph/frame-shape? shape))
-            [:& shape-wrapper
-             {:shape shape}]
-
-            (cph/root-frame? shape)
+         [:g.ws-shape-wrapper {:key (dm/str (dm/get-prop shape :id))}
+          (if ^boolean (cfh/frame-shape? shape)
             [:& root-frame-wrapper
              {:shape shape
-              :objects (get frame-objects (:id shape))
-              :thumbnail? (not (contains? active-frames (:id shape)))}]
-
-            :else
-            [:& nested-frame-wrapper
-             {:shape shape
-              :objects (get frame-objects (:id shape))}])])]]]))
+              :objects objects
+              :thumbnail? (not (contains? active-frames (dm/get-prop shape :id)))}]
+            [:& shape-wrapper {:shape shape}])])]]]))
 
 (mf/defc shape-wrapper
-  {::mf/wrap [#(mf/memo' % (mf/check-props ["shape"]))]
+  {::mf/wrap [#(mf/memo' % common/check-shape-props)]
    ::mf/wrap-props false}
   [props]
-  (let [shape (obj/get props "shape")
+  (let [shape      (unchecked-get props "shape")
+        shape-type (dm/get-prop shape :type)
+        shape-id   (dm/get-prop shape :id)
 
+        ;; FIXME: WARN: this breaks react rule of hooks (hooks can't be under conditional)
         active-frames
-        (when (cph/root-frame? shape) (mf/use-ctx ctx/active-frames))
+        (when (cfh/root-frame? shape)
+          (mf/use-ctx ctx/active-frames))
 
         thumbnail?
         (and (some? active-frames)
-             (not (contains? active-frames (:id shape))))
+             (not (contains? active-frames shape-id)))
 
-        opts  #js {:shape shape :thumbnail? thumbnail?}
+        props         #js {:shape shape :thumbnail? thumbnail?}
 
-        [wrapper wrapper-props]
-        (if (= :svg-raw (:type shape))
-          [mf/Fragment nil]
-          ["g" #js {:className "workspace-shape-wrapper"}])]
+        rawsvg?       (= :svg-raw shape-type)
+        wrapper-elem  (if ^boolean rawsvg? mf/Fragment "g")
+        wrapper-props (if ^boolean rawsvg?
+                        #js {}
+                        #js {:className "workspace-shape-wrapper"})]
 
-    (when (and (some? shape) (not (:hidden shape)))
-      [:> wrapper wrapper-props
-       (case (:type shape)
-         :path    [:> path/path-wrapper opts]
-         :text    [:> text/text-wrapper opts]
-         :group   [:> group-wrapper opts]
-         :rect    [:> rect-wrapper opts]
-         :image   [:> image-wrapper opts]
-         :circle  [:> circle-wrapper opts]
-         :svg-raw [:> svg-raw-wrapper opts]
-         :bool    [:> bool-wrapper opts]
-         :frame   [:> nested-frame-wrapper opts]
+    (when (and (some? shape)
+               (not ^boolean (:hidden shape)))
+      [:> wrapper-elem wrapper-props
+       (case shape-type
+         :path    [:> path/path-wrapper props]
+         :text    [:> text/text-wrapper props]
+         :group   [:> group-wrapper props]
+         :rect    [:> rect-wrapper props]
+         :image   [:> image-wrapper props]
+         :circle  [:> circle-wrapper props]
+         :svg-raw [:> svg-raw-wrapper props]
+         :bool    [:> bool-wrapper props]
+         :frame   [:> nested-frame-wrapper props]
 
          nil)])))
 
 (def group-wrapper (group/group-wrapper-factory shape-wrapper))
 (def svg-raw-wrapper (svg-raw/svg-raw-wrapper-factory shape-wrapper))
 (def bool-wrapper (bool/bool-wrapper-factory shape-wrapper))
-(def root-frame-wrapper (frame/root-frame-wrapper-factory shape-wrapper))
 (def nested-frame-wrapper (frame/nested-frame-wrapper-factory shape-wrapper))
-
+(def root-frame-wrapper (frame/root-frame-wrapper-factory shape-wrapper))

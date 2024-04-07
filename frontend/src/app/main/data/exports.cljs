@@ -10,13 +10,14 @@
    [app.main.data.modal :as modal]
    [app.main.data.workspace.persistence :as dwp]
    [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.dom :as dom]
    [app.util.time :as dt]
    [app.util.websocket :as ws]
-   [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]))
 
 (def default-timeout 5000)
 
@@ -166,6 +167,13 @@
                         :wait true}]
         (rx/concat
          (rx/of ::dwp/force-persist)
+
+         ;; Wait the persist to be succesfull
+         (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
+              (rx/filter #(or (nil? %) (= :saved %)))
+              (rx/first)
+              (rx/timeout 400 (rx/empty)))
+
          (->> (rp/cmd! :export params)
               (rx/mapcat (fn [{:keys [id filename]}]
                            (->> (rp/cmd! :export {:cmd :get-resource :blob? true :id id})
@@ -201,7 +209,7 @@
                  (rx/filter #(= @resource-id (:resource-id %)))
                  (rx/share))
 
-            stoper
+            stopper
             (rx/filter #(or (= "ended" (:status %))
                             (= "error" (:status %)))
                        progress-stream)]
@@ -220,12 +228,12 @@
                         (initialize-export-status exports cmd resource))))
 
          ;; We proceed to update the export state with incoming
-         ;; progress updates. We delay the stoper for give some time
+         ;; progress updates. We delay the stopper for give some time
          ;; to update the status with ended or errored status before
          ;; close the stream.
          (->> progress-stream
               (rx/map update-export-status)
-              (rx/take-until (rx/delay 500 stoper))
+              (rx/take-until (rx/delay 500 stopper))
               (rx/finalize (fn []
                              (swap! st/ongoing-tasks disj :export))))
 
@@ -238,7 +246,7 @@
               (rx/take 1)
               (rx/delay default-timeout)
               (rx/map #(clear-export-state @resource-id))
-              (rx/take-until (rx/delay 6000 stoper))))))))
+              (rx/take-until (rx/delay 6000 stopper))))))))
 
 (defn retry-last-export
   []

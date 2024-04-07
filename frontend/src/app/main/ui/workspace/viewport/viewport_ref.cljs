@@ -11,7 +11,10 @@
    [app.common.geom.point :as gpt]
    [app.main.store :as st]
    [app.util.dom :as dom]
-   [rumext.v2 :as mf]))
+   [app.util.mouse :as mse]
+   [goog.events :as events]
+   [rumext.v2 :as mf])
+  (:import goog.events.EventType))
 
 (defonce viewport-ref (atom nil))
 (defonce current-observer (atom nil))
@@ -45,6 +48,8 @@
       #(fn [node]
          (mf/set-ref-val! ref node)
          (reset! viewport-ref node)
+         (when (some? node)
+           (events/listen node EventType.MOUSELEAVE (fn [] (st/emit! (mse/->BlurEvent)))))
          (init-observer node on-change-bounds)))]))
 
 (defn point->viewport

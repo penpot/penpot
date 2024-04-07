@@ -3,10 +3,10 @@
 
  :deps
  {penpot/common {:local/root "../common"}
-  org.clojure/clojure {:mvn/version "1.11.1"}
-  org.clojure/core.async {:mvn/version "1.6.673"}
+  org.clojure/clojure {:mvn/version "1.12.0-alpha5"}
+  org.clojure/tools.namespace {:mvn/version "1.4.4"}
 
-  com.github.luben/zstd-jni {:mvn/version "1.5.5-4"}
+  com.github.luben/zstd-jni {:mvn/version "1.5.5-11"}
 
   io.prometheus/simpleclient {:mvn/version "0.16.0"}
   io.prometheus/simpleclient_hotspot {:mvn/version "0.16.0"}
@@ -17,30 +17,33 @@
 
   io.prometheus/simpleclient_httpserver {:mvn/version "0.16.0"}
 
-  io.lettuce/lettuce-core {:mvn/version "6.2.4.RELEASE"}
+  io.lettuce/lettuce-core {:mvn/version "6.3.0.RELEASE"}
   java-http-clj/java-http-clj {:mvn/version "0.4.3"}
 
   funcool/yetti
-  {:git/tag "v9.16"
-   :git/sha "7df3e08"
+  {:git/tag "v10.0"
+   :git/sha "520613f"
    :git/url "https://github.com/funcool/yetti.git"
    :exclusions [org.slf4j/slf4j-api]}
 
-  com.github.seancorfield/next.jdbc {:mvn/version "1.3.883"}
+  com.github.seancorfield/next.jdbc {:mvn/version "1.3.909"}
   metosin/reitit-core {:mvn/version "0.6.0"}
+  nrepl/nrepl {:mvn/version "1.1.0"}
+  cider/cider-nrepl {:mvn/version "0.44.0"}
 
-  org.postgresql/postgresql {:mvn/version "42.6.0"}
+  org.postgresql/postgresql {:mvn/version "42.7.1"}
+  org.xerial/sqlite-jdbc {:mvn/version "3.44.1.0"}
 
-  com.zaxxer/HikariCP {:mvn/version "5.0.1"}
+  com.zaxxer/HikariCP {:mvn/version "5.1.0"}
 
   io.whitfin/siphash {:mvn/version "2.0.0"}
 
   buddy/buddy-hashers {:mvn/version "2.0.167"}
   buddy/buddy-sign {:mvn/version "3.5.351"}
 
-  com.github.ben-manes.caffeine/caffeine {:mvn/version "3.1.6"}
+  com.github.ben-manes.caffeine/caffeine {:mvn/version "3.1.8"}
 
-  org.jsoup/jsoup {:mvn/version "1.16.1"}
+  org.jsoup/jsoup {:mvn/version "1.17.2"}
   org.im4java/im4java
   {:git/tag "1.4.0-penpot-2"
    :git/sha "e2b3e16"
@@ -49,14 +52,13 @@
   org.lz4/lz4-java {:mvn/version "1.8.0"}
 
   org.clojars.pntblnk/clj-ldap {:mvn/version "0.0.17"}
-  integrant/integrant {:mvn/version "0.8.1"}
 
   dawran6/emoji {:mvn/version "0.1.5"}
-  markdown-clj/markdown-clj {:mvn/version "1.11.4"}
+  markdown-clj/markdown-clj {:mvn/version "1.11.7"}
 
   ;; Pretty Print specs
   pretty-spec/pretty-spec {:mvn/version "0.1.4"}
-  software.amazon.awssdk/s3 {:mvn/version "2.20.96"}
+  software.amazon.awssdk/s3 {:mvn/version "2.22.12"}
   }
 
  :paths ["src" "resources" "target/classes"]
@@ -64,7 +66,6 @@
  {:dev
   {:extra-deps
    {com.bhauman/rebel-readline {:mvn/version "RELEASE"}
-    org.clojure/tools.namespace {:mvn/version "RELEASE"}
     clojure-humanize/clojure-humanize {:mvn/version "0.2.2"}
     org.clojure/data.csv {:mvn/version "RELEASE"}
     com.clojure-goes-fast/clj-async-profiler {:mvn/version "RELEASE"}
@@ -73,7 +74,7 @@
 
   :build
   {:extra-deps
-   {io.github.clojure/tools.build {:git/tag "v0.9.3" :git/sha "e537cd1"}}
+   {io.github.clojure/tools.build {:git/tag "v0.9.5" :git/sha "24f2894"}}
    :ns-default build}
 
   :test

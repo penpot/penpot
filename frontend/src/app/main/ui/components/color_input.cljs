@@ -6,24 +6,24 @@
 
 (ns app.main.ui.components.color-input
   (:require
-   [app.util.color :as uc]
+   [app.common.colors :as cc]
+   [app.common.data :as d]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [goog.events :as events]
-   [rumext.v2 :as mf])
-  (:import goog.events.EventType))
+   [rumext.v2 :as mf]))
 
 (defn clean-color
   [value]
   (-> value
-      (uc/expand-hex)
-      (uc/parse-color)
-      (uc/prepend-hash)))
+      (cc/expand-hex)
+      (cc/parse)
+      (cc/prepend-hash)))
 
-(mf/defc color-input
+(mf/defc color-input*
   {::mf/wrap-props false
    ::mf/forward-ref true}
   [props external-ref]
@@ -31,7 +31,8 @@
         on-change        (obj/get props "onChange")
         on-blur          (obj/get props "onBlur")
         on-focus         (obj/get props "onFocus")
-        select-on-focus? (obj/get props "data-select-on-focus" true)
+        select-on-focus? (d/nilv (unchecked-get props "selectOnFocus") true)
+        class            (d/nilv (unchecked-get props "className") "color-input")
 
         ;; We need a ref pointing to the input dom element, but the user
         ;; of this component may provide one (that is forwarded here).
@@ -44,7 +45,7 @@
         dirty-ref        (mf/use-ref false)
 
         parse-value
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps ref)
          (fn []
            (let [input-node (mf/ref-val ref)]
@@ -57,24 +58,24 @@
                  nil)))))
 
         update-input
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps ref)
          (fn [new-value]
            (let [input-node (mf/ref-val ref)]
-             (dom/set-value! input-node (uc/remove-hash new-value)))))
+             (dom/set-value! input-node (cc/remove-hash new-value)))))
 
         apply-value
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps on-change update-input)
          (fn [new-value]
            (mf/set-ref-val! dirty-ref false)
-           (when (and new-value (not= (uc/remove-hash new-value) value))
+           (when (and new-value (not= (cc/remove-hash new-value) value))
              (when on-change
                (on-change new-value))
              (update-input new-value))))
 
         handle-key-down
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps apply-value update-input)
          (fn [event]
            (mf/set-ref-val! dirty-ref true)
@@ -92,7 +93,7 @@
                (dom/blur! input-node)))))
 
         handle-blur
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps parse-value apply-value update-input)
          (fn [_]
            (let [new-value (parse-value)]
@@ -103,7 +104,7 @@
                (update-input value)))))
 
         on-click
-        (mf/use-callback
+        (mf/use-fn
          (fn [event]
            (let [target (dom/get-target event)]
              (when (some? ref)
@@ -112,24 +113,27 @@
                    (dom/blur! current)))))))
 
         on-mouse-up
-        (mf/use-callback
-          (fn [event]
-            (dom/prevent-default event)))
+        (mf/use-fn
+         (fn [event]
+           (dom/prevent-default event)))
 
         handle-focus
-        (mf/use-callback
-          (fn [event]
-            (let [target (dom/get-target event)]
-              (when on-focus
-                (on-focus event))
+        (mf/use-fn
+         (fn [event]
+           (let [target (dom/get-target event)]
+             (when on-focus
+               (on-focus event))
 
-              (when select-on-focus?
-                (-> event (dom/get-target) (.select))
+             (when select-on-focus?
+               (-> event (dom/get-target) (.select))
                 ;; In webkit browsers the mouseup event will be called after the on-focus causing and unselect
-                (.addEventListener target "mouseup" on-mouse-up #js {"once" true})))))
+               (.addEventListener target "mouseup" on-mouse-up #js {"once" true})))))
 
-        props (-> props
-                  (obj/without ["value" "onChange" "onFocus"])
+        props (-> (obj/clone props)
+                  (obj/unset! "selectOnFocus")
+                  (obj/set! "value" mf/undefined)
+                  (obj/set! "onChange" mf/undefined)
+                  (obj/set! "className" class)
                   (obj/set! "type" "text")
                   (obj/set! "ref" ref)
                   ;; (obj/set! "list" list-id)
@@ -157,8 +161,8 @@
 
     (mf/use-layout-effect
      (fn []
-       (let [keys [(events/listen globals/window EventType.POINTERDOWN on-click)
-                   (events/listen globals/window EventType.CLICK on-click)]]
+       (let [keys [(events/listen globals/window "pointerdown" on-click)
+                   (events/listen globals/window "click" on-click)]]
          #(doseq [key keys]
             (events/unlistenByKey key)))))
 
@@ -166,7 +170,7 @@
      [:> :input props]
      ;; FIXME: this causes some weird interactions because of using apply-value
      ;; [:datalist {:id list-id}
-     ;;  (for [color-name uc/color-names]
+     ;;  (for [color-name cc/color-names]
      ;;    [:option color-name])]
      ]))
 

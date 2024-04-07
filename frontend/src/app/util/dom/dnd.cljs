@@ -42,14 +42,14 @@
   (let [;;currentTarget (.-currentTarget event)
         relatedTarget (.-relatedTarget event)]
     (js/console.log
-      label
-      "[" (:name data) "]"
+     label
+     "[" (:name data) "]"
       ;; (if currentTarget
       ;;   (str "<" (.-localName currentTarget) " " (.-textContent currentTarget) ">")
       ;;   "null")
-      (if relatedTarget
-        (str "<" (.-localName relatedTarget) " " (.-textContent relatedTarget) ">")
-        "null"))))
+     (if relatedTarget
+       (str "<" (.-localName relatedTarget) " " (.-textContent relatedTarget) ">")
+       "null"))))
 
 (defn set-data!
   ([e data]
@@ -61,6 +61,13 @@
        (.setData dt data-type (t/encode-str data))
        (.setData dt data-type data))
      e)))
+
+(defn invisible-image
+  []
+  (let [img (js/Image.)
+        imd "data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs="]
+    (set! (.-src img) imd)
+    img))
 
 (defn set-drag-image!
   ([e image]
@@ -108,11 +115,13 @@
   ([e]
    (get-data e "penpot/data"))
   ([e data-type]
-   (let [dt (.-dataTransfer e)]
-     (if (or (str/starts-with? data-type "penpot")
-             (= data-type "application/json"))
-       (t/decode-str (.getData dt data-type))
-       (.getData dt data-type)))))
+   (let [dt (.-dataTransfer e)
+         data (.getData dt data-type)]
+     (cond-> data
+       (and (some? data) (not= data "")
+            (or (str/starts-with? data-type "penpot")
+                (= data-type "application/json")))
+       (t/decode-str)))))
 
 (defn get-files
   [e]

@@ -63,6 +63,16 @@
 
 .btn-warning {
   @extend %btn;
+  background: $color-warning;
+  color: $color-white;
+  &:hover {
+    background: $color-warning-dark;
+    color: $color-white;
+  }
+}
+
+.btn-danger {
+  @extend %btn;
   background: $color-danger;
   color: $color-white;
   &:hover {
@@ -71,167 +81,11 @@
   }
 }
 
-.btn-text-basic {
-  @extend %btn;
-  background: transparent;
-  color: $color-primary-dark;
-  flex-shrink: 0;
-  &:hover {
-    background: rgba(49, 239, 184, 0.12);
-  }
-}
-
-.btn-icon-dark {
-  @extend %btn;
-  background: $color-gray-60;
-  color: $color-gray-20;
-  padding: $size-1;
-  svg {
-    fill: $color-gray-20;
-  }
-  &:hover {
-    background: $color-primary;
-    color: $color-gray-60;
-    svg {
-      fill: $color-gray-60;
-    }
-  }
-}
-
-.btn-icon-light {
-  @extend %btn;
-  background: $color-white;
-  border: 1px solid $color-gray-20;
-  color: $color-black;
-  padding: $size-1;
-  svg {
-    fill: $color-black;
-  }
-  &:hover {
-    background: $color-primary;
-    border-color: $color-primary;
-    svg {
-      fill: $color-black;
-    }
-  }
-}
-
-.btn-icon-basic {
-  @extend %btn;
-  background: transparent;
-  color: $color-gray-20;
-  padding: $size-1;
-  svg {
-    fill: $color-gray-20;
-  }
-  &:hover {
-    background: transparent;
-    svg {
-      fill: $color-primary;
-    }
-  }
-}
-
-.btn-text-dark {
-  @extend %btn;
-  background: $color-gray-60;
-  color: $color-gray-20;
-
-  svg {
-    fill: $color-gray-20;
-  }
-  &:hover {
-    background: $color-primary;
-    color: $color-gray-60;
-    svg {
-      fill: $color-gray-60;
-    }
-  }
-}
-
-.btn-gray {
-  @extend %btn;
-  background: $color-gray-30;
-  color: $color-white;
-  &:hover {
-    background: $color-gray-40;
-  }
-}
-
-.btn-ocean {
-  @extend %btn;
-  background: $color-ocean;
-  color: $color-white;
-  &:hover {
-    background: darken($color-ocean, 16%);
-    color: $color-white;
-  }
-}
-
-.btn-option {
-  display: flex;
-  a {
-    margin-right: 0.5rem;
-    &:last-child {
-      margin-right: 0;
-    }
-  }
-  &.column {
-    flex-direction: column;
-    a {
-      margin-bottom: 0.5rem;
-      &:last-child {
-        margin-bottom: 0;
-      }
-    }
-  }
-  &.mr-small {
-    margin: 1rem 0;
-  }
-  &.btn-option-400 {
-    margin: 0 auto;
-    max-width: 400px;
-  }
-  &.mb {
-    margin-bottom: 0.5rem;
-  }
-}
-
 input[type="button"][disabled],
 .btn-disabled {
   background-color: $color-gray-10;
   color: $color-gray-40;
   pointer-events: none;
-}
-
-// Text color
-
-.text-error {
-  background-color: $color-danger;
-  border-radius: $br3;
-  color: $color-danger-lighter;
-  padding: 3px 6px;
-}
-
-.text-success {
-  background-color: $color-success;
-  border-radius: $br3;
-  color: $color-white;
-  padding: 3px 6px;
-}
-
-.text-warning {
-  background-color: $color-warning;
-  border-radius: $br3;
-  color: $color-white;
-  padding: 3px 6px;
-}
-
-.text-info {
-  background-color: $color-complete;
-  border-radius: $br3;
-  color: $color-white;
-  padding: 3px 6px;
 }
 
 // Slider dots
@@ -618,7 +472,9 @@ input.element-name {
 
     &:before {
       border-radius: $br99;
-      transition: box-shadow 0.2s linear 0s, color 0.2s linear 0s;
+      transition:
+        box-shadow 0.2s linear 0s,
+        color 0.2s linear 0s;
     }
   }
 
@@ -678,13 +534,17 @@ input[type="radio"]:checked + label:before {
   }
 
   label {
-    transition: border 0.2s linear 0s, color 0.2s linear 0s;
+    transition:
+      border 0.2s linear 0s,
+      color 0.2s linear 0s;
     position: relative;
 
     &:before {
       top: 1.4px;
       border-radius: $br3;
-      transition: border 0.2s linear 0s, color 0.2s linear 0s;
+      transition:
+        border 0.2s linear 0s,
+        color 0.2s linear 0s;
     }
 
     &::after {
@@ -695,7 +555,9 @@ input[type="radio"]:checked + label:before {
       left: 3.2px;
       top: 0;
       font-size: $fs12;
-      transition: border 0.2s linear 0s, color 0.2s linear 0s;
+      transition:
+        border 0.2s linear 0s,
+        color 0.2s linear 0s;
     }
 
     &:after {
@@ -830,13 +692,17 @@ input[type="range"]::-webkit-slider-runnable-track {
   height: 6px;
   cursor: pointer;
   animate: 0.2s;
-  box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
+  box-shadow:
+    0px 0px 0px #000000,
+    0px 0px 0px #0d0d0d;
   background: $color-gray-60;
   border-radius: $br25;
   border: 0px solid #000101;
 }
 input[type="range"]::-webkit-slider-thumb {
-  box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
+  box-shadow:
+    0px 0px 0px #000000,
+    0px 0px 0px #0d0d0d;
   border: 0px solid #000000;
   height: 18px;
   width: 6px;
@@ -854,13 +720,17 @@ input[type="range"]::-moz-range-track {
   height: 8px;
   cursor: pointer;
   animate: 0.2s;
-  box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
+  box-shadow:
+    0px 0px 0px #000000,
+    0px 0px 0px #0d0d0d;
   background: $color-gray-60;
   border-radius: $br25;
   border: 0px solid #000101;
 }
 input[type="range"]::-moz-range-thumb {
-  box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
+  box-shadow:
+    0px 0px 0px #000000,
+    0px 0px 0px #0d0d0d;
   border: 0px solid #000000;
   height: 24px;
   width: 8px;
@@ -882,16 +752,22 @@ input[type="range"]::-ms-fill-lower {
   background: $color-gray-60;
   border: 0px solid #000101;
   border-radius: $br50;
-  box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
+  box-shadow:
+    0px 0px 0px #000000,
+    0px 0px 0px #0d0d0d;
 }
 input[type="range"]::-ms-fill-upper {
   background: $color-gray-60;
   border: 0px solid #000101;
   border-radius: $br50;
-  box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
+  box-shadow:
+    0px 0px 0px #000000,
+    0px 0px 0px #0d0d0d;
 }
 input[type="range"]::-ms-thumb {
-  box-shadow: 0px 0px 0px #000000, 0px 0px 0px #0d0d0d;
+  box-shadow:
+    0px 0px 0px #000000,
+    0px 0px 0px #0d0d0d;
   border: 0px solid #000000;
   height: 24px;
   width: 8px;
@@ -1089,6 +965,15 @@ input[type="range"]:focus::-ms-fill-upper {
         }
       }
     }
+
+    .link {
+      background: none;
+      border: none;
+      color: $color-info;
+      display: inline;
+      margin: 0;
+      text-decoration: underline;
+    }
   }
 
   .btn-close {
@@ -1126,7 +1011,7 @@ input[type="range"]:focus::-ms-fill-upper {
     padding-left: 16px;
     top: 16px;
     right: 16px;
-    z-index: 1005;
+    z-index: 40;
 
     display: flex;
     align-items: center;
@@ -1211,7 +1096,7 @@ input[type="range"]:focus::-ms-fill-upper {
     top: 70px;
     left: 0;
     right: 0;
-    width: 35rem;
+    width: 40rem;
     margin-left: auto;
     margin-right: auto;
     z-index: 20;

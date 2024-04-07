@@ -1,0 +1,171 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.comments-section {
+  position: relative;
+  background-color: var(--panel-background-color);
+  display: grid;
+  grid-template-rows: $s-40 $s-48 1fr;
+}
+
+.from-viewer {
+  padding: 0 $s-8;
+}
+
+.comments-section-title {
+  @include flexCenter;
+  @include uppercaseTitleTipography;
+  position: relative;
+  height: $s-32;
+  min-height: $s-32;
+  margin: $s-8 $s-8 0 $s-8;
+  border-radius: $br-8;
+  background-color: var(--panel-title-background-color);
+  span {
+    @include flexCenter;
+    flex-grow: 1;
+    color: var(--title-foreground-color-hover);
+  }
+}
+
+.viewer-title {
+  margin: 0;
+  margin-block-start: $s-8;
+}
+
+.close-button {
+  @extend .button-tertiary;
+  position: absolute;
+  right: $s-2;
+  top: $s-2;
+  height: $s-28;
+  width: $s-28;
+  border-radius: $br-6;
+  svg {
+    @extend .button-icon;
+    stroke: var(--icon-foreground);
+  }
+}
+
+.mode-dropdown-wrapper {
+  @include buttonStyle;
+  @extend .asset-element;
+  background-color: var(--color-background-tertiary);
+  display: flex;
+  width: 100%;
+  max-width: $s-256;
+  height: $s-32;
+  padding: $s-8;
+  border-radius: $br-8;
+  margin: $s-16 auto 0 auto;
+  cursor: pointer;
+  position: relative;
+}
+
+.mode-label {
+  padding-right: 8px;
+  flex-grow: 1;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.arrow-icon {
+  @include flexCenter;
+  height: $s-24;
+  width: $s-24;
+  svg {
+    @extend .button-icon-small;
+    transform: rotate(90deg);
+    stroke: var(--icon-foreground);
+  }
+}
+
+.comment-mode-dropdown {
+  @extend .dropdown-wrapper;
+  top: $s-92;
+  left: $s-12;
+  max-width: $s-256;
+  width: 100%;
+}
+
+.viewer-dropdown {
+  left: $s-8;
+}
+
+.dropdown-item {
+  @extend .dropdown-element-base;
+  justify-content: space-between;
+  .icon {
+    @include flexCenter;
+    height: $s-24;
+    width: $s-24;
+    svg {
+      @extend .button-icon-small;
+      stroke: transparent;
+    }
+  }
+  .label {
+    @include bodySmallTypography;
+  }
+  &:hover {
+    .icon svg {
+      stroke: transparent;
+    }
+  }
+  &.selected {
+    .label {
+      color: var(--menu-foreground-color);
+    }
+    .icon svg {
+      stroke: var(--icon-foreground-hover);
+    }
+  }
+}
+
+.separator {
+  height: $s-12;
+}
+
+.comments-section-content {
+  height: 100%;
+  overflow-y: auto;
+}
+
+.thread-groups {
+  display: flex;
+  flex-direction: column;
+  gap: $s-24;
+}
+
+.thread-group-placeholder {
+  @include flexColumn;
+  align-items: center;
+  justify-content: flex-start;
+  margin-top: $s-36;
+}
+
+.placeholder-icon {
+  @include flexCenter;
+  height: $s-48;
+  width: $s-48;
+  border-radius: $br-circle;
+  background-color: var(--empty-message-background-color);
+  svg {
+    @extend .button-icon;
+    height: $s-28;
+    width: $s-28;
+    stroke: var(--empty-message-foreground-color);
+  }
+}
+
+.placeholder-label {
+  @include bodySmallTypography;
+  text-align: center;
+  width: $s-184;
+  color: var(--empty-message-foreground-color);
+}

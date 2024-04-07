@@ -7,98 +7,46 @@
 (ns debug
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
+   [app.common.files.repair :as cfr]
+   [app.common.files.validate :as cfv]
    [app.common.logging :as l]
    [app.common.math :as mth]
    [app.common.transit :as t]
    [app.common.types.file :as ctf]
+   [app.common.uri :as u]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.dashboard.shortcuts]
+   [app.main.data.preview :as dp]
    [app.main.data.viewer.shortcuts]
    [app.main.data.workspace :as dw]
-   [app.main.data.workspace.changes :as dwc]
+   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.path.shortcuts]
+   [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shortcuts]
+   [app.main.errors :as errors]
+   [app.main.features :as features]
+   [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.util.debug :as dbg]
    [app.util.dom :as dom]
+   [app.util.http :as http]
    [app.util.object :as obj]
    [app.util.timers :as timers]
-   [beicon.core :as rx]
+   [beicon.v2.core :as rx]
    [cljs.pprint :refer [pprint]]
    [cuerdas.core :as str]
-   [potok.core :as ptk]
+   [potok.v2.core :as ptk]
    [promesa.core :as p]))
+
+(l/set-level! :debug)
 
 (defn ^:export set-logging
   ([level]
    (l/set-level! :app (keyword level)))
   ([ns level]
    (l/set-level! (keyword ns) (keyword level))))
-
-(def debug-options
-  #{;; Displays the bounding box for the shapes
-    :bounding-boxes
-
-    ;; Displays an overlay over the groups
-    :group
-
-    ;; Displays in the console log the events through the application
-    :events
-
-    ;; Display the boxes that represent the rotation and resize handlers
-    :handlers
-
-    ;; Displays the center of a selection
-    :selection-center
-
-    ;; When active the single selection will not take into account previous transformations
-    ;; this is useful to debug transforms
-    :simple-selection
-
-    ;; When active the thumbnails will be displayed with a sepia filter
-    :thumbnails
-
-    ;; When active we can check in the browser the export values
-    :show-export-metadata
-
-    ;; Show text fragments outlines
-    :text-outline
-
-    ;; Disable thumbnail cache
-    :disable-thumbnail-cache
-
-    ;; Disable frame thumbnails
-    :disable-frame-thumbnails
-
-    ;; Force thumbnails always (independent of selection or zoom level)
-    :force-frame-thumbnails
-
-    ;; Enable a widget to show the auto-layout drop-zones
-    :layout-drop-zones
-
-    ;; Display the layout lines
-    :layout-lines
-
-    ;; Display the bounds for the hug content adjust
-    :layout-content-bounds
-
-    ;; Makes the pixel grid red so its more visibile
-    :pixel-grid
-
-    ;; Show the bounds relative to the parent
-    :parent-bounds
-
-    ;; Show html text
-    :html-text
-
-    ;; Show history overlay
-    :history-overlay
-
-    ;; Show shape name and id
-    :shape-titles
-
-    ;;
-    :grid-layout
-    })
 
 ;; These events are excluded when we activate the :events flag
 (def debug-exclude-events
@@ -109,39 +57,36 @@
     :app.main.data.websocket/send-message
     :app.main.data.workspace.selection/change-hover-state})
 
-(defonce ^:dynamic *debug* (atom #{#_:events}))
-
-(defn debug-all! []
-  (reset! *debug* debug-options)
-  (js* "app.main.reinit()"))
-
-(defn debug-none! []
-  (reset! *debug* #{})
-  (js* "app.main.reinit()"))
-
-(defn debug! [option]
-  (swap! *debug* conj option)
+(defn enable!
+  [option]
+  (dbg/enable! option)
   (when (= :events option)
     (set! st/*debug-events* true))
-
   (js* "app.main.reinit()"))
 
-(defn -debug! [option]
-  (swap! *debug* disj option)
+(defn disable!
+  [option]
+  (dbg/disable! option)
   (when (= :events option)
     (set! st/*debug-events* false))
   (js* "app.main.reinit()"))
 
-(defn ^:export ^boolean debug?
-  [option]
-  (boolean (@*debug* option)))
+(defn ^:export toggle-debug
+  [name]
+  (let [option (keyword name)]
+    (if (dbg/enabled? option)
+      (disable! option)
+      (enable! option))))
 
-(defn ^:export toggle-debug [name] (let [option (keyword name)]
-                                     (if (debug? option)
-                                       (-debug! option)
-                                       (debug! option))))
-(defn ^:export debug-all [] (debug-all!))
-(defn ^:export debug-none [] (debug-none!))
+(defn ^:export debug-all
+  []
+  (reset! dbg/state dbg/options)
+  (js* "app.main.reinit()"))
+
+(defn ^:export debug-none
+  []
+  (reset! dbg/state #{})
+  (js* "app.main.reinit()"))
 
 (defn ^:export tap
   "Transducer function that can execute a side-effect `effect-fn` per input"
@@ -155,21 +100,21 @@
        (rf result input)))))
 
 (defn prettify
-  "Prepare x fror cleaner output when logged."
+  "Prepare x for cleaner output when logged."
   [x]
   (cond
     (map? x) (d/mapm #(prettify %2) x)
     (vector? x) (mapv prettify x)
     (seq? x) (map prettify x)
-    (set? x) (into #{} (map prettify x))
+    (set? x) (into #{} (map prettify) x)
     (number? x) (mth/precision x 4)
-    (uuid? x) (str "#uuid " x)
+    (uuid? x) (str/concat "#uuid " x)
     :else x))
 
 (defn ^:export logjs
   ([str] (tap (partial logjs str)))
   ([str val]
-   (js/console.log str (clj->js (prettify val)))
+   (js/console.log str (clj->js (prettify val) :keyword-fn (fn [v] (str/concat v))))
    val))
 
 (when (exists? js/window)
@@ -270,6 +215,10 @@
   []
   (dump-selected' @st/state))
 
+(defn ^:export preview-selected
+  []
+  (st/emit! (dp/open-preview-selected)))
+
 (defn ^:export parent
   []
   (let [state @st/state
@@ -294,29 +243,59 @@
       (prn (str (:name frame) " - " (:id frame))))
     nil))
 
+(defn ^:export select-by-object-id
+  [object-id]
+  (let [[_ page-id shape-id _] (str/split object-id #"/")]
+    (st/emit! (dw/go-to-page (uuid/uuid page-id)))
+    (st/emit! (dws/select-shape (uuid/uuid shape-id)))))
+
+(defn ^:export select-by-id
+  [shape-id]
+  (st/emit! (dws/select-shape (uuid/uuid shape-id))))
+
 (defn dump-tree'
   ([state] (dump-tree' state false false false))
   ([state show-ids] (dump-tree' state show-ids false false))
   ([state show-ids show-touched] (dump-tree' state show-ids show-touched false))
   ([state show-ids show-touched show-modified]
    (let [page-id    (get state :current-page-id)
-         file-data  (get state :workspace-data)
+         file       (assoc (get state :workspace-file)
+                           :data (get state :workspace-data))
          libraries  (get state :workspace-libraries)]
-     (ctf/dump-tree file-data page-id libraries show-ids show-touched show-modified))))
-
+     (ctf/dump-tree file page-id libraries {:show-ids show-ids
+                                            :show-touched show-touched
+                                            :show-modified show-modified}))))
 (defn ^:export dump-tree
   ([] (dump-tree' @st/state))
   ([show-ids] (dump-tree' @st/state show-ids false false))
   ([show-ids show-touched] (dump-tree' @st/state show-ids show-touched false))
   ([show-ids show-touched show-modified] (dump-tree' @st/state show-ids show-touched show-modified)))
 
+(defn ^:export dump-subtree'
+  ([state shape-id] (dump-subtree' state shape-id false false false))
+  ([state shape-id show-ids] (dump-subtree' state shape-id show-ids false false))
+  ([state shape-id show-ids show-touched] (dump-subtree' state shape-id show-ids show-touched false))
+  ([state shape-id show-ids show-touched show-modified]
+   (let [page-id    (get state :current-page-id)
+         file       (assoc (get state :workspace-file)
+                           :data (get state :workspace-data))
+         libraries  (get state :workspace-libraries)]
+     (ctf/dump-subtree file page-id shape-id libraries {:show-ids show-ids
+                                                        :show-touched show-touched
+                                                        :show-modified show-modified}))))
+(defn ^:export dump-subtree
+  ([shape-id] (dump-subtree' @st/state (uuid/uuid shape-id)))
+  ([shape-id show-ids] (dump-subtree' @st/state (uuid/uuid shape-id) show-ids false false))
+  ([shape-id show-ids show-touched] (dump-subtree' @st/state (uuid/uuid shape-id) show-ids show-touched false))
+  ([shape-id show-ids show-touched show-modified] (dump-subtree' @st/state (uuid/uuid shape-id) show-ids show-touched show-modified)))
+
 (when *assert*
   (defonce debug-subscription
     (->> st/stream
          (rx/filter ptk/event?)
-         (rx/filter (fn [s] (and (debug? :events)
+         (rx/filter (fn [s] (and (dbg/enabled? :events)
                                  (not (debug-exclude-events (ptk/type s))))))
-         (rx/subs #(println "[stream]: " (ptk/repr-event %))))))
+         (rx/subs! #(println "[stream]: " (ptk/repr-event %))))))
 
 (defn ^:export apply-changes
   "Takes a Transit JSON changes"
@@ -324,7 +303,7 @@
 
   (let [file-id (:current-file-id @st/state)
         changes (t/decode-str changes*)]
-    (st/emit! (dwc/commit-changes {:redo-changes changes
+    (st/emit! (dch/commit-changes {:redo-changes changes
                                    :undo-changes []
                                    :save-undo? true
                                    :file-id file-id}))))
@@ -398,6 +377,133 @@
   [read-only?]
   (st/emit! (dw/set-workspace-read-only read-only?)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; REPAIR & VALIDATION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Validation and repair
+
+(defn ^:export validate
+  ([] (validate nil))
+  ([shape-id]
+   (let [file      (assoc (get @st/state :workspace-file)
+                          :data (get @st/state :workspace-data))
+         libraries (get @st/state :workspace-libraries)]
+
+     (try
+       (->> (if-let [shape-id (some-> shape-id parse-uuid)]
+              (let [page (dm/get-in file [:data :pages-index (get @st/state :current-page-id)])]
+                (cfv/validate-shape shape-id file page libraries))
+              (cfv/validate-file file libraries))
+            (group-by :code)
+            (clj->js))
+       (catch :default cause
+         (errors/print-error! cause))))))
+
+(defn ^:export validate-schema
+  []
+  (try
+    (-> (get @st/state :workspace-file)
+        (assoc :data (get @st/state :workspace-data))
+        (cfv/validate-file-schema!))
+    (catch :default cause
+      (errors/print-error! cause))))
+
+(defn ^:export repair
+  [reload?]
+  (st/emit!
+   (ptk/reify ::repair-current-file
+     ptk/EffectEvent
+     (effect [_ state _]
+       (let [features (features/get-team-enabled-features state)
+             sid      (:session-id state)
+
+             file     (get state :workspace-file)
+             fdata    (get state :workspace-data)
+
+             file     (assoc file :data fdata)
+             libs     (get state :workspace-libraries)
+
+             errors   (cfv/validate-file file libs)
+             _        (l/dbg :hint "repair current file" :errors (count errors))
+
+             changes  (cfr/repair-file file libs errors)
+
+             params    {:id (:id file)
+                        :revn (:revn file)
+                        :session-id sid
+                        :changes changes
+                        :features features
+                        :skip-validate true}]
+
+
+         (->> (rp/cmd! :update-file params)
+              (rx/subs! (fn [_]
+                          (when reload?
+                            (dom/reload-current-window)))
+                        (fn [cause]
+                          (errors/print-error! cause)))))))))
+
 (defn ^:export fix-orphan-shapes
   []
   (st/emit! (dw/fix-orphan-shapes)))
+
+(defn ^:export find-components-norefs
+  []
+  (st/emit! (dw/find-components-norefs)))
+
+(defn ^:export set-shape-ref
+  [id shape-ref]
+  (st/emit! (dw/set-shape-ref id shape-ref)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SNAPSHOTS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn ^:export list-available-snapshots
+  [file-id]
+  (let [file-id (or (d/parse-uuid file-id)
+                    (:current-file-id @st/state))]
+    (->> (http/send! {:method :get
+                      :uri (u/join cf/public-uri "api/rpc/command/get-file-snapshots")
+                      :query {:file-id file-id}})
+         (rx/map http/conditional-decode-transit)
+         (rx/mapcat rp/handle-response)
+         (rx/subs! (fn [result]
+                     (let [result (map (fn [row]
+                                         (update row :id str))
+                                       result)]
+                       (js/console.table (clj->js result))))
+                   (fn [cause]
+                     (js/console.log "EE:" cause))))
+    nil))
+
+(defn ^:export take-snapshot
+  [label file-id]
+  (when-let [file-id (or (d/parse-uuid file-id)
+                         (:current-file-id @st/state))]
+    (->> (http/send! {:method :post
+                      :uri (u/join cf/public-uri "api/rpc/command/take-file-snapshot")
+                      :body (http/transit-data {:file-id file-id :label label})})
+         (rx/map http/conditional-decode-transit)
+         (rx/mapcat rp/handle-response)
+         (rx/subs! (fn [{:keys [id]}]
+                     (println "Snapshot saved:" (str id)))
+                   (fn [cause]
+                     (js/console.log "EE:" cause))))))
+
+(defn ^:export restore-snapshot
+  [id file-id]
+  (when-let [file-id (or (d/parse-uuid file-id)
+                         (:current-file-id @st/state))]
+    (when-let [id (d/parse-uuid id)]
+      (->> (http/send! {:method :post
+                        :uri (u/join cf/public-uri "api/rpc/command/restore-file-snapshot")
+                        :body (http/transit-data {:file-id file-id :id id})})
+           (rx/map http/conditional-decode-transit)
+           (rx/mapcat rp/handle-response)
+           (rx/subs! (fn [_]
+                       (println "Snapshot restored " id)
+                       #_(.reload js/location))
+                     (fn [cause]
+                       (js/console.log "EE:" cause)))))))

@@ -13,7 +13,7 @@
    [app.common.schema :as sm]
    [app.config :as cf]
    [cuerdas.core :as str]
-   [potok.core :as ptk]))
+   [potok.v2.core :as ptk]))
 
 (log/set-level! :warn)
 
@@ -127,16 +127,17 @@
 
 ;; --- EVENT: push
 
-(def schema:shortcuts
-  [:map-of
-   :keyword
-   [:map
-    [:command [:or :string [:vector :any]]]
-    [:fn {:optional true} fn?]
-    [:tooltip {:optional true} :string]]])
+(def ^:private
+  schema:shortcuts
+  (sm/define
+    [:map-of :keyword
+     [:map
+      [:command [:or :string [:vector :any]]]
+      [:fn {:optional true} fn?]
+      [:tooltip {:optional true} :string]]]))
 
-(def shortcuts?
-  (sm/pred-fn schema:shortcuts))
+(def check-shortcuts!
+  (sm/check-fn schema:shortcuts))
 
 (defn- wrap-cb
   [key cb]
@@ -169,8 +170,11 @@
 
 (defn push-shortcuts
   [key shortcuts]
-  (dm/assert! (keyword? key))
-  (dm/assert! (shortcuts? shortcuts))
+
+  (dm/assert!
+   "expected valid parameters"
+   (and (keyword? key)
+        (check-shortcuts! shortcuts)))
 
   (ptk/reify ::push-shortcuts
     ptk/UpdateEvent

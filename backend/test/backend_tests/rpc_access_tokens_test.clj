@@ -9,8 +9,8 @@
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.http :as http]
-   [app.storage :as sto]
    [app.rpc :as-alias rpc]
+   [app.storage :as sto]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [mockery.core :refer [with-mocks]]))

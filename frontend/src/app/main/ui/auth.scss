@@ -1,0 +1,91 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "common/refactor/common-refactor.scss" as *;
+
+.auth-section {
+  position: relative;
+  align-items: center;
+  background: var(--panel-background-color);
+  display: grid;
+  gap: $s-32;
+  grid-template-columns: repeat(5, 1fr);
+  height: 100%;
+  padding: $s-32;
+  width: 100%;
+  overflow: auto;
+
+  @media (max-width: 992px) {
+    display: flex;
+    justify-content: center;
+  }
+}
+
+.login-illustration {
+  display: flex;
+  justify-content: center;
+  grid-column: 1 / 4;
+  width: 40vw;
+  justify-self: center;
+
+  svg {
+    width: 100%;
+    fill: $df-primary;
+    height: auto;
+  }
+
+  @media (max-width: 992px) {
+    display: none;
+  }
+}
+
+.auth-content {
+  grid-column: 4 / 6;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: $s-24;
+  height: fit-content;
+  max-width: $s-412;
+  padding-block-end: $s-8;
+  position: relative;
+  width: 100%;
+}
+
+.logo-btn {
+  position: absolute;
+  top: $s-20;
+  left: $s-20;
+  display: flex;
+  justify-content: flex-start;
+  width: $s-120;
+  margin-block-end: $s-52;
+
+  svg {
+    width: $s-120;
+    height: $s-40;
+    fill: var(--main-icon-foreground);
+  }
+}
+
+.terms-login {
+  @include bodySmallTypography;
+  display: flex;
+  gap: $s-4;
+  justify-content: center;
+  width: 100%;
+}
+
+.and-text {
+  border-bottom: $s-1 solid transparent;
+  color: var(--title-foreground-color);
+}
+
+.auth-link {
+  color: var(--link-foreground-color);
+  &:hover {
+    text-decoration: underline;
+  }
+}

@@ -1,0 +1,134 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.element-set {
+  margin: 0;
+}
+
+.title-spacing-shadow {
+  margin: 0;
+  padding-left: $s-2;
+}
+.add-shadow {
+  @extend .button-tertiary;
+  height: $s-32;
+  width: $s-28;
+  svg {
+    @extend .button-icon;
+  }
+}
+
+.element-set-content {
+  margin-top: $s-4;
+  @include flexColumn;
+}
+
+.multiple-shadows {
+  @include flexRow;
+}
+
+.label {
+  @extend .mixed-bar;
+}
+
+.actions {
+  @include flexRow;
+}
+
+.action-btn {
+  @extend .button-tertiary;
+  height: $s-32;
+  width: $s-28;
+  svg {
+    @extend .button-icon;
+  }
+}
+
+.shadow-element {
+  @include flexColumn;
+}
+
+.basic-options {
+  @include flexRow;
+}
+
+.shadow-info {
+  display: flex;
+  align-items: center;
+  gap: $s-1;
+  width: $s-188;
+  .more-options {
+    @extend .button-secondary;
+    height: $s-32;
+    width: $s-28;
+    border-radius: $br-8 0 0 $br-8;
+    svg {
+      @extend .button-icon;
+    }
+    &.selected {
+      background-color: var(--button-radio-background-color-active);
+      svg {
+        stroke: var(--button-radio-foreground-color-active);
+      }
+    }
+  }
+  .type-select {
+    padding: 0;
+    border-radius: 0 $br-8 $br-8 0;
+    flex-grow: 1;
+    .shadow-type-select {
+      flex-grow: 1;
+      border-radius: 0 $br-8 $br-8 0;
+    }
+  }
+
+  &.hidden {
+    .more-options {
+      @include hiddenElement;
+      border: $s-1 solid var(--input-border-color-disabled);
+    }
+    .type-select {
+      @include hiddenElement;
+      .shadow-type-select {
+        @include hiddenElement;
+        border: $s-1 solid var(--input-border-color-disabled);
+      }
+    }
+  }
+}
+
+.shadow-advanced-options {
+  @include flexColumn;
+}
+
+.first-row,
+.second-row {
+  @include flexRow;
+  .offset-x-input,
+  .blur-input,
+  .spread-input,
+  .offset-y-input {
+    @extend .input-element;
+    width: $s-60;
+    min-width: $s-60;
+    align-items: baseline;
+    input {
+      width: $s-32;
+    }
+  }
+  .blur-input,
+  .spread-input {
+    width: $s-92;
+    .input-label {
+      width: $s-44;
+    }
+  }
+  .spread-input {
+    gap: $s-8;
+  }
+}

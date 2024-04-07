@@ -10,13 +10,13 @@
    https://en.wikipedia.org/wiki/Range_tree"
   (:require
    [app.common.data :as d]
-   [app.common.pages.diff :as diff]
-   [app.common.pages.helpers :as cph]
+   [app.common.files.helpers :as cfh]
+   [app.common.files.page-diff :as diff]
+   [app.common.geom.grid :as gg]
+   [app.common.geom.snap :as snap]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
-   [app.util.geom.grid :as gg]
-   [app.util.geom.snap-points :as snap]
    [app.util.range-tree :as rt]))
 
 (def snap-attrs [:frame-id :x :y :width :height :hidden :selrect :grids])
@@ -72,19 +72,22 @@
 
 (defn- add-frame
   [objects page-data frame]
-  (let [frame-id (:id frame)
-        parent-id (:parent-id frame)
-        frame-data (->> (snap/shape-snap-points frame)
-                        (mapv #(array-map :type :shape
-                                          :id frame-id
-                                          :pt %)))
+  (let [frame-id    (:id frame)
+        parent-id   (:parent-id frame)
+
+        frame-data  (if (:blocked frame)
+                      []
+                      (->> (snap/shape->snap-points frame)
+                           (mapv #(array-map :type :shape
+                                             :id frame-id
+                                             :pt %))))
         grid-x-data (get-grids-snap-points frame :x)
         grid-y-data (get-grids-snap-points frame :y)]
 
     (cond-> page-data
       (and (not (ctl/any-layout-descent? objects frame))
            (not (:hidden frame))
-           (not (cph/hidden-parent? objects frame-id)))
+           (not (cfh/hidden-parent? objects frame-id)))
 
       (-> ;; Update root frame information
        (assoc-in [uuid/zero :objects-data frame-id] frame-data)
@@ -101,7 +104,9 @@
 (defn- add-shape
   [objects page-data shape]
   (let [frame-id    (:frame-id shape)
-        snap-points (snap/shape-snap-points shape)
+        snap-points (if (:blocked shape)
+                      []
+                      (snap/shape->snap-points shape))
         shape-data  (->> snap-points
                          (mapv #(array-map
                                  :type :shape
@@ -110,7 +115,7 @@
     (cond-> page-data
       (and (not (ctl/any-layout-descent? objects shape))
            (not (:hidden shape))
-           (not (cph/hidden-parent? objects (:id shape))))
+           (not (cfh/hidden-parent? objects (:id shape))))
       (-> (assoc-in [frame-id :objects-data (:id shape)] shape-data)
           (update-in [frame-id :x] (make-insert-tree-data shape-data :x))
           (update-in [frame-id :y] (make-insert-tree-data shape-data :y))))))
@@ -119,7 +124,7 @@
   [objects page-data guide]
 
   (let [frame (get objects (:frame-id guide))
-        guide-data (->> (snap/guide-snap-points guide frame)
+        guide-data (->> (snap/guide->snap-points guide frame)
                         (mapv #(array-map
                                 :type :guide
                                 :id (:id guide)
@@ -130,7 +135,7 @@
       ;; Guide inside frame, we add the information only on that frame
       (cond-> page-data
         (and (not (:hidden frame))
-             (not (cph/hidden-parent? objects frame-id)))
+             (not (cfh/hidden-parent? objects frame-id)))
         (-> (assoc-in [frame-id :objects-data (:id guide)] guide-data)
             (update-in [frame-id (:axis guide)] (make-insert-tree-data guide-data (:axis guide)))))
 
@@ -209,7 +214,7 @@
   [snap-data {:keys [objects options] :as page}]
   (let [frames     (ctst/get-frames objects)
         shapes     (->> (vals (:objects page))
-                        (remove cph/frame-shape?))
+                        (remove cfh/frame-shape?))
         guides     (vals (:guides options))
 
         page-data

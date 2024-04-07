@@ -13,6 +13,7 @@
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.custom-stroke :refer [shape-custom-strokes]]
+   [app.main.ui.shapes.fills :as fills]
    [app.main.ui.shapes.gradients :as grad]
    [app.util.object :as obj]
    [rumext.v2 :as mf]))
@@ -50,10 +51,11 @@
                              :y y
                              :width width
                              :height height}
-                        (attrs/add-style-attrs shape render-id))
+                        (attrs/add-fill-props! shape render-id)
+                        (attrs/add-border-props! shape))
         get-gradient-id
         (fn [index]
-          (str render-id "_" (:id shape) "_" index))]
+          (str render-id "-" (:id shape) "-" index))]
 
     [:*
      ;; Definition of gradients for partial elements
@@ -61,7 +63,7 @@
        [:defs
         (for [[index data] (d/enumerate position-data)]
           (when (some? (:fill-color-gradient data))
-            (let [id (dm/str "fill-color-gradient_" (get-gradient-id index))]
+            (let [id (dm/str "fill-color-gradient-" (get-gradient-id index))]
               [:& grad/gradient {:id id
                                  :key id
                                  :attr :fill-color-gradient
@@ -96,8 +98,15 @@
                                         (obj/set! "fill" (str "url(#fill-" index "-" render-id ")")))}
                         (cond-> browser-props
                           (obj/merge! browser-props)))
-              shape (assoc shape :fills (:fills data))]
+              shape (assoc shape :fills (:fills data))
 
-          [:& (mf/provider muc/render-id) {:key index :value (str render-id "_" (:id shape) "_" index)}
+              ;; Need to create new render-id per text-block
+              render-id (dm/str render-id "-" index)]
+
+          [:& (mf/provider muc/render-id) {:key index :value render-id}
+           ;; Text fills definition. Need to be defined per-text block
+           [:defs
+            [:& fills/fills          {:shape shape :render-id render-id}]]
+
            [:& shape-custom-strokes {:shape shape :position index :render-id render-id}
             [:> :text props (:text data)]]]))]]))
