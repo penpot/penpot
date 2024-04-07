@@ -1664,6 +1664,7 @@
     (db/update! conn :file
                 {:data (blob/encode (:data file))
                  :features (db/create-array conn "text" (:features file))
+                 :version (:version file)
                  :revn (:revn file)}
                 {:id (:id file)})))
 
