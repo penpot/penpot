@@ -16,6 +16,7 @@
    [app.common.files.migrations :as fmg]
    [app.common.files.shapes-helpers :as cfsh]
    [app.common.files.validate :as cfv]
+   [app.common.fressian :as fres]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
@@ -48,18 +49,18 @@
    [app.rpc.commands.files-snapshot :as fsnap]
    [app.rpc.commands.media :as cmd.media]
    [app.storage :as sto]
+   [app.storage.impl :as impl]
    [app.storage.tmp :as tmp]
    [app.svgo :as svgo]
    [app.util.blob :as blob]
-   [app.util.cache :as cache]
    [app.util.events :as events]
    [app.util.pointer-map :as pmap]
    [app.util.time :as dt]
    [buddy.core.codecs :as bc]
    [clojure.set :refer [rename-keys]]
    [cuerdas.core :as str]
+   [datoteka.fs :as fs]
    [datoteka.io :as io]
-   [promesa.exec :as px]
    [promesa.util :as pu]))
 
 (def ^:dynamic *stats*
@@ -68,7 +69,7 @@
 
 (def ^:dynamic *cache*
   "A dynamic var for setting up a cache instance."
-  nil)
+  false)
 
 (def ^:dynamic *skip-on-graphic-error*
   "A dynamic var for setting up the default error behavior for graphics processing."
@@ -99,6 +100,8 @@
 
     (some? data)
     (assoc :data (blob/decode data))))
+
+(set! *warn-on-reflection* true)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FILE PREPARATION BEFORE MIGRATION
@@ -1296,7 +1299,7 @@
             (try
               (let [item (if (str/starts-with? href "data:")
                            (let [[mtype data] (parse-datauri href)
-                                 size         (alength data)
+                                 size         (alength ^bytes data)
                                  path         (tmp/tempfile :prefix "penpot.media.download.")
                                  written      (io/write-to-file! data path :size size)]
 
@@ -1365,27 +1368,49 @@
                          {::sql/columns [:media-id]})]
     (:media-id fmobject)))
 
-(defn- get-sobject-content
+(defn get-sobject-content
   [id]
   (let [storage  (::sto/storage *system*)
         sobject  (sto/get-object storage id)]
+
+    (when-not sobject
+      (throw (RuntimeException. "sobject is nil")))
+    (when (> (:size sobject) 1135899)
+      (throw (RuntimeException. "svg too big")))
+
     (with-open [stream (sto/get-object-data storage sobject)]
       (slurp stream))))
 
+(defn get-optimized-svg
+  [sid]
+  (let [svg-text (get-sobject-content sid)
+        svg-text (svgo/optimize *system* svg-text)]
+    (csvg/parse svg-text)))
+
+(def base-path "/data/cache")
+
+(defn get-sobject-cache-path
+  [sid]
+  (let [path (impl/id->path sid)]
+    (fs/join base-path path)))
+
+(defn get-cached-svg
+  [sid]
+  (let [path (get-sobject-cache-path sid)]
+    (if (fs/exists? path)
+      (with-open [^java.lang.AutoCloseable stream (io/input-stream path)]
+        (let [reader (fres/reader stream)]
+          (fres/read! reader)))
+      (get-optimized-svg sid))))
+
 (defn- create-shapes-for-svg
   [{:keys [id] :as mobj} file-id objects frame-id position]
-  (let [get-svg (fn [sid]
-                  (let [svg-text (get-sobject-content sid)
-                        svg-text (svgo/optimize *system* svg-text)]
-                    (-> (csvg/parse svg-text)
-                        (assoc :name (:name mobj)))))
-
-        sid      (resolve-sobject-id id)
-        svg-data (if (cache/cache? *cache*)
-                   (cache/get *cache* sid (px/wrap-bindings get-svg))
-                   (get-svg sid))
-
-        svg-data (collect-and-persist-images svg-data file-id id)]
+  (let [sid      (resolve-sobject-id id)
+        svg-data (if *cache*
+                   (get-cached-svg sid)
+                   (get-optimized-svg sid))
+        svg-data (collect-and-persist-images svg-data file-id id)
+        svg-data (assoc svg-data :name (:name mobj))]
 
     (sbuilder/create-svg-shapes svg-data position objects frame-id frame-id #{} false)))
 
@@ -1714,7 +1739,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn migrate-file!
-  [system file-id & {:keys [validate? skip-on-graphic-error? label]}]
+  [system file-id & {:keys [validate? skip-on-graphic-error? label rown]}]
   (let [tpoint (dt/tpoint)
         err    (volatile! false)]
 
@@ -1754,24 +1779,14 @@
                 components (get @*file-stats* :processed-components 0)
                 graphics   (get @*file-stats* :processed-graphics 0)]
 
-            (if (cache/cache? *cache*)
-              (let [cache-stats (cache/stats *cache*)]
-                (l/dbg :hint "migrate:file:end"
-                       :file-id (str file-id)
-                       :graphics graphics
-                       :components components
-                       :validate validate?
-                       :crt (mth/to-fixed (:hit-rate cache-stats) 2)
-                       :crq (str (:req-count cache-stats))
-                       :error @err
-                       :elapsed (dt/format-duration elapsed)))
-              (l/dbg :hint "migrate:file:end"
-                     :file-id (str file-id)
-                     :graphics graphics
-                     :components components
-                     :validate validate?
-                     :error @err
-                     :elapsed (dt/format-duration elapsed)))
+            (l/dbg :hint "migrate:file:end"
+                   :file-id (str file-id)
+                   :graphics graphics
+                   :components components
+                   :validate validate?
+                   :rown rown
+                   :error @err
+                   :elapsed (dt/format-duration elapsed))
 
             (some-> *stats* (swap! update :processed-files (fnil inc 0)))
             (some-> *team-stats* (swap! update :processed-files (fnil inc 0)))))))))
@@ -1833,21 +1848,9 @@
             (when-not @err
               (some-> *stats* (swap! update :processed-teams (fnil inc 0))))
 
-            (if (cache/cache? *cache*)
-              (let [cache-stats (cache/stats *cache*)]
-                (l/dbg :hint "migrate:team:end"
-                       :team-id (dm/str team-id)
-                       :files files
-                       :components components
-                       :graphics graphics
-                       :crt (mth/to-fixed (:hit-rate cache-stats) 2)
-                       :crq (str (:req-count cache-stats))
-                       :error @err
-                       :elapsed (dt/format-duration elapsed)))
-
-              (l/dbg :hint "migrate:team:end"
-                     :team-id (dm/str team-id)
-                     :files files
-                     :components components
-                     :graphics graphics
-                     :elapsed (dt/format-duration elapsed)))))))))
+            (l/dbg :hint "migrate:team:end"
+                   :team-id (dm/str team-id)
+                   :files files
+                   :components components
+                   :graphics graphics
+                   :elapsed (dt/format-duration elapsed))))))))

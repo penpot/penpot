@@ -7,18 +7,19 @@
 (ns app.srepl.components-v2
   (:require
    [app.common.data :as d]
+   [app.common.fressian :as fres]
    [app.common.logging :as l]
-   [app.common.uuid :as uuid]
    [app.db :as db]
    [app.features.components-v2 :as feat]
    [app.main :as main]
    [app.srepl.helpers :as h]
    [app.svgo :as svgo]
-   [app.util.cache :as cache]
    [app.util.events :as events]
    [app.util.time :as dt]
    [app.worker :as-alias wrk]
    [cuerdas.core :as str]
+   [datoteka.fs :as fs]
+   [datoteka.io :as io]
    [promesa.exec :as px]
    [promesa.exec.semaphore :as ps]
    [promesa.util :as pu]))
@@ -112,14 +113,14 @@
 
 (def ^:private sql:get-files-by-created-at
   "SELECT id, features,
-          row_number() OVER (ORDER BY created_at) AS rown
+          row_number() OVER (ORDER BY created_at DESC) AS rown
      FROM file
     WHERE deleted_at IS NULL
     ORDER BY created_at DESC")
 
 (def ^:private sql:get-files-by-modified-at
   "SELECT id, features
-          row_number() OVER (ORDER BY modified_at) AS rown
+          row_number() OVER (ORDER BY modified_at DESC) AS rown
      FROM file
     WHERE deleted_at IS NULL
     ORDER BY modified_at DESC")
@@ -210,11 +211,7 @@
                    skip-on-graphic-error? true}}]
   (l/dbg :hint "migrate:start" :rollback rollback?)
   (let [tpoint  (dt/tpoint)
-        file-id (h/parse-uuid file-id)
-        cache   (if (int? cache)
-                  (cache/create :executor (::wrk/executor main/system)
-                                :max-items cache)
-                  nil)]
+        file-id (h/parse-uuid file-id)]
 
     (binding [feat/*stats* (atom {})
               feat/*cache* cache]
@@ -245,12 +242,7 @@
 
   (let [team-id (h/parse-uuid team-id)
         stats   (atom {})
-        tpoint  (dt/tpoint)
-
-        cache   (if (int? cache)
-                  (cache/create :executor (::wrk/executor main/system)
-                                :max-items cache)
-                  nil)]
+        tpoint  (dt/tpoint)]
 
     (add-watch stats :progress-report (report-progress-files tpoint))
 
@@ -313,35 +305,30 @@
         sjobs     (ps/create :permits max-jobs)
         sprocs    (ps/create :permits max-procs)
 
-        cache     (if (int? cache)
-                    (cache/create :executor (::wrk/executor main/system)
-                                  :max-items cache)
-                    nil)
         migrate-team
         (fn [team-id]
-          (let [tpoint (dt/tpoint)]
-            (try
-              (db/tx-run! (assoc main/system ::db/rollback rollback?)
-                          (fn [system]
-                            (db/exec-one! system ["SET LOCAL idle_in_transaction_session_timeout = 0"])
-                            (feat/migrate-team! system team-id
-                                                :label label
-                                                :validate? validate?
-                                                :skip-on-graphic-error? skip-on-graphic-error?)))
+          (try
+            (db/tx-run! (assoc main/system ::db/rollback rollback?)
+                        (fn [system]
+                          (db/exec-one! system ["SET LOCAL idle_in_transaction_session_timeout = 0"])
+                          (feat/migrate-team! system team-id
+                                              :label label
+                                              :validate? validate?
+                                              :skip-on-graphic-error? skip-on-graphic-error?)))
 
-              (catch Throwable cause
-                (l/wrn :hint "unexpected error on processing team (skiping)"
-                       :team-id (str team-id))
+            (catch Throwable cause
+              (l/wrn :hint "unexpected error on processing team (skiping)"
+                     :team-id (str team-id))
 
-                (events/tap :error
-                            (ex-info "unexpected error on processing team (skiping)"
-                                     {:team-id team-id}
-                                     cause))
+              (events/tap :error
+                          (ex-info "unexpected error on processing team (skiping)"
+                                   {:team-id team-id}
+                                   cause))
 
-                (swap! stats update :errors (fnil inc 0)))
+              (swap! stats update :errors (fnil inc 0)))
 
-              (finally
-                (ps/release! sjobs)))))
+            (finally
+              (ps/release! sjobs))))
 
         process-team
         (fn [team-id]
@@ -439,50 +426,45 @@
         sjobs     (ps/create :permits max-jobs)
         sprocs    (ps/create :permits max-procs)
 
-        cache     (if (int? cache)
-                    (cache/create :executor (::wrk/executor main/system)
-                                  :max-items cache)
-                    nil)
-
         migrate-file
-        (fn [file-id]
-          (let [tpoint (dt/tpoint)]
-            (try
-              (db/tx-run! (assoc main/system ::db/rollback rollback?)
-                          (fn [system]
-                            (db/exec-one! system ["SET LOCAL idle_in_transaction_session_timeout = 0"])
-                            (feat/migrate-file! system file-id
-                                                :label label
-                                                :validate? validate?
-                                                :skip-on-graphic-error? skip-on-graphic-error?)))
+        (fn [file-id rown]
+          (try
+            (db/tx-run! (assoc main/system ::db/rollback rollback?)
+                        (fn [system]
+                          (db/exec-one! system ["SET LOCAL idle_in_transaction_session_timeout = 0"])
+                          (feat/migrate-file! system file-id
+                                              :rown rown
+                                              :label label
+                                              :validate? validate?
+                                              :skip-on-graphic-error? skip-on-graphic-error?)))
 
-              (catch Throwable cause
-                (l/wrn :hint "unexpected error on processing file (skiping)"
-                       :file-id (str file-id))
+            (catch Throwable cause
+              (l/wrn :hint "unexpected error on processing file (skiping)"
+                     :file-id (str file-id))
 
-                (events/tap :error
-                            (ex-info "unexpected error on processing file (skiping)"
-                                     {:file-id file-id}
-                                     cause))
+              (events/tap :error
+                          (ex-info "unexpected error on processing file (skiping)"
+                                   {:file-id file-id}
+                                   cause))
 
-                (swap! stats update :errors (fnil inc 0)))
+              (swap! stats update :errors (fnil inc 0)))
 
-              (finally
-                (ps/release! sjobs)))))
+            (finally
+              (ps/release! sjobs))))
 
         process-file
-        (fn [file-id]
+        (fn [{:keys [id rown]}]
           (ps/acquire! sjobs)
           (let [ts (tpoint)]
             (if (and mtime (neg? (compare mtime ts)))
               (do
                 (l/inf :hint "max time constraint reached"
-                       :file-id (str file-id)
+                       :file-id (str id)
                        :elapsed (dt/format-duration ts))
                 (ps/release! sjobs)
                 (reduced nil))
 
-              (px/run! executor (partial migrate-file file-id)))))]
+              (px/run! executor (partial migrate-file id rown)))))]
 
     (l/dbg :hint "migrate:start"
            :label label
@@ -507,7 +489,6 @@
                                            (if (int? partitions)
                                              (= current-partition (inc (mod rown partitions)))
                                              true)))
-                                 (map :id)
                                  (take max-items)))
 
                       ;; Close and await tasks
@@ -525,6 +506,101 @@
             (l/dbg :hint "migrate:end"
                    :rollback rollback?
                    :elapsed elapsed)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; CACHE POPULATE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def sql:sobjects-for-cache
+  "SELECT id,
+          row_number() OVER (ORDER BY created_at) AS index
+     FROM storage_object
+    WHERE (metadata->>'~:bucket' = 'file-media-object' OR
+           metadata->>'~:bucket' IS NULL)
+      AND metadata->>'~:content-type' = 'image/svg+xml'
+      AND deleted_at IS NULL
+      AND size < 1135899
+    ORDER BY created_at ASC")
+
+(defn populate-cache!
+  "A REPL helper for migrate all files.
+
+  This function starts multiple concurrent file migration processes
+  until thw maximum number of jobs is reached which by default has the
+  value of `1`. This is controled with the `:max-jobs` option.
+
+  If you want to run this on multiple machines you will need to specify
+  the total number of partitions and the current partition.
+
+  In order to get the report table populated, you will need to provide
+  a correct `:label`. That label is also used for persist a file
+  snaphot before continue with the migration."
+  [& {:keys [max-jobs] :or {max-jobs 1}}]
+
+  (let [tpoint    (dt/tpoint)
+
+        factory   (px/thread-factory :virtual false :prefix "penpot/cache/")
+        executor  (px/cached-executor :factory factory)
+
+        sjobs     (ps/create :permits max-jobs)
+
+        retrieve-sobject
+        (fn [id index]
+          (let [path   (feat/get-sobject-cache-path id)
+                parent (fs/parent path)]
+
+            (try
+              (when-not (fs/exists? parent)
+                (fs/create-dir parent))
+
+              (if (fs/exists? path)
+                (l/inf :hint "create cache entry" :status "exists" :index index :id (str id) :path (str path))
+                (let [svg-data (feat/get-optimized-svg id)]
+                  (with-open [^java.lang.AutoCloseable stream (io/output-stream path)]
+                    (let [writer (fres/writer stream)]
+                      (fres/write! writer svg-data)))
+
+                  (l/inf :hint "create cache entry" :status "created"
+                         :index index
+                         :id (str id)
+                         :path (str path))))
+
+              (catch Throwable cause
+                (l/wrn :hint "create cache entry"
+                       :status "error"
+                       :index index
+                       :id (str id)
+                       :path (str path)
+                       :cause cause))
+
+              (finally
+                (ps/release! sjobs)))))
+
+        process-sobject
+        (fn [{:keys [id index]}]
+          (ps/acquire! sjobs)
+          (px/run! executor (partial retrieve-sobject id index)))]
+
+    (l/dbg :hint "migrate:start"
+           :max-jobs max-jobs)
+
+    (try
+      (binding [feat/*system* main/system]
+        (run! process-sobject
+              (db/exec! main/system [sql:sobjects-for-cache]))
+
+        ;; Close and await tasks
+        (pu/close! executor))
+
+      {:elapsed (dt/format-duration (tpoint))}
+
+      (catch Throwable cause
+        (l/dbg :hint "populate:error" :cause cause))
+
+      (finally
+        (let [elapsed (dt/format-duration (tpoint))]
+          (l/dbg :hint "populate:end"
+                 :elapsed elapsed))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FILE PROCESS HELPERS
