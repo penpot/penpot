@@ -2,10 +2,8 @@
 [uri_license]: https://www.mozilla.org/en-US/MPL/2.0
 [uri_license_image]: https://img.shields.io/badge/MPL-2.0-blue.svg
 
-<h1 align="center">
-  <br>
-  <img src="https://penpot.app/images/readme/git-readme-header.png" alt="PENPOT">
-</h1>
+![github-light-mode](https://github.com/penpot/penpot/assets/5446186/e5e725fb-a925-43aa-904e-68658c2ef1b5)
+
 
 <p align="center"><a href="https://www.mozilla.org/en-US/MPL/2.0" rel="nofollow"><img src="https://camo.githubusercontent.com/3fcf3d6b678ea15fde3cf7d6af0e242160366282d62a7c182d83a50bfee3f45e/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f4d504c2d322e302d626c75652e737667" alt="License: MPL-2.0" data-canonical-src="https://img.shields.io/badge/MPL-2.0-blue.svg" style="max-width:100%;"></a>
 <a href="https://gitter.im/penpot/community" rel="nofollow"><img src="https://camo.githubusercontent.com/5b0aecb33434f82a7b158eab7247544235ada0cf7eeb9ce8e52562dd67f614b7/68747470733a2f2f6261646765732e6769747465722e696d2f736572656e6f2d78797a2f636f6d6d756e6974792e737667" alt="Gitter" data-canonical-src="https://badges.gitter.im/sereno-xyz/community.svg" style="max-width:100%;"></a>
@@ -23,12 +21,20 @@
     <a href="https://fosstodon.org/@penpot/"><b>Mastodon</b></a> •
     <a href="https://www.youtube.com/channel/UCAqS8G72uv9P5HG1IfgnQ9g"><b>Youtube</b></a>
 </p>
+<br />
 
-![feature-readme](https://user-images.githubusercontent.com/1045247/189871786-0b44f7cf-3a0a-4445-a87b-9919ec398bf7.gif)
+[Penpot video](https://github.com/penpot/penpot/assets/5446186/b8ad0764-585e-4ddc-b098-9b4090d337cc)
 
-🎇 **Penpot Fest exceeded all expectations - it was a complete success!** 🎇 Penpot Fest is our first Design event that brought designers and developers from the Open Source communities and beyond. Watch the replay of the talks on our [Youtube channel](https://www.youtube.com/playlist?list=PLgcCPfOv5v56-fghJo2dHNBqL9zlDTslh) or [Peertube channel](https://peertube.kaleidos.net/w/p/1tWgyJTt8sKbWwCEcBimZW)
+<br />
+Penpot is the first **Open Source** design tool for design and code collaboration. Designers can create stunning designs, interactive prototypes, design systems at scale, while developers enjoy ready-to-use code and make their workflow easy and fast. And all of this with no handoff drama.
 
-Penpot is the first **Open Source** design and prototyping platform meant for cross-domain teams. Non dependent on operating systems, Penpot is web based and works with open standards (SVG). Penpot invites designers all over the world to fall in love with open source while getting developers excited about the design process in return.
+Penpot is available on browser and [self host](https://penpot.app/self-host). It’s web-based and works with open standards (SVG, CSS and HTML). And last but not least, it’s free! 
+
+Penpot’s latest [huge release 2.0](https://penpot.app/dev-diaries), takes the platform to a whole new level. This update introduces the ground-breaking [CSS Grid Layout feature](https://penpot.app/layout), a complete UI redesign, a new Components system, and much more. Plus, it's faster and more accessible. 
+
+
+🎇 **Penpot Fest is back!** Our first design, code & Open Source event is happening in Barcelona | June 5-7th. [Get your tickets](https://www.eventbrite.es/e/penpot-fest-2024-tickets-859331883797) to join other designers and developers from open-source communities and beyond. 
+Check out the highlights from [Penpot Fest 2023 edition](https://www.youtube.com/watch?v=sOpLZaK5mDc)!
 
 ## Table of contents ##
 
@@ -40,48 +46,47 @@ Penpot is the first **Open Source** design and prototyping platform meant for cr
 
 ## Why Penpot ##
 
-Penpot makes design and prototyping accessible to every team in the world.
+Penpot expresses designs as code. Designers can do their best work and see it will be beautifully implemented by developers in a two-way collaboration.
 
-### For cross-domain teams ###
-We have a clear focus on design and code teams and our capabilities reflect exactly that. The less hand-off mindset, the more fun for everyone.
+### Designed for developers ###
+Penpot was built to serve both designers and developers and create a fluid design-code process. You have the choice to enjoy real-time collaboration or play "solo".
 
-### Multiplatform ###
-Being web based, Penpot is not dependent on operating systems or local installations, you will only need to run a modern browser.
+### Inspect mode ###
+Work with ready-to-use code and make your workflow easy and fast. The inspect tab gives instant access to SVG, CSS and HTML code.
 
-### Open Standards ###
-Using SVG as no other design and prototyping tool does, Penpot files sport compatibility with most of the vectorial tools, are tech friendly and extremely easy to use on the web. We make sure you will always own your work.
+### Self host your own instance ###
+Provide your team or organization with a completely owned collaborative design tool. Use Penpot's cloud service or deploy your own Penpot server.
+
+### Integrations ###
+Penpot offers integration into the development toolchain, thanks to its support for webhooks and an API accessible through access tokens.
+
+### What’s great for design ###
+With Penpot you can design libraries to share and reuse; turn design elements into components and tokens to allow reusability and scalability; and build realistic user flows and interactions.
+
+<br />
 
 <p align="center">
-  <img src="https://penpot.app/images/readme/git-open.png" alt="Open Source" style="width: 65%;">
+  <img src="https://img.plasmic.app/img-optimizer/v1/img?src=https%3A%2F%2Fimg.plasmic.app%2Fimg-optimizer%2Fv1%2Fimg%2F9dd677c36afb477e9666ccd1d3f009ad.png" alt="Open Source" style="width: 65%;">
 </p>
 
+<br />
 
 ## Getting started ##
 
 ### Install with Elestio ###
-[Elestio](https://elest.io/) offers a fully managed service for on-premise instances of a selection of open-source software! This means you can deploy a dedicated instance of Penpot in just 3 minutes with no technical knowledge needed.
+Penpot is the only design & prototype platform that is deployment agnostic. You can use it or deploy it anywhere.
 
-You don’t need to worry about DNS configuration, SMTP, backups, SSL certificates, OS & Penpot upgrades, and much more.
-
-[Get started with Elestio.](https://help.penpot.app/technical-guide/getting-started/#install-with-elestio)
-
-### Install with Docker ###
-
-You can also get started with Penpot locally or self-host it with **docker** and **docker-compose**.
-
-Here’s a step-by-step guide on [getting started with Docker.](https://help.penpot.app/technical-guide/getting-started/#install-with-docker)
-
-### Penpot cloud app ###
-
-If you prefer not to install Penpot in a local environment, [login or register on our Penpot cloud app](https://design.penpot.app). Create a team to work together on projects and share design assets or jump right away into Penpot and **start designing** on your own.
+Learn how to install it with Elestio and Docker, or other options on [our website](https://penpot.dev/self-host).
+<br />
 
 <p align="center">
-  <img src="https://penpot.app/images/readme/git-self-host.png" alt="Getting started" style="width: 65%;">
+  <img src="https://site-assets.plasmic.app/2168cf524dd543caeff32384eb9ea0a1.svg" alt="Open Source" style="width: 65%;">
 </p>
+<br />
 
 ## Community ##
 
-We love the open source software community. Contributing is our passion and if it’s yours too, [participate](https://community.penpot.app/) and [improve](https://community.penpot.app/c/help-us-improve-penpot/7) Penpot. All your ideas and code are welcome!
+We love the Open Source software community. Contributing is our passion and if it’s yours too, participate and [improve](https://community.penpot.app/c/help-us-improve-penpot/7) Penpot. All your designs, code and ideas are welcome!
 
 If you need help or have any questions; if you’d like to share your experience using Penpot or get inspired; if you’d rather meet our community of developers and designers, [join our Community](https://community.penpot.app/)!
 
@@ -93,29 +98,40 @@ You will find the following categories:
 - [Events and Announcements](https://community.penpot.app/c/announcements/5)
 - [Inside Penpot](https://community.penpot.app/c/inside-penpot/21)
 - [Penpot in your language](https://community.penpot.app/c/penpot-in-your-language/12)
+- [Design and Code Essentials](https://community.penpot.app/c/design-and-code-essentials/22)
+
+
+<br />
 
 <p align="center">
-  <img src="https://penpot.app/images/readme/git-collaborate.png" alt="Communnity" style="width: 65%;">
+  <img src="https://github.com/penpot/penpot/assets/5446186/6ac62220-a16c-46c9-ab21-d24ae357ed03" alt="Communnity" style="width: 65%;">
 </p>
+<br />
 
 ## Contributing ##
 
-Every sort of contribution will be very helpful to enhance Penpot. How you’ll participate? All your ideas, designs and code are welcome:
+Any contribution will make a difference to improve Penpot. How can you get involved? 
 
+Choose your way: 
+
+- Create and [share Libraries & Templates](https://penpot.app/libraries-templates.html) that will be helpful for the community
 - Invite your [team to join](https://design.penpot.app/#/auth/register)
-- Star this repo and follow us on Social Media:  [Twitter](https://twitter.com/penpotapp), [Instagram](https://instagram.com/penpot.app), [Youtube](https://www.youtube.com/c/Penpot) or [Mastodon](https://fosstodon.org/@penpot/).
-- Participate in the [Community](https://community.penpot.app/) asking and answering questions, reacting to others’ articles or opening your own conversations.
+- Star this repo and follow us on Social Media: [Mastodon](https://fosstodon.org/@penpot/), [Youtube](https://www.youtube.com/c/Penpot), [Instagram](https://instagram.com/penpot.app), [Linkedin](https://www.linkedin.com/company/penpotdesign),  [Peertube](https://peertube.kaleidos.net/a/penpot_app) and [X](https://twitter.com/penpotapp).
+- Participate in the [Community](https://community.penpot.app/) space by asking and answering questions; reacting to others’ articles;  opening your own conversations and following along on decisions affecting the project.
 - Report bugs with our easy [guide for bugs hunting](https://help.penpot.app/contributing-guide/reporting-bugs/) or [GitHub issues](https://github.com/penpot/penpot/issues)
-- Create and [share Libraries & templates](https://penpot.app/libraries-templates.html) that will be helpful for the community
 - Become a [translator](https://help.penpot.app/contributing-guide/translations)
 - Give feedback: [Mail us](mailto:support@penpot.app)
 - **Contribute to Penpot's code:** [Watch this video](https://www.youtube.com/watch?v=TpN0osiY-8k) by Alejandro Alonso, CIO and developer at Penpot, where he gives us a hands-on demo of how to use Penpot’s repository and make changes in both front and back end
 
 To find (almost) everything you need to know on how to contribute to Penpot, refer to the [contributing-guide](https://help.penpot.app/contributing-guide/).
 
+<br />
+
 <p align="center">
-  <img src="https://penpot.app/images/readme/git-community.png" alt="Contributing" style="width: 65%;">
+  <img src="https://github.com/penpot/penpot/assets/5446186/fea18923-dc06-49be-86ad-c3496a7956e6" alt="Libraries and templates" style="width: 65%;">
 </p>
+
+<br />
 
 ## Resources ##
 
