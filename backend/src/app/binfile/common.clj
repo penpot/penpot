@@ -479,7 +479,9 @@
   (doseq [[feature file-id] (-> *state* deref :pending-to-migrate)]
     (case feature
       "components/v2"
-      (feat.compv2/migrate-file! cfg file-id :validate? (::validate cfg true))
+      (feat.compv2/migrate-file! cfg file-id
+                                 :validate? (::validate cfg true)
+                                 :skip-on-graphic-error? true)
 
       "fdata/shape-data-type"
       nil
