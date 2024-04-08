@@ -218,6 +218,14 @@
                       :hint (ex-message error)
                       :data edata}}))))
 
+(defmethod handle-exception java.io.IOException
+  [cause _ _]
+  (l/wrn :hint "io exception" :cause cause)
+  {::rres/status 500
+   ::rres/body {:type :server-error
+                :code :io-exception
+                :hint (ex-message cause)}})
+
 (defmethod handle-exception java.util.concurrent.CompletionException
   [cause request _]
   (let [cause' (ex-cause cause)]

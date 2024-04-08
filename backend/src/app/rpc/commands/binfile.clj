@@ -65,18 +65,16 @@
 ;; --- Command: import-binfile
 
 (defn- import-binfile
-  [{:keys [::wrk/executor ::bf.v1/project-id] :as cfg} input]
-  (db/tx-run! cfg
-              (fn [{:keys [::db/conn] :as cfg}]
-                ;; NOTE: the importation process performs some operations that
-                ;; are not very friendly with virtual threads, and for avoid
-                ;; unexpected blocking of other concurrent operations we
-                ;; dispatch that operation to a dedicated executor.
-                (let [result (px/invoke! executor (partial bf.v1/import-files! cfg input))]
-                  (db/update! conn :project
-                              {:modified-at (dt/now)}
-                              {:id project-id})
-                  result))))
+  [{:keys [::wrk/executor ::bf.v1/project-id ::db/pool] :as cfg} input]
+  ;; NOTE: the importation process performs some operations that
+  ;; are not very friendly with virtual threads, and for avoid
+  ;; unexpected blocking of other concurrent operations we
+  ;; dispatch that operation to a dedicated executor.
+  (let [result (px/invoke! executor (partial bf.v1/import-files! cfg input))]
+    (db/update! pool :project
+                {:modified-at (dt/now)}
+                {:id project-id})
+    result))
 
 (def ^:private
   schema:import-binfile

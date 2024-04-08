@@ -140,20 +140,20 @@
                 :else
                 (try
                   (l/trc :hint "start task"
-                         :queue queue
-                         :runner-id id
                          :name (:name task)
                          :task-id (str task-id)
+                         :queue queue
+                         :runner-id id
                          :retry (:retry-num task))
                   (let [tpoint  (dt/tpoint)
                         result  (handle-task task)
                         elapsed (dt/format-duration (tpoint))]
 
                     (l/trc :hint "end task"
-                           :queue queue
-                           :runner-id id
                            :name (:name task)
                            :task-id (str task-id)
+                           :queue queue
+                           :runner-id id
                            :retry (:retry-num task)
                            :elapsed elapsed)
 
