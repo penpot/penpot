@@ -2,8 +2,12 @@
 [uri_license]: https://www.mozilla.org/en-US/MPL/2.0
 [uri_license_image]: https://img.shields.io/badge/MPL-2.0-blue.svg
 
-![github-light-mode](https://github.com/penpot/penpot/assets/5446186/e5e725fb-a925-43aa-904e-68658c2ef1b5)
-
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://penpot.app/images/readme/github-dark-mode.png">
+  <source media="(prefers-color-scheme: light)" srcset="https://penpot.app/images/readme/github-light-mode.png">
+  <img alt="penpot header image" src="https://penpot.app/images/readme/github-light-mode.png">
+</picture>
+</p>
 
 <p align="center"><a href="https://www.mozilla.org/en-US/MPL/2.0" rel="nofollow"><img src="https://camo.githubusercontent.com/3fcf3d6b678ea15fde3cf7d6af0e242160366282d62a7c182d83a50bfee3f45e/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f4d504c2d322e302d626c75652e737667" alt="License: MPL-2.0" data-canonical-src="https://img.shields.io/badge/MPL-2.0-blue.svg" style="max-width:100%;"></a>
 <a href="https://gitter.im/penpot/community" rel="nofollow"><img src="https://camo.githubusercontent.com/5b0aecb33434f82a7b158eab7247544235ada0cf7eeb9ce8e52562dd67f614b7/68747470733a2f2f6261646765732e6769747465722e696d2f736572656e6f2d78797a2f636f6d6d756e6974792e737667" alt="Gitter" data-canonical-src="https://badges.gitter.im/sereno-xyz/community.svg" style="max-width:100%;"></a>
@@ -31,7 +35,7 @@ Penpot is the first **Open Source** design tool for design and code collaboratio
 
 Penpot is available on browser and [self host](https://penpot.app/self-host). It’s web-based and works with open standards (SVG, CSS and HTML). And last but not least, it’s free! 
 
-Penpot’s latest [huge release 2.0](https://penpot.app/dev-diaries), takes the platform to a whole new level. This update introduces the ground-breaking [CSS Grid Layout feature](https://penpot.app/layout), a complete UI redesign, a new Components system, and much more. Plus, it's faster and more accessible. 
+Penpot’s latest [huge release 2.0](https://penpot.app/dev-diaries), takes the platform to a whole new level. This update introduces the ground-breaking [CSS Grid Layout feature](https://penpot.app/design/layout), a complete UI redesign, a new Components system, and much more. Plus, it's faster and more accessible. 
 
 
 🎇 **Penpot Fest is back!** Our first design, code & Open Source event is happening in Barcelona | June 5-7th. [Get your tickets](https://www.eventbrite.es/e/penpot-fest-2024-tickets-859331883797) to join other designers and developers from open-source communities and beyond. 
@@ -124,7 +128,7 @@ Choose your way:
 - Give feedback: [Mail us](mailto:support@penpot.app)
 - **Contribute to Penpot's code:** [Watch this video](https://www.youtube.com/watch?v=TpN0osiY-8k) by Alejandro Alonso, CIO and developer at Penpot, where he gives us a hands-on demo of how to use Penpot’s repository and make changes in both front and back end
 
-To find (almost) everything you need to know on how to contribute to Penpot, refer to the [contributing-guide](https://help.penpot.app/contributing-guide/).
+To find (almost) everything you need to know on how to contribute to Penpot, refer to the [contributing guide](https://help.penpot.app/contributing-guide/).
 
 <br />
 
