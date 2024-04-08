@@ -134,6 +134,9 @@
                         file))
                     file)]
 
+      ;; Delete changes from the changes history
+      (db/delete! conn :file-change {:file-id id})
+
       (db/update! conn :file
                   {:deleted-at nil
                    :revn 1

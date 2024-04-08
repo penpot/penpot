@@ -585,7 +585,6 @@
                               :else
                               [move-vector nil])]
 
-
                         (-> (dwm/create-modif-tree ids (ctm/move-modifiers move-vector))
                             (dwm/build-change-frame-modifiers objects selected target-frame drop-index cell-data)
                             (dwm/set-modifiers false false {:snap-ignore-axis snap-ignore-axis}))))))
@@ -608,11 +607,11 @@
               (->> move-stream
                    (rx/last)
                    (rx/mapcat
-                    (fn [[_ target-frame drop-index cell-data]]
+                    (fn [[_ target-frame drop-index drop-cell]]
                       (let [undo-id (js/Symbol)]
                         (rx/of (dwu/start-undo-transaction undo-id)
                                (dwm/apply-modifiers {:undo-transation? false})
-                               (move-shapes-to-frame ids target-frame drop-index cell-data)
+                               (move-shapes-to-frame ids target-frame drop-index drop-cell)
                                (finish-transform)
                                (dwu/commit-undo-transaction undo-id))))))))))))))
 

@@ -17,6 +17,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.shortcuts :as dsc]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.grid-layout.shortcuts :as gsc]
    [app.main.data.workspace.path.shortcuts :as psc]
    [app.main.data.workspace.shortcuts :as wsc]
@@ -39,12 +40,25 @@
    [rumext.v2 :as mf])
   (:import goog.events.EventType))
 
-(defn setup-dom-events [zoom disable-paste in-viewport? workspace-read-only?]
+(defn setup-dom-events [zoom disable-paste in-viewport? workspace-read-only? drawing-tool drawing-path?]
   (let [on-key-down       (actions/on-key-down)
         on-key-up         (actions/on-key-up)
         on-mouse-wheel    (actions/on-mouse-wheel zoom)
         on-paste          (actions/on-paste disable-paste in-viewport? workspace-read-only?)
+        on-pointer-down   (mf/use-fn
+                           (mf/deps drawing-tool drawing-path?)
+                           (fn [_]
+                             (when drawing-path?
+                               (st/emit! (dwe/clear-edition-mode)))))
         on-blur           (mf/use-fn #(st/emit! (mse/->BlurEvent)))]
+
+    (mf/use-effect
+     (mf/deps drawing-tool drawing-path?)
+     (fn []
+       (let [keys [(events/listen js/window EventType.POINTERDOWN on-pointer-down)]]
+         (fn []
+           (doseq [key keys]
+             (events/unlistenByKey key))))))
 
     (mf/use-layout-effect
      (mf/deps on-key-down on-key-up on-mouse-wheel on-paste workspace-read-only?)

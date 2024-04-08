@@ -614,14 +614,14 @@
           (rx/tap #(rx/end! progress-str)))]))
 
 (defn create-files
-  [{:keys [features] :as context} files]
+  [{:keys [system-features] :as context} files]
 
   (let [data (group-by :file-id files)]
     (rx/concat
      (->> (rx/from files)
           (rx/map #(merge context %))
           (rx/merge-map (fn [context]
-                          (->> (create-file context features)
+                          (->> (create-file context system-features)
                                (rx/map #(vector % (first (get data (:file-id context)))))))))
 
      (->> (rx/from files)
@@ -694,7 +694,7 @@
 
   (let [context {:project-id project-id
                  :resolve    (resolve-factory)
-                 :features   features}
+                 :system-features features}
         zip-files (filter #(= "application/zip" (:type %)) files)
         binary-files (filter #(= "application/octet-stream" (:type %)) files)]
 

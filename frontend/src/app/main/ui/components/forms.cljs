@@ -239,6 +239,7 @@
   (let [form          (or (unchecked-get props "form")
                           (mf/use-ctx form-ctx))
         name          (unchecked-get props "name")
+        image         (unchecked-get props "image")
 
         current-value (or (dm/get-in @form [:data name] "")
                           (unchecked-get props "value"))
@@ -260,7 +261,9 @@
 
              (when (fn? on-change)
                (on-change name value)))))]
-    [:div {:class (dm/str class " " (stl/css :custom-radio))}
+    [:div {:class (if image
+                    class
+                    (dm/str class " " (stl/css :custom-radio)))}
      (for [{:keys [image icon value label area]} options]
        (let [image?   (some? image)
              icon?    (some? icon)

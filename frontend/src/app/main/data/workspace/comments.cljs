@@ -60,8 +60,7 @@
       (let [local (:comments-local state)]
         (cond
           (:draft local) (rx/of (dcm/close-thread))
-          (:open local)  (rx/of (dcm/close-thread))
-          :else          (rx/of #(dissoc % :workspace-drawing)))))))
+          (:open local)  (rx/of (dcm/close-thread)))))))
 
 ;; Event responsible of the what should be executed when user clicked
 ;; on the comments layer. An option can be create a new draft thread,
