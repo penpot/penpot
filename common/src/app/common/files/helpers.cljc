@@ -540,7 +540,10 @@
   filted by selected set"
   [objects selected]
   (let [selected (if (set? selected) selected (set selected))]
-    (sequence (map val) (indexed-shapes objects selected))))
+    (sequence
+     (comp (filter (fn [o] (contains? selected (val o))))
+           (map val))
+     (indexed-shapes objects selected))))
 
 (defn get-index-replacement
   "Given a collection of shapes, calculate their positions

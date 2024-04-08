@@ -58,7 +58,8 @@
 (def default-enabled-features
   #{"fdata/shape-data-type"
     "styles/v2"
-    "layout/grid"})
+    "layout/grid"
+    "components/v2"})
 
 ;; A set of features which only affects on frontend and can be enabled
 ;; and disabled freely by the user any time. This features does not
