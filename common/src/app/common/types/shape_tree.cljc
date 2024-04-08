@@ -461,16 +461,15 @@
           row-size    (+ (reduce d/max ##-Inf (map :height bounds)) gap)
           column-size (+ (reduce d/max ##-Inf (map :width bounds)) gap)
 
-          get-next    (fn get-next
-                        [counter]
+          get-next    (fn get-next [counter]
                         (let [row      (quot counter grid-size)
                               column   (mod counter grid-size)
                               position (->> (gpt/point (* column column-size)
                                                        (* row row-size))
                                             (gpt/add start-position))]
-                          (lazy-seq
-                           (cons position (get-next (inc counter))))))]
-
+                          (cons position
+                                (lazy-seq
+                                 (get-next (inc counter))))))]
       (with-meta (get-next 0)
         {:width  (* grid-size column-size)
          :height (* grid-size row-size)}))))
