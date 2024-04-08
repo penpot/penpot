@@ -15,27 +15,33 @@
 <a href="https://gitpod.io/#https://github.com/penpot/penpot" rel="nofollow"><img src="https://camo.githubusercontent.com/daadb4894128d1e19b72d80236f5959f1f2b47f9fe081373f3246131f0189f6c/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f476974706f642d72656164792d2d746f2d2d636f64652d626c75653f6c6f676f3d676974706f64" alt="Gitpod ready-to-code" data-canonical-src="https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod" style="max-width:100%;"></a></p>
 
 <p align="center">
-    <a href="https://penpot.app/"><b>Website</b></a> •
-    <a href="https://help.penpot.app/technical-guide/getting-started/"><b>Getting Started</b></a> •
-    <a href="https://help.penpot.app/user-guide/"><b>User Guide</b></a> •
-    <a href="https://help.penpot.app/user-guide/introduction/info/"><b>Tutorials & Info</b></a> •
-    <a href="https://community.penpot.app/"><b>Community</b></a> •
-    <a href="https://twitter.com/penpotapp"><b>Twitter</b></a> •
-    <a href="https://instagram.com/penpot.app"><b>Instagram</b></a> •
-    <a href="https://fosstodon.org/@penpot/"><b>Mastodon</b></a> •
-    <a href="https://www.youtube.com/channel/UCAqS8G72uv9P5HG1IfgnQ9g"><b>Youtube</b></a>
+    <a href="https://penpot.app/"><b>Website</b></a>  •  
+    <a href="https://help.penpot.app/technical-guide/getting-started/"><b>Getting Started</b></a>  •  
+    <a href="https://help.penpot.app/user-guide/"><b>User Guide</b></a>  •  
+    <a href="https://help.penpot.app/user-guide/introduction/info/"><b>Tutorials & Info</b></a>  •  
+    <a href="https://community.penpot.app/"><b>Community</b></a>
 </p>
+<p align="center">
+    <a href="https://www.youtube.com/@Penpot"><b>Youtube</b></a>  •  
+    <a href="https://peertube.kaleidos.net/a/penpot_app/video-channels"><b>Peertube</b></a>  •  
+    <a href="https://www.linkedin.com/company/penpot/"><b>Linkedin</b></a>  •  
+    <a href="https://instagram.com/penpot.app"><b>Instagram</b></a>  •  
+    <a href="https://fosstodon.org/@penpot/"><b>Mastodon</b></a>  •  
+    <a href="https://twitter.com/penpotapp"><b>X</b></a>
+
+</p>
+</div>
 <br />
 
 [Penpot video](https://github.com/penpot/penpot/assets/5446186/b8ad0764-585e-4ddc-b098-9b4090d337cc)
 
 <br />
 
-Penpot is the first **Open Source** design tool for design and code collaboration. Designers can create stunning designs, interactive prototypes, design systems at scale, while developers enjoy ready-to-use code and make their workflow easy and fast. And all of this with no handoff drama.
+Penpot is the first **open-source** design tool for design and code collaboration. Designers can create stunning designs, interactive prototypes, design systems at scale, while developers enjoy ready-to-use code and make their workflow easy and fast. And all of this with no handoff drama.
 
 Penpot is available on browser and [self host](https://penpot.app/self-host). It’s web-based and works with open standards (SVG, CSS and HTML). And last but not least, it’s free! 
 
-Penpot’s latest [huge release 2.0](https://penpot.app/dev-diaries), takes the platform to a whole new level. This update introduces the ground-breaking [CSS Grid Layout feature](https://penpot.app/design/layout), a complete UI redesign, a new Components system, and much more. Plus, it's faster and more accessible. 
+Penpot’s latest [huge release 2.0](https://penpot.app/dev-diaries), takes the platform to a whole new level. This update introduces the ground-breaking [CSS Grid Layout feature](https://penpot.app/penpot-2.0), a complete UI redesign, a new Components system, and much more. Plus, it's faster and more accessible. 
 
 
 🎇 **Penpot Fest is back!** Our first design, code & Open Source event is happening in Barcelona | June 5-7th. [Get your tickets](https://www.eventbrite.es/e/penpot-fest-2024-tickets-859331883797) to join other designers and developers from open-source communities and beyond. 
@@ -125,7 +131,7 @@ Choose your way:
 - Participate in the [Community](https://community.penpot.app/) space by asking and answering questions; reacting to others’ articles;  opening your own conversations and following along on decisions affecting the project.
 - Report bugs with our easy [guide for bugs hunting](https://help.penpot.app/contributing-guide/reporting-bugs/) or [GitHub issues](https://github.com/penpot/penpot/issues)
 - Become a [translator](https://help.penpot.app/contributing-guide/translations)
-- Give feedback: [Mail us](mailto:support@penpot.app)
+- Give feedback: [Email us](mailto:support@penpot.app)
 - **Contribute to Penpot's code:** [Watch this video](https://www.youtube.com/watch?v=TpN0osiY-8k) by Alejandro Alonso, CIO and developer at Penpot, where he gives us a hands-on demo of how to use Penpot’s repository and make changes in both front and back end
 
 To find (almost) everything you need to know on how to contribute to Penpot, refer to the [contributing guide](https://help.penpot.app/contributing-guide/).
