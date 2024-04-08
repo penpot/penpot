@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source /home/penpot/backend/environ
+source /home/penpot/environ
 export PENPOT_FLAGS="$PENPOT_FLAGS disable-backend-worker"
 
 export OPTIONS="
@@ -12,13 +12,13 @@ export OPTIONS="
        -J-XX:+UnlockDiagnosticVMOptions \
        -J-XX:+DebugNonSafepoints \
        -J-Djdk.tracePinnedThreads=full \
+       -J-XX:+UseTransparentHugePages \
+       -J-XX:ReservedCodeCacheSize=1g \
        -J-Dpolyglot.engine.WarnInterpreterOnly=false \
        -J--enable-preview";
 
 # Setup HEAP
-#export OPTIONS="$OPTIONS -J-Xms900m -J-Xmx900m -J-XX:+AlwaysPreTouch"
-export OPTIONS="$OPTIONS -J-Xms1g -J-Xmx25g"
-#export OPTIONS="$OPTIONS -J-Xms900m -J-Xmx900m -J-XX:+AlwaysPreTouch"
+export OPTIONS="$OPTIONS -J-Xms320g -J-Xmx320g -J-XX:+AlwaysPreTouch"
 
 export PENPOT_HTTP_SERVER_IO_THREADS=2
 export PENPOT_HTTP_SERVER_WORKER_THREADS=2
@@ -33,11 +33,10 @@ export PENPOT_HTTP_SERVER_WORKER_THREADS=2
 # export OPTIONS="$OPTIONS -J-Xint"
 
 # Setup GC
-export OPTIONS="$OPTIONS -J-XX:+UseG1GC -J-Xlog:gc:logs/gc.log" 
-
+export OPTIONS="$OPTIONS -J-XX:+UseG1GC -J-Xlog:gc:logs/gc.log"
 
 # Setup GC
-#export OPTIONS="$OPTIONS -J-XX:+UseZGC -J-XX:+ZGenerational -J-Xlog:gc:gc.log"
+#export OPTIONS="$OPTIONS -J-XX:+UseZGC -J-XX:+ZGenerational -J-Xlog:gc:logs/gc.log"
 
 # Enable ImageMagick v7.x support
 # export OPTIONS="-J-Dim4java.useV7=true $OPTIONS";

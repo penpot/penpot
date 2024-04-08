@@ -92,7 +92,8 @@
          (fn []
            (if from-viewer
              (st/emit! (dcm/update-options {:show-sidebar? false}))
-             (st/emit! :interrupt (dw/deselect-all true)))))
+             (st/emit! (dw/clear-edition-mode)
+                       (dw/deselect-all true)))))
 
         tgroups     (->> threads
                          (dcm/group-threads-by-page))

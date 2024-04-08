@@ -6,7 +6,7 @@
                      alwaysWriteExceptions="true" />
     </Console>
 
-    <RollingFile name="main" fileName="logs/main.log" filePattern="logs/main-%i.log">
+    <RollingFile name="main" fileName="logs/main-latest.log" filePattern="logs/main-%i.log">
       <PatternLayout pattern="[%d{YYYY-MM-dd HH:mm:ss.SSS}] %level{length=1} %logger{36} - %msg%n"
                      alwaysWriteExceptions="true" />
       <Policies>
@@ -15,7 +15,7 @@
       <DefaultRolloverStrategy max="9"/>
     </RollingFile>
 
-    <RollingFile name="reports" fileName="logs/reports.log" filePattern="logs/reports-%i.log">
+    <RollingFile name="reports" fileName="logs/reports-latest.log" filePattern="logs/reports-%i.log">
       <PatternLayout pattern="[%d{YYYY-MM-dd HH:mm:ss.SSS}] %level{length=1} %logger{36} - %msg%n"
                      alwaysWriteExceptions="true" />
       <Policies>
