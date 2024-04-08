@@ -512,8 +512,10 @@
                  (ctk/remove-swap-slot))
 
                (dissoc :shapes
-                       :main-instance
                        :use-for-thumbnail)
+
+               (cond-> (not is-component-root?)
+                 (dissoc :main-instance))
 
                (cond-> into-component?
                  (dissoc :component-root))

@@ -2041,7 +2041,6 @@
               all-objects  (merge page-objects objects)
 
 
-
               drop-cell    (when (ctl/grid-layout? all-objects parent-id)
                              (gslg/get-drop-cell frame-id all-objects position))
 
