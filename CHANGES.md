@@ -130,6 +130,7 @@
 - Fix problem with hand tool stuck [Github #3318](https://github.com/penpot/penpot/issues/3318)
 - Fix problem with fix scrolling on nested elements [Github #3508](https://github.com/penpot/penpot/issues/3508)
 - Fix problem when changing typography assets [Github #3683](https://github.com/penpot/penpot/issues/3683)
+- Internal error when you copy and paste some main components between files [Taiga #7397](https://tree.taiga.io/project/penpot/issue/7397)
 
 
 ## 1.19.5
