@@ -273,7 +273,8 @@
                       ;; color
                       attrs     (cond-> attrs
                                   (:gradient attrs) (get-in [:gradient :stops 0]))
-                      new-attrs (merge (get-in shape [:shadow index :color]) attrs)]
+                      new-attrs (-> (merge (get-in shape [:shadow index :color]) attrs)
+                                    (d/without-nils))]
                   (assoc-in shape [:shadow index :color] new-attrs))))))))
 
 (defn add-shadow
@@ -602,7 +603,8 @@
                                                                    (merge data)
                                                                    (materialize-color-components))))
                     (-> state
-                        (dissoc :gradient :stops :editing-stop)))))))
+                        (dissoc :gradient :stops :editing-stop)
+                        (assoc :type :color)))))))
     ptk/WatchEvent
     (watch [_ state _]
       (when add-recent?
