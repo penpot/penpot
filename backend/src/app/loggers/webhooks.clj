@@ -67,12 +67,10 @@
   [_ {:keys [::db/pool] :as cfg}]
   (fn [{:keys [props] :as task}]
     (let [event (::event props)]
-
-      (l/debug :hint "process webhook event"
-               :name (:name event))
+      (l/dbg :hint "process webhook event" :name (:name event))
 
       (when-let [items (lookup-webhooks cfg event)]
-        (l/trace :hint "webhooks found for event" :total (count items))
+        (l/trc :hint "webhooks found for event" :total (count items))
 
         (db/with-atomic [conn pool]
           (doseq [item items]

@@ -468,7 +468,7 @@
 
 (defn- read-import-v1
   [{:keys [::db/conn ::project-id ::profile-id ::input] :as cfg}]
-  (db/exec-one! conn ["SET idle_in_transaction_session_timeout = 0"])
+  (db/exec-one! conn ["SET LOCAL idle_in_transaction_session_timeout = 0"])
   (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
 
   (pu/with-open [input (zstd-input-stream input)

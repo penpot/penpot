@@ -56,7 +56,7 @@
                        (db/create-array conn "uuid" ids)]]
 
               (db/exec-one! conn sql)
-              (l/trc :hist "queue tasks"
+              (l/trc :hist "enqueue tasks on redis"
                      :queue queue
                      :tasks (count ids)
                      :queued res)))
