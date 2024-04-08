@@ -72,11 +72,11 @@
                 ;; are not very friendly with virtual threads, and for avoid
                 ;; unexpected blocking of other concurrent operations we
                 ;; dispatch that operation to a dedicated executor.
-                (let [result (px/submit! executor (partial bf.v1/import-files! cfg input))]
+                (let [result (px/invoke! executor (partial bf.v1/import-files! cfg input))]
                   (db/update! conn :project
                               {:modified-at (dt/now)}
                               {:id project-id})
-                  (deref result)))))
+                  result))))
 
 (def ^:private
   schema:import-binfile
