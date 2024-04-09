@@ -23,17 +23,20 @@
 
 (defn- send-mattermost-notification!
   [cfg {:keys [id public-uri] :as report}]
+
+
   (let [text (str "Exception: " public-uri "/dbg/error/" id " "
                   (when-let [pid (:profile-id report)]
                     (str "(pid: #uuid-" pid ")"))
                   "\n"
-                  "```\n"
-                  "- host: `" (:host report) "`\n"
-                  "- tenant: `" (:tenant report) "`\n"
+                  "- host: #" (:host report) "\n"
+                  "- tenant: #" (:tenant report) "\n"
+                  "- logger: #" (:logger report) "\n"
                   "- request-path: `" (:request-path report) "`\n"
                   "- frontend-version: `" (:frontend-version report) "`\n"
                   "- backend-version: `" (:backend-version report) "`\n"
                   "\n"
+                  "```\n"
                   "Trace:\n"
                   (:trace report)
                   "```")
@@ -60,6 +63,7 @@
    :frontend-version (:version/frontend context)
    :profile-id       (:request/profile-id context)
    :request-path     (:request/path context)
+   :logger           (::l/logger record)
    :trace            (ex/format-throwable cause :detail? false :header? false)})
 
 (defn handle-event
