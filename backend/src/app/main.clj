@@ -527,6 +527,15 @@
          :worker? (contains? cf/flags :backend-worker)
          :version (:full cf/version)))
 
+(defn start-custom
+  [config]
+  (ig/load-namespaces config)
+  (alter-var-root #'system (fn [sys]
+                             (when sys (ig/halt! sys))
+                             (-> config
+                                 (ig/prep)
+                                 (ig/init)))))
+
 (defn stop
   []
   (alter-var-root #'system (fn [sys]

@@ -160,7 +160,6 @@ available_commands = (
     "delete-profile",
     "search-profile",
     "derive-password",
-    "migrate-components-v2",
 )
 
 parser = argparse.ArgumentParser(
@@ -232,8 +231,5 @@ elif args.action == "search-profile":
         email = input("Email: ")
 
     search_profile(email)
-
-elif args.action == "migrate-components-v2":
-    migrate_components_v2()
 
 
