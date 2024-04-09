@@ -602,9 +602,11 @@
                     (update-in state [:stops stop] (fn [data] (->> changes
                                                                    (merge data)
                                                                    (materialize-color-components))))
+
                     (-> state
                         (dissoc :gradient :stops :editing-stop)
-                        (assoc :type :color)))))))
+                        (cond-> (not= :image (:type state))
+                          (assoc :type :color))))))))
     ptk/WatchEvent
     (watch [_ state _]
       (when add-recent?
