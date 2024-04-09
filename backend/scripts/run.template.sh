@@ -20,5 +20,7 @@ fi
 
 export JVM_OPTS="-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager -Dlog4j2.configurationFile=log4j2.xml -XX:-OmitStackTraceInFastThrow --enable-preview $JVM_OPTS"
 
-set -x
-exec $JAVA_CMD $JVM_OPTS "$@" -jar penpot.jar -m app.main
+ENTRYPOINT=${1:-app.main};
+
+set -ex
+exec $JAVA_CMD $JVM_OPTS "$@" -jar penpot.jar -m $ENTRYPOINT
