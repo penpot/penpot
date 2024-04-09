@@ -1600,29 +1600,28 @@
                                                                           nil
                                                                           true))
                 new-shapes (volatile! [])
-
-                add-shape (fn [shape]
-                            (vswap! new-shapes conj shape))
+                add-shape #(vswap! new-shapes conj %)
 
                 fdata' (create-media-grid fdata page-id (:id frame) grid assets add-shape)
 
-                ;; When svgs had different width&height and viewport, sometimes the old graphics
-                ;; importer didn't calculate well the media object size. So, after migration we
-                ;; recalculate grid size from the actual size of the created shapes.
-                new-grid (ctst/generate-shape-grid @new-shapes position grid-gap)
-
-                {new-width :width new-height :height} (meta new-grid)
-
-                fdata'' (if-not (and (mth/close? width new-width) (mth/close? height new-height))
-                          (do
-                            (l/inf :hint "fixing graphics sizes"
-                                   :file-id (str (:id fdata))
-                                   :group group-name)
-                            (fix-graphics-size fdata' new-grid page-id (:id frame)))
-                          fdata')]
+                ;; When svgs had different width&height and viewport,
+                ;; sometimes the old graphics importer didn't
+                ;; calculate well the media object size. So, after
+                ;; migration we recalculate grid size from the actual
+                ;; size of the created shapes.
+                fdata' (if-let [grid (ctst/generate-shape-grid @new-shapes position grid-gap)]
+                         (let [{new-width :width new-height :height} (meta grid)]
+                           (if-not (and (mth/close? width new-width) (mth/close? height new-height))
+                             (do
+                               (l/inf :hint "fixing graphics sizes"
+                                      :file-id (str (:id fdata))
+                                      :group group-name)
+                               (fix-graphics-size fdata' grid page-id (:id frame)))
+                             fdata'))
+                         fdata')]
 
             (recur (next groups)
-                   fdata''
+                   fdata'
                    (gpt/add position (gpt/point 0 (+ height (* 2 grid-gap) frame-gap))))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
