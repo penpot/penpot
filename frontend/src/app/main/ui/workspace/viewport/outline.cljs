@@ -113,8 +113,7 @@
 (defn- show-outline?
   [shape]
   (and (not (:hidden shape))
-       (not (:blocked shape))
-       (not (:transforming shape))))
+       (not (:blocked shape))))
 
 (mf/defc shape-outlines
   {::mf/wrap-props false}

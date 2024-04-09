@@ -28,7 +28,6 @@
    [app.main.data.workspace.collapse :as dwc]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.selection :as dws]
-   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.snap :as snap]
@@ -291,10 +290,10 @@
     ptk/WatchEvent
     (watch [_ _ stream]
       (rx/concat
-       (rx/of (dwsh/update-shape-flags ids {:transforming true}))
+       (rx/of #(assoc-in % [:workspace-local :transform] :move))
        (->> (rx/timer 1000)
             (rx/map (fn []
-                      (dwsh/update-shape-flags ids {:transforming false})))
+                      #(assoc-in % [:workspace-local :transform] nil)))
             (rx/take-until
              (rx/filter (ptk/type? ::trigger-bounding-box-cloaking) stream)))))))
 
