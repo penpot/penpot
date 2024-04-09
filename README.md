@@ -2,13 +2,11 @@
 [uri_license]: https://www.mozilla.org/en-US/MPL/2.0
 [uri_license_image]: https://img.shields.io/badge/MPL-2.0-blue.svg
 
-<p>
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://penpot.app/images/readme/github-dark-mode.png">
   <source media="(prefers-color-scheme: light)" srcset="https://penpot.app/images/readme/github-light-mode.png">
   <img alt="penpot header image" src="https://penpot.app/images/readme/github-light-mode.png">
 </picture>
-</p>
 
 <p align="center"><a href="https://www.mozilla.org/en-US/MPL/2.0" rel="nofollow"><img src="https://camo.githubusercontent.com/3fcf3d6b678ea15fde3cf7d6af0e242160366282d62a7c182d83a50bfee3f45e/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f4d504c2d322e302d626c75652e737667" alt="License: MPL-2.0" data-canonical-src="https://img.shields.io/badge/MPL-2.0-blue.svg" style="max-width:100%;"></a>
 <a href="https://gitter.im/penpot/community" rel="nofollow"><img src="https://camo.githubusercontent.com/5b0aecb33434f82a7b158eab7247544235ada0cf7eeb9ce8e52562dd67f614b7/68747470733a2f2f6261646765732e6769747465722e696d2f736572656e6f2d78797a2f636f6d6d756e6974792e737667" alt="Gitter" data-canonical-src="https://badges.gitter.im/sereno-xyz/community.svg" style="max-width:100%;"></a>
@@ -31,7 +29,7 @@
     <a href="https://twitter.com/penpotapp"><b>X</b></a>
 
 </p>
-</div>
+
 <br />
 
 [Penpot video](https://github.com/penpot/penpot/assets/5446186/b8ad0764-585e-4ddc-b098-9b4090d337cc)
