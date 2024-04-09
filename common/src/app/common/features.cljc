@@ -144,7 +144,6 @@
         team-features    (into #{} xf-remove-ephimeral (:features team))]
     (-> enabled-features
         (set/intersection no-migration-features)
-        (set/union default-enabled-features)
         (set/union team-features))))
 
 (defn check-client-features!
