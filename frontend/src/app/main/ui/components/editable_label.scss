@@ -20,12 +20,8 @@
   color: var(--input-foreground-color-active);
 }
 
-.editable-label {
-  display: flex;
-
-  &.is-hidden {
-    display: none;
-  }
+.editable-label.is-hidden {
+  display: none;
 }
 
 .editable-label-close {

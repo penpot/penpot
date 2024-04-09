@@ -51,21 +51,21 @@
 
         accept-edit
         (mf/use-fn
-         (mf/deps on-stop-edit)
+         (mf/deps shape-id on-stop-edit)
          (fn []
            (let [name-input     (mf/ref-val ref)
                  name           (str/trim (dom/get-value name-input))]
              (on-stop-edit)
              (reset! edition* false)
-             (st/emit! (dw/end-rename-shape name)))))
+             (st/emit! (dw/end-rename-shape shape-id name)))))
 
         cancel-edit
         (mf/use-fn
-         (mf/deps on-stop-edit)
+         (mf/deps shape-id on-stop-edit)
          (fn []
            (on-stop-edit)
            (reset! edition* false)
-           (st/emit! (dw/end-rename-shape nil))))
+           (st/emit! (dw/end-rename-shape shape-id nil))))
 
         on-key-down
         (mf/use-fn
