@@ -98,7 +98,8 @@
             closed-preview (rx/subject)
             preview (.open js/window "/#/frame-preview")
             listener-fn #(rx/push! closed-preview true)]
-        (.addEventListener preview "beforeunload" listener-fn)
+        (when (some? preview)
+          (.addEventListener preview "beforeunload" listener-fn))
         (->> (rx/from-atom (refs/all-children-objects shape-id) {:emit-current-value? true})
              (rx/take-until closed-preview)
              (rx/debounce 1000)
