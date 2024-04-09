@@ -14,7 +14,7 @@
    [app.common.files.libraries-helpers :as cflh]
    [app.common.files.shapes-helpers :as cfsh]
    [app.common.geom.point :as gpt]
-   [app.common.logging :as log]
+  ;;  [app.common.logging :as log]
    [app.common.types.color :as ctc]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
@@ -51,26 +51,28 @@
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
-;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
-(log/set-level! :warn)
+;; ;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
+;; (log/set-level! :debug)
 
 (defn- log-changes
   [changes file]
   (let [extract-change
         (fn [change]
-          (let [shape (when (:id change)
-                        (cond
-                          (:page-id change)
-                          (get-in file [:pages-index
-                                        (:page-id change)
-                                        :objects
-                                        (:id change)])
-                          (:component-id change)
-                          (get-in file [:components
-                                        (:component-id change)
-                                        :objects
-                                        (:id change)])
-                          :else nil))
+          (let [shape (if-let [obj (:obj change)]
+                        obj
+                        (when (:id change)
+                          (cond
+                            (:page-id change)
+                            (get-in file [:pages-index
+                                          (:page-id change)
+                                          :objects
+                                          (:id change)])
+                            (:component-id change)
+                            (get-in file [:components
+                                          (:component-id change)
+                                          :objects
+                                          (:id change)])
+                            :else nil)))
 
                 prefix (if (:component-id change) "[C] " "[P] ")
 
@@ -711,7 +713,7 @@
   (ptk/reify ::sync-head
     ptk/WatchEvent
     (watch [it state _]
-      (log/info :msg "SYNC-head of shape" :id (str id))
+      (dwlh/dbg-warn "SYNC-HEAD of shape" :id id)
       (let [file       (wsh/get-local-file state)
             file-full  (wsh/get-local-file-full state)
             libraries  (wsh/get-libraries state)
@@ -733,9 +735,7 @@
                 (pcb/with-objects (:objects container))
                 (dwlh/generate-sync-shape-direct file-full libraries container (:id head) false components-v2))]
 
-        (log/debug :msg "SYNC-head finished" :js/rchanges (log-changes
-                                                           (:redo-changes changes)
-                                                           file))
+        (dwlh/dbg-info "SYNC-HEAD finished" :rchanges (dwlh/dbg-obj (log-changes (:redo-changes changes) file)))
         (rx/of (dch/commit-changes changes))))))
 
 (defn reset-component
@@ -747,7 +747,7 @@
   (ptk/reify ::reset-component
     ptk/WatchEvent
     (watch [it state _]
-      (log/info :msg "RESET-COMPONENT of shape" :id (str id))
+      (dwlh/dbg-warn "RESET-COMPONENT of shape" :id id)
       (let [file      (wsh/get-local-file state)
             file-full (wsh/get-local-file-full state)
             libraries (wsh/get-libraries state)
@@ -769,9 +769,7 @@
                 (pcb/with-objects (:objects container))
                 (dwlh/generate-sync-shape-direct file-full libraries container id true components-v2))]
 
-        (log/debug :msg "RESET-COMPONENT finished" :js/rchanges (log-changes
-                                                                 (:redo-changes changes)
-                                                                 file))
+        (dwlh/dbg-info "RESET-COMPONENT finished" :rchanges (dwlh/dbg-obj (log-changes (:redo-changes changes) file)))
         (rx/of
          (dwu/start-undo-transaction undo-id)
          (dch/commit-changes changes)
@@ -808,7 +806,7 @@
    (ptk/reify ::update-component
      ptk/WatchEvent
      (watch [it state _]
-       (log/info :msg "UPDATE-COMPONENT of shape" :id (str id) :undo-group undo-group)
+       (dwlh/dbg-warn "UPDATE-COMPONENT of shape" :id id :undo-group undo-group)
        (let [page-id       (get state :current-page-id)
              local-file    (wsh/get-local-file state)
              full-file     (wsh/get-local-file-full state)
@@ -844,13 +842,9 @@
                                       (update :redo-changes #(into [] xf-remove %))
                                       (update :undo-changes #(into [] xf-remove %)))]
 
-             (log/debug :msg "UPDATE-COMPONENT finished"
-                        :js/local-changes (log-changes
-                                           (:redo-changes local-changes)
-                                           file)
-                        :js/nonlocal-changes (log-changes
-                                              (:redo-changes nonlocal-changes)
-                                              file))
+             (dwlh/dbg-info "UPDATE-COMPONENT finished"
+                            :local-changes (dwlh/dbg-obj (log-changes (:redo-changes local-changes) file))
+                            :nonlocal-changes (dwlh/dbg-obj (log-changes (:redo-changes nonlocal-changes) file)))
 
              (rx/of
               (when (seq (:redo-changes local-changes))
@@ -1038,10 +1032,10 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [undo-id (js/Symbol)]
-        (log/info :msg "COMPONENT-SWAP"
-                  :file (dwlh/pretty-file file-id state)
-                  :id-new-component id-new-component
-                  :undo-id undo-id)
+        (dwlh/dbg-warn "COMPONENT-SWAP"
+                       :file (dwlh/dbg-file file-id state)
+                       :id-new-component id-new-component
+                       :undo-id undo-id)
         (rx/concat
          (rx/of (dwu/start-undo-transaction undo-id))
          (rx/map #(component-swap % file-id id-new-component) (rx/from shapes))
@@ -1091,12 +1085,12 @@
      ptk/WatchEvent
      (watch [it state _]
        (when (and (some? file-id) (some? library-id)) ; Prevent race conditions while navigating out of the file
-         (log/info :msg "SYNC-FILE"
-                   :file (dwlh/pretty-file file-id state)
-                   :library (dwlh/pretty-file library-id state)
-                   :asset-type asset-type
-                   :asset-id asset-id
-                   :undo-group undo-group)
+         (dwlh/dbg-warn "SYNC-FILE"
+                        :file (dwlh/dbg-file file-id state)
+                        :library (dwlh/dbg-file library-id state)
+                        :asset-type asset-type
+                        :asset-id asset-id
+                        :undo-group undo-group)
          (let [file            (wsh/get-file state file-id)
 
                sync-components?   (or (nil? asset-type) (= asset-type :components))
@@ -1136,9 +1130,8 @@
                                     (mapcat find-frames)
                                     distinct)]
 
-           (log/debug :msg "SYNC-FILE finished" :js/rchanges (log-changes
-                                                              (:redo-changes changes)
-                                                              file))
+           (dwlh/dbg-info "SYNC-FILE finished"
+                          :rchanges (dwlh/dbg-obj (log-changes (:redo-changes changes) file)))
            (rx/concat
             (rx/of (set-updating-library false)
                    (msg/hide-tag :sync-dialog))
@@ -1306,9 +1299,9 @@
 
                   (if (d/not-empty? changed-components)
                     (if save-undo?
-                      (do (log/info :msg "DETECTED COMPONENTS CHANGED"
-                                    :ids (map str changed-components)
-                                    :undo-group undo-group)
+                      (do (dwlh/dbg-warn "DETECTED COMPONENTS CHANGED"
+                                         :ids (map dwlh/dbg-id changed-components)
+                                         :undo-group undo-group)
 
                           (->> (rx/from changed-components)
                                (rx/map #(component-changed % (:id old-data) undo-group))))
@@ -1327,7 +1320,7 @@
             notifier-s
             (->> changes-s
                  (rx/debounce 5000)
-                 (rx/tap #(log/trc :hint "buffer initialized")))]
+                 (rx/tap #(dwlh/dbg-log "buffer initialized")))]
 
         (when components-v2?
           (->> (rx/merge
