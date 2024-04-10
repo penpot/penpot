@@ -90,7 +90,7 @@ RUN set -eux; \
     cd /opt/node; \
     tar -xf /tmp/nodejs.tar.gz --strip-components=1; \
     chown -R root /opt/node; \
-    npm install -g yarn; \
+    corepack enable; \
     rm -rf /tmp/nodejs.tar.gz; \
     mkdir -p /opt/penpot; \
     chown -R penpot:penpot /opt/penpot;
@@ -101,7 +101,8 @@ WORKDIR /opt/penpot/exporter
 USER penpot:penpot
 
 RUN set -ex; \
-    yarn --network-timeout 1000000; \
-    yarn --network-timeout 1000000 run playwright install chromium;
+    yarn config set httpTimeout 600000; \
+    yarn install; \
+    yarn run playwright install chromium;
 
 CMD ["node", "app.js"]
