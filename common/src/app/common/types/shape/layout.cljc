@@ -495,9 +495,11 @@
   (= layout-align-items :stretch))
 
 (defn reverse?
-  [{:keys [layout-flex-dir]}]
-  (or (= :row-reverse layout-flex-dir)
-      (= :column-reverse layout-flex-dir)))
+  ([objects id]
+   (reverse? (get objects id)))
+  ([{:keys [layout-flex-dir]}]
+   (or (= :row-reverse layout-flex-dir)
+       (= :column-reverse layout-flex-dir))))
 
 (defn space-between?
   [{:keys [layout-justify-content]}]
