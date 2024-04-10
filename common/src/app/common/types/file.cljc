@@ -219,11 +219,11 @@
 (defn advance-shape-ref
   "Get the shape-ref of the near main of the shape, recursively repeated as many times
    as the given levels."
-  [file container libraries shape levels & options]
-  (let [ref-shape (find-ref-shape file container libraries shape options)]
+  [file container libraries shape levels & {:keys [include-deleted?] :or {include-deleted? false}}]
+  (let [ref-shape (find-ref-shape file container libraries shape :include-deleted? include-deleted? :with-context? true)]
     (if (or (nil? (:shape-ref ref-shape)) (not (pos? levels)))
       (:id ref-shape)
-      (advance-shape-ref file container libraries ref-shape (dec levels) options))))
+      (advance-shape-ref file (:container (meta ref-shape)) libraries ref-shape (dec levels) :include-deleted? include-deleted?))))
 
 (defn find-ref-component
   "Locate the nearest component in the local file or libraries that is referenced by the
