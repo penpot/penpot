@@ -101,7 +101,6 @@ WORKDIR /opt/penpot/exporter
 USER penpot:penpot
 
 RUN set -ex; \
-    yarn config set httpTimeout 600000; \
     yarn install; \
     yarn run playwright install chromium;
 
