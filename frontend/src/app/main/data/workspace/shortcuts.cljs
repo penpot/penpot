@@ -547,17 +547,18 @@
                           :subsections [:shape]
                           :fn #(emit-when-no-readonly (dw/create-bool :exclude))}
 
-   ;; PREVIEW
-   :preview-frame        {:tooltip (ds/meta (ds/alt ds/enter))
-                          :command (ds/c-mod "alt+enter")
-                          :fn #(emit-when-no-readonly (dp/open-preview-selected))}
-
    ;; THEME
    :toggle-theme         {:tooltip (ds/alt "M")
                           :command (ds/a-mod "m")
                           :subsections [:basics]
                           :fn #(st/emit! (with-meta (du/toggle-theme)
                                            {::ev/origin "workspace:shortcut"}))}})
+
+(def debug-shortcuts
+  ;; PREVIEW
+  {:preview-frame        {:tooltip (ds/meta (ds/alt ds/enter))
+                          :command (ds/c-mod "alt+enter")
+                          :fn #(emit-when-no-readonly (dp/open-preview-selected))}})
 
 (def opacity-shortcuts
   (into {} (->>
@@ -569,7 +570,9 @@
                            :fn #(emit-when-no-readonly (dwly/pressed-opacity n))}])))))
 
 (def shortcuts
-  (merge base-shortcuts opacity-shortcuts dwtxts/shortcuts))
+  (cond-> (merge base-shortcuts opacity-shortcuts dwtxts/shortcuts)
+    *assert*
+    (merge debug-shortcuts)))
 
 (defn get-tooltip [shortcut]
   (assert (contains? shortcuts shortcut) (str shortcut))
