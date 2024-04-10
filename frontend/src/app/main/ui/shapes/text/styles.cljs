@@ -101,9 +101,6 @@
                               :textRendering "geometricPrecision"}
          fills
          (cond
-           (some? (:fills data))
-           (:fills data)
-
            ;; DEPRECATED: still here for backward compatibility with
            ;; old penpot files that still has a single color.
            (or (some? (:fill-color data))
@@ -113,7 +110,10 @@
                                                :fill-color-ref-id :fill-color-ref-file]))]
 
            (nil? (:fills data))
-           [{:fill-color "#000000" :fill-opacity 1}])
+           [{:fill-color "#000000" :fill-opacity 1}]
+
+           :else
+           (:fills data))
 
          font (some->> font-id (get fontsdb))
 

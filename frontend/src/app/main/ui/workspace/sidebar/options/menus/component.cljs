@@ -248,18 +248,13 @@
   {::mf/props :obj}
   [{:keys [item on-enter-group]}]
   (let [group-name (:name item)
-        path (cfh/butlast-path-with-dots group-name)
         on-group-click #(on-enter-group group-name)]
     [:div {:class (stl/css :component-group)
            :on-click on-group-click
            :title group-name}
 
-     [:div {:class (stl/css :path-wrapper)}
-      (when-not (str/blank? path)
-        [:span {:class (stl/css :component-group-path)}
-         (str "\u00A0\u2022\u00A0" path)])
-      [:span {:class (stl/css :component-group-name)}
-       (cfh/last-path group-name)]]
+     [:span {:class (stl/css :component-group-name)}
+      (cfh/last-path group-name)]
 
      [:span {:class (stl/css :arrow-icon)}
       i/arrow]]))
@@ -416,10 +411,7 @@
         (mf/use-fn
          (fn [style]
            (swap! filters* assoc :listing-thumbs? (= style "grid"))))
-
-        filters-but-last (cfh/butlast-path (:path filters))
-        last-filters     (cfh/last-path (:path filters))
-        filter-path-with-dots (->> filters-but-last (cfh/split-path) (cfh/join-path-with-dot))]
+        filter-path-with-dots (->> (:path filters) (cfh/split-path) (cfh/join-path-with-dot))]
 
     [:div {:class (stl/css :component-swap)}
      [:div {:class (stl/css :element-set-title)}
@@ -462,10 +454,8 @@
                    :on-click on-go-back
                    :title filter-path-with-dots}
           [:span {:class (stl/css :back-arrow)} i/arrow]
-          (when-not (= "" filter-path-with-dots)
-            [:span {:class (stl/css :path-name)}
-             (dm/str "\u00A0\u2022\u00A0" filter-path-with-dots)])
-          [:span {:class (stl/css :path-name-last)} last-filters]])
+          [:span {:class (stl/css :path-name)}
+           filter-path-with-dots]])
 
        (when (empty? items)
          [:div {:class (stl/css :component-list-empty)}

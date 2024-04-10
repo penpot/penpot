@@ -2013,6 +2013,7 @@
                                 (d/index-by :prev-id))
 
               selected     (:selected pdata)
+
               objects      (:objects pdata)
 
               position     (deref ms/mouse-position)
@@ -2035,6 +2036,10 @@
               index        (if (= candidate-parent-id parent-id)
                              index
                              0)
+
+              selected     (if (and (ctl/flex-layout? page-objects parent-id) (not (ctl/reverse? page-objects parent-id)))
+                             (into (d/ordered-set) (reverse selected))
+                             selected)
 
               objects      (update-vals objects (partial process-shape file-id frame-id parent-id))
 
