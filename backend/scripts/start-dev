@@ -32,6 +32,9 @@ export OPTIONS="
        -J-XX:+UnlockDiagnosticVMOptions \
        -J-XX:+DebugNonSafepoints"
 
+# Default deletion delay for devenv
+export PENPOT_DELETION_DELAY="24h"
+
 # Setup default upload media file size to 100MiB
 export PENPOT_MEDIA_MAX_FILE_SIZE=104857600
 
