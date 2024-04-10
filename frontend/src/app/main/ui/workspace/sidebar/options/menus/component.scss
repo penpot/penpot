@@ -254,14 +254,7 @@
   direction: rtl;
   height: $s-32;
   padding: $s-8 0 $s-8 $s-2;
-}
-
-.path-name-last {
-  @include bodySmallTypography;
-  @include textEllipsis;
-  height: $s-32;
-  padding: $s-8 0 $s-8 $s-2;
-  color: white;
+  margin-right: $s-4;
 }
 
 .component-list-empty {
