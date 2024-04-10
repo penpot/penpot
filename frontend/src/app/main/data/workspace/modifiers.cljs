@@ -46,9 +46,10 @@
 ;; When the interaction is finished (e.g. user releases mouse button), the
 ;; apply-modifiers event is done, that consolidates all modifiers into the base
 ;; geometric attributes of the shapes.
+
 (defn- check-delta
-  "If the shape is a component instance, check its relative position respect the
-  root of the component, and see if it changes after applying a transformation."
+  "If the shape is a component instance, check its relative position and rotation respect
+  the root of the component, and see if it changes after applying a transformation."
   [shape root transformed-shape transformed-root]
   (let [shape-delta
         (when root
@@ -65,6 +66,11 @@
           (gpt/distance-vector shape-delta transformed-shape-delta)
           (gpt/point 0 0))
 
+        rotation-delta
+        (if (and (some? (:rotation shape)) (some? (:rotation shape)))
+          (- (:rotation transformed-shape) (:rotation shape))
+          0)
+
         selrect (:selrect shape)
         transformed-selrect (:selrect transformed-shape)]
 
@@ -76,7 +82,8 @@
     ;; shape position unchanged. But in this case we do not want to ignore it.
     (and (and (< (:x distance) 1) (< (:y distance) 1))
          (mth/close? (:width selrect) (:width transformed-selrect))
-         (mth/close? (:height selrect) (:height transformed-selrect)))))
+         (mth/close? (:height selrect) (:height transformed-selrect))
+         (mth/close? rotation-delta 0))))
 
 (defn calculate-ignore-tree
   "Retrieves a map with the flag `ignore-geometry?` given a tree of modifiers"
