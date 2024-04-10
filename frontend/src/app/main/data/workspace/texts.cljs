@@ -287,7 +287,7 @@
       (nil? (:fills node))
       (assoc :fills (:fills txt/default-text-attrs))
 
-      (and (d/not-empty? color-attrs) (nil? (:fills node)))
+      (and (d/not-empty? color-attrs) (empty? (:fills node)))
       (-> (dissoc :fill-color :fill-opacity :fill-color-ref-id :fill-color-ref-file :fill-color-gradient)
           (assoc :fills [color-attrs])))))
 

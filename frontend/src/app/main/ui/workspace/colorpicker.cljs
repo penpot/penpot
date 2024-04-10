@@ -118,12 +118,9 @@
 
         on-change-tab
         (mf/use-fn
-         (fn [event]
-           (let [tab (-> (dom/get-current-target event)
-                         (dom/get-data "tab")
-                         (keyword))]
-             (reset! active-color-tab tab)
-             (dc/set-active-color-tab! tab))))
+         (fn [tab]
+           (reset! active-color-tab tab)
+           (dc/set-active-color-tab! tab)))
 
         handle-change-mode
         (mf/use-fn
