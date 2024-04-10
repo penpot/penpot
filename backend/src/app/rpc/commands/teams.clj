@@ -869,7 +869,12 @@
    ::sm/params schema:create-team-with-invitations}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id emails role] :as params}]
   (db/with-atomic [conn pool]
-    (let [params   (assoc params :profile-id profile-id)
+
+    (let [features (-> (cfeat/get-enabled-features cf/flags)
+                       (cfeat/check-client-features! (:features params)))
+          params   (assoc params
+                          :profile-id profile-id
+                          :features features)
           cfg      (assoc cfg ::db/conn conn)
           team     (create-team cfg params)
           profile  (db/get-by-id conn :profile profile-id)
