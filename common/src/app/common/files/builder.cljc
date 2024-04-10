@@ -16,6 +16,7 @@
    [app.common.pprint :as pp]
    [app.common.schema :as sm]
    [app.common.svg :as csvg]
+   [app.common.text :as txt]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
@@ -322,8 +323,19 @@
 (defn create-path [file data]
   (create-shape file :path data))
 
+(defn- clean-text-content
+  "Clean the content data so it doesn't break the validation"
+  [content]
+  (letfn [(update-fill [fill]
+            (d/update-in-when fill [:fill-color-gradient :type] keyword))]
+    (txt/transform-nodes
+     (fn [node]
+       (d/update-when node :fills #(mapv update-fill %)))
+     content)))
+
 (defn create-text [file data]
-  (create-shape file :text data))
+  (let [data (d/update-when data :content clean-text-content)]
+    (create-shape file :text data)))
 
 (defn create-image [file data]
   (create-shape file :image data))
