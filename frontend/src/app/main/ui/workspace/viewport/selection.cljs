@@ -321,7 +321,6 @@
         transform      (gsh/transform-str shape)]
 
     (when (and (some? selrect)
-               (not (:transforming shape))
                (not (or (= transform-type :move)
                         (= transform-type :rotate))))
       [:g.controls {:pointer-events (if ^boolean disable-handlers "none" "visible")}
@@ -356,7 +355,6 @@
                            (and flip-y (not flip-x)))]
 
     (when (and (not ^boolean read-only?)
-               (not (:transforming shape))
                (not (or (= transform-type :move)
                         (= transform-type :rotate))))
 
