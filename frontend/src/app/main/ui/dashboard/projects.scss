@@ -85,6 +85,9 @@
   line-height: 0.8;
   color: var(--title-foreground-color-hover);
   cursor: pointer;
+  height: $s-16;
+  display: inline-flex;
+  align-items: center;
 }
 
 .info-wrapper {

@@ -36,6 +36,8 @@
 (def selection-rect-width 1)
 (def min-selrect-side 10)
 (def small-selrect-side 30)
+(def min-selrect-width 10)
+(def min-selrect-height 10)
 
 (mf/defc selection-rect
   {::mf/wrap-props false}
@@ -43,12 +45,27 @@
   (let [x      (dm/get-prop rect :x)
         y      (dm/get-prop rect :y)
         width  (dm/get-prop rect :width)
-        height (dm/get-prop rect :height)]
+        height (dm/get-prop rect :height)
+
+        ;; This is a calculation to create a "minimum" interactable rect
+        ;; Is necesary so that small shapes in x/y (like lines) can be moved
+        ;; better
+        [x width]
+        (if (< width (/ min-selrect-width zoom))
+          (let [width' (/ min-selrect-width zoom)]
+            [(- x (/ (- width' width) 2)) width'])
+          [x width])
+
+        [y height]
+        (if (< height (/ min-selrect-height zoom))
+          (let [height' (/ min-selrect-height zoom)]
+            [(- y (/ (- height' height) 2)) height'])
+          [y height])]
     [:rect.main.viewport-selrect
      {:x x
       :y y
-      :width width
-      :height height
+      :width (max width (/ 10 zoom))
+      :height (max height (/ 10 zoom))
       :transform (str transform)
       :on-pointer-down on-move-selected
       :on-context-menu on-context-menu
@@ -304,7 +321,6 @@
         transform      (gsh/transform-str shape)]
 
     (when (and (some? selrect)
-               (not (:transforming shape))
                (not (or (= transform-type :move)
                         (= transform-type :rotate))))
       [:g.controls {:pointer-events (if ^boolean disable-handlers "none" "visible")}
@@ -339,7 +355,6 @@
                            (and flip-y (not flip-x)))]
 
     (when (and (not ^boolean read-only?)
-               (not (:transforming shape))
                (not (or (= transform-type :move)
                         (= transform-type :rotate))))
 

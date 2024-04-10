@@ -509,6 +509,7 @@
                                           (every? nil?)))]
     (or
       ;;We don't want to change the structure of component copies
+     (ctk/in-component-copy? parent)
      (has-any-copy-parent? objects parent)
       ;; If we are moving something containing a main instance the container can't be part of a component (neither main nor copy)
      (and selected-main-instance? parent-in-component?)
