@@ -6,7 +6,6 @@
 
 (ns app.srepl.components-v2
   (:require
-   [app.common.exceptions :as ex]
    [app.common.fressian :as fres]
    [app.common.logging :as l]
    [app.db :as db]
@@ -305,79 +304,3 @@
         (let [elapsed (dt/format-duration (tpoint))]
           (l/dbg :hint "populate:end"
                  :elapsed elapsed))))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; MAIN (SCRIPT ENTRY POINT)
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def ^:private required-services
-  [[:app.main/assets :app.storage.s3/backend]
-   [:app.main/assets :app.storage.fs/backend]
-   :app.storage/storage
-   :app.db/pool
-   :app.setup/props
-   :app.svgo/optimizer
-   :app.metrics/metrics
-   :app.migrations/migrations
-   :app.http.client/client])
-
-(def ^:private sql:get-teams-by-created-at
-  "SELECT id, features,
-          row_number() OVER (ORDER BY created_at DESC) AS rown
-    FROM team
-   WHERE deleted_at IS NULL
-   ORDER BY created_at DESC")
-
-(defn- get-teams
-  [conn]
-  (->> (db/cursor conn [sql:get-teams-by-created-at] {:chunk-size 1})
-       (map feat/decode-row)
-       (remove (fn [{:keys [features]}]
-                 (contains? features "components/v2")))))
-
-(defn- migrate-teams
-  [{:keys [::db/conn] :as system}]
-  (db/exec-one! conn ["SET LOCAL idle_in_transaction_session_timeout = 0"])
-  (run! (fn [{:keys [id rown]}]
-          (try
-            (-> (assoc system ::db/rollback true)
-                (feat/migrate-team! id
-                                    :rown rown
-                                    :label "migration-v2"
-                                    :validate? false
-                                    :skip-on-graphics-error? true))
-            (catch Throwable _
-              (swap! feat/*stats* update :errors (fnil inc 0))
-              (l/wrn :hint "error on migrating team (skiping)"))))
-        (get-teams conn)))
-
-(defn run-migration
-  []
-  (let [config (select-keys main/system-config required-services)
-        tpoint (dt/tpoint)
-        stats  (atom {})]
-    (main/start-custom config)
-
-    (binding [feat/*stats* stats]
-      (db/tx-run! main/system migrate-teams))
-
-    (let [stats   (deref stats)
-          elapsed (dt/format-duration (tpoint))]
-      (l/inf :hint "migration finished"
-             :files (:processed-files stats)
-             :teams (:processed-teams stats)
-             :errors (:errors stats)
-             :elapsed elapsed))
-
-    (main/stop)))
-
-(defn -main
-  [& _args]
-  (try
-    (run-migration)
-    (System/exit 0)
-
-    (catch Throwable cause
-      (ex/print-throwable cause)
-      (flush)
-      (System/exit -1))))
