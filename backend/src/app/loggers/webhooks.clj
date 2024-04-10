@@ -136,11 +136,11 @@
                     "application/transit+json" (t/encode-str event)
                     "application/x-www-form-urlencoded" (uri/map->query-string event))]
 
-        (l/debug :hint "run webhook"
-                 :event-name (:name event)
-                 :webhook-id (:id whook)
-                 :webhook-uri (:uri whook)
-                 :webhook-mtype (:mtype whook))
+        (l/dbg :hint "run webhook"
+               :event-name (:name event)
+               :webhook-id (:id whook)
+               :webhook-uri (:uri whook)
+               :webhook-mtype (:mtype whook))
 
         (let [req {:uri (:uri whook)
                    :headers {"content-type" (:mtype whook)
@@ -158,8 +158,8 @@
                 (report-delivery! whook req nil err)
                 (update-webhook! whook err)
                 (when (= err "unknown")
-                  (l/error :hint "unknown error on webhook request"
-                           :cause cause))))))))))
+                  (l/err :hint "unknown error on webhook request"
+                         :cause cause))))))))))
 
 (defn interpret-response
   [{:keys [status] :as response}]
