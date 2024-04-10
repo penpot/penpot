@@ -566,6 +566,13 @@
         }
       }
 
+      &.icon-tick.invalid:hover {
+        cursor: default;
+        svg {
+          stroke: var(--icon-foreground);
+        }
+      }
+
       &.icon-cross:hover,
       &.icon-trash:hover {
         svg {

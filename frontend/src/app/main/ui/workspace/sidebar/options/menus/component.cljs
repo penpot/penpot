@@ -184,7 +184,7 @@
                      :class (stl/css-case
                              :icon true
                              :icon-tick true
-                             :hidden invalid-text?)}
+                             :invalid invalid-text?)}
                i/tick]
               [:div {:class (stl/css :icon :icon-cross)
                      :title (tr "labels.discard")
