@@ -987,7 +987,9 @@
                          (cond-> shapes-to-deroot deroot? (conj id))
                          (cond-> shapes-to-reroot reroot? (conj id))]))
                     [[] [] []]
-                    ids)
+                    (->> ids
+                         (mapcat #(ctn/get-child-heads objects %))
+                         (map :id)))
 
             changes (relocate-shapes-changes it
                                              objects
