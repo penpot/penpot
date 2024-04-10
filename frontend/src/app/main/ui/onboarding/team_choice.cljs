@@ -154,7 +154,7 @@
         params  (:clean-data @form)
         emails  (:emails params)
 
-        roles   (mf/use-memo #(get-available-roles))
+        roles   (mf/use-memo get-available-roles)
 
         on-success
         (mf/use-fn
@@ -168,7 +168,7 @@
 
         on-error
         (mf/use-fn
-         (fn [_form _response]
+         (fn [_form _cause]
            (st/emit! (msg/error "Error on creating team."))))
 
         ;; The SKIP branch only creates the team, without invitations

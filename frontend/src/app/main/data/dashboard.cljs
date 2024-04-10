@@ -425,11 +425,11 @@
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)
-            features (features/get-enabled-features state)]
-        params   {:name name
-                  :emails #{emails}
-                  :role role
-                  :features features}
+            features (features/get-enabled-features state)
+            params   {:name name
+                      :emails emails
+                      :role role
+                      :features features}]
         (->> (rp/cmd! :create-team-with-invitations params)
              (rx/tap on-success)
              (rx/map team-created)
