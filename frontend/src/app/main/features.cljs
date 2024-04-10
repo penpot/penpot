@@ -35,7 +35,6 @@
   (-> global-enabled-features
       (set/union (:features/runtime state #{}))
       (set/intersection cfeat/no-migration-features)
-      (set/union cfeat/default-enabled-features)
       (set/union (:features/team state #{}))))
 
 (def features-ref
