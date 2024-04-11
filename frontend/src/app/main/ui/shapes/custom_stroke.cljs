@@ -91,7 +91,7 @@
 
         color     (cond
                     (some? gradient)
-                    (str/ffmt "url(#stroke-color-gradient-%s-%s)" render-id index)
+                    (str/ffmt "url(#stroke-color-gradient-%-%)" render-id index)
 
                     (some? image)
                     (str/ffmt "url(#stroke-fill-%-%)" render-id index)
