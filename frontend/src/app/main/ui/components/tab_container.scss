@@ -21,74 +21,82 @@
   cursor: pointer;
   font-size: $fs-12;
   height: 100%;
-  .tab-container-tab-wrapper {
-    @include flexCenter;
-    flex-direction: row;
-    height: 100%;
-    width: 100%;
-    .tab-container-tab-title {
-      @include flexCenter;
-      @include headlineSmallTypography;
-      height: 100%;
-      width: 100%;
-      padding: 0 $s-8;
-      margin: 0;
-      border-radius: $br-8;
-      background-color: transparent;
-      color: var(--tab-foreground-color);
-      white-space: nowrap;
-      border: $s-2 solid var(--tab-border-color);
-      svg {
-        @extend .button-icon;
-        stroke: var(--tab-foreground-color);
-      }
+}
 
-      &.current,
-      &.current:hover {
-        background: var(--tab-background-color-selected);
-        border-color: var(--tab-border-color-selected);
-        color: var(--tab-foreground-color-selected);
-        svg {
-          stroke: var(--tab-foreground-color-selected);
-        }
-      }
-      &:hover {
-        color: var(--tab-foreground-color-hover);
-        svg {
-          stroke: var(--tab-foreground-color-hover);
-        }
-      }
+.tab-container-tab-wrapper {
+  display: grid;
+  grid-auto-flow: column;
+  height: 100%;
+  width: 100%;
+}
+
+.tab-container-tab-title {
+  @include flexCenter;
+  height: 100%;
+  width: 100%;
+  padding: 0 $s-8;
+  margin: 0;
+  border-radius: $br-8;
+  background-color: transparent;
+  color: var(--tab-foreground-color);
+  border: $s-2 solid var(--tab-border-color);
+  min-width: 0;
+
+  svg {
+    @extend .button-icon;
+    stroke: var(--tab-foreground-color);
+  }
+  .content {
+    @include headlineSmallTypography;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  &.current,
+  &.current:hover {
+    background: var(--tab-background-color-selected);
+    border-color: var(--tab-border-color-selected);
+    color: var(--tab-foreground-color-selected);
+    svg {
+      stroke: var(--tab-foreground-color-selected);
+    }
+  }
+  &:hover {
+    color: var(--tab-foreground-color-hover);
+    svg {
+      stroke: var(--tab-foreground-color-hover);
+    }
+  }
+}
+
+.collapse-sidebar {
+  @include flexCenter;
+  @include buttonStyle;
+  height: 100%;
+  width: $s-24;
+  min-width: $s-24;
+  padding: 0 $s-6;
+  border-radius: $br-5;
+  svg {
+    @include flexCenter;
+    height: $s-16;
+    width: $s-16;
+    stroke: var(--icon-foreground);
+    transform: rotate(180deg);
+    fill: none;
+    color: transparent;
+  }
+  &:hover {
+    svg {
+      stroke: var(--icon-foreground-hover);
     }
   }
 
-  .collapse-sidebar {
-    @include flexCenter;
-    @include buttonStyle;
-    height: 100%;
-    width: $s-24;
-    min-width: $s-24;
-    padding: 0 $s-6;
-    border-radius: $br-5;
+  &.collapsed {
     svg {
-      @include flexCenter;
-      height: $s-16;
-      width: $s-16;
-      stroke: var(--icon-foreground);
-      transform: rotate(180deg);
-      fill: none;
-      color: transparent;
-    }
-    &:hover {
-      svg {
-        stroke: var(--icon-foreground-hover);
-      }
-    }
-
-    &.collapsed {
-      svg {
-        transform: rotate(0deg);
-        padding: 0 0 0 $s-6;
-      }
+      transform: rotate(0deg);
+      padding: 0 0 0 $s-6;
     }
   }
 }
