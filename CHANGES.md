@@ -131,7 +131,8 @@
 - Fix problem with fix scrolling on nested elements [Github #3508](https://github.com/penpot/penpot/issues/3508)
 - Fix problem when changing typography assets [Github #3683](https://github.com/penpot/penpot/issues/3683)
 - Internal error when you copy and paste some main components between files [Taiga #7397](https://tree.taiga.io/project/penpot/issue/7397)
-
+- Fix toolbar disappearing [Taiga #7411](https://tree.taiga.io/project/penpot/issue/7411)
+- Fix long text on tab breaks UI [Taiga Issue #7421](https://tree.taiga.io/project/penpot/issue/7421)
 
 ## 1.19.5
 

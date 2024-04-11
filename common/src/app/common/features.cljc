@@ -50,12 +50,8 @@
     "styles/v2"
     "layout/grid"})
 
-;; A set of features enabled by default for each file, they are
-;; implicit and are enabled by default and can't be disabled. The
-;; features listed in this set are mainly freatures addedby file
-;; migrations process, so all features referenced in migrations should
-;; be here.
-(def default-enabled-features
+;; A set of features enabled by default
+(def default-features
   #{"fdata/shape-data-type"
     "styles/v2"
     "layout/grid"
@@ -81,7 +77,8 @@
 (def no-migration-features
   (-> #{"fdata/objects-map"
         "fdata/pointer-map"
-        "layout/grid"}
+        "layout/grid"
+        "fdata/shape-data-type"}
       (into frontend-only-features)))
 
 (sm/def! ::features
@@ -132,7 +129,7 @@
 (defn get-enabled-features
   "Get the globally enabled fratures set."
   [flags]
-  (into default-enabled-features xf-flag-to-feature flags))
+  (into default-features xf-flag-to-feature flags))
 
 (defn get-team-enabled-features
   "Get the team enabled features.
@@ -144,7 +141,6 @@
         team-features    (into #{} xf-remove-ephimeral (:features team))]
     (-> enabled-features
         (set/intersection no-migration-features)
-        (set/union default-enabled-features)
         (set/union team-features))))
 
 (defn check-client-features!
@@ -247,7 +243,7 @@
   (let [not-supported (-> (or source-features #{})
                           (set/difference destination-features)
                           (set/difference no-migration-features)
-                          (set/difference default-enabled-features)
+                          (set/difference default-features)
                           (seq))]
     (when not-supported
       (ex/raise :type :restriction
@@ -259,7 +255,7 @@
   (let [not-supported (-> (or destination-features #{})
                           (set/difference source-features)
                           (set/difference no-migration-features)
-                          (set/difference default-enabled-features)
+                          (set/difference default-features)
                           (seq))]
     (when not-supported
       (ex/raise :type :restriction

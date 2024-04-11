@@ -612,7 +612,7 @@
       (t/is (fn? result))
 
       (let [events (th/consume-sse result)]
-        (t/is (= 6 (count events)))
+        (t/is (= 5 (count events)))
         (t/is (= :end (first (last events))))))))
 
 (t/deftest get-list-of-buitin-templates

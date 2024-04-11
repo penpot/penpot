@@ -79,6 +79,7 @@
      FROM file AS f
     WHERE f.has_media_trimmed IS false
       AND f.modified_at < now() - ?::interval
+      AND f.deleted_at IS NULL
     ORDER BY f.modified_at DESC
       FOR UPDATE
      SKIP LOCKED")

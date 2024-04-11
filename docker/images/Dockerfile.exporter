@@ -3,7 +3,7 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ENV LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
-    NODE_VERSION=v18.15.0 \
+    NODE_VERSION=v20.11.1 \
     DEBIAN_FRONTEND=noninteractive \
     PATH=/opt/node/bin:$PATH
 
@@ -75,26 +75,23 @@ RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-arm64.tar.xz"; \
-         ;; \
-       armhf|armv7l) \
-         BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-armv7l.tar.xz"; \
+         BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-arm64.tar.gz"; \
          ;; \
        amd64|x86_64) \
-         BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.xz"; \
+         BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.gz"; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
          exit 1; \
          ;; \
     esac; \
-    curl -LfsSo /tmp/nodejs.tar.xz ${BINARY_URL}; \
+    curl -LfsSo /tmp/nodejs.tar.gz ${BINARY_URL}; \
     mkdir -p /opt/node; \
     cd /opt/node; \
-    tar -xf /tmp/nodejs.tar.xz --strip-components=1; \
+    tar -xf /tmp/nodejs.tar.gz --strip-components=1; \
     chown -R root /opt/node; \
-    npm install -g yarn; \
-    rm -rf /tmp/nodejs.tar.xz; \
+    corepack enable; \
+    rm -rf /tmp/nodejs.tar.gz; \
     mkdir -p /opt/penpot; \
     chown -R penpot:penpot /opt/penpot;
 
@@ -104,7 +101,7 @@ WORKDIR /opt/penpot/exporter
 USER penpot:penpot
 
 RUN set -ex; \
-    yarn --network-timeout 1000000; \
-    yarn --network-timeout 1000000 run playwright install chromium;
+    yarn install; \
+    yarn run playwright install chromium;
 
 CMD ["node", "app.js"]

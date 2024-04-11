@@ -143,23 +143,23 @@ RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-arm64.tar.xz"; \
+         BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-arm64.tar.gz"; \
          ;; \
        amd64|x86_64) \
-         BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.xz"; \
+         BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.gz"; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
          exit 1; \
          ;; \
     esac; \
-    curl -LfsSo /tmp/nodejs.tar.xz ${BINARY_URL}; \
+    curl -LfsSo /tmp/nodejs.tar.gz ${BINARY_URL}; \
     mkdir -p /usr/local/nodejs; \
     cd /usr/local/nodejs; \
-    tar -xf /tmp/nodejs.tar.xz --strip-components=1; \
+    tar -xf /tmp/nodejs.tar.gz --strip-components=1; \
     chown -R root /usr/local/nodejs; \
     corepack enable; \
-    rm -rf /tmp/nodejs.tar.xz;
+    rm -rf /tmp/nodejs.tar.gz;
 
 RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \

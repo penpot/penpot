@@ -45,7 +45,7 @@
          data data]
     (if-let [[to-version migrate-fn] (first migrations)]
       (let [migrate-fn (or migrate-fn identity)]
-        (l/inf :hint "migrate file"
+        (l/trc :hint "migrate file"
                :op (if (>= from-version to-version) "down" "up")
                :file-id (str (:id data))
                :version to-version)

@@ -7,6 +7,7 @@
 (ns app.setup
   "Initial data setup of instance."
   (:require
+   [app.common.data :as d]
    [app.common.logging :as l]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
@@ -25,7 +26,7 @@
       (bc/bytes->b64u)
       (bc/bytes->str)))
 
-(defn- retrieve-all
+(defn- get-all-props
   [conn]
   (->> (db/query conn :server-prop {:preload true})
        (filter #(not= "secret-key" (:id %)))
@@ -50,6 +51,28 @@
                       :cause cause))))
         instance-id)))
 
+
+(def sql:add-prop
+  "INSERT INTO server_prop (id, content, preload)
+   VALUES (?, ?, ?)
+       ON CONFLICT (id)
+       DO UPDATE SET content=?, preload=?")
+
+(defn get-prop
+  ([system prop] (get-prop system prop nil))
+  ([system prop default]
+   (let [prop (d/name prop)]
+     (db/run! system (fn [{:keys [::db/conn]}]
+                       (or (db/get* conn :server-prop {:id prop})
+                           default))))))
+
+(defn set-prop!
+  [system prop value]
+  (let [value (db/tjson value)
+        prop  (d/name prop)]
+    (db/run! system (fn [{:keys [::db/conn]}]
+                      (db/exec-one! conn [sql:add-prop prop value false value false])))))
+
 (s/def ::key ::us/string)
 (s/def ::props (s/map-of ::us/keyword some?))
 
@@ -67,7 +90,7 @@
                          "PENPOT_SECRET_KEY environment variable")))
 
     (let [secret (or key (generate-random-key))]
-      (-> (retrieve-all conn)
+      (-> (get-all-props conn)
           (assoc :secret-key secret)
           (assoc :tokens-key (keys/derive secret :salt "tokens"))
           (update :instance-id handle-instance-id conn (db/read-only? pool))))))

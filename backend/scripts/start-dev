@@ -32,34 +32,17 @@ export OPTIONS="
        -J-XX:+UnlockDiagnosticVMOptions \
        -J-XX:+DebugNonSafepoints"
 
+# Default deletion delay for devenv
+export PENPOT_DELETION_DELAY="24h"
+
 # Setup default upload media file size to 100MiB
 export PENPOT_MEDIA_MAX_FILE_SIZE=104857600
 
 # Setup default multipart upload size to 300MiB
 export PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE=314572800
 
-# Setup HEAP
-# export OPTIONS="$OPTIONS -J-Xms50m -J-Xmx1024m"
-# export OPTIONS="$OPTIONS -J-Xms1100m -J-Xmx1100m -J-XX:+AlwaysPreTouch"
-
-# Increase virtual thread pool size
-# export OPTIONS="$OPTIONS -J-Djdk.virtualThreadScheduler.parallelism=16"
-
-# Disable C2 Compiler
-# export OPTIONS="$OPTIONS -J-XX:TieredStopAtLevel=1"
-
-# Disable all compilers
-# export OPTIONS="$OPTIONS -J-Xint"
-
-# Setup GC
-# export OPTIONS="$OPTIONS -J-XX:+UseG1GC"
-
-# Setup GC
-# export OPTIONS="$OPTIONS -J-XX:+UseZGC"
-
 # Enable ImageMagick v7.x support
 # export OPTIONS="-J-Dim4java.useV7=true $OPTIONS";
-
 
 # Initialize MINIO config
 mc alias set penpot-s3/ http://minio:9000 minioadmin minioadmin -q
@@ -76,24 +59,8 @@ export PENPOT_ASSETS_STORAGE_BACKEND=assets-s3
 export PENPOT_STORAGE_ASSETS_S3_ENDPOINT=http://minio:9000
 export PENPOT_STORAGE_ASSETS_S3_BUCKET=penpot
 
-if [ "$1" = "--watch" ]; then
-    trap "exit" INT TERM ERR
-    trap "kill 0" EXIT
+entrypoint=${1:-app.main};
 
-    echo "Start Watch..."
+set -ex
 
-    clojure $OPTIONS -A:dev -M -m app.main &
-
-    npx nodemon \
-        --watch src \
-        --watch ../common \
-        --ext "clj" \
-        --signal SIGKILL \
-        --exec 'echo "(app.main/stop)\n\r(repl/refresh)\n\r(app.main/start)\n" | nc -N localhost 6062'
-
-    wait;
-
-else
-    set -x
-    clojure $OPTIONS -A:dev -M -m app.main;
-fi
+clojure $OPTIONS -A:dev -M -m $entrypoint;

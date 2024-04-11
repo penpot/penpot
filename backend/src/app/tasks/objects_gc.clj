@@ -210,6 +210,9 @@
                         :project-id (str project-id)
                         :deleted-at (dt/format-instant deleted-at))
 
+                 ;; NOTE: fragments not handled here because they have
+                 ;; cascade.
+
                  ;; And finally, permanently delete the file.
                  (db/delete! conn :file {:id id})
 
@@ -229,7 +232,6 @@
 
                  (inc total))
                0)))
-
 
 (def ^:private sql:get-file-thumbnails
   "SELECT file_id, revn, media_id, deleted_at
