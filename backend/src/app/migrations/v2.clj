@@ -57,8 +57,7 @@
         migrated? (setup/get-prop system :v2-migrated false)]
 
     (when-not migrated?
-      (l/inf :hint "v2 migration started"
-             :files (:processed-files stats))
+      (l/inf :hint "v2 migration started")
       (try
         (binding [feat/*stats* stats]
           (db/tx-run! system migrate-teams))
