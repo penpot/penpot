@@ -47,9 +47,11 @@
         on-paste          (actions/on-paste disable-paste in-viewport? workspace-read-only?)
         on-pointer-down   (mf/use-fn
                            (mf/deps drawing-tool drawing-path?)
-                           (fn [_]
-                             (when drawing-path?
-                               (st/emit! (dwe/clear-edition-mode)))))
+                           (fn [e]
+                             (let [target  (dom/get-target e)
+                                   parent? (dom/get-parent-with-data target "dont-clear-path")]
+                               (when (and drawing-path? (not parent?))
+                                 (st/emit! (dwe/clear-edition-mode))))))
         on-blur           (mf/use-fn #(st/emit! (mse/->BlurEvent)))]
 
     (mf/use-effect

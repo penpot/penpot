@@ -357,7 +357,8 @@
                  (common/finish-path)
                  (dwdc/clear-drawing)))))))
 
-(defn change-edit-mode [mode]
+(defn change-edit-mode
+  [mode]
   (ptk/reify ::change-edit-mode
     ptk/UpdateEvent
     (update [_ state]
