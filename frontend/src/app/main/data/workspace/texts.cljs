@@ -285,11 +285,21 @@
   (let [color-attrs (select-keys node [:fill-color :fill-opacity :fill-color-ref-id :fill-color-ref-file :fill-color-gradient])]
     (cond-> node
       (nil? (:fills node))
-      (assoc :fills (:fills txt/default-text-attrs))
+      (assoc :fills [])
 
-      (and (d/not-empty? color-attrs) (empty? (:fills node)))
+      ;; Migrate old colors and remove the old fromat
+      (d/not-empty? color-attrs)
       (-> (dissoc :fill-color :fill-opacity :fill-color-ref-id :fill-color-ref-file :fill-color-gradient)
-          (assoc :fills [color-attrs])))))
+          (update :fills conj color-attrs))
+
+      ;; We don't have the fills attribute. It's an old text without color
+      ;; so need to be black
+      (and (nil? (:fills node)) (empty? color-attrs))
+      (update :fills conj txt/default-text-attrs)
+
+      ;; Remove duplicates from the fills
+      :always
+      (update :fills (comp vec distinct)))))
 
 (defn migrate-content
   [content]
@@ -323,7 +333,9 @@
 
               update-shape
               (fn [shape]
-                (d/update-when shape :content update-content))]
+                (-> shape
+                    (dissoc :fills)
+                    (d/update-when :content update-content)))]
 
           (rx/of (dch/update-shapes shape-ids update-shape)))))))
 
