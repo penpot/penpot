@@ -24,6 +24,7 @@
    [app.loggers.webhooks :as-alias webhooks]
    [app.metrics :as-alias mtx]
    [app.metrics.definition :as-alias mdef]
+   [app.migrations.v2 :as migrations.v2]
    [app.msgbus :as-alias mbus]
    [app.redis :as-alias rds]
    [app.rpc :as-alias rpc]
@@ -527,6 +528,15 @@
          :worker? (contains? cf/flags :backend-worker)
          :version (:full cf/version)))
 
+(defn start-custom
+  [config]
+  (ig/load-namespaces config)
+  (alter-var-root #'system (fn [sys]
+                             (when sys (ig/halt! sys))
+                             (-> config
+                                 (ig/prep)
+                                 (ig/init)))))
+
 (defn stop
   []
   (alter-var-root #'system (fn [sys]
@@ -573,6 +583,11 @@
         (nrepl/start-server :bind "0.0.0.0" :port 6064 :handler cider-nrepl-handler))
 
       (start)
+
+      (when (contains? cf/flags :v2-migration)
+        (px/sleep 5000)
+        (migrations.v2/migrate app.main/system))
+
       (deref p))
     (catch Throwable cause
       (binding [*out* *err*]

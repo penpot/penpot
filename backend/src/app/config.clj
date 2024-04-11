@@ -101,6 +101,8 @@
 (s/def ::audit-log-archive-uri ::us/string)
 (s/def ::audit-log-http-handler-concurrency ::us/integer)
 
+(s/def ::deletion-delay ::dt/duration)
+
 (s/def ::admins ::us/set-of-valid-emails)
 (s/def ::file-change-snapshot-every ::us/integer)
 (s/def ::file-change-snapshot-timeout ::dt/duration)
@@ -214,6 +216,7 @@
   (s/keys :opt-un [::secret-key
                    ::flags
                    ::admins
+                   ::deletion-delay
                    ::allow-demo-users
                    ::audit-log-archive-uri
                    ::audit-log-http-handler-concurrency
@@ -335,7 +338,8 @@
    :enable-backend-openapi-doc
    :enable-backend-worker
    :enable-secure-session-cookies
-   :enable-email-verification])
+   :enable-email-verification
+   :enable-v2-migration])
 
 (defn- parse-flags
   [config]
@@ -380,7 +384,8 @@
 (defonce ^:dynamic flags (parse-flags config))
 
 (def deletion-delay
-  (dt/duration {:days 7}))
+  (or (c/get config :deletion-delay)
+      (dt/duration {:days 7})))
 
 (defn get
   "A configuration getter. Helps code be more testable."
