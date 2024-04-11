@@ -114,7 +114,7 @@ You will find the following categories:
 <br />
 
 <p align="center">
-  <img src="https://github.com/penpot/penpot/assets/5446186/6ac62220-a16c-46c9-ab21-d24ae357ed03" alt="Communnity" style="width: 65%;">
+  <img src="https://github.com/penpot/penpot/assets/5446186/6ac62220-a16c-46c9-ab21-d24ae357ed03" alt="Community" style="width: 65%;">
 </p>
 <br />
 
