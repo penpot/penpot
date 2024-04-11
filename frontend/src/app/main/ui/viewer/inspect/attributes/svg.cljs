@@ -27,7 +27,7 @@
       [:& copy-button {:data (map->css value)}]]
 
      (for [[attr-key attr-value] value]
-       [:& svg-attr {:attr  attr-key :value attr-value :key (str/join "svg-key-" attr-key)}])]
+       [:& svg-attr {:attr  attr-key :value attr-value :key (str/join "svg-key-" (d/name attr-key))}])]
 
     (let [attr-name (as-> attr $
                       (d/name $)
@@ -45,8 +45,7 @@
   [{:keys [shape]}]
   [:*
    (for [[attr-key attr-value] (:svg-attrs shape)]
-     [:& svg-attr {:attr  attr-key :value attr-value :key (str/join "svg-block-key" attr-key)}])])
-
+     [:& svg-attr {:attr attr-key :value attr-value :key (str/join "svg-block-key-" (d/name attr-key))}])])
 
 (mf/defc svg-panel
   [{:keys [shapes]}]
