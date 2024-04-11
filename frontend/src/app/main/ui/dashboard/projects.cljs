@@ -312,11 +312,13 @@
           :on-menu-close on-menu-close
           :on-import on-import}]
 
-        [:span {:class (stl/css :info)} (str (tr "labels.num-of-files" (i18n/c file-count)))]
+        ;; We group these two spans under a div to avoid having extra space between them.
+        [:div
+         [:span {:class (stl/css :info)} (str (tr "labels.num-of-files" (i18n/c file-count)))]
 
-        (let [time (-> (:modified-at project)
-                       (dt/timeago {:locale locale}))]
-          [:span {:class (stl/css :recent-files-row-title-info)} (str ", " time)])
+         (let [time (-> (:modified-at project)
+                        (dt/timeago {:locale locale}))]
+           [:span {:class (stl/css :recent-files-row-title-info)} (str ", " time)])]
 
         [:div {:class (stl/css-case :project-actions true
                                     :pinned-project (:is-pinned project))}
