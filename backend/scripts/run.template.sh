@@ -23,4 +23,4 @@ export JVM_OPTS="-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogMan
 ENTRYPOINT=${1:-app.main};
 
 set -ex
-exec $JAVA_CMD $JVM_OPTS "$@" -jar penpot.jar -m $ENTRYPOINT
+exec $JAVA_CMD $JVM_OPTS -jar penpot.jar -m $ENTRYPOINT
