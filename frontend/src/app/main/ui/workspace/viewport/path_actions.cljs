@@ -142,7 +142,8 @@
          (fn [_]
            (st/emit! (drp/toggle-snap))))]
 
-    [:div {:class (stl/css :sub-actions)}
+    [:div {:class (stl/css :sub-actions)
+           :data-dont-clear-path true}
      [:div {:class (stl/css :sub-actions-group)}
 
       ;; Draw Mode

@@ -169,10 +169,11 @@
 
 (defn get-parent-with-data
   [^js node name]
-  (loop [current node]
-    (if (or (nil? current) (obj/in? (.-dataset current) name))
-      current
-      (recur (.-parentElement current)))))
+  (let [name (str/camel name)]
+    (loop [current node]
+      (if (or (nil? current) (obj/in? (.-dataset current) name))
+        current
+        (recur (.-parentElement current))))))
 
 (defn get-parent-with-selector
   [^js node selector]

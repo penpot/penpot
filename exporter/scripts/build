@@ -16,6 +16,7 @@ clojure -J-Xms100M -J-Xmx1000M -J-XX:+UseSerialGC -M:dev:shadow-cljs release mai
 rm -rf target/app;
 
 # Copy package*.json files
+cp ../.yarnrc.yml target/;
 cp yarn.lock target/;
 cp package.json target/;
 

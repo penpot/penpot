@@ -333,7 +333,7 @@
             ;; NOTE: Neither get-parent-at nor get-parent-with-selector
             ;; work if the component template changes, so we need to
             ;; seek for an alternate solution. Maybe use-context?
-            scroll-node (dom/get-parent-with-data node "scrollContainer")
+            scroll-node (dom/get-parent-with-data node "scroll-container")
             parent-node (dom/get-parent-at node 2)
             first-child-node (dom/get-first-child parent-node)
 

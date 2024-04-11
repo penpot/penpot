@@ -11,10 +11,7 @@
    [app.common.exceptions :as ex]
    [app.common.uuid :as uuid]
    [app.db :as db]
-   [app.main :as main]
    [app.rpc.commands.auth :as cmd.auth]
-   [app.srepl.components-v2 :refer [migrate-teams!]]
-   [app.util.events :as events]
    [app.util.json :as json]
    [app.util.time :as dt]
    [cuerdas.core :as str]))
@@ -104,39 +101,6 @@
 (defmethod exec-command :derive-password
   [{:keys [password]}]
   (auth/derive-password password))
-
-(defmethod exec-command :migrate-v2
-  [_]
-  (letfn [(on-progress-report [{:keys [elapsed completed errors]}]
-            (println (str/ffmt "-> Progress: completed: %, errors: %, elapsed: %"
-                               completed errors elapsed)))
-
-          (on-progress [{:keys [op name]}]
-            (case op
-              :migrate-team
-              (println (str/ffmt "-> Migrating team: \"%\"" name))
-              :migrate-file
-              (println (str/ffmt "=> Migrating file: \"%\"" name))
-              nil))
-
-          (on-event [[type payload]]
-            (case type
-              :progress-report (on-progress-report payload)
-              :progress        (on-progress payload)
-              :error           (on-error payload)
-              nil))
-
-          (on-error [cause]
-            (println "EE:" (ex-message cause)))]
-
-    (println "The components/v2 migration started...")
-
-    (try
-      (let [result (-> (partial migrate-teams! main/system {:rollback? true})
-                       (events/run-with! on-event))]
-        (println (str/ffmt "Migration process finished (elapsed: %)" (:elapsed result))))
-      (catch Throwable cause
-        (on-error cause)))))
 
 (defmethod exec-command :default
   [{:keys [::cmd]}]

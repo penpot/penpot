@@ -99,7 +99,7 @@
       (= code :invalid-image)
       (binding [l/*context* (request->context request)]
         (let [cause (or parent-cause err)]
-          (l/error :hint "unexpected error on processing image" :cause cause)
+          (l/warn :hint "unexpected error on processing image" :cause cause)
           {::rres/status 400 ::rres/body data}))
 
       :else

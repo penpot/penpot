@@ -15,9 +15,9 @@
    [app.config :as cf]
    [app.db :as db]
    [app.http.client :as http]
-   [app.util.json :as json]
    [app.util.time :as dt]
    [app.worker :as wrk]
+   [clojure.data.json :as json]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]))
@@ -86,11 +86,9 @@
 (declare interpret-exception)
 (declare interpret-response)
 
-(def ^:private json-mapper
-  (json/mapper
-   {:encode-key-fn str/camel
-    :decode-key-fn (comp keyword str/kebab)
-    :pretty true}))
+(def json-write-opts
+  {:key-fn str/camel
+   :indent true})
 
 (defmethod ig/pre-init-spec ::run-webhook-handler [_]
   (s/keys :req [::http/client ::db/pool]))
@@ -134,15 +132,15 @@
             whook (::config props)
 
             body  (case (:mtype whook)
-                    "application/json" (json/encode-str event json-mapper)
+                    "application/json" (json/write-str event json-write-opts)
                     "application/transit+json" (t/encode-str event)
                     "application/x-www-form-urlencoded" (uri/map->query-string event))]
 
-        (l/debug :hint "run webhook"
-                 :event-name (:name event)
-                 :webhook-id (:id whook)
-                 :webhook-uri (:uri whook)
-                 :webhook-mtype (:mtype whook))
+        (l/dbg :hint "run webhook"
+               :event-name (:name event)
+               :webhook-id (:id whook)
+               :webhook-uri (:uri whook)
+               :webhook-mtype (:mtype whook))
 
         (let [req {:uri (:uri whook)
                    :headers {"content-type" (:mtype whook)
@@ -160,8 +158,8 @@
                 (report-delivery! whook req nil err)
                 (update-webhook! whook err)
                 (when (= err "unknown")
-                  (l/error :hint "unknown error on webhook request"
-                           :cause cause))))))))))
+                  (l/err :hint "unknown error on webhook request"
+                         :cause cause))))))))))
 
 (defn interpret-response
   [{:keys [status] :as response}]

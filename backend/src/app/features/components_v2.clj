@@ -53,7 +53,6 @@
    [app.storage.tmp :as tmp]
    [app.svgo :as svgo]
    [app.util.blob :as blob]
-   [app.util.events :as events]
    [app.util.pointer-map :as pmap]
    [app.util.time :as dt]
    [buddy.core.codecs :as bc]
@@ -1196,9 +1195,6 @@
             add-instance-grid
             (fn [fdata frame-id grid assets]
               (reduce (fn [result [component position]]
-                        (events/tap :progress {:op :migrate-component
-                                               :id (:id component)
-                                               :name (:name component)})
                         (add-main-instance result component frame-id (gpt/add position
                                                                               (gpt/point grid-gap grid-gap))))
                       fdata
@@ -1518,9 +1514,6 @@
 
     (->> (d/zip media-group grid)
          (reduce (fn [fdata [mobj position]]
-                   (events/tap :progress {:op :migrate-graphic
-                                          :id (:id mobj)
-                                          :name (:name mobj)})
                    (or (process fdata mobj position) fdata))
                  (assoc-in fdata [:options :components-v2] true)))))
 
@@ -1759,11 +1752,6 @@
                         (let [file (get-file system file-id)
                               file (process-file! system file :validate? validate?)]
 
-                          (events/tap :progress
-                                      {:op :migrate-file
-                                       :name (:name file)
-                                       :id (:id file)})
-
                           (persist-file! system file)))))
 
         (catch Throwable cause
@@ -1791,10 +1779,11 @@
             (some-> *team-stats* (swap! update :processed-files (fnil inc 0)))))))))
 
 (defn migrate-team!
-  [system team-id & {:keys [validate? skip-on-graphic-error? label]}]
+  [system team-id & {:keys [validate? rown skip-on-graphic-error? label]}]
 
   (l/dbg :hint "migrate:team:start"
-         :team-id (dm/str team-id))
+         :team-id (dm/str team-id)
+         :rown rown)
 
   (let [tpoint (dt/tpoint)
         err    (volatile! false)
@@ -1815,11 +1804,6 @@
                                  (conj "components/v2")
                                  (conj "layout/grid")
                                  (conj "styles/v2"))]
-
-                (events/tap :progress
-                            {:op :migrate-team
-                             :name (:name team)
-                             :id id})
 
                 (run! (partial migrate-file system)
                       (get-and-lock-team-files conn id))
@@ -1849,6 +1833,7 @@
 
             (l/dbg :hint "migrate:team:end"
                    :team-id (dm/str team-id)
+                   :rown rown
                    :files files
                    :components components
                    :graphics graphics
