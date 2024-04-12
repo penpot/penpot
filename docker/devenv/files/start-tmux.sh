@@ -6,12 +6,10 @@ cd ~;
 
 source ~/.bashrc
 
-set -e;
-
 echo "[start-tmux.sh] Installing node dependencies"
 pushd ~/penpot/frontend/
 yarn install
-#yarn run playwright install --with-deps chromium
+yarn run playwright install --with-deps chromium
 popd
 pushd ~/penpot/exporter/
 yarn install
