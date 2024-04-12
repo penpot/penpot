@@ -10,19 +10,19 @@
     "url": "https://github.com/penpot/penpot"
   },
   "dependencies": {
-    "archiver": "^6.0.1",
+    "archiver": "^6.0.2",
     "cookies": "^0.9.1",
     "generic-pool": "^3.9.0",
     "inflation": "^2.1.0",
     "ioredis": "^5.3.2",
     "luxon": "^3.4.4",
-    "playwright": "^1.40.1",
+    "playwright": "^1.43.0",
     "raw-body": "^2.5.2",
     "xml-js": "^1.6.11",
     "xregexp": "^5.1.1"
   },
   "devDependencies": {
-    "shadow-cljs": "2.27.4",
+    "shadow-cljs": "2.28.3",
     "source-map-support": "^0.5.21"
   },
   "scripts": {

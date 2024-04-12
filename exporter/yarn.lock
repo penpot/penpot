@@ -135,9 +135,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"archiver@npm:^6.0.1":
-  version: 6.0.1
-  resolution: "archiver@npm:6.0.1"
+"archiver@npm:^6.0.2":
+  version: 6.0.2
+  resolution: "archiver@npm:6.0.2"
   dependencies:
     archiver-utils: "npm:^4.0.1"
     async: "npm:^3.2.4"
@@ -146,7 +146,7 @@ __metadata:
     readdir-glob: "npm:^1.1.2"
     tar-stream: "npm:^3.0.0"
     zip-stream: "npm:^5.0.1"
-  checksum: 54c5a634b39691114e727d4b4f360439fa7cd40b414c9d909606fbfd7048037f7dccefa49337f9ed19b1f5c209e021ce5e1ff9c6b547907257bc71f1af6f8cf3
+  checksum: 23a470d468c01cd40fc13b6bd3dbc6d04c4f7b770785dcc7e1e4af256c3d79c4ffd7f7e0e84ae320437e5b8d0a2117aecfca0586b8c0fbd6edc3e04977c438cc
   languageName: node
   linkType: hard
 
@@ -727,15 +727,15 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "exporter@workspace:."
   dependencies:
-    archiver: "npm:^6.0.1"
+    archiver: "npm:^6.0.2"
     cookies: "npm:^0.9.1"
     generic-pool: "npm:^3.9.0"
     inflation: "npm:^2.1.0"
     ioredis: "npm:^5.3.2"
     luxon: "npm:^3.4.4"
-    playwright: "npm:^1.40.1"
+    playwright: "npm:^1.43.0"
     raw-body: "npm:^2.5.2"
-    shadow-cljs: "npm:2.27.4"
+    shadow-cljs: "npm:2.28.3"
     source-map-support: "npm:^0.5.21"
     xml-js: "npm:^1.6.11"
     xregexp: "npm:^5.1.1"
@@ -1546,27 +1546,27 @@ __metadata:
   languageName: node
   linkType: hard
 
-"playwright-core@npm:1.40.1":
-  version: 1.40.1
-  resolution: "playwright-core@npm:1.40.1"
+"playwright-core@npm:1.43.0":
+  version: 1.43.0
+  resolution: "playwright-core@npm:1.43.0"
   bin:
     playwright-core: cli.js
-  checksum: 56c283012974982313a6ae583b975ee4af76d52059fb9a25d9cc616a11224685ec64682b391910c795d2b12d2ab5c7eec31124722c75c0b1703a76ac9b6fd1c2
+  checksum: 3afdcc79176e0c872b3bb66994ef6288b10819dfb800234b81134a35daffc8100596d65ccff10faa8941a450a259a78f446db570898e53031abba7f542602c6a
   languageName: node
   linkType: hard
 
-"playwright@npm:^1.40.1":
-  version: 1.40.1
-  resolution: "playwright@npm:1.40.1"
+"playwright@npm:^1.43.0":
+  version: 1.43.0
+  resolution: "playwright@npm:1.43.0"
   dependencies:
     fsevents: "npm:2.3.2"
-    playwright-core: "npm:1.40.1"
+    playwright-core: "npm:1.43.0"
   dependenciesMeta:
     fsevents:
       optional: true
   bin:
     playwright: cli.js
-  checksum: 5dae164d1f69162da8d7eee52da651296fb885c76a8b36049f216975c751a0a826ff05795a1c0902dc0bd193fe606ae17d5def655f4cbcccb8d8b71afb74b950
+  checksum: 82506d3937416439d42ed7940e03b62225651a049792b7c122cd1fb4318674e5789dbcd38e31c8e2f41d99e3b7dc9aa0898bfdd26dff5456eb3f89a166252bd8
   languageName: node
   linkType: hard
 
@@ -1842,9 +1842,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"shadow-cljs@npm:2.27.4":
-  version: 2.27.4
-  resolution: "shadow-cljs@npm:2.27.4"
+"shadow-cljs@npm:2.28.3":
+  version: 2.28.3
+  resolution: "shadow-cljs@npm:2.28.3"
   dependencies:
     node-libs-browser: "npm:^2.2.1"
     readline-sync: "npm:^1.4.7"
@@ -1854,7 +1854,7 @@ __metadata:
     ws: "npm:^7.4.6"
   bin:
     shadow-cljs: cli/runner.js
-  checksum: bae23e71df9c2b2979259a0cde8747c923ee295f58ab4637c9d6b103d82542b40ef39172d4be2dbb94af2e6458a177d1ec96c1eb1e73b1d8f3a4ddb5eaaba7d4
+  checksum: 623b536a0d95d7696dd465c09ab3cb5d921c867a577a33463ad58dbc40f51f5d0424ba2791a8803f33a94f5c877198de91c3c7f7616618a6b4ae90e80d5d213e
   languageName: node
   linkType: hard
 
