@@ -137,10 +137,11 @@
             width          (dm/get-prop bounds :width)
             height         (dm/get-prop bounds :height)
 
-            thumbnail-uri* (mf/with-memo [file-id page-id frame-id]
-                             (let [object-id (thc/fmt-object-id file-id page-id frame-id "frame")]
-                               (refs/workspace-thumbnail-by-id object-id)))
-            thumbnail-uri  (mf/deref thumbnail-uri*)
+            ;; thumbnail-uri* (mf/with-memo [file-id page-id frame-id]
+            ;;                (let [object-id (thc/fmt-object-id file-id page-id frame-id "frame"7)]
+            ;;                  (refs/workspace-thumbnail-by-id object-id)))
+            ;; thumbnail-uri  (mf/deref thumbnail-uri*)
+            thumbnail-uri  nil
 
             modifiers-ref  (mf/with-memo [frame-id]
                              (refs/workspace-modifiers-by-frame-id frame-id))

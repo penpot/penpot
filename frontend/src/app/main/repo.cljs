@@ -54,7 +54,7 @@
    :get-raw-file {:rename-to :get-file :raw-transit? true}
 
    :create-file-object-thumbnail
-   {:query-params [:file-id :object-id :tag]
+   {:query-params [:file-id :object-id :tag :requester]
     :form-data? true}
 
    :create-file-thumbnail
