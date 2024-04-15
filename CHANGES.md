@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.0.1
+
+### :bug: Bugs fixed
+
+- Fix different issues related to components v2 migrations including [Github #4443](https://github.com/penpot/penpot/issues/4443)
+
 ## 2.0.0 - I Just Can't Get Enough
 
 ### :rocket: Epics and highlights
