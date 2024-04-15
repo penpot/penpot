@@ -243,12 +243,13 @@
     ;; NOTE: we use the climit here in a dynamic invocation because we
     ;; don't want saturate the process-image limit with IO (download
     ;; of external image)
+
     (-> cfg
         (assoc ::climit/id [[:process-image/by-profile (:profile-id params)]
                             [:process-image/global]])
-        (assoc ::climit/profile-id (:profile-id params))
         (assoc ::climit/label "create-file-media-object-from-url")
-        (climit/invoke! db/run! cfg create-file-media-object params))))
+        (climit/invoke! #(db/run! %1 create-file-media-object %2) params))))
+
 
 ;; --- Clone File Media object (Upload and create from url)
 
