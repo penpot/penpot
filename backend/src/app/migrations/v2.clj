@@ -18,7 +18,7 @@
           row_number() OVER (ORDER BY created_at DESC) AS rown
     FROM team
    WHERE deleted_at IS NULL
-     AND (features <@ '{components/v2}' OR features IS NULL)
+     AND (not (features @> '{components/v2}') OR features IS NULL)
    ORDER BY created_at DESC")
 
 (defn- get-teams
@@ -37,7 +37,7 @@
   ;; Run teams migration
   (run! (fn [{:keys [id rown]}]
           (try
-            (-> (assoc system ::db/rollback true)
+            (-> (assoc system ::db/rollback false)
                 (feat/migrate-team! id
                                     :rown rown
                                     :label "v2-migration"
