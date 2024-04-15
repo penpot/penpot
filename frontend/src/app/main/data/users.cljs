@@ -163,7 +163,7 @@
     (ptk/reify ::logged-in
       ev/Event
       (-data [_]
-        {::ev/name "signing"
+        {::ev/name "signin"
          ::ev/type "identify"
          :email (:email profile)
          :auth-backend (:auth-backend profile)

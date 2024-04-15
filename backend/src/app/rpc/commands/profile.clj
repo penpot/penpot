@@ -233,7 +233,7 @@
                          :file-mtype (:mtype file)}}))))
 
 (defn- generate-thumbnail!
-  [file]
+  [_ file]
   (let [input   (media/run {:cmd :info :input file})
         thumb   (media/run {:cmd :profile-thumbnail
                             :format :jpeg
@@ -250,14 +250,14 @@
      :content-type (:mtype thumb)}))
 
 (defn upload-photo
-  [{:keys [::sto/storage ::wrk/executor] :as cfg} {:keys [file]}]
+  [{:keys [::sto/storage ::wrk/executor] :as cfg} {:keys [file] :as params}]
   (let [params (-> cfg
-                   (assoc ::climit/id :process-image/global)
+                   (assoc ::climit/id [[:process-image/by-profile (:profile-id params)]
+                                       [:process-image/global]])
                    (assoc ::climit/label "upload-photo")
                    (assoc ::climit/executor executor)
                    (climit/invoke! generate-thumbnail! file))]
     (sto/put-object! storage params)))
-
 
 ;; --- MUTATION: Request Email Change
 
