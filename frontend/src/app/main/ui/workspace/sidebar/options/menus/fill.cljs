@@ -69,33 +69,34 @@
 
         on-add
         (mf/use-fn
-         (mf/deps ids)
+         (mf/deps ids fills)
          (fn [_]
            (st/emit! (dc/add-fill ids {:color default-color
                                        :opacity 1}))
 
-           (when (not (some? (seq fills))) (open-content))))
+           (when (or (= :multiple fills)
+                     (not (some? (seq fills))))
+             (open-content))))
 
         on-change
-        (mf/use-fn
-         (mf/deps ids)
-         (fn [index]
-           (fn [color]
-             (st/emit! (dc/change-fill ids color index)))))
+        (fn [index]
+          (fn [color]
+            (st/emit! (dc/change-fill ids color index))))
 
         on-reorder
-        (mf/use-fn
-         (mf/deps ids)
-         (fn [new-index]
-           (fn [index]
-             (st/emit! (dc/reorder-fills ids index new-index)))))
+        (fn [new-index]
+          (fn [index]
+            (st/emit! (dc/reorder-fills ids index new-index))))
 
         on-remove
         (fn [index]
           (fn []
             (st/emit! (dc/remove-fill ids {:color default-color
                                            :opacity 1} index))
-            (when (= 1 (count (seq fills))) (close-content))))
+            (when (or (= :multiple fills)
+                      (= 1 (count (seq fills))))
+              (close-content))))
+
         on-remove-all
         (fn [_]
           (st/emit! (dc/remove-all-fills ids {:color clr/black

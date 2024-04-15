@@ -21,6 +21,10 @@
     flex-direction: column;
   }
 
+  .public-DraftStyleDefault-block {
+    white-space: pre;
+  }
+
   &.align-top {
     .DraftEditor-root {
       justify-content: flex-start;
