@@ -49,7 +49,10 @@
         new-theme (get-in new-val [:profile :theme])]
     (if (identical? old-theme new-theme)
       ::not-changed
-      new-theme)))
+      (if (= new-theme "default")
+        "dark"
+        new-theme))))
+
 
 (defmethod handle-state-change :default
   [_ _ _]
