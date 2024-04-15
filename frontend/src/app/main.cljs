@@ -13,6 +13,7 @@
    [app.main.data.events :as ev]
    [app.main.data.users :as du]
    [app.main.data.websocket :as ws]
+   [app.main.data.workspace.thumbnails :as th]
    [app.main.errors]
    [app.main.features :as feat]
    [app.main.rasterizer :as thr]
@@ -112,6 +113,7 @@
   (i18n/init! cf/translations)
   (theme/init! cf/themes)
   (cur/init-styles)
+  (th/init!)
   (thr/init!)
   (init-ui)
   (st/emit! (initialize)))
@@ -126,6 +128,7 @@
      (mf/unmount! modal-root)
      (set! app-root (mf/create-root (dom/get-element "app")))
      (set! modal-root (mf/create-root (dom/get-element "modal"))))
+   (th/init!)
    (st/emit! (ev/initialize))
    (init-ui)))
 

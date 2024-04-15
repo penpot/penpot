@@ -19,6 +19,7 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.http :as http]
+   [app.util.keyed-queue :as kq]
    [app.util.queue :as q]
    [app.util.time :as tp]
    [app.util.timers :as tm]
@@ -30,23 +31,42 @@
 
 (declare update-thumbnail)
 
+(def ^:dynamic *queues* (volatile! nil))
+
 (defn resolve-request
   "Resolves the request to generate a thumbnail for the given ids."
   [item]
   (let [file-id (unchecked-get item "file-id")
         page-id  (unchecked-get item "page-id")
         shape-id (unchecked-get item "shape-id")
-        tag (unchecked-get item "tag")]
-    (st/emit! (update-thumbnail file-id page-id shape-id tag))))
+        tag (unchecked-get item "tag")
+        requester (unchecked-get item "requester")]
+    (st/emit! (update-thumbnail file-id page-id shape-id tag requester))))
 
-;; Defines the thumbnail queue
-(defonce queue
-  (q/create resolve-request (/ 1000 30)))
+(defn upload-thumbnail
+  "Uploads a thumbnail to the back"
+  [params]
+  (->> (rp/cmd! :create-file-object-thumbnail params)
+       (rx/subs! (fn [res]
+                   (l/dbg :hint "thumbnail uploaded" :res res)))))
+
+(defn init!
+  []
+  (let [http-queue (kq/create upload-thumbnail (* 60 1000)) ;; send every 60 seconds
+        blob-queue (q/create resolve-request (/ 1000 30))] ;; resolve every 0.33 seconds
+    (vreset! *queues* {:http-queue http-queue
+                       :blob-queue blob-queue})))
 
 (defn create-request
   "Creates a request to generate a thumbnail for the given ids."
-  [file-id page-id shape-id tag]
-  #js {:file-id file-id :page-id page-id :shape-id shape-id :tag tag})
+  [file-id page-id shape-id tag requester]
+  #js {:file-id file-id :page-id page-id :shape-id shape-id :tag tag :requester requester})
+
+(defn find-post
+  [file-id object-id tag item]
+  (and (= file-id (unchecked-get item "file-id"))
+       (= object-id (unchecked-get item "object-id"))
+       (= tag (unchecked-get item "tag"))))
 
 (defn find-request
   "Returns true if the given item matches the given ids."
@@ -64,10 +84,10 @@
    (ptk/reify ::request-thumbnail
      ptk/EffectEvent
      (effect [_ _ _]
-       (l/dbg :hint "request thumbnail" :requester requester :file-id file-id :page-id page-id :shape-id shape-id :tag tag)
+       (l/dbg :hint "request thumbnail" :file-id file-id :page-id page-id :shape-id shape-id :tag tag :requester requester)
        (q/enqueue-unique
-        queue
-        (create-request file-id page-id shape-id tag)
+        (:blob-queue @*queues*)
+        (create-request file-id page-id shape-id tag requester)
         (partial find-request file-id page-id shape-id tag))))))
 
 ;; This function first renders the HTML calling `render/render-frame` that
@@ -76,7 +96,6 @@
 (defn get-thumbnail
   "Returns the thumbnail for the given ids"
   [state file-id page-id frame-id tag & {:keys [object-id]}]
-
   (let [object-id (or object-id (thc/fmt-object-id file-id page-id frame-id tag))
         tp        (tp/tpoint-ms)
         objects   (wsh/lookup-objects state file-id page-id)
@@ -142,7 +161,7 @@
 (defn update-thumbnail
   "Updates the thumbnail information for the given `id`"
 
-  [file-id page-id frame-id tag]
+  [file-id page-id frame-id tag requester]
   (let [object-id (thc/fmt-object-id file-id page-id frame-id tag)]
     (ptk/reify ::update-thumbnail
       cljs.core/IDeref
@@ -158,15 +177,16 @@
                            (rx/of (assoc-thumbnail object-id uri))
                            (->> (http/send! {:uri uri :response-type :blob :method :get})
                                 (rx/map :body)
-                                (rx/mapcat (fn [blob]
-                                             ;; Send the data to backend
-                                             (let [params {:file-id file-id
-                                                           :object-id object-id
-                                                           :media blob
-                                                           :tag (or tag "frame")}]
-                                               (rp/cmd! :create-file-object-thumbnail params))))
-                                (rx/catch rx/empty)
-                                (rx/ignore)))))
+                                (rx/map
+                                 (fn [blob]
+                                   (kq/enqueue
+                                    (:http-queue @*queues*)
+                                    object-id
+                                    {:file-id file-id
+                                     :object-id object-id
+                                     :media blob
+                                     :tag (or tag "frame")
+                                     :requester requester})))))))
              (rx/catch (fn [cause]
                          (.error js/console cause)
                          (rx/empty)))
