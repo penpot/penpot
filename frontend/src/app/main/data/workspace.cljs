@@ -1711,8 +1711,14 @@
           (process-entry [[type data]]
             (case type
               :text
-              (if (str/empty? data)
+              (cond
+                (str/empty? data)
                 (rx/empty)
+
+                (re-find #"<svg\s" data)
+                (rx/of (paste-svg-text data))
+
+                :else
                 (rx/of (paste-text data)))
 
               :transit
@@ -1757,8 +1763,7 @@
                 text-data    (some-> pdata wapi/extract-text)
                 transit-data (ex/ignoring (some-> text-data t/decode-str))]
             (cond
-              (and (string? text-data)
-                   (str/includes? text-data "<svg "))
+              (and (string? text-data) (re-find #"<svg\s" text-data))
               (rx/of (paste-svg-text text-data))
 
               (seq image-data)
