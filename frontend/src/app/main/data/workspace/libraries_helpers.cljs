@@ -1491,9 +1491,22 @@
                                                  container
                                                  {:type :reg-objects
                                                   :shapes all-parents})]))))
-          (let [roperation {:type :set
+          (let [;; position-data is a special case because can be affected by :geometry-group and :content-group
+                ;; so, if the position-data changes but the geometry is touched we need to reset the position-data
+                ;; so it's calculated again
+                reset-pos-data?
+                (and (cfh/text-shape? origin-shape)
+                     (= attr :position-data)
+                     (not= (get origin-shape attr) (get dest-shape attr))
+                     (touched :geometry-group))
+
+                roperation {:type :set
                             :attr attr
-                            :val (get origin-shape attr)
+                            :val (cond
+                                   ;; If position data changes and the geometry group is touched
+                                   ;; we need to put to nil so we can regenerate it
+                                   reset-pos-data? nil
+                                   :else (get origin-shape attr))
                             :ignore-touched true}
                 uoperation {:type :set
                             :attr attr

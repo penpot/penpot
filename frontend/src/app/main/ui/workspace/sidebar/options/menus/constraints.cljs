@@ -181,14 +181,14 @@
              [:span {:class (stl/css :resalted-area)}]]]
            [:div {:class (stl/css :constraints-center)}
             [:button {:class (stl/css-case :constraint-btn true
-                                           :active (= constraints-h :center))
-                      :data-value "centerh"
+                                           :active (= constraints-v :center))
+                      :data-value "centerv"
                       :on-click on-constraint-button-clicked}
              [:span {:class (stl/css :resalted-area)}]]
             [:button {:class (stl/css-case :constraint-btn-special true
                                            :constraint-btn-rotated true
-                                           :active (= constraints-v :center))
-                      :data-value "centerv"
+                                           :active (= constraints-h :center))
+                      :data-value "centerh"
                       :on-click on-constraint-button-clicked}
              [:span {:class (stl/css :resalted-area)}]]]
            [:div {:class (stl/css :constraints-right)}
