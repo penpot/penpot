@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2.0.2
+
+### :sparkles: Enhancements
+
+- Fix locking contention on cron subsystem (causes backend start blocking)
+- Fix locking contention on file object thumbails backend RPC calls
+
+
 ## 2.0.1
 
 ### :bug: Bugs fixed
