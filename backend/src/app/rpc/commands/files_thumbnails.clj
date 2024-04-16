@@ -228,51 +228,52 @@
 ;; MUTATION COMMANDS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; MUTATION COMMAND: create-file-object-thumbnail
+(def sql:get-file-object-thumbnail
+  "SELECT * FROM file_tagged_object_thumbnail
+    WHERE file_id = ? AND object_id = ? AND tag = ?
+      FOR UPDATE")
 
-(defn- create-file-object-thumbnail!
-  [{:keys [::db/conn ::sto/storage]} file-id object-id media tag]
+(def sql:create-file-object-thumbnail
+  "INSERT INTO file_tagged_object_thumbnail (file_id, object_id, tag, media_id)
+   VALUES (?, ?, ?, ?)
+       ON CONFLICT (file_id, object_id, tag)
+       DO UPDATE SET updated_at=?, media_id=?, deleted_at=null
+   RETURNING *")
 
-  (let [thumb (db/get* conn :file-tagged-object-thumbnail
-                       {:file-id file-id
-                        :object-id object-id
-                        :tag tag}
-                       {::db/remove-deleted false
-                        ::sql/for-update true})
-
-        path  (:path media)
+(defn- persist-thumbnail!
+  [storage media created-at]
+  (let [path  (:path media)
         mtype (:mtype media)
         hash  (sto/calculate-hash path)
         data  (-> (sto/content path)
-                  (sto/wrap-with-hash hash))
-        tnow  (dt/now)
+                  (sto/wrap-with-hash hash))]
 
-        media (sto/put-object! storage
-                               {::sto/content data
-                                ::sto/deduplicate? true
-                                ::sto/touched-at tnow
-                                :content-type mtype
-                                :bucket "file-object-thumbnail"})]
+    (sto/put-object! storage
+                     {::sto/content data
+                      ::sto/deduplicate? true
+                      ::sto/touched-at created-at
+                      :content-type mtype
+                      :bucket "file-object-thumbnail"})))
 
-    (if (some? thumb)
-      (do
-        ;; We mark the old media id as touched if it does not matches
-        (when (not= (:id media) (:media-id thumb))
-          (sto/touch-object! storage (:media-id thumb)))
-        (db/update! conn :file-tagged-object-thumbnail
-                    {:media-id (:id media)
-                     :deleted-at nil
-                     :updated-at tnow}
-                    {:file-id file-id
-                     :object-id object-id
-                     :tag tag}))
-      (db/insert! conn :file-tagged-object-thumbnail
-                  {:file-id file-id
-                   :object-id object-id
-                   :created-at tnow
-                   :updated-at tnow
-                   :tag tag
-                   :media-id (:id media)}))))
+
+
+(defn- create-file-object-thumbnail!
+  [{:keys [::sto/storage] :as cfg} file-id object-id media tag]
+  (let [tsnow     (dt/now)
+        media     (persist-thumbnail! storage media tsnow)
+        [th1 th2] (db/tx-run! cfg (fn [{:keys [::db/conn]}]
+                                    (let [th1 (db/exec-one! conn [sql:get-file-object-thumbnail file-id object-id tag])
+                                          th2 (db/exec-one! conn [sql:create-file-object-thumbnail
+                                                                  file-id object-id tag (:id media)
+                                                                  tsnow (:id media)])]
+                                      [th1 th2])))]
+
+    (when (and (some? th1)
+               (not= (:media-id th1)
+                     (:media-id th2)))
+      (sto/touch-object! storage (:media-id th1)))
+
+    th2))
 
 (def ^:private
   schema:create-file-object-thumbnail
@@ -296,16 +297,10 @@
   (media/validate-media-type! media)
   (media/validate-media-size! media)
 
-  (db/tx-run! cfg
-              (fn [{:keys [::db/conn] :as cfg}]
-                (files/check-edition-permissions! conn profile-id file-id)
-                (when-not (db/read-only? conn)
-                  (let [cfg (-> cfg
-                                (update ::sto/storage media/configure-assets-storage)
-                                (assoc ::rtry/when rtry/conflict-exception?)
-                                (assoc ::rtry/max-retries 5)
-                                (assoc ::rtry/label "create-file-object-thumbnail"))]
-                    (create-file-object-thumbnail! cfg file-id object-id media (or tag "frame")))))))
+  (db/run! cfg files/check-edition-permissions! profile-id file-id)
+
+  (let [cfg (update cfg ::sto/storage media/configure-assets-storage)]
+    (create-file-object-thumbnail! cfg file-id object-id media (or tag "frame"))))
 
 ;; --- MUTATION COMMAND: delete-file-object-thumbnail
 
