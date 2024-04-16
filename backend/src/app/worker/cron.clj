@@ -92,7 +92,7 @@
   (let [ts (ms-until-valid cron)
         ft (px/schedule! ts (partial execute-cron-task cfg task))]
 
-    (l/dbg :hint "schedule task" :id id
+    (l/dbg :hint "schedule" :id id
            :ts (dt/format-duration ts)
            :at (dt/format-instant (dt/in-future ts)))
 
