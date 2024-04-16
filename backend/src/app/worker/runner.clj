@@ -139,7 +139,7 @@
 
                 :else
                 (try
-                  (l/trc :hint "start task"
+                  (l/trc :hint "start"
                          :name (:name task)
                          :task-id (str task-id)
                          :queue queue
@@ -149,7 +149,7 @@
                         result  (handle-task task)
                         elapsed (dt/format-duration (tpoint))]
 
-                    (l/trc :hint "end task"
+                    (l/trc :hint "end"
                            :name (:name task)
                            :task-id (str task-id)
                            :queue queue
