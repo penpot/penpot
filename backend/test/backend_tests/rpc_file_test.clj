@@ -1158,7 +1158,7 @@
       ;; check that the unknown frame thumbnail is deleted
       (let [rows (th/db-query :file-tagged-object-thumbnail {:file-id (:id file)})]
         (t/is (= 2 (count rows)))
-        (t/is (= 1 (count (remove (comp some? :deleted-at) rows)))))
+        (t/is (= 1 (count (remove :deleted-at rows)))))
 
       (let [res (th/run-task! :objects-gc {:min-age 0})]
         (t/is (= 3 (:processed res))))
