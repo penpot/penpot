@@ -277,8 +277,6 @@
       (t/is (thrown? org.postgresql.util.PSQLException
                      (th/db-delete! :storage-object {:id (:media-id row1)}))))))
 
-
-
 (t/deftest get-file-object-thumbnail
   (let [storage (::sto/storage th/*system*)
         profile (th/create-profile* 1)
@@ -317,3 +315,44 @@
 
       (let [result (:result out)]
         (t/is (contains? result "test-key-2"))))))
+
+(t/deftest create-file-object-thumbnail
+  (th/db-delete! :task {:name "object-update"})
+  (let [storage (::sto/storage th/*system*)
+        profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        data    {::th/type :create-file-object-thumbnail
+                 ::rpc/profile-id (:id profile)
+                 :file-id (:id file)
+                 :object-id "test-key-2"
+                 :media {:filename "sample.jpg"
+                         :mtype "image/jpeg"}}]
+
+    (let [data (update data :media
+                       (fn [media]
+                         (-> media
+                             (assoc :path (th/tempfile "backend_tests/test_files/sample2.jpg"))
+                             (assoc :size 7923))))
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (map? (:result out))))
+
+    (let [data (update data :media
+                       (fn [media]
+                         (-> media
+                             (assoc :path (th/tempfile "backend_tests/test_files/sample.jpg"))
+                             (assoc :size 312043))))
+          out  (th/command! data)]
+      (t/is (nil? (:error out)))
+      (t/is (map? (:result out))))
+
+    (let [[row1 :as rows]
+          (->> (th/db-query :task {:name "object-update"})
+               (map #(update % :props db/decode-transit-pgobject)))]
+
+      ;; (app.common.pprint/pprint rows)
+      (t/is (= 1 (count rows)))
+      (t/is (> (inst-ms (dt/diff (:created-at row1) (:scheduled-at row1)))
+               (inst-ms (dt/duration "4m")))))))

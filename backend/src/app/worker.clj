@@ -119,11 +119,13 @@
                         :next.jdbc/update-count))]
     (l/trc :hint "submit task"
            :name task
+           :task-id (str id)
            :queue queue
            :label label
            :dedupe (boolean dedupe)
-           :deleted (or deleted 0)
-           :in (dt/format-duration duration))
+           :delay (dt/format-duration duration)
+           :replace (or deleted 0))
+
 
     (db/exec-one! conn [sql:insert-new-task id task props queue
                         label priority max-retries interval])
