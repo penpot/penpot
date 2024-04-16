@@ -253,7 +253,7 @@
 
   (export [_]
     (->> (export-file file)
-         (rx/subs
+         (rx/subs!
           (fn [value]
             (when  (not (contains? value :type))
               (let [[file export-blob] value]
