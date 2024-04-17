@@ -54,9 +54,10 @@
          (let [props (.-props tab)
                id    (.-id props)
                title (.-title props)
-               sid   (d/name id)]
+               sid   (d/name id)
+               tooltip (if (string? title) title nil)]
            [:div {:key (str/concat "tab-" sid)
-                  :title title
+                  :title tooltip
                   :data-id sid
                   :on-click on-click
                   :class  (stl/css-case
