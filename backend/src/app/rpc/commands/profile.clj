@@ -46,6 +46,10 @@
   (let [email (str/lower email)
         email (if (str/starts-with? email "mailto:")
                 (subs email 7)
+                email)
+        email (if (or (str/starts-with? email "<")
+                      (str/ends-with? email ">"))
+                (str/trim email "<>")
                 email)]
     email))
 

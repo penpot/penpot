@@ -27,6 +27,14 @@
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
 
+
+(t/deftest clean-email
+  (t/is "foo@example.com" (profile/clean-email "mailto:foo@example.com"))
+  (t/is "foo@example.com" (profile/clean-email "mailto:<foo@example.com>"))
+  (t/is "foo@example.com" (profile/clean-email "<foo@example.com>"))
+  (t/is "foo@example.com" (profile/clean-email "foo@example.com>"))
+  (t/is "foo@example.com" (profile/clean-email "<foo@example.com")))
+
 ;; Test with wrong credentials
 (t/deftest profile-login-failed-1
   (let [profile (th/create-profile* 1)

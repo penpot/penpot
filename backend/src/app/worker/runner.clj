@@ -139,7 +139,7 @@
 
                 :else
                 (try
-                  (l/trc :hint "start"
+                  (l/dbg :hint "start"
                          :name (:name task)
                          :task-id (str task-id)
                          :queue queue
@@ -149,7 +149,7 @@
                         result  (handle-task task)
                         elapsed (dt/format-duration (tpoint))]
 
-                    (l/trc :hint "end"
+                    (l/dbg :hint "end"
                            :name (:name task)
                            :task-id (str task-id)
                            :queue queue
@@ -228,9 +228,9 @@
             (recur))))
 
       (catch InterruptedException _
-        (l/debug :hint "interrupted"
-                 :id id
-                 :queue queue))
+        (l/dbg :hint "interrupted"
+               :id id
+               :queue queue))
       (catch Throwable cause
         (l/err :hint "unexpected exception"
                :id id
