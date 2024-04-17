@@ -38,6 +38,11 @@
         team    (-> (db/get conn :team {:id (:team-id project)})
                     (teams/decode-row))
 
+        members (into #{} (->> (teams/get-team-members conn (:team-id project))
+                               (map :id)))
+
+        perms   (assoc perms :in-team (contains? members profile-id))
+
         _       (-> (cfeat/get-team-enabled-features cf/flags team)
                     (cfeat/check-client-features! (:features params))
                     (cfeat/check-file-features! (:features file)))

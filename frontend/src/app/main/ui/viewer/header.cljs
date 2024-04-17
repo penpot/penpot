@@ -180,7 +180,7 @@
        :on-zoom-fit  handle-zoom-fit
        :on-fullscreen toggle-fullscreen}]
 
-     (when (:can-edit permissions)
+     (when (:in-team permissions)
        [:span {:on-click go-to-workspace
                :class (stl/css :edit-btn)}
         i/curve])
@@ -191,7 +191,9 @@
              :on-click toggle-fullscreen}
       i/expand]
 
-     (when (:is-admin permissions)
+     (when (and
+            (:in-team permissions)
+            (:is-admin permissions))
        [:button {:on-click open-share-dialog
                  :class (stl/css :share-btn)}
         (tr "labels.share")])
@@ -301,8 +303,8 @@
       ;; If the user doesn't have permission we disable the link
       [:a {:class (stl/css :home-link)
            :on-click go-to-dashboard
-           :style {:cursor (when-not (:can-edit permissions) "auto")
-                   :pointer-events (when-not (:can-edit permissions) "none")}}
+           :style {:cursor (when-not (:in-team permissions) "auto")
+                   :pointer-events (when-not (:in-team permissions) "none")}}
        [:span {:class (stl/css :logo-icon)}
         i/logo-icon]]
 
@@ -321,7 +323,7 @@
                 :title (tr "viewer.header.interactions-section" (sc/get-tooltip :open-interactions))}
        i/play]
 
-      (when (or (:can-edit permissions)
+      (when (or (:in-team permissions)
                 (= (:who-comment permissions) "all"))
         [:button {:on-click navigate
                   :data-value "comments"
