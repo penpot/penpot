@@ -28,6 +28,8 @@
 ### :boom: Breaking changes & Deprecations
 
 - New strokes default to inside border [Taiga #6847](https://tree.taiga.io/project/penpot/issue/6847)
+- Change default z ordering on layers in flex layout. The previous behavior was inconsistent with how HTML works and we changed it to be more consistent. Previous layers that overlapped could be hidden, the fastest way to fix this is changing the z-index property but a better way is to change the order of your layers.
+
 
 ### :heart: Community contributions (Thank you!)
 - New Hausa, Yoruba and Igbo translations and  update translation files (by All For Tech Empowerment Foundation) [Taiga #6950](https://tree.taiga.io/project/penpot/us/6950), [Taiga #6534](https://tree.taiga.io/project/penpot/us/6534)
