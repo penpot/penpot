@@ -306,3 +306,23 @@
                                          :operations
                                          [{:type :set-touched
                                            :touched (:touched dest-shape)}]})))))))
+
+(defn generate-rename-component
+  "Generate the changes for rename the component with the given id, in the current file library."
+  [changes id new-name library-data components-v2]
+  (let [[path name]   (cfh/parse-path-name new-name)
+        update-fn
+        (fn [component]
+          (cond-> component
+            :always
+            (assoc :path path
+                   :name name)
+
+            (not components-v2)
+            (update :objects
+                            ;; Give the same name to the root shape
+                    #(assoc-in % [id :name] name))))]
+
+    (-> changes
+        (pcb/with-library-data library-data)
+        (pcb/update-component id update-fn))))
