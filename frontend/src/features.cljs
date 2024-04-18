@@ -23,3 +23,8 @@
 
 (defn ^:export get-team-enabled []
   (clj->js (features/get-team-enabled-features @st/state)))
+
+(defn ^:export plugins []
+  (tm/schedule-on-idle #(st/emit! (features/toggle-feature "plugins/runtime")))
+  nil)
+

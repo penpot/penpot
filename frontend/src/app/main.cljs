@@ -25,7 +25,7 @@
    [app.main.ui.modal :refer [modal]]
    [app.main.ui.routes :as rt]
    [app.main.worker :as worker]
-   [app.plugins.api]
+   [app.plugins :as plugins]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n]
    [app.util.theme :as theme]
@@ -105,7 +105,8 @@
             (rx/map deref)
             (rx/filter du/is-authenticated?)
             (rx/take 1)
-            (rx/map #(ws/initialize)))))))
+            (rx/map #(ws/initialize))
+            (rx/tap #(plugins/init!)))))))
 
 (defn ^:export init
   []
