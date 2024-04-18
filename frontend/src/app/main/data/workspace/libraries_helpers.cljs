@@ -26,8 +26,7 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.types.typography :as cty]
    [app.main.data.workspace.state-helpers :as wsh]
-   [cljs.spec.alpha :as s]
-   [clojure.set :as set]))
+   [cljs.spec.alpha :as s]))
 
 ;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
 (log/set-level! :warn)
@@ -48,7 +47,6 @@
 (declare add-shape-to-main)
 (declare remove-shape)
 (declare move-shape)
-(declare change-touched)
 (declare change-remote-synced)
 (declare update-attrs)
 (declare update-grid-main-attrs)
@@ -56,18 +54,12 @@
 (declare update-flex-child-main-attrs)
 (declare update-flex-child-copy-attrs)
 (declare reposition-shape)
-(declare make-change)
 
 (defn pretty-file
   [file-id state]
   (if (= file-id (:current-file-id state))
     "<local>"
     (str "<" (get-in state [:workspace-libraries file-id :name]) ">")))
-
-(defn pretty-uuid
-  [uuid]
-  (let [uuid-str (str uuid)]
-    (subs uuid-str (- (count uuid-str) 6))))
 
 ;; ---- Components and instances creation ----
 
@@ -307,7 +299,7 @@
         new-content (txt/transform-nodes update-node old-content)
 
         redo-change
-        (make-change
+        (cflh/make-change
          container
          {:type :mod-obj
           :id (:id shape)
@@ -319,7 +311,7 @@
                         :val nil}]})
 
         undo-change
-        (make-change
+        (cflh/make-change
          container
          {:type :mod-obj
           :id (:id shape)
@@ -516,7 +508,7 @@
 (defn- generate-sync-shape-direct-recursive
   [changes container shape-inst component library file libraries shape-main root-inst root-main reset? initial-root? redirect-shaperef components-v2]
   (log/debug :msg "Sync shape direct recursive"
-             :shape-inst (str (:name shape-inst) " " (pretty-uuid (:id shape-inst)))
+             :shape-inst (str (:name shape-inst) " " (cflh/pretty-uuid (:id shape-inst)))
              :component (:name component))
 
   (if (nil? shape-main)
@@ -553,10 +545,10 @@
                                             omit-touched?)
 
                     reset?
-                    (change-touched shape-inst
-                                    shape-main
-                                    container
-                                    {:reset-touched? true})
+                    (cflh/change-touched shape-inst
+                                         shape-main
+                                         container
+                                         {:reset-touched? true})
 
                     clear-remote-synced?
                     (change-remote-synced shape-inst container nil)
@@ -574,7 +566,7 @@
 
           only-inst (fn [changes child-inst]
                       (log/trace :msg "Only inst"
-                                 :child-inst (str (:name child-inst) " " (pretty-uuid (:id child-inst))))
+                                 :child-inst (str (:name child-inst) " " (cflh/pretty-uuid (:id child-inst))))
                       (if-not (and omit-touched?
                                    (contains? (:touched shape-inst)
                                               :shapes-group))
@@ -586,7 +578,7 @@
 
           only-main (fn [changes child-main]
                       (log/trace :msg "Only main"
-                                 :child-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
+                                 :child-main (str (:name child-main) " " (cflh/pretty-uuid (:id child-main))))
                       (if-not (and omit-touched?
                                    (contains? (:touched shape-inst)
                                               :shapes-group))
@@ -605,8 +597,8 @@
 
           both (fn [changes child-inst child-main]
                  (log/trace :msg "Both"
-                            :child-inst (str (:name child-inst) " " (pretty-uuid (:id child-inst)))
-                            :child-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
+                            :child-inst (str (:name child-inst) " " (cflh/pretty-uuid (:id child-inst)))
+                            :child-main (str (:name child-main) " " (cflh/pretty-uuid (:id child-main))))
                  (generate-sync-shape-direct-recursive changes
                                                        container
                                                        child-inst
@@ -624,15 +616,15 @@
 
           swapped (fn [changes child-inst child-main]
                     (log/trace :msg "Match slot"
-                               :child-inst (str (:name child-inst) " " (pretty-uuid (:id child-inst)))
-                               :child-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
+                               :child-inst (str (:name child-inst) " " (cflh/pretty-uuid (:id child-inst)))
+                               :child-main (str (:name child-main) " " (cflh/pretty-uuid (:id child-main))))
                     ;; For now we don't make any sync here.
                     changes)
 
           moved (fn [changes child-inst child-main]
                   (log/trace :msg "Move"
-                             :child-inst (str (:name child-inst) " " (pretty-uuid (:id child-inst)))
-                             :child-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
+                             :child-inst (str (:name child-inst) " " (cflh/pretty-uuid (:id child-inst)))
+                             :child-main (str (:name child-main) " " (cflh/pretty-uuid (:id child-main))))
                   (move-shape
                    changes
                    child-inst
@@ -743,14 +735,14 @@
                                       root-inst
                                       component-container
                                       omit-touched?)
-                        (change-touched shape-inst
-                                        shape-main
-                                        container
-                                        {:reset-touched? true})
-                        (change-touched shape-main
-                                        shape-inst
-                                        component-container
-                                        {:copy-touched? true}))
+                        (cflh/change-touched shape-inst
+                                             shape-main
+                                             container
+                                             {:reset-touched? true})
+                        (cflh/change-touched shape-main
+                                             shape-inst
+                                             component-container
+                                             {:copy-touched? true}))
 
                     (ctl/flex-layout? shape-main)
                     (update-flex-child-main-attrs shape-main
@@ -816,8 +808,8 @@
 
           swapped (fn [changes child-inst child-main]
                     (log/trace :msg "Match slot"
-                               :child-inst (str (:name child-inst) " " (pretty-uuid (:id child-inst)))
-                               :child-main (str (:name child-main) " " (pretty-uuid (:id child-main))))
+                               :child-inst (str (:name child-inst) " " (cflh/pretty-uuid (:id child-inst)))
+                               :child-main (str (:name child-main) " " (cflh/pretty-uuid (:id child-main))))
                     ;; For now we don't make any sync here.
                     changes)
 
@@ -870,8 +862,8 @@
          changes       changes]
     (let [child-inst (first children-inst)
           child-main (first children-main)]
-      (log/trace :main (str (:name child-main) " " (pretty-uuid (:id child-main)))
-                 :inst (str (:name child-inst) " " (pretty-uuid (:id child-inst))))
+      (log/trace :main (str (:name child-main) " " (cflh/pretty-uuid (:id child-main)))
+                 :inst (str (:name child-inst) " " (cflh/pretty-uuid (:id child-inst))))
       (cond
         (and (nil? child-inst) (nil? child-main))
         changes
@@ -933,10 +925,10 @@
 
 (defn- add-shape-to-instance
   [changes component-shape index component-page container root-instance root-main omit-touched? set-remote-synced? components-v2]
-  (log/info :msg (str "ADD [P " (pretty-uuid (:id container)) "] "
+  (log/info :msg (str "ADD [P " (cflh/pretty-uuid (:id container)) "] "
                       (:name component-shape)
                       " "
-                      (pretty-uuid (:id component-shape))))
+                      (cflh/pretty-uuid (:id component-shape))))
   (let [component-parent-shape (ctn/get-shape component-page (:parent-id component-shape))
         parent-shape           (d/seek #(ctk/is-main-of? component-parent-shape % components-v2)
                                        (cfh/get-children-with-self (:objects container)
@@ -975,7 +967,7 @@
 
         add-obj-change (fn [changes shape']
                          (update changes :redo-changes conj
-                                 (make-change
+                                 (cflh/make-change
                                   container
                                   (as-> {:type :add-obj
                                          :id (:id shape')
@@ -989,14 +981,14 @@
 
         del-obj-change (fn [changes shape']
                          (update changes :undo-changes conj
-                                 (make-change
+                                 (cflh/make-change
                                   container
                                   {:type :del-obj
                                    :id (:id shape')
                                    :ignore-touched true})))
 
         changes' (reduce add-obj-change changes new-shapes)
-        changes' (update changes' :redo-changes conj (make-change
+        changes' (update changes' :redo-changes conj (cflh/make-change
                                                       container
                                                       {:type :reg-objects
                                                        :shapes all-parents}))
@@ -1008,10 +1000,10 @@
 
 (defn- add-shape-to-main
   [changes shape index component component-container page root-instance root-main components-v2]
-  (log/info :msg (str "ADD [C " (pretty-uuid (:id component-container)) "] "
+  (log/info :msg (str "ADD [C " (cflh/pretty-uuid (:id component-container)) "] "
                       (:name shape)
                       " "
-                      (pretty-uuid (:id shape))))
+                      (cflh/pretty-uuid (:id shape))))
   (let [parent-shape           (ctn/get-shape page (:parent-id shape))
         component-parent-shape (d/seek #(ctk/is-main-of? % parent-shape components-v2)
                                        (cfh/get-children-with-self (:objects component-container)
@@ -1041,7 +1033,7 @@
 
         add-obj-change (fn [changes shape']
                          (update changes :redo-changes conj
-                                 (cond-> (make-change
+                                 (cond-> (cflh/make-change
                                           component-container
                                           {:type :add-obj
                                            :id (:id shape')
@@ -1113,10 +1105,10 @@
   [changes shape container omit-touched?]
   (log/info :msg (str "REMOVE-SHAPE "
                       (if (cfh/page? container) "[P " "[C ")
-                      (pretty-uuid (:id container)) "] "
+                      (cflh/pretty-uuid (:id container)) "] "
                       (:name shape)
                       " "
-                      (pretty-uuid (:id shape))))
+                      (cflh/pretty-uuid (:id shape))))
   (let [objects    (get container :objects)
         parents    (cfh/get-parent-ids objects (:id shape))
         parent     (first parents)
@@ -1126,7 +1118,7 @@
 
         add-redo-change (fn [changes id]
                           (update changes :redo-changes conj
-                                  (make-change
+                                  (cflh/make-change
                                    container
                                    {:type :del-obj
                                     :id id
@@ -1135,7 +1127,7 @@
         add-undo-change (fn [changes id]
                           (let [shape' (get objects id)]
                             (update changes :undo-changes conj
-                                    (make-change
+                                    (cflh/make-change
                                      container
                                      (as-> {:type :add-obj
                                             :id id
@@ -1148,7 +1140,7 @@
                                          (assoc :frame-id (:frame-id shape'))))))))
 
         changes' (-> (reduce add-redo-change changes ids)
-                     (update :redo-changes conj (make-change
+                     (update :redo-changes conj (cflh/make-change
                                                  container
                                                  {:type :reg-objects
                                                   :shapes (vec parents)})))
@@ -1165,10 +1157,10 @@
   [changes shape index-before index-after container omit-touched?]
   (log/info :msg (str "MOVE "
                       (if (cfh/page? container) "[P " "[C ")
-                      (pretty-uuid (:id container)) "] "
+                      (cflh/pretty-uuid (:id container)) "] "
                       (:name shape)
                       " "
-                      (pretty-uuid (:id shape))
+                      (cflh/pretty-uuid (:id shape))
                       " "
                       index-before
                       " -> "
@@ -1176,7 +1168,7 @@
   (let [parent (ctn/get-shape container (:parent-id shape))
 
         changes' (-> changes
-                     (update :redo-changes conj (make-change
+                     (update :redo-changes conj (cflh/make-change
                                                  container
                                                  {:type :mov-objects
                                                   :parent-id (:parent-id shape)
@@ -1184,7 +1176,7 @@
                                                   :index index-after
                                                   :ignore-touched true
                                                   :syncing true}))
-                     (update :undo-changes conj (make-change
+                     (update :undo-changes conj (cflh/make-change
                                                  container
                                                  {:type :mov-objects
                                                   :parent-id (:parent-id shape)
@@ -1197,49 +1189,6 @@
       changes
       changes')))
 
-(defn change-touched
-  [changes dest-shape origin-shape container
-   {:keys [reset-touched? copy-touched?] :as options}]
-  (if (nil? (:shape-ref dest-shape))
-    changes
-    (do
-      (log/info :msg (str "CHANGE-TOUCHED "
-                          (if (cfh/page? container) "[P " "[C ")
-                          (pretty-uuid (:id container)) "] "
-                          (:name dest-shape)
-                          " "
-                          (pretty-uuid (:id dest-shape)))
-                :options options)
-      (let [new-touched (cond
-                          reset-touched?
-                          nil
-
-                          copy-touched?
-                          (if (:remote-synced origin-shape)
-                            nil
-                            (set/union
-                             (:touched dest-shape)
-                             (:touched origin-shape)))
-
-                          :else
-                          (:touched dest-shape))]
-
-        (-> changes
-            (update :redo-changes conj (make-change
-                                        container
-                                        {:type :mod-obj
-                                         :id (:id dest-shape)
-                                         :operations
-                                         [{:type :set-touched
-                                           :touched new-touched}]}))
-            (update :undo-changes conj (make-change
-                                        container
-                                        {:type :mod-obj
-                                         :id (:id dest-shape)
-                                         :operations
-                                         [{:type :set-touched
-                                           :touched (:touched dest-shape)}]})))))))
-
 (defn- change-remote-synced
   [changes shape container remote-synced?]
   (if (nil? (:shape-ref shape))
@@ -1247,20 +1196,20 @@
     (do
       (log/info :msg (str "CHANGE-REMOTE-SYNCED? "
                           (if (cfh/page? container) "[P " "[C ")
-                          (pretty-uuid (:id container)) "] "
+                          (cflh/pretty-uuid (:id container)) "] "
                           (:name shape)
                           " "
-                          (pretty-uuid (:id shape)))
+                          (cflh/pretty-uuid (:id shape)))
                 :remote-synced remote-synced?)
       (-> changes
-          (update :redo-changes conj (make-change
+          (update :redo-changes conj (cflh/make-change
                                       container
                                       {:type :mod-obj
                                        :id (:id shape)
                                        :operations
                                        [{:type :set-remote-synced
                                          :remote-synced remote-synced?}]}))
-          (update :undo-changes conj (make-change
+          (update :undo-changes conj (cflh/make-change
                                       container
                                       {:type :mod-obj
                                        :id (:id shape)
@@ -1279,13 +1228,13 @@
   (log/info :msg (str "SYNC "
                       (:name origin-shape)
                       " "
-                      (pretty-uuid (:id origin-shape))
+                      (cflh/pretty-uuid (:id origin-shape))
                       " -> "
                       (if (cfh/page? container) "[P " "[C ")
-                      (pretty-uuid (:id container)) "] "
+                      (cflh/pretty-uuid (:id container)) "] "
                       (:name dest-shape)
                       " "
-                      (pretty-uuid (:id dest-shape))))
+                      (cflh/pretty-uuid (:id dest-shape))))
 
   (let [;; To synchronize geometry attributes we need to make a prior
         ;; operation, because coordinates are absolute, but we need to
@@ -1313,21 +1262,21 @@
             (let [all-parents (cfh/get-parent-ids (:objects container)
                                                   (:id dest-shape))]
               (-> changes
-                  (update :redo-changes conj (make-change
+                  (update :redo-changes conj (cflh/make-change
                                               container
                                               {:type :mod-obj
                                                :id (:id dest-shape)
                                                :operations roperations}))
-                  (update :redo-changes conj (make-change
+                  (update :redo-changes conj (cflh/make-change
                                               container
                                               {:type :reg-objects
                                                :shapes all-parents}))
-                  (update :undo-changes conj (make-change
+                  (update :undo-changes conj (cflh/make-change
                                               container
                                               {:type :mod-obj
                                                :id (:id dest-shape)
                                                :operations (vec uoperations)}))
-                  (update :undo-changes concat [(make-change
+                  (update :undo-changes concat [(cflh/make-change
                                                  container
                                                  {:type :reg-objects
                                                   :shapes all-parents})]))))
@@ -1503,8 +1452,4 @@
         delta           (gpt/subtract dest-root-pos origin-root-pos)]
     (gsh/move shape delta)))
 
-(defn- make-change
-  [container change]
-  (if (cfh/page? container)
-    (assoc change :page-id (:id container))
-    (assoc change :component-id (:id container))))
+

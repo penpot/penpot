@@ -940,7 +940,7 @@
                 ;; We need to set the same index as the original shape
                 (pcb/change-parent (:parent-id shape) [new-shape] index {:component-swap true
                                                                          :ignore-touched true})
-                (dwlh/change-touched new-shape
+                (cflh/change-touched new-shape
                                      shape
                                      (ctn/make-container page :page)
                                      {}))]

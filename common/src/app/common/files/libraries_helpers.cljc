@@ -17,7 +17,13 @@
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.pages-list :as ctpl]
-   [app.common.uuid :as uuid]))
+   [app.common.uuid :as uuid]
+   [clojure.set :as set]))
+
+(defn pretty-uuid
+  [uuid]
+  (let [uuid-str (str uuid)]
+    (subs uuid-str (- (count uuid-str) 6))))
 
 (defn generate-add-component-changes
   [changes root objects file-id page-id components-v2]
@@ -251,3 +257,52 @@
         (pcb/with-container container)
         (pcb/with-objects (:objects container))
         (generate-detach-instance container libraries id))))
+
+(defn- make-change
+  [container change]
+  (if (cfh/page? container)
+    (assoc change :page-id (:id container))
+    (assoc change :component-id (:id container))))
+
+(defn change-touched
+  [changes dest-shape origin-shape container
+   {:keys [reset-touched? copy-touched?] :as options}]
+  (if (nil? (:shape-ref dest-shape))
+    changes
+    (do
+      (log/info :msg (str "CHANGE-TOUCHED "
+                          (if (cfh/page? container) "[P " "[C ")
+                          (pretty-uuid (:id container)) "] "
+                          (:name dest-shape)
+                          " "
+                          (pretty-uuid (:id dest-shape)))
+                :options options)
+      (let [new-touched (cond
+                          reset-touched?
+                          nil
+
+                          copy-touched?
+                          (if (:remote-synced origin-shape)
+                            nil
+                            (set/union
+                             (:touched dest-shape)
+                             (:touched origin-shape)))
+
+                          :else
+                          (:touched dest-shape))]
+
+        (-> changes
+            (update :redo-changes conj (make-change
+                                        container
+                                        {:type :mod-obj
+                                         :id (:id dest-shape)
+                                         :operations
+                                         [{:type :set-touched
+                                           :touched new-touched}]}))
+            (update :undo-changes conj (make-change
+                                        container
+                                        {:type :mod-obj
+                                         :id (:id dest-shape)
+                                         :operations
+                                         [{:type :set-touched
+                                           :touched (:touched dest-shape)}]})))))))
