@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-03-09 13:01+0000\n"
+"PO-Revision-Date: 2024-04-19 08:03+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian "
 "<https://hosted.weblate.org/projects/penpot/frontend/lv/>\n"
