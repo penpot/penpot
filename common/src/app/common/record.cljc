@@ -429,8 +429,9 @@
     `(update ~ssym ~ksym ~f ~@params)))
 
 (defmacro define-properties!
+  "Define properties in the prototype with `.defineProperty`"
   [rsym & properties]
-  (let [rsym       (with-meta rsym {:tag 'js})]
+  (let [rsym (with-meta rsym {:tag 'js})]
     `(do
        ~@(for [params properties
                :let [pname  (get params :name)
@@ -458,3 +459,50 @@
 
                                  (when set-fn
                                    ["set" set-fn]))))))))
+
+(defmacro add-properties!
+  "Adds properties to an object using `.defineProperty`"
+  [rsym & properties]
+  (let [rsym (with-meta rsym {:tag 'js})
+        getf-sym (with-meta (gensym "get-fn") {:tag 'js})
+        setf-sym (with-meta (gensym "set-fn") {:tag 'js})
+        this-sym (with-meta (gensym "this") {:tag 'js})
+        target-sym (with-meta (gensym "target") {:tag 'js})]
+    `(let [~target-sym ~rsym]
+       ;; Creates the `.defineProperty` per property
+       ~@(for [params properties
+               :let [pname  (get params :name)
+                     get-fn (get params :get)
+                     set-fn (get params :set)
+                     enum-p (get params :enumerable)
+                     conf-p (get params :configurable)
+                     writ-p (get params :writable)]]
+           `(let [~getf-sym ~get-fn
+                  ~setf-sym ~set-fn]
+              (.defineProperty
+               js/Object
+               ~target-sym
+               ~pname
+               (cljs.core/js-obj
+                ~@(concat
+                   (if (some? enum-p)
+                     ["enumerable" enum-p]
+                     ;; Default in JS is false. We default to true
+                     ["enumerable" true])
+
+                   (when (some? conf-p)
+                     ["configurable" conf-p])
+
+                   (when (some? writ-p)
+                     ["writable" writ-p])
+
+                   (when get-fn
+                     ["get" `(fn []
+                               (cljs.core/this-as ~this-sym
+                                                  (~getf-sym ~this-sym)))])
+                   (when set-fn
+                     ["set" `(fn [value#]
+                               (cljs.core/this-as ~this-sym
+                                                  (~setf-sym ~this-sym value#)))]))))))
+       ;; Returns the object
+       ~target-sym)))

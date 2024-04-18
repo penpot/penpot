@@ -7,11 +7,14 @@
 (ns app.plugins.shape
   "RPC for plugins runtime."
   (:require
-   [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.record :as crc]
-   [app.plugins.utils :as utils]
-   [app.util.object :as obj]
+   [app.main.data.workspace.changes :as dwc]
+   [app.main.store :as st]
+   [app.plugins.utils :refer [get-data get-data-fn]]
    [cuerdas.core :as str]))
+
+(declare data->shape-proxy)
 
 (defn- make-fills
   [fills]
@@ -20,8 +23,19 @@
          (->> fills
               (map #(clj->js % {:keyword-fn (fn [k] (str/camel (name k)))})))))
 
-(deftype ShapeProxy [_data]
+(defn- locate-shape
+  [shape-id]
+  (let [page-id (:current-page-id @st/state)]
+    (dm/get-in @st/state [:workspace-data :pages-index page-id :objects shape-id])))
+
+(deftype ShapeProxy [#_:clj-kondo/ignore _data]
   Object
+  (getChildren
+    [self]
+    (apply array (->> (get-data self :shapes)
+                      (map locate-shape)
+                      (map data->shape-proxy))))
+
   (clone [_] (.log js/console (clj->js _data)))
   (delete [_] (.log js/console (clj->js _data)))
   (appendChild [_] (.log js/console (clj->js _data))))
@@ -31,36 +45,28 @@
   {:name js/Symbol.toStringTag
    :get (fn [] (str "ShapeProxy"))})
 
-
-(defn get-data
-  ([this attr]
-   (-> this
-       (obj/get "_data")
-       (get attr)))
-  ([this attr transform-fn]
-   (-> this
-       (get-data attr)
-       (transform-fn))))
-
 (defn data->shape-proxy
   [data]
 
-  (-> (->ShapeProxy data)
-      (js/Object.defineProperties
-       #js {"_data" #js {:enumerable false}
+  (crc/add-properties!
+   (ShapeProxy. data)
+   {:name "_data"
+    :enumerable false}
 
-            :id
-            #js {:get #(get-data (js* "this") :id str)
-                 :enumerable true}
+   {:name "id"
+    :get (get-data-fn :id str)}
 
-            :name
-            #js {:get #(get-data (js* "this") :name)
-                 ;;:set (fn [] (prn "SET NAME"))
-                 :enumerable true}
+   {:name "name"
+    :get (get-data-fn :name)
+    :set (fn [self value]
+           (let [id (get-data self :id)]
+             (st/emit! (dwc/update-shapes [id] #(assoc % :name value)))))}
 
-            :fills
-            #js {:get #(get-data (js* "this") :fills make-fills)
-                 ;;:set (fn [] (prn "SET FILLS"))
-                 :enumerable true}}
-       )))
+   {:name "children"
+    :get #(.getChildren ^js %)}
+
+   {:name "fills"
+    :get (get-data-fn :fills make-fills)
+    ;;:set (fn [self value] (.log js/console self value))
+    }))
 

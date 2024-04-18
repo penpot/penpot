@@ -9,7 +9,7 @@
   (:require
    [app.common.record :as crc]
    [app.plugins.page :as page]
-   [app.plugins.utils :as utils]))
+   [app.plugins.utils :refer [get-data-fn]]))
 
 (def ^:private
   xf-map-page-proxy
@@ -17,8 +17,7 @@
    (map val)
    (map page/data->page-proxy)))
 
-(deftype FileProxy [id name revn
-                    #_:clj-kondo/ignore _data]
+(deftype FileProxy [#_:clj-kondo/ignore _data]
   Object
   (getPages [_]
     ;; Returns a lazy (iterable) of all available pages
@@ -27,16 +26,21 @@
 (crc/define-properties!
   FileProxy
   {:name js/Symbol.toStringTag
-   :get (fn [] (str "FileProxy"))}
-  {:name "pages"
-   :get (fn [] (this-as this (.getPages ^js this)))})
+   :get (fn [] (str "FileProxy"))})
 
 (defn data->file-proxy
   [file data]
-  (utils/hide-data!
-   (->FileProxy (str (:id file))
-                (:name file)
-                (:revn file)
-                data)))
+  (crc/add-properties!
+   (FileProxy. (merge file data))
+   {:name "_data" :enumerable false}
+
+   {:name "id"
+    :get (get-data-fn :id str)}
+
+   {:name "name"
+    :get (get-data-fn :name)}
+
+   {:name "pages"
+    :get #(.getPages ^js %)}))
 
 

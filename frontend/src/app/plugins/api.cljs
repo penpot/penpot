@@ -8,6 +8,8 @@
   "RPC for plugins runtime."
   (:require
    [app.common.data.macros :as dm]
+   [app.common.record :as cr]
+   [app.common.uuid :as uuid]
    [app.main.store :as st]
    [app.plugins.events :as events]
    [app.plugins.file :as file]
@@ -23,35 +25,50 @@
    (map val)
    (map shape/data->shape-proxy)))
 
-(defn ^:export addListener
-  [type callback]
-  (events/add-listener type callback))
+(deftype PenpotContext []
+  Object
+  (addListener
+    [_ type callback]
+    (events/add-listener type callback))
 
-(defn ^:export getFile
-  []
-  (file/data->file-proxy (:workspace-file @st/state) (:workspace-data @st/state)))
+  (getFile
+    [_]
+    (file/data->file-proxy (:workspace-file @st/state) (:workspace-data @st/state)))
 
-(defn ^:export getPage
-  []
-  (let [page-id (:current-page-id @st/state)]
-    (page/data->page-proxy (dm/get-in @st/state [:workspace-data :pages-index page-id]))))
+  (getPage
+    [_]
+    (let [page-id (:current-page-id @st/state)]
+      (page/data->page-proxy (dm/get-in @st/state [:workspace-data :pages-index page-id]))))
 
-(defn ^:export getSelected
-  []
-  (let [selection (get-in @st/state [:workspace-local :selected])]
-    (apply array (map str selection))))
+  (getSelected
+    [_]
+    (let [selection (get-in @st/state [:workspace-local :selected])]
+      (apply array (map str selection))))
 
-(defn ^:export getSelectedShapes
-  []
-  (let [page-id (:current-page-id @st/state)
-        selection (get-in @st/state [:workspace-local :selected])
-        objects (dm/get-in @st/state [:workspace-data :pages-index page-id :objects])
-        shapes (select-keys objects selection)]
-    (apply array (sequence xf-map-shape-proxy shapes))))
+  (getSelectedShapes
+    [_]
+    (let [page-id (:current-page-id @st/state)
+          selection (get-in @st/state [:workspace-local :selected])
+          objects (dm/get-in @st/state [:workspace-data :pages-index page-id :objects])
+          shapes (select-keys objects selection)]
+      (apply array (sequence xf-map-shape-proxy shapes))))
 
-(defn ^:export getTheme
+  (getRoot
+    [_]
+    (let [page-id (:current-page-id @st/state)
+          root (dm/get-in @st/state [:workspace-data :pages-index page-id :objects uuid/zero])]
+      (shape/data->shape-proxy root)))
+
+  (getTheme
+    [_]
+    (let [theme (get-in @st/state [:profile :theme])]
+      (if (or (not theme) (= theme "default"))
+        "dark"
+        (get-in @st/state [:profile :theme])))))
+
+(defn create-context
   []
-  (let [theme (get-in @st/state [:profile :theme])]
-    (if (or (not theme) (= theme "default"))
-      "dark"
-      (get-in @st/state [:profile :theme]))))
+  (cr/add-properties!
+   (PenpotContext.)
+   {:name "root" :get #(.getRoot ^js %)}
+   {:name "currentPage" :get #(.getPage ^js %)}))
