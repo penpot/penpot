@@ -48,7 +48,8 @@
     "fdata/shape-data-type"
     "components/v2"
     "styles/v2"
-    "layout/grid"})
+    "layout/grid"
+    "plugins/runtime"})
 
 ;; A set of features enabled by default
 (def default-features
@@ -62,7 +63,8 @@
 ;; persist on file features field but can be permanently enabled on
 ;; team feature field
 (def frontend-only-features
-  #{"styles/v2"})
+  #{"styles/v2"
+    "plugins/runtime"})
 
 ;; Features that are mainly backend only or there are a proper
 ;; fallback when frontend reports no support for it
@@ -78,7 +80,8 @@
   (-> #{"fdata/objects-map"
         "fdata/pointer-map"
         "layout/grid"
-        "fdata/shape-data-type"}
+        "fdata/shape-data-type"
+        "plugins/runtime"}
       (into frontend-only-features)))
 
 (sm/def! ::features
@@ -97,6 +100,7 @@
     :feature-grid-layout "layout/grid"
     :feature-fdata-objects-map "fdata/objects-map"
     :feature-fdata-pointer-map "fdata/pointer-map"
+    :feature-plugins "plugins/runtime"
     nil))
 
 (defn migrate-legacy-features
