@@ -24,6 +24,16 @@
   }
 }
 
+.logo-container {
+  position: absolute;
+  top: $s-20;
+  left: $s-20;
+  display: flex;
+  justify-content: flex-start;
+  width: $s-120;
+  margin-block-end: $s-52;
+}
+
 .login-illustration {
   display: flex;
   justify-content: center;
@@ -55,14 +65,6 @@
 }
 
 .logo-btn {
-  position: absolute;
-  top: $s-20;
-  left: $s-20;
-  display: flex;
-  justify-content: flex-start;
-  width: $s-120;
-  margin-block-end: $s-52;
-
   svg {
     width: $s-120;
     height: $s-40;
