@@ -554,6 +554,9 @@
                   (dwtr/start-move initial-point #{(:id new-shape)}))
                 (dwu/commit-undo-transaction undo-id)))))))
 
+
+
+
 (defn detach-component
   "Remove all references to components in the shape with the given id,
   and all its children, at the current page."
@@ -564,13 +567,10 @@
     (watch [it state _]
       (let [file      (wsh/get-local-file state)
             page-id   (get state :current-page-id)
-            container (cfh/get-container file :page page-id)
             libraries (wsh/get-libraries state)
 
             changes   (-> (pcb/empty-changes it)
-                          (pcb/with-container container)
-                          (pcb/with-objects (:objects container))
-                          (dwlh/generate-detach-instance container libraries id))]
+                          (cflh/generate-detach-component id file page-id libraries))]
 
         (rx/of (dch/commit-changes changes))))))
 
@@ -606,10 +606,8 @@
             changes (when can-detach?
                       (reduce
                        (fn [changes id]
-                         (dwlh/generate-detach-instance changes container libraries id))
-                       (-> (pcb/empty-changes it)
-                           (pcb/with-container container)
-                           (pcb/with-objects objects))
+                         (cflh/generate-detach-instance changes container libraries id))
+                       (pcb/empty-changes it)
                        selected))]
 
         (rx/of (when can-detach?

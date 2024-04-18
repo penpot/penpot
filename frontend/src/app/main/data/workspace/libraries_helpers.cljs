@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
+   [app.common.files.libraries-helpers :as cflh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.grid-layout :as gslg]
@@ -21,7 +22,6 @@
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
-   [app.common.types.pages-list :as ctpl]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.typography :as cty]
@@ -134,46 +134,7 @@
 
      [new-shape changes])))
 
-(declare generate-detach-recursive)
-(declare generate-advance-nesting-level)
 
-(defn generate-detach-instance
-  "Generate changes to remove the links between a shape and all its children
-  with a component."
-  [changes container libraries shape-id]
-  (let [shape (ctn/get-shape container shape-id)]
-    (log/debug :msg "Detach instance" :shape-id shape-id :container (:id container))
-    (generate-detach-recursive changes container libraries shape-id true (true? (:component-root shape)))))
-
-(defn- generate-detach-recursive
-  [changes container libraries shape-id first component-root?]
-  (let [shape (ctn/get-shape container shape-id)]
-    (if (and (ctk/instance-head? shape) (not first))
-      ; Subinstances are not detached
-      (cond-> changes
-        component-root?
-        ; If the initial shape was component-root, first level subinstances are converted in top instances
-        (pcb/update-shapes [shape-id] #(assoc % :component-root true))
-
-        :always
-        ; Near shape-refs need to be advanced one level
-        (generate-advance-nesting-level nil container libraries (:id shape)))
-
-      ;; Otherwise, detach the shape and all children
-      (let [children-ids (:shapes shape)]
-        (reduce #(generate-detach-recursive %1 container libraries %2 false component-root?)
-                (pcb/update-shapes changes [(:id shape)] ctk/detach-shape)
-                children-ids)))))
-
-(defn- generate-advance-nesting-level
-  [changes file container libraries shape-id]
-  (let [children (cfh/get-children-with-self (:objects container) shape-id)
-        skip-near (fn [changes shape]
-                    (let [ref-shape (ctf/find-ref-shape file container libraries shape {:include-deleted? true})]
-                      (if (some? (:shape-ref ref-shape))
-                        (pcb/update-shapes changes [(:id shape)] #(assoc % :shape-ref (:shape-ref ref-shape)))
-                        changes)))]
-    (reduce skip-near changes children)))
 
 ;; ---- General library synchronization functions ----
 
@@ -532,7 +493,7 @@
           ;; deleted or the library unlinked, do nothing in v2 or detach in v1.
           (if components-v2
             changes
-            (generate-detach-instance changes libraries container shape-id))))
+            (cflh/generate-detach-instance changes libraries container shape-id))))
       changes)))
 
 (defn- find-main-container
@@ -562,7 +523,7 @@
     ;; This should not occur, but protect against it in any case
     (if components-v2
       changes
-      (generate-detach-instance changes container {(:id library) library} (:id shape-inst)))
+      (cflh/generate-detach-instance changes container {(:id library) library} (:id shape-inst)))
     (let [omit-touched?        (not reset?)
           clear-remote-synced? (and initial-root? reset?)
           set-remote-synced?   (and (not initial-root?) reset?)
