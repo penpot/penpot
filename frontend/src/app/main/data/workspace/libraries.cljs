@@ -451,6 +451,38 @@
              (when (and shape-id page-id)
                (rx/of (dch/update-shapes [shape-id] #(assoc % :name clean-name) {:page-id page-id :stack-undo? true}))))))))))
 
+(defn generate-duplicate-component
+  "Create a new component copied from the one with the given id."
+  [changes library component-id components-v2]
+  (let [component          (ctkl/get-component (:data library) component-id)
+        new-name           (:name component)
+
+        main-instance-page (when components-v2
+                             (ctf/get-component-page (:data library) component))
+
+        new-component-id   (when components-v2
+                             (uuid/next))
+
+        [new-component-shape new-component-shapes  ; <- null in components-v2
+         new-main-instance-shape new-main-instance-shapes]
+        (dwlh/duplicate-component component new-component-id (:data library))]
+
+    (-> changes
+        (pcb/with-page main-instance-page)
+        (pcb/with-objects (:objects main-instance-page))
+        (pcb/add-objects new-main-instance-shapes {:ignore-touched true})
+        (pcb/add-component (if components-v2
+                             new-component-id
+                             (:id new-component-shape))
+                           (:path component)
+                           new-name
+                           new-component-shapes
+                           []
+                           (:id new-main-instance-shape)
+                           (:id main-instance-page)
+                           (:annotation component)))))
+
+
 (defn duplicate-component
   "Create a new component copied from the one with the given id."
   [library-id component-id]
@@ -459,37 +491,13 @@
     (watch [it state _]
       (let [libraries          (wsh/get-libraries state)
             library            (get libraries library-id)
-            component          (ctkl/get-component (:data library) component-id)
-            new-name           (:name component)
-
             components-v2      (features/active-feature? state "components/v2")
-
-            main-instance-page (when components-v2
-                                 (ctf/get-component-page (:data library) component))
-
-            new-component-id   (when components-v2
-                                 (uuid/next))
-
-            [new-component-shape new-component-shapes  ; <- null in components-v2
-             new-main-instance-shape new-main-instance-shapes]
-            (dwlh/duplicate-component component new-component-id (:data library))
-
             changes (-> (pcb/empty-changes it nil)
-                        (pcb/with-page main-instance-page)
-                        (pcb/with-objects (:objects main-instance-page))
-                        (pcb/add-objects new-main-instance-shapes {:ignore-touched true})
-                        (pcb/add-component (if components-v2
-                                             new-component-id
-                                             (:id new-component-shape))
-                                           (:path component)
-                                           new-name
-                                           new-component-shapes
-                                           []
-                                           (:id new-main-instance-shape)
-                                           (:id main-instance-page)
-                                           (:annotation component)))]
+                        (generate-duplicate-component library component-id components-v2))]
 
         (rx/of (dch/commit-changes changes))))))
+
+
 
 (defn delete-component
   "Delete the component with the given id, from the current file library."
