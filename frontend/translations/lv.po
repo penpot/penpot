@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-03-09 13:01+0000\n"
+"PO-Revision-Date: 2024-04-19 08:03+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
@@ -55,11 +55,11 @@ msgstr "Pilns vārds"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.login-here"
-msgstr "Ienākt šeit"
+msgstr "Pieteikties šeit"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
-msgstr "Ienākt"
+msgstr "Pieteikties"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-title"
@@ -3171,7 +3171,7 @@ msgid "workspace.assets.libraries"
 msgstr "Bibliotēkas"
 
 msgid "workspace.assets.local-library"
-msgstr "lokālā bibliotēka"
+msgstr "vietējā bibliotēka"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.not-found"
