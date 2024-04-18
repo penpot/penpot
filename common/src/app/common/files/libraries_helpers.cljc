@@ -9,10 +9,13 @@
    [app.common.data :as d]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
+   [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+   [app.common.types.pages-list :as ctpl]
    [app.common.uuid :as uuid]))
 
 (defn generate-add-component-changes
@@ -134,3 +137,64 @@
                            (:id new-main-instance-shape)
                            (:id main-instance-page)
                            (:annotation component)))))
+
+(defn prepare-restore-component
+  ([library-data component-id current-page it]
+   (let [component    (ctkl/get-deleted-component library-data component-id)
+         page         (or (ctf/get-component-page library-data component)
+                          (when (some #(= (:id current-page) %) (:pages library-data)) ;; If the page doesn't belong to the library, it's not valid
+                            current-page)
+                          (ctpl/get-last-page library-data))]
+     (prepare-restore-component nil library-data component-id it page (gpt/point 0 0) nil nil nil)))
+
+  ([changes library-data component-id it page delta old-id parent-id frame-id]
+   (let [component         (ctkl/get-deleted-component library-data component-id)
+         parent            (get-in page [:objects parent-id])
+         main-inst         (get-in component [:objects (:main-instance-id component)])
+         inside-component? (some? (ctn/get-instance-root (:objects page) parent))
+         shapes            (cfh/get-children-with-self (:objects component) (:main-instance-id component))
+         shapes            (map #(gsh/move % delta) shapes)
+
+         first-shape       (cond-> (first shapes)
+                             (not (nil? parent-id))
+                             (assoc :parent-id parent-id)
+                             (not (nil? frame-id))
+                             (assoc :frame-id frame-id)
+                             (and (nil? frame-id) parent (= :frame (:type parent)))
+                             (assoc :frame-id parent-id)
+                             (and (nil? frame-id) parent (not= :frame (:type parent)))
+                             (assoc :frame-id (:frame-id parent))
+                             inside-component?
+                             (dissoc :component-root)
+                             (not inside-component?)
+                             (assoc :component-root true))
+
+         changes           (-> (or changes (pcb/empty-changes it))
+                               (pcb/with-page page)
+                               (pcb/with-objects (:objects page))
+                               (pcb/with-library-data library-data))
+         changes           (cond-> (pcb/add-object changes first-shape {:ignore-touched true})
+                             (some? old-id) (pcb/amend-last-change #(assoc % :old-id old-id))) ; on copy/paste old id is used later to reorder the paster layers
+         changes           (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
+                                   changes
+                                   (rest shapes))]
+     {:changes (pcb/restore-component changes component-id (:id page) main-inst)
+      :shape (first shapes)})))
+
+(defn generate-restore-component
+  "Restore a deleted component, with the given id, in the given file library."
+  [library-data component-id library-id current-page it objects]
+  (let [{:keys [changes shape]} (prepare-restore-component library-data component-id current-page it)
+        parent-id (:parent-id shape)
+        objects (cond-> (assoc objects (:id shape) shape)
+                  (not (nil? parent-id))
+                  (update-in [parent-id :shapes]
+                             #(conj % (:id shape))))
+
+        ;; Adds a resize-parents operation so the groups are updated. We add all the new objects
+        new-objects-ids (->> changes :redo-changes (filter #(= (:type %) :add-obj)) (mapv :id))
+        changes (-> changes
+                    (pcb/with-objects objects)
+                    (pcb/resize-parents new-objects-ids))]
+
+    (assoc changes :file-id library-id)))

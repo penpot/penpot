@@ -175,49 +175,6 @@
                         changes)))]
     (reduce skip-near changes children)))
 
-(defn prepare-restore-component
-  ([library-data component-id current-page it]
-   (let [component    (ctkl/get-deleted-component library-data component-id)
-         page         (or (ctf/get-component-page library-data component)
-                          (when (some #(= (:id current-page) %) (:pages library-data)) ;; If the page doesn't belong to the library, it's not valid
-                            current-page)
-                          (ctpl/get-last-page library-data))]
-     (prepare-restore-component nil library-data component-id it page (gpt/point 0 0) nil nil nil)))
-
-  ([changes library-data component-id it page delta old-id parent-id frame-id]
-   (let [component         (ctkl/get-deleted-component library-data component-id)
-         parent            (get-in page [:objects parent-id])
-         main-inst         (get-in component [:objects (:main-instance-id component)])
-         inside-component? (some? (ctn/get-instance-root (:objects page) parent))
-         shapes            (cfh/get-children-with-self (:objects component) (:main-instance-id component))
-         shapes            (map #(gsh/move % delta) shapes)
-
-         first-shape       (cond-> (first shapes)
-                             (not (nil? parent-id))
-                             (assoc :parent-id parent-id)
-                             (not (nil? frame-id))
-                             (assoc :frame-id frame-id)
-                             (and (nil? frame-id) parent (= :frame (:type parent)))
-                             (assoc :frame-id parent-id)
-                             (and (nil? frame-id) parent (not= :frame (:type parent)))
-                             (assoc :frame-id (:frame-id parent))
-                             inside-component?
-                             (dissoc :component-root)
-                             (not inside-component?)
-                             (assoc :component-root true))
-
-         changes           (-> (or changes (pcb/empty-changes it))
-                               (pcb/with-page page)
-                               (pcb/with-objects (:objects page))
-                               (pcb/with-library-data library-data))
-         changes           (cond-> (pcb/add-object changes first-shape {:ignore-touched true})
-                             (some? old-id) (pcb/amend-last-change #(assoc % :old-id old-id))) ; on copy/paste old id is used later to reorder the paster layers
-         changes           (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
-                                   changes
-                                   (rest shapes))]
-     {:changes (pcb/restore-component changes component-id (:id page) main-inst)
-      :shape (first shapes)})))
-
 ;; ---- General library synchronization functions ----
 
 (defn generate-sync-file
