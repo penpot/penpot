@@ -64,7 +64,7 @@ h.watch("resources/templates", null, async function (path) {
 });
 
 log.info("watch: assets (~)")
-h.watch(["resources/images", "resources/fonts"], null, async function (path) {
+h.watch(["resources/images", "resources/fonts", "resources/plugins-runtime"], null, async function (path) {
   log.info("changed:", path);
   await h.compileSvgSprites();
   await h.copyAssets();
