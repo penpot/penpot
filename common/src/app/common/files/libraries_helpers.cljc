@@ -10,7 +10,9 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.types.component :as ctk]
+   [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
+   [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]))
 
 (defn generate-add-component-changes
@@ -101,3 +103,34 @@
                                     [:component-root])]
 
     [root (:id root-shape) changes]))
+
+(defn generate-duplicate-component
+  "Create a new component copied from the one with the given id."
+  [changes library component-id components-v2]
+  (let [component          (ctkl/get-component (:data library) component-id)
+        new-name           (:name component)
+
+        main-instance-page (when components-v2
+                             (ctf/get-component-page (:data library) component))
+
+        new-component-id   (when components-v2
+                             (uuid/next))
+
+        [new-component-shape new-component-shapes  ; <- null in components-v2
+         new-main-instance-shape new-main-instance-shapes]
+        (ctf/duplicate-component (:data library) component new-component-id)]
+
+    (-> changes
+        (pcb/with-page main-instance-page)
+        (pcb/with-objects (:objects main-instance-page))
+        (pcb/add-objects new-main-instance-shapes {:ignore-touched true})
+        (pcb/add-component (if components-v2
+                             new-component-id
+                             (:id new-component-shape))
+                           (:path component)
+                           new-name
+                           new-component-shapes
+                           []
+                           (:id new-main-instance-shape)
+                           (:id main-instance-page)
+                           (:annotation component)))))

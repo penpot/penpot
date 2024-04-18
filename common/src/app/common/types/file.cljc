@@ -189,6 +189,84 @@
                              :data file-data}
                       :container (ctn/make-container component :component)}))))))
 
+(defn duplicate-component
+  "Clone the root shape of the component and all children. Generate new
+  ids from all of them."
+  [library-data component new-component-id]
+  (let [components-v2 (dm/get-in library-data [:options :components-v2])]
+    (if components-v2
+
+      (let [main-instance-page  (get-component-page library-data component)
+            main-instance-shape (get-component-root library-data component)
+            delta               (gpt/point (+ (:width main-instance-shape) 50) 0)
+
+            ids-map             (volatile! {})
+            inverted-ids-map    (volatile! {})
+            nested-main-heads   (volatile! #{})
+
+            update-original-shape
+            (fn [original-shape new-shape]
+              ; Save some ids for later
+              (vswap! ids-map assoc (:id original-shape) (:id new-shape))
+              (vswap! inverted-ids-map assoc (:id new-shape) (:id original-shape))
+              (when (and (ctk/main-instance? original-shape)
+                         (not= (:component-id original-shape) (:id component)))
+                (vswap! nested-main-heads conj (:id original-shape)))
+              original-shape)
+
+            update-new-shape
+            (fn [new-shape _]
+              (cond-> new-shape
+                ; Link the new main to the new component
+                (= (:component-id new-shape) (:id component))
+                (assoc :component-id new-component-id)
+
+                :always
+                (gsh/move delta)))
+
+            [new-instance-shape new-instance-shapes _]
+            (ctst/clone-shape main-instance-shape
+                              (:parent-id main-instance-shape)
+                              (:objects main-instance-page)
+                              :update-new-shape update-new-shape
+                              :update-original-shape update-original-shape)
+
+            remap-frame
+            (fn [shape]
+              ; Remap all frame-ids internal to the component to the new shapes
+              (update shape :frame-id
+                      #(get @ids-map % (:frame-id shape))))
+
+            convert-nested-main
+            (fn [shape]
+              ; If there is some nested main instance, convert it into a copy of
+              ; main nested in the original component.
+              (let [origin-shape-id (get @inverted-ids-map (:id shape))
+                    objects         (:objects main-instance-page)
+                    parent-ids      (cfh/get-parent-ids-seq-with-self objects origin-shape-id)]
+                (cond-> shape
+                  (@nested-main-heads origin-shape-id)
+                  (dissoc :main-instance)
+
+                  (some @nested-main-heads parent-ids)
+                  (assoc :shape-ref origin-shape-id))))
+
+            xf-shape (comp (map remap-frame)
+                           (map convert-nested-main))
+
+            new-instance-shapes (into [] xf-shape new-instance-shapes)]
+
+        [nil nil new-instance-shape new-instance-shapes])
+
+      (let [component-root (d/seek #(nil? (:parent-id %)) (vals (:objects component)))
+
+            [new-component-shape new-component-shapes _]
+            (ctst/clone-shape component-root
+                              nil
+                              (get component :objects))]
+
+        [new-component-shape new-component-shapes nil nil]))))
+
 (defn get-ref-shape
   "Retrieve the shape in the component that is referenced by the instance shape."
   [file-data component shape & {:keys [with-context?] :or {with-context? false}}]
@@ -219,11 +297,11 @@
 (defn advance-shape-ref
   "Get the shape-ref of the near main of the shape, recursively repeated as many times
    as the given levels."
-  [file container libraries shape levels & {:keys [include-deleted?] :or {include-deleted? false}}]
-  (let [ref-shape (find-ref-shape file container libraries shape :include-deleted? include-deleted? :with-context? true)]
+  [file container libraries shape levels & options]
+  (let [ref-shape (find-ref-shape file container libraries shape options)]
     (if (or (nil? (:shape-ref ref-shape)) (not (pos? levels)))
       (:id ref-shape)
-      (advance-shape-ref file (:container (meta ref-shape)) libraries ref-shape (dec levels) :include-deleted? include-deleted?))))
+      (advance-shape-ref file container libraries ref-shape (dec levels) options))))
 
 (defn find-ref-component
   "Locate the nearest component in the local file or libraries that is referenced by the
