@@ -315,9 +315,12 @@ async function generateTemplates() {
     "../public/images/sprites/symbol/cursors.svg": cursorsSprite,
   };
 
+  const pluginRuntimeUri = (process.env.PENPOT_PLUGIN_DEV === "true") ? "http://localhost:4200" : "./plugins-runtime";
+
   content = await renderTemplate("resources/templates/index.mustache", {
     manifest: manifest,
     translations: JSON.stringify(translations),
+    pluginRuntimeUri,
   }, partials);
 
   await fs.writeFile("./resources/public/index.html", content);
@@ -401,6 +404,7 @@ export async function copyAssets() {
 
   await syncDirs("resources/images/", "resources/public/images/");
   await syncDirs("resources/fonts/", "resources/public/fonts/");
+  await syncDirs("resources/plugins-runtime/", "resources/public/plugins-runtime/");
 
   const end = process.hrtime(start);
   log.info("done: copy assets", `(${ppt(end)})`);

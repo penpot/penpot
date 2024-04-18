@@ -23,25 +23,19 @@
     {{/isDebug}}
 
     <link rel="icon" href="images/favicon.png" />
-
-    <script type="importmap">
-      {"imports": {"plugins-runtime": "http://localhost:4200/index.mjs"}}
-    </script>
-
-    <script type="module" src="http://localhost:4200/index.mjs"></script>
-
-    <script>
-      window.penpotTranslations = JSON.parse({{& translations}});
-      window.penpotVersion = "%version%";
-      window.penpotBuildDate = "%buildDate%";
-    </script>
-
     {{# manifest}}
     <script>window.penpotWorkerURI="{{& worker}}"</script>
     <script defer src="{{& config}}"></script>
     <script defer src="{{& polyfills}}"></script>
     {{/manifest}}
 
+    <script type="module" src="{{pluginRuntimeUri}}/index.mjs"></script>
+
+    <script>
+      window.penpotTranslations = JSON.parse({{& translations}});
+      window.penpotVersion = "%version%";
+      window.penpotBuildDate = "%buildDate%";
+    </script>
     <!--cookie-consent-->
   </head>
   <body>
@@ -49,17 +43,10 @@
     {{> ../public/images/sprites/symbol/cursors.svg }}
     <div id="app"></div>
     <section id="modal"></section>
-    {{# manifest}}
 
+    {{# manifest}}
     <script defer src="{{& shared}}"></script>
     <script defer src="{{& main}}"></script>
-
-    <penpot-plugins />
     {{/manifest}}
-
-    <script type="module">
-      import * as runtime from "plugins-runtime";
-      runtime.initialize(globalThis.app.plugins.api);
-    </script>
   </body>
 </html>

@@ -85,7 +85,7 @@ function run-devenv-tmux {
         start-devenv
     fi
 
-    docker exec -ti penpot-devenv-main sudo -EH -u penpot /home/start-tmux.sh
+    docker exec -ti penpot-devenv-main sudo -EH -u penpot PENPOT_PLUGIN_DEV=$PENPOT_PLUGIN_DEV /home/start-tmux.sh
 }
 
 function run-devenv-shell {
