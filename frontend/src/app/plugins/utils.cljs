@@ -5,8 +5,26 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.plugins.utils
-  "RPC for plugins runtime.")
+  "RPC for plugins runtime."
+  (:require
+   [app.util.object :as obj]))
 
-(defn hide-data!
-  [proxy]
-  (.defineProperty js/Object proxy "_data" #js {:enumerable false}))
+(defn get-data
+  ([self attr]
+   (-> (obj/get self "_data")
+       (get attr)))
+
+  ([self attr transform-fn]
+   (-> (get-data self attr)
+       (transform-fn))))
+
+(defn get-data-fn
+  ([attr]
+   (fn [self]
+     (get-data self attr)))
+
+  ([attr transform-fn]
+   (fn [self]
+     (get-data self attr transform-fn))))
+
+

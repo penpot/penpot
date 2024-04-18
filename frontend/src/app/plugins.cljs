@@ -18,6 +18,4 @@
   (when (features/active-feature? @st/state "plugins/runtime")
     (when-let [init-runtime (obj/get global "initPluginsRuntime")]
       (let [context (api/create-context)]
-        (when *assert*
-          (js/console.log "Plugins context" context))
         (init-runtime context)))))
