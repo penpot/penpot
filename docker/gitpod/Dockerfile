@@ -17,6 +17,7 @@ RUN set -ex; \
     sudo chown gitpod:gitpod /var/log/nginx
 
 COPY files/nginx.conf /etc/nginx/nginx.conf
+COPY files/nginx-mime.types /etc/nginx/mime.types
 
 USER root
 

@@ -249,6 +249,7 @@ EXPOSE 6060
 EXPOSE 9090
 
 COPY files/nginx.conf /etc/nginx/nginx.conf
+COPY files/nginx-mime.types /etc/nginx/mime.types
 COPY files/phantomjs-mock /usr/bin/phantomjs
 
 COPY files/bashrc         /root/.bashrc
