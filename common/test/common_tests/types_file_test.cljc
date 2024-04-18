@@ -7,201 +7,234 @@
 (ns common-tests.types-file-test
   (:require
    [app.common.data :as d]
-   [app.common.geom.point :as gpt]
+   [app.common.files.changes-builder :as pcb]
+   [app.common.files.libraries-helpers :as cflh]
    [app.common.text :as txt]
    [app.common.types.colors-list :as ctcl]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
-   [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.pages-list :as ctpl]
-   [app.common.types.shape :as cts]
-   [app.common.types.shape-tree :as ctst]
    [app.common.types.typographies-list :as ctyl]
-   [app.common.uuid :as uuid]
-   [clojure.pprint :refer [pprint]]
    [clojure.test :as t]
-   [common-tests.helpers.components :as thk]
    [common-tests.helpers.files :as thf]
-   [cuerdas.core :as str]))
+   [common-tests.helpers.ids-map :as thi]))
 
-(t/use-fixtures :each thf/reset-idmap!)
+(t/use-fixtures :each thi/test-fixture)
 
-#_(t/deftest test-absorb-components
-    (let [library-id      (uuid/custom 1 1)
-          library-page-id (uuid/custom 2 2)
-          file-id         (uuid/custom 3 3)
-          file-page-id    (uuid/custom 4 4)
+(t/deftest test-create-file
+  (let [f1 (thf/sample-file :file1)
+        f2 (thf/sample-file :file2 :page-label :page1)
+        f3 (thf/sample-file :file3 :name "testing file")
+        f4 (-> (thf/sample-file :file4 :page-label :page2)
+               (thf/add-sample-page :page3 :name "testing page")
+               (thf/add-sample-shape :shape1))
+        f5 (-> f4
+               (thf/add-sample-shape :shape2)
+               (thf/switch-to-page :page2)
+               (thf/add-sample-shape :shape3 :name "testing shape" :width 100))
+        s1 (thf/get-shape f4 :shape1)
+        s2 (thf/get-shape f5 :shape2 :page-label :page3)
+        s3 (thf/get-shape f5 :shape3)]
 
-          library (-> (thf/sample-file library-id library-page-id {:is-shared true})
-                      (thf/sample-shape :group1
-                                        :group
-                                        library-page-id
-                                        {:name "Group1"})
-                      (thf/sample-shape :shape1
-                                        :rect
-                                        library-page-id
-                                        {:name "Rect1"
-                                         :parent-id (thf/id :group1)})
-                      (thf/sample-component :component1
-                                            library-page-id
-                                            (thf/id :group1)))
+    ;; (thf/pprint-file f4)
 
-          file (-> (thf/sample-file file-id file-page-id)
-                   (thf/sample-instance :instance1
-                                        file-page-id
-                                        library
-                                        (thf/id :component1)))
+    (t/is (= (:name f1) "Test file"))
+    (t/is (= (:name f3) "testing file"))
+    (t/is (= (:id f2) (thi/id :file2)))
+    (t/is (= (:id f4) (thi/id :file4)))
+    (t/is (= (-> f4 :data :pages-index vals first :id) (thi/id :page2)))
+    (t/is (= (-> f4 :data :pages-index vals first :name) "Page 1"))
+    (t/is (= (-> f4 :data :pages-index vals second :id) (thi/id :page3)))
+    (t/is (= (-> f4 :data :pages-index vals second :name) "testing page"))
 
-          absorbed-file (ctf/update-file-data
-                         file
-                         #(ctf/absorb-assets % (:data library)))
+    (t/is (= (:id (thf/current-page f2)) (thi/id :page1)))
+    (t/is (= (:id (thf/current-page f4)) (thi/id :page3)))
+    (t/is (= (:id (thf/current-page f5)) (thi/id :page2)))
 
-          pages      (ctpl/pages-seq (ctf/file-data absorbed-file))
-          components (ctkl/components-seq (ctf/file-data absorbed-file))
-          shapes-1   (ctn/shapes-seq (first pages))
-          shapes-2   (ctn/shapes-seq (second pages))
+    (t/is (= (:id s1) (thi/id :shape1)))
+    (t/is (= (:name s1) "Rectangle"))
+    (t/is (= (:id s2) (thi/id :shape2)))
+    (t/is (= (:name s2) "Rectangle"))
+    (t/is (= (:id s3) (thi/id :shape3)))
+    (t/is (= (:name s3) "testing shape"))
+    (t/is (= (:width s3) 100))
+    (t/is (= (:width (:selrect s3)) 100))))
 
-          [[p-group p-shape] [c-group1 c-shape1] component1]
-          (thk/resolve-instance-and-main
-           (first pages)
-           (:id (second shapes-1))
-           {file-id absorbed-file})
+(t/deftest test-create-components
+  (let [f1 (-> (thf/sample-file :file1)
+               (thf/add-sample-shape :main-root :type :frame)
+               (thf/add-sample-shape :main-child :parent-label :main-root)
+               (thf/make-component :component1 :main-root)
+               (thf/instantiate-component :component1 :copy-root))]
 
-          [[lp-group lp-shape] [c-group2 c-shape2] component2]
-          (thk/resolve-instance-and-main
-           (second pages)
-           (:id (second shapes-2))
-           {file-id absorbed-file})]
+    #_(thf/dump-file f1)
+    #_(thf/pprint-file f4)
 
-    ;; Uncomment to debug
+    (t/is (= (:name f1) "Test file"))))
 
-    ;; (println "\n===== library")
-    ;; (ctf/dump-tree (:data library)
-    ;;                library-page-id
-    ;;                {}
-    ;;                true)
+(t/deftest test-add-component-from-single-shape
+  (let [; Setup
+        file   (-> (thf/sample-file :file1)
+                   (thf/add-sample-shape :shape1 :type :frame))
 
-    ;; (println "\n===== file")
-    ;; (ctf/dump-tree (:data file)
-    ;;                file-page-id
-    ;;                {library-id library}
-    ;;                true)
+        page   (thf/current-page file)
+        shape1 (thf/get-shape file :shape1)
 
-    ;; (println "\n===== absorbed file")
-    ;; (println (str "\n<" (:name (first pages)) ">"))
-    ;; (ctf/dump-tree (:data absorbed-file)
-    ;;                (:id (first pages))
-    ;;                {file-id absorbed-file}
-    ;;                false)
-    ;; (println (str "\n<" (:name (second pages)) ">"))
-    ;; (ctf/dump-tree (:data absorbed-file)
-    ;;                (:id (second pages))
-    ;;                {file-id absorbed-file}
-    ;;                false)
+        ; Action
+        [_ component-id changes]
+        (cflh/generate-add-component (pcb/empty-changes)
+                                     [shape1]
+                                     (:objects page)
+                                     (:id page)
+                                     (:id file)
+                                     true
+                                     nil
+                                     nil)
 
-      (t/is (= (count pages) 2))
-      (t/is (= (:name (first pages)) "Page 1"))
-      (t/is (= (:name (second pages)) "Main components"))
+        file' (thf/apply-changes file changes)
 
-      (t/is (= (count components) 1))
+        ; Get
+        component (thf/get-component-by-id file' component-id)
+        root      (thf/get-shape-by-id file' (:main-instance-id component))]
 
-      (t/is (= (:name p-group) "Group1"))
-      (t/is (ctk/instance-of? p-group file-id (:id component1)))
-      (t/is (not (:main-instance? p-group)))
-      (t/is (not (ctk/main-instance-of? (:id p-group) file-page-id component1)))
-      (t/is (ctk/is-main-of? c-group1 p-group))
+    ; Check
+    (t/is (some? component))
+    (t/is (some? root))
+    (t/is (= (:component-id root) (:id component)))))
 
-      (t/is (= (:name p-shape) "Rect1"))
-      (t/is (ctk/is-main-of? c-shape1 p-shape))))
+(t/deftest test-absorb-components
+  (let [; Setup
+        library (-> (thf/sample-file :library
+                                     :is-shared true)
+                    (thf/add-sample-shape :main-root
+                                          :type :frame
+                                          :name "Frame1")
+                    (thf/add-sample-shape :rect1
+                                          :type :rect
+                                          :name "Rect1"
+                                          :parent-label :main-root)
+                    (thf/make-component :component1 :main-root))
 
+        file (-> (thf/sample-file :file)
+                 (thf/instantiate-component :component1
+                                            :copy-root
+                                            :library library))
+
+        ; Action
+        file' (ctf/update-file-data
+               file
+               #(ctf/absorb-assets % (:data library)))
+
+        _ (thf/validate-file! file')
+
+        ; Get
+        pages'      (ctpl/pages-seq (ctf/file-data file'))
+        components' (ctkl/components-seq (ctf/file-data file'))
+        component' (first components')
+
+        copy-root' (thf/get-shape file' :copy-root)
+        main-root' (ctf/get-ref-shape (ctf/file-data file') component' copy-root')]
+
+    ; Check
+    (t/is (= (count pages') 2))
+    (t/is (= (:name (first pages')) "Page 1"))
+    (t/is (= (:name (second pages')) "Main components"))
+
+    (t/is (= (count components') 1))
+
+    (t/is (ctk/instance-of? copy-root' (:id file') (:id component')))
+    (t/is (ctk/is-main-of? main-root' copy-root' true))
+    (t/is (ctk/main-instance-of? (:id main-root') (:id (second pages')) component'))))
 
 (t/deftest test-absorb-colors
-  (let [library-id      (uuid/custom 1 1)
-        library-page-id (uuid/custom 2 2)
-        file-id         (uuid/custom 3 3)
-        file-page-id    (uuid/custom 4 4)
+  (let [; Setup
+        library (-> (thf/sample-file :library
+                                     :name "Test library"
+                                     :is-shared true)
+                    (thf/add-sample-color :color1 {:name "Test color"
+                                                   :color "#abcdef"}))
 
-        library (-> (thf/sample-file library-id library-page-id {:is-shared true})
-                    (thf/sample-color :color1 {:name "Test color"
-                                               :color "#abcdef"}))
+        file    (-> (thf/sample-file :file
+                                     :name "Test file")
+                    (thf/add-sample-shape :shape1
+                                          :type :rect
+                                          :name "Rect1"
+                                          :fills [{:fill-color "#abcdef"
+                                                   :fill-opacity 1
+                                                   :fill-color-ref-id (thi/id :color1)
+                                                   :fill-color-ref-file (thi/id :library)}]))
 
-        file (-> (thf/sample-file file-id file-page-id)
-                 (thf/sample-shape :shape1
-                                   :rect
-                                   file-page-id
-                                   {:name "Rect1"
-                                    :fills [{:fill-color "#abcdef"
-                                             :fill-opacity 1
-                                             :fill-color-ref-id (thf/id :color1)
-                                             :fill-color-ref-file library-id}]}))
+        ; Action
+        file' (ctf/update-file-data
+               file
+               #(ctf/absorb-assets % (:data library)))
 
-        absorbed-file (ctf/update-file-data
-                       file
-                       #(ctf/absorb-assets % (:data library)))
+        _ (thf/validate-file! file')
 
-        colors (ctcl/colors-seq (ctf/file-data absorbed-file))
-        page   (ctpl/get-page (ctf/file-data absorbed-file) file-page-id)
-        shape1 (ctn/get-shape page (thf/id :shape1))
-        fill   (first (:fills shape1))]
+        ; Get
+        colors' (ctcl/colors-seq (ctf/file-data file'))
+        shape1' (thf/get-shape file' :shape1)
+        fill'   (first (:fills shape1'))]
 
-    (t/is (= (count colors) 1))
-    (t/is (= (:id (first colors)) (thf/id :color1)))
-    (t/is (= (:name (first colors)) "Test color"))
-    (t/is (= (:color (first colors)) "#abcdef"))
+    ; Check
+    (t/is (= (count colors') 1))
+    (t/is (= (:id (first colors')) (thi/id :color1)))
+    (t/is (= (:name (first colors')) "Test color"))
+    (t/is (= (:color (first colors')) "#abcdef"))
 
-    (t/is (= (:fill-color fill) "#abcdef"))
-    (t/is (= (:fill-color-ref-id fill) (thf/id :color1)))
-    (t/is (= (:fill-color-ref-file fill) file-id))))
+    (t/is (= (:fill-color fill') "#abcdef"))
+    (t/is (= (:fill-color-ref-id fill') (thi/id :color1)))
+    (t/is (= (:fill-color-ref-file fill') (:id file')))))
 
 (t/deftest test-absorb-typographies
-  (let [library-id      (uuid/custom 1 1)
-        library-page-id (uuid/custom 2 2)
-        file-id         (uuid/custom 3 3)
-        file-page-id    (uuid/custom 4 4)
+  (let [; Setup
+        library (-> (thf/sample-file :library
+                                     :name "Test library"
+                                     :is-shared true)
+                    (thf/add-sample-typography :typography1 {:name "Test typography"}))
 
-        library (-> (thf/sample-file library-id library-page-id {:is-shared true})
-                    (thf/sample-typography :typography1 {:name "Test typography"}))
+        file    (-> (thf/sample-file :file
+                                     :name "Test file")
+                    (thf/add-sample-shape :shape1
+                                          :type :text
+                                          :name "Text1"
+                                          :content {:type "root"
+                                                    :children [{:type "paragraph-set"
+                                                                :children [{:type "paragraph"
+                                                                            :key "67uep"
+                                                                            :children [{:text "Example text"
+                                                                                        :typography-ref-id (thi/id :typography1)
+                                                                                        :typography-ref-file (thi/id :library)
+                                                                                        :line-height "1.2"
+                                                                                        :font-style "normal"
+                                                                                        :text-transform "none"
+                                                                                        :text-align "left"
+                                                                                        :font-id "sourcesanspro"
+                                                                                        :font-family "sourcesanspro"
+                                                                                        :font-size "14"
+                                                                                        :font-weight "400"
+                                                                                        :font-variant-id "regular"
+                                                                                        :text-decoration "none"
+                                                                                        :letter-spacing "0"
+                                                                                        :fills [{:fill-color "#000000"
+                                                                                                 :fill-opacity 1}]}]}]}]}))
+        ; Action
+        file' (ctf/update-file-data
+               file
+               #(ctf/absorb-assets % (:data library)))
 
-        file (-> (thf/sample-file file-id file-page-id)
-                 (thf/sample-shape :shape1
-                                   :text
-                                   file-page-id
-                                   {:name "Text1"
-                                    :content {:type "root"
-                                              :children [{:type "paragraph-set"
-                                                          :children [{:type "paragraph"
-                                                                      :key "67uep"
-                                                                      :children [{:text "Example text"
-                                                                                  :typography-ref-id (thf/id :typography1)
-                                                                                  :typography-ref-file library-id
-                                                                                  :line-height "1.2"
-                                                                                  :font-style "normal"
-                                                                                  :text-transform "none"
-                                                                                  :text-align "left"
-                                                                                  :font-id "sourcesanspro"
-                                                                                  :font-family "sourcesanspro"
-                                                                                  :font-size "14"
-                                                                                  :font-weight "400"
-                                                                                  :font-variant-id "regular"
-                                                                                  :text-decoration "none"
-                                                                                  :letter-spacing "0"
-                                                                                  :fills [{:fill-color "#000000"
-                                                                                           :fill-opacity 1}]}]}]}]}}))
-        absorbed-file (ctf/update-file-data
-                       file
-                       #(ctf/absorb-assets % (:data library)))
+        _ (thf/validate-file! file')
 
-        typographies (ctyl/typographies-seq (ctf/file-data absorbed-file))
-        page         (ctpl/get-page (ctf/file-data absorbed-file) file-page-id)
+        ; Get
+        typographies' (ctyl/typographies-seq (ctf/file-data file'))
+        shape1'       (thf/get-shape file' :shape1)
+        text-node'    (d/seek #(some? (:text %)) (txt/node-seq (:content shape1')))]
 
-        shape1       (ctn/get-shape page (thf/id :shape1))
-        text-node    (d/seek #(some? (:text %)) (txt/node-seq (:content shape1)))]
+    (t/is (= (count typographies') 1))
+    (t/is (= (:id (first typographies')) (thi/id :typography1)))
+    (t/is (= (:name (first typographies')) "Test typography"))
 
-    (t/is (= (count typographies) 1))
-    (t/is (= (:id (first typographies)) (thf/id :typography1)))
-    (t/is (= (:name (first typographies)) "Test typography"))
-
-    (t/is (= (:typography-ref-id text-node) (thf/id :typography1)))
-    (t/is (= (:typography-ref-file text-node) file-id))))
+    (t/is (= (:typography-ref-id text-node') (thi/id :typography1)))
+    (t/is (= (:typography-ref-file text-node') (:id file')))))
 
