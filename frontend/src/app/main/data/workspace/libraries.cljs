@@ -486,7 +486,8 @@
             current-page (dm/get-in state [:workspace-data :pages-index page-id])
             library-data (wsh/get-file state library-id)
             objects      (wsh/lookup-page-objects state page-id)
-            changes      (cflh/generate-restore-component library-data component-id library-id current-page it objects)]
+            changes      (-> (pcb/empty-changes it)
+                             (cflh/generate-restore-component library-data component-id library-id current-page objects))]
         (rx/of (dch/commit-changes (assoc changes :file-id library-id)))))))
 
 
