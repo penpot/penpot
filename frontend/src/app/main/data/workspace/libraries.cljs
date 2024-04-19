@@ -11,7 +11,6 @@
    [app.common.files.changes :as ch]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
-   [app.common.files.libraries-common-helpers :as cflch]
    [app.common.files.libraries-helpers :as cflh]
    [app.common.files.shapes-helpers :as cfsh]
    [app.common.geom.point :as gpt]
@@ -352,7 +351,7 @@
             parents  (into #{} (map :parent-id) shapes)]
         (when-not (empty? shapes)
           (let [[root _ changes]
-                (cflch/generate-add-component it shapes objects page-id file-id components-v2
+                (cflh/generate-add-component it shapes objects page-id file-id components-v2
                                              dwg/prepare-create-group
                                              cfsh/prepare-create-artboard-from-selection)]
             (when-not (empty? (:redo-changes changes))
