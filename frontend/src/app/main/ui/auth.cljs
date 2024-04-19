@@ -55,7 +55,8 @@
         (st/emit! (du/show-redirect-error error))))
 
     [:main {:class (stl/css :auth-section)}
-     [:a {:href "#/" :class (stl/css :logo-btn)} i/logo]
+     [:h1 {:class (stl/css :logo-container)}
+      [:a {:href "#/" :title "Penpot" :class (stl/css :logo-btn)} i/logo]]
      [:div {:class (stl/css :login-illustration)}
       i/login-illustration]
 
