@@ -524,7 +524,7 @@
                            (pcb/with-objects objects))
 
              [new-shape changes]
-             (dwlh/generate-instantiate-component changes
+             (cflh/generate-instantiate-component changes
                                                   objects
                                                   file-id
                                                   component-id
@@ -895,7 +895,7 @@
             inside-comp? (ctn/in-any-component? objects parent)
 
             [new-shape changes]
-            (dwlh/generate-instantiate-component changes
+            (cflh/generate-instantiate-component changes
                                                  objects
                                                  (:id file)
                                                  id-new-component

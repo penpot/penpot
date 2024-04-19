@@ -7,16 +7,19 @@
 (ns app.common.files.libraries-helpers
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm] 
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.grid-layout :as gslg]
    [app.common.logging :as log]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.pages-list :as ctpl]
+   [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [clojure.set :as set]))
 
@@ -114,6 +117,8 @@
 
     [root (:id root-shape) changes]))
 
+;; ---- Components and instances creation ----
+
 (defn generate-duplicate-component
   "Create a new component copied from the one with the given id."
   [changes library component-id components-v2]
@@ -144,6 +149,110 @@
                            (:id new-main-instance-shape)
                            (:id main-instance-page)
                            (:annotation component)))))
+
+(defn generate-instantiate-component
+  "Generate changes to create a new instance from a component."
+  ([changes objects file-id component-id position page libraries]
+   (generate-instantiate-component changes objects file-id component-id position page libraries nil nil nil {}))
+
+  ([changes objects file-id component-id position page libraries old-id parent-id frame-id
+    {:keys [force-frame?]
+     :or {force-frame? false}}]
+   (let [component     (ctf/get-component libraries file-id component-id)
+         parent        (when parent-id (get objects parent-id))
+         library       (get libraries file-id)
+
+         components-v2 (dm/get-in library [:data :options :components-v2])
+
+         [new-shape new-shapes]
+         (ctn/make-component-instance page
+           component
+           (:data library)
+           position
+           components-v2
+           (cond-> {}
+             force-frame? (assoc :force-frame-id frame-id)))
+
+         first-shape (cond-> (first new-shapes)
+                       (not (nil? parent-id))
+                       (assoc :parent-id parent-id)
+                       (and (not (nil? parent)) (= :frame (:type parent)))
+                       (assoc :frame-id (:id parent))
+                       (and (not (nil? parent)) (not= :frame (:type parent)))
+                       (assoc :frame-id (:frame-id parent))
+                       (and (not (nil? parent)) (ctn/in-any-component? objects parent))
+                       (dissoc :component-root)
+                       (and (nil? parent) (not (nil? frame-id)))
+                       (assoc :frame-id frame-id))
+
+         ;; on copy/paste old id is used later to reorder the paster layers
+         changes (cond-> (pcb/add-object changes first-shape {:ignore-touched true})
+                   (some? old-id) (pcb/amend-last-change #(assoc % :old-id old-id)))
+
+         changes
+         (if (ctl/grid-layout? objects (:parent-id first-shape))
+           (let [target-cell (-> position meta :cell)
+                 [row column]
+                 (if (some? target-cell)
+                   [(:row target-cell) (:column target-cell)]
+                   (gslg/get-drop-cell (:parent-id first-shape) objects position))]
+             (-> changes
+                 (pcb/update-shapes
+                   [(:parent-id first-shape)]
+                   (fn [shape objects]
+                     (-> shape
+                         (ctl/push-into-cell [(:id first-shape)] row column)
+                         (ctl/assign-cells objects)))
+                   {:with-objects? true})
+                 (pcb/reorder-grid-children [(:parent-id first-shape)])))
+           changes)
+
+         changes (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
+                   changes
+                   (rest new-shapes))]
+
+     [new-shape changes])))
+
+(declare generate-detach-recursive)
+(declare generate-advance-nesting-level)
+
+(defn generate-detach-instance
+  "Generate changes to remove the links between a shape and all its children
+  with a component."
+  [changes container libraries shape-id]
+  (let [shape (ctn/get-shape container shape-id)]
+    (log/debug :msg "Detach instance" :shape-id shape-id :container (:id container))
+    (generate-detach-recursive changes container libraries shape-id true (true? (:component-root shape)))))
+
+(defn- generate-detach-recursive
+  [changes container libraries shape-id first component-root?]
+  (let [shape (ctn/get-shape container shape-id)]
+    (if (and (ctk/instance-head? shape) (not first))
+      ; Subinstances are not detached
+      (cond-> changes
+        component-root?
+        ; If the initial shape was component-root, first level subinstances are converted in top instances
+        (pcb/update-shapes [shape-id] #(assoc % :component-root true))
+
+        :always
+        ; Near shape-refs need to be advanced one level
+        (generate-advance-nesting-level nil container libraries (:id shape)))
+
+      ;; Otherwise, detach the shape and all children
+      (let [children-ids (:shapes shape)]
+        (reduce #(generate-detach-recursive %1 container libraries %2 false component-root?)
+          (pcb/update-shapes changes [(:id shape)] ctk/detach-shape)
+          children-ids)))))
+
+(defn- generate-advance-nesting-level
+  [changes file container libraries shape-id]
+  (let [children (cfh/get-children-with-self (:objects container) shape-id)
+        skip-near (fn [changes shape]
+                    (let [ref-shape (ctf/find-ref-shape file container libraries shape {:include-deleted? true})]
+                      (if (some? (:shape-ref ref-shape))
+                        (pcb/update-shapes changes [(:id shape)] #(assoc % :shape-ref (:shape-ref ref-shape)))
+                        changes)))]
+    (reduce skip-near changes children)))
 
 (defn prepare-restore-component
   ([changes library-data component-id current-page]
@@ -188,6 +297,8 @@
      {:changes (pcb/restore-component changes component-id (:id page) main-inst)
       :shape (first shapes)})))
 
+;; ---- General library synchronization functions ----
+
 (defn generate-restore-component
   "Restore a deleted component, with the given id, in the given file library."
   [changes library-data component-id library-id current-page objects]
@@ -205,48 +316,6 @@
                     (pcb/resize-parents new-objects-ids))]
 
     (assoc changes :file-id library-id)))
-
-
-(declare generate-detach-recursive)
-(declare generate-advance-nesting-level)
-
-(defn generate-detach-instance
-  "Generate changes to remove the links between a shape and all its children
-  with a component."
-  [changes container libraries shape-id]
-  (let [shape (ctn/get-shape container shape-id)]
-    (log/debug :msg "Detach instance" :shape-id shape-id :container (:id container))
-    (generate-detach-recursive changes container libraries shape-id true (true? (:component-root shape)))))
-
-(defn- generate-detach-recursive
-  [changes container libraries shape-id first component-root?]
-  (let [shape (ctn/get-shape container shape-id)]
-    (if (and (ctk/instance-head? shape) (not first))
-      ; Subinstances are not detached
-      (cond-> changes
-        component-root?
-        ; If the initial shape was component-root, first level subinstances are converted in top instances
-        (pcb/update-shapes [shape-id] #(assoc % :component-root true))
-
-        :always
-        ; Near shape-refs need to be advanced one level
-        (generate-advance-nesting-level nil container libraries (:id shape)))
-
-      ;; Otherwise, detach the shape and all children
-      (let [children-ids (:shapes shape)]
-        (reduce #(generate-detach-recursive %1 container libraries %2 false component-root?)
-                (pcb/update-shapes changes [(:id shape)] ctk/detach-shape)
-                children-ids)))))
-
-(defn- generate-advance-nesting-level
-  [changes file container libraries shape-id]
-  (let [children (cfh/get-children-with-self (:objects container) shape-id)
-        skip-near (fn [changes shape]
-                    (let [ref-shape (ctf/find-ref-shape file container libraries shape {:include-deleted? true})]
-                      (if (some? (:shape-ref ref-shape))
-                        (pcb/update-shapes changes [(:id shape)] #(assoc % :shape-ref (:shape-ref ref-shape)))
-                        changes)))]
-    (reduce skip-near changes children)))
 
 (defn generate-detach-component
   "Generate changes for remove all references to components in the shape,

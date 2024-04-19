@@ -435,7 +435,7 @@
                             (gpt/subtract (-> origin-frame :selrect gpt/point)))
 
         instantiate-component
-        #(dwlh/generate-instantiate-component changes
+        #(cflh/generate-instantiate-component changes
                                               objects
                                               file-id
                                               (:component-id component-root)
