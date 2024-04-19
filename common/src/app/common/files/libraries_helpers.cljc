@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.data.workspace.libraries-helpers
+(ns app.common.files.libraries-helpers
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -25,7 +25,6 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.typography :as cty]
-   [app.main.data.workspace.state-helpers :as wsh]
    [cljs.spec.alpha :as s]
    [clojure.set :as set]))
 
@@ -37,7 +36,6 @@
 (declare generate-sync-text-shape)
 (declare uses-assets?)
 
-(declare get-assets)
 (declare generate-sync-shape-direct)
 (declare generate-sync-shape-direct-recursive)
 (declare generate-sync-shape-inverse)
@@ -59,10 +57,10 @@
 (declare make-change)
 
 (defn pretty-file
-  [file-id state]
-  (if (= file-id (:current-file-id state))
+  [file-id libraries current-file-id]
+  (if (= file-id current-file-id)
     "<local>"
-    (str "<" (get-in state [:workspace-libraries file-id :name]) ">")))
+    (str "<" (get-in libraries [file-id :name]) ">")))
 
 (defn pretty-uuid
   [uuid]
@@ -304,7 +302,7 @@
 
   If an asset id is given, only shapes linked to this particular asset will
   be synchronized."
-  [it file-id asset-type asset-id library-id state]
+  [it file-id asset-type asset-id library-id libraries current-file-id]
   (s/assert #{:colors :components :typographies} asset-type)
   (s/assert (s/nilable ::us/uuid) asset-id)
   (s/assert ::us/uuid file-id)
@@ -313,10 +311,10 @@
   (log/info :msg "Sync file with library"
             :asset-type asset-type
             :asset-id asset-id
-            :file (pretty-file file-id state)
-            :library (pretty-file library-id state))
+            :file (pretty-file file-id libraries current-file-id)
+            :library (pretty-file library-id libraries current-file-id))
 
-  (let [file          (wsh/get-file state file-id)
+  (let [file          (get-in libraries [file-id :data])
         components-v2 (get-in file [:options :components-v2])]
     (loop [containers (ctf/object-containers-seq file)
            changes (pcb/empty-changes it)]
@@ -329,9 +327,10 @@
                                            asset-type
                                            asset-id
                                            library-id
-                                           state
                                            container
-                                           components-v2))))
+                                           components-v2
+                                           libraries
+                                           current-file-id))))
         changes))))
 
 (defn generate-sync-library
@@ -341,7 +340,7 @@
 
   If an asset id is given, only shapes linked to this particular asset will
   be synchronized."
-  [it file-id asset-type asset-id library-id state]
+  [it file-id asset-type asset-id library-id libraries current-file-id]
   (s/assert #{:colors :components :typographies} asset-type)
   (s/assert (s/nilable ::us/uuid) asset-id)
   (s/assert ::us/uuid file-id)
@@ -350,10 +349,10 @@
   (log/info :msg "Sync local components with library"
             :asset-type asset-type
             :asset-id asset-id
-            :file (pretty-file file-id state)
-            :library (pretty-file library-id state))
+            :file (pretty-file file-id libraries current-file-id)
+            :library (pretty-file library-id libraries current-file-id))
 
-  (let [file          (wsh/get-file state file-id)
+  (let [file          (get-in libraries [file-id :data])
         components-v2 (get-in file [:options :components-v2])]
     (loop [local-components (ctkl/components-seq file)
            changes (pcb/empty-changes it)]
@@ -365,15 +364,16 @@
                                          asset-type
                                          asset-id
                                          library-id
-                                         state
                                          (cfh/make-container local-component :component)
-                                         components-v2)))
+                                         components-v2
+                                         libraries
+                                         current-file-id)))
         changes))))
 
 (defn- generate-sync-container
   "Generate changes to synchronize all shapes in a particular container (a page
   or a component) that use assets of the given type in the given library."
-  [it asset-type asset-id library-id state container components-v2]
+  [it asset-type asset-id library-id container components-v2 libraries current-file-id]
 
   (if (cfh/page? container)
     (log/debug :msg "Sync page in local file" :page-id (:id container))
@@ -390,10 +390,11 @@
                (generate-sync-shape asset-type
                                     changes
                                     library-id
-                                    state
                                     container
                                     shape
-                                    components-v2))
+                                    components-v2
+                                    libraries
+                                    current-file-id))
         changes))))
 
 (defmulti uses-assets?
@@ -421,45 +422,38 @@
 (defmulti generate-sync-shape
   "Generate changes to synchronize one shape from all assets of the given type
   that is using, in the given library."
-  (fn [asset-type _changes _library-id _state _container _shape _components-v2] asset-type))
+  (fn [asset-type _changes _library-id _container _shape _components-v2 _libraries _current-file-id] asset-type))
 
 (defmethod generate-sync-shape :components
-  [_ changes _library-id state container shape components-v2]
+  [_ changes _library-id container shape components-v2 libraries current-file-id]
   (let [shape-id  (:id shape)
-        file      (wsh/get-local-file-full state)
-        libraries (wsh/get-libraries state)]
+        file      (get current-file-id libraries)]
     (generate-sync-shape-direct changes file libraries container shape-id false components-v2)))
 
 (defmethod generate-sync-shape :colors
-  [_ changes library-id state _ shape _]
+  [_ changes library-id _ shape _ libraries _]
   (log/debug :msg "Sync colors of shape" :shape (:name shape))
 
   ;; Synchronize a shape that uses some colors of the library. The value of the
   ;; color in the library is copied to the shape.
-  (let [library-colors (get-assets library-id :colors state)]
+  (let [library-colors (get-in libraries [library-id :data :colors])]
     (pcb/update-shapes changes
                        [(:id shape)]
                        #(ctc/sync-shape-colors % library-id library-colors))))
 
 (defmethod generate-sync-shape :typographies
-  [_ changes library-id state container shape _]
+  [_ changes library-id container shape _ libraries _]
   (log/debug :msg "Sync typographies of shape" :shape (:name shape))
 
   ;; Synchronize a shape that uses some typographies of the library. The attributes
   ;; of the typography are copied to the shape."
-  (let [typographies (get-assets library-id :typographies state)
+  (let [typographies  (get-in libraries [library-id :data :typographies])
         update-node (fn [node]
                       (if-let [typography (get typographies (:typography-ref-id node))]
                         (merge node (dissoc typography :name :id))
                         (dissoc node :typography-ref-id
                                 :typography-ref-file)))]
     (generate-sync-text-shape changes shape container update-node)))
-
-(defn- get-assets
-  [library-id asset-type state]
-  (if (= library-id (:current-file-id state))
-    (get-in state [:workspace-data asset-type])
-    (get-in state [:workspace-libraries library-id :data asset-type])))
 
 (defn- generate-sync-text-shape
   [changes shape container update-node]
