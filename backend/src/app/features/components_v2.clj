@@ -12,7 +12,7 @@
    [app.common.files.changes :as cp]
    [app.common.files.changes-builder :as fcb]
    [app.common.files.helpers :as cfh]
-   [app.common.files.libraries-helpers :as cflh]
+   [app.common.files.libraries-common-helpers :as cflch]
    [app.common.files.migrations :as fmg]
    [app.common.files.shapes-helpers :as cfsh]
    [app.common.files.validate :as cfv]
@@ -1451,7 +1451,7 @@
                 (cons shape children))
 
         [_ _ changes2]
-        (cflh/generate-add-component nil
+        (cflch/generate-add-component nil
                                      [shape]
                                      (:objects page)
                                      (:id page)

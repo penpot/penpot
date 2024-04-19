@@ -11,7 +11,7 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.focus :as cpf]
    [app.common.files.helpers :as cfh]
-   [app.common.files.libraries-helpers :as cflh]
+   [app.common.files.libraries-common-helpers :as cflch]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
@@ -498,7 +498,7 @@
            regenerate-component
            (fn [changes shape]
              (let [components-v2 (dm/get-in library-data [:options :components-v2])
-                   [_ changes] (cflh/generate-add-component-changes changes shape objects file-id (:id page) components-v2)]
+                   [_ changes] (cflch/generate-add-component-changes changes shape objects file-id (:id page) components-v2)]
                changes))
 
            new-obj

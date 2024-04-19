@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.files.libraries-helpers
+(ns app.common.files.libraries-common-helpers
   (:require
    [app.common.data :as d]
    [app.common.files.changes-builder :as pcb]
