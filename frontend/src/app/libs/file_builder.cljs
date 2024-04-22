@@ -144,7 +144,7 @@
     (str (:current-page-id file)))
 
   (addPage [_ name options]
-    (set! file (fb/add-page file {:name name :options options}))
+    (set! file (fb/add-page file {:name name :options (parse-data options)}))
     (str (:current-page-id file)))
 
   (closePage [_]
