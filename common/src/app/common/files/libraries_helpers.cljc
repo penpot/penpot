@@ -846,7 +846,7 @@
                         components-v2))))
 
 
-(defn- generate-rename-component
+(defn generate-rename-component
   "Generate the changes for rename the component with the given id, in the current file library."
   [changes id new-name library-data components-v2]
   (let [[path name]   (cfh/parse-path-name new-name)
@@ -1807,5 +1807,15 @@
                     (pcb/resize-parents new-objects-ids))]
 
     (assoc changes :file-id library-id)))
+
+(defn generate-detach-component
+  "Generate changes for remove all references to components in the shape,
+  with the given id and all its children, at the current page."
+  [changes id file page-id libraries]
+  (let [container (cfh/get-container file :page page-id)]
+    (-> changes
+        (pcb/with-container container)
+        (pcb/with-objects (:objects container))
+        (generate-detach-instance container libraries id))))
 
 
