@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-test("has title", async ({ page }) => {
+test("Has title", async ({ page }) => {
   await page.route("**/api/rpc/command/get-profile", (route) => {
     route.fulfill({
       status: 200,
