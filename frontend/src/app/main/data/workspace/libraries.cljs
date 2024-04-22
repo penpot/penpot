@@ -554,13 +554,10 @@
     (watch [it state _]
       (let [file      (wsh/get-local-file state)
             page-id   (get state :current-page-id)
-            container (cfh/get-container file :page page-id)
             libraries (wsh/get-libraries state)
 
             changes   (-> (pcb/empty-changes it)
-                          (pcb/with-container container)
-                          (pcb/with-objects (:objects container))
-                          (cflh/generate-detach-instance container libraries id))]
+                          (cflh/generate-detach-component id file page-id libraries))]
 
         (rx/of (dch/commit-changes changes))))))
 
@@ -597,9 +594,7 @@
                       (reduce
                        (fn [changes id]
                          (cflh/generate-detach-instance changes container libraries id))
-                       (-> (pcb/empty-changes it)
-                           (pcb/with-container container)
-                           (pcb/with-objects objects))
+                       (pcb/empty-changes it)
                        selected))]
 
         (rx/of (when can-detach?
