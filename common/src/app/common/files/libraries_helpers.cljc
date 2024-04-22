@@ -847,6 +847,7 @@
 
 
 (defn- generate-rename-component
+  "Generate the changes for rename the component with the given id, in the current file library."
   [changes id new-name library-data components-v2]
   (let [[path name]   (cfh/parse-path-name new-name)
         update-fn
@@ -863,6 +864,9 @@
     (-> changes
         (pcb/with-library-data library-data)
         (pcb/update-component id update-fn))))
+
+
+
 
 (defn generate-sync-shape-inverse
   "Generate changes to update the component a shape is linked to, from
@@ -1785,3 +1789,5 @@
                                     [:component-root])]
 
     [root (:id root-shape) changes]))
+
+
