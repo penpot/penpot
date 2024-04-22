@@ -8,8 +8,11 @@
   "RPC for plugins runtime."
   (:require
    [app.common.data.macros :as dm]
+   [app.common.files.changes-builder :as cb]
    [app.common.record :as cr]
+   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
+   [app.main.data.workspace.changes :as ch]
    [app.main.store :as st]
    [app.plugins.events :as events]
    [app.plugins.file :as file]
@@ -37,8 +40,9 @@
 
   (getPage
     [_]
-    (let [page-id (:current-page-id @st/state)]
-      (page/data->page-proxy (dm/get-in @st/state [:workspace-data :pages-index page-id]))))
+    (let [page-id (:current-page-id @st/state)
+          page (dm/get-in @st/state [:workspace-data :pages-index page-id])]
+      (page/data->page-proxy page)))
 
   (getSelected
     [_]
@@ -64,11 +68,26 @@
     (let [theme (get-in @st/state [:profile :theme])]
       (if (or (not theme) (= theme "default"))
         "dark"
-        (get-in @st/state [:profile :theme])))))
+        (get-in @st/state [:profile :theme]))))
+
+  (createRectangle
+    [_]
+    (let [page-id (:current-page-id @st/state)
+          page (dm/get-in @st/state [:workspace-data :pages-index page-id])
+          shape (cts/setup-shape {:type :rect
+                                  :x 0 :y 0 :width 100 :height 100})
+          changes
+          (-> (cb/empty-changes)
+              (cb/with-page page)
+              (cb/with-objects (:objects page))
+              (cb/add-object shape))]
+      (st/emit! (ch/commit-changes changes))
+      (shape/data->shape-proxy shape))))
 
 (defn create-context
   []
   (cr/add-properties!
    (PenpotContext.)
    {:name "root" :get #(.getRoot ^js %)}
-   {:name "currentPage" :get #(.getPage ^js %)}))
+   {:name "currentPage" :get #(.getPage ^js %)}
+   {:name "selection" :get #(.getSelectedShapes ^js %)}))
