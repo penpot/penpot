@@ -99,7 +99,7 @@
           [:h2 "Libraries & templates"]]
          [:div.modal-content
           [:p "We’ve created a new space on Penpot where you can share your libraries and templates and download the ones you like.   Material Design, Cocomaterial or Penpot’s Design System are among them (and a lot more to come!)."]
-          [:p [:a {:alt "Explore libraries & templates" :target "_blank" :href "https://penpot.app/libraries-templates.html"} "Explore libraries & templates"]]]
+          [:p [:a {:alt "Explore libraries & templates" :target "_blank" :href "https://penpot.app/libraries-templates"} "Explore libraries & templates"]]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click finish} "Start!"]
           [:& c/navigation-bullets
