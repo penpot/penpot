@@ -540,6 +540,7 @@
             token  (tokens/generate (::setup/props cfg) info)
             params (d/without-nils
                     {:token token
+                     :provider (:provider (:path-params request))
                      :fullname (:fullname info)})
             uri    (-> (u/uri (cf/get :public-uri))
                        (assoc :path "/#/auth/register/validate")
