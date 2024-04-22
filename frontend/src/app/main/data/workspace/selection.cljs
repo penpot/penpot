@@ -28,7 +28,6 @@
    [app.main.data.modal :as md]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.collapse :as dwc]
-   [app.main.data.workspace.libraries-helpers :as dwlh]
    [app.main.data.workspace.specialized-panel :as-alias dwsp]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
@@ -435,7 +434,7 @@
                             (gpt/subtract (-> origin-frame :selrect gpt/point)))
 
         instantiate-component
-        #(dwlh/generate-instantiate-component changes
+        #(cflh/generate-instantiate-component changes
                                               objects
                                               file-id
                                               (:component-id component-root)
@@ -448,7 +447,7 @@
                                               {})
 
         restore-component
-        #(let [restore (dwlh/prepare-restore-component changes library-data (:component-id component-root) it page delta (:id component-root) parent-id frame-id)]
+        #(let [restore (cflh/prepare-restore-component changes library-data (:component-id component-root) it page delta (:id component-root) parent-id frame-id)]
            [(:shape restore) (:changes restore)])
 
         [_shape changes]

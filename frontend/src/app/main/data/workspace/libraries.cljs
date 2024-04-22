@@ -29,7 +29,6 @@
    [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.groups :as dwg]
-   [app.main.data.workspace.libraries-helpers :as dwlh]
    [app.main.data.workspace.notifications :as-alias dwn]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shapes :as dwsh]
@@ -53,6 +52,13 @@
 
 ;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
 (log/set-level! :warn)
+
+
+(defn- pretty-file
+  [file-id state]
+  (if (= file-id (:current-file-id state))
+    "<local>"
+    (str "<" (get-in state [:workspace-libraries file-id :name]) ">")))
 
 (defn- log-changes
   [changes file]
@@ -472,7 +478,7 @@
 
             [new-component-shape new-component-shapes  ; <- null in components-v2
              new-main-instance-shape new-main-instance-shapes]
-            (dwlh/duplicate-component component new-component-id (:data library))
+            (cflh/duplicate-component component new-component-id (:data library))
 
             changes (-> (pcb/empty-changes it nil)
                         (pcb/with-page main-instance-page)
@@ -525,7 +531,7 @@
             current-page (dm/get-in state [:workspace-data :pages-index page-id])
             objects      (wsh/lookup-page-objects state page-id)
             library-data (wsh/get-file state library-id)
-            {:keys [changes shape]} (dwlh/prepare-restore-component library-data component-id current-page it)
+            {:keys [changes shape]} (cflh/prepare-restore-component library-data component-id current-page it)
             parent-id (:parent-id shape)
             objects (cond-> (assoc objects (:id shape) shape)
                       (not (nil? parent-id))
@@ -574,7 +580,7 @@
                            (pcb/with-objects objects))
 
              [new-shape changes]
-             (dwlh/generate-instantiate-component changes
+             (cflh/generate-instantiate-component changes
                                                   objects
                                                   file-id
                                                   component-id
@@ -606,7 +612,7 @@
             changes   (-> (pcb/empty-changes it)
                           (pcb/with-container container)
                           (pcb/with-objects (:objects container))
-                          (dwlh/generate-detach-instance container libraries id))]
+                          (cflh/generate-detach-instance container libraries id))]
 
         (rx/of (dch/commit-changes changes))))))
 
@@ -642,7 +648,7 @@
             changes (when can-detach?
                       (reduce
                        (fn [changes id]
-                         (dwlh/generate-detach-instance changes container libraries id))
+                         (cflh/generate-detach-instance changes container libraries id))
                        (-> (pcb/empty-changes it)
                            (pcb/with-container container)
                            (pcb/with-objects objects))
@@ -731,7 +737,7 @@
             (-> (pcb/empty-changes it)
                 (pcb/with-container container)
                 (pcb/with-objects (:objects container))
-                (dwlh/generate-sync-shape-direct file-full libraries container (:id head) false components-v2))]
+                (cflh/generate-sync-shape-direct file-full libraries container (:id head) false components-v2))]
 
         (log/debug :msg "SYNC-head finished" :js/rchanges (log-changes
                                                            (:redo-changes changes)
@@ -767,7 +773,7 @@
             (-> (pcb/empty-changes it)
                 (pcb/with-container container)
                 (pcb/with-objects (:objects container))
-                (dwlh/generate-sync-shape-direct file-full libraries container id true components-v2))]
+                (cflh/generate-sync-shape-direct file-full libraries container id true components-v2))]
 
         (log/debug :msg "RESET-COMPONENT finished" :js/rchanges (log-changes
                                                                  (:redo-changes changes)
@@ -823,7 +829,7 @@
                  (-> (pcb/empty-changes it)
                      (pcb/set-undo-group undo-group)
                      (pcb/with-container container)
-                     (dwlh/generate-sync-shape-inverse full-file libraries container id components-v2))
+                     (cflh/generate-sync-shape-inverse full-file libraries container id components-v2))
 
                  file-id   (:component-file shape)
                  file      (wsh/get-file state file-id)
@@ -947,7 +953,7 @@
             inside-comp? (ctn/in-any-component? objects parent)
 
             [new-shape changes]
-            (dwlh/generate-instantiate-component changes
+            (cflh/generate-instantiate-component changes
                                                  objects
                                                  (:id file)
                                                  id-new-component
@@ -978,7 +984,7 @@
                 ;; We need to set the same index as the original shape
                 (pcb/change-parent (:parent-id shape) [new-shape] index {:component-swap true
                                                                          :ignore-touched true})
-                (dwlh/change-touched new-shape
+                (cflh/change-touched new-shape
                                      shape
                                      (ctn/make-container page :page)
                                      {}))]
@@ -1039,7 +1045,7 @@
     (watch [_ state _]
       (let [undo-id (js/Symbol)]
         (log/info :msg "COMPONENT-SWAP"
-                  :file (dwlh/pretty-file file-id state)
+                  :file (pretty-file file-id state)
                   :id-new-component id-new-component
                   :undo-id undo-id)
         (rx/concat
@@ -1092,12 +1098,15 @@
      (watch [it state _]
        (when (and (some? file-id) (some? library-id)) ; Prevent race conditions while navigating out of the file
          (log/info :msg "SYNC-FILE"
-                   :file (dwlh/pretty-file file-id state)
-                   :library (dwlh/pretty-file library-id state)
+                   :file (pretty-file file-id state)
+                   :library (pretty-file library-id state)
                    :asset-type asset-type
                    :asset-id asset-id
                    :undo-group undo-group)
          (let [file            (wsh/get-file state file-id)
+               libraries       (wsh/get-libraries state)
+               current-file-id (:current-file-id state)
+
 
                sync-components?   (or (nil? asset-type) (= asset-type :components))
                sync-colors?       (or (nil? asset-type) (= asset-type :colors))
@@ -1108,22 +1117,22 @@
                                 (-> (pcb/empty-changes it)
                                     (pcb/set-undo-group undo-group))
                                 [(when sync-components?
-                                   (dwlh/generate-sync-library it file-id :components asset-id library-id state))
+                                   (cflh/generate-sync-library it file-id :components asset-id library-id libraries current-file-id))
                                  (when sync-colors?
-                                   (dwlh/generate-sync-library it file-id :colors asset-id library-id state))
+                                   (cflh/generate-sync-library it file-id :colors asset-id library-id libraries current-file-id))
                                  (when sync-typographies?
-                                   (dwlh/generate-sync-library it file-id :typographies asset-id library-id state))])
+                                   (cflh/generate-sync-library it file-id :typographies asset-id library-id libraries current-file-id))])
 
                file-changes    (reduce
                                 pcb/concat-changes
                                 (-> (pcb/empty-changes it)
                                     (pcb/set-undo-group undo-group))
                                 [(when sync-components?
-                                   (dwlh/generate-sync-file it file-id :components asset-id library-id state))
+                                   (cflh/generate-sync-file it file-id :components asset-id library-id libraries current-file-id))
                                  (when sync-colors?
-                                   (dwlh/generate-sync-file it file-id :colors asset-id library-id state))
+                                   (cflh/generate-sync-file it file-id :colors asset-id library-id libraries current-file-id))
                                  (when sync-typographies?
-                                   (dwlh/generate-sync-file it file-id :typographies asset-id library-id state))])
+                                   (cflh/generate-sync-file it file-id :typographies asset-id library-id libraries current-file-id))])
 
                changes         (pcb/concat-changes library-changes file-changes)
 

@@ -123,6 +123,15 @@
     (get state :workspace-data)
     (dm/get-in state [:workspace-libraries file-id :data])))
 
+(defn get-file-full
+  "Get the data content of the given file (it may be the current file
+  or one library)."
+  [state file-id]
+  (if (= file-id (:current-file-id state))
+    (-> (get state :workspace-file)
+        (assoc :data (get state :workspace-data)))
+    (dm/get-in state [:workspace-libraries file-id :data])))
+
 (defn get-libraries
   "Retrieve all libraries, including the local file."
   [state]

@@ -6,7 +6,6 @@
 
 (ns frontend-tests.helpers.pages
   (:require
-   [app.common.data :as d]
    [app.common.files.changes :as cp]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
@@ -17,8 +16,6 @@
    [app.common.uuid :as uuid]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.layout :as layout]
-   [app.main.data.workspace.libraries-helpers :as dwlh]
-   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]))
 
 ;; ---- Helpers to manage pages and objects
@@ -161,7 +158,7 @@
                        (pcb/with-objects objects))
 
          [new-shape changes]
-         (dwlh/generate-instantiate-component changes
+         (cflh/generate-instantiate-component changes
                                               objects
                                               file-id
                                               component-id
