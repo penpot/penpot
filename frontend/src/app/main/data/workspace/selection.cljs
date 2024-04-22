@@ -447,7 +447,7 @@
                                               {})
 
         restore-component
-        #(let [restore (cflh/prepare-restore-component changes library-data (:component-id component-root) it page delta (:id component-root) parent-id frame-id)]
+        #(let [restore (cflh/prepare-restore-component changes library-data (:component-id component-root) page delta (:id component-root) parent-id frame-id)]
            [(:shape restore) (:changes restore)])
 
         [_shape changes]
