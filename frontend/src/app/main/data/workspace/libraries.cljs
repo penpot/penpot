@@ -414,25 +414,10 @@
       (let [new-name (str/trim new-name)]
         (if (str/empty? new-name)
           (rx/empty)
-          (let [data          (get state :workspace-data)
-                [path name]   (cfh/parse-path-name new-name)
+          (let [library-data  (get state :workspace-data)
                 components-v2 (features/active-feature? state "components/v2")
-
-                update-fn
-                (fn [component]
-                  (cond-> component
-                    :always
-                    (assoc :path path
-                           :name name)
-
-                    (not components-v2)
-                    (update :objects
-                            ;; Give the same name to the root shape
-                            #(assoc-in % [id :name] name))))
-
-                changes (-> (pcb/empty-changes it)
-                            (pcb/with-library-data data)
-                            (pcb/update-component id update-fn))]
+                changes       (-> (pcb/empty-changes it)
+                                  (cflh/generate-rename-component id new-name library-data components-v2))]
 
             (rx/of (dch/commit-changes changes))))))))
 
