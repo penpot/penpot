@@ -1820,10 +1820,53 @@
         (pcb/with-objects (:objects container))
         (generate-detach-instance container libraries id))))
 
+(defn generate-update-shape-flags
+  [changes ids objects {:keys [blocked hidden] :as flags}]
+  (let [update-fn
+        (fn [obj]
+          (cond-> obj
+            (boolean? blocked) (assoc :blocked blocked)
+            (boolean? hidden) (assoc :hidden hidden)))
+
+        ids     (if (boolean? blocked)
+                  (into ids (->> ids (mapcat #(cfh/get-children-ids objects %))))
+                  ids)]
+    (-> changes
+        (pcb/update-shapes ids update-fn {:attrs #{:blocked :hidden}}))))
+
 (defn generate-delete-shapes
-  [changes file page objects ids {:keys [components-v2 ignore-touched undo-group]}]
-  (let [changes (-> changes
-                    (pcb/set-undo-group undo-group)
+  [changes file page objects ids {:keys [components-v2 ignore-touched component-swap]}]
+  (let [ids           (cfh/clean-loops objects ids)
+
+        in-component-copy?
+        (fn [shape-id]
+          ;; Look for shapes that are inside a component copy, but are
+          ;; not the root. In this case, they must not be deleted,
+          ;; but hidden (to be able to recover them more easily).
+          ;; Unless we are doing a component swap, in which case we want
+          ;; to delete the old shape
+          (let [shape           (get objects shape-id)]
+            (and (ctn/has-any-copy-parent? objects shape)
+                 (not component-swap))))
+
+        [ids-to-delete ids-to-hide]
+        (if components-v2
+          (loop [ids-seq       (seq ids)
+                 ids-to-delete []
+                 ids-to-hide   []]
+            (let [id (first ids-seq)]
+              (if (nil? id)
+                [ids-to-delete ids-to-hide]
+                (if (in-component-copy? id)
+                  (recur (rest ids-seq)
+                         ids-to-delete
+                         (conj ids-to-hide id))
+                  (recur (rest ids-seq)
+                         (conj ids-to-delete id)
+                         ids-to-hide)))))
+          [ids []])
+
+        changes (-> changes
                     (pcb/with-page page)
                     (pcb/with-objects objects)
                     (pcb/with-library-data file))
@@ -1840,7 +1883,7 @@
                       (conj group-ids (:id parent))
                       group-ids)))
                 #{}
-                ids)
+                ids-to-delete)
 
         interacting-shapes
         (filter (fn [shape]
@@ -1848,11 +1891,11 @@
                   ;; some interaction, this must be deleted, too.
                   (let [interactions (:interactions shape)]
                     (some #(and (ctsi/has-destination %)
-                                (contains? ids (:destination %)))
+                                (contains? ids-to-delete (:destination %)))
                           interactions)))
                 (vals objects))
 
-        ids-set (set ids)
+        ids-set (set ids-to-delete)
         guides-to-remove
         (->> (dm/get-in page [:options :guides])
              (vals)
@@ -1867,7 +1910,7 @@
         (filter (fn [flow]
                   ;; If any of the deleted is a frame that starts a flow,
                   ;; this must be deleted, too.
-                  (contains? ids (:starting-frame flow)))
+                  (contains? ids-to-delete (:starting-frame flow)))
                 (-> page :options :flows))
 
         all-parents
@@ -1875,10 +1918,10 @@
                   ;; All parents of any deleted shape must be resized.
                   (into res (cfh/get-parent-ids objects id)))
                 (d/ordered-set)
-                ids)
+                ids-to-delete)
 
         all-children
-        (->> ids ;; Children of deleted shapes must be also deleted.
+        (->> ids-to-delete ;; Children of deleted shapes must be also deleted.
              (reduce (fn [res id]
                        (into res (cfh/get-children-ids objects id)))
                      [])
@@ -1887,7 +1930,7 @@
 
         find-all-empty-parents
         (fn recursive-find-empty-parents [empty-parents]
-          (let [all-ids   (into empty-parents ids)
+          (let [all-ids   (into empty-parents ids-to-delete)
                 contains? (partial contains? all-ids)
                 xform     (comp (map lookup)
                                 (filter #(or (cfh/group-shape? %) (cfh/bool-shape? %)))
@@ -1911,7 +1954,7 @@
                         (conj components (:component-id shape))
                         components)))
                   []
-                  (into ids all-children))
+                  (into ids-to-delete all-children))
           [])
 
         changes (-> changes
@@ -1923,10 +1966,10 @@
                           (pcb/delete-component changes component-id (:id page)))
                         changes
                         components-to-delete)
-
         changes (-> changes
+                    (generate-update-shape-flags ids-to-hide objects {:hidden true})
                     (pcb/remove-objects all-children {:ignore-touched true})
-                    (pcb/remove-objects ids {:ignore-touched ignore-touched})
+                    (pcb/remove-objects ids-to-delete {:ignore-touched ignore-touched})
                     (pcb/remove-objects empty-parents)
                     (pcb/resize-parents all-parents)
                     (pcb/update-shapes groups-to-unmask
@@ -1938,10 +1981,67 @@
                                                         (fn [interactions]
                                                           (into []
                                                                 (remove #(and (ctsi/has-destination %)
-                                                                              (contains? ids (:destination %))))
+                                                                              (contains? ids-to-delete (:destination %))))
                                                                 interactions)))))
                     (cond-> (seq starting-flows)
                       (pcb/update-page-option :flows (fn [flows]
                                                        (->> (map :id starting-flows)
                                                             (reduce ctp/remove-flow flows))))))]
-    [changes all-parents]))
+    [all-parents changes]))
+
+(defn generate-new-shape-for-swap
+  [changes shape file page libraries id-new-component index target-cell keep-props-values]
+  (let [objects      (:objects page)
+        position     (gpt/point (:x shape) (:y shape))
+        changes      (-> changes
+                         (pcb/with-objects objects))
+        position     (-> position (with-meta {:cell target-cell}))
+        parent       (get objects (:parent-id shape))
+        inside-comp? (ctn/in-any-component? objects parent)
+
+        [new-shape changes]
+        (generate-instantiate-component changes
+                                        objects
+                                        (:id file)
+                                        id-new-component
+                                        position
+                                        page
+                                        libraries
+                                        nil
+                                        (:parent-id shape)
+                                        (:frame-id shape)
+                                        {:force-frame? true})
+
+        new-shape (cond-> new-shape
+                    ;; if the shape isn't inside a main component, it shouldn't have a swap slot
+                    (and (nil? (ctk/get-swap-slot new-shape))
+                         inside-comp?)
+                    (update :touched cfh/set-touched-group (-> (ctf/find-swap-slot shape
+                                                                                   page
+                                                                                   {:id (:id file)
+                                                                                    :data file}
+                                                                                   libraries)
+                                                               (ctk/build-swap-slot-group))))]
+
+    [new-shape (-> changes
+                   ;; Restore the properties
+                   (pcb/update-shapes [(:id new-shape)] #(d/patch-object % keep-props-values))
+
+                   ;; We need to set the same index as the original shape
+                   (pcb/change-parent (:parent-id shape) [new-shape] index {:component-swap true
+                                                                            :ignore-touched true})
+                   (change-touched new-shape
+                                   shape
+                                   (ctn/make-container page :page)
+                                   {}))]))
+
+(defn generate-component-swap
+  [changes objects shape file page libraries id-new-component index target-cell keep-props-values]
+  (let [[all-parents changes]
+        (-> changes
+            (generate-delete-shapes file page objects (d/ordered-set (:id shape)) {:components-v2 true
+                                                                                   :component-swap true}))
+        [new-shape changes]
+        (-> changes
+            (generate-new-shape-for-swap shape file page libraries id-new-component index target-cell keep-props-values))]
+    [new-shape all-parents changes]))
