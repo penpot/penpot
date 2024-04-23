@@ -69,7 +69,8 @@
 
   (clone [_] (.log js/console (clj->js _data)))
   (delete [_] (.log js/console (clj->js _data)))
-  (appendChild [_] (.log js/console (clj->js _data))))
+  (appendChild [_ child] (.log js/console (clj->js _data)))
+  (insertChild [_ index child] (.log js/console (clj->js _data))))
 
 (crc/define-properties!
   ShapeProxy

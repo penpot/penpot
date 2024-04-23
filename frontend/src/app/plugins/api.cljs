@@ -17,7 +17,8 @@
    [app.plugins.events :as events]
    [app.plugins.file :as file]
    [app.plugins.page :as page]
-   [app.plugins.shape :as shape]))
+   [app.plugins.shape :as shape]
+   [app.plugins.viewport :as viewport]))
 
 ;;
 ;; PLUGINS PUBLIC API - The plugins will able to access this functions
@@ -28,11 +29,29 @@
    (map val)
    (map shape/data->shape-proxy)))
 
+(defn create-shape
+  [type]
+  (let [page-id (:current-page-id @st/state)
+        page (dm/get-in @st/state [:workspace-data :pages-index page-id])
+        shape (cts/setup-shape {:type :type
+                                :x 0 :y 0 :width 100 :height 100})
+        changes
+        (-> (cb/empty-changes)
+            (cb/with-page page)
+            (cb/with-objects (:objects page))
+            (cb/add-object shape))]
+    (st/emit! (ch/commit-changes changes))
+    (shape/data->shape-proxy shape)))
+
 (deftype PenpotContext []
   Object
   (addListener
     [_ type callback]
     (events/add-listener type callback))
+
+  (getViewport
+    [_]
+    (viewport/create-proxy))
 
   (getFile
     [_]
@@ -70,19 +89,13 @@
         "dark"
         (get-in @st/state [:profile :theme]))))
 
+  (createFrame
+    [_]
+    (create-shape :frame))
+
   (createRectangle
     [_]
-    (let [page-id (:current-page-id @st/state)
-          page (dm/get-in @st/state [:workspace-data :pages-index page-id])
-          shape (cts/setup-shape {:type :rect
-                                  :x 0 :y 0 :width 100 :height 100})
-          changes
-          (-> (cb/empty-changes)
-              (cb/with-page page)
-              (cb/with-objects (:objects page))
-              (cb/add-object shape))]
-      (st/emit! (ch/commit-changes changes))
-      (shape/data->shape-proxy shape))))
+    (create-shape :rect)))
 
 (defn create-context
   []
@@ -90,4 +103,5 @@
    (PenpotContext.)
    {:name "root" :get #(.getRoot ^js %)}
    {:name "currentPage" :get #(.getPage ^js %)}
-   {:name "selection" :get #(.getSelectedShapes ^js %)}))
+   {:name "selection" :get #(.getSelectedShapes ^js %)}
+   {:name "viewport" :get #(.getViewport ^js %)}))
