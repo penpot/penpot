@@ -37,7 +37,16 @@ test("Shows login page when going to index and user is logged out", async ({ pag
   await page.goto("/");
 
   await expect(page).toHaveURL(/auth\/login$/);
-  await expect(page.getByText("Log into my account")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Log into my account" } )).toBeVisible();
+});
+
+test("User submit a wrong formated email ", async ({ page }) => {
+  await interceptRPC(page, "get-profile", "get-profile-anonymous.json");
+  await page.goto("/");
+  await page.getByLabel("Email").fill("foo");
+
+  await expect(page).toHaveURL(/auth\/login$/);
+  await expect(page.getByText("Enter a valid email please")).toBeVisible();
 });
 
 test("User logs in by filling the login form", async ({ page }) => {
@@ -53,4 +62,19 @@ test("User logs in by filling the login form", async ({ page }) => {
   await page.getByRole("button", { name: "Login" }).click();
 
   await expect(page).toHaveURL(/dashboard/);
+});
+
+test("User submits wrong credentials", async ({ page }) => {
+  await interceptRPC(page, "get-profile", "get-profile-anonymous.json");
+  await interceptRPC(page, "login-with-password", "login-with-password-error.json", { status: 400 });
+
+  await page.goto("/");
+
+  await page.getByLabel("Email").fill("foo123@example.com");
+  await page.getByLabel("Password").fill("aaaa");
+
+  await page.getByRole("button", { name: "Login" }).click();
+
+  await expect(page.getByText("Email or password is incorrect")).toBeVisible();
+  await expect(page).toHaveURL(/auth\/login$/);
 });
