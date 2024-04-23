@@ -21,8 +21,10 @@
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+   [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.typography :as cty]
    [app.common.uuid :as uuid]
@@ -1818,4 +1820,128 @@
         (pcb/with-objects (:objects container))
         (generate-detach-instance container libraries id))))
 
+(defn generate-delete-shapes
+  [changes file page objects ids {:keys [components-v2 ignore-touched undo-group]}]
+  (let [changes (-> changes
+                    (pcb/set-undo-group undo-group)
+                    (pcb/with-page page)
+                    (pcb/with-objects objects)
+                    (pcb/with-library-data file))
+        lookup  (d/getf objects)
+        groups-to-unmask
+        (reduce (fn [group-ids id]
+                  ;; When the shape to delete is the mask of a masked group,
+                  ;; the mask condition must be removed, and it must be
+                  ;; converted to a normal group.
+                  (let [obj    (lookup id)
+                        parent (lookup (:parent-id obj))]
+                    (if (and (:masked-group parent)
+                             (= id (first (:shapes parent))))
+                      (conj group-ids (:id parent))
+                      group-ids)))
+                #{}
+                ids)
 
+        interacting-shapes
+        (filter (fn [shape]
+                  ;; If any of the deleted shapes is the destination of
+                  ;; some interaction, this must be deleted, too.
+                  (let [interactions (:interactions shape)]
+                    (some #(and (ctsi/has-destination %)
+                                (contains? ids (:destination %)))
+                          interactions)))
+                (vals objects))
+
+        ids-set (set ids)
+        guides-to-remove
+        (->> (dm/get-in page [:options :guides])
+             (vals)
+             (filter #(contains? ids-set (:frame-id %)))
+             (map :id))
+
+        guides
+        (->> guides-to-remove
+             (reduce dissoc (dm/get-in page [:options :guides])))
+
+        starting-flows
+        (filter (fn [flow]
+                  ;; If any of the deleted is a frame that starts a flow,
+                  ;; this must be deleted, too.
+                  (contains? ids (:starting-frame flow)))
+                (-> page :options :flows))
+
+        all-parents
+        (reduce (fn [res id]
+                  ;; All parents of any deleted shape must be resized.
+                  (into res (cfh/get-parent-ids objects id)))
+                (d/ordered-set)
+                ids)
+
+        all-children
+        (->> ids ;; Children of deleted shapes must be also deleted.
+             (reduce (fn [res id]
+                       (into res (cfh/get-children-ids objects id)))
+                     [])
+             (reverse)
+             (into (d/ordered-set)))
+
+        find-all-empty-parents
+        (fn recursive-find-empty-parents [empty-parents]
+          (let [all-ids   (into empty-parents ids)
+                contains? (partial contains? all-ids)
+                xform     (comp (map lookup)
+                                (filter #(or (cfh/group-shape? %) (cfh/bool-shape? %)))
+                                (remove #(->> (:shapes %) (remove contains?) seq))
+                                (map :id))
+                parents   (into #{} xform all-parents)]
+            (if (= empty-parents parents)
+              empty-parents
+              (recursive-find-empty-parents parents))))
+
+        empty-parents
+        ;; Any parent whose children are all deleted, must be deleted too.
+        (into (d/ordered-set) (find-all-empty-parents #{}))
+
+        components-to-delete
+        (if components-v2
+          (reduce (fn [components id]
+                    (let [shape (get objects id)]
+                      (if (and (= (:component-file shape) (:id file)) ;; Main instances should exist only in local file
+                               (:main-instance shape))                ;; but check anyway
+                        (conj components (:component-id shape))
+                        components)))
+                  []
+                  (into ids all-children))
+          [])
+
+        changes (-> changes
+                    (pcb/set-page-option :guides guides))
+
+        changes (reduce (fn [changes component-id]
+                          ;; It's important to delete the component before the main instance, because we
+                          ;; need to store the instance position if we want to restore it later.
+                          (pcb/delete-component changes component-id (:id page)))
+                        changes
+                        components-to-delete)
+
+        changes (-> changes
+                    (pcb/remove-objects all-children {:ignore-touched true})
+                    (pcb/remove-objects ids {:ignore-touched ignore-touched})
+                    (pcb/remove-objects empty-parents)
+                    (pcb/resize-parents all-parents)
+                    (pcb/update-shapes groups-to-unmask
+                                       (fn [shape]
+                                         (assoc shape :masked-group false)))
+                    (pcb/update-shapes (map :id interacting-shapes)
+                                       (fn [shape]
+                                         (d/update-when shape :interactions
+                                                        (fn [interactions]
+                                                          (into []
+                                                                (remove #(and (ctsi/has-destination %)
+                                                                              (contains? ids (:destination %))))
+                                                                interactions)))))
+                    (cond-> (seq starting-flows)
+                      (pcb/update-page-option :flows (fn [flows]
+                                                       (->> (map :id starting-flows)
+                                                            (reduce ctp/remove-flow flows))))))]
+    [changes all-parents]))
