@@ -53,11 +53,9 @@
         "dark"
         new-theme))))
 
-
 (defmethod handle-state-change :default
   [_ _ _]
   ::not-changed)
-
 
 (defn add-listener
   [type callback]
