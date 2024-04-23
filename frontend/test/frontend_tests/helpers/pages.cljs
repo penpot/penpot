@@ -132,7 +132,7 @@
         shapes  (dwg/shapes-for-grouping objects shape-ids)
 
         [group component-id changes]
-        (cflh/generate-add-component nil
+        (cflh/generate-add-component (pcb/empty-changes nil)
                                      shapes
                                      (:objects page)
                                      (:id page)

@@ -338,7 +338,7 @@
 
   If an asset id is given, only shapes linked to this particular asset will
   be synchronized."
-  [it file-id asset-type asset-id library-id libraries current-file-id]
+  [changes file-id asset-type asset-id library-id libraries current-file-id]
   (s/assert #{:colors :components :typographies} asset-type)
   (s/assert (s/nilable ::us/uuid) asset-id)
   (s/assert ::us/uuid file-id)
@@ -353,13 +353,13 @@
   (let [file          (get-in libraries [file-id :data])
         components-v2 (get-in file [:options :components-v2])]
     (loop [containers (ctf/object-containers-seq file)
-           changes (pcb/empty-changes it)]
+           changes    changes]
       (if-let [container (first containers)]
         (do
           (recur (next containers)
-                 (pcb/concat-changes
+                 (pcb/concat-changes ;;TODO Remove concat changes
                   changes
-                  (generate-sync-container it
+                  (generate-sync-container (pcb/empty-changes nil)
                                            asset-type
                                            asset-id
                                            library-id
@@ -376,7 +376,7 @@
 
   If an asset id is given, only shapes linked to this particular asset will
   be synchronized."
-  [it file-id asset-type asset-id library-id libraries current-file-id]
+  [changes file-id asset-type asset-id library-id libraries current-file-id]
   (s/assert #{:colors :components :typographies} asset-type)
   (s/assert (s/nilable ::us/uuid) asset-id)
   (s/assert ::us/uuid file-id)
@@ -391,25 +391,25 @@
   (let [file          (get-in libraries [file-id :data])
         components-v2 (get-in file [:options :components-v2])]
     (loop [local-components (ctkl/components-seq file)
-           changes (pcb/empty-changes it)]
+           changes changes]
       (if-let [local-component (first local-components)]
         (recur (next local-components)
-               (pcb/concat-changes
+               (pcb/concat-changes ;;TODO Remove concat changes
                 changes
-                (generate-sync-container it
-                                         asset-type
-                                         asset-id
-                                         library-id
-                                         (cfh/make-container local-component :component)
-                                         components-v2
-                                         libraries
-                                         current-file-id)))
+                (generate-sync-container  (pcb/empty-changes nil)
+                                          asset-type
+                                          asset-id
+                                          library-id
+                                          (cfh/make-container local-component :component)
+                                          components-v2
+                                          libraries
+                                          current-file-id)))
         changes))))
 
 (defn- generate-sync-container
   "Generate changes to synchronize all shapes in a particular container (a page
   or a component) that use assets of the given type in the given library."
-  [it asset-type asset-id library-id container components-v2 libraries current-file-id]
+  [changes asset-type asset-id library-id container components-v2 libraries current-file-id]
 
   (if (cfh/page? container)
     (log/debug :msg "Sync page in local file" :page-id (:id container))
@@ -418,7 +418,7 @@
   (let [linked-shapes (->> (vals (:objects container))
                            (filter #(uses-assets? asset-type asset-id % library-id)))]
     (loop [shapes (seq linked-shapes)
-           changes (-> (pcb/empty-changes it)
+           changes (-> changes
                        (pcb/with-container container)
                        (pcb/with-objects (:objects container)))]
       (if-let [shape (first shapes)]
@@ -1727,9 +1727,9 @@
   "If there is exactly one id, and it's a frame (or a group in v1), and not already a component,
   use it as root. Otherwise, create a frame (v2) or group (v1) that contains all ids. Then, make a
   component with it, and link all shapes to their corresponding one in the component."
-  [it shapes objects page-id file-id components-v2 prepare-create-group prepare-create-board]
+  [changes shapes objects page-id file-id components-v2 prepare-create-group prepare-create-board]
 
-  (let [changes      (pcb/empty-changes it page-id)
+  (let [changes      (pcb/with-page-id changes page-id)
         shapes-count (count shapes)
         first-shape  (first shapes)
 
@@ -1744,7 +1744,8 @@
                      (cfh/frame-shape? first-shape))
                  (not (ctk/instance-head? first-shape)))
           [first-shape
-           (-> (pcb/empty-changes it page-id)
+           (-> changes
+               (pcb/with-page-id page-id)
                (pcb/with-objects objects))
            (:shapes first-shape)]
 
@@ -1756,7 +1757,7 @@
 
                 [root changes]
                 (if-not components-v2
-                  (prepare-create-group it            ; These functions needs to be passed as argument
+                  (prepare-create-group changes       ; These functions needs to be passed as argument
                                         objects       ; to avoid a circular dependence
                                         page-id
                                         shapes

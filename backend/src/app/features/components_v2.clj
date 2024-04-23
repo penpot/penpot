@@ -1450,16 +1450,15 @@
                 page
                 (cons shape children))
 
-        [_ _ changes2]
-        (cflh/generate-add-component nil
+        [_ _ changes]
+        (cflh/generate-add-component changes
                                      [shape]
                                      (:objects page)
                                      (:id page)
                                      file-id
                                      true
                                      nil
-                                     cfsh/prepare-create-artboard-from-selection)
-        changes (fcb/concat-changes changes changes2)]
+                                     cfsh/prepare-create-artboard-from-selection)]
 
     (shape-cb shape)
     (:redo-changes changes)))

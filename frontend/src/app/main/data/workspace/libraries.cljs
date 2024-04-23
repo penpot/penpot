@@ -351,7 +351,7 @@
             parents  (into #{} (map :parent-id) shapes)]
         (when-not (empty? shapes)
           (let [[root _ changes]
-                (cflh/generate-add-component it shapes objects page-id file-id components-v2
+                (cflh/generate-add-component (pcb/empty-changes it) shapes objects page-id file-id components-v2
                                              dwg/prepare-create-group
                                              cfsh/prepare-create-artboard-from-selection)]
             (when-not (empty? (:redo-changes changes))
@@ -1024,22 +1024,22 @@
                                 (-> (pcb/empty-changes it)
                                     (pcb/set-undo-group undo-group))
                                 [(when sync-components?
-                                   (cflh/generate-sync-library it file-id :components asset-id library-id libraries current-file-id))
+                                   (cflh/generate-sync-library (pcb/empty-changes it) file-id :components asset-id library-id libraries current-file-id))
                                  (when sync-colors?
-                                   (cflh/generate-sync-library it file-id :colors asset-id library-id libraries current-file-id))
+                                   (cflh/generate-sync-library (pcb/empty-changes it) file-id :colors asset-id library-id libraries current-file-id))
                                  (when sync-typographies?
-                                   (cflh/generate-sync-library it file-id :typographies asset-id library-id libraries current-file-id))])
+                                   (cflh/generate-sync-library (pcb/empty-changes it) file-id :typographies asset-id library-id libraries current-file-id))])
 
                file-changes    (reduce
                                 pcb/concat-changes
                                 (-> (pcb/empty-changes it)
                                     (pcb/set-undo-group undo-group))
                                 [(when sync-components?
-                                   (cflh/generate-sync-file it file-id :components asset-id library-id libraries current-file-id))
+                                   (cflh/generate-sync-file (pcb/empty-changes it) file-id :components asset-id library-id libraries current-file-id))
                                  (when sync-colors?
-                                   (cflh/generate-sync-file it file-id :colors asset-id library-id libraries current-file-id))
+                                   (cflh/generate-sync-file (pcb/empty-changes it) file-id :colors asset-id library-id libraries current-file-id))
                                  (when sync-typographies?
-                                   (cflh/generate-sync-file it file-id :typographies asset-id library-id libraries current-file-id))])
+                                   (cflh/generate-sync-file (pcb/empty-changes it) file-id :typographies asset-id library-id libraries current-file-id))])
 
                changes         (pcb/concat-changes library-changes file-changes)
 
