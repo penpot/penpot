@@ -7,6 +7,7 @@
 (ns app.libs.file-builder
   (:require
    [app.common.data :as d]
+   [app.common.features :as cfeat]
    [app.common.files.builder :as fb]
    [app.common.media :as cm]
    [app.common.types.components-list :as ctkl]
@@ -73,7 +74,7 @@
 
         manifest-stream
         (->> files-stream
-             (rx/map #(e/create-manifest (uuid/next) (:id file) :all % false))
+             (rx/map #(e/create-manifest (uuid/next) (:id file) :all % cfeat/default-features))
              (rx/map (fn [a]
                        (vector "manifest.json" a))))
 
