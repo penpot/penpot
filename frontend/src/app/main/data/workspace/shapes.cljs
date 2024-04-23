@@ -102,47 +102,15 @@
              file          (wsh/get-file state file-id)
              page          (wsh/lookup-page state page-id)
              objects       (wsh/lookup-page-objects state page-id)
-
              components-v2 (features/active-feature? state "components/v2")
-
-             ids           (cfh/clean-loops objects ids)
-
-             in-component-copy?
-             (fn [shape-id]
-               ;; Look for shapes that are inside a component copy, but are
-               ;; not the root. In this case, they must not be deleted,
-               ;; but hidden (to be able to recover them more easily).
-               ;; Unless we are doing a component swap, in which case we want
-               ;; to delete the old shape
-               (let [shape           (get objects shape-id)]
-                 (and (ctn/has-any-copy-parent? objects shape)
-                      (not (:component-swap options)))))
-
-             [ids-to-delete ids-to-hide]
-             (if components-v2
-               (loop [ids-seq       (seq ids)
-                      ids-to-delete []
-                      ids-to-hide   []]
-                 (let [id (first ids-seq)]
-                   (if (nil? id)
-                     [ids-to-delete ids-to-hide]
-                     (if (in-component-copy? id)
-                       (recur (rest ids-seq)
-                              ids-to-delete
-                              (conj ids-to-hide id))
-                       (recur (rest ids-seq)
-                              (conj ids-to-delete id)
-                              ids-to-hide)))))
-               [ids []])
              undo-id (or (:undo-id options) (js/Symbol))
-             [changes all-parents] (-> (pcb/empty-changes it (:id page))
-                                       (cflh/generate-delete-shapes file page objects ids-to-delete {:components-v2 components-v2
-                                                                                                     :ignore-touched (:component-swap options)
-                                                                                                     :undo-group (:undo-group options)
-                                                                                                     :undo-id undo-id}))]
+             [all-parents changes] (-> (pcb/empty-changes it (:id page))
+                                       (cflh/generate-delete-shapes file page objects ids {:components-v2 components-v2
+                                                                                           :ignore-touched (:component-swap options)
+                                                                                           :undo-group (:undo-group options)
+                                                                                           :undo-id undo-id}))]
 
          (rx/of (dwu/start-undo-transaction undo-id)
-                (update-shape-flags ids-to-hide {:hidden true :undo-group (:undo-group options)})
                 (dc/detach-comment-thread ids)
                 (dch/commit-changes changes)
                 (ptk/data-event :layout/update {:ids all-parents :undo-group (:undo-group options)})
