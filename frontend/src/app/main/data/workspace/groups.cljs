@@ -68,7 +68,7 @@
                    result)))))))
 
 (defn prepare-create-group
-  [it objects page-id shapes base-name keep-name?]
+  [changes objects page-id shapes base-name keep-name?]
   (let [frame-id  (:frame-id (first shapes))
         parent-id (:parent-id (first shapes))
         gname     (if (and keep-name?
@@ -114,7 +114,8 @@
                     (filter (partial ctl/grid-layout? objects)))
               shapes)
 
-        changes   (-> (pcb/empty-changes it page-id)
+        changes   (-> changes
+                      (pcb/with-page-id page-id)
                       (pcb/with-objects objects)
                       (pcb/add-object group {:index group-idx})
                       (pcb/update-shapes (map :id shapes) ctl/remove-layout-item-data)
@@ -191,7 +192,7 @@
             parents  (into #{} (map :parent-id) shapes)]
         (when-not (empty? shapes)
           (let [[group changes]
-                (prepare-create-group it objects page-id shapes "Group" false)]
+                (prepare-create-group (pcb/empty-changes it) objects page-id shapes "Group" false)]
             (rx/of (dch/commit-changes changes)
                    (dws/select-shapes (d/ordered-set (:id group)))
                    (ptk/data-event :layout/update {:ids parents}))))))))
@@ -267,7 +268,7 @@
                          (= (:type (first shapes)) :group))
                   [first-shape (-> (pcb/empty-changes it page-id)
                                    (pcb/with-objects objects))]
-                  (prepare-create-group it objects page-id shapes "Mask" true))
+                  (prepare-create-group (pcb/empty-changes it) objects page-id shapes "Mask" true))
 
                 changes  (-> changes
                              (pcb/update-shapes (:shapes group)

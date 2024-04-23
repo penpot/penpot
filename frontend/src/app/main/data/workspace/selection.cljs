@@ -422,7 +422,7 @@
          (prepare-duplicate-guides shapes page ids-map delta)))))
 
 (defn- prepare-duplicate-component-change
-  [changes objects page component-root parent-id frame-id delta libraries library-data it]
+  [changes objects page component-root parent-id frame-id delta libraries library-data]
   (let [component-id (:component-id component-root)
         file-id (:component-file component-root)
         main-component    (ctf/get-component libraries file-id component-id)
@@ -467,7 +467,7 @@
      changes
 
      (ctf/is-main-of-known-component? obj libraries)
-     (prepare-duplicate-component-change changes objects page obj parent-id frame-id delta libraries library-data it)
+     (prepare-duplicate-component-change changes objects page obj parent-id frame-id delta libraries library-data)
 
      :else
      (let [frame?      (cfh/frame-shape? obj)
