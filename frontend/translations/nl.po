@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-04-24 12:55+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2024-04-25 13:07+0000\n"
+"Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
 ">\n"
 "Language: nl\n"
@@ -1055,7 +1055,6 @@ msgstr "Verbindingsfout, URL niet bereikbaar"
 msgid "errors.webhooks.invalid-uri"
 msgstr "URL komt niet door de validatie."
 
-#, fuzzy
 msgid "errors.webhooks.last-delivery"
 msgstr "Laatste levering was niet succesvol."
 
@@ -1112,7 +1111,6 @@ msgid "feedback.title"
 msgstr "E-mail"
 
 #: src/app/main/ui/settings/feedback.cljs
-#, fuzzy
 msgid "feedback.twitter-go-to"
 msgstr "Ga naar X"
 
@@ -1121,7 +1119,6 @@ msgid "feedback.twitter-subtitle1"
 msgstr "Hier om te helpen met je technische vragen."
 
 #: src/app/main/ui/settings/feedback.cljs
-#, fuzzy
 msgid "feedback.twitter-title"
 msgstr "X-ondersteuningsaccount"
 
@@ -3287,7 +3284,6 @@ msgstr "Interacties tonen bij aanklikken"
 msgid "viewer.header.sitemap"
 msgstr "Sitemap"
 
-#, fuzzy
 msgid "webhooks.last-delivery.success"
 msgstr "De laatste levering was succesvol."
 
@@ -5529,3 +5525,123 @@ msgstr "Donker thema inschakelen"
 
 msgid "workspace.context-menu.grid-track.column.duplicate"
 msgstr "Kolom dupliceren"
+
+#: src/app/main/data/users.cljs
+msgid "errors.email-domain-not-allowed"
+msgstr "Domein niet toegestaan"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.never-used-one"
+msgstr "Geen"
+
+msgid "shortcuts.toggle-snap-guides"
+msgstr "Uitlijnen op hulpijnen"
+
+msgid "shortcuts.scale"
+msgstr "Schaal"
+
+msgid "shortcuts.toggle-layout-grid"
+msgstr "Raster-layout toevoegen/verwijderen"
+
+msgid "shortcuts.toggle-rulers"
+msgstr "Linialen tonen/verbergen"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.filter"
+msgstr "Filteren"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.sort"
+msgstr "Sorteren"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-snap-ruler-guides"
+msgstr "Uitlijnen op liniaal-hulplijnen"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.unlink-library-btn"
+msgstr "Bibliotheekverbinding verbreken"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-account-title"
+msgstr "Log in op mijn account"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-snap-ruler-guides"
+msgstr "Uitlijnen op liniaal-hulplijnen deactiveren"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-guides"
+msgstr "Hulplijnen weergeven"
+
+msgid "workspace.layout_grid.editor.padding.expand"
+msgstr "4-zijdige opvulopties weergeven"
+
+#, markdown
+msgid "workspace.top-bar.view-only"
+msgstr "**Code inspecteren** (alleen weergave)"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-tagline"
+msgstr ""
+"Penpot is de gratis open-source ontwerptool voor samenwerking op het gebied "
+"van ontwerp en code"
+
+msgid "modals.move-shared-confirm.accept"
+msgid_plural "modals.move-shared-confirm.accept"
+msgstr[0] "Verplaatsen"
+msgstr[1] "Verplaatsen"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-guides"
+msgstr "Hulplijnen verbergen"
+
+msgid "workspace.layout_grid.editor.top-bar.locate.tooltip"
+msgstr "Raster-layout tonen"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.shared-library-btn"
+msgstr "Bibliotheek verbinden"
+
+msgid "media.image.short"
+msgstr "img"
+
+#: src/app/main/data/users.cljs
+msgid "errors.auth-provider-not-allowed"
+msgstr "Auth-provider is niet toegestaan voor dit profiel"
+
+msgid "modals.move-shared-confirm.message"
+msgid_plural "modals.move-shared-confirm.message"
+msgstr[0] "Weet je zeker dat je deze bibliotheek wilt verplaatsen?"
+msgstr[1] "Weet je zeker dat je deze bibliotheken wilt verplaatsen?"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs
+msgid "workspace.assets.sidebar.components"
+msgid_plural "workspace.assets.sidebar.components"
+msgstr[0] "1 component"
+msgstr[1] "%s componenten"
+
+msgid "modals.move-shared-confirm.title"
+msgid_plural "modals.move-shared-confirm.title"
+msgstr[0] "Bibliotheek verplaatsen"
+msgstr[1] "Bibliotheken verplaatsen"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-grid"
+msgstr "Raster-layout verwijderen"
+
+msgid "onboarding.team-modal.team-definition"
+msgstr "Wat is een team?"
+
+msgid "media.keep-aspect-ratio"
+msgstr "Verhoudingen behouden"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs
+msgid "settings.select-this-color"
+msgstr "Selecteer items in deze stijl"
+
+msgid "shortcuts.toggle-guides"
+msgstr "Hulplijnen tonen/verbergen"
+
+msgid "shortcuts.toggle-snap-ruler-guide"
+msgstr "Uitlijnen op liniaal-hulplijnen"
