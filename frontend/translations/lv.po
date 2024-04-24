@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-04-19 08:03+0000\n"
-"Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
+"PO-Revision-Date: 2024-04-24 12:55+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
 "Language: lv\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= "
 "19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
-"X-Generator: Weblate 5.5-dev\n"
+"X-Generator: Weblate 5.5.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -989,6 +989,7 @@ msgstr "Savienojuma kļūda, URL nav sasniedzams"
 msgid "errors.webhooks.invalid-uri"
 msgstr "URL neiztur pārbaudi."
 
+#, fuzzy
 msgid "errors.webhooks.last-delivery"
 msgstr "Pēdējā piegāde nebija veiksmīga."
 
@@ -3068,6 +3069,7 @@ msgstr "Rādīt mijiedarbības pēc klikšķa"
 msgid "viewer.header.sitemap"
 msgstr "Vietnes karte"
 
+#, fuzzy
 msgid "webhooks.last-delivery.success"
 msgstr "Pēdējā piegāde bija veiksmīga."
 
