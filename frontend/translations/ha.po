@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-01-02 16:16+0000\n"
-"Last-Translator: Alejandro Alonso <alejandro.alonso@kaleidos.net>\n"
+"PO-Revision-Date: 2024-04-24 12:55+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Hausa <https://hosted.weblate.org/projects/penpot/frontend/ha/"
 ">\n"
 "Language: ha\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.4-dev\n"
+"X-Generator: Weblate 5.5.1-dev\n"
 
 msgid "shortcut-subsection.navigation-dashboard"
 msgstr "shawagi"
@@ -659,6 +659,7 @@ msgstr "sake sunan kungiyar"
 msgid "auth.create-demo-profile"
 msgstr "ka na son gwadawa ne kawai?"
 
+#, fuzzy
 msgid "webhooks.last-delivery.success"
 msgstr "Sakon karshe ya isa."
 
@@ -2387,6 +2388,7 @@ msgid "workspace.options.shadow-options.offsetx"
 msgstr "X"
 
 #: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
 msgid "feedback.twitter-go-to"
 msgstr "je ka tiwita"
 
@@ -2933,6 +2935,7 @@ msgid "workspace.undo.entry.single.media"
 msgstr "kadarar zanen hotuna"
 
 #: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
 msgid "feedback.twitter-title"
 msgstr "wurin karvar qorafin tiwita"
 
@@ -3735,6 +3738,7 @@ msgstr "fadi"
 msgid "shortcuts.letter-spacing-dec"
 msgstr "rage filin harafin"
 
+#, fuzzy
 msgid "errors.webhooks.last-delivery"
 msgstr "saqon qarshe bai je ba."
 
