@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-12-29 21:08+0000\n"
+"PO-Revision-Date: 2024-02-12 19:02+0000\n"
 "Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
 ">\n"
@@ -5168,3 +5168,60 @@ msgstr "Incompatibele functie '%s' gedetecteerd"
 #, markdown
 msgid "workspace.top-bar.read-only"
 msgstr "** Inspectiemodus ** (alleen bekijken)"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.loading"
+msgstr "Laden…"
+
+msgid "workspace.context-menu.grid-track.column.add-before"
+msgstr "Links 1 kolom toevoegen"
+
+msgid "workspace.context-menu.grid-track.row.duplicate"
+msgstr "Rij dupliceren"
+
+msgid "workspace.context-menu.grid-track.row.add-before"
+msgstr "Boven 1 rij toevoegen"
+
+msgid "workspace.context-menu.grid-track.row.add-after"
+msgstr "Onder 1 rij toevoegen"
+
+msgid "workspace.context-menu.grid-track.row.delete"
+msgstr "Rij verwijderen"
+
+msgid "workspace.context-menu.grid-track.row.delete-shapes"
+msgstr "Rij en vormen verwijderen"
+
+msgid "workspace.context-menu.grid-cells.merge"
+msgstr "Cellen samenvoegen"
+
+msgid "workspace.context-menu.grid-cells.area"
+msgstr "Gebied aanmaken"
+
+msgid "workspace.context-menu.grid-cells.create-board"
+msgstr "Bord aanmaken"
+
+msgid "workspace.context-menu.grid-track.column.add-after"
+msgstr "Rechts 1 kolom toevoegen"
+
+msgid "workspace.context-menu.grid-track.column.delete"
+msgstr "Kolom verwijderen"
+
+msgid "workspace.context-menu.grid-track.column.delete-shapes"
+msgstr "Kolom en vormen verwijderen"
+
+msgid "dashboard.import.analyze-error.components-v2"
+msgstr ""
+"Bestand met componenten v2 geactiveerd, maar dit team ondersteunt dit nog "
+"niet."
+
+msgid "shortcuts.toggle-theme"
+msgstr "Thema veranderen"
+
+msgid "workspace.header.menu.toggle-light-theme"
+msgstr "Licht thema inschakelen"
+
+msgid "workspace.header.menu.toggle-dark-theme"
+msgstr "Donker thema inschakelen"
+
+msgid "workspace.context-menu.grid-track.column.duplicate"
+msgstr "Kolom dupliceren"
