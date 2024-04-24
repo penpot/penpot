@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2024-04-24 12:55+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Hausa "
-"<https://hosted.weblate.org/projects/penpot/frontend/ha/>\n"
+"Language-Team: Hausa <https://hosted.weblate.org/projects/penpot/frontend/ha/"
+">\n"
 "Language: ha\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -538,8 +538,107 @@ msgstr "kula da rubutu"
 msgid "dashboard.import.progress.upload-data"
 msgstr "xora bayani akan sabis (%s/%s)"
 
-msgid "dashboard.import.progress.upload-media"
-msgstr "xora kundaye: %s"
+msgid "shortcuts.draw-curve"
+msgstr "Ratse"
+
+#: src/app/main/ui/workspace/comments.cljs
+msgid "labels.all"
+msgstr "duk"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.file"
+msgstr "fayil"
+
+#: src/app/main/ui/inspect/attributes/common.cljs
+msgid "inspect.attributes.color.hsla"
+msgstr "HSLA"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "errors.registration-disabled"
+msgstr "rigitar ba ta yi ba."
+
+msgid "workspace.undo.entry.multiple.media"
+msgstr "kadarar zane"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.get-the-code-from-my-team-project"
+msgstr "sami lambar kowane aiki "
+
+msgid "workspace.options.show-in-viewer"
+msgstr "fito da kaurin sosai"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+msgid "workspace.options.text-options.lowercase"
+msgstr "yanayin kasa"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "errors.password-invalid-confirmation"
+msgstr "tabbata labar tsaro ta yi daidai"
+
+msgid "workspace.undo.entry.multiple.group"
+msgstr "rukunis"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.updates"
+msgstr "sabuntawa"
+
+msgid "dashboard.export-frames"
+msgstr "Allon fitarwa na PDF"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs
+msgid "modals.delete-page.title"
+msgstr "goge shafi"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.service-unavailable.main-message"
+msgstr "ba sabis"
+
+msgid "shortcuts.opacity-2"
+msgstr "Saita dishi dishi zuwa kashi 20"
+
+msgid "workspace.shape.menu.create-multiple-components"
+msgstr "kirkiri abubuwa da yawa"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.rename-group"
+msgstr "sake sunan kungiyar"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-profile"
+msgstr "ka na son gwadawa ne kawai?"
+
+#, fuzzy
+msgid "webhooks.last-delivery.success"
+msgstr "Sakon karshe ya isa."
+
+msgid "shortcuts.bool-intersection"
+msgstr "ma'aunin abubuwa daban daban"
+
+msgid "workspace.options.stroke-width"
+msgstr "gigciye fadin"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-ease-out"
+msgstr "sauki waje"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.not-found.desc-message"
+msgstr "babu wannan fagen, ko ba ka da izinin shiga."
+
+msgid "workspace.options.x"
+msgstr "X layi"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.members"
+msgstr "mambobi"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "dashboard.notifications.email-verified-successfully"
+msgstr "an tantance adireshinka na imel"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.show-interactions"
+msgstr "Nuna hulda"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "dashboard.invite-profile"
@@ -2290,6 +2389,7 @@ msgid "workspace.options.shadow-options.offsetx"
 msgstr "X"
 
 #: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
 msgid "feedback.twitter-go-to"
 msgstr "je ka tiwita"
 
@@ -2836,6 +2936,7 @@ msgid "workspace.undo.entry.single.media"
 msgstr "kadarar zanen hotuna"
 
 #: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
 msgid "feedback.twitter-title"
 msgstr "wurin karvar qorafin tiwita"
 
@@ -3638,6 +3739,7 @@ msgstr "fadi"
 msgid "shortcuts.letter-spacing-dec"
 msgstr "rage filin harafin"
 
+#, fuzzy
 msgid "errors.webhooks.last-delivery"
 msgstr "saqon qarshe bai je ba."
 
