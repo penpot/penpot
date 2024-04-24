@@ -58,10 +58,6 @@ msgid "auth.login-submit"
 msgstr "כניסה"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "שמחים לראות אותך שוב!"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
 
@@ -2817,9 +2813,6 @@ msgstr "נעילת הנבחרים"
 msgid "shortcuts.toggle-lock-size"
 msgstr "נעילת יחס"
 
-msgid "shortcuts.toggle-rules"
-msgstr "הצגת/הסתרת סרגלים"
-
 msgid "shortcuts.toggle-textpalette"
 msgstr "החלפת לוח טקסט"
 
@@ -5070,10 +5063,6 @@ msgstr "החלפת רכיב"
 
 msgid "workspace.options.component.swap.empty"
 msgstr "עדיין אין נכסים בתיקייה הזאת"
-
-#, markdown
-msgid "workspace.top-bar.read-only"
-msgstr "**מצב חקירה** (צפייה בלבד)"
 
 msgid "dashboard.import.analyze-error.components-v2"
 msgstr "קובץ עם רכיבים בגרסה 2 מופעל אך הצוות הזה לא תומך בזה עדיין."

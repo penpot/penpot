@@ -60,10 +60,6 @@ msgid "auth.login-submit"
 msgstr "Prijava"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Drago nam je vidjeti te opet!"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
 
@@ -2345,10 +2341,6 @@ msgstr "Zaključaj odabrano"
 msgid "shortcuts.toggle-lock-size"
 msgstr "Zaključaj proporcije"
 
-#, fuzzy
-msgid "shortcuts.toggle-rules"
-msgstr "Prikaži/sakrij \"rules\""
-
 msgid "shortcuts.toggle-textpalette"
 msgstr "Promijeni paletu teksta"
 
@@ -2696,7 +2688,6 @@ msgstr "Omogući dinamičko poravnanje"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-scale-text"
 msgstr "Omogući skaliranje teksta"
-
 
 #: src/app/main/ui/workspace/header.cljs
 #, fuzzy

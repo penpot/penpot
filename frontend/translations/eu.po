@@ -61,10 +61,6 @@ msgid "auth.login-submit"
 msgstr "Sartu"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Ongi etorri berriz ere!"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
 
@@ -2567,9 +2563,6 @@ msgstr "Blokeatu/Desblokeatu"
 
 msgid "shortcuts.toggle-lock-size"
 msgstr "Blokeatu/Desblokeatu proportzioak"
-
-msgid "shortcuts.toggle-rules"
-msgstr "Erakutsi/ezkutatu erregelak"
 
 msgid "shortcuts.toggle-textpalette"
 msgstr "Erakutsi/Ezkutatu testuen paleta"

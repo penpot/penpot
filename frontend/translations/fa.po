@@ -61,10 +61,6 @@ msgid "auth.login-submit"
 msgstr "ورود"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "خوشحالم که دوباره شما را می‌بینم!"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
 msgstr "گیتهاب"
 
@@ -1875,9 +1871,6 @@ msgstr "انتقال"
 
 msgid "shortcuts.paste"
 msgstr "چسباندن"
-
-msgid "shortcuts.toggle-rules"
-msgstr "نمایش/پنهان کردن خط‌کش‌ها"
 
 msgid "shortcuts.undo"
 msgstr "واگرد"

@@ -3516,10 +3516,6 @@ msgid "workspace.header.menu.show-artboard-names"
 msgstr "Mostrar nombres de tableros"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-g"
-msgstr "Mostrar rejilla"
-
-#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"
 msgstr "Mostrar paleta de colores"
 
@@ -5260,4 +5256,3 @@ msgstr "Crear area"
 
 msgid "workspace.context-menu.grid-cells.create-board"
 msgstr "Crear tablero"
-

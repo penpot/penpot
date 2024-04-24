@@ -61,10 +61,6 @@ msgid "auth.login-submit"
 msgstr "Přihlásit se"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Rádi vás znovu vidíme!"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
 
@@ -2571,9 +2567,6 @@ msgstr "Uzamknout vybrané"
 msgid "shortcuts.toggle-lock-size"
 msgstr "Uzamknout proporce"
 
-msgid "shortcuts.toggle-rules"
-msgstr "Zobrazit/skrýt pravítka"
-
 msgid "shortcuts.toggle-textpalette"
 msgstr "Přepnout paletu textu"
 
@@ -4800,10 +4793,6 @@ msgstr "Anotace"
 
 msgid "workspace.shape.menu.create-multiple-components"
 msgstr "Vytvořte více komponent"
-
-#, markdown
-msgid "workspace.top-bar.read-only"
-msgstr "**Režim kontroly** (Pouze zobrazení)"
 
 msgid "modals.add-shared-confirm-empty.hint"
 msgstr ""

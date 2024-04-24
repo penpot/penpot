@@ -61,10 +61,6 @@ msgid "auth.login-submit"
 msgstr "Inloggen"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Goed om je weer te zien!"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
 
@@ -2974,9 +2970,6 @@ msgstr "Vergrendelen/ontgrendelen"
 msgid "shortcuts.toggle-lock-size"
 msgstr "Proporties vergrendelen"
 
-msgid "shortcuts.toggle-rules"
-msgstr "Linialen tonen/verbergen"
-
 msgid "shortcuts.toggle-textpalette"
 msgstr "Tekstpalet in/uitschakelen"
 
@@ -5164,10 +5157,6 @@ msgstr "Ongeldige gegevens op klembord"
 #: src/app/main/errors.cljs
 msgid "errors.team-feature-mismatch"
 msgstr "Incompatibele functie '%s' gedetecteerd"
-
-#, markdown
-msgid "workspace.top-bar.read-only"
-msgstr "** Inspectiemodus ** (alleen bekijken)"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.loading"

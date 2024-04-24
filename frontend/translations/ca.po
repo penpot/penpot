@@ -60,10 +60,6 @@ msgstr "Inicieu la sessió aquí"
 msgid "auth.login-submit"
 msgstr "Entra"
 
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Ens agrada tornar a veure-vos!"
-
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
@@ -2253,9 +2249,6 @@ msgstr "Bloqueja la selecció"
 
 msgid "shortcuts.toggle-lock-size"
 msgstr "Bloqueja les proporcions"
-
-msgid "shortcuts.toggle-rules"
-msgstr "Mostra/Amaga les regles"
 
 msgid "shortcuts.toggle-textpalette"
 msgstr "Mostra/amaga la paleta de text"

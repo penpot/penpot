@@ -62,10 +62,6 @@ msgid "auth.login-submit"
 msgstr "Intră în cont"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Mă bucur să te văd din nou!"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
 
@@ -2957,9 +2953,6 @@ msgstr "Blocați selecția"
 
 msgid "shortcuts.toggle-lock-size"
 msgstr "Blocați proporțiile"
-
-msgid "shortcuts.toggle-rules"
-msgstr "Afișați/ascundeți rigle"
 
 msgid "shortcuts.toggle-textpalette"
 msgstr "Comutați paleta de text"

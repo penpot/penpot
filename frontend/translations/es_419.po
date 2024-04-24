@@ -284,10 +284,6 @@ msgid "auth.fullname"
 msgstr "Nombre completo"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "¡Qué bueno verte de nuevo!"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-google-submit"
 msgstr "Google"
 

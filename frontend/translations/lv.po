@@ -62,10 +62,6 @@ msgid "auth.login-submit"
 msgstr "Pieteikties"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Prieks Jūs atkal redzēt!"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
 
@@ -2912,9 +2908,6 @@ msgstr "Slēgt / Atslēgt"
 msgid "shortcuts.toggle-lock-size"
 msgstr "Slēgt proporcijas"
 
-msgid "shortcuts.toggle-rules"
-msgstr "Rādīt/paslēpt mērjoslas"
-
 msgid "shortcuts.toggle-textpalette"
 msgstr "Pārslēgt teksta paleti"
 
@@ -5076,10 +5069,6 @@ msgstr "Trijstūris"
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.square-marker-short"
 msgstr "Taisnstūris"
-
-#, markdown
-msgid "workspace.top-bar.read-only"
-msgstr "**Apskatīšana** (tikai skatīt)"
 
 msgid "workspace.assets.duplicate-main"
 msgstr "Divkāršot galveno"

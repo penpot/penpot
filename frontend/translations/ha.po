@@ -337,10 +337,6 @@ msgid "dashboard.export.options.detach.message"
 msgstr ""
 "manhajar tura kundi ba ta shiga cikin fitarwa, wani amfaniqarawa a taska. "
 
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "na ji daxin sake haxuwa da kai!"
-
 msgid "shortcut-subsection.shape"
 msgstr "Siffa"
 
@@ -2548,9 +2544,6 @@ msgstr "gogewa webhook"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.update-main"
 msgstr "sabunta ainihin wurin"
-
-msgid "shortcuts.toggle-rules"
-msgstr "Nuna / boye magwaji"
 
 msgid "shortcuts.draw-path"
 msgstr "Hanya"

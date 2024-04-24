@@ -61,10 +61,6 @@ msgid "auth.login-submit"
 msgstr "Iniciar sessão"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Que bom voltar a ver-te!"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
 msgstr "Github"
 
@@ -2918,9 +2914,6 @@ msgstr "Bloquear selecionado"
 msgid "shortcuts.toggle-lock-size"
 msgstr "Bloquear proporções"
 
-msgid "shortcuts.toggle-rules"
-msgstr "Mostrar/ocultar regras"
-
 msgid "shortcuts.toggle-textpalette"
 msgstr "Alternar paleta de texto"
 
@@ -5183,10 +5176,6 @@ msgstr "Dados inválidos na área de transferência"
 #: src/app/main/errors.cljs
 msgid "errors.team-feature-mismatch"
 msgstr "Funcionalidade incompatível '%s' detetada"
-
-#, markdown
-msgid "workspace.top-bar.read-only"
-msgstr "**Modo de inspeção** (Somente leitura)"
 
 msgid "shortcuts.toggle-theme"
 msgstr "Mudar tema"

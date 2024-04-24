@@ -61,10 +61,6 @@ msgid "auth.login-submit"
 msgstr "Zaloguj się"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Miło Cię znowu widzieć!"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
 
@@ -2465,9 +2461,6 @@ msgstr "Zablokuj wybrane"
 
 msgid "shortcuts.toggle-lock-size"
 msgstr "Zablokuj proporcje"
-
-msgid "shortcuts.toggle-rules"
-msgstr "Pokaż/ukryj linijki"
 
 msgid "shortcuts.toggle-textpalette"
 msgstr "Przełącz paletę tekstu"

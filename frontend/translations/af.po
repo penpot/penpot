@@ -41,10 +41,6 @@ msgstr "(huidige)"
 msgid "auth.notifications.invalid-token-error"
 msgstr "Die hersteltoken is ongeldig."
 
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Wonderlik om jou weer te sien!"
-
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.create"
 msgstr "Genereer nuwe token"

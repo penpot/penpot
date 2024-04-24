@@ -56,10 +56,6 @@ msgid "auth.login-submit"
 msgstr "登入"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "很高興再次見到你！"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
 
@@ -1595,9 +1591,6 @@ msgstr "鎖定選擇"
 
 msgid "shortcuts.toggle-lock-size"
 msgstr "鎖定比例"
-
-msgid "shortcuts.toggle-rules"
-msgstr "顯示/隱藏尺規"
 
 msgid "shortcuts.ungroup"
 msgstr "取消群組"

@@ -61,10 +61,6 @@ msgid "auth.login-submit"
 msgstr "Masuk"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Senang bertemu dengan Anda lagi!"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
 
@@ -2925,9 +2921,6 @@ msgstr "Kunci dipilih"
 msgid "shortcuts.toggle-lock-size"
 msgstr "Kunci proporsi"
 
-msgid "shortcuts.toggle-rules"
-msgstr "Tampilkan/sembunyikan penggaris"
-
 msgid "shortcuts.toggle-textpalette"
 msgstr "Alih palet teks"
 
@@ -5030,10 +5023,6 @@ msgstr "Cari lokasi"
 
 msgid "workspace.options.component.swap"
 msgstr "Ganti komponen"
-
-#, markdown
-msgid "workspace.top-bar.read-only"
-msgstr "**Mode inspeksi** (Hanya Tampilan)"
 
 msgid "media.gradient"
 msgstr "Gradien"

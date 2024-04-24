@@ -56,10 +56,6 @@ msgstr "在这里登录"
 msgid "auth.login-submit"
 msgstr "登录"
 
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "很高兴又见到你！"
-
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
 msgstr "GitHub登录"
@@ -2471,9 +2467,6 @@ msgstr "锁定所选"
 msgid "shortcuts.toggle-lock-size"
 msgstr "锁定比例"
 
-msgid "shortcuts.toggle-rules"
-msgstr "显示/隐藏规则"
-
 msgid "shortcuts.toggle-textpalette"
 msgstr "切换文本调色板"
 
@@ -4489,10 +4482,6 @@ msgstr "矩形"
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.triangle-arrow-short"
 msgstr "三角形"
-
-#, markdown
-msgid "workspace.top-bar.read-only"
-msgstr "**检查模式**（不可编辑）"
 
 msgid "workspace.top-bar.read-only.done"
 msgstr "完成"

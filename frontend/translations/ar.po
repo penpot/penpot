@@ -58,10 +58,6 @@ msgid "auth.login-submit"
 msgstr "تسجيل الدخول"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "سعيد برؤيتك مجددا!"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
 msgstr "Github"
 
@@ -3589,9 +3585,6 @@ msgstr "طول"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.update-main"
 msgstr "تحديث العنصر الرئيسي"
-
-msgid "shortcuts.toggle-rules"
-msgstr "إظهار\\إخفاء المسطرة"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.flow-start"

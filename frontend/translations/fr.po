@@ -60,10 +60,6 @@ msgstr "Connectez-vous ici"
 msgid "auth.login-submit"
 msgstr "Se connecter"
 
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Ravi de vous revoir !"
-
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
@@ -2785,9 +2781,6 @@ msgstr "Verrou sélectionné"
 
 msgid "shortcuts.toggle-lock-size"
 msgstr "Verrouiller les proportions"
-
-msgid "shortcuts.toggle-rules"
-msgstr "Afficher/masquer les règles"
 
 msgid "shortcuts.toggle-textpalette"
 msgstr "Afficher/masquer la palette de texte"

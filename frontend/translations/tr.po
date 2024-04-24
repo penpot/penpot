@@ -60,10 +60,6 @@ msgstr "Buradan oturum açın"
 msgid "auth.login-submit"
 msgstr "Oturum aç"
 
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Seni tekrar görmek süper!"
-
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
@@ -2496,9 +2492,6 @@ msgstr "Seçileni kilitle"
 
 msgid "shortcuts.toggle-lock-size"
 msgstr "Oranları kilitle"
-
-msgid "shortcuts.toggle-rules"
-msgstr "Cetvelleri göster/gizle"
 
 msgid "shortcuts.toggle-textpalette"
 msgstr "Metin paletini değiştir"
@@ -5138,10 +5131,6 @@ msgstr "Bu kütüphanede henüz varlık yok"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.flows.flow"
 msgstr "Akış"
-
-#, markdown
-msgid "workspace.top-bar.read-only"
-msgstr "**İnceleme modu** (Yalnızca görüntüle)"
 
 msgid "workspace.top-bar.read-only.done"
 msgstr "Bitti"
