@@ -49,10 +49,6 @@ msgstr "Forgot password?"
 msgid "auth.fullname"
 msgstr "Full Name"
 
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-account-title"
-msgstr "Log into my account"
-
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.login-here"
 msgstr "Login here"
@@ -60,6 +56,10 @@ msgstr "Login here"
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
 msgstr "Login"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-account-title"
+msgstr "Log into my account"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-tagline"
@@ -171,17 +171,15 @@ msgstr "The open-source solution for design and prototyping."
 msgid "auth.terms-of-service"
 msgstr "Terms of service"
 
-msgid "auth.terms-privacy-agreement"
-msgstr ""
-"When creating a new account, you agree to ourf terms of service and privacy "
-"policy."
-
 #: src/app/main/ui/auth/register.cljs
 #, markdown
 msgid "auth.terms-privacy-agreement-md"
 msgstr ""
-"When creating a new account, you agree to our [terms of service](%s) and "
-"[privacy policy](%s)."
+"When creating a new account, you agree to our [terms of service](%s) and [privacy policy](%s)."
+
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"When creating a new account, you agree to ourf terms of service and privacy policy."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
@@ -840,10 +838,6 @@ msgstr "Ok"
 msgid "ds.confirm-title"
 msgstr "Are you sure?"
 
-#: src/app/main/data/users.cljs
-msgid "errors.auth-provider-not-allowed"
-msgstr "Auth provider not allowed for this profile"
-
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.auth-provider-not-configured"
 msgstr "Authentication provider not configured."
@@ -875,10 +869,6 @@ msgstr "Email already validated."
 msgid "errors.email-as-password"
 msgstr "You can't use your email as password"
 
-#: src/app/main/data/users.cljs
-msgid "errors.email-domain-not-allowed"
-msgstr "Domain not allowed"
-
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.email-has-permanent-bounces"
 msgstr "The email «%s» has many permanent bounce reports."
@@ -897,19 +887,28 @@ msgstr "The email «%s» has been reported as spam or permanently bounce."
 #: src/app/main/errors.cljs
 msgid "errors.feature-mismatch"
 msgstr ""
-"Looks like you are opening a file that has the feature '%s' enabled but the "
-"current penpot version does not supports it or has it disabled."
+"Looks like you are opening a file that has the feature '%s' enabled but "
+"the current penpot version does not supports it or has it disabled."
+
+#: src/app/main/errors.cljs
+msgid "errors.version-not-supported"
+msgstr ""
+"File has an incompatible version number"
+
+#: src/app/main/errors.cljs
+msgid "errors.file-feature-mismatch"
+msgstr ""
+"It seems that there is a mismatch between the enabled features and the "
+"features of the file you are trying to open. Migrations for '%s' need "
+"to be applied before the file can be opened."
 
 #: src/app/main/errors.cljs
 msgid "errors.feature-not-supported"
 msgstr "Feature '%s' is not supported."
 
 #: src/app/main/errors.cljs
-msgid "errors.file-feature-mismatch"
-msgstr ""
-"It seems that there is a mismatch between the enabled features and the "
-"features of the file you are trying to open. Migrations for '%s' need to be "
-"applied before the file can be opened."
+msgid "errors.team-feature-mismatch"
+msgstr "Detected incompatible feature '%s'"
 
 #: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.generic"
@@ -958,9 +957,6 @@ msgstr "Confirmation password must match"
 msgid "errors.password-too-short"
 msgstr "Password should at least be 8 characters"
 
-msgid "errors.paste-data-validation"
-msgstr "Invalid data in clipboard"
-
 msgid "errors.profile-blocked"
 msgstr "The profile is blocked"
 
@@ -972,9 +968,13 @@ msgstr "Your profile has emails muted (spam reports or high bounces)."
 msgid "errors.registration-disabled"
 msgstr "The registration is currently disabled."
 
-#: src/app/main/errors.cljs
-msgid "errors.team-feature-mismatch"
-msgstr "Detected incompatible feature '%s'"
+#: src/app/main/data/users.cljs
+msgid "errors.auth-provider-not-allowed"
+msgstr "Auth provider not allowed for this profile"
+
+#: src/app/main/data/users.cljs
+msgid "errors.email-domain-not-allowed"
+msgstr "Domain not allowed"
 
 msgid "errors.team-leave.insufficient-members"
 msgstr "Insufficient members to leave team, you probably want to delete it."
@@ -992,13 +992,6 @@ msgstr "An unexpected error occurred."
 #: src/app/main/ui/auth/verify_token.cljs
 msgid "errors.unexpected-token"
 msgstr "Unknown token"
-
-msgid "errors.validation"
-msgstr "Validation Error"
-
-#: src/app/main/errors.cljs
-msgid "errors.version-not-supported"
-msgstr "File has an incompatible version number"
 
 msgid "errors.webhooks.connection"
 msgstr "Connection error, URL not reacheable"
@@ -1028,6 +1021,13 @@ msgstr "Email or password is incorrect."
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.wrong-old-password"
 msgstr "Old password is incorrect"
+
+msgid "errors.validation"
+msgstr "Validation Error"
+
+msgid "errors.paste-data-validation"
+msgstr "Invalid data in clipboard"
+
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.description"
@@ -1232,11 +1232,11 @@ msgstr "Lower Case"
 msgid "inspect.attributes.typography.text-transform.none"
 msgstr "None"
 
-msgid "inspect.attributes.typography.text-transform.titlecase"
-msgstr "Title Case"
-
 msgid "inspect.attributes.typography.text-transform.unset"
 msgstr "Unset"
+
+msgid "inspect.attributes.typography.text-transform.titlecase"
+msgstr "Title Case"
 
 msgid "inspect.attributes.typography.text-transform.uppercase"
 msgstr "Upper Case"
@@ -1626,9 +1626,6 @@ msgstr "Role"
 msgid "labels.save"
 msgstr "Save"
 
-msgid "labels.search"
-msgstr "Search"
-
 msgid "labels.search-font"
 msgstr "Search font"
 
@@ -1652,11 +1649,11 @@ msgstr "Service Unavailable"
 msgid "labels.settings"
 msgstr "Settings"
 
-msgid "labels.share"
-msgstr "Share"
-
 msgid "labels.share-prototype"
 msgstr "Share prototype"
+
+msgid "labels.share"
+msgstr "Share"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.shared-libraries"
@@ -1724,33 +1721,12 @@ msgstr "(you)"
 msgid "labels.your-account"
 msgstr "Your account"
 
-msgid "media.choose-image"
-msgstr "Choose image"
-
-msgid "media.gradient"
-msgstr "Gradient"
-
-msgid "media.image"
-msgstr "Image"
-
-msgid "media.image.short"
-msgstr "img"
-
-msgid "media.keep-aspect-ratio"
-msgstr "Keep aspect ratio"
-
-msgid "media.linear"
-msgstr "Linear"
+msgid "labels.search"
+msgstr "Search"
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "media.loading"
 msgstr "Loading image…"
-
-msgid "media.radial"
-msgstr "Radial"
-
-msgid "media.solid"
-msgstr "Solid"
 
 msgid "modals.add-shared-confirm-empty.hint"
 msgstr ""
@@ -2082,21 +2058,6 @@ msgstr "Are you sure you want to leave this team?"
 msgid "modals.leave-confirm.title"
 msgstr "Leaving team"
 
-msgid "modals.move-shared-confirm.accept"
-msgid_plural "modals.move-shared-confirm.accept"
-msgstr[0] "Move"
-msgstr[1] "Move"
-
-msgid "modals.move-shared-confirm.message"
-msgid_plural "modals.move-shared-confirm.message"
-msgstr[0] "Are you sure you want to move this library?"
-msgstr[1] "Are you sure you want to move these libraries?"
-
-msgid "modals.move-shared-confirm.title"
-msgid_plural "modals.move-shared-confirm.title"
-msgstr[0] "Move library"
-msgstr[1] "Move libraries"
-
 #: src/app/main/ui/workspace/nudge.cljs
 msgid "modals.nudge-title"
 msgstr "Nudge amount"
@@ -2154,17 +2115,32 @@ msgid_plural "modals.unpublish-shared-confirm.accept"
 msgstr[0] "Unpublish"
 msgstr[1] "Unpublish"
 
+msgid "modals.move-shared-confirm.accept"
+msgid_plural "modals.move-shared-confirm.accept"
+msgstr[0] "Move"
+msgstr[1] "Move"
+
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "Are you sure you want to unpublish this library?"
 msgstr[1] "Are you sure you want to unpublish these libraries?"
 
+msgid "modals.move-shared-confirm.message"
+msgid_plural "modals.move-shared-confirm.message"
+msgstr[0] "Are you sure you want to move this library?"
+msgstr[1] "Are you sure you want to move these libraries?"
+
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.title"
 msgid_plural "modals.unpublish-shared-confirm.title"
 msgstr[0] "Unpublish library"
 msgstr[1] "Unpublish libraries"
+
+msgid "modals.move-shared-confirm.title"
+msgid_plural "modals.move-shared-confirm.title"
+msgstr[0] "Move library"
+msgstr[1] "Move libraries"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component-in-bulk.hint"
@@ -2284,32 +2260,38 @@ msgstr "Contributing guide"
 msgid "onboarding-v2.welcome.title"
 msgstr "Welcome to Penpot!"
 
-msgid "onboarding.choice.team-up.continue-creating-team"
-msgstr "Continue creating team"
-
-msgid "onboarding.choice.team-up.continue-without-a-team"
-msgstr "Continue without team"
-
-msgid "onboarding.choice.team-up.create-team-and-invite"
-msgstr "Create team & invite"
-
-msgid "onboarding.choice.team-up.create-team-and-send-invites"
-msgstr "Create team and send invites"
-
-msgid "onboarding.choice.team-up.create-team-and-send-invites-description"
-msgstr "You'll be able to invite later"
-
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "After naming your team, you will be able to invite people to join."
 
 msgid "onboarding.choice.team-up.create-team-placeholder"
 msgstr "Enter the name of the team"
 
-msgid "onboarding.choice.team-up.create-team-without-invite"
-msgstr "Create team"
+msgid "onboarding.choice.team-up.continue-creating-team"
+msgstr "Continue creating team"
+
+msgid "onboarding.choice.team-up.start-without-a-team"
+msgstr "Start without a team"
+
+msgid "onboarding.choice.team-up.start-without-a-team-description"
+msgstr "You will be able to create a team later."
+
+msgid "onboarding.choice.team-up.continue-without-a-team"
+msgstr "Continue without team"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites"
+msgstr "Create team and send invites"
 
 msgid "onboarding.choice.team-up.create-team-without-inviting"
 msgstr "Create team without inviting"
+
+msgid "onboarding.choice.team-up.create-team-and-invite"
+msgstr "Create team & invite"
+
+msgid "onboarding.choice.team-up.create-team-without-invite"
+msgstr "Create team"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites-description"
+msgstr "You'll be able to invite later"
 
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "Invite members"
@@ -2321,12 +2303,6 @@ msgstr ""
 
 msgid "onboarding.choice.team-up.roles"
 msgstr "Invite with the role:"
-
-msgid "onboarding.choice.team-up.start-without-a-team"
-msgstr "Start without a team"
-
-msgid "onboarding.choice.team-up.start-without-a-team-description"
-msgstr "You will be able to create a team later."
 
 msgid "onboarding.newsletter.accept"
 msgstr "Yes, subscribe"
@@ -2344,6 +2320,9 @@ msgstr "Want to receive Penpot news?"
 
 msgid "onboarding.team-modal.create-team"
 msgstr "Create a team"
+
+msgid "onboarding.team-modal.team-definition"
+msgstr "What's a team?"
 
 msgid "onboarding.team-modal.create-team-desc"
 msgstr ""
@@ -2364,9 +2343,6 @@ msgstr "Unlimited members"
 
 msgid "onboarding.team-modal.create-team-feature-5"
 msgstr "100% free!"
-
-msgid "onboarding.team-modal.team-definition"
-msgstr "What's a team?"
 
 msgid "onboarding.templates.subtitle"
 msgstr "Here are some templates."
@@ -2916,9 +2892,6 @@ msgstr "Redo"
 msgid "shortcuts.reset-zoom"
 msgstr "Reset zoom"
 
-msgid "shortcuts.scale"
-msgstr "Scale"
-
 msgid "shortcuts.search-placeholder"
 msgstr "Search shortcuts"
 
@@ -3004,9 +2977,6 @@ msgstr "Toggle layers"
 msgid "shortcuts.toggle-layout-flex"
 msgstr "Add / Remove flex layout"
 
-msgid "shortcuts.toggle-layout-grid"
-msgstr "Add/remove grid layout"
-
 msgid "shortcuts.toggle-lock"
 msgstr "Lock / Unlock"
 
@@ -3015,6 +2985,9 @@ msgstr "Lock proportions"
 
 msgid "shortcuts.toggle-rulers"
 msgstr "Show / Hide rulers"
+
+msgid "shortcuts.scale"
+msgstr "Scale"
 
 msgid "shortcuts.toggle-snap-guides"
 msgstr "Snap to guides"
@@ -3057,6 +3030,9 @@ msgstr "Zoom lense increase"
 
 msgid "shortcuts.zoom-selected"
 msgstr "Zoom to selected"
+
+msgid "shortcuts.toggle-layout-grid"
+msgstr "Add/remove grid layout"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "team.webhooks.max-length"
@@ -3260,10 +3236,6 @@ msgstr "Duplicate main"
 msgid "workspace.assets.edit"
 msgstr "Edit"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.filter"
-msgstr "Filter"
-
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.graphics"
 msgstr "Graphics"
@@ -3303,6 +3275,14 @@ msgid "workspace.assets.search"
 msgstr "Search assets"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.filter"
+msgstr "Filter"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.sort"
+msgstr "Sort"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.selected-count"
 msgid_plural "workspace.assets.selected-count"
 msgstr[0] "%s item selected"
@@ -3311,16 +3291,6 @@ msgstr[1] "%s items selected"
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.shared-library"
 msgstr "Shared library"
-
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs
-msgid "workspace.assets.sidebar.components"
-msgid_plural "workspace.assets.sidebar.components"
-msgstr[0] "1 component"
-msgstr[1] "%s components"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.sort"
-msgstr "Sort"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.typography"
@@ -3365,45 +3335,6 @@ msgstr "Text Transform"
 msgid "workspace.assets.ungroup"
 msgstr "Ungroup"
 
-msgid "workspace.context-menu.grid-cells.area"
-msgstr "Create area"
-
-msgid "workspace.context-menu.grid-cells.create-board"
-msgstr "Create board"
-
-msgid "workspace.context-menu.grid-cells.merge"
-msgstr "Merge cells"
-
-msgid "workspace.context-menu.grid-track.column.add-after"
-msgstr "Add 1 column to the right"
-
-msgid "workspace.context-menu.grid-track.column.add-before"
-msgstr "Add 1 column to the left"
-
-msgid "workspace.context-menu.grid-track.column.delete"
-msgstr "Delete column"
-
-msgid "workspace.context-menu.grid-track.column.delete-shapes"
-msgstr "Delete column and shapes"
-
-msgid "workspace.context-menu.grid-track.column.duplicate"
-msgstr "Duplicate column"
-
-msgid "workspace.context-menu.grid-track.row.add-after"
-msgstr "Add 1 row below"
-
-msgid "workspace.context-menu.grid-track.row.add-before"
-msgstr "Add 1 row above"
-
-msgid "workspace.context-menu.grid-track.row.delete"
-msgstr "Delete row"
-
-msgid "workspace.context-menu.grid-track.row.delete-shapes"
-msgstr "Delete row and shapes"
-
-msgid "workspace.context-menu.grid-track.row.duplicate"
-msgstr "Duplicate row"
-
 msgid "workspace.focus.focus-mode"
 msgstr "Focus mode"
 
@@ -3439,12 +3370,12 @@ msgstr "Disable scale text"
 msgid "workspace.header.menu.disable-snap-guides"
 msgstr "Disable snap to guides"
 
-msgid "workspace.header.menu.disable-snap-pixel-grid"
-msgstr "Disable snap to pixel"
-
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.disable-snap-ruler-guides"
 msgstr "Disable snap to ruler guides"
+
+msgid "workspace.header.menu.disable-snap-pixel-grid"
+msgstr "Disable snap to pixel"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-dynamic-alignment"
@@ -3461,12 +3392,12 @@ msgstr "Enable scale text"
 msgid "workspace.header.menu.enable-snap-guides"
 msgstr "Snap to guides"
 
-msgid "workspace.header.menu.enable-snap-pixel-grid"
-msgstr "Enable snap to pixel"
-
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-snap-ruler-guides"
 msgstr "Snap to ruler guides"
+
+msgid "workspace.header.menu.enable-snap-pixel-grid"
+msgstr "Enable snap to pixel"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-artboard-names"
@@ -3541,14 +3472,14 @@ msgstr "Show rulers"
 msgid "workspace.header.menu.show-textpalette"
 msgstr "Show fonts palette"
 
-msgid "workspace.header.menu.toggle-dark-theme"
-msgstr "Switch to dark theme"
+msgid "workspace.header.menu.undo"
+msgstr "Undo"
 
 msgid "workspace.header.menu.toggle-light-theme"
 msgstr "Switch to light theme"
 
-msgid "workspace.header.menu.undo"
-msgstr "Undo"
+msgid "workspace.header.menu.toggle-dark-theme"
+msgstr "Switch to dark theme"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.reset-zoom"
@@ -3598,6 +3529,18 @@ msgstr "Full screen"
 msgid "workspace.header.zoom-selected"
 msgstr "Zoom to selected"
 
+msgid "workspace.layout_grid.editor.title"
+msgstr "Editing grid"
+
+msgid "workspace.layout_grid.editor.top-bar.locate"
+msgstr "Locate"
+
+msgid "workspace.layout_grid.editor.top-bar.locate.tooltip"
+msgstr "Locate grid layout"
+
+msgid "workspace.layout_grid.editor.top-bar.done"
+msgstr "Done"
+
 msgid "workspace.layout_grid.editor.options.edit-grid"
 msgstr "Edit grid"
 
@@ -3606,18 +3549,6 @@ msgstr "Exit"
 
 msgid "workspace.layout_grid.editor.padding.expand"
 msgstr "Show 4 sided padding options"
-
-msgid "workspace.layout_grid.editor.title"
-msgstr "Editing grid"
-
-msgid "workspace.layout_grid.editor.top-bar.done"
-msgstr "Done"
-
-msgid "workspace.layout_grid.editor.top-bar.locate"
-msgstr "Locate"
-
-msgid "workspace.layout_grid.editor.top-bar.locate.tooltip"
-msgstr "Locate grid layout"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.add"
@@ -3688,10 +3619,6 @@ msgid "workspace.libraries.library-updates"
 msgstr "LIBRARY UPDATES"
 
 #: src/app/main/ui/workspace/libraries.cljs
-msgid "workspace.libraries.loading"
-msgstr "Loading…"
-
-#: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.no-libraries-need-sync"
 msgstr "There are no Shared Libraries that need update"
 
@@ -3715,6 +3642,14 @@ msgstr "SHARED LIBRARIES"
 msgid "workspace.libraries.shared-library-btn"
 msgstr "Connect library"
 
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.unlink-library-btn"
+msgstr "Disconnect library"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.loading"
+msgstr "Loading…"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.libraries.text.multiple-typography"
 msgstr "Multiple typographies"
@@ -3726,10 +3661,6 @@ msgstr "Unlink all typographies"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.typography"
 msgstr "%s typographies"
-
-#: src/app/main/ui/workspace/libraries.cljs
-msgid "workspace.libraries.unlink-library-btn"
-msgstr "Disconnect library"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.update"
@@ -3790,6 +3721,12 @@ msgstr "Swap component"
 
 msgid "workspace.options.component.swap.empty"
 msgstr "There are no assets in this library yet"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs
+msgid "workspace.assets.sidebar.components"
+msgid_plural "workspace.assets.sidebar.components"
+msgstr[0] "1 component"
+msgstr[1] "%s components"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints"
@@ -3983,9 +3920,6 @@ msgstr "Group fill"
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.group-stroke"
 msgstr "Group stroke"
-
-msgid "workspace.options.guides.title"
-msgstr "Guides"
 
 msgid "workspace.options.height"
 msgstr "Height"
@@ -5035,13 +4969,6 @@ msgstr "Text (%s)"
 msgid "workspace.toolbar.text-palette"
 msgstr "Typographies (%s)"
 
-msgid "workspace.top-bar.read-only.done"
-msgstr "Done"
-
-#, markdown
-msgid "workspace.top-bar.view-only"
-msgstr "**Inspecting code** (View Only)"
-
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.empty"
 msgstr "There are no history changes so far"
@@ -5175,3 +5102,77 @@ msgstr "Update"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+
+#, markdown
+msgid "workspace.top-bar.view-only"
+msgstr "**Inspecting code** (View Only)"
+
+msgid "workspace.top-bar.read-only.done"
+msgstr "Done"
+
+msgid "media.image"
+msgstr "Image"
+
+msgid "media.image.short"
+msgstr "img"
+
+msgid "media.solid"
+msgstr "Solid"
+
+msgid "media.linear"
+msgstr "Linear"
+
+msgid "media.radial"
+msgstr "Radial"
+
+msgid "media.gradient"
+msgstr "Gradient"
+
+msgid "media.choose-image"
+msgstr "Choose image"
+
+msgid "media.keep-aspect-ratio"
+msgstr "Keep aspect ratio"
+
+msgid "workspace.options.guides.title"
+msgstr "Guides"
+
+msgid "workspace.context-menu.grid-track.column.duplicate"
+msgstr "Duplicate column"
+
+msgid "workspace.context-menu.grid-track.column.add-before"
+msgstr "Add 1 column to the left"
+
+msgid "workspace.context-menu.grid-track.column.add-after"
+msgstr "Add 1 column to the right"
+
+msgid "workspace.context-menu.grid-track.column.delete"
+msgstr "Delete column"
+
+msgid "workspace.context-menu.grid-track.column.delete-shapes"
+msgstr "Delete column and shapes"
+
+msgid "workspace.context-menu.grid-track.row.duplicate"
+msgstr "Duplicate row"
+
+msgid "workspace.context-menu.grid-track.row.add-before"
+msgstr "Add 1 row above"
+
+msgid "workspace.context-menu.grid-track.row.add-after"
+msgstr "Add 1 row below"
+
+msgid "workspace.context-menu.grid-track.row.delete"
+msgstr "Delete row"
+
+msgid "workspace.context-menu.grid-track.row.delete-shapes"
+msgstr "Delete row and shapes"
+
+msgid "workspace.context-menu.grid-cells.merge"
+msgstr "Merge cells"
+
+msgid "workspace.context-menu.grid-cells.area"
+msgstr "Create area"
+
+msgid "workspace.context-menu.grid-cells.create-board"
+msgstr "Create board"
+
