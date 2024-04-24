@@ -9,6 +9,8 @@
   (:require
    [app.common.data :as d]
    [app.common.pprint :as pp]
+   [app.common.uri :as u]
+   [app.main.data.events :as ev]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
@@ -16,6 +18,7 @@
    [app.util.i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.webapi :as wapi]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc error-container
@@ -146,15 +149,19 @@
 
 (mf/defc exception-page
   {::mf/props :obj}
-  [{:keys [data] :as props}]
-  (case (:type data)
-    :not-found
-    [:& not-found]
+  [{:keys [data route] :as props}]
+  (let [type (:type data)
+        path (:path route)
+        query-params (u/map->query-string (:query-params route))]
+    (st/emit! (ptk/event ::ev/event {::ev/name "exception-page" :type type :path path :query-params query-params}))
+    (case (:type data)
+      :not-found
+      [:& not-found]
 
-    :bad-gateway
-    [:& bad-gateway]
+      :bad-gateway
+      [:& bad-gateway]
 
-    :service-unavailable
-    [:& service-unavailable]
+      :service-unavailable
+      [:& service-unavailable]
 
-    [:> internal-error props]))
+      [:> internal-error props])))
