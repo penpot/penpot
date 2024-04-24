@@ -7,6 +7,9 @@
 - Fix locking contention on cron subsystem (causes backend start blocking)
 - Fix locking contention on file object thumbails backend RPC calls
 
+### :bug: Bugs fixed
+
+- Fix color palette sorting [Taiga Issue #7458](https://tree.taiga.io/project/penpot/issue/7458)
 
 ## 2.0.1
 

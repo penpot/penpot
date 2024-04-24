@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.colorpicker.libraries
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.colors :as c]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.data.events :as ev]
@@ -24,7 +25,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc libraries
-  [{:keys [state on-select-color on-add-library-color disable-gradient disable-opacity  disable-image]}]
+  [{:keys [state on-select-color on-add-library-color disable-gradient disable-opacity disable-image]}]
   (let [selected         (h/use-shared-state mdc/colorpicker-selected-broadcast-key :recent)
         current-colors   (mf/use-state [])
 
@@ -43,10 +44,23 @@
                      (parse-uuid event)))))
 
         check-valid-color?
-        (fn [color]
-          (and (or (not disable-gradient) (not (:gradient color)))
-               (or (not disable-opacity) (= 1 (:opacity color)))
-               (or (not disable-image) (not (:image color)))))
+        (mf/use-fn
+         (fn [color]
+           (and (or (not disable-gradient) (not (:gradient color)))
+                (or (not disable-opacity) (= 1 (:opacity color)))
+                (or (not disable-image) (not (:image color))))))
+
+        ;; Sort colors by hue and lightness
+        get-sorted-colors
+        (mf/use-fn
+         (fn [colors]
+           (sort (fn [a b]
+                   (let [[ah _ al] (c/hex->hsl (:color a))
+                         [bh _ bl] (c/hex->hsl (:color b))
+                         a (+ (* ah 100) (* al 99))
+                         b (+ (* bh 100) (* bl 99))]
+                     (compare a b)))
+                 (into [] (filter check-valid-color?) colors))))
 
         toggle-palette
         (mf/use-fn
@@ -89,13 +103,15 @@
                             (sort-by :name)
                             (map #(assoc % :file-id file-id)))))]
 
-        (reset! current-colors (into [] (filter check-valid-color?) colors))))
+        (if (not= @selected :recent)
+          (reset! current-colors (get-sorted-colors colors))
+          (reset! current-colors (into [] (filter check-valid-color? colors))))))
 
     ;; If the file colors change and the file option is selected updates the state
     (mf/with-effect [file-colors]
       (when (= @selected :file)
         (let [colors (vals file-colors)]
-          (reset! current-colors (into [] (filter check-valid-color?) colors)))))
+          (reset! current-colors (get-sorted-colors colors)))))
 
     [:div {:class (stl/css :libraries)}
      [:div {:class (stl/css :select-wrapper)}
