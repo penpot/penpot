@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-02-12 19:02+0000\n"
-"Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
+"PO-Revision-Date: 2024-04-24 12:55+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
 ">\n"
 "Language: nl\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.4-dev\n"
+"X-Generator: Weblate 5.5.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -1012,6 +1012,7 @@ msgstr "Verbindingsfout, URL niet bereikbaar"
 msgid "errors.webhooks.invalid-uri"
 msgstr "URL komt niet door de validatie."
 
+#, fuzzy
 msgid "errors.webhooks.last-delivery"
 msgstr "Laatste levering is niet gelukt."
 
@@ -1068,6 +1069,7 @@ msgid "feedback.title"
 msgstr "E-mail"
 
 #: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
 msgid "feedback.twitter-go-to"
 msgstr "Ga naar X"
 
@@ -1076,6 +1078,7 @@ msgid "feedback.twitter-subtitle1"
 msgstr "Hier om te helpen met je technische vragen."
 
 #: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
 msgid "feedback.twitter-title"
 msgstr "X-ondersteuningsaccount"
 
@@ -3131,6 +3134,7 @@ msgstr "Interacties tonen bij aanklikken"
 msgid "viewer.header.sitemap"
 msgstr "Sitemap"
 
+#, fuzzy
 msgid "webhooks.last-delivery.success"
 msgstr "De laatste levering was succesvol."
 
