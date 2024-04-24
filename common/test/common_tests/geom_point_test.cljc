@@ -203,7 +203,7 @@
     (t/is (mth/close? 1.5 (:x rs)))
     (t/is (mth/close? 3.5 (:y rs)))))
 
-(t/deftest transform-point
+(t/deftest ^:kaocha/skip transform-point
   ;;todo
   )
 

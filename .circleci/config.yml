@@ -93,7 +93,7 @@ jobs:
           working_directory: "./common"
           command: |
             yarn test
-            clojure -X:dev:test :patterns '["common-tests.*-test"]'
+            clojure -M:dev:test
 
       - run:
           name: "frontend tests"
