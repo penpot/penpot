@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2023-10-10 10:01+0000\n"
 "Last-Translator: AlexTECPlayz <alextec70@outlook.com>\n"
-"Language-Team: Romanian <https://hosted.weblate.org/projects/penpot/frontend/"
-"ro/>\n"
+"Language-Team: Romanian "
+"<https://hosted.weblate.org/projects/penpot/frontend/ro/>\n"
 "Language: ro\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -538,6 +538,12 @@ msgstr "Hopa! Nu am putut importa acest fișier"
 
 msgid "dashboard.import.import-error"
 msgstr "A apărut o problemă la importul fișierului. Fișierul nu a fost importat."
+
+msgid "dashboard.import.import-message"
+msgid_plural "dashboard.import.import-message"
+msgstr[0] "1 fișier a fost importat cu succes."
+msgstr[1] "% fișiere au fost importate cu succes."
+msgstr[2] "% de fișiere au fost importate cu succes."
 
 msgid "dashboard.import.import-warning"
 msgstr "Unele fișiere conțineau obiecte nevalide care au fost eliminate."
@@ -1731,6 +1737,12 @@ msgstr "Contul tău"
 msgid "media.loading"
 msgstr "Încarcă imaginea…"
 
+msgid "modals.add-shared-confirm-empty.hint"
+msgstr ""
+"Biblioteca dumneavoastră este goală. Odată adăugate ca bibliotecă "
+"partajată, obiectele pe care le creați vor fi disponibile pentru a fi "
+"utilizate în celelalte fișiere. Sunteți sigur că doriți să o publicați?"
+
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.accept"
@@ -2507,6 +2519,10 @@ msgstr ""
 "Feedback-ul dvs. ne va ajuta să înțelegem care sunt obiceiurile și "
 "preferințele dvs. pentru a putea continua să facem Penpot o unealtă "
 "folositoare și plăcută."
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
+msgid "settings.detach"
+msgstr "Detașați"
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs,
@@ -3621,11 +3637,17 @@ msgstr "Componentă"
 msgid "workspace.options.component.annotation"
 msgstr "Notă"
 
+msgid "workspace.options.component.copy"
+msgstr "Copiați"
+
 msgid "workspace.options.component.create-annotation"
 msgstr "Creați o notă"
 
 msgid "workspace.options.component.edit-annotation"
 msgstr "Editați o notă"
+
+msgid "workspace.options.component.main"
+msgstr "Principal"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.constraints"
@@ -4371,12 +4393,24 @@ msgid "workspace.options.stroke-cap.circle-marker"
 msgstr "Marcator cerc"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.circle-marker-short"
+msgstr "Cerc"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.diamond-marker"
 msgstr "Marcator diamant"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.diamond-marker-short"
+msgstr "Diamant"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.line-arrow"
 msgstr "Săgeată linie"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.line-arrow-short"
+msgstr "Săgeată"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.none"
@@ -4395,8 +4429,16 @@ msgid "workspace.options.stroke-cap.square-marker"
 msgstr "Marcator pătrat"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square-marker-short"
+msgstr "Dreptunghi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.triangle-arrow"
 msgstr "Săgeată triunghi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.triangle-arrow-short"
+msgstr "Triunghi"
 
 msgid "workspace.options.stroke-color"
 msgstr "Culoare contur"
@@ -5001,45 +5043,3 @@ msgstr "Actualizează"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click pentru a închide calea"
-
-msgid "dashboard.import.import-message"
-msgid_plural "dashboard.import.import-message"
-msgstr[0] "1 fișier a fost importat cu succes."
-msgstr[1] "% fișiere au fost importate cu succes."
-msgstr[2] "% de fișiere au fost importate cu succes."
-
-msgid "workspace.options.component.copy"
-msgstr "Copiați"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.square-marker-short"
-msgstr "Dreptunghi"
-
-msgid "workspace.options.component.main"
-msgstr "Principal"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.diamond-marker-short"
-msgstr "Diamant"
-
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
-msgid "settings.detach"
-msgstr "Detașați"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.triangle-arrow-short"
-msgstr "Triunghi"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.line-arrow-short"
-msgstr "Săgeată"
-
-msgid "modals.add-shared-confirm-empty.hint"
-msgstr ""
-"Biblioteca dumneavoastră este goală. Odată adăugate ca bibliotecă partajată, "
-"obiectele pe care le creați vor fi disponibile pentru a fi utilizate în "
-"celelalte fișiere. Sunteți sigur că doriți să o publicați?"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.circle-marker-short"
-msgstr "Cerc"

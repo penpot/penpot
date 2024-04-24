@@ -2697,7 +2697,6 @@ msgstr "Omogući dinamičko poravnanje"
 msgid "workspace.header.menu.enable-scale-text"
 msgstr "Omogući skaliranje teksta"
 
-
 #: src/app/main/ui/workspace/header.cljs
 #, fuzzy
 msgid "workspace.header.menu.enable-snap-guides"

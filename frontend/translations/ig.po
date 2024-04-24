@@ -1,0 +1,2098 @@
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2024-02-14 08:02+0000\n"
+"Last-Translator: Alejandro Alonso <alejandro.alonso@kaleidos.net>\n"
+"Language-Team: Igbo "
+"<https://hosted.weblate.org/projects/penpot/frontend/ig/>\n"
+"Language: ig\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Weblate 5.4-dev\n"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-your-email"
+msgstr "Nyoo ozi- n gị  ma pịa na njikọ inyocha ma bido jiri ite mkpịsị rụwa ọrụ ."
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.confirm-password"
+msgstr "kpebie akara mpibanye"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-account"
+msgstr "mebeta akara ozigosi"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.create-demo-profile"
+msgstr "Chọọ nọọ ị nwa ya. ?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.demo-warning"
+msgstr ""
+"Ihe bụ ọrụ ozigosi ,e jile ya rụọ ezigbo ọrụ , ọrụ ndị a ga-ekpochapụ site "
+"na oge ruo na oge"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.email"
+msgstr "Ozi- n"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.forgot-password"
+msgstr "Chefuru akara mpibanye ?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.fullname"
+msgstr "Aha n'uju"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.login-here"
+msgstr "Banye ebe a"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-submit"
+msgstr "Banye"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-title"
+msgstr "Ihe ịtụnanya ịhụ gị !"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-github-submit"
+msgstr "Obi Git"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-gitlab-submit"
+msgstr "Ụlọ nchọcha Git"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "Gọgụlụ"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-ldap-submit"
+msgstr "LDAP"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-oidc-submit"
+msgstr "Mepe ID"
+
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.not-all-space"
+msgstr "Aha ga-enweriri ụfọdụ mkpụrụ edemede karịa oghere ."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.too-long"
+msgstr "Aha ga-enweriri ọ karịa mkpụrụ okwu narị abụọ na iri ise"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.new-password"
+msgstr "Pinye akara mpịbanye ọhụrụ"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.invalid-token-error"
+msgstr "Ọdịmara e nweghachitere adabaghị ."
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.password-changed-successfully"
+msgstr "Akara mpịbanye a gbanwere gara aga"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.profile-not-verified"
+msgstr "E nyochaghị nchịkọta , Biko nyocha nchịkọta tupu ị gaa n'ihu."
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.recovery-token-sent"
+msgstr "E zigara akara njikọ nnweghachi akara mpibanye n'igbe mbata ozi gị ."
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "auth.notifications.team-invitation-accepted"
+msgstr "Sonyere n'otu nke ọma"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-length-hint"
+msgstr "Ọ karịa mkpụrụ ederede asatọ"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-not-empty"
+msgstr "Akara mpịbanye ga-enweriri ụfọdụ leta/akara mpị karịa oghere ."
+
+msgid "auth.privacy-policy"
+msgstr "Iwu oñiño onwe"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-submit"
+msgstr "Nweghachite akara mpịbanye"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-subtitle"
+msgstr "Anyị ga-ezita ozi n na ndụmọdụ"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-title"
+msgstr "Chefuru akara mpịbanye ?"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.recovery-submit"
+msgstr "Gbanye akara mpịbanye."
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register"
+msgstr "E nweghị ebe Ntinye ihe ma kịta?"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.register-submit"
+msgstr "Mepee ebe Ntinye ihe"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-subtitle"
+msgstr "Ọ bụ n'efu , ọ bụ ebe nsị a jere oje"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-title"
+msgstr "Mepee ebe ntinye ihe"
+
+#: src/app/main/ui/auth.cljs
+msgid "auth.sidebar-tagline"
+msgstr "Nsina ghere oghe iji mee nse na atụtụ"
+
+msgid "auth.terms-of-service"
+msgstr "Ọnọdụ ọrụ"
+
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"Mgbe Ị na-emepe akara mbata ọhụrụ , ị ga-ekwe nye n'ọnọdụ ọrụ anyị na iwu "
+"oñiño onwe"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.verification-email-sent"
+msgstr "Anyị ezigaala ozi nnyocha na"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "branding-illustrations-marketing-pieces"
+msgstr "...onyinye aha, nkọwa gasị, ngwa ire ahịa dịrị gabazịa."
+
+msgid "common.publish"
+msgstr "bipụta"
+
+msgid "common.share-link.all-users"
+msgstr "Ndị niile ji ite mkpịsị arụ ọrụ"
+
+msgid "common.share-link.current-tag"
+msgstr "(kee ugbu a )"
+
+msgid "common.share-link.destroy-link"
+msgstr "Mebie njiko"
+
+msgid "common.share-link.get-link"
+msgstr "Weta njiko"
+
+msgid "common.share-link.link-copied-success"
+msgstr "E setere njiko nke ọma"
+
+msgid "common.share-link.manage-ops"
+msgstr "Jikwa ikike"
+
+msgid "common.share-link.permissions-can-comment"
+msgstr "nwere ike ikwu okwu"
+
+msgid "common.share-link.permissions-can-inspect"
+msgstr "Nwere Ike inyocha akara"
+
+msgid "common.share-link.permissions-hint"
+msgstr "Onye ọ bụla ga-enwe ohere mbanye"
+
+msgid "common.share-link.permissions-pages"
+msgstr "Ihu akwụkwọ ekekoritara"
+
+msgid "common.share-link.placeholder"
+msgstr "Njikọ  e nwere ike ikekorita ga-apụta"
+
+msgid "common.share-link.team-members"
+msgstr "Sọọsọ ndị otu"
+
+msgid "common.share-link.title"
+msgstr "Kee atụ gasị"
+
+msgid "common.unpublish"
+msgstr "Ebiputaghị"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr ""
+"Ite mkpịsị bụ maka otu . Kpọọ ndị otu ka arụkọta  ọnụ on arụmarụ na ederede "
+"ọnụ"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "Jikota ọnụ !"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr "Mụọ ntọala na ite mkpịsị maka iji nkuzi mmemmekwa eme ihe egwu"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "Bido ọmụmụ"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.title"
+msgstr "Nkuzi mmemmekwa"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr "Mee ngagharị na ite mkpịsị ma mata isi a gwara ya."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "Bido njem"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.title"
+msgstr "Aba ngagharị"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create"
+msgstr "Mepụta ọdịmara ọhụrụ"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create.success"
+msgstr "Mmepụtara ọdịmara nnweta gara nke ọma ."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.add-one"
+msgstr "Pịa mpi \"Nweta ọdịmara ọhụrụ \" inweta otu ."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.errors-required-name"
+msgstr "A chọrọ aha"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-180-days"
+msgstr "Mkpụrụ ụbọchị narị na iri asatọ"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-30-days"
+msgstr "Mkpụrụ ụbọchị iri atọ"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-60-days"
+msgstr "Mkpụrụ ụbọchị iri isii"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-90-days"
+msgstr "Mkpụrụ ụbọchị iri itoolu"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-never"
+msgstr "Ncha ncha"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expired-on"
+msgstr "Mebiri na%s"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expires-on"
+msgstr "Na-emebi na%s"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.no-expiration"
+msgstr "Enweghị ụbọchị mmebi"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal"
+msgstr "Ọdịmara nkeonwe"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal.description"
+msgstr ""
+"Ọdịmara nnweta nke onwe na-arụ ọrụ dị ka mgbamonwe mbanye anyị /akara "
+"mpịbanye e nwere ike iji usoro mbinye aka kwe ka ngwa nweta ndịnime ite "
+"mkpịsị API"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.token-will-expire"
+msgstr "Ọdịmara ga-emebi na%s"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.token-will-not-expire"
+msgstr "Ọdịmara enweghị ụbọchị mmebi"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.add-shared"
+msgstr "Tinye dị ka ọ a nkwekọrịta"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.change-email"
+msgstr "Gbanwee ozi - n"
+
+#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
+msgid "dashboard.copy-suffix"
+msgstr "(sere)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.create-new-team"
+msgstr "Mebe otu ọhụrụ"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.default-team-name"
+msgstr "Ite mkpịsị gị"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.delete-team"
+msgstr "kacha otu"
+
+msgid "dashboard.download-binary-file"
+msgstr "Butuo ederede ite mkpịsị (.penpot)"
+
+msgid "dashboard.download-standard-file"
+msgstr "Butuo ederede tozuru etozu (.svg + .json)"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate"
+msgstr "mee oyiri"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.duplicate-multi"
+msgstr "Mee o yiri  %s ederede"
+
+#: src/app/main/ui/dashboard/grid.cljs
+#, markdown
+msgid "dashboard.empty-placeholder-drafts"
+msgstr ""
+"Ederede a tinyere n'ọba ederede ga-apụta ebe a. Gbalịa ikesa ma ọ bụ  tinye "
+"site n'[Ọba ederede na ndebiri anyị ](https://itemkpịsị.app/ọba ederede "
+"gasị-ndebiri gasị.html)."
+
+msgid "dashboard.export-binary-multi"
+msgstr "Butuo %s ederede ite mkpịsị (.penpot)"
+
+msgid "dashboard.export-frames"
+msgstr "Bupu bọọdụ dị ka  PDF"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-frames.title"
+msgstr "Bupu dị ka PDF"
+
+msgid "dashboard.export-multi"
+msgstr "Bupu %s ederede Ite mkpịsị"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-multiple.selected"
+msgstr "A họrọ %s nke %s ndị na"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to"
+msgstr ""
+"Ị nwere ike ị tinye ntọala mbupu na ndịna site na ngwongwo nse (n'ala akụkụ "
+"aka nri ihe ndepụta)"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to-link"
+msgstr "Ozi etu esi ahazi mbupu n'ite mkpịsị"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.no-elements"
+msgstr "E nweghị ndịna ọ bụla na ntọala mbupu"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.title"
+msgstr "Nhọrọ mbupu"
+
+msgid "dashboard.export-standard-multi"
+msgstr "Buto %s ederede tozuru etozu (.svg + .json)"
+
+msgid "dashboard.export.detail"
+msgstr "* Nwere Ike ịgụnye ngwa , esereese gasị, agwụgwara na/ma ọ bụ akara nkụpụta."
+
+msgid "dashboard.export.options.all.message"
+msgstr ""
+"A ga-atinye ederede nwere ọba ederede nkekọrịta ma gụnyere mbupu  , ma "
+"jidekwa ụkpụrụ njikọ ha"
+
+msgid "dashboard.export.options.all.title"
+msgstr "Bupu ọba ederede nkekọrịta"
+
+msgid "dashboard.export.options.detach.message"
+msgstr ""
+"Agaghị a tinye ọba ederede nkekọrịta na mbupu ma o nweghị ihe nnwe a ga a "
+"tinye ọ a ederede . "
+
+msgid "dashboard.export.options.merge.title"
+msgstr "Tinye ihe nnwe ọba ederede nkekọrịta n'ime ọ a ederede."
+
+msgid "dashboard.export.title"
+msgstr "Ederede mbupu gasị"
+
+msgid "dashboard.fonts.deleted-placeholder"
+msgstr "Mkpụrụ edemede na-efu efu"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.dismiss-all"
+msgstr "Gbasaa ha niile"
+
+msgid "dashboard.fonts.empty-placeholder"
+msgstr "Mkpụrụ edemede ndị ị bugoro ga-apụta ebe."
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.upload-all"
+msgstr "Bugo ha niile"
+
+#, markdown
+msgid "dashboard.fonts.warning-text"
+msgstr ""
+"Anyị chọpụtara nsogbu nwere ike ịpụta na mkpụrụ edide gị gbasara ntụ kwụ "
+"ọtọ "
+
+msgid "dashboard.import.analyze-error"
+msgstr "Ewuu! Anyị enweghị ike bubata ederede a"
+
+msgid "dashboard.import.import-error"
+msgstr "E nwere nsogbu na ibubata  ederede . E bubataghị ederede ."
+
+msgid "dashboard.import.import-warning"
+msgstr "Ụfọdụ ederede nwere ihe ndị adabaghị na ya nke ewepugoro. ."
+
+msgid "dashboard.import.progress.process-colors"
+msgstr "Nhazi agwụgwara gasị"
+
+msgid "dashboard.import.progress.process-components"
+msgstr "Nhazi ngwa gasị"
+
+msgid "dashboard.import.progress.process-media"
+msgstr "Nhazi mgbasa ozi"
+
+msgid "dashboard.import.progress.process-page"
+msgstr "Nhazi ihu akwụkwọ : %s"
+
+msgid "dashboard.import.progress.process-typographies"
+msgstr "Nhazi akara nkụpụta"
+
+msgid "dashboard.import.progress.upload-data"
+msgstr "Ibugo njatụle n'ebe nkesa (%s/%s)"
+
+msgid "dashboard.import.progress.upload-media"
+msgstr "Ibugo ederede : %s"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.invite-profile"
+msgstr "Kpọta mmadụ"
+
+#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.leave-team"
+msgstr "Hapụ otu"
+
+msgid "dashboard.libraries-and-templates"
+msgstr "Ọba ederede gasị & ndebiri"
+
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "Nyocha ọtụtụ n'ime ha ma mara etu ị ga-esi tinye ọnụ"
+
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr "E nwere nsogbu ibu aba ndebiri . E bubataghị ndebiri."
+
+#: src/app/main/ui/dashboard/libraries.cljs
+msgid "dashboard.libraries-title"
+msgstr "Ọba ederede gasị"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.loading-files"
+msgstr "Mbụbata ederede gị …"
+
+msgid "dashboard.loading-fonts"
+msgstr "mbubata mkpụrụ edemede gị …"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to"
+msgstr "Ga na"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-multi"
+msgstr "Buga %s ederede gasị na"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to-other-team"
+msgstr "Gaa n'otu ọzọ"
+
+#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/files.cljs
+msgid "dashboard.new-file"
+msgstr "+ Ederede ọhụrụ"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-file-prefix"
+msgstr "Ederede ọhụrụ"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dashboard.new-project"
+msgstr "+ Nchọcha ọhụrụ"
+
+#: src/app/main/data/dashboard.cljs
+msgid "dashboard.new-project-prefix"
+msgstr "Arụmarụ ọhụrụ"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.no-matches-for"
+msgstr "Ọ nweghị ihe ndabara e nwetara maka “%s“"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.no-projects-placeholder"
+msgstr "Arụmarụ a kụdoro ga-apụta ebe a"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "dashboard.notifications.email-changed-successfully"
+msgstr "Adreesị ozi - n gị ahazigharịala gara nke ọma"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "dashboard.notifications.email-verified-successfully"
+msgstr "E nyochala adreesị ozi - n gị nke ọma"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "dashboard.notifications.password-saved"
+msgstr "E dọkwara akara mpịbanye nke ọma !"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.num-of-members"
+msgstr "%s Ndị otu"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.open-in-new-tab"
+msgstr "Mepe ederede na tabụ ọhụrụ"
+
+msgid "dashboard.options"
+msgstr "Nhọrọ gasị"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "dashboard.password-change"
+msgstr "Gbanwee akara mpịbanye"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.pin-unpin"
+msgstr "Nọmba /Wepụ nọmba"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dashboard.projects-title"
+msgstr "Arụmarụ"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.remove-account"
+msgstr "Chọọ iwepu ebe Ntinye ihe gị ?"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.remove-shared"
+msgstr "Wepụ dị ka ọba ederede nkekọrịta"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.save-settings"
+msgstr "Dokwa ntọala"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.search-placeholder"
+msgstr "Chọọ…"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.searching-for"
+msgstr "Na-achọ “%s“…"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.select-ui-language"
+msgstr "Họrọ asụsụ UI"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-duplicate-project"
+msgstr "E megharịala  arụmarụ gị nke ọma\""
+
+#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-move-file"
+msgstr "E wepula  ederede gị nke ọma\""
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-move-project"
+msgstr "E bupula  arụmarụ  gị nke ọma"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.team-info"
+msgstr "Ozi otu"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.team-members"
+msgstr "Ndị otu"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.team-projects"
+msgstr "Arụmarụ otu"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.theme-change"
+msgstr "Isiokwu UI"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.title-search"
+msgstr "Chọọ risọltụ gasị"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.type-something"
+msgstr "Pinye ịchọ risọltụ"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.unpublish-shared"
+msgstr "Ọba ederede ebiputaghị"
+
+#: src/app/main/ui/settings/password.cljs, src/app/main/ui/settings/options.cljs
+msgid "dashboard.update-settings"
+msgstr "Hazie ntọala"
+
+msgid "dashboard.webhooks.active"
+msgstr "Dị gara gara"
+
+msgid "dashboard.webhooks.active.explain"
+msgstr "Mgbe a kpọlitere nkọ a, ọ ga-Ezipụta nkọwa emume n'uju"
+
+msgid "dashboard.webhooks.content-type"
+msgstr "Ụdị ndịna"
+
+msgid "dashboard.webhooks.create"
+msgstr "Mepe nko - ududọ"
+
+msgid "dashboard.webhooks.create.success"
+msgstr "E mepere nko-ududọ nke ọma ."
+
+msgid "dashboard.webhooks.description"
+msgstr ""
+"Nko-ududọ bụ ụzọ dị mfe ga-ekwe ka ebe ududọ na apps ndị ọzọ nweta ozi Mgbe "
+"ụfọdụ emume na eme n'ite mkpịsị . Anyị ga e ziga OZI arịrịọ nwe URLs ọ bụla "
+"ị nwetara"
+
+msgid "dashboard.webhooks.empty.add-one"
+msgstr "Pịa mpị \"Tinye nko-ududọ \" ịtinye otu ."
+
+msgid "dashboard.webhooks.empty.no-webhooks"
+msgstr "E nweghị Nko-ududọ e ebere ruo ugbu a ."
+
+msgid "dashboard.webhooks.update.success"
+msgstr "Ahazigharịrị nko-ududọ nke ọma ."
+
+#: src/app/main/ui/settings.cljs
+msgid "dashboard.your-account-title"
+msgstr "Ebe Ntinye ihe gị"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.your-email"
+msgstr "Ozi-n"
+
+#: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/libraries.cljs, src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.your-penpot"
+msgstr "Ite mkpịsị. gị"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-ok"
+msgstr "Okay"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-title"
+msgstr "Gee ntị"
+
+#: src/app/main/ui/confirm.cljs
+msgid "ds.confirm-cancel"
+msgstr "Kagbuo"
+
+#: src/app/main/ui/confirm.cljs
+msgid "ds.confirm-ok"
+msgstr "Okay"
+
+#: src/app/main/ui/confirm.cljs, src/app/main/ui/confirm.cljs
+msgid "ds.confirm-title"
+msgstr "Ọ doro gị anya ?"
+
+msgid "errors.auth.unable-to-login"
+msgstr "Ọ dị ka enyochaghị gị ma ọ bụ na oge agwụla ."
+
+msgid "errors.bad-font"
+msgstr "E nweghị ike bugo %s mkpụrụ edide"
+
+msgid "errors.bad-font-plural"
+msgstr "E nweghị ike bugo %s mkpụrụ edide"
+
+msgid "errors.cannot-upload"
+msgstr "E nweghị ike ị ugo ederede ."
+
+#: src/app/main/data/workspace.cljs
+msgid "errors.clipboard-not-implemented"
+msgstr "Your browser cannot do this operation"
+
+#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/change_email.cljs
+msgid "errors.email-already-exists"
+msgstr "E jibuola ozi - n rụọ ọrụ"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.email-already-validated"
+msgstr "Aha ozi-n adabala."
+
+msgid "errors.email-as-password"
+msgstr "Ị nweghị ike iji aha ozi-n gị dị ka akara mpịbanye"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "errors.email-has-permanent-bounces"
+msgstr "Ozi-n «%s» nwere ọtụtụ ozi nkọwa mbịaghachigide."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
+msgid "errors.email-invalid"
+msgstr "Debanye aha ozi-n dabara adaba"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "errors.email-invalid-confirmation"
+msgstr "Ozi-n nnabata ga-adabrịrị"
+
+msgid "errors.email-spam-or-permanent-bounces"
+msgstr "E nwela ozi nkọwa na ozi-n«%s» dị ka ozi abaghị uru ma ọ bụ  mbịaghachigide."
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-mismatch"
+msgstr ""
+"Ọ dị ka ị na-emepe ederede nwere a gwara naọ gara aga '%s' mana ihu "
+"itemkpịsị gị akwadoghị ya ma ọ bụ gosiri ọ gaghị aga."
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-not-supported"
+msgstr "Akwadoghị agwara '%s' ."
+
+#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "errors.generic"
+msgstr "Ihe ezighị ezi emela ."
+
+#: src/app/main/ui/components/color_input.cljs
+msgid "errors.invalid-color"
+msgstr "Agwụgwara adabaghị"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.invite-invalid"
+msgstr "kpọọ òkù adabaghị"
+
+msgid "errors.invite-invalid.info"
+msgstr "This invite might be canceled or may be expired."
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.ldap-disabled"
+msgstr "LDAP mbinye aka agaghị ."
+
+#: src/app/main/errors.cljs
+msgid "errors.max-quote-reached"
+msgstr "I ruola '%s' ole a chọrọ . Chọọ enyemaka nkwado ."
+
+#: src/app/main/data/workspace/persistence.cljs
+msgid "errors.media-too-large"
+msgstr "Onyinyo a ebuka ibu maka itinye ."
+
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+msgid "errors.media-type-mismatch"
+msgstr "Dị ka ihe dị na onyinyo adabaghị na mgbatị ederede."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "errors.member-is-muted"
+msgstr ""
+"Nchịkọta gị  nwere ozi-n mechiri emechi (akụkọ ozi-n adịghị mma ma ọ bụ "
+"nwere oké bịaghachiri )."
+
+msgid "errors.profile-blocked"
+msgstr "A gbachiri nchịkọta agbachi"
+
+#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "errors.profile-is-muted"
+msgstr ""
+"Nchịkọta gị lnwere ozi-n mechiri emechi(akụkọ ozi-n adịghị mma ma ọ bụ "
+"nwere oké bịaghachiri ).\")."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "errors.registration-disabled"
+msgstr "Ndebanye merụrụ emerụ ugbu a."
+
+msgid "errors.team-leave.insufficient-members"
+msgstr "Ndị otu ezughị okè ịhapụ otu, ọ nyere ike na ị chọrọ  ihichapụ ya ."
+
+msgid "errors.team-leave.member-does-not-exists"
+msgstr "Onye otu ị na-achọ inye adịghị ."
+
+msgid "errors.team-leave.owner-cant-leave"
+msgstr "O wee enweghị ike ịhapụ otu, ị ga-enyegharịrị ọrụ onwee."
+
+#: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
+msgid "errors.unexpected-error"
+msgstr "Ndejo atughị anya ya pụtara ."
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.unexpected-token"
+msgstr "Ọdịmara amaghị ama"
+
+msgid "errors.webhooks.connection"
+msgstr "Mmejọ, e nwetaghị URL"
+
+msgid "errors.webhooks.invalid-uri"
+msgstr "URL enweghị nkwado ."
+
+msgid "errors.webhooks.ssl-validation"
+msgstr "Mmejọ na nkwado SSL ."
+
+msgid "errors.webhooks.timeout"
+msgstr "Oge ezuola"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.wrong-credentials"
+msgstr "Ozi-na ma ọ bụ akara mpịbanye adịghị mma ."
+
+#: src/app/main/ui/settings/password.cljs
+msgid "errors.wrong-old-password"
+msgstr "Akara mpịbanye ochie adịghị  mma"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.description"
+msgstr "Nkọwa"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-go-to"
+msgstr "Gaa n'ebe ite mkpịsị"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-subtitle1"
+msgstr ""
+"Obi dị anyị añụrị ịhụ gị ebea. Ọ bụrụ na  enyemaka dị mkpa , biko chọọ tupu "
+"ị ịga ozi ."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-title"
+msgstr "Ogbe Ite mkpịsị"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.subject"
+msgstr "Isiokwu"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.subtitle"
+msgstr ""
+"Biko, kọwaa ihe isi ozi-n gị , kwuo ma ọ bụ nsogbu , ncheputara ma ọ bụ "
+"ekaenyeghị. Onye otu anyị ga-azaghachi ozugbo ọ nwere ike ."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.title"
+msgstr "Ozi- n"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-go-to"
+msgstr "Gaa na Twita"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.twitter-subtitle1"
+msgstr "Ebe inyere gị aka n'ajụjụ nkà gị ."
+
+#: src/app/main/ui/settings/password.cljs
+msgid "generic.error"
+msgstr "Mmehie apụtala"
+
+#: src/app/main/ui/inspect/attributes/blur.cljs
+msgid "inspect.attributes.blur"
+msgstr "Inyogo"
+
+#: src/app/main/ui/inspect/attributes/blur.cljs
+msgid "inspect.attributes.blur.value"
+msgstr "Uru"
+
+#: src/app/main/ui/inspect/attributes/common.cljs
+msgid "inspect.attributes.color.hex"
+msgstr "HEX"
+
+#: src/app/main/ui/inspect/attributes/common.cljs
+msgid "inspect.attributes.color.hsla"
+msgstr "HSLA"
+
+#: src/app/main/ui/inspect/attributes/common.cljs
+msgid "inspect.attributes.color.rgba"
+msgstr "RGBA"
+
+#: src/app/main/ui/inspect/attributes/fill.cljs
+msgid "inspect.attributes.fill"
+msgstr "Wunye"
+
+#: src/app/main/ui/inspect/attributes/image.cljs
+msgid "inspect.attributes.image.download"
+msgstr "Butuo onyinyo nsina"
+
+#: src/app/main/ui/inspect/attributes/image.cljs
+msgid "inspect.attributes.image.height"
+msgstr "Ogo"
+
+#: src/app/main/ui/inspect/attributes/image.cljs
+msgid "inspect.attributes.image.width"
+msgstr "Uhie"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout"
+msgstr "Mpụta"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.height"
+msgstr "Ogo"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.left"
+msgstr "Aka ekpe"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.rotation"
+msgstr "Ntụgharị"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.top"
+msgstr "Elu"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.width"
+msgstr "Uhie"
+
+#: src/app/main/ui/inspect/attributes/shadow.cljs
+msgid "inspect.attributes.shadow"
+msgstr "Oninyo"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.size"
+msgstr "Nhazi na ọnọdụ"
+
+#: src/app/main/ui/inspect/attributes/stroke.cljs
+msgid "inspect.attributes.stroke"
+msgstr "Akara"
+
+#, permanent
+msgid "inspect.attributes.stroke.alignment.center"
+msgstr "Etiti"
+
+#, permanent
+msgid "inspect.attributes.stroke.alignment.inner"
+msgstr "Ime"
+
+#, permanent
+msgid "inspect.attributes.stroke.alignment.outer"
+msgstr "Ezi"
+
+msgid "inspect.attributes.stroke.style.dotted"
+msgstr "Atụrụ kpọm kpọm"
+
+msgid "inspect.attributes.stroke.style.mixed"
+msgstr "Gwakọtara"
+
+msgid "inspect.attributes.stroke.style.none"
+msgstr "Ncha ncha"
+
+msgid "inspect.attributes.stroke.style.solid"
+msgstr "Akpụrụka"
+
+#: src/app/main/ui/inspect/attributes/stroke.cljs
+msgid "inspect.attributes.stroke.width"
+msgstr "Uhie"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography"
+msgstr "Akara nkụpụta"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-family"
+msgstr "Ezinụlọ mkpụrụ edide"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-size"
+msgstr "Nhazi mkpụrụ edide"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.letter-spacing"
+msgstr "Ndesa mkpụrụ edemede"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.line-height"
+msgstr "Ogo akara"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.text-decoration"
+msgstr "Nkwazi ederede"
+
+msgid "inspect.attributes.typography.text-decoration.none"
+msgstr "Ncha ncha"
+
+msgid "inspect.attributes.typography.text-decoration.strikethrough"
+msgstr "Kụọgafee"
+
+msgid "inspect.attributes.typography.text-decoration.underline"
+msgstr "N'okpuru"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.text-transform"
+msgstr "Mgbanwe ederede"
+
+msgid "inspect.attributes.typography.text-transform.none"
+msgstr "None"
+
+msgid "inspect.attributes.typography.text-transform.titlecase"
+msgstr "Mkpụrụ edemede isiokwu"
+
+msgid "inspect.attributes.typography.text-transform.uppercase"
+msgstr "Mkpụrụ edemede nnukwu"
+
+msgid "inspect.empty.help"
+msgstr ""
+"Ị chọọ ị ma ihe ndị ọzọ maka nnyocha esereese, gaa n'ebe enyemaka ite "
+"mkpịsị r"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs
+msgid "inspect.tabs.code"
+msgstr "Akara"
+
+msgid "inspect.tabs.code.selected.circle"
+msgstr "Okirikiri"
+
+msgid "inspect.tabs.code.selected.component"
+msgstr "Ndịna"
+
+msgid "inspect.tabs.code.selected.curve"
+msgstr "Nrọgọ"
+
+msgid "inspect.tabs.code.selected.frame"
+msgstr "Ogwe."
+
+msgid "inspect.tabs.code.selected.group"
+msgstr "Otu"
+
+msgid "inspect.tabs.code.selected.image"
+msgstr "Onyinyo"
+
+msgid "inspect.tabs.code.selected.mask"
+msgstr "kpuchie"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs
+msgid "inspect.tabs.code.selected.multiple"
+msgstr "%s a họrọ"
+
+msgid "inspect.tabs.code.selected.path"
+msgstr "Ụzọ"
+
+msgid "inspect.tabs.code.selected.rect"
+msgstr "Rekụtagụlụ"
+
+msgid "inspect.tabs.code.selected.svg-raw"
+msgstr "SVG"
+
+msgid "inspect.tabs.code.selected.text"
+msgstr "Ederede"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs
+msgid "inspect.tabs.info"
+msgstr "Ozi"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "label.shortcuts"
+msgstr "Ụzọ mkpirisi"
+
+msgid "labels.accept"
+msgstr "Nabata"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.access-tokens"
+msgstr "Nweta ọdịmara gasị"
+
+msgid "labels.active"
+msgstr "Gara gara"
+
+msgid "labels.add-custom-font"
+msgstr "Tinye mkpụrụ edide a haziri ahazi"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.admin"
+msgstr "Ọchịkwa"
+
+#: src/app/main/ui/workspace/comments.cljs
+msgid "labels.all"
+msgstr "Ha niile"
+
+msgid "labels.and"
+msgstr "na"
+
+msgid "labels.back"
+msgstr "Azụ"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.bad-gateway.main-message"
+msgstr "Ajọ ụzọ mbanye"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.cancel"
+msgstr "Kagbuo"
+
+msgid "labels.close"
+msgstr "Megbuo"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "labels.comments"
+msgstr "Okwu gasị"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.community"
+msgstr "Ogbe"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "labels.confirm-password"
+msgstr "Nabata akara mpịbanye"
+
+msgid "labels.continue"
+msgstr "Ga n'ihu"
+
+msgid "labels.continue-with"
+msgstr "Gaa n'ihu"
+
+msgid "labels.continue-with-penpot"
+msgstr "I Nwere Ike ịganihu"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.copy-invitation-link"
+msgstr "Dọrọ njikọ"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "labels.create"
+msgstr "Meputa"
+
+#: src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.create-team"
+msgstr "Mepee otu ọhụrụ"
+
+msgid "labels.custom-fonts"
+msgstr "mkpụrụ edide a haziri"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.delete"
+msgstr "Hichaa"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.delete-comment"
+msgstr "Hichaa okwu"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.delete-comment-thread"
+msgstr "Hichapụ eri"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.delete-invitation"
+msgstr "Hichapụ oku"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.delete-multi-files"
+msgstr "Hichapụ ederede %s"
+
+#: src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/files.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.drafts"
+msgstr "Ndesita"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.edit"
+msgstr "Dezie"
+
+msgid "labels.edit-file"
+msgstr "Dezie ederede"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.editor"
+msgstr "Odezi"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.expired-invitation"
+msgstr "Mebiri"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.feedback-disabled"
+msgstr "Nzaghachi merụrụ emeru"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.feedback-sent"
+msgstr "Zigara nzaghachi"
+
+msgid "labels.font-family"
+msgstr "Ezinụlọ mkpụrụ edide"
+
+msgid "labels.font-providers"
+msgstr "Ndị na-enye mkpụrụ edide"
+
+msgid "labels.font-variants"
+msgstr "Ụdịdị gasị"
+
+msgid "labels.fonts"
+msgstr "Mkpụrụ edide gasị"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.github-repo"
+msgstr "Ọ a Github"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.give-feedback"
+msgstr "Nye nzaghachi"
+
+msgid "labels.go-back"
+msgstr "Gaa azụ"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.help-center"
+msgstr "Ebe enyemaka"
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
+msgid "labels.hide-resolved-comments"
+msgstr "Zoo nkwupụta e kpebiri"
+
+msgid "labels.inactive"
+msgstr "Arụghị ọrụ"
+
+msgid "labels.installed-fonts"
+msgstr "Mkpụrụ edide gasị ewubere"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.internal-error.desc-message"
+msgstr "Ihe ọjọọ mere . Biko, rụgharịa ọrụ  ma ọ bụ na nsogbu aka dị , kpọọ nkwado ."
+
+#: src/app/main/ui/static.cljs
+msgid "labels.internal-error.main-message"
+msgstr "Nrụjọ ndịnime"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.invitations"
+msgstr "Akwụkwọ ịkpọ ọkụ gasị"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "labels.language"
+msgstr "Asụsụ"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.libraries-and-templates"
+msgstr "Ọba ederede  na  Ndebiri gasị"
+
+msgid "labels.log-or-sign"
+msgstr "Banye ma ọ bụ debanye"
+
+#: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.logout"
+msgstr "Pụọ"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.member"
+msgstr "Onye otu"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.members"
+msgstr "Ndị otu"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "labels.new-password"
+msgstr "Akara mpịbanye ọhụrụ"
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/dashboard/comments.cljs
+msgid "labels.no-comments-available"
+msgstr "E jidere unu niile! Ngosi nkwupụta ọhụrụ ga-apụta ebe a ."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.no-invitations"
+msgstr "E nweghị ọkụ na-echere"
+
+#: src/app/main/ui/dashboard/team.cljs
+#, markdown
+msgid "labels.no-invitations-hint"
+msgstr "Pịa mpị**kpọọ ndị mmadụ ** ịkpọọ ndị mmadụ n'otu a."
+
+#: src/app/main/ui/static.cljs
+msgid "labels.not-found.desc-message"
+msgstr "Ihu akwụkwọ a nwere ike ọ gaghị adị ma ọ bụ ị nweghị ikikere inweta ya ."
+
+#: src/app/main/ui/static.cljs
+msgid "labels.not-found.main-message"
+msgstr "E wuu !"
+
+#: src/app/main/ui/settings/password.cljs
+msgid "labels.old-password"
+msgstr "Akara mpịbanye ochie"
+
+#: src/app/main/ui/workspace/comments.cljs
+msgid "labels.only-yours"
+msgstr "Sọọsọ nke gị"
+
+msgid "labels.or"
+msgstr "ma ọ bụ"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.owner"
+msgstr "Onye nwe"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.password"
+msgstr "Akara mpịbanye"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.pending-invitation"
+msgstr "Na-echere"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.profile"
+msgstr "Nchịkọta"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.projects"
+msgstr "Ọrụ gasị"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.release-notes"
+msgstr "Wepụta ndetu"
+
+#: src/app/main/ui/workspace.cljs
+msgid "labels.reload-file"
+msgstr "Bugharịa ederede"
+
+#: src/app/main/ui/workspace/libraries.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.remove"
+msgstr "Wepu"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.remove-member"
+msgstr "Wepụ onye otu"
+
+#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.rename"
+msgstr "Nyegharịa aha"
+
+#: src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.rename-team"
+msgstr "Nyegharịa otu"
+
+#: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
+msgid "labels.retry"
+msgstr "Nwagharịa"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.role"
+msgstr "Ọrụ"
+
+msgid "labels.save"
+msgstr "Dokwa"
+
+msgid "labels.search-font"
+msgstr "Chọọ mkpụrụ edide"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.send"
+msgstr "Ziga"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "labels.sending"
+msgstr "Na-eziga…"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.settings"
+msgstr "Ntọala"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.shared-libraries"
+msgstr "Ọba ederede"
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
+msgid "labels.show-all-comments"
+msgstr "Gosi nkwupụta niile"
+
+msgid "labels.show-comments-list"
+msgstr "Gosi ndepụta nkwupụta gasị"
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
+msgid "labels.show-your-comments"
+msgstr "Gosi nanị nkwupụta gị gasị"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.status"
+msgstr "Ọnọdụ"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.tutorials"
+msgstr "Nkuzi"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.unpublish-multi-files"
+msgstr "%s ederede ebipụtaghị"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "labels.update"
+msgstr "Hazigharịa"
+
+#: src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.update-team"
+msgstr "Hazigharịa otu"
+
+msgid "labels.upload"
+msgstr "Bugo"
+
+msgid "labels.upload-custom-fonts"
+msgstr "Bugo ederede gasị ahaziri"
+
+msgid "labels.uploading"
+msgstr "Na-ebugo…"
+
+msgid "labels.view-only"
+msgstr "Sọọsọ nkiri"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.viewer"
+msgstr "Ndị nkiri"
+
+msgid "labels.webhooks"
+msgstr "Nko-ududọ"
+
+#: src/app/main/ui/comments.cljs
+msgid "labels.write-new-comment"
+msgstr "Dee nkwupụta ọhụrụ"
+
+#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.you"
+msgstr "(gị)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.your-account"
+msgstr "Akara mbata gị"
+
+#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+msgid "media.loading"
+msgstr "Na-ebupụta onyinyo …"
+
+msgid "modals.add-shared-confirm-empty.hint"
+msgstr ""
+"E nweghị ihe dị n'ọba ederede gị. \"Ozugbo e tinyere dị ka ọba ederede "
+"ekekoritara, ngwongwo ị mepere ga a dị maka iji ya rụọ ọrụ n'edemede gị ndị "
+"ọzọ niile. Ọ kara gị obi na ị chọrọ ị bipụta ya?"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.add-shared-confirm.accept"
+msgstr "Tinye ka ọba ederede Kekoritara"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.add-shared-confirm.hint"
+msgstr ""
+".Ozugbo e tinyere dị ka ọba ederede ekekoritara, ngwongwo ị mepere ga a dị "
+"maka iji ya rụọ ọrụ n'edemede gị ndị ọzọ niile."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.add-shared-confirm.message"
+msgstr "Tinye “%s” dị ka ọba ederede ekekoritara"
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.big-nudge"
+msgstr "nnukwu nkpatụ"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.submit"
+msgstr "Gbanwee ozi nl"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.expiration-date.label"
+msgstr "Ụbọchị mmebi"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.name.label"
+msgstr "Aha"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.submit-label"
+msgstr "Create token"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.title"
+msgstr "Mepụta ọdịmara nweta"
+
+msgid "modals.create-webhook.submit-label"
+msgstr "Mebe nko - ududo"
+
+msgid "modals.create-webhook.title"
+msgstr "Mebe nko-ududo"
+
+msgid "modals.create-webhook.url.label"
+msgstr "Isi ozi URL"
+
+msgid "modals.create-webhook.url.placeholder"
+msgstr "https://ọmụmaaụ.com/ozi anabara"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.accept"
+msgstr "Hichapụ ọdịmara"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.title"
+msgstr "Hichapụ ọdịmara"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.cancel"
+msgstr "Kagbuo ma dobe ebe ntinye ihe m"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.confirm"
+msgstr "Eee, hichapụ ebe ntinye ihe m"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.info"
+msgstr ""
+"Site na iwepu ebe ntinye ihe gị, arụmarụ  gị gasị ugbu a naebe nchekwa "
+"ga-efu ."
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.title"
+msgstr "Ọ kara gị obi na ị chọrọ ị hichapụ ebe ntinye ihe gị?"
+
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment-thread.accept"
+msgstr "Hichapụ mkparịtaụka"
+
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment-thread.message"
+msgstr "Ọ kara gị obi na ị chọrọ ị hichapụ mkparịtaụka a?"
+
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment-thread.title"
+msgstr "Hichaa mkparịtaụka"
+
+msgid "modals.delete-component-annotation.message"
+msgstr "Ọ kara gị obi na ị chọrọ ị hichapụ nkọwa ?"
+
+msgid "modals.delete-component-annotation.title"
+msgstr "Hichapụ nkọwa"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-confirm.accept"
+msgstr "Hichapụ ederede"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-confirm.message"
+msgstr "Ọ kara gị obi na ị chọrọ ị hichapụ ederede ?"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-confirm.title"
+msgstr "Na-ehichapụ ederede"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-multi-confirm.title"
+msgstr "Na-ehichapụ ederede %s"
+
+msgid "modals.delete-font.title"
+msgstr "Na-ehichapụ mkpụrụ edide"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs
+msgid "modals.delete-page.body"
+msgstr "Ọ kara gị obi na ị chọrọ ị hichapụ ihu akwụkwọ a?"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs
+msgid "modals.delete-page.title"
+msgstr "Hichapụ ihu akwụkwọ"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "modals.delete-project-confirm.accept"
+msgstr "Hichapụ arụmarụ"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "modals.delete-project-confirm.message"
+msgstr "Ọ kara gị obi na ị chọrọ ị hichapụ arụmarụ ?"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "modals.delete-project-confirm.title"
+msgstr "Hichapụ arụmarụ"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.delete-team-confirm.accept"
+msgstr "Hichapụ otu"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.delete-team-confirm.message"
+msgstr ""
+"Ọ kara gị obi na ị chọrọ ị hichapụ otu? ARỤMARỤ na ederede nille gasị "
+"gbasara otú ga-ehichapụ kpam kpam"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.delete-team-confirm.title"
+msgstr "Na-ehichapụ otu"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.delete-team-member-confirm.accept"
+msgstr "Hichapụ onye otu"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.delete-team-member-confirm.message"
+msgstr "Ọ kara gị obi na ị chọrọ ị hichapụ onye otu n'otu a?"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.delete-team-member-confirm.title"
+msgstr "Hichapụ onye otu"
+
+msgid "modals.delete-webhook.accept"
+msgstr "Hichapụ nko-ududọ"
+
+msgid "modals.delete-webhook.message"
+msgstr "Ọ kara gị obi na ị chọrọ ị hichapụ nko-ududọ ?"
+
+msgid "modals.delete-webhook.title"
+msgstr "Na-ehichapụ nko-ududo"
+
+msgid "modals.edit-webhook.submit-label"
+msgstr "Dezie nko-ududo"
+
+msgid "modals.edit-webhook.title"
+msgstr "Dezie nko-ududo"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-member-confirm.accept"
+msgstr "Ziga akwụkwọ ozi mkpọta"
+
+msgid "modals.invite-member.emails"
+msgstr "Ozi-n gasị,  Rịkọm e kewara"
+
+msgid "modals.invite-member.repeated-invitation"
+msgstr "Ụfọdụ ozi n sitere na ndị  ugbu a A gaghị e ịga akwụkwọ ozi mkpọta ha"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.invite-team-member.title"
+msgstr "kpọta ndị otu n'otu a"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.hint"
+msgstr ""
+"Etu ị bụ sọọ otu onye otu , a ga e hichapụ otu a ya n'ọrụ na ederede ya "
+"gasịits projects and files."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-close-confirm.message"
+msgstr "Ọ kara gị obi na ị chọrọ ịhapụ otu %s ?"
+
+msgid "modals.leave-and-reassign.forbidden"
+msgstr ""
+"I nweghị ike ịhapụ otu ma ọ bụrụ na e nweghị onye otu ọzọ akwalitere ga na "
+"onye nwe ya . Ị nwere ike chọọ ị hichapụ otu ."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-reassign.hint1"
+msgstr ""
+"Gị bụ onye nwee otu a, . Biko, họrọ onye otu ọzọ maka ịkwalite gana onye "
+"nweeya tupu ị hapụ ."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-reassign.promote-and-leave"
+msgstr "Kwalite ma hapụ"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-reassign.select-member-to-promote"
+msgstr "Họrọ onye otu maka ịkwalite"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-reassign.title"
+msgstr "Tupu ị hapụ"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-confirm.accept"
+msgstr "Hapụ otu"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-confirm.message"
+msgstr "Ọ kara gị obi na ịchọrọ ịhapụ  otu ?"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-confirm.title"
+msgstr "Nhapụ otu"
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.nudge-title"
+msgstr "ọnụ ọgụgụ nkpatụ"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.hint"
+msgstr ""
+"Ọ bụrụ na Inyefe onwunwe , ị ga-agbanwe ọrụ gị ka ọchikwa,  ụfọdụ ikikere "
+"n'isi ndị otu na-efu "
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.message"
+msgstr ""
+"G  bụ onye nwe otu a ugbu a, Ọ doro gị anya na ị chọrọ ime%s Onye ọhụrụ nwe "
+"otu a?"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.title"
+msgstr "Onye nwe otu ọhụrụ"
+
+msgid "modals.publish-empty-library.accept"
+msgstr "Biputa"
+
+msgid "modals.publish-empty-library.message"
+msgstr "Your library is empty. Are you sure you want to publish it?"
+
+msgid "modals.publish-empty-library.title"
+msgstr "Biputa ọba ederede efu"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.remove-shared-confirm.accept"
+msgstr "Wepụ dịka ọba ederede ekekoritara"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.remove-shared-confirm.hint"
+msgstr ""
+"Ozugbo e wepụrụ dị ka ọba ederede ekekoritara, ọba ederede ederede a "
+"ga-akwụsị dị n'ime ederede ndị ọzọ gasị e ji  rụọ ọrụ"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.remove-shared-confirm.message"
+msgstr "Wepu“%s” dịka ọba ederede ekekoritara"
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.small-nudge"
+msgstr "kpatụ obere"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component-in-bulk.hint"
+msgstr ""
+"Ị na-achọ ịhazigharị ngwa gasị n'ọba ederede ekekoritara. Ihe nwere ike "
+"imetuta ederede ndị ọzọ ji ya arụ ọrụ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component-in-bulk.message"
+msgstr "Update components in a shared library"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component.accept"
+msgstr "Hazigharịa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component.cancel"
+msgstr "Kagbuo"
+
+#: src/app/main/data/common.cljs
+msgid "notifications.by-code.upgrade-version"
+msgstr "A new version is available, please refresh the page"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "notifications.profile-deletion-not-allowed"
+msgstr "I nweghị ike ị hichapụ nchịkọta gị . Nyegharịa ya ndị otu gị tupu ị ganihu"
+
+#: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/options.cljs
+msgid "notifications.profile-saved"
+msgstr "E dọkwara  nchịkọta nke ọma"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "notifications.validation-email-sent"
+msgstr "Ozi nnyocha n zigara na%s. Mepe ozi n gị !"
+
+msgid "onboarding-v2.before-start.desc1"
+msgstr ""
+"I kwesịrị ịma na e nwere ọtụtụ ihe e ji arụ ọrụ dị inwere gị iji bido n'ite "
+"mkpịsị , dị ka ntuziaka onye ọrụ na ọwa YouTube anyị l."
+
+msgid "onboarding-v2.before-start.desc2"
+msgstr ""
+"Ozi banyere etu esi eji ite mkpịsị arụ ọrụ uju. Site na ime atụtụ ga na "
+"nhazi ma ọ bụ  nkesa esereese ."
+
+msgid "onboarding-v2.before-start.desc2.title"
+msgstr "Mkpanaka"
+
+msgid "onboarding-v2.before-start.desc3"
+msgstr "Ị nwere ike ikiri amụmamụ anyị na amụmamụ nke ndị obodo anyị mere."
+
+msgid "onboarding-v2.before-start.desc3.title"
+msgstr "Amụmamụ onyonyo"
+
+msgid "onboarding-v2.before-start.title"
+msgstr "Tupu i bido"
+
+msgid "onboarding-v2.newsletter.desc"
+msgstr ""
+"Debanye aha n'akụkụ ozi ite mkpịsị iji nọrọ gam gam na ngwa ahịa aaga n'ihu "
+"mwulite na akụkọ ụwa."
+
+msgid "onboarding-v2.newsletter.news"
+msgstr ""
+"Zitere m akụkọ banyere ite mkpịsị (ozi edemonye gasị, Nkụzi ihe onyonyo, "
+"nkirigarị...)."
+
+msgid "onboarding-v2.newsletter.privacy1"
+msgstr "Anyị na-eche banyere nzochi onwe, ebe a inwere ike ịgụ..... anyị "
+
+msgid "onboarding-v2.newsletter.privacy2"
+msgstr ""
+"Anyị ga e zitere ozi n bara uru sọọsọ . Ị nwere ike idepu aha oge ọ bụla "
+"site na njikọ ndepu aha n'akwụkwọ ozi  gasị anyị ọ bụla ."
+
+msgid "onboarding-v2.newsletter.updates"
+msgstr ""
+"Zitere m nhazigharị ngwa ahịa (a gwara ọhụrụ gasị , ihe ndị ewepụta gasịrị "
+", ndo ị gasị..)."
+
+msgid "onboarding-v2.welcome.desc1"
+msgstr ""
+"Ite mkpịsị bụ nsina ghere oghe ma bụrụ nke Kaleidos nakwa ndị obodo rụrụ "
+"Ebe ọtụtụ mmadụ nyewegoroa onwe anyị aka..Onye ọ bụla nwere arụkọrịtasite "
+"na :"
+
+msgid "onboarding-v2.welcome.desc2"
+msgstr ""
+"Oghere ọha na ndị obodo niile na ndị otu ite mkpịsị kpọmkwem ịmụ, kesa ma "
+"kọwaa maka ite mkpịsị , ọnọdụ ya ugbu a na ọdịnihu ya"
+
+msgid "onboarding-v2.welcome.desc3.title"
+msgstr "Ntụziaka inye aka"
+
+msgid "onboarding-v2.welcome.title"
+msgstr "Nabata ite mkpịsị !"
+
+msgid "onboarding.choice.team-up.create-team-desc"
+msgstr "I nye ha otu gị aha , I nwere ike ị kpọta ndị mmadụ ka ha sonye."
+
+msgid "onboarding.choice.team-up.create-team-placeholder"
+msgstr "Denye aha otu"
+
+msgid "onboarding.choice.team-up.invite-members"
+msgstr "Kpọta ndị otu"
+
+msgid "onboarding.choice.team-up.invite-members-info"
+msgstr ""
+"Cheta ka itinye onye ọ bụla Ndị nzụlite, ndị nrụpụta, ndị njikwa... dị iche "
+"iche adds up :)"
+
+msgid "onboarding.choice.team-up.roles"
+msgstr "kpọta tinye ọrụ :"
+
+msgid "onboarding.newsletter.accept"
+msgstr "Eee, debanye aha"
+
+msgid "onboarding.newsletter.acceptance-message"
+msgstr "E zigala arịrịọ ndenye aha gị , anyị ga-ezi tara gị ozi - n iji nabata ya"
+
+msgid "onboarding.newsletter.title"
+msgstr "Chọrọ inweta ozi ite mkpịsị ?"
+
+msgid "onboarding.team-modal.create-team"
+msgstr "Mepụta otu"
+
+msgid "onboarding.team-modal.create-team-desc"
+msgstr ""
+"Otu ga-ekwe gị na ndị ọzọ ji ite mkpịsị arụ ọrụ ịrụkọta n'otu ederede na "
+"arụmarụ gasị ."
+
+msgid "onboarding.team-modal.create-team-feature-1"
+msgstr "Ederede na arụmarụ na enweghị njedebe"
+
+msgid "onboarding.team-modal.create-team-feature-2"
+msgstr "Mbipụta ọtụtụ egwuregwu"
+
+msgid "onboarding.team-modal.create-team-feature-3"
+msgstr "Njikwa ọrụ"
+
+msgid "onboarding.team-modal.create-team-feature-4"
+msgstr "Ndị otu enweghị njedebe"
+
+msgid "onboarding.team-modal.create-team-feature-5"
+msgstr "% narị   efu!"
+
+msgid "onboarding.templates.subtitle"
+msgstr "Ụfọdụ ndebiri nọ ebe a."
+
+msgid "onboarding.templates.title"
+msgstr "Bido osise"
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "profile.recovery.go-to-login"
+msgstr "Gaa na mbanye"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "question.design-tool-more-experienced-with"
+msgstr "Kedu ngwa ọrụ nse ị ka mara eji arụ ọrụ ?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.11-30"
+msgstr "Iri na otu ruo na iri atọ"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.2-10"
+msgstr "Abụọ ruo na iri"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.31-50"
+msgstr "Iri atọ na otu ruo na iri ise"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.a-lot"
+msgstr "Ọtụtụ"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.adobe-xd"
+msgstr "Ngwa nrụkọrịta ọrụ Adobe"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.canva"
+msgstr "Kanva"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.describe-your-experience-working-on"
+msgstr "Kedụ ka Ị ga-esi kọwaa ọfụma ihe ndị ị hụrụ ịrụ ọrụ na..."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.developer"
+msgstr "Onye nrụpụta"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.discover-more-about-penpot"
+msgstr "Chọpụta ihe ndị ọzọ gbasara ite mkpịsị"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.figma"
+msgstr "Ihe onyonyo"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.founder"
+msgstr "Onye malitere /VP"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.freelancer"
+msgstr "Onye nwere onwe ya"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.get-the-code-from-my-team-project"
+msgstr "Weta akara site n'arụmarụ otu m "
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.interface-design-visual-assets-design-systems"
+msgstr "... Nhazi ihu nse, uru ahụmụzọ, usoro imewe , etc."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.invision"
+msgstr "Mmakpo"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.leave-feedback-for-my-team-project"
+msgstr "Hapụ Nzaghachi maka arụmarụ ndị otu m"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.lets-get-started"
+msgstr "Ka anyị bido!"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.manager"
+msgstr "Onye njikwa ngwaahịa ma ọ bụ arụmarụ"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.marketing"
+msgstr "Ịzụ ahịa"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.more-than-50"
+msgstr "Karịrị iri ise"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.never-used-a-tool"
+msgstr "E jibeghị m ngwa ọrụ nse rụọ ọrụ mbụ"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.next"
+msgstr "Ọzọ"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.none"
+msgstr "Onweghị"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.other"
+msgstr "Ọzọ (zipụta)"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.personal-project"
+msgstr "A na m arụ ọrụ n'arụmarụ onwe"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.questions-how-are-you-planning-to-use-penpot"
+msgstr "Kedụ ka ị sị akwado iji ite mkpịsị arụ ọrụ ?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.role"
+msgstr "Gịnị bụ ọrụ gị ?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.select-option"
+msgstr "Họrọ nhọ"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.sketch"
+msgstr "Eserese"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.some"
+msgstr "Ụfọdụ"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.start"
+msgstr "Bido"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.start-to-work-on-my-project"
+msgstr "Bido ịrụ ọrụ m"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.student-teacher"
+msgstr "Nwata akwụkwọ ma ọ bụ onye nkụzi"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.team-size"
+msgstr "Kedụ ka otu gị ha?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.test-penpot-to-see-if-its-a-fit-for-team"
+msgstr "Nwale ite mkpịsị ịhụ ma ọ bụ ihe ndaba maka otu "
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.try-out-before-using-penpot-on-premise"
+msgstr "Gbalịa mee mbụ tupu ị jiri ite mkpịsị rụọ ọrụ n'ebe ọ dị"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.wireframes-user-journeys-flows-navigation-trees"
+msgstr "... waya etiti , ndị ọrụ njem na eruba , osisi ngagharị gasị , dgz."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.work-in-concept-ideas"
+msgstr "Na-arụ ọrụ n'echiche ihe"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.your-feedback-will-help-us"
+msgstr ""
+"Nzaghachi gị ga-enyere anyị aka ịghọta ihe agwa na mmasị gị bụ Ka anyị ga "
+"na-eme Ite mkpịsị ụdị ngwa ọrụ bara uru dị ụtọ ."
+
+msgid "shortcuts.bring-backward"
+msgstr "Wega ebe azụ"
+
+msgid "shortcuts.duplicate"
+msgstr "Mkpị"
+
+msgid "shortcuts.letter-spacing-inc"
+msgstr "Leta mmụba oghere"
+
+msgid "shortcuts.paste"
+msgstr "Nyado"
+
+msgid "shortcuts.text-align-left"
+msgstr "Dozie akaekpe"
+
+msgid "viewer.breaking-change.message"
+msgstr "Ndo"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.delete"
+msgstr "Kachapụ"
+
+msgid "workspace.focus.focus-mode"
+msgstr "Umezi nlekwasa anya"
+
+msgid "workspace.focus.focus-on"
+msgstr "Gbanye nlekwasa anya"
+
+msgid "workspace.shape.menu.create-multiple-components"
+msgstr "Mee ọtụtụ akọrọngwa ga"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.color-palette"
+msgstr "Agba[ Palette (Na narị)"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.there-are-updates"
+msgstr "E nwegasịrị nhazizigharị nime ọba ederede ga e kere eke"
