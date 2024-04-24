@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-02-17 14:02+0000\n"
-"Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
+"PO-Revision-Date: 2024-04-24 12:55+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
 "Language: he\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
 "n % 10 == 0) ? 2 : 3));\n"
-"X-Generator: Weblate 5.4\n"
+"X-Generator: Weblate 5.5.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -951,6 +951,7 @@ msgstr "שגיאת תקשורת, הכתובת אינה נגישה"
 msgid "errors.webhooks.invalid-uri"
 msgstr "הכתובת לא מעבירה תיקוף."
 
+#, fuzzy
 msgid "errors.webhooks.last-delivery"
 msgstr "ההעברה האחרונה לא הצליחה."
 
@@ -1005,6 +1006,7 @@ msgid "feedback.title"
 msgstr "דוא״ל"
 
 #: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
 msgid "feedback.twitter-go-to"
 msgstr "מעבר לטוויטר"
 
@@ -1013,6 +1015,7 @@ msgid "feedback.twitter-subtitle1"
 msgstr "כאן כדי לסייע בסוגיות טכניות."
 
 #: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
 msgid "feedback.twitter-title"
 msgstr "חשבון תמיכה בטוויטר"
 
@@ -2974,6 +2977,7 @@ msgstr "הצגת פעילויות בקליק"
 msgid "viewer.header.sitemap"
 msgstr "מפת אתר"
 
+#, fuzzy
 msgid "webhooks.last-delivery.success"
 msgstr "ההעברה האחרונה הצליחה."
 
