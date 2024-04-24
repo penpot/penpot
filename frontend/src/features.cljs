@@ -26,8 +26,7 @@
   (clj->js (features/get-team-enabled-features @st/state)))
 
 (defn ^:export plugins []
-  (when (not (features/active-feature? @st/state "plugins/runtime"))
-    (plugins/init!))
-  (tm/schedule-on-idle #(st/emit! (features/toggle-feature "plugins/runtime")))
+  (st/emit! (features/enable-feature "plugins/runtime"))
+  (plugins/init!)
   nil)
 
