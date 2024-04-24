@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-02-24 15:02+0000\n"
-"Last-Translator: Louis Chance <contact@louischance.com>\n"
+"PO-Revision-Date: 2024-04-24 12:55+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Weblate 5.5-dev\n"
+"X-Generator: Weblate 5.5.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -5183,6 +5183,7 @@ msgstr "Montrer en mode spectateur"
 msgid "workspace.shape.menu.create-multiple-components"
 msgstr "Créer plusieurs composants"
 
+#, fuzzy
 msgid "webhooks.last-delivery.success"
 msgstr "Le dernier envoi a réussi."
 
