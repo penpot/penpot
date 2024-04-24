@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2024-04-24 12:55+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Arabic "
-"<https://hosted.weblate.org/projects/penpot/frontend/ar/>\n"
+"Language-Team: Arabic <https://hosted.weblate.org/projects/penpot/frontend/"
+"ar/>\n"
 "Language: ar\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -4443,6 +4443,7 @@ msgstr "مجموعات"
 msgid "workspace.shape.menu.create-multiple-components"
 msgstr "إنشاء عناصر جديدة"
 
+#, fuzzy
 msgid "webhooks.last-delivery.success"
 msgstr "محاذاة المركز الأفقي"
 
