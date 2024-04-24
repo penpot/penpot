@@ -2047,6 +2047,30 @@
             (generate-new-shape-for-swap shape file page libraries id-new-component index target-cell keep-props-values))]
     [new-shape all-parents changes]))
 
+(defn generate-sync-file-changes
+  [changes undo-group asset-type file-id asset-id library-id libraries current-file-id]
+  (let [sync-components?   (or (nil? asset-type) (= asset-type :components))
+        sync-colors?       (or (nil? asset-type) (= asset-type :colors))
+        sync-typographies? (or (nil? asset-type) (= asset-type :typographies))]
+    (cond-> changes
+      :always
+      (pcb/set-undo-group undo-group)
+      ;; library-changes
+      sync-components?
+      (generate-sync-library file-id :components asset-id library-id libraries current-file-id)
+      sync-colors?
+      (generate-sync-library file-id :colors asset-id library-id libraries current-file-id)
+      sync-typographies?
+      (generate-sync-library file-id :typographies asset-id library-id libraries current-file-id)
+
+      ;; file-changes
+      sync-components?
+      (generate-sync-file file-id :components asset-id library-id libraries current-file-id)
+      sync-colors?
+      (generate-sync-file file-id :colors asset-id library-id libraries current-file-id)
+      sync-typographies?
+      (generate-sync-file file-id :typographies asset-id library-id libraries current-file-id))))
+
 (defn generate-sync-head
   [changes file-full libraries container id components-v2 reset?]
   (let [shape-inst (ctn/get-shape container id)

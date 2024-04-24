@@ -976,34 +976,15 @@
                libraries       (wsh/get-libraries state)
                current-file-id (:current-file-id state)
 
-
-               sync-components?   (or (nil? asset-type) (= asset-type :components))
-               sync-colors?       (or (nil? asset-type) (= asset-type :colors))
-               sync-typographies? (or (nil? asset-type) (= asset-type :typographies))
-
-               library-changes (reduce
-                                pcb/concat-changes
-                                (-> (pcb/empty-changes it)
-                                    (pcb/set-undo-group undo-group))
-                                [(when sync-components?
-                                   (cflh/generate-sync-library (pcb/empty-changes it) file-id :components asset-id library-id libraries current-file-id))
-                                 (when sync-colors?
-                                   (cflh/generate-sync-library (pcb/empty-changes it) file-id :colors asset-id library-id libraries current-file-id))
-                                 (when sync-typographies?
-                                   (cflh/generate-sync-library (pcb/empty-changes it) file-id :typographies asset-id library-id libraries current-file-id))])
-
-               file-changes    (reduce
-                                pcb/concat-changes
-                                (-> (pcb/empty-changes it)
-                                    (pcb/set-undo-group undo-group))
-                                [(when sync-components?
-                                   (cflh/generate-sync-file (pcb/empty-changes it) file-id :components asset-id library-id libraries current-file-id))
-                                 (when sync-colors?
-                                   (cflh/generate-sync-file (pcb/empty-changes it) file-id :colors asset-id library-id libraries current-file-id))
-                                 (when sync-typographies?
-                                   (cflh/generate-sync-file (pcb/empty-changes it) file-id :typographies asset-id library-id libraries current-file-id))])
-
-               changes         (pcb/concat-changes library-changes file-changes)
+               changes         (cflh/generate-sync-file-changes
+                                (pcb/empty-changes it)
+                                undo-group
+                                asset-type
+                                file-id
+                                asset-id
+                                library-id
+                                libraries
+                                current-file-id)
 
                find-frames     (fn [change]
                                  (->> (ch/frames-changed file change)
@@ -1021,8 +1002,7 @@
             (rx/of (set-updating-library false)
                    (msg/hide-tag :sync-dialog))
             (when (seq (:redo-changes changes))
-              (rx/of (dch/commit-changes (assoc changes ;; TODO a ver qué pasa con esto
-                                                :file-id file-id))))
+              (rx/of (dch/commit-changes changes)))
             (when-not (empty? updated-frames)
               (rx/merge
                (rx/of (ptk/data-event :layout/update {:ids (map :id updated-frames) :undo-group undo-group}))
