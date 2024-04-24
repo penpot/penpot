@@ -1,7 +1,7 @@
-const fs = require('fs').promises;
-const gt = require("gettext-parser");
-const l  = require("lodash");
-const path = require('path');
+import {promises as fs} from 'fs';
+import gt from 'gettext-parser';
+import l from 'lodash';
+import path from 'path';
 
 async function* getFiles(dir) {
   const dirents = await fs.readdir(dir, { withFileTypes: true });
