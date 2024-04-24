@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-02-10 15:02+0000\n"
-"Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
+"PO-Revision-Date: 2024-04-24 13:04+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
 "tr/>\n"
 "Language: tr\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.4-dev\n"
+"X-Generator: Weblate 5.5.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -869,6 +869,7 @@ msgstr "Bağlantı hatası, URL'ye erişilemiyor"
 msgid "errors.webhooks.invalid-uri"
 msgstr "URL doğrulamayı geçemiyor."
 
+#, fuzzy
 msgid "errors.webhooks.last-delivery"
 msgstr "Son iletim başarılı olmadı."
 
@@ -2634,6 +2635,7 @@ msgstr "Tıklamada etkileşimleri göster"
 msgid "viewer.header.sitemap"
 msgstr "Site haritası"
 
+#, fuzzy
 msgid "webhooks.last-delivery.success"
 msgstr "Son iletim başarılı oldu."
 
