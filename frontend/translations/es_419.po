@@ -2,14 +2,24 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2024-02-02 13:01+0000\n"
 "Last-Translator: Yessenia Villarte Vaca <yesseniavillarte@gmail.com>\n"
-"Language-Team: Spanish (Latin America) <https://hosted.weblate.org/projects/"
-"penpot/frontend/es_419/>\n"
+"Language-Team: Spanish (Latin America) "
+"<https://hosted.weblate.org/projects/penpot/frontend/es_419/>\n"
 "Language: es_419\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Weblate 5.4-dev\n"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.already-have-account"
+msgstr "¿Ya tienes una cuenta?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-your-email"
+msgstr ""
+"Revise su correo electrónico y haga clic en el enlace para verificar y "
+"comenzar a usar Penpot."
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.confirm-password"
@@ -23,6 +33,12 @@ msgstr "Crear cuenta demo"
 msgid "auth.create-demo-profile"
 msgstr "¿Solo quieres probarlo?"
 
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.demo-warning"
+msgstr ""
+"Este es un servicio DEMO, NO LO UTILICE para trabajos reales, los proyectos "
+"se borrarán periódicamente."
+
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.email"
 msgstr "Correo electrónico"
@@ -30,6 +46,10 @@ msgstr "Correo electrónico"
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
 msgstr "¿Has olvidado tu contraseña?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.fullname"
+msgstr "Nombre completo"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.login-here"
@@ -40,6 +60,10 @@ msgid "auth.login-submit"
 msgstr "Iniciar sesión"
 
 #: src/app/main/ui/auth/login.cljs
+msgid "auth.login-title"
+msgstr "¡Qué bueno verte de nuevo!"
+
+#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
 
@@ -48,12 +72,24 @@ msgid "auth.login-with-gitlab-submit"
 msgstr "GitLab"
 
 #: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "Google"
+
+#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-ldap-submit"
 msgstr "LDAP"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-oidc-submit"
 msgstr "Open ID"
+
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.not-all-space"
+msgstr "El nombre debe contener algún carácter distinto al del espacio."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.too-long"
+msgstr "El nombre debe contener como máximo 250 caracteres."
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
@@ -70,6 +106,16 @@ msgstr "Contraseña cambiada correctamente"
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.profile-not-verified"
 msgstr "El perfil no está verificado, verifique el perfil antes de continuar."
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.recovery-token-sent"
+msgstr ""
+"El enlace de recuperación de contraseña ha sido enviado a su bandeja de "
+"entrada de su correo electrónico."
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "auth.notifications.team-invitation-accepted"
+msgstr "Se unió al equipo con éxito"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.password"
@@ -91,6 +137,10 @@ msgid "auth.recovery-request-submit"
 msgstr "Recuperar contraseña"
 
 #: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-subtitle"
+msgstr "Le enviaremos un correo electrónico con instrucciones"
+
+#: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.recovery-request-title"
 msgstr "¿Has olvidado tu contraseña?"
 
@@ -106,14 +156,32 @@ msgstr "¿No tienes cuenta aún?"
 msgid "auth.register-submit"
 msgstr "Crea una cuenta"
 
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-subtitle"
+msgstr "Es gratis, es de código abierto"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-title"
+msgstr "Crea una cuenta"
+
 #: src/app/main/ui/auth.cljs
 msgid "auth.sidebar-tagline"
 msgstr "La solución de código abierto para diseño y creación de prototipos."
+
+msgid "auth.terms-of-service"
+msgstr "Términos de servicio"
 
 msgid "auth.terms-privacy-agreement"
 msgstr ""
 "Al crear una nueva cuenta, acepta nuestros términos de servicio y política "
 "de privacidad."
+
+#: src/app/main/ui/auth/register.cljs
+#, markdown
+msgid "auth.terms-privacy-agreement-md"
+msgstr ""
+"Al crear una nueva cuenta, acepta nuestros [terms of service](%s) y nuestra "
+"[privacy policy](%s)."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
@@ -129,6 +197,11 @@ msgstr "Publicar"
 msgid "common.share-link.all-users"
 msgstr "Todos los usuarios de Penpot"
 
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr ""
+"¿Estás seguro de que deseas eliminar este enlace? Si lo haces ya no estará "
+"disponible para nadie"
+
 msgid "common.share-link.current-tag"
 msgstr "(actual)"
 
@@ -137,6 +210,12 @@ msgstr "Borrar enlace"
 
 msgid "common.share-link.get-link"
 msgstr "Conseguir enlace"
+
+msgid "common.share-link.link-copied-success"
+msgstr "Enlace copiado exitosamente"
+
+msgid "common.share-link.manage-ops"
+msgstr "Administrar permisos"
 
 msgid "common.share-link.page-shared"
 msgid_plural "common.share-link.page-shared"
@@ -155,16 +234,52 @@ msgstr "Cualquier persona con enlace tendrá acceso"
 msgid "common.share-link.permissions-pages"
 msgstr "Páginas compartidas"
 
+msgid "common.share-link.placeholder"
+msgstr "El enlace para compartir aparecerá aquí"
+
+msgid "common.share-link.team-members"
+msgstr "Solo miembros del equipo"
+
+msgid "common.share-link.title"
+msgstr "Compartir prototipos"
+
 msgid "common.share-link.view-all"
 msgstr "Seleccionar todo"
+
+msgid "common.unpublish"
+msgstr "Despublicar"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.team-hero.management"
 msgstr "Gestión de equipos"
 
 #: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr ""
+"Penpot está destinado a equipos. Invite a miembros a trabajar juntos en "
+"proyectos y archivos"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "¡En equipo!"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr ""
+"Aprenda los conceptos básicos en Penpot mientras se divierte con este "
+"tutorial práctico."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "Iniciar el tutorial"
+
+#: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.tutorial-hero.title"
 msgstr "Tutorial práctico"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr "Date un paseo por Penpot y conoce sus principales características."
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.walkthrough-hero.start"
@@ -179,12 +294,24 @@ msgid "dashboard.access-tokens.copied-success"
 msgstr "Token copiado"
 
 #: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create"
+msgstr "Generar nuevo token"
+
+#: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.create.success"
 msgstr "Token de acceso creado correctamente."
 
 #: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.add-one"
+msgstr "Presione el botón \"Generar nuevo token\" para generar uno."
+
+#: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.no-access-tokens"
 msgstr "No tienes tokens hasta el momento."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.errors-required-name"
+msgstr "El nombre es requerido"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.expiration-180-days"
@@ -207,12 +334,27 @@ msgid "dashboard.access-tokens.expiration-never"
 msgstr "Nunca"
 
 #: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expired-on"
+msgstr "Expirado el %s"
+
+#: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.expires-on"
 msgstr "Vence el %s"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.no-expiration"
 msgstr "Sin fecha de vencimiento"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal"
+msgstr "Tokens de acceso personal"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal.description"
+msgstr ""
+"Los tokens de acceso personal funcionan como una alternativa a nuestro "
+"sistema de autenticación de inicio de sesión/contraseña y pueden usarse "
+"para permitir que una aplicación acceda a la API interna de Penpot"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.token-will-expire"
@@ -229,6 +371,14 @@ msgstr "Agregar como biblioteca compartida"
 #: src/app/main/ui/settings/profile.cljs
 msgid "dashboard.change-email"
 msgstr "Cambiar el correo electrónico"
+
+#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
+msgid "dashboard.copy-suffix"
+msgstr "(copiar)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.create-new-team"
+msgstr "Crear nuevo equipo"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "dashboard.default-team-name"
@@ -263,164 +413,6 @@ msgstr ""
 msgid "dashboard.export-binary-multi"
 msgstr "Descargar %s archivos Penpot (.penpot)"
 
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.already-have-account"
-msgstr "¿Ya tienes una cuenta?"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.check-your-email"
-msgstr ""
-"Revise su correo electrónico y haga clic en el enlace para verificar y "
-"comenzar a usar Penpot."
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.demo-warning"
-msgstr ""
-"Este es un servicio DEMO, NO LO UTILICE para trabajos reales, los proyectos "
-"se borrarán periódicamente."
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.fullname"
-msgstr "Nombre completo"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "¡Qué bueno verte de nuevo!"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-with-google-submit"
-msgstr "Google"
-
-#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.not-all-space"
-msgstr "El nombre debe contener algún carácter distinto al del espacio."
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.too-long"
-msgstr "El nombre debe contener como máximo 250 caracteres."
-
-#: src/app/main/ui/auth/recovery_request.cljs
-msgid "auth.notifications.recovery-token-sent"
-msgstr ""
-"El enlace de recuperación de contraseña ha sido enviado a su bandeja de "
-"entrada de su correo electrónico."
-
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "auth.notifications.team-invitation-accepted"
-msgstr "Se unió al equipo con éxito"
-
-#: src/app/main/ui/auth/recovery_request.cljs
-msgid "auth.recovery-request-subtitle"
-msgstr "Le enviaremos un correo electrónico con instrucciones"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.register-subtitle"
-msgstr "Es gratis, es de código abierto"
-
-msgid "auth.terms-of-service"
-msgstr "Términos de servicio"
-
-#: src/app/main/ui/auth/register.cljs
-#, markdown
-msgid "auth.terms-privacy-agreement-md"
-msgstr ""
-"Al crear una nueva cuenta, acepta nuestros [terms of service](%s) y nuestra ["
-"privacy policy](%s)."
-
-msgid "common.share-link.confirm-deletion-link-description"
-msgstr ""
-"¿Estás seguro de que deseas eliminar este enlace? Si lo haces ya no estará "
-"disponible para nadie"
-
-msgid "common.share-link.link-copied-success"
-msgstr "Enlace copiado exitosamente"
-
-msgid "common.share-link.manage-ops"
-msgstr "Administrar permisos"
-
-msgid "common.share-link.placeholder"
-msgstr "El enlace para compartir aparecerá aquí"
-
-msgid "common.share-link.team-members"
-msgstr "Solo miembros del equipo"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.register-title"
-msgstr "Crea una cuenta"
-
-msgid "common.share-link.title"
-msgstr "Compartir prototipos"
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.team-hero.text"
-msgstr ""
-"Penpot está destinado a equipos. Invite a miembros a trabajar juntos en "
-"proyectos y archivos"
-
-msgid "common.unpublish"
-msgstr "Despublicar"
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.team-hero.title"
-msgstr "¡En equipo!"
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.tutorial-hero.info"
-msgstr ""
-"Aprenda los conceptos básicos en Penpot mientras se divierte con este "
-"tutorial práctico."
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.tutorial-hero.start"
-msgstr "Iniciar el tutorial"
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.walkthrough-hero.info"
-msgstr "Date un paseo por Penpot y conoce sus principales características."
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.empty.add-one"
-msgstr "Presione el botón \"Generar nuevo token\" para generar uno."
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.create"
-msgstr "Generar nuevo token"
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.errors-required-name"
-msgstr "El nombre es requerido"
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.expired-on"
-msgstr "Expirado el %s"
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.personal"
-msgstr "Tokens de acceso personal"
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.personal.description"
-msgstr ""
-"Los tokens de acceso personal funcionan como una alternativa a nuestro "
-"sistema de autenticación de inicio de sesión/contraseña y pueden usarse para "
-"permitir que una aplicación acceda a la API interna de Penpot"
-
-#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
-msgid "dashboard.copy-suffix"
-msgstr "(copiar)"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.create-new-team"
-msgstr "Crear nuevo equipo"
-
-#: src/app/main/ui/export.cljs
-msgid "dashboard.export-shapes.how-to-link"
-msgstr "Información sobre cómo configurar las exportaciones en Penpot."
-
-#: src/app/main/ui/export.cljs
-msgid "dashboard.export-shapes.no-elements"
-msgstr "No hay elementos con configuración de exportación."
-
 msgid "dashboard.export-frames"
 msgstr "Exportar tableros como PDF"
 
@@ -445,20 +437,28 @@ msgstr ""
 "Puede agregar configuraciones de exportación a elementos desde las "
 "propiedades de diseño (en la parte inferior de la barra lateral derecha)."
 
-msgid "dashboard.export-standard-multi"
-msgstr "Descargar %s archivos estándar (.svg + .json)"
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to-link"
+msgstr "Información sobre cómo configurar las exportaciones en Penpot."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.no-elements"
+msgstr "No hay elementos con configuración de exportación."
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.title"
 msgstr "Selección de exportación"
+
+msgid "dashboard.export-standard-multi"
+msgstr "Descargar %s archivos estándar (.svg + .json)"
 
 msgid "dashboard.export.detail"
 msgstr "* Puede incluir componentes, gráficos, colores y/o tipografías."
 
 msgid "dashboard.export.explain"
 msgstr ""
-"Uno o más archivos que desea exportar utilizan bibliotecas compartidas. ¿Qué "
-"quiere hacer con sus activos*?"
+"Uno o más archivos que desea exportar utilizan bibliotecas compartidas. "
+"¿Qué quiere hacer con sus activos*?"
 
 msgid "dashboard.export.options.all.message"
 msgstr ""
@@ -504,6 +504,12 @@ msgstr "dejar el equipo"
 msgid "dashboard.libraries-and-templates"
 msgstr "Bibliotecas y plantillas"
 
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "Explore más de ellos y sepa cómo contribuir"
+
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr "Hubo un problema al importar la plantilla. La plantilla no fue importada."
+
 #: src/app/main/ui/dashboard/libraries.cljs
 msgid "dashboard.libraries-title"
 msgstr "Bibliotecas"
@@ -511,13 +517,6 @@ msgstr "Bibliotecas"
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.loading-files"
 msgstr "cargando tus archivos…"
-
-msgid "dashboard.libraries-and-templates.explore"
-msgstr "Explore más de ellos y sepa cómo contribuir"
-
-msgid "dashboard.libraries-and-templates.import-error"
-msgstr ""
-"Hubo un problema al importar la plantilla. La plantilla no fue importada."
 
 msgid "dashboard.loading-fonts"
 msgstr "cargando tus fuentes…"
