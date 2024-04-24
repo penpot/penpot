@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-02-14 08:02+0000\n"
-"Last-Translator: Alejandro Alonso <alejandro.alonso@kaleidos.net>\n"
+"PO-Revision-Date: 2024-04-24 13:04+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Yoruba <https://hosted.weblate.org/projects/penpot/frontend/"
 "yo/>\n"
 "Language: yo\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.4-dev\n"
+"X-Generator: Weblate 5.5.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.login-here"
@@ -1165,6 +1165,7 @@ msgstr "Àsìṣe nínú ètò ìsopọ̀, kò lè dé ibi URL"
 msgid "errors.webhooks.invalid-uri"
 msgstr "URL kò páásì ìfọwọ́sí."
 
+#, fuzzy
 msgid "errors.webhooks.last-delivery"
 msgstr "Èyí tí a fijíṣẹ́ kẹ́yìn kò dára."
 
@@ -1219,6 +1220,7 @@ msgstr ""
 "láìjìnnà."
 
 #: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
 msgid "feedback.twitter-go-to"
 msgstr "Lọ sí Tíwítà"
 
@@ -1227,6 +1229,7 @@ msgid "feedback.twitter-subtitle1"
 msgstr "A wà níbí láti ṣe ìrànlọ́wọ́ fún àwọn ìbéèrè tó bá wà lórí iṣẹ́ ọnà."
 
 #: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
 msgid "feedback.twitter-title"
 msgstr "Àkáùnti àtìlẹ́yìn fún Tíwítà"
 
