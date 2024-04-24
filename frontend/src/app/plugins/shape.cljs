@@ -12,10 +12,12 @@
    [app.common.files.helpers :as cfh]
    [app.common.record :as crc]
    [app.common.text :as txt]
+   [app.common.uuid :as uuid]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.changes :as dwc]
    [app.main.store :as st]
    [app.plugins.utils :refer [get-data get-data-fn]]
+   [app.util.object :as obj]
    [cuerdas.core :as str]))
 
 (declare data->shape-proxy)
@@ -69,8 +71,16 @@
 
   (clone [_] (.log js/console (clj->js _data)))
   (delete [_] (.log js/console (clj->js _data)))
-  (appendChild [_ child] (.log js/console (clj->js _data)))
-  (insertChild [_ index child] (.log js/console (clj->js _data))))
+
+  (appendChild [self child]
+    (let [parent-id (get-data self :id)
+          child-id (uuid/uuid (obj/get child "id"))]
+      (st/emit! (udw/relocate-shapes #{ child-id } parent-id 0))))
+
+  (insertChild [self index child]
+    (let [parent-id (get-data self :id)
+          child-id (uuid/uuid (obj/get child "id"))]
+      (st/emit! (udw/relocate-shapes #{ child-id } parent-id index)))))
 
 (crc/define-properties!
   ShapeProxy
@@ -117,9 +127,6 @@
                (let [id (get-data self :id)]
                  (st/emit! (dwc/update-shapes [id] #(assoc % :name value)))))}
 
-       {:name "children"
-        :get #(.getChildren ^js %)}
-
        {:name "fills"
         :get #(get-state % :fills make-fills)
         ;;:set (fn [self value] (.log js/console self value))
@@ -129,6 +136,11 @@
         :get #(get-state % :strokes make-strokes)
         ;;:set (fn [self value] (.log js/console self value))
         })
+
+      (cond-> (or (cfh/frame-shape? data) (cfh/group-shape? data) (cfh/svg-raw-shape? data) (cfh/bool-shape? data))
+        (crc/add-properties!
+         {:name "children"
+          :get #(.getChildren ^js %)}))
 
       (cond-> (cfh/text-shape? data)
         (crc/add-properties!

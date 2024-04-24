@@ -790,6 +790,7 @@
 (defn relocate-shapes
   [ids parent-id to-index & [ignore-parents?]]
   (dm/assert! (every? uuid? ids))
+  (dm/assert! (set? ids))
   (dm/assert! (uuid? parent-id))
   (dm/assert! (number? to-index))
 
