@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-04-24 13:04+0000\n"
+"PO-Revision-Date: 2024-04-25 13:07+0000\n"
 "Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
 "Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
 "tr/>\n"
@@ -1035,7 +1035,6 @@ msgstr "Bağlantı hatası, URL'ye erişilemiyor"
 msgid "errors.webhooks.invalid-uri"
 msgstr "URL doğrulamayı geçemiyor."
 
-#, fuzzy
 msgid "errors.webhooks.last-delivery"
 msgstr "Son iletim başarılı olmadı."
 
@@ -3254,7 +3253,6 @@ msgstr "Tıklamada etkileşimleri göster"
 msgid "viewer.header.sitemap"
 msgstr "Site haritası"
 
-#, fuzzy
 msgid "webhooks.last-delivery.success"
 msgstr "Son iletim başarılı oldu."
 
@@ -6109,3 +6107,105 @@ msgstr ""
 #: src/app/main/data/users.cljs
 msgid "errors.auth-provider-not-allowed"
 msgstr "Kimlik doğrulama sağlayıcısına bu profil için izin verilmiyor"
+
+msgid "modals.move-shared-confirm.accept"
+msgid_plural "modals.move-shared-confirm.accept"
+msgstr[0] "Taşı"
+msgstr[1] "Taşı"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.never-used-one"
+msgstr "Hiçbiri"
+
+msgid "shortcuts.toggle-guides"
+msgstr "Kılavuzları göster/gizle"
+
+msgid "shortcuts.toggle-rulers"
+msgstr "Cetvelleri göster/gizle"
+
+msgid "shortcuts.scale"
+msgstr "Ölçeklendir"
+
+msgid "shortcuts.toggle-snap-guides"
+msgstr "Kılavuzlara tuttur"
+
+msgid "shortcuts.toggle-layout-grid"
+msgstr "Izgara düzeni ekle/kaldır"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.filter"
+msgstr "Filtrele"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.sort"
+msgstr "Sırala"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-snap-ruler-guides"
+msgstr "Cetvel kılavuzlarına tuttur"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-guides"
+msgstr "Kılavuzları gizle"
+
+msgid "workspace.layout_grid.editor.top-bar.locate.tooltip"
+msgstr "Izgara düzenini bul"
+
+msgid "workspace.layout_grid.editor.padding.expand"
+msgstr "4 taraflı dolgu seçeneklerini göster"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.shared-library-btn"
+msgstr "Kütüphaneyi bağla"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.unlink-library-btn"
+msgstr "Kütüphanenin bağlantısını kes"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs
+msgid "workspace.assets.sidebar.components"
+msgid_plural "workspace.assets.sidebar.components"
+msgstr[0] "1 bileşen"
+msgstr[1] "%s bileşen"
+
+msgid "media.image.short"
+msgstr "görsel"
+
+msgid "media.keep-aspect-ratio"
+msgstr "En boy oranını koru"
+
+msgid "modals.move-shared-confirm.message"
+msgid_plural "modals.move-shared-confirm.message"
+msgstr[0] "Bu kütüphaneyi taşımak istediğinizden emin misiniz?"
+msgstr[1] "Bu kütüphaneleri taşımak istediğinizden emin misiniz?"
+
+msgid "modals.move-shared-confirm.title"
+msgid_plural "modals.move-shared-confirm.title"
+msgstr[0] "Kütüphaneyi taşı"
+msgstr[1] "Kütüphaneleri taşı"
+
+msgid "onboarding.team-modal.team-definition"
+msgstr "Takım nedir?"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs
+msgid "settings.select-this-color"
+msgstr "Bu biçimi kullanan ögeleri seç"
+
+msgid "shortcuts.toggle-snap-ruler-guide"
+msgstr "Cetvel kılavuzlarına tuttur"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-snap-ruler-guides"
+msgstr "Cetvel kılavuzlarına tutturmayı devre dışı bırak"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-guides"
+msgstr "Kılavuzları göster"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-grid"
+msgstr "Izgara düzenini kaldır"
+
+#, markdown
+msgid "workspace.top-bar.view-only"
+msgstr "**Kodu incele** ( Yalnızca Görüntüle)"
