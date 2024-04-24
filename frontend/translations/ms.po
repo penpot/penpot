@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-02-10 15:02+0000\n"
-"Last-Translator: Revenant <mohdmuizz22@yahoo.com>\n"
+"PO-Revision-Date: 2024-04-24 12:55+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Malay <https://hosted.weblate.org/projects/penpot/frontend/ms/"
 ">\n"
 "Language: ms\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.4-dev\n"
+"X-Generator: Weblate 5.5.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.create-demo-account"
@@ -704,6 +704,7 @@ msgstr "Ralat sambungan, URL tidak dapat dicapai"
 msgid "errors.webhooks.invalid-uri"
 msgstr "URL tidak lulus pengesahan."
 
+#, fuzzy
 msgid "errors.webhooks.last-delivery"
 msgstr "Penghantaran terakhir tidak berjaya."
 
@@ -749,6 +750,7 @@ msgid "feedback.title"
 msgstr "E-mel"
 
 #: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
 msgid "feedback.twitter-go-to"
 msgstr "Pergi ke Twitter"
 
@@ -757,6 +759,7 @@ msgid "feedback.twitter-subtitle1"
 msgstr "Kami di sini untuk membantu dengan pertanyaan teknikal anda."
 
 #: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
 msgid "feedback.twitter-title"
 msgstr "Akaun sokongan Twitter"
 
