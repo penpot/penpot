@@ -12,10 +12,6 @@ msgstr ""
 "X-Generator: Weblate 5.4-dev\n"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Ihe ịtụnanya ịhụ gị !"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
 msgstr "Obi Git"
 
@@ -1991,10 +1987,6 @@ msgstr "Ịzụ ahịa"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.more-than-50"
 msgstr "Karịrị iri ise"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.never-used-a-tool"
-msgstr "E jibeghị m ngwa ọrụ nse rụọ ọrụ mbụ"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.next"

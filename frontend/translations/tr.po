@@ -64,12 +64,6 @@ msgstr "Buradan oturum açın"
 msgid "auth.login-submit"
 msgstr "Oturum aç"
 
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-tagline"
-msgstr ""
-"Penpot, tasarım ve kod işbirliği için özgür ve açık kaynaklı tasarım "
-"aracıdır"
-
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
@@ -3095,15 +3089,6 @@ msgstr "Seçileni kilitle"
 msgid "shortcuts.toggle-lock-size"
 msgstr "Oranları kilitle"
 
-msgid "shortcuts.toggle-rulers"
-msgstr "Cetvelleri göster/gizle"
-
-msgid "shortcuts.toggle-snap-guides"
-msgstr "Kılavuzlara tuttur"
-
-msgid "shortcuts.toggle-snap-ruler-guide"
-msgstr "Cetvel kılavuzlarına tuttur"
-
 msgid "shortcuts.toggle-textpalette"
 msgstr "Metin paletini değiştir"
 
@@ -5997,10 +5982,6 @@ msgstr "Bu kütüphanede henüz varlık yok"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.flows.flow"
 msgstr "Akış"
-
-#, markdown
-msgid "workspace.top-bar.read-only"
-msgstr "**İnceleme modu** (Yalnızca görüntüle)"
 
 msgid "workspace.top-bar.read-only.done"
 msgstr "Bitti"

@@ -62,10 +62,6 @@ msgid "auth.login-submit"
 msgstr "כניסה"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-tagline"
-msgstr "Penpot הוא כלי בקוד פתוח לשיתוף עיצוב וקוד"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
 
@@ -3045,15 +3041,6 @@ msgstr "נעילת הנבחרים"
 msgid "shortcuts.toggle-lock-size"
 msgstr "נעילת יחס"
 
-msgid "shortcuts.toggle-rulers"
-msgstr "הצגת / הסתרת סרגלים"
-
-msgid "shortcuts.toggle-snap-guides"
-msgstr "הצמדה לקווים מנחים"
-
-msgid "shortcuts.toggle-snap-ruler-guide"
-msgstr "הצמדה לקווים מנחים סרגלים"
-
 msgid "shortcuts.toggle-textpalette"
 msgstr "החלפת לוח טקסט"
 
@@ -5437,10 +5424,6 @@ msgstr "החלפת רכיב"
 
 msgid "workspace.options.component.swap.empty"
 msgstr "עדיין אין נכסים בתיקייה הזאת"
-
-#, markdown
-msgid "workspace.top-bar.read-only"
-msgstr "**מצב חקירה** (צפייה בלבד)"
 
 msgid "dashboard.import.analyze-error.components-v2"
 msgstr "קובץ עם רכיבים בגרסה 2 מופעל אך הצוות הזה לא תומך בזה עדיין."

@@ -5410,10 +5410,6 @@ msgstr "Dados inválidos na área de transferência"
 msgid "errors.team-feature-mismatch"
 msgstr "Funcionalidade incompatível '%s' detetada"
 
-#, markdown
-msgid "workspace.top-bar.read-only"
-msgstr "**Modo de inspeção** (Somente leitura)"
-
 msgid "shortcuts.toggle-theme"
 msgstr "Mudar tema"
 

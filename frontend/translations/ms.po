@@ -1581,16 +1581,6 @@ msgid_plural "modals.unpublish-shared-confirm.accept"
 msgstr[0] "Nyahterbit"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.no-files-message"
-msgid_plural "modals.unpublish-shared-confirm.activated.no-files-message"
-msgstr[0] "Ia tidak diaktifkan dalam mana-mana fail."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.activated.scd-message"
-msgid_plural "modals.unpublish-shared-confirm.activated.scd-message"
-msgstr[0] "Perpustakaan ini diaktifkan di sini:"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "Adakah anda pasti mahu menyahterbitkan perpustakaan ini?"
@@ -1859,10 +1849,6 @@ msgstr "Pengurus Produk atau Projek"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.more-than-50"
 msgstr "Lebih daripada 50"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.never-used-a-tool"
-msgstr "Saya tidak pernah menggunakan alat reka bentuk sebelum ini"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.none"

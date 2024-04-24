@@ -65,12 +65,6 @@ msgid "auth.login-submit"
 msgstr "Inloggen"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-tagline"
-msgstr ""
-"Penpot is de gratis open-source ontwerptool voor samenwerking op het gebied "
-"van ontwerp en code"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
 
@@ -3126,15 +3120,6 @@ msgstr "Vergrendelen/ontgrendelen"
 msgid "shortcuts.toggle-lock-size"
 msgstr "Proporties vergrendelen"
 
-msgid "shortcuts.toggle-rulers"
-msgstr "Linialen tonen/verbergen"
-
-msgid "shortcuts.toggle-snap-guides"
-msgstr "Uitlijnen op hulpijnen"
-
-msgid "shortcuts.toggle-snap-ruler-guide"
-msgstr "Uitlijnen op liniaal-hulplijnen"
-
 msgid "shortcuts.toggle-textpalette"
 msgstr "Tekstpalet in/uitschakelen"
 
@@ -5483,10 +5468,6 @@ msgstr "Ongeldige gegevens op klembord"
 #: src/app/main/errors.cljs
 msgid "errors.team-feature-mismatch"
 msgstr "Incompatibele functie '%s' gedetecteerd"
-
-#, markdown
-msgid "workspace.top-bar.read-only"
-msgstr "** Inspectiemodus ** (alleen bekijken)"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.loading"

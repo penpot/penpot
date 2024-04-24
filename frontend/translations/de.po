@@ -64,12 +64,6 @@ msgstr "Hier anmelden"
 msgid "auth.login-submit"
 msgstr "Anmelden"
 
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-tagline"
-msgstr ""
-"Penpot ist das kostenlose Open-Source-Design-Tool für die Zusammenarbeit "
-"von Design und Code"
-
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
@@ -3127,12 +3121,6 @@ msgstr "Auswahl sperren"
 msgid "shortcuts.toggle-lock-size"
 msgstr "Seitenverhältnis sperren/entsperren"
 
-msgid "shortcuts.toggle-rulers"
-msgstr "Lineale anzeigen / ausblenden"
-
-msgid "shortcuts.toggle-snap-guides"
-msgstr "An Hilfslinien ausrichten"
-
 msgid "shortcuts.toggle-textpalette"
 msgstr "Textpalette ein-/ausblenden"
 
@@ -5584,10 +5572,6 @@ msgstr "Bild auswählen"
 
 msgid "workspace.options.guides.title"
 msgstr "Hilfslinien"
-
-#, markdown
-msgid "workspace.top-bar.read-only"
-msgstr "**Inspektionsmodus** (nur Ansicht)"
 
 #: src/app/main/errors.cljs
 msgid "errors.version-not-supported"

@@ -5231,10 +5231,6 @@ msgstr "Cari lokasi"
 msgid "workspace.options.component.swap"
 msgstr "Ganti komponen"
 
-#, markdown
-msgid "workspace.top-bar.read-only"
-msgstr "**Mode inspeksi** (Hanya Tampilan)"
-
 msgid "media.gradient"
 msgstr "Gradien"
 
