@@ -2046,3 +2046,12 @@
         (-> changes
             (generate-new-shape-for-swap shape file page libraries id-new-component index target-cell keep-props-values))]
     [new-shape all-parents changes]))
+
+(defn generate-sync-head
+  [changes file-full libraries container head components-v2]
+  (let [changes
+        (-> changes
+            (pcb/with-container container)
+            (pcb/with-objects (:objects container))
+            (generate-sync-shape-direct file-full libraries container (:id head) false components-v2))]
+    changes))
