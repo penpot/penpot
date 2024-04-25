@@ -155,7 +155,7 @@
       [:div {:class (stl/css :img-container)}
        [:a {:id id
             :tab-index (if (or (not is-visible) collapsed) "-1" "0")
-            :href "https://penpot.app/libraries-templates.html"
+            :href "https://penpot.app/libraries-templates"
             :target "_blank"
             :on-click on-click
             :on-key-down on-key-down}

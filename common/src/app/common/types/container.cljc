@@ -386,7 +386,8 @@
          (fn [new-shape original-shape]
            (let [new-name (:name new-shape)
                  root?    (or (ctk/instance-root? original-shape)   ; If shape is inside a component (not components-v2)
-                              (nil? (:parent-id original-shape)))]  ; we detect it by having no parent)
+                              (nil? (:parent-id original-shape)))  ; we detect it by having no parent)
+                 swap-slot (ctk/get-swap-slot original-shape)]
 
              (when root?
                (vswap! unames conj new-name))
@@ -397,6 +398,9 @@
                :always
                (-> (gsh/move delta)
                    (dissoc :touched))
+
+               (some? swap-slot)
+               (assoc :touched #{(ctk/build-swap-slot-group swap-slot)})
 
                (and main-instance? root?)
                (assoc :main-instance true)

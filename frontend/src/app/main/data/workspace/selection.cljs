@@ -486,6 +486,7 @@
            duplicating-component? (or duplicating-component? (ctk/instance-head? obj))
            is-component-main?     (ctk/main-instance? obj)
            subinstance-head?      (ctk/subinstance-head? obj)
+           instance-root?         (ctk/instance-root? obj)
 
            into-component?        (and duplicating-component?
                                        (ctn/in-any-component? objects parent))
@@ -508,7 +509,9 @@
                       :parent-id parent-id
                       :frame-id frame-id)
 
-               (cond-> (and subinstance-head? remove-swap-slot?)
+               (cond-> (and (not instance-root?)
+                            subinstance-head?
+                            remove-swap-slot?)
                  (ctk/remove-swap-slot))
 
                (dissoc :shapes
@@ -581,8 +584,9 @@
                                                  true
                                                  (and remove-swap-slot?
                                                       ;; only remove swap slot of children when the current shape
-                                                      ;; is not a subinstance head
-                                                      (not subinstance-head?))))
+                                                      ;; is not a subinstance head nor a instance root
+                                                      (not subinstance-head?)
+                                                      (not instance-root?))))
                changes
                (map (d/getf objects) (:shapes obj)))))))
 
