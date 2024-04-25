@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-04-24 12:55+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2024-04-25 13:07+0000\n"
+"Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
 "Language: lv\n"
@@ -989,7 +989,6 @@ msgstr "Savienojuma kļūda, URL nav sasniedzams"
 msgid "errors.webhooks.invalid-uri"
 msgstr "URL neiztur pārbaudi."
 
-#, fuzzy
 msgid "errors.webhooks.last-delivery"
 msgstr "Pēdējā piegāde nebija veiksmīga."
 
@@ -3069,7 +3068,6 @@ msgstr "Rādīt mijiedarbības pēc klikšķa"
 msgid "viewer.header.sitemap"
 msgstr "Vietnes karte"
 
-#, fuzzy
 msgid "webhooks.last-delivery.success"
 msgstr "Pēdējā piegāde bija veiksmīga."
 
@@ -5204,3 +5202,126 @@ msgstr ""
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.loading"
 msgstr "Ielādē…"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-account-title"
+msgstr "Pieteikties manā kontā"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-tagline"
+msgstr ""
+"Penpot ir bezmaksas atvērtā pirmkoda dizaina rīks dizaina un koda sadarbībai"
+
+#: src/app/main/data/users.cljs
+msgid "errors.auth-provider-not-allowed"
+msgstr "Autentifikācijas nodrošinātājs nav atļauts šim profilam"
+
+msgid "shortcuts.toggle-rulers"
+msgstr "Rādīt/paslēpt mērjoslas"
+
+msgid "shortcuts.toggle-snap-guides"
+msgstr "Pievilkt pie vadlīnijām"
+
+msgid "shortcuts.toggle-guides"
+msgstr "Rādīt/paslēpt vadlīnijas"
+
+msgid "shortcuts.toggle-snap-ruler-guide"
+msgstr "Pievilkt pie mērjoslu vadlīnijām"
+
+msgid "shortcuts.toggle-layout-grid"
+msgstr "Pievienot/noņemt režģa izkārtojumu"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-snap-ruler-guides"
+msgstr "Atspējot pievilkšanu mērjoslu vadlīnijām"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-snap-ruler-guides"
+msgstr "Pievilkt pie mērjoslu vadlīnijām"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-guides"
+msgstr "Parādīt vadlīnijas"
+
+msgid "workspace.layout_grid.editor.top-bar.locate.tooltip"
+msgstr "Norādīt režģa izkārtojumu"
+
+msgid "workspace.layout_grid.editor.padding.expand"
+msgstr "Rādīt četrpusējas atbīdes iespējas"
+
+#, markdown
+msgid "workspace.top-bar.view-only"
+msgstr "**Apskata kodu** (tikai skatīšana)"
+
+#: src/app/main/data/users.cljs
+msgid "errors.email-domain-not-allowed"
+msgstr "Domēns nav atļauts"
+
+msgid "modals.move-shared-confirm.accept"
+msgid_plural "modals.move-shared-confirm.accept"
+msgstr[0] "Pārvietot"
+msgstr[1] "Pārvietot"
+msgstr[2] "Pārvietot"
+
+msgid "modals.move-shared-confirm.message"
+msgid_plural "modals.move-shared-confirm.message"
+msgstr[0] "Vai tiešām pārvietot šīs bibliotēkas?"
+msgstr[1] "Vai tiešām pārvietot šīs bibliotēkas?"
+msgstr[2] "Vai tiešām pārvietot šīs bibliotēkas?"
+
+msgid "modals.move-shared-confirm.title"
+msgid_plural "modals.move-shared-confirm.title"
+msgstr[0] "Pārvietot bibliotēkas"
+msgstr[1] "Pārvietot bibliotēkas"
+msgstr[2] "Pārvietot bibliotēkas"
+
+msgid "onboarding.team-modal.team-definition"
+msgstr "Kas ir komanda?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.never-used-one"
+msgstr "Neviens"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs
+msgid "settings.select-this-color"
+msgstr "Atlasīt vienumus, kas izmanto šo stilu"
+
+msgid "shortcuts.scale"
+msgstr "Mērogot"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.filter"
+msgstr "Atlasīt"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.sort"
+msgstr "Kārtot"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-guides"
+msgstr "Paslēpt vadlīnijas"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.shared-library-btn"
+msgstr "Savienot bibliotēku"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.unlink-library-btn"
+msgstr "Atvienot bibliotēku"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs
+msgid "workspace.assets.sidebar.components"
+msgid_plural "workspace.assets.sidebar.components"
+msgstr[0] "%s sastāvdaļu"
+msgstr[1] "%s sastāvdaļa"
+msgstr[2] "%s sastāvdaļas"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-grid"
+msgstr "Noņemt režģa izkārtojumu"
+
+msgid "media.image.short"
+msgstr "att."
+
+msgid "media.keep-aspect-ratio"
+msgstr "Paturēt samēru"
