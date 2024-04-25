@@ -497,12 +497,13 @@
      (redirect-response uri))))
 
 (defn- redirect-to-register
-  [cfg info]
+  [cfg info request]
   (let [info   (assoc info
                       :iss :prepared-register
                       :exp (dt/in-future {:hours 48}))
 
         params {:token (tokens/generate (::setup/props cfg) info)
+                :provider (:provider (:path-params request))
                 :fullname (:fullname info)}
         params (d/without-nils params)]
 
@@ -549,7 +550,7 @@
 
       (not (:is-active profile))
       (let [info (assoc info :profile-id (:id profile))]
-        (redirect-to-register cfg info))
+        (redirect-to-register cfg info request))
 
       :else
       (let [sxf   (session/create-fn cfg (:id profile))
@@ -575,7 +576,7 @@
     :else
     (let [info (assoc info :is-active (provider-has-email-verified? cfg info))]
       (if (contains? cf/flags :registration)
-        (redirect-to-register cfg info)
+        (redirect-to-register cfg info request)
         (redirect-with-error "registration-disabled")))))
 
 (defn- auth-handler

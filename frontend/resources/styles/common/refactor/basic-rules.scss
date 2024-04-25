@@ -6,6 +6,10 @@
 
 // SCROLLBAR
 .new-scrollbar {
+  scrollbar-color: rgba(170, 181, 186, 0.3) transparent;
+  &:hover {
+    scrollbar-color: rgba(170, 181, 186, 0.7) transparent;
+  }
   ::-webkit-scrollbar {
     background-color: transparent;
     cursor: pointer;

@@ -170,7 +170,7 @@
     [:& (mf/provider ctx/current-route) {:value route}
      [:& (mf/provider ctx/current-profile) {:value profile}
       (if edata
-        [:& static/exception-page {:data edata}]
+        [:& static/exception-page {:data edata :route route}]
         [:*
          [:& msgs/notifications-hub]
          (when route
