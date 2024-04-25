@@ -47,7 +47,6 @@
                       :fields [{:label "Boolean"}]}}]
    [:border-radius {:title "Border Radius"
                     :attributes #{:rx :ry :r1 :r2 :r3 :r4}
-                    :on-apply dt/update-token-from-attributes
                     :modal {:key :tokens/border-radius
                             :fields [{:label "Border Radius"
                                       :key :border-radius}]}
