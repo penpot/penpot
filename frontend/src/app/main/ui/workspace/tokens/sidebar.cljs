@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.modal :as modal]
+   [app.main.data.tokens :as dt]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.search-bar :refer [search-bar]]
@@ -17,6 +18,19 @@
    [app.main.ui.workspace.tokens.core :refer [token-types tokens-applied?]]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
+
+(defn on-apply-token [{:keys [token token-type-props selected-shapes] :as _props}]
+  (let [{:keys [attributes on-apply on-update-shape]
+         :or {on-apply dt/update-token-from-attributes}} token-type-props
+        shape-ids (->> selected-shapes
+                       (eduction
+                        (remove #(tokens-applied? token % attributes))
+                        (map :id)))]
+    (doseq [shape selected-shapes]
+      (st/emit! (on-apply {:token-id (:id token)
+                           :shape-id (:id shape)
+                           :attributes attributes}))
+      (st/emit! (on-update-shape (:value token) shape-ids)))))
 
 (mf/defc token-pill
   {::mf/wrap-props false}
@@ -28,20 +42,10 @@
            :on-click on-click}
      name]))
 
-(defn- on-apply-token [token attributes selected-shapes on-apply on-update-shape event]
-  (let [shapes-to-apply-token (filter #(not (tokens-applied? token % attributes)) selected-shapes)
-        shapes-to-apply-token-ids (map #(:id %) shapes-to-apply-token)]
-    (dom/stop-propagation event)
-    (doseq [shape selected-shapes]
-      (st/emit! (on-apply {:token-id (:id token)
-                           :shape-id (:id shape)
-                           :attributes attributes}))
-      (st/emit! (on-update-shape (:value token) shapes-to-apply-token-ids)))))
-
 (mf/defc token-component
   [{:keys [type file tokens selected-shapes token-type-props]}]
   (let [open? (mf/use-state false)
-        {:keys [modal attributes title on-apply on-update-shape]} token-type-props
+        {:keys [modal attributes title]} token-type-props
         on-toggle-open-click (mf/use-fn
                               (mf/deps open? tokens)
                               #(when (seq tokens)
@@ -55,6 +59,14 @@
                                                      :position :right
                                                      :fields fields
                                                      :token-type type}))))
+
+        on-token-pill-click (mf/use-fn
+                             (mf/deps selected-shapes token-type-props)
+                             (fn [event token]
+                               (dom/stop-propagation event)
+                               (on-apply-token {:token token
+                                                :token-type-props token-type-props
+                                                :selected-shapes selected-shapes})))
         tokens-count (count tokens)]
     [:div {:on-click on-toggle-open-click}
      [:& cmm/asset-section {:file-id (:id file)
@@ -69,10 +81,11 @@
         [:& cmm/asset-section-block {:role :content}
          [:div {:class (stl/css :token-pills-wrapper)}
           (for [token tokens]
-            [:& token-pill {:key (:id token)
-                            :token token
-                            :highlighted? (tokens-applied? token selected-shapes attributes)
-                            :on-click #(on-apply-token token attributes selected-shapes on-apply on-update-shape %1)}])]])]]))
+            [:& token-pill
+             {:key (:id token)
+              :token token
+              :highlighted? (tokens-applied? token selected-shapes attributes)
+              :on-click #(on-token-pill-click % token)}])]])]]))
 
 (mf/defc tokens-explorer
   [_props]
