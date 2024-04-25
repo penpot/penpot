@@ -17,6 +17,7 @@
    [app.common.types.pages-list :as ctpl]
    [app.common.types.typographies-list :as ctyl]
    [clojure.test :as t]
+   [common-tests.helpers.compositions :as tho]
    [common-tests.helpers.files :as thf]
    [common-tests.helpers.ids-map :as thi]))
 
@@ -63,10 +64,7 @@
 
 (t/deftest test-create-components
   (let [f1 (-> (thf/sample-file :file1)
-               (thf/add-sample-shape :main-root :type :frame)
-               (thf/add-sample-shape :main-child :parent-label :main-root)
-               (thf/make-component :component1 :main-root)
-               (thf/instantiate-component :component1 :copy-root))]
+               (tho/add-simple-component-with-copy :component1 :main-root :main-child :copy-root))]
 
     #_(thf/dump-file f1)
     #_(thf/pprint-file f4)
@@ -105,21 +103,11 @@
 
 (t/deftest test-absorb-components
   (let [; Setup
-        library (-> (thf/sample-file :library
-                                     :is-shared true)
-                    (thf/add-sample-shape :main-root
-                                          :type :frame
-                                          :name "Frame1")
-                    (thf/add-sample-shape :rect1
-                                          :type :rect
-                                          :name "Rect1"
-                                          :parent-label :main-root)
-                    (thf/make-component :component1 :main-root))
+        library (-> (thf/sample-file :library :is-shared true)
+                    (tho/add-simple-component :component1 :main-root :rect1))
 
         file (-> (thf/sample-file :file)
-                 (thf/instantiate-component :component1
-                                            :copy-root
-                                            :library library))
+                 (thf/instantiate-component :component1 :copy-root :library library))
 
         ; Action
         file' (ctf/update-file-data
@@ -149,14 +137,11 @@
 
 (t/deftest test-absorb-colors
   (let [; Setup
-        library (-> (thf/sample-file :library
-                                     :name "Test library"
-                                     :is-shared true)
+        library (-> (thf/sample-file :library :is-shared true)
                     (thf/add-sample-color :color1 {:name "Test color"
                                                    :color "#abcdef"}))
 
-        file    (-> (thf/sample-file :file
-                                     :name "Test file")
+        file    (-> (thf/sample-file :file)
                     (thf/add-sample-shape :shape1
                                           :type :rect
                                           :name "Rect1"
@@ -189,13 +174,10 @@
 
 (t/deftest test-absorb-typographies
   (let [; Setup
-        library (-> (thf/sample-file :library
-                                     :name "Test library"
-                                     :is-shared true)
+        library (-> (thf/sample-file :library :is-shared true)
                     (thf/add-sample-typography :typography1 {:name "Test typography"}))
 
-        file    (-> (thf/sample-file :file
-                                     :name "Test file")
+        file    (-> (thf/sample-file :file)
                     (thf/add-sample-shape :shape1
                                           :type :text
                                           :name "Text1"
@@ -237,4 +219,3 @@
 
     (t/is (= (:typography-ref-id text-node') (thi/id :typography1)))
     (t/is (= (:typography-ref-file text-node') (:id file')))))
-
