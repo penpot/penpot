@@ -9,7 +9,9 @@
    [app.common.data :as d :refer [ordered-map]]
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.token :as ctt]
-   [app.main.data.workspace.changes :as dch]))
+   [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.transforms :as dwt]
+   [app.main.store :as st]))
 
 ;; Helpers ---------------------------------------------------------------------
 
@@ -38,6 +40,11 @@
                       {:reg-objects? true
                        :attrs ctt/border-radius-keys})))
 
+(defn update-shape-dimensions [value shape-ids]
+  (st/emit!
+   (dwt/update-dimensions shape-ids :width value)
+   (dwt/update-dimensions shape-ids :height value)))
+
 ;; Token types -----------------------------------------------------------------
 
 (def token-types
@@ -65,7 +72,9 @@
              :fields [{:label "Sizing"
                        :key :sizing}]}}]
    [:dimension
-    {:title "Dimension"
+    {:title "Dimensions"
+     :attributes ctt/dimensions-keys
+     :on-update-shape update-shape-dimensions
      :modal {:key :tokens/dimensions
              :fields [{:label "Dimensions"
                        :key :dimensions}]}}]

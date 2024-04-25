@@ -75,6 +75,8 @@
    [:min-width {:optional true} ::sm/uuid]
    [:max-width {:optional true} ::sm/uuid]])
 
+(def dimensions-keys (schema-keys ::dimensions))
+
 (sm/def! ::spacing
   [:map
    [:spacing-column {:optional true} ::sm/uuid]
