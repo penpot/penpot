@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-04-24 13:04+0000\n"
+"PO-Revision-Date: 2024-04-25 13:07+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
@@ -5143,3 +5143,66 @@ msgstr "יצירת שטח"
 
 msgid "workspace.context-menu.grid-cells.create-board"
 msgstr "יצירת לוח"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-account-title"
+msgstr "כניסה לחשבון שלי"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-tagline"
+msgstr "Penpot הוא כלי בקוד פתוח לשיתוף עיצוב וקוד"
+
+msgid "modals.move-shared-confirm.message"
+msgid_plural "modals.move-shared-confirm.message"
+msgstr[0] "להעביר את הספרייה הזאת?"
+msgstr[1] "להעביר את הספריות האלו?"
+msgstr[2] "להעביר את הספריות האלו?"
+msgstr[3] "להעביר את הספריות האלו?"
+
+msgid "onboarding.team-modal.team-definition"
+msgstr "מה זה צוות?"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs
+msgid "settings.select-this-color"
+msgstr "בחירת פריטים שמשתמשים בסגנון הזה"
+
+msgid "shortcuts.toggle-guides"
+msgstr "הצגת / הסתרת קווים מנחים"
+
+msgid "shortcuts.scale"
+msgstr "התאמת גודל"
+
+msgid "shortcuts.toggle-layout-grid"
+msgstr "הוספת/הסרת פריסת רשת"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.sort"
+msgstr "מיון"
+
+#: src/app/main/data/users.cljs
+msgid "errors.auth-provider-not-allowed"
+msgstr "ספק האימות לא מורשה לפרופיל הזה"
+
+#: src/app/main/data/users.cljs
+msgid "errors.email-domain-not-allowed"
+msgstr "שם התחום לא מורשה"
+
+msgid "modals.move-shared-confirm.title"
+msgid_plural "modals.move-shared-confirm.title"
+msgstr[0] "העברת ספרייה"
+msgstr[1] "העברת ספריות"
+msgstr[2] "העברת ספריות"
+msgstr[3] "העברת ספריות"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.never-used-one"
+msgstr "אין"
+
+msgid "shortcuts.toggle-rulers"
+msgstr "הצגת / הסתרת סרגלים"
+
+msgid "shortcuts.toggle-snap-guides"
+msgstr "הצמדה לקווים מנחים"
+
+msgid "shortcuts.toggle-snap-ruler-guide"
+msgstr "הצמדה לקווים מנחים סרגלים"
