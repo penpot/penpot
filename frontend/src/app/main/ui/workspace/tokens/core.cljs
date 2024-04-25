@@ -8,7 +8,7 @@
   (:require
    [app.common.data :as d :refer [ordered-map]]
    [app.common.types.shape.radius :as ctsr]
-   [app.main.data.tokens :as dt]
+   [app.common.types.token :as ctt]
    [app.main.data.workspace.changes :as dch]))
 
 ;; Helpers ---------------------------------------------------------------------
@@ -36,7 +36,7 @@
                          (when (ctsr/has-radius? shape)
                            (ctsr/set-radius-1 shape parsed-value)))
                        {:reg-objects? true
-                        :attrs [:rx :ry :r1 :r2 :r3 :r4]})))
+                        :attrs ctt/border-radius-keys})))
 
 ;; Token types -----------------------------------------------------------------
 
@@ -46,7 +46,7 @@
               :modal {:key :tokens/boolean
                       :fields [{:label "Boolean"}]}}]
    [:border-radius {:title "Border Radius"
-                    :attributes #{:rx :ry :r1 :r2 :r3 :r4}
+                    :attributes ctt/border-radius-keys
                     :modal {:key :tokens/border-radius
                             :fields [{:label "Border Radius"
                                       :key :border-radius}]}

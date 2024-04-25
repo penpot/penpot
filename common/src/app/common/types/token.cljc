@@ -7,11 +7,26 @@
 (ns app.common.types.token
   (:require
    [app.common.schema :as sm]
-   [app.common.schema.registry :as sr]))
+   [app.common.schema.registry :as sr]
+   [malli.util :as mu]))
 
-(defn merge-schemas [& schema-keys]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; HELPERS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn merge-schemas
+  "Merge registered schemas."
+  [& schema-keys]
   (let [schemas (map #(get @sr/registry %) schema-keys)]
     (reduce sm/merge schemas)))
+
+(defn schema-keys
+  "Converts registed map schema into set of keys."
+  [registered-schema]
+  (->> (get @sr/registry registered-schema)
+       (sm/schema)
+       (mu/keys)
+       (into #{})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMA
@@ -48,6 +63,8 @@
    [:r2 {:optional true} ::sm/uuid]
    [:r3 {:optional true} ::sm/uuid]
    [:r4 {:optional true} ::sm/uuid]])
+
+(def border-radius-keys (schema-keys ::border-radius))
 
 (sm/def! ::dimensions
   [:map
