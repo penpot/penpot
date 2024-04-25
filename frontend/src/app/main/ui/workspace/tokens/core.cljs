@@ -30,27 +30,29 @@
 ;; Update functions ------------------------------------------------------------
 
 (defn update-shape-radius [value shape-ids]
-  (let [parsed-value (d/parse-integer value)]
-    (dch/update-shapes shape-ids
-                       (fn [shape]
-                         (when (ctsr/has-radius? shape)
-                           (ctsr/set-radius-1 shape parsed-value)))
-                       {:reg-objects? true
-                        :attrs ctt/border-radius-keys})))
+  (st/emit!
+   (dch/update-shapes shape-ids
+                      (fn [shape]
+                        (when (ctsr/has-radius? shape)
+                          (ctsr/set-radius-1 shape value)))
+                      {:reg-objects? true
+                       :attrs ctt/border-radius-keys})))
 
 ;; Token types -----------------------------------------------------------------
 
 (def token-types
   (ordered-map
-   [:boolean {:title "Boolean"
-              :modal {:key :tokens/boolean
-                      :fields [{:label "Boolean"}]}}]
-   [:border-radius {:title "Border Radius"
-                    :attributes ctt/border-radius-keys
-                    :modal {:key :tokens/border-radius
-                            :fields [{:label "Border Radius"
-                                      :key :border-radius}]}
-                    :on-update-shape update-shape-radius}]
+   [:boolean
+    {:title "Boolean"
+     :modal {:key :tokens/boolean
+             :fields [{:label "Boolean"}]}}]
+   [:border-radius
+    {:title "Border Radius"
+     :attributes ctt/border-radius-keys
+     :on-update-shape update-shape-radius
+     :modal {:key :tokens/border-radius
+             :fields [{:label "Border Radius"
+                       :key :border-radius}]}}]
    [:box-shadow
     {:title "Box Shadow"
      :modal {:key :tokens/box-shadow

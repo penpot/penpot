@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.tokens.sidebar
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
    [app.main.refs :as refs]
@@ -25,12 +26,13 @@
         shape-ids (->> selected-shapes
                        (eduction
                         (remove #(tokens-applied? token % attributes))
-                        (map :id)))]
+                        (map :id)))
+        token-value (d/parse-integer (:value token))]
     (doseq [shape selected-shapes]
       (st/emit! (on-apply {:token-id (:id token)
                            :shape-id (:id shape)
                            :attributes attributes}))
-      (st/emit! (on-update-shape (:value token) shape-ids)))))
+      (on-update-shape token-value shape-ids))))
 
 (mf/defc token-pill
   {::mf/wrap-props false}
