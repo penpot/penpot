@@ -695,9 +695,7 @@
 
             changes
             (-> (pcb/empty-changes it)
-                (pcb/with-container container)
-                (pcb/with-objects (:objects container))
-                (cflh/generate-sync-shape-direct file-full libraries container (:id head) false components-v2))]
+                (cflh/generate-sync-head file-full libraries container head components-v2))]
 
         (log/debug :msg "SYNC-head finished" :js/rchanges (log-changes
                                                            (:redo-changes changes)
