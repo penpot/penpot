@@ -23,6 +23,8 @@
             :show-content
             :hide-in-viewer
 
+            :applied-tokens
+
             :opacity
             :blend-mode
             :blocked
@@ -94,6 +96,8 @@
             :fixed-scroll
             :parent-id
             :frame-id
+
+            :applied-tokens
 
             :opacity
             :blend-mode

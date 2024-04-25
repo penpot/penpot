@@ -25,6 +25,7 @@
    [app.main.ui.workspace.sidebar.options :refer [options-toolbox]]
    [app.main.ui.workspace.sidebar.shortcuts :refer [shortcuts-container]]
    [app.main.ui.workspace.sidebar.sitemap :refer [sitemap]]
+   [app.main.ui.workspace.tokens.sidebar :refer [tokens-sidebar-tab]]
    [app.util.debug :as dbg]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -42,6 +43,7 @@
         toggle-pages   (mf/use-callback #(reset! show-pages? not))
 
         section        (cond (or mode-inspect? (contains? layout :layers)) :layers
+                             (contains? layout :tokens) :tokens
                              (contains? layout :assets) :assets)
 
         shortcuts?     (contains? layout :shortcuts)
@@ -115,7 +117,11 @@
           (when-not ^boolean mode-inspect?
             [:& tab-element {:id :assets
                              :title (tr "workspace.toolbar.assets")}
-             [:& assets-toolbox {:size (- size 58)}]])]])]]))
+             [:& assets-toolbox {:size (- size 58)}]])
+
+          [:& tab-element {:id :tokens
+                           :title "Tokens"}
+           [:& tokens-sidebar-tab]]]])]]))
 
 ;; --- Right Sidebar (Component)
 

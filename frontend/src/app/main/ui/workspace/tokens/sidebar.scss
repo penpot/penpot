@@ -1,0 +1,30 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+@import "./common.scss";
+
+.sidebar-tab-wrapper {
+  padding: $s-12;
+}
+
+.token-pills-wrapper {
+  display: flex;
+  gap: $s-4;
+}
+
+.token-pill {
+  @extend .button-secondary;
+  padding: $s-4 $s-8;
+  border-radius: $br-6;
+  font-size: $fs-14;
+
+  &.token-pill-highlighted {
+    color: var(--button-primary-foreground-color-rest);
+    background: var(--button-primary-background-color-rest);
+  }
+}

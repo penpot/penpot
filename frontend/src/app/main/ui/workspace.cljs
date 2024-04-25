@@ -29,6 +29,7 @@
    [app.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
    [app.main.ui.workspace.sidebar.collapsable-button :refer [collapsed-button]]
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox]]
+   [app.main.ui.workspace.tokens.modals]
    [app.main.ui.workspace.viewport :refer [viewport]]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]

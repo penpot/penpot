@@ -43,7 +43,11 @@
 
    :layers
    {:del #{:document-history :assets}
-    :add #{:sitemap :layers}}})
+    :add #{:sitemap :layers}}
+
+   :tokens
+   {:del #{:sitemap :layers :document-history :assets}
+    :add #{:tokens}}})
 
 (def valid-options-mode
   #{:design :prototype :inspect})

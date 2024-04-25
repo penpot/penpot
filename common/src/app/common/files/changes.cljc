@@ -23,6 +23,8 @@
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.token :as cto]
+   [app.common.types.tokens-list :as ctol]
    [app.common.types.typographies-list :as ctyl]
    [app.common.types.typography :as ctt]
    [clojure.set :as set]))
@@ -232,6 +234,22 @@
     [:del-typography
      [:map {:title "DelTypogrphyChange"}
       [:type [:= :del-typography]]
+      [:id ::sm/uuid]]]
+
+    [:add-token
+     [:map {:title "AddTokenChange"}
+      [:type [:= :add-token]]
+      [:token ::cto/token]]]
+
+    [:mod-token
+     [:map {:title "ModTokenChange"}
+      [:type [:= :mod-token]]
+      [:id ::sm/uuid]
+      [:token ::cto/token]]]
+
+    [:del-token
+     [:map {:title "DelTokenChange"}
+      [:type [:= :del-token]]
       [:id ::sm/uuid]]]]])
 
 (sm/define! ::changes
@@ -668,6 +686,20 @@
 (defmethod process-change :del-typography
   [data {:keys [id]}]
   (ctyl/delete-typography data id))
+
+;; -- Tokens
+
+(defmethod process-change :add-token
+  [data {:keys [token]}]
+  (ctol/add-token data token))
+
+(defmethod process-change :mod-token
+  [data {:keys [id token]}]
+  (ctol/update-token data id merge token))
+
+(defmethod process-change :del-token
+  [data {:keys [id]}]
+  (ctol/delete-token data id))
 
 ;; === Operations
 

@@ -664,6 +664,30 @@
         (update :undo-changes conj {:type :add-typography :typography prev-typography})
         (apply-changes-local))))
 
+(defn add-token
+  [changes token]
+  (-> changes
+      (update :redo-changes conj {:type :add-token :token token})
+      (update :undo-changes conj {:type :del-token :id (:id token)})
+      (apply-changes-local)))
+
+(defn update-token
+  [changes token]
+  (let [token-id (:id token)]
+    (-> changes
+        (update :redo-changes conj {:type :mod-token :id token-id :token token})
+        (apply-changes-local))))
+
+(defn delete-token
+  [changes token-id]
+  (assert-library! changes)
+  (let [library-data (::library-data (meta changes))
+        prev-token (get-in library-data [:tokens token-id])]
+    (-> changes
+        (update :redo-changes conj {:type :del-token :id token-id})
+        (update :undo-changes conj {:type :add-token :token prev-token})
+        (apply-changes-local))))
+
 (defn add-component
   ([changes id path name new-shapes updated-shapes main-instance-id main-instance-page]
    (add-component changes id path name new-shapes updated-shapes main-instance-id main-instance-page nil))

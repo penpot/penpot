@@ -28,6 +28,7 @@
    [app.common.types.shape.path :as ctsp]
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.shape.text :as ctsx]
+   [app.common.types.token :as cto]
    [app.common.uuid :as uuid]
    [clojure.set :as set]))
 
@@ -180,7 +181,8 @@
     [:vector {:gen/max 1} ::ctss/shadow]]
    [:blur {:optional true} ::ctsb/blur]
    [:grow-type {:optional true}
-    [::sm/one-of #{:auto-width :auto-height :fixed}]]])
+    [::sm/one-of #{:auto-width :auto-height :fixed}]]
+   [:applied-tokens {:optional true} ::cto/applied-tokens]])
 
 (sm/define! ::group-attrs
   [:map {:title "GroupAttrs"}
