@@ -2048,10 +2048,29 @@
     [new-shape all-parents changes]))
 
 (defn generate-sync-head
-  [changes file-full libraries container head components-v2]
-  (let [changes
+  [changes file-full libraries container id components-v2 reset?]
+  (let [shape-inst (ctn/get-shape container id)
+        objects    (:objects container)
+        parent     (get objects (:parent-id shape-inst))
+        head       (ctn/get-component-shape container parent)
+        changes
         (-> changes
             (pcb/with-container container)
             (pcb/with-objects (:objects container))
-            (generate-sync-shape-direct file-full libraries container (:id head) false components-v2))]
+            (generate-sync-shape-direct file-full libraries container (:id head) reset? components-v2))]
     changes))
+
+(defn generate-reset-component
+  [changes file-full libraries container id components-v2]
+  (let [objects    (:objects container)
+        swap-slot  (-> (ctn/get-shape container id)
+                       (ctk/get-swap-slot))
+        changes
+        (-> changes
+            (pcb/with-container container)
+            (pcb/with-objects objects)
+            (generate-sync-shape-direct file-full libraries container id true components-v2))]
+
+    (cond-> changes
+      (some? swap-slot)
+      (generate-sync-head file-full libraries container id components-v2 true))))
