@@ -94,6 +94,13 @@
             (obj/unset! "disable-shadows?")
             (obj/set! "ref" ref)
             (obj/set! "id" (dm/fmt "shape-%" shape-id))
+
+            ;; TODO: This is added for backward compatibility.
+            (cond-> (and (cfh/text-shape? shape) (empty? (:position-data shape)))
+              (-> (obj/set! "x" (:x shape))
+                  (obj/set! "y" (:y shape))
+                  (obj/set! "width" (:width shape))
+                  (obj/set! "height" (:height shape))))
             (obj/set! "style" styles))
 
         wrapper-props
