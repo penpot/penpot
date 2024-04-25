@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-04-24 12:55+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2024-04-25 13:07+0000\n"
+"Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
 "Language: de\n"
@@ -1003,7 +1003,6 @@ msgstr "Verbindungsfehler, URL ist nicht erreichbar"
 msgid "errors.webhooks.invalid-uri"
 msgstr "Die URL erfüllt nicht die Validierungskriterien."
 
-#, fuzzy
 msgid "errors.webhooks.last-delivery"
 msgstr "Die letzte Übertragung war nicht erfolgreich."
 
@@ -1716,7 +1715,7 @@ msgid "labels.uploading"
 msgstr "Hochladen…"
 
 msgid "labels.view-only"
-msgstr "NUR ANSEHEN"
+msgstr "Nur ansehen"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.viewer"
@@ -2950,7 +2949,6 @@ msgstr "Interaktionen beim Klicken anzeigen"
 msgid "viewer.header.sitemap"
 msgstr "Sitemap"
 
-#, fuzzy
 msgid "webhooks.last-delivery.success"
 msgstr "Die letzte Übertragung war erfolgreich."
 
@@ -5223,3 +5221,112 @@ msgstr ""
 
 msgid "workspace.context-menu.grid-track.column.add-after"
 msgstr "1 Spalte rechts einfügen"
+
+msgid "modals.move-shared-confirm.title"
+msgid_plural "modals.move-shared-confirm.title"
+msgstr[0] "Bibliothek verschieben"
+msgstr[1] "Bibliotheken verschieben"
+
+msgid "modals.move-shared-confirm.accept"
+msgid_plural "modals.move-shared-confirm.accept"
+msgstr[0] "Verschieben"
+msgstr[1] "Verschieben"
+
+msgid "shortcuts.toggle-guides"
+msgstr "Hilfslinien anzeigen / ausblenden"
+
+msgid "shortcuts.scale"
+msgstr "Skalieren"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.filter"
+msgstr "Filtern"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs
+msgid "workspace.assets.sidebar.components"
+msgid_plural "workspace.assets.sidebar.components"
+msgstr[0] "1 Komponente"
+msgstr[1] "% Komponenten"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.unlink-library-btn"
+msgstr "Bibliothek trennen"
+
+msgid "media.keep-aspect-ratio"
+msgstr "Seitenverhältnis beibehalten"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-account-title"
+msgstr "In mein Konto einloggen"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-tagline"
+msgstr ""
+"Penpot ist das kostenlose Open-Source-Design-Tool für die Zusammenarbeit von "
+"Design und Code"
+
+msgid "modals.move-shared-confirm.message"
+msgid_plural "modals.move-shared-confirm.message"
+msgstr[0] "Sind Sie sicher, dass Sie diese Bibliothek verschieben wollen?"
+msgstr[1] "Sind Sie sicher, dass Sie diese Bibliotheken verschieben wollen?"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs
+msgid "settings.select-this-color"
+msgstr "Elemente mit diesem Stil auswählen"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-grid"
+msgstr "Grid-Layout entfernen"
+
+#: src/app/main/data/users.cljs
+msgid "errors.auth-provider-not-allowed"
+msgstr "Auth-Provider für dieses Profil nicht erlaubt"
+
+msgid "onboarding.team-modal.team-definition"
+msgstr "Was ist ein Team?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.never-used-one"
+msgstr "Keine"
+
+msgid "shortcuts.toggle-rulers"
+msgstr "Lineale anzeigen / ausblenden"
+
+msgid "shortcuts.toggle-snap-guides"
+msgstr "An Hilfslinien ausrichten"
+
+msgid "shortcuts.toggle-layout-grid"
+msgstr "Grid-Layout hinzufügen/entfernen"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.sort"
+msgstr "Sortieren"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-guides"
+msgstr "Hilfslinien ausblenden"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-guides"
+msgstr "Hilfslinien anzeigen"
+
+msgid "workspace.layout_grid.editor.top-bar.locate.tooltip"
+msgstr "Grid-Layout lokalisieren"
+
+msgid "workspace.layout_grid.editor.padding.expand"
+msgstr "4-seitige Abstandsoptionen anzeigen"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.shared-library-btn"
+msgstr "Bibliothek verknüpfen"
+
+#, markdown
+msgid "workspace.top-bar.view-only"
+msgstr "**Code inspizieren** (nur ansehen)"
+
+msgid "media.image.short"
+msgstr "img"
+
+#: src/app/main/data/users.cljs
+msgid "errors.email-domain-not-allowed"
+msgstr "Domain nicht zulässig"
