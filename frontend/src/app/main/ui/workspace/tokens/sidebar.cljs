@@ -114,8 +114,6 @@
         selected-shape-ids (mf/deref refs/selected-shapes)
         selected-shapes (workspace-shapes workspace-data current-page-id selected-shape-ids)]
     [:article
-     [:& search-bar {:placeholder "Filter"
-                     :on-change js/console.log}]
      [:div.assets-bar
       (for [{:keys [token-key token-type-props tokens]} (concat (:filled token-groups)
                                                                 (:empty token-groups))]
