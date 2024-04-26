@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-04-24 12:55+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2024-04-26 04:53+0000\n"
+"Last-Translator: Alejandro Alonso <alejandro.alonso@kaleidos.net>\n"
 "Language-Team: Spanish <https://hosted.weblate.org/projects/penpot/frontend/"
 "es/>\n"
 "Language: es\n"
@@ -5372,3 +5372,42 @@ msgstr "Crear area"
 
 msgid "workspace.context-menu.grid-cells.create-board"
 msgstr "Crear tablero"
+
+#: src/app/main/data/common.cljs
+msgid "notifications.by-code.upgrade-version"
+msgstr "Una nueva versión está disponible, por favor actualiza la página"
+
+msgid "modals.add-shared-confirm-empty.hint"
+msgstr ""
+"Tu biblioteca está vacía. Una vez que se agregue como Biblioteca Compartida, "
+"los recursos que crees estarán disponibles para ser utilizados entre el "
+"resto de tus archivos. ¿Estás seguro de que deseas publicarlo?"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.loading"
+msgstr "Cargando…"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-guides"
+msgstr "Mostrar guías"
+
+#: src/app/main/errors.cljs
+msgid "errors.version-not-supported"
+msgstr "El fichero tiene un número de versión incompatible"
+
+#: src/app/main/errors.cljs
+msgid "errors.team-feature-mismatch"
+msgstr "Detectada funcionalidad incompatible '%s'"
+
+msgid "errors.validation"
+msgstr "Error de validación"
+
+msgid "errors.paste-data-validation"
+msgstr "Datos inválidos en el portapapeles"
+
+msgid "labels.discard"
+msgstr "Descartar"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.libraries.update.see-all-changes"
+msgstr "ver todos los cambios"
