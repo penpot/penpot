@@ -2,28 +2,14 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2024-04-24 12:55+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Malay "
-"<https://hosted.weblate.org/projects/penpot/frontend/ms/>\n"
+"Language-Team: Malay <https://hosted.weblate.org/projects/penpot/frontend/ms/"
+">\n"
 "Language: ms\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 "X-Generator: Weblate 5.5.1-dev\n"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.already-have-account"
-msgstr "Sudah mempunyai akaun?"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.check-your-email"
-msgstr ""
-"Semak e-mel anda dan klik pada pautan untuk mengesahkan dan mula "
-"menggunakan Penpot."
-
-#: src/app/main/ui/auth/recovery.cljs
-msgid "auth.confirm-password"
-msgstr "Mengesahkan kata laluan"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.create-demo-account"
@@ -413,193 +399,8 @@ msgstr "Eksport papan sebagai PDF"
 msgid "dashboard.export-frames.title"
 msgstr "Eksport sebagai PDF"
 
-msgid "dashboard.export-multi"
-msgstr "Eksport fail Penpot %s"
-
-#: src/app/main/ui/export.cljs
-msgid "dashboard.export-multiple.selected"
-msgstr "%s daripada %s elemen dipilih"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "dashboard.export-shapes"
-msgstr "Eksport"
-
-#: src/app/main/ui/export.cljs
-msgid "dashboard.export-shapes.how-to"
-msgstr ""
-"Anda boleh menambah tetapan eksport ke elemen daripada sifat reka bentuk "
-"(di bahagian bawah bar sisi kanan)."
-
-#: src/app/main/ui/export.cljs
-msgid "dashboard.export-shapes.how-to-link"
-msgstr "Maklumat cara untuk menetapkan eksport di Penpot."
-
-#: src/app/main/ui/export.cljs
-msgid "dashboard.export-shapes.no-elements"
-msgstr "Tiada unsur dengan tetapan eksport."
-
-#: src/app/main/ui/export.cljs
-msgid "dashboard.export-shapes.title"
-msgstr "Eksport Pemilihan"
-
-msgid "dashboard.export-standard-multi"
-msgstr "Muat turun %s fail standard (.svg + .json)"
-
-msgid "dashboard.export.detail"
-msgstr "* Mungkin termasuk komponen, grafik, warna dan/atau tipografi."
-
-msgid "dashboard.export.explain"
-msgstr ""
-"Satu atau lebih fail yang anda ingin eksport menggunakan perpustakaan "
-"kongsi. Apa yang anda mahu lakukan dengan aset mereka*?"
-
-msgid "dashboard.export.options.all.message"
-msgstr ""
-"fail dengan perpustakaan kongsi akan disertakan dalam eksport, mengekalkan "
-"hubungannya."
-
-msgid "dashboard.export.options.all.title"
-msgstr "Eksport perpustakaan kongsi"
-
-msgid "dashboard.export.options.detach.message"
-msgstr ""
-"Perpustakaan kongsi tidak akan disertakan dalam eksport dan tiada aset akan "
-"ditambahkan ke perpustakaan. "
-
-msgid "dashboard.export.options.detach.title"
-msgstr "Anggap aset perpustakaan kongsi sebagai objek asas"
-
-msgid "dashboard.export.options.merge.message"
-msgstr ""
-"Fail anda akan dieksport dengan semua aset luaran digabungkan ke dalam "
-"pustaka fail."
-
-msgid "dashboard.export.options.merge.title"
-msgstr "Sertakan aset perpustakaan kongsi dalam pustaka fail"
-
-msgid "dashboard.export.title"
-msgstr "Eksport fail"
-
-msgid "dashboard.fonts.deleted-placeholder"
-msgstr "Fon hilang"
-
-#: src/app/main/ui/dashboard/fonts.cljs
-msgid "dashboard.fonts.dismiss-all"
-msgstr "Tolak semua"
-
-msgid "dashboard.fonts.empty-placeholder"
-msgstr "Fon tersuai yang anda muat naik akan dipaparkan di sini."
-
-#: src/app/main/ui/dashboard/fonts.cljs
-msgid "dashboard.fonts.fonts-added"
-msgid_plural "dashboard.fonts.fonts-added"
-msgstr[0] "%s fon ditambah"
-
-#, markdown
-msgid "dashboard.fonts.hero-text1"
-msgstr ""
-"Sebarang fon web yang anda muat naik di sini akan ditambahkan pada senarai "
-"keluarga fon yang tersedia pada sifat teks fail pasukan ini. Fon dengan "
-"nama keluarga fon yang sama akan dikumpulkan sebagai **keluarga fon "
-"tunggal**. Anda boleh memuat naik fon dengan format berikut: **TTF, OTF dan "
-"WOFF** (hanya satu sahaja diperlukan)."
-
-#, markdown
-msgid "dashboard.fonts.hero-text2"
-msgstr ""
-"Anda hanya perlu memuat naik fon yang anda miliki atau mempunyai lesen "
-"untuk digunakan dalam Penpot. Ketahui lebih lanjut dalam bahagian Hak "
-"kandungan [Syarat Perkhidmatan Penpot](https://penpot.app/terms.html). Anda "
-"juga mungkin ingin membaca tentang [pelesenan "
-"fon](https://www.typography.com/faq)."
-
-#: src/app/main/ui/dashboard/fonts.cljs
-msgid "dashboard.fonts.upload-all"
-msgstr "Muat naik semua"
-
-#, markdown
-msgid "dashboard.fonts.warning-text"
-msgstr ""
-"Kami telah mengesan kemungkinan masalah dalam fon anda yang berkaitan "
-"dengan metrik menegak untuk sistem pengendalian yang berbeza. Untuk "
-"menyemaknya, anda boleh menggunakan perkhidmatan metrik menegak fon seperti "
-"[ini](https://vertical-metrics.netlify.app/). Selain itu, kami mengesyorkan "
-"menggunakan [Transfonter](https://transfonter.org/) untuk menjana fon web "
-"dan membetulkan ralat. "
-
-msgid "dashboard.import"
-msgstr "Import fail Penpot"
-
-msgid "dashboard.import.analyze-error"
-msgstr "Alamak! Kami tidak dapat mengimport fail ini"
-
-msgid "dashboard.import.analyze-error.components-v2"
-msgstr ""
-"Fail dengan komponen v2 diaktifkan tetapi pasukan ini belum menyokongnya "
-"lagi."
-
-msgid "dashboard.import.import-error"
-msgstr "Terdapat masalah mengimport fail. Fail tidak diimport."
-
-msgid "dashboard.import.import-message"
-msgid_plural "dashboard.import.import-message"
-msgstr[0] "%s fail telah berjaya diimport."
-
-msgid "dashboard.import.import-warning"
-msgstr "Sesetengah fail mengandungi objek tidak sah telah dialih keluar."
-
-msgid "dashboard.import.progress.process-colors"
-msgstr "memproses warna"
-
-msgid "dashboard.import.progress.process-components"
-msgstr "Memproses komponen"
-
-msgid "dashboard.import.progress.process-media"
-msgstr "Memproses media"
-
-msgid "dashboard.import.progress.process-page"
-msgstr "Memproses halaman: %s"
-
-msgid "dashboard.import.progress.process-typographies"
-msgstr "Memproses tipografi"
-
-msgid "dashboard.import.progress.upload-data"
-msgstr "Memuat naik data ke pelayan (%s/%s)"
-
-msgid "dashboard.import.progress.upload-media"
-msgstr "Memuat naik fail: %s"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "dashboard.invite-profile"
-msgstr "Jemput orang ramai"
-
-#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.leave-team"
-msgstr "Tinggalkan pasukan"
-
-msgid "dashboard.libraries-and-templates"
-msgstr "Perpustakaan & Templat"
-
-msgid "dashboard.libraries-and-templates.explore"
-msgstr "Terokai lebih banyak daripada mereka dan ketahui cara untuk menyumbang"
-
-msgid "dashboard.libraries-and-templates.import-error"
-msgstr "Terdapat masalah mengimport templat. Templat tidak diimport."
-
-#: src/app/main/ui/dashboard/libraries.cljs
-msgid "dashboard.libraries-title"
-msgstr "Perpustakaan"
-
-#: src/app/main/ui/dashboard/grid.cljs
-msgid "dashboard.loading-files"
-msgstr "memuatkan fail anda…"
-
 msgid "dashboard.loading-fonts"
 msgstr "memuatkan fon anda…"
-
-#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.move-to"
-msgstr "Berpindah ke"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.move-to-multi"
@@ -629,18 +430,6 @@ msgstr "Projek Baharu"
 msgid "dashboard.no-matches-for"
 msgstr "Tiada padanan ditemui untuk \"%s\""
 
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.no-projects-placeholder"
-msgstr "Projek yang disemat akan muncul di sini"
-
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "dashboard.notifications.email-changed-successfully"
-msgstr "Alamat e-mel anda telah berjaya dikemas kini"
-
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "dashboard.notifications.email-verified-successfully"
-msgstr "Alamat e-mel anda telah berjaya disahkan"
-
 #: src/app/main/ui/settings/password.cljs
 msgid "dashboard.notifications.password-saved"
 msgstr "Kata laluan berjaya disimpan!"
@@ -659,38 +448,6 @@ msgstr "Pilihan"
 #: src/app/main/ui/settings/password.cljs
 msgid "dashboard.password-change"
 msgstr "Tukar kata laluan"
-
-#: src/app/main/ui/dashboard/project_menu.cljs
-msgid "dashboard.pin-unpin"
-msgstr "Semat/Nyahsemat"
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dashboard.projects-title"
-msgstr "Projek"
-
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.remove-account"
-msgstr "Mahu mengalih keluar akaun anda?"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.remove-shared"
-msgstr "Alih keluar sebagai Pustaka Dikongsi"
-
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.save-settings"
-msgstr "Simpan tetapan"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.search-placeholder"
-msgstr "Cari…"
-
-#: src/app/main/ui/dashboard/search.cljs
-msgid "dashboard.searching-for"
-msgstr "Mencari \"%s\"…"
-
-#: src/app/main/ui/settings/options.cljs
-msgid "dashboard.select-ui-language"
-msgstr "Pilih Bahasa UI"
 
 #: src/app/main/ui/settings/options.cljs
 msgid "dashboard.select-ui-theme"
@@ -783,66 +540,11 @@ msgstr ""
 "dimaklumkan apabila acara tertentu berlaku di Penpot. Kami akan menghantar "
 "permintaan POST ke setiap URL yang anda berikan."
 
-msgid "dashboard.webhooks.empty.add-one"
-msgstr "Tekan butang \"Tambah webhook\" untuk menambahnya."
-
-msgid "dashboard.webhooks.empty.no-webhooks"
-msgstr "Tiada webhook dibuat setakat ini."
-
-msgid "dashboard.webhooks.update.success"
-msgstr "Webhook berjaya dikemas kini."
-
 #: src/app/main/ui/settings.cljs
 msgid "dashboard.your-account-title"
 msgstr "Akaun anda"
 
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.your-email"
-msgstr "E-mel"
-
-#: src/app/main/ui/settings/profile.cljs
-msgid "dashboard.your-name"
-msgstr "Nama anda"
-
-#: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/libraries.cljs, src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.your-penpot"
-msgstr "Penpot anda"
-
-#: src/app/main/ui/alert.cljs
-msgid "ds.alert-ok"
-msgstr "Ok"
-
-#: src/app/main/ui/alert.cljs
-msgid "ds.alert-title"
-msgstr "Perhatian"
-
-#: src/app/main/ui/confirm.cljs
-msgid "ds.component-subtitle"
-msgstr "Komponen untuk dikemas kini:"
-
-#: src/app/main/ui/confirm.cljs
-msgid "ds.confirm-cancel"
-msgstr "Batal"
-
-#: src/app/main/ui/confirm.cljs
-msgid "ds.confirm-ok"
-msgstr "Ok"
-
-#: src/app/main/ui/confirm.cljs, src/app/main/ui/confirm.cljs
-msgid "ds.confirm-title"
-msgstr "Adakah anda pasti?"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "errors.auth-provider-not-configured"
-msgstr "Pembekal pengesahan tidak dikonfigurasikan."
-
-msgid "errors.auth.unable-to-login"
-msgstr "Nampaknya anda belum disahkan atau sesi telah tamat tempoh."
-
 msgid "errors.bad-font"
-msgstr "Fon %s tidak dapat dimuatkan"
-
-msgid "errors.bad-font-plural"
 msgstr "Fon %s tidak dapat dimuatkan"
 
 msgid "errors.cannot-upload"
@@ -885,8 +587,8 @@ msgstr ""
 "penpot semasa tidak menyokongnya atau menyahdayakannya."
 
 #: src/app/main/errors.cljs
-msgid "errors.feature-not-supported"
-msgstr "Ciri '%s' tidak disokong."
+msgid "errors.version-not-supported"
+msgstr "Fail mempunyai nombor versi yang tidak serasi"
 
 #: src/app/main/errors.cljs
 msgid "errors.file-feature-mismatch"
@@ -894,6 +596,14 @@ msgstr ""
 "Nampaknya terdapat ketidakpadanan antara ciri yang didayakan dan ciri fail "
 "yang anda cuba buka. Migrasi untuk '%s' perlu digunakan sebelum fail boleh "
 "dibuka."
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-not-supported"
+msgstr "Ciri '%s' tidak disokong."
+
+#: src/app/main/errors.cljs
+msgid "errors.team-feature-mismatch"
+msgstr "Ciri tidak serasi '%s' dikesan"
 
 #: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "errors.generic"
@@ -944,9 +654,6 @@ msgstr "Kata laluan pengesahan mesti sepadan"
 msgid "errors.password-too-short"
 msgstr "Kata laluan hendaklah sekurang-kurangnya 8 aksara"
 
-msgid "errors.paste-data-validation"
-msgstr "Data tidak sah dalam papan klip"
-
 msgid "errors.profile-blocked"
 msgstr "Profil disekat"
 
@@ -959,10 +666,6 @@ msgstr ""
 #: src/app/main/ui/auth/register.cljs
 msgid "errors.registration-disabled"
 msgstr "Pendaftaran dilumpuhkan pada masa ini."
-
-#: src/app/main/errors.cljs
-msgid "errors.team-feature-mismatch"
-msgstr "Ciri tidak serasi '%s' dikesan"
 
 msgid "errors.team-leave.insufficient-members"
 msgstr ""
@@ -981,17 +684,6 @@ msgstr ""
 msgid "errors.unexpected-error"
 msgstr "Ralat yang tidak dijangka berlaku."
 
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "errors.unexpected-token"
-msgstr "Token tidak diketahui"
-
-msgid "errors.validation"
-msgstr "Ralat Pengesahan"
-
-#: src/app/main/errors.cljs
-msgid "errors.version-not-supported"
-msgstr "Fail mempunyai nombor versi yang tidak serasi"
-
 msgid "errors.webhooks.connection"
 msgstr "Ralat sambungan, URL tidak dapat dicapai"
 
@@ -1004,9 +696,6 @@ msgstr "Penghantaran terakhir tidak berjaya."
 
 msgid "errors.webhooks.ssl-validation"
 msgstr "Ralat pada pengesahan SSL."
-
-msgid "errors.webhooks.timeout"
-msgstr "Masa tamat"
 
 msgid "errors.webhooks.unexpected"
 msgstr "Ralat yang tidak dijangka semasa mengesahkan"
@@ -1022,6 +711,12 @@ msgstr "E-mel atau kata laluan tidak betul."
 msgid "errors.wrong-old-password"
 msgstr "Kata laluan lama tidak betul"
 
+msgid "errors.validation"
+msgstr "Ralat Pengesahan"
+
+msgid "errors.paste-data-validation"
+msgstr "Data tidak sah dalam papan klip"
+
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.description"
 msgstr "Penerangan"
@@ -1035,20 +730,6 @@ msgid "feedback.discourse-subtitle1"
 msgstr ""
 "Kami berbesar hati anda berada disini. Jika anda memerlukan bantuan, sila "
 "cari sebelum anda menyiarkan siaran baharu."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.discourse-title"
-msgstr "Komuniti Penpot"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.subject"
-msgstr "Subjek"
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.subtitle"
-msgstr ""
-"Sila terangkan sebab e-mel anda, nyatakan sama ada isu, idea atau keraguan. "
-"Seorang ahli pasukan kami akan menjawab secepat mungkin."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.title"
@@ -1101,10 +782,6 @@ msgid "inspect.attributes.image.download"
 msgstr "Muat turun sumber gambar"
 
 #: src/app/main/ui/inspect/attributes/image.cljs
-msgid "inspect.attributes.image.height"
-msgstr "Tinggi"
-
-#: src/app/main/ui/inspect/attributes/image.cljs
 msgid "inspect.attributes.image.width"
 msgstr "Lebar"
 
@@ -1114,6 +791,10 @@ msgstr "Susun atur"
 
 #: src/app/main/ui/inspect/attributes/layout.cljs
 msgid "inspect.attributes.layout.height"
+msgstr "Tinggi"
+
+#: src/app/main/ui/inspect/attributes/image.cljs
+msgid "inspect.attributes.image.height"
 msgstr "Tinggi"
 
 #: src/app/main/ui/inspect/attributes/layout.cljs
@@ -1127,18 +808,6 @@ msgstr "Jejari"
 #: src/app/main/ui/inspect/attributes/layout.cljs
 msgid "inspect.attributes.layout.rotation"
 msgstr "Putaran"
-
-#: src/app/main/ui/inspect/attributes/layout.cljs
-msgid "inspect.attributes.layout.top"
-msgstr "Atas"
-
-#: src/app/main/ui/inspect/attributes/layout.cljs
-msgid "inspect.attributes.layout.width"
-msgstr "Lebar"
-
-#: src/app/main/ui/inspect/attributes/shadow.cljs
-msgid "inspect.attributes.shadow"
-msgstr "Bayang"
 
 #: src/app/main/ui/inspect/attributes/layout.cljs
 msgid "inspect.attributes.size"
@@ -1194,10 +863,6 @@ msgid "inspect.attributes.typography.font-style"
 msgstr "Gaya Huruf"
 
 #: src/app/main/ui/inspect/attributes/text.cljs
-msgid "inspect.attributes.typography.font-weight"
-msgstr "Berat Huruf"
-
-#: src/app/main/ui/inspect/attributes/text.cljs
 msgid "inspect.attributes.typography.letter-spacing"
 msgstr "Jarak Huruf"
 
@@ -1215,9 +880,6 @@ msgstr "Tiada"
 msgid "inspect.attributes.typography.text-decoration.strikethrough"
 msgstr "Tembus"
 
-msgid "inspect.attributes.typography.text-decoration.underline"
-msgstr "Garis bawah"
-
 #: src/app/main/ui/inspect/attributes/text.cljs
 #, fuzzy
 msgid "inspect.attributes.typography.text-transform"
@@ -1229,11 +891,11 @@ msgstr "Huruf Kecil"
 msgid "inspect.attributes.typography.text-transform.none"
 msgstr "Tiada"
 
-msgid "inspect.attributes.typography.text-transform.titlecase"
-msgstr "Huruf Tajuk"
-
 msgid "inspect.attributes.typography.text-transform.unset"
 msgstr "Nyahset"
+
+msgid "inspect.attributes.typography.text-transform.titlecase"
+msgstr "Huruf Tajuk"
 
 msgid "inspect.attributes.typography.text-transform.uppercase"
 msgstr "Huruf Besar"
@@ -1285,9 +947,6 @@ msgstr "Laluan"
 msgid "inspect.tabs.code.selected.rect"
 msgstr "Segi empat tepat"
 
-msgid "inspect.tabs.code.selected.svg-raw"
-msgstr "SVG"
-
 msgid "inspect.tabs.code.selected.text"
 msgstr "Teks"
 
@@ -1306,19 +965,12 @@ msgstr "Terima"
 msgid "labels.access-tokens"
 msgstr "Token capaian"
 
-msgid "labels.active"
-msgstr "Aktif"
-
 msgid "labels.add-custom-font"
 msgstr "Tambah fon tersuai"
 
 #: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
 msgid "labels.admin"
 msgstr "Pentadbir"
-
-#: src/app/main/ui/workspace/comments.cljs
-msgid "labels.all"
-msgstr "Semua"
 
 msgid "labels.and"
 msgstr "dan"
@@ -1361,20 +1013,9 @@ msgstr "Teruskan"
 msgid "labels.continue-with"
 msgstr "Teruskan dengan"
 
-msgid "labels.continue-with-penpot"
-msgstr "Anda boleh meneruskan dengan akaun Penpot"
-
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.copy-invitation-link"
 msgstr "Salin pautan"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "labels.create"
-msgstr "Cipta"
-
-#: src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/dashboard/team_form.cljs
-msgid "labels.create-team"
-msgstr "Cipta pasukan baharu"
 
 #: src/app/main/ui/dashboard/team_form.cljs
 msgid "labels.create-team.placeholder"
@@ -1429,9 +1070,6 @@ msgstr "Penyunting"
 msgid "labels.expired-invitation"
 msgstr "Tamat tempoh"
 
-msgid "labels.export"
-msgstr "Eksport"
-
 #: src/app/main/ui/settings/feedback.cljs
 msgid "labels.feedback-disabled"
 msgstr "Maklum balas dilumpuhkan"
@@ -1463,10 +1101,6 @@ msgstr "Beri maklum balas"
 msgid "labels.go-back"
 msgstr "Pergi balik"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.help-center"
-msgstr "Pusat Bantuan"
-
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.hide-resolved-comments"
 msgstr "Sembunyikan komen yang diselesaikan"
@@ -1476,12 +1110,6 @@ msgstr "tidak aktif"
 
 msgid "labels.installed-fonts"
 msgstr "Fon yang dipasang"
-
-#: src/app/main/ui/static.cljs
-msgid "labels.internal-error.desc-message"
-msgstr ""
-"Sesuatu yang buruk telah berlaku. Sila cuba semula operasi dan jika masalah "
-"berterusan, hubungi sokongan."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.internal-error.main-message"
@@ -1518,26 +1146,14 @@ msgstr "Ahli"
 msgid "labels.new-password"
 msgstr "Kata laluan baharu"
 
-#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/dashboard/comments.cljs
-msgid "labels.no-comments-available"
-msgstr ""
-"Anda telah melihat semua yang baru! Pemberitahuan ulasan baharu akan "
-"dipaparkan di sini."
-
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations"
 msgstr "Tiada jemputan tertunda."
 
-#: src/app/main/ui/dashboard/team.cljs
-#, markdown
-msgid "labels.no-invitations-hint"
-msgstr "Klik butang **Jemput orang** untuk menjemput orang ke pasukan ini."
-
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.desc-message"
 msgstr ""
-"Halaman ini mungkin tidak wujud atau anda tiada kebenaran untuk "
-"mengaksesnya."
+"Halaman ini mungkin tidak wujud atau anda tiada kebenaran untuk mengaksesnya."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.main-message"
@@ -1572,46 +1188,9 @@ msgstr "atau"
 msgid "labels.owner"
 msgstr "Pemilik"
 
-#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.password"
-msgstr "Kata laluan"
-
-#: src/app/main/ui/dashboard/team.cljs
-#, fuzzy
-msgid "labels.pending-invitation"
-msgstr "Belum selesai"
-
-#: src/app/main/ui/settings/sidebar.cljs
-msgid "labels.profile"
-msgstr "Profil"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.projects"
-msgstr "Projek"
-
-#: src/app/main/ui/settings/sidebar.cljs
-msgid "labels.release-notes"
-msgstr "Nota keluaran"
-
-#: src/app/main/ui/workspace.cljs
-msgid "labels.reload-file"
-msgstr "Muat semula fail"
-
-#: src/app/main/ui/workspace/libraries.cljs, src/app/main/ui/dashboard/team.cljs
-msgid "labels.remove"
-msgstr "Alih keluar"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.remove-member"
-msgstr "Buang ahli"
-
 #: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "labels.rename"
 msgstr "Namakan semula"
-
-#: src/app/main/ui/dashboard/team_form.cljs
-msgid "labels.rename-team"
-msgstr "Namakan semula pasukan"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.resend-invitation"
@@ -1627,9 +1206,6 @@ msgstr "Peranan"
 
 msgid "labels.save"
 msgstr "Simpan"
-
-msgid "labels.search"
-msgstr "Cari"
 
 msgid "labels.search-font"
 msgstr "Cari fon"
@@ -1650,15 +1226,11 @@ msgstr "Kami sedang menjalankan penyelenggaraan berjadual pada sistem kami."
 msgid "labels.service-unavailable.main-message"
 msgstr "Perkhidmatan Tidak Tersedia"
 
-#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.settings"
-msgstr "Tetapan"
+msgid "labels.share-prototype"
+msgstr "Kongsi prototaip"
 
 msgid "labels.share"
 msgstr "Kongsi"
-
-msgid "labels.share-prototype"
-msgstr "Kongsi prototaip"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.shared-libraries"
@@ -1675,34 +1247,8 @@ msgstr "Paparkan senarai komen"
 msgid "labels.show-your-comments"
 msgstr "Paparkan komen anda sahaja"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "labels.status"
-msgstr "Status"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.tutorials"
-msgstr "Tutorial"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "labels.unpublish-multi-files"
-msgstr "Nyahterbitkan %s fail"
-
-#: src/app/main/ui/settings/profile.cljs
-msgid "labels.update"
-msgstr "Kemas kini"
-
-#: src/app/main/ui/dashboard/team_form.cljs
-msgid "labels.update-team"
-msgstr "Kemas kini pasukan"
-
-msgid "labels.upload"
-msgstr "Muat naik"
-
 msgid "labels.upload-custom-fonts"
 msgstr "Muat naik fon tersuai"
-
-msgid "labels.uploading"
-msgstr "Memuat naik…"
 
 msgid "labels.view-only"
 msgstr "LIHAT SAHAJA"
@@ -1722,29 +1268,16 @@ msgstr "Tulis komen baharu"
 msgid "labels.you"
 msgstr "(anda)"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.your-account"
-msgstr "Akaun anda"
+msgid "labels.search"
+msgstr "Cari"
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "media.loading"
 msgstr "Memuatkan gambar…"
 
-msgid "modals.add-shared-confirm-empty.hint"
-msgstr ""
-"Pustaka anda kosong. Setelah ditambahkan sebagai Pustaka Dikongsi, aset "
-"yang anda buat akan tersedia untuk digunakan antara fail anda yang lain. "
-"Adakah anda pasti mahu menerbitkannya?"
-
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.accept"
 msgstr "Tambah sebagai Pustaka Kongsi"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.add-shared-confirm.hint"
-msgstr ""
-"Setelah ditambahkan sebagai Pustaka Kongsi, aset pustaka fail ini akan "
-"tersedia untuk digunakan antara fail anda yang lain."
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.add-shared-confirm.message"
@@ -1754,10 +1287,6 @@ msgstr "Tambah “%s” sebagai Pustaka Kongsi"
 #, fuzzy
 msgid "modals.big-nudge"
 msgstr "Anjakan besar"
-
-#: src/app/main/ui/settings/change_email.cljs
-msgid "modals.change-email.confirm-email"
-msgstr "Sahkan e-mel baharu"
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.info"
@@ -1814,44 +1343,12 @@ msgid "modals.create-webhook.url.placeholder"
 msgstr "https://example.com/postreceive"
 
 #: src/app/main/ui/settings/access-tokens.cljs
-msgid "modals.delete-acces-token.accept"
-msgstr "Padam token"
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "modals.delete-acces-token.message"
-msgstr "Adakah anda pasti mahu memadamkan token ini?"
-
-#: src/app/main/ui/settings/access-tokens.cljs
 msgid "modals.delete-acces-token.title"
 msgstr "Padam token"
 
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "modals.delete-account.cancel"
 msgstr "Batal dan kekalkan akaun saya"
-
-#: src/app/main/ui/settings/delete_account.cljs
-msgid "modals.delete-account.confirm"
-msgstr "Ya, padam akaun saya"
-
-#: src/app/main/ui/settings/delete_account.cljs
-msgid "modals.delete-account.info"
-msgstr ""
-"Dengan mengalih keluar akaun anda, anda akan kehilangan semua projek dan "
-"arkib semasa anda."
-
-#: src/app/main/ui/settings/delete_account.cljs
-msgid "modals.delete-account.title"
-msgstr "Adakah anda pasti mahu memadam akaun anda?"
-
-#: src/app/main/ui/comments.cljs
-msgid "modals.delete-comment-thread.accept"
-msgstr "Padam perbualan"
-
-#: src/app/main/ui/comments.cljs
-msgid "modals.delete-comment-thread.message"
-msgstr ""
-"Adakah anda pasti mahu memadamkan perbualan ini? Semua komen dalam urutan "
-"ini akan dipadamkan."
 
 #: src/app/main/ui/comments.cljs
 msgid "modals.delete-comment-thread.title"
@@ -1866,10 +1363,6 @@ msgstr "Padam anotasi"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-file-confirm.accept"
 msgstr "Padam fail"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-file-confirm.message"
-msgstr "Adakah anda pasti mahu memadamkan fail ini?"
 
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-file-confirm.title"
@@ -1889,8 +1382,8 @@ msgstr "Memadamkan %s fail"
 
 msgid "modals.delete-font-variant.message"
 msgstr ""
-"Adakah anda pasti mahu memadamkan gaya fon ini? Ia tidak akan dimuatkan "
-"jika digunakan dalam fail."
+"Adakah anda pasti mahu memadamkan gaya fon ini? Ia tidak akan dimuatkan jika "
+"digunakan dalam fail."
 
 msgid "modals.delete-font-variant.title"
 msgstr "Memadam gaya fon"
@@ -1949,10 +1442,6 @@ msgid_plural "modals.delete-shared-confirm.title"
 msgstr[0] "Memadam fail"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.delete-team-confirm.accept"
-msgstr "Padam pasukan"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.delete-team-confirm.message"
 msgstr ""
 "Adakah anda pasti mahu memadamkan pasukan ini? Semua projek dan fail yang "
@@ -1963,23 +1452,12 @@ msgid "modals.delete-team-confirm.title"
 msgstr "Memadam pasukan"
 
 #: src/app/main/ui/dashboard/team.cljs
-msgid "modals.delete-team-member-confirm.accept"
-msgstr "Padam ahli"
-
-#: src/app/main/ui/dashboard/team.cljs
 msgid "modals.delete-team-member-confirm.message"
 msgstr "Adakah anda pasti mahu memadamkan ahli ini daripada pasukan?"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.delete-team-member-confirm.title"
 msgstr "Padam ahli pasukan"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.delete-unpublish-shared-confirm.activated.hint"
-msgid_plural "modals.delete-unpublish-shared-confirm.activated.hint"
-msgstr[0] ""
-"Aset yang telah digunakan dalam fail ini akan kekal di sana (tiada reka "
-"bentuk akan rosak)."
 
 msgid "modals.delete-webhook.accept"
 msgstr "Padam cangkuk web (webhook)"
@@ -2028,27 +1506,12 @@ msgstr ""
 "pangkat kepada pemilik. Anda mungkin mahu memadamkan pasukan."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-and-reassign.hint1"
-msgstr ""
-"Anda adalah pemilik pasukan ini. Sila pilih ahli lain untuk dinaikkan "
-"pangkat kepada pemilik sebelum anda pergi."
-
-#: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.promote-and-leave"
 msgstr "Naik pangkat dan tinggalkan"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.select-member-to-promote"
 msgstr "Pilih ahli untuk dinaikkan pangkat"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-#, fuzzy
-msgid "modals.leave-and-reassign.title"
-msgstr "Sebelum anda pergi"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "modals.leave-confirm.accept"
-msgstr "Tinggalkan pasukan"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-confirm.message"
@@ -2075,8 +1538,8 @@ msgstr ""
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.message"
 msgstr ""
-"Anda adalah pemilik semasa pasukan ini. Adakah anda pasti mahu menjadikan "
-"%s pemilik baharu pasukan?"
+"Anda adalah pemilik semasa pasukan ini. Adakah anda pasti mahu menjadikan %s "
+"pemilik baharu pasukan?"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.title"
@@ -2092,18 +1555,10 @@ msgid "modals.publish-empty-library.title"
 msgstr "Terbitkan perpustakaan kosong"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.remove-shared-confirm.accept"
-msgstr "Alih keluar sebagai Pustaka Kongsi"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.hint"
 msgstr ""
 "Setelah dialih keluar sebagai Pustaka Kongsi, Pustaka Fail fail ini akan "
 "berhenti tersedia untuk digunakan di antara fail anda yang lain."
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.remove-shared-confirm.message"
-msgstr "Alih keluar \"%s\" sebagai Pustaka Kongsi"
 
 #: src/app/main/ui/workspace/nudge.cljs
 msgid "modals.small-nudge"
@@ -2118,11 +1573,6 @@ msgstr[0] "Nyahterbit"
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
 msgstr[0] "Adakah anda pasti mahu menyahterbitkan perpustakaan ini?"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.unpublish-shared-confirm.title"
-msgid_plural "modals.unpublish-shared-confirm.title"
-msgstr[0] "Nyahterbit pustaka"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component-in-bulk.hint"
@@ -2216,14 +1666,9 @@ msgstr ""
 msgid "onboarding-v2.newsletter.privacy1"
 msgstr "Kami mengambil berat tentang privasi, di sini anda boleh membaca. "
 
-msgid "onboarding-v2.newsletter.privacy2"
-msgstr ""
-"Kami hanya akan menghantar e-mel yang berkaitan kepada anda. Anda boleh "
-"berhenti melanggan pada bila-bila masa melalui pautan nyahlanggan dalam "
-"mana-mana surat berita kami."
-
 msgid "onboarding-v2.newsletter.updates"
-msgstr "Hantar kepada saya kemas kini produk (ciri baharu, keluaran, pembetulan...)."
+msgstr ""
+"Hantar kepada saya kemas kini produk (ciri baharu, keluaran, pembetulan...)."
 
 msgid "onboarding-v2.welcome.desc1"
 msgstr ""
@@ -2236,9 +1681,6 @@ msgstr ""
 "Ruang awam untuk belajar, berkongsi dan membincangkan tentang Penpot, masa "
 "kini dan masa depannya dengan seluruh Komuniti dan pasukan teras Penpot."
 
-msgid "onboarding-v2.welcome.desc2.title"
-msgstr "Mengambil bahagian dalam Komuniti"
-
 msgid "onboarding-v2.welcome.desc3"
 msgstr ""
 "Di mana anda akan menemui cara untuk bekerjasama dengan terjemahan, "
@@ -2250,34 +1692,23 @@ msgstr "Panduan memberi sumbangan"
 msgid "onboarding-v2.welcome.title"
 msgstr "Selamat datang ke Penpot!"
 
-msgid "onboarding.choice.team-up.continue-creating-team"
-msgstr "Teruskan mencipta pasukan"
-
-msgid "onboarding.choice.team-up.continue-without-a-team"
-msgstr "Teruskan tanpa pasukan"
-
-msgid "onboarding.choice.team-up.create-team-and-invite"
-msgstr "Buat pasukan & jemput"
-
-msgid "onboarding.choice.team-up.create-team-and-send-invites"
-msgstr "Buat pasukan dan hantar jemputan"
-
-msgid "onboarding.choice.team-up.create-team-and-send-invites-description"
-msgstr "Anda boleh menjemput kemudian"
-
-msgid "onboarding.choice.team-up.create-team-desc"
-msgstr ""
-"Selepas menamakan pasukan anda, anda akan dapat menjemput orang untuk "
-"menyertai."
-
 msgid "onboarding.choice.team-up.create-team-placeholder"
 msgstr "Masukkan nama pasukan"
 
-msgid "onboarding.choice.team-up.create-team-without-invite"
-msgstr "Cipta pasukan"
+msgid "onboarding.choice.team-up.continue-creating-team"
+msgstr "Teruskan mencipta pasukan"
+
+msgid "onboarding.choice.team-up.start-without-a-team"
+msgstr "Mulakan tanpa pasukan"
+
+msgid "onboarding.choice.team-up.start-without-a-team-description"
+msgstr "Anda boleh membuat pasukan kemudian."
 
 msgid "onboarding.choice.team-up.create-team-without-inviting"
 msgstr "Buat pasukan tanpa menjemput"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites-description"
+msgstr "Anda boleh menjemput kemudian"
 
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "Jemput ahli"
@@ -2289,12 +1720,6 @@ msgstr ""
 
 msgid "onboarding.choice.team-up.roles"
 msgstr "Jemput dengan peranan:"
-
-msgid "onboarding.choice.team-up.start-without-a-team"
-msgstr "Mulakan tanpa pasukan"
-
-msgid "onboarding.choice.team-up.start-without-a-team-description"
-msgstr "Anda boleh membuat pasukan kemudian."
 
 msgid "onboarding.newsletter.accept"
 msgstr "Ya, langgan"
@@ -2312,11 +1737,6 @@ msgstr "Ingin menerima berita Penpot?"
 
 msgid "onboarding.team-modal.create-team"
 msgstr "Cipta pasukan"
-
-msgid "onboarding.team-modal.create-team-desc"
-msgstr ""
-"Pasukan membolehkan anda bekerjasama dengan pengguna Penpot lain yang "
-"bekerja dalam fail dan projek yang sama."
 
 msgid "onboarding.team-modal.create-team-feature-1"
 msgstr "Fail dan projek tanpa had"
@@ -2355,10 +1775,6 @@ msgid "questions.11-30"
 msgstr "11-30"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.2-10"
-msgstr "2-10"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.31-50"
 msgstr "31-50"
 
@@ -2376,7 +1792,8 @@ msgstr "Canva"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.describe-your-experience-working-on"
-msgstr "Bagaimanakah cara terbaik anda menerangkan pengalaman anda bekerja pada..."
+msgstr ""
+"Bagaimanakah cara terbaik anda menerangkan pengalaman anda bekerja pada..."
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.designer"
@@ -2395,16 +1812,8 @@ msgid "questions.figma"
 msgstr "Figma"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.founder"
-msgstr "Pengasas/VP"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.freelancer"
 msgstr "Saya seorang pekerja bebas (freelancer)"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.get-the-code-from-my-team-project"
-msgstr "Dapatkan kod daripada projek pasukan saya "
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.interface-design-visual-assets-design-systems"
@@ -2427,16 +1836,8 @@ msgid "questions.manager"
 msgstr "Pengurus Produk atau Projek"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.marketing"
-msgstr "Pemasaran"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.more-than-50"
 msgstr "Lebih daripada 50"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.next"
-msgstr "Seterusnya"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.none"
@@ -2453,18 +1854,6 @@ msgstr "Saya sedang menjalankan projek peribadi"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.previous"
 msgstr "Sebelumnya"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.questions-how-are-you-planning-to-use-penpot"
-msgstr "Bagaimanakah anda merancang untuk menggunakan Penpot?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.role"
-msgstr "Apakah peranan anda?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.select-option"
-msgstr "Pilih pilihan"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.sketch"
@@ -2518,10 +1907,6 @@ msgstr ""
 msgid "settings.detach"
 msgstr "Tanggalkan"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
-msgid "settings.multiple"
-msgstr "Bercampur"
-
 # SECTIONS
 msgid "shortcut-section.basics"
 msgstr "Asas"
@@ -2553,9 +1938,6 @@ msgstr "Menu utama"
 
 msgid "shortcut-subsection.modify-layers"
 msgstr "Ubah suai lapisan"
-
-msgid "shortcut-subsection.navigation-dashboard"
-msgstr "Navigasi"
 
 msgid "shortcut-subsection.navigation-viewer"
 msgstr "Navigasi"
@@ -2632,11 +2014,11 @@ msgstr "Persimpangan Boolean"
 msgid "shortcuts.bool-union"
 msgstr "Kesatuan Boolean"
 
-msgid "shortcuts.bring-back"
-msgstr "Hantar ke paling belakang"
-
 msgid "shortcuts.bring-backward"
 msgstr "Hantar ke belakang"
+
+msgid "shortcuts.bring-back"
+msgstr "Hantar ke paling belakang"
 
 msgid "shortcuts.bring-forward"
 msgstr "Bawa ke hadapan"
@@ -2656,71 +2038,8 @@ msgstr "Cipta komponen"
 msgid "shortcuts.create-new-project"
 msgstr "Buat baharu"
 
-msgid "shortcuts.cut"
-msgstr "Potong"
-
 msgid "shortcuts.decrease-zoom"
 msgstr "Zum keluar"
-
-msgid "shortcuts.delete"
-msgstr "Padam"
-
-msgid "shortcuts.delete-node"
-msgstr "Padamkan nod"
-
-msgid "shortcuts.detach-component"
-msgstr "Tanggalkan komponen"
-
-msgid "shortcuts.draw-curve"
-msgstr "Lengkung"
-
-msgid "shortcuts.draw-ellipse"
-msgstr "elips"
-
-msgid "shortcuts.draw-frame"
-msgstr "Papan"
-
-msgid "shortcuts.draw-nodes"
-msgstr "Lukis laluan"
-
-msgid "shortcuts.draw-path"
-msgstr "Laluan"
-
-msgid "shortcuts.draw-rect"
-msgstr "Segi empat tepat"
-
-msgid "shortcuts.draw-text"
-msgstr "Teks"
-
-msgid "shortcuts.duplicate"
-msgstr "Pendua"
-
-msgid "shortcuts.escape"
-msgstr "Batal"
-
-msgid "shortcuts.export-shapes"
-msgstr "Eksport bentuk"
-
-msgid "shortcuts.fit-all"
-msgstr "Zum untuk muat semua"
-
-msgid "shortcuts.flip-horizontal"
-msgstr "Terbalikkan secara mendatar"
-
-msgid "shortcuts.flip-vertical"
-msgstr "Terbalikkan secara menegak"
-
-msgid "shortcuts.font-size-dec"
-msgstr "Kurangkan saiz fon"
-
-msgid "shortcuts.font-size-inc"
-msgstr "Tambah saiz fon"
-
-msgid "shortcuts.go-to-drafts"
-msgstr "Pergi ke draf"
-
-msgid "shortcuts.go-to-libs"
-msgstr "Pergi ke perpustakaan kongsi"
 
 msgid "shortcuts.go-to-search"
 msgstr "Cari"
@@ -2751,3 +2070,671 @@ msgstr "Kurangkan jarak huruf"
 
 msgid "shortcuts.letter-spacing-inc"
 msgstr "Penambahan jarak huruf"
+
+msgid "dashboard.export-multi"
+msgstr "Eksport fail Penpot %s"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-multiple.selected"
+msgstr "%s daripada %s elemen dipilih"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "dashboard.export-shapes"
+msgstr "Eksport"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to"
+msgstr ""
+"Anda boleh menambah tetapan eksport ke elemen daripada sifat reka bentuk (di "
+"bahagian bawah bar sisi kanan)."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to-link"
+msgstr "Maklumat cara untuk menetapkan eksport di Penpot."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.no-elements"
+msgstr "Tiada unsur dengan tetapan eksport."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.title"
+msgstr "Eksport Pemilihan"
+
+msgid "dashboard.export-standard-multi"
+msgstr "Muat turun %s fail standard (.svg + .json)"
+
+msgid "dashboard.export.detail"
+msgstr "* Mungkin termasuk komponen, grafik, warna dan/atau tipografi."
+
+msgid "dashboard.export.explain"
+msgstr ""
+"Satu atau lebih fail yang anda ingin eksport menggunakan perpustakaan "
+"kongsi. Apa yang anda mahu lakukan dengan aset mereka*?"
+
+msgid "dashboard.export.options.all.message"
+msgstr ""
+"fail dengan perpustakaan kongsi akan disertakan dalam eksport, mengekalkan "
+"hubungannya."
+
+msgid "dashboard.export.options.all.title"
+msgstr "Eksport perpustakaan kongsi"
+
+msgid "dashboard.export.options.detach.message"
+msgstr ""
+"Perpustakaan kongsi tidak akan disertakan dalam eksport dan tiada aset akan "
+"ditambahkan ke perpustakaan. "
+
+msgid "dashboard.export.options.detach.title"
+msgstr "Anggap aset perpustakaan kongsi sebagai objek asas"
+
+msgid "dashboard.export.options.merge.message"
+msgstr ""
+"Fail anda akan dieksport dengan semua aset luaran digabungkan ke dalam "
+"pustaka fail."
+
+msgid "dashboard.export.options.merge.title"
+msgstr "Sertakan aset perpustakaan kongsi dalam pustaka fail"
+
+msgid "dashboard.export.title"
+msgstr "Eksport fail"
+
+msgid "dashboard.fonts.deleted-placeholder"
+msgstr "Fon hilang"
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.dismiss-all"
+msgstr "Tolak semua"
+
+msgid "dashboard.fonts.empty-placeholder"
+msgstr "Fon tersuai yang anda muat naik akan dipaparkan di sini."
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.fonts-added"
+msgid_plural "dashboard.fonts.fonts-added"
+msgstr[0] "%s fon ditambah"
+
+#, markdown
+msgid "dashboard.fonts.hero-text1"
+msgstr ""
+"Sebarang fon web yang anda muat naik di sini akan ditambahkan pada senarai "
+"keluarga fon yang tersedia pada sifat teks fail pasukan ini. Fon dengan nama "
+"keluarga fon yang sama akan dikumpulkan sebagai **keluarga fon tunggal**. "
+"Anda boleh memuat naik fon dengan format berikut: **TTF, OTF dan WOFF** ("
+"hanya satu sahaja diperlukan)."
+
+#: src/app/main/ui/dashboard/fonts.cljs
+msgid "dashboard.fonts.upload-all"
+msgstr "Muat naik semua"
+
+#, markdown
+msgid "dashboard.fonts.warning-text"
+msgstr ""
+"Kami telah mengesan kemungkinan masalah dalam fon anda yang berkaitan dengan "
+"metrik menegak untuk sistem pengendalian yang berbeza. Untuk menyemaknya, "
+"anda boleh menggunakan perkhidmatan metrik menegak fon seperti [ini](https"
+"://vertical-metrics.netlify.app/). Selain itu, kami mengesyorkan menggunakan "
+"[Transfonter](https://transfonter.org/) untuk menjana fon web dan "
+"membetulkan ralat. "
+
+msgid "dashboard.import"
+msgstr "Import fail Penpot"
+
+msgid "dashboard.import.analyze-error"
+msgstr "Alamak! Kami tidak dapat mengimport fail ini"
+
+#: src/app/main/ui/dashboard/team.cljs
+#, fuzzy
+msgid "labels.pending-invitation"
+msgstr "Belum selesai"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.profile"
+msgstr "Profil"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.projects"
+msgstr "Projek"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.release-notes"
+msgstr "Nota keluaran"
+
+#: src/app/main/ui/workspace.cljs
+msgid "labels.reload-file"
+msgstr "Muat semula fail"
+
+#: src/app/main/ui/workspace/libraries.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "labels.remove"
+msgstr "Alih keluar"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.remove-member"
+msgstr "Buang ahli"
+
+#: src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.rename-team"
+msgstr "Namakan semula pasukan"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.status"
+msgstr "Status"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.tutorials"
+msgstr "Tutorial"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.unpublish-multi-files"
+msgstr "Nyahterbitkan %s fail"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "labels.update"
+msgstr "Kemas kini"
+
+#: src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.update-team"
+msgstr "Kemas kini pasukan"
+
+msgid "labels.upload"
+msgstr "Muat naik"
+
+msgid "labels.uploading"
+msgstr "Memuat naik…"
+
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment-thread.message"
+msgstr ""
+"Adakah anda pasti mahu memadamkan perbualan ini? Semua komen dalam urutan "
+"ini akan dipadamkan."
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.confirm"
+msgstr "Ya, padam akaun saya"
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.info"
+msgstr ""
+"Dengan mengalih keluar akaun anda, anda akan kehilangan semua projek dan "
+"arkib semasa anda."
+
+#: src/app/main/ui/settings/delete_account.cljs
+msgid "modals.delete-account.title"
+msgstr "Adakah anda pasti mahu memadam akaun anda?"
+
+#: src/app/main/ui/comments.cljs
+msgid "modals.delete-comment-thread.accept"
+msgstr "Padam perbualan"
+
+msgid "shortcut-subsection.navigation-dashboard"
+msgstr "Navigasi"
+
+msgid "shortcuts.duplicate"
+msgstr "Pendua"
+
+msgid "shortcuts.escape"
+msgstr "Batal"
+
+msgid "shortcuts.export-shapes"
+msgstr "Eksport bentuk"
+
+msgid "shortcuts.fit-all"
+msgstr "Zum untuk muat semua"
+
+msgid "shortcuts.flip-horizontal"
+msgstr "Terbalikkan secara mendatar"
+
+msgid "shortcuts.flip-vertical"
+msgstr "Terbalikkan secara menegak"
+
+msgid "shortcuts.font-size-dec"
+msgstr "Kurangkan saiz fon"
+
+#, markdown
+msgid "dashboard.fonts.hero-text2"
+msgstr ""
+"Anda hanya perlu memuat naik fon yang anda miliki atau mempunyai lesen untuk "
+"digunakan dalam Penpot. Ketahui lebih lanjut dalam bahagian Hak kandungan ["
+"Syarat Perkhidmatan Penpot](https://penpot.app/terms.html). Anda juga "
+"mungkin ingin membaca tentang [pelesenan fon](https://www.typography.com/"
+"faq)."
+
+msgid "dashboard.import.analyze-error.components-v2"
+msgstr ""
+"Fail dengan komponen v2 diaktifkan tetapi pasukan ini belum menyokongnya "
+"lagi."
+
+msgid "dashboard.import.progress.process-components"
+msgstr "Memproses komponen"
+
+msgid "dashboard.import.progress.process-media"
+msgstr "Memproses media"
+
+#: src/app/main/ui/dashboard/grid.cljs
+msgid "dashboard.loading-files"
+msgstr "memuatkan fail anda…"
+
+#: src/app/main/ui/dashboard/project_menu.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.move-to"
+msgstr "Berpindah ke"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.no-projects-placeholder"
+msgstr "Projek yang disemat akan muncul di sini"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "dashboard.notifications.email-changed-successfully"
+msgstr "Alamat e-mel anda telah berjaya dikemas kini"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "dashboard.notifications.email-verified-successfully"
+msgstr "Alamat e-mel anda telah berjaya disahkan"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.pin-unpin"
+msgstr "Semat/Nyahsemat"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.remove-account"
+msgstr "Mahu mengalih keluar akaun anda?"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dashboard.projects-title"
+msgstr "Projek"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.remove-shared"
+msgstr "Alih keluar sebagai Pustaka Dikongsi"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.search-placeholder"
+msgstr "Cari…"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.save-settings"
+msgstr "Simpan tetapan"
+
+#: src/app/main/ui/confirm.cljs
+msgid "ds.component-subtitle"
+msgstr "Komponen untuk dikemas kini:"
+
+#: src/app/main/ui/dashboard/search.cljs
+msgid "dashboard.searching-for"
+msgstr "Mencari \"%s\"…"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.select-ui-language"
+msgstr "Pilih Bahasa UI"
+
+msgid "dashboard.import.import-error"
+msgstr "Terdapat masalah mengimport fail. Fail tidak diimport."
+
+msgid "dashboard.import.import-message"
+msgid_plural "dashboard.import.import-message"
+msgstr[0] "%s fail telah berjaya diimport."
+
+msgid "dashboard.import.import-warning"
+msgstr "Sesetengah fail mengandungi objek tidak sah telah dialih keluar."
+
+msgid "dashboard.import.progress.process-colors"
+msgstr "memproses warna"
+
+msgid "dashboard.import.progress.process-page"
+msgstr "Memproses halaman: %s"
+
+msgid "dashboard.import.progress.process-typographies"
+msgstr "Memproses tipografi"
+
+msgid "dashboard.import.progress.upload-data"
+msgstr "Memuat naik data ke pelayan (%s/%s)"
+
+msgid "dashboard.import.progress.upload-media"
+msgstr "Memuat naik fail: %s"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.invite-profile"
+msgstr "Jemput orang ramai"
+
+#: src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.leave-team"
+msgstr "Tinggalkan pasukan"
+
+msgid "dashboard.libraries-and-templates"
+msgstr "Perpustakaan & Templat"
+
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "Terokai lebih banyak daripada mereka dan ketahui cara untuk menyumbang"
+
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr "Terdapat masalah mengimport templat. Templat tidak diimport."
+
+#: src/app/main/ui/dashboard/libraries.cljs
+msgid "dashboard.libraries-title"
+msgstr "Perpustakaan"
+
+msgid "dashboard.webhooks.empty.no-webhooks"
+msgstr "Tiada webhook dibuat setakat ini."
+
+msgid "dashboard.webhooks.empty.add-one"
+msgstr "Tekan butang \"Tambah webhook\" untuk menambahnya."
+
+msgid "dashboard.webhooks.update.success"
+msgstr "Webhook berjaya dikemas kini."
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.your-email"
+msgstr "E-mel"
+
+#: src/app/main/ui/settings/profile.cljs
+msgid "dashboard.your-name"
+msgstr "Nama anda"
+
+#: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/libraries.cljs, src/app/main/ui/dashboard/projects.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.your-penpot"
+msgstr "Penpot anda"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-ok"
+msgstr "Ok"
+
+#: src/app/main/ui/alert.cljs
+msgid "ds.alert-title"
+msgstr "Perhatian"
+
+#: src/app/main/ui/confirm.cljs
+msgid "ds.confirm-cancel"
+msgstr "Batal"
+
+#: src/app/main/ui/confirm.cljs
+msgid "ds.confirm-ok"
+msgstr "Ok"
+
+#: src/app/main/ui/confirm.cljs, src/app/main/ui/confirm.cljs
+msgid "ds.confirm-title"
+msgstr "Adakah anda pasti?"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "errors.auth-provider-not-configured"
+msgstr "Pembekal pengesahan tidak dikonfigurasikan."
+
+msgid "errors.auth.unable-to-login"
+msgstr "Nampaknya anda belum disahkan atau sesi telah tamat tempoh."
+
+msgid "errors.bad-font-plural"
+msgstr "Fon %s tidak dapat dimuatkan"
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.unexpected-token"
+msgstr "Token tidak diketahui"
+
+msgid "errors.webhooks.timeout"
+msgstr "Masa tamat"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.discourse-title"
+msgstr "Komuniti Penpot"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.subject"
+msgstr "Subjek"
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.subtitle"
+msgstr ""
+"Sila terangkan sebab e-mel anda, nyatakan sama ada isu, idea atau keraguan. "
+"Seorang ahli pasukan kami akan menjawab secepat mungkin."
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.top"
+msgstr "Atas"
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.layout.width"
+msgstr "Lebar"
+
+#: src/app/main/ui/inspect/attributes/shadow.cljs
+msgid "inspect.attributes.shadow"
+msgstr "Bayang"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-weight"
+msgstr "Berat Huruf"
+
+msgid "inspect.attributes.typography.text-decoration.underline"
+msgstr "Garis bawah"
+
+msgid "inspect.tabs.code.selected.svg-raw"
+msgstr "SVG"
+
+msgid "labels.active"
+msgstr "Aktif"
+
+#: src/app/main/ui/workspace/comments.cljs
+msgid "labels.all"
+msgstr "Semua"
+
+#: src/app/main/ui/static.cljs
+msgid "labels.internal-error.desc-message"
+msgstr ""
+"Sesuatu yang buruk telah berlaku. Sila cuba semula operasi dan jika masalah "
+"berterusan, hubungi sokongan."
+
+msgid "labels.continue-with-penpot"
+msgstr "Anda boleh meneruskan dengan akaun Penpot"
+
+msgid "labels.export"
+msgstr "Eksport"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "labels.create"
+msgstr "Cipta"
+
+#: src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/dashboard/team_form.cljs
+msgid "labels.create-team"
+msgstr "Cipta pasukan baharu"
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/dashboard/comments.cljs
+msgid "labels.no-comments-available"
+msgstr ""
+"Anda telah melihat semua yang baru! Pemberitahuan ulasan baharu akan "
+"dipaparkan di sini."
+
+#: src/app/main/ui/dashboard/team.cljs
+#, markdown
+msgid "labels.no-invitations-hint"
+msgstr "Klik butang **Jemput orang** untuk menjemput orang ke pasukan ini."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.help-center"
+msgstr "Pusat Bantuan"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.password"
+msgstr "Kata laluan"
+
+#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.settings"
+msgstr "Tetapan"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.accept"
+msgstr "Padam token"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-file-confirm.message"
+msgstr "Adakah anda pasti mahu memadamkan fail ini?"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.message"
+msgstr "Adakah anda pasti mahu memadamkan token ini?"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-reassign.hint1"
+msgstr ""
+"Anda adalah pemilik pasukan ini. Sila pilih ahli lain untuk dinaikkan "
+"pangkat kepada pemilik sebelum anda pergi."
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.delete-team-confirm.accept"
+msgstr "Padam pasukan"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.your-account"
+msgstr "Akaun anda"
+
+msgid "modals.add-shared-confirm-empty.hint"
+msgstr ""
+"Pustaka anda kosong. Setelah ditambahkan sebagai Pustaka Dikongsi, aset yang "
+"anda buat akan tersedia untuk digunakan antara fail anda yang lain. Adakah "
+"anda pasti mahu menerbitkannya?"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.delete-team-member-confirm.accept"
+msgstr "Padam ahli"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-unpublish-shared-confirm.activated.hint"
+msgid_plural "modals.delete-unpublish-shared-confirm.activated.hint"
+msgstr[0] ""
+"Aset yang telah digunakan dalam fail ini akan kekal di sana (tiada reka "
+"bentuk akan rosak)."
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.add-shared-confirm.hint"
+msgstr ""
+"Setelah ditambahkan sebagai Pustaka Kongsi, aset pustaka fail ini akan "
+"tersedia untuk digunakan antara fail anda yang lain."
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "modals.change-email.confirm-email"
+msgstr "Sahkan e-mel baharu"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+#, fuzzy
+msgid "modals.leave-and-reassign.title"
+msgstr "Sebelum anda pergi"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-confirm.accept"
+msgstr "Tinggalkan pasukan"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.remove-shared-confirm.accept"
+msgstr "Alih keluar sebagai Pustaka Kongsi"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.remove-shared-confirm.message"
+msgstr "Alih keluar \"%s\" sebagai Pustaka Kongsi"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.title"
+msgid_plural "modals.unpublish-shared-confirm.title"
+msgstr[0] "Nyahterbit pustaka"
+
+msgid "onboarding.choice.team-up.continue-without-a-team"
+msgstr "Teruskan tanpa pasukan"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.marketing"
+msgstr "Pemasaran"
+
+msgid "onboarding-v2.welcome.desc2.title"
+msgstr "Mengambil bahagian dalam Komuniti"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites"
+msgstr "Buat pasukan dan hantar jemputan"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.next"
+msgstr "Seterusnya"
+
+msgid "onboarding.choice.team-up.create-team-and-invite"
+msgstr "Buat pasukan & jemput"
+
+msgid "onboarding.choice.team-up.create-team-without-invite"
+msgstr "Cipta pasukan"
+
+msgid "onboarding.choice.team-up.create-team-desc"
+msgstr ""
+"Selepas menamakan pasukan anda, anda akan dapat menjemput orang untuk "
+"menyertai."
+
+msgid "onboarding-v2.newsletter.privacy2"
+msgstr ""
+"Kami hanya akan menghantar e-mel yang berkaitan kepada anda. Anda boleh "
+"berhenti melanggan pada bila-bila masa melalui pautan nyahlanggan dalam mana-"
+"mana surat berita kami."
+
+msgid "onboarding.team-modal.create-team-desc"
+msgstr ""
+"Pasukan membolehkan anda bekerjasama dengan pengguna Penpot lain yang "
+"bekerja dalam fail dan projek yang sama."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.2-10"
+msgstr "2-10"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.founder"
+msgstr "Pengasas/VP"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.get-the-code-from-my-team-project"
+msgstr "Dapatkan kod daripada projek pasukan saya "
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.questions-how-are-you-planning-to-use-penpot"
+msgstr "Bagaimanakah anda merancang untuk menggunakan Penpot?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.role"
+msgstr "Apakah peranan anda?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.select-option"
+msgstr "Pilih pilihan"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "settings.multiple"
+msgstr "Bercampur"
+
+msgid "shortcuts.cut"
+msgstr "Potong"
+
+msgid "shortcuts.delete"
+msgstr "Padam"
+
+msgid "shortcuts.draw-curve"
+msgstr "Lengkung"
+
+msgid "shortcuts.delete-node"
+msgstr "Padamkan nod"
+
+msgid "shortcuts.font-size-inc"
+msgstr "Tambah saiz fon"
+
+msgid "shortcuts.go-to-drafts"
+msgstr "Pergi ke draf"
+
+msgid "shortcuts.go-to-libs"
+msgstr "Pergi ke perpustakaan kongsi"
+
+msgid "shortcuts.detach-component"
+msgstr "Tanggalkan komponen"
+
+msgid "shortcuts.draw-ellipse"
+msgstr "elips"
+
+msgid "shortcuts.draw-frame"
+msgstr "Papan"
+
+msgid "shortcuts.draw-nodes"
+msgstr "Lukis laluan"
+
+msgid "shortcuts.draw-path"
+msgstr "Laluan"
+
+msgid "shortcuts.draw-text"
+msgstr "Teks"
+
+msgid "shortcuts.draw-rect"
+msgstr "Segi empat tepat"

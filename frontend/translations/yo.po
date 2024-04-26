@@ -2,14 +2,326 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2024-04-24 13:04+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Yoruba "
-"<https://hosted.weblate.org/projects/penpot/frontend/yo/>\n"
+"Language-Team: Yoruba <https://hosted.weblate.org/projects/penpot/frontend/"
+"yo/>\n"
 "Language: yo\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 "X-Generator: Weblate 5.5.1-dev\n"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.login-here"
+msgstr "wọlé síbí"
+
+msgid "common.publish"
+msgstr "ìgbéjáde"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.start"
+msgstr "bẹ̀rẹ̀ ìrìn kiri"
+
+msgid "dashboard.import"
+msgstr "gbé àwọn fáìlì pẹ́ńpọtì wọlé"
+
+msgid "dashboard.import.analyze-error"
+msgstr "ooho!  a kò lè gbé fáìlì yìí wọlé"
+
+msgid "dashboard.import.import-error"
+msgstr "wàhálà wà láti gbé kan wà láti gbé fáìlì wọlé . fáìlì kò wọlé."
+
+#: src/app/main/ui/dashboard/libraries.cljs
+msgid "dashboard.libraries-title"
+msgstr "yàrá ìkàwé"
+
+#: src/app/main/ui/dashboard/project_menu.cljs
+msgid "dashboard.success-duplicate-project"
+msgstr "a ti ṣe ẹ̀dà iṣẹ́ àgbéṣe rẹ dáadáa"
+
+#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-move-file"
+msgstr "a ti gbé fáìlì rẹ kúro dáadáa"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-move-files"
+msgstr "a ti gbé àwọn fáìlì rẹ kúrò dáadáa"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
+msgid "errors.email-invalid"
+msgstr "Tẹ àti wọlé pẹ̀lú ímeèlì tó wúlo jọ̀wọ́"
+
+msgid "errors.webhooks.timeout"
+msgstr "Àkókò ti lọ"
+
+msgid "inspect.tabs.code.selected.circle"
+msgstr "Àyíká"
+
+msgid "inspect.tabs.code.selected.component"
+msgstr "Ẹ̀yà"
+
+msgid "inspect.tabs.code.selected.curve"
+msgstr "Igun"
+
+msgid "inspect.tabs.code.selected.frame"
+msgstr "Bọ́ọ̀dù"
+
+msgid "inspect.tabs.code.selected.group"
+msgstr "Ẹgbẹ́"
+
+msgid "inspect.tabs.code.selected.image"
+msgstr "Àwòrán"
+
+msgid "inspect.tabs.code.selected.mask"
+msgstr "Ìbòjú"
+
+msgid "labels.and"
+msgstr "àti"
+
+msgid "labels.share-prototype"
+msgstr "Pín àwọn ohun tí a ti kọ tẹ́lẹ̀"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.shared-libraries"
+msgstr "Yàrá ìkáwe"
+
+#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
+msgid "labels.show-all-comments"
+msgstr "Fi gbogbo kọ́mẹ́ǹtì hàn"
+
+msgid "labels.show-comments-list"
+msgstr "Fi àkójọ àwọn kọ́mẹ́ǹtì hàn"
+
+msgid "modals.delete-webhook.message"
+msgstr "Ṣe ó dá ọ lójú pé o fẹ́ pa ìkọ́-wẹ́bù yìí rẹ́?"
+
+msgid "modals.publish-empty-library.accept"
+msgstr "Kọ ọ́ jáde"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.31-50"
+msgstr "Mọ́kànlélọ́gbọ̀n-Àádọ́ta"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.a-lot"
+msgstr "O ´ pọ̀jù"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.adobe-xd"
+msgstr "Àdòbí XD"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.share.copy-link"
+msgstr "Da línkì kọ̀"
+
+#: src/app/main/ui/viewer/header.cljs
+msgid "viewer.header.show-interactions"
+msgstr "Ifihan Ibaraenisépọ̀"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.libraries.update.see-all-changes"
+msgstr "wò gbògbò awọn ayípàdà"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.updates"
+msgstr "Awọn ímùdojúiwọn"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.add-interaction"
+msgstr "Tẹ amí +  làtí fi íbàràénisépọ̀ kun"
+
+#: src/app/main/ui/workspace/sidebar/options.cljs
+msgid "workspace.options.design"
+msgstr "Ónirú"
+
+msgid "workspace.options.height"
+msgstr "Gíga"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-on-click"
+msgstr "Tẹ orí"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-open-overlay"
+msgstr "Ṣíìtẹ̀lé ìlànà"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-open-overlay-dest"
+msgstr "Ṣí ìtẹ̀lé ìlànà: %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-relative-to"
+msgstr "Ìbátan sí"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-self"
+msgstr "Tìkara"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-toggle-overlay"
+msgstr "Àyípadà ìtẹ̀lé ìlànà"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-toggle-overlay-dest"
+msgstr "Àyípadà ìtẹ̀lé ìlànà: %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-trigger"
+msgstr "Okùnfà"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-url"
+msgstr "URL"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.row"
+msgstr "Ilà ìbú"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.row-reverse"
+msgstr "Ilà ìbú yíyípadà"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.gap"
+msgstr "Àlàfo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.left"
+msgstr "Òsì"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin"
+msgstr "Etí ìwé"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin-all"
+msgstr "Gbogbo àwọn àwòrán"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin-simple"
+msgstr "Etí ìwé ẹyọ"
+
+msgid "workspace.options.shadow-options.color"
+msgstr "Àwọ̀ òjíjí"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.forward"
+msgstr "Mú wá sọ́wọ́ iwájú"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.front"
+msgstr "Mú wá sí wájú"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.go-main"
+msgstr "Lọ sí olórí fáìlì àkóónú"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.group"
+msgstr "Àwùjọ"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.hide"
+msgstr "Tọ́jú"
+
+msgid "workspace.shape.menu.hide-ui"
+msgstr "Fihàn/ Tọ́jú UI"
+
+msgid "workspace.shape.menu.intersection"
+msgstr "Ìkòríta"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.lock"
+msgstr "Tì"
+
+#: src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.mask"
+msgstr "Ìbòjú"
+
+#: src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.paste"
+msgstr "lẹ̀mọ́"
+
+msgid "workspace.shape.menu.path"
+msgstr "Ipa  ọ̀nà"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-flex"
+msgstr "Yọ àrọ ètò ìrísí kúrò"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.unlock"
+msgstr "Ṣíí"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.unmask"
+msgstr "Sí ìbòjú"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.update-components-in-bulk"
+msgstr "Mímú àwọn ọ̀rọ̀ àkóónú pàtàkì dójú ìwọ̀n"
+
+msgid "workspace.sidebar.collapse"
+msgstr "Wó òpó ègbẹ́"
+
+msgid "workspace.sidebar.expand"
+msgstr "Fẹ òpó ẹ̀gbẹ́"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.sidebar.history"
+msgstr "Ìtàn (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.sidebar.layers"
+msgstr "Àwọn ìpele"
+
+msgid "workspace.sidebar.layers.components"
+msgstr "Àwọn àkóónú"
+
+msgid "workspace.sidebar.layers.frames"
+msgstr "Àwọn pátákó"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs, src/app/main/ui/inspect/attributes/svg.cljs
+msgid "workspace.sidebar.options.svg-attrs.title"
+msgstr "Gbígbé àwọn ànímọ́ SVG wọlé wá"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs
+msgid "workspace.sidebar.sitemap"
+msgstr "Àwọn abala"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.new"
+msgstr "Titun %s"
+
+msgid "workspace.undo.entry.single.circle"
+msgstr "Àyíká"
+
+msgid "workspace.undo.entry.single.color"
+msgstr "Ohun àmúṣọrọ̀ àwọ̀"
+
+msgid "workspace.undo.entry.single.component"
+msgstr "Àkóónú"
+
+msgid "workspace.undo.entry.single.curve"
+msgstr "Ẹkọ̀rọ̀"
+
+msgid "workspace.undo.entry.single.frame"
+msgstr "Pátákó"
+
+msgid "workspace.undo.entry.single.group"
+msgstr "Àkójọ"
+
+msgid "workspace.undo.entry.single.image"
+msgstr "Àwòrán"
+
+msgid "workspace.undo.entry.single.media"
+msgstr "Ohun àmúṣọrọ̀ èyà àwòrán"
+
+msgid "workspace.undo.entry.single.multiple"
+msgstr "Ohun"
+
+msgid "workspace.undo.entry.single.page"
+msgstr "Ojú awẹ́"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.check-your-email"
@@ -46,10 +358,6 @@ msgstr "gbàgbé ọ̀rọ̀-ìgbaniwọlé ?"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.fullname"
 msgstr "orúkọ lẹ́kùnn-ún-rẹ́rẹ́"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.login-here"
-msgstr "wọlé síbí"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
@@ -161,8 +469,8 @@ msgstr "òfin ibiṣẹ́"
 
 msgid "auth.terms-privacy-agreement"
 msgstr ""
-"\"nígbà, tí o bá ń ṣẹ̀dá àkáùntí tuntun ,o gbọ́dọ̀ gba àwọn òfin ibiṣẹ́ "
-"àti àṣírí rẹ́`."
+"\"nígbà, tí o bá ń ṣẹ̀dá àkáùntí tuntun ,o gbọ́dọ̀ gba àwọn òfin ibiṣẹ́ àti "
+"àṣírí rẹ́`."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
@@ -171,9 +479,6 @@ msgstr "a ti fi ìjẹ́rìísí ránsẹ́ sínú ímeèlì rẹ"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "branding-illustrations-marketing-pieces"
 msgstr "..  ìyàsọ́tọ, àpèjúwe,títajà nǹkan, abbl."
-
-msgid "common.publish"
-msgstr "ìgbéjáde"
 
 msgid "common.share-link.all-users"
 msgstr "gbogbo àwọn tó ń lo pẹ́ńpọtì"
@@ -231,8 +536,8 @@ msgstr "kẹ́gbẹ́ ṣera wọn lọ́kan"
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.tutorial-hero.info"
 msgstr ""
-"\"kọ́ nípa kókó bi pẹ́ńpọtì nígbàtí ò ń dára rẹ láraya nípa fífi àwon "
-"ọwọ́ rẹ ṣe “ “ìdánilẹ́kọ̀ọ́ ."
+"\"kọ́ nípa kókó bi pẹ́ńpọtì nígbàtí ò ń dára rẹ láraya nípa fífi àwon ọwọ́ "
+"rẹ ṣe “ “ìdánilẹ́kọ̀ọ́ ."
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.tutorial-hero.start"
@@ -245,10 +550,6 @@ msgstr "gbọ́wọ́ lórí idánilẹ́kọ̀ọ́"
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.walkthrough-hero.info"
 msgstr "rìn kàákiri pẹ́ńpọti kí o lè mọ kókó  àwẹn ẹ̀yà ara rẹ̀."
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.walkthrough-hero.start"
-msgstr "bẹ̀rẹ̀ ìrìn kiri"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.walkthrough-hero.title"
@@ -264,7 +565,8 @@ msgstr "ṣe àyẹ̀wò àmì tókìnnì tí o ṣẹ̀dá bó ṣeyẹ."
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.add-one"
-msgstr "tẹ bọ́tìnnì \" ṣe ìpilẹ̀sẹ̀ àmì tókìnnì tuntun\"  láti ṣe ìpilẹ̀sẹ̀ òmíràn."
+msgstr ""
+"tẹ bọ́tìnnì \" ṣe ìpilẹ̀sẹ̀ àmì tókìnnì tuntun\"  láti ṣe ìpilẹ̀sẹ̀ òmíràn."
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.no-access-tokens"
@@ -314,8 +616,8 @@ msgstr "àmì tokìnnì ìwọlé ti ara ẹni"
 msgid "dashboard.access-tokens.personal.description"
 msgstr ""
 "Iṣẹ́ àmì tókìnì ìwọlé ti ara ẹni dàbì ọ̀nà kejí tí a le gbà wọlé/ ọ̀rọ̀- "
-"agbaniwọle  a lè lo ìfàsẹ sí ètò láti gbaye fún ohun èlò à tì wọlé  "
-"pẹ́ńpọtì ti abẹ́nú  api"
+"agbaniwọle  a lè lo ìfàsẹ sí ètò láti gbaye fún ohun èlò à tì wọlé  pẹ́ń"
+"pọtì ti abẹ́nú  api"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.token-will-expire"
@@ -367,8 +669,8 @@ msgstr "ṣe ẹ̀dà %s fáìlì"
 #, markdown
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
-"\"\" fáìlí tí a dàpọ̀ mọ yàrá ìkàwé á hàn níbí yìí.   gbìyànjú láti má a "
-"pín àwon fáìlì rẹ̀ tàbí ṣàfikún láti ibi [yàrá ìkàwé wa àti  àwòṣe "
+"\"\" fáìlí tí a dàpọ̀ mọ yàrá ìkàwé á hàn níbí yìí.   gbìyànjú láti má a pín "
+"àwon fáìlì rẹ̀ tàbí ṣàfikún láti ibi [yàrá ìkàwé wa àti  àwòṣe "
 "](https://penpot.app/libraries-templates.html)."
 
 msgid "dashboard.export-binary-multi"
@@ -457,11 +759,11 @@ msgstr "àwọn fọ́ǹtì tí o ọpulóòdù yó hàn níbí."
 #, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
-"èyíkéyìí wẹ́bù fọ́ǹtì tí o bá ti ọpulóòdù níbí ni á di àkópọ̀ mọ́ ẹbí "
-"fọ́ǹtì     àwọn ọ̀rọ̀ ohun ìní tí o wà nínú àwọn fáìlì ẹgbẹ́. Fọ́ǹtì "
-"pẹ̀lú u  orúkọ ẹbi fọ́ǹtì kanna la ó dàpọ̀ mọ́ ẹgbẹ́ bí i**ẹbí fọ́ǹtì kan "
-"soso**. O lè  ọpulóòdù fọ́ǹtì pẹ̀lú àwọn ìlànà wọ̀nyí: **TTF, OTF and "
-"WOFF** (ẹyọ kan péré la ó nílò)."
+"èyíkéyìí wẹ́bù fọ́ǹtì tí o bá ti ọpulóòdù níbí ni á di àkópọ̀ mọ́ ẹbí fọ́ǹ"
+"tì     àwọn ọ̀rọ̀ ohun ìní tí o wà nínú àwọn fáìlì ẹgbẹ́. Fọ́ǹtì pẹ̀lú u  "
+"orúkọ ẹbi fọ́ǹtì kanna la ó dàpọ̀ mọ́ ẹgbẹ́ bí i**ẹbí fọ́ǹtì kan soso**. O "
+"lè  ọpulóòdù fọ́ǹtì pẹ̀lú àwọn ìlànà wọ̀nyí: **TTF, OTF and WOFF** (ẹyọ kan "
+"péré la ó nílò)."
 
 #, markdown
 msgid "dashboard.fonts.hero-text2"
@@ -480,19 +782,10 @@ msgid "dashboard.fonts.warning-text"
 msgstr ""
 "a ti ṣàwárí àwọn ohun tí ó le fa wàhálà nínú àwọn fọ́ǹtì ìlànà olóòro   "
 "oríṣiríṣi àwọn ètò tó wà fún ìṣesí ọ̀nà ẹ̀rọ.  láti ṣe àyẹ̀wò rẹ̀ o lè "
-"lofont vertical metrics services like ìlànà fọ́ǹtì olóòró fún àwọn iṣẹ́ "
-"ọ̀nà ẹ̀rọ bí i [èyí èkínní](https://mẹ́tíríkì ìlànà olóòró.netlify .app/). "
-"Ní àfikún, a rẹkọmẹ́ǹdì lílo[tíráńsìfọtà(https://tíráńsìfọtà.org/) láti "
+"lofont vertical metrics services like ìlànà fọ́ǹtì olóòró fún àwọn iṣẹ́ ọ̀"
+"nà ẹ̀rọ bí i [èyí èkínní](https://mẹ́tíríkì ìlànà olóòró.netlify .app/). Ní "
+"àfikún, a rẹkọmẹ́ǹdì lílo[tíráńsìfọtà(https://tíráńsìfọtà.org/) láti "
 "pilẹ̀ṣẹ̀ àwọn wẹ́bù fọ́ǹtì láti túnṣeàsìṣe. "
-
-msgid "dashboard.import"
-msgstr "gbé àwọn fáìlì pẹ́ńpọtì wọlé"
-
-msgid "dashboard.import.analyze-error"
-msgstr "ooho!  a kò lè gbé fáìlì yìí wọlé"
-
-msgid "dashboard.import.import-error"
-msgstr "wàhálà wà láti gbé kan wà láti gbé fáìlì wọlé . fáìlì kò wọlé."
 
 msgid "dashboard.import.import-warning"
 msgstr "àwọn fáìlì tí ó ní nǹkan tí kò fẹsẹ múlẹ̀ ti di yíyọ kúro."
@@ -534,10 +827,6 @@ msgstr "ṣe ìwákiri ọ̀pọ̀ wọn kí o sì mọ bí ó ṣe sojúṣe ti
 
 msgid "dashboard.libraries-and-templates.import-error"
 msgstr "wàhálà wà fún gbígbé tẹ́ńpílétì wọlé.  tẹ́ńpílétì kò wọlé."
-
-#: src/app/main/ui/dashboard/libraries.cljs
-msgid "dashboard.libraries-title"
-msgstr "yàrá ìkàwé"
 
 #: src/app/main/ui/dashboard/grid.cljs
 msgid "dashboard.loading-files"
@@ -654,18 +943,6 @@ msgid "dashboard.success-delete-project"
 msgstr "iṣẹ́ àgbéṣe rẹ ti parẹ́ dáadáa"
 
 #: src/app/main/ui/dashboard/project_menu.cljs
-msgid "dashboard.success-duplicate-project"
-msgstr "a ti ṣe ẹ̀dà iṣẹ́ àgbéṣe rẹ dáadáa"
-
-#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.success-move-file"
-msgstr "a ti gbé fáìlì rẹ kúro dáadáa"
-
-#: src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.success-move-files"
-msgstr "a ti gbé àwọn fáìlì rẹ kúrò dáadáa"
-
-#: src/app/main/ui/dashboard/project_menu.cljs
 msgid "dashboard.success-move-project"
 msgstr "a ti gbé iṣẹ́ àgbéṣe rẹ kúrò dáadáa"
 
@@ -718,9 +995,9 @@ msgstr "a ti ṣẹ̀dá ìkọ́-wẹ́bù dáadáa ."
 
 msgid "dashboard.webhooks.description"
 msgstr ""
-"àwọn ìkọ́-wẹ́bù jẹ́ ọ̀nà tó rọrùn láti fi ààyè sílẹ̀ fún àwọn ààyè "
-"ayélujára mìíràn àti awọn ápù ṣe filọ́ tí àwọn ìṣẹ̀lẹ̀ kan bá ní "
-"pẹ́ńpọtì’’  a ó fi ìbéèrè ráńṣẹ́ sí ọ̀kọ̀kan wọn tí urls tó o pèsè."
+"àwọn ìkọ́-wẹ́bù jẹ́ ọ̀nà tó rọrùn láti fi ààyè sílẹ̀ fún àwọn ààyè ayélujára "
+"mìíràn àti awọn ápù ṣe filọ́ tí àwọn ìṣẹ̀lẹ̀ kan bá ní pẹ́ńpọtì’’  a ó fi "
+"ìbéèrè ráńṣẹ́ sí ọ̀kọ̀kan wọn tí urls tó o pèsè."
 
 msgid "dashboard.webhooks.empty.add-one"
 msgstr "tẹ bọ́tínnì \"fikún ìkọ́- wẹ́bù\" láti fì kan sí i."
@@ -799,16 +1076,13 @@ msgstr "o kò le lo ímeèlì rẹ gẹ́gẹ́ bí ọ̀rọ̀ ìgbaniwọlé"
 msgid "errors.email-has-permanent-bounces"
 msgstr "Ímeèlì  «%s» ti ní ìjábọ̀ ọ̀pọ̀ọlọpọ̀ ìta-bọn-ọ̀n ti pẹ́."
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
-msgstr "Tẹ àti wọlé pẹ̀lú ímeèlì tó wúlo jọ̀wọ́"
-
 #: src/app/main/ui/settings/change_email.cljs
 msgid "errors.email-invalid-confirmation"
 msgstr "Ímeèlì tí a ti mọ̀dájú gbọ́dọ̀ báramu"
 
 msgid "errors.email-spam-or-permanent-bounces"
-msgstr "Ímeèlì ti  «%s»  ń jábọ̀ gẹ́gẹ́ bí i awúrúju tàbí ìta-bọ̀n-ọnọǹ tipẹ́."
+msgstr ""
+"Ímeèlì ti  «%s»  ń jábọ̀ gẹ́gẹ́ bí i awúrúju tàbí ìta-bọ̀n-ọnọǹ tipẹ́."
 
 #: src/app/main/errors.cljs
 msgid "errors.feature-not-supported"
@@ -855,25 +1129,27 @@ msgstr "Ijẹ́rìísí ọ̀rọ̀ ìgbaniwọlé rẹ gbọ́dọ̀ báramu"
 msgid "errors.password-too-short"
 msgstr "Ọ̀rọ̀ ìgbaniwọlé kò gbọdọ̀ dín ní lẹ́tà mẹ́jọ"
 
-msgid "errors.profile-blocked"
-msgstr "Ti dínà mọ́ pírófáìlì"
-
-#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
-msgid "errors.profile-is-muted"
-msgstr "Ímeèlì pírófáìlì rẹ ti ní ìdákẹ́ (ìjábọ̀ àwúrúju tàbí ìtabọ̀n-ọ̀n tó ga)."
-
-#: src/app/main/ui/auth/register.cljs
-msgid "errors.registration-disabled"
-msgstr "Ìforúkọ-sílẹ̀ kò ṣe é ṣe lọ́wọ́lọ́wọ́."
-
 msgid "errors.team-leave.insufficient-members"
 msgstr "kí àwọn ọmọ ẹgbẹ́ tí kò péye fi ẹgbẹ́ sílẹ̀, àbí bóyá o fẹ́ paárẹ́ ni ."
 
 msgid "errors.team-leave.member-does-not-exists"
 msgstr "Kòsí  ọmọ ẹgbẹ́ tí o fẹ́ yàn ."
 
+msgid "errors.profile-blocked"
+msgstr "Ti dínà mọ́ pírófáìlì"
+
+#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/settings/change_email.cljs, src/app/main/ui/dashboard/team.cljs
+msgid "errors.profile-is-muted"
+msgstr ""
+"Ímeèlì pírófáìlì rẹ ti ní ìdákẹ́ (ìjábọ̀ àwúrúju tàbí ìtabọ̀n-ọ̀n tó ga)."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "errors.registration-disabled"
+msgstr "Ìforúkọ-sílẹ̀ kò ṣe é ṣe lọ́wọ́lọ́wọ́."
+
 msgid "errors.team-leave.owner-cant-leave"
-msgstr "Oní nǹkan kò le fi ẹgbẹ́ sílẹ̀ , o gbọ́dọ̀ tún ṣe àtúnyàn iṣẹ́ oní nǹkan."
+msgstr ""
+"Oní nǹkan kò le fi ẹgbẹ́ sílẹ̀ , o gbọ́dọ̀ tún ṣe àtúnyàn iṣẹ́ oní nǹkan."
 
 #: src/app/main/data/media.cljs, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
 msgid "errors.unexpected-error"
@@ -895,9 +1171,6 @@ msgstr "Èyí tí a fijíṣẹ́ kẹ́yìn kò dára."
 
 msgid "errors.webhooks.ssl-validation"
 msgstr "Àsìṣe nínú ìfẹwọ́sí SSL ."
-
-msgid "errors.webhooks.timeout"
-msgstr "Àkókò ti lọ"
 
 msgid "errors.webhooks.unexpected"
 msgstr "Unexpected error on validating àsìṣe àìròtẹ́lẹ̀ lórí ìfọwọ́sí"
@@ -924,8 +1197,12 @@ msgstr "Lọ ibi àpérò pẹ́ńpọtì"
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discourse-subtitle1"
 msgstr ""
-"Inú wa dùn láti rí ẹ níbí.  Tí o bá nílò ìrànlọ́wọ, please search before "
-"you jọ̀wọ́ ṣàwárí kí o tó  firáńṣẹ́."
+"Inú wa dùn láti rí ẹ níbí.  Tí o bá nílò ìrànlọ́wọ, please search before you "
+"jọ̀wọ́ ṣàwárí kí o tó  firáńṣẹ́."
+
+#: src/app/main/ui/settings/feedback.cljs
+msgid "feedback.title"
+msgstr "Ímeèlì"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.discourse-title"
@@ -938,13 +1215,9 @@ msgstr "Kókó-ọ̀rọ̀"
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subtitle"
 msgstr ""
-"Jọ̀wọ́ ṣàpèjúwe ìdí tó wà fún ímeèlì rẹ, ṣàfihàn tì àríyànjiyàn bá wà, le "
-"jẹ́  èrò tàbí síṣe iyèméjì. Ìkan lára àwọn ọmọ ẹgbẹ́ wa yóò dáhùn láìpẹ́ "
+"Jọ̀wọ́ ṣàpèjúwe ìdí tó wà fún ímeèlì rẹ, ṣàfihàn tì àríyànjiyàn bá wà, le jẹ́"
+"  èrò tàbí síṣe iyèméjì. Ìkan lára àwọn ọmọ ẹgbẹ́ wa yóò dáhùn láìpẹ́ "
 "láìjìnnà."
-
-#: src/app/main/ui/settings/feedback.cljs
-msgid "feedback.title"
-msgstr "Ímeèlì"
 
 #: src/app/main/ui/settings/feedback.cljs
 #, fuzzy
@@ -1140,27 +1413,6 @@ msgstr "Yan ìrísí, bọ́ọ̀dù tàbí ẹgbẹ́ láti lọ ṣe ìbẹ̀w
 msgid "inspect.tabs.code"
 msgstr "Kóòdù"
 
-msgid "inspect.tabs.code.selected.circle"
-msgstr "Àyíká"
-
-msgid "inspect.tabs.code.selected.component"
-msgstr "Ẹ̀yà"
-
-msgid "inspect.tabs.code.selected.curve"
-msgstr "Igun"
-
-msgid "inspect.tabs.code.selected.frame"
-msgstr "Bọ́ọ̀dù"
-
-msgid "inspect.tabs.code.selected.group"
-msgstr "Ẹgbẹ́"
-
-msgid "inspect.tabs.code.selected.image"
-msgstr "Àwòrán"
-
-msgid "inspect.tabs.code.selected.mask"
-msgstr "Ìbòjú"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs
 msgid "inspect.tabs.code.selected.multiple"
 msgstr "%s Ti yàn"
@@ -1203,9 +1455,6 @@ msgstr "Alábòjútó"
 msgid "labels.all"
 msgstr "Gbogbo ẹ̀"
 
-msgid "labels.and"
-msgstr "àti"
-
 msgid "labels.back"
 msgstr "Padá"
 
@@ -1222,6 +1471,9 @@ msgstr "Ọ̀nà-àbáwọle búburú"
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.cancel"
 msgstr "Párẹ́"
+
+msgid "labels.font-family"
+msgstr "Ẹbí fọ́ǹtì"
 
 msgid "labels.close"
 msgstr "Tì í"
@@ -1323,9 +1575,6 @@ msgstr "Èsì kò siṣẹ́"
 msgid "labels.feedback-sent"
 msgstr "Èsì ti lọ"
 
-msgid "labels.font-family"
-msgstr "Ẹbí fọ́ǹtì"
-
 msgid "labels.font-providers"
 msgstr "Àwọn Olùpèṣè fọ́ǹtì"
 
@@ -1363,8 +1612,8 @@ msgstr "Fi àwọn fọ́ǹtì sí orí ẹ̀rọ"
 #: src/app/main/ui/static.cljs
 msgid "labels.internal-error.desc-message"
 msgstr ""
-"Nǹkan bíburú ti ṣẹlè.  Jọ̀wọ́ ṣe àtúnṣe iṣẹ́ náà àti pé tí wàhálà bá sì "
-"tẹ̀ síwájú, ké sí olùbásọ̀rọ̀."
+"Nǹkan bíburú ti ṣẹlè.  Jọ̀wọ́ ṣe àtúnṣe iṣẹ́ náà àti pé tí wàhálà bá sì tẹ̀ "
+"síwájú, ké sí olùbásọ̀rọ̀."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.internal-error.main-message"
@@ -1437,9 +1686,17 @@ msgstr "tàbí"
 msgid "labels.owner"
 msgstr "Oníǹkan"
 
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "labels.projects"
+msgstr "Àwọn iṣẹ́ àgbéṣe"
+
 #: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.password"
 msgstr "Ọ̀rọ̀ ìgbaniwọlé"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.release-notes"
+msgstr "Fi àkọsílẹ̀ rẹ sílẹ̀"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.pending-invitation"
@@ -1448,14 +1705,6 @@ msgstr "Ńńdúró"
 #: src/app/main/ui/settings/sidebar.cljs
 msgid "labels.profile"
 msgstr "Pírófáìlì"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.projects"
-msgstr "Àwọn iṣẹ́ àgbéṣe"
-
-#: src/app/main/ui/settings/sidebar.cljs
-msgid "labels.release-notes"
-msgstr "Fi àkọsílẹ̀ rẹ sílẹ̀"
 
 #: src/app/main/ui/workspace.cljs
 msgid "labels.reload-file"
@@ -1514,20 +1763,6 @@ msgstr "Sáfísì kòsí"
 #: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
 msgid "labels.settings"
 msgstr "Àwọn ètò"
-
-msgid "labels.share-prototype"
-msgstr "Pín àwọn ohun tí a ti kọ tẹ́lẹ̀"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "labels.shared-libraries"
-msgstr "Yàrá ìkáwe"
-
-#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
-msgid "labels.show-all-comments"
-msgstr "Fi gbogbo kọ́mẹ́ǹtì hàn"
-
-msgid "labels.show-comments-list"
-msgstr "Fi àkójọ àwọn kọ́mẹ́ǹtì hàn"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-your-comments"
@@ -1803,9 +2038,6 @@ msgstr "Yọ ọmọ ẹgbẹ́ kúrò"
 msgid "modals.delete-webhook.accept"
 msgstr "Pa ìkọ́-wẹ́bù rẹ́"
 
-msgid "modals.delete-webhook.message"
-msgstr "Ṣe ó dá ọ lójú pé o fẹ́ pa ìkọ́-wẹ́bù yìí rẹ́?"
-
 msgid "modals.delete-webhook.title"
 msgstr "Pa ìkọ́- wẹ́bù rẹ́"
 
@@ -1834,17 +2066,20 @@ msgstr "Pe àwọn ọmọ ẹgbẹ́ sínú ẹgbẹ́"
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-close-confirm.hint"
 msgstr ""
-"Gẹ́gẹ́ bí o ṣe jẹ́ ìwọ nìkan ni ọmọ ẹgbẹ́ nínú ẹgbẹ́ yìí,  a ó yọ ẹgbẹ́ "
-"kúrò pẹ̀lú  iṣẹ́ àgbéṣe rẹ̀ àti àwọn fáìlì."
+"Gẹ́gẹ́ bí o ṣe jẹ́ ìwọ nìkan ni ọmọ ẹgbẹ́ nínú ẹgbẹ́ yìí,  a ó yọ ẹgbẹ́ kúrò "
+"pẹ̀lú  iṣẹ́ àgbéṣe rẹ̀ àti àwọn fáìlì."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-close-confirm.message"
 msgstr "Ṣé ó dá ọ lójú pé o fẹ́ kúrò nínú %s ẹgbẹ́?"
 
+msgid "modals.publish-empty-library.title"
+msgstr "Gbé yàrá ìkàwé tó ṣófìfo jáde"
+
 msgid "modals.leave-and-reassign.forbidden"
 msgstr ""
-"O kò lè kúrò nínú ẹgbẹ́ tí kò bá sí ọmọ ẹgbẹ́ mìíràn tó ní ìgbéga sí oní "
-"ǹǹkan. O lè fẹ́ pa ẹgbẹ́ rẹ́."
+"O kò lè kúrò nínú ẹgbẹ́ tí kò bá sí ọmọ ẹgbẹ́ mìíràn tó ní ìgbéga sí oní ǹǹ"
+"kan. O lè fẹ́ pa ẹgbẹ́ rẹ́."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.hint1"
@@ -1881,6 +2116,10 @@ msgstr "Ń fi ẹgbẹ́ sílẹ̀"
 msgid "modals.nudge-title"
 msgstr "Fi kún iye tó jẹ́"
 
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.remove-shared-confirm.accept"
+msgstr "Yọ ọ́ kúrò gẹ́gẹ́ bí i yàrá ìkàwé pípín"
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.accept"
 msgstr "Gbé ẹni tó ni nǹkan"
@@ -1888,8 +2127,8 @@ msgstr "Gbé ẹni tó ni nǹkan"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.hint"
 msgstr ""
-"Tí o bá gbé ẹni tí ó ni nǹkan,  o ó yìí ojúṣe rẹ pada sí Alábòjútó, losing "
-" àwọn ìgbà láàyè díẹ̀ á wà fún ẹgbẹ́ yìí. "
+"Tí o bá gbé ẹni tí ó ni nǹkan,  o ó yìí ojúṣe rẹ pada sí Alábòjútó, losing  "
+"àwọn ìgbà láàyè díẹ̀ á wà fún ẹgbẹ́ yìí. "
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.message"
@@ -1901,18 +2140,8 @@ msgstr ""
 msgid "modals.promote-owner-confirm.title"
 msgstr "Ẹni tó ni ẹgbẹ́ tuntun"
 
-msgid "modals.publish-empty-library.accept"
-msgstr "Kọ ọ́ jáde"
-
 msgid "modals.publish-empty-library.message"
 msgstr "Yàrá ìkàwé rẹ ṣófìfo. Ṣé ó dá ọ lójú pé o fẹ́ kọ ọ́ jáde?"
-
-msgid "modals.publish-empty-library.title"
-msgstr "Gbé yàrá ìkàwé tó ṣófìfo jáde"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "modals.remove-shared-confirm.accept"
-msgstr "Yọ ọ́ kúrò gẹ́gẹ́ bí i yàrá ìkàwé pípín"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.hint"
@@ -1923,16 +2152,6 @@ msgstr ""
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.message"
 msgstr "Yọ ọ́ kúrò“%s” gẹ́gẹ́ bí yàrá ìkàwé pípín"
-
-#: src/app/main/ui/workspace/nudge.cljs
-msgid "modals.small-nudge"
-msgstr "Fọwọ́ làn-ań díẹ̀"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
-msgid "modals.update-remote-component-in-bulk.hint"
-msgstr ""
-"O ṣetán láti mú àwọn ẹ̀yà irin iṣẹ́ dé ojú ìwọ̀n ní yàrá ìkàwé pípín.  Èyí "
-"le fa wàhálà  fún àwọn fáìlì mìíràn tí ó ń lò ó."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component-in-bulk.message"
@@ -1956,6 +2175,16 @@ msgstr ""
 msgid "modals.update-remote-component.message"
 msgstr "Mú ẹ̀yà iyàrá ìkàwé pípín kan dójú ìwọ̀n"
 
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.small-nudge"
+msgstr "Fọwọ́ làn-ań díẹ̀"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "modals.update-remote-component-in-bulk.hint"
+msgstr ""
+"O ṣetán láti mú àwọn ẹ̀yà irin iṣẹ́ dé ojú ìwọ̀n ní yàrá ìkàwé pípín.  Èyí "
+"le fa wàhálà  fún àwọn fáìlì mìíràn tí ó ń lò ó."
+
 #: src/app/main/data/common.cljs
 msgid "notifications.by-code.upgrade-version"
 msgstr "Ẹ̀yà tuntun ti wà, jọ̀wọ́ tún sọ ọ́ jí"
@@ -1968,9 +2197,16 @@ msgstr "Ìfipè tí a fi ránńṣẹ́ ti lọ dáadáa"
 msgid "notifications.invitation-link-copied"
 msgstr "ti ṣe àdàkọ ìfipè ọ̀nà ìtọ́ka sí"
 
+msgid "onboarding-v2.welcome.desc2"
+msgstr ""
+"Ìkẹ́kọ̀ọ́ ìta gbangba,  pín-in kí ẹ sì jí ròrò nípa Pẹ́ńpọtì, ibi tó wà "
+"lọ́wọ́lọ́wọ́ ọ̀jọ́ iwájú pẹ̀lú gbogbo agbègbè àti ìmójútó ẹgbẹ́ pẹ́ńpọtì "
+".   ."
+
 #: src/app/main/ui/settings/delete_account.cljs
 msgid "notifications.profile-deletion-not-allowed"
-msgstr "O kò le è yọ pírófáìlì rẹ kúro. Ṣe àtún yàn àwọn ẹgbẹ́ kí o tó tẹ̀ síwájú."
+msgstr ""
+"O kò le è yọ pírófáìlì rẹ kúro. Ṣe àtún yàn àwọn ẹgbẹ́ kí o tó tẹ̀ síwájú."
 
 #: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/options.cljs
 msgid "notifications.profile-saved"
@@ -1982,9 +2218,9 @@ msgstr "Verification email sent to %s. Check your email!"
 
 msgid "onboarding-v2.before-start.desc1"
 msgstr ""
-"O ní láti mọ̀ pé oríṣiríṣi ohu ohun èlò ló wà láti ràn ọ́ lọ́wọ́ láti rí "
-"gbà bẹ̀rẹ̀ pẹ̀lú Pẹ́ńpọtì, gẹ́gẹ́ bí ohun èlò ìtọ́nisọ́nà àti yútuùbù wa "
-"fún ìlànà ìbáni sọ̀rọ̀."
+"O ní láti mọ̀ pé oríṣiríṣi ohu ohun èlò ló wà láti ràn ọ́ lọ́wọ́ láti rí gbà "
+"bẹ̀rẹ̀ pẹ̀lú Pẹ́ńpọtì, gẹ́gẹ́ bí ohun èlò ìtọ́nisọ́nà àti yútuùbù wa fún "
+"ìlànà ìbáni sọ̀rọ̀."
 
 msgid "onboarding-v2.before-start.desc2"
 msgstr ""
@@ -2010,8 +2246,8 @@ msgstr ""
 
 msgid "onboarding-v2.newsletter.news"
 msgstr ""
-"Fí ìròyìn ránńṣẹ́ sí mi nípa Pẹ́ńpọtì (àwọn bulọ́ọ̀gì,àwọn fídiò "
-"ìbáṣepọ̀, àwọn sísàn wọlé...)."
+"Fí ìròyìn ránńṣẹ́ sí mi nípa Pẹ́ńpọtì (àwọn bulọ́ọ̀gì,àwọn fídiò ìbáṣepọ̀, "
+"àwọn sísàn wọlé...)."
 
 msgid "onboarding-v2.newsletter.privacy1"
 msgstr "Ìfi pamọ́ jẹ wá lógún, ní bí o le kà nípa wa "
@@ -2029,19 +2265,16 @@ msgstr ""
 msgid "onboarding-v2.welcome.desc1"
 msgstr ""
 "Pẹ́ńpọtì ni orísun ìṣílẹ̀kùn àti pe Kálẹidòsìló ṣe é àti àwọn agbègbè,  Ní "
-"bi ọ̀pọ̀lọpọ̀ àwọn ènìyàn ti ran ara wọn lọ́wọ́ tẹ́lẹ̀ .  Gbgbo wọn ló lè "
-"ṣe àjùmọ̀ṣenípa:"
-
-msgid "onboarding-v2.welcome.desc2"
-msgstr ""
-"Ìkẹ́kọ̀ọ́ ìta gbangba,  pín-in kí ẹ sì jí ròrò nípa Pẹ́ńpọtì, ibi tó wà "
-"lọ́wọ́lọ́wọ́ ọ̀jọ́ iwájú pẹ̀lú gbogbo agbègbè àti ìmójútó ẹgbẹ́ pẹ́ńpọtì . "
-"  ."
+"bi ọ̀pọ̀lọpọ̀ àwọn ènìyàn ti ran ara wọn lọ́wọ́ tẹ́lẹ̀ .  Gbgbo wọn ló lè ṣe "
+"àjùmọ̀ṣenípa:"
 
 msgid "onboarding-v2.welcome.desc3"
 msgstr ""
-"Ibi tí a ó ti ri bí a ó ti ṣe àjùmọ̀ṣepọ̀ pẹ̀lú àwọn ìtumọ̀, àwọn ìbéèrè "
-"ẹ̀yà ara ẹ̀rọ, ìmójútó síṣe ojúṣe, ìṣọdẹ kòkòrò…"
+"Ibi tí a ó ti ri bí a ó ti ṣe àjùmọ̀ṣepọ̀ pẹ̀lú àwọn ìtumọ̀, àwọn ìbéèrè ẹ̀"
+"yà ara ẹ̀rọ, ìmójútó síṣe ojúṣe, ìṣọdẹ kòkòrò…"
+
+msgid "onboarding.welcome.alt"
+msgstr "Pẹ́ńpọtì"
 
 msgid "onboarding-v2.welcome.desc3.title"
 msgstr "Sísojúṣe ìtọ́sẹ́nà"
@@ -2087,9 +2320,9 @@ msgstr "Ṣẹ̀dá ẹgbẹ́ kan"
 
 msgid "onboarding.team-modal.create-team-desc"
 msgstr ""
-"A team allows you to collaborate with other Penpot users working in the "
-"Ẹgbẹ́ kan yí ó gbà ọ́ láyè láti lè siṣẹ́pọ̀ pẹ̀lú àwọn onílò pẹ́ńpọti tí ó "
-"siṣẹ́ nínú  àwọn fáìlì àti àwọn iṣẹ́ àgbéṣe kan náà ."
+"A team allows you to collaborate with other Penpot users working in the Ẹgbẹ́"
+" kan yí ó gbà ọ́ láyè láti lè siṣẹ́pọ̀ pẹ̀lú àwọn onílò pẹ́ńpọti tí ó siṣẹ́ "
+"nínú  àwọn fáìlì àti àwọn iṣẹ́ àgbéṣe kan náà ."
 
 msgid "onboarding.team-modal.create-team-feature-1"
 msgstr "Àwọn fáìlì àti àwọn iṣẹ́ àgbéṣe tí kò lópin"
@@ -2112,9 +2345,6 @@ msgstr "Àwọn àwòṣe díẹ̀ nìyí níbí."
 msgid "onboarding.templates.title"
 msgstr "Bẹ̀rẹ̀ sí ṣe ẹ̀yà alárà"
 
-msgid "onboarding.welcome.alt"
-msgstr "Pẹ́ńpọtì"
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "profile.recovery.go-to-login"
 msgstr "Lọ láti wọlé"
@@ -2130,18 +2360,6 @@ msgstr "Mọ́kànlá-Ọgbọ̀n"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.2-10"
 msgstr "Méjì – mẹ́wàá"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.31-50"
-msgstr "Mọ́kànlélọ́gbọ̀n-Àádọ́ta"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.a-lot"
-msgstr "O ´ pọ̀jù"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.adobe-xd"
-msgstr "Àdòbí XD"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.canva"
@@ -2178,10 +2396,6 @@ msgid "questions.freelancer"
 msgstr "Oníṣẹ́ ni mí"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.get-the-code-from-my-team-project"
-msgstr "Gba kóòdù láti inú iṣẹ́ àgbéṣe mi "
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.interface-design-visual-assets-design-systems"
 msgstr "... wíwò ètò ọnà , ìrírí àwọn ohun ìní, àwọn ètò ọnà, abbl."
 
@@ -2196,6 +2410,10 @@ msgstr "Fi èsì sílẹ̀ fún iṣẹ́ àgbéṣe ẹgbẹ́ mi"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.lets-get-started"
 msgstr "Ẹjẹ́ 'ká bẹ̀rẹ̀ !"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.get-the-code-from-my-team-project"
+msgstr "Gba kóòdù láti inú iṣẹ́ àgbéṣe mi "
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.manager"
@@ -2214,8 +2432,16 @@ msgid "questions.next"
 msgstr "Èyí tó kàn"
 
 #: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.select-option"
+msgstr "Ṣe àṣàyàn"
+
+#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.none"
 msgstr "Kòsí"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.sketch"
+msgstr "Yàwòrán"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.other"
@@ -2232,14 +2458,6 @@ msgstr "Tàtẹ̀yìn wá"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.questions-how-are-you-planning-to-use-penpot"
 msgstr "Báwo lo ṣe ń gbèrò lórí bí o ṣe lo pẹ́ńpọtì?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.select-option"
-msgstr "Ṣe àṣàyàn"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.sketch"
-msgstr "Yàwòrán"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.some"
@@ -2824,14 +3042,6 @@ msgid "viewer.header.interactions-section"
 msgstr "Awọ̀n Ibaraenisépọ̀ (%s)"
 
 #: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.share.copy-link"
-msgstr "Da línkì kọ̀"
-
-#: src/app/main/ui/viewer/header.cljs
-msgid "viewer.header.show-interactions"
-msgstr "Ifihan Ibaraenisépọ̀"
-
-#: src/app/main/ui/viewer/header.cljs
 msgid "viewer.header.sitemap"
 msgstr "Áwòran átọ̀kà ílẹ̀"
 
@@ -3223,18 +3433,6 @@ msgstr "%s awọn íwè itẹ̀wé"
 msgid "workspace.libraries.update"
 msgstr "ímùdojúiwọn"
 
-#: src/app/main/data/workspace/libraries.cljs
-msgid "workspace.libraries.update.see-all-changes"
-msgstr "wò gbògbò awọn ayípàdà"
-
-#: src/app/main/ui/workspace/libraries.cljs
-msgid "workspace.libraries.updates"
-msgstr "Awọn ímùdojúiwọn"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.add-interaction"
-msgstr "Tẹ amí +  làtí fi íbàràénisépọ̀ kun"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "workspace.options.blur-options.title"
 msgstr "Baìbaì"
@@ -3303,10 +3501,6 @@ msgstr "Ókè"
 msgid "workspace.options.constraints.topbottom"
 msgstr "Ókè ati Ídí"
 
-#: src/app/main/ui/workspace/sidebar/options.cljs
-msgid "workspace.options.design"
-msgstr "Ónirú"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
 msgid "workspace.options.export"
 msgstr "Sí ilẹ́ òkèeré"
@@ -3326,6 +3520,14 @@ msgstr "Gbígbè okeere …"
 #: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
 msgid "workspace.options.exporting-object-error"
 msgstr "Gbígbè okeere kuna"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.type.bottom"
+msgstr "ìsàlẹ̀"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.params.type.center"
+msgstr "Àárín"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
 msgid "workspace.options.fill"
@@ -3387,14 +3589,6 @@ msgid "workspace.options.grid.params.type"
 msgstr "Irú"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-msgid "workspace.options.grid.params.type.bottom"
-msgstr "ìsàlẹ̀"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-msgid "workspace.options.grid.params.type.center"
-msgstr "Àárín"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.params.type.left"
 msgstr "Òsì"
 
@@ -3433,9 +3627,6 @@ msgstr "Ẹ̀kún ẹgbẹ́"
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.group-stroke"
 msgstr "Ẹgba ẹgbẹ́"
-
-msgid "workspace.options.height"
-msgstr "Gíga"
 
 msgid "workspace.options.inspect"
 msgstr "Ṣàyẹ̀wò"
@@ -3532,54 +3723,6 @@ msgid "workspace.options.interaction-mouse-enter"
 msgstr "Atọ́ka ìwọnú"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-mouse-leave"
-msgstr "Atọ́ka kíkúrò"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-ms"
-msgstr "ms"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-navigate-to"
-msgstr "Lílọ kiri sí"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-navigate-to-dest"
-msgstr "Lílo kiri sí: %s"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-none"
-msgstr "(Akò ṣètò)"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-offset-effect"
-msgstr "Ipa àìṣedédé"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-on-click"
-msgstr "Tẹ orí"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-open-overlay"
-msgstr "Ṣíìtẹ̀lé ìlànà"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-open-overlay-dest"
-msgstr "Ṣí ìtẹ̀lé ìlànà: %s"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-open-url"
-msgstr "Ṣí URL"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-out"
-msgstr "Jáde"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-pos-bottom-center"
-msgstr "Àáriń ìsàlẹ̀"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-pos-bottom-left"
 msgstr "Ìsàlẹ̀ òsì"
 
@@ -3600,8 +3743,44 @@ msgid "workspace.options.interaction-pos-top-center"
 msgstr "Àárín òkè"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-mouse-leave"
+msgstr "Atọ́ka kíkúrò"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-ms"
+msgstr "ms"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-navigate-to"
+msgstr "Lílọ kiri sí"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-navigate-to-dest"
+msgstr "Lílo kiri sí: %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-none"
+msgstr "(Akò ṣètò)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-pos-top-left"
 msgstr "Òkè òsì"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-offset-effect"
+msgstr "Ipa àìṣedédé"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-open-url"
+msgstr "Ṣí URL"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-out"
+msgstr "Jáde"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-bottom-center"
+msgstr "Àáriń ìsàlẹ̀"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-pos-top-right"
@@ -3618,30 +3797,6 @@ msgstr "Ṣe ìtọ́jú ipò àyílọ"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-prev-screen"
 msgstr "Aṣàfihàn àtẹ̀yìnwá"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-relative-to"
-msgstr "Ìbátan sí"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-self"
-msgstr "Tìkara"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-toggle-overlay"
-msgstr "Àyípadà ìtẹ̀lé ìlànà"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-toggle-overlay-dest"
-msgstr "Àyípadà ìtẹ̀lé ìlànà: %s"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-trigger"
-msgstr "Okùnfà"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.interaction-url"
-msgstr "URL"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.interaction-while-hovering"
@@ -3780,34 +3935,6 @@ msgid "workspace.options.layout.direction.column-reverse"
 msgstr "Ìlà  òòró yíyípadà"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.row"
-msgstr "Ilà ìbú"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.direction.row-reverse"
-msgstr "Ilà ìbú yíyípadà"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.gap"
-msgstr "Àlàfo"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
-msgid "workspace.options.layout.left"
-msgstr "Òsì"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout.margin"
-msgstr "Etí ìwé"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout.margin-all"
-msgstr "Gbogbo àwọn àwòrán"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
-msgid "workspace.options.layout.margin-simple"
-msgstr "Etí ìwé ẹyọ"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 msgid "workspace.options.layout.packed"
 msgstr "tí wọn dì"
 
@@ -3881,6 +4008,30 @@ msgstr "Òkè ọ̀tún"
 msgid "workspace.options.radius.all-corners"
 msgstr "Àwọn gbogbo igun"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.blur"
+msgstr "Rẹ́súrẹ́sú"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.drop-shadow"
+msgstr "Da òjìjí"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.inner-shadow"
+msgstr "Òjìjí inú"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.offsetx"
+msgstr "X"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.offsety"
+msgstr "Y"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.spread"
+msgstr "Tànkálẹ̀"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
 msgid "workspace.options.radius.single-corners"
 msgstr "Àwọn igun olómìnira"
@@ -3918,39 +4069,16 @@ msgid "workspace.options.selection-stroke"
 msgstr "Ipò ìlù tí a yàn"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
-msgid "workspace.options.shadow-options.blur"
-msgstr "Rẹ́súrẹ́sú"
-
-msgid "workspace.options.shadow-options.color"
-msgstr "Àwọ̀ òjíjí"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
-msgid "workspace.options.shadow-options.drop-shadow"
-msgstr "Da òjìjí"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
-msgid "workspace.options.shadow-options.inner-shadow"
-msgstr "Òjìjí inú"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
-msgid "workspace.options.shadow-options.offsetx"
-msgstr "X"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
-msgid "workspace.options.shadow-options.offsety"
-msgstr "Y"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
-msgid "workspace.options.shadow-options.spread"
-msgstr "Tànkálẹ̀"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
 msgid "workspace.options.shadow-options.title"
 msgstr "Òjìjí"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
 msgid "workspace.options.shadow-options.title.group"
 msgstr "Àwùjọ òjìjí"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square-marker"
+msgstr "Àmì alápoméjì"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
 msgid "workspace.options.shadow-options.title.multiple"
@@ -3996,6 +4124,14 @@ msgid "workspace.options.stroke-cap.line-arrow"
 msgstr "Ọfà ìlà"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square-marker-short"
+msgstr "Onígun mẹ́rin"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.triangle-arrow"
+msgstr "Ofà onígun mẹ́ta"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.line-arrow-short"
 msgstr "Ofà"
 
@@ -4010,18 +4146,6 @@ msgstr "Yíká"
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.square"
 msgstr "Alápoméjì"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.square-marker"
-msgstr "Àmì alápoméjì"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.square-marker-short"
-msgstr "Onígun mẹ́rin"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.triangle-arrow"
-msgstr "Ofà onígun mẹ́ta"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 msgid "workspace.options.stroke-cap.triangle-arrow-short"
@@ -4280,51 +4404,6 @@ msgstr "Ìyí padà olóòró"
 msgid "workspace.shape.menu.flow-start"
 msgstr "Ìbẹ̀rè ìṣàn"
 
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.forward"
-msgstr "Mú wá sọ́wọ́ iwájú"
-
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.front"
-msgstr "Mú wá sí wájú"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.go-main"
-msgstr "Lọ sí olórí fáìlì àkóónú"
-
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.group"
-msgstr "Àwùjọ"
-
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.hide"
-msgstr "Tọ́jú"
-
-msgid "workspace.shape.menu.hide-ui"
-msgstr "Fihàn/ Tọ́jú UI"
-
-msgid "workspace.shape.menu.intersection"
-msgstr "Ìkòríta"
-
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.lock"
-msgstr "Tì"
-
-#: src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.mask"
-msgstr "Ìbòjú"
-
-#: src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.paste"
-msgstr "lẹ̀mọ́"
-
-msgid "workspace.shape.menu.path"
-msgstr "Ipa  ọ̀nà"
-
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.remove-flex"
-msgstr "Yọ àrọ ètò ìrísí kúrò"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.reset-overrides"
 msgstr "Ṣe àtúnṣe  ìdojúkọ"
@@ -4364,38 +4443,6 @@ msgstr "Ṣe àìkójọ"
 msgid "workspace.shape.menu.union"
 msgstr "Ìbáṣepò"
 
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.unlock"
-msgstr "Ṣíí"
-
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.unmask"
-msgstr "Sí ìbòjú"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.update-components-in-bulk"
-msgstr "Mímú àwọn ọ̀rọ̀ àkóónú pàtàkì dójú ìwọ̀n"
-
-msgid "workspace.sidebar.collapse"
-msgstr "Wó òpó ègbẹ́"
-
-msgid "workspace.sidebar.expand"
-msgstr "Fẹ òpó ẹ̀gbẹ́"
-
-#: src/app/main/ui/workspace/left_toolbar.cljs
-msgid "workspace.sidebar.history"
-msgstr "Ìtàn (%s)"
-
-#: src/app/main/ui/workspace/left_toolbar.cljs
-msgid "workspace.sidebar.layers"
-msgstr "Àwọn ìpele"
-
-msgid "workspace.sidebar.layers.components"
-msgstr "Àwọn àkóónú"
-
-msgid "workspace.sidebar.layers.frames"
-msgstr "Àwọn pátákó"
-
 msgid "workspace.sidebar.layers.groups"
 msgstr "Àkójọ"
 
@@ -4413,14 +4460,6 @@ msgstr "Àwọn ìrísí"
 
 msgid "workspace.sidebar.layers.texts"
 msgstr "Àwọn àyọkà"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs, src/app/main/ui/inspect/attributes/svg.cljs
-msgid "workspace.sidebar.options.svg-attrs.title"
-msgstr "Gbígbé àwọn ànímọ́ SVG wọlé wá"
-
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs
-msgid "workspace.sidebar.sitemap"
-msgstr "Àwọn abala"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.sitemap"
@@ -4451,6 +4490,10 @@ msgid "workspace.toolbar.frame"
 msgstr "Pátákó (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.text"
+msgstr "Àyọkà (%s)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.image"
 msgstr "Àwòrán(%s)"
 
@@ -4469,10 +4512,6 @@ msgstr "Onígun mẹ́rin (%s)"
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.shortcuts"
 msgstr "Àwón ọ̀nà  àbùjá (%s)"
-
-#: src/app/main/ui/workspace/left_toolbar.cljs
-msgid "workspace.toolbar.text"
-msgstr "Àyọkà (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
 msgid "workspace.toolbar.text-palette"
@@ -4503,6 +4542,12 @@ msgstr "Àwọn  ohun àmúṣọrọ̀ àwọ̀"
 msgid "workspace.undo.entry.multiple.component"
 msgstr "Àkóónú"
 
+msgid "workspace.undo.entry.multiple.multiple"
+msgstr "Àwọn ǹǹkan"
+
+msgid "workspace.undo.entry.multiple.page"
+msgstr "Àwọn ojú awé"
+
 msgid "workspace.undo.entry.multiple.curve"
 msgstr "Àwọn ẹkọ̀rọ̀"
 
@@ -4514,12 +4559,6 @@ msgstr "Àwọn àkójọ"
 
 msgid "workspace.undo.entry.multiple.media"
 msgstr "Àwọn ohun ìyì àwòrán"
-
-msgid "workspace.undo.entry.multiple.multiple"
-msgstr "Àwọn ǹǹkan"
-
-msgid "workspace.undo.entry.multiple.page"
-msgstr "Àwọn ojú awé"
 
 msgid "workspace.undo.entry.multiple.path"
 msgstr "Àwọn ẹ̀bá ọ̀nà"
@@ -4535,40 +4574,6 @@ msgstr "Àwọn àyọkà"
 
 msgid "workspace.undo.entry.multiple.typography"
 msgstr "Àwọn ohun ìyì ìwé títẹ̀"
-
-#: src/app/main/ui/workspace/sidebar/history.cljs
-msgid "workspace.undo.entry.new"
-msgstr "Titun %s"
-
-msgid "workspace.undo.entry.single.circle"
-msgstr "Àyíká"
-
-msgid "workspace.undo.entry.single.color"
-msgstr "Ohun àmúṣọrọ̀ àwọ̀"
-
-msgid "workspace.undo.entry.single.component"
-msgstr "Àkóónú"
-
-msgid "workspace.undo.entry.single.curve"
-msgstr "Ẹkọ̀rọ̀"
-
-msgid "workspace.undo.entry.single.frame"
-msgstr "Pátákó"
-
-msgid "workspace.undo.entry.single.group"
-msgstr "Àkójọ"
-
-msgid "workspace.undo.entry.single.image"
-msgstr "Àwòrán"
-
-msgid "workspace.undo.entry.single.media"
-msgstr "Ohun àmúṣọrọ̀ èyà àwòrán"
-
-msgid "workspace.undo.entry.single.multiple"
-msgstr "Ohun"
-
-msgid "workspace.undo.entry.single.page"
-msgstr "Ojú awẹ́"
 
 msgid "workspace.undo.entry.single.path"
 msgstr "Pópó ònà"

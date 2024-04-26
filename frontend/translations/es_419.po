@@ -413,6 +413,160 @@ msgstr ""
 msgid "dashboard.export-binary-multi"
 msgstr "Descargar %s archivos Penpot (.penpot)"
 
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.already-have-account"
+msgstr "¿Ya tienes una cuenta?"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-your-email"
+msgstr ""
+"Revise su correo electrónico y haga clic en el enlace para verificar y "
+"comenzar a usar Penpot."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.demo-warning"
+msgstr ""
+"Este es un servicio DEMO, NO LO UTILICE para trabajos reales, los proyectos "
+"se borrarán periódicamente."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.fullname"
+msgstr "Nombre completo"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-google-submit"
+msgstr "Google"
+
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.not-all-space"
+msgstr "El nombre debe contener algún carácter distinto al del espacio."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.too-long"
+msgstr "El nombre debe contener como máximo 250 caracteres."
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.notifications.recovery-token-sent"
+msgstr ""
+"El enlace de recuperación de contraseña ha sido enviado a su bandeja de "
+"entrada de su correo electrónico."
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "auth.notifications.team-invitation-accepted"
+msgstr "Se unió al equipo con éxito"
+
+#: src/app/main/ui/auth/recovery_request.cljs
+msgid "auth.recovery-request-subtitle"
+msgstr "Le enviaremos un correo electrónico con instrucciones"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-subtitle"
+msgstr "Es gratis, es de código abierto"
+
+msgid "auth.terms-of-service"
+msgstr "Términos de servicio"
+
+#: src/app/main/ui/auth/register.cljs
+#, markdown
+msgid "auth.terms-privacy-agreement-md"
+msgstr ""
+"Al crear una nueva cuenta, acepta nuestros [terms of service](%s) y nuestra ["
+"privacy policy](%s)."
+
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr ""
+"¿Estás seguro de que deseas eliminar este enlace? Si lo haces ya no estará "
+"disponible para nadie"
+
+msgid "common.share-link.link-copied-success"
+msgstr "Enlace copiado exitosamente"
+
+msgid "common.share-link.manage-ops"
+msgstr "Administrar permisos"
+
+msgid "common.share-link.placeholder"
+msgstr "El enlace para compartir aparecerá aquí"
+
+msgid "common.share-link.team-members"
+msgstr "Solo miembros del equipo"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-title"
+msgstr "Crea una cuenta"
+
+msgid "common.share-link.title"
+msgstr "Compartir prototipos"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr ""
+"Penpot está destinado a equipos. Invite a miembros a trabajar juntos en "
+"proyectos y archivos"
+
+msgid "common.unpublish"
+msgstr "Despublicar"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.title"
+msgstr "¡En equipo!"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr ""
+"Aprenda los conceptos básicos en Penpot mientras se divierte con este "
+"tutorial práctico."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.start"
+msgstr "Iniciar el tutorial"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr "Date un paseo por Penpot y conoce sus principales características."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.add-one"
+msgstr "Presione el botón \"Generar nuevo token\" para generar uno."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create"
+msgstr "Generar nuevo token"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.errors-required-name"
+msgstr "El nombre es requerido"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expired-on"
+msgstr "Expirado el %s"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal"
+msgstr "Tokens de acceso personal"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal.description"
+msgstr ""
+"Los tokens de acceso personal funcionan como una alternativa a nuestro "
+"sistema de autenticación de inicio de sesión/contraseña y pueden usarse para "
+"permitir que una aplicación acceda a la API interna de Penpot"
+
+#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
+msgid "dashboard.copy-suffix"
+msgstr "(copiar)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "dashboard.create-new-team"
+msgstr "Crear nuevo equipo"
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.how-to-link"
+msgstr "Información sobre cómo configurar las exportaciones en Penpot."
+
+#: src/app/main/ui/export.cljs
+msgid "dashboard.export-shapes.no-elements"
+msgstr "No hay elementos con configuración de exportación."
+
 msgid "dashboard.export-frames"
 msgstr "Exportar tableros como PDF"
 
