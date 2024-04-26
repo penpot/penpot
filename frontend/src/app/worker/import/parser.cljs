@@ -272,9 +272,21 @@
 (def has-position? #{:frame :rect :image :text})
 
 (defn parse-position
-  [props svg-data]
-  (let [values (->> (select-keys svg-data [:x :y :width :height])
-                    (d/mapm (fn [_ val] (d/parse-double val))))]
+  [props node svg-data]
+  (let [x (get-meta node :x d/parse-double)
+        y (get-meta node :y d/parse-double)
+        width (get-meta node :width d/parse-double)
+        height (get-meta node :height d/parse-double)
+
+        values (->> (select-keys svg-data [:x :y :width :height])
+                    (d/mapm (fn [_ val] (d/parse-double val))))
+
+        values
+        (cond-> values
+          (some? x) (assoc :x x)
+          (some? y) (assoc :y y)
+          (some? width) (assoc :width width)
+          (some? height) (assoc :height height))]
     (d/merge props values)))
 
 (defn parse-circle
@@ -392,7 +404,7 @@
         center (gpt/point center-x center-y)]
     (cond-> props
       (has-position? type)
-      (parse-position svg-data)
+      (parse-position node svg-data)
 
       (= type :svg-raw)
       (add-svg-position node)
