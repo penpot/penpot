@@ -144,18 +144,12 @@
              (map-indexed vector)
              (filter #(#{(:id group)} (second %)))
              (ffirst)
-             inc)
-
-        ;; Shapes that are in a component (including root) must be detached,
-        ;; because cannot be easyly synchronized back to the main component.
-        shapes-to-detach (filter ctk/in-component-copy?
-                                 (cfh/get-children-with-self objects (:id group)))]
+             inc)]
 
     (-> (pcb/empty-changes it page-id)
         (pcb/with-objects objects)
         (pcb/change-parent parent-id children index-in-parent)
-        (pcb/remove-objects [(:id group)])
-        (pcb/update-shapes (map :id shapes-to-detach) ctk/detach-shape))))
+        (pcb/remove-objects [(:id group)]))))
 
 (defn remove-frame-changes
   [it page-id frame objects]
