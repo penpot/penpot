@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-04-26 04:53+0000\n"
+"PO-Revision-Date: 2024-04-26 07:03+0000\n"
 "Last-Translator: Alejandro Alonso <alejandro.alonso@kaleidos.net>\n"
-"Language-Team: Spanish <https://hosted.weblate.org/projects/penpot/frontend/"
-"es/>\n"
+"Language-Team: Spanish "
+"<https://hosted.weblate.org/projects/penpot/frontend/es/>\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.5.1-dev\n"
+"X-Generator: Weblate 5.5.1\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -1048,7 +1048,6 @@ msgstr "Error de conexion, la url no es alcanzable"
 msgid "errors.webhooks.invalid-uri"
 msgstr "La URL no pasa la validación."
 
-#, fuzzy
 msgid "errors.webhooks.last-delivery"
 msgstr "Hubo un problema en el último envío."
 
@@ -3266,7 +3265,6 @@ msgstr "Mostrar interacciones al hacer click"
 msgid "viewer.header.sitemap"
 msgstr "Mapa del sitio"
 
-#, fuzzy
 msgid "webhooks.last-delivery.success"
 msgstr "El último envío fue correcto."
 
@@ -3618,6 +3616,10 @@ msgstr "Seleccionar todo"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-artboard-names"
 msgstr "Mostrar nombres de tableros"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-guides"
+msgstr "Mostrar guías"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"
@@ -5299,115 +5301,3 @@ msgstr "Actualizar"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
-
-#, markdown
-msgid "workspace.top-bar.view-only"
-msgstr "**Inspeccionando código** (View only)"
-
-msgid "workspace.top-bar.read-only.done"
-msgstr "Hecho"
-
-msgid "media.image"
-msgstr "Imagen"
-
-msgid "media.image.short"
-msgstr "img"
-
-msgid "media.solid"
-msgstr "Sólido"
-
-msgid "media.linear"
-msgstr "Linear"
-
-msgid "media.radial"
-msgstr "Radial"
-
-msgid "media.gradient"
-msgstr "Gradiente"
-
-msgid "media.choose-image"
-msgstr "Elegir imagen"
-
-msgid "media.keep-aspect-ratio"
-msgstr "Mantener la proporción"
-
-msgid "workspace.options.guides.title"
-msgstr "Guías"
-
-msgid "workspace.context-menu.grid-track.column.duplicate"
-msgstr "Duplicar columna"
-
-msgid "workspace.context-menu.grid-track.column.add-before"
-msgstr "Añadir 1 columna a la izquierda"
-
-msgid "workspace.context-menu.grid-track.column.add-after"
-msgstr "Añadir 1 columna a la derecha"
-
-msgid "workspace.context-menu.grid-track.column.delete"
-msgstr "Borrar columna"
-
-msgid "workspace.context-menu.grid-track.column.delete-shapes"
-msgstr "Borrar columna con el contenido"
-
-msgid "workspace.context-menu.grid-track.row.duplicate"
-msgstr "Duplicar fila"
-
-msgid "workspace.context-menu.grid-track.row.add-before"
-msgstr "Añadir 1 fila encima"
-
-msgid "workspace.context-menu.grid-track.row.add-after"
-msgstr "Añadir 1 fila debajo"
-
-msgid "workspace.context-menu.grid-track.row.delete"
-msgstr "Borrar fila"
-
-msgid "workspace.context-menu.grid-track.row.delete-shapes"
-msgstr "Borrar fila con el contenido"
-
-msgid "workspace.context-menu.grid-cells.merge"
-msgstr "Fusionar celdas"
-
-msgid "workspace.context-menu.grid-cells.area"
-msgstr "Crear area"
-
-msgid "workspace.context-menu.grid-cells.create-board"
-msgstr "Crear tablero"
-
-#: src/app/main/data/common.cljs
-msgid "notifications.by-code.upgrade-version"
-msgstr "Una nueva versión está disponible, por favor actualiza la página"
-
-msgid "modals.add-shared-confirm-empty.hint"
-msgstr ""
-"Tu biblioteca está vacía. Una vez que se agregue como Biblioteca Compartida, "
-"los recursos que crees estarán disponibles para ser utilizados entre el "
-"resto de tus archivos. ¿Estás seguro de que deseas publicarlo?"
-
-#: src/app/main/ui/workspace/libraries.cljs
-msgid "workspace.libraries.loading"
-msgstr "Cargando…"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-guides"
-msgstr "Mostrar guías"
-
-#: src/app/main/errors.cljs
-msgid "errors.version-not-supported"
-msgstr "El fichero tiene un número de versión incompatible"
-
-#: src/app/main/errors.cljs
-msgid "errors.team-feature-mismatch"
-msgstr "Detectada funcionalidad incompatible '%s'"
-
-msgid "errors.validation"
-msgstr "Error de validación"
-
-msgid "errors.paste-data-validation"
-msgstr "Datos inválidos en el portapapeles"
-
-msgid "labels.discard"
-msgstr "Descartar"
-
-#: src/app/main/data/workspace/libraries.cljs
-msgid "workspace.libraries.update.see-all-changes"
-msgstr "ver todos los cambios"
