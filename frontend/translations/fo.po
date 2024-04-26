@@ -61,10 +61,6 @@ msgid "auth.login-submit"
 msgstr "Rita inn"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Gott at síggja teg aftur!"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"
 

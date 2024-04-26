@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-04-19 08:03+0000\n"
+"PO-Revision-Date: 2024-04-25 13:07+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian "
 "<https://hosted.weblate.org/projects/penpot/frontend/lv/>\n"
@@ -8,9 +8,9 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 "
-"<= 19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
-"X-Generator: Weblate 5.5-dev\n"
+"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= "
+"19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
+"X-Generator: Weblate 5.5.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -60,10 +60,6 @@ msgstr "Pieteikties šeit"
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
 msgstr "Pieteikties"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Prieks Jūs atkal redzēt!"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
@@ -3050,9 +3046,6 @@ msgstr "Slēgt / Atslēgt"
 msgid "shortcuts.toggle-lock-size"
 msgstr "Slēgt proporcijas"
 
-msgid "shortcuts.toggle-rules"
-msgstr "Rādīt/paslēpt mērjoslas"
-
 msgid "shortcuts.toggle-textpalette"
 msgstr "Pārslēgt teksta paleti"
 
@@ -5201,3 +5194,385 @@ msgstr "Atjaunināt"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Jānoklikšķina, lai aizvērtu ceļu"
+
+#: src/app/main/errors.cljs
+msgid "errors.team-feature-mismatch"
+msgstr "Noteikta nesaderīga iespēja '%s'"
+
+msgid "errors.paste-data-validation"
+msgstr "Starpliktuvē ir nederīgi dati"
+
+msgid "onboarding.choice.team-up.continue-creating-team"
+msgstr "Turpināt komandas izveidošanu"
+
+msgid "onboarding.choice.team-up.start-without-a-team"
+msgstr "Uzsākt bez komandas"
+
+msgid "onboarding.choice.team-up.start-without-a-team-description"
+msgstr "Komandu būs iespējams izveidot vēlāk."
+
+msgid "onboarding.choice.team-up.continue-without-a-team"
+msgstr "Turpināt bez komandas"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites"
+msgstr "Izveidot komandu un nosūtīt uzaicinājumus"
+
+msgid "onboarding.choice.team-up.create-team-and-invite"
+msgstr "Izveidot komandu un uzaicināt"
+
+msgid "onboarding.choice.team-up.create-team-without-invite"
+msgstr "Izveidot komandu"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites-description"
+msgstr "Uzaicināt būs iespējams vēlāk"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.developer"
+msgstr "Izstrādātājs"
+
+msgid "workspace.layout_grid.editor.options.exit"
+msgstr "Iziet"
+
+msgid "media.image"
+msgstr "Attēls"
+
+msgid "media.solid"
+msgstr "Viengabalains"
+
+msgid "media.linear"
+msgstr "Līnijveida"
+
+msgid "media.radial"
+msgstr "Radiāls"
+
+msgid "media.gradient"
+msgstr "Pāreja"
+
+msgid "media.choose-image"
+msgstr "Izvēlēties attēlu"
+
+msgid "workspace.options.guides.title"
+msgstr "Vadotnes"
+
+#: src/app/main/errors.cljs
+msgid "errors.version-not-supported"
+msgstr "Datnei ir nesaderīgs versijas numurs"
+
+#: src/app/main/errors.cljs
+msgid "errors.file-feature-mismatch"
+msgstr ""
+"Izskatās, ka ir nesaderība starp iespējotajām iespējām un iespējām datnē, "
+"kuru tiek mēģināts atvērt. Jāpiemēro '%s' migrācijas, pirms datne var tikt "
+"atvērta."
+
+msgid "errors.validation"
+msgstr "Pārbaudes kļūda"
+
+msgid "inspect.attributes.typography.text-transform.unset"
+msgstr "Atiestatīt"
+
+msgid "labels.share"
+msgstr "Kopīgot"
+
+msgid "labels.search"
+msgstr "Meklēt"
+
+#: src/app/main/ui/auth/register.cljs
+#, markdown
+msgid "auth.terms-privacy-agreement-md"
+msgstr ""
+"Ar jauna konta izveidošanu tiek piekrists mūsu [pakalpojuma noteikumiem](%s) "
+"un [privātuma nosacījumiem](%s)."
+
+msgid "onboarding.choice.team-up.create-team-without-inviting"
+msgstr "Izveidot komandu bez uzaicināšanas"
+
+msgid "workspace.layout_grid.editor.options.edit-grid"
+msgstr "Labot režģi"
+
+msgid "workspace.layout_grid.editor.top-bar.locate"
+msgstr "Noteikt atrašanās vietu"
+
+msgid "workspace.layout_grid.editor.top-bar.done"
+msgstr "Darīts"
+
+msgid "workspace.options.component.swap"
+msgstr "Mijmainīt sastāvdaļu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow"
+msgstr "Plūsma"
+
+msgid "workspace.top-bar.read-only.done"
+msgstr "Darīts"
+
+msgid "workspace.options.component.swap.empty"
+msgstr "Šajā bibliotēkā vēl nav līdzekļu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.line-arrow-short"
+msgstr "Bulta"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.triangle-arrow-short"
+msgstr "Trijstūris"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square-marker-short"
+msgstr "Taisnstūris"
+
+msgid "workspace.assets.duplicate-main"
+msgstr "Divkāršot galveno"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.designer"
+msgstr "Modelētājs"
+
+msgid "dashboard.import.import-message"
+msgid_plural "dashboard.import.import-message"
+msgstr[0] "%s datņu tika veiksmīgi ievietotas."
+msgstr[1] "%s datne tika veiksmīgi ievietota."
+msgstr[2] "%s datnes tika veiksmīgi ievietotas."
+
+msgid "modals.add-shared-confirm-empty.hint"
+msgstr ""
+"Bibliotēka ir tukša. Tiklīdz tā būs pievienota kā koplietojama bibliotēka, "
+"izveidotie līdzekļi būs pieejami izmantošanai pārējos failos. Vai tiešām "
+"padarīt to pieejamu?"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
+msgid "settings.detach"
+msgstr "Atdalīt"
+
+msgid "workspace.options.component.copy"
+msgstr "Ievietot starpliktuvē"
+
+msgid "workspace.options.component.main"
+msgstr "Galvenais"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.circle-marker-short"
+msgstr "Aplis"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.diamond-marker-short"
+msgstr "Dimants"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-unpublish-shared-confirm.activated.hint"
+msgid_plural "modals.delete-unpublish-shared-confirm.activated.hint"
+msgstr[0] ""
+"Līdzekļi, kas jau tiek izmantoti šajā datnē, paliks tajā (dizains netiks "
+"salauzts)."
+msgstr[1] ""
+"Līdzeklis, kas jau tiek izmantots šajā datnē, paliks tajā (dizains netiks "
+"salauzts)."
+msgstr[2] ""
+"Līdzekļi, kas jau tiek izmantoti šajā datnē, paliks tajā (dizains netiks "
+"salauzts)."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.marketing"
+msgstr "Tirgvedība"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.founder"
+msgstr "Dibinātājs/viceprezidents"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.manager"
+msgstr "Produktu vai projektu vadītājs"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.role"
+msgstr "Kāda ir ieņemamā loma?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.student-teacher"
+msgstr "Students vai pasniedzējs"
+
+#: src/app/main/data/common.cljs
+msgid "notifications.by-code.upgrade-version"
+msgstr "Ir pieejama jauna versija, lūgums atsvaidzināt lapu"
+
+msgid "workspace.layout_grid.editor.title"
+msgstr "Režģa labošana"
+
+msgid "shortcuts.toggle-theme"
+msgstr "Mainīt izskatu"
+
+msgid "workspace.header.menu.toggle-light-theme"
+msgstr "Pārslēgties uz gaišo izskatu"
+
+msgid "workspace.header.menu.toggle-dark-theme"
+msgstr "Pārslēgties uz tumšo izskatu"
+
+msgid "workspace.context-menu.grid-track.column.duplicate"
+msgstr "Divkāršota sleja"
+
+msgid "workspace.context-menu.grid-track.column.delete"
+msgstr "Izdzēst sleju"
+
+msgid "workspace.context-menu.grid-track.column.delete-shapes"
+msgstr "Izdzēst slejas un apveidus"
+
+msgid "workspace.context-menu.grid-track.row.duplicate"
+msgstr "Divkāršot rindu"
+
+msgid "workspace.context-menu.grid-track.row.add-before"
+msgstr "Pievienot 1 rindu virs"
+
+msgid "workspace.context-menu.grid-track.column.add-after"
+msgstr "Pievienot 1 sleju pa labi"
+
+msgid "workspace.context-menu.grid-track.column.add-before"
+msgstr "Pievienot 1 sleju pa kreisi"
+
+msgid "workspace.context-menu.grid-track.row.add-after"
+msgstr "Pievienot 1 rindu zem"
+
+msgid "workspace.context-menu.grid-track.row.delete"
+msgstr "Izdzēst rindu"
+
+msgid "workspace.context-menu.grid-track.row.delete-shapes"
+msgstr "Izdzēst rindu un apveidus"
+
+msgid "workspace.context-menu.grid-cells.merge"
+msgstr "Apvienot šūnas"
+
+msgid "workspace.context-menu.grid-cells.area"
+msgstr "Izveidot laukumu"
+
+msgid "workspace.context-menu.grid-cells.create-board"
+msgstr "Izveidot plātni"
+
+msgid "dashboard.import.analyze-error.components-v2"
+msgstr ""
+"Datne ar v2 sastāvdaļām ir aktivizēta, bet šī komanda to vēl neatbalsta."
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.loading"
+msgstr "Ielādē…"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-account-title"
+msgstr "Pieteikties manā kontā"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-tagline"
+msgstr ""
+"Penpot ir bezmaksas atvērtā pirmkoda dizaina rīks dizaina un koda sadarbībai"
+
+#: src/app/main/data/users.cljs
+msgid "errors.auth-provider-not-allowed"
+msgstr "Autentifikācijas nodrošinātājs nav atļauts šim profilam"
+
+msgid "shortcuts.toggle-rulers"
+msgstr "Rādīt/paslēpt mērjoslas"
+
+msgid "shortcuts.toggle-snap-guides"
+msgstr "Pievilkt pie vadlīnijām"
+
+msgid "shortcuts.toggle-guides"
+msgstr "Rādīt/paslēpt vadlīnijas"
+
+msgid "shortcuts.toggle-snap-ruler-guide"
+msgstr "Pievilkt pie mērjoslu vadlīnijām"
+
+msgid "shortcuts.toggle-layout-grid"
+msgstr "Pievienot/noņemt režģa izkārtojumu"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-snap-ruler-guides"
+msgstr "Atspējot pievilkšanu mērjoslu vadlīnijām"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-snap-ruler-guides"
+msgstr "Pievilkt pie mērjoslu vadlīnijām"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-guides"
+msgstr "Parādīt vadlīnijas"
+
+msgid "workspace.layout_grid.editor.top-bar.locate.tooltip"
+msgstr "Norādīt režģa izkārtojumu"
+
+msgid "workspace.layout_grid.editor.padding.expand"
+msgstr "Rādīt četrpusējas atbīdes iespējas"
+
+#, markdown
+msgid "workspace.top-bar.view-only"
+msgstr "**Apskata kodu** (tikai skatīšana)"
+
+#: src/app/main/data/users.cljs
+msgid "errors.email-domain-not-allowed"
+msgstr "Domēns nav atļauts"
+
+msgid "modals.move-shared-confirm.accept"
+msgid_plural "modals.move-shared-confirm.accept"
+msgstr[0] "Pārvietot"
+msgstr[1] "Pārvietot"
+msgstr[2] "Pārvietot"
+
+msgid "modals.move-shared-confirm.message"
+msgid_plural "modals.move-shared-confirm.message"
+msgstr[0] "Vai tiešām pārvietot šīs bibliotēkas?"
+msgstr[1] "Vai tiešām pārvietot šīs bibliotēkas?"
+msgstr[2] "Vai tiešām pārvietot šīs bibliotēkas?"
+
+msgid "modals.move-shared-confirm.title"
+msgid_plural "modals.move-shared-confirm.title"
+msgstr[0] "Pārvietot bibliotēkas"
+msgstr[1] "Pārvietot bibliotēkas"
+msgstr[2] "Pārvietot bibliotēkas"
+
+msgid "onboarding.team-modal.team-definition"
+msgstr "Kas ir komanda?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.never-used-one"
+msgstr "Neviens"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs
+msgid "settings.select-this-color"
+msgstr "Atlasīt vienumus, kas izmanto šo stilu"
+
+msgid "shortcuts.scale"
+msgstr "Mērogot"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.filter"
+msgstr "Atlasīt"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.sort"
+msgstr "Kārtot"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-guides"
+msgstr "Paslēpt vadlīnijas"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.shared-library-btn"
+msgstr "Savienot bibliotēku"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.unlink-library-btn"
+msgstr "Atvienot bibliotēku"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs
+msgid "workspace.assets.sidebar.components"
+msgid_plural "workspace.assets.sidebar.components"
+msgstr[0] "%s sastāvdaļu"
+msgstr[1] "%s sastāvdaļa"
+msgstr[2] "%s sastāvdaļas"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-grid"
+msgstr "Noņemt režģa izkārtojumu"
+
+msgid "media.image.short"
+msgstr "att."
+
+msgid "media.keep-aspect-ratio"
+msgstr "Paturēt samēru"
