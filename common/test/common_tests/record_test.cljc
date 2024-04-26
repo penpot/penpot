@@ -27,7 +27,6 @@
 
     (t/testing "unknown assoc"
       (let [o (assoc o :c 176)]
-        (prn  o)
         (t/is (= 1 (:a o)))
         (t/is (= 2 (:b o)))
         (t/is (= 176 (:c o)))))

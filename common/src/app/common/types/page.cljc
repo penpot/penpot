@@ -69,10 +69,10 @@
                                :name "Root Frame"})}})
 
 (defn make-empty-page
-  [id name]
+  [{:keys [id name]}]
   (-> empty-page-data
-      (assoc :id id)
-      (assoc :name name)))
+      (assoc :id (or id (uuid/next)))
+      (assoc :name (or name "Page 1"))))
 
 ;; --- Helpers for flow
 

@@ -578,7 +578,7 @@
     (ex/raise :type :conflict
               :hint "id+name or page should be provided, never both"))
   (let [page (if (and (string? name) (uuid? id))
-               (ctp/make-empty-page id name)
+               (ctp/make-empty-page {:id id :name name})
                page)]
     (ctpl/add-page data page)))
 

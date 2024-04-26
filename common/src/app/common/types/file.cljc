@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.features :as cfeat]
+   [app.common.files.defaults :refer [version]]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
@@ -78,7 +79,7 @@
 
   ([file-id page-id]
    (let [page (when (some? page-id)
-                (ctp/make-empty-page page-id "Page 1"))]
+                (ctp/make-empty-page {:id page-id :name "Page 1"}))]
 
      (cond-> (assoc empty-file-data :id file-id)
        (some? page-id)
@@ -86,6 +87,34 @@
 
        (contains? cfeat/*current* "components/v2")
        (assoc-in [:options :components-v2] true)))))
+
+(defn make-file
+  [{:keys [id project-id name revn is-shared features
+           ignore-sync-until modified-at deleted-at
+           create-page page-id]
+    :or {is-shared false revn 0 create-page true}}]
+
+  (let [id       (or id (uuid/next))
+
+        data     (if create-page
+                   (if page-id
+                     (make-file-data id page-id)
+                     (make-file-data id))
+                   (make-file-data id nil))
+
+        file     {:id id
+                  :project-id project-id
+                  :name name
+                  :revn revn
+                  :is-shared is-shared
+                  :version version
+                  :data data
+                  :features features
+                  :ignore-sync-until ignore-sync-until
+                  :modified-at modified-at
+                  :deleted-at deleted-at}]
+
+    (d/without-nils file)))
 
 ;; Helpers
 
@@ -457,7 +486,7 @@
                              (gpt/point 0 0)
                              (ctn/shapes-seq library-page))]
         [file-data (:id library-page) position])
-      (let [library-page (ctp/make-empty-page (uuid/next) "Main components")]
+      (let [library-page (ctp/make-empty-page {:id (uuid/next) :name "Main components"})]
         [(ctpl/add-page file-data library-page) (:id library-page) (gpt/point 0 0)]))))
 
 (defn- absorb-components
