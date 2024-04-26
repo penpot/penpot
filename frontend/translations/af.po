@@ -11,86 +11,6 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Weblate 5.1-dev\n"
 
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.expiration-30-days"
-msgstr "30 dae"
-
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
-msgid "dashboard.add-shared"
-msgstr "Voeg by as Gedeelde Biblioteek"
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.token-will-not-expire"
-msgstr "Die token het nie 'n verval datum nie"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-with-gitlab-submit"
-msgstr "GitLab"
-
-msgid "common.share-link.placeholder"
-msgstr "Deelbare skakel sal hier verskyn"
-
-#: src/app/main/ui/auth/recovery_request.cljs
-msgid "auth.recovery-request-title"
-msgstr "Wagwoord vergeet?"
-
-msgid "common.share-link.current-tag"
-msgstr "(huidige)"
-
-#: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
-msgstr "Die hersteltoken is ongeldig."
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.create"
-msgstr "Genereer nuwe token"
-
-#: src/app/main/ui/auth/verify_token.cljs
-msgid "auth.notifications.team-invitation-accepted"
-msgstr "Het suksesvol by die span aangesluit"
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.team-hero.title"
-msgstr "Span saam!"
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.expiration-180-days"
-msgstr "180 dae"
-
-msgid "dashboard.export-frames"
-msgstr "Voer borde as PDF uit"
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.create-demo-profile"
-msgstr "Wil jy dit net probeer?"
-
-#: src/app/main/ui/auth/recovery_request.cljs
-msgid "auth.recovery-request-submit"
-msgstr "Herstel Wagwoord"
-
-#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
-msgid "dashboard.copy-suffix"
-msgstr "(kopieer)"
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.errors-required-name"
-msgstr "Die naam word vereis"
-
-#: src/app/main/ui/dashboard/sidebar.cljs
-msgid "dashboard.create-new-team"
-msgstr "Skep 'n nuwe span"
-
-msgid "common.share-link.destroy-link"
-msgstr "Vernietig skakel"
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.copied-success"
-msgstr "Token gekopieer"
-
-#: src/app/main/ui/dashboard/projects.cljs
-msgid "dasboard.walkthrough-hero.info"
-msgstr "Gaan stap deur Penpot en leer sy hoofkenmerke ken."
-
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
 msgstr "Reeds 'n rekening?"
@@ -138,10 +58,6 @@ msgstr "Meld hier aan"
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
 msgstr "Meld aan"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Wonderlik om jou weer te sien!"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"

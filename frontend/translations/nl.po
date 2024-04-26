@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2024-04-25 13:07+0000\n"
 "Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
-"Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
-">\n"
+"Language-Team: Dutch "
+"<https://hosted.weblate.org/projects/penpot/frontend/nl/>\n"
 "Language: nl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -63,6 +63,12 @@ msgstr "Hier inloggen"
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
 msgstr "Inloggen"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-tagline"
+msgstr ""
+"Penpot is de gratis open-source ontwerptool voor samenwerking op het gebied "
+"van ontwerp en code"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
@@ -3120,6 +3126,15 @@ msgstr "Vergrendelen/ontgrendelen"
 msgid "shortcuts.toggle-lock-size"
 msgstr "Proporties vergrendelen"
 
+msgid "shortcuts.toggle-rulers"
+msgstr "Linialen tonen/verbergen"
+
+msgid "shortcuts.toggle-snap-guides"
+msgstr "Uitlijnen op hulpijnen"
+
+msgid "shortcuts.toggle-snap-ruler-guide"
+msgstr "Uitlijnen op liniaal-hulplijnen"
+
 msgid "shortcuts.toggle-textpalette"
 msgstr "Tekstpalet in/uitschakelen"
 
@@ -5178,10 +5193,6 @@ msgstr "Tekst (%s)"
 msgid "workspace.toolbar.text-palette"
 msgstr "Typografie (%s)"
 
-#, markdown
-msgid "workspace.top-bar.read-only"
-msgstr "** Inspectiemodus ** (alleen bekijken)"
-
 msgid "workspace.top-bar.read-only.done"
 msgstr "Klaar"
 
@@ -5322,326 +5333,3 @@ msgstr "Bijwerken"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klik om het pad te sluiten"
-
-msgid "workspace.options.component.copy"
-msgstr "Kopiëren"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.square-marker-short"
-msgstr "Rechthoek"
-
-msgid "workspace.options.component.main"
-msgstr "Hoofd"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.diamond-marker-short"
-msgstr "Ruit"
-
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
-msgid "settings.detach"
-msgstr "Ontkoppelen"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.triangle-arrow-short"
-msgstr "Driehoek"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.line-arrow-short"
-msgstr "Pijl"
-
-msgid "modals.add-shared-confirm-empty.hint"
-msgstr ""
-"Je bibliotheek is leeg. Eenmaal toegevoegd als Gedeelde Bibliotheek, zijn de "
-"assets die je aanmaakt beschikbaar voor gebruik in de rest van je bestanden. "
-"Weet je zeker dat je dit wilt publiceren??"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-msgid "workspace.options.stroke-cap.circle-marker-short"
-msgstr "Cirkel"
-
-msgid "onboarding.choice.team-up.continue-creating-team"
-msgstr "Doorgaan met team aanmaken"
-
-msgid "workspace.options.guides.title"
-msgstr "Hulplijnen"
-
-msgid "media.choose-image"
-msgstr "Afbeelding kiezen"
-
-#: src/app/main/ui/auth/register.cljs
-#, markdown
-msgid "auth.terms-privacy-agreement-md"
-msgstr ""
-"Met het aanmaken van een nieuw account ga je akkoord met onze "
-"[servicevoorwaarden] (%s) en [privacybeleid] (%s)."
-
-msgid "workspace.options.component.swap.empty"
-msgstr "Er zijn nog geen assets in deze bibliotheek"
-
-msgid "media.solid"
-msgstr "Solide"
-
-msgid "workspace.top-bar.read-only.done"
-msgstr "Klaar"
-
-msgid "onboarding.choice.team-up.create-team-and-invite"
-msgstr "Team aanmaken & uitnodigen"
-
-msgid "workspace.layout_grid.editor.top-bar.done"
-msgstr "Klaar"
-
-msgid "onboarding.choice.team-up.continue-without-a-team"
-msgstr "Doorgaan zonder team"
-
-msgid "inspect.attributes.typography.text-transform.unset"
-msgstr "Uitschakelen"
-
-msgid "errors.validation"
-msgstr "Validatiefout"
-
-msgid "workspace.layout_grid.editor.options.exit"
-msgstr "Sluiten"
-
-#: src/app/main/errors.cljs
-msgid "errors.version-not-supported"
-msgstr "Bestand heeft een incompatibel versienummer"
-
-msgid "workspace.options.component.swap"
-msgstr "Component uitwisselen"
-
-msgid "onboarding.choice.team-up.create-team-without-inviting"
-msgstr "Team aanmaken zonder uitnodigingen"
-
-#: src/app/main/errors.cljs
-msgid "errors.file-feature-mismatch"
-msgstr ""
-"Het lijkt erop dat er een discrepantie bestaat tussen de ingeschakelde "
-"functies en de functies van het bestand dat je probeert te openen. Er moeten "
-"migraties voor '%s' worden toegepast voordat het bestand kan worden geopend."
-
-msgid "onboarding.choice.team-up.create-team-without-invite"
-msgstr "Team aanmaken"
-
-msgid "media.linear"
-msgstr "Lineair"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-msgid "workspace.options.flows.flow"
-msgstr "Stroomdiagram"
-
-msgid "labels.search"
-msgstr "Zoeken"
-
-msgid "media.image"
-msgstr "Afbeelding"
-
-msgid "onboarding.choice.team-up.start-without-a-team-description"
-msgstr "Je kunt later een team samenstellen."
-
-msgid "onboarding.choice.team-up.create-team-and-send-invites"
-msgstr "Team aanmaken en uitnodigingen versturen"
-
-msgid "workspace.layout_grid.editor.top-bar.locate"
-msgstr "Lokaliseren"
-
-msgid "media.gradient"
-msgstr "Verloop"
-
-msgid "labels.share"
-msgstr "Delen"
-
-msgid "workspace.layout_grid.editor.options.edit-grid"
-msgstr "Raster bewerken"
-
-msgid "onboarding.choice.team-up.start-without-a-team"
-msgstr "Zonder team beginnen"
-
-msgid "onboarding.choice.team-up.create-team-and-send-invites-description"
-msgstr "Je kunt later uitnodigen"
-
-msgid "media.radial"
-msgstr "Radiaal"
-
-msgid "errors.paste-data-validation"
-msgstr "Ongeldige gegevens op klembord"
-
-#: src/app/main/errors.cljs
-msgid "errors.team-feature-mismatch"
-msgstr "Incompatibele functie '%s' gedetecteerd"
-
-#: src/app/main/ui/workspace/libraries.cljs
-msgid "workspace.libraries.loading"
-msgstr "Laden…"
-
-msgid "workspace.context-menu.grid-track.column.add-before"
-msgstr "Links 1 kolom toevoegen"
-
-msgid "workspace.context-menu.grid-track.row.duplicate"
-msgstr "Rij dupliceren"
-
-msgid "workspace.context-menu.grid-track.row.add-before"
-msgstr "Boven 1 rij toevoegen"
-
-msgid "workspace.context-menu.grid-track.row.add-after"
-msgstr "Onder 1 rij toevoegen"
-
-msgid "workspace.context-menu.grid-track.row.delete"
-msgstr "Rij verwijderen"
-
-msgid "workspace.context-menu.grid-track.row.delete-shapes"
-msgstr "Rij en vormen verwijderen"
-
-msgid "workspace.context-menu.grid-cells.merge"
-msgstr "Cellen samenvoegen"
-
-msgid "workspace.context-menu.grid-cells.area"
-msgstr "Gebied aanmaken"
-
-msgid "workspace.context-menu.grid-cells.create-board"
-msgstr "Bord aanmaken"
-
-msgid "workspace.context-menu.grid-track.column.add-after"
-msgstr "Rechts 1 kolom toevoegen"
-
-msgid "workspace.context-menu.grid-track.column.delete"
-msgstr "Kolom verwijderen"
-
-msgid "workspace.context-menu.grid-track.column.delete-shapes"
-msgstr "Kolom en vormen verwijderen"
-
-msgid "dashboard.import.analyze-error.components-v2"
-msgstr ""
-"Bestand met componenten v2 geactiveerd, maar dit team ondersteunt dit nog "
-"niet."
-
-msgid "shortcuts.toggle-theme"
-msgstr "Thema veranderen"
-
-msgid "workspace.header.menu.toggle-light-theme"
-msgstr "Licht thema inschakelen"
-
-msgid "workspace.header.menu.toggle-dark-theme"
-msgstr "Donker thema inschakelen"
-
-msgid "workspace.context-menu.grid-track.column.duplicate"
-msgstr "Kolom dupliceren"
-
-#: src/app/main/data/users.cljs
-msgid "errors.email-domain-not-allowed"
-msgstr "Domein niet toegestaan"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.never-used-one"
-msgstr "Geen"
-
-msgid "shortcuts.toggle-snap-guides"
-msgstr "Uitlijnen op hulpijnen"
-
-msgid "shortcuts.scale"
-msgstr "Schaal"
-
-msgid "shortcuts.toggle-layout-grid"
-msgstr "Raster-layout toevoegen/verwijderen"
-
-msgid "shortcuts.toggle-rulers"
-msgstr "Linialen tonen/verbergen"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.filter"
-msgstr "Filteren"
-
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "workspace.assets.sort"
-msgstr "Sorteren"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.enable-snap-ruler-guides"
-msgstr "Uitlijnen op liniaal-hulplijnen"
-
-#: src/app/main/ui/workspace/libraries.cljs
-msgid "workspace.libraries.unlink-library-btn"
-msgstr "Bibliotheekverbinding verbreken"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-account-title"
-msgstr "Log in op mijn account"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.disable-snap-ruler-guides"
-msgstr "Uitlijnen op liniaal-hulplijnen deactiveren"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-guides"
-msgstr "Hulplijnen weergeven"
-
-msgid "workspace.layout_grid.editor.padding.expand"
-msgstr "4-zijdige opvulopties weergeven"
-
-#, markdown
-msgid "workspace.top-bar.view-only"
-msgstr "**Code inspecteren** (alleen weergave)"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-tagline"
-msgstr ""
-"Penpot is de gratis open-source ontwerptool voor samenwerking op het gebied "
-"van ontwerp en code"
-
-msgid "modals.move-shared-confirm.accept"
-msgid_plural "modals.move-shared-confirm.accept"
-msgstr[0] "Verplaatsen"
-msgstr[1] "Verplaatsen"
-
-#: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.hide-guides"
-msgstr "Hulplijnen verbergen"
-
-msgid "workspace.layout_grid.editor.top-bar.locate.tooltip"
-msgstr "Raster-layout tonen"
-
-#: src/app/main/ui/workspace/libraries.cljs
-msgid "workspace.libraries.shared-library-btn"
-msgstr "Bibliotheek verbinden"
-
-msgid "media.image.short"
-msgstr "img"
-
-#: src/app/main/data/users.cljs
-msgid "errors.auth-provider-not-allowed"
-msgstr "Auth-provider is niet toegestaan voor dit profiel"
-
-msgid "modals.move-shared-confirm.message"
-msgid_plural "modals.move-shared-confirm.message"
-msgstr[0] "Weet je zeker dat je deze bibliotheek wilt verplaatsen?"
-msgstr[1] "Weet je zeker dat je deze bibliotheken wilt verplaatsen?"
-
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs
-msgid "workspace.assets.sidebar.components"
-msgid_plural "workspace.assets.sidebar.components"
-msgstr[0] "1 component"
-msgstr[1] "%s componenten"
-
-msgid "modals.move-shared-confirm.title"
-msgid_plural "modals.move-shared-confirm.title"
-msgstr[0] "Bibliotheek verplaatsen"
-msgstr[1] "Bibliotheken verplaatsen"
-
-#: src/app/main/ui/workspace/context_menu.cljs
-msgid "workspace.shape.menu.remove-grid"
-msgstr "Raster-layout verwijderen"
-
-msgid "onboarding.team-modal.team-definition"
-msgstr "Wat is een team?"
-
-msgid "media.keep-aspect-ratio"
-msgstr "Verhoudingen behouden"
-
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs
-msgid "settings.select-this-color"
-msgstr "Selecteer items in deze stijl"
-
-msgid "shortcuts.toggle-guides"
-msgstr "Hulplijnen tonen/verbergen"
-
-msgid "shortcuts.toggle-snap-ruler-guide"
-msgstr "Uitlijnen op liniaal-hulplijnen"
