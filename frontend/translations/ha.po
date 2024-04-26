@@ -111,37 +111,6 @@ msgstr "an aika maka da saqon matakan da za a bi domin dawo da lambar tsaronka."
 msgid "auth.notifications.team-invitation-accepted"
 msgstr "ka zama dan tawaga"
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.password"
-msgstr "lambar tsaro"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.password-length-hint"
-msgstr "aqalla a sami alamoni 8"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.password-not-empty"
-msgstr "dole lambar tsaro ta qunshi wasu alamomi, sannan tazara."
-
-msgid "auth.privacy-policy"
-msgstr "matakan kaxaita"
-
-#: src/app/main/ui/auth/recovery_request.cljs
-msgid "auth.recovery-request-submit"
-msgstr "gano lambar tsaro"
-
-#: src/app/main/ui/auth/recovery_request.cljs
-msgid "auth.recovery-request-subtitle"
-msgstr "za mu aika maka da saqon qa'idoji ta imel"
-
-#: src/app/main/ui/auth/recovery_request.cljs
-msgid "auth.recovery-request-title"
-msgstr "an manta lambar tsaro?"
-
-#: src/app/main/ui/auth/recovery.cljs
-msgid "auth.recovery-submit"
-msgstr "canza lambar tsaro"
-
 msgid "shortcut-subsection.shape"
 msgstr "Siffa"
 
