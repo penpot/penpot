@@ -16,6 +16,7 @@
    [app.db.sql :as sql]
    [app.features.components-v2 :as feat.compv2]
    [app.features.fdata :as fdata]
+   [app.loggers.audit :as audit]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.files-create :as files.create]
@@ -23,6 +24,7 @@
    [app.rpc.commands.projects :as projects]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
+   [app.rpc.helpers :as rph]
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
@@ -100,7 +102,9 @@
                                  :revn revn
                                  :data nil
                                  :changes (blob/encode changes)})
-                    nil)))
+                    (rph/with-meta (rph/wrap nil)
+                      {::audit/replace-props {:file-id id
+                                              :revn revn}}))))
 
 ;; --- MUTATION COMMAND: persist-temp-file
 
