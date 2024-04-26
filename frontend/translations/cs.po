@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-01-23 15:02+0000\n"
-"Last-Translator: \"Amerey.eu\" <info@amerey.eu>\n"
+"PO-Revision-Date: 2024-04-24 12:55+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Czech "
 "<https://hosted.weblate.org/projects/penpot/frontend/cs/>\n"
 "Language: cs\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=((n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2);\n"
-"X-Generator: Weblate 5.4-dev\n"
+"X-Generator: Weblate 5.5.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -59,10 +59,6 @@ msgstr "Přihlaste se zde"
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
 msgstr "Přihlásit se"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Rádi vás znovu vidíme!"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
@@ -1015,6 +1011,7 @@ msgstr "Chyba připojení, adresa URL není dostupná"
 msgid "errors.webhooks.invalid-uri"
 msgstr "Adresa URL neprošla ověřením."
 
+#, fuzzy
 msgid "errors.webhooks.last-delivery"
 msgstr "Poslední dodávka nebyla úspěšná."
 
@@ -3029,9 +3026,6 @@ msgstr "Uzamknout vybrané"
 msgid "shortcuts.toggle-lock-size"
 msgstr "Uzamknout proporce"
 
-msgid "shortcuts.toggle-rules"
-msgstr "Zobrazit/skrýt pravítka"
-
 msgid "shortcuts.toggle-textpalette"
 msgstr "Přepnout paletu textu"
 
@@ -3191,6 +3185,7 @@ msgstr "Zobrazit interakce po kliknutí"
 msgid "viewer.header.sitemap"
 msgstr "Mapa stránek"
 
+#, fuzzy
 msgid "webhooks.last-delivery.success"
 msgstr "Poslední doručení proběhlo úspěšně."
 

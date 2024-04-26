@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-07-01 12:52+0000\n"
-"Last-Translator: Mikel Larreategi <mlarreategi@codesyntax.com>\n"
+"PO-Revision-Date: 2024-04-24 12:55+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Basque "
 "<https://hosted.weblate.org/projects/penpot/frontend/eu/>\n"
 "Language: eu\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.0-dev\n"
+"X-Generator: Weblate 5.5.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -59,10 +59,6 @@ msgstr "Sartu"
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
 msgstr "Sartu"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Ongi etorri berriz ere!"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
@@ -893,6 +889,7 @@ msgstr "Konexio errorea, URLa ezin da ireki"
 msgid "errors.webhooks.invalid-uri"
 msgstr "URLak ez du balidazioa gainditu."
 
+#, fuzzy
 msgid "errors.webhooks.last-delivery"
 msgstr "Errore bat gertatu da azken bidalketan."
 
@@ -2568,9 +2565,6 @@ msgstr "Blokeatu/Desblokeatu"
 msgid "shortcuts.toggle-lock-size"
 msgstr "Blokeatu/Desblokeatu proportzioak"
 
-msgid "shortcuts.toggle-rules"
-msgstr "Erakutsi/ezkutatu erregelak"
-
 msgid "shortcuts.toggle-textpalette"
 msgstr "Erakutsi/Ezkutatu testuen paleta"
 
@@ -2724,6 +2718,7 @@ msgstr "Erakutsi interakzioak klik egitean"
 msgid "viewer.header.sitemap"
 msgstr "Webgunearen mapa"
 
+#, fuzzy
 msgid "webhooks.last-delivery.success"
 msgstr "Azken bidalketa ondo joan da."
 

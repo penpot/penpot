@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-03-22 16:01+0000\n"
+"PO-Revision-Date: 2024-04-25 13:07+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German "
 "<https://hosted.weblate.org/projects/penpot/frontend/de/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.5-dev\n"
+"X-Generator: Weblate 5.5.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -52,6 +52,10 @@ msgstr "Passwort vergessen?"
 msgid "auth.fullname"
 msgstr "Vollständiger Name"
 
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-account-title"
+msgstr "In mein Konto einloggen"
+
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.login-here"
 msgstr "Hier anmelden"
@@ -61,8 +65,10 @@ msgid "auth.login-submit"
 msgstr "Anmelden"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Schön, Sie wiederzusehen!"
+msgid "auth.login-tagline"
+msgstr ""
+"Penpot ist das kostenlose Open-Source-Design-Tool für die Zusammenarbeit "
+"von Design und Code"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
@@ -865,6 +871,10 @@ msgstr "Ok"
 msgid "ds.confirm-title"
 msgstr "Sind Sie sicher?"
 
+#: src/app/main/data/users.cljs
+msgid "errors.auth-provider-not-allowed"
+msgstr "Auth-Provider für dieses Profil nicht erlaubt"
+
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.auth-provider-not-configured"
 msgstr "Authentifizierungsanbieter ist nicht konfiguriert."
@@ -896,6 +906,10 @@ msgstr "E-Mail-Adresse wurde bereits validiert."
 
 msgid "errors.email-as-password"
 msgstr "Sie können Ihre E-Mail-Adresse nicht als Passwort verwenden"
+
+#: src/app/main/data/users.cljs
+msgid "errors.email-domain-not-allowed"
+msgstr "Domain nicht zulässig"
 
 #: src/app/main/ui/auth/register.cljs,
 #: src/app/main/ui/auth/recovery_request.cljs,
@@ -1765,7 +1779,7 @@ msgid "labels.uploading"
 msgstr "Hochladen…"
 
 msgid "labels.view-only"
-msgstr "NUR ANSEHEN"
+msgstr "Nur ansehen"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.viewer"
@@ -1794,6 +1808,12 @@ msgstr "Verlauf"
 
 msgid "media.image"
 msgstr "Bild"
+
+msgid "media.image.short"
+msgstr "img"
+
+msgid "media.keep-aspect-ratio"
+msgstr "Seitenverhältnis beibehalten"
 
 msgid "media.linear"
 msgstr "Linear"
@@ -2146,6 +2166,21 @@ msgstr "Sind Sie sicher, dass Sie dieses Team verlassen wollen?"
 msgid "modals.leave-confirm.title"
 msgstr "Team verlassen"
 
+msgid "modals.move-shared-confirm.accept"
+msgid_plural "modals.move-shared-confirm.accept"
+msgstr[0] "Verschieben"
+msgstr[1] "Verschieben"
+
+msgid "modals.move-shared-confirm.message"
+msgid_plural "modals.move-shared-confirm.message"
+msgstr[0] "Sind Sie sicher, dass Sie diese Bibliothek verschieben wollen?"
+msgstr[1] "Sind Sie sicher, dass Sie diese Bibliotheken verschieben wollen?"
+
+msgid "modals.move-shared-confirm.title"
+msgid_plural "modals.move-shared-confirm.title"
+msgstr[0] "Bibliothek verschieben"
+msgstr[1] "Bibliotheken verschieben"
+
 #: src/app/main/ui/workspace/nudge.cljs
 msgid "modals.nudge-title"
 msgstr "Verschiebung"
@@ -2438,6 +2473,9 @@ msgstr "Unbegrenzte Anzahl von Mitgliedern"
 msgid "onboarding.team-modal.create-team-feature-5"
 msgstr "100% kostenlos!"
 
+msgid "onboarding.team-modal.team-definition"
+msgstr "Was ist ein Team?"
+
 msgid "onboarding.templates.subtitle"
 msgstr "Hier sind einige Vorlagen."
 
@@ -2540,6 +2578,10 @@ msgid "questions.more-than-50"
 msgstr "Mehr als 50"
 
 #: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.never-used-one"
+msgstr "Keine"
+
+#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.next"
 msgstr "Weiter"
 
@@ -2630,6 +2672,10 @@ msgstr "Trennen"
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "settings.multiple"
 msgstr "Mehrere"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs
+msgid "settings.select-this-color"
+msgstr "Elemente mit diesem Stil auswählen"
 
 # SECTIONS
 msgid "shortcut-section.basics"
@@ -2984,6 +3030,9 @@ msgstr "Wiederholen"
 msgid "shortcuts.reset-zoom"
 msgstr "Zoom zurücksetzen"
 
+msgid "shortcuts.scale"
+msgstr "Skalieren"
+
 msgid "shortcuts.search-placeholder"
 msgstr "Tastaturkürzel suchen"
 
@@ -3057,6 +3106,9 @@ msgstr "Fokusmodus umschalten"
 msgid "shortcuts.toggle-fullscreen"
 msgstr "Vollbild aktivieren/deaktivieren"
 
+msgid "shortcuts.toggle-guides"
+msgstr "Hilfslinien anzeigen / ausblenden"
+
 msgid "shortcuts.toggle-history"
 msgstr "Verlauf ein-/ausblenden"
 
@@ -3066,14 +3118,20 @@ msgstr "Ebenen ein-/ausblenden"
 msgid "shortcuts.toggle-layout-flex"
 msgstr "Flex-Layout hinzufügen/entfernen"
 
+msgid "shortcuts.toggle-layout-grid"
+msgstr "Grid-Layout hinzufügen/entfernen"
+
 msgid "shortcuts.toggle-lock"
 msgstr "Auswahl sperren"
 
 msgid "shortcuts.toggle-lock-size"
 msgstr "Seitenverhältnis sperren/entsperren"
 
-msgid "shortcuts.toggle-rules"
-msgstr "Lineale ein-/ausblenden"
+msgid "shortcuts.toggle-rulers"
+msgstr "Lineale anzeigen / ausblenden"
+
+msgid "shortcuts.toggle-snap-guides"
+msgstr "An Hilfslinien ausrichten"
 
 msgid "shortcuts.toggle-textpalette"
 msgstr "Textpalette ein-/ausblenden"
@@ -3321,6 +3379,10 @@ msgstr "Hauptkomponente duplizieren"
 msgid "workspace.assets.edit"
 msgstr "Bearbeiten"
 
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.filter"
+msgstr "Filtern"
+
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.graphics"
@@ -3371,6 +3433,16 @@ msgstr[1] "%s Elemente ausgewählt"
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.shared-library"
 msgstr "Geteilte Bibliothek"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs
+msgid "workspace.assets.sidebar.components"
+msgid_plural "workspace.assets.sidebar.components"
+msgstr[0] "1 Komponente"
+msgstr[1] "% Komponenten"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.sort"
+msgstr "Sortieren"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs
@@ -3520,6 +3592,10 @@ msgid "workspace.header.menu.hide-artboard-names"
 msgstr "Namen von Zeichenflächen ausblenden"
 
 #: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-guides"
+msgstr "Hilfslinien ausblenden"
+
+#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
 msgstr "Farbpalette ausblenden"
 
@@ -3564,6 +3640,10 @@ msgstr "Alles auswählen"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-artboard-names"
 msgstr "Namen der Zeichenflächen anzeigen"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-guides"
+msgstr "Hilfslinien anzeigen"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"
@@ -3643,6 +3723,9 @@ msgstr "Grid bearbeiten"
 msgid "workspace.layout_grid.editor.options.exit"
 msgstr "Beenden"
 
+msgid "workspace.layout_grid.editor.padding.expand"
+msgstr "4-seitige Abstandsoptionen anzeigen"
+
 msgid "workspace.layout_grid.editor.title"
 msgstr "Raster bearbeiten"
 
@@ -3651,6 +3734,9 @@ msgstr "Fertig"
 
 msgid "workspace.layout_grid.editor.top-bar.locate"
 msgstr "Lokalisieren"
+
+msgid "workspace.layout_grid.editor.top-bar.locate.tooltip"
+msgstr "Grid-Layout lokalisieren"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.add"
@@ -3748,6 +3834,10 @@ msgstr "Suche nach gemeinsam genutzten Bibliotheken"
 msgid "workspace.libraries.shared-libraries"
 msgstr "GEMEINSAM GENUTZTE BIBLIOTHEKEN"
 
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.shared-library-btn"
+msgstr "Bibliothek verknüpfen"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.libraries.text.multiple-typography"
 msgstr "Mehrere Textstile"
@@ -3759,6 +3849,10 @@ msgstr "Verknüpfung aller Textstile aufheben"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.typography"
 msgstr "%s Textstile"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.unlink-library-btn"
+msgstr "Bibliothek trennen"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.update"
@@ -4925,6 +5019,10 @@ msgstr "Pfad"
 msgid "workspace.shape.menu.remove-flex"
 msgstr "Flex-Layout entfernen"
 
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-grid"
+msgstr "Grid-Layout entfernen"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs
@@ -5097,6 +5195,10 @@ msgstr "**Inspektionsmodus** (nur Ansicht)"
 
 msgid "workspace.top-bar.read-only.done"
 msgstr "Fertig"
+
+#, markdown
+msgid "workspace.top-bar.view-only"
+msgstr "**Code inspizieren** (nur ansehen)"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.empty"

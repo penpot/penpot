@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-01-25 12:01+0000\n"
-"Last-Translator: Yessenia Villarte Vaca <yesseniavillarte@gmail.com>\n"
+"PO-Revision-Date: 2024-04-26 04:53+0000\n"
+"Last-Translator: Alejandro Alonso <alejandro.alonso@kaleidos.net>\n"
 "Language-Team: Spanish "
 "<https://hosted.weblate.org/projects/penpot/frontend/es/>\n"
 "Language: es\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.4-dev\n"
+"X-Generator: Weblate 5.5.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -990,6 +990,9 @@ msgstr "La contraseña de confirmación debe coincidir"
 msgid "errors.password-too-short"
 msgstr "La contraseña debe tener 8 caracteres como mínimo"
 
+msgid "errors.paste-data-validation"
+msgstr "Datos inválidos en el portapapeles"
+
 msgid "errors.profile-blocked"
 msgstr "El perfil esta blockeado"
 
@@ -1004,6 +1007,10 @@ msgstr ""
 #: src/app/main/ui/auth/register.cljs
 msgid "errors.registration-disabled"
 msgstr "El registro está actualmente desactivado."
+
+#: src/app/main/errors.cljs
+msgid "errors.team-feature-mismatch"
+msgstr "Detectada funcionalidad incompatible '%s'"
 
 msgid "errors.team-leave.insufficient-members"
 msgstr ""
@@ -1028,12 +1035,20 @@ msgstr "Ha ocurrido un error inesperado."
 msgid "errors.unexpected-token"
 msgstr "Token desconocido"
 
+msgid "errors.validation"
+msgstr "Error de validación"
+
+#: src/app/main/errors.cljs
+msgid "errors.version-not-supported"
+msgstr "El fichero tiene un número de versión incompatible"
+
 msgid "errors.webhooks.connection"
 msgstr "Error de conexion, la url no es alcanzable"
 
 msgid "errors.webhooks.invalid-uri"
 msgstr "La URL no pasa la validación."
 
+#, fuzzy
 msgid "errors.webhooks.last-delivery"
 msgstr "Hubo un problema en el último envío."
 
@@ -1437,6 +1452,9 @@ msgstr "Eliminar invitation"
 msgid "labels.delete-multi-files"
 msgstr "Borrar %s archivos"
 
+msgid "labels.discard"
+msgstr "Descartar"
+
 #: src/app/main/ui/dashboard/projects.cljs,
 #: src/app/main/ui/dashboard/sidebar.cljs,
 #: src/app/main/ui/dashboard/files.cljs,
@@ -1792,6 +1810,12 @@ msgstr "Radial"
 
 msgid "media.solid"
 msgstr "Sólido"
+
+msgid "modals.add-shared-confirm-empty.hint"
+msgstr ""
+"Tu biblioteca está vacía. Una vez que se agregue como Biblioteca "
+"Compartida, los recursos que crees estarán disponibles para ser utilizados "
+"entre el resto de tus archivos. ¿Estás seguro de que deseas publicarlo?"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -2240,6 +2264,10 @@ msgstr ""
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "modals.update-remote-component.message"
 msgstr "Actualizar un componente en biblioteca"
+
+#: src/app/main/data/common.cljs
+msgid "notifications.by-code.upgrade-version"
+msgstr "Una nueva versión está disponible, por favor actualiza la página"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "notifications.invitation-email-sent"
@@ -3238,6 +3266,7 @@ msgstr "Mostrar interacciones al hacer click"
 msgid "viewer.header.sitemap"
 msgstr "Mapa del sitio"
 
+#, fuzzy
 msgid "webhooks.last-delivery.success"
 msgstr "El último envío fue correcto."
 
@@ -3591,8 +3620,8 @@ msgid "workspace.header.menu.show-artboard-names"
 msgstr "Mostrar nombres de tableros"
 
 #: src/app/main/ui/workspace/header.cljs
-msgid "workspace.header.menu.show-g"
-msgstr "Mostrar rejilla"
+msgid "workspace.header.menu.show-guides"
+msgstr "Mostrar guías"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"
@@ -3758,6 +3787,10 @@ msgid "workspace.libraries.library-updates"
 msgstr "ACTUALIZACIONES DE BIBLIOTECAS"
 
 #: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.loading"
+msgstr "Cargando…"
+
+#: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.no-libraries-need-sync"
 msgstr "No hay bibliotecas que necesiten ser actualizadas"
 
@@ -3800,6 +3833,10 @@ msgstr "Desconectar biblioteca"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.update"
 msgstr "Actualizar"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.libraries.update.see-all-changes"
+msgstr "ver todos los cambios"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.updates"

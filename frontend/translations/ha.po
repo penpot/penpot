@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-01-02 16:16+0000\n"
-"Last-Translator: Alejandro Alonso <alejandro.alonso@kaleidos.net>\n"
+"PO-Revision-Date: 2024-04-24 12:55+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Hausa "
 "<https://hosted.weblate.org/projects/penpot/frontend/ha/>\n"
 "Language: ha\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.4-dev\n"
+"X-Generator: Weblate 5.5.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -58,10 +58,6 @@ msgstr "shiga nan"
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
 msgstr "shiga ciki"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "na ji daxin sake haxuwa da kai!"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
@@ -951,6 +947,7 @@ msgstr "hadin bai yi ba, ba a iya samun  URL"
 msgid "errors.webhooks.invalid-uri"
 msgstr "URL bai gyaru ba."
 
+#, fuzzy
 msgid "errors.webhooks.last-delivery"
 msgstr "saqon qarshe bai je ba."
 
@@ -1007,6 +1004,7 @@ msgid "feedback.title"
 msgstr "imel"
 
 #: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
 msgid "feedback.twitter-go-to"
 msgstr "je ka tiwita"
 
@@ -1015,6 +1013,7 @@ msgid "feedback.twitter-subtitle1"
 msgstr "tambayoyin da ke buqatar amsa."
 
 #: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
 msgid "feedback.twitter-title"
 msgstr "wurin karvar qorafin tiwita"
 
@@ -1960,8 +1959,8 @@ msgstr "ka tabbata ka na son fita daga  %s tawaga?"
 
 msgid "modals.leave-and-reassign.forbidden"
 msgstr ""
-"ba za ku iya bari ba idan ba wani memba da zai ingata wa mai shi. ku na iya "
-"goge tawaga."
+"Webhooks hanyar sanar da manhajoji da addireshi intanet idan wani ya faru a "
+"Penpot. za a tura maka da saqon talla  URLs ka samar da."
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.hint1"

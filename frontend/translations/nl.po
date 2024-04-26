@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-02-12 19:02+0000\n"
+"PO-Revision-Date: 2024-04-25 13:07+0000\n"
 "Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
 "Language-Team: Dutch "
 "<https://hosted.weblate.org/projects/penpot/frontend/nl/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.4-dev\n"
+"X-Generator: Weblate 5.5.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -52,6 +52,10 @@ msgstr "Wachtwoord vergeten?"
 msgid "auth.fullname"
 msgstr "Volledige naam"
 
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-account-title"
+msgstr "Log in op mijn account"
+
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.login-here"
 msgstr "Hier inloggen"
@@ -61,8 +65,10 @@ msgid "auth.login-submit"
 msgstr "Inloggen"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Goed om je weer te zien!"
+msgid "auth.login-tagline"
+msgstr ""
+"Penpot is de gratis open-source ontwerptool voor samenwerking op het gebied "
+"van ontwerp en code"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
@@ -867,6 +873,10 @@ msgstr "Oké"
 msgid "ds.confirm-title"
 msgstr "Weet je het zeker?"
 
+#: src/app/main/data/users.cljs
+msgid "errors.auth-provider-not-allowed"
+msgstr "Auth-provider is niet toegestaan voor dit profiel"
+
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.auth-provider-not-configured"
 msgstr "Authenticatie-provider niet geconfigureerd."
@@ -900,6 +910,10 @@ msgstr "E-mail is al gevalideerd."
 
 msgid "errors.email-as-password"
 msgstr "Je kan je e-mail niet als wachtwoord gebruiken"
+
+#: src/app/main/data/users.cljs
+msgid "errors.email-domain-not-allowed"
+msgstr "Domein niet toegestaan"
 
 #: src/app/main/ui/auth/register.cljs,
 #: src/app/main/ui/auth/recovery_request.cljs,
@@ -1048,7 +1062,7 @@ msgid "errors.webhooks.invalid-uri"
 msgstr "URL komt niet door de validatie."
 
 msgid "errors.webhooks.last-delivery"
-msgstr "Laatste levering is niet gelukt."
+msgstr "Laatste levering was niet succesvol."
 
 msgid "errors.webhooks.ssl-validation"
 msgstr "Fout bij SSL-validatie."
@@ -1156,7 +1170,7 @@ msgstr "Breedte"
 
 #: src/app/main/ui/inspect/attributes/layout.cljs
 msgid "inspect.attributes.layout"
-msgstr "Lay-out"
+msgstr "Layout"
 
 #: src/app/main/ui/inspect/attributes/layout.cljs
 msgid "inspect.attributes.layout.height"
@@ -1791,6 +1805,12 @@ msgstr "Verloop"
 msgid "media.image"
 msgstr "Afbeelding"
 
+msgid "media.image.short"
+msgstr "img"
+
+msgid "media.keep-aspect-ratio"
+msgstr "Verhoudingen behouden"
+
 msgid "media.linear"
 msgstr "Lineair"
 
@@ -2148,6 +2168,21 @@ msgstr "Weet je zeker dat je dit team wilt verlaten?"
 msgid "modals.leave-confirm.title"
 msgstr "Team verlaten"
 
+msgid "modals.move-shared-confirm.accept"
+msgid_plural "modals.move-shared-confirm.accept"
+msgstr[0] "Verplaatsen"
+msgstr[1] "Verplaatsen"
+
+msgid "modals.move-shared-confirm.message"
+msgid_plural "modals.move-shared-confirm.message"
+msgstr[0] "Weet je zeker dat je deze bibliotheek wilt verplaatsen?"
+msgstr[1] "Weet je zeker dat je deze bibliotheken wilt verplaatsen?"
+
+msgid "modals.move-shared-confirm.title"
+msgid_plural "modals.move-shared-confirm.title"
+msgstr[0] "Bibliotheek verplaatsen"
+msgstr[1] "Bibliotheken verplaatsen"
+
 #: src/app/main/ui/workspace/nudge.cljs
 msgid "modals.nudge-title"
 msgstr "Verschuiving"
@@ -2436,6 +2471,9 @@ msgstr "Oneindig veel leden"
 msgid "onboarding.team-modal.create-team-feature-5"
 msgstr "100% gratis!"
 
+msgid "onboarding.team-modal.team-definition"
+msgstr "Wat is een team?"
+
 msgid "onboarding.templates.subtitle"
 msgstr "Hier zijn wat sjablonen."
 
@@ -2538,6 +2576,10 @@ msgid "questions.more-than-50"
 msgstr "Meer dan 50"
 
 #: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.never-used-one"
+msgstr "Geen"
+
+#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.next"
 msgstr "Volgende"
 
@@ -2629,6 +2671,10 @@ msgstr "Ontkoppelen"
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "settings.multiple"
 msgstr "Gemixt"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs
+msgid "settings.select-this-color"
+msgstr "Selecteer items in deze stijl"
 
 # SECTIONS
 msgid "shortcut-section.basics"
@@ -2983,6 +3029,9 @@ msgstr "Opnieuw doen"
 msgid "shortcuts.reset-zoom"
 msgstr "Zoom herstellen"
 
+msgid "shortcuts.scale"
+msgstr "Schaal"
+
 msgid "shortcuts.search-placeholder"
 msgstr "Sneltoetsen zoeken"
 
@@ -3056,6 +3105,9 @@ msgstr "Focusmodus in/uitschakelen"
 msgid "shortcuts.toggle-fullscreen"
 msgstr "Volledig scherm in/uitschakelen"
 
+msgid "shortcuts.toggle-guides"
+msgstr "Hulplijnen tonen/verbergen"
+
 msgid "shortcuts.toggle-history"
 msgstr "Geschiedenis in/uitschakelen"
 
@@ -3065,14 +3117,23 @@ msgstr "Lagen in/uitschakelen"
 msgid "shortcuts.toggle-layout-flex"
 msgstr "Flex-layout toevoegen/verwijderen"
 
+msgid "shortcuts.toggle-layout-grid"
+msgstr "Raster-layout toevoegen/verwijderen"
+
 msgid "shortcuts.toggle-lock"
 msgstr "Vergrendelen/ontgrendelen"
 
 msgid "shortcuts.toggle-lock-size"
 msgstr "Proporties vergrendelen"
 
-msgid "shortcuts.toggle-rules"
+msgid "shortcuts.toggle-rulers"
 msgstr "Linialen tonen/verbergen"
+
+msgid "shortcuts.toggle-snap-guides"
+msgstr "Uitlijnen op hulpijnen"
+
+msgid "shortcuts.toggle-snap-ruler-guide"
+msgstr "Uitlijnen op liniaal-hulplijnen"
 
 msgid "shortcuts.toggle-textpalette"
 msgstr "Tekstpalet in/uitschakelen"
@@ -3318,6 +3379,10 @@ msgstr "Hoofdcomponent dupliceren"
 msgid "workspace.assets.edit"
 msgstr "Bewerken"
 
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.filter"
+msgstr "Filteren"
+
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.graphics"
@@ -3368,6 +3433,16 @@ msgstr[1] "%s items geselecteerd"
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.shared-library"
 msgstr "Gedeelde bibliotheek"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs
+msgid "workspace.assets.sidebar.components"
+msgid_plural "workspace.assets.sidebar.components"
+msgstr[0] "1 component"
+msgstr[1] "%s componenten"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.sort"
+msgstr "Sorteren"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs
@@ -3495,6 +3570,10 @@ msgid "workspace.header.menu.disable-snap-pixel-grid"
 msgstr "Uitlijnen op pixel uitschakelen"
 
 #: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-snap-ruler-guides"
+msgstr "Uitlijnen op liniaal-hulplijnen deactiveren"
+
+#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-dynamic-alignment"
 msgstr "Dynamische uitlijning inschakelen"
 
@@ -3513,8 +3592,16 @@ msgid "workspace.header.menu.enable-snap-pixel-grid"
 msgstr "Uitlijnen op pixel"
 
 #: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-snap-ruler-guides"
+msgstr "Uitlijnen op liniaal-hulplijnen"
+
+#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-artboard-names"
 msgstr "Bordnamen verbergen"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-guides"
+msgstr "Hulplijnen verbergen"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -3561,6 +3648,10 @@ msgstr "Alles selecteren"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-artboard-names"
 msgstr "Bordnamen tonen"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-guides"
+msgstr "Hulplijnen weergeven"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"
@@ -3640,6 +3731,9 @@ msgstr "Raster bewerken"
 msgid "workspace.layout_grid.editor.options.exit"
 msgstr "Sluiten"
 
+msgid "workspace.layout_grid.editor.padding.expand"
+msgstr "4-zijdige opvulopties weergeven"
+
 msgid "workspace.layout_grid.editor.title"
 msgstr "Raster bewerken"
 
@@ -3648,6 +3742,9 @@ msgstr "Klaar"
 
 msgid "workspace.layout_grid.editor.top-bar.locate"
 msgstr "Lokaliseren"
+
+msgid "workspace.layout_grid.editor.top-bar.locate.tooltip"
+msgstr "Raster-layout tonen"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.add"
@@ -3743,6 +3840,10 @@ msgstr "Gedeelde bibliotheken zoeken"
 msgid "workspace.libraries.shared-libraries"
 msgstr "GEDEELDE BIBLIOTHEKEN"
 
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.shared-library-btn"
+msgstr "Bibliotheek verbinden"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.libraries.text.multiple-typography"
 msgstr "Meervoudige typografie"
@@ -3754,6 +3855,10 @@ msgstr "Alle typografie ontkoppelen"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.typography"
 msgstr "%s typografie"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.unlink-library-btn"
+msgstr "Bibliotheekverbinding verbreken"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.update"
@@ -4918,6 +5023,10 @@ msgstr "Pad"
 msgid "workspace.shape.menu.remove-flex"
 msgstr "Flex-indeling verwijderen"
 
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-grid"
+msgstr "Raster-layout verwijderen"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs
@@ -5090,6 +5199,10 @@ msgstr "** Inspectiemodus ** (alleen bekijken)"
 
 msgid "workspace.top-bar.read-only.done"
 msgstr "Klaar"
+
+#, markdown
+msgid "workspace.top-bar.view-only"
+msgstr "**Code inspecteren** (alleen weergave)"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.empty"

@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-02-10 15:02+0000\n"
+"PO-Revision-Date: 2024-04-25 13:07+0000\n"
 "Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
 "Language-Team: Turkish "
 "<https://hosted.weblate.org/projects/penpot/frontend/tr/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.4-dev\n"
+"X-Generator: Weblate 5.5.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -52,6 +52,10 @@ msgstr "Parolanı mı unuttun?"
 msgid "auth.fullname"
 msgstr "Tam Adın"
 
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-account-title"
+msgstr "Hesabımda oturum aç"
+
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.login-here"
 msgstr "Buradan oturum açın"
@@ -61,8 +65,10 @@ msgid "auth.login-submit"
 msgstr "Oturum aç"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Seni tekrar görmek süper!"
+msgid "auth.login-tagline"
+msgstr ""
+"Penpot, tasarım ve kod işbirliği için özgür ve açık kaynaklı tasarım "
+"aracıdır"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
@@ -855,6 +861,10 @@ msgstr "Tamam"
 msgid "ds.confirm-title"
 msgstr "Emin misin?"
 
+#: src/app/main/data/users.cljs
+msgid "errors.auth-provider-not-allowed"
+msgstr "Kimlik doğrulama sağlayıcısına bu profil için izin verilmiyor"
+
 #: src/app/main/ui/auth/login.cljs
 msgid "errors.auth-provider-not-configured"
 msgstr "Kimlik doğrulama sağlayıcısı yapılandırılmadı."
@@ -886,6 +896,10 @@ msgstr "E-posta zaten doğrulandı."
 
 msgid "errors.email-as-password"
 msgstr "E-postanızı parola olarak kullanamazsınız"
+
+#: src/app/main/data/users.cljs
+msgid "errors.email-domain-not-allowed"
+msgstr "Etki alanına izin verilmiyor"
 
 #: src/app/main/ui/auth/register.cljs,
 #: src/app/main/ui/auth/recovery_request.cljs,
@@ -1773,6 +1787,12 @@ msgstr "Değişim"
 msgid "media.image"
 msgstr "Görsel"
 
+msgid "media.image.short"
+msgstr "görsel"
+
+msgid "media.keep-aspect-ratio"
+msgstr "En boy oranını koru"
+
 msgid "media.linear"
 msgstr "Doğrusal"
 
@@ -2124,6 +2144,21 @@ msgstr "Bu takımdan ayrılmak istediğinden emin misin?"
 msgid "modals.leave-confirm.title"
 msgstr "Takımdan ayrıl"
 
+msgid "modals.move-shared-confirm.accept"
+msgid_plural "modals.move-shared-confirm.accept"
+msgstr[0] "Taşı"
+msgstr[1] "Taşı"
+
+msgid "modals.move-shared-confirm.message"
+msgid_plural "modals.move-shared-confirm.message"
+msgstr[0] "Bu kütüphaneyi taşımak istediğinizden emin misiniz?"
+msgstr[1] "Bu kütüphaneleri taşımak istediğinizden emin misiniz?"
+
+msgid "modals.move-shared-confirm.title"
+msgid_plural "modals.move-shared-confirm.title"
+msgstr[0] "Kütüphaneyi taşı"
+msgstr[1] "Kütüphaneleri taşı"
+
 #: src/app/main/ui/workspace/nudge.cljs
 msgid "modals.nudge-title"
 msgstr "Dürtme miktarı"
@@ -2404,6 +2439,9 @@ msgstr "Sınırsız üye"
 msgid "onboarding.team-modal.create-team-feature-5"
 msgstr "%100 özgür!"
 
+msgid "onboarding.team-modal.team-definition"
+msgstr "Takım nedir?"
+
 msgid "onboarding.templates.subtitle"
 msgstr "İşte bazı şablonlar."
 
@@ -2506,6 +2544,10 @@ msgid "questions.more-than-50"
 msgstr "50'den fazla"
 
 #: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.never-used-one"
+msgstr "Hiçbiri"
+
+#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.next"
 msgstr "Sonraki"
 
@@ -2598,6 +2640,10 @@ msgstr "Çıkar"
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
 msgid "settings.multiple"
 msgstr "Karışık"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs
+msgid "settings.select-this-color"
+msgstr "Bu biçimi kullanan ögeleri seç"
 
 # SECTIONS
 msgid "shortcut-section.basics"
@@ -2952,6 +2998,9 @@ msgstr "Yeniden yap"
 msgid "shortcuts.reset-zoom"
 msgstr "Yakınlaştırmayı sıfırla"
 
+msgid "shortcuts.scale"
+msgstr "Ölçeklendir"
+
 msgid "shortcuts.search-placeholder"
 msgstr "Kısayolları ara"
 
@@ -3025,6 +3074,9 @@ msgstr "Odak modunu değiştir"
 msgid "shortcuts.toggle-fullscreen"
 msgstr "Tam ekranı değiştir"
 
+msgid "shortcuts.toggle-guides"
+msgstr "Kılavuzları göster/gizle"
+
 msgid "shortcuts.toggle-history"
 msgstr "Geçmişi değiştir"
 
@@ -3034,14 +3086,23 @@ msgstr "Katmanları değiştir"
 msgid "shortcuts.toggle-layout-flex"
 msgstr "Düzen esnekliği ekle/kaldır"
 
+msgid "shortcuts.toggle-layout-grid"
+msgstr "Izgara düzeni ekle/kaldır"
+
 msgid "shortcuts.toggle-lock"
 msgstr "Seçileni kilitle"
 
 msgid "shortcuts.toggle-lock-size"
 msgstr "Oranları kilitle"
 
-msgid "shortcuts.toggle-rules"
+msgid "shortcuts.toggle-rulers"
 msgstr "Cetvelleri göster/gizle"
+
+msgid "shortcuts.toggle-snap-guides"
+msgstr "Kılavuzlara tuttur"
+
+msgid "shortcuts.toggle-snap-ruler-guide"
+msgstr "Cetvel kılavuzlarına tuttur"
 
 msgid "shortcuts.toggle-textpalette"
 msgstr "Metin paletini değiştir"
@@ -3287,6 +3348,10 @@ msgstr "Ana bileşeni çoğalt"
 msgid "workspace.assets.edit"
 msgstr "Düzenle"
 
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.filter"
+msgstr "Filtrele"
+
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.graphics"
@@ -3337,6 +3402,16 @@ msgstr[1] "%s öge seçildi"
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.shared-library"
 msgstr "Paylaşılan kütüphane"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs
+msgid "workspace.assets.sidebar.components"
+msgid_plural "workspace.assets.sidebar.components"
+msgstr[0] "1 bileşen"
+msgstr[1] "%s bileşen"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.sort"
+msgstr "Sırala"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs
@@ -3464,6 +3539,10 @@ msgid "workspace.header.menu.disable-snap-pixel-grid"
 msgstr "Piksele tutturmayı devre dışı bırak"
 
 #: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-snap-ruler-guides"
+msgstr "Cetvel kılavuzlarına tutturmayı devre dışı bırak"
+
+#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-dynamic-alignment"
 msgstr "Dinamik hizalamayı etkinleştir"
 
@@ -3482,8 +3561,16 @@ msgid "workspace.header.menu.enable-snap-pixel-grid"
 msgstr "Piksele tutturmayı etkinleştir"
 
 #: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-snap-ruler-guides"
+msgstr "Cetvel kılavuzlarına tuttur"
+
+#: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-artboard-names"
 msgstr "Çalışma yüzeyi adlarını gizle"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-guides"
+msgstr "Kılavuzları gizle"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-palette"
@@ -3530,6 +3617,10 @@ msgstr "Tümünü seç"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-artboard-names"
 msgstr "Çalışma yüzeylerinin adlarını göster"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-guides"
+msgstr "Kılavuzları göster"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-palette"
@@ -3609,6 +3700,9 @@ msgstr "Izgarayı düzenle"
 msgid "workspace.layout_grid.editor.options.exit"
 msgstr "Çıkış"
 
+msgid "workspace.layout_grid.editor.padding.expand"
+msgstr "4 taraflı dolgu seçeneklerini göster"
+
 msgid "workspace.layout_grid.editor.title"
 msgstr "Düzenleme ızgarası"
 
@@ -3617,6 +3711,9 @@ msgstr "Bitti"
 
 msgid "workspace.layout_grid.editor.top-bar.locate"
 msgstr "Bul"
+
+msgid "workspace.layout_grid.editor.top-bar.locate.tooltip"
+msgstr "Izgara düzenini bul"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.add"
@@ -3712,6 +3809,10 @@ msgstr "Paylaşılmış kütüphane ara"
 msgid "workspace.libraries.shared-libraries"
 msgstr "PAYLAŞILMIŞ KÜTÜPHANELER"
 
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.shared-library-btn"
+msgstr "Kütüphaneyi bağla"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.libraries.text.multiple-typography"
 msgstr "Çoklu tipografiler"
@@ -3723,6 +3824,10 @@ msgstr "Tüm tipografileri ayır"
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.typography"
 msgstr "%s tipografi"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.unlink-library-btn"
+msgstr "Kütüphanenin bağlantısını kes"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.update"
@@ -4886,6 +4991,10 @@ msgstr "Yol"
 msgid "workspace.shape.menu.remove-flex"
 msgstr "Düzen esnekliğini kaldır"
 
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-grid"
+msgstr "Izgara düzenini kaldır"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs,
 #: src/app/main/ui/workspace/context_menu.cljs
@@ -5058,6 +5167,10 @@ msgstr "**İnceleme modu** (Yalnızca görüntüle)"
 
 msgid "workspace.top-bar.read-only.done"
 msgstr "Bitti"
+
+#, markdown
+msgid "workspace.top-bar.view-only"
+msgstr "**Kodu incele** ( Yalnızca Görüntüle)"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs
 msgid "workspace.undo.empty"

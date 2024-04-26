@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-02-04 11:38+0000\n"
-"Last-Translator: im424 <424@live.hk>\n"
+"PO-Revision-Date: 2024-04-24 13:04+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Chinese (Traditional) "
 "<https://hosted.weblate.org/projects/penpot/frontend/zh_Hant/>\n"
 "Language: zh_Hant\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 4.16-dev\n"
+"X-Generator: Weblate 5.5.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -54,10 +54,6 @@ msgstr "在此登入"
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
 msgstr "登入"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "很高興再次見到你！"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
@@ -794,6 +790,7 @@ msgstr "連線錯誤，無法接上網址"
 msgid "errors.webhooks.invalid-uri"
 msgstr "網址未能通過驗証。"
 
+#, fuzzy
 msgid "errors.webhooks.last-delivery"
 msgstr "上一次傳送未能成功。"
 
@@ -1595,9 +1592,6 @@ msgstr "鎖定選擇"
 
 msgid "shortcuts.toggle-lock-size"
 msgstr "鎖定比例"
-
-msgid "shortcuts.toggle-rules"
-msgstr "顯示/隱藏尺規"
 
 msgid "shortcuts.ungroup"
 msgstr "取消群組"

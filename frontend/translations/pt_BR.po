@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-04-24 03:54+0000\n"
-"Last-Translator: Ally Tiago <allytiagomail@gmail.com>\n"
+"PO-Revision-Date: 2024-04-24 12:55+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Portuguese (Brazil) "
 "<https://hosted.weblate.org/projects/penpot/frontend/pt_BR/>\n"
 "Language: pt_BR\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 4.18-dev\n"
+"X-Generator: Weblate 5.5.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -58,10 +58,6 @@ msgstr "Entrar aqui"
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
 msgstr "Entrar"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Bom te ver novamente!"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
@@ -856,6 +852,7 @@ msgstr "Erro de conexão, URL não acessível"
 msgid "errors.webhooks.invalid-uri"
 msgstr "A URL não passa na validação."
 
+#, fuzzy
 msgid "errors.webhooks.last-delivery"
 msgstr "O último envio não foi bem-sucedido."
 
@@ -2457,9 +2454,6 @@ msgstr "Bloquear selecionado"
 msgid "shortcuts.toggle-lock-size"
 msgstr "Fixar proporções"
 
-msgid "shortcuts.toggle-rules"
-msgstr "Mostrar/ocultar réguas"
-
 msgid "shortcuts.toggle-textpalette"
 msgstr "Mostrar/Esconder paleta de tipografias"
 
@@ -2601,6 +2595,7 @@ msgstr "Mostrar interações ao clicar"
 msgid "viewer.header.sitemap"
 msgstr "Mapa do site"
 
+#, fuzzy
 msgid "webhooks.last-delivery.success"
 msgstr "O último envio foi bem-sucedido."
 

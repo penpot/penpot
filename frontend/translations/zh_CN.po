@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-01-12 23:06+0000\n"
-"Last-Translator: Geek Squirrel <geeksquirrel@qq.com>\n"
+"PO-Revision-Date: 2024-04-24 13:04+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Chinese (Simplified) "
 "<https://hosted.weblate.org/projects/penpot/frontend/zh_Hans/>\n"
 "Language: zh_CN\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Weblate 5.4-dev\n"
+"X-Generator: Weblate 5.5.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -55,10 +55,6 @@ msgstr "在这里登录"
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
 msgstr "登录"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "很高兴又见到你！"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
@@ -969,6 +965,7 @@ msgstr "连接错误，无法访问 URL"
 msgid "errors.webhooks.invalid-uri"
 msgstr "网址未通过验证。"
 
+#, fuzzy
 msgid "errors.webhooks.last-delivery"
 msgstr "上次交付不成功。"
 
@@ -1021,6 +1018,7 @@ msgid "feedback.title"
 msgstr "电子邮件"
 
 #: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
 msgid "feedback.twitter-go-to"
 msgstr "前往Twtter"
 
@@ -1029,6 +1027,7 @@ msgid "feedback.twitter-subtitle1"
 msgstr "这里可以帮助您解决技术问题。"
 
 #: src/app/main/ui/settings/feedback.cljs
+#, fuzzy
 msgid "feedback.twitter-title"
 msgstr "Twtter支持帐号"
 
@@ -2882,9 +2881,6 @@ msgstr "锁定所选"
 msgid "shortcuts.toggle-lock-size"
 msgstr "锁定比例"
 
-msgid "shortcuts.toggle-rules"
-msgstr "显示/隐藏规则"
-
 msgid "shortcuts.toggle-textpalette"
 msgstr "切换文本调色板"
 
@@ -3044,6 +3040,7 @@ msgstr "点击时显示交互"
 msgid "viewer.header.sitemap"
 msgstr "站点地图"
 
+#, fuzzy
 msgid "webhooks.last-delivery.success"
 msgstr "上次交付成功。"
 

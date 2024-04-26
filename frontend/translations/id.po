@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-04-08 15:01+0000\n"
-"Last-Translator: Linerly <linerly@proton.me>\n"
+"PO-Revision-Date: 2024-04-24 12:55+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Indonesian "
 "<https://hosted.weblate.org/projects/penpot/frontend/id/>\n"
 "Language: id\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.5-dev\n"
+"X-Generator: Weblate 5.5.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -59,10 +59,6 @@ msgstr "Masuk di sini"
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
 msgstr "Masuk"
-
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Senang bertemu dengan Anda lagi!"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
@@ -1017,6 +1013,7 @@ msgstr "Kesalahan koneksi, URL tidak dapat diraih"
 msgid "errors.webhooks.invalid-uri"
 msgstr "URL tidak melewati validasi."
 
+#, fuzzy
 msgid "errors.webhooks.last-delivery"
 msgstr "Pengiriman terakhir tidak berhasil."
 
@@ -3020,9 +3017,6 @@ msgstr "Kunci dipilih"
 msgid "shortcuts.toggle-lock-size"
 msgstr "Kunci proporsi"
 
-msgid "shortcuts.toggle-rules"
-msgstr "Tampilkan/sembunyikan penggaris"
-
 msgid "shortcuts.toggle-textpalette"
 msgstr "Alih palet teks"
 
@@ -3187,6 +3181,7 @@ msgstr "Tampilkan interaksi pada klik"
 msgid "viewer.header.sitemap"
 msgstr "Peta Situs"
 
+#, fuzzy
 msgid "webhooks.last-delivery.success"
 msgstr "Pengiriman terakhir berhasil."
 
