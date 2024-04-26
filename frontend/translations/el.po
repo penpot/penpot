@@ -60,10 +60,6 @@ msgstr "Συνδεθείτε εδώ"
 msgid "auth.login-submit"
 msgstr "Συνδεθείτε"
 
-#: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "Χαίρομαι που σας ξαναδώ"
-
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
 msgstr "GitHub"

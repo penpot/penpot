@@ -56,10 +56,6 @@ msgid "auth.login-submit"
 msgstr "লগিন"
 
 #: src/app/main/ui/auth/login.cljs
-msgid "auth.login-title"
-msgstr "আপনাকে আবার দেখে ভালো লাগছে!"
-
-#: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
 msgstr "গিটহাব"
 
