@@ -34,3 +34,9 @@
   [f]
   (reset-idmap!)
   (f))
+
+(defn label [id]
+  (->> @idmap
+       (filter #(= id (val %)))
+       (map key)
+       (first)))

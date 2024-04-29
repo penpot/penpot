@@ -6,7 +6,8 @@
 
 (ns common-tests.helpers.compositions
   (:require
-   [common-tests.helpers.files :as thf]))
+   [common-tests.helpers.files :as thf]
+   [common-tests.helpers.ids-map :as thi]))
 
 (defn add-rect
   [file rect-label]
@@ -15,10 +16,11 @@
                         :name "Rect1"))
 
 (defn add-frame
-  [file frame-label]
-  (thf/add-sample-shape file frame-label
-                        :type :frame
-                        :name "Frame1"))
+  ([file frame-label & {:keys [parent-label]}]
+   (thf/add-sample-shape file frame-label
+                         :type :frame
+                         :name "Frame1"
+                         :parent-label parent-label)))
 
 (defn add-frame-with-child
   [file frame-label child-label]
