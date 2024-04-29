@@ -107,6 +107,62 @@
           (let [id (get-data self :id)]
             (st/emit! (udw/update-position id {:y value}))))}
 
+       {:name "parentX"
+        :get (fn [self]
+               (let [page-id (:current-page-id @st/state)
+                     parent-id (get-state self :parent-id)
+                     parent-x (dm/get-in @st/state [:workspace-data :pages-index page-id :objects parent-id :x])]
+                 (- (get-state self :x) parent-x)))
+        :set
+        (fn [self value]
+          (let [page-id (:current-page-id @st/state)
+                id (get-data self :id)
+                parent-id (get-state self :parent-id)
+                parent-x (dm/get-in @st/state [:workspace-data :pages-index page-id :objects parent-id :x])]
+            (st/emit! (udw/update-position id {:x (+ parent-x value)}))))}
+
+       {:name "parentY"
+        :get (fn [self]
+               (let [page-id (:current-page-id @st/state)
+                     parent-id (get-state self :parent-id)
+                     parent-y (dm/get-in @st/state [:workspace-data :pages-index page-id :objects parent-id :y])]
+                 (- (get-state self :y) parent-y)))
+        :set
+        (fn [self value]
+          (let [page-id (:current-page-id @st/state)
+                id (get-data self :id)
+                parent-id (get-state self :parent-id)
+                parent-y (dm/get-in @st/state [:workspace-data :pages-index page-id :objects parent-id :y])]
+            (st/emit! (udw/update-position id {:y (+ parent-y value)}))))}
+
+       {:name "frameX"
+        :get (fn [self]
+               (let [page-id (:current-page-id @st/state)
+                     frame-id (get-state self :frame-id)
+                     frame-x (dm/get-in @st/state [:workspace-data :pages-index page-id :objects frame-id :x])]
+                 (- (get-state self :x) frame-x)))
+        :set
+        (fn [self value]
+          (let [page-id (:current-page-id @st/state)
+                id (get-data self :id)
+                frame-id (get-state self :frame-id)
+                frame-x (dm/get-in @st/state [:workspace-data :pages-index page-id :objects frame-id :x])]
+            (st/emit! (udw/update-position id {:x (+ frame-x value)}))))}
+
+       {:name "frameY"
+        :get (fn [self]
+               (let [page-id (:current-page-id @st/state)
+                     frame-id (get-state self :frame-id)
+                     frame-y (dm/get-in @st/state [:workspace-data :pages-index page-id :objects frame-id :y])]
+                 (- (get-state self :y) frame-y)))
+        :set
+        (fn [self value]
+          (let [page-id (:current-page-id @st/state)
+                id (get-data self :id)
+                frame-id (get-state self :frame-id)
+                frame-y (dm/get-in @st/state [:workspace-data :pages-index page-id :objects frame-id :y])]
+            (st/emit! (udw/update-position id {:y (+ frame-y value)}))))}
+
        {:name "width"
         :get #(get-state % :width)}
 
