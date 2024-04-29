@@ -9,12 +9,15 @@
    [app.common.data.macros :as dm]
    [app.common.features :as ffeat]
    [app.common.files.changes :as cfc]
+   [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
+   [app.common.files.libraries-helpers :as cflh]
    [app.common.files.validate :as cfv]
    [app.common.geom.point :as gpt]
    [app.common.pprint :refer [pprint]]
    [app.common.types.color :as ctc]
    [app.common.types.colors-list :as ctcl]
+   [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
@@ -206,8 +209,16 @@
   [file id]
   (ctkl/get-component (:data file) id))
 
+(defn set-child-label
+  [file shape-label child-idx label]
+  (let [id (-> (get-shape file shape-label)
+               :shapes
+               (nth child-idx))]
+    (when id
+      (thi/set-id! label id))))
+
 (defn instantiate-component
-  [file component-label copy-root-label & {:keys [parent-label library] :as params}]
+  [file component-label copy-root-label & {:keys [parent-label library children-labels] :as params}]
   (let [page      (current-page file)
         library   (or library file)
         component (get-component library component-label)
@@ -236,33 +247,60 @@
                      (assoc :frame-id frame-id)
 
                      (and (some? parent) (ctn/in-any-component? (:objects page) parent))
-                     (dissoc :component-root))]
+                     (dissoc :component-root))
+        file'      (ctf/update-file-data
+                    file
+                    (fn [file-data]
+                      (as-> file-data $
+                        (ctpl/update-page $
+                                          (:id page)
+                                          #(ctst/add-shape (:id copy-root')
+                                                           copy-root'
+                                                           %
+                                                           frame-id
+                                                           parent-id
+                                                           nil
+                                                           true))
+                        (reduce (fn [file-data shape]
+                                  (ctpl/update-page file-data
+                                                    (:id page)
+                                                    #(ctst/add-shape (:id shape)
+                                                                     shape
+                                                                     %
+                                                                     (:parent-id shape)
+                                                                     (:frame-id shape)
+                                                                     nil
+                                                                     true)))
+                                $
+                                (remove #(= (:id %) (:did copy-root')) copy-shapes)))))]
+    (when children-labels
+      (dotimes [idx (count children-labels)]
+        (set-child-label file' copy-root-label idx (nth children-labels idx))))
+    file'))
 
-    (ctf/update-file-data
-     file
-     (fn [file-data]
-       (as-> file-data $
-         (ctpl/update-page $
-                           (:id page)
-                           #(ctst/add-shape (:id copy-root')
-                                            copy-root'
-                                            %
-                                            frame-id
-                                            parent-id
-                                            nil
-                                            true))
-         (reduce (fn [file-data shape]
-                   (ctpl/update-page file-data
-                                     (:id page)
-                                     #(ctst/add-shape (:id shape)
-                                                      shape
-                                                      %
-                                                      (:parent-id shape)
-                                                      (:frame-id shape)
-                                                      nil
-                                                      true)))
-                 $
-                 (remove #(= (:id %) (:did copy-root')) copy-shapes)))))))
+
+
+(defn component-swap
+  [file shape-label new-component-label new-shape-label & {:keys [library] :as params}]
+  (let [shape            (get-shape file shape-label)
+        library          (or library file)
+        libraries        {(:id library) library}
+        page             (current-page file)
+        objects          (:objects page)
+        id-new-component (-> (get-component library new-component-label)
+                             :id)
+
+        ;; Store the properties that need to be maintained when the component is swapped
+        keep-props-values (select-keys shape ctk/swap-keep-attrs)
+
+
+        [new_shape _ changes]
+        (-> (pcb/empty-changes nil (:id page))
+            (cflh/generate-component-swap objects shape (:data file) page libraries id-new-component 0 nil keep-props-values))]
+
+    (thi/set-id! new-shape-label (:id new_shape))
+    (apply-changes file changes)))
+
 
 (defn sample-color
   [label & {:keys [] :as params}]

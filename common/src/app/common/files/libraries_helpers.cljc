@@ -2098,3 +2098,189 @@
     (cond-> changes
       (some? swap-slot)
       (generate-sync-head file-full libraries container id components-v2 true))))
+
+(defn generate-relocate-shapes [changes objects parents parent-id page-id to-index ids]
+  (let [groups-to-delete
+        (loop [current-id  (first parents)
+               to-check    (rest parents)
+               removed-id? (set ids)
+               result #{}]
+
+          (if-not current-id
+            ;; Base case, no next element
+            result
+
+            (let [group (get objects current-id)]
+              (if (and (not= :frame (:type group))
+                       (not= current-id parent-id)
+                       (empty? (remove removed-id? (:shapes group))))
+
+                ;; Adds group to the remove and check its parent
+                (let [to-check (concat to-check [(cfh/get-parent-id objects current-id)])]
+                  (recur (first to-check)
+                         (rest to-check)
+                         (conj removed-id? current-id)
+                         (conj result current-id)))
+
+                ;; otherwise recur
+                (recur (first to-check)
+                       (rest to-check)
+                       removed-id?
+                       result)))))
+
+        groups-to-unmask
+        (reduce (fn [group-ids id]
+                  ;; When a masked group loses its mask shape, because it's
+                  ;; moved outside the group, the mask condition must be
+                  ;; removed, and it must be converted to a normal group.
+                  (let [obj (get objects id)
+                        parent (get objects (:parent-id obj))]
+                    (if (and (:masked-group parent)
+                             (= id (first (:shapes parent)))
+                             (not= (:id parent) parent-id))
+                      (conj group-ids (:id parent))
+                      group-ids)))
+                #{}
+                ids)
+
+
+        ;; TODO: Probably implementing this using loop/recur will
+        ;; be more efficient than using reduce and continuous data
+        ;; desturcturing.
+
+        ;; Sets the correct components metadata for the moved shapes
+        ;; `shapes-to-detach` Detach from a component instance a shape that was inside a component and is moved outside
+        ;; `shapes-to-deroot` Removes the root flag from a component instance moved inside another component
+        ;; `shapes-to-reroot` Adds a root flag when a nested component instance is moved outside
+        [shapes-to-detach shapes-to-deroot shapes-to-reroot]
+        (reduce (fn [[shapes-to-detach shapes-to-deroot shapes-to-reroot] id]
+                  (let [shape                  (get objects id)
+                        parent                 (get objects parent-id)
+                        component-shape        (ctn/get-component-shape objects shape)
+                        component-shape-parent (ctn/get-component-shape objects parent {:allow-main? true})
+                        root-parent            (ctn/get-instance-root objects parent)
+
+                        detach? (and (ctk/in-component-copy-not-head? shape)
+                                     (not= (:id component-shape)
+                                           (:id component-shape-parent)))
+                        deroot? (and (ctk/instance-root? shape)
+                                     root-parent)
+                        reroot? (and (ctk/subinstance-head? shape)
+                                     (not component-shape-parent))
+
+                        ids-to-detach (when detach?
+                                        (cons id (cfh/get-children-ids objects id)))]
+
+                    [(cond-> shapes-to-detach detach? (into ids-to-detach))
+                     (cond-> shapes-to-deroot deroot? (conj id))
+                     (cond-> shapes-to-reroot reroot? (conj id))]))
+                [[] [] []]
+                (->> ids
+                     (mapcat #(ctn/get-child-heads objects %))
+                     (map :id)))
+
+        shapes-to-unconstraint ids
+
+        ordered-indexes       (cfh/order-by-indexed-shapes objects ids)
+        shapes                (map (d/getf objects) ordered-indexes)
+        parent                (get objects parent-id)
+        component-main-parent (ctn/find-component-main objects parent false)
+        child-heads
+        (->> ordered-indexes
+             (mapcat #(ctn/get-child-heads objects %))
+             (map :id))]
+
+    (-> changes
+        (pcb/with-page-id page-id)
+        (pcb/with-objects objects)
+
+        ;; Remove layout-item properties when moving a shape outside a layout
+        (cond-> (not (ctl/any-layout? parent))
+          (pcb/update-shapes ordered-indexes ctl/remove-layout-item-data))
+
+        ;; Remove the hide in viewer flag
+        (cond-> (and (not= uuid/zero parent-id) (cfh/frame-shape? parent))
+          (pcb/update-shapes ordered-indexes #(cond-> % (cfh/frame-shape? %) (assoc :hide-in-viewer true))))
+
+        ;; Remove the swap slots if it is moving to a different component
+        (pcb/update-shapes child-heads
+                           (fn [shape]
+                             (cond-> shape
+                               (not= component-main-parent (ctn/find-component-main objects shape false))
+                               (ctk/remove-swap-slot))))
+
+        ;; Add component-root property when moving a component outside a component
+        (cond-> (not (ctn/get-instance-root objects parent))
+          (pcb/update-shapes child-heads #(assoc % :component-root true)))
+
+        ;; Move the shapes
+        (pcb/change-parent parent-id
+                           shapes
+                           to-index)
+
+        ;; Remove empty groups
+        (pcb/remove-objects groups-to-delete)
+
+        ;; Unmask groups whose mask have moved outside
+        (pcb/update-shapes groups-to-unmask
+                           (fn [shape]
+                             (assoc shape :masked-group false)))
+
+        ;; Detach shapes moved out of their component
+        (pcb/update-shapes shapes-to-detach ctk/detach-shape)
+
+        ;; Make non root a component moved inside another one
+        (pcb/update-shapes shapes-to-deroot
+                           (fn [shape]
+                             (assoc shape :component-root nil)))
+
+        ;; Make root a subcomponent moved outside its parent component
+        (pcb/update-shapes shapes-to-reroot
+                           (fn [shape]
+                             (assoc shape :component-root true)))
+
+        ;; Reset constraints depending on the new parent
+        (pcb/update-shapes shapes-to-unconstraint
+                           (fn [shape]
+                             (let [frame-id    (if (= (:type parent) :frame)
+                                                 (:id parent)
+                                                 (:frame-id parent))
+                                   moved-shape (assoc shape
+                                                      :parent-id parent-id
+                                                      :frame-id frame-id)]
+                               (assoc shape
+                                      :constraints-h (gsh/default-constraints-h moved-shape)
+                                      :constraints-v (gsh/default-constraints-v moved-shape))))
+                           {:ignore-touched true})
+
+        ;; Fix the sizing when moving a shape
+        (pcb/update-shapes parents
+                           (fn [parent]
+                             (if (ctl/flex-layout? parent)
+                               (cond-> parent
+                                 (ctl/change-h-sizing? (:id parent) objects (:shapes parent))
+                                 (assoc :layout-item-h-sizing :fix)
+
+                                 (ctl/change-v-sizing? (:id parent) objects (:shapes parent))
+                                 (assoc :layout-item-v-sizing :fix))
+                               parent)))
+
+        ;; Update grid layout
+        (cond-> (ctl/grid-layout? objects parent-id)
+          (pcb/update-shapes [parent-id] #(ctl/add-children-to-index % ids objects to-index)))
+
+        (pcb/update-shapes parents
+                           (fn [parent objects]
+                             (cond-> parent
+                               (ctl/grid-layout? parent)
+                               (ctl/assign-cells objects)))
+                           {:with-objects? true})
+
+        (pcb/reorder-grid-children parents)
+
+        ;; If parent locked, lock the added shapes
+        (cond-> (:blocked parent)
+          (pcb/update-shapes ordered-indexes #(assoc % :blocked true)))
+
+        ;; Resize parent containers that need to
+        (pcb/resize-parents parents))))
