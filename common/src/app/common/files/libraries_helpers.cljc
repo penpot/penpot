@@ -35,7 +35,7 @@
 (log/set-level! :warn)
 
 (defn generate-update-shapes
-[changes ids update-fn objects {:keys [attrs ignore-tree ignore-touched with-objects?]}]
+  [changes ids update-fn objects {:keys [attrs ignore-tree ignore-touched with-objects?]}]
   (let [changes   (reduce
                    (fn [changes id]
                      (let [opts {:attrs attrs

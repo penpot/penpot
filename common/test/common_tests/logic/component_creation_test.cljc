@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns common-tests.logic.logic-comp-creation-test
+(ns common-tests.logic.component-creation-test
   (:require
    [app.common.files.changes-builder :as pcb]
    [app.common.files.libraries-helpers :as cflh]
@@ -15,14 +15,14 @@
 (t/use-fixtures :each thi/test-fixture)
 
 (t/deftest test-add-component-from-single-shape
-  (let [; Setup
+  (let [;; Setup
         file   (-> (thf/sample-file :file1)
                    (thf/add-sample-shape :shape1 :type :frame))
 
         page   (thf/current-page file)
         shape1 (thf/get-shape file :shape1)
 
-        ; Action
+        ;; Action
         [_ component-id changes]
         (cflh/generate-add-component (pcb/empty-changes)
                                      [shape1]
@@ -35,11 +35,11 @@
 
         file' (thf/apply-changes file changes)
 
-        ; Get
+        ;; Get
         component (thf/get-component-by-id file' component-id)
         root      (thf/get-shape-by-id file' (:main-instance-id component))]
 
-    ; Check
+    ;; Check
     (t/is (some? component))
     (t/is (some? root))
     (t/is (= (:component-id root) (:id component)))))

@@ -16,7 +16,6 @@
    [app.common.logging :as log]
    [app.common.schema :as sm]
    [app.common.types.shape-tree :as ctst]
-   [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]

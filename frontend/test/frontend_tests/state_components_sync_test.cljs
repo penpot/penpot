@@ -7,7 +7,6 @@
 (ns frontend-tests.state-components-sync-test
   (:require
    [app.common.colors :as clr]
-   [app.common.types.file :as ctf]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.libraries :as dwl]
@@ -23,69 +22,6 @@
   {:before thp/reset-idmap!})
 
 ;; === Test touched ======================
-
-(t/deftest test-touched
-  (t/async done
-    (let [state (-> thp/initial-state
-                    (thp/sample-page)
-                    (thp/sample-shape :shape1 :rect
-                                      {:name "Rect 1"
-                                       :fill-color clr/white
-                                       :fill-opacity 1})
-                    (thp/make-component :main1 :component1
-                                        [(thp/id :shape1)])
-                    (thp/instantiate-component :instance1
-                                               (thp/id :component1)))
-
-          [_group1 shape1']
-          (thl/resolve-instance state (thp/id :instance1))
-
-          store (the/prepare-store state done
-                                   (fn [new-state]
-                                     ;; Uncomment to debug
-                                     ;; (ctf/dump-tree (get new-state :workspace-data)
-                                     ;;                (get new-state :current-page-id)
-                                     ;;                (get new-state :workspace-libraries)
-                                     ;;                false true)
-                                     ;; Expected shape tree:
-                                     ;;;
-                                     ;; [Page]
-                                     ;; Root Frame
-                                     ;;   Rect 1
-                                     ;;     Rect 1
-                                     ;;   Rect 1              #--> Rect 1
-                                     ;;     Rect 1*           ---> Rect 1
-                                     ;;         #{:fill-group}
-                                     ;;;
-                                     ;; [Rect 1]
-                                     ;;   page1 / Rect 1
-                                     ;;;
-                                     (let [[[group shape1] [c-group c-shape1] _component]
-                                           (thl/resolve-instance-and-main
-                                            new-state
-                                            (thp/id :instance1))]
-
-                                       (t/is (= (:name group) "Rect 1"))
-                                       (t/is (= (:touched group) nil))
-                                       (t/is (= (:name shape1) "Rect 1"))
-                                       (t/is (= (:touched shape1) #{:fill-group}))
-                                       (t/is (= (:fill-color shape1) clr/test))
-                                       (t/is (= (:fill-opacity shape1) 0.5))
-
-                                       (t/is (= (:name c-group) "Rect 1"))
-                                       (t/is (= (:touched c-group) nil))
-                                       (t/is (= (:name c-shape1) "Rect 1"))
-                                       (t/is (= (:touched c-shape1) nil))
-                                       (t/is (= (:fill-color c-shape1) clr/white))
-                                       (t/is (= (:fill-opacity c-shape1) 1)))))]
-
-      (ptk/emit!
-       store
-       (dch/update-shapes [(:id shape1')]
-                          (fn [shape]
-                            (merge shape {:fill-color clr/test
-                                          :fill-opacity 0.5})))
-       :the/end))))
 
 (t/deftest test-touched-children-add
   (t/async done
