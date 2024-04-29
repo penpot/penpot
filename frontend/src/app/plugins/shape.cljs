@@ -16,9 +16,8 @@
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.changes :as dwc]
    [app.main.store :as st]
-   [app.plugins.utils :refer [get-data get-data-fn]]
-   [app.util.object :as obj]
-   [cuerdas.core :as str]))
+   [app.plugins.utils :as utils :refer [get-data get-data-fn]]
+   [app.util.object :as obj]))
 
 (declare data->shape-proxy)
 
@@ -26,19 +25,13 @@
   [fills]
   (.freeze
    js/Object
-   (apply array
-          (->> fills
-               ;; TODO: Transform explicitly instead of cljs->js?
-               (map #(clj->js % {:keyword-fn (fn [k] (str/camel (name k)))}))))))
+   (apply array (->> fills (map utils/to-js)))))
 
 (defn- make-strokes
   [strokes]
   (.freeze
    js/Object
-   (apply array
-          (->> strokes
-               ;; TODO: Transform explicitly instead of cljs->js?
-               (map #(clj->js % {:keyword-fn (fn [k] (str/camel (name k)))}))))))
+   (apply array (->> strokes (map utils/to-js)))))
 
 (defn- locate-shape
   [shape-id]
@@ -64,7 +57,6 @@
 
   (resize
     [self width height]
-
     (let [id (get-data self :id)]
       (st/emit! (udw/update-dimensions [id] :width width)
                 (udw/update-dimensions [id] :height height))))
@@ -99,7 +91,7 @@
         :get (get-data-fn :id str)}
 
        {:name "type"
-        :get (get-data-fn :type)}
+        :get (get-data-fn :type name)}
 
        {:name "x"
         :get #(get-state % :x)
@@ -129,12 +121,18 @@
 
        {:name "fills"
         :get #(get-state % :fills make-fills)
-        ;;:set (fn [self value] (.log js/console self value))
+        :set (fn [self value]
+               (let [id (get-data self :id)
+                     value (mapv #(utils/from-js %) value)]
+                 (st/emit! (dwc/update-shapes [id] #(assoc % :fills value)))))
         }
 
        {:name "strokes"
         :get #(get-state % :strokes make-strokes)
-        ;;:set (fn [self value] (.log js/console self value))
+        :set (fn [self value]
+               (let [id (get-data self :id)
+                     value (mapv #(utils/from-js %) value)]
+                 (st/emit! (dwc/update-shapes [id] #(assoc % :strokes value)))))
         })
 
       (cond-> (or (cfh/frame-shape? data) (cfh/group-shape? data) (cfh/svg-raw-shape? data) (cfh/bool-shape? data))

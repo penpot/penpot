@@ -8,15 +8,11 @@
   "RPC for plugins runtime."
   (:require
    [app.common.data.macros :as dm]
-   [app.common.geom.point :as gpt]
-   [app.common.record :as crc]
    [app.common.record :as crc]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.viewport :as dwv]
    [app.main.data.workspace.zoom :as dwz]
    [app.main.store :as st]
-   [app.plugins.page :as page]
-   [app.plugins.utils :refer [get-data-fn]]
    [app.util.object :as obj]))
 
 (deftype ViewportProxy []
