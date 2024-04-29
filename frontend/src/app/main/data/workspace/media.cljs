@@ -459,3 +459,12 @@
               (rx/tap on-success)
               (rx/catch on-error)
               (rx/finalize #(st/emit! (msg/hide-tag :media-loading)))))))))
+
+(defn create-svg-shape
+  [id name svg-string position]
+  (ptk/reify ::create-svg-shape
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (svg->clj [name svg-string])
+           (rx/take 1)
+           (rx/map #(svg/add-svg-shapes id % position {:change-selection? false}))))))

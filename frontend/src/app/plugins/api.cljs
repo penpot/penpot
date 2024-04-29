@@ -9,6 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as cb]
+   [app.common.geom.point :as gpt]
    [app.common.record :as cr]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
@@ -127,7 +128,14 @@
   (createRectangle
     [_]
     (create-shape :rect))
-  )
+
+  (createShapeFromSvg
+    [_ svg-string]
+    (let [id (uuid/next)
+          page-id (:current-page-id @st/state)]
+      (st/emit! (dwm/create-svg-shape id "svg" svg-string (gpt/point 0 0)))
+      (shape/data->shape-proxy
+       (dm/get-in @st/state [:workspace-data :pages-index page-id :objects id])))))
 
 (defn create-context
   []

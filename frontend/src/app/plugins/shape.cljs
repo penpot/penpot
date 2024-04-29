@@ -67,12 +67,12 @@
   (appendChild [self child]
     (let [parent-id (get-data self :id)
           child-id (uuid/uuid (obj/get child "id"))]
-      (st/emit! (udw/relocate-shapes #{ child-id } parent-id 0))))
+      (st/emit! (udw/relocate-shapes #{child-id} parent-id 0))))
 
   (insertChild [self index child]
     (let [parent-id (get-data self :id)
           child-id (uuid/uuid (obj/get child "id"))]
-      (st/emit! (udw/relocate-shapes #{ child-id } parent-id index)))))
+      (st/emit! (udw/relocate-shapes #{child-id} parent-id index)))))
 
 (crc/define-properties!
   ShapeProxy
@@ -124,16 +124,14 @@
         :set (fn [self value]
                (let [id (get-data self :id)
                      value (mapv #(utils/from-js %) value)]
-                 (st/emit! (dwc/update-shapes [id] #(assoc % :fills value)))))
-        }
+                 (st/emit! (dwc/update-shapes [id] #(assoc % :fills value)))))}
 
        {:name "strokes"
         :get #(get-state % :strokes make-strokes)
         :set (fn [self value]
                (let [id (get-data self :id)
                      value (mapv #(utils/from-js %) value)]
-                 (st/emit! (dwc/update-shapes [id] #(assoc % :strokes value)))))
-        })
+                 (st/emit! (dwc/update-shapes [id] #(assoc % :strokes value)))))})
 
       (cond-> (or (cfh/frame-shape? data) (cfh/group-shape? data) (cfh/svg-raw-shape? data) (cfh/bool-shape? data))
         (crc/add-properties!
