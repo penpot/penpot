@@ -43,8 +43,7 @@ Penpot is available on browser and [self host](https://penpot.app/self-host). It
 Penpot’s latest [huge release 2.0](https://penpot.app/dev-diaries), takes the platform to a whole new level. This update introduces the ground-breaking [CSS Grid Layout feature](https://penpot.app/penpot-2.0), a complete UI redesign, a new Components system, and much more. Plus, it's faster and more accessible. 
 
 
-🎇 **Penpot Fest is back!** Our design, code & Open Source event is happening in Barcelona | June 5-7th. [Get your tickets](https://www.eventbrite.es/e/penpot-fest-2024-tickets-859331883797) to join other designers and developers from open-source communities and beyond. 
-Check out the highlights from [Penpot Fest 2023 edition](https://www.youtube.com/watch?v=sOpLZaK5mDc)!
+🎇 **Penpot Fest** is our design, code & Open Source event. Check out the highlights from [Penpot Fest 2023 edition](https://www.youtube.com/watch?v=sOpLZaK5mDc)!
 
 ## Table of contents ##
 
