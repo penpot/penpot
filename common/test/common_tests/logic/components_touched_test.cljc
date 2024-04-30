@@ -61,14 +61,15 @@
                                                      :copy-root)
                  (thf/add-sample-shape :free-shape))
 
-        page (thf/current-page file)
+        page      (thf/current-page file)
+        copy-root (thf/get-shape file :copy-root)
 
         ;; Action
         ;; IMPORTANT: as modifying copies structure is now forbidden, this action
         ;; will not have any effect, and so the parent shape won't also be touched.
         changes (cflh/generate-relocate-shapes (pcb/empty-changes)
                                                (:objects page)
-                                               #{(thi/id :copy-root)}   ; parents
+                                               #{(:parent-id copy-root)}   ; parents
                                                (thi/id :copy-root)      ; parent-id
                                                (:id page)               ; page-id
                                                0                        ; to-index
@@ -134,7 +135,7 @@
         ;; will not have any effect, and so the parent shape won't also be touched.
         changes (cflh/generate-relocate-shapes (pcb/empty-changes)
                                                (:objects page)
-                                               #{(thi/id :copy-root)}   ; parents
+                                               #{(:parent-id copy-child1)}   ; parents
                                                (thi/id :copy-root)      ; parent-id
                                                (:id page)               ; page-id
                                                2                        ; to-index
