@@ -8,12 +8,11 @@
   "RPC for plugins runtime."
   (:require
    [app.common.data.macros :as dm]
+   [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.util.object :as obj]
-   [cuerdas.core :as str]))
-
-(def uuid-regex
-  #"\w{8}-\w{4}-\w{4}-\w{4}-\w{12}")
+   [cuerdas.core :as str]
+   [promesa.core :as p]))
 
 (defn get-data
   ([self attr]
@@ -42,14 +41,13 @@
        (let [v (cond (map? v)
                      (from-js v)
 
-                     (and (string? v) (re-matches uuid-regex v))
+                     (and (string? v) (re-matches us/uuid-rx v))
                      (uuid/uuid v)
 
                      :else v)]
          (assoc m (keyword (str/kebab k)) v)))
      {}
      ret)))
-
 
 (defn to-js
   "Converts to javascript an camelize the keys"
@@ -65,5 +63,19 @@
          obj)]
     (clj->js result)))
 
-
-
+(defn result-p
+  "Creates a pair of atom+promise. The promise will be resolved when the atom gets a value.
+  We use this to return the promise to the library clients and resolve its value when a value is passed
+  to the atom"
+  []
+  (let [ret-v (atom nil)
+        ret-p
+        (p/create
+         (fn [resolve _]
+           (add-watch
+            ret-v
+            ::watcher
+            (fn [_ _ _ value]
+              (remove-watch ret-v ::watcher)
+              (resolve value)))))]
+    [ret-v ret-p]))

@@ -15,6 +15,8 @@
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.changes :as dwc]
+   [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.store :as st]
    [app.plugins.utils :as utils :refer [get-data get-data-fn]]
    [app.util.object :as obj]))
@@ -61,8 +63,18 @@
       (st/emit! (udw/update-dimensions [id] :width width)
                 (udw/update-dimensions [id] :height height))))
 
-  (clone [_] (.log js/console (clj->js _data)))
-  (delete [_] (.log js/console (clj->js _data)))
+  (clone [self]
+    (let [id (get-data self :id)
+          page-id (:current-page-id @st/state)
+          ret-v (atom nil)]
+      (st/emit! (dws/duplicate-shapes #{id} :change-selection? false :return-ref ret-v))
+      (let [new-id (deref ret-v)
+            shape (dm/get-in @st/state [:workspace-data :pages-index page-id :objects new-id])]
+        (data->shape-proxy shape))))
+
+  (remove [self]
+    (let [id (get-data self :id)]
+      (st/emit! (dwsh/delete-shapes #{id}))))
 
   (appendChild [self child]
     (let [parent-id (get-data self :id)

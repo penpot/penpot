@@ -723,62 +723,76 @@
 
         (gpt/subtract new-pos pt-obj)))))
 
+(defn duplicate-shapes
+  [ids & {:keys [move-delta? alt-duplication? change-selection? return-ref]
+          :or {move-delta? false alt-duplication? false change-selection? true return-ref nil}}]
+  (ptk/reify ::duplicate-shapes
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [page     (wsh/lookup-page state)
+            objects  (:objects page)
+            ids (into #{}
+                      (comp (map (d/getf objects))
+                            (filter #(ctk/allow-duplicate? objects %))
+                            (map :id))
+                      ids)]
+        (when (seq ids)
+          (let [obj             (get objects (first ids))
+                delta           (if move-delta?
+                                  (calc-duplicate-delta obj state objects)
+                                  (gpt/point 0 0))
+
+                file-id         (:current-file-id state)
+                libraries       (wsh/get-libraries state)
+                library-data    (wsh/get-file state file-id)
+
+                changes         (->> (prepare-duplicate-changes objects page ids delta it libraries library-data file-id)
+                                     (duplicate-changes-update-indices objects ids))
+
+                tags            (or (:tags changes) #{})
+
+                changes         (cond-> changes alt-duplication? (assoc :tags (conj tags :alt-duplication)))
+
+                id-original     (first ids)
+
+                new-ids         (->> changes
+                                     :redo-changes
+                                     (filter #(= (:type %) :add-obj))
+                                     (filter #(ids (:old-id %)))
+                                     (map #(get-in % [:obj :id]))
+                                     (into (d/ordered-set)))
+
+                id-duplicated   (first new-ids)
+
+                frames (into #{}
+                             (map #(get-in objects [% :frame-id]))
+                             ids)
+                undo-id (js/Symbol)]
+
+            ;; Warning: This order is important for the focus mode.
+            (->> (rx/of
+                  (dwu/start-undo-transaction undo-id)
+                  (dch/commit-changes changes)
+                  (when change-selection?
+                    (select-shapes new-ids))
+                  (ptk/data-event :layout/update {:ids frames})
+                  (memorize-duplicated id-original id-duplicated)
+                  (dwu/commit-undo-transaction undo-id))
+                 (rx/tap #(when (some? return-ref)
+                            (reset! return-ref id-duplicated))))))))))
+
 (defn duplicate-selected
   ([move-delta?]
    (duplicate-selected move-delta? false))
   ([move-delta? alt-duplication?]
    (ptk/reify ::duplicate-selected
      ptk/WatchEvent
-     (watch [it state _]
+     (watch [_ state _]
        (when (or (not move-delta?) (nil? (get-in state [:workspace-local :transform])))
-         (let [page     (wsh/lookup-page state)
-               objects  (:objects page)
-               selected (->> (wsh/lookup-selected state)
-                             (map (d/getf objects))
-                             (filter #(ctk/allow-duplicate? objects %))
-                             (map :id)
-                             set)]
-           (when (seq selected)
-             (let [obj             (get objects (first selected))
-                   delta           (if move-delta?
-                                     (calc-duplicate-delta obj state objects)
-                                     (gpt/point 0 0))
-
-                   file-id         (:current-file-id state)
-                   libraries       (wsh/get-libraries state)
-                   library-data    (wsh/get-file state file-id)
-
-                   changes         (->> (prepare-duplicate-changes objects page selected delta it libraries library-data file-id)
-                                        (duplicate-changes-update-indices objects selected))
-
-                   tags            (or (:tags changes) #{})
-
-                   changes         (cond-> changes alt-duplication? (assoc :tags (conj tags :alt-duplication)))
-
-                   id-original     (first selected)
-
-                   new-selected    (->> changes
-                                        :redo-changes
-                                        (filter #(= (:type %) :add-obj))
-                                        (filter #(selected (:old-id %)))
-                                        (map #(get-in % [:obj :id]))
-                                        (into (d/ordered-set)))
-
-                   id-duplicated   (first new-selected)
-
-                   frames (into #{}
-                                (map #(get-in objects [% :frame-id]))
-                                selected)
-                   undo-id (js/Symbol)]
-
-               ;; Warning: This order is important for the focus mode.
-               (rx/of
-                (dwu/start-undo-transaction undo-id)
-                (dch/commit-changes changes)
-                (select-shapes new-selected)
-                (ptk/data-event :layout/update {:ids frames})
-                (memorize-duplicated id-original id-duplicated)
-                (dwu/commit-undo-transaction undo-id))))))))))
+         (let [selected (wsh/lookup-selected state)]
+           (rx/of (duplicate-shapes selected
+                                    :move-delta? move-delta?
+                                    :alt-duplication? alt-duplication?))))))))
 
 (defn change-hover-state
   [id value]

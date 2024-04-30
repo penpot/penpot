@@ -9,6 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.record :as crc]
+   [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.viewport :as dwv]
    [app.main.data.workspace.zoom :as dwz]
@@ -46,16 +47,17 @@
     :set
     (fn [_ value]
       (let [new-x (obj/get value "x")
-            new-y (obj/get value "y")
-            vb (dm/get-in @st/state [:workspace-local :vbox])
-            old-x (+ (:x vb) (/ (:width vb) 2))
-            old-y (+ (:y vb) (/ (:height vb) 2))
-            delta-x (- new-x old-x)
-            delta-y (- new-y old-y)
-            to-position
-            {:x #(+ % delta-x)
-             :y #(+ % delta-y)}]
-        (st/emit! (dwv/update-viewport-position to-position))))}
+            new-y (obj/get value "y")]
+        (when (and (us/safe-number? new-x) (us/safe-number? new-y))
+          (let [vb (dm/get-in @st/state [:workspace-local :vbox])
+                old-x (+ (:x vb) (/ (:width vb) 2))
+                old-y (+ (:y vb) (/ (:height vb) 2))
+                delta-x (- new-x old-x)
+                delta-y (- new-y old-y)
+                to-position
+                {:x #(+ % delta-x)
+                 :y #(+ % delta-y)}]
+            (st/emit! (dwv/update-viewport-position to-position))))))}
 
    {:name "zoom"
     :get
@@ -63,8 +65,9 @@
       (dm/get-in @st/state [:workspace-local :zoom]))
     :set
     (fn [_ value]
-      (let [z (dm/get-in @st/state [:workspace-local :zoom])]
-        (st/emit! (dwz/set-zoom (/ value z)))))}
+      (when (us/safe-number? value)
+        (let [z (dm/get-in @st/state [:workspace-local :zoom])]
+          (st/emit! (dwz/set-zoom (/ value z))))))}
 
    {:name "bounds"
     :get
