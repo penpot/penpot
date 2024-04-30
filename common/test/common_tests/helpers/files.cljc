@@ -6,6 +6,7 @@
 
 (ns common-tests.helpers.files
   (:require
+   [app.common.colors :as clr]
    [app.common.data.macros :as dm]
    [app.common.features :as ffeat]
    [app.common.files.changes :as cfc]
@@ -169,7 +170,7 @@
 ;; ----- Components
 
 (defn make-component
-  [file label root-label]
+  [file label root-label & {:keys [] :as params}]
   (let [page (current-page file)
         root (get-shape file root-label)]
 
@@ -194,12 +195,12 @@
                                        #(update % :objects assoc (:id shape) shape)))
                    $
                    updated-shapes)
-           (ctkl/add-component $
-                               {:id (:component-id updated-root)
-                                :name (:name updated-root)
-                                :main-instance-id (:id updated-root)
-                                :main-instance-page (:id page)
-                                :shapes updated-shapes})))))))
+           (ctkl/add-component $ (assoc params
+                                        :id (:component-id updated-root)
+                                        :name (:name updated-root)
+                                        :main-instance-id (:id updated-root)
+                                        :main-instance-page (:id page)
+                                        :shapes updated-shapes))))))))
 
 (defn get-component
   [file label]
@@ -306,7 +307,21 @@
   [label & {:keys [] :as params}]
   (ctc/make-color (assoc params :id (thi/new-id! label))))
 
-(defn add-sample-color
+(defn sample-fill-color
+  [& {:keys [fill-color fill-opacity] :as params}]
+  (let [params (cond-> params
+                 (nil? fill-color)
+                 (assoc :fill-color clr/black)
+
+                 (nil? fill-opacity)
+                 (assoc :fill-opacity 1))]
+    params))
+
+(defn sample-fills-color
+  [& {:keys [] :as params}]
+  [(sample-fill-color params)])
+
+(defn add-sample-library-color
   [file label & {:keys [] :as params}]
   (let [color (sample-color label params)]
     (ctf/update-file-data file #(ctcl/add-color % color))))

@@ -34,6 +34,23 @@
 ;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
 (log/set-level! :warn)
 
+(defn generate-update-shapes
+  [changes ids update-fn objects {:keys [attrs ignore-tree ignore-touched with-objects?]}]
+  (let [changes   (reduce
+                   (fn [changes id]
+                     (let [opts {:attrs attrs
+                                 :ignore-geometry? (get ignore-tree id)
+                                 :ignore-touched ignore-touched
+                                 :with-objects? with-objects?}]
+                       (pcb/update-shapes changes [id] update-fn (d/without-nils opts))))
+                   (-> changes
+                       (pcb/with-objects objects))
+                   ids)
+        grid-ids (->> ids (filter (partial ctl/grid-layout? objects)))
+        changes (pcb/update-shapes changes grid-ids ctl/assign-cell-positions {:with-objects? true})
+        changes (pcb/reorder-grid-children changes ids)]
+    changes))
+
 (declare generate-sync-container)
 (declare generate-sync-shape)
 (declare generate-sync-text-shape)

@@ -70,21 +70,21 @@
     (t/is (= (:name f1) "Test file"))))
 
 (t/deftest test-absorb-components
-  (let [; Setup
+  (let [;; Setup
         library (-> (thf/sample-file :library :is-shared true)
                     (tho/add-simple-component :component1 :main-root :rect1))
 
         file (-> (thf/sample-file :file)
                  (thf/instantiate-component :component1 :copy-root :library library))
 
-        ; Action
+        ;; Action
         file' (ctf/update-file-data
                file
                #(ctf/absorb-assets % (:data library)))
 
         _ (thf/validate-file! file')
 
-        ; Get
+        ;; Get
         pages'      (ctpl/pages-seq (ctf/file-data file'))
         components' (ctkl/components-seq (ctf/file-data file'))
         component' (first components')
@@ -92,7 +92,7 @@
         copy-root' (thf/get-shape file' :copy-root)
         main-root' (ctf/get-ref-shape (ctf/file-data file') component' copy-root')]
 
-    ; Check
+    ;; Check
     (t/is (= (count pages') 2))
     (t/is (= (:name (first pages')) "Page 1"))
     (t/is (= (:name (second pages')) "Main components"))
@@ -104,10 +104,10 @@
     (t/is (ctk/main-instance-of? (:id main-root') (:id (second pages')) component'))))
 
 (t/deftest test-absorb-colors
-  (let [; Setup
+  (let [;; Setup
         library (-> (thf/sample-file :library :is-shared true)
-                    (thf/add-sample-color :color1 {:name "Test color"
-                                                   :color "#abcdef"}))
+                    (thf/add-sample-library-color :color1 {:name "Test color"
+                                                           :color "#abcdef"}))
 
         file    (-> (thf/sample-file :file)
                     (thf/add-sample-shape :shape1
@@ -118,19 +118,19 @@
                                                    :fill-color-ref-id (thi/id :color1)
                                                    :fill-color-ref-file (thi/id :library)}]))
 
-        ; Action
+        ;; Action
         file' (ctf/update-file-data
                file
                #(ctf/absorb-assets % (:data library)))
 
         _ (thf/validate-file! file')
 
-        ; Get
+        ;; Get
         colors' (ctcl/colors-seq (ctf/file-data file'))
         shape1' (thf/get-shape file' :shape1)
         fill'   (first (:fills shape1'))]
 
-    ; Check
+    ;; Check
     (t/is (= (count colors') 1))
     (t/is (= (:id (first colors')) (thi/id :color1)))
     (t/is (= (:name (first colors')) "Test color"))
@@ -141,7 +141,7 @@
     (t/is (= (:fill-color-ref-file fill') (:id file')))))
 
 (t/deftest test-absorb-typographies
-  (let [; Setup
+  (let [;; Setup
         library (-> (thf/sample-file :library :is-shared true)
                     (thf/add-sample-typography :typography1 {:name "Test typography"}))
 
@@ -169,18 +169,19 @@
                                                                                         :letter-spacing "0"
                                                                                         :fills [{:fill-color "#000000"
                                                                                                  :fill-opacity 1}]}]}]}]}))
-        ; Action
+        ;; Action
         file' (ctf/update-file-data
                file
                #(ctf/absorb-assets % (:data library)))
 
         _ (thf/validate-file! file')
 
-        ; Get
+        ;; Get
         typographies' (ctyl/typographies-seq (ctf/file-data file'))
         shape1'       (thf/get-shape file' :shape1)
         text-node'    (d/seek #(some? (:text %)) (txt/node-seq (:content shape1')))]
 
+    ;; Check
     (t/is (= (count typographies') 1))
     (t/is (= (:id (first typographies')) (thi/id :typography1)))
     (t/is (= (:name (first typographies')) "Test typography"))

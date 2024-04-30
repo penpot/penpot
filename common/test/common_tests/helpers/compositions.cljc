@@ -6,39 +6,76 @@
 
 (ns common-tests.helpers.compositions
   (:require
-   [common-tests.helpers.files :as thf]
-   [common-tests.helpers.ids-map :as thi]))
+   [app.common.data :as d]
+   [common-tests.helpers.files :as thf]))
 
 (defn add-rect
-  [file rect-label]
+  [file rect-label & {:keys [] :as params}]
   (thf/add-sample-shape file rect-label
-                        :type :rect
-                        :name "Rect1"))
+                        (merge {:type :rect
+                                :name "Rect1"}
+                               params)))
 
 (defn add-frame
-  ([file frame-label & {:keys [parent-label]}]
-   (thf/add-sample-shape file frame-label
-                         :type :frame
-                         :name "Frame1"
-                         :parent-label parent-label)))
+  [file frame-label & {:keys [] :as params}]
+  (thf/add-sample-shape file frame-label
+                        (merge {:type :frame
+                                :name "Frame1"}
+                               params)))
 
 (defn add-frame-with-child
-  [file frame-label child-label]
+  [file frame-label child-label & {:keys [frame-params child-params]}]
   (-> file
-      (add-frame frame-label)
+      (add-frame frame-label frame-params)
       (thf/add-sample-shape child-label
-                            :type :rect
-                            :name "Rect1"
-                            :parent-label frame-label)))
+                            (merge {:type :rect
+                                    :name "Rect1"
+                                    :parent-label frame-label}
+                                   child-params))))
 
 (defn add-simple-component
-  [file component-label root-label child-label]
+  [file component-label root-label child-label
+   & {:keys [component-params root-params child-params]}]
   (-> file
-      (add-frame-with-child root-label child-label)
-      (thf/make-component component-label root-label)))
+      (add-frame-with-child root-label child-label :frame-params root-params :child-params child-params)
+      (thf/make-component component-label root-label component-params)))
 
 (defn add-simple-component-with-copy
-  [file component-label main-root-label main-child-label copy-root-label]
+  [file component-label main-root-label main-child-label copy-root-label
+   & {:keys [component-params main-root-params main-child-params copy-root-params]}]
   (-> file
-      (add-simple-component component-label main-root-label main-child-label)
-      (thf/instantiate-component component-label copy-root-label)))
+      (add-simple-component component-label
+                            main-root-label
+                            main-child-label
+                            :component-params component-params
+                            :root-params main-root-params
+                            :child-params main-child-params)
+      (thf/instantiate-component component-label copy-root-label copy-root-params)))
+
+(defn add-component-with-many-children
+  [file component-label root-label child-labels
+   & {:keys [component-params root-params child-params-list]}]
+  (as-> file $
+    (add-frame $ root-label root-params)
+    (reduce (fn [file [label params]]
+              (thf/add-sample-shape file
+                                    label
+                                    (merge {:type :rect
+                                            :name "Rect1"
+                                            :parent-label root-label}
+                                           params)))
+            $
+            (d/zip-all child-labels child-params-list))
+    (thf/make-component $ component-label root-label component-params)))
+
+(defn add-component-with-many-children-and-copy
+  [file component-label root-label child-labels copy-root-label
+   & {:keys [component-params root-params child-params-list copy-root-params]}]
+  (-> file
+      (add-component-with-many-children component-label
+                                        root-label
+                                        child-labels
+                                        :component-params component-params
+                                        :root-params root-params
+                                        :child-params-list child-params-list)
+      (thf/instantiate-component component-label copy-root-label copy-root-params)))
