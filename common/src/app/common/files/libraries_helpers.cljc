@@ -166,7 +166,7 @@
 
         [new-component-shape new-component-shapes  ; <- null in components-v2
          new-main-instance-shape new-main-instance-shapes]
-        (duplicate-component (:data library) component new-component-id)]
+        (duplicate-component component new-component-id (:data library))]
 
     (-> changes
         (pcb/with-page main-instance-page)
