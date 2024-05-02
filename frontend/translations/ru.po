@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-01-23 15:01+0000\n"
+"PO-Revision-Date: 2024-05-03 13:07+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
-"Language-Team: Russian "
-"<https://hosted.weblate.org/projects/penpot/frontend/ru/>\n"
+"Language-Team: Russian <https://hosted.weblate.org/projects/penpot/frontend/"
+"ru/>\n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Weblate 5.4-dev\n"
+"X-Generator: Weblate 5.5.3\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -3025,3 +3025,131 @@ msgstr "Обновить"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Нажмите для замыкания контура"
+
+msgid "workspace.undo.entry.multiple.multiple"
+msgstr "объекты"
+
+msgid "workspace.undo.entry.single.page"
+msgstr "страница"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.copied-success"
+msgstr "Токен скопирован"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.offsetx"
+msgstr "X"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
+msgid "workspace.options.show-fill-on-export"
+msgstr "Показать в экспорте"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.circle-marker-short"
+msgstr "Круг"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.triangle-arrow"
+msgstr "Треугольная стрела"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square-marker-short"
+msgstr "Прямоугольник"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.lock"
+msgstr "Заблокировать"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.new"
+msgstr "Новый: %s"
+
+msgid "workspace.undo.entry.multiple.group"
+msgstr "группы"
+
+msgid "workspace.undo.entry.single.component"
+msgstr "компонент"
+
+msgid "workspace.undo.entry.single.circle"
+msgstr "круг"
+
+msgid "workspace.undo.entry.single.multiple"
+msgstr "объект"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.updates.more-info"
+msgstr "Дополнительная информация"
+
+msgid "workspace.top-bar.read-only.done"
+msgstr "Готово"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.shortcuts"
+msgstr "Сочетание клавиш (%s)"
+
+msgid "workspace.sidebar.layers.shapes"
+msgstr "Формы"
+
+msgid "workspace.undo.entry.multiple.page"
+msgstr "страницы"
+
+msgid "workspace.shape.menu.intersection"
+msgstr "Пересечь"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.offsety"
+msgstr "Y"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.triangle-arrow-short"
+msgstr "Треугольник"
+
+msgid "workspace.undo.entry.multiple.shape"
+msgstr "формы"
+
+msgid "workspace.undo.entry.multiple.circle"
+msgstr "круги"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.unlock"
+msgstr "Paзблокировать"
+
+msgid "workspace.sidebar.collapse"
+msgstr "Свернуть боковую панель"
+
+msgid "workspace.options.width"
+msgstr "Ширина"
+
+#: src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.paste"
+msgstr "Вставить"
+
+msgid "workspace.undo.entry.single.shape"
+msgstr "форма"
+
+msgid "workspace.undo.entry.single.text"
+msgstr "текст"
+
+msgid "workspace.undo.entry.single.image"
+msgstr "изображение"
+
+msgid "workspace.undo.entry.multiple.text"
+msgstr "тексты"
+
+msgid "workspace.sidebar.layers.texts"
+msgstr "Тексты"
+
+msgid "workspace.sidebar.layers.masks"
+msgstr "Маски"
+
+msgid "workspace.sidebar.layers.images"
+msgstr "Изображения"
+
+msgid "workspace.sidebar.layers.groups"
+msgstr "Группы"
+
+msgid "workspace.sidebar.expand"
+msgstr "Расширить боковую панель"
+
+msgid "workspace.shape.menu.union"
+msgstr "Суммировать"
