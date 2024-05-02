@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-04-24 12:55+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: French "
-"<https://hosted.weblate.org/projects/penpot/frontend/fr/>\n"
+"PO-Revision-Date: 2024-05-03 13:07+0000\n"
+"Last-Translator: Louis Chance <contact@louischance.com>\n"
+"Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
+"fr/>\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Weblate 5.5.1-dev\n"
+"X-Generator: Weblate 5.5.3\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -1021,7 +1021,6 @@ msgstr "Erreur de connexion, URL inaccessible"
 msgid "errors.webhooks.invalid-uri"
 msgstr "L'URL ne passe pas la validation."
 
-#, fuzzy
 msgid "errors.webhooks.last-delivery"
 msgstr "Il y a eu une erreur dans le dernier envoi."
 
@@ -3145,7 +3144,6 @@ msgstr "Afficher les interactions au clic"
 msgid "viewer.header.sitemap"
 msgstr "Plan du site"
 
-#, fuzzy
 msgid "webhooks.last-delivery.success"
 msgstr "Le dernier envoi a réussi."
 
@@ -4621,7 +4619,7 @@ msgid "workspace.shape.menu.add-flex"
 msgstr "Ajouter flex layout"
 
 msgid "workspace.shape.menu.add-grid"
-msgstr "Ajouter grid layout"
+msgstr "Ajouter disposition en grille"
 
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.back"
@@ -5044,3 +5042,275 @@ msgstr "Actualiser"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Cliquez pour fermer le chemin"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs
+msgid "workspace.assets.sidebar.components"
+msgid_plural "workspace.assets.sidebar.components"
+msgstr[0] "1 composant"
+msgstr[1] "%s composants"
+
+#: src/app/main/ui/auth/register.cljs
+#, markdown
+msgid "auth.terms-privacy-agreement-md"
+msgstr ""
+"En créant un compte, vous acceptez nos [conditions d'utilisation](%s) et ["
+"politique de confidentialité](%s)."
+
+msgid "modals.move-shared-confirm.message"
+msgid_plural "modals.move-shared-confirm.message"
+msgstr[0] "Êtes-vous sûr de vouloir déplacer cette librairie ?"
+msgstr[1] "Êtes-vous sûr de vouloir déplacer ces librairies ?"
+
+msgid "modals.move-shared-confirm.title"
+msgid_plural "modals.move-shared-confirm.title"
+msgstr[0] "Déplacer librairie"
+msgstr[1] "Déplacer librairies"
+
+msgid "onboarding.team-modal.team-definition"
+msgstr "Qu'est-ce qu'une équipe ?"
+
+msgid "shortcuts.scale"
+msgstr "Échelle"
+
+msgid "shortcuts.toggle-layout-grid"
+msgstr "Ajouter / Retirer grid layout"
+
+msgid "workspace.context-menu.grid-cells.create-board"
+msgstr "Créer un tableau"
+
+msgid "workspace.context-menu.grid-cells.merge"
+msgstr "Fusionner les cellules"
+
+msgid "workspace.context-menu.grid-track.column.add-after"
+msgstr "Ajouter une colonne à droite"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-snap-ruler-guides"
+msgstr "Aligner aux guides de règles"
+
+msgid "workspace.layout_grid.editor.options.edit-grid"
+msgstr "Éditer la grille"
+
+msgid "workspace.layout_grid.editor.top-bar.locate"
+msgstr "Montrer"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-grid"
+msgstr "Supprimer la disposition en grille"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.loading"
+msgstr "Chargement…"
+
+msgid "inspect.attributes.typography.text-transform.unset"
+msgstr "Non assigné"
+
+msgid "labels.share"
+msgstr "Partager"
+
+msgid "labels.search"
+msgstr "Rechercher"
+
+msgid "onboarding.choice.team-up.continue-creating-team"
+msgstr "Continuer en créant une équipe"
+
+msgid "onboarding.choice.team-up.start-without-a-team"
+msgstr "Commencer sans équipe"
+
+msgid "onboarding.choice.team-up.continue-without-a-team"
+msgstr "Continuer sans équipe"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites"
+msgstr "Créer une équipe et envoyer des invitations"
+
+msgid "onboarding.choice.team-up.start-without-a-team-description"
+msgstr "Vous pourrez créer une équipe plus tard."
+
+msgid "onboarding.choice.team-up.create-team-and-invite"
+msgstr "Créer une équipe et inviter"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites-description"
+msgstr "Vous pourrez envoyer les invitations plus tard"
+
+msgid "onboarding.choice.team-up.create-team-without-invite"
+msgstr "Créer l'équipe"
+
+msgid "onboarding.choice.team-up.create-team-without-inviting"
+msgstr "Créer l'équipe sans inviter"
+
+msgid "workspace.layout_grid.editor.top-bar.done"
+msgstr "Fait"
+
+msgid "workspace.layout_grid.editor.options.exit"
+msgstr "Quitter"
+
+msgid "workspace.options.component.swap"
+msgstr "Échanger composant"
+
+msgid "workspace.options.component.swap.empty"
+msgstr "Cette librairie ne contient aucun élément pour le moment"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow"
+msgstr "Flux"
+
+msgid "media.radial"
+msgstr "Radial"
+
+msgid "media.choose-image"
+msgstr "Choisir image"
+
+msgid "media.gradient"
+msgstr "Gradient"
+
+msgid "workspace.options.guides.title"
+msgstr "Guides"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-account-title"
+msgstr "Connexion à mon compte"
+
+#: src/app/main/data/users.cljs
+msgid "errors.email-domain-not-allowed"
+msgstr "Domaine non autorisé"
+
+msgid "errors.paste-data-validation"
+msgstr "Données du presse-papier invalides"
+
+msgid "errors.validation"
+msgstr "Erreur de validation"
+
+msgid "media.image"
+msgstr "Image"
+
+msgid "media.image.short"
+msgstr "img"
+
+msgid "media.keep-aspect-ratio"
+msgstr "Conserver le ratio"
+
+msgid "media.linear"
+msgstr "Linéaire"
+
+msgid "media.solid"
+msgstr "Solide"
+
+msgid "modals.move-shared-confirm.accept"
+msgid_plural "modals.move-shared-confirm.accept"
+msgstr[0] "Déplacer"
+msgstr[1] "Déplacer"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.never-used-one"
+msgstr "Aucune"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs
+msgid "settings.select-this-color"
+msgstr "Sélectionnez les éléments qui utilisent ce style"
+
+msgid "shortcuts.toggle-guides"
+msgstr "Montrer / Cacher les guides"
+
+msgid "shortcuts.toggle-rulers"
+msgstr "Montrer / Cacher les règles"
+
+msgid "shortcuts.toggle-snap-guides"
+msgstr "Aligner selon les guides"
+
+msgid "shortcuts.toggle-snap-ruler-guide"
+msgstr "Aligner selon les guides de règles"
+
+msgid "shortcuts.toggle-theme"
+msgstr "Changer le thème"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.filter"
+msgstr "Filtrer"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.sort"
+msgstr "Trier"
+
+msgid "workspace.context-menu.grid-track.column.add-before"
+msgstr "Ajouter une colonne à gauche"
+
+msgid "workspace.context-menu.grid-track.column.delete"
+msgstr "Supprimer la colonne"
+
+msgid "workspace.context-menu.grid-track.column.delete-shapes"
+msgstr "Supprimer la colonne et le contenu"
+
+msgid "workspace.context-menu.grid-track.column.duplicate"
+msgstr "Dupliquer la colonne"
+
+msgid "workspace.context-menu.grid-track.row.add-after"
+msgstr "Ajouter une rangée en-dessous"
+
+msgid "workspace.context-menu.grid-track.row.add-before"
+msgstr "Ajouter une rangée au-dessus"
+
+msgid "workspace.context-menu.grid-track.row.delete"
+msgstr "Supprimer la rangée"
+
+msgid "workspace.context-menu.grid-track.row.delete-shapes"
+msgstr "Supprimer la rangée et son contenu"
+
+msgid "workspace.context-menu.grid-track.row.duplicate"
+msgstr "Dupliquer la rangée"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-snap-ruler-guides"
+msgstr "Désactiver l'alignement aux guides de règles"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-guides"
+msgstr "Montrer les guides"
+
+msgid "workspace.header.menu.toggle-dark-theme"
+msgstr "Basculer vers le thème sombre"
+
+msgid "workspace.header.menu.toggle-light-theme"
+msgstr "Basculer vers le thème clair"
+
+msgid "workspace.layout_grid.editor.padding.expand"
+msgstr "Montrer les options de marge intérieure sur les 4 côtés"
+
+msgid "workspace.layout_grid.editor.top-bar.locate.tooltip"
+msgstr "Montrer la disposition en grille"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.shared-library-btn"
+msgstr "Connecter librairie"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.unlink-library-btn"
+msgstr "Déconnecter librairie"
+
+msgid "workspace.top-bar.read-only.done"
+msgstr "Fait"
+
+#, markdown
+msgid "workspace.top-bar.view-only"
+msgstr "**Inspection du code** (Vue uniquement)"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-tagline"
+msgstr ""
+"Penpot est l'outil de design libre et open-source pour la collaboration "
+"entre Design et Développement"
+
+msgid "dashboard.import.analyze-error.components-v2"
+msgstr ""
+"Fichier avec composants v2 activé mais n'est pas encore supporté par cette "
+"équipe."
+
+#: src/app/main/data/users.cljs
+msgid "errors.auth-provider-not-allowed"
+msgstr "Le fournisseur d'authentification n'est pas autorisé pour ce profil"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-guides"
+msgstr "Cacher les guides"
+
+msgid "workspace.context-menu.grid-cells.area"
+msgstr "Créer une zone"
