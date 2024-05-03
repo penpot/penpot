@@ -72,7 +72,7 @@
    :layout-grid-columns    []})
 
 (defn get-layout-initializer
-  [type from-frame?]
+  [type from-frame? calculate-params?]
   (let [[initial-layout-data calculate-params]
         (case type
           :flex [initial-flex-layout flex/calculate-params]
@@ -87,9 +87,11 @@
                 (cond-> (not from-frame?)
                   (assoc :show-content true :hide-in-viewer true)))
 
-            params (calculate-params objects (cfh/get-immediate-children objects (:id shape)) shape)]
+            params (when calculate-params?
+                     (calculate-params objects (cfh/get-immediate-children objects (:id shape)) shape))]
         (cond-> (merge shape params)
-          (= type :grid) (-> (ctl/assign-cells objects) ctl/reorder-grid-children))))))
+          (= type :grid)
+          (-> (ctl/assign-cells objects) ctl/reorder-grid-children))))))
 
 ;; Never call this directly but through the data-event `:layout/update`
 ;; Otherwise a lot of cycle dependencies could be generated
@@ -124,7 +126,7 @@
   (ptk/reify ::finalize))
 
 (defn create-layout-from-id
-  [id type from-frame?]
+  [id type & {:keys [from-frame? calculate-params?] :or {from-frame? false calculate-params? true}}]
   (dm/assert!
    "expected uuid for `id`"
    (uuid? id))
@@ -135,7 +137,7 @@
       (let [objects            (wsh/lookup-page-objects state)
             parent             (get objects id)
             undo-id            (js/Symbol)
-            layout-initializer (get-layout-initializer type from-frame?)]
+            layout-initializer (get-layout-initializer type from-frame? calculate-params?)]
 
         (rx/of (dwu/start-undo-transaction undo-id)
                (dch/update-shapes [id] layout-initializer {:with-objects? true})
@@ -177,7 +179,7 @@
               (dwse/select-shapes ordered-ids)
               (dwsh/create-artboard-from-selection new-shape-id parent-id group-index (:name (first selected-shapes)))
               (cl/remove-all-fills [new-shape-id] {:color clr/black :opacity 1})
-              (create-layout-from-id new-shape-id type false)
+              (create-layout-from-id new-shape-id type)
               (dch/update-shapes [new-shape-id] #(assoc % :layout-item-h-sizing :auto :layout-item-v-sizing :auto))
               (dch/update-shapes selected #(assoc % :layout-item-h-sizing :fix :layout-item-v-sizing :fix))
               (dwsh/delete-shapes page-id selected)
@@ -188,7 +190,7 @@
            (rx/of
             (dwsh/create-artboard-from-selection new-shape-id)
             (cl/remove-all-fills [new-shape-id] {:color clr/black :opacity 1})
-            (create-layout-from-id new-shape-id type false)
+            (create-layout-from-id new-shape-id type)
             (dch/update-shapes [new-shape-id] #(assoc % :layout-item-h-sizing :auto :layout-item-v-sizing :auto))
             (dch/update-shapes selected #(assoc % :layout-item-h-sizing :fix :layout-item-v-sizing :fix))))
 
@@ -227,7 +229,7 @@
         (rx/of
          (dwu/start-undo-transaction undo-id)
          (if (and single? is-frame?)
-           (create-layout-from-id (first selected) type true)
+           (create-layout-from-id (first selected) type :from-frame? true)
            (create-layout-from-selection type))
          (dwu/commit-undo-transaction undo-id))))))
 
