@@ -1,6 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { interceptRPC } from "./helpers/MockRPC";
-import { MockWebSocket } from "./helpers/MockWebSocket";
+import { interceptRPC } from "./helpers/MockAPI";
 
 const setupLoggedOutUser = async (page) => {
   await interceptRPC(page, "get-profile", "get-profile-anonymous.json");
@@ -30,16 +29,8 @@ const setupDashboardUser = async (page) => {
     "get-profiles-for-file-comments",
     "logged-in-user/get-profiles-for-file-comments-empty.json",
   );
-  await interceptRPC(
-    page,
-    "get-builtin-templates",
-    "logged-in-user/get-builtin-templates-empty.json",
-  );
+  await interceptRPC(page, "get-builtin-templates", "logged-in-user/get-builtin-templates-empty.json");
 };
-
-test.beforeEach(async ({ page }) => {
-  await MockWebSocket.init(page);
-})
 
 test("Shows login page when going to index and user is logged out", async ({ page }) => {
   await setupLoggedOutUser(page);
@@ -61,9 +52,6 @@ test("User logs in by filling the login form", async ({ page }) => {
   await page.getByLabel("Password").fill("loremipsum");
 
   await page.getByRole("button", { name: "Login" }).click();
-
-  const ws = await MockWebSocket.waitForURL('ws://0.0.0.0:3500/ws/notifications');
-  console.log(ws)
 
   await expect(page).toHaveURL(/dashboard/);
 });

@@ -1,4 +1,3 @@
-console.log("MockWebSocket mock loaded");
 window.WebSocket = class MockWebSocket extends EventTarget {
   static CONNECTING = 0;
   static OPEN = 1;
@@ -13,6 +12,19 @@ window.WebSocket = class MockWebSocket extends EventTarget {
 
   static getByURL(url) {
     return this.#mocks.get(url);
+  }
+
+  static waitForURL(url) {
+    return new Promise((resolve) => {
+      let intervalID = setInterval(() => {
+        for (const [wsURL, ws] of this.#mocks) {
+          if (wsURL.includes(url)) {
+            clearInterval(intervalID);
+            resolve(ws);
+          }
+        }
+      }, 30);
+    });
   }
 
   #url;
@@ -32,9 +44,8 @@ window.WebSocket = class MockWebSocket extends EventTarget {
   #spyClose = null;
 
   constructor(url, protocols) {
+    console.log("🤖 New websocket at", url);
     super();
-
-    console.log("MockWebSocket", url, protocols);
 
     this.#url = url;
     this.#protocols = protocols || [];
@@ -84,13 +95,13 @@ window.WebSocket = class MockWebSocket extends EventTarget {
   }
 
   set onopen(callback) {
-    if (callback === null) {
-      this.removeEventListener("open", this.#onopen);
-    } else if (typeof callback === "function") {
-      if (this.#onopen) this.removeEventListener("open", this.#onopen);
+    this.removeEventListener("open", this.#onopen);
+    this.#onopen = null;
+
+    if (typeof callback === "function") {
       this.addEventListener("open", callback);
+      this.#onopen = callback;
     }
-    this.#onopen = callback;
   }
 
   get onopen() {
@@ -98,13 +109,13 @@ window.WebSocket = class MockWebSocket extends EventTarget {
   }
 
   set onerror(callback) {
-    if (callback === null) {
-      this.removeEventListener("error", this.#onerror);
-    } else if (typeof callback === "function") {
-      if (this.#onerror) this.removeEventListener("error", this.#onerror);
+    this.removeEventListener("error", this.#onerror);
+    this.#onerror = null;
+
+    if (typeof callback === "function") {
       this.addEventListener("error", callback);
+      this.#onerror = callback;
     }
-    this.#onerror = callback;
   }
 
   get onerror() {
@@ -112,13 +123,13 @@ window.WebSocket = class MockWebSocket extends EventTarget {
   }
 
   set onmessage(callback) {
-    if (callback === null) {
-      this.removeEventListener("message", this.#onmessage);
-    } else if (typeof callback === "function") {
-      if (this.#onmessage) this.removeEventListener("message", this.#onmessage);
+    this.removeEventListener("message", this.#onmessage);
+    this.#onmessage = null;
+
+    if (typeof callback === "function") {
       this.addEventListener("message", callback);
+      this.#onmessage = callback;
     }
-    this.#onmessage = callback;
   }
 
   get onmessage() {
@@ -126,13 +137,13 @@ window.WebSocket = class MockWebSocket extends EventTarget {
   }
 
   set onclose(callback) {
-    if (callback === null) {
-      this.removeEventListener("close", this.#onclose);
-    } else if (typeof callback === "function") {
-      if (this.#onclose) this.removeEventListener("close", this.#onclose);
+    this.removeEventListener("close", this.#onclose);
+    this.#onclose = null;
+
+    if (typeof callback === "function") {
       this.addEventListener("close", callback);
+      this.#onclose = callback;
     }
-    this.#onclose = callback;
   }
 
   get onclose() {
@@ -160,6 +171,7 @@ window.WebSocket = class MockWebSocket extends EventTarget {
   }
 
   mockOpen(options) {
+    console.log("🤖 open mock");
     this.#protocol = options?.protocol || "";
     this.#extensions = options?.extensions || "";
     this.#readyState = MockWebSocket.OPEN;
@@ -174,9 +186,12 @@ window.WebSocket = class MockWebSocket extends EventTarget {
   }
 
   mockMessage(data) {
+    console.log("🤯 mock message");
     if (this.#readyState !== MockWebSocket.OPEN) {
+      console.log("socket is not connected");
       throw new Error("MockWebSocket is not connected");
     }
+    console.log("😰 dispatching `message`", { data });
     this.dispatchEvent(new MessageEvent("message", { data }));
     return this;
   }
@@ -188,16 +203,16 @@ window.WebSocket = class MockWebSocket extends EventTarget {
   }
 
   send(data) {
-    console.log(data);
     if (this.#readyState === MockWebSocket.CONNECTING) {
       throw new DOMException("InvalidStateError", "MockWebSocket is not connected");
     }
-    console.log(`MockWebSocket send: ${data}`);
-    this.#spyMessage && this.#spyMessage(this.url, data);
+
+    if (this.#spyMessage) {
+      this.#spyMessage(this.url, data);
+    }
   }
 
   close(code, reason) {
-    console.log(code, reason);
     if (code && !Number.isInteger(code) && code !== 1000 && (code < 3000 || code > 4999)) {
       throw new DOMException("InvalidAccessError", "Invalid code");
     }
@@ -214,7 +229,8 @@ window.WebSocket = class MockWebSocket extends EventTarget {
     }
 
     this.#readyState = MockWebSocket.CLOSING;
-    console.log("MockWebSocket close");
-    this.#spyClose && this.#spyClose(this.url, code, reason);
+    if (this.#spyClose) {
+      this.#spyClose(this.url, code, reason);
+    }
   }
-}
+};
