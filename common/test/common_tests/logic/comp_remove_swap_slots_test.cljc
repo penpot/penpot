@@ -60,10 +60,38 @@
         changes                (cflh/generate-relocate-shapes (pcb/empty-changes nil)
                                                               (:objects page)
                                                               #{(:parent-id blue1)} ;; parents
-                                                              uuid/zero             ;; paremt-id
+                                                              uuid/zero             ;; parent-id
                                                               (:id page)            ;; page-id
                                                               0                     ;; to-index
                                                               #{(:id blue1)})       ;; ids
+        file'                  (thf/apply-changes file changes)
+
+        ;; ============================== Get =================================
+        blue1'                 (thf/get-shape file' :blue1)]
+
+    ;; ================================== Check ===============================
+    ;; blue1 had swap-id before move
+    (t/is (some? (ctk/get-swap-slot blue1)))
+
+    ;; blue1 has not swap-id after move
+    (t/is (some? blue1'))
+    (t/is (nil? (ctk/get-swap-slot blue1')))))
+
+(t/deftest test-keep-swap-slot-move-blue1-to-root
+  (let [;; ============================== Setup ===============================
+        file                   (setup-file)
+        page                   (thf/current-page file)
+        blue1                  (thf/get-shape file :blue1)
+
+        ;; ============================== Action ==============================
+        changes                (cflh/generate-move-shapes-to-frame (pcb/empty-changes nil)
+                                                                   #{(:id blue1)}       ;; ids
+                                                                   uuid/zero            ;; frame-id
+                                                                   (:id page)           ;; page-id
+                                                                   (:objects page)      ;; objects
+                                                                   0                    ;; drop-index
+                                                                   nil)                 ;; cell
+
         file'                  (thf/apply-changes file changes)
 
         ;; ============================== Get =================================
@@ -94,6 +122,36 @@
                                                               (:id page)            ;; page-id
                                                               0                     ;; to-index
                                                               #{(:id blue1)})       ;; ids
+        file'                  (thf/apply-changes file changes)
+
+        ;; ============================== Get =================================
+        blue1'                 (thf/get-shape file' :blue1)]
+
+    ;; ================================== Check ===============================
+    ;; blue1 had swap-id before move
+    (t/is (some? (ctk/get-swap-slot blue1)))
+
+    ;; blue1 has not swap-id after move
+    (t/is (some? blue1'))
+    (t/is (nil? (ctk/get-swap-slot blue1')))))
+
+(t/deftest test-keep-swap-slot-move-blue1-to-b2
+  (let [;; ============================== Setup ===============================
+        file                   (setup-file)
+        page                   (thf/current-page file)
+        blue1                  (thf/get-shape file :blue1)
+        b2                     (thf/get-shape file :frame-b2)
+
+
+        ;; ============================== Action ==============================
+        changes                (cflh/generate-move-shapes-to-frame (pcb/empty-changes nil)
+                                                                   #{(:id blue1)}       ;; ids
+                                                                   (:id b2)             ;; frame-id
+                                                                   (:id page)           ;; page-id
+                                                                   (:objects page)      ;; objects
+                                                                   0                    ;; drop-index
+                                                                   nil)                 ;; cell
+
         file'                  (thf/apply-changes file changes)
 
         ;; ============================== Get =================================
@@ -149,6 +207,48 @@
     (t/is (some? blue1''))
     (t/is (nil? (ctk/get-swap-slot blue1'')))))
 
+(t/deftest test-keep-swap-slot-move-yellow-to-root
+  (let [;; ============================== Setup ===============================
+        file                   (setup-file)
+        page                   (thf/current-page file)
+        blue1                  (thf/get-shape file :blue1)
+        yellow                 (thf/get-shape file :frame-yellow)
+
+        ;; ============================== Action ==============================
+        ;; Move blue1 into yellow
+        changes                (cflh/generate-move-shapes-to-frame (pcb/empty-changes nil)
+                                                                   #{(:id blue1)}       ;; ids
+                                                                   (:id yellow)         ;; frame-id
+                                                                   (:id page)           ;; page-id
+                                                                   (:objects page)      ;; objects
+                                                                   0                    ;; drop-index
+                                                                   nil)                 ;; cell
+
+        file'                  (thf/apply-changes file changes)
+        page'                  (thf/current-page file')
+        yellow'                (thf/get-shape file' :frame-yellow)
+
+        ;; Move yellow into root
+        changes'               (cflh/generate-move-shapes-to-frame (pcb/empty-changes nil)
+                                                                   #{(:id yellow')}      ;; ids
+                                                                   uuid/zero            ;; frame-id
+                                                                   (:id page')           ;; page-id
+                                                                   (:objects page')      ;; objects
+                                                                   0                    ;; drop-index
+                                                                   nil)                 ;; cell
+        file''                  (thf/apply-changes file' changes')
+
+        ;; ============================== Get =================================
+        blue1''                 (thf/get-shape file'' :blue1)]
+
+    ;; ================================== Check ===============================
+    ;; blue1 had swap-id before move
+    (t/is (some? (ctk/get-swap-slot blue1)))
+
+    ;; blue1 has not swap-id after move
+    (t/is (some? blue1''))
+    (t/is (nil? (ctk/get-swap-slot blue1'')))))
+
 
 (t/deftest test-keep-swap-slot-relocating-yellow-to-b2
   (let [;; ============================== Setup ===============================
@@ -180,6 +280,50 @@
                                                               (:id page')             ;; page-id
                                                               0                       ;; to-index
                                                               #{(:id yellow')})       ;; ids
+        file''                  (thf/apply-changes file' changes')
+
+        ;; ============================== Get =================================
+        blue1''                 (thf/get-shape file'' :blue1)]
+
+    ;; ================================== Check ===============================
+    ;; blue1 had swap-id before move
+    (t/is (some? (ctk/get-swap-slot blue1)))
+
+    ;; blue1 has not swap-id after move
+    (t/is (some? blue1''))
+    (t/is (nil? (ctk/get-swap-slot blue1'')))))
+
+(t/deftest test-keep-swap-slot-move-yellow-to-b2
+  (let [;; ============================== Setup ===============================
+        file                   (setup-file)
+        page                   (thf/current-page file)
+        blue1                  (thf/get-shape file :blue1)
+        yellow                 (thf/get-shape file :frame-yellow)
+
+        ;; ============================== Action ==============================
+        ;; Move blue1 into yellow
+        changes                (cflh/generate-move-shapes-to-frame (pcb/empty-changes nil)
+                                                                   #{(:id blue1)}       ;; ids
+                                                                   (:id yellow)         ;; frame-id
+                                                                   (:id page)           ;; page-id
+                                                                   (:objects page)      ;; objects
+                                                                   0                    ;; drop-index
+                                                                   nil)                 ;; cell
+
+        file'                  (thf/apply-changes file changes)
+        page'                  (thf/current-page file')
+        yellow'                (thf/get-shape file' :frame-yellow)
+        b2'                    (thf/get-shape file' :frame-b2)
+
+        ;; Move yellow into b2
+        changes'                (cflh/generate-move-shapes-to-frame (pcb/empty-changes nil)
+                                                                    #{(:id yellow')}   ;; ids
+                                                                    (:id b2')          ;; frame-id
+                                                                    (:id page')        ;; page-id
+                                                                    (:objects page')   ;; objects
+                                                                    0                  ;; drop-index
+                                                                    nil)               ;; cell
+
         file''                  (thf/apply-changes file' changes')
 
         ;; ============================== Get =================================
