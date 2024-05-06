@@ -127,7 +127,6 @@
         state
         (let [page-id (:current-page-id state)
               objects (wsh/lookup-page-objects state page-id)
-              _ (prn "??" (->> ids (map #(get objects %)) (map :name)))
               srect   (->> ids
                            (map #(get objects %))
                            (gsh/shapes->rect))]

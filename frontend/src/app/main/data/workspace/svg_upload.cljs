@@ -112,7 +112,6 @@
                   (dwu/commit-undo-transaction undo-id)))
 
          (catch :default cause
-           (js/console.log (.-stack cause))
            (rx/throw {:type :svg-parser
                       :data cause})))))))
 

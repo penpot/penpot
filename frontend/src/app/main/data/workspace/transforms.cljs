@@ -831,7 +831,7 @@
                                      :ignore-constraints false
                                      :ignore-snap-pixel true}))))))
 
-(defn- move-shapes-to-frame
+(defn move-shapes-to-frame
   [ids frame-id drop-index [row column :as cell]]
   (ptk/reify ::move-shapes-to-frame
     ptk/WatchEvent
@@ -923,24 +923,32 @@
             changes
             (-> (pcb/empty-changes it page-id)
                 (pcb/with-objects objects)
+
                 ;; Remove layout-item properties when moving a shape outside a layout
                 (cond-> (not (ctl/any-layout? objects frame-id))
                   (pcb/update-shapes moving-shapes-ids ctl/remove-layout-item-data))
+
                 ;; Remove the swap slots if it is moving to a different component
-                (pcb/update-shapes child-heads
-                                   (fn [shape]
-                                     (cond-> shape
-                                       (not= component-main-frame (ctn/find-component-main objects shape false))
-                                       (ctk/remove-swap-slot))))
+                (pcb/update-shapes
+                 child-heads
+                 (fn [shape]
+                   (cond-> shape
+                     (not= component-main-frame (ctn/find-component-main objects shape false))
+                     (ctk/remove-swap-slot))))
+
                 ;; Remove component-root property when moving a shape inside a component
                 (cond-> (ctn/get-instance-root objects frame)
                   (pcb/update-shapes moving-shapes-children-ids #(dissoc % :component-root)))
+
                 ;; Add component-root property when moving a component outside a component
                 (cond-> (not (ctn/get-instance-root objects frame))
                   (pcb/update-shapes child-heads #(assoc % :component-root true)))
+
                 (pcb/update-shapes moving-shapes-ids #(cond-> % (cfh/frame-shape? %) (assoc :hide-in-viewer true)))
                 (pcb/update-shapes shape-ids-to-detach ctk/detach-shape)
                 (pcb/change-parent frame-id moving-shapes drop-index)
+
+                ;; Change the grid cell in a grid layout
                 (cond-> (ctl/grid-layout? objects frame-id)
                   (-> (pcb/update-shapes
                        [frame-id]
@@ -948,7 +956,8 @@
                          (-> frame
                              ;; Assign the cell when pushing into a specific grid cell
                              (cond-> (some? cell)
-                               (-> (ctl/push-into-cell moving-shapes-ids row column)
+                               (-> (ctl/free-cell-shapes moving-shapes-ids)
+                                   (ctl/push-into-cell moving-shapes-ids row column)
                                    (ctl/assign-cells objects)))
                              (ctl/assign-cell-positions objects)))
                        {:with-objects? true})

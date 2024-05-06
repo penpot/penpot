@@ -10,9 +10,13 @@
    [app.common.record :as crc]
    [app.common.spec :as us]
    [app.common.types.shape.layout :as ctl]
+   [app.common.uuid :as uuid]
    [app.main.data.workspace.shape-layout :as dwsl]
+   [app.main.data.workspace.transforms :as dwt]
    [app.main.store :as st]
-   [app.plugins.utils :as utils :refer [get-data get-state]]))
+   [app.plugins.utils :as utils :refer [get-data get-state]]
+   [app.util.object :as obj]
+   [potok.v2.core :as ptk]))
 
 (defn- make-tracks
   [tracks]
@@ -72,7 +76,14 @@
   (remove
     [self]
     (let [id (get-data self :id)]
-      (st/emit! (dwsl/remove-layout #{id})))))
+      (st/emit! (dwsl/remove-layout #{id}))))
+
+  (appendChild
+    [self child row column]
+    (let [parent-id (get-data self :id)
+          child-id (uuid/uuid (obj/get child "id"))]
+      (st/emit! (dwt/move-shapes-to-frame #{child-id} parent-id nil [row column])
+                (ptk/data-event :layout/update {:ids [parent-id]})))))
 
 (defn grid-layout-proxy
   [data]
