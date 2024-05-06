@@ -7,11 +7,9 @@
 (ns common-tests.logic.swap-and-reset-test
   (:require
    [app.common.files.changes-builder :as pcb]
-   [app.common.files.libraries-helpers :as cflh]
-   [app.common.pprint :as pp]
+   [app.common.logic.libraries :as cll]
    [app.common.types.component :as ctk]
    [app.common.types.file :as  ctf]
-   [app.common.uuid :as uuid]
    [clojure.test :as t]
    [common-tests.helpers.compositions :as thc]
    [common-tests.helpers.files :as thf]
@@ -34,16 +32,16 @@
 
         ;; Action
         [new-shape all-parents changes]
-        (cflh/generate-component-swap (pcb/empty-changes)
-                                      (:objects page)
-                                      component-1-copy-root
-                                      (:data file)
-                                      page
-                                      {(:id  file) file}
-                                      (:id component-2)
-                                      0
-                                      nil
-                                      {})
+        (cll/generate-component-swap (pcb/empty-changes)
+                                     (:objects page)
+                                     component-1-copy-root
+                                     (:data file)
+                                     page
+                                     {(:id  file) file}
+                                     (:id component-2)
+                                     0
+                                     nil
+                                     {})
 
         file' (thf/apply-changes file changes)
 
@@ -82,16 +80,16 @@
 
         ;; Action
         [new-shape all-parents changes]
-        (cflh/generate-component-swap (pcb/empty-changes)
-                                      (:objects page)
-                                      copy
-                                      (:data file)
-                                      page
-                                      libraries
-                                      (:id component-2)
-                                      0
-                                      nil
-                                      {})
+        (cll/generate-component-swap (pcb/empty-changes)
+                                     (:objects page)
+                                     copy
+                                     (:data file)
+                                     page
+                                     libraries
+                                     (:id component-2)
+                                     0
+                                     nil
+                                     {})
 
         file'      (thf/apply-changes file changes)
         libraries' {(:id  file') file'}
@@ -137,27 +135,27 @@
 
         ;; Action
         [new-shape all-parents changes-swap]
-        (cflh/generate-component-swap (pcb/empty-changes)
-                                      (:objects page)
-                                      copy
-                                      (:data file)
-                                      page
-                                      {(:id  file) file}
-                                      (:id component-2)
-                                      0
-                                      nil
-                                      {})
+        (cll/generate-component-swap (pcb/empty-changes)
+                                     (:objects page)
+                                     copy
+                                     (:data file)
+                                     page
+                                     {(:id  file) file}
+                                     (:id component-2)
+                                     0
+                                     nil
+                                     {})
 
         file-swap (thf/apply-changes file changes-swap)
         page-swap (thf/current-page file-swap)
 
         changes
-        (cflh/generate-reset-component (pcb/empty-changes)
-                                       file-swap
-                                       {(:id  file-swap) file-swap}
-                                       page-swap
-                                       (:id new-shape)
-                                       true)
+        (cll/generate-reset-component (pcb/empty-changes)
+                                      file-swap
+                                      {(:id  file-swap) file-swap}
+                                      page-swap
+                                      (:id new-shape)
+                                      true)
 
         file' (thf/apply-changes file changes)
         page' (thf/current-page file')

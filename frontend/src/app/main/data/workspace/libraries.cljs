@@ -11,10 +11,11 @@
    [app.common.files.changes :as ch]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
-   [app.common.files.libraries-helpers :as cflh]
    [app.common.files.shapes-helpers :as cfsh]
    [app.common.geom.point :as gpt]
    [app.common.logging :as log]
+   [app.common.logic.libraries :as cll]
+   [app.common.logic.shapes :as cls]
    [app.common.types.color :as ctc]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
@@ -351,9 +352,9 @@
             parents  (into #{} (map :parent-id) shapes)]
         (when-not (empty? shapes)
           (let [[root _ changes]
-                (cflh/generate-add-component (pcb/empty-changes it) shapes objects page-id file-id components-v2
-                                             dwg/prepare-create-group
-                                             cfsh/prepare-create-artboard-from-selection)]
+                (cll/generate-add-component (pcb/empty-changes it) shapes objects page-id file-id components-v2
+                                            dwg/prepare-create-group
+                                            cfsh/prepare-create-artboard-from-selection)]
             (when-not (empty? (:redo-changes changes))
               (rx/of (dch/commit-changes changes)
                      (dws/select-shapes (d/ordered-set (:id root)))
@@ -417,7 +418,7 @@
           (let [library-data  (get state :workspace-data)
                 components-v2 (features/active-feature? state "components/v2")
                 changes       (-> (pcb/empty-changes it)
-                                  (cflh/generate-rename-component id new-name library-data components-v2))]
+                                  (cll/generate-rename-component id new-name library-data components-v2))]
 
             (rx/of (dch/commit-changes changes))))))))
 
@@ -452,7 +453,7 @@
             library            (get libraries library-id)
             components-v2      (features/active-feature? state "components/v2")
             changes (-> (pcb/empty-changes it nil)
-                        (cflh/generate-duplicate-component library component-id components-v2))]
+                        (cll/generate-duplicate-component library component-id components-v2))]
 
         (rx/of (dch/commit-changes changes))))))
 
@@ -478,9 +479,9 @@
                 [all-parents changes]
                 (-> (pcb/empty-changes it page-id)
                     ;; Deleting main root triggers component delete
-                    (cflh/generate-delete-shapes file page objects #{root-id} {:components-v2 components-v2
-                                                                               :undo-group undo-group
-                                                                               :undo-id undo-id}))]
+                    (cls/generate-delete-shapes file page objects #{root-id} {:components-v2 components-v2
+                                                                              :undo-group undo-group
+                                                                              :undo-id undo-id}))]
             (rx/of
              (dwu/start-undo-transaction undo-id)
              (dwt/clear-thumbnail (:current-file-id state) page-id root-id "component")
@@ -508,7 +509,7 @@
             library-data (wsh/get-file state library-id)
             objects      (wsh/lookup-page-objects state page-id)
             changes      (-> (pcb/empty-changes it)
-                             (cflh/generate-restore-component library-data component-id library-id current-page objects))]
+                             (cll/generate-restore-component library-data component-id library-id current-page objects))]
         (rx/of (dch/commit-changes changes))))))
 
 
@@ -545,13 +546,13 @@
                            (pcb/with-objects objects))
 
              [new-shape changes]
-             (cflh/generate-instantiate-component changes
-                                                  objects
-                                                  file-id
-                                                  component-id
-                                                  position
-                                                  page
-                                                  libraries)
+             (cll/generate-instantiate-component changes
+                                                 objects
+                                                 file-id
+                                                 component-id
+                                                 position
+                                                 page
+                                                 libraries)
              undo-id (js/Symbol)]
          (rx/of (dwu/start-undo-transaction undo-id)
                 (dch/commit-changes changes)
@@ -574,7 +575,7 @@
             libraries (wsh/get-libraries state)
 
             changes   (-> (pcb/empty-changes it)
-                          (cflh/generate-detach-component id file page-id libraries))]
+                          (cll/generate-detach-component id file page-id libraries))]
 
         (rx/of (dch/commit-changes changes))))))
 
@@ -610,7 +611,7 @@
             changes (when can-detach?
                       (reduce
                        (fn [changes id]
-                         (cflh/generate-detach-instance changes container libraries id))
+                         (cll/generate-detach-instance changes container libraries id))
                        (pcb/empty-changes it)
                        selected))]
 
@@ -696,7 +697,7 @@
 
             changes
             (-> (pcb/empty-changes it)
-                (cflh/generate-reset-component file-full libraries container id components-v2))]
+                (cll/generate-reset-component file-full libraries container id components-v2))]
 
         (log/debug :msg "RESET-COMPONENT finished" :js/rchanges (log-changes
                                                                  (:redo-changes changes)
@@ -751,7 +752,7 @@
                  (-> (pcb/empty-changes it)
                      (pcb/set-undo-group undo-group)
                      (pcb/with-container container)
-                     (cflh/generate-sync-shape-inverse full-file libraries container id components-v2))
+                     (cll/generate-sync-shape-inverse full-file libraries container id components-v2))
 
                  file-id   (:component-file shape)
                  file      (wsh/get-file state file-id)
@@ -890,7 +891,7 @@
             [new-shape all-parents changes]
             (-> (pcb/empty-changes it (:id page))
                 (pcb/set-undo-group undo-group)
-                (cflh/generate-component-swap objects shape file page libraries id-new-component index target-cell keep-props-values))]
+                (cll/generate-component-swap objects shape file page libraries id-new-component index target-cell keep-props-values))]
 
         (rx/of
          (dwu/start-undo-transaction undo-id)
@@ -976,7 +977,7 @@
                libraries       (wsh/get-libraries state)
                current-file-id (:current-file-id state)
 
-               changes         (cflh/generate-sync-file-changes
+               changes         (cll/generate-sync-file-changes
                                 (pcb/empty-changes it)
                                 undo-group
                                 asset-type

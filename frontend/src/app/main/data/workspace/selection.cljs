@@ -11,10 +11,10 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.focus :as cpf]
    [app.common.files.helpers :as cfh]
-   [app.common.files.libraries-helpers :as cflh]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
+   [app.common.logic.libraries :as cll]
    [app.common.record :as cr]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
@@ -434,20 +434,20 @@
                             (gpt/subtract (-> origin-frame :selrect gpt/point)))
 
         instantiate-component
-        #(cflh/generate-instantiate-component changes
-                                              objects
-                                              file-id
-                                              (:component-id component-root)
-                                              pos
-                                              page
-                                              libraries
-                                              (:id component-root)
-                                              parent-id
-                                              frame-id
-                                              {})
+        #(cll/generate-instantiate-component changes
+                                             objects
+                                             file-id
+                                             (:component-id component-root)
+                                             pos
+                                             page
+                                             libraries
+                                             (:id component-root)
+                                             parent-id
+                                             frame-id
+                                             {})
 
         restore-component
-        #(let [restore (cflh/prepare-restore-component changes library-data (:component-id component-root) page delta (:id component-root) parent-id frame-id)]
+        #(let [restore (cll/prepare-restore-component changes library-data (:component-id component-root) page delta (:id component-root) parent-id frame-id)]
            [(:shape restore) (:changes restore)])
 
         [_shape changes]
@@ -498,7 +498,7 @@
            regenerate-component
            (fn [changes shape]
              (let [components-v2 (dm/get-in library-data [:options :components-v2])
-                   [_ changes] (cflh/generate-add-component-changes changes shape objects file-id (:id page) components-v2)]
+                   [_ changes] (cll/generate-add-component-changes changes shape objects file-id (:id page) components-v2)]
                changes))
 
            new-obj

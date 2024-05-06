@@ -13,13 +13,13 @@
    [app.common.features :as cfeat]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
-   [app.common.files.libraries-helpers :as cflh]
    [app.common.geom.align :as gal]
    [app.common.geom.point :as gpt]
    [app.common.geom.proportions :as gpp]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.grid-layout :as gslg]
+   [app.common.logic.shapes :as cls]
    [app.common.schema :as sm]
    [app.common.text :as txt]
    [app.common.transit :as t]
@@ -809,13 +809,13 @@
             all-parents (into #{parent-id} (map #(cfh/get-parent-id objects %)) ids)
             parents  (if ignore-parents? #{parent-id} all-parents)
 
-            changes (cflh/generate-relocate-shapes (pcb/empty-changes it)
-                                                   objects
-                                                   parents
-                                                   parent-id
-                                                   page-id
-                                                   to-index
-                                                   ids)
+            changes (cls/generate-relocate-shapes (pcb/empty-changes it)
+                                                  objects
+                                                  parents
+                                                  parent-id
+                                                  page-id
+                                                  to-index
+                                                  ids)
             undo-id (js/Symbol)]
 
         (rx/of (dwu/start-undo-transaction undo-id)
