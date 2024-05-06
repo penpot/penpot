@@ -7,7 +7,7 @@
 (ns common-tests.logic.comp-remove-swap-slots-test
   (:require
    [app.common.files.changes-builder :as pcb]
-   [app.common.files.libraries-helpers :as cflh]
+   [app.common.logic.shapes :as cls]
    [app.common.types.component :as ctk]
    [app.common.uuid :as uuid]
    [clojure.test :as t]
@@ -57,13 +57,13 @@
         blue1                  (thf/get-shape file :blue1)
 
         ;; ============================== Action ==============================
-        changes                (cflh/generate-relocate-shapes (pcb/empty-changes nil)
-                                                              (:objects page)
-                                                              #{(:parent-id blue1)} ;; parents
-                                                              uuid/zero             ;; parent-id
-                                                              (:id page)            ;; page-id
-                                                              0                     ;; to-index
-                                                              #{(:id blue1)})       ;; ids
+        changes                (cls/generate-relocate-shapes (pcb/empty-changes nil)
+                                                             (:objects page)
+                                                             #{(:parent-id blue1)} ;; parents
+                                                             uuid/zero             ;; parent-id
+                                                             (:id page)            ;; page-id
+                                                             0                     ;; to-index
+                                                             #{(:id blue1)})       ;; ids
         file'                  (thf/apply-changes file changes)
 
         ;; ============================== Get =================================
@@ -84,13 +84,13 @@
         blue1                  (thf/get-shape file :blue1)
 
         ;; ============================== Action ==============================
-        changes                (cflh/generate-move-shapes-to-frame (pcb/empty-changes nil)
-                                                                   #{(:id blue1)}       ;; ids
-                                                                   uuid/zero            ;; frame-id
-                                                                   (:id page)           ;; page-id
-                                                                   (:objects page)      ;; objects
-                                                                   0                    ;; drop-index
-                                                                   nil)                 ;; cell
+        changes                (cls/generate-move-shapes-to-frame (pcb/empty-changes nil)
+                                                                  #{(:id blue1)}       ;; ids
+                                                                  uuid/zero            ;; frame-id
+                                                                  (:id page)           ;; page-id
+                                                                  (:objects page)      ;; objects
+                                                                  0                    ;; drop-index
+                                                                  nil)                 ;; cell
 
         file'                  (thf/apply-changes file changes)
 
@@ -115,13 +115,13 @@
 
 
         ;; ============================== Action ==============================
-        changes                (cflh/generate-relocate-shapes (pcb/empty-changes nil)
-                                                              (:objects page)
-                                                              #{(:parent-id blue1)} ;; parents
-                                                              (:id b2)              ;; parent-id
-                                                              (:id page)            ;; page-id
-                                                              0                     ;; to-index
-                                                              #{(:id blue1)})       ;; ids
+        changes                (cls/generate-relocate-shapes (pcb/empty-changes nil)
+                                                             (:objects page)
+                                                             #{(:parent-id blue1)} ;; parents
+                                                             (:id b2)              ;; parent-id
+                                                             (:id page)            ;; page-id
+                                                             0                     ;; to-index
+                                                             #{(:id blue1)})       ;; ids
         file'                  (thf/apply-changes file changes)
 
         ;; ============================== Get =================================
@@ -144,13 +144,13 @@
 
 
         ;; ============================== Action ==============================
-        changes                (cflh/generate-move-shapes-to-frame (pcb/empty-changes nil)
-                                                                   #{(:id blue1)}       ;; ids
-                                                                   (:id b2)             ;; frame-id
-                                                                   (:id page)           ;; page-id
-                                                                   (:objects page)      ;; objects
-                                                                   0                    ;; drop-index
-                                                                   nil)                 ;; cell
+        changes                (cls/generate-move-shapes-to-frame (pcb/empty-changes nil)
+                                                                  #{(:id blue1)}       ;; ids
+                                                                  (:id b2)             ;; frame-id
+                                                                  (:id page)           ;; page-id
+                                                                  (:objects page)      ;; objects
+                                                                  0                    ;; drop-index
+                                                                  nil)                 ;; cell
 
         file'                  (thf/apply-changes file changes)
 
@@ -174,26 +174,26 @@
 
         ;; ============================== Action ==============================
         ;; Move blue1 into yellow
-        changes                (cflh/generate-relocate-shapes (pcb/empty-changes nil)
-                                                              (:objects page)
-                                                              #{(:parent-id blue1)} ;; parents
-                                                              (:id yellow)          ;; parent-id
-                                                              (:id page)            ;; page-id
-                                                              0                     ;; to-index
-                                                              #{(:id blue1)})       ;; ids
+        changes                (cls/generate-relocate-shapes (pcb/empty-changes nil)
+                                                             (:objects page)
+                                                             #{(:parent-id blue1)} ;; parents
+                                                             (:id yellow)          ;; parent-id
+                                                             (:id page)            ;; page-id
+                                                             0                     ;; to-index
+                                                             #{(:id blue1)})       ;; ids
 
         file'                  (thf/apply-changes file changes)
         page'                  (thf/current-page file')
         yellow'                (thf/get-shape file' :frame-yellow)
 
         ;; Move yellow into root
-        changes'               (cflh/generate-relocate-shapes (pcb/empty-changes nil)
-                                                              (:objects page')
-                                                              #{(:parent-id yellow')} ;; parents
-                                                              uuid/zero               ;; parent-id
-                                                              (:id page')             ;; page-id
-                                                              0                       ;; to-index
-                                                              #{(:id yellow')})       ;; ids
+        changes'               (cls/generate-relocate-shapes (pcb/empty-changes nil)
+                                                             (:objects page')
+                                                             #{(:parent-id yellow')} ;; parents
+                                                             uuid/zero               ;; parent-id
+                                                             (:id page')             ;; page-id
+                                                             0                       ;; to-index
+                                                             #{(:id yellow')})       ;; ids
         file''                  (thf/apply-changes file' changes')
 
         ;; ============================== Get =================================
@@ -216,26 +216,26 @@
 
         ;; ============================== Action ==============================
         ;; Move blue1 into yellow
-        changes                (cflh/generate-move-shapes-to-frame (pcb/empty-changes nil)
-                                                                   #{(:id blue1)}       ;; ids
-                                                                   (:id yellow)         ;; frame-id
-                                                                   (:id page)           ;; page-id
-                                                                   (:objects page)      ;; objects
-                                                                   0                    ;; drop-index
-                                                                   nil)                 ;; cell
+        changes                (cls/generate-move-shapes-to-frame (pcb/empty-changes nil)
+                                                                  #{(:id blue1)}       ;; ids
+                                                                  (:id yellow)         ;; frame-id
+                                                                  (:id page)           ;; page-id
+                                                                  (:objects page)      ;; objects
+                                                                  0                    ;; drop-index
+                                                                  nil)                 ;; cell
 
         file'                  (thf/apply-changes file changes)
         page'                  (thf/current-page file')
         yellow'                (thf/get-shape file' :frame-yellow)
 
         ;; Move yellow into root
-        changes'               (cflh/generate-move-shapes-to-frame (pcb/empty-changes nil)
-                                                                   #{(:id yellow')}      ;; ids
-                                                                   uuid/zero            ;; frame-id
-                                                                   (:id page')           ;; page-id
-                                                                   (:objects page')      ;; objects
-                                                                   0                    ;; drop-index
-                                                                   nil)                 ;; cell
+        changes'               (cls/generate-move-shapes-to-frame (pcb/empty-changes nil)
+                                                                  #{(:id yellow')}      ;; ids
+                                                                  uuid/zero            ;; frame-id
+                                                                  (:id page')           ;; page-id
+                                                                  (:objects page')      ;; objects
+                                                                  0                    ;; drop-index
+                                                                  nil)                 ;; cell
         file''                  (thf/apply-changes file' changes')
 
         ;; ============================== Get =================================
@@ -259,13 +259,13 @@
 
         ;; ============================== Action ==============================
         ;; Move blue1 into yellow
-        changes                (cflh/generate-relocate-shapes (pcb/empty-changes nil)
-                                                              (:objects page)
-                                                              #{(:parent-id blue1)} ;; parents
-                                                              (:id yellow)          ;; parent-id
-                                                              (:id page)            ;; page-id
-                                                              0                     ;; to-index
-                                                              #{(:id blue1)})       ;; ids
+        changes                (cls/generate-relocate-shapes (pcb/empty-changes nil)
+                                                             (:objects page)
+                                                             #{(:parent-id blue1)} ;; parents
+                                                             (:id yellow)          ;; parent-id
+                                                             (:id page)            ;; page-id
+                                                             0                     ;; to-index
+                                                             #{(:id blue1)})       ;; ids
 
         file'                  (thf/apply-changes file changes)
         page'                  (thf/current-page file')
@@ -273,13 +273,13 @@
         b2'                    (thf/get-shape file' :frame-b2)
 
         ;; Move yellow into b2
-        changes'               (cflh/generate-relocate-shapes (pcb/empty-changes nil)
-                                                              (:objects page')
-                                                              #{(:parent-id yellow')} ;; parents
-                                                              (:id b2')               ;; parent-id
-                                                              (:id page')             ;; page-id
-                                                              0                       ;; to-index
-                                                              #{(:id yellow')})       ;; ids
+        changes'               (cls/generate-relocate-shapes (pcb/empty-changes nil)
+                                                             (:objects page')
+                                                             #{(:parent-id yellow')} ;; parents
+                                                             (:id b2')               ;; parent-id
+                                                             (:id page')             ;; page-id
+                                                             0                       ;; to-index
+                                                             #{(:id yellow')})       ;; ids
         file''                  (thf/apply-changes file' changes')
 
         ;; ============================== Get =================================
@@ -302,13 +302,13 @@
 
         ;; ============================== Action ==============================
         ;; Move blue1 into yellow
-        changes                (cflh/generate-move-shapes-to-frame (pcb/empty-changes nil)
-                                                                   #{(:id blue1)}       ;; ids
-                                                                   (:id yellow)         ;; frame-id
-                                                                   (:id page)           ;; page-id
-                                                                   (:objects page)      ;; objects
-                                                                   0                    ;; drop-index
-                                                                   nil)                 ;; cell
+        changes                (cls/generate-move-shapes-to-frame (pcb/empty-changes nil)
+                                                                  #{(:id blue1)}       ;; ids
+                                                                  (:id yellow)         ;; frame-id
+                                                                  (:id page)           ;; page-id
+                                                                  (:objects page)      ;; objects
+                                                                  0                    ;; drop-index
+                                                                  nil)                 ;; cell
 
         file'                  (thf/apply-changes file changes)
         page'                  (thf/current-page file')
@@ -316,13 +316,13 @@
         b2'                    (thf/get-shape file' :frame-b2)
 
         ;; Move yellow into b2
-        changes'                (cflh/generate-move-shapes-to-frame (pcb/empty-changes nil)
-                                                                    #{(:id yellow')}   ;; ids
-                                                                    (:id b2')          ;; frame-id
-                                                                    (:id page')        ;; page-id
-                                                                    (:objects page')   ;; objects
-                                                                    0                  ;; drop-index
-                                                                    nil)               ;; cell
+        changes'                (cls/generate-move-shapes-to-frame (pcb/empty-changes nil)
+                                                                   #{(:id yellow')}   ;; ids
+                                                                   (:id b2')          ;; frame-id
+                                                                   (:id page')        ;; page-id
+                                                                   (:objects page')   ;; objects
+                                                                   0                  ;; drop-index
+                                                                   nil)               ;; cell
 
         file''                  (thf/apply-changes file' changes')
 

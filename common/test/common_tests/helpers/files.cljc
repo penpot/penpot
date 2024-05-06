@@ -12,9 +12,9 @@
    [app.common.files.changes :as cfc]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
-   [app.common.files.libraries-helpers :as cflh]
    [app.common.files.validate :as cfv]
    [app.common.geom.point :as gpt]
+   [app.common.logic.libraries :as cll]
    [app.common.pprint :refer [pprint]]
    [app.common.types.color :as ctc]
    [app.common.types.colors-list :as ctcl]
@@ -297,7 +297,7 @@
 
         [new_shape _ changes]
         (-> (pcb/empty-changes nil (:id page))
-            (cflh/generate-component-swap objects shape (:data file) page libraries id-new-component 0 nil keep-props-values))]
+            (cll/generate-component-swap objects shape (:data file) page libraries id-new-component 0 nil keep-props-values))]
 
     (thi/set-id! new-shape-label (:id new_shape))
     (apply-changes file changes)))

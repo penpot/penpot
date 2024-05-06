@@ -7,7 +7,7 @@
 (ns common-tests.logic.component-creation-test
   (:require
    [app.common.files.changes-builder :as pcb]
-   [app.common.files.libraries-helpers :as cflh]
+   [app.common.logic.libraries :as cll]
    [clojure.test :as t]
    [common-tests.helpers.files :as thf]
    [common-tests.helpers.ids-map :as thi]))
@@ -24,14 +24,14 @@
 
         ;; Action
         [_ component-id changes]
-        (cflh/generate-add-component (pcb/empty-changes)
-                                     [shape1]
-                                     (:objects page)
-                                     (:id page)
-                                     (:id file)
-                                     true
-                                     nil
-                                     nil)
+        (cll/generate-add-component (pcb/empty-changes)
+                                    [shape1]
+                                    (:objects page)
+                                    (:id page)
+                                    (:id file)
+                                    true
+                                    nil
+                                    nil)
 
         file' (thf/apply-changes file changes)
 

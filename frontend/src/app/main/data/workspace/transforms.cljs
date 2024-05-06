@@ -11,7 +11,6 @@
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
-   [app.common.files.libraries-helpers :as cflh]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.modifiers :as gm]
    [app.common.geom.point :as gpt]
@@ -19,6 +18,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.flex-layout :as gslf]
    [app.common.geom.shapes.grid-layout :as gslg]
+   [app.common.logic.shapes :as cls]
    [app.common.math :as mth]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
@@ -839,7 +839,7 @@
     (watch [it state _]
       (let [page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
-            changes (cflh/generate-move-shapes-to-frame (pcb/empty-changes it) ids frame-id page-id objects drop-index cell)]
+            changes (cls/generate-move-shapes-to-frame (pcb/empty-changes it) ids frame-id page-id objects drop-index cell)]
 
         (when (and (some? frame-id) (d/not-empty? changes))
           (rx/of (dch/commit-changes changes)

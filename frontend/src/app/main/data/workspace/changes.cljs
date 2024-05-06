@@ -12,8 +12,8 @@
    [app.common.files.changes :as cpc]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cph]
-   [app.common.files.libraries-helpers :as cflh]
    [app.common.logging :as log]
+   [app.common.logic.shapes :as cls]
    [app.common.schema :as sm]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
@@ -77,13 +77,13 @@
              changes (-> (pcb/empty-changes it page-id)
                          (pcb/set-save-undo? save-undo?)
                          (pcb/set-stack-undo? stack-undo?)
-                         (cflh/generate-update-shapes ids
-                                                      update-fn
-                                                      objects
-                                                      {:attrs attrs
-                                                       :ignore-tree ignore-tree
-                                                       :ignore-touched ignore-touched
-                                                       :with-objects? with-objects?})
+                         (cls/generate-update-shapes ids
+                                                     update-fn
+                                                     objects
+                                                     {:attrs attrs
+                                                      :ignore-tree ignore-tree
+                                                      :ignore-touched ignore-touched
+                                                      :with-objects? with-objects?})
                          (cond-> undo-group
                            (pcb/set-undo-group undo-group)))
 
