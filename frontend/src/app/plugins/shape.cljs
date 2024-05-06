@@ -7,10 +7,13 @@
 (ns app.plugins.shape
   "RPC for plugins runtime."
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.record :as crc]
+   [app.common.spec :as us]
    [app.common.text :as txt]
+   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.changes :as dwc]
@@ -24,17 +27,11 @@
 
 (declare data->shape-proxy)
 
-(defn- make-fills
-  [fills]
+(defn- array-to-js
+  [value]
   (.freeze
    js/Object
-   (apply array (->> fills (map utils/to-js)))))
-
-(defn- make-strokes
-  [strokes]
-  (.freeze
-   js/Object
-   (apply array (->> strokes (map utils/to-js)))))
+   (apply array (->> value (map utils/to-js)))))
 
 (defn- locate-shape
   [shape-id]
@@ -86,7 +83,8 @@
 
   (addGridLayout [self]
     (let [id (get-data self :id)]
-      (st/emit! (dwsl/create-layout-from-id id :grid :from-frame? true :calculate-params? false)))))
+      (st/emit! (dwsl/create-layout-from-id id :grid :from-frame? true :calculate-params? false))
+      (grid/grid-layout-proxy (obj/get self "_data")))))
 
 (crc/define-properties!
   ShapeProxy
@@ -107,6 +105,118 @@
        {:name "type"
         :get (get-data-fn :type name)}
 
+       {:name "name"
+        :get #(get-state % :name)
+        :set (fn [self value]
+               (let [id (get-data self :id)]
+                 (st/emit! (dwc/update-shapes [id] #(assoc % :name value)))))}
+
+       {:name "blocked"
+        :get #(get-state % :blocked boolean)
+        :set (fn [self value]
+               (let [id (get-data self :id)]
+                 (st/emit! (dwc/update-shapes [id] #(assoc % :blocked value)))))}
+
+       {:name "hidden"
+        :get #(get-state % :hidden boolean)
+        :set (fn [self value]
+               (let [id (get-data self :id)]
+                 (st/emit! (dwc/update-shapes [id] #(assoc % :hidden value)))))}
+
+       {:name "proportionLock"
+        :get #(get-state % :proportion-lock boolean)
+        :set (fn [self value]
+               (let [id (get-data self :id)]
+                 (st/emit! (dwc/update-shapes [id] #(assoc % :proportion-lock value)))))}
+
+       {:name "constraintsHorizontal"
+        :get #(get-state % :constraints-h d/name)
+        :set (fn [self value]
+               (let [id (get-data self :id)
+                     value (keyword value)]
+                 (when (contains? cts/horizontal-constraint-types value)
+                   (st/emit! (dwc/update-shapes [id] #(assoc % :constraints-h value))))))}
+
+       {:name "constraintsVertical"
+        :get #(get-state % :constraints-v d/name)
+        :set (fn [self value]
+               (let [id (get-data self :id)
+                     value (keyword value)]
+                 (when (contains? cts/vertical-constraint-types value)
+                   (st/emit! (dwc/update-shapes [id] #(assoc % :constraints-v value))))))}
+
+       {:name "borderRadius"
+        :get #(get-state % :rx)
+        :set (fn [self value]
+               (let [id (get-data self :id)]
+                 (when (us/safe-int? value)
+                   (st/emit! (dwc/update-shapes [id] #(assoc % :rx value :ry value))))))}
+
+       {:name "borderRadiusTopLeft"
+        :get #(get-state % :r1)
+        :set (fn [self value]
+               (let [id (get-data self :id)]
+                 (when (us/safe-int? value)
+                   (st/emit! (dwc/update-shapes [id] #(assoc % :r1 value))))))}
+
+       {:name "borderRadiusTopRight"
+        :get #(get-state % :r2)
+        :set (fn [self value]
+               (let [id (get-data self :id)]
+                 (when (us/safe-int? value)
+                   (st/emit! (dwc/update-shapes [id] #(assoc % :r2 value))))))}
+
+       {:name "borderRadiusBottomRight"
+        :get #(get-state % :r3)
+        :set (fn [self value]
+               (let [id (get-data self :id)]
+                 (when (us/safe-int? value)
+                   (st/emit! (dwc/update-shapes [id] #(assoc % :r3 value))))))}
+
+       {:name "borderRadiusBottomLeft"
+        :get #(get-state % :r4)
+        :set (fn [self value]
+               (let [id (get-data self :id)]
+                 (when (us/safe-int? value)
+                   (st/emit! (dwc/update-shapes [id] #(assoc % :r4 value))))))}
+
+       {:name "opacity"
+        :get #(get-state % :opacity)
+        :set (fn [self value]
+               (let [id (get-data self :id)]
+                 (when (and (us/safe-number? value) (>= value 0) (<= value 1))
+                   (st/emit! (dwc/update-shapes [id] #(assoc % :opacity value))))))}
+
+       {:name "blendMode"
+        :get #(get-state % :blend-mode d/name)
+        :set (fn [self value]
+               (let [id (get-data self :id)
+                     value (keyword value)]
+                 (when (contains? cts/blend-modes value)
+                   (st/emit! (dwc/update-shapes [id] #(assoc % :blend-mode value))))))}
+
+       {:name "shadows"
+        :get #(get-state % :shadow array-to-js)
+        :set (fn [self value]
+               (let [id (get-data self :id)
+                     value (mapv #(utils/from-js %) value)]
+                 (st/emit! (dwc/update-shapes [id] #(assoc % :shadows value)))))}
+
+       {:name "blur"
+        :get #(get-state % :blur utils/to-js)
+        :set (fn [self value]
+               (let [id (get-data self :id)
+                     value (utils/from-js value)]
+                 (st/emit! (dwc/update-shapes [id] #(assoc % :blur value)))))}
+
+       {:name "exports"
+        :get #(get-state % :exports array-to-js)
+        :set (fn [self value]
+               (let [id (get-data self :id)
+                     value (mapv #(utils/from-js %) value)]
+                 (st/emit! (dwc/update-shapes [id] #(assoc % :exports value)))))}
+
+       ;; Geometry properties
        {:name "x"
         :get #(get-state % :x)
         :set
@@ -183,21 +293,22 @@
        {:name "height"
         :get #(get-state % :height)}
 
-       {:name "name"
-        :get #(get-state % :name)
-        :set (fn [self value]
-               (let [id (get-data self :id)]
-                 (st/emit! (dwc/update-shapes [id] #(assoc % :name value)))))}
+       {:name "flipX"
+        :get #(get-state % :flip-x)}
 
+       {:name "flipY"
+        :get #(get-state % :flip-y)}
+
+       ;; Strokes and fills
        {:name "fills"
-        :get #(get-state % :fills make-fills)
+        :get #(get-state % :fills array-to-js)
         :set (fn [self value]
                (let [id (get-data self :id)
                      value (mapv #(utils/from-js %) value)]
                  (st/emit! (dwc/update-shapes [id] #(assoc % :fills value)))))}
 
        {:name "strokes"
-        :get #(get-state % :strokes make-strokes)
+        :get #(get-state % :strokes array-to-js)
         :set (fn [self value]
                (let [id (get-data self :id)
                      value (mapv #(utils/from-js %) value)]
@@ -220,8 +331,16 @@
               (fn [self]
                 (let [layout (get-state self :layout)]
                   (when (= :grid layout)
-                    (grid/grid-layout-proxy data))))})
+                    (grid/grid-layout-proxy data))))}
 
+             {:name "guides"
+              :get #(get-state % :grids array-to-js)
+              :set (fn [self value]
+                     (let [id (get-data self :id)
+                           value (mapv #(utils/from-js %) value)]
+                       (st/emit! (dwc/update-shapes [id] #(assoc % :grids value)))))})
+
+            ;; TODO: Flex properties
             #_(crc/add-properties!
                {:name "flex"
                 :get
@@ -235,9 +354,18 @@
             (obj/unset! "addFlexLayout")))
 
       (cond-> (cfh/text-shape? data)
-        (crc/add-properties!
-         {:name "characters"
-          :get #(get-state % :content txt/content->text)
-          :set (fn [self value]
-                 (let [id (get-data self :id)]
-                   (st/emit! (dwc/update-shapes [id] #(txt/change-text % value)))))}))))
+        (-> (crc/add-properties!
+             {:name "characters"
+              :get #(get-state % :content txt/content->text)
+              :set (fn [self value]
+                     (let [id (get-data self :id)]
+                       (st/emit! (dwc/update-shapes [id] #(txt/change-text % value)))))})
+
+            (crc/add-properties!
+             {:name "growType"
+              :get #(get-state % :grow-type d/name)
+              :set (fn [self value]
+                     (let [id (get-data self :id)
+                           value (keyword value)]
+                       (when (contains? #{:auto-width :auto-height :fixed} value)
+                         (st/emit! (dwc/update-shapes [id] #(assoc % :grow-type value))))))})))))
