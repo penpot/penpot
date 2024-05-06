@@ -7,7 +7,6 @@
 (ns common-tests.logic.components-touched-test
   (:require
    [app.common.files.changes-builder :as pcb]
-   [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [clojure.test :as t]
    [common-tests.helpers.compositions :as tho]
@@ -151,3 +150,81 @@
     ;; Check
     (t/is (= (:touched copy-root') nil))
     (t/is (= (:touched copy-child') nil))))
+
+(t/deftest test-touched-when-changing-upper
+  (let [;; Setup
+        file   (-> (thf/sample-file :file1)
+                   (tho/add-nested-component-with-copy :component1
+                                                       :main1-root
+                                                       :main1-child
+                                                       :component2
+                                                       :main2-root
+                                                       :main2-nested-head
+                                                       :copy2-root
+                                                       :root2-params {:fills (thf/sample-fills-color
+                                                                              :fill-color "#abcdef")}))
+        page       (thf/current-page file)
+        copy2-root (thf/get-shape file :copy2-root)
+
+        ;; Action
+        update-fn (fn [shape]
+                    (assoc shape :fills (thf/sample-fills-color :fill-color "#fabada")))
+
+        changes   (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                              #{(:id copy2-root)}
+                                              update-fn
+                                              (:objects page)
+                                              {})
+
+        file'     (thf/apply-changes file changes)
+
+        ;; Get
+        copy2-root' (thf/get-shape file' :copy2-root)
+        fills'      (:fills copy2-root')
+        fill'       (first fills')]
+
+    ;; Check
+    (t/is (= (count fills') 1))
+    (t/is (= (:fill-color fill') "#fabada"))
+    (t/is (= (:fill-opacity fill') 1))
+    (t/is (= (:touched copy2-root') #{:fill-group}))))
+
+(t/deftest test-touched-when-changing-lower
+  (let [;; Setup
+        file   (-> (thf/sample-file :file1)
+                   (tho/add-nested-component-with-copy :component1
+                                                       :main1-root
+                                                       :main1-child
+                                                       :component2
+                                                       :main2-root
+                                                       :main2-nested-head
+                                                       :copy2-root
+                                                       :nested-head-params {:fills (thf/sample-fills-color
+                                                                                    :fill-color "#abcdef")}))
+        page       (thf/current-page file)
+        copy2-root (thf/get-shape file :copy2-root)
+
+        ;; Action
+        update-fn (fn [shape]
+                    (assoc shape :fills (thf/sample-fills-color :fill-color "#fabada")))
+
+        changes   (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                              (:shapes copy2-root)
+                                              update-fn
+                                              (:objects page)
+                                              {})
+
+        file'     (thf/apply-changes file changes)
+
+        ;; Get
+        copy2-root'  (thf/get-shape file' :copy2-root)
+        copy2-child' (thf/get-shape-by-id file' (first (:shapes copy2-root')))
+        fills'       (:fills copy2-child')
+        fill'        (first fills')]
+
+    ;; Check
+    (t/is (= (count fills') 1))
+    (t/is (= (:fill-color fill') "#fabada"))
+    (t/is (= (:fill-opacity fill') 1))
+    (t/is (= (:touched copy2-root') nil))
+    (t/is (= (:touched copy2-child') #{:fill-group}))))
