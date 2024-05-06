@@ -7,15 +7,11 @@
 (ns app.main.ui.dashboard.projects
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data :as d]
    [app.common.geom.point :as gpt]
-   [app.config :as cf]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
-   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
    [app.main.data.users :as du]
-   [app.main.errors :as errors]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.grid :refer [line-grid]]
@@ -99,80 +95,6 @@
 
 (def builtin-templates
   (l/derived :builtin-templates st/state))
-
-(mf/defc tutorial-project
-  [{:keys [close-tutorial default-project-id] :as props}]
-  (let [state     (mf/use-state {:status :waiting
-                                 :file nil})
-
-        templates (mf/deref builtin-templates)
-        template  (d/seek #(= (:id %) "tutorial-for-beginners") templates)
-
-        on-template-cloned-success
-        (mf/use-fn
-         (mf/deps default-project-id)
-         (fn [response]
-           (swap! state #(assoc % :status :success :file (:first response)))
-           (st/emit! (dd/go-to-workspace {:id (first response) :project-id default-project-id :name "tutorial"})
-                     (du/update-profile-props {:viewed-tutorial? true}))))
-
-        on-template-cloned-error
-        (mf/use-fn
-         (fn [cause]
-           (swap! state assoc :status :error)
-           (errors/print-error! cause)
-           (st/emit! (msg/error (tr "dashboard.libraries-and-templates.import-error")))))
-
-        download-tutorial
-        (mf/use-fn
-         (mf/deps template default-project-id)
-         (fn []
-           (let [mdata  {:on-success on-template-cloned-success
-                         :on-error on-template-cloned-error}
-                 params {:project-id default-project-id
-                         :template-id (:id template)}]
-             (swap! state #(assoc % :status :importing))
-             (st/emit! (with-meta (dd/clone-template (with-meta params mdata))
-                         {::ev/origin "get-started-hero-block"})))))]
-    [:article {:class (stl/css :tutorial)}
-     [:div {:class (stl/css :thumbnail)}]
-     [:div {:class (stl/css :text)}
-      [:h2 {:class (stl/css :title)} (tr "dasboard.tutorial-hero.title")]
-      [:p {:class (stl/css :info)} (tr "dasboard.tutorial-hero.info")]
-      [:button {:class (stl/css :btn-primary :action)
-                :on-click download-tutorial}
-       (case (:status @state)
-         :waiting (tr "dasboard.tutorial-hero.start")
-         :importing [:span.loader i/loader-pencil]
-         :success "")]]
-
-     [:button {:class (stl/css :close)
-               :on-click close-tutorial
-               :aria-label (tr "labels.close")}
-      close-icon]]))
-
-(mf/defc interface-walkthrough
-  {::mf/wrap [mf/memo]}
-  [{:keys [close-walkthrough] :as props}]
-  (let [handle-walkthrough-link
-        (fn []
-          (st/emit! (ptk/event ::ev/event {::ev/name "show-walkthrough"
-                                           ::ev/origin "get-started-hero-block"
-                                           :section "dashboard"})))]
-    [:article {:class (stl/css :walkthrough)}
-     [:div {:class (stl/css :thumbnail)}]
-     [:div {:class (stl/css :text)}
-      [:h2 {:class (stl/css :title)} (tr "dasboard.walkthrough-hero.title")]
-      [:p {:class (stl/css :info)} (tr "dasboard.walkthrough-hero.info")]
-      [:a {:class (stl/css :btn-primary :action)
-           :href " https://design.penpot.app/walkthrough"
-           :target "_blank"
-           :on-click handle-walkthrough-link}
-       (tr "dasboard.walkthrough-hero.start")]]
-     [:button {:class (stl/css :close)
-               :on-click close-walkthrough
-               :aria-label (tr "labels.close")}
-      close-icon]]))
 
 (mf/defc project-item
   [{:keys [project first? team files] :as props}]
@@ -365,7 +287,7 @@
   (l/derived :dashboard-recent-files st/state))
 
 (mf/defc projects-section
-  [{:keys [team projects profile default-project-id] :as props}]
+  [{:keys [team projects profile] :as props}]
   (let [projects            (->> (vals projects)
                                  (sort-by :modified-at)
                                  (reverse))
@@ -378,8 +300,6 @@
                                  (:team-hero? props true)
                                  (not (:is-default team)))
 
-        tutorial-viewed?    (:viewed-tutorial? props true)
-        walkthrough-viewed? (:viewed-walkthrough? props true)
         is-my-penpot        (= (:default-team-id profile) (:id team))
 
         team-id             (:id team)
@@ -390,28 +310,6 @@
            (st/emit! (du/update-profile-props {:team-hero? false})
                      (ptk/data-event ::ev/event {::ev/name "dont-show-team-up-hero"
                                                  ::ev/origin "dashboard"}))))
-
-        close-tutorial
-        (mf/use-fn
-         (fn []
-           (st/emit! (du/update-profile-props {:viewed-tutorial? true})
-                     (ptk/data-event ::ev/event {::ev/name "dont-show-tutorial"
-                                                 ::ev/origin "get-started-hero"
-                                                 :type "tutorial"
-                                                 :section "dashboard"}))))
-
-        close-walkthrough
-        (mf/use-fn
-         (fn []
-           (st/emit! (du/update-profile-props {:viewed-walkthrough? true})
-                     (ptk/data-event ::ev/event {::ev/name "dont-show-walkthrough"
-                                                 ::ev/origin "get-started-hero"
-                                                 :type "walkthrough"
-                                                 :section "dashboard"}))))
-
-        show-hero? (and is-my-penpot
-                        (or (not tutorial-viewed?)
-                            (not walkthrough-viewed?)))
 
         show-team-hero? (and (not is-my-penpot) team-hero?)]
 
@@ -433,22 +331,9 @@
          (when team-hero?
            [:& team-hero {:team team :close-fn close-banner}])
 
-         (when (and (contains? cf/flags :dashboard-templates-section)
-                    show-hero?)
-           [:div {:class (stl/css :hero-projects)}
-            (when (and (not tutorial-viewed?) (:is-default team))
-              [:& tutorial-project
-               {:close-tutorial close-tutorial
-                :default-project-id default-project-id}])
-
-            (when (and (not walkthrough-viewed?) (:is-default team))
-              [:& interface-walkthrough
-               {:close-walkthrough close-walkthrough}])])
-
          [:div {:class (stl/css-case :dashboard-container true
                                      :no-bg true
                                      :dashboard-projects true
-                                     :with-hero show-hero?
                                      :with-team-hero show-team-hero?)}
           (for [{:keys [id] :as project} projects]
             (let [files (when recent-map

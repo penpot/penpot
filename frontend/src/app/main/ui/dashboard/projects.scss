@@ -20,7 +20,6 @@
   height: calc(100vh - $s-64);
 }
 
-.with-hero,
 .with-team-hero {
   height: calc(100vh - $s-280);
 }
@@ -240,90 +239,5 @@
   @media (max-width: 1200px) {
     display: none;
     width: 0;
-  }
-}
-
-.hero-projects {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-gap: $s-32;
-  margin: 0 $s-16 $s-16 $s-20;
-
-  @media (max-width: 1366px) {
-    grid-template-columns: 1fr;
-  }
-
-  .tutorial,
-  .walkthrough {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    position: relative;
-    border-radius: $br-8;
-    min-height: $s-216;
-    background-color: $db-tertiary;
-    padding: $s-8;
-
-    .thumbnail {
-      width: $s-200;
-      height: $s-200;
-      border-radius: $br-6;
-      padding: $s-32;
-      display: block;
-      background-color: var(--color-canvas);
-    }
-
-    img {
-      border-radius: $br-4;
-      margin-bottom: 0;
-      width: $s-232;
-    }
-
-    .text {
-      padding: $s-32;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .title {
-      color: $df-primary;
-      font-size: $fs-24;
-      font-weight: $fw400;
-      margin-bottom: $s-8;
-    }
-    .info {
-      flex: 1;
-      color: $df-secondary;
-      margin-bottom: $s-20;
-      font-size: $fs-16;
-    }
-    .invite {
-      height: $s-32;
-    }
-    .action {
-      width: $s-180;
-      height: $s-40;
-    }
-  }
-  .walkthrough {
-    .thumbnail {
-      background-image: url("/images/walkthrough-cover.png");
-      background-position: center;
-      background-repeat: no-repeat;
-      background-size: cover;
-    }
-  }
-  .tutorial {
-    .thumbnail {
-      background-image: url("/images/hands-on-tutorial.png");
-      background-position: center;
-      background-repeat: no-repeat;
-      background-size: cover;
-    }
-    .loader {
-      display: flex;
-      svg#loader-pencil {
-        width: $s-32;
-      }
-    }
   }
 }
