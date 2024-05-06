@@ -22,6 +22,7 @@
    [app.common.svg :as csvg]
    [app.common.svg.path :as path]
    [app.common.types.shape :as cts]
+   [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
 (def default-rect
@@ -78,67 +79,68 @@
 (declare parse-svg-element)
 
 (defn create-svg-shapes
-  [svg-data {:keys [x y]} objects frame-id parent-id selected center?]
-  (let [[vb-x vb-y vb-width vb-height] (svg-dimensions svg-data)
+  ([svg-data pos objects frame-id parent-id selected center?]
+   (create-svg-shapes (uuid/next) svg-data pos objects frame-id parent-id selected center?))
+  ([id svg-data {:keys [x y]} objects frame-id parent-id selected center?]
+   (let [[vb-x vb-y vb-width vb-height] (svg-dimensions svg-data)
 
+         unames   (cfh/get-used-names objects)
+         svg-name (str/replace (:name svg-data) ".svg" "")
 
-        unames   (cfh/get-used-names objects)
-        svg-name (str/replace (:name svg-data) ".svg" "")
+         svg-data (-> svg-data
+                      (assoc :x (mth/round
+                                 (if center?
+                                   (- x vb-x (/ vb-width 2))
+                                   x)))
+                      (assoc :y (mth/round
+                                 (if center?
+                                   (- y vb-y (/ vb-height 2))
+                                   y)))
+                      (assoc :offset-x vb-x)
+                      (assoc :offset-y vb-y)
+                      (assoc :width vb-width)
+                      (assoc :height vb-height)
+                      (assoc :name svg-name))
 
-        svg-data (-> svg-data
-                     (assoc :x (mth/round
-                                (if center?
-                                  (- x vb-x (/ vb-width 2))
-                                  x)))
-                     (assoc :y (mth/round
-                                (if center?
-                                  (- y vb-y (/ vb-height 2))
-                                  y)))
-                     (assoc :offset-x vb-x)
-                     (assoc :offset-y vb-y)
-                     (assoc :width vb-width)
-                     (assoc :height vb-height)
-                     (assoc :name svg-name))
+         [def-nodes svg-data]
+         (-> svg-data
+             (csvg/fix-default-values)
+             (csvg/fix-percents)
+             (csvg/extract-defs))
 
-        [def-nodes svg-data]
-        (-> svg-data
-            (csvg/fix-default-values)
-            (csvg/fix-percents)
-            (csvg/extract-defs))
+         ;; In penpot groups have the size of their children. To
+         ;; respect the imported svg size and empty space let's create
+         ;; a transparent shape as background to respect the imported
+         ;; size
+         background
+         {:tag :rect
+          :attrs {:x      (dm/str vb-x)
+                  :y      (dm/str vb-y)
+                  :width  (dm/str vb-width)
+                  :height (dm/str vb-height)
+                  :fill   "none"
+                  :id     "base-background"}
+          :hidden true
+          :content []}
 
-        ;; In penpot groups have the size of their children. To
-        ;; respect the imported svg size and empty space let's create
-        ;; a transparent shape as background to respect the imported
-        ;; size
-        background
-        {:tag :rect
-         :attrs {:x      (dm/str vb-x)
-                 :y      (dm/str vb-y)
-                 :width  (dm/str vb-width)
-                 :height (dm/str vb-height)
-                 :fill   "none"
-                 :id     "base-background"}
-         :hidden true
-         :content []}
+         svg-data   (-> svg-data
+                        (assoc :defs def-nodes)
+                        (assoc :content (into [background] (:content svg-data))))
 
-        svg-data   (-> svg-data
-                       (assoc :defs def-nodes)
-                       (assoc :content (into [background] (:content svg-data))))
+         root-shape (create-svg-root id frame-id parent-id svg-data)
+         root-id    (:id root-shape)
 
-        root-shape (create-svg-root frame-id parent-id svg-data)
-        root-id    (:id root-shape)
+         ;; Create the root shape
+         root-attrs (-> (:attrs svg-data)
+                        (csvg/format-styles))
 
-        ;; Create the root shape
-        root-attrs (-> (:attrs svg-data)
-                       (csvg/format-styles))
+         [_ children]
+         (reduce (partial create-svg-children objects selected frame-id root-id svg-data)
+                 [unames []]
+                 (d/enumerate (->> (:content svg-data)
+                                   (mapv #(csvg/inherit-attributes root-attrs %)))))]
 
-        [_ children]
-        (reduce (partial create-svg-children objects selected frame-id root-id svg-data)
-                [unames []]
-                (d/enumerate (->> (:content svg-data)
-                                  (mapv #(csvg/inherit-attributes root-attrs %)))))]
-
-    [root-shape children]))
+     [root-shape children])))
 
 (defn create-raw-svg
   [name frame-id {:keys [x y width height offset-x offset-y]} {:keys [attrs] :as data}]
@@ -157,12 +159,13 @@
       :svg-viewbox vbox})))
 
 (defn create-svg-root
-  [frame-id parent-id {:keys [name x y width height offset-x offset-y attrs]}]
+  [id frame-id parent-id {:keys [name x y width height offset-x offset-y attrs]}]
   (let [props (-> (dissoc attrs :viewBox :view-box :xmlns)
                   (d/without-keys csvg/inheritable-props)
                   (csvg/attrs->props))]
     (cts/setup-shape
-     {:type :group
+     {:id id
+      :type :group
       :name name
       :frame-id frame-id
       :parent-id parent-id

@@ -87,7 +87,17 @@
       (->> (svg/upload-images svg-data file-id)
            (rx/map #(svg/add-svg-shapes (assoc svg-data :image-data %) position))))))
 
-(defn- process-uris
+
+(defn upload-media-url
+  [name file-id url]
+  (rp/cmd!
+   :create-file-media-object-from-url
+   {:name name
+    :file-id file-id
+    :url url
+    :is-local true}))
+
+(defn process-uris
   [{:keys [file-id local? name uris mtype on-image on-svg]}]
   (letfn [(svg-url? [url]
             (or (and mtype (= mtype "image/svg+xml"))
@@ -449,3 +459,12 @@
               (rx/tap on-success)
               (rx/catch on-error)
               (rx/finalize #(st/emit! (msg/hide-tag :media-loading)))))))))
+
+(defn create-svg-shape
+  [id name svg-string position]
+  (ptk/reify ::create-svg-shape
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (svg->clj [name svg-string])
+           (rx/take 1)
+           (rx/map #(svg/add-svg-shapes id % position {:change-selection? false}))))))
