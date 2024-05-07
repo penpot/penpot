@@ -1,0 +1,58 @@
+{
+  "~:features": {
+    "~#set": [
+      "layout/grid",
+      "styles/v2",
+      "fdata/pointer-map",
+      "fdata/objects-map",
+      "components/v2",
+      "fdata/shape-data-type"
+    ]
+  },
+  "~:permissions": {
+    "~:type": "~:membership",
+    "~:is-owner": true,
+    "~:is-admin": true,
+    "~:can-edit": true,
+    "~:can-read": true,
+    "~:is-logged": true
+  },
+  "~:has-media-trimmed": false,
+  "~:comment-thread-seqn": 0,
+  "~:name": "New File 1",
+  "~:revn": 11,
+  "~:modified-at": "~m1713873823633",
+  "~:id": "~uc7ce0794-0992-8105-8004-38f280443849",
+  "~:is-shared": false,
+  "~:version": 46,
+  "~:project-id": "~uc7ce0794-0992-8105-8004-38e630f7920b",
+  "~:created-at": "~m1713536343369",
+  "~:data": {
+    "~:pages": [
+      "~uc7ce0794-0992-8105-8004-38f28044384a"
+    ],
+    "~:pages-index": {
+      "~uc7ce0794-0992-8105-8004-38f28044384a": {
+        "~#penpot/pointer": [
+          "~ude58c8f6-c5c2-8196-8004-3df9e2e52d88",
+          {
+            "~:created-at": "~m1713873823636"
+          }
+        ]
+      }
+    },
+    "~:id": "~uc7ce0794-0992-8105-8004-38f280443849",
+    "~:options": {
+      "~:components-v2": true
+    },
+    "~:recent-colors": [
+      {
+        "~:color": "#0000ff",
+        "~:opacity": 1,
+        "~:id": null,
+        "~:file-id": null,
+        "~:image": null
+      }
+    ]
+  }
+}
