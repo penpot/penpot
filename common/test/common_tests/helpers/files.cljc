@@ -6,29 +6,17 @@
 
 (ns common-tests.helpers.files
   (:require
-   [app.common.colors :as clr]
-   [app.common.data.macros :as dm]
+   [app.common.data :as d]
    [app.common.features :as ffeat]
    [app.common.files.changes :as cfc]
-   [app.common.files.changes-builder :as pcb]
-   [app.common.files.helpers :as cfh]
    [app.common.files.validate :as cfv]
-   [app.common.geom.point :as gpt]
-   [app.common.logic.libraries :as cll]
    [app.common.pprint :refer [pprint]]
-   [app.common.types.color :as ctc]
-   [app.common.types.colors-list :as ctcl]
-   [app.common.types.component :as ctk]
-   [app.common.types.components-list :as ctkl]
-   [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
-   [app.common.types.shape :as cts]
-   [app.common.types.shape-tree :as ctst]
-   [app.common.types.typographies-list :as cttl]
-   [app.common.types.typography :as ctt]
-   [common-tests.helpers.ids-map :as thi]))
+   [app.common.uuid :as uuid]
+   [common-tests.helpers.ids-map :as thi]
+   [cuerdas.core :as str]))
 
 ;; ----- Files
 
@@ -68,25 +56,6 @@
     (validate-file! file')
     file'))
 
-(declare current-page-id)
-(declare get-page)
-
-(defn dump-file
-  [file & {:keys [page-label libraries] :as params}]
-  (let [params    (-> params
-                      (or {:show-ids true :show-touched true})
-                      (dissoc page-label libraries))
-        page      (if (some? page-label)
-                    (:id (get-page file page-label))
-                    (current-page-id file))
-        libraries (or libraries {})]
-
-    (ctf/dump-tree file page libraries params)))
-
-(defn pprint-file
-  [file & {:keys [level length] :or {level 10 length 1000}}]
-  (pprint file {:level level :length length}))
-
 ;; ----- Pages
 
 (defn sample-page
@@ -116,221 +85,74 @@
   [file label]
   (vary-meta file assoc :current-page-id (thi/id label)))
 
-;; ----- Shapes
+;; ----- Debug
 
-(defn sample-shape
-  [label & {:keys [type] :as params}]
-  (let [params (cond-> params
-                 label
-                 (assoc :id (thi/new-id! label))
+(defn dump-file-type
+  "Dump a file using dump-tree function in common.types.file."
+  [file & {:keys [page-label libraries] :as params}]
+  (let [params    (-> params
+                      (or {:show-ids true :show-touched true})
+                      (dissoc page-label libraries))
+        page      (if (some? page-label)
+                    (:id (get-page file page-label))
+                    (current-page-id file))
+        libraries (or libraries {})]
 
-                 (nil? type)
-                 (assoc :type :rect))]
+    (ctf/dump-tree file page libraries params)))
 
-    (cts/setup-shape params)))
+(defn pprint-file
+  "Pretry print a file trying to limit the quantity of info shown."
+  [file & {:keys [level length] :or {level 10 length 1000}}]
+  (pprint file {:level level :length length}))
 
-(defn add-sample-shape
-  [file label & {:keys [parent-label] :as params}]
-  (let [page      (current-page file)
-        shape     (sample-shape label (dissoc params :parent-label))
-        parent-id (when parent-label
-                    (thi/id parent-label))
-        parent    (when parent-id
-                    (ctst/get-shape page parent-id))
-        frame-id  (if (cfh/frame-shape? parent)
-                    (:id parent)
-                    (:frame-id parent))]
-    (ctf/update-file-data
-     file
-     (fn [file-data]
-       (ctpl/update-page file-data
-                         (:id page)
-                         #(ctst/add-shape (:id shape)
-                                          shape
-                                          %
-                                          frame-id
-                                          parent-id
-                                          nil
-                                          true))))))
+(defn dump-shape
+  "Dump a shape, with each attribute in a line."
+  [shape]
+  (println "{")
+  (doseq [[k v] (sort shape)]
+    (when (some? v)
+      (println (str "    " k " : " v))))
+  (println "}"))
 
-(defn get-shape
-  [file label & {:keys [page-label]}]
-  (let [page (if page-label
-               (get-page file page-label)
-               (current-page file))]
-    (ctst/get-shape page (thi/id label))))
+(defn- stringify-keys [m keys]
+  (apply str (interpose ", " (map #(str % ": " (get m %)) keys))))
 
-(defn get-shape-by-id
-  [file id & {:keys [page-label]}]
-  (let [page (if page-label
-               (get-page file page-label)
-               (current-page file))]
-    (ctst/get-shape page id)))
+(defn- dump-page-shape
+  [shape keys padding]
+  (println (str/pad (str padding
+                         (when (:main-instance shape) "{")
+                         (or (thi/label (:id shape)) "<no-label>")
+                         (when (:main-instance shape) "}")
+                         (when keys
+                           (str " [" (stringify-keys shape keys) "]")))
+                    {:length 40 :type :right})
+           (if (nil? (:shape-ref shape))
+             (if (:component-root shape)
+               (str "# [Component " (or (thi/label (:component-id shape)) "<no-label>") "]")
+               "")
+             (str/format "%s--> %s%s"
+                         (cond (:component-root shape) "#"
+                               (:component-id shape) "@"
+                               :else "-")
+                         (if (:component-root shape)
+                           (str "[Component " (or (thi/label (:component-id shape)) "<no-label>") "] ")
+                           "")
+                         (or (thi/label (:shape-ref shape)) "<no-label>")))))
 
-;; ----- Components
+(defn dump-page
+  "Dump the layer tree of the page. Print the label of each shape, and the specified keys."
+  ([page keys]
+   (dump-page page uuid/zero "" keys))
+  ([page root-id padding keys]
+   (let [lookupf (d/getf (:objects page))
+         root-shape (lookupf root-id)
+         shapes (map lookupf (:shapes root-shape))]
+     (doseq [shape shapes]
+       (dump-page-shape shape keys padding)
+       (dump-page page (:id shape) (str padding "    ") keys)))))
 
-(defn make-component
-  [file label root-label & {:keys [] :as params}]
-  (let [page (current-page file)
-        root (get-shape file root-label)]
-
-    (dm/assert!
-     "Need that root is already a frame"
-     (cfh/frame-shape? root))
-
-    (let [[_new-root _new-shapes updated-shapes]
-          (ctn/convert-shape-in-component root (:objects page) (:id file))
-
-          updated-root (first updated-shapes)] ; Can't use new-root because it has a new id
-
-      (thi/set-id! label (:component-id updated-root))
-
-      (ctf/update-file-data
-       file
-       (fn [file-data]
-         (as-> file-data $
-           (reduce (fn [file-data shape]
-                     (ctpl/update-page file-data
-                                       (:id page)
-                                       #(update % :objects assoc (:id shape) shape)))
-                   $
-                   updated-shapes)
-           (ctkl/add-component $ (assoc params
-                                        :id (:component-id updated-root)
-                                        :name (:name updated-root)
-                                        :main-instance-id (:id updated-root)
-                                        :main-instance-page (:id page)
-                                        :shapes updated-shapes))))))))
-
-(defn get-component
-  [file label]
-  (ctkl/get-component (:data file) (thi/id label)))
-
-(defn get-component-by-id
-  [file id]
-  (ctkl/get-component (:data file) id))
-
-(defn set-child-label
-  [file shape-label child-idx label]
-  (let [id (-> (get-shape file shape-label)
-               :shapes
-               (nth child-idx))]
-    (when id
-      (thi/set-id! label id))))
-
-(defn instantiate-component
-  [file component-label copy-root-label & {:keys [parent-label library children-labels] :as params}]
-  (let [page      (current-page file)
-        library   (or library file)
-        component (get-component library component-label)
-        parent-id (when parent-label
-                    (thi/id parent-label))
-        parent    (when parent-id
-                    (ctst/get-shape page parent-id))
-        frame-id  (if (cfh/frame-shape? parent)
-                    (:id parent)
-                    (:frame-id parent))
-
-        [copy-root copy-shapes]
-        (ctn/make-component-instance page
-                                     component
-                                     (:data library)
-                                     (gpt/point 100 100)
-                                     true
-                                     {:force-id (thi/new-id! copy-root-label)
-                                      :force-frame-id frame-id})
-
-        copy-root' (cond-> copy-root
-                     (some? parent)
-                     (assoc :parent-id parent-id)
-
-                     (some? frame-id)
-                     (assoc :frame-id frame-id)
-
-                     (and (some? parent) (ctn/in-any-component? (:objects page) parent))
-                     (dissoc :component-root))
-        file'      (ctf/update-file-data
-                    file
-                    (fn [file-data]
-                      (as-> file-data $
-                        (ctpl/update-page $
-                                          (:id page)
-                                          #(ctst/add-shape (:id copy-root')
-                                                           copy-root'
-                                                           %
-                                                           frame-id
-                                                           parent-id
-                                                           nil
-                                                           true))
-                        (reduce (fn [file-data shape]
-                                  (ctpl/update-page file-data
-                                                    (:id page)
-                                                    #(ctst/add-shape (:id shape)
-                                                                     shape
-                                                                     %
-                                                                     (:parent-id shape)
-                                                                     (:frame-id shape)
-                                                                     nil
-                                                                     true)))
-                                $
-                                (remove #(= (:id %) (:did copy-root')) copy-shapes)))))]
-    (when children-labels
-      (dotimes [idx (count children-labels)]
-        (set-child-label file' copy-root-label idx (nth children-labels idx))))
-    file'))
-
-
-
-(defn component-swap
-  [file shape-label new-component-label new-shape-label & {:keys [library] :as params}]
-  (let [shape            (get-shape file shape-label)
-        library          (or library file)
-        libraries        {(:id library) library}
-        page             (current-page file)
-        objects          (:objects page)
-        id-new-component (-> (get-component library new-component-label)
-                             :id)
-
-        ;; Store the properties that need to be maintained when the component is swapped
-        keep-props-values (select-keys shape ctk/swap-keep-attrs)
-
-
-        [new_shape _ changes]
-        (-> (pcb/empty-changes nil (:id page))
-            (cll/generate-component-swap objects shape (:data file) page libraries id-new-component 0 nil keep-props-values))]
-
-    (thi/set-id! new-shape-label (:id new_shape))
-    (apply-changes file changes)))
-
-
-(defn sample-color
-  [label & {:keys [] :as params}]
-  (ctc/make-color (assoc params :id (thi/new-id! label))))
-
-(defn sample-fill-color
-  [& {:keys [fill-color fill-opacity] :as params}]
-  (let [params (cond-> params
-                 (nil? fill-color)
-                 (assoc :fill-color clr/black)
-
-                 (nil? fill-opacity)
-                 (assoc :fill-opacity 1))]
-    params))
-
-(defn sample-fills-color
-  [& {:keys [] :as params}]
-  [(sample-fill-color params)])
-
-(defn add-sample-library-color
-  [file label & {:keys [] :as params}]
-  (let [color (sample-color label params)]
-    (ctf/update-file-data file #(ctcl/add-color % color))))
-
-(defn sample-typography
-  [label & {:keys [] :as params}]
-  (ctt/make-typography (assoc params :id (thi/new-id! label))))
-
-(defn add-sample-typography
-  [file label & {:keys [] :as params}]
-  (let [typography (sample-typography label params)]
-    (ctf/update-file-data file #(cttl/add-typography % typography))))
+(defn dump-file
+  "Dump the current page of the file, using dump-page above.
+   Example: (thf/dump-file file [:id :touched])"
+  ([file] (dump-file file []))
+  ([file keys] (dump-page (current-page file) keys)))

@@ -15,9 +15,11 @@
    [app.common.types.pages-list :as ctpl]
    [app.common.types.typographies-list :as ctyl]
    [clojure.test :as t]
+   [common-tests.helpers.components :as thc]
    [common-tests.helpers.compositions :as tho]
    [common-tests.helpers.files :as thf]
-   [common-tests.helpers.ids-map :as thi]))
+   [common-tests.helpers.ids-map :as thi]
+   [common-tests.helpers.shapes :as ths]))
 
 (t/use-fixtures :each thi/test-fixture)
 
@@ -27,14 +29,14 @@
         f3 (thf/sample-file :file3 :name "testing file")
         f4 (-> (thf/sample-file :file4 :page-label :page2)
                (thf/add-sample-page :page3 :name "testing page")
-               (thf/add-sample-shape :shape1))
+               (ths/add-sample-shape :shape1))
         f5 (-> f4
-               (thf/add-sample-shape :shape2)
+               (ths/add-sample-shape :shape2)
                (thf/switch-to-page :page2)
-               (thf/add-sample-shape :shape3 :name "testing shape" :width 100))
-        s1 (thf/get-shape f4 :shape1)
-        s2 (thf/get-shape f5 :shape2 :page-label :page3)
-        s3 (thf/get-shape f5 :shape3)]
+               (ths/add-sample-shape :shape3 :name "testing shape" :width 100))
+        s1 (ths/get-shape f4 :shape1)
+        s2 (ths/get-shape f5 :shape2 :page-label :page3)
+        s3 (ths/get-shape f5 :shape3)]
 
     ;; (thf/pprint-file f4)
 
@@ -75,7 +77,7 @@
                     (tho/add-simple-component :component1 :main-root :rect1))
 
         file (-> (thf/sample-file :file)
-                 (thf/instantiate-component :component1 :copy-root :library library))
+                 (thc/instantiate-component :component1 :copy-root :library library))
 
         ;; Action
         file' (ctf/update-file-data
@@ -89,7 +91,7 @@
         components' (ctkl/components-seq (ctf/file-data file'))
         component' (first components')
 
-        copy-root' (thf/get-shape file' :copy-root)
+        copy-root' (ths/get-shape file' :copy-root)
         main-root' (ctf/get-ref-shape (ctf/file-data file') component' copy-root')]
 
     ;; Check
@@ -106,11 +108,11 @@
 (t/deftest test-absorb-colors
   (let [;; Setup
         library (-> (thf/sample-file :library :is-shared true)
-                    (thf/add-sample-library-color :color1 {:name "Test color"
+                    (ths/add-sample-library-color :color1 {:name "Test color"
                                                            :color "#abcdef"}))
 
         file    (-> (thf/sample-file :file)
-                    (thf/add-sample-shape :shape1
+                    (ths/add-sample-shape :shape1
                                           :type :rect
                                           :name "Rect1"
                                           :fills [{:fill-color "#abcdef"
@@ -127,7 +129,7 @@
 
         ;; Get
         colors' (ctcl/colors-seq (ctf/file-data file'))
-        shape1' (thf/get-shape file' :shape1)
+        shape1' (ths/get-shape file' :shape1)
         fill'   (first (:fills shape1'))]
 
     ;; Check
@@ -143,10 +145,10 @@
 (t/deftest test-absorb-typographies
   (let [;; Setup
         library (-> (thf/sample-file :library :is-shared true)
-                    (thf/add-sample-typography :typography1 {:name "Test typography"}))
+                    (ths/add-sample-typography :typography1 {:name "Test typography"}))
 
         file    (-> (thf/sample-file :file)
-                    (thf/add-sample-shape :shape1
+                    (ths/add-sample-shape :shape1
                                           :type :text
                                           :name "Text1"
                                           :content {:type "root"
@@ -178,7 +180,7 @@
 
         ;; Get
         typographies' (ctyl/typographies-seq (ctf/file-data file'))
-        shape1'       (thf/get-shape file' :shape1)
+        shape1'       (ths/get-shape file' :shape1)
         text-node'    (d/seek #(some? (:text %)) (txt/node-seq (:content shape1')))]
 
     ;; Check

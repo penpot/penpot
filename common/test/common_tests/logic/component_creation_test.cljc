@@ -9,20 +9,22 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.logic.libraries :as cll]
    [clojure.test :as t]
+   [common-tests.helpers.components :as thc]
    [common-tests.helpers.files :as thf]
-   [common-tests.helpers.ids-map :as thi]))
+   [common-tests.helpers.ids-map :as thi]
+   [common-tests.helpers.shapes :as ths]))
 
 (t/use-fixtures :each thi/test-fixture)
 
 (t/deftest test-add-component-from-single-shape
-  (let [;; Setup
+  (let [;; ==== Setup
         file   (-> (thf/sample-file :file1)
-                   (thf/add-sample-shape :shape1 :type :frame))
+                   (ths/add-sample-shape :shape1 :type :frame))
 
         page   (thf/current-page file)
-        shape1 (thf/get-shape file :shape1)
+        shape1 (ths/get-shape file :shape1)
 
-        ;; Action
+        ;; ==== Action
         [_ component-id changes]
         (cll/generate-add-component (pcb/empty-changes)
                                     [shape1]
@@ -35,11 +37,11 @@
 
         file' (thf/apply-changes file changes)
 
-        ;; Get
-        component (thf/get-component-by-id file' component-id)
-        root      (thf/get-shape-by-id file' (:main-instance-id component))]
+        ;; ==== Get
+        component (thc/get-component-by-id file' component-id)
+        root      (ths/get-shape-by-id file' (:main-instance-id component))]
 
-    ;; Check
+    ;; ==== Check
     (t/is (some? component))
     (t/is (some? root))
     (t/is (= (:component-id root) (:id component)))))
