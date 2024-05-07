@@ -20,22 +20,24 @@
 
 (t/deftest test-reset-after-changing-attribute
   (let [;; ==== Setup
-        file  (-> (thf/sample-file :file1)
-                  (tho/add-simple-component-with-copy :component1
-                                                      :main-root
-                                                      :main-child
-                                                      :copy-root
-                                                      :main-child-params {:fills (ths/sample-fills-color
-                                                                                  :fill-color "#abcdef")}))
-        page      (thf/current-page file)
-        copy-root (ths/get-shape file :copy-root)
+        file   (-> (thf/sample-file :file1)
+                   (tho/add-simple-component-with-copy :component1
+                                                       :main-root
+                                                       :main-child
+                                                       :copy-root
+                                                       :main-child-params {:fills (ths/sample-fills-color
+                                                                                   :fill-color "#abcdef")}
+                                                       :copy-root-params {:children-labels [:copy-child]}))
+        page       (thf/current-page file)
+        copy-root  (ths/get-shape file :copy-root)
+        copy-child (ths/get-shape file :copy-child)
 
         ;; ==== Action
         update-fn (fn [shape]
                     (assoc shape :fills (ths/sample-fills-color :fill-color "#fabada")))
 
         changes   (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
-                                              (:shapes copy-root)
+                                              #{(:id copy-child)}
                                               update-fn
                                               (:objects page)
                                               {})
@@ -54,11 +56,13 @@
 
         ;; ==== Get
         copy-root'  (ths/get-shape file' :copy-root)
-        copy-child' (ths/get-shape-by-id file' (first (:shapes copy-root')))
+        copy-child' (ths/get-shape file' :copy-child)
         fills'      (:fills copy-child')
         fill'       (first fills')]
 
     ;; ==== Check
+    (t/is (some? copy-root'))
+    (t/is (some? copy-child'))
     (t/is (= (count fills') 1))
     (t/is (= (:fill-color fill') "#abcdef"))
     (t/is (= (:fill-opacity fill') 1))
@@ -67,23 +71,26 @@
 
 (t/deftest test-reset-from-library
   (let [;; ==== Setup
-        library (-> (thf/sample-file :library :is-shared true)
-                    (tho/add-simple-component :component1 :main-root :main-child
-                                              :child-params {:fills (ths/sample-fills-color
-                                                                     :fill-color "#abcdef")}))
+        library    (-> (thf/sample-file :library :is-shared true)
+                       (tho/add-simple-component :component1 :main-root :main-child
+                                                 :child-params {:fills (ths/sample-fills-color
+                                                                        :fill-color "#abcdef")}))
 
-        file (-> (thf/sample-file :file)
-                 (thc/instantiate-component :component1 :copy-root :library library))
+        file       (-> (thf/sample-file :file)
+                       (thc/instantiate-component :component1 :copy-root
+                                                  :library library
+                                                  :children-labels [:copy-child]))
 
-        page      (thf/current-page file)
-        copy-root (ths/get-shape file :copy-root)
+        page       (thf/current-page file)
+        copy-root  (ths/get-shape file :copy-root)
+        copy-child (ths/get-shape file :copy-child)
 
         ;; ==== Action
         update-fn (fn [shape]
                     (assoc shape :fills (ths/sample-fills-color :fill-color "#fabada")))
 
         changes   (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
-                                              (:shapes copy-root)
+                                              #{(:id copy-child)}
                                               update-fn
                                               (:objects page)
                                               {})
@@ -103,11 +110,13 @@
 
         ;; ==== Get
         copy-root'  (ths/get-shape file' :copy-root)
-        copy-child' (ths/get-shape-by-id file' (first (:shapes copy-root')))
+        copy-child' (ths/get-shape file' :copy-child)
         fills'      (:fills copy-child')
         fill'       (first fills')]
 
     ;; ==== Check
+    (t/is (some? copy-root'))
+    (t/is (some? copy-child'))
     (t/is (= (count fills') 1))
     (t/is (= (:fill-color fill') "#abcdef"))
     (t/is (= (:fill-opacity fill') 1))
@@ -120,7 +129,8 @@
                  (tho/add-simple-component-with-copy :component1
                                                      :main-root
                                                      :main-child
-                                                     :copy-root)
+                                                     :copy-root
+                                                     :copy-root-params {:children-labels [:copy-child]})
                  (ths/add-sample-shape :free-shape))
 
         page      (thf/current-page file)
@@ -152,9 +162,11 @@
 
         ;; ==== Get
         copy-root'  (ths/get-shape file' :copy-root)
-        copy-child' (ths/get-shape-by-id file' (first (:shapes copy-root')))]
+        copy-child' (ths/get-shape file' :copy-child)]
 
     ;; ==== Check
+    (t/is (some? copy-root'))
+    (t/is (some? copy-child'))
     (t/is (= (:touched copy-root') nil))
     (t/is (= (:touched copy-child') nil))))
 
@@ -164,10 +176,12 @@
                        (tho/add-simple-component-with-copy :component1
                                                            :main-root
                                                            :main-child
-                                                           :copy-root))
+                                                           :copy-root
+                                                           :copy-root-params {:children-labels [:copy-child]}))
 
         page       (thf/current-page file)
         copy-root  (ths/get-shape file :copy-root)
+        copy-child (ths/get-shape file :copy-child)
 
         ;; ==== Action
 
@@ -178,7 +192,7 @@
                                     file
                                     page
                                     (:objects page)
-                                    (set (:shapes copy-root))
+                                    #{(:id copy-child)}
                                     {:components-v2 true})
 
         file-mdf  (thf/apply-changes file changes)
@@ -195,9 +209,11 @@
 
         ;; ==== Get
         copy-root'  (ths/get-shape file' :copy-root)
-        copy-child' (ths/get-shape-by-id file' (first (:shapes copy-root')))]
+        copy-child' (ths/get-shape file' :copy-child)]
 
     ;; ==== Check
+    (t/is (some? copy-root'))
+    (t/is (some? copy-child'))
     (t/is (= (:touched copy-root') nil))
     (t/is (= (:touched copy-child') nil))))
 
@@ -207,12 +223,13 @@
                  (tho/add-component-with-many-children-and-copy :component1
                                                                 :main-root
                                                                 [:main-child1 :main-child2 :main-child3]
-                                                                :copy-root)
+                                                                :copy-root
+                                                                :copy-root-params {:children-labels [:copy-child]})
                  (ths/add-sample-shape :free-shape))
 
         page (thf/current-page file)
         copy-root (ths/get-shape file :copy-root)
-        copy-child1 (ths/get-shape-by-id file (first (:shapes copy-root)))
+        copy-child1 (ths/get-shape file :copy-child)
 
         ;; ==== Action
 
@@ -240,9 +257,11 @@
 
         ;; ==== Get
         copy-root'  (ths/get-shape file' :copy-root)
-        copy-child' (ths/get-shape-by-id file' (first (:shapes copy-root')))]
+        copy-child' (ths/get-shape file' :copy-child)]
 
     ;; ==== Check
+    (t/is (some? copy-root'))
+    (t/is (some? copy-child'))
     (t/is (= (:touched copy-root') nil))
     (t/is (= (:touched copy-child') nil))))
 
@@ -289,6 +308,7 @@
         fill'       (first fills')]
 
     ;; ==== Check
+    (t/is (some? copy2-root'))
     (t/is (= (count fills') 1))
     (t/is (= (:fill-color fill') "#abcdef"))
     (t/is (= (:fill-opacity fill') 1))
@@ -296,23 +316,25 @@
 
 (t/deftest test-reset-after-changing-lower
   (let [;; ==== Setup
-        file   (-> (thf/sample-file :file1)
-                   (tho/add-nested-component-with-copy :component1
-                                                       :main1-root
-                                                       :main1-child
-                                                       :component2
-                                                       :main2-root
-                                                       :main2-nested-head
-                                                       :copy2-root))
-        page       (thf/current-page file)
-        copy2-root (ths/get-shape file :copy2-root)
+        file    (-> (thf/sample-file :file1)
+                    (tho/add-nested-component-with-copy :component1
+                                                        :main1-root
+                                                        :main1-child
+                                                        :component2
+                                                        :main2-root
+                                                        :main2-nested-head
+                                                        :copy2-root
+                                                        :copy2-root-params {:children-labels [:copy2-child]}))
+        page        (thf/current-page file)
+        copy2-root  (ths/get-shape file :copy2-root)
+        copy2-child (ths/get-shape file :copy2-child)
 
         ;; ==== Action
         update-fn (fn [shape]
                     (assoc shape :fills (ths/sample-fills-color :fill-color "#fabada")))
 
         changes   (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
-                                              (:shapes copy2-root)
+                                              #{(:id copy2-child)}
                                               update-fn
                                               (:objects page)
                                               {})
@@ -331,11 +353,13 @@
 
         ;; ==== Get
         copy2-root'  (ths/get-shape file' :copy2-root)
-        copy2-child' (ths/get-shape-by-id file' (first (:shapes copy2-root')))
+        copy2-child' (ths/get-shape file' :copy2-child)
         fills'       (:fills copy2-child')
         fill'        (first fills')]
 
     ;; ==== Check
+    (t/is (some? copy2-root'))
+    (t/is (some? copy2-child'))
     (t/is (= (count fills') 1))
     (t/is (= (:fill-color fill') "#FFFFFF"))
     (t/is (= (:fill-opacity fill') 1))

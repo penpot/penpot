@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns common-tests.logic.component-creation-test
+(ns common-tests.logic.comp-creation-test
   (:require
    [app.common.files.changes-builder :as pcb]
    [app.common.logic.libraries :as cll]

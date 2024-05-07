@@ -129,6 +129,7 @@
     (when children-labels
       (dotimes [idx (count children-labels)]
         (set-child-label file' copy-root-label idx (nth children-labels idx))))
+
     file'))
 
 (defn component-swap
