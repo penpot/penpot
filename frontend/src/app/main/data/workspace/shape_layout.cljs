@@ -15,6 +15,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.flex-layout :as flex]
    [app.common.geom.shapes.grid-layout :as grid]
+   [app.common.logic.libraries :as cll]
    [app.common.types.component :as ctc]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
@@ -339,8 +340,9 @@
             selected (set shapes-by-track)
 
             changes
-            (->> (dwse/prepare-duplicate-changes objects page selected (gpt/point 0 0) it libraries library-data file-id)
-                 (dwse/duplicate-changes-update-indices objects selected))
+            (-> (pcb/empty-changes it)
+                (cll/generate-duplicate-changes objects page selected (gpt/point 0 0) libraries library-data file-id)
+                (cll/generate-duplicate-changes-update-indices objects selected))
 
             ;; Creates a map with shape-id => duplicated-shape-id
             ids-map
