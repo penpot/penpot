@@ -36,7 +36,8 @@
   (f))
 
 (defn label [id]
-  (->> @idmap
-       (filter #(= id (val %)))
-       (map key)
-       (first)))
+  (or (->> @idmap
+           (filter #(= id (val %)))
+           (map key)
+           (first))
+      (str "<no-label #" (subs id (- (count id) 6)) ">")))

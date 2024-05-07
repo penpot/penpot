@@ -23,17 +23,16 @@
 ;; Related .penpot file: common/test/cases/remove-swap-slots.penpot
 (defn- setup-file
   []
-    ;;  :frame-b1 [:id: 3aee2370-44e4-81c8-8004-46e56a459d70, :touched: ]
-    ;;      :blue1 [:id: 3aee2370-44e4-81c8-8004-46e56a45fc55, :touched: #{:swap-slot-3aee2370-44e4-81c8-8004-46e56a459d75}]
-    ;;      :green-copy [:id: 3aee2370-44e4-81c8-8004-46e56a45fc56, :touched: ]
-    ;;          :blue-copy-in-green-copy [:id: 3aee2370-44e4-81c8-8004-46e56a4631a4, :touched: #{:swap-slot-3aee2370-44e4-81c8-8004-46e56a459d6f}]
-    ;;      :frame-yellow [:id: 3aee2370-44e4-81c8-8004-46e56a459d73, :touched: ]
-    ;;  :frame-green [:id: 3aee2370-44e4-81c8-8004-46e56a459d6c, :touched: ]
-    ;;      :red-copy-green [:id: 3aee2370-44e4-81c8-8004-46e56a459d6f, :touched: ]
-    ;;  :frame-blue [:id: 3aee2370-44e4-81c8-8004-46e56a459d69, :touched: ]
-    ;;  :frame-b2 [:id: 3aee2370-44e4-81c8-8004-46e56a4631a5, :touched: ]
-    ;;  :frame-red [:id: 3aee2370-44e4-81c8-8004-46e56a459d66, :touched: ]
-
+  ;; {:frame-red} [:name Frame1]                           # [Component :red]
+  ;; {:frame-blue} [:name Frame1]                          # [Component :blue]
+  ;; {:frame-green} [:name Frame1]                         # [Component :green]
+  ;;     :red-copy-green [:name Frame1]                    @--> :frame-red
+  ;; {:frame-b1} [:name Frame1]                            # [Component :b1]
+  ;;     :blue1 [:name Frame1, :swap-slot-label :red-copy] @--> :frame-blue
+  ;;     :frame-yellow [:name Frame1]                   
+  ;;     :green-copy [:name Frame1]                        @--> :frame-green
+  ;;         :blue-copy-in-green-copy [:name Frame1, :swap-slot-label :red-copy-green] @--> :frame-blue
+  ;; {:frame-b2} [:name Frame1]                            # [Component :b2]
   (-> (thf/sample-file :file1)
       (tho/add-frame :frame-red)
       (thc/make-component :red :frame-red)
