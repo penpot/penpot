@@ -51,12 +51,13 @@
       (thf/make-component :b2 :frame-b2)))
 
 (t/deftest test-keep-swap-slot-relocating-blue1-to-root
-  (let [;; ============================== Setup ===============================
+  (let [;; ==== Setup
         file                   (setup-file)
+
         page                   (thf/current-page file)
         blue1                  (thf/get-shape file :blue1)
 
-        ;; ============================== Action ==============================
+        ;; ==== Action
         changes                (cls/generate-relocate-shapes (pcb/empty-changes nil)
                                                              (:objects page)
                                                              #{(:parent-id blue1)} ;; parents
@@ -66,10 +67,11 @@
                                                              #{(:id blue1)})       ;; ids
         file'                  (thf/apply-changes file changes)
 
-        ;; ============================== Get =================================
+        ;; ==== Get
         blue1'                 (thf/get-shape file' :blue1)]
 
-    ;; ================================== Check ===============================
+    ;; ==== Check
+
     ;; blue1 had swap-id before move
     (t/is (some? (ctk/get-swap-slot blue1)))
 
@@ -78,12 +80,12 @@
     (t/is (nil? (ctk/get-swap-slot blue1')))))
 
 (t/deftest test-keep-swap-slot-move-blue1-to-root
-  (let [;; ============================== Setup ===============================
+  (let [;; ==== Setup
         file                   (setup-file)
         page                   (thf/current-page file)
         blue1                  (thf/get-shape file :blue1)
 
-        ;; ============================== Action ==============================
+        ;; ==== Action
         changes                (cls/generate-move-shapes-to-frame (pcb/empty-changes nil)
                                                                   #{(:id blue1)}       ;; ids
                                                                   uuid/zero            ;; frame-id
@@ -94,10 +96,11 @@
 
         file'                  (thf/apply-changes file changes)
 
-        ;; ============================== Get =================================
+        ;; ==== Get
         blue1'                 (thf/get-shape file' :blue1)]
 
-    ;; ================================== Check ===============================
+    ;; ==== Check
+
     ;; blue1 had swap-id before move
     (t/is (some? (ctk/get-swap-slot blue1)))
 
@@ -107,14 +110,14 @@
 
 
 (t/deftest test-keep-swap-slot-relocating-blue1-to-b2
-  (let [;; ============================== Setup ===============================
+  (let [;; ==== Setup
         file                   (setup-file)
         page                   (thf/current-page file)
         blue1                  (thf/get-shape file :blue1)
         b2                     (thf/get-shape file :frame-b2)
 
 
-        ;; ============================== Action ==============================
+        ;; ==== Action
         changes                (cls/generate-relocate-shapes (pcb/empty-changes nil)
                                                              (:objects page)
                                                              #{(:parent-id blue1)} ;; parents
@@ -124,10 +127,11 @@
                                                              #{(:id blue1)})       ;; ids
         file'                  (thf/apply-changes file changes)
 
-        ;; ============================== Get =================================
+        ;; ==== Get
         blue1'                 (thf/get-shape file' :blue1)]
 
-    ;; ================================== Check ===============================
+    ;; ==== Check
+
     ;; blue1 had swap-id before move
     (t/is (some? (ctk/get-swap-slot blue1)))
 
@@ -136,14 +140,14 @@
     (t/is (nil? (ctk/get-swap-slot blue1')))))
 
 (t/deftest test-keep-swap-slot-move-blue1-to-b2
-  (let [;; ============================== Setup ===============================
+  (let [;; ==== Setup
         file                   (setup-file)
         page                   (thf/current-page file)
         blue1                  (thf/get-shape file :blue1)
         b2                     (thf/get-shape file :frame-b2)
 
 
-        ;; ============================== Action ==============================
+        ;; ==== Action
         changes                (cls/generate-move-shapes-to-frame (pcb/empty-changes nil)
                                                                   #{(:id blue1)}       ;; ids
                                                                   (:id b2)             ;; frame-id
@@ -154,10 +158,11 @@
 
         file'                  (thf/apply-changes file changes)
 
-        ;; ============================== Get =================================
+        ;; ==== Get
         blue1'                 (thf/get-shape file' :blue1)]
 
-    ;; ================================== Check ===============================
+    ;; ==== Check
+
     ;; blue1 had swap-id before move
     (t/is (some? (ctk/get-swap-slot blue1)))
 
@@ -166,13 +171,13 @@
     (t/is (nil? (ctk/get-swap-slot blue1')))))
 
 (t/deftest test-keep-swap-slot-relocating-yellow-to-root
-  (let [;; ============================== Setup ===============================
+  (let [;; ==== Setup
         file                   (setup-file)
         page                   (thf/current-page file)
         blue1                  (thf/get-shape file :blue1)
         yellow                 (thf/get-shape file :frame-yellow)
 
-        ;; ============================== Action ==============================
+        ;; ==== Action
         ;; Move blue1 into yellow
         changes                (cls/generate-relocate-shapes (pcb/empty-changes nil)
                                                              (:objects page)
@@ -196,10 +201,11 @@
                                                              #{(:id yellow')})       ;; ids
         file''                  (thf/apply-changes file' changes')
 
-        ;; ============================== Get =================================
+        ;; ==== Get
         blue1''                 (thf/get-shape file'' :blue1)]
 
-    ;; ================================== Check ===============================
+    ;; ==== Check
+
     ;; blue1 had swap-id before move
     (t/is (some? (ctk/get-swap-slot blue1)))
 
@@ -208,13 +214,14 @@
     (t/is (nil? (ctk/get-swap-slot blue1'')))))
 
 (t/deftest test-keep-swap-slot-move-yellow-to-root
-  (let [;; ============================== Setup ===============================
+  (let [;; ==== Setup
         file                   (setup-file)
         page                   (thf/current-page file)
         blue1                  (thf/get-shape file :blue1)
         yellow                 (thf/get-shape file :frame-yellow)
 
-        ;; ============================== Action ==============================
+        ;; ==== Action
+
         ;; Move blue1 into yellow
         changes                (cls/generate-move-shapes-to-frame (pcb/empty-changes nil)
                                                                   #{(:id blue1)}       ;; ids
@@ -238,10 +245,11 @@
                                                                   nil)                 ;; cell
         file''                  (thf/apply-changes file' changes')
 
-        ;; ============================== Get =================================
+        ;; ==== Get
         blue1''                 (thf/get-shape file'' :blue1)]
 
-    ;; ================================== Check ===============================
+    ;; ==== Check
+
     ;; blue1 had swap-id before move
     (t/is (some? (ctk/get-swap-slot blue1)))
 
@@ -251,13 +259,14 @@
 
 
 (t/deftest test-keep-swap-slot-relocating-yellow-to-b2
-  (let [;; ============================== Setup ===============================
+  (let [;; ==== Setup
         file                   (setup-file)
         page                   (thf/current-page file)
         blue1                  (thf/get-shape file :blue1)
         yellow                 (thf/get-shape file :frame-yellow)
 
-        ;; ============================== Action ==============================
+        ;; ==== Action
+
         ;; Move blue1 into yellow
         changes                (cls/generate-relocate-shapes (pcb/empty-changes nil)
                                                              (:objects page)
@@ -282,10 +291,11 @@
                                                              #{(:id yellow')})       ;; ids
         file''                  (thf/apply-changes file' changes')
 
-        ;; ============================== Get =================================
+        ;; ==== Get
         blue1''                 (thf/get-shape file'' :blue1)]
 
-    ;; ================================== Check ===============================
+    ;; ==== Check
+
     ;; blue1 had swap-id before move
     (t/is (some? (ctk/get-swap-slot blue1)))
 
@@ -294,13 +304,14 @@
     (t/is (nil? (ctk/get-swap-slot blue1'')))))
 
 (t/deftest test-keep-swap-slot-move-yellow-to-b2
-  (let [;; ============================== Setup ===============================
+  (let [;; ==== Setup
         file                   (setup-file)
         page                   (thf/current-page file)
         blue1                  (thf/get-shape file :blue1)
         yellow                 (thf/get-shape file :frame-yellow)
 
-        ;; ============================== Action ==============================
+        ;; ==== Action
+
         ;; Move blue1 into yellow
         changes                (cls/generate-move-shapes-to-frame (pcb/empty-changes nil)
                                                                   #{(:id blue1)}       ;; ids
@@ -326,10 +337,11 @@
 
         file''                  (thf/apply-changes file' changes')
 
-        ;; ============================== Get =================================
+        ;; ==== Get
         blue1''                 (thf/get-shape file'' :blue1)]
 
-    ;; ================================== Check ===============================
+    ;; ==== Check
+
     ;; blue1 had swap-id before move
     (t/is (some? (ctk/get-swap-slot blue1)))
 

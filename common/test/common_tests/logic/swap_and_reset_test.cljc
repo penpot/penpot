@@ -19,19 +19,22 @@
 
 ;; Related .penpot file: common/test/cases/swap-and-reset.penpot
 (t/deftest test-simple-swap
-  (let [;; Setup
-        file
-        (-> (thf/sample-file :file1)
-            (thc/add-simple-component-with-copy :component-1 :component-1-main-root :component-1-main-child :component-1-copy-root)
-            (thc/add-simple-component :component-2 :component-2-root :component-2-child))
+  (let [;; ==== Setup
+        file (-> (thf/sample-file :file1)
+                 (thc/add-simple-component-with-copy :component-1
+                                                     :component-1-main-root
+                                                     :component-1-main-child
+                                                     :component-1-copy-root)
+                 (thc/add-simple-component :component-2
+                                           :component-2-root
+                                           :component-2-child))
 
         component-1-copy-root (thf/get-shape file :component-1-copy-root)
-        component-1           (thf/get-component file :component-1)
         component-2           (thf/get-component file :component-2)
         page                  (thf/current-page file)
 
-        ;; Action
-        [new-shape all-parents changes]
+        ;; ==== Action
+        [new-shape _all-parents changes]
         (cll/generate-component-swap (pcb/empty-changes)
                                      (:objects page)
                                      component-1-copy-root
@@ -45,16 +48,16 @@
 
         file' (thf/apply-changes file changes)
 
-        ;; Get 
+        ;; ==== Get 
         swapped (thf/get-shape-by-id file' (:id new-shape))]
 
-    ;; Check
+    ;; ==== Check
     (t/is (not= (:component-id component-1-copy-root) (:component-id swapped)))
     (t/is (= (:id component-2) (:component-id swapped)))
     (t/is (= (:id file) (:component-file swapped)))))
 
 (t/deftest test-swap-nested
-  (let [;; Setup
+  (let [;; ==== Setup
         file
         (-> (thf/sample-file :file1)
             (thc/add-simple-component :component-1 :component-1-main-root :component-1-main-child)
@@ -65,9 +68,7 @@
             (thc/add-simple-component :component-2 :component-2-main-root :component-2-main-child))
 
         page        (thf/current-page file)
-        component-1 (thf/get-component file :component-1)
         component-2 (thf/get-component file :component-2)
-        component-3 (thf/get-component file :component-3)
 
         copy
         (->>
@@ -78,8 +79,8 @@
 
         libraries {(:id  file) file}
 
-        ;; Action
-        [new-shape all-parents changes]
+        ;; ==== Action
+        [new-shape _all-parents changes]
         (cll/generate-component-swap (pcb/empty-changes)
                                      (:objects page)
                                      copy
@@ -95,7 +96,7 @@
         libraries' {(:id  file') file'}
         page'      (thf/current-page file')
 
-        ;; Get
+        ;; ==== Get
         swapped               (thf/get-shape-by-id file' (:id new-shape))
         component-1-copy-root (thf/get-shape file' :component-1-copy-root)
         slot                  (-> (ctf/find-swap-slot swapped
@@ -104,7 +105,7 @@
                                                       libraries')
                                   (ctk/build-swap-slot-group))]
 
-    ;; Check
+    ;; ==== Check
     (t/is (not= (:component-id copy) (:component-id swapped)))
     (t/is (= (:id component-2) (:component-id swapped)))
     (t/is (= (:id file) (:component-file swapped)))
@@ -112,7 +113,7 @@
     (t/is (= (ctk/get-swap-slot swapped) (:id component-1-copy-root)))))
 
 (t/deftest test-swap-and-reset-override
-  (let [;; Setup
+  (let [;; ==== Setup
         file
         (-> (thf/sample-file :file1)
             (thc/add-simple-component :component-1 :component-1-main-root :component-1-main-child)
@@ -133,8 +134,8 @@
          first
          (thf/get-shape-by-id file))
 
-        ;; Action
-        [new-shape all-parents changes-swap]
+        ;; ==== Action
+        [new-shape _all-parents changes-swap]
         (cll/generate-component-swap (pcb/empty-changes)
                                      (:objects page)
                                      copy
@@ -158,17 +159,15 @@
                                       true)
 
         file' (thf/apply-changes file changes)
-        page' (thf/current-page file')
-        ;; Get
+
+        ;; ==== Get
         reset
         (->>
          (thf/get-shape file' :component-container-instance)
          :shapes
          first
-         (thf/get-shape-by-id file'))
+         (thf/get-shape-by-id file'))]
 
-        component-1-copy-root (thf/get-shape file' :component-1-copy-root)]
-
-    ;; Check
+    ;; ==== Check
     (t/is (= (:id component-1) (:component-id reset)))
     (t/is (nil? (ctk/get-swap-slot reset)))))

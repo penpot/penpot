@@ -16,7 +16,7 @@
 (t/use-fixtures :each thi/test-fixture)
 
 (t/deftest test-touched-when-changing-attribute
-  (let [;; Setup
+  (let [;; ==== Setup
         file  (-> (thf/sample-file :file1)
                   (tho/add-simple-component-with-copy :component1
                                                       :main-root
@@ -27,7 +27,7 @@
         page      (thf/current-page file)
         copy-root (thf/get-shape file :copy-root)
 
-        ;; Action
+        ;; ==== Action
         update-fn (fn [shape]
                     (assoc shape :fills (thf/sample-fills-color :fill-color "#fabada")))
 
@@ -39,13 +39,13 @@
 
         file'     (thf/apply-changes file changes)
 
-        ;; Get
+        ;; ==== Get
         copy-root'  (thf/get-shape file' :copy-root)
         copy-child' (thf/get-shape-by-id file' (first (:shapes copy-root')))
         fills'      (:fills copy-child')
         fill'       (first fills')]
 
-    ;; Check
+    ;; ==== Check
     (t/is (= (count fills') 1))
     (t/is (= (:fill-color fill') "#fabada"))
     (t/is (= (:fill-opacity fill') 1))
@@ -53,7 +53,7 @@
     (t/is (= (:touched copy-child') #{:fill-group}))))
 
 (t/deftest test-not-touched-when-adding-shape
-  (let [;; Setup
+  (let [;; ==== Setup
         file (-> (thf/sample-file :file1)
                  (tho/add-simple-component-with-copy :component1
                                                      :main-root
@@ -64,7 +64,8 @@
         page      (thf/current-page file)
         copy-root (thf/get-shape file :copy-root)
 
-        ;; Action
+        ;; ==== Action
+
         ;; IMPORTANT: as modifying copies structure is now forbidden, this action
         ;; will not have any effect, and so the parent shape won't also be touched.
         changes (cls/generate-relocate-shapes (pcb/empty-changes)
@@ -77,16 +78,16 @@
 
         file'   (thf/apply-changes file changes)
 
-        ;; Get
+        ;; ==== Get
         copy-root'  (thf/get-shape file' :copy-root)
         copy-child' (thf/get-shape-by-id file' (first (:shapes copy-root')))]
 
-    ;; Check
+    ;; ==== Check
     (t/is (= (:touched copy-root') nil))
     (t/is (= (:touched copy-child') nil))))
 
 (t/deftest test-touched-when-deleting-shape
-  (let [;; Setup
+  (let [;; ==== Setup
         file       (-> (thf/sample-file :file1)
                        (tho/add-simple-component-with-copy :component1
                                                            :main-root
@@ -96,7 +97,8 @@
         page       (thf/current-page file)
         copy-root  (thf/get-shape file :copy-root)
 
-        ;; Action
+        ;; ==== Action
+
         ;; IMPORTANT: as modifying copies structure is now forbidden, this action will not
         ;; delete the child shape, but hide it (thus setting the visibility group).
         [_all-parents changes]
@@ -109,16 +111,16 @@
 
         file'   (thf/apply-changes file changes)
 
-        ;; Get
+        ;; ==== Get
         copy-root'  (thf/get-shape file' :copy-root)
         copy-child' (thf/get-shape-by-id file' (first (:shapes copy-root')))]
 
-    ;; Check
+    ;; ==== Check
     (t/is (= (:touched copy-root') nil))
     (t/is (= (:touched copy-child') #{:visibility-group}))))
 
 (t/deftest test-not-touched-when-moving-shape
-  (let [;; Setup
+  (let [;; ==== Setup
         file (-> (thf/sample-file :file1)
                  (tho/add-component-with-many-children-and-copy :component1
                                                                 :main-root
@@ -130,7 +132,8 @@
         copy-root (thf/get-shape file :copy-root)
         copy-child1 (thf/get-shape-by-id file (first (:shapes copy-root)))
 
-        ;; Action
+        ;; ==== Action
+
         ;; IMPORTANT: as modifying copies structure is now forbidden, this action
         ;; will not have any effect, and so the parent shape won't also be touched.
         changes (cls/generate-relocate-shapes (pcb/empty-changes)
@@ -143,16 +146,16 @@
 
         file'   (thf/apply-changes file changes)
 
-        ;; Get
+        ;; ==== Get
         copy-root'  (thf/get-shape file' :copy-root)
         copy-child' (thf/get-shape-by-id file' (first (:shapes copy-root')))]
 
-    ;; Check
+    ;; ==== Check
     (t/is (= (:touched copy-root') nil))
     (t/is (= (:touched copy-child') nil))))
 
 (t/deftest test-touched-when-changing-upper
-  (let [;; Setup
+  (let [;; ==== Setup
         file   (-> (thf/sample-file :file1)
                    (tho/add-nested-component-with-copy :component1
                                                        :main1-root
@@ -166,7 +169,7 @@
         page       (thf/current-page file)
         copy2-root (thf/get-shape file :copy2-root)
 
-        ;; Action
+        ;; ==== Action
         update-fn (fn [shape]
                     (assoc shape :fills (thf/sample-fills-color :fill-color "#fabada")))
 
@@ -178,19 +181,19 @@
 
         file'     (thf/apply-changes file changes)
 
-        ;; Get
+        ;; ==== Get
         copy2-root' (thf/get-shape file' :copy2-root)
         fills'      (:fills copy2-root')
         fill'       (first fills')]
 
-    ;; Check
+    ;; ==== Check
     (t/is (= (count fills') 1))
     (t/is (= (:fill-color fill') "#fabada"))
     (t/is (= (:fill-opacity fill') 1))
     (t/is (= (:touched copy2-root') #{:fill-group}))))
 
 (t/deftest test-touched-when-changing-lower
-  (let [;; Setup
+  (let [;; ==== Setup
         file   (-> (thf/sample-file :file1)
                    (tho/add-nested-component-with-copy :component1
                                                        :main1-root
@@ -204,7 +207,7 @@
         page       (thf/current-page file)
         copy2-root (thf/get-shape file :copy2-root)
 
-        ;; Action
+        ;; ==== Action
         update-fn (fn [shape]
                     (assoc shape :fills (thf/sample-fills-color :fill-color "#fabada")))
 
@@ -216,13 +219,13 @@
 
         file'     (thf/apply-changes file changes)
 
-        ;; Get
+        ;; ==== Get
         copy2-root'  (thf/get-shape file' :copy2-root)
         copy2-child' (thf/get-shape-by-id file' (first (:shapes copy2-root')))
         fills'       (:fills copy2-child')
         fill'        (first fills')]
 
-    ;; Check
+    ;; ==== Check
     (t/is (= (count fills') 1))
     (t/is (= (:fill-color fill') "#fabada"))
     (t/is (= (:fill-opacity fill') 1))
