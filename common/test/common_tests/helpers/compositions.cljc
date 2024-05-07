@@ -7,13 +7,14 @@
 (ns common-tests.helpers.compositions
   (:require
    [app.common.data :as d]
-   [common-tests.helpers.files :as thf]))
+   [common-tests.helpers.components :as thc]
+   [common-tests.helpers.shapes :as ths]))
 
 (defn add-rect
   [file rect-label & {:keys [] :as params}]
   ;; Generated shape tree:
   ;; :rect-label [:type :rect :name: Rect1]
-  (thf/add-sample-shape file rect-label
+  (ths/add-sample-shape file rect-label
                         (merge {:type :rect
                                 :name "Rect1"}
                                params)))
@@ -22,7 +23,7 @@
   [file frame-label & {:keys [] :as params}]
   ;; Generated shape tree:
   ;; :frame-label [:type :frame :name: Frame1]
-  (thf/add-sample-shape file frame-label
+  (ths/add-sample-shape file frame-label
                         (merge {:type :frame
                                 :name "Frame1"}
                                params)))
@@ -34,7 +35,7 @@
   ;;     :child-label [:name: Rect1]
   (-> file
       (add-frame frame-label frame-params)
-      (thf/add-sample-shape child-label
+      (ths/add-sample-shape child-label
                             (merge {:type :rect
                                     :name "Rect1"
                                     :parent-label frame-label}
@@ -48,7 +49,7 @@
   ;;     :child-label [:name: Rect1]  
   (-> file
       (add-frame-with-child root-label child-label :frame-params root-params :child-params child-params)
-      (thf/make-component component-label root-label component-params)))
+      (thc/make-component component-label root-label component-params)))
 
 (defn add-simple-component-with-copy
   [file component-label main-root-label main-child-label copy-root-label
@@ -66,7 +67,7 @@
                             :component-params component-params
                             :root-params main-root-params
                             :child-params main-child-params)
-      (thf/instantiate-component component-label copy-root-label copy-root-params)))
+      (thc/instantiate-component component-label copy-root-label copy-root-params)))
 
 (defn add-component-with-many-children
   [file component-label root-label child-labels
@@ -79,7 +80,7 @@
   (as-> file $
     (add-frame $ root-label root-params)
     (reduce (fn [file [index [label params]]]
-              (thf/add-sample-shape file
+              (ths/add-sample-shape file
                                     label
                                     (merge {:type :rect
                                             :name (str "Rect" (inc index))
@@ -87,7 +88,7 @@
                                            params)))
             $
             (d/enumerate (d/zip-all child-labels child-params-list)))
-    (thf/make-component $ component-label root-label component-params)))
+    (thc/make-component $ component-label root-label component-params)))
 
 (defn add-component-with-many-children-and-copy
   [file component-label main-root-label main-child-labels copy-root-label
@@ -109,7 +110,7 @@
                                         :component-params component-params
                                         :root-params main-root-params
                                         :child-params-list main-child-params-list)
-      (thf/instantiate-component component-label copy-root-label copy-root-params)))
+      (thc/instantiate-component component-label copy-root-label copy-root-params)))
 
 (defn add-nested-component
   [file component1-label main1-root-label main1-child-label component2-label main2-root-label nested-head-label
@@ -130,11 +131,11 @@
                             :child-params main1-child-params)
       (add-frame main2-root-label (merge {:name "Frame2"}
                                          main2-root-params))
-      (thf/instantiate-component component1-label
+      (thc/instantiate-component component1-label
                                  nested-head-label
                                  (assoc nested-head-params
                                         :parent-label main2-root-label))
-      (thf/make-component component2-label
+      (thc/make-component component2-label
                           main2-root-label
                           component2-params)))
 
@@ -165,4 +166,4 @@
                             :component2-params component2-params
                             :main2-root-params main2-root-params
                             :nested-head-params nested-head-params)
-      (thf/instantiate-component component2-label copy2-label copy2-params)))
+      (thc/instantiate-component component2-label copy2-label copy2-params)))

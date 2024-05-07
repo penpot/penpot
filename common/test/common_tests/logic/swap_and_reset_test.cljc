@@ -11,9 +11,11 @@
    [app.common.types.component :as ctk]
    [app.common.types.file :as  ctf]
    [clojure.test :as t]
-   [common-tests.helpers.compositions :as thc]
+   [common-tests.helpers.components :as thc]
+   [common-tests.helpers.compositions :as tho]
    [common-tests.helpers.files :as thf]
-   [common-tests.helpers.ids-map :as thi]))
+   [common-tests.helpers.ids-map :as thi]
+   [common-tests.helpers.shapes :as ths]))
 
 (t/use-fixtures :each thi/test-fixture)
 
@@ -21,16 +23,16 @@
 (t/deftest test-simple-swap
   (let [;; ==== Setup
         file (-> (thf/sample-file :file1)
-                 (thc/add-simple-component-with-copy :component-1
+                 (tho/add-simple-component-with-copy :component-1
                                                      :component-1-main-root
                                                      :component-1-main-child
                                                      :component-1-copy-root)
-                 (thc/add-simple-component :component-2
+                 (tho/add-simple-component :component-2
                                            :component-2-root
                                            :component-2-child))
 
-        component-1-copy-root (thf/get-shape file :component-1-copy-root)
-        component-2           (thf/get-component file :component-2)
+        component-1-copy-root (ths/get-shape file :component-1-copy-root)
+        component-2           (thc/get-component file :component-2)
         page                  (thf/current-page file)
 
         ;; ==== Action
@@ -49,7 +51,7 @@
         file' (thf/apply-changes file changes)
 
         ;; ==== Get 
-        swapped (thf/get-shape-by-id file' (:id new-shape))]
+        swapped (ths/get-shape-by-id file' (:id new-shape))]
 
     ;; ==== Check
     (t/is (not= (:component-id component-1-copy-root) (:component-id swapped)))
@@ -60,22 +62,22 @@
   (let [;; ==== Setup
         file
         (-> (thf/sample-file :file1)
-            (thc/add-simple-component :component-1 :component-1-main-root :component-1-main-child)
-            (thc/add-frame :component-container)
-            (thf/instantiate-component :component-1 :component-1-copy-root :parent-label :component-container)
-            (thf/make-component :component-container-main :component-container)
-            (thf/instantiate-component :component-container-main :component-container-instance)
-            (thc/add-simple-component :component-2 :component-2-main-root :component-2-main-child))
+            (tho/add-simple-component :component-1 :component-1-main-root :component-1-main-child)
+            (tho/add-frame :component-container)
+            (thc/instantiate-component :component-1 :component-1-copy-root :parent-label :component-container)
+            (thc/make-component :component-container-main :component-container)
+            (thc/instantiate-component :component-container-main :component-container-instance)
+            (tho/add-simple-component :component-2 :component-2-main-root :component-2-main-child))
 
         page        (thf/current-page file)
-        component-2 (thf/get-component file :component-2)
+        component-2 (thc/get-component file :component-2)
 
         copy
         (->>
-         (thf/get-shape file :component-container-instance)
+         (ths/get-shape file :component-container-instance)
          :shapes
          first
-         (thf/get-shape-by-id file))
+         (ths/get-shape-by-id file))
 
         libraries {(:id  file) file}
 
@@ -97,8 +99,8 @@
         page'      (thf/current-page file')
 
         ;; ==== Get
-        swapped               (thf/get-shape-by-id file' (:id new-shape))
-        component-1-copy-root (thf/get-shape file' :component-1-copy-root)
+        swapped               (ths/get-shape-by-id file' (:id new-shape))
+        component-1-copy-root (ths/get-shape file' :component-1-copy-root)
         slot                  (-> (ctf/find-swap-slot swapped
                                                       page'
                                                       file'
@@ -116,23 +118,23 @@
   (let [;; ==== Setup
         file
         (-> (thf/sample-file :file1)
-            (thc/add-simple-component :component-1 :component-1-main-root :component-1-main-child)
-            (thc/add-frame :component-container)
-            (thf/instantiate-component :component-1 :component-1-copy-root :parent-label :component-container)
-            (thf/make-component :component-container-main :component-container)
-            (thf/instantiate-component :component-container-main :component-container-instance)
-            (thc/add-simple-component :component-2 :component-2-main-root :component-2-main-child))
+            (tho/add-simple-component :component-1 :component-1-main-root :component-1-main-child)
+            (tho/add-frame :component-container)
+            (thc/instantiate-component :component-1 :component-1-copy-root :parent-label :component-container)
+            (thc/make-component :component-container-main :component-container)
+            (thc/instantiate-component :component-container-main :component-container-instance)
+            (tho/add-simple-component :component-2 :component-2-main-root :component-2-main-child))
 
         page        (thf/current-page file)
-        component-1 (thf/get-component file :component-1)
-        component-2 (thf/get-component file :component-2)
+        component-1 (thc/get-component file :component-1)
+        component-2 (thc/get-component file :component-2)
 
         copy
         (->>
-         (thf/get-shape file :component-container-instance)
+         (ths/get-shape file :component-container-instance)
          :shapes
          first
-         (thf/get-shape-by-id file))
+         (ths/get-shape-by-id file))
 
         ;; ==== Action
         [new-shape _all-parents changes-swap]
@@ -163,10 +165,10 @@
         ;; ==== Get
         reset
         (->>
-         (thf/get-shape file' :component-container-instance)
+         (ths/get-shape file' :component-container-instance)
          :shapes
          first
-         (thf/get-shape-by-id file'))]
+         (ths/get-shape-by-id file'))]
 
     ;; ==== Check
     (t/is (= (:id component-1) (:component-id reset)))
