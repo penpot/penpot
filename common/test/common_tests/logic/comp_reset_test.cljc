@@ -4,9 +4,10 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns common-tests.logic.components-touched-test
+(ns common-tests.logic.comp-reset-test
   (:require
    [app.common.files.changes-builder :as pcb]
+   [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [clojure.test :as t]
    [common-tests.helpers.components :as thc]
@@ -17,7 +18,7 @@
 
 (t/use-fixtures :each thi/test-fixture)
 
-(t/deftest test-touched-when-changing-attribute
+(t/deftest test-reset-after-changing-attribute
   (let [;; ==== Setup
         file  (-> (thf/sample-file :file1)
                   (tho/add-simple-component-with-copy :component1
@@ -39,6 +40,16 @@
                                               (:objects page)
                                               {})
 
+        file-mdf  (thf/apply-changes file changes)
+        page-mdf  (thf/current-page file-mdf)
+
+        changes   (cll/generate-reset-component (pcb/empty-changes)
+                                                file-mdf
+                                                {(:id file-mdf) file-mdf}
+                                                page-mdf
+                                                (:id copy-root)
+                                                true)
+
         file'     (thf/apply-changes file changes)
 
         ;; ==== Get
@@ -49,12 +60,12 @@
 
     ;; ==== Check
     (t/is (= (count fills') 1))
-    (t/is (= (:fill-color fill') "#fabada"))
+    (t/is (= (:fill-color fill') "#abcdef"))
     (t/is (= (:fill-opacity fill') 1))
     (t/is (= (:touched copy-root') nil))
-    (t/is (= (:touched copy-child') #{:fill-group}))))
+    (t/is (= (:touched copy-child') nil))))
 
-(t/deftest test-touched-from-library
+(t/deftest test-reset-from-library
   (let [;; ==== Setup
         library (-> (thf/sample-file :library :is-shared true)
                     (tho/add-simple-component :component1 :main-root :main-child
@@ -77,6 +88,17 @@
                                               (:objects page)
                                               {})
 
+        file-mdf  (thf/apply-changes file changes)
+        page-mdf  (thf/current-page file-mdf)
+
+        changes   (cll/generate-reset-component (pcb/empty-changes)
+                                                file-mdf
+                                                {(:id file-mdf) file-mdf
+                                                 (:id library) library}
+                                                page-mdf
+                                                (:id copy-root)
+                                                true)
+
         file'     (thf/apply-changes file changes)
 
         ;; ==== Get
@@ -87,12 +109,12 @@
 
     ;; ==== Check
     (t/is (= (count fills') 1))
-    (t/is (= (:fill-color fill') "#fabada"))
+    (t/is (= (:fill-color fill') "#abcdef"))
     (t/is (= (:fill-opacity fill') 1))
     (t/is (= (:touched copy-root') nil))
-    (t/is (= (:touched copy-child') #{:fill-group}))))
+    (t/is (= (:touched copy-child') nil))))
 
-(t/deftest test-not-touched-when-adding-shape
+(t/deftest test-reset-after-adding-shape
   (let [;; ==== Setup
         file (-> (thf/sample-file :file1)
                  (tho/add-simple-component-with-copy :component1
@@ -116,6 +138,16 @@
                                               0                        ; to-index
                                               #{(thi/id :free-shape)}) ; ids
 
+        file-mdf  (thf/apply-changes file changes)
+        page-mdf  (thf/current-page file-mdf)
+
+        changes   (cll/generate-reset-component (pcb/empty-changes)
+                                                file-mdf
+                                                {(:id file-mdf) file-mdf}
+                                                page-mdf
+                                                (:id copy-root)
+                                                true)
+
         file'   (thf/apply-changes file changes)
 
         ;; ==== Get
@@ -126,7 +158,7 @@
     (t/is (= (:touched copy-root') nil))
     (t/is (= (:touched copy-child') nil))))
 
-(t/deftest test-not-touched-when-deleting-shape
+(t/deftest test-reset-after-deleting-shape
   (let [;; ==== Setup
         file       (-> (thf/sample-file :file1)
                        (tho/add-simple-component-with-copy :component1
@@ -149,6 +181,16 @@
                                     (set (:shapes copy-root))
                                     {:components-v2 true})
 
+        file-mdf  (thf/apply-changes file changes)
+        page-mdf  (thf/current-page file-mdf)
+
+        changes   (cll/generate-reset-component (pcb/empty-changes)
+                                                file-mdf
+                                                {(:id file-mdf) file-mdf}
+                                                page-mdf
+                                                (:id copy-root)
+                                                true)
+
         file'   (thf/apply-changes file changes)
 
         ;; ==== Get
@@ -157,9 +199,9 @@
 
     ;; ==== Check
     (t/is (= (:touched copy-root') nil))
-    (t/is (= (:touched copy-child') #{:visibility-group}))))
+    (t/is (= (:touched copy-child') nil))))
 
-(t/deftest test-not-touched-when-moving-shape
+(t/deftest test-reset-after-moving-shape
   (let [;; ==== Setup
         file (-> (thf/sample-file :file1)
                  (tho/add-component-with-many-children-and-copy :component1
@@ -184,6 +226,16 @@
                                               2                        ; to-index
                                               #{(:id copy-child1)}) ; ids
 
+        file-mdf  (thf/apply-changes file changes)
+        page-mdf  (thf/current-page file-mdf)
+
+        changes   (cll/generate-reset-component (pcb/empty-changes)
+                                                file-mdf
+                                                {(:id file-mdf) file-mdf}
+                                                page-mdf
+                                                (:id copy-root)
+                                                true)
+
         file'   (thf/apply-changes file changes)
 
         ;; ==== Get
@@ -194,7 +246,7 @@
     (t/is (= (:touched copy-root') nil))
     (t/is (= (:touched copy-child') nil))))
 
-(t/deftest test-touched-when-changing-upper
+(t/deftest test-reset-after-changing-upper
   (let [;; ==== Setup
         file   (-> (thf/sample-file :file1)
                    (tho/add-nested-component-with-copy :component1
@@ -219,6 +271,16 @@
                                               (:objects page)
                                               {})
 
+        file-mdf  (thf/apply-changes file changes)
+        page-mdf  (thf/current-page file-mdf)
+
+        changes   (cll/generate-reset-component (pcb/empty-changes)
+                                                file-mdf
+                                                {(:id file-mdf) file-mdf}
+                                                page-mdf
+                                                (:id copy2-root)
+                                                true)
+
         file'     (thf/apply-changes file changes)
 
         ;; ==== Get
@@ -228,11 +290,11 @@
 
     ;; ==== Check
     (t/is (= (count fills') 1))
-    (t/is (= (:fill-color fill') "#fabada"))
+    (t/is (= (:fill-color fill') "#abcdef"))
     (t/is (= (:fill-opacity fill') 1))
-    (t/is (= (:touched copy2-root') #{:fill-group}))))
+    (t/is (= (:touched copy2-root') nil))))
 
-(t/deftest test-touched-when-changing-lower
+(t/deftest test-reset-after-changing-lower
   (let [;; ==== Setup
         file   (-> (thf/sample-file :file1)
                    (tho/add-nested-component-with-copy :component1
@@ -255,6 +317,16 @@
                                               (:objects page)
                                               {})
 
+        file-mdf  (thf/apply-changes file changes)
+        page-mdf  (thf/current-page file-mdf)
+
+        changes   (cll/generate-reset-component (pcb/empty-changes)
+                                                file-mdf
+                                                {(:id file-mdf) file-mdf}
+                                                page-mdf
+                                                (:id copy2-root)
+                                                true)
+
         file'     (thf/apply-changes file changes)
 
         ;; ==== Get
@@ -265,7 +337,7 @@
 
     ;; ==== Check
     (t/is (= (count fills') 1))
-    (t/is (= (:fill-color fill') "#fabada"))
+    (t/is (= (:fill-color fill') "#FFFFFF"))
     (t/is (= (:fill-opacity fill') 1))
     (t/is (= (:touched copy2-root') nil))
-    (t/is (= (:touched copy2-child') #{:fill-group}))))
+    (t/is (= (:touched copy2-child') nil))))
