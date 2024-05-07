@@ -1697,7 +1697,7 @@
     (assoc change :page-id (:id container))
     (assoc change :component-id (:id container))))
 
-(defn- generate-add-component-changes
+(defn generate-add-component-changes
   [changes root objects file-id page-id components-v2]
   (let [name (:name root)
         [path name] (cfh/parse-path-name name)
