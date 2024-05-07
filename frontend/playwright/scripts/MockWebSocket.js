@@ -11,20 +11,15 @@ window.WebSocket = class MockWebSocket extends EventTarget {
   }
 
   static getByURL(url) {
-    return this.#mocks.get(url);
-  }
-
-  static waitForURL(url) {
-    return new Promise((resolve) => {
-      let intervalID = setInterval(() => {
-        for (const [wsURL, ws] of this.#mocks) {
-          if (wsURL.includes(url)) {
-            clearInterval(intervalID);
-            resolve(ws);
-          }
-        }
-      }, 30);
-    });
+    if (this.#mocks.has(url)) {
+      return this.#mocks.get(url);
+    }
+    for (const [wsURL, ws] of this.#mocks) {
+      if (wsURL.includes(url)) {
+        return ws;
+      }
+    }
+    return undefined;
   }
 
   #url;

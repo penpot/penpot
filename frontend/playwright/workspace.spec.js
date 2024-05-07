@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { interceptRPC, interceptRPCByRegex } from "./helpers/MockAPI";
-import { WebSocketManager } from "./helpers/MockWebSocket";
+import { MockWebSocket } from "./helpers/MockWebSocket";
 import { presenceFixture } from "./fixtures/workspace/ws-notifications";
 
 const anyProjectId = "c7ce0794-0992-8105-8004-38e630f7920b";
@@ -30,7 +30,7 @@ const setupWorkspaceUser = (page) => {
 };
 
 test.beforeEach(async ({ page }) => {
-  await WebSocketManager.init(page);
+  await MockWebSocket.init(page);
 });
 
 test("User loads worskpace with empty file", async ({ page }) => {
@@ -45,13 +45,15 @@ test.only("User receives notifications updates in the workspace", async ({ page 
   await setupWorkspaceUser(page);
   await page.goto(`/#/workspace/${anyProjectId}/${anyFileId}?page-id=${anyPageId}`);
 
-  await page.evaluate(async () => {
-    const ws = await WebSocket.waitForURL("ws://0.0.0.0:3500/ws/notifications");
-    ws.mockOpen();
-  });
+  const ws = await MockWebSocket.waitForURL("ws://0.0.0.0:3500/ws/notifications")
+  await ws.mockOpen();
+  console.log('JEEEEEE', ws)
 
   await expect(page.getByTestId("page-name")).toHaveText("Page 1");
 
+  await ws.mockMessage(JSON.stringify(presenceFixture));
+
+  /*
   await page.evaluate(
     async ({ presenceFixture }) => {
       const ws = await WebSocket.waitForURL("ws://0.0.0.0:3500/ws/notifications");
@@ -59,11 +61,16 @@ test.only("User receives notifications updates in the workspace", async ({ page 
     },
     { presenceFixture },
   );
+  */
 
-  expect(page.getByTestId("active-users-list").getByAltText("Princesa Leia")).toHaveCount(2);
+  await expect(page.getByTestId("active-users-list").getByAltText("Princesa Leia")).toHaveCount(2);
 
+  await ws.mockClose();
+
+  /*
   await page.evaluate(async () => {
     const ws = await WebSocket.waitForURL("ws://0.0.0.0:3500/ws/notifications");
     ws.mockClose();
   });
+  */
 });
