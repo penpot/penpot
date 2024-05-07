@@ -13,9 +13,9 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cph]
    [app.common.logging :as log]
+   [app.common.logic.shapes :as cls]
    [app.common.schema :as sm]
    [app.common.types.shape-tree :as ctst]
-   [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
@@ -74,23 +74,19 @@
                   (filter #(some update-layout-attr? (pcb/changed-attrs % objects update-fn {:attrs attrs :with-objects? with-objects?})))
                   (map :id))
 
-             changes   (reduce
-                        (fn [changes id]
-                          (let [opts {:attrs attrs
-                                      :ignore-geometry? (get ignore-tree id)
-                                      :ignore-touched ignore-touched
-                                      :with-objects? with-objects?}]
-                            (pcb/update-shapes changes [id] update-fn (d/without-nils opts))))
-                        (-> (pcb/empty-changes it page-id)
-                            (pcb/set-save-undo? save-undo?)
-                            (pcb/set-stack-undo? stack-undo?)
-                            (pcb/with-objects objects)
-                            (cond-> undo-group
-                              (pcb/set-undo-group undo-group)))
-                        ids)
-             grid-ids (->> ids (filter (partial ctl/grid-layout? objects)))
-             changes (pcb/update-shapes changes grid-ids ctl/assign-cell-positions {:with-objects? true})
-             changes (pcb/reorder-grid-children changes ids)
+             changes (-> (pcb/empty-changes it page-id)
+                         (pcb/set-save-undo? save-undo?)
+                         (pcb/set-stack-undo? stack-undo?)
+                         (cls/generate-update-shapes ids
+                                                     update-fn
+                                                     objects
+                                                     {:attrs attrs
+                                                      :ignore-tree ignore-tree
+                                                      :ignore-touched ignore-touched
+                                                      :with-objects? with-objects?})
+                         (cond-> undo-group
+                           (pcb/set-undo-group undo-group)))
+
              changes (add-undo-group changes state)]
          (rx/concat
           (if (seq (:redo-changes changes))

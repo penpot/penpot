@@ -5,7 +5,7 @@ test("Has title", async ({ page }) => {
     route.fulfill({
       status: 200,
       contentType: "application/transit+json",
-      path: "playwright/fixtures/get-profile-anonymous.json",
+      path: "playwright/data/get-profile-anonymous.json",
     });
   });
   await page.goto("/");

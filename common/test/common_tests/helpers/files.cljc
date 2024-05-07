@@ -6,150 +6,153 @@
 
 (ns common-tests.helpers.files
   (:require
+   [app.common.data :as d]
    [app.common.features :as ffeat]
-   [app.common.geom.point :as gpt]
-   [app.common.types.colors-list :as ctcl]
-   [app.common.types.components-list :as ctkl]
-   [app.common.types.container :as ctn]
+   [app.common.files.changes :as cfc]
+   [app.common.files.validate :as cfv]
+   [app.common.pprint :refer [pprint]]
    [app.common.types.file :as ctf]
+   [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
-   [app.common.types.shape :as cts]
-   [app.common.types.shape-tree :as ctst]
-   [app.common.types.typographies-list :as ctyl]
-   [app.common.uuid :as uuid]))
+   [app.common.uuid :as uuid]
+   [common-tests.helpers.ids-map :as thi]
+   [cuerdas.core :as str]))
 
-(defn- make-file-data
-  [file-id page-id]
-  (binding [ffeat/*current* #{"components/v2"}]
-    (ctf/make-file-data file-id page-id)))
-
-(def ^:private idmap (atom {}))
-
-(defn reset-idmap!
-  [next]
-  (reset! idmap {})
-  (next))
-
-(defn id
-  [label]
-  (get @idmap label))
+;; ----- Files
 
 (defn sample-file
-  ([file-id page-id] (sample-file file-id page-id nil))
-  ([file-id page-id props]
-   (merge {:id file-id
-           :name (get props :name "File1")
-           :data (make-file-data file-id page-id)}
-          props)))
+  [label & {:keys [page-label name] :as params}]
+  (binding [ffeat/*current* #{"components/v2"}]
+    (let [params (cond-> params
+                   label
+                   (assoc :id (thi/new-id! label))
 
-(defn sample-shape
-  [file label type page-id props]
-  (ctf/update-file-data
-   file
-   (fn [file-data]
-     (let [frame-id  (get props :frame-id uuid/zero)
-           parent-id (get props :parent-id uuid/zero)
-           shape     (cts/setup-shape
-                      (-> {:type type
-                           :width 1
-                           :height 1}
-                          (merge props)))]
+                   page-label
+                   (assoc :page-id (thi/new-id! page-label))
 
-       (swap! idmap assoc label (:id shape))
-       (ctpl/update-page file-data
-                         page-id
-                         #(ctst/add-shape (:id shape)
-                                          shape
-                                          %
-                                          frame-id
-                                          parent-id
-                                          0
-                                          true))))))
+                   (nil? name)
+                   (assoc :name "Test file"))
 
-(defn sample-component
-  [file label page-id shape-id]
-  (ctf/update-file-data
-   file
-   (fn [file-data]
-     (let [page (ctpl/get-page file-data page-id)
+          file (-> (ctf/make-file (dissoc params :page-label))
+                   (assoc :features #{"components/v2"}))
 
-           [component-shape component-shapes updated-shapes]
-           (ctn/make-component-shape (ctn/get-shape page shape-id)
-                                     (:objects page)
-                                     (:id file)
-                                     true)]
+          page (-> file
+                   :data
+                   (ctpl/pages-seq)
+                   (first))]
 
-       (swap! idmap assoc label (:id component-shape))
-       (-> file-data
-           (ctpl/update-page page-id
-                             #(reduce (fn [page shape] (ctst/set-shape page shape))
-                                      %
-                                      updated-shapes))
-           (ctkl/add-component {:id (:id component-shape)
-                                :name (:name component-shape)
-                                :path ""
-                                :main-instance-id shape-id
-                                :main-instance-page page-id
-                                :shapes component-shapes}))))))
+      (with-meta file
+        {:current-page-id (:id page)}))))
 
-(defn sample-instance
-  [file label page-id library component-id]
-  (ctf/update-file-data
-   file
-   (fn [file-data]
-     (let [[instance-shape instance-shapes]
-           (ctn/make-component-instance (ctpl/get-page file-data page-id)
-                                        (ctkl/get-component (:data library) component-id)
-                                        (:data library)
-                                        (gpt/point 0 0)
-                                        true)]
+(defn validate-file!
+  ([file] (validate-file! file {}))
+  ([file libraries]
+   (cfv/validate-file-schema! file)
+   (cfv/validate-file! file libraries)))
 
-       (swap! idmap assoc label (:id instance-shape))
-       (-> file-data
-           (ctpl/update-page page-id
-                             #(reduce (fn [page shape]
-                                        (ctst/add-shape (:id shape)
-                                                        shape
-                                                        page
-                                                        uuid/zero
-                                                        (:parent-id shape)
-                                                        0
-                                                        true))
-                                      %
-                                      instance-shapes)))))))
+(defn apply-changes
+  [file changes]
+  (let [file' (ctf/update-file-data file #(cfc/process-changes % (:redo-changes changes) true))]
+    (validate-file! file')
+    file'))
 
-(defn sample-color
-  [file label props]
-  (ctf/update-file-data
-   file
-   (fn [file-data]
-     (let [id (uuid/next)
-           props (merge {:id id
-                         :name "Color 1"
-                         :color "#000000"
-                         :opacity 1}
-                        props)]
-       (swap! idmap assoc label id)
-       (ctcl/add-color file-data props)))))
+;; ----- Pages
 
-(defn sample-typography
-  [file label props]
-  (ctf/update-file-data
-   file
-   (fn [file-data]
-     (let [id (uuid/next)
-           props (merge {:id id
-                         :name "Typography 1"
-                         :font-id "sourcesanspro"
-                         :font-family "sourcesanspro"
-                         :font-size "14"
-                         :font-style "normal"
-                         :font-variant-id "regular"
-                         :font-weight "400"
-                         :line-height "1.2"
-                         :letter-spacing "0"
-                         :text-transform "none"}
-                        props)]
-       (swap! idmap assoc label id)
-       (ctyl/add-typography file-data props)))))
+(defn sample-page
+  [label & {:keys [] :as params}]
+  (ctp/make-empty-page (assoc params :id (thi/new-id! label))))
 
+(defn add-sample-page
+  [file label & {:keys [] :as params}]
+  (let [page (sample-page label params)]
+    (-> file
+        (ctf/update-file-data #(ctpl/add-page % page))
+        (vary-meta assoc :current-page-id (:id page)))))
+
+(defn get-page
+  [file label]
+  (ctpl/get-page (:data file) (thi/id label)))
+
+(defn current-page-id
+  [file]
+  (:current-page-id (meta file)))
+
+(defn current-page
+  [file]
+  (ctpl/get-page (:data file) (current-page-id file)))
+
+(defn switch-to-page
+  [file label]
+  (vary-meta file assoc :current-page-id (thi/id label)))
+
+;; ----- Debug
+
+(defn dump-file-type
+  "Dump a file using dump-tree function in common.types.file."
+  [file & {:keys [page-label libraries] :as params}]
+  (let [params    (-> params
+                      (or {:show-ids true :show-touched true})
+                      (dissoc page-label libraries))
+        page      (if (some? page-label)
+                    (:id (get-page file page-label))
+                    (current-page-id file))
+        libraries (or libraries {})]
+
+    (ctf/dump-tree file page libraries params)))
+
+(defn pprint-file
+  "Pretry print a file trying to limit the quantity of info shown."
+  [file & {:keys [level length] :or {level 10 length 1000}}]
+  (pprint file {:level level :length length}))
+
+(defn dump-shape
+  "Dump a shape, with each attribute in a line."
+  [shape]
+  (println "{")
+  (doseq [[k v] (sort shape)]
+    (when (some? v)
+      (println (str "    " k " : " v))))
+  (println "}"))
+
+(defn- stringify-keys [m keys]
+  (apply str (interpose ", " (map #(str % ": " (get m %)) keys))))
+
+(defn- dump-page-shape
+  [shape keys padding]
+  (println (str/pad (str padding
+                         (when (:main-instance shape) "{")
+                         (or (thi/label (:id shape)) "<no-label>")
+                         (when (:main-instance shape) "}")
+                         (when keys
+                           (str " [" (stringify-keys shape keys) "]")))
+                    {:length 40 :type :right})
+           (if (nil? (:shape-ref shape))
+             (if (:component-root shape)
+               (str "# [Component " (or (thi/label (:component-id shape)) "<no-label>") "]")
+               "")
+             (str/format "%s--> %s%s"
+                         (cond (:component-root shape) "#"
+                               (:component-id shape) "@"
+                               :else "-")
+                         (if (:component-root shape)
+                           (str "[Component " (or (thi/label (:component-id shape)) "<no-label>") "] ")
+                           "")
+                         (or (thi/label (:shape-ref shape)) "<no-label>")))))
+
+(defn dump-page
+  "Dump the layer tree of the page. Print the label of each shape, and the specified keys."
+  ([page keys]
+   (dump-page page uuid/zero "" keys))
+  ([page root-id padding keys]
+   (let [lookupf (d/getf (:objects page))
+         root-shape (lookupf root-id)
+         shapes (map lookupf (:shapes root-shape))]
+     (doseq [shape shapes]
+       (dump-page-shape shape keys padding)
+       (dump-page page (:id shape) (str padding "    ") keys)))))
+
+(defn dump-file
+  "Dump the current page of the file, using dump-page above.
+   Example: (thf/dump-file file [:id :touched])"
+  ([file] (dump-file file []))
+  ([file keys] (dump-page (current-page file) keys)))

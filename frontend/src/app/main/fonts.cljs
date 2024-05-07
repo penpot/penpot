@@ -133,7 +133,10 @@
 (defn- fetch-gfont-css
   [url]
   (->> (http/send! {:method :get :uri url :mode :cors :response-type :text})
-       (rx/map :body)))
+       (rx/map :body)
+       (rx/catch (fn [err]
+                   (.warn js/console "Cannot find the font" (obj/get err "message"))
+                   (rx/empty)))))
 
 (defmethod load-font :google
   [{:keys [id ::on-loaded] :as font}]

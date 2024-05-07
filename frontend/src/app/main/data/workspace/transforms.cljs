@@ -18,6 +18,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.flex-layout :as gslf]
    [app.common.geom.shapes.grid-layout :as gslg]
+   [app.common.logic.shapes :as cls]
    [app.common.math :as mth]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
@@ -831,129 +832,14 @@
                                      :ignore-constraints false
                                      :ignore-snap-pixel true}))))))
 
-(defn- move-shapes-to-frame
-  [ids frame-id drop-index [row column :as cell]]
+(defn move-shapes-to-frame
+  [ids frame-id drop-index cell]
   (ptk/reify ::move-shapes-to-frame
     ptk/WatchEvent
     (watch [it state _]
-      (let [page-id  (:current-page-id state)
-            objects  (wsh/lookup-page-objects state page-id)
-            lookup   (d/getf objects)
-            frame    (get objects frame-id)
-            layout?  (:layout frame)
-
-            component-main-frame (ctn/find-component-main objects frame false)
-
-            shapes (->> ids
-                        (cfh/clean-loops objects)
-                        (keep lookup)
-                        ;;remove shapes inside copies, because we can't change the structure of copies
-                        (remove #(ctk/in-component-copy? (get objects (:parent-id %)))))
-
-            moving-shapes
-            (cond->> shapes
-              (not layout?)
-              (remove #(= (:frame-id %) frame-id))
-
-              layout?
-              (remove #(and (= (:frame-id %) frame-id)
-                            (not= (:parent-id %) frame-id))))
-
-            ordered-indexes (cfh/order-by-indexed-shapes objects (map :id moving-shapes))
-            moving-shapes (map (d/getf objects) ordered-indexes)
-
-            all-parents
-            (reduce (fn [res id]
-                      (into res (cfh/get-parent-ids objects id)))
-                    (d/ordered-set)
-                    ids)
-
-            find-all-empty-parents
-            (fn recursive-find-empty-parents [empty-parents]
-              (let [all-ids   (into empty-parents ids)
-                    contains? (partial contains? all-ids)
-                    xform     (comp (map lookup)
-                                    (filter cfh/group-shape?)
-                                    (remove #(->> (:shapes %) (remove contains?) seq))
-                                    (map :id))
-                    parents   (into #{} xform all-parents)]
-                (if (= empty-parents parents)
-                  empty-parents
-                  (recursive-find-empty-parents parents))))
-
-            empty-parents
-            ;; Any empty parent whose children are moved to another frame should be deleted
-            (if (empty? moving-shapes)
-              #{}
-              (into (d/ordered-set) (find-all-empty-parents #{})))
-
-            ;; Not move absolute shapes that won't change parent
-            moving-shapes
-            (->> moving-shapes
-                 (remove (fn [shape]
-                           (and (ctl/position-absolute? shape)
-                                (= frame-id (:parent-id shape))))))
-
-            frame-component
-            (ctn/get-component-shape objects frame)
-
-            shape-ids-to-detach
-            (reduce (fn [result shape]
-                      (if (and (some? shape) (ctk/in-component-copy-not-head? shape))
-                        (let [shape-component (ctn/get-component-shape objects shape)]
-                          (if (= (:id frame-component) (:id shape-component))
-                            result
-                            (into result (cfh/get-children-ids-with-self objects (:id shape)))))
-                        result))
-                    #{}
-                    moving-shapes)
-
-            moving-shapes-ids
-            (map :id moving-shapes)
-
-            moving-shapes-children-ids
-            (->> moving-shapes-ids
-                 (mapcat #(cfh/get-children-ids-with-self objects %)))
-
-            child-heads
-            (->> moving-shapes-ids
-                 (mapcat #(ctn/get-child-heads objects %))
-                 (map :id))
-
-            changes
-            (-> (pcb/empty-changes it page-id)
-                (pcb/with-objects objects)
-                ;; Remove layout-item properties when moving a shape outside a layout
-                (cond-> (not (ctl/any-layout? objects frame-id))
-                  (pcb/update-shapes moving-shapes-ids ctl/remove-layout-item-data))
-                ;; Remove the swap slots if it is moving to a different component
-                (pcb/update-shapes child-heads
-                                   (fn [shape]
-                                     (cond-> shape
-                                       (not= component-main-frame (ctn/find-component-main objects shape false))
-                                       (ctk/remove-swap-slot))))
-                ;; Remove component-root property when moving a shape inside a component
-                (cond-> (ctn/get-instance-root objects frame)
-                  (pcb/update-shapes moving-shapes-children-ids #(dissoc % :component-root)))
-                ;; Add component-root property when moving a component outside a component
-                (cond-> (not (ctn/get-instance-root objects frame))
-                  (pcb/update-shapes child-heads #(assoc % :component-root true)))
-                (pcb/update-shapes moving-shapes-ids #(cond-> % (cfh/frame-shape? %) (assoc :hide-in-viewer true)))
-                (pcb/update-shapes shape-ids-to-detach ctk/detach-shape)
-                (pcb/change-parent frame-id moving-shapes drop-index)
-                (cond-> (ctl/grid-layout? objects frame-id)
-                  (-> (pcb/update-shapes
-                       [frame-id]
-                       (fn [frame objects]
-                         (-> frame
-                             ;; Assign the cell when pushing into a specific grid cell
-                             (cond-> (some? cell)
-                               (-> (ctl/push-into-cell moving-shapes-ids row column)
-                                   (ctl/assign-cells objects)))
-                             (ctl/assign-cell-positions objects)))
-                       {:with-objects? true})
-                      (pcb/reorder-grid-children [frame-id])))
-                (pcb/remove-objects empty-parents))]
+      (let [page-id (:current-page-id state)
+            objects (wsh/lookup-page-objects state page-id)
+            changes (cls/generate-move-shapes-to-frame (pcb/empty-changes it) ids frame-id page-id objects drop-index cell)]
 
         (when (and (some? frame-id) (d/not-empty? changes))
           (rx/of (dch/commit-changes changes)

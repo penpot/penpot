@@ -1281,6 +1281,21 @@
   (let [cells+index (d/enumerate cells)]
     (d/seek #(in-cell? (second %) row column) cells+index)))
 
+(defn free-cell-shapes
+  "Removes the shape-ids from the cells previously assigned."
+  [parent shape-ids]
+  (let [shape-ids (set shape-ids)]
+    (letfn [(free-cells
+              [cells]
+              (reduce-kv
+               (fn [m k v]
+                 (if (some shape-ids (:shapes v))
+                   (assoc-in m [k :shapes] [])
+                   m))
+               cells
+               cells))]
+      (update parent :layout-grid-cells free-cells))))
+
 (defn push-into-cell
   "Push the shapes into the row/column cell and moves the rest"
   [parent shape-ids row column]
@@ -1295,16 +1310,17 @@
         ;; Move shift the `shapes` attribute between cells
         (->> (range start-index (inc to-index))
              (map vector shape-ids)
-             (reduce (fn [[parent cells] [shape-id idx]]
-                       ;; If the shape to put in a cell is the same that is already in the cell we do nothing
-                       (if (= shape-id (get-in parent [:layout-grid-cells (get-in cells [idx :id]) :shapes 0]))
-                         [parent cells]
-                         (let [[parent cells] (free-cell-push parent cells idx)]
-                           [(update-in parent [:layout-grid-cells (get-in cells [idx :id])]
-                                       assoc :position :manual
-                                       :shapes [shape-id])
-                            cells])))
-                     [parent cells])
+             (reduce
+              (fn [[parent cells] [shape-id idx]]
+                ;; If the shape to put in a cell is the same that is already in the cell we do nothing
+                (if (= shape-id (get-in parent [:layout-grid-cells (get-in cells [idx :id]) :shapes 0]))
+                  [parent cells]
+                  (let [[parent cells] (free-cell-push parent cells idx)]
+                    [(update-in parent [:layout-grid-cells (get-in cells [idx :id])]
+                                assoc :position :manual
+                                :shapes [shape-id])
+                     cells])))
+              [parent cells])
              (first)))
       parent)))
 

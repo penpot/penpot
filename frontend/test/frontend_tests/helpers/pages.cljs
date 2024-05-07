@@ -9,9 +9,9 @@
    [app.common.files.changes :as cp]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
-   [app.common.files.libraries-helpers :as cflh]
    [app.common.files.shapes-helpers :as cfsh]
    [app.common.geom.point :as gpt]
+   [app.common.logic.libraries :as cll]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.groups :as dwg]
@@ -132,14 +132,14 @@
         shapes  (dwg/shapes-for-grouping objects shape-ids)
 
         [group component-id changes]
-        (cflh/generate-add-component (pcb/empty-changes nil)
-                                     shapes
-                                     (:objects page)
-                                     (:id page)
-                                     current-file-id
-                                     true
-                                     dwg/prepare-create-group
-                                     cfsh/prepare-create-artboard-from-selection)]
+        (cll/generate-add-component (pcb/empty-changes nil)
+                                    shapes
+                                    (:objects page)
+                                    (:id page)
+                                    current-file-id
+                                    true
+                                    dwg/prepare-create-group
+                                    cfsh/prepare-create-artboard-from-selection)]
 
     (swap! idmap assoc instance-label (:id group)
            component-label component-id)
@@ -158,13 +158,13 @@
                        (pcb/with-objects objects))
 
          [new-shape changes]
-         (cflh/generate-instantiate-component changes
-                                              objects
-                                              file-id
-                                              component-id
-                                              (gpt/point 100 100)
-                                              page
-                                              libraries)]
+         (cll/generate-instantiate-component changes
+                                             objects
+                                             file-id
+                                             component-id
+                                             (gpt/point 100 100)
+                                             page
+                                             libraries)]
 
      (swap! idmap assoc label (:id new-shape))
      (update state :workspace-data

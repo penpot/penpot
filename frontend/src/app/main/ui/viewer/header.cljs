@@ -332,7 +332,7 @@
                   :title (tr "viewer.header.comments-section" (sc/get-tooltip :open-comments))}
          i/comments])
 
-      (when (or (= (:type permissions) :membership)
+      (when (or (:in-team permissions)
                 (and (= (:type permissions) :share-link)
                      (= (:who-inspect permissions) "all")))
         [:button {:on-click go-to-inspect

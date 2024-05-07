@@ -6,8 +6,10 @@
 
 (ns app.common.types.typography
   (:require
+   [app.common.data :as d]
    [app.common.schema :as sm]
-   [app.common.text :as txt]))
+   [app.common.text :as txt]
+   [app.common.uuid :as uuid]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMA
@@ -35,6 +37,23 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn make-typography
+  [{:keys [id name path font-id font-family font-variant-id font-size
+           font-weight font-style line-height letter-spacing text-transform]}]
+  (-> {:id (or id (uuid/next))
+       :name (or name "Typography 1")
+       :path path
+       :font-id (or font-id "sourcesanspro")
+       :font-family (or font-family "sourcesanspro")
+       :font-variant-id (or font-variant-id "regular")
+       :font-size (or font-size "14")
+       :font-weight (or font-weight "480")
+       :font-style (or font-style "normal")
+       :line-height (or line-height "1.2")
+       :letter-spacing (or letter-spacing "0")
+       :text-transform (or text-transform "none")}
+      (d/without-nils)))
 
 (defn uses-library-typographies?
   "Check if the shape uses any typography in the given library."

@@ -6,13 +6,10 @@
 
 (ns app.rpc.commands.files-create
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.features :as cfeat]
-   [app.common.files.defaults :refer [version]]
    [app.common.schema :as sm]
    [app.common.types.file :as ctf]
-   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.features.fdata :as feat.fdata]
@@ -40,7 +37,7 @@
 (defn create-file
   [{:keys [::db/conn] :as cfg}
    {:keys [id name project-id is-shared revn
-           modified-at deleted-at create-page
+           modified-at deleted-at create-page page-id
            ignore-sync-until features]
     :or {is-shared false revn 0 create-page true}
     :as params}]
@@ -51,23 +48,17 @@
 
   (binding [pmap/*tracked* (pmap/create-tracked)
             cfeat/*current* features]
-    (let [id       (or id (uuid/next))
-
-          data     (if create-page
-                     (ctf/make-file-data id)
-                     (ctf/make-file-data id nil))
-
-          file     {:id id
-                    :project-id project-id
-                    :name name
-                    :revn revn
-                    :is-shared is-shared
-                    :version version
-                    :data data
-                    :features features
-                    :ignore-sync-until ignore-sync-until
-                    :modified-at modified-at
-                    :deleted-at deleted-at}
+    (let [file     (ctf/make-file {:id id
+                                   :project-id project-id
+                                   :name name
+                                   :revn revn
+                                   :is-shared is-shared
+                                   :features features
+                                   :ignore-sync-until ignore-sync-until
+                                   :modified-at modified-at
+                                   :deleted-at deleted-at
+                                   :create-page create-page
+                                   :page-id page-id})
 
           file     (if (contains? features "fdata/objects-map")
                      (feat.fdata/enable-objects-map file)
@@ -75,9 +66,7 @@
 
           file     (if (contains? features "fdata/pointer-map")
                      (feat.fdata/enable-pointer-map file)
-                     file)
-
-          file     (d/without-nils file)]
+                     file)]
 
       (db/insert! conn :file
                   (-> file
@@ -86,9 +75,9 @@
                   {::db/return-keys false})
 
       (when (contains? features "fdata/pointer-map")
-        (feat.fdata/persist-pointers! cfg id))
+        (feat.fdata/persist-pointers! cfg (:id file)))
 
-      (->> (assoc params :file-id id :role :owner)
+      (->> (assoc params :file-id (:id file) :role :owner)
            (create-file-role! conn))
 
       (db/update! conn :project

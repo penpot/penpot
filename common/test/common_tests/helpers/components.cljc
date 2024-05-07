@@ -6,141 +6,148 @@
 
 (ns common-tests.helpers.components
   (:require
+   [app.common.data.macros :as dm]
+   [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
+   [app.common.geom.point :as gpt]
+   [app.common.logic.libraries :as cll]
    [app.common.types.component :as ctk]
+   [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
-   [clojure.test :as t]))
+   [app.common.types.pages-list :as ctpl]
+   [app.common.types.shape-tree :as ctst]
+   [common-tests.helpers.files :as thf]
+   [common-tests.helpers.ids-map :as thi]
+   [common-tests.helpers.shapes :as ths]))
 
-;; ---- Helpers to manage libraries and synchronization
+(defn make-component
+  [file label root-label & {:keys [] :as params}]
+  (let [page (thf/current-page file)
+        root (ths/get-shape file root-label)]
 
-(defn check-instance-root
-  [shape]
-  (t/is (some? (:shape-ref shape)))
-  (t/is (some? (:component-id shape)))
-  (t/is (= (:component-root shape) true)))
+    (dm/assert!
+     "Need that root is already a frame"
+     (cfh/frame-shape? root))
 
-(defn check-instance-subroot
-  [shape]
-  (t/is (some? (:shape-ref shape)))
-  (t/is (some? (:component-id shape)))
-  (t/is (nil? (:component-root shape))))
+    (let [[_new-root _new-shapes updated-shapes]
+          (ctn/convert-shape-in-component root (:objects page) (:id file))
 
-(defn check-instance-child
-  [shape]
-  (t/is (some? (:shape-ref shape)))
-  (t/is (nil? (:component-id shape)))
-  (t/is (nil? (:component-file shape)))
-  (t/is (nil? (:component-root shape))))
+          updated-root (first updated-shapes)] ; Can't use new-root because it has a new id
 
-(defn check-instance-inner
-  [shape]
-  (if (some? (:component-id shape))
-    (check-instance-subroot shape)
-    (check-instance-child shape)))
+      (thi/set-id! label (:component-id updated-root))
 
-(defn check-noninstance
-  [shape]
-  (t/is (nil? (:shape-ref shape)))
-  (t/is (nil? (:component-id shape)))
-  (t/is (nil? (:component-file shape)))
-  (t/is (nil? (:component-root shape)))
-  (t/is (nil? (:remote-synced? shape)))
-  (t/is (nil? (:touched shape))))
+      (ctf/update-file-data
+       file
+       (fn [file-data]
+         (as-> file-data $
+           (reduce (fn [file-data shape]
+                     (ctpl/update-page file-data
+                                       (:id page)
+                                       #(update % :objects assoc (:id shape) shape)))
+                   $
+                   updated-shapes)
+           (ctkl/add-component $ (assoc params
+                                        :id (:component-id updated-root)
+                                        :name (:name updated-root)
+                                        :main-instance-id (:id updated-root)
+                                        :main-instance-page (:id page)
+                                        :shapes updated-shapes))))))))
 
-(defn check-from-file
-  [shape file]
-  (t/is (= (:component-file shape)
-           (:id file))))
+(defn get-component
+  [file label]
+  (ctkl/get-component (:data file) (thi/id label)))
 
-(defn resolve-instance
-  "Get the shape with the given id and all its children, and
-   verify that they are a well constructed instance tree."
-  [page root-inst-id]
-  (let [root-inst   (ctn/get-shape page root-inst-id)
-        shapes-inst (cfh/get-children-with-self (:objects page)
-                                                root-inst-id)]
-    (check-instance-root (first shapes-inst))
-    (run! check-instance-inner (rest shapes-inst))
+(defn get-component-by-id
+  [file id]
+  (ctkl/get-component (:data file) id))
 
-    shapes-inst))
+(defn set-child-label
+  [file shape-label child-idx label]
+  (let [id (-> (ths/get-shape file shape-label)
+               :shapes
+               (nth child-idx))]
+    (when id
+      (thi/set-id! label id))))
 
-(defn resolve-noninstance
-  "Get the shape with the given id and all its children, and
-   verify that they are not a component instance."
-  [page root-inst-id]
-  (let [root-inst   (ctn/get-shape page root-inst-id)
-        shapes-inst (cfh/get-children-with-self (:objects page)
-                                                root-inst-id)]
-    (run! check-noninstance shapes-inst)
+(defn instantiate-component
+  [file component-label copy-root-label & {:keys [parent-label library children-labels] :as params}]
+  (let [page      (thf/current-page file)
+        library   (or library file)
+        component (get-component library component-label)
+        parent-id (when parent-label
+                    (thi/id parent-label))
+        parent    (when parent-id
+                    (ctst/get-shape page parent-id))
+        frame-id  (if (cfh/frame-shape? parent)
+                    (:id parent)
+                    (:frame-id parent))
 
-    shapes-inst))
+        [copy-root copy-shapes]
+        (ctn/make-component-instance page
+                                     component
+                                     (:data library)
+                                     (gpt/point 100 100)
+                                     true
+                                     {:force-id (thi/new-id! copy-root-label)
+                                      :force-frame-id frame-id})
 
-(defn resolve-instance-and-main
-  "Get the shape with the given id and all its children, and also
-   the main component and all its shapes."
-  [page root-inst-id libraries]
-  (let [root-inst     (ctn/get-shape page root-inst-id)
+        copy-root' (cond-> copy-root
+                     (some? parent)
+                     (assoc :parent-id parent-id)
 
-        component     (ctf/get-component libraries (:component-file root-inst) (:component-id root-inst))
+                     (some? frame-id)
+                     (assoc :frame-id frame-id)
 
-        shapes-inst   (cfh/get-children-with-self (:objects page) root-inst-id)
-        shapes-main   (cfh/get-children-with-self (:objects component) (:shape-ref root-inst))
+                     (and (some? parent) (ctn/in-any-component? (:objects page) parent))
+                     (dissoc :component-root))
+        file'      (ctf/update-file-data
+                    file
+                    (fn [file-data]
+                      (as-> file-data $
+                        (ctpl/update-page $
+                                          (:id page)
+                                          #(ctst/add-shape (:id copy-root')
+                                                           copy-root'
+                                                           %
+                                                           frame-id
+                                                           parent-id
+                                                           nil
+                                                           true))
+                        (reduce (fn [file-data shape]
+                                  (ctpl/update-page file-data
+                                                    (:id page)
+                                                    #(ctst/add-shape (:id shape)
+                                                                     shape
+                                                                     %
+                                                                     (:parent-id shape)
+                                                                     (:frame-id shape)
+                                                                     nil
+                                                                     true)))
+                                $
+                                (remove #(= (:id %) (:did copy-root')) copy-shapes)))))]
+    (when children-labels
+      (dotimes [idx (count children-labels)]
+        (set-child-label file' copy-root-label idx (nth children-labels idx))))
+    file'))
 
-        unique-refs   (into #{} (map :shape-ref) shapes-inst)
+(defn component-swap
+  [file shape-label new-component-label new-shape-label & {:keys [library] :as params}]
+  (let [shape            (ths/get-shape file shape-label)
+        library          (or library file)
+        libraries        {(:id library) library}
+        page             (thf/current-page file)
+        objects          (:objects page)
+        id-new-component (-> (get-component library new-component-label)
+                             :id)
 
-        main-exists?  (fn [shape]
-                        (let [component-shape
-                              (ctn/get-component-shape (:objects page) shape)
-
-                              component
-                              (ctf/get-component libraries (:component-file component-shape) (:component-id component-shape))
-
-                              main-shape
-                              (ctn/get-shape component (:shape-ref shape))]
-
-                          (t/is (some? main-shape))))]
-
-    ;; Validate that the instance tree is well constructed
-    (check-instance-root (first shapes-inst))
-    (run! check-instance-inner (rest shapes-inst))
-    (t/is (= (count shapes-inst)
-             (count shapes-main)
-             (count unique-refs)))
-    (run! main-exists? shapes-inst)
-
-    [shapes-inst shapes-main component]))
-
-(defn resolve-instance-and-main-allow-dangling
-  "Get the shape with the given id and all its children, and also
-   the main component and all its shapes. Allows shapes with the
-   corresponding component shape missing."
-  [page root-inst-id libraries]
-  (let [root-inst     (ctn/get-shape page root-inst-id)
-
-        component     (ctf/get-component libraries (:component-file root-inst) (:component-id root-inst))
-
-        shapes-inst   (cfh/get-children-with-self (:objects page) root-inst-id)
-        shapes-main   (cfh/get-children-with-self (:objects component) (:shape-ref root-inst))
-
-        unique-refs   (into #{} (map :shape-ref) shapes-inst)
-
-        main-exists?  (fn [shape]
-                        (let [component-shape
-                              (ctn/get-component-shape (:objects page) shape)
-
-                              component
-                              (ctf/get-component libraries (:component-file component-shape) (:component-id component-shape))
-
-                              main-shape
-                              (ctn/get-shape component (:shape-ref shape))]
-
-                          (t/is (some? main-shape))))]
-
-    ;; Validate that the instance tree is well constructed
-    (check-instance-root (first shapes-inst))
-
-    [shapes-inst shapes-main component]))
+        ;; Store the properties that need to be maintained when the component is swapped
+        keep-props-values (select-keys shape ctk/swap-keep-attrs)
 
 
+        [new_shape _ changes]
+        (-> (pcb/empty-changes nil (:id page))
+            (cll/generate-component-swap objects shape (:data file) page libraries id-new-component 0 nil keep-props-values))]
 
+    (thi/set-id! new-shape-label (:id new_shape))
+    (thf/apply-changes file changes)))

@@ -13,6 +13,7 @@
    [app.common.types.color.generic :as-alias color-generic]
    [app.common.types.color.gradient :as-alias color-gradient]
    [app.common.types.color.gradient.stop :as-alias color-gradient-stop]
+   [app.common.uuid :as uuid]
    [clojure.test.check.generators :as tgen]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -104,6 +105,22 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; --- factory
+
+(defn make-color
+  [{:keys [id name path value color opacity ref-id ref-file gradient image]}]
+  (-> {:id (or id (uuid/next))
+       :name (or name color "Black")
+       :path path
+       :value value
+       :color (or color "#000000")
+       :opacity (or opacity 1)
+       :ref-id ref-id
+       :ref-file ref-file
+       :gradient gradient
+       :image image}
+      (d/without-nils)))
 
 ;; --- fill
 
