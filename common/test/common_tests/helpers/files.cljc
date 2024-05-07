@@ -11,6 +11,7 @@
    [app.common.files.changes :as cfc]
    [app.common.files.validate :as cfv]
    [app.common.pprint :refer [pprint]]
+   [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
@@ -87,7 +88,7 @@
 
 ;; ----- Debug
 
-(defn dump-file-type
+(defn dump-tree
   "Dump a file using dump-tree function in common.types.file."
   [file & {:keys [page-label libraries] :as params}]
   (let [params    (-> params
@@ -115,44 +116,74 @@
   (println "}"))
 
 (defn- stringify-keys [m keys]
-  (apply str (interpose ", " (map #(str % ": " (get m %)) keys))))
+  (let [kv (-> (select-keys m keys)
+               (assoc :swap-slot (when ((set keys) :swap-slot)
+                                   (ctk/get-swap-slot m)))
+               (assoc :swap-slot-label (when ((set keys) :swap-slot-label)
+                                         (when-let [slot (ctk/get-swap-slot m)]
+                                           (thi/label slot))))
+               (d/without-nils))
+
+        pretty-uuid (fn [id]
+                      (let [id (str id)]
+                        (str "#" (subs id (- (count id) 6)))))
+
+        format-kv (fn [[k v]]
+                    (cond
+                      (uuid? v)
+                      (str k " " (pretty-uuid v))
+
+                      :else
+                      (str k " " v)))]
+
+    (when (seq kv)
+      (str " [" (apply str (interpose ", " (map format-kv kv))) "]"))))
 
 (defn- dump-page-shape
-  [shape keys padding]
+  [shape keys padding show-refs?]
   (println (str/pad (str padding
-                         (when (:main-instance shape) "{")
-                         (or (thi/label (:id shape)) "<no-label>")
-                         (when (:main-instance shape) "}")
-                         (when keys
-                           (str " [" (stringify-keys shape keys) "]")))
-                    {:length 40 :type :right})
+                         (when (and (:main-instance shape) show-refs?) "{")
+                         (thi/label (:id shape))
+                         (when (and (:main-instance shape) show-refs?) "}")
+                         (when (seq keys)
+                           (stringify-keys shape keys)))
+                    {:length 50 :type :right})
            (if (nil? (:shape-ref shape))
-             (if (:component-root shape)
-               (str "# [Component " (or (thi/label (:component-id shape)) "<no-label>") "]")
+             (if (and (:component-root shape) show-refs?)
+               (str "# [Component " (thi/label (:component-id shape)) "]")
                "")
-             (str/format "%s--> %s%s"
-                         (cond (:component-root shape) "#"
-                               (:component-id shape) "@"
-                               :else "-")
-                         (if (:component-root shape)
-                           (str "[Component " (or (thi/label (:component-id shape)) "<no-label>") "] ")
-                           "")
-                         (or (thi/label (:shape-ref shape)) "<no-label>")))))
+             (if show-refs?
+               (str/format "%s--> %s%s"
+                           (cond (:component-root shape) "#"
+                                 (:component-id shape) "@"
+                                 :else "-")
+                           (if (:component-root shape)
+                             (str "[Component " (thi/label (:component-id shape)) "] ")
+                             "")
+                           (thi/label (:shape-ref shape)))
+               ""))))
 
 (defn dump-page
-  "Dump the layer tree of the page. Print the label of each shape, and the specified keys."
-  ([page keys]
-   (dump-page page uuid/zero "" keys))
-  ([page root-id padding keys]
-   (let [lookupf (d/getf (:objects page))
-         root-shape (lookupf root-id)
-         shapes (map lookupf (:shapes root-shape))]
-     (doseq [shape shapes]
-       (dump-page-shape shape keys padding)
-       (dump-page page (:id shape) (str padding "    ") keys)))))
+  "Dump the layer tree of the page, showing labels of the shapes.
+    - keys: a list of attributes of the shapes you want to show. In addition, you
+            can add :swap-slot to show the slot id (if any) or :swap-slot-label
+            to show the corresponding label.
+    - show-refs?: if true, the component references will be shown."
+  [page & {:keys [keys root-id padding show-refs?]
+           :or {keys [:name :swap-slot-label] root-id uuid/zero padding "" show-refs? true}}]
+  (let [lookupf (d/getf (:objects page))
+        root-shape (lookupf root-id)
+        shapes (map lookupf (:shapes root-shape))]
+    (doseq [shape shapes]
+      (dump-page-shape shape keys padding show-refs?)
+      (dump-page page
+                 :keys keys
+                 :root-id (:id shape)
+                 :padding (str padding "    ")
+                 :show-refs? show-refs?))))
 
 (defn dump-file
   "Dump the current page of the file, using dump-page above.
-   Example: (thf/dump-file file [:id :touched])"
-  ([file] (dump-file file []))
-  ([file keys] (dump-page (current-page file) keys)))
+   Example: (thf/dump-file file :keys [:name :swap-slot-label] :show-refs? false)"
+  [file & {:keys [] :as params}]
+  (dump-page (current-page file) params))
