@@ -39,7 +39,6 @@ window.WebSocket = class MockWebSocket extends EventTarget {
   #spyClose = null;
 
   constructor(url, protocols) {
-    console.log("🤖 New websocket at", url);
     super();
 
     this.#url = url;
@@ -166,7 +165,6 @@ window.WebSocket = class MockWebSocket extends EventTarget {
   }
 
   mockOpen(options) {
-    console.log("🤖 open mock");
     this.#protocol = options?.protocol || "";
     this.#extensions = options?.extensions || "";
     this.#readyState = MockWebSocket.OPEN;
@@ -181,12 +179,9 @@ window.WebSocket = class MockWebSocket extends EventTarget {
   }
 
   mockMessage(data) {
-    console.log("🤯 mock message");
     if (this.#readyState !== MockWebSocket.OPEN) {
-      console.log("socket is not connected");
       throw new Error("MockWebSocket is not connected");
     }
-    console.log("😰 dispatching `message`", { data });
     this.dispatchEvent(new MessageEvent("message", { data }));
     return this;
   }

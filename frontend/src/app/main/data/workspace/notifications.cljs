@@ -162,7 +162,6 @@
                 (assoc :text-color "#000000")))
 
           (update-presence [presence]
-          (js/console.log "🥰 WIIIIII" (clj->js presence))
             (-> presence
                 (update session-id update-session presence)
                 (d/without-nils)))]

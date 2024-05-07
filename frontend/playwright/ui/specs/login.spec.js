@@ -1,10 +1,8 @@
 import { test, expect } from "@playwright/test";
-import { setupNotLogedIn } from "../../helpers/intercepts";
-
-import LoginPage from "../pages/login-page";
+import { LoginPage } from "../pages/LoginPage";
 
 test.beforeEach(async ({ page }) => {
-  await setupNotLogedIn(page);
+  await LoginPage.setupLoggedOutUser(page);
   await page.goto("/#/auth/login");
 });
 
@@ -13,7 +11,7 @@ test("Shows login page when going to index and user is logged out", async ({ pag
 
   await loginPage.setupAllowedUser();
 
-  await expect(loginPage.url()).toMatch(/auth\/login$/);
+  await expect(loginPage.page).toHaveURL(/auth\/login$/);
   await expect(loginPage.initialHeading).toBeVisible();
 });
 
@@ -37,8 +35,7 @@ test("User logs in by filling the login form", async ({ page }) => {
   await loginPage.clickLoginButton();
 
   await page.waitForURL('**/dashboard/**');
-  await expect(page).toHaveURL(/dashboard/);
-  // await expect(loginPage.url()).toMatch(/dashboard/);
+  await expect(loginPage.page).toHaveURL(/dashboard/);
 });
 
 test("User submits wrong credentials", async ({ page }) => {
@@ -50,5 +47,5 @@ test("User submits wrong credentials", async ({ page }) => {
   await loginPage.clickLoginButton();
 
   await expect(loginPage.message).toBeVisible();
-  await expect(loginPage.url()).toMatch(/auth\/login$/);
+  await expect(loginPage.page).toHaveURL(/auth\/login$/);
 });

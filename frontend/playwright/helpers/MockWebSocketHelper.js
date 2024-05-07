@@ -1,18 +1,21 @@
-export class MockWebSocket extends EventTarget {
+export class MockWebSocketHelper extends EventTarget {
   static #mocks = new Map();
 
   static async init(page) {
     await page.exposeFunction("MockWebSocket$$constructor", (url, protocols) => {
-      console.log("MockWebSocket$$constructor", MockWebSocket, url, protocols);
-      const webSocket = new MockWebSocket(page, url, protocols);
+      const webSocket = new MockWebSocketHelper(page, url, protocols);
       this.#mocks.set(url, webSocket);
     });
     await page.exposeFunction("MockWebSocket$$spyMessage", (url, data) => {
-      console.log("MockWebSocket$$spyMessage", url, data);
+      if (!this.#mocks.has(url)) {
+        throw new Error(`WebSocket with URL ${url} not found`);
+      }
       this.#mocks.get(url).dispatchEvent(new MessageEvent("message", { data }));
     });
     await page.exposeFunction("MockWebSocket$$spyClose", (url, code, reason) => {
-      console.log("MockWebSocket$$spyClose", url, code, reason);
+      if (!this.#mocks.has(url)) {
+        throw new Error(`WebSocket with URL ${url} not found`);
+      }
       this.#mocks.get(url).dispatchEvent(new CloseEvent("close", { code, reason }));
     });
     await page.addInitScript({ path: "playwright/scripts/MockWebSocket.js" });
@@ -22,7 +25,6 @@ export class MockWebSocket extends EventTarget {
     return new Promise((resolve) => {
       const intervalID = setInterval(() => {
         for (const [wsURL, ws] of this.#mocks) {
-          console.log('waitForURL', wsURL);
           if (wsURL.includes(url)) {
             clearInterval(intervalID);
             return resolve(ws);
