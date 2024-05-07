@@ -19,6 +19,7 @@
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.grid-layout :as gslg]
+   [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.schema :as sm]
    [app.common.text :as txt]
@@ -1868,7 +1869,8 @@
               drop-cell    (when (ctl/grid-layout? all-objects parent-id)
                              (gslg/get-drop-cell frame-id all-objects position))
 
-              changes      (-> (dws/prepare-duplicate-changes all-objects page selected delta it libraries ldata file-id)
+              changes      (-> (pcb/empty-changes it)
+                               (cll/generate-duplicate-changes all-objects page selected delta libraries ldata file-id)
                                (pcb/amend-changes (partial process-rchange media-idx))
                                (pcb/amend-changes (partial change-add-obj-index objects selected index)))
 
