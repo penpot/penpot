@@ -122,7 +122,11 @@
               (add! :stroke-cap-end)))
 
         (cond-> text?
-          (-> (add! :grow-type)
+          (-> (add! :x)
+              (add! :y)
+              (add! :width)
+              (add! :height)
+              (add! :grow-type)
               (add! :content (comp json/encode uuid->string))
               (add! :position-data (comp json/encode uuid->string))))
 
