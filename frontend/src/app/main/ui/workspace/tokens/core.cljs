@@ -8,8 +8,10 @@
   (:require
    [app.common.data :as d :refer [ordered-map]]
    [app.common.types.shape.radius :as ctsr]
-   [app.main.data.tokens :as dt]
-   [app.main.data.workspace.changes :as dch]))
+   [app.common.types.token :as ctt]
+   [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.transforms :as dwt]
+   [app.main.store :as st]))
 
 ;; Helpers ---------------------------------------------------------------------
 
@@ -30,27 +32,34 @@
 ;; Update functions ------------------------------------------------------------
 
 (defn update-shape-radius [value shape-ids]
-  (let [parsed-value (d/parse-integer value)]
-    (dch/update-shapes shape-ids
-                       (fn [shape]
-                         (when (ctsr/has-radius? shape)
-                           (ctsr/set-radius-1 shape parsed-value)))
-                       {:reg-objects? true
-                        :attrs [:rx :ry :r1 :r2 :r3 :r4]})))
+  (st/emit!
+   (dch/update-shapes shape-ids
+                      (fn [shape]
+                        (when (ctsr/has-radius? shape)
+                          (ctsr/set-radius-1 shape value)))
+                      {:reg-objects? true
+                       :attrs ctt/border-radius-keys})))
+
+(defn update-shape-dimensions [value shape-ids]
+  (st/emit!
+   (dwt/update-dimensions shape-ids :width value)
+   (dwt/update-dimensions shape-ids :height value)))
 
 ;; Token types -----------------------------------------------------------------
 
 (def token-types
   (ordered-map
-   [:boolean {:title "Boolean"
-              :modal {:key :tokens/boolean
-                      :fields [{:label "Boolean"}]}}]
-   [:border-radius {:title "Border Radius"
-                    :attributes #{:rx :ry :r1 :r2 :r3 :r4}
-                    :modal {:key :tokens/border-radius
-                            :fields [{:label "Border Radius"
-                                      :key :border-radius}]}
-                    :on-update-shape update-shape-radius}]
+   [:boolean
+    {:title "Boolean"
+     :modal {:key :tokens/boolean
+             :fields [{:label "Boolean"}]}}]
+   [:border-radius
+    {:title "Border Radius"
+     :attributes ctt/border-radius-keys
+     :on-update-shape update-shape-radius
+     :modal {:key :tokens/border-radius
+             :fields [{:label "Border Radius"
+                       :key :border-radius}]}}]
    [:box-shadow
     {:title "Box Shadow"
      :modal {:key :tokens/box-shadow
@@ -63,7 +72,9 @@
              :fields [{:label "Sizing"
                        :key :sizing}]}}]
    [:dimension
-    {:title "Dimension"
+    {:title "Dimensions"
+     :attributes ctt/dimensions-keys
+     :on-update-shape update-shape-dimensions
      :modal {:key :tokens/dimensions
              :fields [{:label "Dimensions"
                        :key :dimensions}]}}]
