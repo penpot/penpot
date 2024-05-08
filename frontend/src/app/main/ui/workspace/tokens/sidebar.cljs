@@ -16,7 +16,7 @@
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.tokens.common :refer [workspace-shapes]]
-   [app.main.ui.workspace.tokens.core :refer [token-types tokens-applied?]]
+   [app.main.ui.workspace.tokens.core :refer [tokens-applied?] :as wtc]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
@@ -89,23 +89,36 @@
               :highlighted? (tokens-applied? token selected-shapes attributes)
               :on-click #(on-token-pill-click % token)}])]])]]))
 
+(defn sorted-token-groups
+  "Separate token-types into groups of `:empty` or `:filled` depending if tokens exist for that type.
+  Sort each group alphabetically (by their `:token-key`)."
+  [tokens]
+  (let [tokens-by-group (->> (vals tokens)
+                             (group-by :type))
+        {:keys [empty filled]} (->> wtc/token-types
+                                    (map (fn [[token-key token-type-props]]
+                                           {:token-key token-key
+                                            :token-type-props token-type-props
+                                            :tokens (get tokens-by-group token-key [])}))
+                                    (group-by (fn [{:keys [tokens]}]
+                                                (if (empty? tokens) :empty :filled))))]
+    {:empty (sort-by :token-key empty)
+     :filled (sort-by :token-key filled)}))
+
 (mf/defc tokens-explorer
   [_props]
   (let [file (mf/deref refs/workspace-file)
         current-page-id (:current-page-id @st/state)
         workspace-data (mf/deref refs/workspace-data)
         tokens (get workspace-data :tokens)
-        tokens-by-group (->> (vals tokens)
-                             (group-by :type))
+        token-groups (mf/with-memo [tokens]
+                       (sorted-token-groups tokens))
         selected-shape-ids (mf/deref refs/selected-shapes)
         selected-shapes (workspace-shapes workspace-data current-page-id selected-shape-ids)]
-    (js/console.log "tokens" tokens)
     [:article
-     [:& search-bar {:placeholder "Filter"
-                     :on-change js/console.log}]
      [:div.assets-bar
-      (for [[token-key token-type-props] token-types
-            :let [tokens (or (get tokens-by-group token-key) [])]]
+      (for [{:keys [token-key token-type-props tokens]} (concat (:filled token-groups)
+                                                                (:empty token-groups))]
         [:& token-component {:key token-key
                              :type token-key
                              :file file
