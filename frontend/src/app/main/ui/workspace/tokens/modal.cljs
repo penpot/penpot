@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -68,7 +69,8 @@
                                          :type token-type
                                          :value token-value}
                                   @description (assoc :description @description))]
-                      (st/emit! (dt/add-token token))))]
+                      (st/emit! (dt/add-token token))
+                      (modal/hide!)))]
 
     (mf/use-effect
      (fn []
