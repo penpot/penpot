@@ -2120,26 +2120,26 @@
 
        (reduce (fn [changes child]
                  (generate-duplicate-shape-change changes
-                                                          (:objects page')
-                                                          page
-                                                          unames
-                                                          update-unames!
-                                                          ids-map
-                                                          child
-                                                          delta
-                                                          level-delta
-                                                          libraries
-                                                          library-data
-                                                          file-id
-                                                          (if frame? new-id frame-id)
-                                                          new-id
-                                                          duplicating-component?
-                                                          true
-                                                          (and remove-swap-slot?
+                                                  (:objects page')
+                                                  page
+                                                  unames
+                                                  update-unames!
+                                                  ids-map
+                                                  child
+                                                  delta
+                                                  level-delta
+                                                  libraries
+                                                  library-data
+                                                  file-id
+                                                  (if frame? new-id frame-id)
+                                                  new-id
+                                                  duplicating-component?
+                                                  true
+                                                  (and remove-swap-slot?
                                                                ;; only remove swap slot of children when the current shape
                                                                ;; is not a subinstance head nor a instance root
-                                                               (not subinstance-head?)
-                                                               (not instance-root?))))
+                                                       (not subinstance-head?)
+                                                       (not instance-root?))))
                changes
                (map (d/getf objects) (:shapes obj)))))))
 
@@ -2162,17 +2162,17 @@
         changes
         (->> shapes
              (reduce #(generate-duplicate-shape-change %1
-                                                               all-objects
-                                                               page
-                                                               unames
-                                                               update-unames!
-                                                               ids-map
-                                                               %2
-                                                               delta
-                                                               nil
-                                                               libraries
-                                                               library-data
-                                                               file-id)
+                                                       all-objects
+                                                       page
+                                                       unames
+                                                       update-unames!
+                                                       ids-map
+                                                       %2
+                                                       delta
+                                                       nil
+                                                       libraries
+                                                       library-data
+                                                       file-id)
                      changes))
 
          ;; We need to check the changes to get the ids-map
