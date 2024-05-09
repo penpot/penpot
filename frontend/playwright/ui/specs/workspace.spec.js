@@ -1,54 +1,40 @@
 import { test, expect } from "@playwright/test";
-import { BasePage } from "../pages/BasePage";
-import { MockWebSocketHelper } from "../../helpers/MockWebSocketHelper";
+import { WorkspacePage } from "../pages/WorkspacePage";
 import { presenceFixture } from "../../data/workspace/ws-notifications";
 
-const anyProjectId = "c7ce0794-0992-8105-8004-38e630f7920b";
-const anyFileId = "c7ce0794-0992-8105-8004-38f280443849";
-const anyPageId = "c7ce0794-0992-8105-8004-38f28044384a";
-
-const setupWorkspaceUser = (page) => {
-  BasePage.mockRPC(page, "get-profile", "logged-in-user/get-profile-logged-in.json");
-  BasePage.mockRPC(page, "get-team-users?file-id=*", "logged-in-user/get-team-users-single-user.json");
-  BasePage.mockRPC(page, "get-comment-threads?file-id=*", "workspace/get-comment-threads-empty.json");
-  BasePage.mockRPC(page, "get-project?id=*", "workspace/get-project-default.json");
-  BasePage.mockRPC(page, "get-team?id=*", "workspace/get-team-default.json");
-  BasePage.mockRPC(page, /get\-file\?/, "workspace/get-file-blank.json");
-  BasePage.mockRPC(
-    page,
-    "get-file-object-thumbnails?file-id=*",
-    "workspace/get-file-object-thumbnails-blank.json",
-  );
-  BasePage.mockRPC(
-    page,
-    "get-profiles-for-file-comments?file-id=*",
-    "workspace/get-profile-for-file-comments.json",
-  );
-  BasePage.mockRPC(page, "get-font-variants?team-id=*", "workspace/get-font-variants-empty.json");
-  BasePage.mockRPC(page, "get-file-fragment?file-id=*", "workspace/get-file-fragment-blank.json");
-  BasePage.mockRPC(page, "get-file-libraries?file-id=*", "workspace/get-file-libraries-empty.json");
-};
-
 test.beforeEach(async ({ page }) => {
-  await MockWebSocketHelper.init(page);
+  await WorkspacePage.init(page);
 });
 
 test("User loads worskpace with empty file", async ({ page }) => {
-  await setupWorkspaceUser(page);
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile(page);
 
-  await page.goto(`/#/workspace/${anyProjectId}/${anyFileId}?page-id=${anyPageId}`);
+  await workspacePage.goToWorkspace();
 
-  await expect(page.getByTestId("page-name")).toHaveText("Page 1");
+  await expect(workspacePage.pageName).toHaveText("Page 1");
 });
 
-test("User receives notifications updates in the workspace", async ({ page }) => {
-  await setupWorkspaceUser(page);
-  await page.goto(`/#/workspace/${anyProjectId}/${anyFileId}?page-id=${anyPageId}`);
+test("User receives presence notifications updates in the workspace", async ({ page }) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile();
 
-  const ws = await MockWebSocketHelper.waitForURL("ws://0.0.0.0:3500/ws/notifications")
-  await ws.mockOpen();
-  await expect(page.getByTestId("page-name")).toHaveText("Page 1");
-  await ws.mockMessage(JSON.stringify(presenceFixture));
+  await workspacePage.goToWorkspace();
+  await workspacePage.sendPresenceMessage(presenceFixture);
+
   await expect(page.getByTestId("active-users-list").getByAltText("Princesa Leia")).toHaveCount(2);
-  await ws.mockClose();
+});
+
+test("User draws a rect", async ({ page }) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockRPC("update-file?id=*", "workspace/update-file-create-rect.json");
+
+  await workspacePage.goToWorkspace();
+  await workspacePage.rectShapeButton.click();
+  await workspacePage.clickWithDragViewportAt(128, 128, 200, 100);
+
+  const shape = await workspacePage.rootShape.locator("rect");
+  expect(shape).toHaveAttribute("width", "200");
+  expect(shape).toHaveAttribute("height", "100");
 });

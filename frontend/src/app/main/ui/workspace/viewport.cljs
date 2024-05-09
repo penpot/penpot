@@ -276,7 +276,7 @@
     (hooks/setup-shortcuts node-editing? drawing-path? text-editing? grid-editing?)
     (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform vbox)
 
-    [:div.viewport {:style #js {"--zoom" zoom}}
+    [:div.viewport {:style #js {"--zoom" zoom} :data-testid "viewport"}
      [:& top-bar/top-bar {:layout layout}]
      [:div.viewport-overlays
       ;; The behaviour inside a foreign object is a bit different that in plain HTML so we wrap

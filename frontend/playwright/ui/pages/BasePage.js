@@ -6,6 +6,7 @@ export class BasePage {
     if (typeof path !== "string" && !(path instanceof RegExp)) {
       throw new TypeError("Invalid path argument. Must be a string or a RegExp.");
     }
+
     const url = typeof path === "string" ? `**/api/rpc/command/${path}` : path;
     const interceptConfig = {
       status: 200,

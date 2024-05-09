@@ -1,8 +1,8 @@
 import { BasePage } from "./BasePage";
 
 export class LoginPage extends BasePage {
-  static setupLoggedOutUser(page) {
-    return this.mockRPC(page, "get-profile", "get-profile-anonymous.json");
+  static async initWithLoggedOutUser(page) {
+    await BasePage.mockRPC(page, "get-profile", "get-profile-anonymous.json");
   }
 
   constructor(page) {
@@ -10,8 +10,8 @@ export class LoginPage extends BasePage {
     this.loginButton = page.getByRole("button", { name: "Login" });
     this.password = page.getByLabel("Password");
     this.userName = page.getByLabel("Email");
-    this.message = page.getByText("Email or password is incorrect");
-    this.badLoginMsg = page.getByText("Enter a valid email please");
+    this.invalidCredentialsError = page.getByText("Email or password is incorrect");
+    this.invalidEmailError = page.getByText("Enter a valid email please");
     this.initialHeading = page.getByRole("heading", { name: "Log into my account" });
   }
 
@@ -24,7 +24,7 @@ export class LoginPage extends BasePage {
     await this.loginButton.click();
   }
 
-  async setupAllowedUser() {
+  async setupLoggedInUser() {
     await this.mockRPC("get-profile", "logged-in-user/get-profile-logged-in.json");
     await this.mockRPC("get-teams", "logged-in-user/get-teams-default.json");
     await this.mockRPC("get-font-variants?team-id=*", "logged-in-user/get-font-variants-empty.json");
