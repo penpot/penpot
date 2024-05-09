@@ -40,4 +40,4 @@
            (filter #(= id (val %)))
            (map key)
            (first))
-      (str "<no-label #" (subs id (- (count id) 6)) ">")))
+      (str "<no-label #" (subs (str id) (- (count (str id)) 6)) ">")))
