@@ -22,7 +22,6 @@
 
 (t/use-fixtures :each thi/test-fixture)
 
-
 ;; Related .penpot file: common/test/cases/remove-swap-slots.penpot
 (defn- setup-file
   []
@@ -350,14 +349,21 @@
     (t/is (some? blue1''))
     (t/is (nil? (ctk/get-swap-slot blue1'')))))
 
+
+
+(defn- find-copied-shape
+  [original-shape page parent-id]
+  ;; copied shape has the same name, is in the specified parent, and doesn't have a label
+  (->> (vals (:objects page))
+       (filter #(and (= (:name %) (:name original-shape))
+                     (= (:parent-id %) parent-id)
+                     (str/starts-with? (thi/label (:id %)) "<no-label")))
+       first))
+
 (defn- find-duplicated-shape
   [original-shape page]
   ;; duplicated shape has the same name, the same parent, and doesn't have a label
-  (->> (vals (:objects page))
-       (filter #(and (= (:name %) (:name original-shape))
-                     (= (:parent-id %) (:parent-id original-shape))
-                     (str/starts-with? (thi/label (:id %)) "<no-label")))
-       first))
+  (find-copied-shape original-shape page (:parent-id original-shape)))
 
 (t/deftest test-remove-swap-slot-duplicating-blue1
   (let [;; ==== Setup
@@ -451,3 +457,167 @@
     ;; duplicated-blue1'' has not swap-id
     (t/is (some? duplicated-blue1''))
     (t/is (nil? (ctk/get-swap-slot duplicated-blue1'')))))
+
+
+(t/deftest test-remove-swap-slot-copy-blue1-to-root
+  (let [;; ==== Setup
+        file                   (setup-file)
+
+        page                   (thf/current-page file)
+        blue1                  (ths/get-shape file :blue1)
+        features               #{"components/v2"}
+        version                46
+
+        ;; ==== Action
+        pdata                  (ths/simulate-copy-shape #{(:id blue1)} (:objects page) {(:id  file) file} page file features version)
+        [changes _ _]          (cll/generate-paste-shapes (pcb/empty-changes nil)
+                                                          (:id file)            ;; file-id
+                                                          page                  ;; page
+                                                          #{}                   ;; objects-selected-in-page
+                                                          false                 ;; is-selected-frame?
+                                                          true                  ;; is-any-same-frame-from-selected?
+                                                          {(:id  file) file}    ;; libraries
+                                                          (:data file)          ;; ldata
+                                                          (gpt/point 1000 1000) ;; mouse-position
+                                                          pdata)
+
+        file'                  (thf/apply-changes file changes)
+
+        ;; ==== Get
+        blue1'                 (ths/get-shape file' :blue1)
+        page'                  (thf/current-page file')
+        copied-blue1'          (find-copied-shape blue1' page' uuid/zero)]
+
+
+    ;; ==== Check
+
+    ;; blue1 had swap-id
+    (t/is (some? (ctk/get-swap-slot blue1')))
+
+    ;; copied-blue1 has not swap-id
+    (t/is (some? copied-blue1'))
+    (t/is (nil? (ctk/get-swap-slot copied-blue1')))))
+
+(t/deftest test-remove-swap-slot-copy-blue1-to-b1
+  (let [;; ==== Setup
+        file                   (setup-file)
+
+        page                   (thf/current-page file)
+        blue1                  (ths/get-shape file :blue1)
+        features               #{"components/v2"}
+        version                46
+
+        ;; ==== Action
+        b1                     (ths/get-shape file :frame-b1)
+        pdata                  (ths/simulate-copy-shape #{(:id blue1)} (:objects page) {(:id  file) file} page file features version)
+        [changes _ _]          (cll/generate-paste-shapes (pcb/empty-changes nil)
+                                                          (:id file)            ;; file-id
+                                                          page                  ;; page
+                                                          #{(:id b1)}           ;; objects-selected-in-page
+                                                          true                  ;; is-selected-frame?
+                                                          false                 ;; is-any-same-frame-from-selected?
+                                                          {(:id  file) file}    ;; libraries
+                                                          (:data file)          ;; ldata
+                                                          (gpt/point 1000 1000) ;; mouse-position
+                                                          pdata)
+
+        file'                  (thf/apply-changes file changes)
+
+        ;; ==== Get
+        blue1'                 (ths/get-shape file' :blue1)
+        b1'                    (ths/get-shape file :frame-b1)
+        page'                  (thf/current-page file')
+        copied-blue1'          (find-copied-shape blue1' page' (:id b1'))]
+
+
+    ;; ==== Check
+
+    ;; blue1 had swap-id
+    (t/is (some? (ctk/get-swap-slot blue1')))
+
+
+    ;; copied-blue1 has not swap-id
+    (t/is (some? copied-blue1'))
+    (t/is (nil? (ctk/get-swap-slot copied-blue1')))))
+
+(t/deftest test-remove-swap-slot-copy-blue1-to-yellow
+  (let [;; ==== Setup
+        file                   (setup-file)
+
+        page                   (thf/current-page file)
+        blue1                  (ths/get-shape file :blue1)
+        features               #{"components/v2"}
+        version                46
+
+        ;; ==== Action
+        yellow                 (ths/get-shape file :frame-yellow)
+        pdata                  (ths/simulate-copy-shape #{(:id blue1)} (:objects page) {(:id  file) file} page file features version)
+        [changes _ _]          (cll/generate-paste-shapes (pcb/empty-changes nil)
+                                                          (:id file)            ;; file-id
+                                                          page                  ;; page
+                                                          #{(:id yellow)}       ;; objects-selected-in-page
+                                                          true                  ;; is-selected-frame?
+                                                          false                 ;; is-any-same-frame-from-selected?
+                                                          {(:id  file) file}    ;; libraries
+                                                          (:data file)          ;; ldata
+                                                          (gpt/point 1000 1000) ;; mouse-position
+                                                          pdata)
+
+        file'                  (thf/apply-changes file changes)
+
+        ;; ==== Get
+        blue1'                 (ths/get-shape file' :blue1)
+        yellow'                (ths/get-shape file :frame-yellow)
+        page'                  (thf/current-page file')
+        copied-blue1'          (find-copied-shape blue1' page' (:id yellow'))]
+
+
+    ;; ==== Check
+
+    ;; blue1 had swap-id
+    (t/is (some? (ctk/get-swap-slot blue1')))
+
+    ;; copied-blue1 has not swap-id
+    (t/is (some? copied-blue1'))
+    (t/is (nil? (ctk/get-swap-slot copied-blue1')))))
+
+(t/deftest test-remove-swap-slot-copy-blue1-to-b2
+  (let [;; ==== Setup
+        file                   (setup-file)
+
+        page                   (thf/current-page file)
+        blue1                  (ths/get-shape file :blue1)
+        features               #{"components/v2"}
+        version                46
+
+        ;; ==== Action
+        b2                     (ths/get-shape file :frame-b2)
+        pdata                  (ths/simulate-copy-shape #{(:id blue1)} (:objects page) {(:id  file) file} page file features version)
+        [changes _ _]          (cll/generate-paste-shapes (pcb/empty-changes nil)
+                                                          (:id file)            ;; file-id
+                                                          page                  ;; page
+                                                          #{(:id b2)}       ;; objects-selected-in-page
+                                                          true                  ;; is-selected-frame?
+                                                          false                 ;; is-any-same-frame-from-selected?
+                                                          {(:id  file) file}    ;; libraries
+                                                          (:data file)          ;; ldata
+                                                          (gpt/point 1000 1000) ;; mouse-position
+                                                          pdata)
+
+        file'                  (thf/apply-changes file changes)
+
+        ;; ==== Get
+        blue1'                 (ths/get-shape file' :blue1)
+        b2'                    (ths/get-shape file' :frame-b2)
+        page'                  (thf/current-page file')
+        copied-blue1'          (find-copied-shape blue1' page' (:id b2'))]
+
+
+    ;; ==== Check
+
+    ;; blue1 had swap-id
+    (t/is (some? (ctk/get-swap-slot blue1')))
+
+    ;; copied-blue1 has not swap-id
+    (t/is (some? copied-blue1'))
+    (t/is (nil? (ctk/get-swap-slot copied-blue1')))))

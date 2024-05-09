@@ -1668,13 +1668,13 @@
 
             mouse-position                   (deref ms/mouse-position)
 
-            page-selected                    (wsh/lookup-selected state)
+            objects-selected-in-page         (wsh/lookup-selected state)
             is-selected-frame?               (selected-frame? state)
             is-any-same-frame-from-selected? (any-same-frame-from-selected? state (keys pasted-objects))
 
 
             [changes selected frame-id]      (cll/generate-paste-shapes
-                                              (pcb/empty-changes it) file-id page page-selected is-selected-frame?
+                                              (pcb/empty-changes it) file-id page objects-selected-in-page is-selected-frame?
                                               is-any-same-frame-from-selected? libraries ldata mouse-position pdata)
 
 
