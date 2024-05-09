@@ -10,8 +10,11 @@
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.token :as ctt]
    [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.shape-layout :as dwsl]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.transforms :as dwt]
-   [app.main.store :as st]))
+   [app.main.store :as st]
+   [beicon.v2.core :as rx]))
 
 ;; Helpers ---------------------------------------------------------------------
 
@@ -44,6 +47,11 @@
   (st/emit!
    (dwt/update-dimensions shape-ids :width value)
    (dwt/update-dimensions shape-ids :height value)))
+
+(defn update-layout-spacing-column [value shape-ids]
+  (let [selected-shapes  (wsh/lookup-selected @st/state)]
+    (st/emit!
+     (dwsl/update-layout selected-shapes {:layout-gap {:column-gap value :row-gap value}}))))
 
 ;; Token types -----------------------------------------------------------------
 
@@ -100,6 +108,8 @@
                        :key :rotation}]}}]
    [:spacing
     {:title "Spacing"
+     :attributes ctt/spacing-keys
+     :on-update-shape update-layout-spacing-column
      :modal {:key :tokens/spacing
              :fields [{:label "Spacing"
                        :key :spacing}]}}]
