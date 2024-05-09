@@ -17,7 +17,8 @@
    [common-tests.helpers.compositions :as tho]
    [common-tests.helpers.files :as thf]
    [common-tests.helpers.ids-map :as thi]
-   [common-tests.helpers.shapes :as ths]))
+   [common-tests.helpers.shapes :as ths]
+   [cuerdas.core :as str]))
 
 (t/use-fixtures :each thi/test-fixture)
 
@@ -31,7 +32,7 @@
   ;;     :red-copy-green [:name Frame1]                    @--> :frame-red
   ;; {:frame-b1} [:name Frame1]                            # [Component :b1]
   ;;     :blue1 [:name Frame1, :swap-slot-label :red-copy] @--> :frame-blue
-  ;;     :frame-yellow [:name Frame1]                   
+  ;;     :frame-yellow [:name Frame1]
   ;;     :green-copy [:name Frame1]                        @--> :frame-green
   ;;         :blue-copy-in-green-copy [:name Frame1, :swap-slot-label :red-copy-green] @--> :frame-blue
   ;; {:frame-b2} [:name Frame1]                            # [Component :b2]
@@ -355,7 +356,7 @@
   (->> (vals (:objects page))
        (filter #(and (= (:name %) (:name original-shape))
                      (= (:parent-id %) (:parent-id original-shape))
-                     (nil? (thi/label (:id %)))))
+                     (str/starts-with? (thi/label (:id %)) "<no-label")))
        first))
 
 (t/deftest test-remove-swap-slot-duplicating-blue1
