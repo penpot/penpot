@@ -24,3 +24,17 @@ test("User receives presence notifications updates in the workspace", async ({ p
 
   await expect(page.getByTestId("active-users-list").getByAltText("Princesa Leia")).toHaveCount(2);
 });
+
+test("User draws a rect", async ({ page }) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockRPC("update-file?id=*", "workspace/update-file-create-rect.json");
+
+  await workspacePage.goToWorkspace();
+  await workspacePage.rectShapeButton.click();
+  await workspacePage.clickWithDragViewportAt(128, 128, 200, 100);
+
+  const shape = await workspacePage.rootShape.locator("rect");
+  expect(shape).toHaveAttribute("width", "200");
+  expect(shape).toHaveAttribute("height", "100");
+});

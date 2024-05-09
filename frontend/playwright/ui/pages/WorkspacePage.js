@@ -39,9 +39,11 @@ export class WorkspacePage extends BaseWebSocketPage {
 
   constructor(page) {
     super(page);
-    // TODO: add locators
     this.pageName = page.getByTestId("page-name");
     this.presentUserListItems = page.getByTestId("active-users-list").getByAltText("Princesa Leia");
+    this.viewport = page.getByTestId("viewport");
+    this.rootShape = page.locator(`[id="shape-00000000-0000-0000-0000-000000000000"]`);
+    this.rectShapeButton = page.getByRole("button", { name: "Rectangle (R)" });
   }
 
   async goToWorkspace() {
@@ -85,5 +87,13 @@ export class WorkspacePage extends BaseWebSocketPage {
     await this.mockRPC("get-font-variants?team-id=*", "workspace/get-font-variants-empty.json");
     await this.mockRPC("get-file-fragment?file-id=*", "workspace/get-file-fragment-blank.json");
     await this.mockRPC("get-file-libraries?file-id=*", "workspace/get-file-libraries-empty.json");
+  }
+
+  async clickWithDragViewportAt(x, y, width, height) {
+    await this.page.waitForTimeout(100);
+    await this.viewport.hover({ position: { x, y } });
+    await this.page.mouse.down();
+    await this.viewport.hover({ position: { x: x + width, y: y + height } });
+    await this.page.mouse.up();
   }
 }
