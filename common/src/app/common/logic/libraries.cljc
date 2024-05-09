@@ -11,6 +11,7 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.grid-layout :as gslg]
    [app.common.logging :as log]
@@ -2217,3 +2218,224 @@
      changes
      (fn [change]
        (assoc change :index (get objects-indices (:old-id change)))))))
+
+
+(defn generate-paste-shapes
+  [changes file-id page objects-selected-in-page is-selected-frame? is-any-same-frame-from-selected?
+   libraries ldata mouse-position {in-viewport? :in-viewport :as pdata}]
+  (letfn [(get-tree-root-shapes [tree]
+            ;; This fn gets a map of shapes and finds what shapes are parent of the rest
+            (let [shapes-in-tree (vals tree)
+                  shape-ids (keys tree)
+                  parent-ids (set (map #(:parent-id %) shapes-in-tree))]
+              (->> shape-ids
+                   (filter #(contains? parent-ids %)))))
+
+          (frame-same-size? [paste-obj frame-obj]
+            (and
+             (= (:heigth (:selrect (first (vals paste-obj))))
+                (:heigth (:selrect frame-obj)))
+             (= (:width (:selrect (first (vals paste-obj))))
+                (:width (:selrect frame-obj)))))
+
+          (translate-media [mdata media-idx attr-path]
+            (let [id   (-> (get-in mdata attr-path)
+                           (:id))
+                  mobj (get media-idx id)]
+              (if mobj
+                (if (empty? attr-path)
+                  (-> mdata
+                      (assoc :id (:id mobj))
+                      (assoc :path (:path mobj)))
+                  (update-in mdata attr-path (fn [value]
+                                               (-> value
+                                                   (assoc :id (:id mobj))
+                                                   (assoc :path (:path mobj))))))
+                mdata)))
+
+          (add-obj? [chg]
+            (= (:type chg) :add-obj))
+
+          ;; Analyze the rchange and replace staled media and
+          ;; references to the new uploaded media-objects.
+          (process-rchange [media-idx change]
+            (let [;; Texts can have different fills for pieces of the text
+                  tr-fill-xf    (map #(translate-media % media-idx [:fill-image]))
+                  tr-stroke-xf  (map #(translate-media % media-idx [:stroke-image]))]
+              (if (add-obj? change)
+                (update change :obj (fn [obj]
+                                      (-> obj
+                                          (update :fills #(into [] tr-fill-xf %))
+                                          (update :strokes #(into [] tr-stroke-xf %))
+                                          (d/update-when :metadata translate-media media-idx [])
+                                          (d/update-when :fill-image translate-media media-idx [])
+                                          (d/update-when :content
+                                                         (fn [content]
+                                                           (txt/xform-nodes tr-fill-xf content)))
+                                          (d/update-when :position-data
+                                                         (fn [position-data]
+                                                           (mapv (fn [pos-data]
+                                                                   (update pos-data :fills #(into [] tr-fill-xf %)))
+                                                                 position-data))))))
+                change)))
+
+          (calculate-paste-position [pobjects selected position page-objects page-selected is-selected-frame? is-any-same-frame-from-selected?]
+            (let [selected-objs        (map (d/getf pobjects) selected)
+                  first-selected-obj   (first selected-objs)
+                  wrapper              (gsh/shapes->rect selected-objs)
+                  orig-pos             (gpt/point (:x1 wrapper) (:y1 wrapper))
+                  frame-id             (first page-selected)
+                  frame-object         (get page-objects frame-id)
+                  base                 (cfh/get-base-shape page-objects objects-selected-in-page)
+                  index                (cfh/get-position-on-parent page-objects (:id base))
+                  tree-root            (get-tree-root-shapes pobjects)
+                  only-one-root-shape? (and
+                                        (< 1 (count pobjects))
+                                        (= 1 (count tree-root)))]
+
+              (cond
+                is-selected-frame?
+
+                (if (or is-any-same-frame-from-selected?
+                        (and only-one-root-shape?
+                             (frame-same-size? pobjects (first tree-root))))
+                  ;; Paste next to selected frame, if selected is itself or of the same size as the copied
+                  (let [selected-frame-obj (get page-objects (first page-selected))
+                        parent-id          (:parent-id base)
+                        paste-x            (+ (:width selected-frame-obj) (:x selected-frame-obj) 50)
+                        paste-y            (:y selected-frame-obj)
+                        delta              (gpt/subtract (gpt/point paste-x paste-y) orig-pos)]
+
+                    [parent-id delta index])
+
+                  ;; Paste inside selected frame otherwise
+                  (let [selected-frame-obj (get page-objects (first page-selected))
+                        origin-frame-id (:frame-id first-selected-obj)
+                        origin-frame-object (get page-objects origin-frame-id)
+
+                        margin-x (-> (- (:width origin-frame-object) (+ (:x wrapper) (:width wrapper)))
+                                     (min (- (:width frame-object) (:width wrapper))))
+
+                        margin-y  (-> (- (:height origin-frame-object) (+ (:y wrapper) (:height wrapper)))
+                                      (min (- (:height frame-object) (:height wrapper))))
+
+                        ;; Pasted objects mustn't exceed the selected frame x limit
+                        paste-x (if (> (+ (:width wrapper) (:x1 wrapper)) (:width frame-object))
+                                  (+ (- (:x frame-object) (:x orig-pos)) (- (:width frame-object) (:width wrapper) margin-x))
+                                  (:x frame-object))
+
+                        ;; Pasted objects mustn't exceed the selected frame y limit
+                        paste-y (if (> (+ (:height wrapper) (:y1 wrapper)) (:height frame-object))
+                                  (+ (- (:y frame-object) (:y orig-pos)) (- (:height frame-object) (:height wrapper) margin-y))
+                                  (:y frame-object))
+
+                        delta (if (= origin-frame-id uuid/zero)
+                                ;; When the origin isn't in a frame the result is pasted in the center.
+                                (gpt/subtract (gsh/shape->center frame-object) (grc/rect->center wrapper))
+                                ;; When pasting from one frame to another frame the object
+                                ;; position must be limited to container boundaries. If
+                                ;; the pasted object doesn't fit we try to:
+                                ;;
+                                ;; - Align it to the limits on the x and y axis
+                                ;; - Respect the distance of the object to the right and bottom in the original frame
+                                (gpt/point paste-x paste-y))]
+                    [frame-id delta (dec (count (:shapes selected-frame-obj)))]))
+
+                (empty? page-selected)
+                (let [frame-id (ctst/top-nested-frame page-objects position)
+                      delta    (gpt/subtract position orig-pos)]
+                  [frame-id delta])
+
+                :else
+                (let [parent-id (:parent-id base)
+                      delta     (if in-viewport?
+                                  (gpt/subtract position orig-pos)
+                                  (gpt/subtract (gpt/point (:selrect base)) orig-pos))]
+                  [parent-id delta index]))))
+
+          ;; Change the indexes of the pasted shapes
+          (change-add-obj-index [objects selected index change]
+            (let [;; if there is no current element selected, we want
+                  ;; the first (inc index) to be 0
+                  index (d/nilv index -1)
+                  set-index (fn [[result index] id]
+                              [(assoc result id index) (inc index)])
+
+                  ;; FIXME: optimize ???
+                  map-ids
+                  (->> selected
+                       (map #(get-in objects [% :id]))
+                       (reduce set-index [{} (inc index)])
+                       first)]
+
+              (if (and (add-obj? change)
+                       (contains? map-ids (:old-id change)))
+                (assoc change :index (get map-ids (:old-id change)))
+                change)))
+
+          (process-shape [file-id frame-id parent-id shape]
+            (cond-> shape
+              :always
+              (assoc :frame-id frame-id :parent-id parent-id)
+
+              (and (or (cfh/group-shape? shape)
+                       (cfh/bool-shape? shape))
+                   (nil? (:shapes shape)))
+              (assoc :shapes [])
+
+              (cfh/text-shape? shape)
+              (cty/remove-external-typographies file-id)))]
+
+    (let [media-idx    (->> (:images pdata)
+                            (d/index-by :prev-id))
+          selected     (:selected pdata)
+          objects      (:objects pdata)
+          page-objects (:objects page)
+
+          [candidate-parent-id
+           delta
+           index]      (calculate-paste-position objects selected mouse-position page-objects
+                                                 objects-selected-in-page is-selected-frame? is-any-same-frame-from-selected?)
+
+          [parent-id
+           frame-id]   (ctn/find-valid-parent-and-frame-ids candidate-parent-id page-objects (vals objects) true libraries)
+
+          index        (if (= candidate-parent-id parent-id) index 0)
+
+          selected     (if (and (ctl/flex-layout? page-objects parent-id) (not (ctl/reverse? page-objects parent-id)))
+                         (into (d/ordered-set) (reverse selected))
+                         selected)
+
+          objects      (update-vals objects (partial process-shape file-id frame-id parent-id))
+
+          all-objects  (merge page-objects objects)
+
+          drop-cell    (when (ctl/grid-layout? all-objects parent-id)
+                         (gslg/get-drop-cell frame-id all-objects mouse-position))
+
+          changes      (-> changes
+                           (generate-duplicate-changes all-objects page selected delta libraries ldata file-id)
+                           (pcb/amend-changes (partial process-rchange media-idx))
+                           (pcb/amend-changes (partial change-add-obj-index objects selected index)))
+
+          ;; Adds a resize-parents operation so the groups are
+          ;; updated. We add all the new objects
+          changes      (->> (:redo-changes changes)
+                            (filter add-obj?)
+                            (map :id)
+                            (pcb/resize-parents changes))
+
+          selected     (into (d/ordered-set)
+                             (comp
+                              (filter add-obj?)
+                              (filter #(contains? selected (:old-id %)))
+                              (map :obj)
+                              (map :id))
+                             (:redo-changes changes))
+
+          changes      (cond-> changes
+                         (some? drop-cell)
+                         (pcb/update-shapes [parent-id]
+                                            #(ctl/add-children-to-cell % selected all-objects drop-cell)))]
+
+      [changes selected frame-id])))
