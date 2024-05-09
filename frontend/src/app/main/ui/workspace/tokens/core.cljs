@@ -67,8 +67,12 @@
    (dwt/update-dimensions shape-ids :width value)
    (dwt/update-dimensions shape-ids :height value)))
 
-(defn update-layout-spacing-column [value shape-ids]
-  (let [selected-shapes  (wsh/lookup-selected @st/state)]
+(defn update-opacity [value shape-ids]
+  (st/emit!
+   (dch/update-shapes shape-ids #(assoc % :opacity value))))
+
+(defn update-layout-spacing-column [value _shape-ids]
+  (let [selected-shapes (wsh/lookup-selected @st/state)]
     (st/emit!
      (dwsl/update-layout selected-shapes {:layout-gap {:column-gap value :row-gap value}}))))
 
@@ -112,6 +116,8 @@
                        :key :numeric}]}}]
    [:opacity
     {:title "Opacity"
+     :attributes ctt/opacity-keys
+     :on-update-shape update-opacity
      :modal {:key :tokens/opacity
              :fields [{:label "Opacity"
                        :key :opacity}]}}]
