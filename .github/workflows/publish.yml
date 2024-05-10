@@ -2,11 +2,18 @@ name: Publish docker image
 
 on:
   push:
-    branches: [ token-studio-develop ]
+    branches: [ tokens-studio-develop ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - dockerfile: Dockerfile.backend
+            type: backend
+          - dockerfile: Dockerfile.frontend
+            type: frontend
     permissions:
       contents: read
       packages: write
@@ -24,20 +31,27 @@ jobs:
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN  }}
+        password: ${{ secrets.GHCR_TOKEN  }}
 
     - name: Docker meta
       id: meta
       uses: docker/metadata-action@v5
       with:
         tags: |
-          type=sha,format=long
+          type=sha,format=long,prefix=${{matrix.type}}-
         images: |
-          ghcr.io/tokens-studio/token-flow
+          ghcr.io/tokens-studio/tokens-studio-for-penpot
+    - name: prebuild
+      run: |
+        echo "Building ${{ matrix.type }} image"
+        ./manage.sh build-${{matrix.type}}-bundle
+        mv ./bundles/${{matrix.type}} ./docker/images/bundle-${{matrix.type}}/
+
     - name: Publish Docker images
       uses: docker/build-push-action@v5
       with:
-        context: .
+        context: ./docker/images
+        file: ./docker/images/${{ matrix.dockerfile }} 
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
