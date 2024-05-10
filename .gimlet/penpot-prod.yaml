@@ -4,29 +4,64 @@ namespace: apps
 deploy:
   branch: token-studio-develop
   event: push
-chart:
-  repository: https://charts.truecharts.org
-  name: penpot 
-  version: 4.0.13
-values:
-  backendImage:
-    pullPolicy: IfNotPresent
-    repository: ghcr.io/tokens-studio/tokens-studio-for-penpot
-    tag: 'backend-{{ .SHA }}'
-  image:
-    pullPolicy: IfNotPresent
-    repository: ghcr.io/tokens-studio/tokens-studio-for-penpot
-    tag: 'frontend-{{ .SHA }}'
-  penpot:
-    public_uri: penpot.tokens.studio
-  ingress:
-    main:
-      enabled: true
-      annotations:
-        cert-manager.io/cluster-issuer: letsencrypt-prod
-        networking.gke.io/v1beta1.FrontendConfig: default-frontend-config
-      hosts:
-        - host: penpot.tokens.studio
-      tls:
-        - hosts:
-          - penpot.tokens.studio
+manifests: | 
+  apiVersion: v1
+  kind: Namespace
+  metadata:
+    name: penpot
+    labels:
+      toolkit.fluxcd.io/tenant: penpot-team
+  ---
+  apiVersion: source.toolkit.fluxcd.io/v1beta2
+  kind: HelmRepository
+  metadata:
+    name: truecharts
+    namespace: penpot
+  spec:
+    interval: 5m
+    type: oci
+    url: oci://tccr.io/truecharts
+  ---
+  apiVersion: helm.toolkit.fluxcd.io/v2beta2
+  kind: HelmRelease
+  metadata:
+    name: penpot
+    namespace: penpot
+  spec:
+    releaseName: penpot 
+    chart:
+      spec:
+        version: "4.0.13"
+        chart: penpot 
+        sourceRef:
+          kind: HelmRepository
+          name: truecharts
+    interval: 50m
+    install:
+      remediation:
+        retries: 3
+    # Default values
+    # https://github.com/stefanprodan/podinfo/blob/master/charts/podinfo/values.yaml
+    values:
+      backendImage:
+        pullPolicy: IfNotPresent
+        repository: ghcr.io/tokens-studio/tokens-studio-for-penpot
+        tag: 'backend-{{ .SHA }}'
+      image:
+        pullPolicy: IfNotPresent
+        repository: ghcr.io/tokens-studio/tokens-studio-for-penpot
+        tag: 'frontend-{{ .SHA }}'
+      penpot:
+        public_uri: penpot.tokens.studio
+      ingress:
+        main:
+          enabled: true
+          annotations:
+            cert-manager.io/cluster-issuer: letsencrypt-prod
+            networking.gke.io/v1beta1.FrontendConfig: default-frontend-config
+          hosts:
+            - host: penpot.tokens.studio
+          tls:
+            - hosts:
+              - penpot.tokens.studio
+        
