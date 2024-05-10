@@ -89,6 +89,8 @@
    [:position-x {:optional true} ::sm/uuid]
    [:position-y {:optional true} ::sm/uuid]])
 
+(def spacing-keys (schema-keys ::spacing))
+
 (sm/def! ::tokens
   [:map {:title "Applied Tokens"}])
 
