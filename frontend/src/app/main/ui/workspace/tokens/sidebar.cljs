@@ -7,32 +7,15 @@
 (ns app.main.ui.workspace.tokens.sidebar
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data :as d]
    [app.main.data.modal :as modal]
-   [app.main.data.tokens :as dt]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.search-bar :refer [search-bar]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.tokens.common :refer [workspace-shapes]]
    [app.main.ui.workspace.tokens.core :refer [tokens-applied?] :as wtc]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
-
-(defn on-apply-token [{:keys [token token-type-props selected-shapes] :as _props}]
-  (let [{:keys [attributes on-apply on-update-shape]
-         :or {on-apply dt/update-token-from-attributes}} token-type-props
-        shape-ids (->> selected-shapes
-                       (eduction
-                        (remove #(tokens-applied? token % attributes))
-                        (map :id)))
-        token-value (d/parse-integer (:value token))]
-    (doseq [shape selected-shapes]
-      (st/emit! (on-apply {:token-id (:id token)
-                           :shape-id (:id shape)
-                           :attributes attributes}))
-      (on-update-shape token-value shape-ids))))
 
 (mf/defc token-pill
   {::mf/wrap-props false}
@@ -66,9 +49,9 @@
                              (mf/deps selected-shapes token-type-props)
                              (fn [event token]
                                (dom/stop-propagation event)
-                               (on-apply-token {:token token
-                                                :token-type-props token-type-props
-                                                :selected-shapes selected-shapes})))
+                               (wtc/on-apply-token {:token token
+                                                    :token-type-props token-type-props
+                                                    :selected-shapes selected-shapes})))
         tokens-count (count tokens)]
     [:div {:on-click on-toggle-open-click}
      [:& cmm/asset-section {:file-id (:id file)
