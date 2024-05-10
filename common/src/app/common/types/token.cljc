@@ -77,6 +77,12 @@
 
 (def dimensions-keys (schema-keys ::dimensions))
 
+(sm/def! ::opacity
+  [:map
+   [:opacity ::sm/uuid]])
+
+(def opacity-keys (schema-keys ::opacity))
+
 (sm/def! ::spacing
   [:map
    [:spacing-column {:optional true} ::sm/uuid]
