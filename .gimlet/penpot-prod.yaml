@@ -1,0 +1,32 @@
+app: penpot
+env: prod
+namespace: apps
+deploy:
+  branch: token-studio-develop
+  event: push
+chart:
+  repository: https://charts.truecharts.org
+  name: penpot 
+  version: 4.0.13
+values:
+  backendImage:
+    pullPolicy: IfNotPresent
+    repository: ghcr.io/tokens-studio/tokens-studio-for-penpot
+    tag: 'backend-{{ .SHA }}'
+  image:
+    pullPolicy: IfNotPresent
+    repository: ghcr.io/tokens-studio/tokens-studio-for-penpot
+    tag: 'frontend-{{ .SHA }}'
+  penpot:
+    public_uri: penpot.tokens.studio
+  ingress:
+    main:
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-prod
+        networking.gke.io/v1beta1.FrontendConfig: default-frontend-config
+      hosts:
+        - host: penpot.tokens.studio
+      tls:
+        - hosts:
+          - penpot.tokens.studio

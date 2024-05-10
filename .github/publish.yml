@@ -1,0 +1,59 @@
+name: Publish docker image
+
+on:
+  push:
+    branches: [ token-studio-develop ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3 
+
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN  }}
+
+    - name: Docker meta
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        tags: |
+          type=sha,format=long
+        images: |
+          ghcr.io/tokens-studio/token-flow
+    - name: Publish Docker images
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs:
+      - "build"
+    steps: 
+      - uses: actions/checkout@v4
+      - name: 🍍 Deploy with Gimlet
+        uses: gimlet-io/gimlet-artifact-shipper-action@v0.8.3
+        env:
+              GIMLET_SERVER: ${{ secrets.GIMLET_SERVER }}
+              GIMLET_TOKEN: ${{ secrets.GIMLET_TOKEN }}
+        with:
+          ENV: "prod"
+          APP: "penpot"
