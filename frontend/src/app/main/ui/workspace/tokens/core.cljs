@@ -9,6 +9,7 @@
    [app.common.data :as d :refer [ordered-map]]
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.token :as ctt]
+   [app.main.data.tokens :as dt]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -31,7 +32,26 @@
   [token shapes token-attributes]
   (some #(token-applied? token % token-attributes) shapes))
 
+(defn resolve-token-value [{:keys [value] :as token}]
+  (if-let [int-or-double (d/parse-double value)]
+    int-or-double
+    (throw (ex-info (str "Implement token value resolve for " value) token))))
+
 ;; Update functions ------------------------------------------------------------
+
+(defn on-apply-token [{:keys [token token-type-props selected-shapes] :as _props}]
+  (let [{:keys [attributes on-apply on-update-shape]
+         :or {on-apply dt/update-token-from-attributes}} token-type-props
+        shape-ids (->> selected-shapes
+                       (eduction
+                        (remove #(tokens-applied? token % attributes))
+                        (map :id)))
+        token-value (resolve-token-value token)]
+    (doseq [shape selected-shapes]
+      (st/emit! (on-apply {:token-id (:id token)
+                           :shape-id (:id shape)
+                           :attributes attributes}))
+      (on-update-shape token-value shape-ids))))
 
 (defn update-shape-radius [value shape-ids]
   (st/emit!
