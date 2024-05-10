@@ -13,8 +13,7 @@
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.transforms :as dwt]
-   [app.main.store :as st]
-   [beicon.v2.core :as rx]))
+   [app.main.store :as st]))
 
 ;; Helpers ---------------------------------------------------------------------
 
