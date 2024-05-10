@@ -43,8 +43,8 @@
         toggle-pages   (mf/use-callback #(reset! show-pages? not))
 
         section        (cond (or mode-inspect? (contains? layout :layers)) :layers
-                             (contains? layout :tokens) :tokens
-                             (contains? layout :assets) :assets)
+                             (contains? layout :assets) :assets
+                             (contains? layout :tokens) :tokens)
 
         shortcuts?     (contains? layout :shortcuts)
         show-debug?    (contains? layout :debug-panel)
