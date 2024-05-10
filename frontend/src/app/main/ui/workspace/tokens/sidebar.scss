@@ -15,6 +15,7 @@
 .token-pills-wrapper {
   display: flex;
   gap: $s-4;
+  flex-wrap: wrap;
 }
 
 .token-pill {
