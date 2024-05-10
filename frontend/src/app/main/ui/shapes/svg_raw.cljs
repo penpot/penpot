@@ -104,9 +104,20 @@
           svg-root?  (and (map? content) (= tag :svg))
           svg-tag?   (map? content)
           svg-leaf?  (string? content)
-          valid-tag? (contains? csvg/svg-tags tag)]
+          valid-tag? (contains? csvg/svg-tags tag)
+
+          current-svg-root-id (mf/use-ctx muc/current-svg-root-id)
+
+          ;; We need to create a "scope" for svg classes. The root of the imported SVG (first group) will
+          ;; be stored in the context and with this we scoped the styles:
+          style-content
+          (when (= tag :style)
+            (dm/str "#shape-" current-svg-root-id "{ " (->> shape :content :content (str/join "\n")) " }"))]
 
       (cond
+        (= tag :style)
+        [:style style-content]
+
         ^boolean svg-root?
         [:& svg-root {:shape shape}
          (for [item childs]

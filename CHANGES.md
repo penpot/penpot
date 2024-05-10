@@ -10,6 +10,7 @@
 ### :bug: Bugs fixed
 
 - Fix color palette sorting [Taiga Issue #7458](https://tree.taiga.io/project/penpot/issue/7458)
+- Fix style scoping problem with imported SVG [Taiga #7671](https://tree.taiga.io/project/penpot/issue/7671)
 
 ## 2.0.1
 
