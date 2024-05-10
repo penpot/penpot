@@ -33,12 +33,10 @@
         copy-child (ths/get-shape file :copy-child)
 
         ;; ==== Action
-        update-fn (fn [shape]
-                    (assoc shape :fills (ths/sample-fills-color :fill-color "#fabada")))
-
         changes   (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
                                               #{(:id copy-child)}
-                                              update-fn
+                                              (fn [shape]
+                                                (assoc shape :fills (ths/sample-fills-color :fill-color "#fabada")))
                                               (:objects page)
                                               {})
 
@@ -86,12 +84,10 @@
         copy-child (ths/get-shape file :copy-child)
 
         ;; ==== Action
-        update-fn (fn [shape]
-                    (assoc shape :fills (ths/sample-fills-color :fill-color "#fabada")))
-
         changes   (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
                                               #{(:id copy-child)}
-                                              update-fn
+                                              (fn [shape]
+                                                (assoc shape :fills (ths/sample-fills-color :fill-color "#fabada")))
                                               (:objects page)
                                               {})
 
@@ -281,12 +277,10 @@
         copy2-root (ths/get-shape file :copy2-root)
 
         ;; ==== Action
-        update-fn (fn [shape]
-                    (assoc shape :fills (ths/sample-fills-color :fill-color "#fabada")))
-
         changes   (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
                                               #{(:id copy2-root)}
-                                              update-fn
+                                              (fn [shape]
+                                                (assoc shape :fills (ths/sample-fills-color :fill-color "#fabada")))
                                               (:objects page)
                                               {})
 
@@ -330,12 +324,10 @@
         copy2-child (ths/get-shape file :copy2-child)
 
         ;; ==== Action
-        update-fn (fn [shape]
-                    (assoc shape :fills (ths/sample-fills-color :fill-color "#fabada")))
-
         changes   (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
                                               #{(:id copy2-child)}
-                                              update-fn
+                                              (fn [shape]
+                                                (assoc shape :fills (ths/sample-fills-color :fill-color "#fabada")))
                                               (:objects page)
                                               {})
 
