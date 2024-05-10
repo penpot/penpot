@@ -20,10 +20,14 @@
 (mf/defc token-pill
   {::mf/wrap-props false}
   [{:keys [on-click token highlighted?]}]
-  (let [{:keys [name value]} token]
+  (let [{:keys [name value]} token
+        resolved-value (try
+                         (wtc/resolve-token-value token)
+                         (catch js/Error _ nil))]
     [:div {:class (stl/css-case :token-pill true
-                                :token-pill-highlighted highlighted?)
-           :title (str "Token value: " value)
+                                :token-pill-highlighted highlighted?
+                                :token-pill-invalid (not resolved-value))
+           :title (str (if resolved-value "Token value: " "Invalid token value: ") value)
            :on-click on-click}
      name]))
 

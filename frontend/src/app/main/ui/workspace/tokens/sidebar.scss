@@ -27,4 +27,9 @@
     color: var(--button-primary-foreground-color-rest);
     background: var(--button-primary-background-color-rest);
   }
+
+  &.token-pill-invalid {
+    color: var(--status-color-error-500);
+    opacity: 0.8;
+  }
 }
