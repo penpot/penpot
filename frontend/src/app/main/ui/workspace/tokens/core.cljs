@@ -30,10 +30,10 @@
   [token shapes token-attributes]
   (some #(token-applied? token % token-attributes) shapes))
 
-(defn resolve-token-value [value]
+(defn resolve-token-value [{:keys [value] :as token}]
   (if-let [int-or-double (d/parse-double value)]
     int-or-double
-    (throw (ex-info (str "Implement token value resolve for " value) value))))
+    (throw (ex-info (str "Implement token value resolve for " value) token))))
 
 ;; Update functions ------------------------------------------------------------
 
@@ -44,7 +44,7 @@
                        (eduction
                         (remove #(tokens-applied? token % attributes))
                         (map :id)))
-        token-value (resolve-token-value (:value token))]
+        token-value (resolve-token-value token)]
     (doseq [shape selected-shapes]
       (st/emit! (on-apply {:token-id (:id token)
                            :shape-id (:id shape)
