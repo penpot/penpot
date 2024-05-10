@@ -4,19 +4,19 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns common-tests.helpers.files
+(ns app.common.test-helpers.files
   (:require
    [app.common.data :as d]
    [app.common.features :as ffeat]
    [app.common.files.changes :as cfc]
    [app.common.files.validate :as cfv]
    [app.common.pprint :refer [pprint]]
+   [app.common.test-helpers.ids-map :as thi]
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
    [app.common.uuid :as uuid]
-   [common-tests.helpers.ids-map :as thi]
    [cuerdas.core :as str]))
 
 ;; ----- Files

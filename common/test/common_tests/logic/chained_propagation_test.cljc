@@ -6,21 +6,16 @@
 
 (ns common-tests.logic.chained-propagation-test
   (:require
-   [app.common.files.changes :as ch]
    [app.common.files.changes-builder :as pcb]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
-   [app.common.pprint :as pp]
-   [app.common.types.component :as ctk]
+   [app.common.test-helpers.components :as thc]
+   [app.common.test-helpers.compositions :as tho]
+   [app.common.test-helpers.files :as thf]
+   [app.common.test-helpers.ids-map :as thi]
+   [app.common.test-helpers.shapes :as ths]
    [app.common.types.container :as ctn]
-   [app.common.types.file :as  ctf]
-   [app.common.uuid :as uuid]
-   [clojure.test :as t]
-   [common-tests.helpers.components :as thc]
-   [common-tests.helpers.compositions :as tho]
-   [common-tests.helpers.files :as thf]
-   [common-tests.helpers.ids-map :as thi]
-   [common-tests.helpers.shapes :as ths]))
+   [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
 
@@ -55,8 +50,6 @@
 
           (step-update-color-comp-2 [file]
             (let [page    (thf/current-page file)
-                  file-id (:id file)
-                  page-id (:id page)
 
                   ;; Changes to update the color of the contained rectangle in component comp-2
                   changes-update-color-comp-1
@@ -75,7 +68,6 @@
           (step-propagate-comp-2 [file]
             (let [page    (thf/current-page file)
                   file-id (:id file)
-                  page-id (:id page)
 
                   ;; Changes to propagate the color changes of component comp-1
                   changes-sync-comp-1 (-> (pcb/empty-changes)
@@ -108,8 +100,7 @@
                                               (:objects page)
                                               {})
 
-                  file' (thf/apply-changes file changes-update-color-comp-3)
-                  page' (thf/current-page file')]
+                  file' (thf/apply-changes file changes-update-color-comp-3)]
 
               (t/is (= (first-child-fill-color file' :comp-1-comp-2) "#00FF00"))
               file'))
@@ -168,7 +159,6 @@
 
           (step-update-color-comp-4 [file]
             (let [page          (thf/current-page file)
-                  file-id       (:id file)
                   ;; Changes to update the color of the contained rectangle in component comp-4
                   changes-update-color-comp-4
                   (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
@@ -184,8 +174,7 @@
               file'))
 
           (step-propagate-comp-4 [file]
-            (let [page    (thf/current-page file)
-                  file-id (:id file)
+            (let [file-id (:id file)
                   ;; Changes to propagate the color changes of component comp-4
                   changes-sync-comp-4 (-> (pcb/empty-changes)
                                           (cll/generate-sync-file-changes

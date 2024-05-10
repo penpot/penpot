@@ -4,10 +4,12 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns common-tests.helpers.shapes
+(ns app.common.test-helpers.shapes
   (:require
    [app.common.colors :as clr]
    [app.common.files.helpers :as cfh]
+   [app.common.test-helpers.files :as thf]
+   [app.common.test-helpers.ids-map :as thi]
    [app.common.types.color :as ctc]
    [app.common.types.colors-list :as ctcl]
    [app.common.types.file :as ctf]
@@ -15,9 +17,7 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.typographies-list :as cttl]
-   [app.common.types.typography :as ctt]
-   [common-tests.helpers.files :as thf]
-   [common-tests.helpers.ids-map :as thi]))
+   [app.common.types.typography :as ctt]))
 
 (defn sample-shape
   [label & {:keys [type] :as params}]

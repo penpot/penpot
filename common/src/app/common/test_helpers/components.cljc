@@ -4,22 +4,22 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns common-tests.helpers.components
+(ns app.common.test-helpers.components
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.logic.libraries :as cll]
+   [app.common.test-helpers.files :as thf]
+   [app.common.test-helpers.ids-map :as thi]
+   [app.common.test-helpers.shapes :as ths]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.pages-list :as ctpl]
-   [app.common.types.shape-tree :as ctst]
-   [common-tests.helpers.files :as thf]
-   [common-tests.helpers.ids-map :as thi]
-   [common-tests.helpers.shapes :as ths]))
+   [app.common.types.shape-tree :as ctst]))
 
 (defn make-component
   [file label root-label & {:keys [] :as params}]
