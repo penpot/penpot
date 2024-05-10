@@ -720,6 +720,7 @@
                                    (map lookupf)
                                    (map mk-change))
                              updated-shapes))))
+
          (apply-changes-local)))))
 
 (defn update-component

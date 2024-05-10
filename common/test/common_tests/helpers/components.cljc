@@ -33,8 +33,9 @@
     (let [[_new-root _new-shapes updated-shapes]
           (ctn/convert-shape-in-component root (:objects page) (:id file))
 
-          updated-root (first updated-shapes)] ; Can't use new-root because it has a new id
+          updated-root (first updated-shapes) ; Can't use new-root because it has a new id
 
+          [path name] (cfh/parse-path-name (:name updated-root))]
       (thi/set-id! label (:component-id updated-root))
 
       (ctf/update-file-data
@@ -49,14 +50,15 @@
                    updated-shapes)
            (ctkl/add-component $ (assoc params
                                         :id (:component-id updated-root)
-                                        :name (:name updated-root)
+                                        :name name
+                                        :path path
                                         :main-instance-id (:id updated-root)
                                         :main-instance-page (:id page)
                                         :shapes updated-shapes))))))))
 
 (defn get-component
-  [file label]
-  (ctkl/get-component (:data file) (thi/id label)))
+  [file label & {:keys [include-deleted?] :or {include-deleted? false}}]
+  (ctkl/get-component (:data file) (thi/id label) include-deleted?))
 
 (defn get-component-by-id
   [file id]
@@ -129,6 +131,7 @@
     (when children-labels
       (dotimes [idx (count children-labels)]
         (set-child-label file' copy-root-label idx (nth children-labels idx))))
+
     file'))
 
 (defn component-swap

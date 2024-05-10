@@ -61,6 +61,10 @@
 
     (update container :objects update-objects parent-id)))
 
+(defn parent-of?
+  [parent child]
+  (= (:id parent) (:parent-id child)))
+
 (defn get-shape
   "Get a shape identified by id"
   [container id]

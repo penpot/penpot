@@ -150,8 +150,6 @@
 
         [new-component-shape new-component-shapes nil nil]))))
 
-
-
 (defn generate-duplicate-component
   "Create a new component copied from the one with the given id."
   [changes library component-id components-v2]

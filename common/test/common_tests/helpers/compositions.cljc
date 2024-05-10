@@ -140,8 +140,8 @@
                           component2-params)))
 
 (defn add-nested-component-with-copy
-  [file component1-label main1-root-label main1-child-label component2-label main2-root-label nested-head-label copy2-label
-   & {:keys [component1-params root1-params main1-child-params component2-params main2-root-params nested-head-params copy2-params]}]
+  [file component1-label main1-root-label main1-child-label component2-label main2-root-label nested-head-label copy2-root-label
+   & {:keys [component1-params root1-params main1-child-params component2-params main2-root-params nested-head-params copy2-root-params]}]
   ;; Generated shape tree:
   ;; {:main1-root-label} [:name: Frame1]      # [Component :component1-label]
   ;;     :main1-child-label [:name: Rect1]    
@@ -166,4 +166,4 @@
                             :component2-params component2-params
                             :main2-root-params main2-root-params
                             :nested-head-params nested-head-params)
-      (thc/instantiate-component component2-label copy2-label copy2-params)))
+      (thc/instantiate-component component2-label copy2-root-label copy2-root-params)))
