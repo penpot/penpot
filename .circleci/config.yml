@@ -103,6 +103,16 @@ jobs:
             yarn test
 
       - run:
+          name: "frontend integration tests"
+          working_directory: "./frontend"
+          command: |
+            yarn install
+            yarn run compile
+            clojure -M:dev:shadow-cljs compile main
+            yarn playwright install --with-deps chromium
+            yarn e2e:test
+
+      - run:
           name: "backend tests"
           working_directory: "./backend"
           command: |

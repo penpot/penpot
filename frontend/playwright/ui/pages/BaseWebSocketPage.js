@@ -27,6 +27,6 @@ export class BaseWebSocketPage extends BasePage {
    * @returns {Promise<MockWebSocketHelper>}
    */
   async waitForNotificationsWebSocket() {
-    return this.waitForWebSocket("ws://0.0.0.0:3500/ws/notifications");
+    return this.waitForWebSocket("ws://localhost:3000/ws/notifications");
   }
 }
