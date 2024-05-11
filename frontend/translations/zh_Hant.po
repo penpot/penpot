@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-05-05 05:07+0000\n"
+"PO-Revision-Date: 2024-05-12 09:01+0000\n"
 "Last-Translator: Andy Li <andyli2456@gmail.com>\n"
 "Language-Team: Chinese (Traditional) <https://hosted.weblate.org/projects/"
 "penpot/frontend/zh_Hant/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.5.3\n"
+"X-Generator: Weblate 5.5.4\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -2442,3 +2442,29 @@ msgstr "不再作為共用資料庫"
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 msgid "dashboard.unpublish-shared"
 msgstr "取消發佈資料庫"
+
+msgid "errors.cannot-upload"
+msgstr "無法上傳此媒體檔案。"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal.description"
+msgstr "個人存取權杖就像是帳號密碼驗證系統的替代方案，且可用於讓第三方應用程式存取 "
+"Penpot 內部 API"
+
+#: src/app/main/data/users.cljs
+msgid "errors.email-domain-not-allowed"
+msgstr "不允許此域名"
+
+msgid "errors.paste-data-validation"
+msgstr "剪貼簿中的資料無效"
+
+msgid "dashboard.import.analyze-error.components-v2"
+msgstr "檔案中啟用了 Components v2 但這個團隊尚未支援。"
+
+#: src/app/main/ui/confirm.cljs
+msgid "ds.component-subtitle"
+msgstr "待更新的元件："
+
+#: src/app/main/data/users.cljs
+msgid "errors.auth-provider-not-allowed"
+msgstr "此設定檔不允許此驗證提供者"
