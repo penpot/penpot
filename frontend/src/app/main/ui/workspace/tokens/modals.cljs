@@ -22,6 +22,12 @@
   [properties]
   [:& tokens-properties-form properties])
 
+(mf/defc stroke-width-modal
+  {::mf/register modal/components
+   ::mf/register-as :tokens/stroke-width}
+  [properties]
+  [:& tokens-properties-form properties])
+
 (mf/defc box-shadow-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/box-shadow}
