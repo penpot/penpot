@@ -35,6 +35,6 @@ test.skip("User draws a rect", async ({ page }) => {
   await workspacePage.clickWithDragViewportAt(128, 128, 200, 100);
 
   const shape = await workspacePage.rootShape.locator("rect");
-  expect(shape).toHaveAttribute("width", "200");
-  expect(shape).toHaveAttribute("height", "100");
+  await expect(shape).toHaveAttribute("width", "200");
+  await expect(shape).toHaveAttribute("height", "100");
 });
