@@ -71,6 +71,13 @@
   (st/emit!
    (dch/update-shapes shape-ids #(assoc % :opacity value))))
 
+(defn update-stroke-width
+  [value shape-ids]
+  (st/emit!
+   (dch/update-shapes shape-ids (fn [shape]
+                                  (when (seq (:strokes shape))
+                                    (assoc-in shape [:strokes 0 :stroke-width] value))))))
+
 (defn update-layout-spacing-column [value _shape-ids]
   (let [selected-shapes (wsh/lookup-selected @st/state)]
     (st/emit!
@@ -91,6 +98,13 @@
      :modal {:key :tokens/border-radius
              :fields [{:label "Border Radius"
                        :key :border-radius}]}}]
+   [:stroke-width
+    {:title "Stroke Width"
+     :attributes ctt/stroke-width-keys
+     :on-update-shape update-stroke-width
+     :modal {:key :tokens/stroke-width
+             :fields [{:label "Stroke Width"
+                       :key :stroke-width}]}}]
    [:box-shadow
     {:title "Box Shadow"
      :modal {:key :tokens/box-shadow
