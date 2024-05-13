@@ -98,7 +98,7 @@ manifests: |
         postgresqlEnabled: false
         redisEnabled: false
         imagePullSecrets: 
-          - ghcr-login-secret
+          - name: ghcr-login-secret
       backend:
         image:
           pullPolicy: IfNotPresent
