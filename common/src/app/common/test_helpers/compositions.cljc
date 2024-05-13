@@ -4,11 +4,11 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns common-tests.helpers.compositions
+(ns app.common.test-helpers.compositions
   (:require
    [app.common.data :as d]
-   [common-tests.helpers.components :as thc]
-   [common-tests.helpers.shapes :as ths]))
+   [app.common.test-helpers.components :as thc]
+   [app.common.test-helpers.shapes :as ths]))
 
 (defn add-rect
   [file rect-label & {:keys [] :as params}]

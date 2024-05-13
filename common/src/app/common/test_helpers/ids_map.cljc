@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns common-tests.helpers.ids-map
+(ns app.common.test-helpers.ids-map
   (:require
    [app.common.uuid :as uuid]))
 

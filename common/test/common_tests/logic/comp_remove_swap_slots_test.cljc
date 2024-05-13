@@ -10,18 +10,17 @@
    [app.common.geom.point :as gpt]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
+   [app.common.test-helpers.components :as thc]
+   [app.common.test-helpers.compositions :as tho]
+   [app.common.test-helpers.files :as thf]
+   [app.common.test-helpers.ids-map :as thi]
+   [app.common.test-helpers.shapes :as ths]
    [app.common.types.component :as ctk]
    [app.common.uuid :as uuid]
    [clojure.test :as t]
-   [common-tests.helpers.components :as thc]
-   [common-tests.helpers.compositions :as tho]
-   [common-tests.helpers.files :as thf]
-   [common-tests.helpers.ids-map :as thi]
-   [common-tests.helpers.shapes :as ths]
    [cuerdas.core :as str]))
 
 (t/use-fixtures :each thi/test-fixture)
-
 
 ;; Related .penpot file: common/test/cases/remove-swap-slots.penpot
 (defn- setup-file

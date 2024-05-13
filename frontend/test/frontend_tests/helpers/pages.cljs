@@ -97,7 +97,7 @@
      (if (empty? shapes)
        state
        (let [[group changes]
-             (dwg/prepare-create-group nil (:objects page) (:id page) shapes prefix true)]
+             (dwg/prepare-create-group (pcb/empty-changes) nil (:objects page) (:id page) shapes prefix true)]
 
          (swap! idmap assoc label (:id group))
          (update state :workspace-data
