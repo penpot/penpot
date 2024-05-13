@@ -54,3 +54,8 @@
     (doall (for [event events]
              (ptk/emit! store event)))
     (ptk/emit! store :the/end)))
+
+(defn get-file-from-store
+  [store]
+  (-> (:workspace-file store)
+      (assoc :data (:workspace-data store))))
