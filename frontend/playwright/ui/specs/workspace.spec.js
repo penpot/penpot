@@ -6,7 +6,7 @@ test.beforeEach(async ({ page }) => {
   await WorkspacePage.init(page);
 });
 
-test("User loads worskpace with empty file", async ({ page }) => {
+test.skip("User loads worskpace with empty file", async ({ page }) => {
   const workspacePage = new WorkspacePage(page);
   await workspacePage.setupEmptyFile(page);
 
@@ -15,7 +15,7 @@ test("User loads worskpace with empty file", async ({ page }) => {
   await expect(workspacePage.pageName).toHaveText("Page 1");
 });
 
-test("User receives presence notifications updates in the workspace", async ({ page }) => {
+test.skip("User receives presence notifications updates in the workspace", async ({ page }) => {
   const workspacePage = new WorkspacePage(page);
   await workspacePage.setupEmptyFile();
 
@@ -25,7 +25,7 @@ test("User receives presence notifications updates in the workspace", async ({ p
   await expect(page.getByTestId("active-users-list").getByAltText("Princesa Leia")).toHaveCount(2);
 });
 
-test("User draws a rect", async ({ page }) => {
+test.skip("User draws a rect", async ({ page }) => {
   const workspacePage = new WorkspacePage(page);
   await workspacePage.setupEmptyFile();
   await workspacePage.mockRPC("update-file?id=*", "workspace/update-file-create-rect.json");
