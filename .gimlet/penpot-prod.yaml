@@ -120,6 +120,12 @@ manifests: |
             - secretName: tls-penpot
               hosts:
               - penpot.tokens.studio
+      # https://github.com/codechem/helm/issues/15
+      ingress:
+        tls:
+          - secretName: tls-penpot
+            hosts:
+            - penpot.tokens.studio
       config:
         publicURI: https://penpot.tokens.studio
         postgresql:
