@@ -96,7 +96,7 @@ manifests: |
     values:
       global:
         postgresqlEnabled: false
-        redisEnabled: false
+        redisEnabled: true
         imagePullSecrets: 
           - name: ghcr-login-secret
       backend:
@@ -109,16 +109,16 @@ manifests: |
           pullPolicy: IfNotPresent
           repository: ghcr.io/tokens-studio/tokens-studio-for-penpot
           tag: 'frontend-{{ .SHA }}'
-      ingress:
-        enabled: true
-        annotations:
-          cert-manager.io/cluster-issuer: letsencrypt-prod
-          networking.gke.io/v1beta1.FrontendConfig: default-frontend-config
-        hosts:
-          - host: penpot.tokens.studio
-        tls:
-          - hosts:
-            - penpot.tokens.studio
+        ingress:
+          enabled: true
+          annotations:
+            cert-manager.io/cluster-issuer: letsencrypt-prod
+            networking.gke.io/v1beta1.FrontendConfig: default-frontend-config
+          hosts:
+            - host: penpot.tokens.studio
+          tls:
+            - hosts:
+              - penpot.tokens.studio
       config:
         publicURI: https://penpot.tokens.studio
         postgresql:
