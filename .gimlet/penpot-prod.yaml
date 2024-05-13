@@ -128,6 +128,8 @@ manifests: |
             - penpot.tokens.studio
       config:
         publicURI: https://penpot.tokens.studio
+        redis:
+          host: penpot-redis-headless.penpot.svc.cluster.local
         postgresql:
           host: penpot-db-rw
           database: penpot
