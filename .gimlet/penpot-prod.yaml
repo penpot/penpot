@@ -117,7 +117,8 @@ manifests: |
           hosts:
             - host: penpot.tokens.studio
           tls:
-            - hosts:
+            - secretName: tls-penpot
+              hosts:
               - penpot.tokens.studio
       config:
         publicURI: https://penpot.tokens.studio
