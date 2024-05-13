@@ -15,12 +15,65 @@ manifests: |
   apiVersion: source.toolkit.fluxcd.io/v1beta2
   kind: HelmRepository
   metadata:
-    name: truecharts
+    name: codechem
     namespace: penpot
   spec:
     interval: 5m
-    type: oci
-    url: oci://tccr.io/truecharts
+    url: https://charts.codechem.com
+  ---
+  apiVersion: bitnami.com/v1alpha1
+  kind: SealedSecret
+  metadata:
+    creationTimestamp: null
+    name: db-penpot-secrets
+    namespace: penpot
+  spec:
+    encryptedData:
+      password: AgCiw6CFyLZqoW6kSqlpiLdYm8yX/w3F4gislkq3AGE7U0NcocimqJvntuaQ79PjTcV/NbdoQQatZwD3GwNynF1ZO5aClvaYZn9QI2WZI7gwRRjrWATZeMAecDPV5hoVdA+B3COXytOeNvaS1QR2mbG0MXO8QAG9eEawr1B7X+XZaPWicJ+BZE4n6fL6zM+dxbZkLXpI9yJAsRGJSAaRVofFF8D6OlSpxV6gNYp0JG6Ml6EBoQlWFojW3Xl9Nu2HWwrNxWzV1IBi6aXlWqWEiLkF184VqE8nLIGwr6toJ3NRH84spmR8ae3fZmLjc3AXtx+lLm07BIzTPCHqKKfjdQmoVsvqOCMPtPEwvgJgEf95JHAVpKdCQwGMSsU8rfeMsettQCrazY7T8TJQylNeECBelxiX/3ElVzNoYBXOMcFYPLN6vMOJwAexU0jN1N7hgvFe2qGE69hjQkfelXpYWf3+gbxYSAo92Blos9+0D9Om3kJCDUomnapO/t4poAdV0C15dmEln69TfFt9vG2jXj/P/gwA8KlAxKPhO7PhteSrF9+qbqScssu+YthHkMujeYtJqwW9/06MessEb8HXOG19qMd+Sq6jzE2u02k9M9T8oJk1qUP4AAWDQdqOK8VDELxFiGtYuMYdpAeAYlJ4iuIS6LxESLYuiCRM6JCvTEepJ3t177dLE7NJ2gZLo6cnHIzv064thygQkZ/boDvpE3l7BRbLG7qS0Ik2jUMkzhZ/yQ==
+      username: AgAObRR5wZOzZYHbGz/uME6taQpfh7pbX9nSLlGVd4B7jKHEw/wJcjkwE4EL3nJcJRPLdBN1lnqzXcoUd/IC4RzVD9PY/4vh8VZ7SwtwmqMpGLrUUXhd1f0Uvhe5EmeoTQvKL39gFnRq4xOf+dSRybwW4Ic1st1ocVDnSKCUmR70f2wWl4z7GQx80IdxqNnMAIXzYoVUIziUrOcOGeY7sFpngV04CdBVT2Af/P1zb39LxiUZkEjG72WdTlnk5TH4S/p0ijOzcd1Cg69ErB/u1G5D8mvIe/oR+3unjgVl/XkITvdZExBtsKr9nRzGdRb7L4R4/xpfHdLUESfayyTOL7O8yiETcCkHdKBUHaUkOAw00EWktfrlok+enjvTX11NvTHBMfMwRVfVfQFEiFA5/ONMAHZuvcH3ER0CMR4wEFjkkEHFMQGH0B3ypbvZrUcXgaoNzi5xDUmrQ/QfHjg0D4VXjmoEVsKqtvfT30cZyUgs82hFnoYKYkCqkANDqsxDATB35EX5ouvgXfPNIqzzQ/EuOg3ISMBjKghSbc/KQGU1sb4qEacemA0OLA1/VCiCI6HoAIYZ8eF3Lw+o5zQEdKueKGAydiBa3vktg+bDeGYly+x9herP44B5xqjZpB8NdSXLoe7skgwY9l8z/Qzx5S+QVfetAKpoB8XzDda14FwyVKgChg8otRsvRJjpM8WjnNc0t/lbUUg=
+    template:
+      metadata:
+        creationTimestamp: null
+        name: db-penpot-secrets
+        namespace: penpot
+      type: Opaque
+  ---
+  apiVersion: bitnami.com/v1alpha1
+  kind: SealedSecret
+  metadata:
+    creationTimestamp: null
+    name: db-penpot-superuser-secret
+    namespace: penpot
+  spec:
+    encryptedData:
+      password: AgB0pbafjYslpezh14HhHzukQ3g6IFf5VNwRx+faASu1I+xkYocuJHLzUV3hS/YWULqPTTX/3L1gsP7cv3grOkk9JZWThOcy38quIEahoyuSOdCUDglO2h+dfV50QIqpBkCkLCdXZJhKZpNIUPWA8npNgB5CVtT/Hx6EXV7svV6aXtZ57FDVsgsXAi4avGGhoNUcD0JNen7P7qzTNQLB0rFtvjo6d1sVpLJj5ab02NSKHD8lfVS12Lj6BXWiLaGwkClbcENddL6eJC6BC2TKAEHwwvOAPes12IRzst9cTINtxmLb+1DkgcftDSDiG1WEmEu6Doby5UY3nVWoI679F9iKCz/TBdjQPdQCYx6lP436gI2AjFmyQky+dSee3OSiCSTXHfmMYbBOVr5JdJFWcaRCUtIZh2Rq5o4wo2ACVrFiNiIjjzsZo1RWJDfi693SnoejYi5x5Jegc0cdvPAt7/E9N4a8gS5WfX6oKFuuUiIBmgbSrxXORrEasmZiNgrWl0bzYd6Ru61nSbMPdzODc2rQEv1GO2vDOVRthmp8se3MQoV3wNLkevTuHsqZSN28wcjBxM/5Dkr0UsPqip688d68VIq/Z8h7eSzjKLR0lQZc7BcK2o0oYWmFU3Ol0mekj2pyr2sHzcvneQ9tO00JDemh41EGvtnLFSmABYt6B9/RmjiL+XjYYLUHl5kLjOyN34TnT4s1ku8WuzXKHwKX+/EqVPQwzvknk082q2i8zrY33Q==
+      username: AgBPXBXqVpJOQCz+sWvkVBEPZfAcNUzjGKwxO80sztceVsSksaXX8V9rufD8/847cG5CJCIxhOmUBpyIsoj5/xXcdHDVD2qaY6O3pmfNwg/Y2BTUSASEF2iEH8xaRVhtuPgFMdVhGnwDKkYjQr5MrzG43VUn920ruPZQbBZFEE1dgmsSFE2pbRB2WZdAZeDi4+mmlDfrROQnj89ywDmdtSzsn84it7/wkX59IB7oAaxqm5zhVjm3Ns6s9PQO1D72sIb3awGVcWOkJ6i98ghMjTNhu1E8hTBuOwZEjhyB8Oe1/qlZ9cZ9Rguo2MQ4lENd7SUaG+6tcECjZP9KrodfQIKcpFunrJc/V5+pm31A/lHZ4aPJ6IV7951ztls1ymO+nVfxv2KVpsp1wTYkm3gEhRRqjhSXr+I2cfoN2Bo+a5BaHs5aKi/5cpqlWCS5oVdQQB6BIMx6mF7rchIaOjTCFWkSBmSMYhuhWYkTy1WBNmK4e3jR5PtsB2AFWEh9QDTAzIVsEOlUo3joy1od6KWdpZgepeRfy5wNk97FOQeIV5j9cXwvldpS5fFNN92mcyofmtzwgvWa/D1SD4KH0uWxFlgICuA1eFrzZGAAMxnrBTeZnyS9y6aQwJfApzhEfBNY60EnNNaMskjHc9VIJXOqGFUZSzbNxph/OH+k2SQzlivfYdudJMiOm45tgNcy48Q34kX5fNVqoVViNw==
+    template:
+      metadata:
+        creationTimestamp: null
+        name: db-penpot-superuser-secret
+        namespace: penpot
+      type: Opaque
+  ---
+  apiVersion: postgresql.cnpg.io/v1
+  kind: Cluster
+  metadata:
+    name: penpot-db
+    namespace: penpot
+  spec:
+    instances: 1
+    superuserSecret:
+      name: db-penpot-superuser-secret
+    bootstrap:
+      initdb:
+        database: penpot
+        owner: penpot
+        secret:
+          name: db-penpot-secrets
+    monitoring:
+      enablePodMonitor: true
+    storage:
+      size: 5Gi
   ---
   apiVersion: helm.toolkit.fluxcd.io/v2beta2
   kind: HelmRelease
@@ -31,37 +84,42 @@ manifests: |
     releaseName: penpot 
     chart:
       spec:
-        version: "4.0.13"
+        version: "1.0.10"
         chart: penpot 
         sourceRef:
           kind: HelmRepository
-          name: truecharts
+          name: codechem
     interval: 50m
     install:
       remediation:
         retries: 3
-    # Default values
-    # https://github.com/stefanprodan/podinfo/blob/master/charts/podinfo/values.yaml
     values:
-      backendImage:
-        pullPolicy: IfNotPresent
-        repository: ghcr.io/tokens-studio/tokens-studio-for-penpot
-        tag: 'backend-{{ .SHA }}'
-      image:
-        pullPolicy: IfNotPresent
-        repository: ghcr.io/tokens-studio/tokens-studio-for-penpot
-        tag: 'frontend-{{ .SHA }}'
-      penpot:
-        public_uri: penpot.tokens.studio
+      backend:
+        image:
+          pullPolicy: IfNotPresent
+          repository: ghcr.io/tokens-studio/tokens-studio-for-penpot
+          tag: 'backend-{{ .SHA }}' 
+      frontend:
+        image:
+          pullPolicy: IfNotPresent
+          repository: ghcr.io/tokens-studio/tokens-studio-for-penpot
+          tag: 'frontend-{{ .SHA }}'
       ingress:
-        main:
-          enabled: true
-          annotations:
-            cert-manager.io/cluster-issuer: letsencrypt-prod
-            networking.gke.io/v1beta1.FrontendConfig: default-frontend-config
-          hosts:
-            - host: penpot.tokens.studio
-          tls:
-            - hosts:
-              - penpot.tokens.studio
-        
+        enabled: true
+        annotations:
+          cert-manager.io/cluster-issuer: letsencrypt-prod
+          networking.gke.io/v1beta1.FrontendConfig: default-frontend-config
+        hosts:
+          - host: penpot.tokens.studio
+        tls:
+          - hosts:
+            - penpot.tokens.studio
+      config:
+        publicURI: https://penpot.tokens.studio
+        postgresql:
+          host: penpot-db-rw
+          database: penpot
+          existingSecret: db-penpot-secrets
+          secretKeys:
+            usernameKey: username
+            passwordKey: password
