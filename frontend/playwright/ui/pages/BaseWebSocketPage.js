@@ -8,8 +8,8 @@ export class BaseWebSocketPage extends BasePage {
    * @param {Page} page
    * @returns
    */
-  static initWebSockets(page) {
-    return MockWebSocketHelper.init(page);
+  static async initWebSockets(page) {
+    await MockWebSocketHelper.init(page);
   }
 
   /**

@@ -6,7 +6,7 @@ test.beforeEach(async ({ page }) => {
   await WorkspacePage.init(page);
 });
 
-test.skip("User loads worskpace with empty file", async ({ page }) => {
+test("User loads worskpace with empty file", async ({ page }) => {
   const workspacePage = new WorkspacePage(page);
   await workspacePage.setupEmptyFile(page);
 
@@ -15,7 +15,7 @@ test.skip("User loads worskpace with empty file", async ({ page }) => {
   await expect(workspacePage.pageName).toHaveText("Page 1");
 });
 
-test.skip("User receives presence notifications updates in the workspace", async ({ page }) => {
+test("User receives presence notifications updates in the workspace", async ({ page }) => {
   const workspacePage = new WorkspacePage(page);
   await workspacePage.setupEmptyFile();
 
@@ -25,7 +25,7 @@ test.skip("User receives presence notifications updates in the workspace", async
   await expect(page.getByTestId("active-users-list").getByAltText("Princesa Leia")).toHaveCount(2);
 });
 
-test.skip("User draws a rect", async ({ page }) => {
+test("User draws a rect", async ({ page }) => {
   const workspacePage = new WorkspacePage(page);
   await workspacePage.setupEmptyFile();
   await workspacePage.mockRPC("update-file?id=*", "workspace/update-file-create-rect.json");
@@ -35,6 +35,6 @@ test.skip("User draws a rect", async ({ page }) => {
   await workspacePage.clickWithDragViewportAt(128, 128, 200, 100);
 
   const shape = await workspacePage.rootShape.locator("rect");
-  expect(shape).toHaveAttribute("width", "200");
-  expect(shape).toHaveAttribute("height", "100");
+  await expect(shape).toHaveAttribute("width", "200");
+  await expect(shape).toHaveAttribute("height", "100");
 });
