@@ -7,8 +7,15 @@
 (ns app.common.test-helpers.compositions
   (:require
    [app.common.data :as d]
+   [app.common.files.changes-builder :as pcb]
+   [app.common.logic.libraries :as cll]
+   [app.common.logic.shapes :as cls]
    [app.common.test-helpers.components :as thc]
-   [app.common.test-helpers.shapes :as ths]))
+   [app.common.test-helpers.files :as thf]
+   [app.common.test-helpers.shapes :as ths]
+   [app.common.types.container :as ctn]))
+
+;; ----- File building
 
 (defn add-rect
   [file rect-label & {:keys [] :as params}]
@@ -167,3 +174,147 @@
                             :main2-root-params main2-root-params
                             :nested-head-params nested-head-params)
       (thc/instantiate-component component2-label copy2-root-label copy2-root-params)))
+
+;; ----- Getters
+
+(defn- bottom-shape-by-id
+  "Get the deepest descendant of a shape by id"
+  [file id & {:keys [page-label]}]
+  (let [shape (ths/get-shape-by-id file id :page-label page-label)]
+    (if (some? (:shapes shape))
+      (let [child-id (-> (:shapes shape)
+                         first)]
+        (bottom-shape-by-id file child-id :page-label page-label))
+      shape)))
+
+(defn- bottom-shape
+  "Get the deepest descendant of a shape by tag"
+  [file tag & {:keys [page-label]}]
+  (let [shape (ths/get-shape file tag :page-label page-label)]
+    (bottom-shape-by-id file (:id shape) :page-label page-label)))
+
+(defn bottom-fill-color
+  "Get the first fill color of the deepest descendant of a shape by tag"
+  [file tag & {:keys [page-label]}]
+  (-> (bottom-shape file tag :page-label page-label)
+      :fills
+      first
+      :fill-color))
+
+;; ----- File modifiers
+
+(defn propagate-component-changes
+  "Propagates the component changes for component specified by component-tag"
+  [file component-tag]
+  (let [file-id (:id file)
+
+        changes (-> (pcb/empty-changes)
+                    (cll/generate-sync-file-changes
+                     nil
+                     :components
+                     file-id
+                     (:id (thc/get-component  file component-tag))
+                     file-id
+                     {file-id file}
+                     file-id))]
+    (thf/apply-changes file changes)))
+
+(defn swap-component
+  "Swap the specified shape by the component specified by component-tag"
+  [file shape component-tag & {:keys [page-label propagate-fn]}]
+  (let [page    (if page-label
+                  (thf/get-page file page-label)
+                  (thf/current-page file))
+
+        [_ _all-parents changes]
+        (cll/generate-component-swap (pcb/empty-changes)
+                                     (:objects page)
+                                     shape
+                                     (:data file)
+                                     page
+                                     {(:id  file) file}
+                                     (->  (thc/get-component file component-tag)
+                                          :id)
+                                     0
+                                     nil
+                                     {})
+
+        file' (thf/apply-changes file changes)]
+    (if propagate-fn
+      (propagate-fn file')
+      file')))
+
+(defn swap-component-in-shape [file shape-tag component-tag & {:keys [page-label propagate-fn]}]
+  (swap-component file (ths/get-shape file shape-tag :page-label page-label) component-tag :page-label page-label :propagate-fn propagate-fn))
+
+(defn swap-component-in-first-child [file shape-tag component-tag & {:keys [page-label propagate-fn]}]
+  (let [first-child-id (->> (ths/get-shape file shape-tag :page-label page-label)
+                            :shapes
+                            first)]
+    (swap-component file
+                    (ths/get-shape-by-id file first-child-id :page-label page-label)
+                    component-tag
+                    :page-label page-label
+                    :propagate-fn propagate-fn)))
+
+(defn update-color
+  "Update the first fill color for the shape identified by shape-tag"
+  [file shape-tag color & {:keys [page-label propagate-fn]}]
+  (let [page (if page-label
+               (thf/get-page file page-label)
+               (thf/current-page file))
+        changes
+        (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                    #{(:id (ths/get-shape file shape-tag :page-label page-label))}
+                                    (fn [shape]
+                                      (assoc shape :fills (ths/sample-fills-color :fill-color color)))
+                                    (:objects page)
+                                    {})
+        file' (thf/apply-changes file changes)]
+    (if propagate-fn
+      (propagate-fn file')
+      file')))
+
+(defn update-bottom-color
+  "Update the first fill color of the deepest descendant for the shape identified by shape-tag"
+  [file shape-tag color & {:keys [page-label propagate-fn]}]
+  (let [page (if page-label
+               (thf/get-page file page-label)
+               (thf/current-page file))
+        changes
+        (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                    #{(:id (bottom-shape file shape-tag :page-label page-label))}
+                                    (fn [shape]
+                                      (assoc shape :fills (ths/sample-fills-color :fill-color color)))
+                                    (:objects page)
+                                    {})
+        file' (thf/apply-changes file changes)]
+    (if propagate-fn
+      (propagate-fn file')
+      file')))
+
+(defn reset-overrides [file shape & {:keys [page-label propagate-fn]}]
+  (let [page (if page-label
+               (thf/get-page file page-label)
+               (thf/current-page file))
+        container (ctn/make-container page :page)
+        file-id   (:id file)
+        changes   (-> (pcb/empty-changes)
+                      (cll/generate-reset-component
+                       file
+                       {file-id file}
+                       (ctn/make-container container :page)
+                       (:id shape)
+                       true))
+        file' (thf/apply-changes file changes)]
+    (if propagate-fn
+      (propagate-fn file')
+      file')))
+
+(defn reset-overrides-in-first-child [file shape-tag & {:keys [page-label propagate-fn]}]
+  (let [first-child-id (->>
+                        (ths/get-shape file shape-tag :page-label page-label)
+                        :shapes
+                        first)
+        shape (ths/get-shape-by-id file first-child-id :page-label page-label)]
+    (reset-overrides file shape :page-label page-label :propagate-fn propagate-fn)))
