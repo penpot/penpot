@@ -18,7 +18,6 @@
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.tokens.common :refer [hide-token-context-menu]]
    [app.util.dom :as dom]
-   [app.util.i18n :refer [tr]]
    [app.util.timers :as timers]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
@@ -118,9 +117,9 @@
         do-duplicate #(js/console.log "Duplicating")
         do-edit #(js/console.log "Editing")]
     [:ul.context-list
-     [:> token-menu-entry {:title (tr "Delete Token") :on-click do-delete}]
-     [:> token-menu-entry {:title (tr "Duplicate Token") :on-click do-duplicate}]
-     [:> token-menu-entry {:title (tr "Edit Token") :on-click do-edit}]]))
+     [:> token-menu-entry {:title "Delete Token" :on-click do-delete}]
+     [:> token-menu-entry {:title "Duplicate Token" :on-click do-duplicate}]
+     [:> token-menu-entry {:title "Edit Token" :on-click do-edit}]]))
 
 (mf/defc token-context-menu
   []
