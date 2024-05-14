@@ -5301,3 +5301,34 @@ msgstr "Actualizar"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
+
+msgid "workspace.plugins.title"
+msgstr "Extensiones"
+
+msgid "workspace.plugins.search-placeholder"
+msgstr "Intruduzca URL de la extensión"
+
+msgid "workspace.plugins.install"
+msgstr "Instalar"
+
+msgid "workspace.plugins.installed-plugins"
+msgstr "Extensiones instaladas"
+
+msgid "workspace.plugins.empty-plugins"
+msgstr "No se encuentran extensiones"
+
+msgid "workspace.plugins.button-open"
+msgstr "Abrir"
+
+msgid "workspace.plugins.error.url"
+msgstr "La extensión no existe o la url no es correcta."
+
+msgid "workspace.plugins.success"
+msgstr "Extensión cargada correctamente."
+
+msgid "workspace.plugins.menu.title"
+msgstr "Extensiones"
+
+msgid "workspace.plugins.menu.plugins-manager"
+msgstr "Gestor de extensiones"
+

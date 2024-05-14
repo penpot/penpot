@@ -20,6 +20,7 @@
    [app.main.store :as st]
    [app.plugins.events :as events]
    [app.plugins.file :as file]
+   [app.plugins.library :as library]
    [app.plugins.page :as page]
    [app.plugins.shape :as shape]
    [app.plugins.utils :as utils]
@@ -147,11 +148,12 @@
 
   (createShapeFromSvg
     [_ svg-string]
-    (let [id (uuid/next)
-          page-id (:current-page-id @st/state)]
-      (st/emit! (dwm/create-svg-shape id "svg" svg-string (gpt/point 0 0)))
-      (shape/data->shape-proxy
-       (dm/get-in @st/state [:workspace-data :pages-index page-id :objects id])))))
+    (when (some? svg-string)
+      (let [id (uuid/next)
+            page-id (:current-page-id @st/state)]
+        (st/emit! (dwm/create-svg-shape id "svg" svg-string (gpt/point 0 0)))
+        (shape/data->shape-proxy
+         (dm/get-in @st/state [:workspace-data :pages-index page-id :objects id]))))))
 
 (defn create-context
   []
@@ -160,4 +162,5 @@
    {:name "root" :get #(.getRoot ^js %)}
    {:name "currentPage" :get #(.getPage ^js %)}
    {:name "selection" :get #(.getSelectedShapes ^js %)}
-   {:name "viewport" :get #(.getViewport ^js %)}))
+   {:name "viewport" :get #(.getViewport ^js %)}
+   {:name "library" :get (fn [_] (library/create-library-subcontext))}))

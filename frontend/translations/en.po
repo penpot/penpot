@@ -5175,3 +5175,33 @@ msgstr "Update"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+
+msgid "workspace.plugins.title"
+msgstr "Plugins"
+
+msgid "workspace.plugins.search-placeholder"
+msgstr "Write a plugin URL"
+
+msgid "workspace.plugins.install"
+msgstr "Install"
+
+msgid "workspace.plugins.installed-plugins"
+msgstr "Installed plugins"
+
+msgid "workspace.plugins.empty-plugins"
+msgstr "No plugins installed yet"
+
+msgid "workspace.plugins.button-open"
+msgstr "Open"
+
+msgid "workspace.plugins.error.url"
+msgstr "The plugin doesn't exist or the URL is not correct."
+
+msgid "workspace.plugins.success"
+msgstr "Plugin correctly loaded."
+
+msgid "workspace.plugins.menu.title"
+msgstr "Plugins"
+
+msgid "workspace.plugins.menu.plugins-manager"
+msgstr "Plugins manager"
