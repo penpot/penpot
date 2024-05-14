@@ -1,0 +1,126 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.token-context-menu {
+  position: absolute;
+  top: $s-40;
+  left: $s-736;
+  z-index: $z-index-4;
+}
+
+.context-list,
+.token-context-submenu {
+  @include menuShadow;
+  display: grid;
+  width: $s-240;
+  padding: $s-4;
+  border-radius: $br-8;
+  border: $s-2 solid var(--panel-border-color);
+  background-color: var(--menu-background-color);
+  max-height: 100vh;
+  overflow-y: auto;
+}
+
+.token-context-submenu {
+  position: absolute;
+}
+
+.separator {
+  height: $s-12;
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: $s-28;
+  width: 100%;
+  padding: $s-6;
+  border-radius: $br-8;
+  cursor: pointer;
+
+  .title {
+    @include bodySmallTypography;
+    color: var(--menu-foreground-color);
+  }
+  .shortcut {
+    @include flexCenter;
+    gap: $s-2;
+    color: var(--menu-shortcut-foreground-color);
+    .shortcut-key {
+      @include bodySmallTypography;
+      @include flexCenter;
+      height: $s-20;
+      padding: $s-2 $s-6;
+      border-radius: $br-6;
+      background-color: var(--menu-shortcut-background-color);
+    }
+  }
+
+  .submenu-icon svg {
+    @extend .button-icon-small;
+    stroke: var(--menu-foreground-color);
+  }
+
+  &:hover {
+    background-color: var(--menu-background-color-hover);
+    .title {
+      color: var(--menu-foreground-color-hover);
+    }
+    .shortcut {
+      color: var(--menu-shortcut-foreground-color-hover);
+    }
+  }
+  &:focus {
+    border: 1px solid var(--menu-border-color-focus);
+    background-color: var(--menu-background-color-focus);
+  }
+}
+
+.icon-menu-item {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  height: $s-28;
+  padding: $s-6;
+  border-radius: $br-8;
+  &:hover {
+    background-color: var(--menu-background-color-hover);
+  }
+
+  span.title {
+    margin-left: $s-6;
+  }
+
+  .selected-icon {
+    svg {
+      @extend .button-icon-small;
+      stroke: var(--menu-foreground-color);
+    }
+  }
+
+  .shape-icon {
+    margin-left: $s-2;
+    svg {
+      @extend .button-icon-small;
+      stroke: var(--menu-foreground-color);
+    }
+  }
+
+  .icon-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    margin: 0;
+  }
+}
+
+.icon-menu-item[disabled],
+.context-menu-item[disabled] {
+  pointer-events: none;
+  opacity: 0.6;
+}

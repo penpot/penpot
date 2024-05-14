@@ -15,7 +15,7 @@
    [app.main.ui.components.search-bar :refer [search-bar]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
-   [app.main.ui.workspace.tokens.common :refer [workspace-shapes]]
+   [app.main.ui.workspace.tokens.common :as tcm]
    [app.main.ui.workspace.tokens.core :refer [tokens-applied?] :as wtc]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
@@ -36,18 +36,28 @@
 
 (mf/defc token-pill
   {::mf/wrap-props false}
-  [{:keys [on-click token highlighted?]}]
+  [{:keys [on-click token highlighted? on-context-menu]}]
   (let [{:keys [name value]} token]
     [:div {:class (stl/css-case :token-pill true
                                 :token-pill-highlighted highlighted?)
            :title (str "Token value: " value)
-           :on-click on-click}
+           :on-click on-click
+           :on-context-menu on-context-menu}
      name]))
 
 (mf/defc token-component
   [{:keys [type file tokens selected-shapes token-type-props]}]
   (let [open? (mf/use-state false)
         {:keys [modal attributes title]} token-type-props
+
+        on-context-menu (mf/use-fn
+                         (fn [event token]
+                           (dom/prevent-default event)
+                           (dom/stop-propagation event)
+                           (st/emit! (tcm/show-token-context-menu {:type :token
+                                                                   :position (dom/get-client-position event)
+                                                                   :token-id (:id token)}))))
+
         on-toggle-open-click (mf/use-fn
                               (mf/deps open? tokens)
                               #(when (seq tokens)
@@ -87,7 +97,8 @@
              {:key (:id token)
               :token token
               :highlighted? (tokens-applied? token selected-shapes attributes)
-              :on-click #(on-token-pill-click % token)}])]])]]))
+              :on-click #(on-token-pill-click % token)
+              :on-context-menu #(on-context-menu % token)}])]])]]))
 
 (defn sorted-token-groups
   "Separate token-types into groups of `:empty` or `:filled` depending if tokens exist for that type.
@@ -114,7 +125,7 @@
         token-groups (mf/with-memo [tokens]
                        (sorted-token-groups tokens))
         selected-shape-ids (mf/deref refs/selected-shapes)
-        selected-shapes (workspace-shapes workspace-data current-page-id selected-shape-ids)]
+        selected-shapes (tcm/workspace-shapes workspace-data current-page-id selected-shape-ids)]
     [:article
      [:div.assets-bar
       (for [{:keys [token-key token-type-props tokens]} (concat (:filled token-groups)
