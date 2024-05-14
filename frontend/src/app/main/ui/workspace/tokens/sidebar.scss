@@ -42,3 +42,9 @@
   display: flex;
   place-content: center;
 }
+
+.section-icon {
+  margin-right: $s-4;
+  // Align better with the label
+  translate: 0px -1px;
+}
