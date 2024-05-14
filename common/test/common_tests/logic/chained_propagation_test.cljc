@@ -37,7 +37,7 @@
   (letfn [(setup []
             (-> (thf/sample-file :file1)
                 (tho/add-frame :frame-comp-1)
-                (ths/add-sample-shape :rectangle :parent-label :frame-comp-1)
+                (ths/add-sample-shape :rectangle :parent-label :frame-comp-1 :fills (ths/sample-fills-color :fill-color "#2653d8"))
                 (thc/make-component :comp-1 :frame-comp-1)
 
                 (tho/add-frame :frame-comp-2)
@@ -48,90 +48,39 @@
                 (thc/instantiate-component :comp-2 :copy-comp-2  :parent-label :frame-comp-3 :children-labels [:comp-1-comp-2])
                 (thc/make-component :comp-3 :frame-comp-3)))
 
-          (step-update-color-comp-2 [file]
-            (let [page    (thf/current-page file)
+          (propagate-all-component-changes [file]
+            (-> file
+                (tho/propagate-component-changes :comp-1)
+                (tho/propagate-component-changes :comp-2)))
 
-                  ;; Changes to update the color of the contained rectangle in component comp-2
-                  changes-update-color-comp-1
-                  (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
-                                              (:shapes (ths/get-shape file :copy-comp-1))
-                                              (fn [shape]
-                                                (assoc shape :fills (ths/sample-fills-color :fill-color "#FF0000")))
-                                              (:objects page)
-                                              {})
+          (fill-colors [file]
+            [(tho/bottom-fill-color file :frame-comp-1)
+             (tho/bottom-fill-color file :frame-comp-2)
+             (tho/bottom-fill-color file :frame-comp-3)])
 
-                  file' (thf/apply-changes file changes-update-color-comp-1)]
-
-              (t/is (= (first-child-fill-color file' :comp-1-comp-2) "#B1B2B5"))
-              file'))
-
-          (step-propagate-comp-2 [file]
-            (let [page    (thf/current-page file)
-                  file-id (:id file)
-
-                  ;; Changes to propagate the color changes of component comp-1
-                  changes-sync-comp-1 (-> (pcb/empty-changes)
-                                          (cll/generate-sync-file-changes
-                                           nil
-                                           :components
-                                           file-id
-                                           (:id (thc/get-component  file :comp-2))
-                                           file-id
-                                           {file-id file}
-                                           file-id))
-
-                  file' (thf/apply-changes file changes-sync-comp-1)]
-
-              (t/is (= (first-fill-color file' :rect-comp-2) "#FF0000"))
-              (t/is (= (first-child-fill-color file' :comp-1-comp-2) "#FF0000"))
-              file'))
-
-          (step-update-color-comp-3 [file]
-            (let [page    (thf/current-page file)
-                  page-id (:id page)
-                  comp-1-comp-2 (ths/get-shape file :comp-1-comp-2)
-                  rect-comp-3   (ths/get-shape-by-id file (first (:shapes comp-1-comp-2)))
-                  ;; Changes to update the color of the contained rectangle in component comp-3
-                  changes-update-color-comp-3
-                  (cls/generate-update-shapes (pcb/empty-changes nil page-id)
-                                              [(:id rect-comp-3)]
-                                              (fn [shape]
-                                                (assoc shape :fills (ths/sample-fills-color :fill-color "#00FF00")))
-                                              (:objects page)
-                                              {})
-
-                  file' (thf/apply-changes file changes-update-color-comp-3)]
-
-              (t/is (= (first-child-fill-color file' :comp-1-comp-2) "#00FF00"))
-              file'))
-
-          (step-reset [file]
-            (let [page          (thf/current-page file)
-                  file-id       (:id file)
-                  comp-1-comp-2 (ths/get-shape file :comp-1-comp-2)
-                  ;; Changes to reset the changes on comp-1 inside comp-3
-                  changes-reset  (cll/generate-reset-component (pcb/empty-changes)
-                                                               file
-                                                               {file-id file}
-                                                               (ctn/make-container page :page)
-                                                               (:id comp-1-comp-2)
-                                                               true)
-                  file' (thf/apply-changes file changes-reset)]
-
-              (t/is (= (first-child-fill-color file' :comp-1-comp-2) "#FF0000"))
-              file'))]
+          (validate [file validator]
+            (validator file)
+            file)]
 
     (-> (setup)
-        step-update-color-comp-2
-        step-propagate-comp-2
-        step-update-color-comp-3
-        step-reset)))
+        ;; Change the color of Comp1 inside Comp2 to red. It will propagate to Comp1 inside Comp3
+        (tho/update-bottom-color :frame-comp-2 "#FF0000" :propagate-fn propagate-all-component-changes)
+        (validate #(t/is (= (fill-colors %) ["#2653d8" "#FF0000" "#FF0000"])))
+
+        ;; Change the color of Comp1 inside Comp3 to green.
+        (tho/update-bottom-color :frame-comp-3 "#00FF00" :propagate-fn propagate-all-component-changes)
+        (validate #(t/is (= (fill-colors %) ["#2653d8" "#FF0000" "#00FF00"])))
+
+        ;; Select Comp1 inside Comp3, and do a ‘Reset override’ 
+        ;; Desired result: Comp1 inside Comp3 change its color to red, like Comp1 inside Comp2.
+        (tho/reset-overrides-in-first-child :copy-comp-2)
+        (validate #(t/is (= (fill-colors %) ["#2653d8" "#FF0000" "#FF0000"]))))))
 
 (t/deftest test-propagation-with-deleted-component
   (letfn [(setup []
             (-> (thf/sample-file :file1)
                 (tho/add-frame :frame-comp-4)
-                (ths/add-sample-shape :rectangle :parent-label :frame-comp-4)
+                (ths/add-sample-shape :rectangle :parent-label :frame-comp-4 :fills (ths/sample-fills-color :fill-color "#b1b2b5"))
                 (thc/make-component :comp-4 :frame-comp-4)
 
                 (tho/add-frame :frame-comp-5)
@@ -142,71 +91,26 @@
                 (thc/instantiate-component :comp-5 :copy-comp-5  :parent-label :frame-comp-6 :children-labels [:comp-4-comp-5])
                 (thc/make-component :comp-6 :frame-comp-6)))
 
-          (step-delete-comp-5 [file]
-            (let [page (thf/current-page file)
-                  ;; Changes to delete comp-5
-                  [_ changes-delete] (cls/generate-delete-shapes (pcb/empty-changes nil (:id page))
-                                                                 file
-                                                                 page
-                                                                 (:objects page)
-                                                                 #{(-> (ths/get-shape file :frame-comp-5)
-                                                                       :id)}
-                                                                 {:components-v2 true})
+          (propagate-all-component-changes [file]
+            (-> file
+                (tho/propagate-component-changes :comp-4)
+                (tho/propagate-component-changes :comp-5)))
 
-                  file' (thf/apply-changes file changes-delete)]
-              (t/is (= (first-child-fill-color file' :comp-4-comp-5) "#B1B2B5"))
-              file'))
+          (fill-colors [file]
+            [(tho/bottom-fill-color file :frame-comp-4)
+             (tho/bottom-fill-color file :frame-comp-5)
+             (tho/bottom-fill-color file :frame-comp-6)])
 
-          (step-update-color-comp-4 [file]
-            (let [page          (thf/current-page file)
-                  ;; Changes to update the color of the contained rectangle in component comp-4
-                  changes-update-color-comp-4
-                  (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
-                                              [(-> (ths/get-shape file :rectangle)
-                                                   :id)]
-                                              (fn [shape]
-                                                (assoc shape :fills (ths/sample-fills-color :fill-color "#FF0000")))
-                                              (:objects page)
-                                              {})
-
-                  file' (thf/apply-changes file changes-update-color-comp-4)]
-              (t/is (= (first-fill-color file' :rectangle) "#FF0000"))
-              file'))
-
-          (step-propagate-comp-4 [file]
-            (let [file-id (:id file)
-                  ;; Changes to propagate the color changes of component comp-4
-                  changes-sync-comp-4 (-> (pcb/empty-changes)
-                                          (cll/generate-sync-file-changes
-                                           nil
-                                           :components
-                                           file-id
-                                           (:id (thc/get-component  file :comp-4))
-                                           file-id
-                                           {file-id file}
-                                           file-id))
-
-                  file' (thf/apply-changes file changes-sync-comp-4)]
-              file'))
-
-          (step-propagate-comp-5 [file]
-            (let [file-id (:id file)
-                  ;; Changes to propagate the color changes of component comp-5
-                  changes-sync-comp-5 (-> (pcb/empty-changes)
-                                          (cll/generate-sync-file-changes
-                                           nil
-                                           :components
-                                           file-id
-                                           (:id (thc/get-component  file :comp-5))
-                                           file-id
-                                           {file-id file}
-                                           file-id))
-                  file' (thf/apply-changes file changes-sync-comp-5)]
-              (t/is (= (first-child-fill-color file' :comp-4-comp-5) "#FF0000"))
-              file'))]
+          (validate [file validator]
+            (validator file)
+            file)]
 
     (-> (setup)
-        step-delete-comp-5
-        step-update-color-comp-4
-        step-propagate-comp-4
-        step-propagate-comp-5)))
+        ;; Delete Comp5.
+        (tho/delete-shape :frame-comp-5)
+        (validate #(t/is (= (fill-colors %) ["#b1b2b5" nil "#b1b2b5"])))
+
+        ;; Change the color of Comp4
+        ;; Desired result: Comp6 change color
+        (tho/update-bottom-color :frame-comp-4 "#FF0000" :propagate-fn propagate-all-component-changes)
+        (validate #(t/is (= (fill-colors %) ["#FF0000" nil "#FF0000"]))))))
