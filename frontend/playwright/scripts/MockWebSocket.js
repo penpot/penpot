@@ -46,14 +46,14 @@ window.WebSocket = class MockWebSocket extends EventTarget {
 
     MockWebSocket.#mocks.set(this.#url, this);
 
-    if (typeof window["MockWebSocket$$constructor"] === "function") {
-      MockWebSocket$$constructor(this.#url, this.#protocols);
+    if (typeof window["onMockWebSocketConstructor"] === "function") {
+      onMockWebSocketConstructor(this.#url, this.#protocols);
     }
-    if (typeof window["MockWebSocket$$spyMessage"] === "function") {
-      this.#spyMessage = MockWebSocket$$spyMessage;
+    if (typeof window["onMockWebSocketSpyMessage"] === "function") {
+      this.#spyMessage = onMockWebSocketSpyMessage;
     }
-    if (typeof window["MockWebSocket$$spyClose"] === "function") {
-      this.#spyClose = MockWebSocket$$spyClose;
+    if (typeof window["onMockWebSocketSpyClose"] === "function") {
+      this.#spyClose = onMockWebSocketSpyClose;
     }
   }
 
