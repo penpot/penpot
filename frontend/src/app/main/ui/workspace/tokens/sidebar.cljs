@@ -52,7 +52,7 @@
 (mf/defc token-component
   [{:keys [type file tokens selected-shapes token-type-props]}]
   (let [open? (mf/use-state false)
-        {:keys [icon modal attributes title]} token-type-props
+        {:keys [modal attributes title]} token-type-props
         on-toggle-open-click (mf/use-fn
                               (mf/deps open? tokens)
                               #(when (seq tokens)
@@ -78,7 +78,9 @@
     [:div {:on-click on-toggle-open-click}
      [:& cmm/asset-section {:file-id (:id file)
                             :icon (mf/fnc icon-wrapper [_]
-                                    [:& token-section-icon {:type type}])
+                                    [:div {:class (stl/css :section-icon)}
+                                     [:& token-section-icon {:type type}]])
+
                             :title title
                             :assets-count tokens-count
                             :open? @open?}
