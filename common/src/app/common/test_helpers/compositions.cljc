@@ -177,7 +177,7 @@
 
 ;; ----- Getters
 
-(defn- bottom-shape-by-id
+(defn bottom-shape-by-id
   "Get the deepest descendant of a shape by id"
   [file id & {:keys [page-label]}]
   (let [shape (ths/get-shape-by-id file id :page-label page-label)]
@@ -187,7 +187,7 @@
         (bottom-shape-by-id file child-id :page-label page-label))
       shape)))
 
-(defn- bottom-shape
+(defn bottom-shape
   "Get the deepest descendant of a shape by tag"
   [file tag & {:keys [page-label]}]
   (let [shape (ths/get-shape file tag :page-label page-label)]
@@ -318,3 +318,19 @@
                         first)
         shape (ths/get-shape-by-id file first-child-id :page-label page-label)]
     (reset-overrides file shape :page-label page-label :propagate-fn propagate-fn)))
+
+(defn delete-shape [file shape-tag & {:keys [page-label propagate-fn]}]
+  (let [page (if page-label
+               (thf/get-page file page-label)
+               (thf/current-page file))
+        [_ changes] (cls/generate-delete-shapes (pcb/empty-changes nil (:id page))
+                                                file
+                                                page
+                                                (:objects page)
+                                                #{(-> (ths/get-shape file shape-tag :page-label page-label)
+                                                      :id)}
+                                                {:components-v2 true})
+        file' (thf/apply-changes file changes)]
+    (if propagate-fn
+      (propagate-fn file')
+      file')))
