@@ -10,13 +10,14 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.data.events :as ev]
+   [app.main.data.modal :as modal]
    [app.main.data.shortcuts :as scd]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.icons :as i]
-   [app.main.ui.workspace.tokens.common :refer [hide-token-context-menu]]
+   [app.main.ui.workspace.tokens.common :as tcm]
    [app.util.dom :as dom]
    [app.util.timers :as timers]
    [okulary.core :as l]
@@ -113,13 +114,18 @@
 
 (mf/defc token-pill-context-menu
   [{:keys [token-id]}]
-  (let [do-delete #(js/console.log "Deleting")
+  (let [delete-fn #(st/emit! (tcm/delete-token token-id))
+        do-delete #(st/emit! (modal/show
+                              {:type :confirm
+                               :title "Delete"
+                               :message "Are you sure?"
+                               :on-accept delete-fn}))
         do-duplicate #(js/console.log "Duplicating")
         do-edit #(js/console.log "Editing")]
     [:ul.context-list
-     [:> token-menu-entry {:title "Delete Token" :on-click do-delete}]
-     [:> token-menu-entry {:title "Duplicate Token" :on-click do-duplicate}]
-     [:> token-menu-entry {:title "Edit Token" :on-click do-edit}]]))
+     [:& token-menu-entry {:title "Delete Token" :on-click do-delete}]
+     [:& token-menu-entry {:title "Duplicate Token" :on-click do-duplicate}]
+     [:& token-menu-entry {:title "Edit Token" :on-click do-edit}]]))
 
 (mf/defc token-context-menu
   []
@@ -142,11 +148,11 @@
               (.setAttribute ^js dropdown "style" new-style))))))
 
     [:& dropdown {:show (boolean mdata)
-                  :on-close #(st/emit! hide-token-context-menu)}
+                  :on-close #(st/emit! tcm/hide-token-context-menu)}
      [:div {:class (stl/css :token-context-menu)
             :ref dropdown-ref
             :style {:top top :left left}
             :on-context-menu prevent-default}
       (when  (= :token (:type mdata))
         [:ul {:class (stl/css :context-list)}
-         [:& token-pill-context-menu {:token-id (:id mdata)}]])]]))
+         [:& token-pill-context-menu {:token-id (:token-id mdata)}]])]]))
