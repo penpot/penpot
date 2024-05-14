@@ -130,7 +130,7 @@
 
 (mf/defc asset-section
   {::mf/wrap-props false}
-  [{:keys [children file-id title section assets-count open?]}]
+  [{:keys [children file-id title section assets-count icon open?]}]
   (let [children    (-> (array/normalize-to-array children)
                         (array/without-nils))
 
@@ -151,7 +151,7 @@
         (mf/html
          [:span {:class (stl/css :title-name)}
           [:span {:class (stl/css :section-icon)}
-           [:& section-icon {:section section}]]
+           [:& (or icon section-icon) {:section section}]]
           [:span {:class (stl/css :section-name)}
            title]
 

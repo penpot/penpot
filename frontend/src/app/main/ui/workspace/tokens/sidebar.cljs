@@ -31,10 +31,28 @@
            :on-click on-click}
      name]))
 
+(mf/defc token-section-icon
+  {::mf/wrap-props false}
+  [{:keys [type]}]
+  (case type
+    :border-radius i/corner-radius
+    :numeric [:span {:class (stl/css :section-text-icon)} "123"]
+    :boolean i/boolean-difference
+    :opacity [:span {:class (stl/css :section-text-icon)} "%"]
+    :rotation i/rotation
+    :spacing i/padding-extended
+    :string i/text-mixed
+    :stroke-width i/stroke-size
+    :typography i/text
+    ;; TODO: Add diagonal icon here when it's available
+    :dimension [:div {:style {:rotate "45deg"}} i/constraint-horizontal]
+    :sizing [:div {:style {:rotate "45deg"}} i/constraint-horizontal]
+    i/add))
+
 (mf/defc token-component
   [{:keys [type file tokens selected-shapes token-type-props]}]
   (let [open? (mf/use-state false)
-        {:keys [modal attributes title]} token-type-props
+        {:keys [icon modal attributes title]} token-type-props
         on-toggle-open-click (mf/use-fn
                               (mf/deps open? tokens)
                               #(when (seq tokens)
@@ -59,6 +77,8 @@
         tokens-count (count tokens)]
     [:div {:on-click on-toggle-open-click}
      [:& cmm/asset-section {:file-id (:id file)
+                            :icon (mf/fnc icon-wrapper [_]
+                                    [:& token-section-icon {:type type}])
                             :title title
                             :assets-count tokens-count
                             :open? @open?}
