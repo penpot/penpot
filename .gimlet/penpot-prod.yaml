@@ -94,6 +94,9 @@ manifests: |
       remediation:
         retries: 3
     values:
+      redis:
+        replica:
+          replicaCount: 0
       global:
         postgresqlEnabled: false
         redisEnabled: true
@@ -129,7 +132,7 @@ manifests: |
       config:
         publicURI: https://penpot.tokens.studio
         redis:
-          host: penpot-redis-headless.penpot.svc.cluster.local
+          host: penpot-redis-master.penpot.svc.cluster.local
         postgresql:
           host: penpot-db-rw
           database: penpot
