@@ -56,7 +56,7 @@
                  :class (stl/css :active-users-opened)
                  :on-click on-close
                  :on-blur on-close}
-        [:ul {:class (stl/css :active-users-list)}
+        [:ul {:class (stl/css :active-users-list) :data-testid "active-users-list"}
          (for [session sessions]
            [:& session-widget
             {:color (:color session)
@@ -66,7 +66,7 @@
 
      [:button {:class (stl/css-case :active-users true)
                :on-click on-open}
-      [:ul {:class (stl/css :active-users-list)}
+      [:ul {:class (stl/css :active-users-list) :data-testid "active-users-list"}
        (when (> num-sessions 2)
          [:span {:class (stl/css :users-num)} (dm/str "+" (- num-sessions 2))])
 

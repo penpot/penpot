@@ -783,6 +783,7 @@
        [:li {:class (stl/css-case :current drafts?
                                   :sidebar-nav-item true)}
         [:& link {:action go-drafts
+                  :data-testid "drafts-link-sidebar"
                   :class (stl/css :sidebar-link)
                   :keyboard-action go-drafts-with-key}
          [:span {:class (stl/css :element-title)} (tr "labels.drafts")]]]

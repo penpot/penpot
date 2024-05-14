@@ -8,14 +8,14 @@
   (:require
    [app.common.files.changes-builder :as pcb]
    [app.common.logic.libraries :as cll]
+   [app.common.test-helpers.components :as thc]
+   [app.common.test-helpers.compositions :as tho]
+   [app.common.test-helpers.files :as thf]
+   [app.common.test-helpers.ids-map :as thi]
+   [app.common.test-helpers.shapes :as ths]
    [app.common.types.component :as ctk]
    [app.common.types.file :as  ctf]
-   [clojure.test :as t]
-   [common-tests.helpers.components :as thc]
-   [common-tests.helpers.compositions :as tho]
-   [common-tests.helpers.files :as thf]
-   [common-tests.helpers.ids-map :as thi]
-   [common-tests.helpers.shapes :as ths]))
+   [clojure.test :as t]))
 
 (t/use-fixtures :each thi/test-fixture)
 
