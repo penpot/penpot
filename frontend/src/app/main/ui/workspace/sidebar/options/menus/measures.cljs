@@ -484,6 +484,7 @@
                [:span {:class (stl/css :icon)}  i/corner-radius]
                [:& editable-select
                 {:placeholder (if (= :multiple (:rx values)) (tr "settings.multiple") "--")
+                 :class (stl/css :token-select)
                  :type "number"
                  :min 0
                  :input-class (stl/css :numeric-input)
