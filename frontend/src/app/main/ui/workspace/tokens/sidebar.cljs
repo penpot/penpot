@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.modal :as modal]
+   [app.main.data.tokens :as dt]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
@@ -20,12 +21,12 @@
 (mf/defc token-pill
   {::mf/wrap-props false}
   [{:keys [on-click token highlighted? on-context-menu]}]
-  (let [{:keys [name value]} token]
+  (let [{:keys [name value]} token
         resolved-value (try
                          (wtc/resolve-token-value token)
                          (catch js/Error _ nil))]
     [:div {:class (stl/css-case :token-pill true
-                                :token-pill-highlighted highlighted?)
+                                :token-pill-highlighted highlighted?
                                 :token-pill-invalid (not resolved-value))
            :title (str (if resolved-value "Token value: " "Invalid token value: ") value)
            :on-click on-click
