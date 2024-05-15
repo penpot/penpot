@@ -76,6 +76,7 @@
                   :is-transparent (and opacity (> 1 opacity))
                   :grid-area area
                   :read-only read-only?)
+          :role "button"
           :data-readonly (str read-only?)
           :on-click on-click
           :title (color-title color)}
