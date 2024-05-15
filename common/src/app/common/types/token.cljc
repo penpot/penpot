@@ -73,7 +73,7 @@
 
 (def stroke-width-keys (schema-keys ::stroke-width))
 
-(sm/def! ::dimensions
+(sm/def! ::sizing
   [:map
    [:width {:optional true} ::sm/uuid]
    [:height {:optional true} ::sm/uuid]
@@ -82,7 +82,7 @@
    [:min-width {:optional true} ::sm/uuid]
    [:max-width {:optional true} ::sm/uuid]])
 
-(def dimensions-keys (schema-keys ::dimensions))
+(def sizing-keys (schema-keys ::sizing))
 
 (sm/def! ::opacity
   [:map
@@ -104,11 +104,20 @@
 
 (def spacing-keys (schema-keys ::spacing))
 
+(sm/def! ::dimensions
+  (merge-schemas ::sizing
+                 ::spacing
+                 ::stroke-width
+                 ::border-radius))
+
+(def dimensions-keys (schema-keys ::dimensions))
+
 (sm/def! ::tokens
   [:map {:title "Applied Tokens"}])
 
 (sm/def! ::applied-tokens
   (merge-schemas ::tokens
                  ::border-radius
-                 ::dimensions
-                 ::spacing))
+                 ::sizing
+                 ::spacing
+                 ::dimensions))
