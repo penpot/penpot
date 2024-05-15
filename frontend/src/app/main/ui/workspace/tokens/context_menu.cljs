@@ -10,7 +10,6 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.data.events :as ev]
-   [app.main.data.modal :as modal]
    [app.main.data.shortcuts :as scd]
    [app.main.data.tokens :as dt]
    [app.main.data.workspace :as dw]
@@ -114,12 +113,7 @@
 
 (mf/defc token-pill-context-menu
   [{:keys [token-id]}]
-  (let [delete-fn #(st/emit! (dt/delete-token token-id))
-        do-delete #(st/emit! (modal/show
-                              {:type :confirm
-                               :title "Delete"
-                               :message "Are you sure?"
-                               :on-accept delete-fn}))
+  (let [do-delete #(st/emit! (dt/delete-token token-id))
         do-duplicate #(js/console.log "Duplicating")
         do-edit #(js/console.log "Editing")]
     [:ul.context-list
