@@ -37,6 +37,12 @@
     int-or-double
     (throw (ex-info (str "Implement token value resolve for " value) token))))
 
+(defn group-tokens-by-type
+  "Groups tokens by their `:type` property."
+  [tokens]
+  (->> (vals tokens)
+       (group-by :type)))
+
 ;; Update functions ------------------------------------------------------------
 
 (defn on-apply-token [{:keys [token token-type-props selected-shapes] :as _props}]

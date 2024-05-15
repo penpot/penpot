@@ -113,13 +113,12 @@
   "Separate token-types into groups of `:empty` or `:filled` depending if tokens exist for that type.
   Sort each group alphabetically (by their `:token-key`)."
   [tokens]
-  (let [tokens-by-group (->> (vals tokens)
-                             (group-by :type))
+  (let [tokens-by-type (wtc/group-tokens-by-type tokens)
         {:keys [empty filled]} (->> wtc/token-types
                                     (map (fn [[token-key token-type-props]]
                                            {:token-key token-key
                                             :token-type-props token-type-props
-                                            :tokens (get tokens-by-group token-key [])}))
+                                            :tokens (get tokens-by-type token-key [])}))
                                     (group-by (fn [{:keys [tokens]}]
                                                 (if (empty? tokens) :empty :filled))))]
     {:empty (sort-by :token-key empty)
