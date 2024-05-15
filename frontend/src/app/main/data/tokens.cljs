@@ -75,6 +75,18 @@
                           (pcb/add-token token))]
           (rx/of (dch/commit-changes changes)))))))
 
+(defn delete-token
+  [id]
+  (dm/assert! (uuid? id))
+  (ptk/reify ::delete-token
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [data    (get state :workspace-data)
+            changes (-> (pcb/empty-changes it)
+                        (pcb/with-library-data data)
+                        (pcb/delete-token id))]
+        (rx/of (dch/commit-changes changes))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TEMP (Move to test)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -125,15 +137,3 @@
     ptk/UpdateEvent
     (update [_ state]
       (assoc-in state [:workspace-local :token-context-menu] nil))))
-
-(defn delete-token
-  [id]
-  (dm/assert! (uuid? id))
-  (ptk/reify ::delete-token
-    ptk/WatchEvent
-    (watch [it state _]
-      (let [data    (get state :workspace-data)
-            changes (-> (pcb/empty-changes it)
-                        (pcb/with-library-data data)
-                        (pcb/delete-token id))]
-        (rx/of (dch/commit-changes changes))))))
