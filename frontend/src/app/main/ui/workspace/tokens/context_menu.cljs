@@ -17,6 +17,7 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.icons :as i]
+   [app.main.ui.workspace.context-menu :refer [menu-entry prevent-default]]
    [app.util.dom :as dom]
    [app.util.timers :as timers]
    [okulary.core :as l]
@@ -25,101 +26,15 @@
 (def tokens-menu-ref
   (l/derived :token-context-menu refs/workspace-local))
 
-(defn- prevent-default
-  [event]
-  (dom/prevent-default event)
-  (dom/stop-propagation event))
-
-(mf/defc token-menu-entry
-  {::mf/props :obj}
-  [{:keys [title shortcut on-click on-pointer-enter on-pointer-leave
-           on-unmount children selected? icon disabled value]}]
-  (let [submenu-ref (mf/use-ref nil)
-        hovering?   (mf/use-ref false)
-        on-pointer-enter
-        (mf/use-callback
-         (fn []
-           (mf/set-ref-val! hovering? true)
-           (let [submenu-node (mf/ref-val submenu-ref)]
-             (when (some? submenu-node)
-               (dom/set-css-property! submenu-node "display" "block")))
-           (when on-pointer-enter (on-pointer-enter))))
-
-        on-pointer-leave
-        (mf/use-callback
-         (fn []
-           (mf/set-ref-val! hovering? false)
-           (let [submenu-node (mf/ref-val submenu-ref)]
-             (when (some? submenu-node)
-               (timers/schedule
-                200
-                #(when-not (mf/ref-val hovering?)
-                   (dom/set-css-property! submenu-node "display" "none")))))
-           (when on-pointer-leave (on-pointer-leave))))
-
-        set-dom-node
-        (mf/use-callback
-         (fn [dom]
-           (let [submenu-node (mf/ref-val submenu-ref)]
-             (when (and (some? dom) (some? submenu-node))
-               (dom/set-css-property! submenu-node "top" (str (.-offsetTop dom) "px"))))))]
-
-    (mf/use-effect
-     (mf/deps on-unmount)
-     (constantly on-unmount))
-
-    (if icon
-      [:li {:class (stl/css :icon-menu-item)
-            :disabled disabled
-            :data-value value
-            :ref set-dom-node
-            :on-click on-click
-            :on-pointer-enter on-pointer-enter
-            :on-pointer-leave on-pointer-leave}
-       [:span
-        {:class (stl/css :icon-wrapper)}
-        (if selected? [:span {:class (stl/css :selected-icon)}
-                       i/tick]
-            [:span {:class (stl/css :selected-icon)}])
-        [:span {:class (stl/css :shape-icon)} icon]]
-       [:span {:class (stl/css :title)} title]]
-      [:li {:class (stl/css :context-menu-item)
-            :disabled disabled
-            :ref set-dom-node
-            :data-value value
-            :on-click on-click
-            :on-pointer-enter on-pointer-enter
-            :on-pointer-leave on-pointer-leave}
-       [:span {:class (stl/css :title)} title]
-       (when shortcut
-         [:span   {:class (stl/css :shortcut)}
-          (for [[idx sc] (d/enumerate (scd/split-sc shortcut))]
-            [:span {:key (dm/str shortcut "-" idx)
-                    :class (stl/css :shortcut-key)} sc])])
-
-       (when (> (count children) 1)
-         [:span {:class (stl/css :submenu-icon)} i/arrow])
-
-       (when (> (count children) 1)
-         [:ul {:class (stl/css :token-context-submenu)
-               :ref submenu-ref
-               :style {:display "none" :left 250}
-               :on-context-menu prevent-default}
-          children])])))
-
-(mf/defc menu-separator
-  []
-  [:li {:class (stl/css :separator)}])
-
 (mf/defc token-pill-context-menu
   [{:keys [token-id]}]
   (let [do-delete #(st/emit! (dt/delete-token token-id))
         do-duplicate #(js/console.log "Duplicating")
         do-edit #(js/console.log "Editing")]
-    [:ul.context-list
-     [:& token-menu-entry {:title "Delete Token" :on-click do-delete}]
-     [:& token-menu-entry {:title "Duplicate Token" :on-click do-duplicate}]
-     [:& token-menu-entry {:title "Edit Token" :on-click do-edit}]]))
+    [:*
+     [:& menu-entry {:title "Delete Token" :on-click do-delete}]
+     [:& menu-entry {:title "Duplicate Token" :on-click do-duplicate}]
+     [:& menu-entry {:title "Edit Token" :on-click do-edit}]]))
 
 (mf/defc token-context-menu
   []
