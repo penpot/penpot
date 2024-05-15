@@ -12,12 +12,12 @@
    [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.shortcuts :as scd]
+   [app.main.data.tokens :as dt]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.icons :as i]
-   [app.main.ui.workspace.tokens.common :as tcm]
    [app.util.dom :as dom]
    [app.util.timers :as timers]
    [okulary.core :as l]
@@ -114,7 +114,7 @@
 
 (mf/defc token-pill-context-menu
   [{:keys [token-id]}]
-  (let [delete-fn #(st/emit! (tcm/delete-token token-id))
+  (let [delete-fn #(st/emit! (dt/delete-token token-id))
         do-delete #(st/emit! (modal/show
                               {:type :confirm
                                :title "Delete"
@@ -148,7 +148,7 @@
               (.setAttribute ^js dropdown "style" new-style))))))
 
     [:& dropdown {:show (boolean mdata)
-                  :on-close #(st/emit! tcm/hide-token-context-menu)}
+                  :on-close #(st/emit! dt/hide-token-context-menu)}
      [:div {:class (stl/css :token-context-menu)
             :ref dropdown-ref
             :style {:top top :left left}

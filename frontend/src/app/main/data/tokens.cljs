@@ -8,6 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
+   [app.common.geom.point :as gpt]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
@@ -108,3 +109,31 @@
   (= (toggle-or-apply-token shape-after-token-2-is-applied token-3)
      shape-after-token-3-is-applied)
   nil)
+
+;; Token Context Menu Functions -------------------------------------------------
+
+(defn show-token-context-menu
+  [{:keys [position token-id] :as params}]
+  (dm/assert! (gpt/point? position))
+  (ptk/reify ::show-token-context-menu
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :token-context-menu] params))))
+
+(def hide-token-context-menu
+  (ptk/reify ::hide-token-context-menu
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :token-context-menu] nil))))
+
+(defn delete-token
+  [id]
+  (dm/assert! (uuid? id))
+  (ptk/reify ::delete-token
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [data    (get state :workspace-data)
+            changes (-> (pcb/empty-changes it)
+                        (pcb/with-library-data data)
+                        (pcb/delete-token id))]
+        (rx/of (dch/commit-changes changes))))))

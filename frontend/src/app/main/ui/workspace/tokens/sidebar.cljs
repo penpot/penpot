@@ -15,7 +15,7 @@
    [app.main.ui.components.search-bar :refer [search-bar]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
-   [app.main.ui.workspace.tokens.common :as tcm]
+   [app.main.ui.workspace.tokens.common :refer [workspace-shapes]]
    [app.main.ui.workspace.tokens.core :refer [tokens-applied?] :as wtc]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
@@ -54,9 +54,9 @@
                          (fn [event token]
                            (dom/prevent-default event)
                            (dom/stop-propagation event)
-                           (st/emit! (tcm/show-token-context-menu {:type :token
-                                                                   :position (dom/get-client-position event)
-                                                                   :token-id (:id token)}))))
+                           (st/emit! (dt/show-token-context-menu {:type :token
+                                                                  :position (dom/get-client-position event)
+                                                                  :token-id (:id token)}))))
 
         on-toggle-open-click (mf/use-fn
                               (mf/deps open? tokens)
@@ -125,7 +125,7 @@
         token-groups (mf/with-memo [tokens]
                        (sorted-token-groups tokens))
         selected-shape-ids (mf/deref refs/selected-shapes)
-        selected-shapes (tcm/workspace-shapes workspace-data current-page-id selected-shape-ids)]
+        selected-shapes (workspace-shapes workspace-data current-page-id selected-shape-ids)]
     [:article
      [:div.assets-bar
       (for [{:keys [token-key token-type-props tokens]} (concat (:filled token-groups)

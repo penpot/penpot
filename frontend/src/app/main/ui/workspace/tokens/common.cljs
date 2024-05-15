@@ -7,12 +7,6 @@
 (ns app.main.ui.workspace.tokens.common
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data.macros :as dm]
-   [app.common.files.changes-builder :as pcb]
-   [app.common.geom.point :as gpt]
-   [app.main.data.workspace.changes :as dch]
-   [beicon.v2.core :as rx]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 ;; Helpers ---------------------------------------------------------------------
@@ -45,31 +39,3 @@
             :default-value default-value
             :autoFocus auto-focus?
             :on-change on-change}]])
-
-;; Token Context Menu Functions -------------------------------------------------
-
-(defn show-token-context-menu
-  [{:keys [position token-id] :as params}]
-  (dm/assert! (gpt/point? position))
-  (ptk/reify ::show-token-context-menu
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-local :token-context-menu] params))))
-
-(def hide-token-context-menu
-  (ptk/reify ::hide-token-context-menu
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-local :token-context-menu] nil))))
-
-(defn delete-token
-  [id]
-  (dm/assert! (uuid? id))
-  (ptk/reify ::delete-token
-    ptk/WatchEvent
-    (watch [it state _]
-      (let [data    (get state :workspace-data)
-            changes (-> (pcb/empty-changes it)
-                        (pcb/with-library-data data)
-                        (pcb/delete-token id))]
-        (rx/of (dch/commit-changes changes))))))
