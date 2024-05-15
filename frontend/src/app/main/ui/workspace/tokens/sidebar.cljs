@@ -7,13 +7,13 @@
 (ns app.main.ui.workspace.tokens.sidebar
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
-   [app.main.ui.workspace.tokens.common :refer [workspace-shapes]]
    [app.main.ui.workspace.tokens.core :as wtc]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
@@ -52,7 +52,7 @@
     i/add))
 
 (mf/defc token-component
-  [{:keys [type file tokens selected-shapes token-type-props]}]
+  [{:keys [type tokens selected-shapes token-type-props]}]
   (let [open? (mf/use-state false)
         {:keys [modal attributes title]} token-type-props
 
@@ -87,8 +87,7 @@
                                                     :selected-shapes selected-shapes})))
         tokens-count (count tokens)]
     [:div {:on-click on-toggle-open-click}
-     [:& cmm/asset-section {:file-id (:id file)
-                            :icon (mf/fnc icon-wrapper [_]
+     [:& cmm/asset-section {:icon (mf/fnc icon-wrapper [_]
                                     [:div {:class (stl/css :section-icon)}
                                      [:& token-section-icon {:type type}]])
 
@@ -128,21 +127,20 @@
 
 (mf/defc tokens-explorer
   [_props]
-  (let [file (mf/deref refs/workspace-file)
-        current-page-id (:current-page-id @st/state)
-        workspace-data (mf/deref refs/workspace-data)
-        tokens (get workspace-data :tokens)
+  (let [objects (mf/deref refs/workspace-page-objects)
+
+        selected (mf/deref refs/selected-shapes)
+        selected-shapes (into [] (keep (d/getf objects)) selected)
+
+        tokens (mf/deref refs/workspace-tokens)
         token-groups (mf/with-memo [tokens]
-                       (sorted-token-groups tokens))
-        selected-shape-ids (mf/deref refs/selected-shapes)
-        selected-shapes (workspace-shapes workspace-data current-page-id selected-shape-ids)]
+                       (sorted-token-groups tokens))]
     [:article
      [:div.assets-bar
       (for [{:keys [token-key token-type-props tokens]} (concat (:filled token-groups)
                                                                 (:empty token-groups))]
         [:& token-component {:key token-key
                              :type token-key
-                             :file file
                              :selected-shapes selected-shapes
                              :tokens tokens
                              :token-type-props token-type-props}])]]))
