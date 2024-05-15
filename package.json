@@ -18,5 +18,9 @@
     "lint:clj:backend": "clj-kondo --parallel=true --lint backend/src",
     "lint:clj:exporter": "clj-kondo --parallel=true --lint exporter/src",
     "lint:clj": "yarn run lint:clj:common && yarn run lint:clj:frontend && yarn run lint:clj:backend && yarn run lint:clj:exporter"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.43.1",
+    "@types/node": "^20.12.7"
   }
 }

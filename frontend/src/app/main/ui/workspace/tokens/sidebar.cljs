@@ -7,12 +7,9 @@
 (ns app.main.ui.workspace.tokens.sidebar
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data :as d]
    [app.main.data.modal :as modal]
-   [app.main.data.tokens :as dt]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.search-bar :refer [search-bar]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.tokens.common :refer [workspace-shapes]]
@@ -20,30 +17,38 @@
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
-(defn on-apply-token [{:keys [token token-type-props selected-shapes] :as _props}]
-  (let [{:keys [attributes on-apply on-update-shape]
-         :or {on-apply dt/update-token-from-attributes}} token-type-props
-        shape-ids (->> selected-shapes
-                       (eduction
-                        (remove #(tokens-applied? token % attributes))
-                        (map :id)))
-        token-value (d/parse-integer (:value token))]
-    (doseq [shape selected-shapes]
-      (st/emit! (on-apply {:token-id (:id token)
-                           :shape-id (:id shape)
-                           :attributes attributes}))
-      (on-update-shape token-value shape-ids))))
-
 (mf/defc token-pill
   {::mf/wrap-props false}
   [{:keys [on-click token highlighted? on-context-menu]}]
   (let [{:keys [name value]} token]
+        resolved-value (try
+                         (wtc/resolve-token-value token)
+                         (catch js/Error _ nil))]
     [:div {:class (stl/css-case :token-pill true
                                 :token-pill-highlighted highlighted?)
-           :title (str "Token value: " value)
+                                :token-pill-invalid (not resolved-value))
+           :title (str (if resolved-value "Token value: " "Invalid token value: ") value)
            :on-click on-click
            :on-context-menu on-context-menu}
      name]))
+
+(mf/defc token-section-icon
+  {::mf/wrap-props false}
+  [{:keys [type]}]
+  (case type
+    :border-radius i/corner-radius
+    :numeric [:span {:class (stl/css :section-text-icon)} "123"]
+    :boolean i/boolean-difference
+    :opacity [:span {:class (stl/css :section-text-icon)} "%"]
+    :rotation i/rotation
+    :spacing i/padding-extended
+    :string i/text-mixed
+    :stroke-width i/stroke-size
+    :typography i/text
+    ;; TODO: Add diagonal icon here when it's available
+    :dimension [:div {:style {:rotate "45deg"}} i/constraint-horizontal]
+    :sizing [:div {:style {:rotate "45deg"}} i/constraint-horizontal]
+    i/add))
 
 (mf/defc token-component
   [{:keys [type file tokens selected-shapes token-type-props]}]
@@ -76,12 +81,16 @@
                              (mf/deps selected-shapes token-type-props)
                              (fn [event token]
                                (dom/stop-propagation event)
-                               (on-apply-token {:token token
-                                                :token-type-props token-type-props
-                                                :selected-shapes selected-shapes})))
+                               (wtc/on-apply-token {:token token
+                                                    :token-type-props token-type-props
+                                                    :selected-shapes selected-shapes})))
         tokens-count (count tokens)]
     [:div {:on-click on-toggle-open-click}
      [:& cmm/asset-section {:file-id (:id file)
+                            :icon (mf/fnc icon-wrapper [_]
+                                    [:div {:class (stl/css :section-icon)}
+                                     [:& token-section-icon {:type type}]])
+
                             :title title
                             :assets-count tokens-count
                             :open? @open?}

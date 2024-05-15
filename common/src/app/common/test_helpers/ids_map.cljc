@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns common-tests.helpers.ids-map
+(ns app.common.test-helpers.ids-map
   (:require
    [app.common.uuid :as uuid]))
 
@@ -36,7 +36,8 @@
   (f))
 
 (defn label [id]
-  (->> @idmap
-       (filter #(= id (val %)))
-       (map key)
-       (first)))
+  (or (->> @idmap
+           (filter #(= id (val %)))
+           (map key)
+           (first))
+      (str "<no-label #" (subs (str id) (- (count (str id)) 6)) ">")))

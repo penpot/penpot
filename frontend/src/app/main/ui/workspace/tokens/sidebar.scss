@@ -28,4 +28,23 @@
     color: var(--button-primary-foreground-color-rest);
     background: var(--button-primary-background-color-rest);
   }
+
+  &.token-pill-invalid {
+    color: var(--status-color-error-500);
+    opacity: 0.8;
+  }
+}
+
+.section-text-icon {
+  font-size: $fs-12;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  place-content: center;
+}
+
+.section-icon {
+  margin-right: $s-4;
+  // Align better with the label
+  translate: 0px -1px;
 }

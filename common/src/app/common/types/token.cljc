@@ -35,6 +35,7 @@
 (def token-types
   #{:boolean
     :border-radius
+    :stroke-width
     :box-shadow
     :dimension
     :numeric
@@ -66,6 +67,12 @@
 
 (def border-radius-keys (schema-keys ::border-radius))
 
+(sm/def! ::stroke-width
+  [:map
+   [:stroke-width {:optional true} ::sm/uuid]])
+
+(def stroke-width-keys (schema-keys ::stroke-width))
+
 (sm/def! ::dimensions
   [:map
    [:width {:optional true} ::sm/uuid]
@@ -76,6 +83,12 @@
    [:max-width {:optional true} ::sm/uuid]])
 
 (def dimensions-keys (schema-keys ::dimensions))
+
+(sm/def! ::opacity
+  [:map
+   [:opacity ::sm/uuid]])
+
+(def opacity-keys (schema-keys ::opacity))
 
 (sm/def! ::spacing
   [:map

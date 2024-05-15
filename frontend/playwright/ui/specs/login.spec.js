@@ -1,54 +1,50 @@
 import { test, expect } from "@playwright/test";
-import { setupNotLogedIn } from "../../helpers/intercepts";
-
-import LoginPage from "../pages/login-page";
+import { LoginPage } from "../pages/LoginPage";
 
 test.beforeEach(async ({ page }) => {
-  await setupNotLogedIn(page);
+  await LoginPage.initWithLoggedOutUser(page);
   await page.goto("/#/auth/login");
 });
 
-test("Shows login page when going to index and user is logged out", async ({ page }) => {
+test("User is redirected to the login page when logged out", async ({ page }) => {
   const loginPage = new LoginPage(page);
 
-  await loginPage.setupAllowedUser();
+  await loginPage.setupLoggedInUser();
 
-  await expect(loginPage.url()).toMatch(/auth\/login$/);
+  await expect(loginPage.page).toHaveURL(/auth\/login$/);
   await expect(loginPage.initialHeading).toBeVisible();
 });
 
-test("User submit a wrong formated email ", async ({ page }) => {
-  const loginPage = new LoginPage(page);
+test.describe("Login form", () => {
+  test("User logs in by filling the login form", async ({ page }) => {
+    const loginPage = new LoginPage(page);
+    await loginPage.setupLoginSuccess();
+    await loginPage.setupLoggedInUser();
 
-  await loginPage.setupLoginSuccess();
+    await loginPage.fillEmailAndPasswordInputs("foo@example.com", "loremipsum");
+    await loginPage.clickLoginButton();
 
-  await loginPage.fillEmailAndPasswordInputs("foo", "lorenIpsum");
+    await page.waitForURL("**/dashboard/**");
+    await expect(loginPage.page).toHaveURL(/dashboard/);
+  });
 
-  await expect(loginPage.badLoginMsg).toBeVisible();
-});
+  test("User gets error message when submitting an bad formatted email ", async ({ page }) => {
+    const loginPage = new LoginPage(page);
+    await loginPage.setupLoginSuccess();
 
-test("User logs in by filling the login form", async ({ page }) => {
-  const loginPage = new LoginPage(page);
+    await loginPage.fillEmailAndPasswordInputs("foo", "lorenIpsum");
 
-  await loginPage.setupLoginSuccess();
-  await loginPage.setupAllowedUser();
+    await expect(loginPage.invalidEmailError).toBeVisible();
+  });
 
-  await loginPage.fillEmailAndPasswordInputs("foo@example.com", "loremipsum");
-  await loginPage.clickLoginButton();
+  test("User gets error message when submitting wrong credentials", async ({ page }) => {
+    const loginPage = new LoginPage(page);
+    await loginPage.setupLoginError();
 
-  await page.waitForURL('**/dashboard/**');
-  await expect(page).toHaveURL(/dashboard/);
-  // await expect(loginPage.url()).toMatch(/dashboard/);
-});
+    await loginPage.fillEmailAndPasswordInputs("test@example.com", "loremipsum");
+    await loginPage.clickLoginButton();
 
-test("User submits wrong credentials", async ({ page }) => {
-  const loginPage = new LoginPage(page);
-
-  await loginPage.setupLoginError();
-
-  await loginPage.fillEmailAndPasswordInputs("test@example.com", "loremipsum");
-  await loginPage.clickLoginButton();
-
-  await expect(loginPage.message).toBeVisible();
-  await expect(loginPage.url()).toMatch(/auth\/login$/);
+    await expect(loginPage.invalidCredentialsError).toBeVisible();
+    await expect(loginPage.page).toHaveURL(/auth\/login$/);
+  });
 });

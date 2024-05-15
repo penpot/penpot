@@ -3,7 +3,7 @@ import { fileURLToPath } from "url";
 import path from "path";
 
 const app = express();
-const port = 3500;
+const port = 3000;
 
 const staticPath = path.join(fileURLToPath(import.meta.url), "../../resources/public");
 app.use(express.static(staticPath));

@@ -9,6 +9,7 @@
    [app.common.data :as d :refer [ordered-map]]
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.token :as ctt]
+   [app.main.data.tokens :as dt]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -31,7 +32,26 @@
   [token shapes token-attributes]
   (some #(token-applied? token % token-attributes) shapes))
 
+(defn resolve-token-value [{:keys [value] :as token}]
+  (if-let [int-or-double (d/parse-double value)]
+    int-or-double
+    (throw (ex-info (str "Implement token value resolve for " value) token))))
+
 ;; Update functions ------------------------------------------------------------
+
+(defn on-apply-token [{:keys [token token-type-props selected-shapes] :as _props}]
+  (let [{:keys [attributes on-apply on-update-shape]
+         :or {on-apply dt/update-token-from-attributes}} token-type-props
+        shape-ids (->> selected-shapes
+                       (eduction
+                        (remove #(tokens-applied? token % attributes))
+                        (map :id)))
+        token-value (resolve-token-value token)]
+    (doseq [shape selected-shapes]
+      (st/emit! (on-apply {:token-id (:id token)
+                           :shape-id (:id shape)
+                           :attributes attributes}))
+      (on-update-shape token-value shape-ids))))
 
 (defn update-shape-radius [value shape-ids]
   (st/emit!
@@ -47,8 +67,19 @@
    (dwt/update-dimensions shape-ids :width value)
    (dwt/update-dimensions shape-ids :height value)))
 
-(defn update-layout-spacing-column [value shape-ids]
-  (let [selected-shapes  (wsh/lookup-selected @st/state)]
+(defn update-opacity [value shape-ids]
+  (st/emit!
+   (dch/update-shapes shape-ids #(assoc % :opacity value))))
+
+(defn update-stroke-width
+  [value shape-ids]
+  (st/emit!
+   (dch/update-shapes shape-ids (fn [shape]
+                                  (when (seq (:strokes shape))
+                                    (assoc-in shape [:strokes 0 :stroke-width] value))))))
+
+(defn update-layout-spacing-column [value _shape-ids]
+  (let [selected-shapes (wsh/lookup-selected @st/state)]
     (st/emit!
      (dwsl/update-layout selected-shapes {:layout-gap {:column-gap value :row-gap value}}))))
 
@@ -67,6 +98,13 @@
      :modal {:key :tokens/border-radius
              :fields [{:label "Border Radius"
                        :key :border-radius}]}}]
+   [:stroke-width
+    {:title "Stroke Width"
+     :attributes ctt/stroke-width-keys
+     :on-update-shape update-stroke-width
+     :modal {:key :tokens/stroke-width
+             :fields [{:label "Stroke Width"
+                       :key :stroke-width}]}}]
    [:box-shadow
     {:title "Box Shadow"
      :modal {:key :tokens/box-shadow
@@ -92,6 +130,8 @@
                        :key :numeric}]}}]
    [:opacity
     {:title "Opacity"
+     :attributes ctt/opacity-keys
+     :on-update-shape update-opacity
      :modal {:key :tokens/opacity
              :fields [{:label "Opacity"
                        :key :opacity}]}}]
