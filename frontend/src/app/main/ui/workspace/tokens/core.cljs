@@ -113,6 +113,8 @@
                        :type :box-shadow}]}}]
    [:sizing
     {:title "Sizing"
+     :attributes ctt/sizing-keys
+     :on-update-shape update-shape-dimensions
      :modal {:key :tokens/sizing
              :fields [{:label "Sizing"
                        :key :sizing}]}}]
