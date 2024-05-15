@@ -196,6 +196,9 @@
 (def context-menu
   (l/derived :context-menu workspace-local))
 
+(def token-context-menu
+  (l/derived :token-context-menu workspace-local))
+
 ;; page item that it is being edited
 (def editing-page-item
   (l/derived :page-item workspace-local))
