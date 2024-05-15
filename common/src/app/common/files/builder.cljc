@@ -513,7 +513,7 @@
 
 
 (defn start-component
-  ([file data] (start-component file data :group))
+  ([file data] (start-component file data :frame))
   ([file data root-type]
    ;; FIXME: data probably can be a shape instance, then we can use gsh/shape->rect
    (let [selrect (or (grc/make-rect (:x data) (:y data) (:width data) (:height data))
@@ -595,7 +595,7 @@
 
              {:add-container? true}))
 
-          (= (:type component) :group)
+          (= (:type component) :frame)
           (let [component' (gsh/update-group-selrect component children)]
             (commit-change
              file

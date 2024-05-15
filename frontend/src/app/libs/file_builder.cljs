@@ -249,6 +249,12 @@
   (deleteObject [_ id]
     (set! file (fb/delete-object file (uuid/uuid id))))
 
+  (getId [_]
+    (str (:id file)))
+
+  (getCurrentPageId [_]
+    (str (:current-page-id file)))
+
   (asMap [_]
     (clj->js file))
 
