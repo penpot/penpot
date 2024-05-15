@@ -14,7 +14,7 @@
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.tokens.common :refer [workspace-shapes]]
-   [app.main.ui.workspace.tokens.core :refer [tokens-applied?] :as wtc]
+   [app.main.ui.workspace.tokens.core :as wtc]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
@@ -106,7 +106,7 @@
             [:& token-pill
              {:key (:id token)
               :token token
-              :highlighted? (tokens-applied? token selected-shapes attributes)
+              :highlighted? (wtc/tokens-applied? token selected-shapes attributes)
               :on-click #(on-token-pill-click % token)
               :on-context-menu #(on-context-menu % token)}])]])]]))
 
