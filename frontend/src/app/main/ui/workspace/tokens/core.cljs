@@ -43,6 +43,17 @@
   (->> (vals tokens)
        (group-by :type)))
 
+(defn tokens-name-map
+  "Convert tokens into a map with their `:name` as the key."
+  [tokens]
+  (->> (map (fn [{:keys [name] :as token}] [name token]) tokens)
+       (into {})))
+
+(defn tokens-name-map-for-type [token-type tokens]
+  (-> (group-tokens-by-type tokens)
+      (get token-type [])
+      (tokens-name-map)))
+
 ;; Update functions ------------------------------------------------------------
 
 (defn on-apply-token [{:keys [token token-type-props selected-shapes] :as _props}]
