@@ -44,12 +44,18 @@
        (group-by :type)))
 
 (defn tokens-name-map
-  "Convert tokens into a map with their `:name` as the key."
+  "Convert tokens into a map with their `:name` as the key.
+
+  E.g.: {\"sm\" {:token-type :border-radius :id #uuid \"000\" ...}}"
   [tokens]
   (->> (map (fn [{:keys [name] :as token}] [name token]) tokens)
        (into {})))
 
-(defn tokens-name-map-for-type [token-type tokens]
+(defn tokens-name-map-for-type
+  "Convert tokens with `token-type` into a map with their `:name` as the key.
+
+  E.g.: {\"sm\" {:token-type :border-radius :id #uuid \"000\" ...}}"
+  [token-type tokens]
   (-> (group-tokens-by-type tokens)
       (get token-type [])
       (tokens-name-map)))
