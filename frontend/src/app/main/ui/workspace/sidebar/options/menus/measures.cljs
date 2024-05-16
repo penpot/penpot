@@ -262,7 +262,7 @@
                                   (update-fn shape)
                                   shape))
                               {:reg-objects? true
-                               :attrs [:rx :ry :r1 :r2 :r3 :r4]})))
+                               :attrs [:rx :ry :r1 :r2 :r3 :r4 :applied-tokens]})))
 
         on-switch-to-radius-1
         (mf/use-fn
@@ -293,12 +293,14 @@
          (fn [value]
            (let [token (when (symbol? value)
                          (get border-radius-tokens (str value)))
-                 token-value (wtc/resolve-token-value token)]
+                 token-value (some-> token wtc/resolve-token-value)]
              (st/emit!
-              (dt/update-token-from-attributes {:token-id (:id token)
-                                                :shape-id (first ids)
-                                                :attributes (get-in wtc/token-types [:border-radius :attributes])})
-              (change-radius #(ctsr/set-radius-1 % (or token-value value)))))))
+              (change-radius (fn [shape]
+                               (cond-> shape
+                                 token-value (#(dt/apply-token-to-shape {:token-id (:id token)
+                                                                         :shape %
+                                                                         :attributes (wtc/token-attributes :border-radius)}))
+                                 :always (ctsr/set-radius-1 (or token-value value)))))))))
 
         on-radius-multi-change
         (mf/use-fn

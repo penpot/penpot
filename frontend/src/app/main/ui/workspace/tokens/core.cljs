@@ -188,3 +188,6 @@
                       {:label "Paragraph Indent" :key :paragraph-indent}
                       {:label "Text Decoration" :key :text-decoration}
                       {:label "Text Case" :key :text-case}]}}]))
+
+(defn token-attributes [token-type]
+  (get-in token-types [token-type :attributes]))

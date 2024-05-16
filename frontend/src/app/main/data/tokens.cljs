@@ -55,9 +55,13 @@
   (->> (map (fn [attr] [attr token-id]) attributes)
        (into {})))
 
-(defn apply-token-id [{:keys [shape token-id attributes]}]
+(defn apply-token-id-to-attributes [{:keys [shape token-id attributes]}]
   (let [token (token-from-attributes token-id attributes)]
     (toggle-or-apply-token shape token)))
+
+(defn apply-token-to-shape [{:keys [shape _token-id _attributes] :as props}]
+  (let [applied-tokens (apply-token-id-to-attributes props)]
+    (update shape :applied-tokens #(merge % applied-tokens))))
 
 (defn update-token-from-attributes
   [{:keys [token-id shape-id attributes]}]
@@ -65,9 +69,9 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [shape (get-shape-from-state shape-id state)
-            applied-tokens (apply-token-id {:shape shape
-                                            :token-id token-id
-                                            :attributes attributes})]
+            applied-tokens (apply-token-id-to-attributes {:shape shape
+                                                          :token-id token-id
+                                                          :attributes attributes})]
         (rx/of (update-shape shape-id {:applied-tokens applied-tokens}))))))
 
 (defn add-token
