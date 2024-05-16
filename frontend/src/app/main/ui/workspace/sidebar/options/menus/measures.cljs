@@ -12,6 +12,7 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.types.shape.radius :as ctsr]
    [app.main.constants :refer [size-presets]]
+   [app.main.data.tokens :as dt]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.interactions :as dwi]
@@ -19,10 +20,12 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.components.editable-select :refer [editable-select]]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
+   [app.main.ui.workspace.tokens.core :as wtc]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [clojure.set :refer [rename-keys union]]
@@ -94,6 +97,10 @@
 
         selection-parents-ref (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))
         selection-parents     (mf/deref selection-parents-ref)
+
+        tokens (mf/deref refs/workspace-tokens)
+        border-radius-tokens (mf/use-memo (mf/deps tokens) #(wtc/tokens-name-map-for-type :border-radius tokens))
+        border-radius-options (mf/use-memo (mf/deps border-radius-tokens) #(map (comp :name val) border-radius-tokens))
 
         flex-child?       (->> selection-parents (some ctl/flex-layout?))
         absolute?         (ctl/item-absolute? shape)
@@ -255,7 +262,7 @@
                                   (update-fn shape)
                                   shape))
                               {:reg-objects? true
-                               :attrs [:rx :ry :r1 :r2 :r3 :r4]})))
+                               :attrs [:rx :ry :r1 :r2 :r3 :r4 :applied-tokens]})))
 
         on-switch-to-radius-1
         (mf/use-fn
@@ -282,9 +289,17 @@
 
         on-radius-1-change
         (mf/use-fn
-         (mf/deps ids change-radius)
+         (mf/deps ids change-radius border-radius-tokens)
          (fn [value]
-           (st/emit! (change-radius #(ctsr/set-radius-1 % value)))))
+           (let [token (when (symbol? value)
+                         (get border-radius-tokens (str value)))
+                 token-value (some-> token wtc/resolve-token-value)]
+             (st/emit!
+              (change-radius (fn [shape]
+                               (-> (dt/maybe-apply-token-to-shape {:token token
+                                                                   :shape shape
+                                                                   :attributes (wtc/token-attributes :border-radius)})
+                                   (ctsr/set-radius-1 (or token-value value)))))))))
 
         on-radius-multi-change
         (mf/use-fn
@@ -468,12 +483,14 @@
               [:div {:class (stl/css :radius-1)
                      :title (tr "workspace.options.radius")}
                [:span {:class (stl/css :icon)}  i/corner-radius]
-               [:> numeric-input*
+               [:& editable-select
                 {:placeholder (if (= :multiple (:rx values)) (tr "settings.multiple") "--")
-                 :ref radius-input-ref
+                 :class (stl/css :token-select)
+                 :type "number"
                  :min 0
+                 :input-class (stl/css :numeric-input)
                  :on-change on-radius-1-change
-                 :className (stl/css :numeric-input)
+                 :options border-radius-options
                  :value (:rx values)}]]
 
               @radius-multi?

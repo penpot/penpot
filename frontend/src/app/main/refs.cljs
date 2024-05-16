@@ -230,6 +230,12 @@
 (def workspace-data
   (l/derived :workspace-data st/state))
 
+(def workspace-tokens
+  (l/derived (fn [data]
+               (get data :tokens []))
+             workspace-data
+             =))
+
 (def workspace-file-colors
   (l/derived (fn [data]
                (when data

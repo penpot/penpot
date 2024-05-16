@@ -37,6 +37,29 @@
     int-or-double
     (throw (ex-info (str "Implement token value resolve for " value) token))))
 
+(defn group-tokens-by-type
+  "Groups tokens by their `:type` property."
+  [tokens]
+  (->> (vals tokens)
+       (group-by :type)))
+
+(defn tokens-name-map
+  "Convert tokens into a map with their `:name` as the key.
+
+  E.g.: {\"sm\" {:token-type :border-radius :id #uuid \"000\" ...}}"
+  [tokens]
+  (->> (map (fn [{:keys [name] :as token}] [name token]) tokens)
+       (into {})))
+
+(defn tokens-name-map-for-type
+  "Convert tokens with `token-type` into a map with their `:name` as the key.
+
+  E.g.: {\"sm\" {:token-type :border-radius :id #uuid \"000\" ...}}"
+  [token-type tokens]
+  (-> (group-tokens-by-type tokens)
+      (get token-type [])
+      (tokens-name-map)))
+
 ;; Update functions ------------------------------------------------------------
 
 (defn on-apply-token [{:keys [token token-type-props selected-shapes] :as _props}]
@@ -171,3 +194,6 @@
                       {:label "Paragraph Indent" :key :paragraph-indent}
                       {:label "Text Decoration" :key :text-decoration}
                       {:label "Text Case" :key :text-case}]}}]))
+
+(defn token-attributes [token-type]
+  (get-in token-types [token-type :attributes]))

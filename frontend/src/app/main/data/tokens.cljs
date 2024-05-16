@@ -57,15 +57,34 @@
   (->> (map (fn [attr] [attr token-id]) attributes)
        (into {})))
 
+(defn apply-token-id-to-attributes [{:keys [shape token-id attributes]}]
+  (let [token (token-from-attributes token-id attributes)]
+    (toggle-or-apply-token shape token)))
+
+(defn apply-token-to-shape
+  [{:keys [shape token attributes] :as _props}]
+  (let [applied-tokens (apply-token-id-to-attributes {:shape shape
+                                                      :token-id (:id token)
+                                                      :attributes attributes})]
+    (update shape :applied-tokens #(merge % applied-tokens))))
+
+(defn maybe-apply-token-to-shape
+  "When the passed `:token` is non-nil apply it to the `:applied-tokens` on a shape."
+  [{:keys [shape token _attributes] :as props}]
+  (if token
+    (apply-token-to-shape props)
+    shape))
+
 (defn update-token-from-attributes
   [{:keys [token-id shape-id attributes]}]
   (ptk/reify ::update-token-from-attributes
     ptk/WatchEvent
     (watch [_ state _]
       (let [shape (get-shape-from-state shape-id state)
-            token (token-from-attributes token-id attributes)
-            next-applied-tokens (toggle-or-apply-token shape token)]
-        (rx/of (update-shape shape-id {:applied-tokens next-applied-tokens}))))))
+            applied-tokens (apply-token-id-to-attributes {:shape shape
+                                                          :token-id token-id
+                                                          :attributes attributes})]
+        (rx/of (update-shape shape-id {:applied-tokens applied-tokens}))))))
 
 (defn get-token-data-from-token-id
   [id]
