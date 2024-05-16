@@ -13,7 +13,6 @@
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
    [app.main.refs :as refs]
-   [app.main.store :as st]
    [app.main.ui.workspace.tokens.common :refer [workspace-shapes]]
    [beicon.v2.core :as rx]
    [clojure.data :as data]
@@ -71,7 +70,7 @@
 (defn get-token-data-from-token-id
   [id]
   (let [workspace-data (deref refs/workspace-data)]
-    (get (:tokens workspace-data) id)))        
+    (get (:tokens workspace-data) id)))
 
 (defn add-token
   [token]
@@ -97,13 +96,10 @@
 
 (defn duplicate-token
   [id]
-  (let [token-data (get-token-data-from-token-id id)
-        duplicate-token-name (str/concat (:name token-data) "-copy")
-        duplicate-token {:name duplicate-token-name
-                         :value (:value token-data)
-                         :type (:type token-data)
-                         :description (or (:description token-data) "")}]
-    (st/emit! (add-token duplicate-token))))
+  (let [new-token (-> (get-token-data-from-token-id id)
+                      (dissoc :id)
+                      (update :name #(str/concat % "-copy")))]
+    (add-token new-token)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TEMP (Move to test)
