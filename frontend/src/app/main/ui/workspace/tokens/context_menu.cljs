@@ -29,7 +29,7 @@
 (mf/defc token-pill-context-menu
   [{:keys [token-id]}]
   (let [do-delete #(st/emit! (dt/delete-token token-id))
-        do-duplicate #(js/console.log "Duplicating")
+        do-duplicate #(st/emit! (dt/duplicate-token token-id))
         do-edit #(js/console.log "Editing")]
     [:*
      [:& menu-entry {:title "Delete Token" :on-click do-delete}]
