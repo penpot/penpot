@@ -289,7 +289,7 @@
 
         on-radius-1-change
         (mf/use-fn
-         (mf/deps ids change-radius)
+         (mf/deps ids change-radius border-radius-tokens)
          (fn [value]
            (let [token (when (symbol? value)
                          (get border-radius-tokens (str value)))
