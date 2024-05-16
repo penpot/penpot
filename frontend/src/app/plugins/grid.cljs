@@ -34,7 +34,7 @@
       (st/emit! (dwsl/add-layout-track #{id} :row {:type type :value value}))))
 
   (addRowAtIndex
-    [self type value index]
+    [self index type value]
     (let [id (get-data self :id)
           type (keyword type)]
       (st/emit! (dwsl/add-layout-track #{id} :row {:type type :value value} index))))
@@ -46,7 +46,7 @@
       (st/emit! (dwsl/add-layout-track #{id} :column {:type type :value value}))))
 
   (addColumnAtIndex
-    [self type value index]
+    [self index type value]
     (let [id (get-data self :id)
           type (keyword type)]
       (st/emit! (dwsl/add-layout-track #{id} :column {:type type :value value} index))))
@@ -170,4 +170,37 @@
         (fn [self value]
           (let [id (get-data self :id)]
             (when (us/safe-int? value)
-              (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p2 value :p4 value}})))))})))
+              (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p2 value :p4 value}})))))}
+
+
+       {:name "topPadding"
+        :get #(:p1 (get-state % :layout-padding))
+        :set
+        (fn [self value]
+          (let [id (get-data self :id)]
+            (when (us/safe-int? value)
+              (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p1 value}})))))}
+
+       {:name "rightPadding"
+        :get #(:p2 (get-state % :layout-padding))
+        :set
+        (fn [self value]
+          (let [id (get-data self :id)]
+            (when (us/safe-int? value)
+              (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p2 value}})))))}
+
+       {:name "bottomPadding"
+        :get #(:p3 (get-state % :layout-padding))
+        :set
+        (fn [self value]
+          (let [id (get-data self :id)]
+            (when (us/safe-int? value)
+              (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p3 value}})))))}
+
+       {:name "leftPadding"
+        :get #(:p4 (get-state % :layout-padding))
+        :set
+        (fn [self value]
+          (let [id (get-data self :id)]
+            (when (us/safe-int? value)
+              (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p4 value}})))))})))

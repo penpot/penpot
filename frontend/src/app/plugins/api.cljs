@@ -11,6 +11,7 @@
    [app.common.files.changes-builder :as cb]
    [app.common.geom.point :as gpt]
    [app.common.record :as cr]
+   [app.common.text :as txt]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as ch]
@@ -19,6 +20,7 @@
    [app.main.store :as st]
    [app.plugins.events :as events]
    [app.plugins.file :as file]
+   [app.plugins.library :as library]
    [app.plugins.page :as page]
    [app.plugins.shape :as shape]
    [app.plugins.utils :as utils]
@@ -129,13 +131,29 @@
     [_]
     (create-shape :rect))
 
+  (createText
+    [_ text]
+    (let [page-id (:current-page-id @st/state)
+          page (dm/get-in @st/state [:workspace-data :pages-index page-id])
+          shape (-> (cts/setup-shape {:type :text :x 0 :y 0 :grow-type :auto-width})
+                    (txt/change-text text)
+                    (assoc :position-data nil))
+          changes
+          (-> (cb/empty-changes)
+              (cb/with-page page)
+              (cb/with-objects (:objects page))
+              (cb/add-object shape))]
+      (st/emit! (ch/commit-changes changes))
+      (shape/data->shape-proxy shape)))
+
   (createShapeFromSvg
     [_ svg-string]
-    (let [id (uuid/next)
-          page-id (:current-page-id @st/state)]
-      (st/emit! (dwm/create-svg-shape id "svg" svg-string (gpt/point 0 0)))
-      (shape/data->shape-proxy
-       (dm/get-in @st/state [:workspace-data :pages-index page-id :objects id])))))
+    (when (some? svg-string)
+      (let [id (uuid/next)
+            page-id (:current-page-id @st/state)]
+        (st/emit! (dwm/create-svg-shape id "svg" svg-string (gpt/point 0 0)))
+        (shape/data->shape-proxy
+         (dm/get-in @st/state [:workspace-data :pages-index page-id :objects id]))))))
 
 (defn create-context
   []
@@ -144,4 +162,5 @@
    {:name "root" :get #(.getRoot ^js %)}
    {:name "currentPage" :get #(.getPage ^js %)}
    {:name "selection" :get #(.getSelectedShapes ^js %)}
-   {:name "viewport" :get #(.getViewport ^js %)}))
+   {:name "viewport" :get #(.getViewport ^js %)}
+   {:name "library" :get (fn [_] (library/create-library-subcontext))}))

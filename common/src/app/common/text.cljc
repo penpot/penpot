@@ -406,8 +406,12 @@
   [shape text]
   (let [content (:content shape)
 
-        paragraph-style (select-keys (->> content (node-seq is-paragraph-node?) first) text-all-attrs)
-        text-style (select-keys (->> content (node-seq is-text-node?) first) text-all-attrs)
+        paragraph-style (merge
+                         default-text-attrs
+                         (select-keys (->> content (node-seq is-paragraph-node?) first) text-all-attrs))
+        text-style (merge
+                    default-text-attrs
+                    (select-keys (->> content (node-seq is-text-node?) first) text-all-attrs))
 
         paragraph-texts (str/split text "\n")
 

@@ -7,6 +7,8 @@
 (ns app.main.ui.workspace.main-menu
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -20,12 +22,14 @@
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.shortcuts :as sc]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu dropdown-menu-item*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks.resize :as r]
    [app.main.ui.icons :as i]
+   [app.main.ui.workspace.plugins :as uwp]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -60,6 +64,9 @@
         nav-to-feedback
         (mf/use-fn #(st/emit! (rt/nav-new-window* {:rname :settings-feedback})))
 
+        plugins?
+        (features/active-feature? @st/state "plugins/runtime")
+
         show-shortcuts
         (mf/use-fn
          (mf/deps layout)
@@ -83,7 +90,8 @@
     [:& dropdown-menu {:show true
                        :on-close on-close
                        :list-class (stl/css-case :sub-menu true
-                                                 :help-info true)}
+                                                 :help-info plugins?
+                                                 :help-info-old (not plugins?))}
      [:> dropdown-menu-item* {:class (stl/css :submenu-item)
                               :on-click    nav-to-helpc-center
                               :on-key-down (fn [event]
@@ -148,7 +156,6 @@
                               :id          "file-menu-shortcuts"}
       [:span {:class (stl/css :item-name)} (tr "label.shortcuts")]
       [:span {:class (stl/css :shortcut)}
-
        (for [sc (scd/split-sc (sc/get-tooltip :show-shortcuts))]
          [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
 
@@ -596,6 +603,41 @@
         [:span {:class (stl/css :item-name)}
          (tr "dashboard.export-frames")]])]))
 
+(mf/defc plugins-menu
+  {::mf/wrap-props false
+   ::mf/wrap [mf/memo]}
+  [{:keys [open-plugins on-close]}]
+  (when (features/active-feature? @st/state "plugins/runtime")
+    (let [plugins (uwp/load-from-store)]
+      [:& dropdown-menu {:show true
+                         :list-class (stl/css-case :sub-menu true :plugins true)
+                         :on-close on-close}
+       [:> dropdown-menu-item* {:on-click    open-plugins
+                                :class       (stl/css :submenu-item)
+                                :on-key-down (fn [event]
+                                               (when (kbd/enter? event)
+                                                 (open-plugins event)))
+                                :data-test   "open-plugins"
+                                :id          "file-menu-open-plugins"}
+        [:span {:class (stl/css :item-name)}
+         (tr "workspace.plugins.menu.plugins-manager")]
+        [:span {:class (stl/css :shortcut)}
+         (for [sc (scd/split-sc (sc/get-tooltip :plugins))]
+           [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
+
+
+       (when (d/not-empty? plugins)
+         [:div {:class (stl/css :separator)}])
+
+       (for [[idx {:keys [name url]}] (d/enumerate plugins)]
+         [:> dropdown-menu-item* {:key         (dm/str "plugins-menu-" idx)
+                                  :on-click    #(uwp/open-plugin! url)
+                                  :class       (stl/css :submenu-item)
+                                  :on-key-down (fn [event]
+                                                 (when (kbd/enter? event)
+                                                   #(uwp/open-plugin! url)))}
+          [:span {:class (stl/css :item-name)} name]])])))
+
 (mf/defc menu
   {::mf/wrap-props false}
   [{:keys [layout file profile]}]
@@ -644,12 +686,19 @@
              (reset! show-menu* false)
              (reset! sub-menu* nil))))
 
-
         toggle-theme
         (mf/use-fn
          (fn [event]
            (dom/stop-propagation event)
-           (st/emit! (du/toggle-theme))))]
+           (st/emit! (du/toggle-theme))))
+
+        open-plugins-manager
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (reset! show-menu* false)
+           (reset! sub-menu* nil)
+           (st/emit! (modal/show :plugin-management {}))))]
 
 
     [:*
@@ -703,6 +752,19 @@
                                :id          "file-menu-preferences"}
        [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.option.preferences")]
        [:span {:class (stl/css :open-arrow)} i/arrow]]
+
+      (when (features/active-feature? @st/state "plugins/runtime")
+        [:> dropdown-menu-item* {:class (stl/css :menu-item)
+                                 :on-click    on-menu-click
+                                 :on-key-down (fn [event]
+                                                (when (kbd/enter? event)
+                                                  (on-menu-click event)))
+                                 :on-pointer-enter on-menu-click
+                                 :data-test   "plugins"
+                                 :id          "file-menu-plugins"}
+         [:span {:class (stl/css :item-name)} (tr "workspace.plugins.menu.title")]
+         [:span {:class (stl/css :open-arrow)} i/arrow]])
+
       [:div {:class (stl/css :separator)}]
       [:> dropdown-menu-item* {:class (stl/css-case :menu-item true)
                                :on-click    on-menu-click
@@ -737,6 +799,11 @@
          :profile profile
          :toggle-flag toggle-flag
          :toggle-theme toggle-theme
+         :on-close close-sub-menu}]
+
+       :plugins
+       [:& plugins-menu
+        {:open-plugins open-plugins-manager
          :on-close close-sub-menu}]
 
        :help-info
