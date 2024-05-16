@@ -60,8 +60,7 @@
     (toggle-or-apply-token shape token)))
 
 (defn apply-token-to-shape
-  "When the passed `:token` is non-nil apply it to the `:applied-tokens` on a shape."
-  [{:keys [shape token attributes] :as props}]
+  [{:keys [shape token attributes] :as _props}]
   (let [applied-tokens (apply-token-id-to-attributes {:shape shape
                                                       :token-id (:id token)
                                                       :attributes attributes})]
