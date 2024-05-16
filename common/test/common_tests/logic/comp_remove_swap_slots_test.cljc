@@ -521,10 +521,6 @@
     ;; blue1 has swap-id before move
     (t/is (some? (ctk/get-swap-slot blue1)))
 
-    (thf/dump-file file :keys [:name :swap-slot-label] :show-refs? false)
-    (prn "-------------------")
-    (thf/dump-file file'' :keys [:name :swap-slot-label] :show-refs? false)
-
     ;;blue1 still has swap-id after move
     (t/is (some? blue1''))
     (t/is (some? (ctk/get-swap-slot blue1'')))))
