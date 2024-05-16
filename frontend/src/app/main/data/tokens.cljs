@@ -55,15 +55,20 @@
   (->> (map (fn [attr] [attr token-id]) attributes)
        (into {})))
 
+(defn apply-token-id [{:keys [shape token-id attributes]}]
+  (let [token (token-from-attributes token-id attributes)]
+    (toggle-or-apply-token shape token)))
+
 (defn update-token-from-attributes
   [{:keys [token-id shape-id attributes]}]
   (ptk/reify ::update-token-from-attributes
     ptk/WatchEvent
     (watch [_ state _]
       (let [shape (get-shape-from-state shape-id state)
-            token (token-from-attributes token-id attributes)
-            next-applied-tokens (toggle-or-apply-token shape token)]
-        (rx/of (update-shape shape-id {:applied-tokens next-applied-tokens}))))))
+            applied-tokens (apply-token-id {:shape shape
+                                            :token-id token-id
+                                            :attributes attributes})]
+        (rx/of (update-shape shape-id {:applied-tokens applied-tokens}))))))
 
 (defn add-token
   [token]
