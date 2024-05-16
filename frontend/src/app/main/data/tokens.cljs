@@ -12,9 +12,11 @@
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.changes :as dch]
+   [app.main.refs :as refs]
    [app.main.ui.workspace.tokens.common :refer [workspace-shapes]]
    [beicon.v2.core :as rx]
    [clojure.data :as data]
+   [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -65,6 +67,11 @@
             next-applied-tokens (toggle-or-apply-token shape token)]
         (rx/of (update-shape shape-id {:applied-tokens next-applied-tokens}))))))
 
+(defn get-token-data-from-token-id
+  [id]
+  (let [workspace-data (deref refs/workspace-data)]
+    (get (:tokens workspace-data) id)))
+
 (defn add-token
   [token]
   (let [token (update token :id #(or % (uuid/next)))]
@@ -86,6 +93,13 @@
                         (pcb/with-library-data data)
                         (pcb/delete-token id))]
         (rx/of (dch/commit-changes changes))))))
+
+(defn duplicate-token
+  [id]
+  (let [new-token (-> (get-token-data-from-token-id id)
+                      (dissoc :id)
+                      (update :name #(str/concat % "-copy")))]
+    (add-token new-token)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TEMP (Move to test)
