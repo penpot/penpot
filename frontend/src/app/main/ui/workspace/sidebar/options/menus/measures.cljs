@@ -296,11 +296,11 @@
                  token-value (some-> token wtc/resolve-token-value)]
              (st/emit!
               (change-radius (fn [shape]
-                               (cond-> shape
-                                 token-value (#(dt/apply-token-to-shape {:token-id (:id token)
-                                                                         :shape %
-                                                                         :attributes (wtc/token-attributes :border-radius)}))
-                                 :always (ctsr/set-radius-1 (or token-value value)))))))))
+                               (-> (dt/maybe-apply-token-to-shape
+                                    {:token-id token
+                                     :shape shape
+                                     :attributes (wtc/token-attributes :border-radius)})
+                                   (ctsr/set-radius-1 (or token-value value)))))))))
 
         on-radius-multi-change
         (mf/use-fn

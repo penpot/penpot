@@ -59,9 +59,20 @@
   (let [token (token-from-attributes token-id attributes)]
     (toggle-or-apply-token shape token)))
 
-(defn apply-token-to-shape [{:keys [shape _token-id _attributes] :as props}]
-  (let [applied-tokens (apply-token-id-to-attributes props)]
+(defn apply-token-to-shape
+  "When the passed `:token` is non-nil apply it to the `:applied-tokens` on a shape."
+  [{:keys [shape token attributes] :as props}]
+  (let [applied-tokens (apply-token-id-to-attributes {:shape shape
+                                                      :token-id (:id token)
+                                                      :attributes attributes})]
     (update shape :applied-tokens #(merge % applied-tokens))))
+
+(defn maybe-apply-token-to-shape
+  "When the passed `:token` is non-nil apply it to the `:applied-tokens` on a shape."
+  [{:keys [shape token _attributes] :as props}]
+  (if token
+    (apply-token-to-shape props)
+    shape))
 
 (defn update-token-from-attributes
   [{:keys [token-id shape-id attributes]}]
