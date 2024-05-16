@@ -33,7 +33,7 @@
   ;;     :blue1 [:name Frame1, :swap-slot-label :red-copy] @--> :frame-blue
   ;;     :frame-yellow [:name Frame1]
   ;;     :green-copy [:name Frame1]                        @--> :frame-green
-  ;;         :blue-copy-in-green-copy [:name Frame1, :swap-slot-label :red-copy-green] @--> :frame-blue
+  ;;         :blue2 [:name Frame1, :swap-slot-label :red-copy-green] @--> :frame-blue
   ;; {:frame-b2} [:name Frame1]                            # [Component :b2]
   (-> (thf/sample-file :file1)
       (tho/add-frame :frame-red)
@@ -49,7 +49,7 @@
       (thc/instantiate-component :red :red-copy :parent-label :frame-b1)
       (thc/component-swap :red-copy :blue :blue1)
       (thc/instantiate-component :green :green-copy :parent-label :frame-b1 :children-labels [:red-copy-in-green-copy])
-      (thc/component-swap :red-copy-in-green-copy :blue :blue-copy-in-green-copy)
+      (thc/component-swap :red-copy-in-green-copy :blue :blue2)
       (tho/add-frame :frame-b2)
       (thc/make-component :b2 :frame-b2)))
 
@@ -450,3 +450,314 @@
     ;; duplicated-blue1'' has not swap-id
     (t/is (some? duplicated-blue1''))
     (t/is (nil? (ctk/get-swap-slot duplicated-blue1'')))))
+
+(t/deftest test-keep-swap-slot-relocating-blue1-before-yellow
+  (let [;; ==== Setup
+        file                   (setup-file)
+
+        page                   (thf/current-page file)
+        blue1                  (ths/get-shape file :blue1)
+
+        ;; ==== Action
+        changes                (cls/generate-relocate-shapes (pcb/empty-changes nil)
+                                                             (:objects page)
+                                                             #{(:parent-id blue1)} ;; parents
+                                                             (:parent-id blue1)    ;; parent-id
+                                                             (:id page)            ;; page-id
+                                                             2                     ;; to-index
+                                                             #{(:id blue1)})       ;; ids
+        file'                  (thf/apply-changes file changes)
+
+        ;; ==== Get
+        blue1'                 (ths/get-shape file' :blue1)]
+
+    ;; ==== Check
+
+    ;; blue1 had swap-id before move
+    (t/is (some? (ctk/get-swap-slot blue1)))
+
+    ;; blue1 still has swap-id after move
+    (t/is (some? blue1'))
+    (t/is (some? (ctk/get-swap-slot blue1')))))
+
+(t/deftest test-keep-swap-slot-move-blue1-inside-and-outside-yellow
+  (let [;; ==== Setup
+        file                   (setup-file)
+        page                   (thf/current-page file)
+        blue1                  (ths/get-shape file :blue1)
+        yellow                 (ths/get-shape file :frame-yellow)
+
+        ;; ==== Action
+        ;; Move blue1 into yellow
+        changes                (cls/generate-move-shapes-to-frame (pcb/empty-changes nil)
+                                                                  #{(:id blue1)}       ;; ids
+                                                                  (:id yellow)         ;; frame-id
+                                                                  (:id page)           ;; page-id
+                                                                  (:objects page)      ;; objects
+                                                                  0                    ;; drop-index
+                                                                  nil)                 ;; cell
+
+        file'                  (thf/apply-changes file changes)
+
+        ;; Move blue1 outside yellow
+        page'                  (thf/current-page file')
+        blue1'                 (ths/get-shape file' :blue1)
+        b1'                    (ths/get-shape file' :frame-b1)
+        changes'               (cls/generate-move-shapes-to-frame (pcb/empty-changes nil)
+                                                                  #{(:id blue1')}      ;; ids
+                                                                  (:id b1')            ;; frame-id
+                                                                  (:id page')          ;; page-id
+                                                                  (:objects page')     ;; objects
+                                                                  0                    ;; drop-index
+                                                                  nil)                 ;; cell
+
+        file''                  (thf/apply-changes file' changes')
+
+        ;; ==== Get
+        blue1''                 (ths/get-shape file'' :blue1)]
+
+    ;; ==== Check
+
+    ;; blue1 has swap-id before move
+    (t/is (some? (ctk/get-swap-slot blue1)))
+
+    ;;blue1 still has swap-id after move
+    (t/is (some? blue1''))
+    (t/is (some? (ctk/get-swap-slot blue1'')))))
+
+
+(t/deftest test-keep-swap-slot-relocate-blue1-inside-and-outside-yellow
+  (let [;; ==== Setup
+        file                   (setup-file)
+        page                   (thf/current-page file)
+        blue1                  (ths/get-shape file :blue1)
+        yellow                 (ths/get-shape file :frame-yellow)
+
+        ;; ==== Action
+        ;; Relocate blue1 into yellow
+        changes                (cls/generate-relocate-shapes (pcb/empty-changes nil)
+                                                             (:objects page)
+                                                             #{(:parent-id blue1)} ;; parents
+                                                             (:id yellow)          ;; parent-id
+                                                             (:id page)            ;; page-id
+                                                             0                     ;; to-index
+                                                             #{(:id blue1)})       ;; ids
+
+        file'                  (thf/apply-changes file changes)
+
+        ;; Relocate blue1 outside yellow
+        page'                  (thf/current-page file')
+        blue1'                 (ths/get-shape file' :blue1)
+        b1'                    (ths/get-shape file' :frame-b1)
+        changes'               (cls/generate-relocate-shapes (pcb/empty-changes nil)
+                                                             (:objects page')
+                                                             #{(:parent-id blue1')} ;; parents
+                                                             (:id b1')          ;; parent-id
+                                                             (:id page')            ;; page-id
+                                                             0                     ;; to-index
+                                                             #{(:id blue1')})       ;; ids
+
+        file''                  (thf/apply-changes file' changes')
+
+        ;; ==== Get
+        blue1''                 (ths/get-shape file'' :blue1)]
+
+    ;; ==== Check
+
+    ;; blue1 has swap-id before move
+    (t/is (some? (ctk/get-swap-slot blue1)))
+
+    ;;blue1 still has swap-id after move
+    (t/is (some? blue1''))
+    (t/is (some? (ctk/get-swap-slot blue1'')))))
+
+
+(t/deftest test-remove-swap-slot-relocating-green-copy-to-root
+  (let [;; ==== Setup
+        file                   (setup-file)
+
+        page                   (thf/current-page file)
+        blue2                  (ths/get-shape file :blue2)
+        green-copy             (ths/get-shape file :green-copy)
+
+        ;; ==== Action
+        changes                (cls/generate-relocate-shapes (pcb/empty-changes nil)
+                                                             (:objects page)
+                                                             #{(:parent-id green-copy)} ;; parents
+                                                             uuid/zero                  ;; parent-id
+                                                             (:id page)                 ;; page-id
+                                                             0                          ;; to-index
+                                                             #{(:id green-copy)})       ;; ids
+        file'                  (thf/apply-changes file changes)
+
+        ;; ==== Get
+        blue2'                 (ths/get-shape file' :blue2)]
+
+    ;; ==== Check
+
+    ;; blue2 had swap-id before move
+    (t/is (some? (ctk/get-swap-slot blue2)))
+
+    ;; blue1still has swap-id after move
+    (t/is (some? blue2'))
+    (t/is (some? (ctk/get-swap-slot blue2')))))
+
+(t/deftest test-remove-swap-slot-moving-green-copy-to-root
+  (let [;; ==== Setup
+        file                   (setup-file)
+
+        page                   (thf/current-page file)
+        blue2                  (ths/get-shape file :blue2)
+        green-copy             (ths/get-shape file :green-copy)
+
+        ;; ==== Action
+        changes                (cls/generate-move-shapes-to-frame (pcb/empty-changes nil)
+                                                                  #{(:id green-copy)}  ;; ids
+                                                                  uuid/zero            ;; frame-id
+                                                                  (:id page)           ;; page-id
+                                                                  (:objects page)      ;; objects
+                                                                  0                    ;; drop-index
+                                                                  nil)                 ;; cell
+
+        file'                  (thf/apply-changes file changes)
+
+        ;; ==== Get
+        blue2'                 (ths/get-shape file' :blue2)]
+
+    ;; ==== Check
+
+    ;; blue2 had swap-id before move
+    (t/is (some? (ctk/get-swap-slot blue2)))
+
+    ;; blue1still has swap-id after move
+    (t/is (some? blue2'))
+    (t/is (some? (ctk/get-swap-slot blue2')))))
+
+
+(t/deftest test-remove-swap-slot-relocating-green-copy-to-b2
+  (let [;; ==== Setup
+        file                   (setup-file)
+
+        page                   (thf/current-page file)
+        blue2                  (ths/get-shape file :blue2)
+        green-copy             (ths/get-shape file :green-copy)
+        b2                     (ths/get-shape file :frame-b2)
+
+        ;; ==== Action
+        changes                (cls/generate-relocate-shapes (pcb/empty-changes nil)
+                                                             (:objects page)
+                                                             #{(:parent-id green-copy)} ;; parents
+                                                             (:id b2)                   ;; parent-id
+                                                             (:id page)                 ;; page-id
+                                                             0                          ;; to-index
+                                                             #{(:id green-copy)})       ;; ids
+        file'                  (thf/apply-changes file changes)
+
+        ;; ==== Get
+        blue2'                 (ths/get-shape file' :blue2)]
+
+    ;; ==== Check
+
+    ;; blue2 had swap-id before move
+    (t/is (some? (ctk/get-swap-slot blue2)))
+
+    ;; blue1still has swap-id after move
+    (t/is (some? blue2'))
+    (t/is (some? (ctk/get-swap-slot blue2')))))
+
+(t/deftest test-remove-swap-slot-moving-green-copy-to-b2
+  (let [;; ==== Setup
+        file                   (setup-file)
+
+        page                   (thf/current-page file)
+        blue2                  (ths/get-shape file :blue2)
+        green-copy             (ths/get-shape file :green-copy)
+        b2                     (ths/get-shape file :frame-b2)
+
+        ;; ==== Action
+        changes                (cls/generate-move-shapes-to-frame (pcb/empty-changes nil)
+                                                                  #{(:id green-copy)}  ;; ids
+                                                                  (:id b2)             ;; frame-id
+                                                                  (:id page)           ;; page-id
+                                                                  (:objects page)      ;; objects
+                                                                  0                    ;; drop-index
+                                                                  nil)                 ;; cell
+
+        file'                  (thf/apply-changes file changes)
+
+        ;; ==== Get
+        blue2'                 (ths/get-shape file' :blue2)]
+
+    ;; ==== Check
+
+    ;; blue2 had swap-id before move
+    (t/is (some? (ctk/get-swap-slot blue2)))
+
+    ;; blue1still has swap-id after move
+    (t/is (some? blue2'))
+    (t/is (some? (ctk/get-swap-slot blue2')))))
+
+
+(t/deftest test-remove-swap-slot-duplicating-green-copy
+  (let [;; ==== Setup
+        file                   (setup-file)
+
+        page                   (thf/current-page file)
+        green-copy             (ths/get-shape file :green-copy)
+
+        ;; ==== Action
+        changes                (-> (pcb/empty-changes nil)
+                                   (cll/generate-duplicate-changes (:objects page)         ;; objects
+                                                                   page                    ;; page
+                                                                   #{(:id green-copy)}     ;; ids
+                                                                   (gpt/point 0 0)         ;; delta
+                                                                   {(:id  file) file}      ;; libraries
+                                                                   (:data file)            ;; library-data
+                                                                   (:id file))             ;; file-id
+                                   (cll/generate-duplicate-changes-update-indices (:objects page)       ;; objects
+                                                                                  #{(:id green-copy)})) ;; ids
+
+
+
+        file'                  (thf/apply-changes file changes)
+
+        ;; ==== Get
+        page'                  (thf/current-page file')
+        blue1'                 (ths/get-shape file' :blue1)
+        green-copy'            (ths/get-shape file :green-copy)
+        duplicated-green-copy' (find-duplicated-shape green-copy' page')
+        duplicated-blue1-id'   (-> duplicated-green-copy'
+                                   :shapes
+                                   first)
+        duplicated-blue1'      (get (:objects page') duplicated-blue1-id')]
+
+    ;; ==== Check
+
+    ;; blue1 has swap-id
+    (t/is (some? (ctk/get-swap-slot blue1')))
+
+    ;; duplicated-blue1 also has swap-id
+    (t/is (some? duplicated-blue1'))
+    (t/is (some? (ctk/get-swap-slot duplicated-blue1')))))
+
+(t/deftest test-swap-outside-component-doesnt-have-swap-slot
+  (let [;; ==== Setup
+        file                   (setup-file)
+
+        page                   (thf/current-page file)
+        blue1                  (ths/get-shape file :blue1)
+
+        ;; ==== Action
+
+        file'                  (-> file
+                                   (thc/instantiate-component :red :red-copy1)
+                                   (thc/component-swap :red-copy1 :blue :blue-copy1))
+
+        ;; ==== Get
+        blue-copy1'            (ths/get-shape file' :blue-copy1)]
+
+    ;; ==== Check
+
+    ;; blue-copy1 has not swap-id
+    (t/is (some? blue-copy1'))
+    (t/is (nil? (ctk/get-swap-slot blue-copy1')))))

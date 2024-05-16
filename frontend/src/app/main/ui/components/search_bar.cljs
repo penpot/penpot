@@ -7,6 +7,7 @@
 (ns app.main.ui.components.search-bar
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data.macros :as dm]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
@@ -23,7 +24,7 @@
         icon        (unchecked-get props "icon")
         autofocus   (unchecked-get props "auto-focus")
         id          (unchecked-get props "id")
-
+        input-class (unchecked-get props "class")
 
         handle-change
         (mf/use-fn
@@ -51,7 +52,7 @@
     [:span {:class (stl/css-case :search-box true
                                  :has-children (some? children))}
      children
-     [:div {:class (stl/css :search-input-wrapper)}
+     [:div {:class (dm/str input-class " " (stl/css :search-input-wrapper))}
       icon
       [:input {:id id
                :on-change handle-change

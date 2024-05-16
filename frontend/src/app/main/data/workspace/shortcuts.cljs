@@ -8,6 +8,7 @@
   (:require
    [app.main.data.events :as ev]
    [app.main.data.exports :as de]
+   [app.main.data.modal :as modal]
    [app.main.data.preview :as dp]
    [app.main.data.shortcuts :as ds]
    [app.main.data.users :as du]
@@ -23,6 +24,7 @@
    [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.hooks.resize :as r]
@@ -552,7 +554,15 @@
                           :command (ds/a-mod "m")
                           :subsections [:basics]
                           :fn #(st/emit! (with-meta (du/toggle-theme)
-                                           {::ev/origin "workspace:shortcut"}))}})
+                                           {::ev/origin "workspace:shortcut"}))}
+
+
+   ;; PLUGINS
+   :plugins               {:tooltip (ds/meta (ds/alt "P"))
+                           :command (ds/c-mod "alt+p")
+                           :subsections [:basics]
+                           :fn #(when (features/active-feature? @st/state "plugins/runtime")
+                                  (st/emit! (modal/show :plugin-management {})))}})
 
 (def debug-shortcuts
   ;; PREVIEW

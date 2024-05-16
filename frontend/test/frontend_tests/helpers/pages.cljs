@@ -6,13 +6,19 @@
 
 (ns frontend-tests.helpers.pages
   (:require
+   [app.common.data :as d]
    [app.common.files.changes :as cp]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.files.shapes-helpers :as cfsh]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
    [app.common.logic.libraries :as cll]
+   [app.common.types.component :as ctk]
+   [app.common.types.container :as ctn]
+   [app.common.types.file :as ctf]
    [app.common.types.shape :as cts]
+   [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.layout :as layout]
@@ -186,3 +192,82 @@
                                          :components (:components data)}})
         (update :workspace-data
                 assoc :components {} :pages [] :pages-index {}))))
+
+
+(defn simulate-copy-shape
+  [selected objects libraries page file features version]
+  (letfn [(sort-selected [data]
+            (let [;; Narrow the objects map so it contains only relevant data for
+                  ;; selected and its parents
+                  objects  (cfh/selected-subtree objects selected)
+                  selected (->> (ctst/sort-z-index objects selected)
+                                (reverse)
+                                (into (d/ordered-set)))]
+
+              (assoc data :selected selected)))
+
+          ;; Prepare the shape object.
+          (prepare-object [objects parent-frame-id obj]
+            (maybe-translate obj objects parent-frame-id))
+
+          ;; Collects all the items together and split images into a
+          ;; separated data structure for a more easy paste process.
+          (collect-data [result {:keys [id ::images] :as item}]
+            (cond-> result
+              :always
+              (update :objects assoc id (dissoc item ::images))
+
+              (some? images)
+              (update :images into images)))
+
+          (maybe-translate [shape objects parent-frame-id]
+            (if (= parent-frame-id uuid/zero)
+              shape
+              (let [frame (get objects parent-frame-id)]
+                (gsh/translate-to-frame shape frame))))
+
+          ;; When copying an instance that is nested inside another one, we need to
+          ;; advance the shape refs to one or more levels of remote mains.
+          (advance-copies [data]
+            (let [heads     (mapcat #(ctn/get-child-heads (:objects data) %) selected)]
+              (update data :objects
+                      #(reduce (partial advance-copy file libraries page)
+                               %
+                               heads))))
+
+          (advance-copy [file libraries page objects shape]
+            (if (and (ctk/instance-head? shape) (not (ctk/main-instance? shape)))
+              (let [level-delta (ctn/get-nesting-level-delta (:objects page) shape uuid/zero)]
+                (if (pos? level-delta)
+                  (reduce (partial advance-shape file libraries page level-delta)
+                          objects
+                          (cfh/get-children-with-self objects (:id shape)))
+                  objects))
+              objects))
+
+          (advance-shape [file libraries page level-delta objects shape]
+            (let [new-shape-ref (ctf/advance-shape-ref file page libraries shape level-delta {:include-deleted? true})]
+              (cond-> objects
+                (and (some? new-shape-ref) (not= new-shape-ref (:shape-ref shape)))
+                (assoc-in [(:id shape) :shape-ref] new-shape-ref))))]
+
+    (let [file-id  (:id file)
+          frame-id (cfh/common-parent-frame objects selected)
+
+          initial  {:type :copied-shapes
+                    :features features
+                    :version version
+                    :file-id file-id
+                    :selected selected
+                    :objects {}
+                    :images #{}
+                    :in-viewport false}
+
+          shapes   (->> (cfh/selected-with-children objects selected)
+                        (keep (d/getf objects)))]
+
+      (->> shapes
+           (map (partial prepare-object objects frame-id))
+           (reduce collect-data initial)
+           sort-selected
+           advance-copies))))
