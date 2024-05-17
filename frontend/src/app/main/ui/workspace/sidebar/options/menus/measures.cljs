@@ -294,8 +294,7 @@
         (mf/use-fn
          (mf/deps ids change-radius border-radius-tokens)
          (fn [value]
-           (let [token (when (symbol? value)
-                         (get border-radius-tokens (str value)))
+           (let [token (when (map? value) value)
                  token-value (some-> token wtc/resolve-token-value)]
              (st/emit!
               (change-radius (fn [shape]

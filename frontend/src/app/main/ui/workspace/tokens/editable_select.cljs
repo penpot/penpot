@@ -48,28 +48,30 @@
           (dom/stop-propagation event)
           (swap! state* assoc :is-open? false))
 
-        select-item
-        (mf/use-fn
-         (mf/deps on-change on-blur)
-         (fn [event]
-           (let  [value (-> (dom/get-current-target event)
-                            (dom/get-data "value")
-                            (d/read-string))]
-             (swap! state* assoc :current-value value)
-             (when on-change (on-change value))
-             (when on-blur (on-blur)))))
-
-        as-key-value (fn [item] (if (map? item) [(:value item) (:label item)] [item item]))
-        labels-map   (into {} (map as-key-value) options)
-        value->label (fn [value] (get labels-map value value))
+        labels-map   (->> (map (fn [{:keys [label] :as item}]
+                                 [label item])
+                               options)
+                          (into {}))
 
         set-value
         (fn [value]
           (swap! state* assoc :current-value value)
           (when on-change (on-change value)))
 
-        ;; TODO: why this method supposes that all editable select
-        ;; works with numbers?
+        select-item
+        (mf/use-fn
+         (mf/deps on-change on-blur labels-map)
+         (fn [event]
+           (let [label (-> (dom/get-current-target event)
+                           (dom/get-data "label")
+                           (d/read-string)
+                           (str))
+                 {:keys [value] :as item} (get labels-map label)]
+             (swap! state* assoc
+                    :current-value value
+                    :current-item item)
+             (when on-change (on-change item))
+             (when on-blur (on-blur)))))
 
         handle-change-input
         (fn [event]
@@ -163,13 +165,13 @@
     [:div {:class (dm/str class " " (stl/css :editable-select))
            :ref on-node-load}
      (if (= type "number")
-       [:> numeric-input* {:value (or (some-> current-value value->label) "")
+       [:> numeric-input* {:value (or current-value "")
                            :className input-class
                            :on-change set-value
                            :on-focus handle-focus
                            :on-blur handle-blur
                            :placeholder placeholder}]
-       [:input {:value (or (some-> current-value value->label) "")
+       [:input {:value (or current-value "")
                 :class input-class
                 :on-change handle-change-input
                 :on-key-down handle-key-down
@@ -188,18 +190,18 @@
       [:div {:class (stl/css :custom-select-dropdown)
              :ref select-wrapper-ref}
        [:ul {:class (stl/css :custom-select-dropdown-list)}
-        (for [[index item] (map-indexed vector options)]
-          (if (= :separator item)
-            [:li {:class (stl/css :separator)
-                  :key (dm/str element-id "-" index)}]
-            (let [[value label] (as-key-value item)]
-              [:li
-               {:key (str element-id "-" index)
-                :class (stl/css-case :dropdown-element true
-                                     :is-selected (= (dm/str value) current-value))
-                :data-value value
-                :on-click select-item}
-               [:span {:class (stl/css :label)} label]
-               [:span {:class (stl/css :value)} value]
-               [:span {:class (stl/css :check-icon)}
-                i/tick]])))]]]]))
+        (for [[index item] (d/enumerate options)]
+          (cond
+            (= :separator item) [:li {:class (stl/css :separator)
+                                      :key (dm/str element-id "-" index)}]
+            :else (let [{:keys [value label]} item]
+                    [:li
+                     {:key (str element-id "-" index)
+                      :class (stl/css-case :dropdown-element true
+                                           :is-selected (= (dm/str value) current-value))
+                      :data-label label
+                      :on-click select-item}
+                     [:span {:class (stl/css :label)} label]
+                     [:span {:class (stl/css :value)} value]
+                     [:span {:class (stl/css :check-icon)}
+                      i/tick]])))]]]]))
