@@ -303,6 +303,7 @@ async function generateSvgSprites() {
 }
 
 async function generateTemplates() {
+  const isDebug = process.env.NODE_ENV !== "production";
   await fs.mkdir("./resources/public/", { recursive: true });
 
   const translations = await readTranslations();
@@ -325,6 +326,7 @@ async function generateTemplates() {
       manifest: manifest,
       translations: JSON.stringify(translations),
       pluginRuntimeUri,
+      isDebug,
     },
     partials,
   );
