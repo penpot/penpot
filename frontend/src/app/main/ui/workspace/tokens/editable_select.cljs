@@ -19,11 +19,30 @@
    [app.util.timers :as timers]
    [rumext.v2 :as mf]))
 
+(defn on-number-input-key-down [{:keys [event min-val max-val set-value!]}]
+  (let [up? (kbd/up-arrow? event)
+        down? (kbd/down-arrow? event)]
+    (when (or up? down?)
+      (dom/prevent-default event)
+      (let [value (-> event dom/get-target dom/get-value)
+            value (or (d/parse-double value) value)
+            increment (cond
+                        (kbd/shift? event) (if up? 10 -10)
+                        (kbd/alt? event) (if up? 0.1 -0.1)
+                        :else (if up? 1 -1))
+            new-value (+ value increment)
+            new-value (cond
+                        (and (d/num? min-val) (< new-value min-val)) min-val
+                        (and (d/num? max-val) (> new-value max-val)) max-val
+                        :else new-value)]
+        (set-value! new-value)))))
+
 (mf/defc editable-select
   [{:keys [value type options class on-change placeholder on-blur input-class] :as params}]
   (let [state* (mf/use-state {:id (uuid/next)
                               :is-open? false
                               :current-value value
+                              :current-item nil
                               :top nil
                               :left nil
                               :bottom nil})
@@ -98,34 +117,17 @@
 
         handle-key-down
         (mf/use-fn
-         (mf/deps set-value)
+         (mf/deps set-value is-open?)
          (fn [event]
-           (when (= type "number")
-             (let [up?    (kbd/up-arrow? event)
-                   down?  (kbd/down-arrow? event)]
-               (when (or up? down?)
-                 (dom/prevent-default event)
-                 (let [value (-> event dom/get-target dom/get-value)
-                       value (or (d/parse-double value) value)
-
-                       increment (cond
-                                   (kbd/shift? event)
-                                   (if up? 10 -10)
-
-                                   (kbd/alt? event)
-                                   (if up? 0.1 -0.1)
-
-                                   :else
-                                   (if up? 1 -1))
-
-                       new-value (+ value increment)
-
-                       new-value (cond
-                                   (and (d/num? min-val) (< new-value min-val)) min-val
-                                   (and (d/num? max-val) (> new-value max-val)) max-val
-                                   :else new-value)]
-
-                   (set-value new-value)))))))
+           (cond
+             is-open? (let [up? (kbd/up-arrow? event)
+                            down? (kbd/down-arrow? event)]
+                        (dom/prevent-default event)
+                        (js/console.log "up? down?" up? down?))
+             (= type "number") (on-number-input-key-down {:event event
+                                                          :min-val min-val
+                                                          :max-val max-val
+                                                          :set-value! set-value}))))
 
         handle-focus
         (mf/use-fn
