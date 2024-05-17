@@ -59,7 +59,7 @@
   (validator file)
   file)
 
-;; Related .penpot file: common/test/cases/xxxxxx
+;; Related .penpot file: common/test/cases/swap-as-override.penpot
 (t/deftest swap-main-then-copy
   (-> (setup)
       ;; Swap icon in icon+text main. Check that it propagates to copies.
