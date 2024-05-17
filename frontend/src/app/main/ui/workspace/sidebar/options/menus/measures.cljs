@@ -20,12 +20,12 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.components.editable-select :refer [editable-select]]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.tokens.core :as wtc]
+   [app.main.ui.workspace.tokens.editable-select :refer [editable-select]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [clojure.set :refer [rename-keys union]]
@@ -100,7 +100,11 @@
 
         tokens (mf/deref refs/workspace-tokens)
         border-radius-tokens (mf/use-memo (mf/deps tokens) #(wtc/tokens-name-map-for-type :border-radius tokens))
-        border-radius-options (mf/use-memo (mf/deps border-radius-tokens) #(map (comp :name val) border-radius-tokens))
+        border-radius-options (mf/use-memo (mf/deps shape border-radius-tokens)
+                                           #(map (fn [[_k {:keys [name] :as item}]]
+                                                   (cond-> (assoc item :label name)
+                                                     (wtc/token-applied? item shape (wtc/token-attributes :border-radius)) (assoc :selected? true)))
+                                                 border-radius-tokens))
 
         flex-child?       (->> selection-parents (some ctl/flex-layout?))
         absolute?         (ctl/item-absolute? shape)
@@ -291,8 +295,7 @@
         (mf/use-fn
          (mf/deps ids change-radius border-radius-tokens)
          (fn [value]
-           (let [token (when (symbol? value)
-                         (get border-radius-tokens (str value)))
+           (let [token (when (map? value) value)
                  token-value (some-> token wtc/resolve-token-value)]
              (st/emit!
               (change-radius (fn [shape]
