@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.files.changes-builder :as pcb]
+   [app.common.geom.point :as gpt]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.test-helpers.components :as thc]
@@ -20,7 +21,7 @@
 (defn add-rect
   [file rect-label & {:keys [] :as params}]
   ;; Generated shape tree:
-  ;; :rect-label [:type :rect :name: Rect1]
+  ;; :rect-label [:type :rect :name Rect1]
   (ths/add-sample-shape file rect-label
                         (merge {:type :rect
                                 :name "Rect1"}
@@ -29,17 +30,26 @@
 (defn add-frame
   [file frame-label & {:keys [] :as params}]
   ;; Generated shape tree:
-  ;; :frame-label [:type :frame :name: Frame1]
+  ;; :frame-label [:type :frame :name Frame1]
   (ths/add-sample-shape file frame-label
                         (merge {:type :frame
                                 :name "Frame1"}
                                params)))
 
+(defn add-group
+  [file group-label & {:keys [] :as params}]
+  ;; Generated shape tree:
+  ;; :group-label [:type :group :name Group1]
+  (ths/add-sample-shape file group-label
+                        (merge {:type :group
+                                :name "Group1"}
+                               params)))
+
 (defn add-frame-with-child
   [file frame-label child-label & {:keys [frame-params child-params]}]
   ;; Generated shape tree:
-  ;; :frame-label [:name: Frame1]
-  ;;     :child-label [:name: Rect1]
+  ;; :frame-label [:name Frame1]
+  ;;     :child-label [:name Rect1]
   (-> file
       (add-frame frame-label frame-params)
       (ths/add-sample-shape child-label
@@ -52,8 +62,8 @@
   [file component-label root-label child-label
    & {:keys [component-params root-params child-params]}]
   ;; Generated shape tree:
-  ;; {:root-label} [:name: Frame1]    # [Component :component-label]
-  ;;     :child-label [:name: Rect1]  
+  ;; {:root-label} [:name Frame1]    # [Component :component-label]
+  ;;     :child-label [:name Rect1]  
   (-> file
       (add-frame-with-child root-label child-label :frame-params root-params :child-params child-params)
       (thc/make-component component-label root-label component-params)))
@@ -62,11 +72,11 @@
   [file component-label main-root-label main-child-label copy-root-label
    & {:keys [component-params main-root-params main-child-params copy-root-params]}]
   ;; Generated shape tree:
-  ;; {:main-root-label} [:name: Frame1]       # [Component :component-label]
-  ;;     :main-child-label [:name: Rect1]     
+  ;; {:main-root-label} [:name Frame1]       # [Component :component-label]
+  ;;     :main-child-label [:name Rect1]     
   ;;
-  ;; :copy-root-label [:name: Frame1]         #--> [Component :component-label] :main-root-label
-  ;;     <no-label> [:name: Rect1]            ---> :main-child-label
+  ;; :copy-root-label [:name Frame1]         #--> [Component :component-label] :main-root-label
+  ;;     <no-label> [:name Rect1]            ---> :main-child-label
   (-> file
       (add-simple-component component-label
                             main-root-label
@@ -80,10 +90,10 @@
   [file component-label root-label child-labels
    & {:keys [component-params root-params child-params-list]}]
   ;; Generated shape tree:
-  ;; {:root-label} [:name: Frame1]            # [Component :component-label]
-  ;;     :child1-label [:name: Rect1]         
-  ;;     :child2-label [:name: Rect2]         
-  ;;     :child3-label [:name: Rect3]         
+  ;; {:root-label} [:name Frame1]            # [Component :component-label]
+  ;;     :child1-label [:name Rect1]         
+  ;;     :child2-label [:name Rect2]         
+  ;;     :child3-label [:name Rect3]         
   (as-> file $
     (add-frame $ root-label root-params)
     (reduce (fn [file [index [label params]]]
@@ -101,15 +111,15 @@
   [file component-label main-root-label main-child-labels copy-root-label
    & {:keys [component-params main-root-params main-child-params-list copy-root-params]}]
   ;; Generated shape tree:
-  ;;  {:root-label} [:name: Frame1]            # [Component :component-label]
-  ;;      :child1-label [:name: Rect1]         
-  ;;      :child2-label [:name: Rect2]         
-  ;;      :child3-label [:name: Rect3]         
+  ;;  {:root-label} [:name Frame1]            # [Component :component-label]
+  ;;      :child1-label [:name Rect1]         
+  ;;      :child2-label [:name Rect2]         
+  ;;      :child3-label [:name Rect3]         
   ;;
-  ;;  :copy-root-label [:name: Frame1]         #--> [Component :component-label] :root-label
-  ;;      <no-label> [:name: Rect1]            ---> :child1-label
-  ;;      <no-label> [:name: Rect2]            ---> :child2-label
-  ;;      <no-label> [:name: Rect3]            ---> :child3-label
+  ;;  :copy-root-label [:name Frame1]         #--> [Component :component-label] :root-label
+  ;;      <no-label> [:name Rect1]            ---> :child1-label
+  ;;      <no-label> [:name Rect2]            ---> :child2-label
+  ;;      <no-label> [:name Rect3]            ---> :child3-label
   (-> file
       (add-component-with-many-children component-label
                                         main-root-label
@@ -123,12 +133,12 @@
   [file component1-label main1-root-label main1-child-label component2-label main2-root-label nested-head-label
    & {:keys [component1-params root1-params main1-child-params component2-params main2-root-params nested-head-params]}]
   ;; Generated shape tree:
-  ;; {:main1-root-label} [:name: Frame1]      # [Component :component1-label]
-  ;;     :main1-child-label [:name: Rect1]    
+  ;; {:main1-root-label} [:name Frame1]      # [Component :component1-label]
+  ;;     :main1-child-label [:name Rect1]    
   ;;
-  ;; {:main2-root-label} [:name: Frame2]      # [Component :component2-label]
-  ;;     :nested-head-label [:name: Frame1]   @--> [Component :component1-label] :main1-root-label
-  ;;         <no-label> [:name: Rect1]        ---> :main1-child-label
+  ;; {:main2-root-label} [:name Frame2]      # [Component :component2-label]
+  ;;     :nested-head-label [:name Frame1]   @--> [Component :component1-label] :main1-root-label
+  ;;         <no-label> [:name Rect1]        ---> :main1-child-label
   (-> file
       (add-simple-component component1-label
                             main1-root-label
@@ -150,16 +160,16 @@
   [file component1-label main1-root-label main1-child-label component2-label main2-root-label nested-head-label copy2-root-label
    & {:keys [component1-params root1-params main1-child-params component2-params main2-root-params nested-head-params copy2-root-params]}]
   ;; Generated shape tree:
-  ;; {:main1-root-label} [:name: Frame1]      # [Component :component1-label]
-  ;;     :main1-child-label [:name: Rect1]    
+  ;; {:main1-root-label} [:name Frame1]      # [Component :component1-label]
+  ;;     :main1-child-label [:name Rect1]    
   ;;
-  ;; {:main2-root-label} [:name: Frame2]      # [Component :component2-label]
-  ;;     :nested-head-label [:name: Frame1]   @--> [Component :component1-label] :main1-root-label
-  ;;         <no-label> [:name: Rect1]        ---> :main1-child-label
+  ;; {:main2-root-label} [:name Frame2]      # [Component :component2-label]
+  ;;     :nested-head-label [:name Frame1]   @--> [Component :component1-label] :main1-root-label
+  ;;         <no-label> [:name Rect1]        ---> :main1-child-label
   ;;
-  ;; :copy2-label [:name: Frame2]             #--> [Component :component2-label] :main2-root-label
-  ;;     <no-label> [:name: Frame1]           @--> [Component :component1-label] :nested-head-label
-  ;;         <no-label> [:name: Rect1]        ---> <no-label>
+  ;; :copy2-label [:name Frame2]             #--> [Component :component2-label] :main2-root-label
+  ;;     <no-label> [:name Frame1]           @--> [Component :component1-label] :nested-head-label
+  ;;         <no-label> [:name Rect1]        ---> <no-label>
   (-> file
       (add-nested-component component1-label
                             main1-root-label
@@ -334,3 +344,25 @@
     (if propagate-fn
       (propagate-fn file')
       file')))
+
+(defn duplicate-shape [file shape-tag & {:keys [page-label propagate-fn]}]
+  (let [page (if page-label
+               (thf/get-page file page-label)
+               (thf/current-page file))
+        shape (ths/get-shape file shape-tag :page-label page-label)
+        changes
+        (-> (pcb/empty-changes nil)
+            (cll/generate-duplicate-changes (:objects page)         ;; objects
+                                            page                    ;; page
+                                            #{(:id shape)}          ;; ids
+                                            (gpt/point 0 0)         ;; delta
+                                            {(:id  file) file}      ;; libraries
+                                            (:data file)            ;; library-data
+                                            (:id file))             ;; file-id 
+            (cll/generate-duplicate-changes-update-indices (:objects page)  ;; objects
+                                                           #{(:id shape)}))
+        file' (thf/apply-changes file changes)]
+    (if propagate-fn
+      (propagate-fn file')
+      file')))
+
