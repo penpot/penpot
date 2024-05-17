@@ -35,6 +35,11 @@
   .custom-select-dropdown {
     @extend .dropdown-wrapper;
     max-height: $s-320;
+    width: auto;
+    margin-top: $s-4;
+    right: 0;
+    left: auto;
+
     .separator {
       margin: 0;
       height: $s-12;
