@@ -185,19 +185,21 @@
 
      [:& dropdown {:show (or is-open? false)
                    :on-close close-dropdown}
-      [:ul {:class (stl/css :custom-select-dropdown)
-            :ref font-size-wrapper-ref}
-       (for [[index item] (map-indexed vector options)]
-         (if (= :separator item)
-           [:li {:class (stl/css :separator)
-                 :key (dm/str element-id "-" index)}]
-           (let [[value label] (as-key-value item)]
-             [:li
-              {:key (str element-id "-" index)
-               :class (stl/css-case :dropdown-element true
-                                    :is-selected (= (dm/str value) current-value))
-               :data-value value
-               :on-click select-item}
-              [:span {:class (stl/css :label)} label]
-              [:span {:class (stl/css :check-icon)}
-               i/tick]])))]]]))
+      [:div {:class (stl/css :custom-select-dropdown)
+             :ref select-wrapper-ref}
+       [:ul {:class (stl/css :custom-select-dropdown-list)}
+        (for [[index item] (map-indexed vector options)]
+          (if (= :separator item)
+            [:li {:class (stl/css :separator)
+                  :key (dm/str element-id "-" index)}]
+            (let [[value label] (as-key-value item)]
+              [:li
+               {:key (str element-id "-" index)
+                :class (stl/css-case :dropdown-element true
+                                     :is-selected (= (dm/str value) current-value))
+                :data-value value
+                :on-click select-item}
+               [:span {:class (stl/css :label)} label]
+               [:span {:class (stl/css :value)} value]
+               [:span {:class (stl/css :check-icon)}
+                i/tick]])))]]]]))

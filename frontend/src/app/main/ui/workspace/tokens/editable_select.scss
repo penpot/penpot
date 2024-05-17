@@ -31,25 +31,44 @@
     }
   }
 
+  .custom-select-dropdown-list {
+    width: 100%;
+    max-width: 180px;
+    margin-bottom: 0;
+  }
+
   .custom-select-dropdown {
     @extend .dropdown-wrapper;
     max-height: $s-320;
     width: auto;
     margin-top: $s-4;
     right: 0;
-    left: auto;
+    left: unset;
 
     .separator {
       margin: 0;
       height: $s-12;
     }
+
     .dropdown-element {
       @extend .dropdown-element-base;
       color: var(--menu-foreground-color-rest);
+      padding: 0;
+      display: flex;
+
+      .label,
+      .value {
+        width: fit-content;
+      }
+
       .label {
-        flex-grow: 1;
-        width: 100%;
         text-transform: unset;
+        flex: 1;
+      }
+
+      .value {
+        flex: 0.2;
+        text-align: right;
       }
 
       .check-icon {
