@@ -16,6 +16,42 @@
    [cuerdas.core :as str]
    [promesa.core :as p]))
 
+(defn locate-file
+  [id]
+  (assert (uuid? id) "File not valid uuid")
+  (if (= id (:current-file-id @st/state))
+    (-> (:workspace-file @st/state)
+        (assoc :data (:workspace-data @st/state)))
+    (dm/get-in @st/state [:workspace-libraries id])))
+
+(defn locate-page
+  [file-id id]
+  (assert (uuid? id) "Page not valid uuid")
+  (dm/get-in (locate-file file-id) [:data :pages-index id]))
+
+(defn locate-shape
+  [file-id page-id id]
+  (assert (uuid? id) "Shape not valid uuid")
+  (dm/get-in (locate-page file-id page-id) [:objects id]))
+
+(defn proxy->file
+  [proxy]
+  (let [id (obj/get proxy "$id")]
+    (locate-file id)))
+
+(defn proxy->page
+  [proxy]
+  (let [file-id (obj/get proxy "$file")
+        id (obj/get proxy "$id")]
+    (locate-page file-id id)))
+
+(defn proxy->shape
+  [proxy]
+  (let [file-id (obj/get proxy "$file")
+        page-id (obj/get proxy "$page")
+        id (obj/get proxy "$id")]
+    (locate-shape file-id page-id id)))
+
 (defn get-data
   ([self attr]
    (-> (obj/get self "_data")
@@ -76,6 +112,12 @@
          {}
          obj)]
     (clj->js result)))
+
+(defn array-to-js
+  [value]
+  (.freeze
+   js/Object
+   (apply array (->> value (map to-js)))))
 
 (defn result-p
   "Creates a pair of atom+promise. The promise will be resolved when the atom gets a value.

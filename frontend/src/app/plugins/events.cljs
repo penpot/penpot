@@ -23,17 +23,18 @@
     (if (and (identical? old-file new-file)
              (identical? old-data new-data))
       ::not-changed
-      (file/data->file-proxy new-file new-data))))
+      (file/file-proxy (:id new-file)))))
 
 (defmethod handle-state-change "pagechange"
   [_ old-val new-val]
-  (let [old-page-id (:current-page-id old-val)
+  (let [file-id     (:current-file-id new-val)
+        old-page-id (:current-page-id old-val)
         new-page-id (:current-page-id new-val)
         old-page    (dm/get-in old-val [:workspace-data :pages-index old-page-id])
         new-page    (dm/get-in new-val [:workspace-data :pages-index new-page-id])]
     (if (identical? old-page new-page)
       ::not-changed
-      (page/data->page-proxy new-page))))
+      (page/page-proxy file-id new-page-id))))
 
 (defmethod handle-state-change "selectionchange"
   [_ old-val new-val]
