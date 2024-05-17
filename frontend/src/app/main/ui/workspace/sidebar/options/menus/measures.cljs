@@ -100,7 +100,10 @@
 
         tokens (mf/deref refs/workspace-tokens)
         border-radius-tokens (mf/use-memo (mf/deps tokens) #(wtc/tokens-name-map-for-type :border-radius tokens))
-        border-radius-options (mf/use-memo (mf/deps border-radius-tokens) #(map (comp :name val) border-radius-tokens))
+        border-radius-options (mf/use-memo (mf/deps border-radius-tokens)
+                                           #(map (fn [[_k {:keys [name] :as item}]]
+                                                   (assoc item :label name))
+                                                 border-radius-tokens))
 
         flex-child?       (->> selection-parents (some ctl/flex-layout?))
         absolute?         (ctl/item-absolute? shape)
