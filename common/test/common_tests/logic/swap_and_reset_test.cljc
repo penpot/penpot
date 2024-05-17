@@ -20,156 +20,65 @@
 (t/use-fixtures :each thi/test-fixture)
 
 ;; Related .penpot file: common/test/cases/swap-and-reset.penpot
-(t/deftest test-simple-swap
-  (let [;; ==== Setup
-        file (-> (thf/sample-file :file1)
-                 (tho/add-simple-component-with-copy :component-1
-                                                     :component-1-main-root
-                                                     :component-1-main-child
-                                                     :component-1-copy-root)
-                 (tho/add-simple-component :component-2
-                                           :component-2-root
-                                           :component-2-child))
-
-        component-1-copy-root (ths/get-shape file :component-1-copy-root)
-        component-2           (thc/get-component file :component-2)
-        page                  (thf/current-page file)
-
-        ;; ==== Action
-        [new-shape _all-parents changes]
-        (cll/generate-component-swap (pcb/empty-changes)
-                                     (:objects page)
-                                     component-1-copy-root
-                                     (:data file)
-                                     page
-                                     {(:id  file) file}
-                                     (:id component-2)
-                                     0
-                                     nil
-                                     {})
-
-        file' (thf/apply-changes file changes)
-
-        ;; ==== Get 
-        swapped (ths/get-shape-by-id file' (:id new-shape))]
-
-    ;; ==== Check
-    (t/is (not= (:component-id component-1-copy-root) (:component-id swapped)))
-    (t/is (= (:id component-2) (:component-id swapped)))
-    (t/is (= (:id file) (:component-file swapped)))))
-
-(t/deftest test-swap-nested
-  (let [;; ==== Setup
-        file
-        (-> (thf/sample-file :file1)
-            (tho/add-simple-component :component-1 :component-1-main-root :component-1-main-child)
-            (tho/add-frame :component-container)
-            (thc/instantiate-component :component-1 :component-1-copy-root :parent-label :component-container)
-            (thc/make-component :component-container-main :component-container)
-            (thc/instantiate-component :component-container-main :component-container-instance)
-            (tho/add-simple-component :component-2 :component-2-main-root :component-2-main-child))
-
-        page        (thf/current-page file)
-        component-2 (thc/get-component file :component-2)
-
-        copy
-        (->>
-         (ths/get-shape file :component-container-instance)
-         :shapes
-         first
-         (ths/get-shape-by-id file))
-
-        libraries {(:id  file) file}
-
-        ;; ==== Action
-        [new-shape _all-parents changes]
-        (cll/generate-component-swap (pcb/empty-changes)
-                                     (:objects page)
-                                     copy
-                                     (:data file)
-                                     page
-                                     libraries
-                                     (:id component-2)
-                                     0
-                                     nil
-                                     {})
-
-        file'      (thf/apply-changes file changes)
-        libraries' {(:id  file') file'}
-        page'      (thf/current-page file')
-
-        ;; ==== Get
-        swapped               (ths/get-shape-by-id file' (:id new-shape))
-        component-1-copy-root (ths/get-shape file' :component-1-copy-root)
-        slot                  (-> (ctf/find-swap-slot swapped
-                                                      page'
-                                                      file'
-                                                      libraries')
-                                  (ctk/build-swap-slot-group))]
-
-    ;; ==== Check
-    (t/is (not= (:component-id copy) (:component-id swapped)))
-    (t/is (= (:id component-2) (:component-id swapped)))
-    (t/is (= (:id file) (:component-file swapped)))
-    (t/is (contains? (:touched swapped) slot))
-    (t/is (= (ctk/get-swap-slot swapped) (:id component-1-copy-root)))))
-
 (t/deftest test-swap-and-reset-override
-  (let [;; ==== Setup
-        file
-        (-> (thf/sample-file :file1)
-            (tho/add-simple-component :component-1 :component-1-main-root :component-1-main-child)
-            (tho/add-frame :component-container)
-            (thc/instantiate-component :component-1 :component-1-copy-root :parent-label :component-container)
-            (thc/make-component :component-container-main :component-container)
-            (thc/instantiate-component :component-container-main :component-container-instance)
-            (tho/add-simple-component :component-2 :component-2-main-root :component-2-main-child))
+  (letfn [(setup []
+            (-> (thf/sample-file :file1)
 
-        page        (thf/current-page file)
-        component-1 (thc/get-component file :component-1)
-        component-2 (thc/get-component file :component-2)
+                (tho/add-frame :frame-rectangle)
+                (ths/add-sample-shape :rectangle-shape :parent-label :frame-rectangle :type :rect)
+                (thc/make-component :rectangle :frame-rectangle)
 
-        copy
-        (->>
-         (ths/get-shape file :component-container-instance)
-         :shapes
-         first
-         (ths/get-shape-by-id file))
+                (tho/add-frame :frame-circle)
+                (ths/add-sample-shape :circle :parent-label :frame-circle :type :circle)
+                (thc/make-component :circle :frame-circle)
 
-        ;; ==== Action
-        [new-shape _all-parents changes-swap]
-        (cll/generate-component-swap (pcb/empty-changes)
-                                     (:objects page)
-                                     copy
-                                     (:data file)
-                                     page
-                                     {(:id  file) file}
-                                     (:id component-2)
-                                     0
-                                     nil
-                                     {})
+                (tho/add-frame :frame-main)
+                (thc/instantiate-component :rectangle :copy-rectangle :parent-label :frame-main :children-labels [:copy-rectangle-shape])
+                (thc/make-component :main :frame-main)
 
-        file-swap (thf/apply-changes file changes-swap)
-        page-swap (thf/current-page file-swap)
+                (thc/instantiate-component :main :copy :children-labels [:copy-copy-rectangle])))
 
-        changes
-        (cll/generate-reset-component (pcb/empty-changes)
-                                      file-swap
-                                      {(:id  file-swap) file-swap}
-                                      page-swap
-                                      (:id new-shape)
-                                      true)
+          (copy-type [file]
+            (:type (tho/bottom-shape file :copy)))
 
-        file' (thf/apply-changes file changes)
+          (nested-component-id [file]
+            (->>
+             (ths/get-shape file :copy)
+             :shapes
+             first
+             (ths/get-shape-by-id file)
+             (:component-id)))
 
-        ;; ==== Get
-        reset
-        (->>
-         (ths/get-shape file' :component-container-instance)
-         :shapes
-         first
-         (ths/get-shape-by-id file'))]
+          (nested-swap-slot [file]
+            (->>
+             (ths/get-shape file :copy)
+             :shapes
+             first
+             (ths/get-shape-by-id file)
+             (ctk/get-swap-slot)))
 
-    ;; ==== Check
-    (t/is (= (:id component-1) (:component-id reset)))
-    (t/is (nil? (ctk/get-swap-slot reset)))))
+          (circle-component-id [file]
+            (:id (thc/get-component file :circle)))
+
+          (rectangle-component-id [file]
+            (:id (thc/get-component file :rectangle)))
+
+          (copy-rectangle-id [file]
+            (:id (ths/get-shape file :copy-rectangle)))
+
+          (validate [file validator]
+            (validator file)
+            file)]
+
+    (-> (setup)
+        ;; Select the Rectangle inside Copy and swap it for an Ellipse
+        (tho/swap-component-in-shape :copy-copy-rectangle :circle)
+        (validate #(t/is (= (copy-type %) :circle)))
+        (validate #(t/is (= (nested-component-id %) (circle-component-id %))))
+        (validate #(t/is (= (copy-rectangle-id %) (nested-swap-slot %))))
+
+        ;; Do a "Reset override" on the newly created Ellipse. It should swap for a Rectangle
+        (tho/reset-overrides-in-first-child :copy)
+        (validate #(t/is (= (copy-type %) :rect)))
+        (validate #(t/is (= (nested-component-id %) (rectangle-component-id %))))
+        (validate #(t/is (nil? (nested-swap-slot %)))))))

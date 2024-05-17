@@ -1,0 +1,167 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+}
+
+.modal-dialog {
+  @extend .modal-container-base;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: $s-472;
+  max-height: $s-472;
+  width: $s-472;
+  max-width: $s-472;
+}
+
+.close-btn {
+  @extend .modal-close-btn-base;
+}
+
+.close-icon {
+  @extend .button-icon;
+  stroke: var(--icon-foreground);
+}
+
+.modal-title {
+  @include headlineMediumTypography;
+  margin-block-end: $s-16;
+  color: var(--modal-title-foreground-color);
+}
+
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  height: $s-380;
+}
+
+.primary-button {
+  @extend .button-primary;
+  @include headlineSmallTypography;
+  padding: $s-0 $s-16;
+}
+
+.search-icon {
+  @include flexCenter;
+  width: $s-20;
+  padding: 0 0 0 $s-8;
+  svg {
+    @extend .button-icon-small;
+    stroke: var(--icon-foreground);
+  }
+}
+
+.top-bar {
+  display: flex;
+  gap: $s-8;
+}
+
+.open-button {
+  @extend .button-secondary;
+  width: $s-68;
+  min-width: $s-68;
+  height: $s-32;
+  text-transform: uppercase;
+}
+
+.trash-button {
+  @extend .button-tertiary;
+  width: $s-32;
+  height: $s-32;
+
+  svg {
+    @extend .button-icon;
+    stroke: var(--icon-foreground);
+  }
+}
+
+.plugins-list {
+  padding-top: $s-20;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.plugins-list-element {
+  display: flex;
+  gap: $s-12;
+}
+
+.plugin-icon {
+  min-width: $s-32;
+  min-height: $s-32;
+  width: $s-32;
+  height: $s-32;
+  background: #b1b2b5;
+}
+
+.plugin-description {
+  display: flex;
+  flex-direction: column;
+  gap: $s-8;
+}
+
+.plugin-title {
+  @include bodyMediumTypography;
+  color: #ffffff;
+}
+
+.plugin-summary {
+  @include bodySmallTypography;
+  color: #8f9da3;
+}
+
+.plugins-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  margin-top: 3rem;
+}
+
+.plugins-empty-logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #212426;
+
+  svg {
+    width: 16px;
+    height: 16px;
+    fill: #8f9da3;
+  }
+}
+
+.plugins-empty-text {
+  @include bodySmallTypography;
+  color: white;
+}
+
+div.input-error {
+  border: 1px solid var(--input-border-color-error);
+}
+
+.info {
+  @include bodySmallTypography;
+  margin-top: $s-4;
+
+  &.error {
+    color: var(--input-border-color-error);
+  }
+
+  &.success {
+    color: var(--input-border-color-success);
+  }
+}

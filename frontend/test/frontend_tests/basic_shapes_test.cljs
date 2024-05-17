@@ -40,8 +40,6 @@
                fills'      (:fills shape1')
                fill'       (first fills')]
 
-           (cthf/dump-shape shape1')
-
           ;; ==== Check
            (t/is (some? shape1'))
            (t/is (= (count fills') 1))

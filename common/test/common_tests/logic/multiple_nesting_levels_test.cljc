@@ -24,8 +24,7 @@
 
 (t/use-fixtures :each thi/test-fixture)
 
-;; TODO
-;; Related .penpot file: XXX
+;; Related .penpot file: common/test/cases/multiple-testing-levels.penpot
 (t/deftest test-multiple-nesting-levels
   (letfn [(setup []
             (-> (thf/sample-file :file1)
