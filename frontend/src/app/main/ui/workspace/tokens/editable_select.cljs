@@ -178,9 +178,10 @@
                 :placeholder placeholder
                 :type type}])
 
-     [:span {:class (stl/css :dropdown-button)
-             :on-click toggle-dropdown}
-      i/arrow]
+     (when (seq options)
+       [:span {:class (stl/css :dropdown-button)
+               :on-click toggle-dropdown}
+        i/arrow])
 
      [:& dropdown {:show (or is-open? false)
                    :on-close close-dropdown}
