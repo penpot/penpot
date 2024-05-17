@@ -37,6 +37,27 @@
                         :else new-value)]
         (set-value! new-value)))))
 
+(mf/defc dropdown-select [{:keys [on-close element-id element-ref options on-select]}]
+  [:& dropdown {:show true
+                :on-close on-close}
+   [:div {:class (stl/css :custom-select-dropdown)
+          :ref element-ref}
+    [:ul {:class (stl/css :custom-select-dropdown-list)}
+     (for [[index item] (d/enumerate options)]
+       (cond
+         (= :separator item) [:li {:class (stl/css :separator)
+                                   :key (dm/str element-id "-" index)}]
+         :else (let [{:keys [value label]} item]
+                 [:li
+                  {:key (str element-id "-" index)
+                   :class (stl/css-case :dropdown-element true
+                                        :is-selected false #_(= (dm/str value) current-value))
+                   :data-label label
+                   :on-click on-select}
+                  [:span {:class (stl/css :label)} label]
+                  [:span {:class (stl/css :value)} value]
+                  [:span {:class (stl/css :check-icon)} i/tick]])))]]])
+
 (mf/defc editable-select
   [{:keys [value type options class on-change placeholder on-blur input-class] :as params}]
   (let [state* (mf/use-state {:id (uuid/next)
@@ -187,23 +208,9 @@
                :on-click toggle-dropdown}
         i/arrow])
 
-     [:& dropdown {:show (or is-open? false)
-                   :on-close close-dropdown}
-      [:div {:class (stl/css :custom-select-dropdown)
-             :ref select-wrapper-ref}
-       [:ul {:class (stl/css :custom-select-dropdown-list)}
-        (for [[index item] (d/enumerate options)]
-          (cond
-            (= :separator item) [:li {:class (stl/css :separator)
-                                      :key (dm/str element-id "-" index)}]
-            :else (let [{:keys [value label]} item]
-                    [:li
-                     {:key (str element-id "-" index)
-                      :class (stl/css-case :dropdown-element true
-                                           :is-selected (= (dm/str value) current-value))
-                      :data-label label
-                      :on-click select-item}
-                     [:span {:class (stl/css :label)} label]
-                     [:span {:class (stl/css :value)} value]
-                     [:span {:class (stl/css :check-icon)}
-                      i/tick]])))]]]]))
+     (when (and is-open? (seq options))
+       [:& dropdown-select {:on-close close-dropdown
+                            :element-id element-id
+                            :element-ref select-wrapper-ref
+                            :options options
+                            :on-select select-item}])]))
