@@ -36,7 +36,7 @@
         max-val (get params :max)
 
         emit-blur? (mf/use-ref nil)
-        font-size-wrapper-ref (mf/use-ref)
+        select-wrapper-ref (mf/use-ref)
 
         toggle-dropdown
         (mf/use-fn
@@ -145,7 +145,7 @@
         (reset! state* {:current-value value})))
 
     (mf/with-effect [is-open?]
-      (let [wrapper-node (mf/ref-val font-size-wrapper-ref)
+      (let [wrapper-node (mf/ref-val select-wrapper-ref)
             node (dom/get-element-by-class "checked-element is-selected" wrapper-node)
             nodes (dom/get-elements-by-class "checked-element-value" wrapper-node)
             closest (fn [a b] (first (sort-by #(mth/abs (- % b)) a)))
