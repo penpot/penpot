@@ -32,8 +32,9 @@
   }
 
   .custom-select-dropdown-list {
+    min-width: 150px;
     width: 100%;
-    max-width: 180px;
+    max-width: 200px;
     margin-bottom: 0;
   }
 
@@ -67,8 +68,8 @@
       }
 
       .value {
-        flex: 0.2;
         text-align: right;
+        flex: 0.6;
       }
 
       .check-icon {
