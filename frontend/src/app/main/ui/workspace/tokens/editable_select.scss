@@ -74,6 +74,7 @@
 
       .check-icon {
         @include flexCenter;
+        translate: -$s-4 0;
         svg {
           @extend .button-icon-small;
           visibility: hidden;

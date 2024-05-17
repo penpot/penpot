@@ -47,11 +47,11 @@
        (cond
          (= :separator item) [:li {:class (stl/css :separator)
                                    :key (dm/str element-id "-" index)}]
-         :else (let [{:keys [value label]} item]
+         :else (let [{:keys [value label selected?]} item]
                  [:li
                   {:key (str element-id "-" index)
                    :class (stl/css-case :dropdown-element true
-                                        :is-selected false #_(= (dm/str value) current-value))
+                                        :is-selected selected?)
                    :data-label label
                    :on-click on-select}
                   [:span {:class (stl/css :label)} label]
