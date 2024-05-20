@@ -101,10 +101,15 @@
                                   (when (seq (:strokes shape))
                                     (assoc-in shape [:strokes 0 :stroke-width] value))))))
 
-(defn update-layout-spacing-column [value _shape-ids]
-  (let [selected-shapes (wsh/lookup-selected @st/state)]
-    (st/emit!
-     (dwsl/update-layout selected-shapes {:layout-gap {:column-gap value :row-gap value}}))))
+(defn update-layout-spacing-column [value shape-ids]
+  (doseq [shape-id shape-ids]
+    (let [shape (dt/get-shape-from-state shape-id @st/state)
+          layout-direction (:layout-flex-dir shape)
+          layout-update (if (or (= layout-direction :row-reverse) (= layout-direction :row))
+                          {:layout-gap {:column-gap value}}
+                          {:layout-gap {:row-gap value}})]
+      (st/emit!
+       (dwsl/update-layout [shape-id] layout-update)))))
 
 ;; Token types -----------------------------------------------------------------
 
