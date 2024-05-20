@@ -74,6 +74,8 @@ jobs:
           DEPLOY: "true"
   smoke:
     runs-on: ubuntu-latest
+    needs:
+      - "deploy"
     steps:
 
       - name: Check if URL can be accessed
