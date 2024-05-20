@@ -19,6 +19,9 @@
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]))
 
+(t/use-fixtures :each
+  {:before thp/reset-idmap!})
+
 ;; Related .penpot file: common/test/cases/remove-swap-slots.penpot
 (defn- setup-file
   []

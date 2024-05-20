@@ -11,9 +11,11 @@
 ;; ---- Helpers to manage ids as known identifiers
 
 (def ^:private idmap (atom {}))
+(def ^:private next-uuid-val (atom 1))
 
 (defn reset-idmap! []
-  (reset! idmap {}))
+  (reset! idmap {})
+  (reset! next-uuid-val 1))
 
 (defn set-id!
   [label id]
@@ -41,3 +43,8 @@
            (map key)
            (first))
       (str "<no-label #" (subs (str id) (- (count (str id)) 6)) ">")))
+
+(defn next-uuid []
+  (let [current (uuid/custom @next-uuid-val)]
+    (swap! next-uuid-val inc)
+    current))
