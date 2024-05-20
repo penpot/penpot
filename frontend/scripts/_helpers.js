@@ -19,19 +19,22 @@ function getCoreCount() {
   return os.cpus().length;
 }
 
-// const __filename = url.fileURLToPath(import.meta.url);
 export const dirname = url.fileURLToPath(new URL(".", import.meta.url));
 
 export function startWorker() {
   return wpool.pool(dirname + "/_worker.js", {
-    maxWorkers: getCoreCount()
+    maxWorkers: getCoreCount(),
   });
 }
 
-async function findFiles(basePath, predicate, options={}) {
-  predicate = predicate ?? function() { return true; }
+async function findFiles(basePath, predicate, options = {}) {
+  predicate =
+    predicate ??
+    function () {
+      return true;
+    };
 
-  let files = await fs.readdir(basePath, {recursive: options.recursive ?? false})
+  let files = await fs.readdir(basePath, { recursive: options.recursive ?? false });
   files = files.map((path) => ph.join(basePath, path));
 
   return files;
@@ -42,8 +45,11 @@ function syncDirs(originPath, destPath) {
 
   return new Promise((resolve, reject) => {
     proc.exec(command, (cause, stdout) => {
-      if (cause) { reject(cause); }
-      else { resolve(); }
+      if (cause) {
+        reject(cause);
+      } else {
+        resolve();
+      }
     });
   });
 }
@@ -71,28 +77,30 @@ export async function compileSassAll(worker) {
   const limitFn = pLimit(4);
   const sourceDir = "src";
 
-  let files = await fs.readdir(sourceDir, { recursive: true })
+  let files = await fs.readdir(sourceDir, { recursive: true });
   files = files.filter((path) => path.endsWith(".scss"));
   files = files.map((path) => ph.join(sourceDir, path));
-  // files = files.slice(0, 10);
 
   const procs = [
     compileSass(worker, "resources/styles/main-default.scss", {}),
-    compileSass(worker, "resources/styles/debug.scss", {})
+    compileSass(worker, "resources/styles/debug.scss", {}),
   ];
 
   for (let path of files) {
-    const proc = limitFn(() => compileSass(worker, path, {modules: true}));
+    const proc = limitFn(() => compileSass(worker, path, { modules: true }));
     procs.push(proc);
   }
 
   const result = await Promise.all(procs);
 
-  return result.reduce((acc, item, index) => {
-    acc.index[item.outputPath] = item.css;
-    acc.items.push(item.outputPath);
-    return acc;
-  }, {index:{}, items: []});
+  return result.reduce(
+    (acc, item, index) => {
+      acc.index[item.outputPath] = item.css;
+      acc.items.push(item.outputPath);
+      return acc;
+    },
+    { index: {}, items: [] },
+  );
 }
 
 function compare(a, b) {
@@ -106,7 +114,7 @@ function compare(a, b) {
 }
 
 export function concatSass(data) {
-  const output = []
+  const output = [];
 
   for (let path of data.items) {
     output.push(data.index[path]);
@@ -118,10 +126,9 @@ export function concatSass(data) {
 export async function watch(baseDir, predicate, callback) {
   predicate = predicate ?? (() => true);
 
-
   const watcher = new Watcher(baseDir, {
     persistent: true,
-    recursive: true
+    recursive: true,
   });
 
   watcher.on("change", (path) => {
@@ -133,7 +140,7 @@ export async function watch(baseDir, predicate, callback) {
 
 async function readShadowManifest() {
   try {
-    const manifestPath = "resources/public/js/manifest.json"
+    const manifestPath = "resources/public/js/manifest.json";
     let content = await fs.readFile(manifestPath, { encoding: "utf8" });
     content = JSON.parse(content);
 
@@ -148,7 +155,6 @@ async function readShadowManifest() {
 
     return index;
   } catch (cause) {
-    // log.error("error on reading manifest (using default)", cause);
     return {
       config: "js/config.js",
       polyfills: "js/polyfills.js",
@@ -160,14 +166,14 @@ async function readShadowManifest() {
   }
 }
 
-async function renderTemplate(path, context={}, partials={}) {
-  const content = await fs.readFile(path, {encoding: "utf-8"});
+async function renderTemplate(path, context = {}, partials = {}) {
+  const content = await fs.readFile(path, { encoding: "utf-8" });
 
   const ts = Math.floor(new Date());
 
   context = Object.assign({}, context, {
     ts: ts,
-    isDebug: process.env.NODE_ENV !== "production"
+    isDebug: process.env.NODE_ENV !== "production",
   });
 
   return mustache.render(content, context, partials);
@@ -214,9 +220,8 @@ async function readTranslations() {
     // this happens when file does not matches correct
     // iso code for the language.
     ["ja_jp", "jpn_JP"],
-    // ["fi", "fin_FI"],
     ["uk", "ukr_UA"],
-    "ha"
+    "ha",
   ];
   const result = {};
 
@@ -261,10 +266,6 @@ async function readTranslations() {
           }
         });
       }
-      // if (key === "modals.delete-font.title") {
-      //   console.dir(trdata[key], {depth:10});
-      //   console.dir(result[key], {depth:10});
-      // }
     }
   }
 
@@ -274,13 +275,13 @@ async function readTranslations() {
 async function generateSvgSprite(files, prefix) {
   const spriter = new SVGSpriter({
     mode: {
-      symbol: { inline: true }
-    }
+      symbol: { inline: true },
+    },
   });
 
   for (let path of files) {
-    const name = `${prefix}${ph.basename(path)}`
-    const content = await fs.readFile(path, {encoding: "utf-8"});
+    const name = `${prefix}${ph.basename(path)}`;
+    const content = await fs.readFile(path, { encoding: "utf-8" });
     spriter.add(name, name, content);
   }
 
@@ -302,6 +303,7 @@ async function generateSvgSprites() {
 }
 
 async function generateTemplates() {
+  const isDebug = process.env.NODE_ENV !== "production";
   await fs.mkdir("./resources/public/", { recursive: true });
 
   const translations = await readTranslations();
@@ -315,13 +317,19 @@ async function generateTemplates() {
     "../public/images/sprites/symbol/cursors.svg": cursorsSprite,
   };
 
-  const pluginRuntimeUri = (process.env.PENPOT_PLUGIN_DEV === "true") ? "http://localhost:4200" : "./plugins-runtime";
+  const pluginRuntimeUri =
+    process.env.PENPOT_PLUGIN_DEV === "true" ? "http://localhost:4200" : "./plugins-runtime";
 
-  content = await renderTemplate("resources/templates/index.mustache", {
-    manifest: manifest,
-    translations: JSON.stringify(translations),
-    pluginRuntimeUri,
-  }, partials);
+  content = await renderTemplate(
+    "resources/templates/index.mustache",
+    {
+      manifest: manifest,
+      translations: JSON.stringify(translations),
+      pluginRuntimeUri,
+      isDebug,
+    },
+    partials,
+  );
 
   await fs.writeFile("./resources/public/index.html", content);
 
@@ -351,7 +359,7 @@ export async function compileStyles() {
   const worker = startWorker();
   const start = process.hrtime();
 
-  log.info("init: compile styles")
+  log.info("init: compile styles");
   let result = await compileSassAll(worker);
   result = concatSass(result);
 
@@ -365,7 +373,7 @@ export async function compileStyles() {
 
 export async function compileSvgSprites() {
   const start = process.hrtime();
-  log.info("init: compile svgsprite")
+  log.info("init: compile svgsprite");
   await generateSvgSprites();
   const end = process.hrtime(start);
   log.info("done: compile svgsprite", `(${ppt(end)})`);
@@ -373,7 +381,7 @@ export async function compileSvgSprites() {
 
 export async function compileTemplates() {
   const start = process.hrtime();
-  log.info("init: compile templates")
+  log.info("init: compile templates");
   await generateTemplates();
   const end = process.hrtime(start);
   log.info("done: compile templates", `(${ppt(end)})`);
@@ -381,13 +389,12 @@ export async function compileTemplates() {
 
 export async function compilePolyfills() {
   const start = process.hrtime();
-  log.info("init: compile polyfills")
-
+  log.info("init: compile polyfills");
 
   const files = await findFiles("resources/polyfills/", isJsFile);
   let result = [];
   for (let path of files) {
-    const content = await fs.readFile(path, {encoding:"utf-8"});
+    const content = await fs.readFile(path, { encoding: "utf-8" });
     result.push(content);
   }
 
@@ -400,7 +407,7 @@ export async function compilePolyfills() {
 
 export async function copyAssets() {
   const start = process.hrtime();
-  log.info("init: copy assets")
+  log.info("init: copy assets");
 
   await syncDirs("resources/images/", "resources/public/images/");
   await syncDirs("resources/fonts/", "resources/public/fonts/");
@@ -409,4 +416,3 @@ export async function copyAssets() {
   const end = process.hrtime(start);
   log.info("done: copy assets", `(${ppt(end)})`);
 }
-
