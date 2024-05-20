@@ -71,3 +71,18 @@ jobs:
         with:
           ENV: "prod"
           APP: "penpot"
+          DEPLOY: "true"
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Check if URL can be accessed
+        run: |
+          URL="https://penpot.tokens.studio"
+          STATUS=$(curl -o /dev/null -s -w "%{http_code}\n" $URL)
+          if [ $STATUS -ne 200 ]; then
+            echo "Error: Unable to access $URL. HTTP Status: $STATUS"
+            exit 1
+          else
+            echo "Success: $URL is accessible. HTTP Status: $STATUS"
+          fi

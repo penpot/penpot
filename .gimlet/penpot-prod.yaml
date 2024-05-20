@@ -140,3 +140,37 @@ manifests: |
           secretKeys:
             usernameKey: username
             passwordKey: password
+json6902Patches:
+- target:
+    group: "apps"
+    version: "v1"
+    kind: "Deployment"
+    name: "penpot-frontend"
+  patch: |
+    ---
+    - op: add
+      path: /metadata/labels
+      value: 
+        portService: tokens-studio-for-penpot
+- target:
+    group: "apps"
+    version: "v1"
+    kind: "Deployment"
+    name: "penpot-exporter"
+  patch: |
+    ---
+    - op: add
+      path: /metadata/labels
+      value: 
+        portService: tokens-studio-for-penpot
+- target:
+    group: "apps"
+    version: "v1"
+    kind: "Deployment"
+    name: "penpot-backend"
+  patch: |
+    ---
+    - op: add
+      path: /metadata/labels
+      value: 
+        portService: tokens-studio-for-penpot
