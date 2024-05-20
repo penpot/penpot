@@ -20,8 +20,8 @@
    [app.config :as cf]
    [app.db :as db]
    [app.main :as main]
-   [app.media]
    [app.media :as-alias mtx]
+   [app.media]
    [app.migrations]
    [app.msgbus :as-alias mbus]
    [app.rpc :as-alias rpc]
@@ -34,6 +34,7 @@
    [app.util.blob :as blob]
    [app.util.services :as sv]
    [app.util.time :as dt]
+   [app.worker.runner]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [clojure.test :as t]
@@ -424,6 +425,18 @@
    (let [tasks (:app.worker/registry *system*)]
      (let [task-fn (get tasks (d/name name))]
        (task-fn params)))))
+
+(def sql:pending-tasks
+  "select t.* from task as t
+    where t.status = 'new'
+    order by t.priority desc, t.scheduled_at")
+
+(defn run-pending-tasks!
+  []
+  (db/tx-run! *system* (fn [{:keys [::db/conn] :as cfg}]
+                         (let [tasks (->> (db/exec! conn [sql:pending-tasks])
+                                          (map #'app.worker.runner/decode-task-row))]
+                           (run! (partial #'app.worker.runner/run-task cfg) tasks)))))
 
 ;; --- UTILS
 

@@ -351,6 +351,8 @@
 
      :object-update
      (ig/ref :app.tasks.object-update/handler)
+     :delete-object
+     (ig/ref :app.tasks.delete-object/handler)
      :process-webhook-event
      (ig/ref ::webhooks/process-event-handler)
      :run-webhook
@@ -381,6 +383,9 @@
    {::db/pool (ig/ref ::db/pool)}
 
    :app.tasks.object-update/handler
+   {::db/pool (ig/ref ::db/pool)}
+
+   :app.tasks.delete-object/handler
    {::db/pool (ig/ref ::db/pool)}
 
    :app.tasks.file-gc/handler

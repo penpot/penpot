@@ -35,6 +35,7 @@
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [app.util.time :as dt]
+   [app.worker :as wrk]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]))
 
@@ -916,7 +917,8 @@
   (db/update! conn :file
               {:deleted-at (dt/now)}
               {:id file-id}
-              {::db/return-keys [:id :name :is-shared :project-id :created-at :modified-at]}))
+              {::db/return-keys [:id :name :is-shared :deleted-at
+                                 :project-id :created-at :modified-at]}))
 
 (def ^:private
   schema:delete-file
@@ -928,6 +930,13 @@
   [{:keys [::db/conn] :as cfg} {:keys [profile-id id] :as params}]
   (check-edition-permissions! conn profile-id id)
   (let [file (mark-file-deleted! conn id)]
+
+    (wrk/submit! {::wrk/task :delete-object
+                  ::wrk/delay (dt/duration "1m")
+                  ::wrk/conn conn
+                  :object :file
+                  :deleted-at (:deleted-at file)
+                  :id id})
 
     ;; NOTE: when a file is a shared library, then we proceed to load
     ;; the whole file, proceed with feature checking and properly execute

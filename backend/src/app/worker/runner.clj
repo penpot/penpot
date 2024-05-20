@@ -35,8 +35,92 @@
   [_ item]
   {:params item})
 
+(defn- get-task
+  [{:keys [::db/pool]} task-id]
+  (ex/try!
+   (some-> (db/get* pool :task {:id task-id})
+           (decode-task-row))))
+
+(defn- run-task
+  [{:keys [::wrk/registry ::id ::queue] :as cfg} task]
+  (try
+    (l/dbg :hint "start"
+           :name (:name task)
+           :task-id (str (:id task))
+           :queue queue
+           :runner-id id
+           :retry (:retry-num task))
+    (let [tpoint  (dt/tpoint)
+          task-fn (get registry (:name task))
+          result  (if task-fn
+                    (task-fn task)
+                    {:status :completed :task task})
+          elapsed (dt/format-duration (tpoint))]
+
+      (when-not task-fn
+        (l/wrn :hint "no task handler found" :name (:name task)))
+
+      (l/dbg :hint "end"
+             :name (:name task)
+             :task-id (str (:id task))
+             :queue queue
+             :runner-id id
+             :retry (:retry-num task)
+             :elapsed elapsed)
+
+      result)
+
+    (catch InterruptedException cause
+      (throw cause))
+    (catch Throwable cause
+      (let [edata (ex-data cause)]
+        (if (and (< (:retry-num task)
+                    (:max-retries task))
+                 (= ::retry (:type edata)))
+          (cond-> {:status :retry :task task :error cause}
+            (dt/duration? (:delay edata))
+            (assoc :delay (:delay edata))
+
+            (= ::noop (:strategy edata))
+            (assoc :inc-by 0))
+          (do
+            (l/err :hint "unhandled exception on task"
+                   ::l/context (get-error-context cause task)
+                   :cause cause)
+            (if (>= (:retry-num task) (:max-retries task))
+              {:status :failed :task task :error cause}
+              {:status :retry :task task :error cause})))))))
+
+(defn- run-task!
+  [{:keys [::rds/rconn ::id] :as cfg} task-id]
+  (loop [task (get-task cfg task-id)]
+    (cond
+      (ex/exception? task)
+      (if (or (db/connection-error? task)
+              (db/serialization-error? task))
+        (do
+          (l/wrn :hint "connection error on retrieving task from database (retrying in some instants)"
+                 :id id
+                 :cause task)
+          (px/sleep (::rds/timeout rconn))
+          (recur (get-task cfg task-id)))
+        (do
+          (l/err :hint "unhandled exception on retrieving task from database (retrying in some instants)"
+                 :id id
+                 :cause task)
+          (px/sleep (::rds/timeout rconn))
+          (recur (get-task cfg task-id))))
+
+      (nil? task)
+      (l/wrn :hint "no task found on the database"
+             :id id
+             :task-id task-id)
+
+      :else
+      (run-task cfg task))))
+
 (defn- run-worker-loop!
-  [{:keys [::db/pool ::rds/rconn ::wrk/registry ::timeout ::queue ::id]}]
+  [{:keys [::db/pool ::rds/rconn ::timeout ::queue] :as cfg}]
   (letfn [(handle-task-retry [{:keys [task error inc-by delay] :or {inc-by 1 delay 1000}}]
             (let [explain (ex-message error)
                   nretry  (+ (:retry-num task) inc-by)
@@ -82,88 +166,6 @@
                        :length (alength payload)
                        :cause cause))))
 
-          (handle-task [{:keys [name] :as task}]
-            (let [task-fn (get registry name)]
-              (if task-fn
-                (task-fn task)
-                (l/wrn :hint "no task handler found" :name name))
-              {:status :completed :task task}))
-
-          (handle-task-exception [cause task]
-            (let [edata (ex-data cause)]
-              (if (and (< (:retry-num task)
-                          (:max-retries task))
-                       (= ::retry (:type edata)))
-                (cond-> {:status :retry :task task :error cause}
-                  (dt/duration? (:delay edata))
-                  (assoc :delay (:delay edata))
-
-                  (= ::noop (:strategy edata))
-                  (assoc :inc-by 0))
-                (do
-                  (l/err :hint "unhandled exception on task"
-                         ::l/context (get-error-context cause task)
-                         :cause cause)
-                  (if (>= (:retry-num task) (:max-retries task))
-                    {:status :failed :task task :error cause}
-                    {:status :retry :task task :error cause})))))
-
-          (get-task [task-id]
-            (ex/try!
-             (some-> (db/get* pool :task {:id task-id})
-                     (decode-task-row))))
-
-          (run-task [task-id]
-            (loop [task (get-task task-id)]
-              (cond
-                (ex/exception? task)
-                (if (or (db/connection-error? task)
-                        (db/serialization-error? task))
-                  (do
-                    (l/wrn :hint "connection error on retrieving task from database (retrying in some instants)"
-                           :id id
-                           :cause task)
-                    (px/sleep (::rds/timeout rconn))
-                    (recur (get-task task-id)))
-                  (do
-                    (l/err :hint "unhandled exception on retrieving task from database (retrying in some instants)"
-                           :id id
-                           :cause task)
-                    (px/sleep (::rds/timeout rconn))
-                    (recur (get-task task-id))))
-
-                (nil? task)
-                (l/wrn :hint "no task found on the database"
-                       :id id
-                       :task-id task-id)
-
-                :else
-                (try
-                  (l/dbg :hint "start"
-                         :name (:name task)
-                         :task-id (str task-id)
-                         :queue queue
-                         :runner-id id
-                         :retry (:retry-num task))
-                  (let [tpoint  (dt/tpoint)
-                        result  (handle-task task)
-                        elapsed (dt/format-duration (tpoint))]
-
-                    (l/dbg :hint "end"
-                           :name (:name task)
-                           :task-id (str task-id)
-                           :queue queue
-                           :runner-id id
-                           :retry (:retry-num task)
-                           :elapsed elapsed)
-
-                    result)
-
-                  (catch InterruptedException cause
-                    (throw cause))
-                  (catch Throwable cause
-                    (handle-task-exception cause task))))))
-
           (process-result [{:keys [status] :as result}]
             (ex/try!
              (case status
@@ -173,7 +175,7 @@
                nil)))
 
           (run-task-loop [task-id]
-            (loop [result (run-task task-id)]
+            (loop [result (run-task! cfg task-id)]
               (when-let [cause (process-result result)]
                 (if (or (db/connection-error? cause)
                         (db/serialization-error? cause))

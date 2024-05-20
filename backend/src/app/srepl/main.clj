@@ -192,7 +192,6 @@
 ;; NOTIFICATIONS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
 (defn notify!
   [{:keys [::mbus/msgbus ::db/pool]} & {:keys [dest code message level]
                                         :or {code :generic level :info}
@@ -473,6 +472,83 @@
           (l/dbg :hint "process:end"
                  :rollback rollback?
                  :elapsed elapsed))))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; RESTORE DELETED OBJECTS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn restore-deleted-team!
+  "Mark a team and all related objects as not deleted"
+  [team-id]
+  (let [team-id (h/parse-uuid team-id)]
+    (db/tx-run! main/system
+                (fn [{:keys [::db/conn]}]
+                  (db/update! conn :team-font-variant
+                              {:deleted-at nil}
+                              {:team-id team-id})
+
+                  (doseq [project (db/update! conn :project
+                                              {:deleted-at nil}
+                                              {:team-id team-id}
+                                              {::db/return-keys [:id]
+                                               ::db/many true})]
+
+                    (doseq [file (db/update! conn :file
+                                             {:deleted-at nil
+                                              :has-media-trimmed false}
+                                             {:project-id (:id project)}
+                                             {::db/return-keys [:id]
+                                              ::db/many true})]
+
+                      ;; Fragments are not handled here because they
+                      ;; use the database cascade operation and they
+                      ;; are not marked for deletion with objects-gc
+                      ;; task
+
+                      (db/update! conn :file-media-object
+                                  {:deleted-at nil}
+                                  {:file-id (:id file)})
+
+                      ;; Mark thumbnails to be deleted
+                      (db/update! conn :file-thumbnail
+                                  {:deleted-at nil}
+                                  {:file-id (:id file)})
+
+                      (db/update! conn :file-tagged-object-thumbnail
+                                  {:deleted-at nil}
+                                  {:file-id (:id file)})))))))
+
+
+(defn restore-deleted-project!
+  "Mark a project and all related objects as not deleted"
+  [project-id]
+  (let [project-id (h/parse-uuid project-id)]
+    (db/tx-run! main/system
+                (fn [{:keys [::db/conn]}]
+                  (doseq [file (db/update! conn :file
+                                           {:deleted-at nil
+                                            :has-media-trimmed false}
+                                           {:project-id project-id}
+                                           {::db/return-keys [:id]
+                                            ::db/many true})]
+
+                    ;; Fragments are not handled here because they use
+                    ;; the database cascade operation and they are not
+                    ;; marked for deletion with objects-gc task
+
+                    (db/update! conn :file-media-object
+                                {:deleted-at nil}
+                                {:file-id (:id file)})
+
+                    ;; Mark thumbnails to be deleted
+                    (db/update! conn :file-thumbnail
+                                {:deleted-at nil}
+                                {:file-id (:id file)})
+
+                    (db/update! conn :file-tagged-object-thumbnail
+                                {:deleted-at nil}
+                                {:file-id (:id file)}))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MISC
