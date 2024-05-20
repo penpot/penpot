@@ -101,7 +101,7 @@
       (when open?
         [:& cmm/asset-section-block {:role :content}
          [:div {:class (stl/css :token-pills-wrapper)}
-          (for [token tokens]
+          (for [token (sort-by :modified-at tokens)]
             [:& token-pill
              {:key (:id token)
               :token token
