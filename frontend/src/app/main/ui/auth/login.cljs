@@ -158,7 +158,7 @@
     [:*
      (when-let [message @error]
        [:& context-notification
-        {:type :warning
+        {:type :error
          :content message
          :data-test "login-banner"
          :role "alert"}])
