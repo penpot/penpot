@@ -47,8 +47,9 @@
 
   (cr/add-properties!
    (LibraryColorProxy. file-id id)
-   {:name "$file" :enumerable false}
-   {:name "$id" :enumerable false}
+   {:name "$id" :enumerable false :get (constantly id)}
+   {:name "$file" :enumerable false :get (constantly file-id)}
+
    {:name "id" :get (fn [_] (dm/str id))}
 
    {:name "name"
@@ -76,8 +77,8 @@
 
   (cr/add-properties!
    (LibraryTypographyProxy. file-id id)
-   {:name "$file" :enumerable false}
-   {:name "$id" :enumerable false}
+   {:name "$id" :enumerable false :get (constantly id)}
+   {:name "$file" :enumerable false :get (constantly file-id)}
    {:name "id" :get (fn [_] (dm/str id))}
    {:name "name"
     :get #(-> % u/proxy->library-typography :name)}))
@@ -92,8 +93,8 @@
 
   (cr/add-properties!
    (LibraryComponentProxy. file-id id)
-   {:name "$file" :enumerable false}
-   {:name "$id" :enumerable false}
+   {:name "$id" :enumerable false :get (constantly id)}
+   {:name "$file" :enumerable false :get (constantly file-id)}
    {:name "id" :get (fn [_] (dm/str id))}
    {:name "name"
     :get #(-> % u/proxy->library-component :name)}))
@@ -107,7 +108,7 @@
 
   (cr/add-properties!
    (Library. file-id)
-   {:name "$file" :enumerable false}
+   {:name "$file" :enumerable false :get (constantly file-id)}
 
    {:name "id"
     :get #(-> % u/proxy->file :id str)}

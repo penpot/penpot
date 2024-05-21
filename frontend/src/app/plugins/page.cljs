@@ -40,8 +40,8 @@
   [file-id id]
   (crc/add-properties!
    (PageProxy. file-id id)
-   {:name "$file" :enumerable false}
-   {:name "$id" :enumerable false}
+   {:name "$id" :enumerable false :get (constantly id)}
+   {:name "$file" :enumerable false :get (constantly file-id)}
 
    {:name "id"
     :get #(dm/str (obj/get % "$id"))}
