@@ -157,7 +157,9 @@
              token (let [backspace? (kbd/backspace? event)
                          value (-> event dom/get-target dom/get-value)
                          caret-at-beginning? (= 0 (.. event -target -selectionStart))]
-                     (set-token-value! value)
+                     (cond
+                       (and backspace? caret-at-beginning?) (set-value "")
+                       :else (set-token-value! value))
                      (js/console.log "backspace?" caret-at-beginning? (.. event -target)))
              is-open? (let [up? (kbd/up-arrow? event)
                             down? (kbd/down-arrow? event)]
