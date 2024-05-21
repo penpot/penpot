@@ -16,7 +16,11 @@
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.tokens.core :as wtc]
    [app.util.dom :as dom]
+   [okulary.core :as l]
    [rumext.v2 :as mf]))
+
+(def lens:token-type-open-status
+  (l/derived (l/in [:workspace-tokens :open-status]) st/state))
 
 (mf/defc token-pill
   {::mf/wrap-props false}
@@ -53,7 +57,8 @@
 
 (mf/defc token-component
   [{:keys [type tokens selected-shapes token-type-props]}]
-  (let [open? (mf/use-state false)
+  (let [open? (mf/deref (-> (l/key type)
+                            (l/derived lens:token-type-open-status)))
         {:keys [modal attributes title]} token-type-props
 
         on-context-menu (mf/use-fn
@@ -66,8 +71,7 @@
 
         on-toggle-open-click (mf/use-fn
                               (mf/deps open? tokens)
-                              #(when (seq tokens)
-                                 (swap! open? not)))
+                              #(st/emit! (dt/set-token-type-section-open type (not open?))))
         on-popover-open-click (mf/use-fn
                                (fn [event]
                                  (let [{:keys [key fields]} modal]
@@ -93,7 +97,7 @@
 
                             :title title
                             :assets-count tokens-count
-                            :open? @open?}
+                            :open? open?}
       [:& cmm/asset-section-block {:role :title-button}
        [:button {:class (stl/css :action-button)
                  :on-click on-popover-open-click}
