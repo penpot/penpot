@@ -104,6 +104,7 @@
 
 (defn- persist-commit
   [commit-id]
+  (js/console.log "commit-id" commit-id)
   (ptk/reify ::persist-commit
     ptk/WatchEvent
     (watch [_ state _]
@@ -120,6 +121,8 @@
                         :changes (vec changes)
                         :features features}]
 
+          ;; 🔥
+          #_(rx/empty)
           (->> (rp/cmd! :update-file params)
                (rx/mapcat (fn [{:keys [revn lagged] :as response}]
                             (log/debug :hint "changes persisted" :commit-id (dm/str commit-id) :lagged (count lagged))

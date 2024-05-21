@@ -49,7 +49,7 @@ export class WorkspacePage extends BaseWebSocketPage {
 
   #ws = null;
 
-  constructor(page) {
+  constructor(page, features) {
     super(page);
     this.pageName = page.getByTestId("page-name");
     this.presentUserListItems = page

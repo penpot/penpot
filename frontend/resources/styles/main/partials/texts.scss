@@ -1,3 +1,8 @@
+/*
+  DEPRECATED!
+  These  styles should be removed when the new-editor
+  is fully functional.
+*/
 .text-editor,
 .rich-text {
   color: var(--app-black);
@@ -6,11 +11,19 @@
 
   div {
     line-height: inherit;
-    user-select: text;
+    user-select: auto;
   }
 
   span {
+    line-break: auto;
     line-height: inherit;
+  }
+
+  &.v2 {
+    outline: none;
+    user-select: auto;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
   }
 }
 

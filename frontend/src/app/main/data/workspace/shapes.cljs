@@ -62,6 +62,9 @@
              objects   (wsh/lookup-page-objects state page-id)
              ids       (into [] (filter some?) ids)
 
+             update-text-ids
+             (filter #(= (:type (get objects %)) :text) ids)
+
              update-layout-ids
              (->> ids
                   (map (d/getf objects))
@@ -82,6 +85,7 @@
                            (pcb/set-undo-group undo-group)))
 
              changes (add-undo-group changes state)]
+
          (rx/concat
           (if (seq (:redo-changes changes))
             (let [changes (cond-> changes reg-objects? (pcb/resize-parents ids))]
@@ -91,6 +95,10 @@
           ;; Update layouts for properties marked
           (if (d/not-empty? update-layout-ids)
             (rx/of (ptk/data-event :layout/update {:ids update-layout-ids}))
+            (rx/empty))
+
+          (if (d/not-empty? update-text-ids)
+            (rx/of (ptk/data-event :text-layout/update {:ids update-text-ids}))
             (rx/empty))))))))
 
 (defn add-shape

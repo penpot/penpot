@@ -65,6 +65,7 @@
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.workspace.text.layout :as dwtl]
    [app.main.data.workspace.thumbnails :as dwth]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
@@ -162,7 +163,8 @@
         (->> (rx/concat
               ;; Initialize notifications
               (rx/of (dwn/initialize team-id file-id)
-                     (dwsl/initialize))
+                     (dwsl/initialize)
+                     (dwtl/initialize))
 
               ;; Load team fonts. We must ensure custom fonts are
               ;; fully loadad before mark workspace as initialized
@@ -396,7 +398,8 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of (dwn/finalize file-id)
-             (dwsl/finalize)))))
+             (dwsl/finalize)
+             (dwtl/finalize)))))
 
 (declare go-to-page)
 (declare ^:private preload-data-uris)

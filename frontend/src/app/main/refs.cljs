@@ -184,6 +184,9 @@
 (def options-mode-global
   (l/derived :options-mode workspace-global))
 
+(def default-font
+  (l/derived :default-font workspace-global))
+
 (def inspect-expanded
   (l/derived :inspect-expanded workspace-local))
 
@@ -353,6 +356,9 @@
 
 (def workspace-editor-state
   (l/derived :workspace-editor-state st/state))
+
+(def workspace-new-editor-state
+  (l/derived :workspace-new-editor-state st/state))
 
 (def workspace-modifiers
   (l/derived :workspace-modifiers st/state =))

@@ -11,6 +11,7 @@
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
+   [app.main.store :as st]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu]]
@@ -48,9 +49,12 @@
         parents (mf/deref parents-by-ids-ref)
 
         state-map    (mf/deref refs/workspace-editor-state)
+        v2-state-map (mf/deref refs/workspace-new-editor-state)
+
         shared-libs  (mf/deref refs/workspace-libraries)
 
         editor-state (get state-map (:id shape))
+        v2-editor-state (get v2-state-map (:id shape))
 
         layer-values (select-keys shape layer-attrs)
 
@@ -81,7 +85,16 @@
                       {:editor-state editor-state
                        :shape shape
                        :attrs txt/text-node-attrs}))
-        layout-item-values (select-keys shape layout-item-attrs)]
+
+        layout-item-values (select-keys shape layout-item-attrs)
+
+        fill-values (if (and (= st/*text-editor* "v2") (some? v2-editor-state))
+                      (d/merge fill-values (select-keys v2-editor-state fill-attrs))
+                      fill-values)
+
+        text-values (if (and (= st/*text-editor* "v2") (some? v2-editor-state))
+                      (d/merge text-values v2-editor-state)
+                      text-values)]
 
     [:*
      [:& layer-menu {:ids ids

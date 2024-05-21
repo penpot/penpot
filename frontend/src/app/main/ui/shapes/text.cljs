@@ -36,4 +36,4 @@
     ;; Old components can have texts without position data that must be rendered via foreign key
     (cond
       (some? position-data) [:> svg/text-shape props]
-      is-component?             [:> fo/text-shape props])))
+      is-component?         [:> fo/text-shape props])))

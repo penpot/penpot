@@ -1,0 +1,77 @@
+:global {
+  .selection-imposter-rect {
+    position: absolute;
+    background-color: var(--text-editor-selection-background-color);
+  }
+}
+
+.text-editor-container {
+  height: 100%;
+  position: relative;
+}
+
+.text-editor-selection-imposter {
+  position: relative;
+}
+
+.text-editor-content {
+  // We need this variable to convert from a pixel based line-height to
+  // to a unit based one.
+  // FIXME: 🔥
+  --line-height-divisor: 14;
+
+  height: 100%;
+  font-family: sourcesanspro;
+
+  outline: none;
+  user-select: text;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+
+  caret-color: black;
+
+  color: transparent;
+
+  [data-itype="paragraph"] {
+    line-height: inherit;
+    user-select: text;
+
+    white-space: pre;
+    margin: 0px;
+    /* font-size: 0px; */
+  }
+
+  [data-itype="inline"] {
+    line-break: auto;
+    line-height: inherit;
+
+    white-space: break-spaces;
+    text-rendering: geometricPrecision;
+    overflow-wrap: initial;
+    caret-color: rgb(0, 0, 0);
+  }
+
+  [data-itype="root"] {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+// Vertical align.
+.align-top {
+  [data-itype="root"] {
+    justify-content: start;
+  }
+}
+
+.align-center {
+  [data-itype="root"] {
+    justify-content: center;
+  }
+}
+
+.align-bottom {
+  [data-itype="root"] {
+    justify-content: end;
+  }
+}

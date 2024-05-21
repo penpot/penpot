@@ -67,6 +67,7 @@
 (sm/register! ::position-data
   [:vector {:min 1 :gen/max 2}
    [:map
+    [:key {:optional true} :string]
     [:x ::sm/safe-number]
     [:y ::sm/safe-number]
     [:width ::sm/safe-number]

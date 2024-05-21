@@ -397,7 +397,7 @@
         handle-change
         (fn [type]
           (if (= text-transform type)
-            (on-change {:text-transform "unset"})
+            (on-change {:text-transform "none"})
             (on-change {:text-transform type}))
           (when (some? on-blur) (on-blur)))]
 
@@ -420,10 +420,9 @@
 
 (mf/defc text-options
   {::mf/wrap-props false}
-  [{:keys [ids editor values on-change on-blur show-recent]}]
+  [{:keys [ids values on-change on-blur show-recent]}]
   (let [full-size-selector? (and show-recent (= (mf/use-ctx ctx/sidebar) :right))
-        opts #js {:editor editor
-                  :ids ids
+        opts #js {:ids ids
                   :values values
                   :on-change on-change
                   :on-blur on-blur
@@ -438,7 +437,7 @@
 
 (mf/defc typography-advanced-options
   {::mf/wrap [mf/memo]}
-  [{:keys [visible?  typography editable? name-input-ref on-close on-change on-name-blur local? navigate-to-library on-key-down]}]
+  [{:keys [visible? typography editable? name-input-ref on-close on-change on-name-blur local? navigate-to-library on-key-down]}]
   (let [ref       (mf/use-ref nil)
         font-data (fonts/get-font-data (:font-id typography))]
     (fonts/ensure-loaded! (:font-id typography))

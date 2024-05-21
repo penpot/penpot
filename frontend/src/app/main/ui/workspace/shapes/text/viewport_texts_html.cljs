@@ -29,6 +29,7 @@
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
+;;
 (defn fix-position
   [shape]
   (if-let [modifiers (:modifiers shape)]
@@ -46,6 +47,7 @@
           (dissoc :modifiers)))
     shape))
 
+;; Updates the content of the editor-state.
 (defn- update-with-editor-state
   "Updates the shape with the current state in the editor"
   [shape editor-state]
@@ -60,6 +62,7 @@
       (and (some? shape) (some? editor-content))
       (assoc :content (d/txt-merge content editor-content)))))
 
+;; Updates a text shape position.
 (defn- update-text-shape
   [{:keys [grow-type id migrate] :as shape} node]
   ;; Check if we need to update the size because it's auto-width or auto-height
@@ -83,6 +86,8 @@
 
     (st/emit! (dwt/clean-text-modifier id))))
 
+;; Calculates position data based on grow-type
+;; and text modifiers.
 (defn- update-text-modifier
   [{:keys [grow-type id] :as shape} node]
   (->> (tsp/calc-position-data id)
@@ -103,6 +108,11 @@
                      props))))
        (p/fmap #(st/emit! (dwt/update-text-modifier id %)))))
 
+;; This component renders a text-shape
+;; When the ref is created and rendered, then
+;; the handle-update callback is called and this
+;; calls the on-update prop, this usually tends
+;; to call the "calc-position-data".
 (mf/defc text-container
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
@@ -122,6 +132,9 @@
                          :shape shape
                          :grow-type (:grow-type shape)}]))
 
+;; Check if grow-type, content, x, y, width or height
+;; are equal between two shapes.
+;; If they're equal returns true.
 (defn text-properties-equal?
   [shape other]
   (or (identical? shape other)
@@ -134,6 +147,7 @@
            (mth/close? (dm/get-prop shape :width) (dm/get-prop other :width))
            (mth/close? (dm/get-prop shape :height) (dm/get-prop other :height)))))
 
+;; This component renders any shape that has changes.
 (mf/defc text-changes-renderer
   {::mf/wrap-props false}
   [props]
@@ -182,6 +196,8 @@
                            :shape shape
                            :on-update handle-update-shape}])]))
 
+;; This component renders any text shape that is
+;; being modified.
 (mf/defc text-modifiers-renderer
   {::mf/wrap-props false}
   [props]
@@ -214,6 +230,8 @@
                            :shape shape
                            :on-update handle-update-shape}])]))
 
+;; This component only renders the currently edited
+;; text shape.
 (mf/defc viewport-text-editing
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
@@ -255,6 +273,7 @@
     [:& text-container {:shape shape
                         :on-update handle-update-shape}]))
 
+;; Check if props of `viewport-texts` are identical.
 (defn check-props
   [new-props old-props]
   (and (identical? (unchecked-get new-props "objects")
@@ -264,6 +283,8 @@
        (= (unchecked-get new-props "edition")
           (unchecked-get old-props "edition"))))
 
+;; This component renders all the texts that are being
+;; edited, modified or changed.
 (mf/defc viewport-texts
   {::mf/wrap-props false
    ::mf/wrap [#(mf/memo' % check-props)]}

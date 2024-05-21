@@ -16,13 +16,15 @@
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.refs :as refs]
+   [app.main.store :as st]
    [app.main.ui.context :as ctx]
    [app.main.ui.flex-controls :as mfc]
    [app.main.ui.hooks :as ui-hooks]
    [app.main.ui.measurements :as msr]
    [app.main.ui.shapes.export :as use]
    [app.main.ui.workspace.shapes :as shapes]
-   [app.main.ui.workspace.shapes.text.editor :as editor]
+   [app.main.ui.workspace.shapes.text.editor :as editor-v1]
+   [app.main.ui.workspace.shapes.text.new-editor :as editor-v2]
    [app.main.ui.workspace.shapes.text.text-edition-outline :refer [text-edition-outline]]
    [app.main.ui.workspace.shapes.text.viewport-texts-html :as stvh]
    [app.main.ui.workspace.viewport.actions :as actions]
@@ -280,19 +282,27 @@
     [:div {:class (stl/css :viewport) :style #js {"--zoom" zoom} :data-testid "viewport"}
      [:& top-bar/top-bar {:layout layout}]
      [:div {:class (stl/css :viewport-overlays)}
+      ;; TODO: Borrar esto una vez que el layout se realice con la clase de TextLayout
+      ;; por completo.
+
       ;; The behaviour inside a foreign object is a bit different that in plain HTML so we wrap
-      ;; inside a foreign object "dummy" so this awkward behaviour is take into account
-      [:svg {:style {:top 0 :left 0 :position "fixed" :width "100%" :height "100%" :opacity (when-not (dbg/enabled? :html-text) 0)}}
-       [:foreignObject {:x 0 :y 0 :width "100%" :height "100%"}
-        [:div {:style {:pointer-events (when-not (dbg/enabled? :html-text) "none")
+      ;; inside a foreign object "dummy" so this awkward behaviour is take into account.
+
+      ;; NOTE: This is necessary for the "v1" version of the text editor, `stvh/viewport-texts`
+      ;; is a component that re-renders the content of the text editor so we can compute
+      ;; the text layout.
+      (when (= st/*text-editor* "v1")
+        [:svg {:style {:top 0 :left 0 :position "fixed" :width "100%" :height "100%" :opacity (when-not (dbg/enabled? :html-text) 0)}}
+         [:foreignObject {:x 0 :y 0 :width "100%" :height "100%"}
+          [:div {:style {:pointer-events (when-not (dbg/enabled? :html-text) "none")
                        ;; some opacity because to debug auto-width events will fill the screen
-                       :opacity 0.6}}
-         [:& stvh/viewport-texts
-          {:key (dm/str "texts-" page-id)
-           :page-id page-id
-           :objects objects
-           :modifiers modifiers
-           :edition edition}]]]]
+                         :opacity 0.6}}
+           [:& stvh/viewport-texts
+            {:key (dm/str "texts-" page-id)
+             :page-id page-id
+             :objects objects
+             :modifiers modifiers
+             :edition edition}]]]])
 
       (when show-comments?
         [:& comments/comments-layer {:vbox vbox
@@ -388,8 +398,11 @@
 
       [:g {:style {:pointer-events (if disable-events? "none" "auto")}}
        (when show-text-editor?
-         [:& editor/text-editor-svg {:shape editing-shape
-                                     :modifiers modifiers}])
+         (if (= st/*text-editor* "v2")
+           [:& editor-v2/text-editor {:shape editing-shape
+                                      :modifiers modifiers}]
+           [:& editor-v1/text-editor-svg {:shape editing-shape
+                                          :modifiers modifiers}]))
 
        (when show-frame-outline?
          (let [outlined-frame-id
