@@ -57,6 +57,7 @@
 /frontend/package-lock.json
 /frontend/resources/fonts/experiments
 /frontend/resources/public/*
+/frontend/storybook-static/
 /frontend/target/
 /other/
 /scripts/
