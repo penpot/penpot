@@ -75,6 +75,11 @@
         min-val (get params :min)
         max-val (get params :max)
 
+        multiple? (= :multiple value)
+        token (when-not multiple?
+                (-> (filter :selected? options) (first)))
+        _ (js/console.log "token" token)
+
         emit-blur? (mf/use-ref nil)
         select-wrapper-ref (mf/use-ref)
 
@@ -187,21 +192,31 @@
 
     [:div {:class (dm/str class " " (stl/css :editable-select))
            :ref on-node-load}
-     (if (= type "number")
-       [:> numeric-input* {:value (or current-value "")
-                           :className input-class
-                           :on-change set-value
-                           :on-focus handle-focus
-                           :on-blur handle-blur
-                           :placeholder placeholder}]
-       [:input {:value (or current-value "")
-                :class input-class
-                :on-change handle-change-input
-                :on-key-down handle-key-down
-                :on-focus handle-focus
-                :on-blur handle-blur
-                :placeholder placeholder
-                :type type}])
+     (when token
+       [:div {:class (stl/css :token-pill)}
+        (:label token)])
+     (cond
+       token [:input {:value ""
+                      :class input-class
+                      :on-change handle-change-input
+                      :on-key-down handle-key-down
+                      :on-focus handle-focus
+                      :on-blur handle-blur
+                      :type type}]
+       (= type "number") [:> numeric-input* {:value (or current-value "")
+                                             :className input-class
+                                             :on-change set-value
+                                             :on-focus handle-focus
+                                             :on-blur handle-blur
+                                             :placeholder placeholder}]
+       :else [:input {:value (or current-value "")
+                      :class input-class
+                      :on-change handle-change-input
+                      :on-key-down handle-key-down
+                      :on-focus handle-focus
+                      :on-blur handle-blur
+                      :placeholder placeholder
+                      :type type}])
 
      (when (seq options)
        [:span {:class (stl/css :dropdown-button)
