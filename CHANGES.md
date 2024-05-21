@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.0.3
+
+### :bug: Bugs fixed
+
+- Fix chrome scrollbar styling [Taiga Issue #7852](https://tree.taiga.io/project/penpot/issue/7852)
+
 ## 2.0.2
 
 ### :sparkles: Enhancements
