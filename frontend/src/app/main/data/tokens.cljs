@@ -155,6 +155,13 @@
      shape-after-token-3-is-applied)
   nil)
 
+(defn set-token-type-section-open
+  [token-type open?]
+  (ptk/reify ::set-token-type-section-open
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-tokens :open-status token-type] open?))))
+
 ;; Token Context Menu Functions -------------------------------------------------
 
 (defn show-token-context-menu
