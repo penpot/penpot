@@ -28,7 +28,7 @@
   [id]
   (crc/add-properties!
    (FileProxy. id)
-   {:name "$id" :enumerable false}
+   {:name "$id" :enumerable false :get (constantly id)}
 
    {:name "id"
     :get #(dm/str (obj/get % "$id"))}

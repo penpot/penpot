@@ -33,9 +33,9 @@
   [file-id page-id id]
   (-> (FlexLayout. file-id page-id id)
       (crc/add-properties!
-       {:name "$id" :enumerable false}
-       {:name "$file" :enumerable false}
-       {:name "$page" :enumerable false}
+       {:name "$id" :enumerable false :get (constantly id)}
+       {:name "$file" :enumerable false :get (constantly file-id)}
+       {:name "$page" :enumerable false :get (constantly page-id)}
 
        {:name "dir"
         :get #(-> % proxy->shape :layout-flex-dir d/name)
@@ -154,9 +154,9 @@
   [file-id page-id id]
   (-> (LayoutChildProxy. file-id page-id id)
       (crc/add-properties!
-       {:name "$id" :enumerable false}
-       {:name "$file" :enumerable false}
-       {:name "$page" :enumerable false}
+       {:name "$id" :enumerable false :get (constantly id)}
+       {:name "$file" :enumerable false :get (constantly file-id)}
+       {:name "$page" :enumerable false :get (constantly page-id)}
 
        {:name "absolute"
         :get #(-> % proxy->shape :layout-item-absolute boolean)
