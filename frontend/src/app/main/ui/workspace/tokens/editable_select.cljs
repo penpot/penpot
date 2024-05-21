@@ -172,7 +172,7 @@
     (mf/use-effect
      (mf/deps value current-value)
      #(when (not= (str value) current-value)
-        (reset! state* {:current-value value})))
+        (swap! state* assoc :current-value value)))
 
     (mf/with-effect [is-open?]
       (let [wrapper-node (mf/ref-val select-wrapper-ref)
