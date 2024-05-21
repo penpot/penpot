@@ -63,6 +63,7 @@
   (let [state* (mf/use-state {:id (uuid/next)
                               :is-open? false
                               :current-value value
+                              :token-value nil
                               :current-item nil
                               :top nil
                               :left nil
@@ -98,9 +99,15 @@
                                options)
                           (into {}))
 
+        set-token-value!
+        (fn [value]
+          (swap! state* assoc :token-value value))
+
         set-value
         (fn [value]
-          (swap! state* assoc :current-value value)
+          (swap! state* assoc
+                 :current-value value
+                 :token-value value)
           (when on-change (on-change value)))
 
         select-item
@@ -114,6 +121,7 @@
                  {:keys [value] :as item} (get labels-map label)]
              (swap! state* assoc
                     :current-value value
+                    :token-value nil
                     :current-item item)
              (when on-change (on-change item))
              (when on-blur (on-blur)))))
@@ -143,9 +151,14 @@
 
         handle-key-down
         (mf/use-fn
-         (mf/deps set-value is-open?)
-         (fn [event]
+         (mf/deps set-value is-open? token)
+         (fn [^js event]
            (cond
+             token (let [backspace? (kbd/backspace? event)
+                         value (-> event dom/get-target dom/get-value)
+                         caret-at-beginning? (= 0 (.. event -target -selectionStart))]
+                     (set-token-value! value)
+                     (js/console.log "backspace?" caret-at-beginning? (.. event -target)))
              is-open? (let [up? (kbd/up-arrow? event)
                             down? (kbd/down-arrow? event)]
                         (dom/prevent-default event)
@@ -196,7 +209,7 @@
        [:div {:class (stl/css :token-pill)}
         (:label token)])
      (cond
-       token [:input {:value ""
+       token [:input {:value (or (:token-value state) "")
                       :class input-class
                       :on-change handle-change-input
                       :on-key-down handle-key-down
