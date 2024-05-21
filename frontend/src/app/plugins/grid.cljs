@@ -13,7 +13,7 @@
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.store :as st]
-   [app.plugins.utils :as utils :refer [proxy->shape]]
+   [app.plugins.utils :as utils :refer [proxy->shape locate-shape]]
    [app.util.object :as obj]
    [potok.v2.core :as ptk]))
 
@@ -196,3 +196,93 @@
           (let [id (obj/get self "$id")]
             (when (us/safe-int? value)
               (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p4 value}})))))})))
+
+(deftype GridCellProxy [$file $page $id])
+
+(defn layout-cell-proxy
+  [file-id page-id id]
+  (letfn [(locate-cell [_]
+            (let [shape (locate-shape file-id page-id id)
+                  parent (locate-shape file-id page-id (:parent-id shape))]
+              (ctl/get-cell-by-shape-id parent id)))]
+
+    (-> (GridCellProxy. file-id page-id id)
+        (crc/add-properties!
+         {:name "$id" :enumerable false}
+         {:name "$file" :enumerable false}
+         {:name "$page" :enumerable false}
+
+         {:name "row"
+          :get #(-> % locate-cell :row)
+          :set
+          (fn [self value]
+            (let [shape (proxy->shape self)
+                  cell (locate-cell self)]
+              (when (us/safe-int? value)
+                (st/emit! (dwsl/update-grid-cell-position (:parent-id shape) (:id cell) {:row value})))))}
+
+         {:name "rowSpan"
+          :get #(-> % locate-cell :row-span)
+          :set
+          (fn [self value]
+            (let [shape (proxy->shape self)
+                  cell (locate-cell self)]
+              (when (us/safe-int? value)
+                (st/emit! (dwsl/update-grid-cell-position (:parent-id shape) (:id cell) {:row-span value})))))}
+
+         {:name "column"
+          :get #(-> % locate-cell :column)
+          :set
+          (fn [self value]
+            (let [shape (proxy->shape self)
+                  cell (locate-cell self)]
+              (when (us/safe-int? value)
+                (st/emit! (dwsl/update-grid-cell-position (:parent-id shape) (:id cell) {:column value})))))}
+
+         {:name "columnSpan"
+          :get #(-> % locate-cell :column-span)
+          :set
+          (fn [self value]
+            (let [shape (proxy->shape self)
+                  cell (locate-cell self)]
+              (when (us/safe-int? value)
+                (st/emit! (dwsl/update-grid-cell-position (:parent-id shape) (:id cell) {:column-span value})))))}
+
+         {:name "areaName"
+          :get #(-> % locate-cell :area-name)
+          :set
+          (fn [self value]
+            (let [shape (proxy->shape self)
+                  cell (locate-cell self)]
+              (when (string? value)
+                (st/emit! (dwsl/update-grid-cells (:parent-id shape) #{(:id cell)} {:area-name value})))))}
+
+         {:name "position"
+          :get #(-> % locate-cell :position d/name)
+          :set
+          (fn [self value]
+            (let [shape (proxy->shape self)
+                  cell (locate-cell self)
+                  value (keyword value)]
+              (when (contains? ctl/grid-position-types value)
+                (st/emit! (dwsl/change-cells-mode (:parent-id shape) #{(:id cell)} value)))))}
+
+         {:name "alignSelf"
+          :get #(-> % locate-cell :align-self d/name)
+          :set
+          (fn [self value]
+            (let [shape (proxy->shape self)
+                  value (keyword value)
+                  cell (locate-cell self)]
+              (when (contains? ctl/grid-cell-align-self-types value)
+                (st/emit! (dwsl/update-grid-cells (:parent-id shape) #{(:id cell)} {:align-self value})))))}
+
+         {:name "justifySelf"
+          :get #(-> % locate-cell :justify-self d/name)
+          :set
+          (fn [self value]
+            (let [shape (proxy->shape self)
+                  value (keyword value)
+                  cell (locate-cell self)]
+              (when (contains? ctl/grid-cell-justify-self-types value)
+                (st/emit! (dwsl/update-grid-cells (:parent-id shape) #{(:id cell)} {:justify-self value})))))}))))

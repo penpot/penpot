@@ -13,14 +13,16 @@
    [app.common.spec :as us]
    [app.common.text :as txt]
    [app.common.types.shape :as cts]
+   [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.changes :as dwc]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.store :as st]
+   [app.plugins.flex :as flex]
    [app.plugins.grid :as grid]
-   [app.plugins.utils :as utils :refer [locate-shape proxy->shape array-to-js]]
+   [app.plugins.utils :as utils :refer [locate-objects locate-shape proxy->shape array-to-js]]
    [app.util.object :as obj]))
 
 (declare shape-proxy)
@@ -62,7 +64,8 @@
   ;; Only for frames
   (addFlexLayout
     [_]
-    (st/emit! (dwsl/create-layout-from-id $id :flex :from-frame? true :calculate-params? false)))
+    (st/emit! (dwsl/create-layout-from-id $id :flex :from-frame? true :calculate-params? false))
+    (grid/grid-layout-proxy $file $page $id))
 
   (addGridLayout
     [_]
@@ -309,7 +312,27 @@
            :set (fn [self value]
                   (let [id (obj/get self "$id")
                         value (mapv #(utils/from-js %) value)]
-                    (st/emit! (dwc/update-shapes [id] #(assoc % :strokes value)))))})
+                    (st/emit! (dwc/update-shapes [id] #(assoc % :strokes value)))))}
+
+          {:name "layoutChild"
+           :get
+           (fn [self]
+             (let [file-id (obj/get self "$file")
+                   page-id (obj/get self "$page")
+                   id (obj/get self "$id")
+                   objects (locate-objects file-id page-id)]
+               (when (ctl/any-layout-immediate-child-id? objects id)
+                 (flex/layout-child-proxy file-id page-id id))))}
+
+          {:name "layoutCell"
+           :get
+           (fn [self]
+             (let [file-id (obj/get self "$file")
+                   page-id (obj/get self "$page")
+                   id (obj/get self "$id")
+                   objects (locate-objects file-id page-id)]
+               (when (ctl/grid-layout-immediate-child-id? objects id)
+                 (grid/layout-cell-proxy file-id page-id id))))})
 
          (cond-> (or (cfh/frame-shape? data) (cfh/group-shape? data) (cfh/svg-raw-shape? data) (cfh/bool-shape? data))
            (crc/add-properties!
@@ -334,21 +357,40 @@
                      (when (= :grid layout)
                        (grid/grid-layout-proxy file-id page-id id))))}
 
+                {:name "flex"
+                 :get
+                 (fn [self]
+                   (let [layout (-> self proxy->shape :layout)
+                         file-id (obj/get self "$file")
+                         page-id (obj/get self "$page")
+                         id (obj/get self "$id")]
+                     (when (= :flex layout)
+                       (flex/flex-layout-proxy file-id page-id id))))}
+
                 {:name "guides"
                  :get #(-> % proxy->shape :grids array-to-js)
                  :set (fn [self value]
                         (let [id (obj/get self "$id")
                               value (mapv #(utils/from-js %) value)]
-                          (st/emit! (dwc/update-shapes [id] #(assoc % :grids value)))))})
+                          (st/emit! (dwc/update-shapes [id] #(assoc % :grids value)))))}
 
-               ;; TODO: Flex properties
-               #_(crc/add-properties!
-                  {:name "flex"
-                   :get
-                   (fn [self]
-                     (let [layout (-> self proxy->shape :layout)]
-                       (when (= :flex layout)
-                         (flex-layout-proxy (proxy->shape self)))))})))
+                {:name "horizontalSizing"
+                 :get #(-> % proxy->shape :layout-item-h-sizing (d/nilv :fix) d/name)
+                 :set
+                 (fn [self value]
+                   (let [id (obj/get self "$id")
+                         value (keyword value)]
+                     (when (contains? #{:fix :auto} value)
+                       (st/emit! (dwsl/update-layout #{id} {:layout-item-h-sizing value})))))}
+
+                {:name "verticalSizing"
+                 :get #(-> % proxy->shape :layout-item-v-sizing (d/nilv :fix) d/name)
+                 :set
+                 (fn [self value]
+                   (let [id (obj/get self "$id")
+                         value (keyword value)]
+                     (when (contains? #{:fix :auto} value)
+                       (st/emit! (dwsl/update-layout #{id} {:layout-item-v-sizing value})))))})))
 
          (cond-> (not (cfh/frame-shape? data))
            (-> (obj/unset! "addGridLayout")

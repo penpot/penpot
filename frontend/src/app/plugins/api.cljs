@@ -154,4 +154,4 @@
    {:name "currentPage" :get #(.getPage ^js %)}
    {:name "selection" :get #(.getSelectedShapes ^js %)}
    {:name "viewport" :get #(.getViewport ^js %)}
-   {:name "library" :get (fn [_] (library/create-library-subcontext))}))
+   {:name "library" :get (fn [_] (library/library-subcontext))}))

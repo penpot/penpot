@@ -101,6 +101,7 @@
          (fn []
            (->> (http/send! {:method :get
                              :uri plugin-url
+                             :omit-default-headers true
                              :response-type :json})
                 (rx/map :body)
                 (rx/subs!
