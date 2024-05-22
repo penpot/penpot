@@ -153,9 +153,9 @@
                                        (swap! state* assoc :refocus? true))
                        replace-token-with-value? (do
                                                    (dom/prevent-default event)
-                                                   (set-token-value! nil)
                                                    (on-token-remove token)
-                                                   (handle-change-input event))
+                                                   (handle-change-input event)
+                                                   (set-token-value! nil))
                        :else (set-token-value! value)))
              is-open? (let [up? (kbd/up-arrow? event)
                             down? (kbd/down-arrow? event)]
