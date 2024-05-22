@@ -167,6 +167,7 @@
         (mf/use-fn
          (fn []
            (mf/set-ref-val! emit-blur? true)
+           (swap! state* assoc :token-value nil)
            (timers/schedule
             200
             (fn []
