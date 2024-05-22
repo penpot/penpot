@@ -28,7 +28,14 @@ body {
 
 * {
   box-sizing: border-box;
+  scrollbar-width: thin;
   // transition: all .4s ease;
+}
+
+@-moz-document url-prefix() {
+  * {
+    scrollbar-width: auto;
+  }
 }
 
 .global-zeroclipboard-container {
