@@ -126,4 +126,5 @@
                  ::border-radius
                  ::sizing
                  ::spacing
+                 ::rotation
                  ::dimensions))
