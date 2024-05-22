@@ -2,57 +2,57 @@ var An = (t, e, r) => {
   if (!e.has(t))
     throw TypeError("Cannot " + r);
 };
-var Re = (t, e, r) => (An(t, e, "read from private field"), r ? r.call(t) : e.get(t)), Mr = (t, e, r) => {
+var Se = (t, e, r) => (An(t, e, "read from private field"), r ? r.call(t) : e.get(t)), Lr = (t, e, r) => {
   if (e.has(t))
     throw TypeError("Cannot add the same private member more than once");
   e instanceof WeakSet ? e.add(t) : e.set(t, r);
 }, Fr = (t, e, r, n) => (An(t, e, "write to private field"), n ? n.call(t, r) : e.set(t, r), r);
-const E = globalThis, {
-  Array: Ps,
-  Date: ks,
+const x = globalThis, {
+  Array: Es,
+  Date: xs,
   FinalizationRegistry: vt,
-  Float32Array: Ts,
-  JSON: Is,
-  Map: Ae,
-  Math: As,
+  Float32Array: Ps,
+  JSON: ks,
+  Map: Ce,
+  Math: Ts,
   Number: io,
   Object: ln,
-  Promise: Cs,
-  Proxy: Sr,
-  Reflect: Ns,
+  Promise: Is,
+  Proxy: Er,
+  Reflect: As,
   RegExp: Be,
-  Set: St,
+  Set: Et,
   String: ie,
-  Symbol: Nt,
-  WeakMap: ke,
-  WeakSet: Et
+  Symbol: $t,
+  WeakMap: Te,
+  WeakSet: xt
 } = globalThis, {
   // The feral Error constructor is safe for internal use, but must not be
   // revealed to post-lockdown code in any compartment including the start
   // compartment since in V8 at least it bears stack inspection capabilities.
   Error: le,
-  RangeError: $s,
+  RangeError: Cs,
   ReferenceError: rt,
   SyntaxError: Wt,
   TypeError: v
 } = globalThis, {
-  assign: Er,
+  assign: xr,
   create: H,
   defineProperties: F,
   entries: te,
-  freeze: y,
-  getOwnPropertyDescriptor: ue,
+  freeze: g,
+  getOwnPropertyDescriptor: de,
   getOwnPropertyDescriptors: Je,
   getOwnPropertyNames: Ot,
   getPrototypeOf: B,
   is: Pr,
-  isFrozen: sl,
-  isSealed: al,
-  isExtensible: il,
+  isFrozen: nl,
+  isSealed: ol,
+  isExtensible: sl,
   keys: co,
   prototype: lo,
-  seal: cl,
-  preventExtensions: Os,
+  seal: al,
+  preventExtensions: $s,
   setPrototypeOf: uo,
   values: fo,
   fromEntries: Pt
@@ -61,11 +61,11 @@ const E = globalThis, {
   toStringTag: He,
   iterator: qt,
   matchAll: po,
-  unscopables: Rs,
-  keyFor: Ls,
-  for: ll
-} = Nt, { isInteger: Ms } = io, { stringify: mo } = Is, { defineProperty: Fs } = ln, M = (t, e, r) => {
-  const n = Fs(t, e, r);
+  unscopables: Ns,
+  keyFor: Os,
+  for: il
+} = $t, { isInteger: Rs } = io, { stringify: mo } = ks, { defineProperty: Ms } = ln, L = (t, e, r) => {
+  const n = Ms(t, e, r);
   if (n !== t)
     throw v(
       `Please report that the original defineProperty silently failed to set ${mo(
@@ -76,42 +76,42 @@ const E = globalThis, {
 }, {
   apply: oe,
   construct: cr,
-  get: Ds,
-  getOwnPropertyDescriptor: Us,
+  get: Ls,
+  getOwnPropertyDescriptor: Fs,
   has: ho,
-  isExtensible: js,
+  isExtensible: Ds,
   ownKeys: st,
-  preventExtensions: Zs,
-  set: go
-} = Ns, { isArray: gt, prototype: Te } = Ps, { prototype: kt } = Ae, { prototype: kr } = RegExp, { prototype: Kt } = St, { prototype: Oe } = ie, { prototype: Tr } = ke, { prototype: yo } = Et, { prototype: un } = Function, { prototype: vo } = Cs, zs = B(Uint8Array.prototype), { bind: Nn } = un, k = Nn.bind(Nn.call), se = k(lo.hasOwnProperty), Ve = k(Te.filter), nt = k(Te.forEach), Ir = k(Te.includes), Tt = k(Te.join), de = (
+  preventExtensions: Us,
+  set: yo
+} = As, { isArray: yt, prototype: Ie } = Es, { prototype: kt } = Ce, { prototype: kr } = RegExp, { prototype: Kt } = Et, { prototype: Re } = ie, { prototype: Tr } = Te, { prototype: go } = xt, { prototype: un } = Function, { prototype: vo } = Is, js = B(Uint8Array.prototype), { bind: $n } = un, k = $n.bind($n.call), se = k(lo.hasOwnProperty), Ve = k(Ie.filter), nt = k(Ie.forEach), Ir = k(Ie.includes), Tt = k(Ie.join), fe = (
   /** @type {any} */
-  k(Te.map)
-), Br = k(Te.pop), ae = k(Te.push), Gs = k(Te.slice), Bs = k(Te.some), _o = k(Te.sort), Hs = k(Te[qt]), Ce = k(kt.set), De = k(kt.get), Ar = k(kt.has), Vs = k(kt.delete), Ws = k(kt.entries), qs = k(kt[qt]), Cr = k(Kt.add);
+  k(Ie.map)
+), Br = k(Ie.pop), ae = k(Ie.push), Zs = k(Ie.slice), zs = k(Ie.some), _o = k(Ie.sort), Gs = k(Ie[qt]), $e = k(kt.set), De = k(kt.get), Ar = k(kt.has), Bs = k(kt.delete), Hs = k(kt.entries), Vs = k(kt[qt]), Cr = k(Kt.add);
 k(Kt.delete);
-const $n = k(Kt.forEach), dn = k(Kt.has), Ks = k(Kt[qt]), fn = k(kr.test), pn = k(kr.exec), Ys = k(kr[po]), bo = k(Oe.endsWith), Js = k(Oe.includes), Xs = k(Oe.indexOf);
-k(Oe.match);
+const Nn = k(Kt.forEach), dn = k(Kt.has), Ws = k(Kt[qt]), fn = k(kr.test), pn = k(kr.exec), qs = k(kr[po]), bo = k(Re.endsWith), Ks = k(Re.includes), Ys = k(Re.indexOf);
+k(Re.match);
 const lr = (
   /** @type {any} */
-  k(Oe.replace)
-), Qs = k(Oe.search), mn = k(Oe.slice), wo = k(Oe.split), xo = k(Oe.startsWith), ea = k(Oe[qt]), ta = k(Tr.delete), L = k(Tr.get), hn = k(Tr.has), ee = k(Tr.set), Nr = k(yo.add), Yt = k(yo.has), ra = k(un.toString), na = k(vo.catch), gn = (
+  k(Re.replace)
+), Js = k(Re.search), mn = k(Re.slice), wo = k(Re.split), So = k(Re.startsWith), Xs = k(Re[qt]), Qs = k(Tr.delete), M = k(Tr.get), hn = k(Tr.has), ee = k(Tr.set), $r = k(go.add), Yt = k(go.has), ea = k(un.toString), ta = k(vo.catch), yn = (
   /** @type {any} */
   k(vo.then)
-), oa = vt && k(vt.prototype.register);
+), ra = vt && k(vt.prototype.register);
 vt && k(vt.prototype.unregister);
-const yn = y(H(null)), We = (t) => ln(t) === t, vn = (t) => t instanceof le, So = eval, ye = Function, sa = () => {
+const gn = g(H(null)), We = (t) => ln(t) === t, vn = (t) => t instanceof le, Eo = eval, ve = Function, na = () => {
   throw v('Cannot eval with evalTaming set to "noEval" (SES_NO_EVAL)');
 };
-function aa() {
+function oa() {
   return this;
 }
-if (aa())
+if (oa())
   throw v("SES failed to initialize, sloppy mode (SES_NO_SLOPPY)");
-const { freeze: et } = Object, { apply: ia } = Reflect, _n = (t) => (e, ...r) => ia(t, e, r), ca = _n(Array.prototype.push), On = _n(Array.prototype.includes), la = _n(String.prototype.split), Qe = JSON.stringify, Qt = (t, ...e) => {
+const { freeze: et } = Object, { apply: sa } = Reflect, _n = (t) => (e, ...r) => sa(t, e, r), aa = _n(Array.prototype.push), On = _n(Array.prototype.includes), ia = _n(String.prototype.split), Qe = JSON.stringify, Qt = (t, ...e) => {
   let r = t[0];
   for (let n = 0; n < e.length; n += 1)
     r = `${r}${e[n]}${t[n + 1]}`;
   throw Error(r);
-}, Eo = (t, e = !1) => {
+}, xo = (t, e = !1) => {
   const r = [], n = (c, u, l = void 0) => {
     typeof c == "string" || Qt`Environment option name ${Qe(c)} must be a string.`, typeof u == "string" || Qt`Environment option default setting ${Qe(
       u
@@ -119,7 +119,7 @@ const { freeze: et } = Object, { apply: ia } = Reflect, _n = (t) => (e, ...r) =>
     let d = u;
     const f = t.process || void 0, m = typeof f == "object" && f.env || void 0;
     if (typeof m == "object" && c in m) {
-      e || ca(r, c);
+      e || aa(r, c);
       const p = m[c];
       typeof p == "string" || Qt`Environment option named ${Qe(
         c
@@ -134,41 +134,41 @@ const { freeze: et } = Object, { apply: ia } = Reflect, _n = (t) => (e, ...r) =>
   et(n);
   const a = (c) => {
     const u = n(c, "");
-    return et(u === "" ? [] : la(u, ","));
+    return et(u === "" ? [] : ia(u, ","));
   };
   et(a);
-  const o = (c, u) => On(a(c), u), i = () => et([...r]);
+  const s = (c, u) => On(a(c), u), i = () => et([...r]);
   return et(i), et({
     getEnvironmentOption: n,
     getEnvironmentOptionsList: a,
-    environmentOptionsListHas: o,
+    environmentOptionsListHas: s,
     getCapturedEnvironmentOptionNames: i
   });
 };
-et(Eo);
+et(xo);
 const {
-  getEnvironmentOption: me,
-  getEnvironmentOptionsList: ul,
-  environmentOptionsListHas: dl
-} = Eo(globalThis, !0), ur = (t) => (t = `${t}`, t.length >= 1 && Js("aeiouAEIOU", t[0]) ? `an ${t}` : `a ${t}`);
-y(ur);
+  getEnvironmentOption: he,
+  getEnvironmentOptionsList: cl,
+  environmentOptionsListHas: ll
+} = xo(globalThis, !0), ur = (t) => (t = `${t}`, t.length >= 1 && Ks("aeiouAEIOU", t[0]) ? `an ${t}` : `a ${t}`);
+g(ur);
 const Po = (t, e = void 0) => {
-  const r = new St(), n = (a, o) => {
-    switch (typeof o) {
+  const r = new Et(), n = (a, s) => {
+    switch (typeof s) {
       case "object": {
-        if (o === null)
+        if (s === null)
           return null;
-        if (dn(r, o))
+        if (dn(r, s))
           return "[Seen]";
-        if (Cr(r, o), vn(o))
-          return `[${o.name}: ${o.message}]`;
-        if (He in o)
-          return `[${o[He]}]`;
-        if (gt(o))
-          return o;
-        const i = co(o);
+        if (Cr(r, s), vn(s))
+          return `[${s.name}: ${s.message}]`;
+        if (He in s)
+          return `[${s[He]}]`;
+        if (yt(s))
+          return s;
+        const i = co(s);
         if (i.length < 2)
-          return o;
+          return s;
         let c = !0;
         for (let l = 1; l < i.length; l += 1)
           if (i[l - 1] >= i[l]) {
@@ -176,24 +176,24 @@ const Po = (t, e = void 0) => {
             break;
           }
         if (c)
-          return o;
+          return s;
         _o(i);
-        const u = de(i, (l) => [l, o[l]]);
+        const u = fe(i, (l) => [l, s[l]]);
         return Pt(u);
       }
       case "function":
-        return `[Function ${o.name || "<anon>"}]`;
+        return `[Function ${s.name || "<anon>"}]`;
       case "string":
-        return xo(o, "[") ? `[${o}]` : o;
+        return So(s, "[") ? `[${s}]` : s;
       case "undefined":
       case "symbol":
-        return `[${ie(o)}]`;
+        return `[${ie(s)}]`;
       case "bigint":
-        return `[${o}n]`;
+        return `[${s}n]`;
       case "number":
-        return Pr(o, NaN) ? "[NaN]" : o === 1 / 0 ? "[Infinity]" : o === -1 / 0 ? "[-Infinity]" : o;
+        return Pr(s, NaN) ? "[NaN]" : s === 1 / 0 ? "[Infinity]" : s === -1 / 0 ? "[-Infinity]" : s;
       default:
-        return o;
+        return s;
     }
   };
   try {
@@ -202,15 +202,15 @@ const Po = (t, e = void 0) => {
     return "[Something that failed to stringify]";
   }
 };
-y(Po);
-const { isSafeInteger: ua } = Number, { freeze: mt } = Object, { toStringTag: da } = Symbol, Rn = (t) => {
+g(Po);
+const { isSafeInteger: ca } = Number, { freeze: mt } = Object, { toStringTag: la } = Symbol, Rn = (t) => {
   const r = {
     next: void 0,
     prev: void 0,
     data: t
   };
   return r.next = r, r.prev = r, r;
-}, Ln = (t, e) => {
+}, Mn = (t, e) => {
   if (t === e)
     throw TypeError("Cannot splice a cell into itself");
   if (e.next !== e || e.prev !== e)
@@ -221,16 +221,16 @@ const { isSafeInteger: ua } = Number, { freeze: mt } = Object, { toStringTag: da
   const { prev: e, next: r } = t;
   e.next = r, r.prev = e, t.prev = t, t.next = t;
 }, ko = (t) => {
-  if (!ua(t) || t < 0)
+  if (!ca(t) || t < 0)
     throw TypeError("keysBudget must be a safe non-negative integer number");
   const e = /* @__PURE__ */ new WeakMap();
   let r = 0;
   const n = Rn(void 0), a = (d) => {
     const f = e.get(d);
     if (!(f === void 0 || f.data === void 0))
-      return Dr(f), Ln(n, f), f;
-  }, o = (d) => a(d) !== void 0;
-  mt(o);
+      return Dr(f), Mn(n, f), f;
+  }, s = (d) => a(d) !== void 0;
+  mt(s);
   const i = (d) => {
     const f = a(d);
     return f && f.data && f.data.get(d);
@@ -240,7 +240,7 @@ const { isSafeInteger: ua } = Number, { freeze: mt } = Object, { toStringTag: da
     if (t < 1)
       return l;
     let m = a(d);
-    if (m === void 0 && (m = Rn(void 0), Ln(n, m)), !m.data)
+    if (m === void 0 && (m = Rn(void 0), Mn(n, m)), !m.data)
       for (r += 1, m.data = /* @__PURE__ */ new WeakMap(), e.set(d, m); r > t; ) {
         const p = n.prev;
         Dr(p), p.data = void 0, r -= 1;
@@ -254,32 +254,32 @@ const { isSafeInteger: ua } = Number, { freeze: mt } = Object, { toStringTag: da
   };
   mt(u);
   const l = mt({
-    has: o,
+    has: s,
     get: i,
     set: c,
     delete: u,
     // eslint-disable-next-line jsdoc/check-types
     [
       /** @type {typeof Symbol.toStringTag} */
-      da
+      la
     ]: "LRUCacheMap"
   });
   return l;
 };
 mt(ko);
-const { freeze: sr } = Object, { isSafeInteger: fa } = Number, pa = 1e3, ma = 100, To = (t = pa, e = ma) => {
-  if (!fa(e) || e < 1)
+const { freeze: sr } = Object, { isSafeInteger: ua } = Number, da = 1e3, fa = 100, To = (t = da, e = fa) => {
+  if (!ua(e) || e < 1)
     throw TypeError(
       "argsPerErrorBudget must be a safe positive integer number"
     );
-  const r = ko(t), n = (o, i) => {
-    const c = r.get(o);
-    c !== void 0 ? (c.length >= e && c.shift(), c.push(i)) : r.set(o, [i]);
+  const r = ko(t), n = (s, i) => {
+    const c = r.get(s);
+    c !== void 0 ? (c.length >= e && c.shift(), c.push(i)) : r.set(s, [i]);
   };
   sr(n);
-  const a = (o) => {
-    const i = r.get(o);
-    return r.delete(o), i;
+  const a = (s) => {
+    const i = r.get(s);
+    return r.delete(s), i;
   };
   return sr(a), sr({
     addLogArgs: n,
@@ -287,140 +287,140 @@ const { freeze: sr } = Object, { isSafeInteger: fa } = Number, pa = 1e3, ma = 10
   });
 };
 sr(To);
-const _t = new ke(), at = (t, e = void 0) => {
-  const r = y({
-    toString: y(() => Po(t, e))
+const _t = new Te(), at = (t, e = void 0) => {
+  const r = g({
+    toString: g(() => Po(t, e))
   });
   return ee(_t, r, t), r;
 };
-y(at);
-const ha = y(/^[\w:-]( ?[\w:-])*$/), Hr = (t, e = void 0) => {
-  if (typeof t != "string" || !fn(ha, t))
+g(at);
+const pa = g(/^[\w:-]( ?[\w:-])*$/), Hr = (t, e = void 0) => {
+  if (typeof t != "string" || !fn(pa, t))
     return at(t, e);
-  const r = y({
-    toString: y(() => t)
+  const r = g({
+    toString: g(() => t)
   });
   return ee(_t, r, t), r;
 };
-y(Hr);
-const $r = new ke(), Io = ({ template: t, args: e }) => {
+g(Hr);
+const Nr = new Te(), Io = ({ template: t, args: e }) => {
   const r = [t[0]];
   for (let n = 0; n < e.length; n += 1) {
     const a = e[n];
-    let o;
-    hn(_t, a) ? o = `${a}` : vn(a) ? o = `(${ur(a.name)})` : o = `(${ur(typeof a)})`, ae(r, o, t[n + 1]);
+    let s;
+    hn(_t, a) ? s = `${a}` : vn(a) ? s = `(${ur(a.name)})` : s = `(${ur(typeof a)})`, ae(r, s, t[n + 1]);
   }
   return Tt(r, "");
-}, Ao = y({
+}, Ao = g({
   toString() {
-    const t = L($r, this);
+    const t = M(Nr, this);
     return t === void 0 ? "[Not a DetailsToken]" : Io(t);
   }
 });
-y(Ao.toString);
+g(Ao.toString);
 const bt = (t, ...e) => {
-  const r = y({ __proto__: Ao });
-  return ee($r, r, { template: t, args: e }), r;
+  const r = g({ __proto__: Ao });
+  return ee(Nr, r, { template: t, args: e }), r;
 };
-y(bt);
-const Co = (t, ...e) => (e = de(
+g(bt);
+const Co = (t, ...e) => (e = fe(
   e,
   (r) => hn(_t, r) ? r : at(r)
 ), bt(t, ...e));
-y(Co);
-const No = ({ template: t, args: e }) => {
+g(Co);
+const $o = ({ template: t, args: e }) => {
   const r = [t[0]];
   for (let n = 0; n < e.length; n += 1) {
     let a = e[n];
-    hn(_t, a) && (a = L(_t, a));
-    const o = lr(Br(r) || "", / $/, "");
-    o !== "" && ae(r, o);
+    hn(_t, a) && (a = M(_t, a));
+    const s = lr(Br(r) || "", / $/, "");
+    s !== "" && ae(r, s);
     const i = lr(t[n + 1], /^ /, "");
     ae(r, a, i);
   }
   return r[r.length - 1] === "" && Br(r), r;
-}, ar = new ke();
+}, ar = new Te();
 let Vr = 0;
-const Mn = new ke(), $o = (t, e = t.name) => {
-  let r = L(Mn, t);
-  return r !== void 0 || (Vr += 1, r = `${e}#${Vr}`, ee(Mn, t, r)), r;
-}, Wr = (t = bt`Assert failed`, e = E.Error, { errorName: r = void 0 } = {}) => {
+const Ln = new Te(), No = (t, e = t.name) => {
+  let r = M(Ln, t);
+  return r !== void 0 || (Vr += 1, r = `${e}#${Vr}`, ee(Ln, t, r)), r;
+}, Wr = (t = bt`Assert failed`, e = x.Error, { errorName: r = void 0 } = {}) => {
   typeof t == "string" && (t = bt([t]));
-  const n = L($r, t);
+  const n = M(Nr, t);
   if (n === void 0)
     throw v(`unrecognized details ${at(t)}`);
-  const a = Io(n), o = new e(a);
-  return ee(ar, o, No(n)), r !== void 0 && $o(o, r), o;
+  const a = Io(n), s = new e(a);
+  return ee(ar, s, $o(n)), r !== void 0 && No(s, r), s;
 };
-y(Wr);
-const { addLogArgs: ga, takeLogArgsArray: ya } = To(), qr = new ke(), Oo = (t, e) => {
+g(Wr);
+const { addLogArgs: ma, takeLogArgsArray: ha } = To(), qr = new Te(), Oo = (t, e) => {
   typeof e == "string" && (e = bt([e]));
-  const r = L($r, e);
+  const r = M(Nr, e);
   if (r === void 0)
     throw v(`unrecognized details ${at(e)}`);
-  const n = No(r), a = L(qr, t);
+  const n = $o(r), a = M(qr, t);
   if (a !== void 0)
-    for (const o of a)
-      o(t, n);
+    for (const s of a)
+      s(t, n);
   else
-    ga(t, n);
+    ma(t, n);
 };
-y(Oo);
-const va = (t) => {
+g(Oo);
+const ya = (t) => {
   if (!("stack" in t))
     return "";
-  const e = `${t.stack}`, r = Xs(e, `
+  const e = `${t.stack}`, r = Ys(e, `
 `);
-  return xo(e, " ") || r === -1 ? e : mn(e, r + 1);
+  return So(e, " ") || r === -1 ? e : mn(e, r + 1);
 }, Kr = {
-  getStackString: E.getStackString || va,
-  tagError: (t) => $o(t),
+  getStackString: x.getStackString || ya,
+  tagError: (t) => No(t),
   resetErrorTagNum: () => {
     Vr = 0;
   },
-  getMessageLogArgs: (t) => L(ar, t),
+  getMessageLogArgs: (t) => M(ar, t),
   takeMessageLogArgs: (t) => {
-    const e = L(ar, t);
-    return ta(ar, t), e;
+    const e = M(ar, t);
+    return Qs(ar, t), e;
   },
   takeNoteLogArgsArray: (t, e) => {
-    const r = ya(t);
+    const r = ha(t);
     if (e !== void 0) {
-      const n = L(qr, t);
+      const n = M(qr, t);
       n ? ae(n, e) : ee(qr, t, [e]);
     }
     return r || [];
   }
 };
-y(Kr);
+g(Kr);
 const Or = (t = void 0, e = !1) => {
-  const r = e ? Co : bt, n = r`Check failed`, a = (f = n, m = E.Error) => {
+  const r = e ? Co : bt, n = r`Check failed`, a = (f = n, m = x.Error) => {
     const p = Wr(f, m);
     throw t !== void 0 && t(p), p;
   };
-  y(a);
-  const o = (f, ...m) => a(r(f, ...m));
+  g(a);
+  const s = (f, ...m) => a(r(f, ...m));
   function i(f, m = void 0, p = void 0) {
     f || a(m, p);
   }
   const c = (f, m, p = void 0, h = void 0) => {
     Pr(f, m) || a(
       p || r`Expected ${f} is same as ${m}`,
-      h || $s
+      h || Cs
     );
   };
-  y(c);
+  g(c);
   const u = (f, m, p) => {
     if (typeof f !== m) {
-      if (typeof m == "string" || o`${at(m)} must be a string`, p === void 0) {
+      if (typeof m == "string" || s`${at(m)} must be a string`, p === void 0) {
         const h = ur(m);
         p = r`${f} must be ${Hr(h)}`;
       }
       a(p, v);
     }
   };
-  y(u);
-  const d = Er(i, {
+  g(u);
+  const d = xr(i, {
     error: Wr,
     fail: a,
     equal: c,
@@ -428,45 +428,45 @@ const Or = (t = void 0, e = !1) => {
     string: (f, m = void 0) => u(f, "string", m),
     note: Oo,
     details: r,
-    Fail: o,
+    Fail: s,
     quote: at,
     bare: Hr,
     makeAssert: Or
   });
-  return y(d);
+  return g(d);
 };
-y(Or);
-const Z = Or(), Ro = ue(
-  zs,
+g(Or);
+const Z = Or(), Ro = de(
+  js,
   He
 );
 Z(Ro);
-const Lo = Ro.get;
-Z(Lo);
-const _a = (t) => oe(Lo, t, []) !== void 0, ba = (t) => {
+const Mo = Ro.get;
+Z(Mo);
+const ga = (t) => oe(Mo, t, []) !== void 0, va = (t) => {
   const e = +ie(t);
-  return Ms(e) && ie(e) === t;
-}, wa = (t) => {
-  Os(t), nt(st(t), (e) => {
-    const r = ue(t, e);
-    Z(r), ba(e) || M(t, e, {
+  return Rs(e) && ie(e) === t;
+}, _a = (t) => {
+  $s(t), nt(st(t), (e) => {
+    const r = de(t, e);
+    Z(r), va(e) || L(t, e, {
       ...r,
       writable: !1,
       configurable: !1
     });
   });
-}, xa = () => {
-  if (typeof E.harden == "function")
-    return E.harden;
-  const t = new Et(), { harden: e } = {
+}, ba = () => {
+  if (typeof x.harden == "function")
+    return x.harden;
+  const t = new xt(), { harden: e } = {
     /**
      * @template T
      * @param {T} root
      * @returns {T}
      */
     harden(r) {
-      const n = new St(), a = new ke();
-      function o(d, f = void 0) {
+      const n = new Et(), a = new Te();
+      function s(d, f = void 0) {
         if (!We(d))
           return;
         const m = typeof d;
@@ -475,30 +475,30 @@ const _a = (t) => oe(Lo, t, []) !== void 0, ba = (t) => {
         Yt(t, d) || dn(n, d) || (Cr(n, d), ee(a, d, f));
       }
       function i(d) {
-        _a(d) ? wa(d) : y(d);
-        const f = L(a, d) || "unknown", m = Je(d), p = B(d);
-        o(p, `${f}.__proto__`), nt(st(m), (h) => {
+        ga(d) ? _a(d) : g(d);
+        const f = M(a, d) || "unknown", m = Je(d), p = B(d);
+        s(p, `${f}.__proto__`), nt(st(m), (h) => {
           const _ = `${f}.${ie(h)}`, w = m[
             /** @type {string} */
             h
           ];
-          se(w, "value") ? o(w.value, `${_}`) : (o(w.get, `${_}(get)`), o(w.set, `${_}(set)`));
+          se(w, "value") ? s(w.value, `${_}`) : (s(w.get, `${_}(get)`), s(w.set, `${_}(set)`));
         });
       }
       function c() {
-        $n(n, i);
+        Nn(n, i);
       }
       function u(d) {
-        Nr(t, d);
+        $r(t, d);
       }
       function l() {
-        $n(n, u);
+        Nn(n, u);
       }
-      return o(r), c(), l(), r;
+      return s(r), c(), l(), r;
     }
   };
   return e;
-}, Mo = {
+}, Lo = {
   // *** Value Properties of the Global Object
   Infinity: 1 / 0,
   NaN: NaN,
@@ -589,7 +589,7 @@ const _a = (t) => oe(Lo, t, []) !== void 0, ba = (t) => {
   Symbol: "%SharedSymbol%",
   // *** Other Properties of the Global Object
   Math: "%SharedMath%"
-}, Sa = [
+}, wa = [
   EvalError,
   RangeError,
   ReferenceError,
@@ -603,17 +603,17 @@ const _a = (t) => oe(Lo, t, []) !== void 0, ba = (t) => {
   // Do not specify "prototype" here, since only Function instances that can
   // be used as a constructor have a prototype property. For constructors,
   // since prototype properties are instance-specific, we define it there.
-}, Ea = {
+}, Sa = {
   // This property is not mentioned in ECMA 262, but is present in V8 and
   // necessary for lockdown to succeed.
   "[[Proto]]": "%AsyncFunctionPrototype%"
-}, s = Yr, Dn = Ea, O = {
-  get: s,
+}, o = Yr, Dn = Sa, O = {
+  get: o,
   set: "undefined"
-}, Ie = {
-  get: s,
-  set: s
-}, Un = (t) => t === O || t === Ie;
+}, Ae = {
+  get: o,
+  set: o
+}, Un = (t) => t === O || t === Ae;
 function dt(t) {
   return {
     // Properties of the NativeError Constructors
@@ -636,7 +636,7 @@ function ft(t) {
     cause: !1
   };
 }
-function he(t) {
+function ye(t) {
   return {
     // Properties of the TypedArray Constructors
     "[[Proto]]": "%TypedArray%",
@@ -662,40 +662,40 @@ const jn = {
   SQRT1_2: "number",
   SQRT2: "number",
   "@@toStringTag": "string",
-  abs: s,
-  acos: s,
-  acosh: s,
-  asin: s,
-  asinh: s,
-  atan: s,
-  atanh: s,
-  atan2: s,
-  cbrt: s,
-  ceil: s,
-  clz32: s,
-  cos: s,
-  cosh: s,
-  exp: s,
-  expm1: s,
-  floor: s,
-  fround: s,
-  hypot: s,
-  imul: s,
-  log: s,
-  log1p: s,
-  log10: s,
-  log2: s,
-  max: s,
-  min: s,
-  pow: s,
-  round: s,
-  sign: s,
-  sin: s,
-  sinh: s,
-  sqrt: s,
-  tan: s,
-  tanh: s,
-  trunc: s,
+  abs: o,
+  acos: o,
+  acosh: o,
+  asin: o,
+  asinh: o,
+  atan: o,
+  atanh: o,
+  atan2: o,
+  cbrt: o,
+  ceil: o,
+  clz32: o,
+  cos: o,
+  cosh: o,
+  exp: o,
+  expm1: o,
+  floor: o,
+  fround: o,
+  hypot: o,
+  imul: o,
+  log: o,
+  log1p: o,
+  log10: o,
+  log2: o,
+  max: o,
+  min: o,
+  pow: o,
+  round: o,
+  sign: o,
+  sin: o,
+  sinh: o,
+  sqrt: o,
+  tan: o,
+  tanh: o,
+  trunc: o,
   // See https://github.com/Moddable-OpenSource/moddable/issues/523
   idiv: !1,
   // See https://github.com/Moddable-OpenSource/moddable/issues/523
@@ -715,7 +715,7 @@ const jn = {
   // The intrinsics object has no prototype to avoid conflicts.
   "[[Proto]]": null,
   // %ThrowTypeError%
-  "%ThrowTypeError%": s,
+  "%ThrowTypeError%": o,
   // *** The Global Object
   // *** Value Properties of the Global Object
   Infinity: "number",
@@ -723,44 +723,44 @@ const jn = {
   undefined: "undefined",
   // *** Function Properties of the Global Object
   // eval
-  "%UniqueEval%": s,
-  isFinite: s,
-  isNaN: s,
-  parseFloat: s,
-  parseInt: s,
-  decodeURI: s,
-  decodeURIComponent: s,
-  encodeURI: s,
-  encodeURIComponent: s,
+  "%UniqueEval%": o,
+  isFinite: o,
+  isNaN: o,
+  parseFloat: o,
+  parseInt: o,
+  decodeURI: o,
+  decodeURIComponent: o,
+  encodeURI: o,
+  encodeURIComponent: o,
   // *** Fundamental Objects
   Object: {
     // Properties of the Object Constructor
     "[[Proto]]": "%FunctionPrototype%",
-    assign: s,
-    create: s,
-    defineProperties: s,
-    defineProperty: s,
-    entries: s,
-    freeze: s,
-    fromEntries: s,
-    getOwnPropertyDescriptor: s,
-    getOwnPropertyDescriptors: s,
-    getOwnPropertyNames: s,
-    getOwnPropertySymbols: s,
-    getPrototypeOf: s,
-    hasOwn: s,
-    is: s,
-    isExtensible: s,
-    isFrozen: s,
-    isSealed: s,
-    keys: s,
-    preventExtensions: s,
+    assign: o,
+    create: o,
+    defineProperties: o,
+    defineProperty: o,
+    entries: o,
+    freeze: o,
+    fromEntries: o,
+    getOwnPropertyDescriptor: o,
+    getOwnPropertyDescriptors: o,
+    getOwnPropertyNames: o,
+    getOwnPropertySymbols: o,
+    getPrototypeOf: o,
+    hasOwn: o,
+    is: o,
+    isExtensible: o,
+    isFrozen: o,
+    isSealed: o,
+    keys: o,
+    preventExtensions: o,
     prototype: "%ObjectPrototype%",
-    seal: s,
-    setPrototypeOf: s,
-    values: s,
+    seal: o,
+    setPrototypeOf: o,
+    values: o,
     // https://github.com/tc39/proposal-array-grouping
-    groupBy: s,
+    groupBy: o,
     // Seen on QuickJS
     __getClass: !1
   },
@@ -768,20 +768,20 @@ const jn = {
     // Properties of the Object Prototype Object
     "[[Proto]]": null,
     constructor: "Object",
-    hasOwnProperty: s,
-    isPrototypeOf: s,
-    propertyIsEnumerable: s,
-    toLocaleString: s,
-    toString: s,
-    valueOf: s,
+    hasOwnProperty: o,
+    isPrototypeOf: o,
+    propertyIsEnumerable: o,
+    toLocaleString: o,
+    toString: o,
+    valueOf: o,
     // Annex B: Additional Properties of the Object.prototype Object
     // See note in header about the difference between [[Proto]] and --proto--
     // special notations.
-    "--proto--": Ie,
-    __defineGetter__: s,
-    __defineSetter__: s,
-    __lookupGetter__: s,
-    __lookupSetter__: s
+    "--proto--": Ae,
+    __defineGetter__: o,
+    __defineSetter__: o,
+    __lookupGetter__: o,
+    __lookupSetter__: o
   },
   "%UniqueFunction%": {
     // Properties of the Function Constructor
@@ -793,12 +793,12 @@ const jn = {
     prototype: "%FunctionPrototype%"
   },
   "%FunctionPrototype%": {
-    apply: s,
-    bind: s,
-    call: s,
+    apply: o,
+    bind: o,
+    call: o,
     constructor: "%InertFunction%",
-    toString: s,
-    "@@hasInstance": s,
+    toString: o,
+    "@@hasInstance": o,
     // proposed but not yet std. To be removed if there
     caller: !1,
     // proposed but not yet std. To be removed if there
@@ -815,8 +815,8 @@ const jn = {
   },
   "%BooleanPrototype%": {
     constructor: "Boolean",
-    toString: s,
-    valueOf: s
+    toString: o,
+    valueOf: o
   },
   "%SharedSymbol%": {
     // Properties of the Symbol Constructor
@@ -824,11 +824,11 @@ const jn = {
     asyncDispose: "symbol",
     asyncIterator: "symbol",
     dispose: "symbol",
-    for: s,
+    for: o,
     hasInstance: "symbol",
     isConcatSpreadable: "symbol",
     iterator: "symbol",
-    keyFor: s,
+    keyFor: o,
     match: "symbol",
     matchAll: "symbol",
     prototype: "%SymbolPrototype%",
@@ -850,9 +850,9 @@ const jn = {
     // Properties of the Symbol Prototype Object
     constructor: "%SharedSymbol%",
     description: O,
-    toString: s,
-    valueOf: s,
-    "@@toPrimitive": s,
+    toString: o,
+    valueOf: o,
+    "@@toPrimitive": o,
     "@@toStringTag": "string"
   },
   "%InitialError%": {
@@ -860,33 +860,33 @@ const jn = {
     "[[Proto]]": "%FunctionPrototype%",
     prototype: "%ErrorPrototype%",
     // Non standard, v8 only, used by tap
-    captureStackTrace: s,
+    captureStackTrace: o,
     // Non standard, v8 only, used by tap, tamed to accessor
-    stackTraceLimit: Ie,
+    stackTraceLimit: Ae,
     // Non standard, v8 only, used by several, tamed to accessor
-    prepareStackTrace: Ie
+    prepareStackTrace: Ae
   },
   "%SharedError%": {
     // Properties of the Error Constructor
     "[[Proto]]": "%FunctionPrototype%",
     prototype: "%ErrorPrototype%",
     // Non standard, v8 only, used by tap
-    captureStackTrace: s,
+    captureStackTrace: o,
     // Non standard, v8 only, used by tap, tamed to accessor
-    stackTraceLimit: Ie,
+    stackTraceLimit: Ae,
     // Non standard, v8 only, used by several, tamed to accessor
-    prepareStackTrace: Ie
+    prepareStackTrace: Ae
   },
   "%ErrorPrototype%": {
     constructor: "%SharedError%",
     message: "string",
     name: "string",
-    toString: s,
+    toString: o,
     // proposed de-facto, assumed TODO
     // Seen on FF Nightly 88.0a1
     at: !1,
     // Seen on FF and XS
-    stack: Ie,
+    stack: Ae,
     // Superfluously present in some versions of V8.
     // https://github.com/tc39/notes/blob/master/meetings/2021-10/oct-26.md#:~:text=However%2C%20Chrome%2093,and%20node%2016.11.
     cause: !1
@@ -909,36 +909,36 @@ const jn = {
     // Properties of the Number Constructor
     "[[Proto]]": "%FunctionPrototype%",
     EPSILON: "number",
-    isFinite: s,
-    isInteger: s,
-    isNaN: s,
-    isSafeInteger: s,
+    isFinite: o,
+    isInteger: o,
+    isNaN: o,
+    isSafeInteger: o,
     MAX_SAFE_INTEGER: "number",
     MAX_VALUE: "number",
     MIN_SAFE_INTEGER: "number",
     MIN_VALUE: "number",
     NaN: "number",
     NEGATIVE_INFINITY: "number",
-    parseFloat: s,
-    parseInt: s,
+    parseFloat: o,
+    parseInt: o,
     POSITIVE_INFINITY: "number",
     prototype: "%NumberPrototype%"
   },
   "%NumberPrototype%": {
     // Properties of the Number Prototype Object
     constructor: "Number",
-    toExponential: s,
-    toFixed: s,
-    toLocaleString: s,
-    toPrecision: s,
-    toString: s,
-    valueOf: s
+    toExponential: o,
+    toFixed: o,
+    toLocaleString: o,
+    toPrecision: o,
+    toString: o,
+    valueOf: o
   },
   BigInt: {
     // Properties of the BigInt Constructor
     "[[Proto]]": "%FunctionPrototype%",
-    asIntN: s,
-    asUintN: s,
+    asIntN: o,
+    asUintN: o,
     prototype: "%BigIntPrototype%",
     // See https://github.com/Moddable-OpenSource/moddable/issues/523
     bitLength: !1,
@@ -971,167 +971,167 @@ const jn = {
   },
   "%BigIntPrototype%": {
     constructor: "BigInt",
-    toLocaleString: s,
-    toString: s,
-    valueOf: s,
+    toLocaleString: o,
+    toString: o,
+    valueOf: o,
     "@@toStringTag": "string"
   },
   "%InitialMath%": {
     ...jn,
     // `%InitialMath%.random()` has the standard unsafe behavior
-    random: s
+    random: o
   },
   "%SharedMath%": {
     ...jn,
     // `%SharedMath%.random()` is tamed to always throw
-    random: s
+    random: o
   },
   "%InitialDate%": {
     // Properties of the Date Constructor
     "[[Proto]]": "%FunctionPrototype%",
-    now: s,
-    parse: s,
+    now: o,
+    parse: o,
     prototype: "%DatePrototype%",
-    UTC: s
+    UTC: o
   },
   "%SharedDate%": {
     // Properties of the Date Constructor
     "[[Proto]]": "%FunctionPrototype%",
     // `%SharedDate%.now()` is tamed to always throw
-    now: s,
-    parse: s,
+    now: o,
+    parse: o,
     prototype: "%DatePrototype%",
-    UTC: s
+    UTC: o
   },
   "%DatePrototype%": {
     constructor: "%SharedDate%",
-    getDate: s,
-    getDay: s,
-    getFullYear: s,
-    getHours: s,
-    getMilliseconds: s,
-    getMinutes: s,
-    getMonth: s,
-    getSeconds: s,
-    getTime: s,
-    getTimezoneOffset: s,
-    getUTCDate: s,
-    getUTCDay: s,
-    getUTCFullYear: s,
-    getUTCHours: s,
-    getUTCMilliseconds: s,
-    getUTCMinutes: s,
-    getUTCMonth: s,
-    getUTCSeconds: s,
-    setDate: s,
-    setFullYear: s,
-    setHours: s,
-    setMilliseconds: s,
-    setMinutes: s,
-    setMonth: s,
-    setSeconds: s,
-    setTime: s,
-    setUTCDate: s,
-    setUTCFullYear: s,
-    setUTCHours: s,
-    setUTCMilliseconds: s,
-    setUTCMinutes: s,
-    setUTCMonth: s,
-    setUTCSeconds: s,
-    toDateString: s,
-    toISOString: s,
-    toJSON: s,
-    toLocaleDateString: s,
-    toLocaleString: s,
-    toLocaleTimeString: s,
-    toString: s,
-    toTimeString: s,
-    toUTCString: s,
-    valueOf: s,
-    "@@toPrimitive": s,
+    getDate: o,
+    getDay: o,
+    getFullYear: o,
+    getHours: o,
+    getMilliseconds: o,
+    getMinutes: o,
+    getMonth: o,
+    getSeconds: o,
+    getTime: o,
+    getTimezoneOffset: o,
+    getUTCDate: o,
+    getUTCDay: o,
+    getUTCFullYear: o,
+    getUTCHours: o,
+    getUTCMilliseconds: o,
+    getUTCMinutes: o,
+    getUTCMonth: o,
+    getUTCSeconds: o,
+    setDate: o,
+    setFullYear: o,
+    setHours: o,
+    setMilliseconds: o,
+    setMinutes: o,
+    setMonth: o,
+    setSeconds: o,
+    setTime: o,
+    setUTCDate: o,
+    setUTCFullYear: o,
+    setUTCHours: o,
+    setUTCMilliseconds: o,
+    setUTCMinutes: o,
+    setUTCMonth: o,
+    setUTCSeconds: o,
+    toDateString: o,
+    toISOString: o,
+    toJSON: o,
+    toLocaleDateString: o,
+    toLocaleString: o,
+    toLocaleTimeString: o,
+    toString: o,
+    toTimeString: o,
+    toUTCString: o,
+    valueOf: o,
+    "@@toPrimitive": o,
     // Annex B: Additional Properties of the Date.prototype Object
-    getYear: s,
-    setYear: s,
-    toGMTString: s
+    getYear: o,
+    setYear: o,
+    toGMTString: o
   },
   // Text Processing
   String: {
     // Properties of the String Constructor
     "[[Proto]]": "%FunctionPrototype%",
-    fromCharCode: s,
-    fromCodePoint: s,
+    fromCharCode: o,
+    fromCodePoint: o,
     prototype: "%StringPrototype%",
-    raw: s,
+    raw: o,
     // See https://github.com/Moddable-OpenSource/moddable/issues/523
     fromArrayBuffer: !1
   },
   "%StringPrototype%": {
     // Properties of the String Prototype Object
     length: "number",
-    at: s,
-    charAt: s,
-    charCodeAt: s,
-    codePointAt: s,
-    concat: s,
+    at: o,
+    charAt: o,
+    charCodeAt: o,
+    codePointAt: o,
+    concat: o,
     constructor: "String",
-    endsWith: s,
-    includes: s,
-    indexOf: s,
-    lastIndexOf: s,
-    localeCompare: s,
-    match: s,
-    matchAll: s,
-    normalize: s,
-    padEnd: s,
-    padStart: s,
-    repeat: s,
-    replace: s,
-    replaceAll: s,
+    endsWith: o,
+    includes: o,
+    indexOf: o,
+    lastIndexOf: o,
+    localeCompare: o,
+    match: o,
+    matchAll: o,
+    normalize: o,
+    padEnd: o,
+    padStart: o,
+    repeat: o,
+    replace: o,
+    replaceAll: o,
     // ES2021
-    search: s,
-    slice: s,
-    split: s,
-    startsWith: s,
-    substring: s,
-    toLocaleLowerCase: s,
-    toLocaleUpperCase: s,
-    toLowerCase: s,
-    toString: s,
-    toUpperCase: s,
-    trim: s,
-    trimEnd: s,
-    trimStart: s,
-    valueOf: s,
-    "@@iterator": s,
+    search: o,
+    slice: o,
+    split: o,
+    startsWith: o,
+    substring: o,
+    toLocaleLowerCase: o,
+    toLocaleUpperCase: o,
+    toLowerCase: o,
+    toString: o,
+    toUpperCase: o,
+    trim: o,
+    trimEnd: o,
+    trimStart: o,
+    valueOf: o,
+    "@@iterator": o,
     // Annex B: Additional Properties of the String.prototype Object
-    substr: s,
-    anchor: s,
-    big: s,
-    blink: s,
-    bold: s,
-    fixed: s,
-    fontcolor: s,
-    fontsize: s,
-    italics: s,
-    link: s,
-    small: s,
-    strike: s,
-    sub: s,
-    sup: s,
-    trimLeft: s,
-    trimRight: s,
+    substr: o,
+    anchor: o,
+    big: o,
+    blink: o,
+    bold: o,
+    fixed: o,
+    fontcolor: o,
+    fontsize: o,
+    italics: o,
+    link: o,
+    small: o,
+    strike: o,
+    sub: o,
+    sup: o,
+    trimLeft: o,
+    trimRight: o,
     // See https://github.com/Moddable-OpenSource/moddable/issues/523
     compare: !1,
     // https://github.com/tc39/proposal-is-usv-string
-    isWellFormed: s,
-    toWellFormed: s,
-    unicodeSets: s,
+    isWellFormed: o,
+    toWellFormed: o,
+    unicodeSets: o,
     // Seen on QuickJS
     __quote: !1
   },
   "%StringIteratorPrototype%": {
     "[[Proto]]": "%IteratorPrototype%",
-    next: s,
+    next: o,
     "@@toStringTag": "string"
   },
   "%InitialRegExp%": {
@@ -1170,22 +1170,22 @@ const jn = {
   "%RegExpPrototype%": {
     // Properties of the RegExp Prototype Object
     constructor: "%SharedRegExp%",
-    exec: s,
+    exec: o,
     dotAll: O,
     flags: O,
     global: O,
     hasIndices: O,
     ignoreCase: O,
-    "@@match": s,
-    "@@matchAll": s,
+    "@@match": o,
+    "@@matchAll": o,
     multiline: O,
-    "@@replace": s,
-    "@@search": s,
+    "@@replace": o,
+    "@@search": o,
     source: O,
-    "@@split": s,
+    "@@split": o,
     sticky: O,
-    test: s,
-    toString: s,
+    test: o,
+    toString: o,
     unicode: O,
     unicodeSets: O,
     // Annex B: Additional Properties of the RegExp.prototype Object
@@ -1195,61 +1195,61 @@ const jn = {
   "%RegExpStringIteratorPrototype%": {
     // The %RegExpStringIteratorPrototype% Object
     "[[Proto]]": "%IteratorPrototype%",
-    next: s,
+    next: o,
     "@@toStringTag": "string"
   },
   // Indexed Collections
   Array: {
     // Properties of the Array Constructor
     "[[Proto]]": "%FunctionPrototype%",
-    from: s,
-    isArray: s,
-    of: s,
+    from: o,
+    isArray: o,
+    of: o,
     prototype: "%ArrayPrototype%",
     "@@species": O,
     // Stage 3:
     // https://tc39.es/proposal-relative-indexing-method/
-    at: s,
+    at: o,
     // https://tc39.es/proposal-array-from-async/
-    fromAsync: s
+    fromAsync: o
   },
   "%ArrayPrototype%": {
     // Properties of the Array Prototype Object
-    at: s,
+    at: o,
     length: "number",
-    concat: s,
+    concat: o,
     constructor: "Array",
-    copyWithin: s,
-    entries: s,
-    every: s,
-    fill: s,
-    filter: s,
-    find: s,
-    findIndex: s,
-    flat: s,
-    flatMap: s,
-    forEach: s,
-    includes: s,
-    indexOf: s,
-    join: s,
-    keys: s,
-    lastIndexOf: s,
-    map: s,
-    pop: s,
-    push: s,
-    reduce: s,
-    reduceRight: s,
-    reverse: s,
-    shift: s,
-    slice: s,
-    some: s,
-    sort: s,
-    splice: s,
-    toLocaleString: s,
-    toString: s,
-    unshift: s,
-    values: s,
-    "@@iterator": s,
+    copyWithin: o,
+    entries: o,
+    every: o,
+    fill: o,
+    filter: o,
+    find: o,
+    findIndex: o,
+    flat: o,
+    flatMap: o,
+    forEach: o,
+    includes: o,
+    indexOf: o,
+    join: o,
+    keys: o,
+    lastIndexOf: o,
+    map: o,
+    pop: o,
+    push: o,
+    reduce: o,
+    reduceRight: o,
+    reverse: o,
+    shift: o,
+    slice: o,
+    some: o,
+    sort: o,
+    splice: o,
+    toLocaleString: o,
+    toString: o,
+    unshift: o,
+    values: o,
+    "@@iterator": o,
     "@@unscopables": {
       "[[Proto]]": null,
       copyWithin: "boolean",
@@ -1279,91 +1279,91 @@ const jn = {
       groupBy: "boolean"
     },
     // See https://github.com/tc39/proposal-array-find-from-last
-    findLast: s,
-    findLastIndex: s,
+    findLast: o,
+    findLastIndex: o,
     // https://github.com/tc39/proposal-change-array-by-copy
-    toReversed: s,
-    toSorted: s,
-    toSpliced: s,
-    with: s,
+    toReversed: o,
+    toSorted: o,
+    toSpliced: o,
+    with: o,
     // https://github.com/tc39/proposal-array-grouping
-    group: s,
+    group: o,
     // Not in proposal? Where?
-    groupToMap: s,
+    groupToMap: o,
     // Not in proposal? Where?
-    groupBy: s
+    groupBy: o
   },
   "%ArrayIteratorPrototype%": {
     // The %ArrayIteratorPrototype% Object
     "[[Proto]]": "%IteratorPrototype%",
-    next: s,
+    next: o,
     "@@toStringTag": "string"
   },
   // *** TypedArray Objects
   "%TypedArray%": {
     // Properties of the %TypedArray% Intrinsic Object
     "[[Proto]]": "%FunctionPrototype%",
-    from: s,
-    of: s,
+    from: o,
+    of: o,
     prototype: "%TypedArrayPrototype%",
     "@@species": O
   },
   "%TypedArrayPrototype%": {
-    at: s,
+    at: o,
     buffer: O,
     byteLength: O,
     byteOffset: O,
     constructor: "%TypedArray%",
-    copyWithin: s,
-    entries: s,
-    every: s,
-    fill: s,
-    filter: s,
-    find: s,
-    findIndex: s,
-    forEach: s,
-    includes: s,
-    indexOf: s,
-    join: s,
-    keys: s,
-    lastIndexOf: s,
+    copyWithin: o,
+    entries: o,
+    every: o,
+    fill: o,
+    filter: o,
+    find: o,
+    findIndex: o,
+    forEach: o,
+    includes: o,
+    indexOf: o,
+    join: o,
+    keys: o,
+    lastIndexOf: o,
     length: O,
-    map: s,
-    reduce: s,
-    reduceRight: s,
-    reverse: s,
-    set: s,
-    slice: s,
-    some: s,
-    sort: s,
-    subarray: s,
-    toLocaleString: s,
-    toString: s,
-    values: s,
-    "@@iterator": s,
+    map: o,
+    reduce: o,
+    reduceRight: o,
+    reverse: o,
+    set: o,
+    slice: o,
+    some: o,
+    sort: o,
+    subarray: o,
+    toLocaleString: o,
+    toString: o,
+    values: o,
+    "@@iterator": o,
     "@@toStringTag": O,
     // See https://github.com/tc39/proposal-array-find-from-last
-    findLast: s,
-    findLastIndex: s,
+    findLast: o,
+    findLastIndex: o,
     // https://github.com/tc39/proposal-change-array-by-copy
-    toReversed: s,
-    toSorted: s,
-    with: s
+    toReversed: o,
+    toSorted: o,
+    with: o
   },
   // The TypedArray Constructors
-  BigInt64Array: he("%BigInt64ArrayPrototype%"),
-  BigUint64Array: he("%BigUint64ArrayPrototype%"),
+  BigInt64Array: ye("%BigInt64ArrayPrototype%"),
+  BigUint64Array: ye("%BigUint64ArrayPrototype%"),
   // https://github.com/tc39/proposal-float16array
-  Float16Array: he("%Float16ArrayPrototype%"),
-  Float32Array: he("%Float32ArrayPrototype%"),
-  Float64Array: he("%Float64ArrayPrototype%"),
-  Int16Array: he("%Int16ArrayPrototype%"),
-  Int32Array: he("%Int32ArrayPrototype%"),
-  Int8Array: he("%Int8ArrayPrototype%"),
-  Uint16Array: he("%Uint16ArrayPrototype%"),
-  Uint32Array: he("%Uint32ArrayPrototype%"),
-  Uint8Array: he("%Uint8ArrayPrototype%"),
-  Uint8ClampedArray: he("%Uint8ClampedArrayPrototype%"),
+  Float16Array: ye("%Float16ArrayPrototype%"),
+  Float32Array: ye("%Float32ArrayPrototype%"),
+  Float64Array: ye("%Float64ArrayPrototype%"),
+  Int16Array: ye("%Int16ArrayPrototype%"),
+  Int32Array: ye("%Int32ArrayPrototype%"),
+  Int8Array: ye("%Int8ArrayPrototype%"),
+  Uint16Array: ye("%Uint16ArrayPrototype%"),
+  Uint32Array: ye("%Uint32ArrayPrototype%"),
+  Uint8Array: ye("%Uint8ArrayPrototype%"),
+  Uint8ClampedArray: ye("%Uint8ClampedArrayPrototype%"),
   "%BigInt64ArrayPrototype%": ge("BigInt64Array"),
   "%BigUint64ArrayPrototype%": ge("BigUint64Array"),
   // https://github.com/tc39/proposal-float16array
@@ -1384,27 +1384,27 @@ const jn = {
     "@@species": O,
     prototype: "%MapPrototype%",
     // https://github.com/tc39/proposal-array-grouping
-    groupBy: s
+    groupBy: o
   },
   "%MapPrototype%": {
-    clear: s,
+    clear: o,
     constructor: "Map",
-    delete: s,
-    entries: s,
-    forEach: s,
-    get: s,
-    has: s,
-    keys: s,
-    set: s,
+    delete: o,
+    entries: o,
+    forEach: o,
+    get: o,
+    has: o,
+    keys: o,
+    set: o,
     size: O,
-    values: s,
-    "@@iterator": s,
+    values: o,
+    "@@iterator": o,
     "@@toStringTag": "string"
   },
   "%MapIteratorPrototype%": {
     // The %MapIteratorPrototype% Object
     "[[Proto]]": "%IteratorPrototype%",
-    next: s,
+    next: o,
     "@@toStringTag": "string"
   },
   Set: {
@@ -1416,37 +1416,37 @@ const jn = {
     groupBy: !1
   },
   "%SetPrototype%": {
-    add: s,
-    clear: s,
+    add: o,
+    clear: o,
     constructor: "Set",
-    delete: s,
-    entries: s,
-    forEach: s,
-    has: s,
-    keys: s,
+    delete: o,
+    entries: o,
+    forEach: o,
+    has: o,
+    keys: o,
     size: O,
-    values: s,
-    "@@iterator": s,
+    values: o,
+    "@@iterator": o,
     "@@toStringTag": "string",
     // See https://github.com/tc39/proposal-set-methods
-    intersection: s,
+    intersection: o,
     // See https://github.com/tc39/proposal-set-methods
-    union: s,
+    union: o,
     // See https://github.com/tc39/proposal-set-methods
-    difference: s,
+    difference: o,
     // See https://github.com/tc39/proposal-set-methods
-    symmetricDifference: s,
+    symmetricDifference: o,
     // See https://github.com/tc39/proposal-set-methods
-    isSubsetOf: s,
+    isSubsetOf: o,
     // See https://github.com/tc39/proposal-set-methods
-    isSupersetOf: s,
+    isSupersetOf: o,
     // See https://github.com/tc39/proposal-set-methods
-    isDisjointFrom: s
+    isDisjointFrom: o
   },
   "%SetIteratorPrototype%": {
     // The %SetIteratorPrototype% Object
     "[[Proto]]": "%IteratorPrototype%",
-    next: s,
+    next: o,
     "@@toStringTag": "string"
   },
   WeakMap: {
@@ -1456,10 +1456,10 @@ const jn = {
   },
   "%WeakMapPrototype%": {
     constructor: "WeakMap",
-    delete: s,
-    get: s,
-    has: s,
-    set: s,
+    delete: o,
+    get: o,
+    has: o,
+    set: o,
     "@@toStringTag": "string"
   },
   WeakSet: {
@@ -1468,17 +1468,17 @@ const jn = {
     prototype: "%WeakSetPrototype%"
   },
   "%WeakSetPrototype%": {
-    add: s,
+    add: o,
     constructor: "WeakSet",
-    delete: s,
-    has: s,
+    delete: o,
+    has: o,
     "@@toStringTag": "string"
   },
   // *** Structured Data
   ArrayBuffer: {
     // Properties of the ArrayBuffer Constructor
     "[[Proto]]": "%FunctionPrototype%",
-    isView: s,
+    isView: o,
     prototype: "%ArrayBufferPrototype%",
     "@@species": O,
     // See https://github.com/Moddable-OpenSource/moddable/issues/523
@@ -1489,17 +1489,17 @@ const jn = {
   "%ArrayBufferPrototype%": {
     byteLength: O,
     constructor: "ArrayBuffer",
-    slice: s,
+    slice: o,
     "@@toStringTag": "string",
     // See https://github.com/Moddable-OpenSource/moddable/issues/523
     concat: !1,
     // See https://github.com/tc39/proposal-resizablearraybuffer
-    transfer: s,
-    resize: s,
+    transfer: o,
+    resize: o,
     resizable: O,
     maxByteLength: O,
     // https://github.com/tc39/proposal-arraybuffer-transfer
-    transferToFixedLength: s,
+    transferToFixedLength: o,
     detached: O
   },
   // SharedArrayBuffer Objects
@@ -1519,42 +1519,42 @@ const jn = {
     byteLength: O,
     byteOffset: O,
     constructor: "DataView",
-    getBigInt64: s,
-    getBigUint64: s,
+    getBigInt64: o,
+    getBigUint64: o,
     // https://github.com/tc39/proposal-float16array
-    getFloat16: s,
-    getFloat32: s,
-    getFloat64: s,
-    getInt8: s,
-    getInt16: s,
-    getInt32: s,
-    getUint8: s,
-    getUint16: s,
-    getUint32: s,
-    setBigInt64: s,
-    setBigUint64: s,
+    getFloat16: o,
+    getFloat32: o,
+    getFloat64: o,
+    getInt8: o,
+    getInt16: o,
+    getInt32: o,
+    getUint8: o,
+    getUint16: o,
+    getUint32: o,
+    setBigInt64: o,
+    setBigUint64: o,
     // https://github.com/tc39/proposal-float16array
-    setFloat16: s,
-    setFloat32: s,
-    setFloat64: s,
-    setInt8: s,
-    setInt16: s,
-    setInt32: s,
-    setUint8: s,
-    setUint16: s,
-    setUint32: s,
+    setFloat16: o,
+    setFloat32: o,
+    setFloat64: o,
+    setInt8: o,
+    setInt16: o,
+    setInt32: o,
+    setUint8: o,
+    setUint16: o,
+    setUint32: o,
     "@@toStringTag": "string"
   },
   // Atomics
   Atomics: !1,
   // UNSAFE and suppressed.
   JSON: {
-    parse: s,
-    stringify: s,
+    parse: o,
+    stringify: o,
     "@@toStringTag": "string",
     // https://github.com/tc39/proposal-json-parse-with-source/
-    rawJSON: s,
-    isRawJSON: s
+    rawJSON: o,
+    isRawJSON: o
   },
   // *** Control Abstraction Objects
   // https://github.com/tc39/proposal-iterator-helpers
@@ -1562,41 +1562,41 @@ const jn = {
     // Properties of the Iterator Constructor
     "[[Proto]]": "%FunctionPrototype%",
     prototype: "%IteratorPrototype%",
-    from: s
+    from: o
   },
   "%IteratorPrototype%": {
     // The %IteratorPrototype% Object
-    "@@iterator": s,
+    "@@iterator": o,
     // https://github.com/tc39/proposal-iterator-helpers
     constructor: "Iterator",
-    map: s,
-    filter: s,
-    take: s,
-    drop: s,
-    flatMap: s,
-    reduce: s,
-    toArray: s,
-    forEach: s,
-    some: s,
-    every: s,
-    find: s,
+    map: o,
+    filter: o,
+    take: o,
+    drop: o,
+    flatMap: o,
+    reduce: o,
+    toArray: o,
+    forEach: o,
+    some: o,
+    every: o,
+    find: o,
     "@@toStringTag": "string",
     // https://github.com/tc39/proposal-async-iterator-helpers
-    toAsync: s,
+    toAsync: o,
     // See https://github.com/Moddable-OpenSource/moddable/issues/523#issuecomment-1942904505
     "@@dispose": !1
   },
   // https://github.com/tc39/proposal-iterator-helpers
   "%WrapForValidIteratorPrototype%": {
     "[[Proto]]": "%IteratorPrototype%",
-    next: s,
-    return: s
+    next: o,
+    return: o
   },
   // https://github.com/tc39/proposal-iterator-helpers
   "%IteratorHelperPrototype%": {
     "[[Proto]]": "%IteratorPrototype%",
-    next: s,
-    return: s,
+    next: o,
+    return: o,
     "@@toStringTag": "string"
   },
   // https://github.com/tc39/proposal-async-iterator-helpers
@@ -1604,24 +1604,24 @@ const jn = {
     // Properties of the Iterator Constructor
     "[[Proto]]": "%FunctionPrototype%",
     prototype: "%AsyncIteratorPrototype%",
-    from: s
+    from: o
   },
   "%AsyncIteratorPrototype%": {
     // The %AsyncIteratorPrototype% Object
-    "@@asyncIterator": s,
+    "@@asyncIterator": o,
     // https://github.com/tc39/proposal-async-iterator-helpers
     constructor: "AsyncIterator",
-    map: s,
-    filter: s,
-    take: s,
-    drop: s,
-    flatMap: s,
-    reduce: s,
-    toArray: s,
-    forEach: s,
-    some: s,
-    every: s,
-    find: s,
+    map: o,
+    filter: o,
+    take: o,
+    drop: o,
+    flatMap: o,
+    reduce: o,
+    toArray: o,
+    forEach: o,
+    some: o,
+    every: o,
+    find: o,
     "@@toStringTag": "string",
     // See https://github.com/Moddable-OpenSource/moddable/issues/523#issuecomment-1942904505
     "@@asyncDispose": !1
@@ -1629,14 +1629,14 @@ const jn = {
   // https://github.com/tc39/proposal-async-iterator-helpers
   "%WrapForValidAsyncIteratorPrototype%": {
     "[[Proto]]": "%AsyncIteratorPrototype%",
-    next: s,
-    return: s
+    next: o,
+    return: o
   },
   // https://github.com/tc39/proposal-async-iterator-helpers
   "%AsyncIteratorHelperPrototype%": {
     "[[Proto]]": "%AsyncIteratorPrototype%",
-    next: s,
-    return: s,
+    next: o,
+    return: o,
     "@@toStringTag": "string"
   },
   "%InertGeneratorFunction%": {
@@ -1671,18 +1671,18 @@ const jn = {
     // Properties of the Generator Prototype Object
     "[[Proto]]": "%IteratorPrototype%",
     constructor: "%Generator%",
-    next: s,
-    return: s,
-    throw: s,
+    next: o,
+    return: o,
+    throw: o,
     "@@toStringTag": "string"
   },
   "%AsyncGeneratorPrototype%": {
     // Properties of the AsyncGenerator Prototype Object
     "[[Proto]]": "%AsyncIteratorPrototype%",
     constructor: "%AsyncGenerator%",
-    next: s,
-    return: s,
-    throw: s,
+    next: o,
+    return: o,
+    throw: o,
     "@@toStringTag": "string"
   },
   // TODO: To be replaced with Promise.delegate
@@ -1696,43 +1696,43 @@ const jn = {
   // another whitelist change to update to the current proposed standard.
   HandledPromise: {
     "[[Proto]]": "Promise",
-    applyFunction: s,
-    applyFunctionSendOnly: s,
-    applyMethod: s,
-    applyMethodSendOnly: s,
-    get: s,
-    getSendOnly: s,
+    applyFunction: o,
+    applyFunctionSendOnly: o,
+    applyMethod: o,
+    applyMethodSendOnly: o,
+    get: o,
+    getSendOnly: o,
     prototype: "%PromisePrototype%",
-    resolve: s
+    resolve: o
   },
   Promise: {
     // Properties of the Promise Constructor
     "[[Proto]]": "%FunctionPrototype%",
-    all: s,
-    allSettled: s,
+    all: o,
+    allSettled: o,
     // To transition from `false` to `fn` once we also have `AggregateError`
     // TODO https://github.com/Agoric/SES-shim/issues/550
     any: !1,
     // ES2021
     prototype: "%PromisePrototype%",
-    race: s,
-    reject: s,
-    resolve: s,
+    race: o,
+    reject: o,
+    resolve: o,
     // https://github.com/tc39/proposal-promise-with-resolvers
-    withResolvers: s,
+    withResolvers: o,
     "@@species": O
   },
   "%PromisePrototype%": {
     // Properties of the Promise Prototype Object
-    catch: s,
+    catch: o,
     constructor: "Promise",
-    finally: s,
-    then: s,
+    finally: o,
+    then: o,
     "@@toStringTag": "string",
     // Non-standard, used in node to prevent async_hooks from breaking
-    "UniqueSymbol(async_id_symbol)": Ie,
-    "UniqueSymbol(trigger_async_id_symbol)": Ie,
-    "UniqueSymbol(destroyed)": Ie
+    "UniqueSymbol(async_id_symbol)": Ae,
+    "UniqueSymbol(trigger_async_id_symbol)": Ae,
+    "UniqueSymbol(destroyed)": Ae
   },
   "%InertAsyncFunction%": {
     // Properties of the AsyncFunction Constructor
@@ -1753,67 +1753,67 @@ const jn = {
   Reflect: {
     // The Reflect Object
     // Not a function object.
-    apply: s,
-    construct: s,
-    defineProperty: s,
-    deleteProperty: s,
-    get: s,
-    getOwnPropertyDescriptor: s,
-    getPrototypeOf: s,
-    has: s,
-    isExtensible: s,
-    ownKeys: s,
-    preventExtensions: s,
-    set: s,
-    setPrototypeOf: s,
+    apply: o,
+    construct: o,
+    defineProperty: o,
+    deleteProperty: o,
+    get: o,
+    getOwnPropertyDescriptor: o,
+    getPrototypeOf: o,
+    has: o,
+    isExtensible: o,
+    ownKeys: o,
+    preventExtensions: o,
+    set: o,
+    setPrototypeOf: o,
     "@@toStringTag": "string"
   },
   Proxy: {
     // Properties of the Proxy Constructor
     "[[Proto]]": "%FunctionPrototype%",
-    revocable: s
+    revocable: o
   },
   // Appendix B
   // Annex B: Additional Properties of the Global Object
-  escape: s,
-  unescape: s,
+  escape: o,
+  unescape: o,
   // Proposed
   "%UniqueCompartment%": {
     "[[Proto]]": "%FunctionPrototype%",
     prototype: "%CompartmentPrototype%",
-    toString: s
+    toString: o
   },
   "%InertCompartment%": {
     "[[Proto]]": "%FunctionPrototype%",
     prototype: "%CompartmentPrototype%",
-    toString: s
+    toString: o
   },
   "%CompartmentPrototype%": {
     constructor: "%InertCompartment%",
-    evaluate: s,
+    evaluate: o,
     globalThis: O,
     name: O,
     import: Dn,
     load: Dn,
-    importNow: s,
-    module: s,
+    importNow: o,
+    module: o,
     "@@toStringTag": "string"
   },
-  lockdown: s,
-  harden: { ...s, isFake: "boolean" },
-  "%InitialGetStackString%": s
-}, Pa = (t) => typeof t == "function";
-function ka(t, e, r) {
+  lockdown: o,
+  harden: { ...o, isFake: "boolean" },
+  "%InitialGetStackString%": o
+}, Ea = (t) => typeof t == "function";
+function xa(t, e, r) {
   if (se(t, e)) {
-    const n = ue(t, e);
+    const n = de(t, e);
     if (!n || !Pr(n.value, r.value) || n.get !== r.get || n.set !== r.set || n.writable !== r.writable || n.enumerable !== r.enumerable || n.configurable !== r.configurable)
       throw v(`Conflicting definitions of ${e}`);
   }
-  M(t, e, r);
+  L(t, e, r);
 }
-function Ta(t, e) {
+function Pa(t, e) {
   for (const [r, n] of te(e))
-    ka(t, r, n);
+    xa(t, r, n);
 }
 function Uo(t, e) {
   const r = { __proto__: null };
@@ -1825,9 +1825,9 @@ const jo = () => {
   const t = H(null);
   let e;
   const r = (c) => {
-    Ta(t, Je(c));
+    Pa(t, Je(c));
   };
-  y(r);
+  g(r);
   const n = () => {
     for (const [c, u] of te(t)) {
       if (!We(u) || !se(u, "prototype"))
@@ -1849,48 +1849,48 @@ const jo = () => {
       t[d] = f;
     }
   };
-  y(n);
-  const a = () => (y(t), e = new Et(Ve(fo(t), Pa)), t);
-  y(a);
-  const o = (c) => {
+  g(n);
+  const a = () => (g(t), e = new xt(Ve(fo(t), Ea)), t);
+  g(a);
+  const s = (c) => {
     if (!e)
       throw v(
         "isPseudoNative can only be called after finalIntrinsics"
       );
     return Yt(e, c);
   };
-  y(o);
+  g(s);
   const i = {
     addIntrinsics: r,
     completePrototypes: n,
     finalIntrinsics: a,
-    isPseudoNative: o
+    isPseudoNative: s
   };
-  return y(i), r(Mo), r(Uo(E, Fo)), i;
-}, Ia = (t) => {
+  return g(i), r(Lo), r(Uo(x, Fo)), i;
+}, ka = (t) => {
   const { addIntrinsics: e, finalIntrinsics: r } = jo();
   return e(Uo(t, Do)), r();
 };
-function Aa(t, e) {
+function Ta(t, e) {
   let r = !1;
-  const n = (m, ...p) => (r || (console.groupCollapsed("Removing unpermitted intrinsics"), r = !0), console[m](...p)), a = ["undefined", "boolean", "number", "string", "symbol"], o = new Ae(
-    Nt ? de(
+  const n = (m, ...p) => (r || (console.groupCollapsed("Removing unpermitted intrinsics"), r = !0), console[m](...p)), a = ["undefined", "boolean", "number", "string", "symbol"], s = new Ce(
+    $t ? fe(
       Ve(
         te(dr["%SharedSymbol%"]),
-        ([m, p]) => p === "symbol" && typeof Nt[m] == "symbol"
+        ([m, p]) => p === "symbol" && typeof $t[m] == "symbol"
       ),
-      ([m]) => [Nt[m], `@@${m}`]
+      ([m]) => [$t[m], `@@${m}`]
     ) : []
   );
   function i(m, p) {
     if (typeof p == "string")
       return p;
-    const h = De(o, p);
+    const h = De(s, p);
     if (typeof p == "symbol") {
       if (h)
         return h;
       {
-        const _ = Ls(p);
+        const _ = Os(p);
         return _ !== void 0 ? `RegisteredSymbol(${_})` : `Unique${ie(p)}`;
       }
     }
@@ -1930,7 +1930,7 @@ function Aa(t, e) {
     throw v(`Unexpected whitelist permit ${_} at ${m}`);
   }
   function l(m, p, h, _) {
-    const w = ue(p, h);
+    const w = de(p, h);
     if (!w)
       throw v(`Property ${h} not found at ${m}`);
     if (se(w, "value")) {
@@ -1955,9 +1955,9 @@ function Aa(t, e) {
     const _ = h["[[Proto]]"];
     c(m, p, _), typeof p == "function" && e(p);
     for (const w of st(p)) {
-      const I = i(m, w), N = `${m}.${I}`, T = d(p, h, I);
-      if (!T || !l(N, p, w, T)) {
-        T !== !1 && n("warn", `Removing ${N}`);
+      const I = i(m, w), $ = `${m}.${I}`, T = d(p, h, I);
+      if (!T || !l($, p, w, T)) {
+        T !== !1 && n("warn", `Removing ${$}`);
         try {
           delete p[w];
         } catch (D) {
@@ -1965,13 +1965,13 @@ function Aa(t, e) {
             if (typeof p == "function" && w === "prototype" && (p.prototype = void 0, p.prototype === void 0)) {
               n(
                 "warn",
-                `Tolerating undeletable ${N} === undefined`
+                `Tolerating undeletable ${$} === undefined`
               );
               continue;
             }
-            n("error", `failed to delete ${N}`, D);
+            n("error", `failed to delete ${$}`, D);
           } else
-            n("error", `deleting ${N} threw`, D);
+            n("error", `deleting ${$} threw`, D);
           throw D;
         }
       }
@@ -1983,23 +1983,23 @@ function Aa(t, e) {
     r && console.groupEnd();
   }
 }
-function Ca() {
+function Ia() {
   try {
-    ye.prototype.constructor("return 1");
+    ve.prototype.constructor("return 1");
   } catch {
-    return y({});
+    return g({});
   }
   const t = {};
   function e(r, n, a) {
-    let o;
+    let s;
     try {
-      o = (0, eval)(a);
+      s = (0, eval)(a);
     } catch (u) {
       if (u instanceof Wt)
         return;
       throw u;
     }
-    const i = B(o), c = function() {
+    const i = B(s), c = function() {
       throw v(
         "Function.prototype.constructor is not a valid constructor."
       );
@@ -2014,7 +2014,7 @@ function Ca() {
       }
     }), F(i, {
       constructor: { value: c }
-    }), c !== ye.prototype.constructor && uo(c, ye.prototype.constructor), t[n] = c;
+    }), c !== ve.prototype.constructor && uo(c, ve.prototype.constructor), t[n] = c;
   }
   return e("Function", "%InertFunction%", "(function(){})"), e(
     "GeneratorFunction",
@@ -2030,10 +2030,10 @@ function Ca() {
     "(async function*(){})"
   ), t;
 }
-function Na(t = "safe") {
+function Aa(t = "safe") {
   if (t !== "safe" && t !== "unsafe")
     throw v(`unrecognized dateTaming ${t}`);
-  const e = ks, r = e.prototype, n = {
+  const e = xs, r = e.prototype, n = {
     /**
      * `%SharedDate%.now()` throw a `TypeError` starting with "secure mode".
      * See https://github.com/endojs/endo/issues/910#issuecomment-1581855420
@@ -2076,8 +2076,8 @@ function Na(t = "safe") {
         configurable: !0
       }
     }), u;
-  }, o = a({ powers: "original" }), i = a({ powers: "none" });
-  return F(o, {
+  }, s = a({ powers: "original" }), i = a({ powers: "none" });
+  return F(s, {
     now: {
       value: e.now,
       writable: !0,
@@ -2094,14 +2094,14 @@ function Na(t = "safe") {
   }), F(r, {
     constructor: { value: i }
   }), {
-    "%InitialDate%": o,
+    "%InitialDate%": s,
     "%SharedDate%": i
   };
 }
-function $a(t = "safe") {
+function Ca(t = "safe") {
   if (t !== "safe" && t !== "unsafe")
     throw v(`unrecognized mathTaming ${t}`);
-  const e = As, r = e, { random: n, ...a } = Je(e), i = H(lo, {
+  const e = Ts, r = e, { random: n, ...a } = Je(e), i = H(lo, {
     ...a,
     random: {
       value: {
@@ -2123,13 +2123,13 @@ function $a(t = "safe") {
     "%SharedMath%": i
   };
 }
-function Oa(t = "safe") {
+function $a(t = "safe") {
   if (t !== "safe" && t !== "unsafe")
     throw v(`unrecognized regExpTaming ${t}`);
-  const e = Be.prototype, r = (o = {}) => {
+  const e = Be.prototype, r = (s = {}) => {
     const i = function(...l) {
       return new.target === void 0 ? Be(...l) : cr(Be, l, new.target);
-    }, c = ue(Be, Cn);
+    }, c = de(Be, Cn);
     if (!c)
       throw v("no RegExp[Symbol.species] descriptor");
     return F(i, {
@@ -2150,7 +2150,7 @@ function Oa(t = "safe") {
     "%SharedRegExp%": a
   };
 }
-const Ra = {
+const Na = {
   "%ObjectPrototype%": {
     toString: !0
   },
@@ -2260,7 +2260,7 @@ const Ra = {
     // https://github.com/tc39/proposal-iterator-helpers
     [He]: !0
   }
-}, La = {
+}, Oa = {
   ...Zo,
   /**
    * Rollup (as used at least by vega) and webpack
@@ -2314,11 +2314,11 @@ const Ra = {
    */
   "%SetPrototype%": "*"
 };
-function Ma(t, e, r = []) {
-  const n = new St(r);
+function Ra(t, e, r = []) {
+  const n = new Et(r);
   function a(l, d, f, m) {
     if ("value" in m && m.configurable) {
-      const { value: p } = m, h = dn(n, f), { get: _, set: w } = ue(
+      const { value: p } = m, h = dn(n, f), { get: _, set: w } = de(
         {
           get [f]() {
             return p;
@@ -2330,7 +2330,7 @@ function Ma(t, e, r = []) {
                   f
                 )}' of '${l}'`
               );
-            se(this, f) ? this[f] = I : (h && console.error(v(`Override property ${f}`)), M(this, f, {
+            se(this, f) ? this[f] = I : (h && console.error(v(`Override property ${f}`)), L(this, f, {
               value: I,
               writable: !0,
               enumerable: !0,
@@ -2340,12 +2340,12 @@ function Ma(t, e, r = []) {
         },
         f
       );
-      M(_, "originalValue", {
+      L(_, "originalValue", {
         value: p,
         writable: !1,
         enumerable: !1,
         configurable: !1
-      }), M(d, f, {
+      }), L(d, f, {
         get: _,
         set: w,
         enumerable: m.enumerable,
@@ -2353,8 +2353,8 @@ function Ma(t, e, r = []) {
       });
     }
   }
-  function o(l, d, f) {
-    const m = ue(d, f);
+  function s(l, d, f) {
+    const m = de(d, f);
     m && a(l, d, f, m);
   }
   function i(l, d) {
@@ -2363,12 +2363,12 @@ function Ma(t, e, r = []) {
   }
   function c(l, d, f) {
     for (const m of st(f)) {
-      const p = ue(d, m);
+      const p = de(d, m);
       if (!p || p.get || p.set)
         continue;
       const h = `${l}.${ie(m)}`, _ = f[m];
       if (_ === !0)
-        o(h, d, m);
+        s(h, d, m);
       else if (_ === "*")
         i(h, p.value);
       else if (We(_))
@@ -2380,7 +2380,7 @@ function Ma(t, e, r = []) {
   let u;
   switch (e) {
     case "min": {
-      u = Ra;
+      u = Na;
       break;
     }
     case "moderate": {
@@ -2388,7 +2388,7 @@ function Ma(t, e, r = []) {
       break;
     }
     case "severe": {
-      u = La;
+      u = Oa;
       break;
     }
     default:
@@ -2396,7 +2396,7 @@ function Ma(t, e, r = []) {
   }
   c("root", t, u);
 }
-const { Fail: Jr, quote: fr } = Z, Fa = /^(\w*[a-z])Locale([A-Z]\w*)$/, zo = {
+const { Fail: Jr, quote: fr } = Z, Ma = /^(\w*[a-z])Locale([A-Z]\w*)$/, zo = {
   // See https://tc39.es/ecma262/#sec-string.prototype.localecompare
   localeCompare(t) {
     if (this === null || this === void 0)
@@ -2409,40 +2409,40 @@ const { Fail: Jr, quote: fr } = Z, Fa = /^(\w*[a-z])Locale([A-Z]\w*)$/, zo = {
   toString() {
     return `${this}`;
   }
-}, Da = zo.localeCompare, Ua = zo.toString;
-function ja(t, e = "safe") {
+}, La = zo.localeCompare, Fa = zo.toString;
+function Da(t, e = "safe") {
   if (e !== "safe" && e !== "unsafe")
     throw v(`unrecognized localeTaming ${e}`);
   if (e !== "unsafe") {
-    M(ie.prototype, "localeCompare", {
-      value: Da
+    L(ie.prototype, "localeCompare", {
+      value: La
     });
     for (const r of Ot(t)) {
       const n = t[r];
       if (We(n))
         for (const a of Ot(n)) {
-          const o = pn(Fa, a);
-          if (o) {
+          const s = pn(Ma, a);
+          if (s) {
             typeof n[a] == "function" || Jr`expected ${fr(a)} to be a function`;
-            const i = `${o[1]}${o[2]}`, c = n[i];
-            typeof c == "function" || Jr`function ${fr(i)} not found`, M(n, a, { value: c });
+            const i = `${s[1]}${s[2]}`, c = n[i];
+            typeof c == "function" || Jr`function ${fr(i)} not found`, L(n, a, { value: c });
           }
         }
     }
-    M(io.prototype, "toLocaleString", {
-      value: Ua
+    L(io.prototype, "toLocaleString", {
+      value: Fa
     });
   }
 }
-const Za = (t) => ({
+const Ua = (t) => ({
   eval(r) {
     return typeof r != "string" ? r : t(r);
   }
-}).eval, { Fail: Zn } = Z, za = (t) => {
+}).eval, { Fail: Zn } = Z, ja = (t) => {
   const e = function(n) {
-    const a = `${Br(arguments) || ""}`, o = `${Tt(arguments, ",")}`;
-    new ye(o, ""), new ye(a);
-    const i = `(function anonymous(${o}
+    const a = `${Br(arguments) || ""}`, s = `${Tt(arguments, ",")}`;
+    new ve(s, ""), new ve(a);
+    const i = `(function anonymous(${s}
 ) {
 ${a}
 })`;
@@ -2452,19 +2452,19 @@ ${a}
     // Ensure that any function created in any evaluator in a realm is an
     // instance of Function in any evaluator of the same realm.
     prototype: {
-      value: ye.prototype,
+      value: ve.prototype,
       writable: !1,
       enumerable: !1,
       configurable: !1
     }
-  }), B(ye) === ye.prototype || Zn`Function prototype is the same accross compartments`, B(e) === ye.prototype || Zn`Function constructor prototype is the same accross compartments`, e;
-}, Ga = (t) => {
-  M(
+  }), B(ve) === ve.prototype || Zn`Function prototype is the same accross compartments`, B(e) === ve.prototype || Zn`Function constructor prototype is the same accross compartments`, e;
+}, Za = (t) => {
+  L(
     t,
-    Rs,
-    y(
-      Er(H(null), {
-        set: y(() => {
+    Ns,
+    g(
+      xr(H(null), {
+        set: g(() => {
           throw v(
             "Cannot set Symbol.unscopables of a Compartment's globalThis"
           );
@@ -2475,8 +2475,8 @@ ${a}
     )
   );
 }, Go = (t) => {
-  for (const [e, r] of te(Mo))
-    M(t, e, {
+  for (const [e, r] of te(Lo))
+    L(t, e, {
       value: r,
       writable: !1,
       enumerable: !1,
@@ -2489,31 +2489,31 @@ ${a}
   markVirtualizedNativeFunction: a
 }) => {
   for (const [i, c] of te(Fo))
-    se(e, c) && M(t, i, {
+    se(e, c) && L(t, i, {
       value: e[c],
       writable: !0,
       enumerable: !1,
       configurable: !0
     });
   for (const [i, c] of te(r))
-    se(e, c) && M(t, i, {
+    se(e, c) && L(t, i, {
       value: e[c],
       writable: !0,
       enumerable: !1,
       configurable: !0
     });
-  const o = {
+  const s = {
     globalThis: t
   };
-  o.Compartment = y(
+  s.Compartment = g(
     n(
       n,
       e,
       a
     )
   );
-  for (const [i, c] of te(o))
-    M(t, i, {
+  for (const [i, c] of te(s))
+    L(t, i, {
       value: c,
       writable: !0,
       enumerable: !1,
@@ -2521,8 +2521,8 @@ ${a}
     }), typeof c == "function" && a(c);
 }, Xr = (t, e, r) => {
   {
-    const n = y(Za(e));
-    r(n), M(t, "eval", {
+    const n = g(Ua(e));
+    r(n), L(t, "eval", {
       value: n,
       writable: !0,
       enumerable: !1,
@@ -2530,29 +2530,29 @@ ${a}
     });
   }
   {
-    const n = y(za(e));
-    r(n), M(t, "Function", {
+    const n = g(ja(e));
+    r(n), L(t, "Function", {
       value: n,
       writable: !0,
       enumerable: !1,
       configurable: !0
     });
   }
-}, { Fail: Ba, quote: Ho } = Z, Vo = new Sr(
-  yn,
-  y({
+}, { Fail: za, quote: Ho } = Z, Vo = new Er(
+  gn,
+  g({
     get(t, e) {
-      Ba`Please report unexpected scope handler trap: ${Ho(ie(e))}`;
+      za`Please report unexpected scope handler trap: ${Ho(ie(e))}`;
     }
   })
-), Ha = {
+), Ga = {
   get(t, e) {
   },
   set(t, e, r) {
     throw rt(`${ie(e)} is not defined`);
   },
   has(t, e) {
-    return e in E;
+    return e in x;
   },
   // note: this is likely a bug of safari
   // https://bugs.webkit.org/show_bug.cgi?id=195534
@@ -2573,43 +2573,43 @@ ${a}
   ownKeys(t) {
     return [];
   }
-}, Wo = y(
+}, Wo = g(
   H(
     Vo,
-    Je(Ha)
+    Je(Ga)
   )
-), Va = new Sr(
-  yn,
+), Ba = new Er(
+  gn,
   Wo
 ), qo = (t) => {
   const e = {
     // inherit scopeTerminator behavior
     ...Wo,
     // Redirect set properties to the globalObject.
-    set(a, o, i) {
-      return go(t, o, i);
+    set(a, s, i) {
+      return yo(t, s, i);
     },
     // Always claim to have a potential property in order to be the recipient of a set
-    has(a, o) {
+    has(a, s) {
       return !0;
     }
-  }, r = y(
+  }, r = g(
     H(
       Vo,
       Je(e)
     )
   );
-  return new Sr(
-    yn,
+  return new Er(
+    gn,
     r
   );
 };
-y(qo);
-const { Fail: Wa } = Z, qa = () => {
-  const t = H(null), e = y({
+g(qo);
+const { Fail: Ha } = Z, Va = () => {
+  const t = H(null), e = g({
     eval: {
       get() {
-        return delete t.eval, So;
+        return delete t.eval, Eo;
       },
       enumerable: !1,
       configurable: !0
@@ -2618,18 +2618,18 @@ const { Fail: Wa } = Z, qa = () => {
     evalScope: t,
     allowNextEvalToBeUnsafe() {
       const { revoked: n } = r;
-      n !== null && Wa`a handler did not reset allowNextEvalToBeUnsafe ${n.err}`, F(t, e);
+      n !== null && Ha`a handler did not reset allowNextEvalToBeUnsafe ${n.err}`, F(t, e);
     },
     /** @type {null | { err: any }} */
     revoked: null
   };
   return r;
-}, zn = "\\s*[@#]\\s*([a-zA-Z][a-zA-Z0-9]*)\\s*=\\s*([^\\s\\*]*)", Ka = new Be(
+}, zn = "\\s*[@#]\\s*([a-zA-Z][a-zA-Z0-9]*)\\s*=\\s*([^\\s\\*]*)", Wa = new Be(
   `(?:\\s*//${zn}|/\\*${zn}\\s*\\*/)\\s*$`
 ), bn = (t) => {
   let e = "<unknown>";
   for (; t.length > 0; ) {
-    const r = pn(Ka, t);
+    const r = pn(Wa, t);
     if (r === null)
       break;
     t = mn(t, 0, t.length - r[0].length), r[3] === "sourceURL" ? e = r[4] : r[1] === "sourceURL" && (e = r[2]);
@@ -2637,7 +2637,7 @@ const { Fail: Wa } = Z, qa = () => {
   return e;
 };
 function wn(t, e) {
-  const r = Qs(t, e);
+  const r = Js(t, e);
   if (r < 0)
     return -1;
   const n = t[r] === `
@@ -2664,11 +2664,11 @@ const Ko = new Be("(?:<!--|-->)", "g"), Yo = (t) => {
   throw Wt(
     `Possible import expression rejected at ${r}:${e}. (SES_IMPORT_REJECTED)`
   );
-}, es = (t) => lr(t, Xo, (r, n, a) => `${n}__import__${a}`), Ya = new Be(
+}, es = (t) => lr(t, Xo, (r, n, a) => `${n}__import__${a}`), qa = new Be(
   "(^|[^.])\\beval(\\s*\\()",
   "g"
 ), ts = (t) => {
-  const e = wn(t, Ya);
+  const e = wn(t, qa);
   if (e < 0)
     return t;
   const r = bn(t);
@@ -2680,16 +2680,16 @@ const Ko = new Be("(?:<!--|-->)", "g"), Yo = (t) => {
     t = r(t);
   return t;
 };
-y({
-  rejectHtmlComments: y(Yo),
-  evadeHtmlCommentTest: y(Jo),
-  rejectImportExpressions: y(Qo),
-  evadeImportExpressionTest: y(es),
-  rejectSomeDirectEvalExpressions: y(ts),
-  mandatoryTransforms: y(rs),
-  applyTransforms: y(ns)
+g({
+  rejectHtmlComments: g(Yo),
+  evadeHtmlCommentTest: g(Jo),
+  rejectImportExpressions: g(Qo),
+  evadeImportExpressionTest: g(es),
+  rejectSomeDirectEvalExpressions: g(ts),
+  mandatoryTransforms: g(rs),
+  applyTransforms: g(ns)
 });
-const Ja = [
+const Ka = [
   // 11.6.2.1 Keywords
   "await",
   "break",
@@ -2744,9 +2744,9 @@ const Ja = [
   "false",
   "this",
   "arguments"
-], Xa = /^[a-zA-Z_$][\w$]*$/, Gn = (t) => t !== "eval" && !Ir(Ja, t) && fn(Xa, t);
+], Ya = /^[a-zA-Z_$][\w$]*$/, Gn = (t) => t !== "eval" && !Ir(Ka, t) && fn(Ya, t);
 function Bn(t, e) {
-  const r = ue(t, e);
+  const r = de(t, e);
   return r && //
   // The getters will not have .writable, don't let the falsyness of
   // 'undefined' trick us: test with === false, not ! . However descriptors
@@ -2762,7 +2762,7 @@ function Bn(t, e) {
   // case where Object.prototype has been poisoned.
   se(r, "value");
 }
-const Qa = (t, e = {}) => {
+const Ja = (t, e = {}) => {
   const r = Ot(t), n = Ot(e), a = Ve(
     n,
     (i) => Gn(i) && Bn(e, i)
@@ -2782,8 +2782,8 @@ const Qa = (t, e = {}) => {
 function Hn(t, e) {
   return t.length === 0 ? "" : `const {${Tt(t, ",")}} = this.${e};`;
 }
-const ei = (t) => {
-  const { globalObjectConstants: e, moduleLexicalConstants: r } = Qa(
+const Xa = (t) => {
+  const { globalObjectConstants: e, moduleLexicalConstants: r } = Ja(
     t.globalObject,
     t.moduleLexicals
   ), n = Hn(
@@ -2792,7 +2792,7 @@ const ei = (t) => {
   ), a = Hn(
     r,
     "moduleLexicals"
-  ), o = ye(`
+  ), s = ve(`
     with (this.scopeTerminator) {
       with (this.globalObject) {
         with (this.moduleLexicals) {
@@ -2808,14 +2808,14 @@ const ei = (t) => {
       }
     }
   `);
-  return oe(o, t, []);
-}, { Fail: ti } = Z, xn = ({
+  return oe(s, t, []);
+}, { Fail: Qa } = Z, Sn = ({
   globalObject: t,
   moduleLexicals: e = {},
   globalTransforms: r = [],
   sloppyGlobalsMode: n = !1
 }) => {
-  const a = n ? qo(t) : Va, o = qa(), { evalScope: i } = o, c = y({
+  const a = n ? qo(t) : Ba, s = Va(), { evalScope: i } = s, c = g({
     evalScope: i,
     moduleLexicals: e,
     globalObject: t,
@@ -2823,7 +2823,7 @@ const ei = (t) => {
   });
   let u;
   const l = () => {
-    u || (u = ei(c));
+    u || (u = Xa(c));
   };
   return { safeEvaluate: (f, m) => {
     const { localTransforms: p = [] } = m || {};
@@ -2834,45 +2834,45 @@ const ei = (t) => {
     ]);
     let h;
     try {
-      return o.allowNextEvalToBeUnsafe(), oe(u, t, [f]);
+      return s.allowNextEvalToBeUnsafe(), oe(u, t, [f]);
     } catch (_) {
       throw h = _, _;
     } finally {
       const _ = "eval" in i;
-      delete i.eval, _ && (o.revoked = { err: h }, ti`handler did not reset allowNextEvalToBeUnsafe ${h}`);
+      delete i.eval, _ && (s.revoked = { err: h }, Qa`handler did not reset allowNextEvalToBeUnsafe ${h}`);
     }
   } };
-}, ri = ") { [native code] }";
+}, ei = ") { [native code] }";
 let Ur;
 const os = () => {
   if (Ur === void 0) {
-    const t = new Et();
-    M(un, "toString", {
+    const t = new xt();
+    L(un, "toString", {
       value: {
         toString() {
-          const r = ra(this);
-          return bo(r, ri) || !Yt(t, this) ? r : `function ${this.name}() { [native code] }`;
+          const r = ea(this);
+          return bo(r, ei) || !Yt(t, this) ? r : `function ${this.name}() { [native code] }`;
         }
       }.toString
-    }), Ur = y(
-      (r) => Nr(t, r)
+    }), Ur = g(
+      (r) => $r(t, r)
     );
   }
   return Ur;
 };
-function ni(t = "safe") {
+function ti(t = "safe") {
   if (t !== "safe" && t !== "unsafe")
     throw v(`unrecognized domainTaming ${t}`);
   if (t === "unsafe")
     return;
-  const e = E.process || void 0;
+  const e = x.process || void 0;
   if (typeof e == "object") {
-    const r = ue(e, "domain");
+    const r = de(e, "domain");
     if (r !== void 0 && r.get !== void 0)
       throw v(
         "SES failed to lockdown, Node.js domains have been initialized (SES_NO_DOMAINS)"
       );
-    M(e, "domain", {
+    L(e, "domain", {
       value: null,
       configurable: !1,
       writable: !1,
@@ -2880,7 +2880,7 @@ function ni(t = "safe") {
     });
   }
 }
-const ss = y([
+const ss = g([
   ["debug", "debug"],
   // (fmt?, ...args) verbose level on Chrome
   ["log", "log"],
@@ -2899,7 +2899,7 @@ const ss = y([
   // (fmt?, ...args)
   ["groupCollapsed", "log"]
   // (fmt?, ...args)
-]), as = y([
+]), as = g([
   ["assert", "error"],
   // (value, fmt?, ...args)
   ["timeLog", "log"],
@@ -2931,70 +2931,70 @@ const ss = y([
   // (label?)
   ["timeStamp", void 0]
   // (label?)
-]), is = y([
+]), is = g([
   ...ss,
   ...as
-]), oi = (t, { shouldResetForDebugging: e = !1 } = {}) => {
+]), ri = (t, { shouldResetForDebugging: e = !1 } = {}) => {
   e && t.resetErrorTagNum();
   let r = [];
   const n = Pt(
-    de(is, ([i, c]) => {
+    fe(is, ([i, c]) => {
       const u = (...l) => {
         ae(r, [i, ...l]);
       };
-      return M(u, "name", { value: i }), [i, y(u)];
+      return L(u, "name", { value: i }), [i, g(u)];
     })
   );
-  y(n);
+  g(n);
   const a = () => {
-    const i = y(r);
+    const i = g(r);
     return r = [], i;
   };
-  return y(a), y({ loggingConsole: (
+  return g(a), g({ loggingConsole: (
     /** @type {VirtualConsole} */
     n
   ), takeLog: a });
 };
-y(oi);
+g(ri);
 const At = {
   NOTE: "ERROR_NOTE:",
   MESSAGE: "ERROR_MESSAGE:"
 };
-y(At);
+g(At);
 const cs = (t, e) => {
   if (!t)
     return;
-  const { getStackString: r, tagError: n, takeMessageLogArgs: a, takeNoteLogArgsArray: o } = e, i = (w, I) => de(w, (T) => vn(T) ? (ae(I, T), `(${n(T)})`) : T), c = (w, I, N, T, D) => {
-    const j = n(I), q = N === At.MESSAGE ? `${j}:` : `${j} ${N}`, K = i(T, D);
+  const { getStackString: r, tagError: n, takeMessageLogArgs: a, takeNoteLogArgsArray: s } = e, i = (w, I) => fe(w, (T) => vn(T) ? (ae(I, T), `(${n(T)})`) : T), c = (w, I, $, T, D) => {
+    const j = n(I), q = $ === At.MESSAGE ? `${j}:` : `${j} ${$}`, K = i(T, D);
     t[w](q, ...K);
-  }, u = (w, I, N = void 0) => {
+  }, u = (w, I, $ = void 0) => {
     if (I.length === 0)
       return;
-    if (I.length === 1 && N === void 0) {
+    if (I.length === 1 && $ === void 0) {
       f(w, I[0]);
       return;
     }
     let T;
-    I.length === 1 ? T = "Nested error" : T = `Nested ${I.length} errors`, N !== void 0 && (T = `${T} under ${N}`), t.group(T);
+    I.length === 1 ? T = "Nested error" : T = `Nested ${I.length} errors`, $ !== void 0 && (T = `${T} under ${$}`), t.group(T);
     try {
       for (const D of I)
         f(w, D);
     } finally {
       t.groupEnd();
     }
-  }, l = new Et(), d = (w) => (I, N) => {
+  }, l = new xt(), d = (w) => (I, $) => {
     const T = [];
-    c(w, I, At.NOTE, N, T), u(w, T, n(I));
+    c(w, I, At.NOTE, $, T), u(w, T, n(I));
   }, f = (w, I) => {
     if (Yt(l, I))
       return;
-    const N = n(I);
-    Nr(l, I);
-    const T = [], D = a(I), j = o(
+    const $ = n(I);
+    $r(l, I);
+    const T = [], D = a(I), j = s(
       I,
       d(w)
     );
-    D === void 0 ? t[w](`${N}:`, I.message) : c(
+    D === void 0 ? t[w](`${$}:`, I.message) : c(
       w,
       I,
       At.MESSAGE,
@@ -3007,99 +3007,99 @@ const cs = (t, e) => {
 `), t[w](q);
     for (const K of j)
       c(w, I, At.NOTE, K, T);
-    u(w, T, N);
-  }, m = de(ss, ([w, I]) => {
-    const N = (...T) => {
+    u(w, T, $);
+  }, m = fe(ss, ([w, I]) => {
+    const $ = (...T) => {
       const D = [], j = i(T, D);
       t[w](...j), u(w, D);
     };
-    return M(N, "name", { value: w }), [w, y(N)];
+    return L($, "name", { value: w }), [w, g($)];
   }), p = Ve(
     as,
     ([w, I]) => w in t
-  ), h = de(p, ([w, I]) => {
-    const N = (...T) => {
+  ), h = fe(p, ([w, I]) => {
+    const $ = (...T) => {
       t[w](...T);
     };
-    return M(N, "name", { value: w }), [w, y(N)];
+    return L($, "name", { value: w }), [w, g($)];
   }), _ = Pt([...m, ...h]);
   return (
     /** @type {VirtualConsole} */
-    y(_)
+    g(_)
   );
 };
-y(cs);
-const si = (t, e, r = void 0) => {
+g(cs);
+const ni = (t, e, r = void 0) => {
   const n = Ve(
     is,
     ([i, c]) => i in t
-  ), a = de(n, ([i, c]) => [i, y((...l) => {
+  ), a = fe(n, ([i, c]) => [i, g((...l) => {
     (c === void 0 || e.canLog(c)) && t[i](...l);
-  })]), o = Pt(a);
+  })]), s = Pt(a);
   return (
     /** @type {VirtualConsole} */
-    y(o)
+    g(s)
   );
 };
-y(si);
+g(ni);
 const Vn = (t) => {
   if (vt === void 0)
     return;
   let e = 0;
-  const r = new Ae(), n = (d) => {
-    Vs(r, d);
-  }, a = new ke(), o = (d) => {
+  const r = new Ce(), n = (d) => {
+    Bs(r, d);
+  }, a = new Te(), s = (d) => {
     if (Ar(r, d)) {
       const f = De(r, d);
       n(d), t(f);
     }
-  }, i = new vt(o);
+  }, i = new vt(s);
   return {
     rejectionHandledHandler: (d) => {
-      const f = L(a, d);
+      const f = M(a, d);
       n(f);
     },
     unhandledRejectionHandler: (d, f) => {
       e += 1;
       const m = e;
-      Ce(r, m, d), ee(a, f, m), oa(i, f, m, f);
+      $e(r, m, d), ee(a, f, m), ra(i, f, m, f);
     },
     processTerminationHandler: () => {
-      for (const [d, f] of Ws(r))
+      for (const [d, f] of Hs(r))
         n(d), t(f);
     }
   };
 }, jr = (t) => {
   throw v(t);
-}, Wn = (t, e) => y((...r) => oe(t, e, r)), ai = (t = "safe", e = "platform", r = "report", n = void 0) => {
+}, Wn = (t, e) => g((...r) => oe(t, e, r)), oi = (t = "safe", e = "platform", r = "report", n = void 0) => {
   t === "safe" || t === "unsafe" || jr(`unrecognized consoleTaming ${t}`);
   let a;
   n === void 0 ? a = Kr : a = {
     ...Kr,
     getStackString: n
   };
-  const o = (
+  const s = (
     /** @type {VirtualConsole} */
     // eslint-disable-next-line no-nested-ternary
-    typeof E.console < "u" ? E.console : typeof E.print == "function" ? (
+    typeof x.console < "u" ? x.console : typeof x.print == "function" ? (
       // Make a good-enough console for eshost (including only functions that
       // log at a specific level with no special argument interpretation).
       // https://console.spec.whatwg.org/#logging
-      ((l) => y({ debug: l, log: l, info: l, warn: l, error: l }))(
+      ((l) => g({ debug: l, log: l, info: l, warn: l, error: l }))(
         // eslint-disable-next-line no-undef
-        Wn(E.print)
+        Wn(x.print)
       )
     ) : void 0
   );
-  if (o && o.log)
+  if (s && s.log)
     for (const l of ["warn", "error"])
-      o[l] || M(o, l, {
-        value: Wn(o.log, o)
+      s[l] || L(s, l, {
+        value: Wn(s.log, s)
       });
   const i = (
     /** @type {VirtualConsole} */
-    t === "unsafe" ? o : cs(o, a)
-  ), c = E.process || void 0;
+    t === "unsafe" ? s : cs(s, a)
+  ), c = x.process || void 0;
   if (e !== "none" && typeof c == "object" && typeof c.on == "function") {
     let l;
     if (e === "platform" || e === "exit") {
@@ -3117,7 +3117,7 @@ const Vn = (t) => {
     });
     d && (c.on("unhandledRejection", d.unhandledRejectionHandler), c.on("rejectionHandled", d.rejectionHandledHandler), c.on("exit", d.processTerminationHandler));
   }
-  const u = E.window || void 0;
+  const u = x.window || void 0;
   if (e !== "none" && typeof u == "object" && typeof u.addEventListener == "function" && u.addEventListener("error", (l) => {
     l.preventDefault(), i.error(l.error), (e === "exit" || e === "abort") && (u.location.href = "about:blank");
   }), r !== "none" && typeof u == "object" && typeof u.addEventListener == "function") {
@@ -3133,7 +3133,7 @@ const Vn = (t) => {
     }));
   }
   return { console: i };
-}, ii = [
+}, si = [
   // suppress 'getThis' definitely
   "getTypeName",
   // suppress 'getFunction' definitely
@@ -3156,43 +3156,43 @@ const Vn = (t) => {
   "getScriptNameOrSourceURL",
   "toString"
   // TODO replace to use only whitelisted info
-], ci = (t) => {
-  const r = Pt(de(ii, (n) => {
+], ai = (t) => {
+  const r = Pt(fe(si, (n) => {
     const a = t[n];
     return [n, () => oe(a, t, [])];
   }));
   return H(r, {});
-}, li = (t) => de(t, ci), ui = /\/node_modules\//, di = /^(?:node:)?internal\//, fi = /\/packages\/ses\/src\/error\/assert.js$/, pi = /\/packages\/eventual-send\/src\//, mi = [
+}, ii = (t) => fe(t, ai), ci = /\/node_modules\//, li = /^(?:node:)?internal\//, ui = /\/packages\/ses\/src\/error\/assert.js$/, di = /\/packages\/eventual-send\/src\//, fi = [
+  ci,
+  li,
   ui,
-  di,
-  fi,
-  pi
-], hi = (t) => {
+  di
+], pi = (t) => {
   if (!t)
     return !0;
-  for (const e of mi)
+  for (const e of fi)
     if (fn(e, t))
       return !1;
   return !0;
-}, gi = /^((?:.*[( ])?)[:/\w_-]*\/\.\.\.\/(.+)$/, yi = /^((?:.*[( ])?)[:/\w_-]*\/(packages\/.+)$/, vi = [
-  gi,
-  yi
-], _i = (t) => {
-  for (const e of vi) {
+}, mi = /^((?:.*[( ])?)[:/\w_-]*\/\.\.\.\/(.+)$/, hi = /^((?:.*[( ])?)[:/\w_-]*\/(packages\/.+)$/, yi = [
+  mi,
+  hi
+], gi = (t) => {
+  for (const e of yi) {
     const r = pn(e, t);
     if (r)
-      return Tt(Gs(r, 1), "");
+      return Tt(Zs(r, 1), "");
   }
   return t;
-}, bi = (t, e, r, n) => {
-  const a = t.captureStackTrace, o = (p) => n === "verbose" ? !0 : hi(p.getFileName()), i = (p) => {
+}, vi = (t, e, r, n) => {
+  const a = t.captureStackTrace, s = (p) => n === "verbose" ? !0 : pi(p.getFileName()), i = (p) => {
     let h = `${p}`;
-    return n === "concise" && (h = _i(h)), `
+    return n === "concise" && (h = gi(h)), `
   at ${h}`;
   }, c = (p, h) => Tt(
-    de(Ve(h, o), i),
+    fe(Ve(h, s), i),
     ""
-  ), u = new ke(), l = {
+  ), u = new Te(), l = {
     // The optional `optFn` argument is for cutting off the bottom of
     // the stack --- for capturing the stack only above the topmost
     // call to that function. Since this isn't the "real" captureStackTrace
@@ -3203,15 +3203,15 @@ const Vn = (t) => {
         oe(a, t, [p, h]);
         return;
       }
-      go(p, "stack", "");
+      yo(p, "stack", "");
     },
     // Shim of proposed special power, to reside by default only
     // in the start compartment, for getting the stack traceback
     // string associated with an error.
     // See https://tc39.es/proposal-error-stacks/
     getStackString(p) {
-      let h = L(u, p);
-      if (h === void 0 && (p.stack, h = L(u, p), h || (h = { stackString: "" }, ee(u, p, h))), h.stackString !== void 0)
+      let h = M(u, p);
+      if (h === void 0 && (p.stack, h = M(u, p), h || (h = { stackString: "" }, ee(u, p, h))), h.stackString !== void 0)
         return h.stackString;
       const _ = c(p, h.callSites);
       return ee(u, p, { stackString: _ }), _;
@@ -3225,15 +3225,15 @@ const Vn = (t) => {
     }
   }, d = l.prepareStackTrace;
   t.prepareStackTrace = d;
-  const f = new Et([d]), m = (p) => {
+  const f = new xt([d]), m = (p) => {
     if (Yt(f, p))
       return p;
     const h = {
       prepareStackTrace(_, w) {
-        return ee(u, _, { callSites: w }), p(_, li(w));
+        return ee(u, _, { callSites: w }), p(_, ii(w));
       }
     };
-    return Nr(f, h.prepareStackTrace), h.prepareStackTrace;
+    return $r(f, h.prepareStackTrace), h.prepareStackTrace;
   };
   return F(e, {
     captureStackTrace: {
@@ -3257,17 +3257,17 @@ const Vn = (t) => {
       configurable: !0
     }
   }), l.getStackString;
-}, qn = ue(le.prototype, "stack"), Kn = qn && qn.get, wi = {
+}, qn = de(le.prototype, "stack"), Kn = qn && qn.get, _i = {
   getStackString(t) {
     return typeof Kn == "function" ? oe(Kn, t, []) : "stack" in t ? `${t.stack}` : "";
   }
 };
-function xi(t = "safe", e = "concise") {
+function bi(t = "safe", e = "concise") {
   if (t !== "safe" && t !== "unsafe")
     throw v(`unrecognized errorTaming ${t}`);
   if (e !== "concise" && e !== "verbose")
     throw v(`unrecognized stackFiltering ${e}`);
-  const r = le.prototype, n = typeof le.captureStackTrace == "function" ? "v8" : "unknown", { captureStackTrace: a } = le, o = (l = {}) => {
+  const r = le.prototype, n = typeof le.captureStackTrace == "function" ? "v8" : "unknown", { captureStackTrace: a } = le, s = (l = {}) => {
     const d = function(...m) {
       let p;
       return new.target === void 0 ? p = oe(le, this, m) : p = cr(le, m, new.target), n === "v8" && oe(a, le, [p, d]), p;
@@ -3281,11 +3281,11 @@ function xi(t = "safe", e = "concise") {
         configurable: !1
       }
     }), d;
-  }, i = o({ powers: "original" }), c = o({ powers: "none" });
+  }, i = s({ powers: "original" }), c = s({ powers: "none" });
   F(r, {
     constructor: { value: c }
   });
-  for (const l of Sa)
+  for (const l of wa)
     uo(l, c);
   F(i, {
     stackTraceLimit: {
@@ -3324,7 +3324,7 @@ function xi(t = "safe", e = "concise") {
     },
     captureStackTrace: {
       value: (l, d) => {
-        M(l, "stack", {
+        L(l, "stack", {
           value: ""
         });
       },
@@ -3333,8 +3333,8 @@ function xi(t = "safe", e = "concise") {
       configurable: !0
     }
   });
-  let u = wi.getStackString;
-  return n === "v8" ? u = bi(
+  let u = _i.getStackString;
+  return n === "v8" ? u = vi(
     le,
     i,
     t,
@@ -3377,26 +3377,26 @@ function xi(t = "safe", e = "concise") {
     "%SharedError%": c
   };
 }
-const { Fail: Si, details: Qr, quote: Me } = Z, ls = () => {
-}, Ei = (t, e) => y({
+const { Fail: wi, details: Qr, quote: Le } = Z, ls = () => {
+}, Si = (t, e) => g({
   compartment: t,
   specifier: e
-}), Pi = (t, e, r) => {
+}), Ei = (t, e, r) => {
   const n = H(null);
   for (const a of t) {
-    const o = e(a, r);
-    n[a] = o;
+    const s = e(a, r);
+    n[a] = s;
   }
-  return y(n);
-}, Yn = (t, e, r, n, a, o, i, c, u) => {
-  const { resolveHook: l, moduleRecords: d } = L(
+  return g(n);
+}, Yn = (t, e, r, n, a, s, i, c, u) => {
+  const { resolveHook: l, moduleRecords: d } = M(
     t,
     r
-  ), f = Pi(
+  ), f = Ei(
     a.imports,
     l,
     n
-  ), m = y({
+  ), m = g({
     compartment: r,
     staticModuleRecord: a,
     moduleSpecifier: n,
@@ -3409,35 +3409,35 @@ const { Fail: Si, details: Qr, quote: Me } = Z, ls = () => {
       e,
       r,
       p,
-      o,
+      s,
       i,
       c
     );
     Cr(
-      o,
-      gn(h, ls, (_) => {
+      s,
+      yn(h, ls, (_) => {
         ae(c, _);
       })
     );
   }
-  return Ce(d, n, m), m;
-}, ki = async (t, e, r, n, a, o, i) => {
-  const { importHook: c, moduleMap: u, moduleMapHook: l, moduleRecords: d } = L(
+  return $e(d, n, m), m;
+}, xi = async (t, e, r, n, a, s, i) => {
+  const { importHook: c, moduleMap: u, moduleMapHook: l, moduleRecords: d } = M(
     t,
     r
   );
   let f = u[n];
   if (f === void 0 && l !== void 0 && (f = l(n)), typeof f == "string")
     Z.fail(
-      Qr`Cannot map module ${Me(n)} to ${Me(
+      Qr`Cannot map module ${Le(n)} to ${Le(
         f
       )} in parent compartment, not yet implemented`,
       v
     );
   else if (f !== void 0) {
-    const p = L(e, f);
+    const p = M(e, f);
     p === void 0 && Z.fail(
-      Qr`Cannot map module ${Me(
+      Qr`Cannot map module ${Le(
         n
       )} because the value is not a module exports namespace, or is from another realm`,
       rt
@@ -3448,17 +3448,17 @@ const { Fail: Si, details: Qr, quote: Me } = Z, ls = () => {
       p.compartment,
       p.specifier,
       a,
-      o,
+      s,
       i
     );
-    return Ce(d, n, h), h;
+    return $e(d, n, h), h;
   }
   if (Ar(d, n))
     return De(d, n);
   const m = await c(n);
-  if ((m === null || typeof m != "object") && Si`importHook must return a promise for an object, for module ${Me(
+  if ((m === null || typeof m != "object") && wi`importHook must return a promise for an object, for module ${Le(
     n
-  )} in compartment ${Me(r.name)}`, m.specifier !== void 0) {
+  )} in compartment ${Le(r.name)}`, m.specifier !== void 0) {
     if (m.record !== void 0) {
       if (m.compartment !== void 0)
         throw v(
@@ -3476,11 +3476,11 @@ const { Fail: Si, details: Qr, quote: Me } = Z, ls = () => {
         h,
         _,
         a,
-        o,
+        s,
         i,
         w
       );
-      return Ce(d, n, I), I;
+      return $e(d, n, I), I;
     }
     if (m.compartment !== void 0) {
       if (m.importMeta !== void 0)
@@ -3493,10 +3493,10 @@ const { Fail: Si, details: Qr, quote: Me } = Z, ls = () => {
         m.compartment,
         m.specifier,
         a,
-        o,
+        s,
         i
       );
-      return Ce(d, n, p), p;
+      return $e(d, n, p), p;
     }
     throw v("Unnexpected RedirectStaticModuleInterface record shape");
   }
@@ -3507,67 +3507,67 @@ const { Fail: Si, details: Qr, quote: Me } = Z, ls = () => {
     n,
     m,
     a,
-    o,
+    s,
     i
   );
-}, pr = async (t, e, r, n, a, o, i) => {
-  const { name: c } = L(
+}, pr = async (t, e, r, n, a, s, i) => {
+  const { name: c } = M(
     t,
     r
   );
-  let u = De(o, r);
-  u === void 0 && (u = new Ae(), Ce(o, r, u));
+  let u = De(s, r);
+  u === void 0 && (u = new Ce(), $e(s, r, u));
   let l = De(u, n);
-  return l !== void 0 || (l = na(
-    ki(
+  return l !== void 0 || (l = ta(
+    xi(
       t,
       e,
       r,
       n,
       a,
-      o,
+      s,
       i
     ),
     (d) => {
       throw Z.note(
         d,
-        Qr`${d.message}, loading ${Me(n)} in compartment ${Me(
+        Qr`${d.message}, loading ${Le(n)} in compartment ${Le(
           c
         )}`
       ), d;
     }
-  ), Ce(u, n, l)), l;
+  ), $e(u, n, l)), l;
 }, Jn = async (t, e, r, n) => {
-  const { name: a } = L(
+  const { name: a } = M(
     t,
     r
-  ), o = new St(), i = new Ae(), c = [], u = pr(
+  ), s = new Et(), i = new Ce(), c = [], u = pr(
     t,
     e,
     r,
     n,
-    o,
+    s,
     i,
     c
   );
   Cr(
-    o,
-    gn(u, ls, (l) => {
+    s,
+    yn(u, ls, (l) => {
       ae(c, l);
     })
   );
-  for (const l of o)
+  for (const l of s)
     await l;
   if (c.length > 0)
     throw v(
-      `Failed to load module ${Me(n)} in package ${Me(
+      `Failed to load module ${Le(n)} in package ${Le(
         a
       )} (${c.length} underlying failures: ${Tt(
-        de(c, (l) => l.message),
+        fe(c, (l) => l.message),
         ", "
       )}`
     );
-}, { quote: pt } = Z, Ti = () => {
+}, { quote: pt } = Z, Pi = () => {
   let t = !1;
   const e = H(null, {
     // Make this appear like an ESM module namespace object.
@@ -3578,12 +3578,12 @@ const { Fail: Si, details: Qr, quote: Me } = Z, ls = () => {
       configurable: !1
     }
   });
-  return y({
+  return g({
     activate() {
       t = !0;
     },
     exportsTarget: e,
-    exportsProxy: new Sr(e, {
+    exportsProxy: new Er(e, {
       get(r, n, a) {
         if (!t)
           throw v(
@@ -3591,7 +3591,7 @@ const { Fail: Si, details: Qr, quote: Me } = Z, ls = () => {
               n
             )} of module exports namespace, the module has not yet begun to execute`
           );
-        return Ds(e, n, a);
+        return Ls(e, n, a);
       },
       set(r, n, a) {
         throw v(
@@ -3626,21 +3626,21 @@ const { Fail: Si, details: Qr, quote: Me } = Z, ls = () => {
               n
             )}, the module has not yet begun to execute`
           );
-        return Us(e, n);
+        return Fs(e, n);
       },
       preventExtensions(r) {
         if (!t)
           throw v(
             "Cannot prevent extensions of module exports namespace, the module has not yet begun to execute"
           );
-        return Zs(e);
+        return Us(e);
       },
       isExtensible() {
         if (!t)
           throw v(
             "Cannot check extensibility of module exports namespace, the module has not yet begun to execute"
           );
-        return js(e);
+        return Ds(e);
       },
       getPrototypeOf(r) {
         return null;
@@ -3665,33 +3665,33 @@ const { Fail: Si, details: Qr, quote: Me } = Z, ls = () => {
       }
     })
   });
-}, Sn = (t, e, r, n) => {
+}, En = (t, e, r, n) => {
   const { deferredExports: a } = e;
   if (!Ar(a, n)) {
-    const o = Ti();
+    const s = Pi();
     ee(
       r,
-      o.exportsProxy,
-      Ei(t, n)
-    ), Ce(a, n, o);
+      s.exportsProxy,
+      Si(t, n)
+    ), $e(a, n, s);
   }
   return De(a, n);
-}, Ii = (t, e) => {
+}, ki = (t, e) => {
   const { sloppyGlobalsMode: r = !1, __moduleShimLexicals__: n = void 0 } = e;
   let a;
   if (n === void 0 && !r)
     ({ safeEvaluate: a } = t);
   else {
-    let { globalTransforms: o } = t;
+    let { globalTransforms: s } = t;
     const { globalObject: i } = t;
     let c;
-    n !== void 0 && (o = void 0, c = H(
+    n !== void 0 && (s = void 0, c = H(
       null,
       Je(n)
-    )), { safeEvaluate: a } = xn({
+    )), { safeEvaluate: a } = Sn({
       globalObject: i,
       moduleLexicals: c,
-      globalTransforms: o,
+      globalTransforms: s,
       sloppyGlobalsMode: r
     });
   }
@@ -3702,34 +3702,34 @@ const { Fail: Si, details: Qr, quote: Me } = Z, ls = () => {
   const {
     transforms: n = [],
     __evadeHtmlCommentTest__: a = !1,
-    __evadeImportExpressionTest__: o = !1,
+    __evadeImportExpressionTest__: s = !1,
     __rejectSomeDirectEvalExpressions__: i = !0
     // Note default on
   } = r, c = [...n];
-  a === !0 && ae(c, Jo), o === !0 && ae(c, es), i === !0 && ae(c, ts);
-  const { safeEvaluate: u } = Ii(
+  a === !0 && ae(c, Jo), s === !0 && ae(c, es), i === !0 && ae(c, ts);
+  const { safeEvaluate: u } = ki(
     t,
     r
   );
   return u(e, {
     localTransforms: c
   });
-}, { quote: er } = Z, Ai = (t, e, r, n, a, o) => {
-  const { exportsProxy: i, exportsTarget: c, activate: u } = Sn(
+}, { quote: er } = Z, Ti = (t, e, r, n, a, s) => {
+  const { exportsProxy: i, exportsTarget: c, activate: u } = En(
     r,
-    L(t, r),
+    M(t, r),
     n,
     a
   ), l = H(null);
   if (e.exports) {
-    if (!gt(e.exports) || Bs(e.exports, (f) => typeof f != "string"))
+    if (!yt(e.exports) || zs(e.exports, (f) => typeof f != "string"))
       throw v(
         `SES third-party static module record "exports" property must be an array of strings for module ${a}`
       );
     nt(e.exports, (f) => {
       let m = c[f];
       const p = [];
-      M(c, f, {
+      L(c, f, {
         get: () => m,
         set: (w) => {
           m = w;
@@ -3748,7 +3748,7 @@ const { Fail: Si, details: Qr, quote: Me } = Z, ls = () => {
   const d = {
     activated: !1
   };
-  return y({
+  return g({
     notifiers: l,
     exportsProxy: i,
     execute() {
@@ -3760,7 +3760,7 @@ const { Fail: Si, details: Qr, quote: Me } = Z, ls = () => {
           e.execute(
             c,
             r,
-            o
+            s
           );
         } catch (f) {
           throw d.errorFromExecute = f, f;
@@ -3768,10 +3768,10 @@ const { Fail: Si, details: Qr, quote: Me } = Z, ls = () => {
       }
     }
   });
-}, Ci = (t, e, r, n) => {
+}, Ii = (t, e, r, n) => {
   const {
     compartment: a,
-    moduleSpecifier: o,
+    moduleSpecifier: s,
     staticModuleRecord: i,
     importMeta: c
   } = r, {
@@ -3782,15 +3782,15 @@ const { Fail: Si, details: Qr, quote: Me } = Z, ls = () => {
     __reexportMap__: m = {},
     __needsImportMeta__: p = !1,
     __syncModuleFunctor__: h
-  } = i, _ = L(t, a), { __shimTransforms__: w, importMetaHook: I } = _, { exportsProxy: N, exportsTarget: T, activate: D } = Sn(
+  } = i, _ = M(t, a), { __shimTransforms__: w, importMetaHook: I } = _, { exportsProxy: $, exportsTarget: T, activate: D } = En(
     a,
     _,
     e,
-    o
-  ), j = H(null), q = H(null), K = H(null), je = H(null), fe = H(null);
-  c && Er(fe, c), p && I && I(o, fe);
+    s
+  ), j = H(null), q = H(null), K = H(null), je = H(null), pe = H(null);
+  c && xr(pe, c), p && I && I(s, pe);
   const Ze = H(null), Xe = H(null);
-  nt(te(d), ([pe, [z]]) => {
+  nt(te(d), ([me, [z]]) => {
     let G = Ze[z];
     if (!G) {
       let X, Q = !0, ce = [];
@@ -3798,102 +3798,102 @@ const { Fail: Si, details: Qr, quote: Me } = Z, ls = () => {
         if (Q)
           throw rt(`binding ${er(z)} not yet initialized`);
         return X;
-      }, ve = y((_e) => {
+      }, _e = g((be) => {
         if (!Q)
           throw v(
             `Internal: binding ${er(z)} already initialized`
           );
-        X = _e;
+        X = be;
         const In = ce;
         ce = null, Q = !1;
-        for (const be of In || [])
-          be(_e);
-        return _e;
+        for (const we of In || [])
+          we(be);
+        return be;
       });
       G = {
         get: Y,
-        notify: (_e) => {
-          _e !== ve && (Q ? ae(ce || [], _e) : _e(X));
+        notify: (be) => {
+          be !== _e && (Q ? ae(ce || [], be) : be(X));
         }
-      }, Ze[z] = G, K[z] = ve;
+      }, Ze[z] = G, K[z] = _e;
     }
-    j[pe] = {
+    j[me] = {
       get: G.get,
       set: void 0,
       enumerable: !0,
       configurable: !1
-    }, Xe[pe] = G.notify;
+    }, Xe[me] = G.notify;
   }), nt(
     te(f),
-    ([pe, [z, G]]) => {
+    ([me, [z, G]]) => {
       let X = Ze[z];
       if (!X) {
         let Q, ce = !0;
-        const Y = [], ve = () => {
+        const Y = [], _e = () => {
           if (ce)
             throw rt(
-              `binding ${er(pe)} not yet initialized`
+              `binding ${er(me)} not yet initialized`
             );
           return Q;
-        }, ut = y((be) => {
-          Q = be, ce = !1;
-          for (const Lr of Y)
-            Lr(be);
-        }), _e = (be) => {
+        }, ut = g((we) => {
+          Q = we, ce = !1;
+          for (const Mr of Y)
+            Mr(we);
+        }), be = (we) => {
           if (ce)
             throw rt(`binding ${er(z)} not yet initialized`);
-          Q = be;
-          for (const Lr of Y)
-            Lr(be);
+          Q = we;
+          for (const Mr of Y)
+            Mr(we);
         };
         X = {
-          get: ve,
-          notify: (be) => {
-            be !== ut && (ae(Y, be), ce || be(Q));
+          get: _e,
+          notify: (we) => {
+            we !== ut && (ae(Y, we), ce || we(Q));
           }
-        }, Ze[z] = X, G && M(q, z, {
-          get: ve,
-          set: _e,
+        }, Ze[z] = X, G && L(q, z, {
+          get: _e,
+          set: be,
           enumerable: !0,
           configurable: !1
         }), je[z] = ut;
       }
-      j[pe] = {
+      j[me] = {
         get: X.get,
         set: void 0,
         enumerable: !0,
         configurable: !1
-      }, Xe[pe] = X.notify;
+      }, Xe[me] = X.notify;
     }
   );
-  const ze = (pe) => {
-    pe(T);
+  const ze = (me) => {
+    me(T);
   };
   Xe["*"] = ze;
-  function Xt(pe) {
+  function Xt(me) {
     const z = H(null);
     z.default = !1;
-    for (const [G, X] of pe) {
+    for (const [G, X] of me) {
       const Q = De(n, G);
       Q.execute();
       const { notifiers: ce } = Q;
-      for (const [Y, ve] of X) {
+      for (const [Y, _e] of X) {
         const ut = ce[Y];
         if (!ut)
           throw Wt(
             `The requested module '${G}' does not provide an export named '${Y}'`
           );
-        for (const _e of ve)
-          ut(_e);
+        for (const be of _e)
+          ut(be);
       }
       if (Ir(u, G))
-        for (const [Y, ve] of te(
+        for (const [Y, _e] of te(
           ce
         ))
-          z[Y] === void 0 ? z[Y] = ve : z[Y] = !1;
+          z[Y] === void 0 ? z[Y] = _e : z[Y] = !1;
       if (m[G])
-        for (const [Y, ve] of m[G])
-          z[ve] = ce[Y];
+        for (const [Y, _e] of m[G])
+          z[_e] = ce[Y];
     }
     for (const [G, X] of te(z))
       if (!Xe[G] && X !== !1) {
@@ -3910,8 +3910,8 @@ const { Fail: Si, details: Qr, quote: Me } = Z, ls = () => {
       }
     nt(
       _o(co(j)),
-      (G) => M(T, G, j[G])
-    ), y(T), D();
+      (G) => L(T, G, j[G])
+    ), g(T), D();
   }
   let It;
   h !== void 0 ? It = h : It = us(_, l, {
@@ -3920,17 +3920,17 @@ const { Fail: Si, details: Qr, quote: Me } = Z, ls = () => {
     __moduleShimLexicals__: q
   });
   let kn = !1, Tn;
-  function Es() {
+  function Ss() {
     if (It) {
-      const pe = It;
+      const me = It;
       It = null;
       try {
-        pe(
-          y({
-            imports: y(Xt),
-            onceVar: y(K),
-            liveVar: y(je),
-            importMeta: fe
+        me(
+          g({
+            imports: g(Xt),
+            onceVar: g(K),
+            liveVar: g(je),
+            importMeta: pe
           })
         );
       } catch (z) {
@@ -3940,28 +3940,28 @@ const { Fail: Si, details: Qr, quote: Me } = Z, ls = () => {
     if (kn)
       throw Tn;
   }
-  return y({
+  return g({
     notifiers: Xe,
-    exportsProxy: N,
-    execute: Es
+    exportsProxy: $,
+    execute: Ss
   });
 }, { Fail: tt, quote: W } = Z, ds = (t, e, r, n) => {
-  const { name: a, moduleRecords: o } = L(
+  const { name: a, moduleRecords: s } = M(
     t,
     r
-  ), i = De(o, n);
+  ), i = De(s, n);
   if (i === void 0)
     throw rt(
       `Missing link to module ${W(n)} from compartment ${W(
         a
       )}`
     );
-  return Mi(t, e, i);
+  return Ri(t, e, i);
 };
-function Ni(t) {
+function Ai(t) {
   return typeof t.__syncModuleProgram__ == "string";
 }
-function $i(t, e) {
+function Ci(t, e) {
   const { __fixedExportMap__: r, __liveExportMap__: n } = t;
   We(r) || tt`Property '__fixedExportMap__' of a precompiled module record must be an object, got ${W(
     r
@@ -3969,50 +3969,50 @@ function $i(t, e) {
     n
   )}, for module ${W(e)}`;
 }
-function Oi(t) {
+function $i(t) {
   return typeof t.execute == "function";
 }
-function Ri(t, e) {
+function Ni(t, e) {
   const { exports: r } = t;
-  gt(r) || tt`Property 'exports' of a third-party static module record must be an array, got ${W(
+  yt(r) || tt`Property 'exports' of a third-party static module record must be an array, got ${W(
     r
   )}, for module ${W(e)}`;
 }
-function Li(t, e) {
+function Oi(t, e) {
   We(t) || tt`Static module records must be of type object, got ${W(
     t
   )}, for module ${W(e)}`;
   const { imports: r, exports: n, reexports: a = [] } = t;
-  gt(r) || tt`Property 'imports' of a static module record must be an array, got ${W(
+  yt(r) || tt`Property 'imports' of a static module record must be an array, got ${W(
     r
-  )}, for module ${W(e)}`, gt(n) || tt`Property 'exports' of a precompiled module record must be an array, got ${W(
+  )}, for module ${W(e)}`, yt(n) || tt`Property 'exports' of a precompiled module record must be an array, got ${W(
     n
-  )}, for module ${W(e)}`, gt(a) || tt`Property 'reexports' of a precompiled module record must be an array if present, got ${W(
+  )}, for module ${W(e)}`, yt(a) || tt`Property 'reexports' of a precompiled module record must be an array if present, got ${W(
     a
   )}, for module ${W(e)}`;
 }
-const Mi = (t, e, r) => {
-  const { compartment: n, moduleSpecifier: a, resolvedImports: o, staticModuleRecord: i } = r, { instances: c } = L(t, n);
+const Ri = (t, e, r) => {
+  const { compartment: n, moduleSpecifier: a, resolvedImports: s, staticModuleRecord: i } = r, { instances: c } = M(t, n);
   if (Ar(c, a))
     return De(c, a);
-  Li(i, a);
-  const u = new Ae();
+  Oi(i, a);
+  const u = new Ce();
   let l;
-  if (Ni(i))
-    $i(i, a), l = Ci(
+  if (Ai(i))
+    Ci(i, a), l = Ii(
       t,
       e,
       r,
       u
     );
-  else if (Oi(i))
-    Ri(i, a), l = Ai(
+  else if ($i(i))
+    Ni(i, a), l = Ti(
       t,
       i,
       n,
       e,
       a,
-      o
+      s
     );
   else
     throw v(
@@ -4020,42 +4020,42 @@ const Mi = (t, e, r) => {
         i
       )}`
     );
-  Ce(c, a, l);
-  for (const [d, f] of te(o)) {
+  $e(c, a, l);
+  for (const [d, f] of te(s)) {
     const m = ds(
       t,
       e,
       n,
       f
     );
-    Ce(u, d, m);
+    $e(u, d, m);
   }
   return l;
-}, { quote: Zr } = Z, $t = new ke(), Le = new ke(), tr = (t) => {
-  const { importHook: e, resolveHook: r } = L(Le, t);
+}, { quote: Zr } = Z, Nt = new Te(), Me = new Te(), tr = (t) => {
+  const { importHook: e, resolveHook: r } = M(Me, t);
   if (typeof e != "function" || typeof r != "function")
     throw v(
       "Compartment must be constructed with an importHook and a resolveHook for it to be able to load modules"
     );
-}, En = function(e = {}, r = {}, n = {}) {
+}, xn = function(e = {}, r = {}, n = {}) {
   throw v(
     "Compartment.prototype.constructor is not a valid constructor."
   );
 }, Xn = (t, e) => {
   const { execute: r, exportsProxy: n } = ds(
-    Le,
-    $t,
+    Me,
+    Nt,
     t,
     e
   );
   return r(), n;
 }, Pn = {
-  constructor: En,
+  constructor: xn,
   get globalThis() {
-    return L(Le, this).globalObject;
+    return M(Me, this).globalObject;
   },
   get name() {
-    return L(Le, this).name;
+    return M(Me, this).name;
   },
   /**
    * @param {string} source is a JavaScript program grammar construction.
@@ -4068,17 +4068,17 @@ const Mi = (t, e, r) => {
    * @param {boolean} [options.__rejectSomeDirectEvalExpressions__]
    */
   evaluate(t, e = {}) {
-    const r = L(Le, this);
+    const r = M(Me, this);
     return us(r, t, e);
   },
   module(t) {
     if (typeof t != "string")
       throw v("first argument of module() must be a string");
     tr(this);
-    const { exportsProxy: e } = Sn(
+    const { exportsProxy: e } = En(
       this,
-      L(Le, this),
-      $t,
+      M(Me, this),
+      Nt,
       t
     );
     return e;
@@ -4086,8 +4086,8 @@ const Mi = (t, e, r) => {
   async import(t) {
     if (typeof t != "string")
       throw v("first argument of import() must be a string");
-    return tr(this), gn(
-      Jn(Le, $t, this, t),
+    return tr(this), yn(
+      Jn(Me, Nt, this, t),
       () => ({ namespace: Xn(
         /** @type {Compartment} */
         this,
@@ -4098,7 +4098,7 @@ const Mi = (t, e, r) => {
   async load(t) {
     if (typeof t != "string")
       throw v("first argument of load() must be a string");
-    return tr(this), Jn(Le, $t, this, t);
+    return tr(this), Jn(Me, Nt, this, t);
   },
   importNow(t) {
     if (typeof t != "string")
@@ -4118,11 +4118,11 @@ F(Pn, {
     configurable: !0
   }
 });
-F(En, {
+F(xn, {
   prototype: { value: Pn }
 });
 const en = (t, e, r) => {
-  function n(a = {}, o = {}, i = {}) {
+  function n(a = {}, s = {}, i = {}) {
     if (new.target === void 0)
       throw v(
         "Class constructor Compartment cannot be invoked without 'new'"
@@ -4135,45 +4135,45 @@ const en = (t, e, r) => {
       importHook: f,
       moduleMapHook: m,
       importMetaHook: p
-    } = i, h = [...u, ...l], _ = new Ae(), w = new Ae(), I = new Ae();
-    for (const [D, j] of te(o || {})) {
+    } = i, h = [...u, ...l], _ = new Ce(), w = new Ce(), I = new Ce();
+    for (const [D, j] of te(s || {})) {
       if (typeof j == "string")
         throw v(
           `Cannot map module ${Zr(D)} to ${Zr(
             j
           )} in parent compartment`
         );
-      if (L($t, j) === void 0)
+      if (M(Nt, j) === void 0)
         throw rt(
           `Cannot map module ${Zr(
             D
           )} because it has no known compartment in this realm`
         );
     }
-    const N = {};
-    Ga(N), Go(N);
-    const { safeEvaluate: T } = xn({
-      globalObject: N,
+    const $ = {};
+    Za($), Go($);
+    const { safeEvaluate: T } = Sn({
+      globalObject: $,
       globalTransforms: h,
       sloppyGlobalsMode: !1
     });
-    Bo(N, {
+    Bo($, {
       intrinsics: e,
       newGlobalPropertyNames: Do,
       makeCompartmentConstructor: t,
       markVirtualizedNativeFunction: r
     }), Xr(
-      N,
+      $,
       T,
       r
-    ), Er(N, a), ee(Le, this, {
+    ), xr($, a), ee(Me, this, {
       name: `${c}`,
       globalTransforms: h,
-      globalObject: N,
+      globalObject: $,
       safeEvaluate: T,
       resolveHook: d,
       importHook: f,
-      moduleMap: o,
+      moduleMap: s,
       moduleMapHook: m,
       importMetaHook: p,
       moduleRecords: _,
@@ -4187,22 +4187,22 @@ const en = (t, e, r) => {
 function zr(t) {
   return B(t).constructor;
 }
-function Fi() {
+function Mi() {
   return arguments;
 }
-const Di = () => {
-  const t = ye.prototype.constructor, e = ue(Fi(), "callee"), r = e && e.get, n = ea(new ie()), a = B(n), o = kr[po] && Ys(/./), i = o && B(o), c = Hs([]), u = B(c), l = B(Ts), d = qs(new Ae()), f = B(d), m = Ks(new St()), p = B(m), h = B(u);
+const Li = () => {
+  const t = ve.prototype.constructor, e = de(Mi(), "callee"), r = e && e.get, n = Xs(new ie()), a = B(n), s = kr[po] && qs(/./), i = s && B(s), c = Gs([]), u = B(c), l = B(Ps), d = Vs(new Ce()), f = B(d), m = Ws(new Et()), p = B(m), h = B(u);
   function* _() {
   }
   const w = zr(_), I = w.prototype;
-  async function* N() {
+  async function* $() {
   }
   const T = zr(
-    N
+    $
   ), D = T.prototype, j = D.prototype, q = B(j);
   async function K() {
   }
-  const je = zr(K), fe = {
+  const je = zr(K), pe = {
     "%InertFunction%": t,
     "%ArrayIteratorPrototype%": u,
     "%InertAsyncFunction%": je,
@@ -4219,36 +4219,36 @@ const Di = () => {
     "%StringIteratorPrototype%": a,
     "%ThrowTypeError%": r,
     "%TypedArray%": l,
-    "%InertCompartment%": En
+    "%InertCompartment%": xn
   };
-  return E.Iterator && (fe["%IteratorHelperPrototype%"] = B(
+  return x.Iterator && (pe["%IteratorHelperPrototype%"] = B(
     // eslint-disable-next-line @endo/no-polymorphic-call
-    E.Iterator.from([]).take(0)
-  ), fe["%WrapForValidIteratorPrototype%"] = B(
+    x.Iterator.from([]).take(0)
+  ), pe["%WrapForValidIteratorPrototype%"] = B(
     // eslint-disable-next-line @endo/no-polymorphic-call
-    E.Iterator.from({ next() {
+    x.Iterator.from({ next() {
     } })
-  )), E.AsyncIterator && (fe["%AsyncIteratorHelperPrototype%"] = B(
+  )), x.AsyncIterator && (pe["%AsyncIteratorHelperPrototype%"] = B(
     // eslint-disable-next-line @endo/no-polymorphic-call
-    E.AsyncIterator.from([]).take(0)
-  ), fe["%WrapForValidAsyncIteratorPrototype%"] = B(
+    x.AsyncIterator.from([]).take(0)
+  ), pe["%WrapForValidAsyncIteratorPrototype%"] = B(
     // eslint-disable-next-line @endo/no-polymorphic-call
-    E.AsyncIterator.from({ next() {
+    x.AsyncIterator.from({ next() {
     } })
-  )), fe;
+  )), pe;
 }, fs = (t, e) => {
   if (e !== "safe" && e !== "unsafe")
     throw v(`unrecognized fakeHardenOption ${e}`);
   if (e === "safe" || (Object.isExtensible = () => !1, Object.isFrozen = () => !0, Object.isSealed = () => !0, Reflect.isExtensible = () => !1, t.isFake))
     return t;
   const r = (n) => n;
-  return r.isFake = !0, y(r);
+  return r.isFake = !0, g(r);
 };
-y(fs);
-const Ui = () => {
-  const t = Nt, e = t.prototype, r = {
-    Symbol(o) {
-      return t(o);
+g(fs);
+const Fi = () => {
+  const t = $t, e = t.prototype, r = {
+    Symbol(s) {
+      return t(s);
     }
   }.Symbol;
   F(e, {
@@ -4260,13 +4260,13 @@ const Ui = () => {
   const n = te(
     Je(t)
   ), a = Pt(
-    de(n, ([o, i]) => [
-      o,
+    fe(n, ([s, i]) => [
+      s,
       { ...i, configurable: !0 }
     ])
   );
   return F(r, a), { "%SharedSymbol%": r };
-}, ji = (t) => {
+}, Di = (t) => {
   try {
     return t(), !1;
   } catch {
@@ -4275,23 +4275,23 @@ const Ui = () => {
 }, Qn = (t, e, r) => {
   if (t === void 0)
     return !1;
-  const n = ue(t, e);
+  const n = de(t, e);
   if (!n || "value" in n)
     return !1;
-  const { get: a, set: o } = n;
-  if (typeof a != "function" || typeof o != "function" || a() !== r || oe(a, t, []) !== r)
+  const { get: a, set: s } = n;
+  if (typeof a != "function" || typeof s != "function" || a() !== r || oe(a, t, []) !== r)
     return !1;
   const i = "Seems to be a setter", c = { __proto__: null };
-  if (oe(o, c, [i]), c[e] !== i)
+  if (oe(s, c, [i]), c[e] !== i)
     return !1;
   const u = { __proto__: t };
-  return oe(o, u, [i]), u[e] !== i || !ji(() => oe(o, t, [r])) || "originalValue" in a || n.configurable === !1 ? !1 : (M(t, e, {
+  return oe(s, u, [i]), u[e] !== i || !Di(() => oe(s, t, [r])) || "originalValue" in a || n.configurable === !1 ? !1 : (L(t, e, {
     value: r,
     writable: !0,
     enumerable: n.enumerable,
     configurable: !0
   }), !0);
-}, Zi = (t) => {
+}, Ui = (t) => {
   Qn(
     t["%IteratorPrototype%"],
     "constructor",
@@ -4303,16 +4303,16 @@ const Ui = () => {
   );
 }, { Fail: eo, details: to, quote: ro } = Z;
 let rr, nr;
-const zi = xa(), Gi = () => {
+const ji = ba(), Zi = () => {
   let t = !1;
   try {
-    t = ye(
+    t = ve(
       "eval",
       "SES_changed",
       `        eval("SES_changed = true");
         return SES_changed;
       `
-    )(So, !1), t || delete E.SES_changed;
+    )(Eo, !1), t || delete x.SES_changed;
   } catch {
     t = !0;
   }
@@ -4322,31 +4322,31 @@ const zi = xa(), Gi = () => {
     );
 }, ps = (t = {}) => {
   const {
-    errorTaming: e = me("LOCKDOWN_ERROR_TAMING", "safe"),
+    errorTaming: e = he("LOCKDOWN_ERROR_TAMING", "safe"),
     errorTrapping: r = (
       /** @type {"platform" | "none" | "report" | "abort" | "exit" | undefined} */
-      me("LOCKDOWN_ERROR_TRAPPING", "platform")
+      he("LOCKDOWN_ERROR_TRAPPING", "platform")
     ),
     unhandledRejectionTrapping: n = (
       /** @type {"none" | "report" | undefined} */
-      me("LOCKDOWN_UNHANDLED_REJECTION_TRAPPING", "report")
+      he("LOCKDOWN_UNHANDLED_REJECTION_TRAPPING", "report")
     ),
-    regExpTaming: a = me("LOCKDOWN_REGEXP_TAMING", "safe"),
-    localeTaming: o = me("LOCKDOWN_LOCALE_TAMING", "safe"),
+    regExpTaming: a = he("LOCKDOWN_REGEXP_TAMING", "safe"),
+    localeTaming: s = he("LOCKDOWN_LOCALE_TAMING", "safe"),
     consoleTaming: i = (
       /** @type {'unsafe' | 'safe' | undefined} */
-      me("LOCKDOWN_CONSOLE_TAMING", "safe")
+      he("LOCKDOWN_CONSOLE_TAMING", "safe")
     ),
-    overrideTaming: c = me("LOCKDOWN_OVERRIDE_TAMING", "moderate"),
-    stackFiltering: u = me("LOCKDOWN_STACK_FILTERING", "concise"),
-    domainTaming: l = me("LOCKDOWN_DOMAIN_TAMING", "safe"),
-    evalTaming: d = me("LOCKDOWN_EVAL_TAMING", "safeEval"),
+    overrideTaming: c = he("LOCKDOWN_OVERRIDE_TAMING", "moderate"),
+    stackFiltering: u = he("LOCKDOWN_STACK_FILTERING", "concise"),
+    domainTaming: l = he("LOCKDOWN_DOMAIN_TAMING", "safe"),
+    evalTaming: d = he("LOCKDOWN_EVAL_TAMING", "safeEval"),
     overrideDebug: f = Ve(
-      wo(me("LOCKDOWN_OVERRIDE_DEBUG", ""), ","),
+      wo(he("LOCKDOWN_OVERRIDE_DEBUG", ""), ","),
       /** @param {string} debugName */
       (ze) => ze !== ""
     ),
-    __hardenTaming__: m = me("LOCKDOWN_HARDEN_TAMING", "safe"),
+    __hardenTaming__: m = he("LOCKDOWN_HARDEN_TAMING", "safe"),
     dateTaming: p = "safe",
     // deprecated
     mathTaming: h = "safe",
@@ -4359,51 +4359,51 @@ const zi = xa(), Gi = () => {
   Z.fail(
     to`Already locked down at ${rr} (SES_ALREADY_LOCKED_DOWN)`,
     v
-  ), rr = v("Prior lockdown (SES_ALREADY_LOCKED_DOWN)"), rr.stack, Gi(), E.Function.prototype.constructor !== E.Function && // @ts-ignore harden is absent on globalThis type def.
-  typeof E.harden == "function" && // @ts-ignore lockdown is absent on globalThis type def.
-  typeof E.lockdown == "function" && E.Date.prototype.constructor !== E.Date && typeof E.Date.now == "function" && // @ts-ignore does not recognize that Date constructor is a special
+  ), rr = v("Prior lockdown (SES_ALREADY_LOCKED_DOWN)"), rr.stack, Zi(), x.Function.prototype.constructor !== x.Function && // @ts-ignore harden is absent on globalThis type def.
+  typeof x.harden == "function" && // @ts-ignore lockdown is absent on globalThis type def.
+  typeof x.lockdown == "function" && x.Date.prototype.constructor !== x.Date && typeof x.Date.now == "function" && // @ts-ignore does not recognize that Date constructor is a special
   // Function.
   // eslint-disable-next-line @endo/no-polymorphic-call
-  Pr(E.Date.prototype.constructor.now(), NaN))
+  Pr(x.Date.prototype.constructor.now(), NaN))
     throw v(
       "Already locked down but not by this SES instance (SES_MULTIPLE_INSTANCES)"
     );
-  ni(l);
-  const N = os(), { addIntrinsics: T, completePrototypes: D, finalIntrinsics: j } = jo(), q = fs(zi, m);
-  T({ harden: q }), T(Ca()), T(Na(p)), T(xi(e, u)), T($a(h)), T(Oa(a)), T(Ui()), T(Di()), D();
+  ti(l);
+  const $ = os(), { addIntrinsics: T, completePrototypes: D, finalIntrinsics: j } = jo(), q = fs(ji, m);
+  T({ harden: q }), T(Ia()), T(Aa(p)), T(bi(e, u)), T(Ca(h)), T($a(a)), T(Fi()), T(Li()), D();
   const K = j(), je = { __proto__: null };
-  typeof E.Buffer == "function" && (je.Buffer = E.Buffer);
-  let fe;
-  e !== "unsafe" && (fe = K["%InitialGetStackString%"]);
-  const Ze = ai(
+  typeof x.Buffer == "function" && (je.Buffer = x.Buffer);
+  let pe;
+  e !== "unsafe" && (pe = K["%InitialGetStackString%"]);
+  const Ze = oi(
     i,
     r,
     n,
-    fe
+    pe
   );
-  if (E.console = /** @type {Console} */
+  if (x.console = /** @type {Console} */
   Ze.console, typeof /** @type {any} */
   Ze.console._times == "object" && (je.SafeMap = B(
     // eslint-disable-next-line no-underscore-dangle
     /** @type {any} */
     Ze.console._times
-  )), e === "unsafe" && E.assert === Z && (E.assert = Or(void 0, !0)), ja(K, o), Zi(K), Aa(K, N), Go(E), Bo(E, {
+  )), e === "unsafe" && x.assert === Z && (x.assert = Or(void 0, !0)), Da(K, s), Ui(K), Ta(K, $), Go(x), Bo(x, {
     intrinsics: K,
     newGlobalPropertyNames: Fn,
     makeCompartmentConstructor: en,
-    markVirtualizedNativeFunction: N
+    markVirtualizedNativeFunction: $
   }), d === "noEval")
     Xr(
-      E,
-      sa,
-      N
+      x,
+      na,
+      $
     );
   else if (d === "safeEval") {
-    const { safeEvaluate: ze } = xn({ globalObject: E });
+    const { safeEvaluate: ze } = Sn({ globalObject: x });
     Xr(
-      E,
+      x,
       ze,
-      N
+      $
     );
   }
   return () => {
@@ -4413,83 +4413,83 @@ const zi = xa(), Gi = () => {
       v
     ), nr = v(
       "Prior lockdown (SES_ALREADY_LOCKED_DOWN)"
-    ), nr.stack, Ma(K, c, f);
+    ), nr.stack, Ra(K, c, f);
     const ze = {
       intrinsics: K,
       hostIntrinsics: je,
       globals: {
         // Harden evaluators
-        Function: E.Function,
-        eval: E.eval,
+        Function: x.Function,
+        eval: x.eval,
         // @ts-ignore Compartment does exist on globalThis
-        Compartment: E.Compartment,
+        Compartment: x.Compartment,
         // Harden Symbol
-        Symbol: E.Symbol
+        Symbol: x.Symbol
       }
     };
     for (const Xt of Ot(Fn))
-      ze.globals[Xt] = E[Xt];
+      ze.globals[Xt] = x[Xt];
     return q(ze), q;
   };
 };
-E.lockdown = (t) => {
+x.lockdown = (t) => {
   const e = ps(t);
-  E.harden = e();
+  x.harden = e();
 };
-E.repairIntrinsics = (t) => {
+x.repairIntrinsics = (t) => {
   const e = ps(t);
-  E.hardenIntrinsics = () => {
-    E.harden = e();
+  x.hardenIntrinsics = () => {
+    x.harden = e();
   };
 };
-const Bi = os();
-E.Compartment = en(
+const zi = os();
+x.Compartment = en(
   en,
-  Ia(E),
-  Bi
+  ka(x),
+  zi
 );
-E.assert = Z;
-const Hi = (t) => {
+x.assert = Z;
+const Gi = (t) => {
   let e = { x: 0, y: 0 }, r = { x: 0, y: 0 }, n = { x: 0, y: 0 };
   const a = (c) => {
     const { clientX: u, clientY: l } = c, d = u - n.x + r.x, f = l - n.y + r.y;
     e = { x: d, y: f }, t.style.transform = `translate(${d}px, ${f}px)`;
-  }, o = () => {
-    document.removeEventListener("mousemove", a), document.removeEventListener("mouseup", o);
+  }, s = () => {
+    document.removeEventListener("mousemove", a), document.removeEventListener("mouseup", s);
   }, i = (c) => {
-    n = { x: c.clientX, y: c.clientY }, r = { x: e.x, y: e.y }, document.addEventListener("mousemove", a), document.addEventListener("mouseup", o);
+    n = { x: c.clientX, y: c.clientY }, r = { x: e.x, y: e.y }, document.addEventListener("mousemove", a), document.addEventListener("mouseup", s);
   };
-  return t.addEventListener("mousedown", i), o;
-}, Vi = `
+  return t.addEventListener("mousedown", i), s;
+}, Bi = ":host{--spacing-4: .25rem;--spacing-8: calc(var(--spacing-4) * 2);--spacing-12: calc(var(--spacing-4) * 3);--spacing-16: calc(var(--spacing-4) * 4);--spacing-20: calc(var(--spacing-4) * 5);--spacing-24: calc(var(--spacing-4) * 6);--spacing-28: calc(var(--spacing-4) * 7);--spacing-32: calc(var(--spacing-4) * 8);--spacing-36: calc(var(--spacing-4) * 9);--spacing-40: calc(var(--spacing-4) * 10);--font-weight-regular: 400;--font-weight-bold: 500;--font-line-height-s: 1.2;--font-line-height-m: 1.4;--font-line-height-l: 1.5;--font-size-s: 12px;--font-size-m: 14px;--font-size-l: 16px}[data-theme]{background-color:var(--color-background-primary);color:var(--color-foreground-secondary)}.wrapper{display:flex;flex-direction:column;position:fixed;inset-block-end:10px;inset-inline-start:10px;z-index:1000;padding:25px;border-radius:15px;box-shadow:0 0 10px #0000004d}.header{align-items:center;display:flex;justify-content:space-between;border-block-end:2px solid var(--color-background-quaternary);padding-block-end:var(--spacing-4);margin-block-end:var(--spacing-20)}button{background:transparent;border:0;cursor:pointer;padding:0}h1{font-size:var(--font-size-s);font-weight:var(--font-weight-bold);margin:0;margin-inline-end:var(--spacing-4);-webkit-user-select:none;user-select:none}iframe{border:none;inline-size:100%;block-size:100%}", Hi = `
 <svg width="16"  height="16"xmlns="http://www.w3.org/2000/svg" fill="none"><g class="fills"><rect rx="0" ry="0" width="16" height="16" class="frame-background"/></g><g class="frame-children"><path d="M11.997 3.997 8 8l-3.997 4.003m-.006-8L8 8l4.003 3.997" class="fills"/><g class="strokes"><path d="M11.997 3.997 8 8l-3.997 4.003m-.006-8L8 8l4.003 3.997" style="fill: none; stroke-width: 1; stroke: rgb(143, 157, 163); stroke-opacity: 1; stroke-linecap: round;" class="stroke-shape"/></g></g></svg>`;
-var we, Vt;
-class Wi extends HTMLElement {
+var ue, Vt;
+class Vi extends HTMLElement {
   constructor() {
     super();
-    Mr(this, we, null);
-    Mr(this, Vt, null);
+    Lr(this, ue, null);
+    Lr(this, Vt, null);
     this.attachShadow({ mode: "open" });
   }
   setTheme(r) {
-    Re(this, we) && Re(this, we).setAttribute("data-theme", r);
+    Se(this, ue) && Se(this, ue).setAttribute("data-theme", r);
   }
   disconnectedCallback() {
     var r;
-    (r = Re(this, Vt)) == null || r.call(this);
+    (r = Se(this, Vt)) == null || r.call(this);
   }
   connectedCallback() {
-    const r = this.getAttribute("title"), n = this.getAttribute("iframe-src"), a = Number(this.getAttribute("width") || "300"), o = Number(this.getAttribute("height") || "400");
+    const r = this.getAttribute("title"), n = this.getAttribute("iframe-src"), a = Number(this.getAttribute("width") || "300"), s = Number(this.getAttribute("height") || "400");
     if (!r || !n)
       throw new Error("title and iframe-src attributes are required");
     if (!this.shadowRoot)
       throw new Error("Error creating shadow root");
-    Fr(this, we, document.createElement("div")), Re(this, we).classList.add("wrapper"), Fr(this, Vt, Hi(Re(this, we)));
+    Fr(this, ue, document.createElement("div")), Se(this, ue).classList.add("wrapper"), Se(this, ue).style.inlineSize = `${a}px`, Se(this, ue).style.blockSize = `${s}px`, Fr(this, Vt, Gi(Se(this, ue)));
     const i = document.createElement("div");
     i.classList.add("header");
     const c = document.createElement("h1");
     c.textContent = r, i.appendChild(c);
     const u = document.createElement("button");
-    u.setAttribute("type", "button"), u.innerHTML = `<div class="close">${Vi}</div>`, u.addEventListener("click", () => {
+    u.setAttribute("type", "button"), u.innerHTML = `<div class="close">${Hi}</div>`, u.addEventListener("click", () => {
       this.shadowRoot && this.shadowRoot.dispatchEvent(
         new CustomEvent("close", {
           composed: !0,
@@ -4507,84 +4507,13 @@ class Wi extends HTMLElement {
       "allow-storage-access-by-user-activation"
     ), this.addEventListener("message", (f) => {
       l.contentWindow && l.contentWindow.postMessage(f.detail, "*");
-    }), this.shadowRoot.appendChild(Re(this, we)), Re(this, we).appendChild(i), Re(this, we).appendChild(l);
+    }), this.shadowRoot.appendChild(Se(this, ue)), Se(this, ue).appendChild(i), Se(this, ue).appendChild(l);
     const d = document.createElement("style");
-    d.textContent = `
-        :host {
-          --spacing-4: 0.25rem;
-          --spacing-8: calc(var(--spacing-4) * 2);
-          --spacing-12: calc(var(--spacing-4) * 3);
-          --spacing-16: calc(var(--spacing-4) * 4);
-          --spacing-20: calc(var(--spacing-4) * 5);
-          --spacing-24: calc(var(--spacing-4) * 6);
-          --spacing-28: calc(var(--spacing-4) * 7);
-          --spacing-32: calc(var(--spacing-4) * 8);
-          --spacing-36: calc(var(--spacing-4) * 9);
-          --spacing-40: calc(var(--spacing-4) * 10);
-
-          --font-weight-regular: 400;
-          --font-weight-bold: 500;
-          --font-line-height-s: 1.2;
-          --font-line-height-m: 1.4;
-          --font-line-height-l: 1.5;
-          --font-size-s: 12px;
-          --font-size-m: 14px;
-          --font-size-l: 16px;
-        }
-
-        [data-theme] {
-          background-color: var(--color-background-primary);
-          color: var(--color-foreground-secondary);
-        }
-
-        .wrapper {
-          display: flex;
-          flex-direction: column;
-          position: fixed;
-          inset-block-end: 10px;
-          inset-inline-start: 10px;
-          z-index: 1000;
-          padding: 25px;
-          border-radius: 15px;
-          box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.3);
-          inline-size: ${a}px;
-          block-size: ${o}px;
-        }
-
-        .header {
-          align-items: center;
-          display: flex;
-          justify-content: space-between;
-          border-block-end: 2px solid var(--color-background-quaternary);
-          padding-block-end: var(--spacing-4);
-          margin-block-end: var(--spacing-20);
-        }
-
-        button {
-          background: transparent;
-          border: 0;
-          cursor: pointer;
-          padding: 0;
-        }
-
-        h1 {
-          font-size: var(--font-size-s);
-          font-weight: var(--font-weight-bold);
-          margin: 0;
-          margin-inline-end: var(--spacing-4);
-          user-select: none;
-        }
-
-        iframe {
-          border: none;
-          inline-size: 100%;
-          block-size: 100%;
-        }
-    `, this.shadowRoot.appendChild(d);
+    d.textContent = Bi, this.shadowRoot.appendChild(d);
   }
 }
-we = new WeakMap(), Vt = new WeakMap();
-customElements.define("plugin-modal", Wi);
+ue = new WeakMap(), Vt = new WeakMap();
+customElements.define("plugin-modal", Vi);
 var R;
 (function(t) {
   t.assertEqual = (a) => a;
@@ -4595,31 +4524,31 @@ var R;
     throw new Error();
   }
   t.assertNever = r, t.arrayToEnum = (a) => {
-    const o = {};
+    const s = {};
     for (const i of a)
-      o[i] = i;
-    return o;
+      s[i] = i;
+    return s;
   }, t.getValidEnumValues = (a) => {
-    const o = t.objectKeys(a).filter((c) => typeof a[a[c]] != "number"), i = {};
-    for (const c of o)
+    const s = t.objectKeys(a).filter((c) => typeof a[a[c]] != "number"), i = {};
+    for (const c of s)
       i[c] = a[c];
     return t.objectValues(i);
-  }, t.objectValues = (a) => t.objectKeys(a).map(function(o) {
-    return a[o];
+  }, t.objectValues = (a) => t.objectKeys(a).map(function(s) {
+    return a[s];
   }), t.objectKeys = typeof Object.keys == "function" ? (a) => Object.keys(a) : (a) => {
-    const o = [];
+    const s = [];
     for (const i in a)
-      Object.prototype.hasOwnProperty.call(a, i) && o.push(i);
-    return o;
-  }, t.find = (a, o) => {
+      Object.prototype.hasOwnProperty.call(a, i) && s.push(i);
+    return s;
+  }, t.find = (a, s) => {
     for (const i of a)
-      if (o(i))
+      if (s(i))
         return i;
   }, t.isInteger = typeof Number.isInteger == "function" ? (a) => Number.isInteger(a) : (a) => typeof a == "number" && isFinite(a) && Math.floor(a) === a;
-  function n(a, o = " | ") {
-    return a.map((i) => typeof i == "string" ? `'${i}'` : i).join(o);
+  function n(a, s = " | ") {
+    return a.map((i) => typeof i == "string" ? `'${i}'` : i).join(s);
   }
-  t.joinValues = n, t.jsonStringifyReplacer = (a, o) => typeof o == "bigint" ? o.toString() : o;
+  t.joinValues = n, t.jsonStringifyReplacer = (a, s) => typeof s == "bigint" ? s.toString() : s;
 })(R || (R = {}));
 var tn;
 (function(t) {
@@ -4671,7 +4600,7 @@ const b = R.arrayToEnum([
     default:
       return b.unknown;
   }
-}, g = R.arrayToEnum([
+}, y = R.arrayToEnum([
   "invalid_type",
   "invalid_literal",
   "custom",
@@ -4688,8 +4617,8 @@ const b = R.arrayToEnum([
   "invalid_intersection_types",
   "not_multiple_of",
   "not_finite"
-]), qi = (t) => JSON.stringify(t, null, 2).replace(/"([^"]+)":/g, "$1:");
-class Se extends Error {
+]), Wi = (t) => JSON.stringify(t, null, 2).replace(/"([^"]+)":/g, "$1:");
+class xe extends Error {
   constructor(e) {
     super(), this.issues = [], this.addIssue = (n) => {
       this.issues = [...this.issues, n];
@@ -4703,10 +4632,10 @@ class Se extends Error {
     return this.issues;
   }
   format(e) {
-    const r = e || function(o) {
-      return o.message;
-    }, n = { _errors: [] }, a = (o) => {
-      for (const i of o.issues)
+    const r = e || function(s) {
+      return s.message;
+    }, n = { _errors: [] }, a = (s) => {
+      for (const i of s.issues)
         if (i.code === "invalid_union")
           i.unionErrors.map(a);
         else if (i.code === "invalid_return_type")
@@ -4744,56 +4673,56 @@ class Se extends Error {
     return this.flatten();
   }
 }
-Se.create = (t) => new Se(t);
+xe.create = (t) => new xe(t);
 const Rt = (t, e) => {
   let r;
   switch (t.code) {
-    case g.invalid_type:
+    case y.invalid_type:
       t.received === b.undefined ? r = "Required" : r = `Expected ${t.expected}, received ${t.received}`;
       break;
-    case g.invalid_literal:
+    case y.invalid_literal:
       r = `Invalid literal value, expected ${JSON.stringify(t.expected, R.jsonStringifyReplacer)}`;
       break;
-    case g.unrecognized_keys:
+    case y.unrecognized_keys:
       r = `Unrecognized key(s) in object: ${R.joinValues(t.keys, ", ")}`;
       break;
-    case g.invalid_union:
+    case y.invalid_union:
       r = "Invalid input";
       break;
-    case g.invalid_union_discriminator:
+    case y.invalid_union_discriminator:
       r = `Invalid discriminator value. Expected ${R.joinValues(t.options)}`;
       break;
-    case g.invalid_enum_value:
+    case y.invalid_enum_value:
       r = `Invalid enum value. Expected ${R.joinValues(t.options)}, received '${t.received}'`;
       break;
-    case g.invalid_arguments:
+    case y.invalid_arguments:
       r = "Invalid function arguments";
       break;
-    case g.invalid_return_type:
+    case y.invalid_return_type:
       r = "Invalid function return type";
       break;
-    case g.invalid_date:
+    case y.invalid_date:
       r = "Invalid date";
       break;
-    case g.invalid_string:
+    case y.invalid_string:
       typeof t.validation == "object" ? "includes" in t.validation ? (r = `Invalid input: must include "${t.validation.includes}"`, typeof t.validation.position == "number" && (r = `${r} at one or more positions greater than or equal to ${t.validation.position}`)) : "startsWith" in t.validation ? r = `Invalid input: must start with "${t.validation.startsWith}"` : "endsWith" in t.validation ? r = `Invalid input: must end with "${t.validation.endsWith}"` : R.assertNever(t.validation) : t.validation !== "regex" ? r = `Invalid ${t.validation}` : r = "Invalid";
       break;
-    case g.too_small:
+    case y.too_small:
       t.type === "array" ? r = `Array must contain ${t.exact ? "exactly" : t.inclusive ? "at least" : "more than"} ${t.minimum} element(s)` : t.type === "string" ? r = `String must contain ${t.exact ? "exactly" : t.inclusive ? "at least" : "over"} ${t.minimum} character(s)` : t.type === "number" ? r = `Number must be ${t.exact ? "exactly equal to " : t.inclusive ? "greater than or equal to " : "greater than "}${t.minimum}` : t.type === "date" ? r = `Date must be ${t.exact ? "exactly equal to " : t.inclusive ? "greater than or equal to " : "greater than "}${new Date(Number(t.minimum))}` : r = "Invalid input";
       break;
-    case g.too_big:
+    case y.too_big:
       t.type === "array" ? r = `Array must contain ${t.exact ? "exactly" : t.inclusive ? "at most" : "less than"} ${t.maximum} element(s)` : t.type === "string" ? r = `String must contain ${t.exact ? "exactly" : t.inclusive ? "at most" : "under"} ${t.maximum} character(s)` : t.type === "number" ? r = `Number must be ${t.exact ? "exactly" : t.inclusive ? "less than or equal to" : "less than"} ${t.maximum}` : t.type === "bigint" ? r = `BigInt must be ${t.exact ? "exactly" : t.inclusive ? "less than or equal to" : "less than"} ${t.maximum}` : t.type === "date" ? r = `Date must be ${t.exact ? "exactly" : t.inclusive ? "smaller than or equal to" : "smaller than"} ${new Date(Number(t.maximum))}` : r = "Invalid input";
       break;
-    case g.custom:
+    case y.custom:
       r = "Invalid input";
       break;
-    case g.invalid_intersection_types:
+    case y.invalid_intersection_types:
       r = "Intersection results could not be merged";
       break;
-    case g.not_multiple_of:
+    case y.not_multiple_of:
       r = `Number must be a multiple of ${t.multipleOf}`;
       break;
-    case g.not_finite:
+    case y.not_finite:
       r = "Number must be finite";
       break;
     default:
@@ -4802,16 +4731,16 @@ const Rt = (t, e) => {
   return { message: r };
 };
 let ms = Rt;
-function Ki(t) {
+function qi(t) {
   ms = t;
 }
 function mr() {
   return ms;
 }
 const hr = (t) => {
-  const { data: e, path: r, errorMaps: n, issueData: a } = t, o = [...r, ...a.path || []], i = {
+  const { data: e, path: r, errorMaps: n, issueData: a } = t, s = [...r, ...a.path || []], i = {
     ...a,
-    path: o
+    path: s
   };
   let c = "";
   const u = n.filter((l) => !!l).slice().reverse();
@@ -4819,11 +4748,11 @@ const hr = (t) => {
     c = l(i, { data: e, defaultError: c }).message;
   return {
     ...a,
-    path: o,
+    path: s,
     message: a.message || c
   };
-}, Yi = [];
-function x(t, e) {
+}, Ki = [];
+function S(t, e) {
   const r = hr({
     issueData: e,
     data: t.data,
@@ -4869,21 +4798,21 @@ class J {
   static mergeObjectSync(e, r) {
     const n = {};
     for (const a of r) {
-      const { key: o, value: i } = a;
-      if (o.status === "aborted" || i.status === "aborted")
+      const { key: s, value: i } = a;
+      if (s.status === "aborted" || i.status === "aborted")
         return A;
-      o.status === "dirty" && e.dirty(), i.status === "dirty" && e.dirty(), o.value !== "__proto__" && (typeof i.value < "u" || a.alwaysSet) && (n[o.value] = i.value);
+      s.status === "dirty" && e.dirty(), i.status === "dirty" && e.dirty(), s.value !== "__proto__" && (typeof i.value < "u" || a.alwaysSet) && (n[s.value] = i.value);
     }
     return { status: e.value, value: n };
   }
 }
 const A = Object.freeze({
   status: "aborted"
-}), hs = (t) => ({ status: "dirty", value: t }), re = (t) => ({ status: "valid", value: t }), rn = (t) => t.status === "aborted", nn = (t) => t.status === "dirty", Lt = (t) => t.status === "valid", gr = (t) => typeof Promise < "u" && t instanceof Promise;
-var S;
+}), hs = (t) => ({ status: "dirty", value: t }), re = (t) => ({ status: "valid", value: t }), rn = (t) => t.status === "aborted", nn = (t) => t.status === "dirty", Mt = (t) => t.status === "valid", yr = (t) => typeof Promise < "u" && t instanceof Promise;
+var E;
 (function(t) {
   t.errToObj = (e) => typeof e == "string" ? { message: e } : e || {}, t.toString = (e) => typeof e == "string" ? e : e == null ? void 0 : e.message;
-})(S || (S = {}));
+})(E || (E = {}));
 class Ne {
   constructor(e, r, n, a) {
     this._cachedPath = [], this.parent = e, this.data = r, this._path = n, this._key = a;
@@ -4893,7 +4822,7 @@ class Ne {
   }
 }
 const no = (t, e) => {
-  if (Lt(e))
+  if (Mt(e))
     return { success: !0, data: e.value };
   if (!t.common.issues.length)
     throw new Error("Validation failed but no issues detected.");
@@ -4902,7 +4831,7 @@ const no = (t, e) => {
     get error() {
       if (this._error)
         return this._error;
-      const r = new Se(t.common.issues);
+      const r = new xe(t.common.issues);
       return this._error = r, this._error;
     }
   };
@@ -4915,7 +4844,7 @@ function C(t) {
     throw new Error(`Can't use "invalid_type_error" or "required_error" in conjunction with custom error map.`);
   return e ? { errorMap: e, description: a } : { errorMap: (i, c) => i.code !== "invalid_type" ? { message: c.defaultError } : typeof c.data > "u" ? { message: n ?? c.defaultError } : { message: r ?? c.defaultError }, description: a };
 }
-class $ {
+class N {
   constructor(e) {
     this.spa = this.safeParseAsync, this._def = e, this.parse = this.parse.bind(this), this.safeParse = this.safeParse.bind(this), this.parseAsync = this.parseAsync.bind(this), this.safeParseAsync = this.safeParseAsync.bind(this), this.spa = this.spa.bind(this), this.refine = this.refine.bind(this), this.refinement = this.refinement.bind(this), this.superRefine = this.superRefine.bind(this), this.optional = this.optional.bind(this), this.nullable = this.nullable.bind(this), this.nullish = this.nullish.bind(this), this.array = this.array.bind(this), this.promise = this.promise.bind(this), this.or = this.or.bind(this), this.and = this.and.bind(this), this.transform = this.transform.bind(this), this.brand = this.brand.bind(this), this.default = this.default.bind(this), this.catch = this.catch.bind(this), this.describe = this.describe.bind(this), this.pipe = this.pipe.bind(this), this.readonly = this.readonly.bind(this), this.isNullable = this.isNullable.bind(this), this.isOptional = this.isOptional.bind(this);
   }
@@ -4950,7 +4879,7 @@ class $ {
   }
   _parseSync(e) {
     const r = this._parse(e);
-    if (gr(r))
+    if (yr(r))
       throw new Error("Synchronous parse encountered promise.");
     return r;
   }
@@ -4977,8 +4906,8 @@ class $ {
       parent: null,
       data: e,
       parsedType: Ge(e)
-    }, o = this._parseSync({ data: e, path: a.path, parent: a });
-    return no(a, o);
+    }, s = this._parseSync({ data: e, path: a.path, parent: a });
+    return no(a, s);
   }
   async parseAsync(e, r) {
     const n = await this.safeParseAsync(e, r);
@@ -4998,14 +4927,14 @@ class $ {
       parent: null,
       data: e,
       parsedType: Ge(e)
-    }, a = this._parse({ data: e, path: n.path, parent: n }), o = await (gr(a) ? a : Promise.resolve(a));
-    return no(n, o);
+    }, a = this._parse({ data: e, path: n.path, parent: n }), s = await (yr(a) ? a : Promise.resolve(a));
+    return no(n, s);
   }
   refine(e, r) {
     const n = (a) => typeof r == "string" || typeof r > "u" ? { message: r } : typeof r == "function" ? r(a) : r;
-    return this._refinement((a, o) => {
-      const i = e(a), c = () => o.addIssue({
-        code: g.custom,
+    return this._refinement((a, s) => {
+      const i = e(a), c = () => s.addIssue({
+        code: y.custom,
         ...n(a)
       });
       return typeof Promise < "u" && i instanceof Promise ? i.then((u) => u ? !0 : (c(), !1)) : i ? !0 : (c(), !1);
@@ -5015,7 +4944,7 @@ class $ {
     return this._refinement((n, a) => e(n) ? !0 : (a.addIssue(typeof r == "function" ? r(n, a) : r), !1));
   }
   _refinement(e) {
-    return new Pe({
+    return new ke({
       schema: this,
       typeName: P.ZodEffects,
       effect: { type: "refinement", refinement: e }
@@ -5034,10 +4963,10 @@ class $ {
     return this.nullable().optional();
   }
   array() {
-    return Ee.create(this, this._def);
+    return Pe.create(this, this._def);
   }
   promise() {
-    return xt.create(this, this._def);
+    return St.create(this, this._def);
   }
   or(e) {
     return Ut.create([this, e], this._def);
@@ -5046,7 +4975,7 @@ class $ {
     return jt.create(this, e, this._def);
   }
   transform(e) {
-    return new Pe({
+    return new ke({
       ...C(this._def),
       schema: this,
       typeName: P.ZodEffects,
@@ -5063,7 +4992,7 @@ class $ {
     });
   }
   brand() {
-    return new ys({
+    return new gs({
       typeName: P.ZodBranded,
       type: this,
       ...C(this._def)
@@ -5089,7 +5018,7 @@ class $ {
     return Jt.create(this, e);
   }
   readonly() {
-    return xr.create(this);
+    return Sr.create(this);
   }
   isOptional() {
     return this.safeParse(void 0).success;
@@ -5098,174 +5027,174 @@ class $ {
     return this.safeParse(null).success;
   }
 }
-const Ji = /^c[^\s-]{8,}$/i, Xi = /^[a-z][a-z0-9]*$/, Qi = /^[0-9A-HJKMNP-TV-Z]{26}$/, ec = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/i, tc = /^(?!\.)(?!.*\.\.)([A-Z0-9_+-\.]*)[A-Z0-9_+-]@([A-Z0-9][A-Z0-9\-]*\.)+[A-Z]{2,}$/i, rc = "^(\\p{Extended_Pictographic}|\\p{Emoji_Component})+$";
+const Yi = /^c[^\s-]{8,}$/i, Ji = /^[a-z][a-z0-9]*$/, Xi = /^[0-9A-HJKMNP-TV-Z]{26}$/, Qi = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/i, ec = /^(?!\.)(?!.*\.\.)([A-Z0-9_+-\.]*)[A-Z0-9_+-]@([A-Z0-9][A-Z0-9\-]*\.)+[A-Z]{2,}$/i, tc = "^(\\p{Extended_Pictographic}|\\p{Emoji_Component})+$";
 let Gr;
-const nc = /^(((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2}))\.){3}((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2}))$/, oc = /^(([a-f0-9]{1,4}:){7}|::([a-f0-9]{1,4}:){0,6}|([a-f0-9]{1,4}:){1}:([a-f0-9]{1,4}:){0,5}|([a-f0-9]{1,4}:){2}:([a-f0-9]{1,4}:){0,4}|([a-f0-9]{1,4}:){3}:([a-f0-9]{1,4}:){0,3}|([a-f0-9]{1,4}:){4}:([a-f0-9]{1,4}:){0,2}|([a-f0-9]{1,4}:){5}:([a-f0-9]{1,4}:){0,1})([a-f0-9]{1,4}|(((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2}))\.){3}((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2})))$/, sc = (t) => t.precision ? t.offset ? new RegExp(`^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{${t.precision}}(([+-]\\d{2}(:?\\d{2})?)|Z)$`) : new RegExp(`^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{${t.precision}}Z$`) : t.precision === 0 ? t.offset ? new RegExp("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(([+-]\\d{2}(:?\\d{2})?)|Z)$") : new RegExp("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$") : t.offset ? new RegExp("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(([+-]\\d{2}(:?\\d{2})?)|Z)$") : new RegExp("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$");
-function ac(t, e) {
-  return !!((e === "v4" || !e) && nc.test(t) || (e === "v6" || !e) && oc.test(t));
+const rc = /^(((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2}))\.){3}((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2}))$/, nc = /^(([a-f0-9]{1,4}:){7}|::([a-f0-9]{1,4}:){0,6}|([a-f0-9]{1,4}:){1}:([a-f0-9]{1,4}:){0,5}|([a-f0-9]{1,4}:){2}:([a-f0-9]{1,4}:){0,4}|([a-f0-9]{1,4}:){3}:([a-f0-9]{1,4}:){0,3}|([a-f0-9]{1,4}:){4}:([a-f0-9]{1,4}:){0,2}|([a-f0-9]{1,4}:){5}:([a-f0-9]{1,4}:){0,1})([a-f0-9]{1,4}|(((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2}))\.){3}((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2})))$/, oc = (t) => t.precision ? t.offset ? new RegExp(`^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{${t.precision}}(([+-]\\d{2}(:?\\d{2})?)|Z)$`) : new RegExp(`^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{${t.precision}}Z$`) : t.precision === 0 ? t.offset ? new RegExp("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(([+-]\\d{2}(:?\\d{2})?)|Z)$") : new RegExp("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$") : t.offset ? new RegExp("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(([+-]\\d{2}(:?\\d{2})?)|Z)$") : new RegExp("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$");
+function sc(t, e) {
+  return !!((e === "v4" || !e) && rc.test(t) || (e === "v6" || !e) && nc.test(t));
 }
-class xe extends $ {
+class Ee extends N {
   _parse(e) {
     if (this._def.coerce && (e.data = String(e.data)), this._getType(e) !== b.string) {
-      const o = this._getOrReturnCtx(e);
-      return x(
-        o,
+      const s = this._getOrReturnCtx(e);
+      return S(
+        s,
         {
-          code: g.invalid_type,
+          code: y.invalid_type,
           expected: b.string,
-          received: o.parsedType
+          received: s.parsedType
         }
         //
       ), A;
     }
     const n = new J();
     let a;
-    for (const o of this._def.checks)
-      if (o.kind === "min")
-        e.data.length < o.value && (a = this._getOrReturnCtx(e, a), x(a, {
-          code: g.too_small,
-          minimum: o.value,
+    for (const s of this._def.checks)
+      if (s.kind === "min")
+        e.data.length < s.value && (a = this._getOrReturnCtx(e, a), S(a, {
+          code: y.too_small,
+          minimum: s.value,
           type: "string",
           inclusive: !0,
           exact: !1,
-          message: o.message
+          message: s.message
         }), n.dirty());
-      else if (o.kind === "max")
-        e.data.length > o.value && (a = this._getOrReturnCtx(e, a), x(a, {
-          code: g.too_big,
-          maximum: o.value,
+      else if (s.kind === "max")
+        e.data.length > s.value && (a = this._getOrReturnCtx(e, a), S(a, {
+          code: y.too_big,
+          maximum: s.value,
           type: "string",
           inclusive: !0,
           exact: !1,
-          message: o.message
+          message: s.message
         }), n.dirty());
-      else if (o.kind === "length") {
-        const i = e.data.length > o.value, c = e.data.length < o.value;
-        (i || c) && (a = this._getOrReturnCtx(e, a), i ? x(a, {
-          code: g.too_big,
-          maximum: o.value,
+      else if (s.kind === "length") {
+        const i = e.data.length > s.value, c = e.data.length < s.value;
+        (i || c) && (a = this._getOrReturnCtx(e, a), i ? S(a, {
+          code: y.too_big,
+          maximum: s.value,
           type: "string",
           inclusive: !0,
           exact: !0,
-          message: o.message
-        }) : c && x(a, {
-          code: g.too_small,
-          minimum: o.value,
+          message: s.message
+        }) : c && S(a, {
+          code: y.too_small,
+          minimum: s.value,
           type: "string",
           inclusive: !0,
           exact: !0,
-          message: o.message
+          message: s.message
         }), n.dirty());
-      } else if (o.kind === "email")
-        tc.test(e.data) || (a = this._getOrReturnCtx(e, a), x(a, {
+      } else if (s.kind === "email")
+        ec.test(e.data) || (a = this._getOrReturnCtx(e, a), S(a, {
           validation: "email",
-          code: g.invalid_string,
-          message: o.message
+          code: y.invalid_string,
+          message: s.message
         }), n.dirty());
-      else if (o.kind === "emoji")
-        Gr || (Gr = new RegExp(rc, "u")), Gr.test(e.data) || (a = this._getOrReturnCtx(e, a), x(a, {
+      else if (s.kind === "emoji")
+        Gr || (Gr = new RegExp(tc, "u")), Gr.test(e.data) || (a = this._getOrReturnCtx(e, a), S(a, {
           validation: "emoji",
-          code: g.invalid_string,
-          message: o.message
+          code: y.invalid_string,
+          message: s.message
         }), n.dirty());
-      else if (o.kind === "uuid")
-        ec.test(e.data) || (a = this._getOrReturnCtx(e, a), x(a, {
+      else if (s.kind === "uuid")
+        Qi.test(e.data) || (a = this._getOrReturnCtx(e, a), S(a, {
           validation: "uuid",
-          code: g.invalid_string,
-          message: o.message
+          code: y.invalid_string,
+          message: s.message
         }), n.dirty());
-      else if (o.kind === "cuid")
-        Ji.test(e.data) || (a = this._getOrReturnCtx(e, a), x(a, {
+      else if (s.kind === "cuid")
+        Yi.test(e.data) || (a = this._getOrReturnCtx(e, a), S(a, {
           validation: "cuid",
-          code: g.invalid_string,
-          message: o.message
+          code: y.invalid_string,
+          message: s.message
         }), n.dirty());
-      else if (o.kind === "cuid2")
-        Xi.test(e.data) || (a = this._getOrReturnCtx(e, a), x(a, {
+      else if (s.kind === "cuid2")
+        Ji.test(e.data) || (a = this._getOrReturnCtx(e, a), S(a, {
           validation: "cuid2",
-          code: g.invalid_string,
-          message: o.message
+          code: y.invalid_string,
+          message: s.message
         }), n.dirty());
-      else if (o.kind === "ulid")
-        Qi.test(e.data) || (a = this._getOrReturnCtx(e, a), x(a, {
+      else if (s.kind === "ulid")
+        Xi.test(e.data) || (a = this._getOrReturnCtx(e, a), S(a, {
           validation: "ulid",
-          code: g.invalid_string,
-          message: o.message
+          code: y.invalid_string,
+          message: s.message
         }), n.dirty());
-      else if (o.kind === "url")
+      else if (s.kind === "url")
         try {
           new URL(e.data);
         } catch {
-          a = this._getOrReturnCtx(e, a), x(a, {
+          a = this._getOrReturnCtx(e, a), S(a, {
             validation: "url",
-            code: g.invalid_string,
-            message: o.message
+            code: y.invalid_string,
+            message: s.message
           }), n.dirty();
         }
       else
-        o.kind === "regex" ? (o.regex.lastIndex = 0, o.regex.test(e.data) || (a = this._getOrReturnCtx(e, a), x(a, {
+        s.kind === "regex" ? (s.regex.lastIndex = 0, s.regex.test(e.data) || (a = this._getOrReturnCtx(e, a), S(a, {
           validation: "regex",
-          code: g.invalid_string,
-          message: o.message
-        }), n.dirty())) : o.kind === "trim" ? e.data = e.data.trim() : o.kind === "includes" ? e.data.includes(o.value, o.position) || (a = this._getOrReturnCtx(e, a), x(a, {
-          code: g.invalid_string,
-          validation: { includes: o.value, position: o.position },
-          message: o.message
-        }), n.dirty()) : o.kind === "toLowerCase" ? e.data = e.data.toLowerCase() : o.kind === "toUpperCase" ? e.data = e.data.toUpperCase() : o.kind === "startsWith" ? e.data.startsWith(o.value) || (a = this._getOrReturnCtx(e, a), x(a, {
-          code: g.invalid_string,
-          validation: { startsWith: o.value },
-          message: o.message
-        }), n.dirty()) : o.kind === "endsWith" ? e.data.endsWith(o.value) || (a = this._getOrReturnCtx(e, a), x(a, {
-          code: g.invalid_string,
-          validation: { endsWith: o.value },
-          message: o.message
-        }), n.dirty()) : o.kind === "datetime" ? sc(o).test(e.data) || (a = this._getOrReturnCtx(e, a), x(a, {
-          code: g.invalid_string,
+          code: y.invalid_string,
+          message: s.message
+        }), n.dirty())) : s.kind === "trim" ? e.data = e.data.trim() : s.kind === "includes" ? e.data.includes(s.value, s.position) || (a = this._getOrReturnCtx(e, a), S(a, {
+          code: y.invalid_string,
+          validation: { includes: s.value, position: s.position },
+          message: s.message
+        }), n.dirty()) : s.kind === "toLowerCase" ? e.data = e.data.toLowerCase() : s.kind === "toUpperCase" ? e.data = e.data.toUpperCase() : s.kind === "startsWith" ? e.data.startsWith(s.value) || (a = this._getOrReturnCtx(e, a), S(a, {
+          code: y.invalid_string,
+          validation: { startsWith: s.value },
+          message: s.message
+        }), n.dirty()) : s.kind === "endsWith" ? e.data.endsWith(s.value) || (a = this._getOrReturnCtx(e, a), S(a, {
+          code: y.invalid_string,
+          validation: { endsWith: s.value },
+          message: s.message
+        }), n.dirty()) : s.kind === "datetime" ? oc(s).test(e.data) || (a = this._getOrReturnCtx(e, a), S(a, {
+          code: y.invalid_string,
           validation: "datetime",
-          message: o.message
-        }), n.dirty()) : o.kind === "ip" ? ac(e.data, o.version) || (a = this._getOrReturnCtx(e, a), x(a, {
+          message: s.message
+        }), n.dirty()) : s.kind === "ip" ? sc(e.data, s.version) || (a = this._getOrReturnCtx(e, a), S(a, {
           validation: "ip",
-          code: g.invalid_string,
-          message: o.message
-        }), n.dirty()) : R.assertNever(o);
+          code: y.invalid_string,
+          message: s.message
+        }), n.dirty()) : R.assertNever(s);
     return { status: n.value, value: e.data };
   }
   _regex(e, r, n) {
     return this.refinement((a) => e.test(a), {
       validation: r,
-      code: g.invalid_string,
-      ...S.errToObj(n)
+      code: y.invalid_string,
+      ...E.errToObj(n)
     });
   }
   _addCheck(e) {
-    return new xe({
+    return new Ee({
       ...this._def,
       checks: [...this._def.checks, e]
     });
   }
   email(e) {
-    return this._addCheck({ kind: "email", ...S.errToObj(e) });
+    return this._addCheck({ kind: "email", ...E.errToObj(e) });
   }
   url(e) {
-    return this._addCheck({ kind: "url", ...S.errToObj(e) });
+    return this._addCheck({ kind: "url", ...E.errToObj(e) });
   }
   emoji(e) {
-    return this._addCheck({ kind: "emoji", ...S.errToObj(e) });
+    return this._addCheck({ kind: "emoji", ...E.errToObj(e) });
   }
   uuid(e) {
-    return this._addCheck({ kind: "uuid", ...S.errToObj(e) });
+    return this._addCheck({ kind: "uuid", ...E.errToObj(e) });
   }
   cuid(e) {
-    return this._addCheck({ kind: "cuid", ...S.errToObj(e) });
+    return this._addCheck({ kind: "cuid", ...E.errToObj(e) });
   }
   cuid2(e) {
-    return this._addCheck({ kind: "cuid2", ...S.errToObj(e) });
+    return this._addCheck({ kind: "cuid2", ...E.errToObj(e) });
   }
   ulid(e) {
-    return this._addCheck({ kind: "ulid", ...S.errToObj(e) });
+    return this._addCheck({ kind: "ulid", ...E.errToObj(e) });
   }
   ip(e) {
-    return this._addCheck({ kind: "ip", ...S.errToObj(e) });
+    return this._addCheck({ kind: "ip", ...E.errToObj(e) });
   }
   datetime(e) {
     var r;
@@ -5278,14 +5207,14 @@ class xe extends $ {
       kind: "datetime",
       precision: typeof (e == null ? void 0 : e.precision) > "u" ? null : e == null ? void 0 : e.precision,
       offset: (r = e == null ? void 0 : e.offset) !== null && r !== void 0 ? r : !1,
-      ...S.errToObj(e == null ? void 0 : e.message)
+      ...E.errToObj(e == null ? void 0 : e.message)
     });
   }
   regex(e, r) {
     return this._addCheck({
       kind: "regex",
       regex: e,
-      ...S.errToObj(r)
+      ...E.errToObj(r)
     });
   }
   includes(e, r) {
@@ -5293,42 +5222,42 @@ class xe extends $ {
       kind: "includes",
       value: e,
       position: r == null ? void 0 : r.position,
-      ...S.errToObj(r == null ? void 0 : r.message)
+      ...E.errToObj(r == null ? void 0 : r.message)
     });
   }
   startsWith(e, r) {
     return this._addCheck({
       kind: "startsWith",
       value: e,
-      ...S.errToObj(r)
+      ...E.errToObj(r)
     });
   }
   endsWith(e, r) {
     return this._addCheck({
       kind: "endsWith",
       value: e,
-      ...S.errToObj(r)
+      ...E.errToObj(r)
     });
   }
   min(e, r) {
     return this._addCheck({
       kind: "min",
       value: e,
-      ...S.errToObj(r)
+      ...E.errToObj(r)
     });
   }
   max(e, r) {
     return this._addCheck({
       kind: "max",
       value: e,
-      ...S.errToObj(r)
+      ...E.errToObj(r)
     });
   }
   length(e, r) {
     return this._addCheck({
       kind: "length",
       value: e,
-      ...S.errToObj(r)
+      ...E.errToObj(r)
     });
   }
   /**
@@ -5336,22 +5265,22 @@ class xe extends $ {
    * @see {@link ZodString.min}
    */
   nonempty(e) {
-    return this.min(1, S.errToObj(e));
+    return this.min(1, E.errToObj(e));
   }
   trim() {
-    return new xe({
+    return new Ee({
       ...this._def,
       checks: [...this._def.checks, { kind: "trim" }]
     });
   }
   toLowerCase() {
-    return new xe({
+    return new Ee({
       ...this._def,
       checks: [...this._def.checks, { kind: "toLowerCase" }]
     });
   }
   toUpperCase() {
-    return new xe({
+    return new Ee({
       ...this._def,
       checks: [...this._def.checks, { kind: "toUpperCase" }]
     });
@@ -5396,75 +5325,75 @@ class xe extends $ {
     return e;
   }
 }
-xe.create = (t) => {
+Ee.create = (t) => {
   var e;
-  return new xe({
+  return new Ee({
     checks: [],
     typeName: P.ZodString,
     coerce: (e = t == null ? void 0 : t.coerce) !== null && e !== void 0 ? e : !1,
     ...C(t)
   });
 };
-function ic(t, e) {
-  const r = (t.toString().split(".")[1] || "").length, n = (e.toString().split(".")[1] || "").length, a = r > n ? r : n, o = parseInt(t.toFixed(a).replace(".", "")), i = parseInt(e.toFixed(a).replace(".", ""));
-  return o % i / Math.pow(10, a);
+function ac(t, e) {
+  const r = (t.toString().split(".")[1] || "").length, n = (e.toString().split(".")[1] || "").length, a = r > n ? r : n, s = parseInt(t.toFixed(a).replace(".", "")), i = parseInt(e.toFixed(a).replace(".", ""));
+  return s % i / Math.pow(10, a);
 }
-class qe extends $ {
+class qe extends N {
   constructor() {
     super(...arguments), this.min = this.gte, this.max = this.lte, this.step = this.multipleOf;
   }
   _parse(e) {
     if (this._def.coerce && (e.data = Number(e.data)), this._getType(e) !== b.number) {
-      const o = this._getOrReturnCtx(e);
-      return x(o, {
-        code: g.invalid_type,
+      const s = this._getOrReturnCtx(e);
+      return S(s, {
+        code: y.invalid_type,
         expected: b.number,
-        received: o.parsedType
+        received: s.parsedType
       }), A;
     }
     let n;
     const a = new J();
-    for (const o of this._def.checks)
-      o.kind === "int" ? R.isInteger(e.data) || (n = this._getOrReturnCtx(e, n), x(n, {
-        code: g.invalid_type,
+    for (const s of this._def.checks)
+      s.kind === "int" ? R.isInteger(e.data) || (n = this._getOrReturnCtx(e, n), S(n, {
+        code: y.invalid_type,
         expected: "integer",
         received: "float",
-        message: o.message
-      }), a.dirty()) : o.kind === "min" ? (o.inclusive ? e.data < o.value : e.data <= o.value) && (n = this._getOrReturnCtx(e, n), x(n, {
-        code: g.too_small,
-        minimum: o.value,
+        message: s.message
+      }), a.dirty()) : s.kind === "min" ? (s.inclusive ? e.data < s.value : e.data <= s.value) && (n = this._getOrReturnCtx(e, n), S(n, {
+        code: y.too_small,
+        minimum: s.value,
         type: "number",
-        inclusive: o.inclusive,
+        inclusive: s.inclusive,
         exact: !1,
-        message: o.message
-      }), a.dirty()) : o.kind === "max" ? (o.inclusive ? e.data > o.value : e.data >= o.value) && (n = this._getOrReturnCtx(e, n), x(n, {
-        code: g.too_big,
-        maximum: o.value,
+        message: s.message
+      }), a.dirty()) : s.kind === "max" ? (s.inclusive ? e.data > s.value : e.data >= s.value) && (n = this._getOrReturnCtx(e, n), S(n, {
+        code: y.too_big,
+        maximum: s.value,
         type: "number",
-        inclusive: o.inclusive,
+        inclusive: s.inclusive,
         exact: !1,
-        message: o.message
-      }), a.dirty()) : o.kind === "multipleOf" ? ic(e.data, o.value) !== 0 && (n = this._getOrReturnCtx(e, n), x(n, {
-        code: g.not_multiple_of,
-        multipleOf: o.value,
-        message: o.message
-      }), a.dirty()) : o.kind === "finite" ? Number.isFinite(e.data) || (n = this._getOrReturnCtx(e, n), x(n, {
-        code: g.not_finite,
-        message: o.message
-      }), a.dirty()) : R.assertNever(o);
+        message: s.message
+      }), a.dirty()) : s.kind === "multipleOf" ? ac(e.data, s.value) !== 0 && (n = this._getOrReturnCtx(e, n), S(n, {
+        code: y.not_multiple_of,
+        multipleOf: s.value,
+        message: s.message
+      }), a.dirty()) : s.kind === "finite" ? Number.isFinite(e.data) || (n = this._getOrReturnCtx(e, n), S(n, {
+        code: y.not_finite,
+        message: s.message
+      }), a.dirty()) : R.assertNever(s);
     return { status: a.value, value: e.data };
   }
   gte(e, r) {
-    return this.setLimit("min", e, !0, S.toString(r));
+    return this.setLimit("min", e, !0, E.toString(r));
   }
   gt(e, r) {
-    return this.setLimit("min", e, !1, S.toString(r));
+    return this.setLimit("min", e, !1, E.toString(r));
   }
   lte(e, r) {
-    return this.setLimit("max", e, !0, S.toString(r));
+    return this.setLimit("max", e, !0, E.toString(r));
   }
   lt(e, r) {
-    return this.setLimit("max", e, !1, S.toString(r));
+    return this.setLimit("max", e, !1, E.toString(r));
   }
   setLimit(e, r, n, a) {
     return new qe({
@@ -5475,7 +5404,7 @@ class qe extends $ {
           kind: e,
           value: r,
           inclusive: n,
-          message: S.toString(a)
+          message: E.toString(a)
         }
       ]
     });
@@ -5489,7 +5418,7 @@ class qe extends $ {
   int(e) {
     return this._addCheck({
       kind: "int",
-      message: S.toString(e)
+      message: E.toString(e)
     });
   }
   positive(e) {
@@ -5497,7 +5426,7 @@ class qe extends $ {
       kind: "min",
       value: 0,
       inclusive: !1,
-      message: S.toString(e)
+      message: E.toString(e)
     });
   }
   negative(e) {
@@ -5505,7 +5434,7 @@ class qe extends $ {
       kind: "max",
       value: 0,
       inclusive: !1,
-      message: S.toString(e)
+      message: E.toString(e)
     });
   }
   nonpositive(e) {
@@ -5513,7 +5442,7 @@ class qe extends $ {
       kind: "max",
       value: 0,
       inclusive: !0,
-      message: S.toString(e)
+      message: E.toString(e)
     });
   }
   nonnegative(e) {
@@ -5521,20 +5450,20 @@ class qe extends $ {
       kind: "min",
       value: 0,
       inclusive: !0,
-      message: S.toString(e)
+      message: E.toString(e)
     });
   }
   multipleOf(e, r) {
     return this._addCheck({
       kind: "multipleOf",
       value: e,
-      message: S.toString(r)
+      message: E.toString(r)
     });
   }
   finite(e) {
     return this._addCheck({
       kind: "finite",
-      message: S.toString(e)
+      message: E.toString(e)
     });
   }
   safe(e) {
@@ -5542,12 +5471,12 @@ class qe extends $ {
       kind: "min",
       inclusive: !0,
       value: Number.MIN_SAFE_INTEGER,
-      message: S.toString(e)
+      message: E.toString(e)
     })._addCheck({
       kind: "max",
       inclusive: !0,
       value: Number.MAX_SAFE_INTEGER,
-      message: S.toString(e)
+      message: E.toString(e)
     });
   }
   get minValue() {
@@ -5581,52 +5510,52 @@ qe.create = (t) => new qe({
   coerce: (t == null ? void 0 : t.coerce) || !1,
   ...C(t)
 });
-class Ke extends $ {
+class Ke extends N {
   constructor() {
     super(...arguments), this.min = this.gte, this.max = this.lte;
   }
   _parse(e) {
     if (this._def.coerce && (e.data = BigInt(e.data)), this._getType(e) !== b.bigint) {
-      const o = this._getOrReturnCtx(e);
-      return x(o, {
-        code: g.invalid_type,
+      const s = this._getOrReturnCtx(e);
+      return S(s, {
+        code: y.invalid_type,
         expected: b.bigint,
-        received: o.parsedType
+        received: s.parsedType
       }), A;
     }
     let n;
     const a = new J();
-    for (const o of this._def.checks)
-      o.kind === "min" ? (o.inclusive ? e.data < o.value : e.data <= o.value) && (n = this._getOrReturnCtx(e, n), x(n, {
-        code: g.too_small,
+    for (const s of this._def.checks)
+      s.kind === "min" ? (s.inclusive ? e.data < s.value : e.data <= s.value) && (n = this._getOrReturnCtx(e, n), S(n, {
+        code: y.too_small,
         type: "bigint",
-        minimum: o.value,
-        inclusive: o.inclusive,
-        message: o.message
-      }), a.dirty()) : o.kind === "max" ? (o.inclusive ? e.data > o.value : e.data >= o.value) && (n = this._getOrReturnCtx(e, n), x(n, {
-        code: g.too_big,
+        minimum: s.value,
+        inclusive: s.inclusive,
+        message: s.message
+      }), a.dirty()) : s.kind === "max" ? (s.inclusive ? e.data > s.value : e.data >= s.value) && (n = this._getOrReturnCtx(e, n), S(n, {
+        code: y.too_big,
         type: "bigint",
-        maximum: o.value,
-        inclusive: o.inclusive,
-        message: o.message
-      }), a.dirty()) : o.kind === "multipleOf" ? e.data % o.value !== BigInt(0) && (n = this._getOrReturnCtx(e, n), x(n, {
-        code: g.not_multiple_of,
-        multipleOf: o.value,
-        message: o.message
-      }), a.dirty()) : R.assertNever(o);
+        maximum: s.value,
+        inclusive: s.inclusive,
+        message: s.message
+      }), a.dirty()) : s.kind === "multipleOf" ? e.data % s.value !== BigInt(0) && (n = this._getOrReturnCtx(e, n), S(n, {
+        code: y.not_multiple_of,
+        multipleOf: s.value,
+        message: s.message
+      }), a.dirty()) : R.assertNever(s);
     return { status: a.value, value: e.data };
   }
   gte(e, r) {
-    return this.setLimit("min", e, !0, S.toString(r));
+    return this.setLimit("min", e, !0, E.toString(r));
   }
   gt(e, r) {
-    return this.setLimit("min", e, !1, S.toString(r));
+    return this.setLimit("min", e, !1, E.toString(r));
   }
   lte(e, r) {
-    return this.setLimit("max", e, !0, S.toString(r));
+    return this.setLimit("max", e, !0, E.toString(r));
   }
   lt(e, r) {
-    return this.setLimit("max", e, !1, S.toString(r));
+    return this.setLimit("max", e, !1, E.toString(r));
   }
   setLimit(e, r, n, a) {
     return new Ke({
@@ -5637,7 +5566,7 @@ class Ke extends $ {
           kind: e,
           value: r,
           inclusive: n,
-          message: S.toString(a)
+          message: E.toString(a)
         }
       ]
     });
@@ -5653,7 +5582,7 @@ class Ke extends $ {
       kind: "min",
       value: BigInt(0),
       inclusive: !1,
-      message: S.toString(e)
+      message: E.toString(e)
     });
   }
   negative(e) {
@@ -5661,7 +5590,7 @@ class Ke extends $ {
       kind: "max",
       value: BigInt(0),
       inclusive: !1,
-      message: S.toString(e)
+      message: E.toString(e)
     });
   }
   nonpositive(e) {
@@ -5669,7 +5598,7 @@ class Ke extends $ {
       kind: "max",
       value: BigInt(0),
       inclusive: !0,
-      message: S.toString(e)
+      message: E.toString(e)
     });
   }
   nonnegative(e) {
@@ -5677,14 +5606,14 @@ class Ke extends $ {
       kind: "min",
       value: BigInt(0),
       inclusive: !0,
-      message: S.toString(e)
+      message: E.toString(e)
     });
   }
   multipleOf(e, r) {
     return this._addCheck({
       kind: "multipleOf",
       value: e,
-      message: S.toString(r)
+      message: E.toString(r)
     });
   }
   get minValue() {
@@ -5709,12 +5638,12 @@ Ke.create = (t) => {
     ...C(t)
   });
 };
-class Mt extends $ {
+class Lt extends N {
   _parse(e) {
     if (this._def.coerce && (e.data = !!e.data), this._getType(e) !== b.boolean) {
       const n = this._getOrReturnCtx(e);
-      return x(n, {
-        code: g.invalid_type,
+      return S(n, {
+        code: y.invalid_type,
         expected: b.boolean,
         received: n.parsedType
       }), A;
@@ -5722,45 +5651,45 @@ class Mt extends $ {
     return re(e.data);
   }
 }
-Mt.create = (t) => new Mt({
+Lt.create = (t) => new Lt({
   typeName: P.ZodBoolean,
   coerce: (t == null ? void 0 : t.coerce) || !1,
   ...C(t)
 });
-class it extends $ {
+class it extends N {
   _parse(e) {
     if (this._def.coerce && (e.data = new Date(e.data)), this._getType(e) !== b.date) {
-      const o = this._getOrReturnCtx(e);
-      return x(o, {
-        code: g.invalid_type,
+      const s = this._getOrReturnCtx(e);
+      return S(s, {
+        code: y.invalid_type,
         expected: b.date,
-        received: o.parsedType
+        received: s.parsedType
       }), A;
     }
     if (isNaN(e.data.getTime())) {
-      const o = this._getOrReturnCtx(e);
-      return x(o, {
-        code: g.invalid_date
+      const s = this._getOrReturnCtx(e);
+      return S(s, {
+        code: y.invalid_date
       }), A;
     }
     const n = new J();
     let a;
-    for (const o of this._def.checks)
-      o.kind === "min" ? e.data.getTime() < o.value && (a = this._getOrReturnCtx(e, a), x(a, {
-        code: g.too_small,
-        message: o.message,
+    for (const s of this._def.checks)
+      s.kind === "min" ? e.data.getTime() < s.value && (a = this._getOrReturnCtx(e, a), S(a, {
+        code: y.too_small,
+        message: s.message,
         inclusive: !0,
         exact: !1,
-        minimum: o.value,
+        minimum: s.value,
         type: "date"
-      }), n.dirty()) : o.kind === "max" ? e.data.getTime() > o.value && (a = this._getOrReturnCtx(e, a), x(a, {
-        code: g.too_big,
-        message: o.message,
+      }), n.dirty()) : s.kind === "max" ? e.data.getTime() > s.value && (a = this._getOrReturnCtx(e, a), S(a, {
+        code: y.too_big,
+        message: s.message,
         inclusive: !0,
         exact: !1,
-        maximum: o.value,
+        maximum: s.value,
         type: "date"
-      }), n.dirty()) : R.assertNever(o);
+      }), n.dirty()) : R.assertNever(s);
     return {
       status: n.value,
       value: new Date(e.data.getTime())
@@ -5776,14 +5705,14 @@ class it extends $ {
     return this._addCheck({
       kind: "min",
       value: e.getTime(),
-      message: S.toString(r)
+      message: E.toString(r)
     });
   }
   max(e, r) {
     return this._addCheck({
       kind: "max",
       value: e.getTime(),
-      message: S.toString(r)
+      message: E.toString(r)
     });
   }
   get minDate() {
@@ -5805,12 +5734,12 @@ it.create = (t) => new it({
   typeName: P.ZodDate,
   ...C(t)
 });
-class yr extends $ {
+class gr extends N {
   _parse(e) {
     if (this._getType(e) !== b.symbol) {
       const n = this._getOrReturnCtx(e);
-      return x(n, {
-        code: g.invalid_type,
+      return S(n, {
+        code: y.invalid_type,
         expected: b.symbol,
         received: n.parsedType
       }), A;
@@ -5818,16 +5747,16 @@ class yr extends $ {
     return re(e.data);
   }
 }
-yr.create = (t) => new yr({
+gr.create = (t) => new gr({
   typeName: P.ZodSymbol,
   ...C(t)
 });
-class Ft extends $ {
+class Ft extends N {
   _parse(e) {
     if (this._getType(e) !== b.undefined) {
       const n = this._getOrReturnCtx(e);
-      return x(n, {
-        code: g.invalid_type,
+      return S(n, {
+        code: y.invalid_type,
         expected: b.undefined,
         received: n.parsedType
       }), A;
@@ -5839,12 +5768,12 @@ Ft.create = (t) => new Ft({
   typeName: P.ZodUndefined,
   ...C(t)
 });
-class Dt extends $ {
+class Dt extends N {
   _parse(e) {
     if (this._getType(e) !== b.null) {
       const n = this._getOrReturnCtx(e);
-      return x(n, {
-        code: g.invalid_type,
+      return S(n, {
+        code: y.invalid_type,
         expected: b.null,
         received: n.parsedType
       }), A;
@@ -5856,7 +5785,7 @@ Dt.create = (t) => new Dt({
   typeName: P.ZodNull,
   ...C(t)
 });
-class wt extends $ {
+class wt extends N {
   constructor() {
     super(...arguments), this._any = !0;
   }
@@ -5868,7 +5797,7 @@ wt.create = (t) => new wt({
   typeName: P.ZodAny,
   ...C(t)
 });
-class ot extends $ {
+class ot extends N {
   constructor() {
     super(...arguments), this._unknown = !0;
   }
@@ -5880,11 +5809,11 @@ ot.create = (t) => new ot({
   typeName: P.ZodUnknown,
   ...C(t)
 });
-class Ue extends $ {
+class Ue extends N {
   _parse(e) {
     const r = this._getOrReturnCtx(e);
-    return x(r, {
-      code: g.invalid_type,
+    return S(r, {
+      code: y.invalid_type,
       expected: b.never,
       received: r.parsedType
     }), A;
@@ -5894,12 +5823,12 @@ Ue.create = (t) => new Ue({
   typeName: P.ZodNever,
   ...C(t)
 });
-class vr extends $ {
+class vr extends N {
   _parse(e) {
     if (this._getType(e) !== b.undefined) {
       const n = this._getOrReturnCtx(e);
-      return x(n, {
-        code: g.invalid_type,
+      return S(n, {
+        code: y.invalid_type,
         expected: b.void,
         received: n.parsedType
       }), A;
@@ -5911,19 +5840,19 @@ vr.create = (t) => new vr({
   typeName: P.ZodVoid,
   ...C(t)
 });
-class Ee extends $ {
+class Pe extends N {
   _parse(e) {
     const { ctx: r, status: n } = this._processInputParams(e), a = this._def;
     if (r.parsedType !== b.array)
-      return x(r, {
-        code: g.invalid_type,
+      return S(r, {
+        code: y.invalid_type,
         expected: b.array,
         received: r.parsedType
       }), A;
     if (a.exactLength !== null) {
       const i = r.data.length > a.exactLength.value, c = r.data.length < a.exactLength.value;
-      (i || c) && (x(r, {
-        code: i ? g.too_big : g.too_small,
+      (i || c) && (S(r, {
+        code: i ? y.too_big : y.too_small,
         minimum: c ? a.exactLength.value : void 0,
         maximum: i ? a.exactLength.value : void 0,
         type: "array",
@@ -5932,15 +5861,15 @@ class Ee extends $ {
         message: a.exactLength.message
       }), n.dirty());
     }
-    if (a.minLength !== null && r.data.length < a.minLength.value && (x(r, {
-      code: g.too_small,
+    if (a.minLength !== null && r.data.length < a.minLength.value && (S(r, {
+      code: y.too_small,
       minimum: a.minLength.value,
       type: "array",
       inclusive: !0,
       exact: !1,
       message: a.minLength.message
-    }), n.dirty()), a.maxLength !== null && r.data.length > a.maxLength.value && (x(r, {
-      code: g.too_big,
+    }), n.dirty()), a.maxLength !== null && r.data.length > a.maxLength.value && (S(r, {
+      code: y.too_big,
       maximum: a.maxLength.value,
       type: "array",
       inclusive: !0,
@@ -5948,35 +5877,35 @@ class Ee extends $ {
       message: a.maxLength.message
     }), n.dirty()), r.common.async)
       return Promise.all([...r.data].map((i, c) => a.type._parseAsync(new Ne(r, i, r.path, c)))).then((i) => J.mergeArray(n, i));
-    const o = [...r.data].map((i, c) => a.type._parseSync(new Ne(r, i, r.path, c)));
-    return J.mergeArray(n, o);
+    const s = [...r.data].map((i, c) => a.type._parseSync(new Ne(r, i, r.path, c)));
+    return J.mergeArray(n, s);
   }
   get element() {
     return this._def.type;
   }
   min(e, r) {
-    return new Ee({
+    return new Pe({
       ...this._def,
-      minLength: { value: e, message: S.toString(r) }
+      minLength: { value: e, message: E.toString(r) }
     });
   }
   max(e, r) {
-    return new Ee({
+    return new Pe({
       ...this._def,
-      maxLength: { value: e, message: S.toString(r) }
+      maxLength: { value: e, message: E.toString(r) }
     });
   }
   length(e, r) {
-    return new Ee({
+    return new Pe({
       ...this._def,
-      exactLength: { value: e, message: S.toString(r) }
+      exactLength: { value: e, message: E.toString(r) }
     });
   }
   nonempty(e) {
     return this.min(1, e);
   }
 }
-Ee.create = (t, e) => new Ee({
+Pe.create = (t, e) => new Pe({
   type: t,
   minLength: null,
   maxLength: null,
@@ -5996,12 +5925,12 @@ function ht(t) {
       shape: () => e
     });
   } else
-    return t instanceof Ee ? new Ee({
+    return t instanceof Pe ? new Pe({
       ...t._def,
       type: ht(t.element)
-    }) : t instanceof Fe ? Fe.create(ht(t.unwrap())) : t instanceof lt ? lt.create(ht(t.unwrap())) : t instanceof $e ? $e.create(t.items.map((e) => ht(e))) : t;
+    }) : t instanceof Fe ? Fe.create(ht(t.unwrap())) : t instanceof lt ? lt.create(ht(t.unwrap())) : t instanceof Oe ? Oe.create(t.items.map((e) => ht(e))) : t;
 }
-class U extends $ {
+class U extends N {
   constructor() {
     super(...arguments), this._cached = null, this.nonstrict = this.passthrough, this.augment = this.extend;
   }
@@ -6014,19 +5943,19 @@ class U extends $ {
   _parse(e) {
     if (this._getType(e) !== b.object) {
       const l = this._getOrReturnCtx(e);
-      return x(l, {
-        code: g.invalid_type,
+      return S(l, {
+        code: y.invalid_type,
         expected: b.object,
         received: l.parsedType
       }), A;
     }
-    const { status: n, ctx: a } = this._processInputParams(e), { shape: o, keys: i } = this._getCached(), c = [];
+    const { status: n, ctx: a } = this._processInputParams(e), { shape: s, keys: i } = this._getCached(), c = [];
     if (!(this._def.catchall instanceof Ue && this._def.unknownKeys === "strip"))
       for (const l in a.data)
         i.includes(l) || c.push(l);
     const u = [];
     for (const l of i) {
-      const d = o[l], f = a.data[l];
+      const d = s[l], f = a.data[l];
       u.push({
         key: { status: "valid", value: l },
         value: d._parse(new Ne(a, f, a.path, l)),
@@ -6042,8 +5971,8 @@ class U extends $ {
             value: { status: "valid", value: a.data[d] }
           });
       else if (l === "strict")
-        c.length > 0 && (x(a, {
-          code: g.unrecognized_keys,
+        c.length > 0 && (S(a, {
+          code: y.unrecognized_keys,
           keys: c
         }), n.dirty());
       else if (l !== "strip")
@@ -6079,15 +6008,15 @@ class U extends $ {
     return this._def.shape();
   }
   strict(e) {
-    return S.errToObj, new U({
+    return E.errToObj, new U({
       ...this._def,
       unknownKeys: "strict",
       ...e !== void 0 ? {
         errorMap: (r, n) => {
-          var a, o, i, c;
-          const u = (i = (o = (a = this._def).errorMap) === null || o === void 0 ? void 0 : o.call(a, r, n).message) !== null && i !== void 0 ? i : n.defaultError;
+          var a, s, i, c;
+          const u = (i = (s = (a = this._def).errorMap) === null || s === void 0 ? void 0 : s.call(a, r, n).message) !== null && i !== void 0 ? i : n.defaultError;
           return r.code === "unrecognized_keys" ? {
-            message: (c = S.errToObj(e).message) !== null && c !== void 0 ? c : u
+            message: (c = E.errToObj(e).message) !== null && c !== void 0 ? c : u
           } : {
             message: u
           };
@@ -6254,10 +6183,10 @@ class U extends $ {
       if (e && !e[n])
         r[n] = this.shape[n];
       else {
-        let o = this.shape[n];
-        for (; o instanceof Fe; )
-          o = o._def.innerType;
-        r[n] = o;
+        let s = this.shape[n];
+        for (; s instanceof Fe; )
+          s = s._def.innerType;
+        r[n] = s;
       }
     }), new U({
       ...this._def,
@@ -6265,7 +6194,7 @@ class U extends $ {
     });
   }
   keyof() {
-    return gs(R.objectKeys(this.shape));
+    return ys(R.objectKeys(this.shape));
   }
 }
 U.create = (t, e) => new U({
@@ -6289,24 +6218,24 @@ U.lazycreate = (t, e) => new U({
   typeName: P.ZodObject,
   ...C(e)
 });
-class Ut extends $ {
+class Ut extends N {
   _parse(e) {
     const { ctx: r } = this._processInputParams(e), n = this._def.options;
-    function a(o) {
-      for (const c of o)
+    function a(s) {
+      for (const c of s)
         if (c.result.status === "valid")
           return c.result;
-      for (const c of o)
+      for (const c of s)
         if (c.result.status === "dirty")
           return r.common.issues.push(...c.ctx.common.issues), c.result;
-      const i = o.map((c) => new Se(c.ctx.common.issues));
-      return x(r, {
-        code: g.invalid_union,
+      const i = s.map((c) => new xe(c.ctx.common.issues));
+      return S(r, {
+        code: y.invalid_union,
         unionErrors: i
       }), A;
     }
     if (r.common.async)
-      return Promise.all(n.map(async (o) => {
+      return Promise.all(n.map(async (s) => {
         const i = {
           ...r,
           common: {
@@ -6316,7 +6245,7 @@ class Ut extends $ {
           parent: null
         };
         return {
-          result: await o._parseAsync({
+          result: await s._parseAsync({
             data: r.data,
             path: r.path,
             parent: i
@@ -6325,7 +6254,7 @@ class Ut extends $ {
         };
       })).then(a);
     {
-      let o;
+      let s;
       const i = [];
       for (const u of n) {
         const l = {
@@ -6342,13 +6271,13 @@ class Ut extends $ {
         });
         if (d.status === "valid")
           return d;
-        d.status === "dirty" && !o && (o = { result: d, ctx: l }), l.common.issues.length && i.push(l.common.issues);
+        d.status === "dirty" && !s && (s = { result: d, ctx: l }), l.common.issues.length && i.push(l.common.issues);
       }
-      if (o)
-        return r.common.issues.push(...o.ctx.common.issues), o.result;
-      const c = i.map((u) => new Se(u));
-      return x(r, {
-        code: g.invalid_union,
+      if (s)
+        return r.common.issues.push(...s.ctx.common.issues), s.result;
+      const c = i.map((u) => new xe(u));
+      return S(r, {
+        code: y.invalid_union,
         unionErrors: c
       }), A;
     }
@@ -6362,27 +6291,27 @@ Ut.create = (t, e) => new Ut({
   typeName: P.ZodUnion,
   ...C(e)
 });
-const ir = (t) => t instanceof zt ? ir(t.schema) : t instanceof Pe ? ir(t.innerType()) : t instanceof Gt ? [t.value] : t instanceof Ye ? t.options : t instanceof Bt ? Object.keys(t.enum) : t instanceof Ht ? ir(t._def.innerType) : t instanceof Ft ? [void 0] : t instanceof Dt ? [null] : null;
-class Rr extends $ {
+const ir = (t) => t instanceof zt ? ir(t.schema) : t instanceof ke ? ir(t.innerType()) : t instanceof Gt ? [t.value] : t instanceof Ye ? t.options : t instanceof Bt ? Object.keys(t.enum) : t instanceof Ht ? ir(t._def.innerType) : t instanceof Ft ? [void 0] : t instanceof Dt ? [null] : null;
+class Rr extends N {
   _parse(e) {
     const { ctx: r } = this._processInputParams(e);
     if (r.parsedType !== b.object)
-      return x(r, {
-        code: g.invalid_type,
+      return S(r, {
+        code: y.invalid_type,
         expected: b.object,
         received: r.parsedType
       }), A;
-    const n = this.discriminator, a = r.data[n], o = this.optionsMap.get(a);
-    return o ? r.common.async ? o._parseAsync({
+    const n = this.discriminator, a = r.data[n], s = this.optionsMap.get(a);
+    return s ? r.common.async ? s._parseAsync({
       data: r.data,
       path: r.path,
       parent: r
-    }) : o._parseSync({
+    }) : s._parseSync({
       data: r.data,
       path: r.path,
       parent: r
-    }) : (x(r, {
-      code: g.invalid_union_discriminator,
+    }) : (S(r, {
+      code: y.invalid_union_discriminator,
       options: Array.from(this.optionsMap.keys()),
       path: [n]
     }), A);
@@ -6406,14 +6335,14 @@ class Rr extends $ {
    */
   static create(e, r, n) {
     const a = /* @__PURE__ */ new Map();
-    for (const o of r) {
-      const i = ir(o.shape[e]);
+    for (const s of r) {
+      const i = ir(s.shape[e]);
       if (!i)
         throw new Error(`A discriminator value for key \`${e}\` could not be extracted from all schema options`);
       for (const c of i) {
         if (a.has(c))
           throw new Error(`Discriminator property ${String(e)} has duplicate value ${String(c)}`);
-        a.set(c, o);
+        a.set(c, s);
       }
     }
     return new Rr({
@@ -6430,8 +6359,8 @@ function on(t, e) {
   if (t === e)
     return { valid: !0, data: t };
   if (r === b.object && n === b.object) {
-    const a = R.objectKeys(e), o = R.objectKeys(t).filter((c) => a.indexOf(c) !== -1), i = { ...t, ...e };
-    for (const c of o) {
+    const a = R.objectKeys(e), s = R.objectKeys(t).filter((c) => a.indexOf(c) !== -1), i = { ...t, ...e };
+    for (const c of s) {
       const u = on(t[c], e[c]);
       if (!u.valid)
         return { valid: !1 };
@@ -6442,8 +6371,8 @@ function on(t, e) {
     if (t.length !== e.length)
       return { valid: !1 };
     const a = [];
-    for (let o = 0; o < t.length; o++) {
-      const i = t[o], c = e[o], u = on(i, c);
+    for (let s = 0; s < t.length; s++) {
+      const i = t[s], c = e[s], u = on(i, c);
       if (!u.valid)
         return { valid: !1 };
       a.push(u.data);
@@ -6452,14 +6381,14 @@ function on(t, e) {
   } else
     return r === b.date && n === b.date && +t == +e ? { valid: !0, data: t } : { valid: !1 };
 }
-class jt extends $ {
+class jt extends N {
   _parse(e) {
-    const { status: r, ctx: n } = this._processInputParams(e), a = (o, i) => {
-      if (rn(o) || rn(i))
+    const { status: r, ctx: n } = this._processInputParams(e), a = (s, i) => {
+      if (rn(s) || rn(i))
         return A;
-      const c = on(o.value, i.value);
-      return c.valid ? ((nn(o) || nn(i)) && r.dirty(), { status: r.value, value: c.data }) : (x(n, {
-        code: g.invalid_intersection_types
+      const c = on(s.value, i.value);
+      return c.valid ? ((nn(s) || nn(i)) && r.dirty(), { status: r.value, value: c.data }) : (S(n, {
+        code: y.invalid_intersection_types
       }), A);
     };
     return n.common.async ? Promise.all([
@@ -6473,7 +6402,7 @@ class jt extends $ {
         path: n.path,
         parent: n
       })
-    ]).then(([o, i]) => a(o, i)) : a(this._def.left._parseSync({
+    ]).then(([s, i]) => a(s, i)) : a(this._def.left._parseSync({
       data: n.data,
       path: n.path,
       parent: n
@@ -6490,57 +6419,57 @@ jt.create = (t, e, r) => new jt({
   typeName: P.ZodIntersection,
   ...C(r)
 });
-class $e extends $ {
+class Oe extends N {
   _parse(e) {
     const { status: r, ctx: n } = this._processInputParams(e);
     if (n.parsedType !== b.array)
-      return x(n, {
-        code: g.invalid_type,
+      return S(n, {
+        code: y.invalid_type,
         expected: b.array,
         received: n.parsedType
       }), A;
     if (n.data.length < this._def.items.length)
-      return x(n, {
-        code: g.too_small,
+      return S(n, {
+        code: y.too_small,
         minimum: this._def.items.length,
         inclusive: !0,
         exact: !1,
         type: "array"
       }), A;
-    !this._def.rest && n.data.length > this._def.items.length && (x(n, {
-      code: g.too_big,
+    !this._def.rest && n.data.length > this._def.items.length && (S(n, {
+      code: y.too_big,
       maximum: this._def.items.length,
       inclusive: !0,
       exact: !1,
       type: "array"
     }), r.dirty());
-    const o = [...n.data].map((i, c) => {
+    const s = [...n.data].map((i, c) => {
       const u = this._def.items[c] || this._def.rest;
       return u ? u._parse(new Ne(n, i, n.path, c)) : null;
     }).filter((i) => !!i);
-    return n.common.async ? Promise.all(o).then((i) => J.mergeArray(r, i)) : J.mergeArray(r, o);
+    return n.common.async ? Promise.all(s).then((i) => J.mergeArray(r, i)) : J.mergeArray(r, s);
   }
   get items() {
     return this._def.items;
   }
   rest(e) {
-    return new $e({
+    return new Oe({
       ...this._def,
       rest: e
     });
   }
 }
-$e.create = (t, e) => {
+Oe.create = (t, e) => {
   if (!Array.isArray(t))
     throw new Error("You must pass an array of schemas to z.tuple([ ... ])");
-  return new $e({
+  return new Oe({
     items: t,
     typeName: P.ZodTuple,
     rest: null,
     ...C(e)
   });
 };
-class Zt extends $ {
+class Zt extends N {
   get keySchema() {
     return this._def.keyType;
   }
@@ -6550,15 +6479,15 @@ class Zt extends $ {
   _parse(e) {
     const { status: r, ctx: n } = this._processInputParams(e);
     if (n.parsedType !== b.object)
-      return x(n, {
-        code: g.invalid_type,
+      return S(n, {
+        code: y.invalid_type,
         expected: b.object,
         received: n.parsedType
       }), A;
-    const a = [], o = this._def.keyType, i = this._def.valueType;
+    const a = [], s = this._def.keyType, i = this._def.valueType;
     for (const c in n.data)
       a.push({
-        key: o._parse(new Ne(n, c, n.path, c)),
+        key: s._parse(new Ne(n, c, n.path, c)),
         value: i._parse(new Ne(n, n.data[c], n.path, c))
       });
     return n.common.async ? J.mergeObjectAsync(r, a) : J.mergeObjectSync(r, a);
@@ -6567,20 +6496,20 @@ class Zt extends $ {
     return this._def.valueType;
   }
   static create(e, r, n) {
-    return r instanceof $ ? new Zt({
+    return r instanceof N ? new Zt({
       keyType: e,
       valueType: r,
       typeName: P.ZodRecord,
       ...C(n)
     }) : new Zt({
-      keyType: xe.create(),
+      keyType: Ee.create(),
       valueType: e,
       typeName: P.ZodRecord,
       ...C(r)
     });
   }
 }
-class _r extends $ {
+class _r extends N {
   get keySchema() {
     return this._def.keyType;
   }
@@ -6590,14 +6519,14 @@ class _r extends $ {
   _parse(e) {
     const { status: r, ctx: n } = this._processInputParams(e);
     if (n.parsedType !== b.map)
-      return x(n, {
-        code: g.invalid_type,
+      return S(n, {
+        code: y.invalid_type,
         expected: b.map,
         received: n.parsedType
       }), A;
-    const a = this._def.keyType, o = this._def.valueType, i = [...n.data.entries()].map(([c, u], l) => ({
+    const a = this._def.keyType, s = this._def.valueType, i = [...n.data.entries()].map(([c, u], l) => ({
       key: a._parse(new Ne(n, c, n.path, [l, "key"])),
-      value: o._parse(new Ne(n, u, n.path, [l, "value"]))
+      value: s._parse(new Ne(n, u, n.path, [l, "value"]))
     }));
     if (n.common.async) {
       const c = /* @__PURE__ */ new Map();
@@ -6628,32 +6557,32 @@ _r.create = (t, e, r) => new _r({
   typeName: P.ZodMap,
   ...C(r)
 });
-class ct extends $ {
+class ct extends N {
   _parse(e) {
     const { status: r, ctx: n } = this._processInputParams(e);
     if (n.parsedType !== b.set)
-      return x(n, {
-        code: g.invalid_type,
+      return S(n, {
+        code: y.invalid_type,
         expected: b.set,
         received: n.parsedType
       }), A;
     const a = this._def;
-    a.minSize !== null && n.data.size < a.minSize.value && (x(n, {
-      code: g.too_small,
+    a.minSize !== null && n.data.size < a.minSize.value && (S(n, {
+      code: y.too_small,
       minimum: a.minSize.value,
       type: "set",
       inclusive: !0,
       exact: !1,
       message: a.minSize.message
-    }), r.dirty()), a.maxSize !== null && n.data.size > a.maxSize.value && (x(n, {
-      code: g.too_big,
+    }), r.dirty()), a.maxSize !== null && n.data.size > a.maxSize.value && (S(n, {
+      code: y.too_big,
       maximum: a.maxSize.value,
       type: "set",
       inclusive: !0,
       exact: !1,
       message: a.maxSize.message
     }), r.dirty());
-    const o = this._def.valueType;
+    const s = this._def.valueType;
     function i(u) {
       const l = /* @__PURE__ */ new Set();
       for (const d of u) {
@@ -6663,19 +6592,19 @@ class ct extends $ {
       }
       return { status: r.value, value: l };
     }
-    const c = [...n.data.values()].map((u, l) => o._parse(new Ne(n, u, n.path, l)));
+    const c = [...n.data.values()].map((u, l) => s._parse(new Ne(n, u, n.path, l)));
     return n.common.async ? Promise.all(c).then((u) => i(u)) : i(c);
   }
   min(e, r) {
     return new ct({
       ...this._def,
-      minSize: { value: e, message: S.toString(r) }
+      minSize: { value: e, message: E.toString(r) }
     });
   }
   max(e, r) {
     return new ct({
       ...this._def,
-      maxSize: { value: e, message: S.toString(r) }
+      maxSize: { value: e, message: E.toString(r) }
     });
   }
   size(e, r) {
@@ -6692,15 +6621,15 @@ ct.create = (t, e) => new ct({
   typeName: P.ZodSet,
   ...C(e)
 });
-class yt extends $ {
+class gt extends N {
   constructor() {
     super(...arguments), this.validate = this.implement;
   }
   _parse(e) {
     const { ctx: r } = this._processInputParams(e);
     if (r.parsedType !== b.function)
-      return x(r, {
-        code: g.invalid_type,
+      return S(r, {
+        code: y.invalid_type,
         expected: b.function,
         received: r.parsedType
       }), A;
@@ -6715,7 +6644,7 @@ class yt extends $ {
           Rt
         ].filter((l) => !!l),
         issueData: {
-          code: g.invalid_arguments,
+          code: y.invalid_arguments,
           argumentsError: u
         }
       });
@@ -6731,31 +6660,31 @@ class yt extends $ {
           Rt
         ].filter((l) => !!l),
         issueData: {
-          code: g.invalid_return_type,
+          code: y.invalid_return_type,
           returnTypeError: u
         }
       });
     }
-    const o = { errorMap: r.common.contextualErrorMap }, i = r.data;
-    if (this._def.returns instanceof xt) {
+    const s = { errorMap: r.common.contextualErrorMap }, i = r.data;
+    if (this._def.returns instanceof St) {
       const c = this;
       return re(async function(...u) {
-        const l = new Se([]), d = await c._def.args.parseAsync(u, o).catch((p) => {
+        const l = new xe([]), d = await c._def.args.parseAsync(u, s).catch((p) => {
           throw l.addIssue(n(u, p)), l;
         }), f = await Reflect.apply(i, this, d);
-        return await c._def.returns._def.type.parseAsync(f, o).catch((p) => {
+        return await c._def.returns._def.type.parseAsync(f, s).catch((p) => {
           throw l.addIssue(a(f, p)), l;
         });
       });
     } else {
       const c = this;
       return re(function(...u) {
-        const l = c._def.args.safeParse(u, o);
+        const l = c._def.args.safeParse(u, s);
         if (!l.success)
-          throw new Se([n(u, l.error)]);
-        const d = Reflect.apply(i, this, l.data), f = c._def.returns.safeParse(d, o);
+          throw new xe([n(u, l.error)]);
+        const d = Reflect.apply(i, this, l.data), f = c._def.returns.safeParse(d, s);
         if (!f.success)
-          throw new Se([a(d, f.error)]);
+          throw new xe([a(d, f.error)]);
         return f.data;
       });
     }
@@ -6767,13 +6696,13 @@ class yt extends $ {
     return this._def.returns;
   }
   args(...e) {
-    return new yt({
+    return new gt({
       ...this._def,
-      args: $e.create(e).rest(ot.create())
+      args: Oe.create(e).rest(ot.create())
     });
   }
   returns(e) {
-    return new yt({
+    return new gt({
       ...this._def,
       returns: e
     });
@@ -6785,15 +6714,15 @@ class yt extends $ {
     return this.parse(e);
   }
   static create(e, r, n) {
-    return new yt({
-      args: e || $e.create([]).rest(ot.create()),
+    return new gt({
+      args: e || Oe.create([]).rest(ot.create()),
       returns: r || ot.create(),
       typeName: P.ZodFunction,
       ...C(n)
     });
   }
 }
-class zt extends $ {
+class zt extends N {
   get schema() {
     return this._def.getter();
   }
@@ -6807,13 +6736,13 @@ zt.create = (t, e) => new zt({
   typeName: P.ZodLazy,
   ...C(e)
 });
-class Gt extends $ {
+class Gt extends N {
   _parse(e) {
     if (e.data !== this._def.value) {
       const r = this._getOrReturnCtx(e);
-      return x(r, {
+      return S(r, {
         received: r.data,
-        code: g.invalid_literal,
+        code: y.invalid_literal,
         expected: this._def.value
       }), A;
     }
@@ -6828,28 +6757,28 @@ Gt.create = (t, e) => new Gt({
   typeName: P.ZodLiteral,
   ...C(e)
 });
-function gs(t, e) {
+function ys(t, e) {
   return new Ye({
     values: t,
     typeName: P.ZodEnum,
     ...C(e)
   });
 }
-class Ye extends $ {
+class Ye extends N {
   _parse(e) {
     if (typeof e.data != "string") {
       const r = this._getOrReturnCtx(e), n = this._def.values;
-      return x(r, {
+      return S(r, {
         expected: R.joinValues(n),
         received: r.parsedType,
-        code: g.invalid_type
+        code: y.invalid_type
       }), A;
     }
     if (this._def.values.indexOf(e.data) === -1) {
       const r = this._getOrReturnCtx(e), n = this._def.values;
-      return x(r, {
+      return S(r, {
         received: r.data,
-        code: g.invalid_enum_value,
+        code: y.invalid_enum_value,
         options: n
       }), A;
     }
@@ -6883,23 +6812,23 @@ class Ye extends $ {
     return Ye.create(this.options.filter((r) => !e.includes(r)));
   }
 }
-Ye.create = gs;
-class Bt extends $ {
+Ye.create = ys;
+class Bt extends N {
   _parse(e) {
     const r = R.getValidEnumValues(this._def.values), n = this._getOrReturnCtx(e);
     if (n.parsedType !== b.string && n.parsedType !== b.number) {
       const a = R.objectValues(r);
-      return x(n, {
+      return S(n, {
         expected: R.joinValues(a),
         received: n.parsedType,
-        code: g.invalid_type
+        code: y.invalid_type
       }), A;
     }
     if (r.indexOf(e.data) === -1) {
       const a = R.objectValues(r);
-      return x(n, {
+      return S(n, {
         received: n.data,
-        code: g.invalid_enum_value,
+        code: y.invalid_enum_value,
         options: a
       }), A;
     }
@@ -6914,15 +6843,15 @@ Bt.create = (t, e) => new Bt({
   typeName: P.ZodNativeEnum,
   ...C(e)
 });
-class xt extends $ {
+class St extends N {
   unwrap() {
     return this._def.type;
   }
   _parse(e) {
     const { ctx: r } = this._processInputParams(e);
     if (r.parsedType !== b.promise && r.common.async === !1)
-      return x(r, {
-        code: g.invalid_type,
+      return S(r, {
+        code: y.invalid_type,
         expected: b.promise,
         received: r.parsedType
       }), A;
@@ -6933,12 +6862,12 @@ class xt extends $ {
     })));
   }
 }
-xt.create = (t, e) => new xt({
+St.create = (t, e) => new St({
   type: t,
   typeName: P.ZodPromise,
   ...C(e)
 });
-class Pe extends $ {
+class ke extends N {
   innerType() {
     return this._def.schema;
   }
@@ -6946,16 +6875,16 @@ class Pe extends $ {
     return this._def.schema._def.typeName === P.ZodEffects ? this._def.schema.sourceType() : this._def.schema;
   }
   _parse(e) {
-    const { status: r, ctx: n } = this._processInputParams(e), a = this._def.effect || null, o = {
+    const { status: r, ctx: n } = this._processInputParams(e), a = this._def.effect || null, s = {
       addIssue: (i) => {
-        x(n, i), i.fatal ? r.abort() : r.dirty();
+        S(n, i), i.fatal ? r.abort() : r.dirty();
       },
       get path() {
         return n.path;
       }
     };
-    if (o.addIssue = o.addIssue.bind(o), a.type === "preprocess") {
-      const i = a.transform(n.data, o);
+    if (s.addIssue = s.addIssue.bind(s), a.type === "preprocess") {
+      const i = a.transform(n.data, s);
       return n.common.issues.length ? {
         status: "dirty",
         value: n.data
@@ -6971,7 +6900,7 @@ class Pe extends $ {
     }
     if (a.type === "refinement") {
       const i = (c) => {
-        const u = a.refinement(c, o);
+        const u = a.refinement(c, s);
         if (n.common.async)
           return Promise.resolve(u);
         if (u instanceof Promise)
@@ -6995,30 +6924,30 @@ class Pe extends $ {
           path: n.path,
           parent: n
         });
-        if (!Lt(i))
+        if (!Mt(i))
           return i;
-        const c = a.transform(i.value, o);
+        const c = a.transform(i.value, s);
         if (c instanceof Promise)
           throw new Error("Asynchronous transform encountered during synchronous parse operation. Use .parseAsync instead.");
         return { status: r.value, value: c };
       } else
-        return this._def.schema._parseAsync({ data: n.data, path: n.path, parent: n }).then((i) => Lt(i) ? Promise.resolve(a.transform(i.value, o)).then((c) => ({ status: r.value, value: c })) : i);
+        return this._def.schema._parseAsync({ data: n.data, path: n.path, parent: n }).then((i) => Mt(i) ? Promise.resolve(a.transform(i.value, s)).then((c) => ({ status: r.value, value: c })) : i);
     R.assertNever(a);
   }
 }
-Pe.create = (t, e, r) => new Pe({
+ke.create = (t, e, r) => new ke({
   schema: t,
   typeName: P.ZodEffects,
   effect: e,
   ...C(r)
 });
-Pe.createWithPreprocess = (t, e, r) => new Pe({
+ke.createWithPreprocess = (t, e, r) => new ke({
   schema: e,
   effect: { type: "preprocess", transform: t },
   typeName: P.ZodEffects,
   ...C(r)
 });
-class Fe extends $ {
+class Fe extends N {
   _parse(e) {
     return this._getType(e) === b.undefined ? re(void 0) : this._def.innerType._parse(e);
   }
@@ -7031,7 +6960,7 @@ Fe.create = (t, e) => new Fe({
   typeName: P.ZodOptional,
   ...C(e)
 });
-class lt extends $ {
+class lt extends N {
   _parse(e) {
     return this._getType(e) === b.null ? re(null) : this._def.innerType._parse(e);
   }
@@ -7044,7 +6973,7 @@ lt.create = (t, e) => new lt({
   typeName: P.ZodNullable,
   ...C(e)
 });
-class Ht extends $ {
+class Ht extends N {
   _parse(e) {
     const { ctx: r } = this._processInputParams(e);
     let n = r.data;
@@ -7064,7 +6993,7 @@ Ht.create = (t, e) => new Ht({
   defaultValue: typeof e.default == "function" ? e.default : () => e.default,
   ...C(e)
 });
-class br extends $ {
+class br extends N {
   _parse(e) {
     const { ctx: r } = this._processInputParams(e), n = {
       ...r,
@@ -7079,11 +7008,11 @@ class br extends $ {
         ...n
       }
     });
-    return gr(a) ? a.then((o) => ({
+    return yr(a) ? a.then((s) => ({
       status: "valid",
-      value: o.status === "valid" ? o.value : this._def.catchValue({
+      value: s.status === "valid" ? s.value : this._def.catchValue({
         get error() {
-          return new Se(n.common.issues);
+          return new xe(n.common.issues);
         },
         input: n.data
       })
@@ -7091,7 +7020,7 @@ class br extends $ {
       status: "valid",
       value: a.status === "valid" ? a.value : this._def.catchValue({
         get error() {
-          return new Se(n.common.issues);
+          return new xe(n.common.issues);
         },
         input: n.data
       })
@@ -7107,12 +7036,12 @@ br.create = (t, e) => new br({
   catchValue: typeof e.catch == "function" ? e.catch : () => e.catch,
   ...C(e)
 });
-class wr extends $ {
+class wr extends N {
   _parse(e) {
     if (this._getType(e) !== b.nan) {
       const n = this._getOrReturnCtx(e);
-      return x(n, {
-        code: g.invalid_type,
+      return S(n, {
+        code: y.invalid_type,
         expected: b.nan,
         received: n.parsedType
       }), A;
@@ -7124,8 +7053,8 @@ wr.create = (t) => new wr({
   typeName: P.ZodNaN,
   ...C(t)
 });
-const cc = Symbol("zod_brand");
-class ys extends $ {
+const ic = Symbol("zod_brand");
+class gs extends N {
   _parse(e) {
     const { ctx: r } = this._processInputParams(e), n = r.data;
     return this._def.type._parse({
@@ -7138,18 +7067,18 @@ class ys extends $ {
     return this._def.type;
   }
 }
-class Jt extends $ {
+class Jt extends N {
   _parse(e) {
     const { status: r, ctx: n } = this._processInputParams(e);
     if (n.common.async)
       return (async () => {
-        const o = await this._def.in._parseAsync({
+        const s = await this._def.in._parseAsync({
           data: n.data,
           path: n.path,
           parent: n
         });
-        return o.status === "aborted" ? A : o.status === "dirty" ? (r.dirty(), hs(o.value)) : this._def.out._parseAsync({
-          data: o.value,
+        return s.status === "aborted" ? A : s.status === "dirty" ? (r.dirty(), hs(s.value)) : this._def.out._parseAsync({
+          data: s.value,
           path: n.path,
           parent: n
         });
@@ -7178,58 +7107,58 @@ class Jt extends $ {
     });
   }
 }
-class xr extends $ {
+class Sr extends N {
   _parse(e) {
     const r = this._def.innerType._parse(e);
-    return Lt(r) && (r.value = Object.freeze(r.value)), r;
+    return Mt(r) && (r.value = Object.freeze(r.value)), r;
   }
 }
-xr.create = (t, e) => new xr({
+Sr.create = (t, e) => new Sr({
   innerType: t,
   typeName: P.ZodReadonly,
   ...C(e)
 });
 const vs = (t, e = {}, r) => t ? wt.create().superRefine((n, a) => {
-  var o, i;
+  var s, i;
   if (!t(n)) {
-    const c = typeof e == "function" ? e(n) : typeof e == "string" ? { message: e } : e, u = (i = (o = c.fatal) !== null && o !== void 0 ? o : r) !== null && i !== void 0 ? i : !0, l = typeof c == "string" ? { message: c } : c;
+    const c = typeof e == "function" ? e(n) : typeof e == "string" ? { message: e } : e, u = (i = (s = c.fatal) !== null && s !== void 0 ? s : r) !== null && i !== void 0 ? i : !0, l = typeof c == "string" ? { message: c } : c;
     a.addIssue({ code: "custom", ...l, fatal: u });
   }
-}) : wt.create(), lc = {
+}) : wt.create(), cc = {
   object: U.lazycreate
 };
 var P;
 (function(t) {
   t.ZodString = "ZodString", t.ZodNumber = "ZodNumber", t.ZodNaN = "ZodNaN", t.ZodBigInt = "ZodBigInt", t.ZodBoolean = "ZodBoolean", t.ZodDate = "ZodDate", t.ZodSymbol = "ZodSymbol", t.ZodUndefined = "ZodUndefined", t.ZodNull = "ZodNull", t.ZodAny = "ZodAny", t.ZodUnknown = "ZodUnknown", t.ZodNever = "ZodNever", t.ZodVoid = "ZodVoid", t.ZodArray = "ZodArray", t.ZodObject = "ZodObject", t.ZodUnion = "ZodUnion", t.ZodDiscriminatedUnion = "ZodDiscriminatedUnion", t.ZodIntersection = "ZodIntersection", t.ZodTuple = "ZodTuple", t.ZodRecord = "ZodRecord", t.ZodMap = "ZodMap", t.ZodSet = "ZodSet", t.ZodFunction = "ZodFunction", t.ZodLazy = "ZodLazy", t.ZodLiteral = "ZodLiteral", t.ZodEnum = "ZodEnum", t.ZodEffects = "ZodEffects", t.ZodNativeEnum = "ZodNativeEnum", t.ZodOptional = "ZodOptional", t.ZodNullable = "ZodNullable", t.ZodDefault = "ZodDefault", t.ZodCatch = "ZodCatch", t.ZodPromise = "ZodPromise", t.ZodBranded = "ZodBranded", t.ZodPipeline = "ZodPipeline", t.ZodReadonly = "ZodReadonly";
 })(P || (P = {}));
-const uc = (t, e = {
+const lc = (t, e = {
   message: `Input not instance of ${t.name}`
-}) => vs((r) => r instanceof t, e), _s = xe.create, bs = qe.create, dc = wr.create, fc = Ke.create, ws = Mt.create, pc = it.create, mc = yr.create, hc = Ft.create, gc = Dt.create, yc = wt.create, vc = ot.create, _c = Ue.create, bc = vr.create, wc = Ee.create, xc = U.create, Sc = U.strictCreate, Ec = Ut.create, Pc = Rr.create, kc = jt.create, Tc = $e.create, Ic = Zt.create, Ac = _r.create, Cc = ct.create, Nc = yt.create, $c = zt.create, Oc = Gt.create, Rc = Ye.create, Lc = Bt.create, Mc = xt.create, oo = Pe.create, Fc = Fe.create, Dc = lt.create, Uc = Pe.createWithPreprocess, jc = Jt.create, Zc = () => _s().optional(), zc = () => bs().optional(), Gc = () => ws().optional(), Bc = {
-  string: (t) => xe.create({ ...t, coerce: !0 }),
+}) => vs((r) => r instanceof t, e), _s = Ee.create, bs = qe.create, uc = wr.create, dc = Ke.create, ws = Lt.create, fc = it.create, pc = gr.create, mc = Ft.create, hc = Dt.create, yc = wt.create, gc = ot.create, vc = Ue.create, _c = vr.create, bc = Pe.create, wc = U.create, Sc = U.strictCreate, Ec = Ut.create, xc = Rr.create, Pc = jt.create, kc = Oe.create, Tc = Zt.create, Ic = _r.create, Ac = ct.create, Cc = gt.create, $c = zt.create, Nc = Gt.create, Oc = Ye.create, Rc = Bt.create, Mc = St.create, oo = ke.create, Lc = Fe.create, Fc = lt.create, Dc = ke.createWithPreprocess, Uc = Jt.create, jc = () => _s().optional(), Zc = () => bs().optional(), zc = () => ws().optional(), Gc = {
+  string: (t) => Ee.create({ ...t, coerce: !0 }),
   number: (t) => qe.create({ ...t, coerce: !0 }),
-  boolean: (t) => Mt.create({
+  boolean: (t) => Lt.create({
     ...t,
     coerce: !0
   }),
   bigint: (t) => Ke.create({ ...t, coerce: !0 }),
   date: (t) => it.create({ ...t, coerce: !0 })
-}, Hc = A;
+}, Bc = A;
 var V = /* @__PURE__ */ Object.freeze({
   __proto__: null,
   defaultErrorMap: Rt,
-  setErrorMap: Ki,
+  setErrorMap: qi,
   getErrorMap: mr,
   makeIssue: hr,
-  EMPTY_PATH: Yi,
-  addIssueToContext: x,
+  EMPTY_PATH: Ki,
+  addIssueToContext: S,
   ParseStatus: J,
   INVALID: A,
   DIRTY: hs,
   OK: re,
   isAborted: rn,
   isDirty: nn,
-  isValid: Lt,
-  isAsync: gr,
+  isValid: Mt,
+  isAsync: yr,
   get util() {
     return R;
   },
@@ -7238,138 +7167,106 @@ var V = /* @__PURE__ */ Object.freeze({
   },
   ZodParsedType: b,
   getParsedType: Ge,
-  ZodType: $,
-  ZodString: xe,
+  ZodType: N,
+  ZodString: Ee,
   ZodNumber: qe,
   ZodBigInt: Ke,
-  ZodBoolean: Mt,
+  ZodBoolean: Lt,
   ZodDate: it,
-  ZodSymbol: yr,
+  ZodSymbol: gr,
   ZodUndefined: Ft,
   ZodNull: Dt,
   ZodAny: wt,
   ZodUnknown: ot,
   ZodNever: Ue,
   ZodVoid: vr,
-  ZodArray: Ee,
+  ZodArray: Pe,
   ZodObject: U,
   ZodUnion: Ut,
   ZodDiscriminatedUnion: Rr,
   ZodIntersection: jt,
-  ZodTuple: $e,
+  ZodTuple: Oe,
   ZodRecord: Zt,
   ZodMap: _r,
   ZodSet: ct,
-  ZodFunction: yt,
+  ZodFunction: gt,
   ZodLazy: zt,
   ZodLiteral: Gt,
   ZodEnum: Ye,
   ZodNativeEnum: Bt,
-  ZodPromise: xt,
-  ZodEffects: Pe,
-  ZodTransformer: Pe,
+  ZodPromise: St,
+  ZodEffects: ke,
+  ZodTransformer: ke,
   ZodOptional: Fe,
   ZodNullable: lt,
   ZodDefault: Ht,
   ZodCatch: br,
   ZodNaN: wr,
-  BRAND: cc,
-  ZodBranded: ys,
+  BRAND: ic,
+  ZodBranded: gs,
   ZodPipeline: Jt,
-  ZodReadonly: xr,
+  ZodReadonly: Sr,
   custom: vs,
-  Schema: $,
-  ZodSchema: $,
-  late: lc,
+  Schema: N,
+  ZodSchema: N,
+  late: cc,
   get ZodFirstPartyTypeKind() {
     return P;
   },
-  coerce: Bc,
+  coerce: Gc,
   any: yc,
-  array: wc,
-  bigint: fc,
+  array: bc,
+  bigint: dc,
   boolean: ws,
-  date: pc,
-  discriminatedUnion: Pc,
+  date: fc,
+  discriminatedUnion: xc,
   effect: oo,
-  enum: Rc,
-  function: Nc,
-  instanceof: uc,
-  intersection: kc,
+  enum: Oc,
+  function: Cc,
+  instanceof: lc,
+  intersection: Pc,
   lazy: $c,
-  literal: Oc,
-  map: Ac,
-  nan: dc,
-  nativeEnum: Lc,
-  never: _c,
-  null: gc,
-  nullable: Dc,
+  literal: Nc,
+  map: Ic,
+  nan: uc,
+  nativeEnum: Rc,
+  never: vc,
+  null: hc,
+  nullable: Fc,
   number: bs,
-  object: xc,
-  oboolean: Gc,
-  onumber: zc,
-  optional: Fc,
-  ostring: Zc,
-  pipeline: jc,
-  preprocess: Uc,
+  object: wc,
+  oboolean: zc,
+  onumber: Zc,
+  optional: Lc,
+  ostring: jc,
+  pipeline: Uc,
+  preprocess: Dc,
   promise: Mc,
-  record: Ic,
-  set: Cc,
+  record: Tc,
+  set: Ac,
   strictObject: Sc,
   string: _s,
-  symbol: mc,
+  symbol: pc,
   transformer: oo,
-  tuple: Tc,
-  undefined: hc,
+  tuple: kc,
+  undefined: mc,
   union: Ec,
-  unknown: vc,
-  void: bc,
-  NEVER: Hc,
-  ZodIssueCode: g,
-  quotelessJson: qi,
-  ZodError: Se
+  unknown: gc,
+  void: _c,
+  NEVER: Bc,
+  ZodIssueCode: y,
+  quotelessJson: Wi,
+  ZodError: xe
 });
-const Vc = V.object({
-  name: V.string(),
-  code: V.string().url(),
-  permissions: V.array(
-    V.enum([
-      "page:read",
-      "page:write",
-      "file:read",
-      "file:write",
-      "selection:read"
-    ])
-  )
-});
-function xs(t) {
-  return fetch(t).then((e) => e.json()).then((e) => {
-    if (!Vc.safeParse(e).success)
-      throw new Error("Invalid plugin manifest");
-    return e;
-  }).catch((e) => {
-    throw console.error(e), e;
-  });
-}
-function Wc(t) {
-  return fetch(t).then((e) => e.text());
-}
-async function qc(t) {
-  const e = await xs(t.manifest), r = await Wc(e.code);
-  return {
-    manifest: e,
-    code: r
-  };
-}
-const Kc = V.object({
+const Hc = V.object({
   width: V.number().positive(),
   height: V.number().positive()
 });
-function Yc(t, e, r, n) {
+function Vc(t, e, r, n) {
   const a = document.createElement("plugin-modal");
   return a.setTheme(r), a.setAttribute("title", t), a.setAttribute("iframe-src", e), a.setAttribute("width", String(n.width || 285)), a.setAttribute("height", String(n.height || 540)), document.body.appendChild(a), a;
 }
-const Jc = V.function().args(V.string(), V.string(), V.enum(["dark", "light"]), Kc).implement((t, e, r, n) => Yc(t, e, r, n)), sn = [
+const Wc = V.function().args(V.string(), V.string(), V.enum(["dark", "light"]), Hc).implement((t, e, r, n) => Vc(t, e, r, n)), sn = [
   "pagechange",
   "filechange",
   "selectionchange",
@@ -7381,61 +7278,61 @@ window.addEventListener("message", (t) => {
   for (const e of an)
     e(t.data);
 });
-function Xc(t, e) {
+function qc(t, e) {
   t === "themechange" && ne && ne.setTheme(e), (Ct.get(t) || []).forEach((n) => n(e));
 }
-function Qc(t, e) {
+function Kc(t, e) {
   const r = () => {
     ne == null || ne.removeEventListener("close", r), ne && ne.remove(), an = [], ne = null;
-  }, n = (o) => {
-    if (!e.permissions.includes(o))
-      throw new Error(`Permission ${o} is not granted`);
+  }, n = (s) => {
+    if (!e.permissions.includes(s))
+      throw new Error(`Permission ${s} is not granted`);
   };
   return {
     ui: {
-      open: (o, i, c) => {
+      open: (s, i, c) => {
         const u = t.getTheme();
-        ne = Jc(o, i, u, c), ne.setTheme(u), ne.addEventListener("close", r, {
+        ne = Wc(s, i, u, c), ne.setTheme(u), ne.addEventListener("close", r, {
           once: !0
         });
       },
-      sendMessage(o) {
+      sendMessage(s) {
         const i = new CustomEvent("message", {
-          detail: o
+          detail: s
         });
         ne == null || ne.dispatchEvent(i);
       },
-      onMessage: (o) => {
-        V.function().parse(o), an.push(o);
+      onMessage: (s) => {
+        V.function().parse(s), an.push(s);
       }
     },
     utils: {
       types: {
-        isText(o) {
-          return o.type === "text";
+        isText(s) {
+          return s.type === "text";
         },
-        isRectangle(o) {
-          return o.type === "rect";
+        isRectangle(s) {
+          return s.type === "rect";
         },
-        isFrame(o) {
-          return o.type === "frame";
+        isFrame(s) {
+          return s.type === "frame";
         }
       }
     },
-    setTimeout: V.function().args(V.function(), V.number()).implement((o, i) => {
-      setTimeout(o, i);
+    setTimeout: V.function().args(V.function(), V.number()).implement((s, i) => {
+      setTimeout(s, i);
     }),
     closePlugin: r,
-    on(o, i) {
-      V.enum(sn).parse(o), V.function().parse(i), o === "pagechange" ? n("page:read") : o === "filechange" ? n("file:read") : o === "selectionchange" && n("selection:read");
-      const c = Ct.get(o) || [];
-      c.push(i), Ct.set(o, c);
+    on(s, i) {
+      V.enum(sn).parse(s), V.function().parse(i), s === "pagechange" ? n("page:read") : s === "filechange" ? n("file:read") : s === "selectionchange" && n("selection:read");
+      const c = Ct.get(s) || [];
+      c.push(i), Ct.set(s, c);
     },
-    off(o, i) {
-      V.enum(sn).parse(o), V.function().parse(i);
-      const c = Ct.get(o) || [];
+    off(s, i) {
+      V.enum(sn).parse(s), V.function().parse(i);
+      const c = Ct.get(s) || [];
       Ct.set(
-        o,
+        s,
         c.filter((u) => u !== i)
       );
     },
@@ -7450,7 +7347,10 @@ function Qc(t, e) {
       return n("selection:read"), t.selection;
     },
     get viewport() {
-      return n("selection:read"), t.viewport;
+      return t.viewport;
+    },
+    get library() {
+      return t.library;
     },
     getFile() {
       return n("file:read"), t.getFile();
@@ -7473,25 +7373,57 @@ function Qc(t, e) {
     createRectangle() {
       return t.createRectangle();
     },
-    createText(o) {
-      return t.createText(o);
+    createText(s) {
+      return t.createText(s);
     },
-    createShapeFromSvg(o) {
-      return t.createShapeFromSvg(o);
+    createShapeFromSvg(s) {
+      return t.createShapeFromSvg(s);
     },
-    uploadMediaUrl(o, i) {
-      return t.uploadMediaUrl(o, i);
+    uploadMediaUrl(s, i) {
+      return t.uploadMediaUrl(s, i);
     }
+  };
+}
+const Yc = V.object({
+  name: V.string(),
+  code: V.string().url(),
+  permissions: V.array(
+    V.enum([
+      "page:read",
+      "page:write",
+      "file:read",
+      "file:write",
+      "selection:read"
+    ])
+  )
+});
+function Jc(t) {
+  return fetch(t).then((e) => e.json()).then((e) => {
+    if (!Yc.safeParse(e).success)
+      throw new Error("Invalid plugin manifest");
+    return e;
+  }).catch((e) => {
+    throw console.error(e), e;
+  });
+}
+function Xc(t) {
+  return fetch(t).then((e) => e.text());
+}
+async function Qc(t) {
+  const e = await Jc(t.manifest), r = await Xc(e.code);
+  return {
+    manifest: e,
+    code: r
   };
 }
 let so = !1, or, cn = null;
 function el(t) {
   cn = t;
 }
-const Ss = async function(t) {
-  const { code: e, manifest: r } = await qc(t);
+const tl = async function(t) {
+  const { code: e, manifest: r } = await Qc(t);
   try {
-    so || (so = !0, hardenIntrinsics()), or && or.closePlugin(), cn ? (or = Qc(cn, r), new Compartment({
+    so || (so = !0, hardenIntrinsics()), or && or.closePlugin(), cn ? (or = Kc(cn, r), new Compartment({
       penpot: harden(or),
       fetch: window.fetch.bind(window),
       console: harden(window.console)
@@ -7499,247 +7431,7 @@ const Ss = async function(t) {
   } catch (n) {
     console.error(n);
   }
-}, tl = `
-<svg width="16"  height="16"xmlns="http://www.w3.org/2000/svg" fill="none"><g class="fills"><rect rx="0" ry="0" width="16" height="16" class="frame-background"/></g><g class="frame-children"><path d="M11.997 3.997 8 8l-3.997 4.003m-.006-8L8 8l4.003 3.997" class="fills"/><g class="strokes"><path d="M11.997 3.997 8 8l-3.997 4.003m-.006-8L8 8l4.003 3.997" style="fill: none; stroke-width: 1; stroke: rgb(143, 157, 163); stroke-opacity: 1; stroke-linecap: round;" class="stroke-shape"/></g></g></svg>`, ao = (t) => {
-  t.target.tagName === "INSTALLER-MODAL" && t.stopImmediatePropagation();
 };
-class rl extends HTMLElement {
-  constructor() {
-    super(), this.dialog = null, this.attachShadow({ mode: "open" });
-  }
-  createPlugin(e, r) {
-    var c, u;
-    const n = document.createElement("li");
-    n.classList.add("plugin"), n.textContent = e;
-    const a = document.createElement("div");
-    a.classList.add("actions");
-    const o = document.createElement("button");
-    o.classList.add("button"), o.textContent = "Open", o.type = "button", o.addEventListener("click", () => {
-      this.closeModal(), Ss({
-        manifest: r
-      });
-    }), a.appendChild(o);
-    const i = document.createElement("button");
-    i.classList.add("button", "remove"), i.textContent = "Remove", i.type = "button", i.addEventListener("click", () => {
-      n.remove();
-      const d = this.getPlugins().filter((f) => f.url !== r);
-      this.savePlugins(d);
-    }), a.appendChild(i), n.appendChild(a), (u = (c = this.dialog) == null ? void 0 : c.querySelector(".plugins-list")) == null || u.prepend(n);
-  }
-  loadPluginList() {
-    const e = this.getPlugins();
-    for (const r of e)
-      this.createPlugin(r.name, r.url);
-  }
-  getPlugins() {
-    const e = localStorage.getItem("plugins");
-    return e ? JSON.parse(e) : [];
-  }
-  savePlugins(e) {
-    localStorage.setItem("plugins", JSON.stringify(e));
-  }
-  submitNewPlugin(e) {
-    e.preventDefault();
-    const n = e.target.querySelector("input");
-    if (!n)
-      return;
-    const a = n.value;
-    n.value = "", xs(a).then((o) => {
-      if (this.createPlugin(o.name, a), !localStorage.getItem("plugins"))
-        localStorage.setItem(
-          "plugins",
-          JSON.stringify([{ name: o.name, url: a }])
-        );
-      else {
-        const c = this.getPlugins();
-        c.push({ name: o.name, url: a }), this.savePlugins(c);
-      }
-      this.error(!1);
-    }).catch((o) => {
-      console.error(o), this.error(!0);
-    });
-  }
-  error(e) {
-    var r, n;
-    (n = (r = this.dialog) == null ? void 0 : r.querySelector(".error")) == null || n.classList.toggle("show", e);
-  }
-  connectedCallback() {
-    var r;
-    if (!this.shadowRoot)
-      throw new Error("Error creating shadow root");
-    this.dialog = document.createElement("dialog"), this.dialog.innerHTML = `
-      <div class="header">
-        <h1>Plugins</h1>
-        <button type="button" class="close">${tl}</button>
-      </div>
-      <form>
-        <input class="input url-input" placeholder="Plugin url" autofocus type="url" />
-        <button class="button" type="submit">Install</button>
-      </form>
-      <div class="error">
-        Error instaling plugin
-      </div>
-
-      <ul class="plugins-list"></ul>
-    `, (r = this.dialog.querySelector(".close")) == null || r.addEventListener("click", () => {
-      this.closeModal();
-    }), this.shadowRoot.appendChild(this.dialog), this.dialog.addEventListener("submit", (n) => {
-      this.submitNewPlugin(n);
-    }), this.loadPluginList();
-    const e = document.createElement("style");
-    e.textContent = `
-    * {
-      font-family worksans, sans-serif
-    }
-
-    ::backdrop {
-      background-color: rgba(0, 0, 0, 0.8);
-    }
-
-    dialog {
-      border: 0;
-      width: 700px;
-      height: 500px;
-      padding: 20px;
-      background-color: white;
-      border-radius: 10px;
-      flex-direction: column;
-      display: none;
-    }
-
-    dialog[open] {
-      display: flex;
-    }
-
-    .header {
-      display: flex;
-      justify-content: space-between;
-    }
-
-    h1 {
-      margin: 0;
-      margin-block-end: 10px;
-    }
-
-    ul {
-      padding: 0;
-    }
-
-    li {
-      list-style: none;
-    }
-
-    .input {
-      display: flex;
-      border: 1px solid;
-      border-radius: calc( 0.25rem * 2);
-      font-size: 12px;
-      font-weight: 400;
-      line-height: 1.4;
-      outline: none;
-      padding-block: calc( 0.25rem * 2);
-      padding-inline: calc( 0.25rem * 2);
-      background-color: #f3f4f6;
-      border-color: #f3f4f6;
-      color: #000;
-
-      &:hover {
-        background-color: #eef0f2;
-        border-color: #eef0f2;
-      }
-
-      &:focus {
-        background-color: #ffffff
-        border-color: ##6911d4;
-      }
-    }
-
-    button {
-      background: transparent;
-      border: 0;
-      cursor: pointer;
-    }
-
-    .button {
-      border: 1px solid transparent;
-      font-weight: 500;
-      font-size: 12px;
-      border-radius: 8px;
-      line-height: 1.2;
-      padding: 8px 24px 8px 24px;
-      text-transform: uppercase;
-      background-color: #7EFFF5;
-      border: 1px solid 7EFFF5;
-      outline: 2px solid transparent;
-
-      &:hover:not(:disabled) {
-          cursor: pointer;
-      }
-
-      &:focus-visible {
-          outline: none;
-      }
-    }
-
-    .remove {
-      background-color: #ff3277;
-      border: 1px solid #ff3277;
-      outline: 2px solid transparent;
-    }
-
-    form {
-      display: flex;
-      gap: 10px;
-      margin-block-end: 20px;
-    }
-
-    .url-input {
-      inline-size: 400px;
-    }
-
-    .plugins-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .plugin {
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .actions {
-      display: flex;
-      gap: 10px;
-    }
-
-    .error {
-      display: none;
-      color: red;
-
-      &.show {
-        display: block;
-      }
-    }
-    `, this.shadowRoot.appendChild(e);
-  }
-  closeModal() {
-    var e, r;
-    (r = (e = this.shadowRoot) == null ? void 0 : e.querySelector("dialog")) == null || r.close(), window.removeEventListener("paste", ao, !0);
-  }
-  openModal() {
-    var e, r;
-    (r = (e = this.shadowRoot) == null ? void 0 : e.querySelector("dialog")) == null || r.showModal(), window.addEventListener("paste", ao, !0);
-  }
-}
-function nl() {
-  customElements.define("installer-modal", rl);
-  const t = document.createElement("installer-modal");
-  document.body.appendChild(t), document.addEventListener("keydown", (e) => {
-    var r;
-    e.key.toUpperCase() === "I" && e.ctrlKey && ((r = document.querySelector("installer-modal")) == null || r.openModal());
-  });
-}
 console.log("%c[PLUGINS] Loading plugin system", "color: #008d7c");
 repairIntrinsics({
   evalTaming: "unsafeEval",
@@ -7747,11 +7439,12 @@ repairIntrinsics({
   errorTaming: "unsafe",
   consoleTaming: "unsafe"
 });
-globalThis.initPluginsRuntime = (t) => {
+const ao = globalThis;
+ao.initPluginsRuntime = (t) => {
   if (t) {
-    console.log("%c[PLUGINS] Initialize context", "color: #008d7c"), globalThis.ɵcontext = t, globalThis.ɵloadPlugin = Ss, nl(), el(t);
+    console.log("%c[PLUGINS] Initialize context", "color: #008d7c"), ao.ɵcontext = t, globalThis.ɵloadPlugin = tl, el(t);
     for (const e of sn)
-      t.addListener(e, Xc.bind(null, e));
+      t.addListener(e, qc.bind(null, e));
   }
 };
 //# sourceMappingURL=index.js.map
