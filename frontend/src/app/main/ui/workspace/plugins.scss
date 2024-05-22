@@ -101,13 +101,16 @@
   min-height: $s-32;
   width: $s-32;
   height: $s-32;
-  background: #b1b2b5;
+  background: var(--button-secondary-background-color-rest);
+  padding: $s-2;
+  border-radius: $s-4;
 }
 
 .plugin-description {
   display: flex;
   flex-direction: column;
   gap: $s-8;
+  width: 100%;
 }
 
 .plugin-title {
