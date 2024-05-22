@@ -158,7 +158,7 @@
     [:*
      (when-let [message @error]
        [:& context-notification
-        {:type :warning
+        {:type :error
          :content message
          :data-test "login-banner"
          :role "alert"}])
@@ -300,11 +300,13 @@
          [:& lk/link {:action go-register
                       :class (stl/css :register-link)
                       :data-test "register-submit"}
-          (tr "auth.register-submit")]])]
+          (tr "auth.register-submit")]])
 
-     (when (contains? cf/flags :demo-users)
-       [:div {:class (stl/css :link-entry :demo-account)}
-        [:span (tr "auth.create-demo-profile") " "]
-        [:& lk/link {:action create-demo-profile
-                     :data-test "demo-account-link"}
-         (tr "auth.create-demo-account")]])]))
+      (when (contains? cf/flags :demo-users)
+        [:div {:class (stl/css :demo-account)}
+         [:span  {:class (stl/css :demo-account-text)}
+          (tr "auth.create-demo-profile") " "]
+         [:& lk/link {:action create-demo-profile
+                      :class (stl/css :demo-account-link)
+                      :data-test "demo-account-link"}
+          (tr "auth.create-demo-account")]])]]))

@@ -58,7 +58,6 @@
   width: 100%;
 }
 
-.demo-account,
 .go-back {
   display: flex;
   flex-direction: column;
@@ -67,7 +66,6 @@
   border-block-start: none;
 }
 
-.demo-account-link,
 .go-back-link {
   @extend .button-secondary;
   @include uppercaseTitleTipography;
@@ -81,7 +79,8 @@
 
 .register,
 .account,
-.recovery-request {
+.recovery-request,
+.demo-account {
   display: flex;
   justify-content: center;
   gap: $s-8;
@@ -90,7 +89,8 @@
 
 .register-text,
 .account-text,
-.recovery-text {
+.recovery-text,
+.demo-account-text {
   @include smallTitleTipography;
   text-align: right;
   color: var(--title-foreground-color);
@@ -99,7 +99,8 @@
 .register-link,
 .account-link,
 .recovery-link,
-.forgot-pass-link {
+.forgot-pass-link,
+.demo-account-link {
   @include smallTitleTipography;
   text-align: left;
   background-color: transparent;
