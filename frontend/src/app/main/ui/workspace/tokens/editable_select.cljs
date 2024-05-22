@@ -208,9 +208,10 @@
 
     [:div {:class (dm/str class " " (stl/css :editable-select))
            :ref on-node-load}
-     (when token
-       [:div {:class (stl/css :token-pill)}
-        (:label token)])
+     (when-let [{:keys [label value]} token]
+       [:div {:title (str label ": " value)
+              :class (stl/css :token-pill)}
+        value])
      (cond
        token [:input {:value (or (:token-value state) "")
                       :class input-class
