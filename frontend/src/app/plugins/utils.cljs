@@ -56,38 +56,44 @@
 (defn proxy->file
   [proxy]
   (let [id (obj/get proxy "$id")]
-    (locate-file id)))
+    (when (some? id)
+      (locate-file id))))
 
 (defn proxy->page
   [proxy]
   (let [file-id (obj/get proxy "$file")
         id (obj/get proxy "$id")]
-    (locate-page file-id id)))
+    (when (and (some? file-id) (some? id))
+      (locate-page file-id id))))
 
 (defn proxy->shape
   [proxy]
   (let [file-id (obj/get proxy "$file")
         page-id (obj/get proxy "$page")
         id (obj/get proxy "$id")]
-    (locate-shape file-id page-id id)))
+    (when (and (some? file-id) (some? page-id) (some? id))
+      (locate-shape file-id page-id id))))
 
 (defn proxy->library-color
   [proxy]
   (let [file-id (obj/get proxy "$file")
         id (obj/get proxy "$id")]
-    (locate-library-color file-id id)))
+    (when (and (some? file-id) (some? id))
+      (locate-library-color file-id id))))
 
 (defn proxy->library-typography
   [proxy]
   (let [file-id (obj/get proxy "$file")
         id (obj/get proxy "$id")]
-    (locate-library-color file-id id)))
+    (when (and (some? file-id) (some? id))
+      (locate-library-color file-id id))))
 
 (defn proxy->library-component
   [proxy]
   (let [file-id (obj/get proxy "$file")
         id (obj/get proxy "$id")]
-    (locate-library-color file-id id)))
+    (when (and (some? file-id) (some? id))
+      (locate-library-color file-id id))))
 
 (defn get-data
   ([self attr]
