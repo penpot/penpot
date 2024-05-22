@@ -167,6 +167,7 @@
 
         handle-focus
         (mf/use-fn
+         (mf/deps refocus?)
          (fn []
            (when refocus?
              (swap! state* dissoc :refocus?))
