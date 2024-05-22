@@ -17,6 +17,11 @@
   border-radius: $br-8;
   cursor: pointer;
 
+  background: transparent;
+  &:hover {
+    background: transparent;
+  }
+
   .dropdown-button {
     @include flexCenter;
     margin-right: -$s-8;
