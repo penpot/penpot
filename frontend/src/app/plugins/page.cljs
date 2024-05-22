@@ -28,8 +28,9 @@
   (findShapes
     [_]
     ;; Returns a lazy (iterable) of all available shapes
-    (let [page (locate-page $file $id)]
-      (apply array (sequence (map shape/shape-proxy) (keys (:objects page)))))))
+    (when (and (some? $file) (some? $id))
+      (let [page (locate-page $file $id)]
+        (apply array (sequence (map shape/shape-proxy) (keys (:objects page))))))))
 
 (crc/define-properties!
   PageProxy
