@@ -54,13 +54,7 @@
         get-sorted-colors
         (mf/use-fn
          (fn [colors]
-           (sort (fn [a b]
-                   (let [[ah _ al] (c/hex->hsl (:color a))
-                         [bh _ bl] (c/hex->hsl (:color b))
-                         a (+ (* ah 100) (* al 99))
-                         b (+ (* bh 100) (* bl 99))]
-                     (compare a b)))
-                 (into [] (filter check-valid-color?) colors))))
+           (sort c/sort-colors (into [] (filter check-valid-color?) colors))))
 
         toggle-palette
         (mf/use-fn

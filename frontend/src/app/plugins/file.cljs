@@ -7,38 +7,34 @@
 (ns app.plugins.file
   "RPC for plugins runtime."
   (:require
+   [app.common.data.macros :as dm]
    [app.common.record :as crc]
    [app.plugins.page :as page]
-   [app.plugins.utils :refer [get-data-fn]]))
+   [app.plugins.utils :refer [locate-file proxy->file]]
+   [app.util.object :as obj]))
 
-(def ^:private
-  xf-map-page-proxy
-  (comp
-   (map val)
-   (map page/data->page-proxy)))
-
-(deftype FileProxy [#_:clj-kondo/ignore _data]
+(deftype FileProxy [$id]
   Object
   (getPages [_]
-    ;; Returns a lazy (iterable) of all available pages
-    (apply array (sequence xf-map-page-proxy (:pages-index _data)))))
+    (let [file (locate-file $id)]
+      (apply array (sequence (map #(page/page-proxy $id %)) (dm/get-in file [:data :pages]))))))
 
 (crc/define-properties!
   FileProxy
   {:name js/Symbol.toStringTag
    :get (fn [] (str "FileProxy"))})
 
-(defn data->file-proxy
-  [file data]
+(defn file-proxy
+  [id]
   (crc/add-properties!
-   (FileProxy. (merge file data))
-   {:name "_data" :enumerable false}
+   (FileProxy. id)
+   {:name "$id" :enumerable false :get (constantly id)}
 
    {:name "id"
-    :get (get-data-fn :id str)}
+    :get #(dm/str (obj/get % "$id"))}
 
    {:name "name"
-    :get (get-data-fn :name)}
+    :get #(-> % proxy->file :name)}
 
    {:name "pages"
     :get #(.getPages ^js %)}))

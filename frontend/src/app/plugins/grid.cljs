@@ -10,11 +10,10 @@
    [app.common.record :as crc]
    [app.common.spec :as us]
    [app.common.types.shape.layout :as ctl]
-   [app.common.uuid :as uuid]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.store :as st]
-   [app.plugins.utils :as utils :refer [get-data get-state]]
+   [app.plugins.utils :as utils :refer [proxy->shape locate-shape]]
    [app.util.object :as obj]
    [potok.v2.core :as ptk]))
 
@@ -24,183 +23,266 @@
    js/Object
    (apply array (->> tracks (map utils/to-js)))))
 
-(deftype GridLayout [_data]
+(deftype GridLayout [$file $page $id]
   Object
 
   (addRow
-    [self type value]
-    (let [id (get-data self :id)
-          type (keyword type)]
-      (st/emit! (dwsl/add-layout-track #{id} :row {:type type :value value}))))
+    [_ type value]
+    (let [type (keyword type)]
+      (st/emit! (dwsl/add-layout-track #{$id} :row {:type type :value value}))))
 
   (addRowAtIndex
-    [self index type value]
-    (let [id (get-data self :id)
-          type (keyword type)]
-      (st/emit! (dwsl/add-layout-track #{id} :row {:type type :value value} index))))
+    [_ index type value]
+    (let [type (keyword type)]
+      (st/emit! (dwsl/add-layout-track #{$id} :row {:type type :value value} index))))
 
   (addColumn
-    [self type value]
-    (let [id (get-data self :id)
-          type (keyword type)]
-      (st/emit! (dwsl/add-layout-track #{id} :column {:type type :value value}))))
+    [_ type value]
+    (let [type (keyword type)]
+      (st/emit! (dwsl/add-layout-track #{$id} :column {:type type :value value}))))
 
   (addColumnAtIndex
-    [self index type value]
-    (let [id (get-data self :id)
-          type (keyword type)]
-      (st/emit! (dwsl/add-layout-track #{id} :column {:type type :value value} index))))
+    [_ index type value]
+    (let [type (keyword type)]
+      (st/emit! (dwsl/add-layout-track #{$id} :column {:type type :value value} index))))
 
   (removeRow
-    [self index]
-    (let [id (get-data self :id)]
-      (st/emit! (dwsl/remove-layout-track #{id} :row index))))
+    [_ index]
+    (st/emit! (dwsl/remove-layout-track #{$id} :row index)))
 
   (removeColumn
-    [self index]
-    (let [id (get-data self :id)]
-      (st/emit! (dwsl/remove-layout-track #{id} :column index))))
+    [_ index]
+    (st/emit! (dwsl/remove-layout-track #{$id} :column index)))
 
   (setColumn
-    [self index type value]
-    (let [id (get-data self :id)
-          type (keyword type)]
-      (st/emit! (dwsl/change-layout-track #{id} :column index (d/without-nils {:type type :value value})))))
+    [_ index type value]
+    (let [type (keyword type)]
+      (st/emit! (dwsl/change-layout-track #{$id} :column index (d/without-nils {:type type :value value})))))
 
   (setRow
-    [self index type value]
-    (let [id (get-data self :id)
-          type (keyword type)]
-      (st/emit! (dwsl/change-layout-track #{id} :row index (d/without-nils {:type type :value value})))))
+    [_ index type value]
+    (let [type (keyword type)]
+      (st/emit! (dwsl/change-layout-track #{$id} :row index (d/without-nils {:type type :value value})))))
 
   (remove
-    [self]
-    (let [id (get-data self :id)]
-      (st/emit! (dwsl/remove-layout #{id}))))
+    [_]
+    (st/emit! (dwsl/remove-layout #{$id})))
 
   (appendChild
-    [self child row column]
-    (let [parent-id (get-data self :id)
-          child-id (uuid/uuid (obj/get child "id"))]
-      (st/emit! (dwt/move-shapes-to-frame #{child-id} parent-id nil [row column])
-                (ptk/data-event :layout/update {:ids [parent-id]})))))
+    [_ child row column]
+    (let [child-id  (obj/get child "$id")]
+      (st/emit! (dwt/move-shapes-to-frame #{child-id} $id nil [row column])
+                (ptk/data-event :layout/update {:ids [$id]})))))
 
 (defn grid-layout-proxy
-  [data]
-  (-> (GridLayout. data)
+  [file-id page-id id]
+  (-> (GridLayout. file-id page-id id)
       (crc/add-properties!
+       {:name "$id" :enumerable false :get (constantly id)}
+       {:name "$file" :enumerable false :get (constantly file-id)}
+       {:name "$page" :enumerable false :get (constantly page-id)}
        {:name "dir"
-        :get #(get-state % :layout-grid-dir d/name)
+        :get #(-> % proxy->shape :layout-grid-dir d/name)
         :set
         (fn [self value]
-          (let [id (get-data self :id)
+          (let [id (obj/get self "$id")
                 value (keyword value)]
             (when (contains? ctl/grid-direction-types value)
               (st/emit! (dwsl/update-layout #{id} {:layout-grid-dir value})))))}
 
        {:name "rows"
-        :get #(get-state % :layout-grid-rows make-tracks)}
+        :get #(-> % proxy->shape :layout-grid-rows make-tracks)}
 
        {:name "columns"
-        :get #(get-state % :layout-grid-columns make-tracks)}
+        :get #(-> % proxy->shape :layout-grid-columns make-tracks)}
 
        {:name "alignItems"
-        :get #(get-state % :layout-align-items d/name)
+        :get #(-> % proxy->shape :layout-align-items d/name)
         :set
         (fn [self value]
-          (let [id (get-data self :id)
+          (let [id (obj/get self "$id")
                 value (keyword value)]
             (when (contains? ctl/align-items-types value)
               (st/emit! (dwsl/update-layout #{id} {:layout-align-items value})))))}
 
        {:name "alignContent"
-        :get #(get-state % :layout-align-content d/name)
+        :get #(-> % proxy->shape :layout-align-content d/name)
         :set
         (fn [self value]
-          (let [id (get-data self :id)
+          (let [id (obj/get self "$id")
                 value (keyword value)]
             (when (contains? ctl/align-content-types value)
               (st/emit! (dwsl/update-layout #{id} {:layout-align-content value})))))}
 
        {:name "justifyItems"
-        :get #(get-state % :layout-justify-items d/name)
+        :get #(-> % proxy->shape :layout-justify-items d/name)
         :set
         (fn [self value]
-          (let [id (get-data self :id)
+          (let [id (obj/get self "$id")
                 value (keyword value)]
             (when (contains? ctl/justify-items-types value)
               (st/emit! (dwsl/update-layout #{id} {:layout-justify-items value})))))}
 
        {:name "justifyContent"
-        :get #(get-state % :layout-justify-content d/name)
+        :get #(-> % proxy->shape :layout-justify-content d/name)
         :set
         (fn [self value]
-          (let [id (get-data self :id)
+          (let [id (obj/get self "$id")
                 value (keyword value)]
             (when (contains? ctl/justify-content-types value)
               (st/emit! (dwsl/update-layout #{id} {:layout-justify-content value})))))}
 
        {:name "rowGap"
-        :get #(:row-gap (get-state % :layout-gap))
+        :get #(-> % proxy->shape :layout-gap :row-gap)
         :set
         (fn [self value]
-          (let [id (get-data self :id)]
+          (let [id (obj/get self "$id")]
             (when (us/safe-int? value)
               (st/emit! (dwsl/update-layout #{id} {:layout-gap {:row-gap value}})))))}
 
        {:name "columnGap"
-        :get #(:column-gap (get-state % :layout-gap))
+        :get #(-> % proxy->shape :layout-gap :column-gap)
         :set
         (fn [self value]
-          (let [id (get-data self :id)]
+          (let [id (obj/get self "$id")]
             (when (us/safe-int? value)
               (st/emit! (dwsl/update-layout #{id} {:layout-gap {:column-gap value}})))))}
 
        {:name "verticalPadding"
-        :get #(:p1 (get-state % :layout-padding))
+        :get #(-> % proxy->shape :layout-padding :p1)
         :set
         (fn [self value]
-          (let [id (get-data self :id)]
+          (let [id (obj/get self "$id")]
             (when (us/safe-int? value)
               (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p1 value :p3 value}})))))}
 
        {:name "horizontalPadding"
-        :get #(:p2 (get-state % :layout-padding))
+        :get #(-> % proxy->shape :layout-padding :p2)
         :set
         (fn [self value]
-          (let [id (get-data self :id)]
+          (let [id (obj/get self "$id")]
             (when (us/safe-int? value)
               (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p2 value :p4 value}})))))}
 
 
        {:name "topPadding"
-        :get #(:p1 (get-state % :layout-padding))
+        :get #(-> % proxy->shape :layout-padding :p1)
         :set
         (fn [self value]
-          (let [id (get-data self :id)]
+          (let [id (obj/get self "$id")]
             (when (us/safe-int? value)
               (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p1 value}})))))}
 
        {:name "rightPadding"
-        :get #(:p2 (get-state % :layout-padding))
+        :get #(-> % proxy->shape :layout-padding :p2)
         :set
         (fn [self value]
-          (let [id (get-data self :id)]
+          (let [id (obj/get self "$id")]
             (when (us/safe-int? value)
               (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p2 value}})))))}
 
        {:name "bottomPadding"
-        :get #(:p3 (get-state % :layout-padding))
+        :get #(-> % proxy->shape :layout-padding :p3)
         :set
         (fn [self value]
-          (let [id (get-data self :id)]
+          (let [id (obj/get self "$id")]
             (when (us/safe-int? value)
               (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p3 value}})))))}
 
        {:name "leftPadding"
-        :get #(:p4 (get-state % :layout-padding))
+        :get #(-> % proxy->shape :layout-padding :p4)
         :set
         (fn [self value]
-          (let [id (get-data self :id)]
+          (let [id (obj/get self "$id")]
             (when (us/safe-int? value)
               (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p4 value}})))))})))
+
+(deftype GridCellProxy [$file $page $id])
+
+(defn layout-cell-proxy
+  [file-id page-id id]
+  (letfn [(locate-cell [_]
+            (let [shape (locate-shape file-id page-id id)
+                  parent (locate-shape file-id page-id (:parent-id shape))]
+              (ctl/get-cell-by-shape-id parent id)))]
+
+    (-> (GridCellProxy. file-id page-id id)
+        (crc/add-properties!
+         {:name "$id" :enumerable false :get (constantly id)}
+         {:name "$file" :enumerable false :get (constantly file-id)}
+         {:name "$page" :enumerable false :get (constantly page-id)}
+
+         {:name "row"
+          :get #(-> % locate-cell :row)
+          :set
+          (fn [self value]
+            (let [shape (proxy->shape self)
+                  cell (locate-cell self)]
+              (when (us/safe-int? value)
+                (st/emit! (dwsl/update-grid-cell-position (:parent-id shape) (:id cell) {:row value})))))}
+
+         {:name "rowSpan"
+          :get #(-> % locate-cell :row-span)
+          :set
+          (fn [self value]
+            (let [shape (proxy->shape self)
+                  cell (locate-cell self)]
+              (when (us/safe-int? value)
+                (st/emit! (dwsl/update-grid-cell-position (:parent-id shape) (:id cell) {:row-span value})))))}
+
+         {:name "column"
+          :get #(-> % locate-cell :column)
+          :set
+          (fn [self value]
+            (let [shape (proxy->shape self)
+                  cell (locate-cell self)]
+              (when (us/safe-int? value)
+                (st/emit! (dwsl/update-grid-cell-position (:parent-id shape) (:id cell) {:column value})))))}
+
+         {:name "columnSpan"
+          :get #(-> % locate-cell :column-span)
+          :set
+          (fn [self value]
+            (let [shape (proxy->shape self)
+                  cell (locate-cell self)]
+              (when (us/safe-int? value)
+                (st/emit! (dwsl/update-grid-cell-position (:parent-id shape) (:id cell) {:column-span value})))))}
+
+         {:name "areaName"
+          :get #(-> % locate-cell :area-name)
+          :set
+          (fn [self value]
+            (let [shape (proxy->shape self)
+                  cell (locate-cell self)]
+              (when (string? value)
+                (st/emit! (dwsl/update-grid-cells (:parent-id shape) #{(:id cell)} {:area-name value})))))}
+
+         {:name "position"
+          :get #(-> % locate-cell :position d/name)
+          :set
+          (fn [self value]
+            (let [shape (proxy->shape self)
+                  cell (locate-cell self)
+                  value (keyword value)]
+              (when (contains? ctl/grid-position-types value)
+                (st/emit! (dwsl/change-cells-mode (:parent-id shape) #{(:id cell)} value)))))}
+
+         {:name "alignSelf"
+          :get #(-> % locate-cell :align-self d/name)
+          :set
+          (fn [self value]
+            (let [shape (proxy->shape self)
+                  value (keyword value)
+                  cell (locate-cell self)]
+              (when (contains? ctl/grid-cell-align-self-types value)
+                (st/emit! (dwsl/update-grid-cells (:parent-id shape) #{(:id cell)} {:align-self value})))))}
+
+         {:name "justifySelf"
+          :get #(-> % locate-cell :justify-self d/name)
+          :set
+          (fn [self value]
+            (let [shape (proxy->shape self)
+                  value (keyword value)
+                  cell (locate-cell self)]
+              (when (contains? ctl/grid-cell-justify-self-types value)
+                (st/emit! (dwsl/update-grid-cells (:parent-id shape) #{(:id cell)} {:justify-self value})))))}))))

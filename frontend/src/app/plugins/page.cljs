@@ -7,46 +7,48 @@
 (ns app.plugins.page
   "RPC for plugins runtime."
   (:require
+   [app.common.data.macros :as dm]
    [app.common.record :as crc]
    [app.common.uuid :as uuid]
    [app.plugins.shape :as shape]
-   [app.plugins.utils :refer [get-data-fn]]))
+   [app.plugins.utils :refer [locate-page proxy->page]]
+   [app.util.object :as obj]))
 
-(def ^:private
-  xf-map-shape-proxy
-  (comp
-   (map val)
-   (map shape/data->shape-proxy)))
-
-(deftype PageProxy [#_:clj-kondo/ignore _data]
+(deftype PageProxy [$file $id]
   Object
-  (getShapeById [_ id]
-    (shape/data->shape-proxy (get (:objects _data) (uuid/uuid id))))
+  (getShapeById
+    [_ shape-id]
+    (let [shape-id (uuid/uuid shape-id)]
+      (shape/shape-proxy $file $id shape-id)))
 
-  (getRoot [_]
-    (shape/data->shape-proxy (get (:objects _data) uuid/zero)))
+  (getRoot
+    [_]
+    (shape/shape-proxy $file $id uuid/zero))
 
-  (findShapes [_]
+  (findShapes
+    [_]
     ;; Returns a lazy (iterable) of all available shapes
-    (apply array (sequence xf-map-shape-proxy (:objects _data)))))
+    (let [page (locate-page $file $id)]
+      (apply array (sequence (map shape/shape-proxy) (keys (:objects page)))))))
 
 (crc/define-properties!
   PageProxy
   {:name js/Symbol.toStringTag
    :get (fn [] (str "PageProxy"))})
 
-(defn data->page-proxy
-  [data]
-
+(defn page-proxy
+  [file-id id]
   (crc/add-properties!
-   (PageProxy. data)
-   {:name "_data" :enumerable false}
+   (PageProxy. file-id id)
+   {:name "$id" :enumerable false :get (constantly id)}
+   {:name "$file" :enumerable false :get (constantly file-id)}
 
    {:name "id"
-    :get (get-data-fn :id str)}
+    :get #(dm/str (obj/get % "$id"))}
 
    {:name "name"
-    :get (get-data-fn :name)}
+    :get #(-> % proxy->page :name)}
 
    {:name "root"
+    :enumerable false
     :get #(.getRoot ^js %)}))

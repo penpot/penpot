@@ -16,6 +16,79 @@
    [cuerdas.core :as str]
    [promesa.core :as p]))
 
+(defn locate-file
+  [id]
+  (assert (uuid? id) "File not valid uuid")
+  (if (= id (:current-file-id @st/state))
+    (-> (:workspace-file @st/state)
+        (assoc :data (:workspace-data @st/state)))
+    (dm/get-in @st/state [:workspace-libraries id])))
+
+(defn locate-page
+  [file-id id]
+  (assert (uuid? id) "Page not valid uuid")
+  (dm/get-in (locate-file file-id) [:data :pages-index id]))
+
+(defn locate-objects
+  [file-id page-id]
+  (:objects (locate-page file-id page-id)))
+
+(defn locate-shape
+  [file-id page-id id]
+  (assert (uuid? id) "Shape not valid uuid")
+  (dm/get-in (locate-page file-id page-id) [:objects id]))
+
+(defn locate-library-color
+  [file-id id]
+  (assert (uuid? id) "Color not valid uuid")
+  (dm/get-in (locate-file file-id) [:data :colors id]))
+
+(defn locate-library-typography
+  [file-id id]
+  (assert (uuid? id) "Typography not valid uuid")
+  (dm/get-in (locate-file file-id) [:data :typographies id]))
+
+(defn locate-library-component
+  [file-id id]
+  (assert (uuid? id) "Component not valid uuid")
+  (dm/get-in (locate-file file-id) [:data :components id]))
+
+(defn proxy->file
+  [proxy]
+  (let [id (obj/get proxy "$id")]
+    (locate-file id)))
+
+(defn proxy->page
+  [proxy]
+  (let [file-id (obj/get proxy "$file")
+        id (obj/get proxy "$id")]
+    (locate-page file-id id)))
+
+(defn proxy->shape
+  [proxy]
+  (let [file-id (obj/get proxy "$file")
+        page-id (obj/get proxy "$page")
+        id (obj/get proxy "$id")]
+    (locate-shape file-id page-id id)))
+
+(defn proxy->library-color
+  [proxy]
+  (let [file-id (obj/get proxy "$file")
+        id (obj/get proxy "$id")]
+    (locate-library-color file-id id)))
+
+(defn proxy->library-typography
+  [proxy]
+  (let [file-id (obj/get proxy "$file")
+        id (obj/get proxy "$id")]
+    (locate-library-color file-id id)))
+
+(defn proxy->library-component
+  [proxy]
+  (let [file-id (obj/get proxy "$file")
+        id (obj/get proxy "$id")]
+    (locate-library-color file-id id)))
+
 (defn get-data
   ([self attr]
    (-> (obj/get self "_data")
@@ -45,37 +118,51 @@
 
 (defn from-js
   "Converts the object back to js"
-  ([obj]
-   (from-js obj identity))
-  ([obj vfn]
-   (let [ret (js->clj obj {:keyword-fn (fn [k] (str/camel (name k)))})]
-     (reduce-kv
-      (fn [m k v]
-        (let [k (keyword (str/kebab k))
-              v (cond (map? v)
-                      (from-js v)
+  [obj]
+  (when (some? obj)
+    (let [process-node
+          (fn process-node [node]
+            (reduce-kv
+             (fn [m k v]
+               (let [k (keyword (str/kebab k))
+                     v (cond (map? v)
+                             (process-node v)
 
-                      (and (string? v) (re-matches us/uuid-rx v))
-                      (uuid/uuid v)
+                             (vector? v)
+                             (mapv process-node v)
 
-                      :else (vfn k v))]
-          (assoc m k v)))
-      {}
-      ret))))
+                             (and (string? v) (re-matches us/uuid-rx v))
+                             (uuid/uuid v)
+
+                             (= k :type)
+                             (keyword v)
+
+                             :else v)]
+                 (assoc m k v)))
+             {}
+             node))]
+      (process-node (js->clj obj)))))
 
 (defn to-js
   "Converts to javascript an camelize the keys"
   [obj]
-  (let [result
-        (reduce-kv
-         (fn [m k v]
-           (let [v (cond (object? v) (to-js v)
-                         (uuid? v) (dm/str v)
-                         :else v)]
-             (assoc m (str/camel (name k)) v)))
-         {}
-         obj)]
-    (clj->js result)))
+  (when (some? obj)
+    (let [result
+          (reduce-kv
+           (fn [m k v]
+             (let [v (cond (object? v) (to-js v)
+                           (uuid? v) (dm/str v)
+                           :else v)]
+               (assoc m (str/camel (name k)) v)))
+           {}
+           obj)]
+      (clj->js result))))
+
+(defn array-to-js
+  [value]
+  (.freeze
+   js/Object
+   (apply array (->> value (map to-js)))))
 
 (defn result-p
   "Creates a pair of atom+promise. The promise will be resolved when the atom gets a value.

@@ -32,12 +32,6 @@
 ;;
 ;; PLUGINS PUBLIC API - The plugins will able to access this functions
 ;;
-(def ^:private
-  xf-map-shape-proxy
-  (comp
-   (map val)
-   (map shape/data->shape-proxy)))
-
 (defn create-shape
   [type]
   (let [page-id (:current-page-id @st/state)
@@ -50,7 +44,7 @@
             (cb/with-objects (:objects page))
             (cb/add-object shape))]
     (st/emit! (ch/commit-changes changes))
-    (shape/data->shape-proxy shape)))
+    (shape/shape-proxy (:id shape))))
 
 (deftype PenpotContext []
   Object
@@ -64,13 +58,13 @@
 
   (getFile
     [_]
-    (file/data->file-proxy (:workspace-file @st/state) (:workspace-data @st/state)))
+    (file/file-proxy (:current-file-id @st/state)))
 
   (getPage
     [_]
-    (let [page-id (:current-page-id @st/state)
-          page (dm/get-in @st/state [:workspace-data :pages-index page-id])]
-      (page/data->page-proxy page)))
+    (let [file-id (:current-file-id @st/state)
+          page-id (:current-page-id @st/state)]
+      (page/page-proxy file-id page-id)))
 
   (getSelected
     [_]
@@ -79,17 +73,12 @@
 
   (getSelectedShapes
     [_]
-    (let [page-id (:current-page-id @st/state)
-          selection (get-in @st/state [:workspace-local :selected])
-          objects (dm/get-in @st/state [:workspace-data :pages-index page-id :objects])
-          shapes (select-keys objects selection)]
-      (apply array (sequence xf-map-shape-proxy shapes))))
+    (let [selection (get-in @st/state [:workspace-local :selected])]
+      (apply array (sequence (map shape/shape-proxy) selection))))
 
   (getRoot
     [_]
-    (let [page-id (:current-page-id @st/state)
-          root (dm/get-in @st/state [:workspace-data :pages-index page-id :objects uuid/zero])]
-      (shape/data->shape-proxy root)))
+    (shape/shape-proxy uuid/zero))
 
   (getTheme
     [_]
@@ -100,7 +89,7 @@
 
   (uploadMediaUrl
     [_ name url]
-    (let [file-id (get-in @st/state [:workspace-file :id])]
+    (let [file-id (:current-file-id @st/state)]
       (p/create
        (fn [resolve reject]
          (->> (dwm/upload-media-url name file-id url)
@@ -110,17 +99,17 @@
 
   (group
     [_ shapes]
-    (let [page-id (:current-page-id @st/state)
+    (let [file-id (:current-file-id @st/state)
+          page-id (:current-page-id @st/state)
           id (uuid/next)
-          ids (into #{} (map #(get (obj/get % "_data") :id)) shapes)]
+          ids (into #{} (map #(obj/get % "$id")) shapes)]
       (st/emit! (dwg/group-shapes id ids))
-      (shape/data->shape-proxy
-       (dm/get-in @st/state [:workspace-data :pages-index page-id :objects id]))))
+      (shape/shape-proxy file-id page-id id)))
 
   (ungroup
     [_ group & rest]
     (let [shapes (concat [group] rest)
-          ids (into #{} (map #(get (obj/get % "_data") :id)) shapes)]
+          ids (into #{} (map #(obj/get % "$id")) shapes)]
       (st/emit! (dwg/ungroup-shapes ids))))
 
   (createFrame
@@ -133,7 +122,8 @@
 
   (createText
     [_ text]
-    (let [page-id (:current-page-id @st/state)
+    (let [file-id (:current-file-id @st/state)
+          page-id (:current-page-id @st/state)
           page (dm/get-in @st/state [:workspace-data :pages-index page-id])
           shape (-> (cts/setup-shape {:type :text :x 0 :y 0 :grow-type :auto-width})
                     (txt/change-text text)
@@ -144,23 +134,24 @@
               (cb/with-objects (:objects page))
               (cb/add-object shape))]
       (st/emit! (ch/commit-changes changes))
-      (shape/data->shape-proxy shape)))
+      (shape/shape-proxy file-id page-id (:id shape))))
 
   (createShapeFromSvg
     [_ svg-string]
     (when (some? svg-string)
       (let [id (uuid/next)
+            file-id (:current-file-id @st/state)
             page-id (:current-page-id @st/state)]
         (st/emit! (dwm/create-svg-shape id "svg" svg-string (gpt/point 0 0)))
-        (shape/data->shape-proxy
-         (dm/get-in @st/state [:workspace-data :pages-index page-id :objects id]))))))
+        (shape/shape-proxy file-id page-id id)))))
 
 (defn create-context
   []
   (cr/add-properties!
    (PenpotContext.)
    {:name "root" :get #(.getRoot ^js %)}
+   {:name "currentFile" :get #(.getFile ^js %)}
    {:name "currentPage" :get #(.getPage ^js %)}
    {:name "selection" :get #(.getSelectedShapes ^js %)}
    {:name "viewport" :get #(.getViewport ^js %)}
-   {:name "library" :get (fn [_] (library/create-library-subcontext))}))
+   {:name "library" :get (fn [_] (library/library-subcontext))}))

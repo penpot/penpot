@@ -17,6 +17,7 @@
     (mf/fnc group-shape
       {::mf/wrap-props false}
       [props]
+
       (let [shape         (unchecked-get props "shape")
             childs        (unchecked-get props "childs")
             render-id     (mf/use-ctx muc/render-id)
@@ -36,21 +37,31 @@
 
             mask-props    (if ^boolean masked-group?
                             #js {:mask (mask-url render-id mask)}
-                            #js {})]
+                            #js {})
+
+            current-svg-root-id (mf/use-ctx muc/current-svg-root-id)
+
+            ;; We need to create a "scope" for svg classes. The root of the imported SVG (first group) will
+            ;; be stored in the context. When rendering the styles we add its id as prefix.
+            [svg-wrapper svg-wrapper-props]
+            (if (and (contains? shape :svg-attrs) (not  current-svg-root-id))
+              [(mf/provider muc/current-svg-root-id) #js {:value (:id shape)}]
+              [mf/Fragment #js {}])]
 
         ;; We need to separate mask and clip into two because a bug in
         ;; Firefox breaks when the group has clip+mask+foreignObject
         ;; Clip and mask separated will work in every platform Firefox
         ;; bug: https://bugzilla.mozilla.org/show_bug.cgi?id=1734805
-        [:> wrapper clip-props
-         [:> wrapper mask-props
-          (when ^boolean masked-group?
-            [:& render-mask {:mask mask}])
+        [:> svg-wrapper svg-wrapper-props
+         [:> wrapper clip-props
+          [:> wrapper mask-props
+           (when ^boolean masked-group?
+             [:& render-mask {:mask mask}])
 
-          (for [item childs]
-            [:& shape-wrapper
-             {:shape item
-              :key (dm/str (dm/get-prop item :id))}])]]))))
+           (for [item childs]
+             [:& shape-wrapper
+              {:shape item
+               :key (dm/str (dm/get-prop item :id))}])]]]))))
 
 
 

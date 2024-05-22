@@ -6,10 +6,14 @@
 
 // SCROLLBAR
 .new-scrollbar {
+  scrollbar-width: thin;
   scrollbar-color: rgba(170, 181, 186, 0.3) transparent;
   &:hover {
     scrollbar-color: rgba(170, 181, 186, 0.7) transparent;
   }
+
+  // These rules do not apply in chrome - 121 or higher
+  //  We keep them to preserve backward compatibility.
   ::-webkit-scrollbar {
     background-color: transparent;
     cursor: pointer;
