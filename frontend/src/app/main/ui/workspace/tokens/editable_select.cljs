@@ -59,7 +59,7 @@
                   [:span {:class (stl/css :check-icon)} i/tick]])))]]])
 
 (mf/defc editable-select
-  [{:keys [value type options class on-change placeholder on-blur input-class] :as params}]
+  [{:keys [value type options class on-change placeholder on-blur input-class on-token-remove] :as params}]
   (let [state* (mf/use-state {:id (uuid/next)
                               :is-open? false
                               :current-value value
@@ -79,7 +79,6 @@
         multiple? (= :multiple value)
         token (when-not multiple?
                 (-> (filter :selected? options) (first)))
-        _ (js/console.log "token" token)
 
         emit-blur? (mf/use-ref nil)
         select-wrapper-ref (mf/use-ref)
@@ -156,9 +155,11 @@
            (cond
              token (let [backspace? (kbd/backspace? event)
                          value (-> event dom/get-target dom/get-value)
-                         caret-at-beginning? (= 0 (.. event -target -selectionStart))]
+                         caret-at-beginning? (nil? (.. event -target -selectionStart))]
                      (cond
-                       (and backspace? caret-at-beginning?) (set-value "")
+                       (and backspace? caret-at-beginning?) (do
+                                                              (dom/prevent-default event)
+                                                              (on-token-remove token))
                        :else (set-token-value! value))
                      (js/console.log "backspace?" caret-at-beginning? (.. event -target)))
              is-open? (let [up? (kbd/up-arrow? event)
