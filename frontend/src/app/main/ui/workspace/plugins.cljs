@@ -70,12 +70,12 @@
   [{:keys [name description host code icon permissions]}]
   (.ɵloadPlugin
    js/window #js
-   {:name name
-    :description description
-    :host host
-    :code code
-    :icon icon
-    :permissions (apply array permissions)}))
+              {:name name
+               :description description
+               :host host
+               :code code
+               :icon icon
+               :permissions (apply array permissions)}))
 
 (mf/defc plugin-management-dialog
   {::mf/register modal/components
