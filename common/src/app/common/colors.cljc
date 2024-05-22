@@ -274,6 +274,13 @@
     (catch #?(:clj Throwable :cljs :default) _cause
       [0 0 0])))
 
+(defn hex->lum
+  [color]
+  (let [[r g b] (hex->rgb color)]
+    (mth/sqrt (+ (* 0.241 r)
+                 (* 0.691 g)
+                 (* 0.068 b)))))
+
 (defn- int->hex
   "Convert integer to hex string"
   [v]
@@ -455,3 +462,19 @@
 
     :else
     [r g (inc b)]))
+
+(defn reduce-range
+  [value range]
+  (/ (mth/floor (* value range)) range))
+
+(defn sort-colors
+  [a b]
+  (let [[ah _ av] (hex->hsv (:color a))
+        [bh _ bv] (hex->hsv (:color b))
+        ah (reduce-range (/ ah 60) 8)
+        bh (reduce-range (/ bh 60) 8)
+        av (/ av 255)
+        bv (/ bv 255)
+        a (+ (* ah 100) (* av 10))
+        b (+ (* bh 100) (* bv 10))]
+    (compare a b)))
