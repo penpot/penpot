@@ -131,23 +131,6 @@
                 value (or (d/parse-double value) value)]
             (set-value value)))
 
-        on-node-load
-        (fn [node]
-          ;; There is a problem when changing the state in this callback that
-          ;; produces the dropdown to close in the same event
-          (when node
-            (timers/schedule
-             #(when-let [bounds (when node (dom/get-bounding-rect node))]
-                (let [{window-height :height} (dom/get-window-size)
-                      {:keys [left top height]} bounds
-                      bottom (when (< (- window-height top) 300) (- window-height top))
-                      top (when (>= (- window-height top) 300) (+ top height))]
-                  (swap! state*
-                         assoc
-                         :left left
-                         :top top
-                         :bottom bottom))))))
-
         handle-key-down
         (mf/use-fn
          (mf/deps set-value is-open? token)
@@ -206,8 +189,7 @@
       (mf/set-ref-val! emit-blur? (not is-open?)))
 
 
-    [:div {:class (dm/str class " " (stl/css :editable-select))
-           :ref on-node-load}
+    [:div {:class (dm/str class " " (stl/css :editable-select))}
      (when-let [{:keys [label value]} token]
        [:div {:title (str label ": " value)
               :class (stl/css :token-pill)}
