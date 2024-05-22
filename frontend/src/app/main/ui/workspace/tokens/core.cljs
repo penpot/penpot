@@ -10,6 +10,7 @@
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.token :as ctt]
    [app.main.data.tokens :as dt]
+   [app.main.data.workspace :as udw]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -101,6 +102,10 @@
                                   (when (seq (:strokes shape))
                                     (assoc-in shape [:strokes 0 :stroke-width] value))))))
 
+(defn update-rotation [value shape-ids]
+  (st/emit! (udw/trigger-bounding-box-cloaking shape-ids)
+            (udw/increase-rotation shape-ids value)))
+
 (defn update-layout-spacing-column [value shape-ids]
   (doseq [shape-id shape-ids]
     (let [shape (dt/get-shape-from-state shape-id @st/state)
@@ -172,6 +177,8 @@
                        :key :other}]}}]
    [:rotation
     {:title "Rotation"
+     :attributes ctt/rotation-keys
+     :on-update-shape update-rotation
      :modal {:key :tokens/rotation
              :fields [{:label "Rotation"
                        :key :rotation}]}}]
