@@ -112,12 +112,20 @@
 
 (def dimensions-keys (schema-keys ::dimensions))
 
+(sm/def! ::rotation
+  [:map
+   [:rotation ::sm/uuid]])
+
+(def rotation-keys (schema-keys ::rotation))
+
 (sm/def! ::tokens
-  [:map {:title "Applied Tokens"}])
+  [:map {:title "Applied Tokens"
+         :closed true}])
 
 (sm/def! ::applied-tokens
   (merge-schemas ::tokens
                  ::border-radius
                  ::sizing
                  ::spacing
+                 ::rotation
                  ::dimensions))
