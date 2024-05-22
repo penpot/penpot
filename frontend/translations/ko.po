@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-04-13 12:50+0000\n"
-"Last-Translator: Suhwan Kim <jgk9282@gmail.com>\n"
-"Language-Team: Korean "
-"<https://hosted.weblate.org/projects/penpot/frontend/ko/>\n"
+"PO-Revision-Date: 2024-05-23 20:09+0000\n"
+"Last-Translator: Chan Young Park <designbycy@gmail.com>\n"
+"Language-Team: Korean <https://hosted.weblate.org/projects/penpot/frontend/"
+"ko/>\n"
 "Language: ko\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 4.17-dev\n"
+"X-Generator: Weblate 5.6-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -45,15 +45,15 @@ msgstr "로그인"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
-msgstr "GitHub"
+msgstr "깃허브 (GitHub)"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-gitlab-submit"
-msgstr "GitLab"
+msgstr "깃랩 (GitLab)"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-google-submit"
-msgstr "구글"
+msgstr "구글 (Google)"
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
@@ -112,7 +112,7 @@ msgstr "계정을 생성하세요"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.register-subtitle"
-msgstr "무료고 오픈소스에요"
+msgstr "무료 오픈 소스입니다"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"
@@ -127,7 +127,8 @@ msgstr "서비스 정책"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.terms-privacy-agreement"
-msgstr "새로운 계정을 생성하실 때, 서비스 정책과 개인 정보 정책에 동의해요"
+msgstr "새로운 계정을 생성하시면, 사용자는 펜팟의 서비스 정책과 개인 정보 정책에 "
+"동의하는 것으로 간주됩니다."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
@@ -674,3 +675,142 @@ msgstr "그룹"
 
 msgid "shortcuts.h-distribute"
 msgstr "가로로 분배하기"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-your-email"
+msgstr "이메일에 포함된 링크를 클릭하여 계정을 인증하고 펜팟의 사용을 시작하십시오."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.fullname"
+msgstr "이름 (성명)"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.demo-warning"
+msgstr "데모 서비스입니다. 실제 작업에 사용하지 마십시오. 생성된 프로젝트는 "
+"주기적으로 삭제될 것입니다."
+
+#: src/app/main/ui/auth/recovery.cljs
+msgid "auth.notifications.invalid-token-error"
+msgstr "복구 토큰이 유효하지 않습니다."
+
+msgid "common.share-link.destroy-link"
+msgstr "링크 제거하기"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.info"
+msgstr "펜팟을 둘러보고 주요 기능에 대한 정보를 습득하십시오."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.walkthrough-hero.title"
+msgstr "인터페이스 둘러보기"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create"
+msgstr "새로운 토큰 생성하기"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.add-one"
+msgstr "\"새로운 토큰 생성하기\" 버튼을 눌러 토큰을 생성하십시오."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.no-access-tokens"
+msgstr "현재 가지고 있는 토큰이 없습니다."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal"
+msgstr "개인용 엑세스 토큰"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expired-on"
+msgstr "%s에 만료되었습니다"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.too-long"
+msgstr "이름은 최대 250자까지만 입력 가능합니다."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.errors-required-name"
+msgstr "이름을 입력하십시오"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.copied-success"
+msgstr "복사된 토큰"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-90-days"
+msgstr "90일"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-ldap-submit"
+msgstr "LDAP"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expires-on"
+msgstr "%s에 만료됩니다"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.no-expiration"
+msgstr "만료 기한 없음"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "branding-illustrations-marketing-pieces"
+msgstr "...브랜딩, 일러스트레이션, 마케팅 자료 등."
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-tagline"
+msgstr "펜팟은 디자인과 코딩의 협업을 위한 무료 오픈소스 디자인 도구입니다"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-not-empty"
+msgstr "비밀번호는 공백 이외의 글자를 포함해야 합니다."
+
+#: src/app/main/ui/auth/register.cljs
+#, markdown
+msgid "auth.terms-privacy-agreement-md"
+msgstr "새로운 계정을 생성하시면, 사용자는 펜팟의 [서비스 정책](%s)과 [개인 정보 "
+"정책](%s)에 동의하는 것으로 간주됩니다."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.team-hero.text"
+msgstr "펜팟은 팀을 위한 도구입니다. 팀원들을 초대하여 프로젝트 및 파일 단위로 "
+"협업하십시오"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-with-oidc-submit"
+msgstr "오픈아이디 (OpenID)"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.title"
+msgstr "실습용 튜토리얼"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-account-title"
+msgstr "내 계정에 로그인하기"
+
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.not-all-space"
+msgstr "이름은 공백 이외의 글자를 포함해야 합니다."
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.info"
+msgstr "본 실습용 튜토리얼을 통해 펜팟의 기본 기능에 대하여 재미있게 학습하십시오."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create.success"
+msgstr "엑세스 토큰이 성공적으로 생성되었습니다."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-180-days"
+msgstr "180일"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-30-days"
+msgstr "30일"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-60-days"
+msgstr "60일"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-never"
+msgstr "기한 없음"
