@@ -70,6 +70,7 @@
                               :bottom nil})
         state (deref state*)
         is-open? (:is-open? state)
+        refocus? (:refocus? state)
         current-value (:current-value state)
         element-id (:id state)
 
@@ -142,7 +143,8 @@
                      (cond
                        (and backspace? caret-at-beginning?) (do
                                                               (dom/prevent-default event)
-                                                              (on-token-remove token))
+                                                              (on-token-remove token)
+                                                              (swap! state* assoc :refocus? true)
                        :else (set-token-value! value))
                      (js/console.log "backspace?" caret-at-beginning? (.. event -target)))
              is-open? (let [up? (kbd/up-arrow? event)
@@ -157,6 +159,8 @@
         handle-focus
         (mf/use-fn
          (fn []
+           (when refocus?
+             (swap! state* dissoc :refocus?))
            (mf/set-ref-val! emit-blur? false)))
 
         handle-blur
@@ -202,7 +206,8 @@
                       :on-focus handle-focus
                       :on-blur handle-blur
                       :type type}]
-       (= type "number") [:> numeric-input* {:value (or current-value "")
+       (= type "number") [:> numeric-input* {:autoFocus refocus?
+                                             :value (or current-value "")
                                              :className input-class
                                              :on-change set-value
                                              :on-focus handle-focus
