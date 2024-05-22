@@ -312,7 +312,6 @@
                                (-> (dt/maybe-apply-token-to-shape {:token token
                                                                    :shape shape
                                                                    :attributes (wtc/token-attributes :border-radius)})
-                                   (doto js/console.log)
                                    (ctsr/set-radius-1 (or token-value value)))))))))
 
         on-radius-multi-change
