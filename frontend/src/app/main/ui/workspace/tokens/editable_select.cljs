@@ -17,6 +17,7 @@
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.timers :as timers]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (defn on-number-input-key-down [{:keys [event min-val max-val set-value!]}]
@@ -138,19 +139,26 @@
          (fn [^js event]
            (cond
              token (let [backspace? (kbd/backspace? event)
+                         enter? (kbd/enter? event)
                          value (-> event dom/get-target dom/get-value)
-                         caret-at-beginning? (nil? (.. event -target -selectionStart))]
+                         caret-at-beginning? (nil? (.. event -target -selectionStart))
+                         delete-token? (and backspace? caret-at-beginning?)
+                         replace-token-with-value? (and enter? (seq (str/trim value)))]
                      (cond
-                       (and backspace? caret-at-beginning?) (do
-                                                              (dom/prevent-default event)
-                                                              (on-token-remove token)
-                                                              (swap! state* assoc :refocus? true)
-                       :else (set-token-value! value))
-                     (js/console.log "backspace?" caret-at-beginning? (.. event -target)))
+                       delete-token? (do
+                                       (dom/prevent-default event)
+                                       (on-token-remove token)
+                                       ;; Re-focus the input value of the newly rendered input element
+                                       (swap! state* assoc :refocus? true))
+                       replace-token-with-value? (do
+                                                   (dom/prevent-default event)
+                                                   (set-token-value! nil)
+                                                   (on-token-remove token)
+                                                   (handle-change-input event))
+                       :else (set-token-value! value)))
              is-open? (let [up? (kbd/up-arrow? event)
                             down? (kbd/down-arrow? event)]
-                        (dom/prevent-default event)
-                        (js/console.log "up? down?" up? down?))
+                        (dom/prevent-default event))
              (= type "number") (on-number-input-key-down {:event event
                                                           :min-val min-val
                                                           :max-val max-val
