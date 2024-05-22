@@ -21,6 +21,12 @@
   &:hover {
     background: transparent;
   }
+  &:focus-within {
+    .token-pill {
+      background-color: var(--button-primary-background-color-rest);
+      color: var(--button-primary-foreground-color-rest);
+    }
+  }
 
   .dropdown-button {
     @include flexCenter;
