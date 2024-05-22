@@ -11,12 +11,14 @@ let sass = null;
 
 async function compileSassAll() {
   const start = process.hrtime();
-  log.info("init: compile styles")
-
-  sass = await h.compileSassAll(worker);
-  let output = await h.concatSass(sass);
-  await fs.writeFile("./resources/public/css/main.css", output);
-
+  log.info("init: compile styles");
+  try {
+    sass = await h.compileSassAll(worker);
+    let output = await h.concatSass(sass);
+    await fs.writeFile("./resources/public/css/main.css", output);
+  } catch (error) {
+    log.error("Error during compileSassAll: ", error);
+  }
   const end = process.hrtime(start);
   log.info("done: compile styles", `(${ppt(end)})`);
 }
@@ -24,24 +26,27 @@ async function compileSassAll() {
 async function compileSass(path) {
   const start = process.hrtime();
   log.info("changed:", path);
-  const result = await h.compileSass(worker, path, {modules:true});
-  sass.index[result.outputPath] = result.css;
+  try {
+    const result = await h.compileSass(worker, path, { modules: true });
+    sass.index[result.outputPath] = result.css;
 
-  const output = h.concatSass(sass);
+    const output = h.concatSass(sass);
 
-  await fs.writeFile("./resources/public/css/main.css", output);
-
+    await fs.writeFile("./resources/public/css/main.css", output);
+  } catch (error) {
+    log.error("Error during compileSass: ", error);
+  }
   const end = process.hrtime(start);
   log.info("done:", `(${ppt(end)})`);
 }
 
 await compileSassAll();
-await h.copyAssets()
-await h.compileSvgSprites()
+await h.copyAssets();
+await h.compileSvgSprites();
 await h.compileTemplates();
 await h.compilePolyfills();
 
-log.info("watch: scss src (~)")
+log.info("watch: scss src (~)");
 
 h.watch("src", h.isSassFile, async function (path) {
   if (path.includes("common")) {
@@ -51,19 +56,19 @@ h.watch("src", h.isSassFile, async function (path) {
   }
 });
 
-log.info("watch: scss: resources (~)")
+log.info("watch: scss: resources (~)");
 h.watch("resources/styles", h.isSassFile, async function (path) {
   log.info("changed:", path);
-  await compileSassAll()
+  await compileSassAll();
 });
 
-log.info("watch: templates (~)")
+log.info("watch: templates (~)");
 h.watch("resources/templates", null, async function (path) {
   log.info("changed:", path);
   await h.compileTemplates();
 });
 
-log.info("watch: assets (~)")
+log.info("watch: assets (~)");
 h.watch(["resources/images", "resources/fonts", "resources/plugins-runtime"], null, async function (path) {
   log.info("changed:", path);
   await h.compileSvgSprites();
@@ -71,4 +76,6 @@ h.watch(["resources/images", "resources/fonts", "resources/plugins-runtime"], nu
   await h.compileTemplates();
 });
 
-worker.terminate();
+process.on("exit", () => {
+  worker.terminate();
+});
