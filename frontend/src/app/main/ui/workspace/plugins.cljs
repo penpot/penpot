@@ -26,7 +26,7 @@
 (mf/defc plugin-entry
   [{:keys [index manifest on-open-plugin on-remove-plugin]}]
 
-  (let [{:keys [host icon url name description]} manifest
+  (let [{:keys [host icon name description]} manifest
         handle-open-click
         (mf/use-callback
          (mf/deps index manifest on-open-plugin)
