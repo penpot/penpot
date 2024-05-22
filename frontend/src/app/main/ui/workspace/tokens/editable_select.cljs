@@ -142,7 +142,8 @@
                          enter? (kbd/enter? event)
                          value (-> event dom/get-target dom/get-value)
                          caret-at-beginning? (nil? (.. event -target -selectionStart))
-                         delete-token? (and backspace? caret-at-beginning?)
+                         no-text-selected? (str/empty? (.toString (js/document.getSelection)))
+                         delete-token? (and backspace? caret-at-beginning? no-text-selected?)
                          replace-token-with-value? (and enter? (seq (str/trim value)))]
                      (cond
                        delete-token? (do
