@@ -29,6 +29,7 @@
     "translations:validate": "node ./scripts/validate-translations.js",
     "translations:find-unused": "node ./scripts/find-unused-translations.js",
     "compile": "node ./scripts/compile.js",
+    "compile:cljs": "clojure -M:dev:shadow-cljs compile main",
     "watch": "node ./scripts/watch.js",
     "e2e:server": "node ./scripts/e2e-server.js",
     "e2e:test": "playwright test",
