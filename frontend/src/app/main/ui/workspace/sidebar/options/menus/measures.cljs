@@ -291,6 +291,16 @@
              (on-switch-to-radius-4)
              (on-switch-to-radius-1))))
 
+        on-border-radius-token-unapply
+        (mf/use-fn
+         (mf/deps ids change-radius border-radius-tokens)
+         (fn [token]
+           (let [token-value (some-> token wtc/resolve-token-value)]
+             (st/emit!
+              (change-radius (fn [shape]
+                               (-> (dt/unapply-token-id shape (wtc/token-attributes :border-radius))
+                                   (ctsr/set-radius-1 token-value))))))))
+
         on-radius-1-change
         (mf/use-fn
          (mf/deps ids change-radius border-radius-tokens)
@@ -488,6 +498,7 @@
                [:span {:class (stl/css :icon)}  i/corner-radius]
                [:& editable-select
                 {:placeholder (if (= :multiple (:rx values)) (tr "settings.multiple") "--")
+                 :on-token-remove on-border-radius-token-unapply
                  :class (stl/css :token-select)
                  :type "number"
                  :min 0

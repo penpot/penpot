@@ -17,6 +17,7 @@
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.timers :as timers]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (defn on-number-input-key-down [{:keys [event min-val max-val set-value!]}]
@@ -59,21 +60,27 @@
                   [:span {:class (stl/css :check-icon)} i/tick]])))]]])
 
 (mf/defc editable-select
-  [{:keys [value type options class on-change placeholder on-blur input-class] :as params}]
+  [{:keys [value type options class on-change placeholder on-blur input-class on-token-remove] :as params}]
   (let [state* (mf/use-state {:id (uuid/next)
                               :is-open? false
                               :current-value value
+                              :token-value nil
                               :current-item nil
                               :top nil
                               :left nil
                               :bottom nil})
         state (deref state*)
         is-open? (:is-open? state)
+        refocus? (:refocus? state)
         current-value (:current-value state)
         element-id (:id state)
 
         min-val (get params :min)
         max-val (get params :max)
+
+        multiple? (= :multiple value)
+        token (when-not multiple?
+                (-> (filter :selected? options) (first)))
 
         emit-blur? (mf/use-ref nil)
         select-wrapper-ref (mf/use-ref)
@@ -93,9 +100,15 @@
                                options)
                           (into {}))
 
+        set-token-value!
+        (fn [value]
+          (swap! state* assoc :token-value value))
+
         set-value
         (fn [value]
-          (swap! state* assoc :current-value value)
+          (swap! state* assoc
+                 :current-value value
+                 :token-value value)
           (when on-change (on-change value)))
 
         select-item
@@ -109,6 +122,7 @@
                  {:keys [value] :as item} (get labels-map label)]
              (swap! state* assoc
                     :current-value value
+                    :token-value nil
                     :current-item item)
              (when on-change (on-change item))
              (when on-blur (on-blur)))))
@@ -119,32 +133,33 @@
                 value (or (d/parse-double value) value)]
             (set-value value)))
 
-        on-node-load
-        (fn [node]
-          ;; There is a problem when changing the state in this callback that
-          ;; produces the dropdown to close in the same event
-          (when node
-            (timers/schedule
-             #(when-let [bounds (when node (dom/get-bounding-rect node))]
-                (let [{window-height :height} (dom/get-window-size)
-                      {:keys [left top height]} bounds
-                      bottom (when (< (- window-height top) 300) (- window-height top))
-                      top (when (>= (- window-height top) 300) (+ top height))]
-                  (swap! state*
-                         assoc
-                         :left left
-                         :top top
-                         :bottom bottom))))))
-
         handle-key-down
         (mf/use-fn
-         (mf/deps set-value is-open?)
-         (fn [event]
+         (mf/deps set-value is-open? token)
+         (fn [^js event]
            (cond
+             token (let [backspace? (kbd/backspace? event)
+                         enter? (kbd/enter? event)
+                         value (-> event dom/get-target dom/get-value)
+                         caret-at-beginning? (nil? (.. event -target -selectionStart))
+                         no-text-selected? (str/empty? (.toString (js/document.getSelection)))
+                         delete-token? (and backspace? caret-at-beginning? no-text-selected?)
+                         replace-token-with-value? (and enter? (seq (str/trim value)))]
+                     (cond
+                       delete-token? (do
+                                       (dom/prevent-default event)
+                                       (on-token-remove token)
+                                       ;; Re-focus the input value of the newly rendered input element
+                                       (swap! state* assoc :refocus? true))
+                       replace-token-with-value? (do
+                                                   (dom/prevent-default event)
+                                                   (on-token-remove token)
+                                                   (handle-change-input event)
+                                                   (set-token-value! nil))
+                       :else (set-token-value! value)))
              is-open? (let [up? (kbd/up-arrow? event)
                             down? (kbd/down-arrow? event)]
-                        (dom/prevent-default event)
-                        (js/console.log "up? down?" up? down?))
+                        (dom/prevent-default event))
              (= type "number") (on-number-input-key-down {:event event
                                                           :min-val min-val
                                                           :max-val max-val
@@ -152,13 +167,17 @@
 
         handle-focus
         (mf/use-fn
+         (mf/deps refocus?)
          (fn []
+           (when refocus?
+             (swap! state* dissoc :refocus?))
            (mf/set-ref-val! emit-blur? false)))
 
         handle-blur
         (mf/use-fn
          (fn []
            (mf/set-ref-val! emit-blur? true)
+           (swap! state* assoc :token-value nil)
            (timers/schedule
             200
             (fn []
@@ -167,7 +186,7 @@
     (mf/use-effect
      (mf/deps value current-value)
      #(when (not= (str value) current-value)
-        (reset! state* {:current-value value})))
+        (swap! state* assoc :current-value value)))
 
     (mf/with-effect [is-open?]
       (let [wrapper-node (mf/ref-val select-wrapper-ref)
@@ -185,23 +204,34 @@
       (mf/set-ref-val! emit-blur? (not is-open?)))
 
 
-    [:div {:class (dm/str class " " (stl/css :editable-select))
-           :ref on-node-load}
-     (if (= type "number")
-       [:> numeric-input* {:value (or current-value "")
-                           :className input-class
-                           :on-change set-value
-                           :on-focus handle-focus
-                           :on-blur handle-blur
-                           :placeholder placeholder}]
-       [:input {:value (or current-value "")
-                :class input-class
-                :on-change handle-change-input
-                :on-key-down handle-key-down
-                :on-focus handle-focus
-                :on-blur handle-blur
-                :placeholder placeholder
-                :type type}])
+    [:div {:class (dm/str class " " (stl/css :editable-select))}
+     (when-let [{:keys [label value]} token]
+       [:div {:title (str label ": " value)
+              :class (stl/css :token-pill)}
+        value])
+     (cond
+       token [:input {:value (or (:token-value state) "")
+                      :class input-class
+                      :on-change handle-change-input
+                      :on-key-down handle-key-down
+                      :on-focus handle-focus
+                      :on-blur handle-blur
+                      :type type}]
+       (= type "number") [:> numeric-input* {:autoFocus refocus?
+                                             :value (or current-value "")
+                                             :className input-class
+                                             :on-change set-value
+                                             :on-focus handle-focus
+                                             :on-blur handle-blur
+                                             :placeholder placeholder}]
+       :else [:input {:value (or current-value "")
+                      :class input-class
+                      :on-change handle-change-input
+                      :on-key-down handle-key-down
+                      :on-focus handle-focus
+                      :on-blur handle-blur
+                      :placeholder placeholder
+                      :type type}])
 
      (when (seq options)
        [:span {:class (stl/css :dropdown-button)

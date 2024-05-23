@@ -6,6 +6,7 @@
 
 (ns app.main.data.tokens
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.common.geom.point :as gpt]
@@ -56,6 +57,9 @@
 (defn token-from-attributes [token-id attributes]
   (->> (map (fn [attr] [attr token-id]) attributes)
        (into {})))
+
+(defn unapply-token-id [shape attributes]
+  (update shape :applied-tokens d/without-keys attributes))
 
 (defn apply-token-id-to-attributes [{:keys [shape token-id attributes]}]
   (let [token (token-from-attributes token-id attributes)]

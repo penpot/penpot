@@ -17,6 +17,17 @@
   border-radius: $br-8;
   cursor: pointer;
 
+  background: transparent;
+  &:hover {
+    background: transparent;
+  }
+  &:focus-within {
+    .token-pill {
+      background-color: var(--button-primary-background-color-rest);
+      color: var(--button-primary-foreground-color-rest);
+    }
+  }
+
   .dropdown-button {
     @include flexCenter;
     margin-right: -$s-8;
@@ -36,6 +47,19 @@
     width: 100%;
     max-width: 200px;
     margin-bottom: 0;
+  }
+
+  .token-pill {
+    background-color: rgb(94 107 120 / 25%);
+    border-radius: $br-4;
+    padding: $s-2 $s-6;
+    text-overflow: ellipsis;
+    flex: 0 0 auto;
+  }
+
+  .token-pill + input {
+    flex: 1 1 auto;
+    width: 0;
   }
 
   .custom-select-dropdown {
