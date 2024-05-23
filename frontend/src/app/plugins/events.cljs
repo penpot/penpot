@@ -14,6 +14,14 @@
 
 (defmulti handle-state-change (fn [type _] type))
 
+(defmethod handle-state-change "finish"
+  [_ old-val new-val]
+  (let [old-file-id (:current-file-id old-val)
+        new-file-id (:current-file-id new-val)]
+    (if (and (some? old-file-id) (nil? new-file-id))
+      (str old-file-id)
+      ::not-changed)))
+
 (defmethod handle-state-change "filechange"
   [_ old-val new-val]
   (let [old-file (:workspace-file old-val)
@@ -72,3 +80,6 @@
     ;; return the generated key
     key))
 
+(defn remove-listener
+  [key]
+  (remove-watch st/state key))
