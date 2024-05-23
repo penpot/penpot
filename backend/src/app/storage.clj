@@ -16,7 +16,6 @@
    [app.storage.impl :as impl]
    [app.storage.s3 :as ss3]
    [app.util.time :as dt]
-   [app.worker :as wrk]
    [clojure.spec.alpha :as s]
    [datoteka.fs :as fs]
    [integrant.core :as ig]
@@ -171,28 +170,16 @@
           (impl/put-object object content))
       object)))
 
-(def ^:private default-touch-delay
-  "A default delay for the asynchronous touch operation"
-  (dt/duration "5m"))
-
 (defn touch-object!
   "Mark object as touched."
-  [{:keys [::db/pool-or-conn] :as storage} object-or-id & {:keys [async]}]
+  [{:keys [::db/pool-or-conn] :as storage} object-or-id]
   (us/assert! ::storage storage)
   (let [id (if (impl/object? object-or-id) (:id object-or-id) object-or-id)]
-    (if async
-      (wrk/submit! ::wrk/conn pool-or-conn
-                   ::wrk/task :object-update
-                   ::wrk/delay default-touch-delay
-                   :object :storage-object
-                   :id id
-                   :key :touched-at
-                   :val (dt/now))
-      (-> (db/update! pool-or-conn :storage-object
-                      {:touched-at (dt/now)}
-                      {:id id})
-          (db/get-update-count)
-          (pos?)))))
+    (-> (db/update! pool-or-conn :storage-object
+                    {:touched-at (dt/now)}
+                    {:id id})
+        (db/get-update-count)
+        (pos?))))
 
 (defn get-object-data
   "Return an input stream instance of the object content."
