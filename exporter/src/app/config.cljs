@@ -17,7 +17,7 @@
 
 (def ^:private defaults
   {:public-uri "http://localhost:3449"
-   :tenant "default"
+   :tenant "dev"
    :host "localhost"
    :http-server-port 6061
    :http-server-host "0.0.0.0"
