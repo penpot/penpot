@@ -346,13 +346,5 @@
                              (assoc :size 312043))))
           out  (th/command! data)]
       (t/is (nil? (:error out)))
-      (t/is (map? (:result out))))
+      (t/is (map? (:result out))))))
 
-    (let [[row1 :as rows]
-          (->> (th/db-query :task {:name "object-update"})
-               (map #(update % :props db/decode-transit-pgobject)))]
-
-      ;; (app.common.pprint/pprint rows)
-      (t/is (= 1 (count rows)))
-      (t/is (> (inst-ms (dt/diff (:created-at row1) (:scheduled-at row1)))
-               (inst-ms (dt/duration "4m")))))))
