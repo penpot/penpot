@@ -20,8 +20,8 @@
    [app.config :as cf]
    [app.db :as db]
    [app.main :as main]
-   [app.media :as-alias mtx]
    [app.media]
+   [app.media :as-alias mtx]
    [app.migrations]
    [app.msgbus :as-alias mbus]
    [app.rpc :as-alias rpc]
@@ -78,47 +78,6 @@
    :enable-feature-components-v2
    :disable-file-validation])
 
-(def test-init-sql
-  ["alter table project_profile_rel set unlogged;\n"
-   "alter table file_profile_rel set unlogged;\n"
-   "alter table presence set unlogged;\n"
-   "alter table presence set unlogged;\n"
-   "alter table http_session set unlogged;\n"
-   "alter table team_profile_rel set unlogged;\n"
-   "alter table team_project_profile_rel set unlogged;\n"
-   "alter table comment_thread_status set unlogged;\n"
-   "alter table comment set unlogged;\n"
-   "alter table comment_thread set unlogged;\n"
-   "alter table profile_complaint_report set unlogged;\n"
-   "alter table file_change set unlogged;\n"
-   "alter table team_font_variant set unlogged;\n"
-   "alter table share_link set unlogged;\n"
-   "alter table usage_quote set unlogged;\n"
-   "alter table access_token set unlogged;\n"
-   "alter table profile set unlogged;\n"
-   "alter table file_library_rel set unlogged;\n"
-   "alter table file_thumbnail set unlogged;\n"
-   "alter table file_object_thumbnail set unlogged;\n"
-   "alter table file_tagged_object_thumbnail set unlogged;\n"
-   "alter table file_media_object set unlogged;\n"
-   "alter table file_data_fragment set unlogged;\n"
-   "alter table file set unlogged;\n"
-   "alter table project set unlogged;\n"
-   "alter table team_invitation set unlogged;\n"
-   "alter table webhook_delivery set unlogged;\n"
-   "alter table webhook set unlogged;\n"
-   "alter table team set unlogged;\n"
-   ;; For some reason, modifying the task realted tables is very very
-   ;; slow (5s); so we just don't alter them
-   ;; "alter table task set unlogged;\n"
-   ;; "alter table task_default set unlogged;\n"
-   ;; "alter table task_completed set unlogged;\n"
-   "alter table audit_log set unlogged ;\n"
-   "alter table storage_object set unlogged;\n"
-   "alter table server_error_report set unlogged;\n"
-   "alter table server_prop set unlogged;\n"
-   "alter table global_complaint_report set unlogged;\n"])
-
 (defn state-init
   [next]
   (with-redefs [app.config/flags (flags/parse flags/default default-flags)
@@ -165,9 +124,6 @@
       (try
         (binding [*system* system
                   *pool*   (:app.db/pool system)]
-          (db/with-atomic [conn *pool*]
-            (doseq [sql test-init-sql]
-              (db/exec! conn [sql])))
           (next))
         (finally
           (ig/halt! system))))))
@@ -182,8 +138,7 @@
       (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
       (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
       (let [result (->> (db/exec! conn [sql])
-                        (map :table-name)
-                        (remove #(= "task" %)))]
+                        (map :table-name))]
         (doseq [table result]
           (db/exec! conn [(str "delete from " table ";")]))))
 
