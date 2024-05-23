@@ -99,12 +99,15 @@
         selection-parents     (mf/deref selection-parents-ref)
 
         tokens (mf/deref refs/workspace-tokens)
-        border-radius-tokens (mf/use-memo (mf/deps tokens) #(wtc/tokens-name-map-for-type :border-radius tokens))
-        border-radius-options (mf/use-memo (mf/deps shape border-radius-tokens)
-                                           #(map (fn [[_k {:keys [name] :as item}]]
-                                                   (cond-> (assoc item :label name)
-                                                     (wtc/token-applied? item shape (wtc/token-attributes :border-radius)) (assoc :selected? true)))
-                                                 border-radius-tokens))
+        border-radius-tokens (mf/use-memo
+                              (mf/deps tokens)
+                              #(wtc/tokens-name-map-for-type :border-radius tokens))
+        border-radius-options (mf/use-memo
+                               (mf/deps shape border-radius-tokens)
+                               #(map (fn [[_k {:keys [name] :as item}]]
+                                       (cond-> (assoc item :label name)
+                                         (wtc/token-applied? item shape (wtc/token-attributes :border-radius)) (assoc :selected? true)))
+                                     border-radius-tokens))
 
         flex-child?       (->> selection-parents (some ctl/flex-layout?))
         absolute?         (ctl/item-absolute? shape)
