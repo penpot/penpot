@@ -629,13 +629,13 @@
        (when (d/not-empty? plugins)
          [:div {:class (stl/css :separator)}])
 
-       (for [[idx {:keys [name url]}] (d/enumerate plugins)]
+       (for [[idx {:keys [name] :as manifest}] (d/enumerate plugins)]
          [:> dropdown-menu-item* {:key         (dm/str "plugins-menu-" idx)
-                                  :on-click    #(uwp/open-plugin! url)
+                                  :on-click    #(uwp/open-plugin! manifest)
                                   :class       (stl/css :submenu-item)
                                   :on-key-down (fn [event]
                                                  (when (kbd/enter? event)
-                                                   #(uwp/open-plugin! url)))}
+                                                   #(uwp/open-plugin! manifest)))}
           [:span {:class (stl/css :item-name)} name]])])))
 
 (mf/defc menu
