@@ -26,7 +26,7 @@
 (mf/defc plugin-entry
   [{:keys [index manifest on-open-plugin on-remove-plugin]}]
 
-  (let [{:keys [host icon url name description]} manifest
+  (let [{:keys [host icon name description]} manifest
         handle-open-click
         (mf/use-callback
          (mf/deps index manifest on-open-plugin)
@@ -70,12 +70,12 @@
   [{:keys [name description host code icon permissions]}]
   (.ɵloadPlugin
    js/window #js
-   {:name name
-    :description description
-    :host host
-    :code code
-    :icon icon
-    :permissions (apply array permissions)}))
+              {:name name
+               :description description
+               :host host
+               :code code
+               :icon icon
+               :permissions (apply array permissions)}))
 
 (mf/defc plugin-management-dialog
   {::mf/register modal/components
