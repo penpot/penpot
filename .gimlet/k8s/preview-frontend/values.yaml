@@ -1,0 +1,489 @@
+## Default values for Penpot
+
+## @section Global parameters
+
+## @param global.postgresqlEnabled Whether to deploy the Bitnami PostgreSQL chart as subchart. Check [the official chart](https://artifacthub.io/packages/helm/bitnami/postgresql) for configuration.
+## @param global.redisEnabled Whether to deploy the Bitnami Redis chart as subchart. Check [the official chart](https://artifacthub.io/packages/helm/bitnami/redis) for configuration.
+## @param global.imagePullSecrets Global Docker registry secret names as an array.
+##
+global:
+  postgresqlEnabled: false
+  redisEnabled: false
+  ## E.g.
+  ## imagePullSecrets:
+  ##   - myRegistryKeySecretName
+  ##
+  imagePullSecrets: []
+
+## @section Common parameters
+
+## @param nameOverride String to partially override common.names.fullname
+##
+nameOverride: ""
+## @param fullnameOverride String to fully override common.names.fullname
+##
+fullnameOverride: ""
+## @param serviceAccount.enabled Specifies whether a ServiceAccount should be created.
+## @param serviceAccount.annotations Annotations for service account. Evaluated as a template. Only used if `create` is `true`.
+## @param serviceAccount.name The name of the ServiceAccount to use. If not set and enabled is true, a name is generated using the fullname template.
+##
+serviceAccount:
+  enabled: true
+  annotations: {}
+  name: ""
+
+## @section Backend parameters
+
+## Penpot Backend
+##
+backend:
+  ## @param backend.image.repository The Docker repository to pull the image from.
+  ## @param backend.image.tag The image tag to use.
+  ## @param backend.image.imagePullPolicy The image pull policy to use.
+  ##
+  image:
+    repository: penpotapp/backend
+    tag: 1.16.0-beta
+    imagePullPolicy: IfNotPresent
+  ## @param backend.replicaCount The number of replicas to deploy.
+  ##
+  replicaCount: 1
+  ## @param backend.service.type The service type to create.
+  ## @param backend.service.port The service port to use.
+  ##
+  service:
+    type: ClusterIP
+    port: 6060
+  ## Configure Pods Security Context
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
+  ## @param backend.podSecurityContext.enabled Enabled Penpot pods' security context
+  ## @param backend.podSecurityContext.fsGroup Set Penpot pod's security context fsGroup
+  ##
+  podSecurityContext:
+    enabled: true
+    fsGroup: 1001
+  ## Configure Container Security Context
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
+  ## @param backend.containerSecurityContext.enabled Enabled Penpot containers' security context
+  ## @param backend.containerSecurityContext.runAsUser Set Penpot containers' security context runAsUser
+  ## @param backend.containerSecurityContext.allowPrivilegeEscalation Set Penpot containers' security context allowPrivilegeEscalation
+  ## @param backend.containerSecurityContext.capabilities.drop Set Penpot containers' security context capabilities to be dropped
+  ## @param backend.containerSecurityContext.readOnlyRootFilesystem Set Penpot containers' security context readOnlyRootFilesystem
+  ## @param backend.containerSecurityContext.runAsNonRoot Set Penpot container's security context runAsNonRoot
+  ##
+  containerSecurityContext:
+    enabled: true
+    runAsUser: 1001
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - all
+    readOnlyRootFilesystem: false
+    runAsNonRoot: true
+  ## @param backend.affinity Affinity for Penpot pods assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ##
+  affinity: {}
+  ## @param backend.nodeSelector Node labels for Penpot pods assignment
+  ## ref: https://kubernetes.io/docs/user-guide/node-selection/
+  ##
+  nodeSelector: {}
+  ## @param backend.tolerations Tolerations for Penpot pods assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: []
+  ## Penpot backend resource requests and limits
+  ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+  ## @param backend.resources.limits The resources limits for the Penpot backend containers
+  ## @param backend.resources.requests The requested resources for the Penpot backend containers
+  ##
+  resources:
+    limits: {}
+    requests: {}
+
+## @section Frontend parameters
+
+## Penpot Frontend
+##
+frontend:
+  ## @param frontend.image.repository The Docker repository to pull the image from.
+  ## @param frontend.image.tag The image tag to use.
+  ## @param frontend.image.imagePullPolicy The image pull policy to use.
+  ##
+  image:
+    repository: penpotapp/frontend
+    tag: 1.16.0-beta
+    imagePullPolicy: IfNotPresent
+  ## @param frontend.replicaCount The number of replicas to deploy.
+  ##
+  replicaCount: 1
+  ## @param frontend.service.type The service type to create.
+  ## @param frontend.service.port The service port to use.
+  ##
+  service:
+    type: ClusterIP
+    port: 80
+  ## @param frontend.ingress.enabled Enable ingress record generation for Penpot frontend.
+  ## @param frontend.ingress.annotations Mapped annotations for the frontend ingress.
+  ## @param frontend.ingress.hosts Array style hosts for the frontend ingress.
+  ## @param frontend.ingress.tls Array style TLS secrets for the frontend ingress.
+  ##
+  ingress:
+    enabled: false
+    ## E.g.
+    ## annotations:
+    ##   kubernetes.io/ingress.class: nginx
+    ##   kubernetes.io/tls-acme: "true"
+    ##
+    annotations:
+      {}
+    ## E.g.
+    ## hosts:
+    ##   - host: penpot-example.local
+    hosts: []
+    ## E.g.
+    ##  - secretName: chart-example-tls
+    ##    hosts:
+    ##      - chart-example.local
+    tls: []
+  ## @param frontend.affinity Affinity for Penpot pods assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ##
+  affinity: {}
+  ## @param frontend.nodeSelector Node labels for Penpot pods assignment
+  ## ref: https://kubernetes.io/docs/user-guide/node-selection/
+  ##
+  nodeSelector: {}
+  ## @param frontend.tolerations Tolerations for Penpot pods assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: []
+  ## Penpot frontend resource requests and limits
+  ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+  ## @param frontend.resources.limits The resources limits for the Penpot frontend containers
+  ## @param frontend.resources.requests The requested resources for the Penpot frontend containers
+  ##
+  resources:
+    limits: {}
+    requests: {}
+
+## @section Exporter parameters
+
+## Penpot Exporter
+##
+exporter:
+  ## @param exporter.image.repository The Docker repository to pull the image from.
+  ## @param exporter.image.tag The image tag to use.
+  ## @param exporter.image.imagePullPolicy The image pull policy to use.
+  ##
+  image:
+    repository: penpotapp/exporter
+    tag: 1.16.0-beta
+    imagePullPolicy: IfNotPresent
+  ## @param exporter.replicaCount The number of replicas to deploy.
+  ##
+  replicaCount: 1
+  ## @param exporter.service.type The service type to create.
+  ## @param exporter.service.port The service port to use.
+  ##
+  service:
+    type: ClusterIP
+    port: 6061
+  ## Configure Pods Security Context
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
+  ## @param exporter.podSecurityContext.enabled Enabled Penpot pods' security context
+  ## @param exporter.podSecurityContext.fsGroup Set Penpot pod's security context fsGroup
+  ##
+  podSecurityContext:
+    enabled: true
+    fsGroup: 1001
+  ## Configure Container Security Context
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
+  ## @param exporter.containerSecurityContext.enabled Enabled Penpot containers' security context
+  ## @param exporter.containerSecurityContext.runAsUser Set Penpot containers' security context runAsUser
+  ## @param exporter.containerSecurityContext.allowPrivilegeEscalation Set Penpot containers' security context allowPrivilegeEscalation
+  ## @param exporter.containerSecurityContext.capabilities.drop Set Penpot containers' security context capabilities to be dropped
+  ## @param exporter.containerSecurityContext.readOnlyRootFilesystem Set Penpot containers' security context readOnlyRootFilesystem
+  ## @param exporter.containerSecurityContext.runAsNonRoot Set Penpot container's security context runAsNonRoot
+  ##
+  containerSecurityContext:
+    enabled: true
+    runAsUser: 1001
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - all
+    readOnlyRootFilesystem: false
+    runAsNonRoot: true
+  ## @param exporter.affinity Affinity for Penpot pods assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ##
+  affinity: {}
+  ## @param exporter.nodeSelector Node labels for Penpot pods assignment
+  ## ref: https://kubernetes.io/docs/user-guide/node-selection/
+  ##
+  nodeSelector: {}
+  ## @param exporter.tolerations Tolerations for Penpot pods assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: []
+  ## Penpot exporter resource requests and limits
+  ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+  ## @param exporter.resources.limits The resources limits for the Penpot exporter containers
+  ## @param exporter.resources.requests The requested resources for the Penpot exporter containers
+  ##
+  resources:
+    limits: {}
+    requests: {}
+
+## @section Persistence parameters
+
+## Penpot persistence
+##
+persistence:
+  ## @param persistence.enabled Enable persistence using Persistent Volume Claims.
+  ##
+  enabled: false
+  ## @param persistence.storageClass Persistent Volume storage class.
+  ## If defined, storageClassName: <storageClass>.
+  ## If undefined (the default) or set to null, no storageClassName spec is set, choosing the default provisioner.
+  ##
+  storageClass: ""
+  ## @param persistence.size Persistent Volume size.
+  ##
+  size: 8Gi
+  ## @param persistence.existingClaim The name of an existing PVC to use for persistence.
+  ##
+  existingClaim: ""
+  ## @param persistence.accessModes Persistent Volume access modes.
+  ##
+  accessModes:
+    - ReadWriteOnce
+  ## @param persistence.annotations Persistent Volume Claim annotations.
+  ##
+  annotations: {}
+
+## @section Configuration parameters
+
+## Penpot configuration
+##
+config:
+  ## @param config.publicURI The public domain to serve Penpot on. Set `disable-secure-session-cookies` in the flags if you plan on serving it on a non HTTPS domain.
+  ## @param config.flags The feature flags to enable. Check [the official docs](https://help.penpot.app/technical-guide/configuration/) for more info.
+  ## @param config.apiSecretKey A random secret key needed for persistent user sessions. Generate with `openssl rand -hex 16` for example.
+  ##
+  publicURI: "http://localhost:8080"
+  flags: "enable-registration enable-login disable-demo-users disable-demo-warning"
+  apiSecretKey: "b46a12cb4bedc6b9df8cb3f18c708b65"
+  ## @param config.postgresql.host The PostgreSQL host to connect to.
+  ## @param config.postgresql.port The PostgreSQL host port to use.
+  ## @param config.postgresql.database The PostgreSQL database to use.
+  ## @param config.postgresql.username The database username to use.
+  ## @param config.postgresql.password The database username to use.
+  ## @param config.postgresql.existingSecret The name of an existing secret.
+  ## @param config.postgresql.secretKeys.usernameKey The username key to use from an existing secret.
+  ## @param config.postgresql.secretKeys.passwordKey The password key to use from an existing secret.
+  ##
+  postgresql:
+    host: "postgresql.penpot.svc.cluster.local"
+    port: 5432
+    username: ""
+    password: ""
+    database: ""
+    existingSecret: ""
+    secretKeys:
+      usernameKey: ""
+      passwordKey: ""
+  ## @param config.redis.host The Redis host to connect to.
+  ## @param config.redis.port The Redis host port to use.
+  ## @param config.redis.database The Redis database to connect to.
+  ##
+  redis:
+    host: "redis-headless.penpot.svc.cluster.local"
+    port: 6379
+    database: "0"
+  ## @param config.assets.storageBackend The storage backend for assets to use. Use `assets-fs` for filesystem, and `assets-s3` for S3.
+  ## @param config.assets.filesystem.directory The storage directory to use if you chose the filesystem storage backend.
+  ## @param config.assets.s3.accessKeyID The S3 access key ID to use if you chose the S3 storage backend.
+  ## @param config.assets.s3.secretAccessKey The S3 secret access key to use if you chose the S3 storage backend.
+  ## @param config.assets.s3.region The S3 region to use if you chose the S3 storage backend.
+  ## @param config.assets.s3.bucket The name of the S3 bucket to use if you chose the S3 storage backend.
+  ## @param config.assets.s3.endpointURI The S3 endpoint URI to use if you chose the S3 storage backend.
+  ## @param config.assets.s3.existingSecret The name of an existing secret.
+  ## @param config.assets.s3.secretKeys.accessKeyIDKey The S3 access key ID to use from an existing secret.
+  ## @param config.assets.s3.secretKeys.secretAccessKey The S3 secret access key to use from an existing secret.
+  ## @param config.assets.s3.secretKeys.endpointURIKey The S3 endpoint URI to use from an existing secret.
+  ##
+  assets:
+    storageBackend: "assets-fs"
+    filesystem:
+      directory: "/opt/data/assets"
+    s3:
+      accessKeyID: ""
+      secretAccessKey: ""
+      region: ""
+      bucket: ""
+      endpointURI: ""
+      existingSecret: ""
+      secretKeys:
+        accessKeyIDKey: ""
+        secretAccessKey: ""
+        endpointURIKey: ""
+  ## @param config.telemetryEnabled Whether to enable sending of anonymous telemetry data.
+  ##
+  telemetryEnabled: true
+  ## @param config.smtp.enabled Whether to enable SMTP configuration. You also need to add the 'enable-smtp' flag to the PENPOT_FLAGS variable.
+  ## @param config.smtp.defaultFrom The SMTP default email to send from.
+  ## @param config.smtp.defaultReplyTo The SMTP default email to reply to.
+  ## @param config.smtp.host The SMTP host to use.
+  ## @param config.smtp.port The SMTP host port to use.
+  ## @param config.smtp.username The SMTP username to use.
+  ## @param config.smtp.password The SMTP password to use.
+  ## @param config.smtp.tls Whether to use TLS for the SMTP connection.
+  ## @param config.smtp.ssl Whether to use SSL for the SMTP connection.
+  ## @param config.smtp.existingSecret The name of an existing secret.
+  ## @param config.smtp.secretKeys.usernameKey The SMTP username to use from an existing secret.
+  ## @param config.smtp.secretKeys.passwordKey The SMTP password to use from an existing secret.
+  ##
+  smtp:
+    enabled: false
+    defaultFrom: ""
+    defaultReplyTo: ""
+    host: ""
+    port: ""
+    username: ""
+    password: ""
+    tls: true
+    ssl: false
+    existingSecret: ""
+    secretKeys:
+      usernameKey: ""
+      passwordKey: ""
+  ## @param config.registrationDomainWhitelist Comma separated list of allowed domains to register. Empty to allow all domains.
+  ##
+  registrationDomainWhitelist: ""
+  ## Penpot Authentication providers parameters
+  ##
+  providers:
+    ## @param config.providers.google.enabled Whether to enable Google configuration. To enable Google auth, add `enable-login-with-google` to the flags.
+    ## @param config.providers.google.clientID The Google client ID to use. To enable Google auth, add `enable-login-with-google` to the flags.
+    ## @param config.providers.google.clientSecret The Google client secret to use. To enable Google auth, add `enable-login-with-google` to the flags.
+    ##
+    google:
+      enabled: false
+      clientID: ""
+      clientSecret: ""
+    ## @param config.providers.github.enabled Whether to enable GitHub configuration. To enable GitHub auth, also add `enable-login-with-github` to the flags.
+    ## @param config.providers.github.clientID The GitHub client ID to use.
+    ## @param config.providers.github.clientSecret The GitHub client secret to use.
+    ##
+    github:
+      enabled: false
+      clientID: ""
+      clientSecret: ""
+    ## @param config.providers.gitlab.enabled Whether to enable GitLab configuration. To enable GitLab auth, also add `enable-login-with-gitlab` to the flags.
+    ## @param config.providers.gitlab.baseURI The GitLab base URI to use.
+    ## @param config.providers.gitlab.clientID The GitLab client ID to use.
+    ## @param config.providers.gitlab.clientSecret The GitLab client secret to use.
+    ##
+    gitlab:
+      enabled: false
+      baseURI: "https://gitlab.com"
+      clientID: ""
+      clientSecret: ""
+    ## @param config.providers.oidc.enabled Whether to enable OIDC configuration. To enable OpenID Connect auth, also add `enable-login-with-oidc` to the flags.
+    ## @param config.providers.oidc.baseURI The OpenID Connect base URI to use.
+    ## @param config.providers.oidc.clientID The OpenID Connect client ID to use.
+    ## @param config.providers.oidc.clientSecret The OpenID Connect client secret to use.
+    ## @param config.providers.oidc.authURI Optional OpenID Connect auth URI to use. Auto discovered if not provided.
+    ## @param config.providers.oidc.tokenURI Optional OpenID Connect token URI to use. Auto discovered if not provided.
+    ## @param config.providers.oidc.userURI Optional OpenID Connect user URI to use. Auto discovered if not provided.
+    ## @param config.providers.oidc.roles Optional OpenID Connect roles to use. If no role is provided, roles checking  disabled.
+    ## @param config.providers.oidc.rolesAttribute Optional OpenID Connect roles attribute to use. If not provided, the roles checking will be disabled.
+    ## @param config.providers.oidc.scopes Optional OpenID Connect scopes to use. This settings allow overwrite the required scopes, use with caution because penpot requres at least `name` and `email` attrs found on the user info. Optional, defaults to `openid profile`.
+    ## @param config.providers.oidc.nameAttribute Optional OpenID Connect name attribute to use. If not provided, the `name` prop will be used.
+    ## @param config.providers.oidc.emailAttribute Optional OpenID Connect email attribute to use. If not provided, the `email` prop will be used.
+    ##
+    oidc:
+      enabled: false
+      baseURI: ""
+      clientID: ""
+      clientSecret: ""
+      authURI: ""
+      tokenURI: ""
+      userURI: ""
+      roles: "role1 role2"
+      rolesAttribute: ""
+      scopes: "scope1 scope2"
+      nameAttribute: ""
+      emailAttribute: ""
+    ## @param config.providers.ldap.enabled Whether to enable LDAP configuration. To enable LDAP, also add `enable-login-with-ldap` to the flags.
+    ## @param config.providers.ldap.host The LDAP host to use.
+    ## @param config.providers.ldap.port The LDAP port to use.
+    ## @param config.providers.ldap.ssl Whether to use SSL for the LDAP connection.
+    ## @param config.providers.ldap.startTLS Whether to utilize StartTLS for the LDAP connection.
+    ## @param config.providers.ldap.baseDN The LDAP base DN to use.
+    ## @param config.providers.ldap.bindDN The LDAP bind DN to use.
+    ## @param config.providers.ldap.bindPassword The LDAP bind password to use.
+    ## @param config.providers.ldap.attributesUsername The LDAP attributes username to use.
+    ## @param config.providers.ldap.attributesEmail The LDAP attributes email to use.
+    ## @param config.providers.ldap.attributesFullname The LDAP attributes fullname to use.
+    ## @param config.providers.ldap.attributesPhoto The LDAP attributes photo format to use.
+    ##
+    ldap:
+      enabled: false
+      host: "ldap"
+      port: 10389
+      ssl: false
+      startTLS: false
+      baseDN: "ou=people,dc=planetexpress,dc=com"
+      bindDN: "cn=admin,dc=planetexpress,dc=com"
+      bindPassword: "GoodNewsEveryone"
+      attributesUsername: "uid"
+      attributesEmail: "mail"
+      attributesFullname: "cn"
+      attributesPhoto: "jpegPhoto"
+    ## @param config.providers.existingSecret The name of an existing secret to use.
+    ## @param config.providers.secretKeys.googleClientIDKey The Google client ID key to use from an existing secret.
+    ## @param config.providers.secretKeys.googleClientSecretKey The Google client secret key to use from an existing secret.
+    ## @param config.providers.secretKeys.githubClientIDKey The GitHub client ID key to use from an existing secret.
+    ## @param config.providers.secretKeys.githubClientSecretKey The GitHub client secret key to use from an existing secret.
+    ## @param config.providers.secretKeys.gitlabClientIDKey The GitLab client ID key to use from an existing secret.
+    ## @param config.providers.secretKeys.gitlabClientSecretKey The GitLab client secret key to use from an existing secret.
+    ## @param config.providers.secretKeys.oidcClientIDKey The OpenID Connect client ID key to use from an existing secret.
+    ## @param config.providers.secretKeys.oidcClientSecretKey The OpenID Connect client secret key to use from an existing secret.
+    ##
+    existingSecret: ""
+    secretKeys:
+      googleClientIDKey: ""
+      googleClientSecretKey: ""
+      githubClientIDKey: ""
+      githubClientSecretKey: ""
+      gitlabClientIDKey: ""
+      gitlabClientSecretKey: ""
+      oidcClientIDKey: ""
+      oidcClientSecretKey: ""
+
+
+frontend:
+  image:
+    pullPolicy: IfNotPresent
+    repository: ghcr.io/tokens-studio/tokens-studio-for-penpot
+    tag: latest
+  ingress:
+    enabled: true
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      networking.gke.io/v1beta1.FrontendConfig: default-frontend-config
+
+config:
+  publicURI: https://penpot.tokens.studio
+  redis:
+    host: penpot-redis-master.penpot.svc.cluster.local
+  postgresql:
+    host: penpot-db-rw
+    database: penpot
+    existingSecret: db-penpot-secrets
+    secretKeys:
+      usernameKey: username
+      passwordKey: password
