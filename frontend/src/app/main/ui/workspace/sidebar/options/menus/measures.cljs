@@ -295,7 +295,7 @@
         (mf/use-fn
          (mf/deps ids change-radius border-radius-tokens)
          (fn [token]
-           (let [token-value (some-> token wtc/resolve-token-value)]
+           (let [token-value (wtc/maybe-resolve-token-value token)]
              (st/emit!
               (change-radius (fn [shape]
                                (-> (dt/unapply-token-id shape (wtc/token-attributes :border-radius))
@@ -305,11 +305,10 @@
         (mf/use-fn
          (mf/deps ids change-radius border-radius-tokens)
          (fn [value]
-           (let [token (when (map? value) value)
-                 token-value (some-> token wtc/resolve-token-value)]
+           (let [token-value (wtc/maybe-resolve-token-value value)]
              (st/emit!
               (change-radius (fn [shape]
-                               (-> (dt/maybe-apply-token-to-shape {:token token
+                               (-> (dt/maybe-apply-token-to-shape {:token (when token-value value)
                                                                    :shape shape
                                                                    :attributes (wtc/token-attributes :border-radius)})
                                    (ctsr/set-radius-1 (or token-value value)))))))))

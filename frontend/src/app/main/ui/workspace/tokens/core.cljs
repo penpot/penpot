@@ -37,6 +37,9 @@
     int-or-double
     (throw (ex-info (str "Implement token value resolve for " value) token))))
 
+(defn maybe-resolve-token-value [{:keys [value] :as token}]
+  (when value (resolve-token-value token)))
+
 (defn group-tokens-by-type
   "Groups tokens by their `:type` property."
   [tokens]
