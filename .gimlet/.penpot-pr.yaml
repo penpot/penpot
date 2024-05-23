@@ -1,0 +1,25 @@
+app: penpot-pr-{{ .BRANCH | sanitizeDNSName }}
+# TODO move to staging cluster when ready
+env: prod
+deploy:
+  event: pr
+cleanup:
+  event: branchDeleted
+  app: penpot-pr-{{ .BRANCH | sanitizeDNSName }}
+chart:
+  name: https://github.com/tokens-studio/tokens-studio-for-penpot.git?branch={{ .BRANCH }}&path=/.gimlet/k8s/preview-frontend/
+values:
+  namespace: {{ .BRANCH | sanitizeDNSName }}
+  frontend:
+  image:
+    pullPolicy: IfNotPresent
+    repository: ghcr.io/tokens-studio/tokens-studio-for-penpot
+    tag: 'frontend-{{ .SHA }}'
+  ingress:     
+    hosts:
+      - host: "{{ .BRANCH | sanitizeDNSName }}.penpot.staging.tokens.studio"
+    tls:
+      - secretName: tls-penpot
+        hosts:
+        - "{{ .BRANCH | sanitizeDNSName }}.penpot.staging.tokens.studio"
+  

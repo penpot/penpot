@@ -1,0 +1,17 @@
+name: penpot-frontend-preview
+maintainers:
+  - name: Tokens Studio
+    url: https://tokens.studio
+apiVersion: v2
+appVersion: 1.16.0-beta
+version: 1.0.0
+description: Penpot Preview chart
+home: https://github.com/tokens-studio/tokens-studio-for-penpot
+icon: https://avatars.githubusercontent.com/u/30179644?s=200&v=4
+keywords:
+  - kubernetes
+  - penpot
+  - penpotapp
+  - design
+sources:
+  - https://github.com/penpot/penpot
