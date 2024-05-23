@@ -86,7 +86,7 @@
 
 (sm/def! ::opacity
   [:map
-   [:opacity ::sm/uuid]])
+   [:opacity {:optional true} ::sm/uuid]])
 
 (def opacity-keys (schema-keys ::opacity))
 
@@ -114,7 +114,7 @@
 
 (sm/def! ::rotation
   [:map
-   [:rotation ::sm/uuid]])
+   [:rotation {:optional true} ::sm/uuid]])
 
 (def rotation-keys (schema-keys ::rotation))
 
