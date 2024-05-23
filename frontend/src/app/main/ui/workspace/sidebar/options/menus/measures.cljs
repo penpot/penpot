@@ -99,15 +99,15 @@
         selection-parents     (mf/deref selection-parents-ref)
 
         tokens (mf/deref refs/workspace-tokens)
-        border-radius-tokens (mf/use-memo
-                              (mf/deps tokens)
-                              #(wtc/tokens-name-map-for-type :border-radius tokens))
+        tokens-by-type (mf/use-memo (mf/deps tokens) #(wtc/group-tokens-by-type tokens))
+
+        border-radius-tokens (:border-radius tokens-by-type)
         border-radius-options (mf/use-memo
                                (mf/deps shape border-radius-tokens)
-                               #(map (fn [[_k {:keys [name] :as item}]]
-                                       (cond-> (assoc item :label name)
-                                         (wtc/token-applied? item shape (wtc/token-attributes :border-radius)) (assoc :selected? true)))
-                                     border-radius-tokens))
+                               #(wtc/tokens-name-map->select-options
+                                 {:shape shape
+                                  :tokens border-radius-tokens
+                                  :attributes (wtc/token-attributes :border-radius)}))
 
         flex-child?       (->> selection-parents (some ctl/flex-layout?))
         absolute?         (ctl/item-absolute? shape)
@@ -296,7 +296,7 @@
 
         on-border-radius-token-unapply
         (mf/use-fn
-         (mf/deps ids change-radius border-radius-tokens)
+         (mf/deps ids change-radius)
          (fn [token]
            (let [token-value (wtc/maybe-resolve-token-value token)]
              (st/emit!
@@ -306,7 +306,7 @@
 
         on-radius-1-change
         (mf/use-fn
-         (mf/deps ids change-radius border-radius-tokens)
+         (mf/deps ids change-radius)
          (fn [value]
            (let [token-value (wtc/maybe-resolve-token-value value)]
              (st/emit!

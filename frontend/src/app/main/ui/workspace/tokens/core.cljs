@@ -63,6 +63,12 @@
       (get token-type [])
       (tokens-name-map)))
 
+(defn tokens-name-map->select-options [{:keys [shape tokens attributes]}]
+  (->> (tokens-name-map tokens)
+       (map (fn [[_k {:keys [name] :as item}]]
+              (cond-> (assoc item :label name)
+                (token-applied? item shape attributes) (assoc :selected? true))))))
+
 ;; Update functions ------------------------------------------------------------
 
 (defn on-apply-token [{:keys [token token-type-props selected-shapes] :as _props}]
