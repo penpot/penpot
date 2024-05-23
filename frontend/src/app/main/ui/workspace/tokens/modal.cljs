@@ -43,23 +43,24 @@
 
 (mf/defc tokens-properties-form
   {::mf/wrap-props false}
-  [{:keys [token-type x y position fields token-name token-value token-description]}]
+  [{:keys [token-type x y position fields token]}]
   (let [vport (mf/deref viewport)
         style (calculate-position vport position x y)
 
-        name (mf/use-var (or token-name ""))
+        name (mf/use-var (or (:name token) ""))
         on-update-name #(reset! name (dom/get-target-val %))
         name-ref (mf/use-ref)
 
-        description (mf/use-var token-description)
+        token-value (mf/use-var (or (:value token) ""))
+
+        description (mf/use-var (or (:description token) ""))
         on-update-description #(reset! description (dom/get-target-val %))
 
-        initial-state (map (fn [field]
-                             (if (= (:key field) :value)
-                               (assoc field :value token-value)
-                               field))
-                           fields)
-        state (mf/use-state initial-state)
+        initial-fields (mapv (fn [field]
+                               (assoc field :value (or (:value token) "")))
+                             fields)
+        state (mf/use-state initial-fields)
+
         on-update-state-field (fn [idx e]
                                 (->> (dom/get-target-val e)
                                      (assoc-in @state [idx :value])
@@ -71,9 +72,10 @@
                                           (first)
                                           (val))
                           token (cond-> {:name @name
-                                         :type token-type
+                                         :type (or (:type token) token-type)
                                          :value token-value}
-                                  @description (assoc :description @description))]
+                                  @description (assoc :description @description)
+                                  (:id token) (assoc :id (:id token)))]
                       (st/emit! (dt/add-token token))
                       (modal/hide!)))]
 
@@ -87,7 +89,7 @@
       :on-submit on-submit}
      [:div {:class (stl/css :token-rows)}
       [:& tokens.common/labeled-input {:label "Name"
-                                       :value @name
+                                       :default-value @name
                                        :on-change on-update-name
                                        :input-ref name-ref}]
       (for [[idx {:keys [type label]}] (d/enumerate @state)]
@@ -95,8 +97,10 @@
          (case type
            :box-shadow [:p "TODO BOX SHADOW"]
            [:& tokens.common/labeled-input {:label label
+                                            :default-value @token-value
                                             :on-change #(on-update-state-field idx %)}])])
       [:& tokens.common/labeled-input {:label "Description"
+                                       :default-value @description
                                        :on-change #(on-update-description %)}]
       [:div {:class (stl/css :button-row)}
        [:button {:class (stl/css :button)

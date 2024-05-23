@@ -8,9 +8,9 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.main.data.modal :as modal]
    [app.common.data.macros :as dm]
    [app.main.data.events :as ev]
+   [app.main.data.modal :as modal]
    [app.main.data.shortcuts :as scd]
    [app.main.data.tokens :as dt]
    [app.main.data.workspace :as dw]
@@ -32,24 +32,20 @@
   (let [{:keys [modal attributes title]} token-type-props
         do-delete #(st/emit! (dt/delete-token token-id))
         do-duplicate #(st/emit! (dt/duplicate-token token-id))
-        do-edit #(println "Editing " modal)
-        edit-token (mf/use-fn
-                    (fn [event]
-                      (let [{:keys [key fields]} modal
-                            token (dt/get-token-data-from-token-id token-id)]
-                        (dom/stop-propagation event)
-                        (modal/show! key {:x (.-clientX ^js event)
-                                          :y (.-clientY ^js event)
-                                          :position :right
-                                          :fields fields
-                                          :token-type type
-                                          :token-name (:name token)
-                                          :token-value (:value token)
-                                          :token-description (:description token)}))))]
+        do-edit (fn [event]
+                  (let [{:keys [key fields]} modal
+                        token (dt/get-token-data-from-token-id token-id)]
+                    (st/emit! dt/hide-token-context-menu)
+                    (dom/stop-propagation event)
+                    (modal/show! key {:x (.-clientX ^js event)
+                                      :y (.-clientY ^js event)
+                                      :position :right
+                                      :fields fields
+                                      :token token})))]
     [:*
      [:& menu-entry {:title "Delete Token" :on-click do-delete}]
      [:& menu-entry {:title "Duplicate Token" :on-click do-duplicate}]
-     [:& menu-entry {:title "Edit Token" :on-click edit-token}]]))
+     [:& menu-entry {:title "Edit Token" :on-click do-edit}]]))
 
 (mf/defc token-context-menu
   []
