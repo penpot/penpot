@@ -9,7 +9,7 @@ cleanup:
 chart:
   name: https://github.com/tokens-studio/tokens-studio-for-penpot.git?branch={{ .BRANCH }}&path=/.gimlet/k8s/preview-frontend/
 values:
-  namespace: {{ .BRANCH | sanitizeDNSName }}
+  namespace: "{{ .BRANCH | sanitizeDNSName }}"
   frontend:
   image:
     pullPolicy: IfNotPresent
