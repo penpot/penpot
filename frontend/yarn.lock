@@ -6680,9 +6680,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"draft-js@git+https://github.com/penpot/draft-js.git":
+"draft-js@git+https://github.com/penpot/draft-js.git#commit=4a99b2a6020b2af97f6dc5fa1b4275ec16b559a0":
   version: 0.11.7
-  resolution: "draft-js@https://github.com/penpot/draft-js.git#commit=3119afbfa3efb80da6a7b232b0ae873a31e7acc0"
+  resolution: "draft-js@https://github.com/penpot/draft-js.git#commit=4a99b2a6020b2af97f6dc5fa1b4275ec16b559a0"
   dependencies:
     fbjs: "npm:^3.0.4"
     immutable: "npm:~3.7.4"
@@ -6690,7 +6690,7 @@ __metadata:
   peerDependencies:
     react: ">=0.14.0"
     react-dom: ">=0.14.0"
-  checksum: 10c0/46f3dd133b174feeefe2f8cbd7b943385448727c375d0d75dc49651979cfd89d2a64347283749bc75dd789b095ce6747122c5822328f4ea15ba02ca5663ffb4b
+  checksum: 10c0/dcd6fd9481b445c0df31a414d5bf0b84ad691d50ac90d805b65c36fb4d26b1ada787f37a63cb437e2a1b6d8dc0f95b4f3c41f6a8082480235ab48b391900a43b
   languageName: node
   linkType: hard
 
@@ -7926,7 +7926,7 @@ __metadata:
     autoprefixer: "npm:^10.4.17"
     concurrently: "npm:^8.2.2"
     date-fns: "npm:^3.3.1"
-    draft-js: "git+https://github.com/penpot/draft-js.git"
+    draft-js: "git+https://github.com/penpot/draft-js.git#commit=4a99b2a6020b2af97f6dc5fa1b4275ec16b559a0"
     eventsource-parser: "npm:^1.1.2"
     express: "npm:^4.19.2"
     fancy-log: "npm:^2.0.0"
