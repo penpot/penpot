@@ -43,18 +43,23 @@
 
 (mf/defc tokens-properties-form
   {::mf/wrap-props false}
-  [{:keys [token-type x y position fields]}]
+  [{:keys [token-type x y position fields token-name token-value token-description]}]
   (let [vport (mf/deref viewport)
         style (calculate-position vport position x y)
 
-        name (mf/use-var nil)
+        name (mf/use-var (or token-name ""))
         on-update-name #(reset! name (dom/get-target-val %))
         name-ref (mf/use-ref)
 
-        description (mf/use-var nil)
+        description (mf/use-var token-description)
         on-update-description #(reset! description (dom/get-target-val %))
 
-        state (mf/use-state fields)
+        initial-state (map (fn [field]
+                             (if (= (:key field) :value)
+                               (assoc field :value token-value)
+                               field))
+                           fields)
+        state (mf/use-state initial-state)
         on-update-state-field (fn [idx e]
                                 (->> (dom/get-target-val e)
                                      (assoc-in @state [idx :value])
@@ -82,6 +87,7 @@
       :on-submit on-submit}
      [:div {:class (stl/css :token-rows)}
       [:& tokens.common/labeled-input {:label "Name"
+                                       :value @name
                                        :on-change on-update-name
                                        :input-ref name-ref}]
       (for [[idx {:keys [type label]}] (d/enumerate @state)]
