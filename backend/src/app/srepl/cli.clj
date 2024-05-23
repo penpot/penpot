@@ -12,6 +12,7 @@
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.rpc.commands.auth :as cmd.auth]
+   [app.rpc.commands.profile :as cmd.profile]
    [app.util.json :as json]
    [app.util.time :as dt]
    [cuerdas.core :as str]))
@@ -37,12 +38,13 @@
     :or {is-active true}}]
   (when-let [system (get-current-system)]
     (db/with-atomic [conn (:app.db/pool system)]
-      (let [params  {:id (uuid/next)
-                     :email email
-                     :fullname fullname
-                     :is-active is-active
-                     :password password
-                     :props {}}]
+      (let [password (cmd.profile/derive-password system password)
+            params   {:id (uuid/next)
+                      :email email
+                      :fullname fullname
+                      :is-active is-active
+                      :password password
+                      :props {}}]
         (->> (cmd.auth/create-profile! conn params)
              (cmd.auth/create-profile-rels! conn))))))
 
