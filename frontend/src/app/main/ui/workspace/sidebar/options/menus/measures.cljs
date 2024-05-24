@@ -238,7 +238,6 @@
          (mf/deps ids)
          (fn [value attr]
            (let [token-value (wtc/maybe-resolve-token-value value)]
-             (js/console.log "token-value" token-value value)
              (st/emit! (udw/trigger-bounding-box-cloaking ids)
                        (dch/update-shapes ids
                                           (if token-value
