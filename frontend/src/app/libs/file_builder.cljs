@@ -249,8 +249,17 @@
   (deleteObject [_ id]
     (set! file (fb/delete-object file (uuid/uuid id))))
 
+  (getId [_]
+    (:id file))
+
+  (getCurrentPageId [_]
+    (:current-page-id file))
+
   (asMap [_]
     (clj->js file))
+
+  (newId [_]
+    (uuid/next))
 
   (export [_]
     (->> (export-file file)
@@ -261,7 +270,8 @@
                 (dom/trigger-download (:name file) export-blob))))))))
 
 (defn create-file-export [^string name]
-  (File. (fb/create-file name)))
+  (binding [cfeat/*current* cfeat/default-features]
+    (File. (fb/create-file name))))
 
 (defn exports []
   #js {:createFile    create-file-export})
