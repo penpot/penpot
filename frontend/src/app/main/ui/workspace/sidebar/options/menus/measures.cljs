@@ -109,12 +109,20 @@
                                   :tokens border-radius-tokens
                                   :attributes (wtc/token-attributes :border-radius)}))
         sizing-tokens (:sizing tokens-by-type)
-        sizing-options (mf/use-memo
+        width-options (mf/use-memo
+                       (mf/deps shape sizing-tokens)
+                       #(wtc/tokens-name-map->select-options
+                         {:shape shape
+                          :tokens sizing-tokens
+                          :attributes (wtc/token-attributes :sizing)
+                          :selected-attributes #{:width}}))
+        height-options (mf/use-memo
                         (mf/deps shape sizing-tokens)
                         #(wtc/tokens-name-map->select-options
                           {:shape shape
                            :tokens sizing-tokens
-                           :attributes (wtc/token-attributes :sizing)}))
+                           :attributes (wtc/token-attributes :sizing)
+                           :selected-attributes #{:height}}))
 
         flex-child?       (->> selection-parents (some ctl/flex-layout?))
         absolute?         (ctl/item-absolute? shape)
@@ -235,7 +243,7 @@
                        (dch/update-shapes ids
                                           (if token-value
                                             #(assoc-in % [:applied-tokens attr] (:id value))
-                                            #(dissoc % :applied-tokens attr))
+                                            #(d/dissoc-in % [:applied-tokens attr]))
                                           {:reg-objects? true
                                            :attrs [:applied-tokens]})
                        (udw/update-dimensions ids attr (or token-value value))))))
@@ -450,7 +458,7 @@
            :input-class (stl/css :numeric-input)
            :on-change on-width-change
            :on-token-remove #(on-width-change (wtc/maybe-resolve-token-value %))
-           :options sizing-options
+           :options width-options
            :position :left
            :type "number"
            :value (:width values)}]]
@@ -458,13 +466,19 @@
                                     :disabled disabled-height-sizing?)
                :title (tr "workspace.options.height")}
          [:span {:class (stl/css :icon-text)} "H"]
-         [:> numeric-input* {:min 0.01
-                             :no-validate true
-                             :placeholder (if (= :multiple (:height values)) (tr "settings.multiple") "--")
-                             :on-change on-height-change
-                             :disabled disabled-height-sizing?
-                             :className (stl/css :numeric-input)
-                             :value (:height values)}]]
+         [:& editable-select
+          {:placeholder (if (= :multiple (:rx values)) (tr "settings.multiple") "--")
+           :no-validate true
+           :min 0.01
+           :class (stl/css :token-select)
+           :disabled disabled-height-sizing?
+           :input-class (stl/css :numeric-input)
+           :on-change on-height-change
+           :on-token-remove #(on-height-change (wtc/maybe-resolve-token-value %))
+           :options height-options
+           :position :right
+           :type "number"
+           :value (:height values)}]]
         [:button {:class (stl/css-case
                           :lock-size-btn true
                           :selected (true? proportion-lock)

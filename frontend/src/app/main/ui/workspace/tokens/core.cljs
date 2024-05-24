@@ -63,11 +63,11 @@
       (get token-type [])
       (tokens-name-map)))
 
-(defn tokens-name-map->select-options [{:keys [shape tokens attributes]}]
+(defn tokens-name-map->select-options [{:keys [shape tokens attributes selected-attributes]}]
   (->> (tokens-name-map tokens)
        (map (fn [[_k {:keys [name] :as item}]]
               (cond-> (assoc item :label name)
-                (token-applied? item shape attributes) (assoc :selected? true))))))
+                (token-applied? item shape (or selected-attributes attributes)) (assoc :selected? true))))))
 
 ;; Update functions ------------------------------------------------------------
 
