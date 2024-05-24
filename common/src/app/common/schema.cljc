@@ -240,7 +240,6 @@
   (when-not ^boolean (-validate s value)
     (let [hint    (d/nilv dm/*assert-context* "check error")
           explain (-explain s value)]
-      (println (humanize-explain explain))
       (throw (ex-info hint {:type :assertion
                             :code :data-validation
                             :hint hint
