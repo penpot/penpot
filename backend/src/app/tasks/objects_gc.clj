@@ -17,67 +17,18 @@
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
 
-(declare ^:private delete-file-data-fragments!)
-(declare ^:private delete-file-media-objects!)
-(declare ^:private delete-file-object-thumbnails!)
-(declare ^:private delete-file-thumbnails!)
-(declare ^:private delete-files!)
-(declare ^:private delete-fonts!)
-(declare ^:private delete-profiles!)
-(declare ^:private delete-projects!)
-(declare ^:private delete-teams!)
-
-(defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req [::db/pool ::sto/storage]))
-
-(defmethod ig/prep-key ::handler
-  [_ cfg]
-  (assoc cfg ::min-age cf/deletion-delay))
-
-(defmethod ig/init-key ::handler
-  [_ cfg]
-  (fn [params]
-    (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                      ;; Disable deletion protection for the current transaction
-                      (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
-                      (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
-
-                      (let [min-age (dt/duration (or (:min-age params) (::min-age cfg)))
-                            cfg     (-> cfg
-                                        (assoc ::min-age (db/interval min-age))
-                                        (update ::sto/storage media/configure-assets-storage conn))
-
-                            total   (reduce + 0
-                                            [(delete-profiles! cfg)
-                                             (delete-teams! cfg)
-                                             (delete-fonts! cfg)
-                                             (delete-projects! cfg)
-                                             (delete-files! cfg)
-                                             (delete-file-thumbnails! cfg)
-                                             (delete-file-object-thumbnails! cfg)
-                                             (delete-file-data-fragments! cfg)
-                                             (delete-file-media-objects! cfg)])]
-
-                        (l/info :hint "task finished"
-                                :deleted total
-                                :rollback? (boolean (:rollback? params)))
-
-                        (when (:rollback? params)
-                          (db/rollback! conn))
-
-                        {:processed total})))))
-
 (def ^:private sql:get-profiles
   "SELECT id, photo_id FROM profile
     WHERE deleted_at IS NOT NULL
       AND deleted_at < now() - ?::interval
     ORDER BY deleted_at ASC
+    LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
 
 (defn- delete-profiles!
-  [{:keys [::db/conn ::min-age ::sto/storage] :as cfg}]
-  (->> (db/cursor conn [sql:get-profiles min-age])
+  [{:keys [::db/conn ::min-age ::chunk-size ::sto/storage] :as cfg}]
+  (->> (db/cursor conn [sql:get-profiles min-age chunk-size] {:chunk-size 1})
        (reduce (fn [total {:keys [id photo-id]}]
                  (l/trc :hint "permanently delete" :rel "profile" :id (str id))
 
@@ -99,13 +50,13 @@
     WHERE deleted_at IS NOT NULL
       AND deleted_at < now() - ?::interval
     ORDER BY deleted_at ASC
+    LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
 
 (defn- delete-teams!
-  [{:keys [::db/conn ::min-age ::sto/storage] :as cfg}]
-
-  (->> (db/cursor conn [sql:get-teams min-age])
+  [{:keys [::db/conn ::min-age ::chunk-size ::sto/storage] :as cfg}]
+  (->> (db/cursor conn [sql:get-teams min-age chunk-size] {:chunk-size 1})
        (reduce (fn [total {:keys [id photo-id deleted-at]}]
                  (l/trc :hint "permanently delete"
                         :rel "team"
@@ -118,15 +69,6 @@
                  ;; And finally, permanently delete the team.
                  (db/delete! conn :team {:id id})
 
-                 ;; Mark for deletion in cascade
-                 (db/update! conn :team-font-variant
-                             {:deleted-at deleted-at}
-                             {:team-id id})
-
-                 (db/update! conn :project
-                             {:deleted-at deleted-at}
-                             {:team-id id})
-
                  (inc total))
                0)))
 
@@ -136,12 +78,13 @@
     WHERE deleted_at IS NOT NULL
       AND deleted_at < now() - ?::interval
     ORDER BY deleted_at ASC
+    LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
 
 (defn- delete-fonts!
-  [{:keys [::db/conn ::min-age ::sto/storage] :as cfg}]
-  (->> (db/cursor conn [sql:get-fonts min-age])
+  [{:keys [::db/conn ::min-age ::chunk-size ::sto/storage] :as cfg}]
+  (->> (db/cursor conn [sql:get-fonts min-age chunk-size] {:chunk-size 1})
        (reduce (fn [total {:keys [id team-id deleted-at] :as font}]
                  (l/trc :hint "permanently delete"
                         :rel "team-font-variant"
@@ -167,12 +110,13 @@
     WHERE deleted_at IS NOT NULL
       AND deleted_at < now() - ?::interval
     ORDER BY deleted_at ASC
+    LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
 
 (defn- delete-projects!
-  [{:keys [::db/conn ::min-age] :as cfg}]
-  (->> (db/cursor conn [sql:get-projects min-age])
+  [{:keys [::db/conn ::min-age ::chunk-size] :as cfg}]
+  (->> (db/cursor conn [sql:get-projects min-age chunk-size] {:chunk-size 1})
        (reduce (fn [total {:keys [id team-id deleted-at]}]
                  (l/trc :hint "permanently delete"
                         :rel "project"
@@ -183,11 +127,6 @@
                  ;; And finally, permanently delete the project.
                  (db/delete! conn :project {:id id})
 
-                 ;; Mark files to be deleted
-                 (db/update! conn :file
-                             {:deleted-at deleted-at}
-                             {:project-id id})
-
                  (inc total))
                0)))
 
@@ -197,12 +136,13 @@
     WHERE deleted_at IS NOT NULL
       AND deleted_at < now() - ?::interval
     ORDER BY deleted_at ASC
+    LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
 
 (defn- delete-files!
-  [{:keys [::db/conn ::min-age] :as cfg}]
-  (->> (db/cursor conn [sql:get-files min-age])
+  [{:keys [::db/conn ::min-age ::chunk-size] :as cfg}]
+  (->> (db/cursor conn [sql:get-files min-age chunk-size] {:chunk-size 1})
        (reduce (fn [total {:keys [id deleted-at project-id]}]
                  (l/trc :hint "permanently delete"
                         :rel "file"
@@ -210,25 +150,8 @@
                         :project-id (str project-id)
                         :deleted-at (dt/format-instant deleted-at))
 
-                 ;; NOTE: fragments not handled here because they have
-                 ;; cascade.
-
                  ;; And finally, permanently delete the file.
                  (db/delete! conn :file {:id id})
-
-                 ;; Mark file media objects to be deleted
-                 (db/update! conn :file-media-object
-                             {:deleted-at deleted-at}
-                             {:file-id id})
-
-                 ;; Mark thumbnails to be deleted
-                 (db/update! conn :file-thumbnail
-                             {:deleted-at deleted-at}
-                             {:file-id id})
-
-                 (db/update! conn :file-tagged-object-thumbnail
-                             {:deleted-at deleted-at}
-                             {:file-id id})
 
                  (inc total))
                0)))
@@ -239,12 +162,13 @@
     WHERE deleted_at IS NOT NULL
       AND deleted_at < now() - ?::interval
     ORDER BY deleted_at ASC
+    LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
 
 (defn delete-file-thumbnails!
-  [{:keys [::db/conn ::min-age ::sto/storage] :as cfg}]
-  (->> (db/cursor conn [sql:get-file-thumbnails min-age])
+  [{:keys [::db/conn ::min-age ::chunk-size ::sto/storage] :as cfg}]
+  (->> (db/cursor conn [sql:get-file-thumbnails min-age chunk-size] {:chunk-size 1})
        (reduce (fn [total {:keys [file-id revn media-id deleted-at]}]
                  (l/trc :hint "permanently delete"
                         :rel "file-thumbnail"
@@ -267,12 +191,13 @@
     WHERE deleted_at IS NOT NULL
       AND deleted_at < now() - ?::interval
     ORDER BY deleted_at ASC
+    LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
 
 (defn delete-file-object-thumbnails!
-  [{:keys [::db/conn ::min-age ::sto/storage] :as cfg}]
-  (->> (db/cursor conn [sql:get-file-object-thumbnails min-age])
+  [{:keys [::db/conn ::min-age ::chunk-size ::sto/storage] :as cfg}]
+  (->> (db/cursor conn [sql:get-file-object-thumbnails min-age chunk-size] {:chunk-size 1})
        (reduce (fn [total {:keys [file-id object-id media-id deleted-at]}]
                  (l/trc :hint "permanently delete"
                         :rel "file-tagged-object-thumbnail"
@@ -295,12 +220,13 @@
     WHERE deleted_at IS NOT NULL
       AND deleted_at < now() - ?::interval
     ORDER BY deleted_at ASC
+    LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
 
 (defn- delete-file-data-fragments!
-  [{:keys [::db/conn ::min-age] :as cfg}]
-  (->> (db/cursor conn [sql:get-file-data-fragments min-age])
+  [{:keys [::db/conn ::min-age ::chunk-size] :as cfg}]
+  (->> (db/cursor conn [sql:get-file-data-fragments min-age chunk-size] {:chunk-size 1})
        (reduce (fn [total {:keys [file-id id deleted-at]}]
                  (l/trc :hint "permanently delete"
                         :rel "file-data-fragment"
@@ -319,12 +245,13 @@
     WHERE deleted_at IS NOT NULL
       AND deleted_at < now() - ?::interval
     ORDER BY deleted_at ASC
+    LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
 
 (defn- delete-file-media-objects!
-  [{:keys [::db/conn ::min-age ::sto/storage] :as cfg}]
-  (->> (db/cursor conn [sql:get-file-media-objects min-age])
+  [{:keys [::db/conn ::min-age ::chunk-size ::sto/storage] :as cfg}]
+  (->> (db/cursor conn [sql:get-file-media-objects min-age chunk-size] {:chunk-size 1})
        (reduce (fn [total {:keys [id file-id deleted-at] :as fmo}]
                  (l/trc :hint "permanently delete"
                         :rel "file-media-object"
@@ -340,3 +267,53 @@
 
                  (inc total))
                0)))
+
+(def ^:private deletion-proc-vars
+  [#'delete-file-media-objects!
+   #'delete-file-data-fragments!
+   #'delete-file-object-thumbnails!
+   #'delete-file-thumbnails!
+   #'delete-files!
+   #'delete-projects!
+   #'delete-fonts!
+   #'delete-teams!
+   #'delete-profiles!])
+
+(defn- execute-proc!
+  "A generic function that executes the specified proc iterativelly
+  until 0 results is returned"
+  [cfg proc-fn]
+  (loop [total 0]
+    (let [result (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
+                                   (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
+                                   (proc-fn cfg)))]
+      (if (pos? result)
+        (recur (+ total result))
+        total))))
+
+(defmethod ig/pre-init-spec ::handler [_]
+  (s/keys :req [::db/pool ::sto/storage]))
+
+(defmethod ig/prep-key ::handler
+  [_ cfg]
+  (assoc cfg
+         ::min-age cf/deletion-delay
+         ::chunk-size 10))
+
+(defmethod ig/init-key ::handler
+  [_ cfg]
+  (fn [params]
+    (let [min-age (dt/duration (or (:min-age params) (::min-age cfg)))
+          cfg     (-> cfg
+                      (assoc ::min-age (db/interval min-age))
+                      (update ::sto/storage media/configure-assets-storage))]
+
+      (loop [procs (map deref deletion-proc-vars)
+             total 0]
+        (if-let [proc-fn (first procs)]
+          (let [result (execute-proc! cfg proc-fn)]
+            (recur (rest procs)
+                   (+ total result)))
+          (do
+            (l/inf :hint "task finished" :deleted total)
+            {:processed total}))))))

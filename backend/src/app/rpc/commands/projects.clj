@@ -20,6 +20,7 @@
    [app.rpc.quotes :as quotes]
    [app.util.services :as sv]
    [app.util.time :as dt]
+   [app.worker :as wrk]
    [clojure.spec.alpha :as s]))
 
 (s/def ::id ::us/uuid)
@@ -262,10 +263,16 @@
                               {:deleted-at (dt/now)}
                               {:id id :is-default false}
                               {::db/return-keys true})]
+
+      (wrk/submit! {::wrk/task :delete-object
+                    ::wrk/delay (dt/duration "1m")
+                    ::wrk/conn conn
+                    :object :project
+                    :deleted-at (:deleted-at project)
+                    :id id})
+
       (rph/with-meta (rph/wrap)
         {::audit/props {:team-id (:team-id project)
                         :name (:name project)
                         :created-at (:created-at project)
                         :modified-at (:modified-at project)}}))))
-
-

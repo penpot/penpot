@@ -271,7 +271,7 @@
     (when (and (some? th1)
                (not= (:media-id th1)
                      (:media-id th2)))
-      (sto/touch-object! storage (:media-id th1) :async true))
+      (sto/touch-object! storage (:media-id th1)))
 
     th2))
 

@@ -31,6 +31,7 @@
    [app.tokens :as tokens]
    [app.util.services :as sv]
    [app.util.time :as dt]
+   [app.worker :as wrk]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]))
 
@@ -528,14 +529,23 @@
   {::doc/added "1.17"}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (db/with-atomic [conn pool]
-    (let [perms (get-permissions conn profile-id id)]
+    (let [perms      (get-permissions conn profile-id id)
+          deleted-at (dt/now)]
+
       (when-not (:is-owner perms)
         (ex/raise :type :validation
                   :code :only-owner-can-delete-team))
 
       (db/update! conn :team
-                  {:deleted-at (dt/now)}
+                  {:deleted-at deleted-at}
                   {:id id :is-default false})
+
+      (wrk/submit! {::wrk/task :delete-object
+                    ::wrk/delay (dt/duration "1m")
+                    ::wrk/conn conn
+                    :object :team
+                    :deleted-at deleted-at
+                    :id id})
       nil)))
 
 
