@@ -229,12 +229,18 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [value attr]
-           (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                     (dch/update-shapes ids
-                                        #(assoc % :applied-tokens {})
-                                        {:reg-objects? true
-                                         :attrs [:applied-tokens]})
-                     (udw/update-dimensions ids attr value))))
+           (let [token-value (wtc/maybe-resolve-token-value value)]
+             (js/console.log "token-value" token-value value)
+             (st/emit! (udw/trigger-bounding-box-cloaking ids)
+                       (dch/update-shapes ids
+                                          (if token-value
+                                            #(assoc-in % [:applied-tokens attr] (:id value))
+                                            #(dissoc % :applied-tokens attr))
+                                          {:reg-objects? true
+                                           :attrs [:applied-tokens]})
+                       (udw/update-dimensions ids attr (or token-value value))))))
+
+
 
         on-proportion-lock-change
         (mf/use-fn
@@ -435,13 +441,19 @@
                                     :disabled disabled-width-sizing?)
                :title (tr "workspace.options.width")}
          [:span {:class (stl/css :icon-text)} "W"]
-         [:> numeric-input* {:min 0.01
-                             :no-validate true
-                             :placeholder (if (= :multiple (:width values)) (tr "settings.multiple") "--")
-                             :on-change on-width-change
-                             :disabled disabled-width-sizing?
-                             :className (stl/css :numeric-input)
-                             :value (:width values)}]]
+         [:& editable-select
+          {:min 0.01
+           :class (stl/css :token-select)
+           :disabled disabled-width-sizing?
+           :input-class (stl/css :numeric-input)
+           :no-validate true
+           :on-change on-width-change
+           :on-token-remove #(on-width-change (wtc/maybe-resolve-token-value %))
+           :options sizing-options
+           :placeholder (if (= :multiple (:rx values)) (tr "settings.multiple") "--")
+           :position :left
+           :type "number"
+           :value (:width values)}]]
         [:div {:class (stl/css-case :height true
                                     :disabled disabled-height-sizing?)
                :title (tr "workspace.options.height")}
