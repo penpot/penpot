@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-05-23 20:09+0000\n"
+"PO-Revision-Date: 2024-05-25 18:09+0000\n"
 "Last-Translator: Chan Young Park <designbycy@gmail.com>\n"
 "Language-Team: Korean <https://hosted.weblate.org/projects/penpot/frontend/"
 "ko/>\n"
@@ -120,7 +120,7 @@ msgstr "계정을 생성하세요"
 
 #: src/app/main/ui/auth.cljs
 msgid "auth.sidebar-tagline"
-msgstr "디자인과 프로토타이핑을 위한 오픈소스 솔루션"
+msgstr "디자인과 프로토타이핑을 위한 오픈소스 솔루션."
 
 msgid "auth.terms-of-service"
 msgstr "서비스 정책"
@@ -814,3 +814,36 @@ msgstr "60일"
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.expiration-never"
 msgstr "기한 없음"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.add-shared"
+msgstr "공유 라이브러리로 추가하기"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal.description"
+msgstr ""
+"개인용 엑세스 토큰은 펜팟의 로그인/암호 인증 시스템의 대안으로 사용되며, "
+"어플리케이션의 펜팟 내부 API 엑세스를 위해 사용될 수 있습니다"
+
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "%s 페이지가 공유되었습니다"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.token-will-expire"
+msgstr "토큰은 %s에 만료 예정입니다"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.token-will-not-expire"
+msgstr "토큰의 만료 기한이 없습니다"
+
+msgid "dashboard.export-binary-multi"
+msgstr "%s 펜팟 파일 (.penpot) 다운로드 하기"
+
+#: src/app/main/ui/dashboard/grid.cljs
+#, markdown
+msgid "dashboard.empty-placeholder-drafts"
+msgstr ""
+"라이브러리에 추가된 파일은 여기에서 볼 수 있습니다. 파일을 공유하거나 펜팟의 "
+"[라이브러리와 템플릿](https://penpot.app/libraries-templates.html) 에서 "
+"추가해 보십시오."
