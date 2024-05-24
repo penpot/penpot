@@ -10,28 +10,9 @@
    [app.common.logging :as l]
    [app.db :as db]
    [app.util.time :as dt]
+   [app.worker :as wrk]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
-
-(declare ^:private delete-orphan-teams!)
-
-(defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req [::db/pool]))
-
-(defmethod ig/init-key ::handler
-  [_ cfg]
-  (fn [params]
-    (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                      (l/inf :hint "gc started" :rollback? (boolean (:rollback? params)))
-                      (let [total (delete-orphan-teams! cfg)]
-                        (l/inf :hint "task finished"
-                               :teams total
-                               :rollback? (boolean (:rollback? params)))
-
-                        (when (:rollback? params)
-                          (db/rollback! conn))
-
-                        {:processed total})))))
 
 (def ^:private sql:get-orphan-teams
   "SELECT t.id
@@ -44,16 +25,43 @@
       FOR UPDATE OF t
      SKIP LOCKED")
 
-(defn- delete-orphan-teams!
+(defn- delete-orphan-teams
   "Find all orphan teams (with no members) and mark them for
   deletion (soft delete)."
   [{:keys [::db/conn] :as cfg}]
-  (->> (db/cursor conn sql:get-orphan-teams)
-       (map :id)
-       (reduce (fn [total team-id]
-                 (l/trc :hint "mark orphan team for deletion" :id (str team-id))
-                 (db/update! conn :team
-                             {:deleted-at (dt/now)}
-                             {:id team-id})
-                 (inc total))
-               0)))
+  (let [deleted-at (dt/now)]
+    (->> (db/cursor conn sql:get-orphan-teams)
+         (map :id)
+         (reduce (fn [total team-id]
+                   (l/trc :hint "mark orphan team for deletion" :id (str team-id))
+
+                   (db/update! conn :team
+                               {:deleted-at deleted-at}
+                               {:id team-id})
+
+                   (wrk/submit! {::wrk/task :delete-object
+                                 ::wrk/conn conn
+                                 :object :team
+                                 :deleted-at deleted-at
+                                 :id team-id})
+
+                   (inc total))
+                 0))))
+
+(defmethod ig/pre-init-spec ::handler [_]
+  (s/keys :req [::db/pool]))
+
+(defmethod ig/init-key ::handler
+  [_ cfg]
+  (fn [params]
+    (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
+                      (l/inf :hint "gc started" :rollback? (boolean (:rollback? params)))
+                      (let [total (delete-orphan-teams cfg)]
+                        (l/inf :hint "task finished"
+                               :teams total
+                               :rollback? (boolean (:rollback? params)))
+
+                        (when (:rollback? params)
+                          (db/rollback! conn))
+
+                        {:processed total})))))
