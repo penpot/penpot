@@ -135,6 +135,12 @@
                 value (or (d/parse-double value) value)]
             (set-value value)))
 
+        handle-token-change-input
+        (fn [event]
+          (let [value (-> event dom/get-target dom/get-value)
+                value (or (d/parse-double value) value)]
+            (set-token-value! value)))
+
         handle-key-down
         (mf/use-fn
          (mf/deps set-value is-open? token)
@@ -214,7 +220,7 @@
      (cond
        token [:input {:value (or (:token-value state) "")
                       :class input-class
-                      :on-change handle-change-input
+                      :on-change handle-token-change-input
                       :on-key-down handle-key-down
                       :on-focus handle-focus
                       :on-blur handle-blur
