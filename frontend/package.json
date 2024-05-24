@@ -33,9 +33,9 @@
     "watch": "node ./scripts/watch.js",
     "e2e:server": "node ./scripts/e2e-server.js",
     "e2e:test": "playwright test",
-    "storybook:compile": "gulp template:storybook && clojure -M:dev:shadow-cljs compile storybook",
-    "storybook:watch": "npm run storybook:compile && concurrently \"clojure -M:dev:shadow-cljs watch storybook\" \"storybook dev -p 6006\"",
-    "storybook:build": "npm run storybook:compile && storybook build"
+    "storybook:compile": "yarn run compile && clojure -M:dev:shadow-cljs compile storybook",
+    "storybook:watch": "yarn run storybook:compile && concurrently \"clojure -M:dev:shadow-cljs watch storybook\" \"storybook dev -p 6006\" \"yarn run watch\"",
+    "storybook:build": "yarn run storybook:compile && storybook build"
   },
   "devDependencies": {
     "@playwright/test": "1.42.1",
