@@ -37,6 +37,9 @@
     int-or-double
     (throw (ex-info (str "Implement token value resolve for " value) token))))
 
+(defn maybe-resolve-token-value [{:keys [value] :as token}]
+  (when value (resolve-token-value token)))
+
 (defn group-tokens-by-type
   "Groups tokens by their `:type` property."
   [tokens]
@@ -59,6 +62,12 @@
   (-> (group-tokens-by-type tokens)
       (get token-type [])
       (tokens-name-map)))
+
+(defn tokens-name-map->select-options [{:keys [shape tokens attributes selected-attributes]}]
+  (->> (tokens-name-map tokens)
+       (map (fn [[_k {:keys [name] :as item}]]
+              (cond-> (assoc item :label name)
+                (token-applied? item shape (or selected-attributes attributes)) (assoc :selected? true))))))
 
 ;; Update functions ------------------------------------------------------------
 

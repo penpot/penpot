@@ -38,11 +38,13 @@
                         :else new-value)]
         (set-value! new-value)))))
 
-(mf/defc dropdown-select [{:keys [on-close element-id element-ref options on-select]}]
+(mf/defc dropdown-select [{:keys [position on-close element-id element-ref options on-select]}]
   [:& dropdown {:show true
                 :on-close on-close}
-   [:div {:class (stl/css :custom-select-dropdown)
-          :ref element-ref}
+   [:> :div {:class (stl/css-case :custom-select-dropdown true
+                                  :custom-select-dropdown-right (= position :right)
+                                  :custom-select-dropdown-left (= position :left))
+             :ref element-ref}
     [:ul {:class (stl/css :custom-select-dropdown-list)}
      (for [[index item] (d/enumerate options)]
        (cond
@@ -60,7 +62,7 @@
                   [:span {:class (stl/css :check-icon)} i/tick]])))]]])
 
 (mf/defc editable-select
-  [{:keys [value type options class on-change placeholder on-blur input-class on-token-remove] :as params}]
+  [{:keys [value type options class on-change placeholder on-blur input-class on-token-remove position] :as params}]
   (let [state* (mf/use-state {:id (uuid/next)
                               :is-open? false
                               :current-value value
@@ -133,6 +135,12 @@
                 value (or (d/parse-double value) value)]
             (set-value value)))
 
+        handle-token-change-input
+        (fn [event]
+          (let [value (-> event dom/get-target dom/get-value)
+                value (or (d/parse-double value) value)]
+            (set-token-value! value)))
+
         handle-key-down
         (mf/use-fn
          (mf/deps set-value is-open? token)
@@ -141,7 +149,7 @@
              token (let [backspace? (kbd/backspace? event)
                          enter? (kbd/enter? event)
                          value (-> event dom/get-target dom/get-value)
-                         caret-at-beginning? (nil? (.. event -target -selectionStart))
+                         caret-at-beginning? (zero? (.. event -target -selectionStart))
                          no-text-selected? (str/empty? (.toString (js/document.getSelection)))
                          delete-token? (and backspace? caret-at-beginning? no-text-selected?)
                          replace-token-with-value? (and enter? (seq (str/trim value)))]
@@ -212,11 +220,10 @@
      (cond
        token [:input {:value (or (:token-value state) "")
                       :class input-class
-                      :on-change handle-change-input
+                      :on-change handle-token-change-input
                       :on-key-down handle-key-down
                       :on-focus handle-focus
-                      :on-blur handle-blur
-                      :type type}]
+                      :on-blur handle-blur}]
        (= type "number") [:> numeric-input* {:autoFocus refocus?
                                              :value (or current-value "")
                                              :className input-class
@@ -239,7 +246,8 @@
         i/arrow])
 
      (when (and is-open? (seq options))
-       [:& dropdown-select {:on-close close-dropdown
+       [:& dropdown-select {:position position
+                            :on-close close-dropdown
                             :element-id element-id
                             :element-ref select-wrapper-ref
                             :options options
