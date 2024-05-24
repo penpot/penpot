@@ -442,15 +442,15 @@
                :title (tr "workspace.options.width")}
          [:span {:class (stl/css :icon-text)} "W"]
          [:& editable-select
-          {:min 0.01
+          {:placeholder (if (= :multiple (:rx values)) (tr "settings.multiple") "--")
+           :no-validate true
+           :min 0.01
            :class (stl/css :token-select)
            :disabled disabled-width-sizing?
            :input-class (stl/css :numeric-input)
-           :no-validate true
            :on-change on-width-change
            :on-token-remove #(on-width-change (wtc/maybe-resolve-token-value %))
            :options sizing-options
-           :placeholder (if (= :multiple (:rx values)) (tr "settings.multiple") "--")
            :position :left
            :type "number"
            :value (:width values)}]]
@@ -523,13 +523,13 @@
                [:span {:class (stl/css :icon)}  i/corner-radius]
                [:& editable-select
                 {:placeholder (if (= :multiple (:rx values)) (tr "settings.multiple") "--")
+                 :min 0
                  :class (stl/css :token-select)
                  :input-class (stl/css :numeric-input)
-                 :position :right
-                 :min 0
                  :on-change on-radius-1-change
                  :on-token-remove on-border-radius-token-unapply
                  :options border-radius-options
+                 :position :right
                  :type "number"
                  :value (:rx values)}]]
 
