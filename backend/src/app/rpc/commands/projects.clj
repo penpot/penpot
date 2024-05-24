@@ -7,6 +7,7 @@
 (ns app.rpc.commands.projects
   (:require
    [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.db :as db]
    [app.db.sql :as-alias sql]
@@ -245,13 +246,29 @@
 
 ;; --- MUTATION: Delete Project
 
+(defn- delete-project
+  [conn project-id]
+  (let [project (db/update! conn :project
+                            {:deleted-at (dt/now)}
+                            {:id project-id}
+                            {::db/return-keys true})]
+
+    (when (:is-default project)
+      (ex/raise :type :validation
+                :code :non-deletable-project
+                :hint "impossible to delete default project"))
+
+    (wrk/submit! {::wrk/task :delete-object
+                  ::wrk/conn conn
+                  :object :project
+                  :deleted-at (:deleted-at project)
+                  :id project-id})
+
+    project))
+
 (s/def ::delete-project
   (s/keys :req [::rpc/profile-id]
           :req-un [::id]))
-
-;; TODO: right now, we just don't allow delete default projects, in a
-;; future we need to ensure raise a correct exception signaling that
-;; this is not allowed.
 
 (sv/defmethod ::delete-project
   {::doc/added "1.18"
@@ -259,18 +276,7 @@
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id id)
-    (let [project (db/update! conn :project
-                              {:deleted-at (dt/now)}
-                              {:id id :is-default false}
-                              {::db/return-keys true})]
-
-      (wrk/submit! {::wrk/task :delete-object
-                    ::wrk/delay (dt/duration "1m")
-                    ::wrk/conn conn
-                    :object :project
-                    :deleted-at (:deleted-at project)
-                    :id id})
-
+    (let [project (delete-project conn id)]
       (rph/with-meta (rph/wrap)
         {::audit/props {:team-id (:team-id project)
                         :name (:name project)

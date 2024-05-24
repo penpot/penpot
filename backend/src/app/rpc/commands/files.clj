@@ -912,13 +912,19 @@
 
 ;; --- MUTATION COMMAND: delete-file
 
-(defn- mark-file-deleted!
+(defn- mark-file-deleted
   [conn file-id]
-  (db/update! conn :file
-              {:deleted-at (dt/now)}
-              {:id file-id}
-              {::db/return-keys [:id :name :is-shared :deleted-at
-                                 :project-id :created-at :modified-at]}))
+  (let [file (db/update! conn :file
+                         {:deleted-at (dt/now)}
+                         {:id file-id}
+                         {::db/return-keys [:id :name :is-shared :deleted-at
+                                            :project-id :created-at :modified-at]})]
+    (wrk/submit! {::wrk/task :delete-object
+                  ::wrk/conn conn
+                  :object :file
+                  :deleted-at (:deleted-at file)
+                  :id file-id})
+    file))
 
 (def ^:private
   schema:delete-file
@@ -929,14 +935,7 @@
 (defn- delete-file
   [{:keys [::db/conn] :as cfg} {:keys [profile-id id] :as params}]
   (check-edition-permissions! conn profile-id id)
-  (let [file (mark-file-deleted! conn id)]
-
-    (wrk/submit! {::wrk/task :delete-object
-                  ::wrk/delay (dt/duration "1m")
-                  ::wrk/conn conn
-                  :object :file
-                  :deleted-at (:deleted-at file)
-                  :id id})
+  (let [file (mark-file-deleted conn id)]
 
     ;; NOTE: when a file is a shared library, then we proceed to load
     ;; the whole file, proceed with feature checking and properly execute
@@ -950,8 +949,6 @@
             team (teams/get-team conn
                                  :profile-id profile-id
                                  :project-id (:project-id file))]
-
-
 
         (-> (cfeat/get-team-enabled-features cf/flags team)
             (cfeat/check-client-features! (:features params))

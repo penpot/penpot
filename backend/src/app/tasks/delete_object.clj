@@ -17,7 +17,7 @@
 
 (defmethod delete-object :file
   [{:keys [::db/conn]} {:keys [id deleted-at]}]
-  (l/trc :hint "marking for deletion" :rel "file" :id id)
+  (l/trc :hint "marking for deletion" :rel "file" :id (str id))
   ;; Mark file media objects to be deleted
   (db/update! conn :file-media-object
               {:deleted-at deleted-at}
@@ -34,7 +34,7 @@
 
 (defmethod delete-object :project
   [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
-  (l/trc :hint "marking for deletion" :rel "project" :id id)
+  (l/trc :hint "marking for deletion" :rel "project" :id (str id))
   (doseq [file (db/update! conn :file
                            {:deleted-at deleted-at}
                            {:project-id id}
@@ -44,7 +44,7 @@
 
 (defmethod delete-object :team
   [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
-  (l/trc :hint "marking for deletion" :rel "team" :id id)
+  (l/trc :hint "marking for deletion" :rel "team" :id (str id))
   (db/update! conn :team-font-variant
               {:deleted-at deleted-at}
               {:team-id id})
