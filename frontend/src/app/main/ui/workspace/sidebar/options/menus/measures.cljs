@@ -108,6 +108,13 @@
                                  {:shape shape
                                   :tokens border-radius-tokens
                                   :attributes (wtc/token-attributes :border-radius)}))
+        sizing-tokens (:sizing tokens-by-type)
+        sizing-options (mf/use-memo
+                        (mf/deps shape sizing-tokens)
+                        #(wtc/tokens-name-map->select-options
+                          {:shape shape
+                           :tokens sizing-tokens
+                           :attributes (wtc/token-attributes :sizing)}))
 
         flex-child?       (->> selection-parents (some ctl/flex-layout?))
         absolute?         (ctl/item-absolute? shape)
@@ -223,6 +230,10 @@
          (mf/deps ids)
          (fn [value attr]
            (st/emit! (udw/trigger-bounding-box-cloaking ids)
+                     (dch/update-shapes ids
+                                        #(assoc % :applied-tokens {})
+                                        {:reg-objects? true
+                                         :attrs [:applied-tokens]})
                      (udw/update-dimensions ids attr value))))
 
         on-proportion-lock-change
