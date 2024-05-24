@@ -511,13 +511,14 @@
                [:span {:class (stl/css :icon)}  i/corner-radius]
                [:& editable-select
                 {:placeholder (if (= :multiple (:rx values)) (tr "settings.multiple") "--")
-                 :on-token-remove on-border-radius-token-unapply
                  :class (stl/css :token-select)
-                 :type "number"
-                 :min 0
                  :input-class (stl/css :numeric-input)
+                 :position :right
+                 :min 0
                  :on-change on-radius-1-change
+                 :on-token-remove on-border-radius-token-unapply
                  :options border-radius-options
+                 :type "number"
                  :value (:rx values)}]]
 
               @radius-multi?

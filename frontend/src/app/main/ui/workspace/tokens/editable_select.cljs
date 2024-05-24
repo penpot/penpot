@@ -38,11 +38,13 @@
                         :else new-value)]
         (set-value! new-value)))))
 
-(mf/defc dropdown-select [{:keys [on-close element-id element-ref options on-select]}]
+(mf/defc dropdown-select [{:keys [position on-close element-id element-ref options on-select]}]
   [:& dropdown {:show true
                 :on-close on-close}
-   [:div {:class (stl/css :custom-select-dropdown)
-          :ref element-ref}
+   [:> :div {:class (stl/css-case :custom-select-dropdown true
+                                  :custom-select-dropdown-right (= position :right)
+                                  :custom-select-dropdown-left (= position :left))
+             :ref element-ref}
     [:ul {:class (stl/css :custom-select-dropdown-list)}
      (for [[index item] (d/enumerate options)]
        (cond
@@ -60,7 +62,7 @@
                   [:span {:class (stl/css :check-icon)} i/tick]])))]]])
 
 (mf/defc editable-select
-  [{:keys [value type options class on-change placeholder on-blur input-class on-token-remove] :as params}]
+  [{:keys [value type options class on-change placeholder on-blur input-class on-token-remove position] :as params}]
   (let [state* (mf/use-state {:id (uuid/next)
                               :is-open? false
                               :current-value value
@@ -239,7 +241,8 @@
         i/arrow])
 
      (when (and is-open? (seq options))
-       [:& dropdown-select {:on-close close-dropdown
+       [:& dropdown-select {:position position
+                            :on-close close-dropdown
                             :element-id element-id
                             :element-ref select-wrapper-ref
                             :options options
