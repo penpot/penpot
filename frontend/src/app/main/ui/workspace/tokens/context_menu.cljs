@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.data.events :as ev]
+   [app.main.data.modal :as modal]
    [app.main.data.shortcuts :as scd]
    [app.main.data.tokens :as dt]
    [app.main.data.workspace :as dw]
@@ -27,10 +28,20 @@
   (l/derived :token-context-menu refs/workspace-local))
 
 (mf/defc token-pill-context-menu
-  [{:keys [token-id]}]
-  (let [do-delete #(st/emit! (dt/delete-token token-id))
+  [{:keys [token-id token-type-props]}]
+  (let [{:keys [modal attributes title]} token-type-props
+        do-delete #(st/emit! (dt/delete-token token-id))
         do-duplicate #(st/emit! (dt/duplicate-token token-id))
-        do-edit #(js/console.log "Editing")]
+        do-edit (fn [event]
+                  (let [{:keys [key fields]} modal
+                        token (dt/get-token-data-from-token-id token-id)]
+                    (st/emit! dt/hide-token-context-menu)
+                    (dom/stop-propagation event)
+                    (modal/show! key {:x (.-clientX ^js event)
+                                      :y (.-clientY ^js event)
+                                      :position :right
+                                      :fields fields
+                                      :token token})))]
     [:*
      [:& menu-entry {:title "Delete Token" :on-click do-delete}]
      [:& menu-entry {:title "Duplicate Token" :on-click do-duplicate}]
@@ -64,4 +75,5 @@
             :on-context-menu prevent-default}
       (when  (= :token (:type mdata))
         [:ul {:class (stl/css :context-list)}
-         [:& token-pill-context-menu {:token-id (:token-id mdata)}]])]]))
+         [:& token-pill-context-menu {:token-id (:token-id mdata)
+                                      :token-type-props (:token-type-props mdata)}]])]]))
