@@ -149,7 +149,7 @@
              token (let [backspace? (kbd/backspace? event)
                          enter? (kbd/enter? event)
                          value (-> event dom/get-target dom/get-value)
-                         caret-at-beginning? (nil? (.. event -target -selectionStart))
+                         caret-at-beginning? (zero? (.. event -target -selectionStart))
                          no-text-selected? (str/empty? (.toString (js/document.getSelection)))
                          delete-token? (and backspace? caret-at-beginning? no-text-selected?)
                          replace-token-with-value? (and enter? (seq (str/trim value)))]
@@ -223,8 +223,7 @@
                       :on-change handle-token-change-input
                       :on-key-down handle-key-down
                       :on-focus handle-focus
-                      :on-blur handle-blur
-                      :type type}]
+                      :on-blur handle-blur}]
        (= type "number") [:> numeric-input* {:autoFocus refocus?
                                              :value (or current-value "")
                                              :className input-class
