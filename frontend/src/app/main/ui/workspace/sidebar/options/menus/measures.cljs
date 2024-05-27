@@ -237,15 +237,18 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [value attr]
-           (let [token-value (wtc/maybe-resolve-token-value value)]
+           (let [token-value (wtc/maybe-resolve-token-value value)
+                 undo-id (js/Symbol)]
              (st/emit! (udw/trigger-bounding-box-cloaking ids)
+                       (dwu/start-undo-transaction undo-id)
                        (dch/update-shapes ids
                                           (if token-value
                                             #(assoc-in % [:applied-tokens attr] (:id value))
                                             #(d/dissoc-in % [:applied-tokens attr]))
                                           {:reg-objects? true
                                            :attrs [:applied-tokens]})
-                       (udw/update-dimensions ids attr (or token-value value))))))
+                       (udw/update-dimensions ids attr (or token-value value))
+                       (dwu/commit-undo-transaction undo-id)))))
 
 
 
