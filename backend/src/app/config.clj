@@ -113,8 +113,7 @@
 (s/def ::worker-default-parallelism ::us/integer)
 (s/def ::worker-webhook-parallelism ::us/integer)
 
-(s/def ::authenticated-cookie-domain ::us/string)
-(s/def ::authenticated-cookie-name ::us/string)
+(s/def ::auth-data-cookie-domain ::us/string)
 (s/def ::auth-token-cookie-name ::us/string)
 (s/def ::auth-token-cookie-max-age ::dt/duration)
 
@@ -222,7 +221,6 @@
                    ::audit-log-http-handler-concurrency
                    ::auth-token-cookie-name
                    ::auth-token-cookie-max-age
-                   ::authenticated-cookie-name
                    ::authenticated-cookie-domain
                    ::database-password
                    ::database-uri
