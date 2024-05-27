@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.logging :as l]
    [app.common.spec :as us]
+   [app.common.uri :as u]
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
@@ -33,7 +34,7 @@
 
 ;; A cookie that we can use to check from other sites of the same
 ;; domain if a user is authenticated.
-(def default-authenticated-cookie-name "authenticated")
+(def default-auth-data-cookie-name "auth-data")
 
 ;; Default value for cookie max-age
 (def default-cookie-max-age (dt/duration {:days 7}))
@@ -133,9 +134,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (declare ^:private assign-auth-token-cookie)
-(declare ^:private assign-authenticated-cookie)
+(declare ^:private assign-auth-data-cookie)
 (declare ^:private clear-auth-token-cookie)
-(declare ^:private clear-authenticated-cookie)
+(declare ^:private clear-auth-data-cookie)
 (declare ^:private gen-token)
 
 (defn create-fn
@@ -153,7 +154,7 @@
       (l/trace :hint "create" :profile-id (str profile-id))
       (-> response
           (assign-auth-token-cookie session)
-          (assign-authenticated-cookie session)))))
+          (assign-auth-data-cookie session)))))
 
 (defn delete-fn
   [{:keys [::manager]}]
@@ -167,7 +168,7 @@
           (assoc :status 204)
           (assoc :body nil)
           (clear-auth-token-cookie)
-          (clear-authenticated-cookie)))))
+          (clear-auth-data-cookie)))))
 
 (defn- gen-token
   [props {:keys [profile-id created-at]}]
@@ -229,7 +230,7 @@
         (let [session (update! manager session)]
           (-> response
               (assign-auth-token-cookie session)
-              (assign-authenticated-cookie session)))
+              (assign-auth-data-cookie session)))
         response))))
 
 (def soft-auth
@@ -262,11 +263,11 @@
                     :secure secure?}]
     (update response :cookies assoc name cookie)))
 
-(defn- assign-authenticated-cookie
-  [response {updated-at :updated-at}]
+(defn- assign-auth-data-cookie
+  [response {profile-id :profile-id updated-at :updated-at}]
   (let [max-age    (cf/get :auth-token-cookie-max-age default-cookie-max-age)
-        domain     (cf/get :authenticated-cookie-domain)
-        cname      (cf/get :authenticated-cookie-name "authenticated")
+        domain     (cf/get :auth-data-cookie-domain)
+        cname      default-auth-data-cookie-name
 
         created-at (or updated-at (dt/now))
         renewal    (dt/plus created-at default-renewal-max-age)
@@ -274,14 +275,17 @@
 
         comment    (str "Renewal at: " (dt/format-instant renewal :rfc1123))
         secure?    (contains? cf/flags :secure-session-cookies)
+        strict?    (contains? cf/flags :strict-session-cookies)
+        cors?      (contains? cf/flags :cors)
 
         cookie     {:domain domain
                     :expires expires
                     :path "/"
                     :comment comment
-                    :value true
-                    :same-site :strict
+                    :value (u/map->query-string {:profile-id profile-id})
+                    :same-site (if cors? :none (if strict? :strict :lax))
                     :secure secure?}]
+
     (cond-> response
       (string? domain)
       (update :cookies assoc cname cookie))))
@@ -291,10 +295,10 @@
   (let [cname (cf/get :auth-token-cookie-name default-auth-token-cookie-name)]
     (update response :cookies assoc cname {:path "/" :value "" :max-age 0})))
 
-(defn- clear-authenticated-cookie
+(defn- clear-auth-data-cookie
   [response]
-  (let [cname  (cf/get :authenticated-cookie-name default-authenticated-cookie-name)
-        domain (cf/get :authenticated-cookie-domain)]
+  (let [cname  default-auth-data-cookie-name
+        domain (cf/get :auth-data-cookie-domain)]
     (cond-> response
       (string? domain)
       (update :cookies assoc cname {:domain domain :path "/" :value "" :max-age 0}))))
