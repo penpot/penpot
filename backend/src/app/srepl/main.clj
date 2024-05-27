@@ -503,10 +503,14 @@
 
   (db/update! conn :file-tagged-object-thumbnail
               {:deleted-at nil}
-              {:file-id file-id}))
+              {:file-id file-id})
+
+  :restored)
+
+
 
 (defn- restore-project*
-  [{:keys [::db/conn]} project-id]
+  [{:keys [::db/conn] :as cfg} project-id]
 
   (db/update! conn :project
               {:deleted-at nil}
@@ -515,10 +519,12 @@
   (doseq [{:keys [id]} (db/query conn :file
                                  {:project-id project-id}
                                  {::db/columns [:id]})]
-    (restore-file* conn id)))
+    (restore-file* cfg id))
+
+  :restored)
 
 (defn- restore-team*
-  [{:keys [::db/conn]} team-id]
+  [{:keys [::db/conn] :as cfg} team-id]
   (db/update! conn :team
               {:deleted-at nil}
               {:id team-id})
@@ -530,7 +536,9 @@
   (doseq [{:keys [id]} (db/query conn :project
                                  {:team-id team-id}
                                  {::db/columns [:id]})]
-    (restore-project* conn id)))
+    (restore-project* cfg id))
+
+  :restored)
 
 (defn restore-deleted-team!
   "Mark a team and all related objects as not deleted"
