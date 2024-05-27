@@ -7,6 +7,8 @@
 (ns app.main.ui.workspace.tokens.common
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 ;; Helpers ---------------------------------------------------------------------
@@ -20,6 +22,14 @@
   [pos coll]
   (into (subvec coll 0 pos) (subvec coll (inc pos))))
 
+(defn camel-keys [m]
+  (->> m
+       (d/deep-mapm
+        (fn [[k v]]
+          (if (or (keyword? k) (string? k))
+            [(keyword (str/camel (name k))) v]
+            [k v])))))
+
 ;; Components ------------------------------------------------------------------
 
 (mf/defc labeled-input
@@ -28,9 +38,10 @@
   (let [input-props (cond-> input-props
                       ;; Disable auto-complete on form fields for proprietary password managers
                       ;; https://github.com/orgs/tokens-studio/projects/69/views/11?pane=issue&itemId=63724204
-                      (not auto-complete?) (assoc :data-1p-ignore true
-                                                  :data-lpignore true
-                                                  :autoComplete "off"))]
+                      (not auto-complete?) (assoc "data-1p-ignore" true
+                                                  "data-lpignore" true
+                                                  :auto-complete "off")
+                      :always camel-keys)]
     [:label {:class (stl/css :labeled-input)}
      [:span {:class (stl/css :label)} label]
      [:& :input input-props]]))

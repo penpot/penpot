@@ -84,19 +84,19 @@
       :on-submit on-submit}
      [:div {:class (stl/css :token-rows)}
       [:& tokens.common/labeled-input {:label "Name"
-                                       :input-props {:defaultValue @name
-                                                     :autoFocus true
-                                                     :onChange on-update-name}}]
+                                       :input-props {:default-value @name
+                                                     :auto-focus true
+                                                     :on-change on-update-name}}]
       (for [[idx {:keys [type label]}] (d/enumerate @state)]
         [:* {:key (str "form-field-" idx)}
          (case type
            :box-shadow [:p "TODO BOX SHADOW"]
            [:& tokens.common/labeled-input {:label label
-                                            :input-props {:defaultValue @token-value
-                                                          :onChange #(on-update-state-field idx %)}}])])
+                                            :input-props {:default-value @token-value
+                                                          :on-change #(on-update-state-field idx %)}}])])
       [:& tokens.common/labeled-input {:label "Description"
-                                       :input-props {:defaultValue @description
-                                                     :onChange #(on-update-description %)}}]
+                                       :input-props {:default-value @description
+                                                     :on-change #(on-update-description %)}}]
       [:div {:class (stl/css :button-row)}
        [:button {:class (stl/css :button)
                  :type "submit"}
