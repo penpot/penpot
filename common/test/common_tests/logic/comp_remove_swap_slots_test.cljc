@@ -61,41 +61,12 @@
         blue1                  (ths/get-shape file :blue1)
 
         ;; ==== Action
-        changes                (cls/generate-relocate-shapes (pcb/empty-changes nil)
-                                                             (:objects page)
-                                                             #{(:parent-id blue1)} ;; parents
-                                                             uuid/zero             ;; parent-id
-                                                             (:id page)            ;; page-id
-                                                             0                     ;; to-index
-                                                             #{(:id blue1)})       ;; ids
-        file'                  (thf/apply-changes file changes)
-
-        ;; ==== Get
-        blue1'                 (ths/get-shape file' :blue1)]
-
-    ;; ==== Check
-
-    ;; blue1 had swap-id before move
-    (t/is (some? (ctk/get-swap-slot blue1)))
-
-    ;; blue1 has not swap-id after move
-    (t/is (some? blue1'))
-    (t/is (nil? (ctk/get-swap-slot blue1')))))
-
-(t/deftest test-remove-swap-slot-move-blue1-to-root
-  (let [;; ==== Setup
-        file                   (setup-file)
-        page                   (thf/current-page file)
-        blue1                  (ths/get-shape file :blue1)
-
-        ;; ==== Action
-        changes                (cls/generate-move-shapes-to-frame (pcb/empty-changes nil)
-                                                                  #{(:id blue1)}       ;; ids
-                                                                  uuid/zero            ;; frame-id
-                                                                  (:id page)           ;; page-id
-                                                                  (:objects page)      ;; objects
-                                                                  0                    ;; drop-index
-                                                                  nil)                 ;; cell
+        changes                (cls/generate-relocate (pcb/empty-changes nil)
+                                                      (:objects page)
+                                                      uuid/zero             ;; parent-id
+                                                      (:id page)            ;; page-id
+                                                      0                     ;; to-index
+                                                      #{(:id blue1)})       ;; ids
 
         file'                  (thf/apply-changes file changes)
 
@@ -110,7 +81,6 @@
     ;; blue1 has not swap-id after move
     (t/is (some? blue1'))
     (t/is (nil? (ctk/get-swap-slot blue1')))))
-
 
 (t/deftest test-remove-swap-slot-relocating-blue1-to-b2
   (let [;; ==== Setup
@@ -121,43 +91,12 @@
 
 
         ;; ==== Action
-        changes                (cls/generate-relocate-shapes (pcb/empty-changes nil)
-                                                             (:objects page)
-                                                             #{(:parent-id blue1)} ;; parents
-                                                             (:id b2)              ;; parent-id
-                                                             (:id page)            ;; page-id
-                                                             0                     ;; to-index
-                                                             #{(:id blue1)})       ;; ids
-        file'                  (thf/apply-changes file changes)
-
-        ;; ==== Get
-        blue1'                 (ths/get-shape file' :blue1)]
-
-    ;; ==== Check
-
-    ;; blue1 had swap-id before move
-    (t/is (some? (ctk/get-swap-slot blue1)))
-
-    ;; blue1 has not swap-id after move
-    (t/is (some? blue1'))
-    (t/is (nil? (ctk/get-swap-slot blue1')))))
-
-(t/deftest test-remove-swap-slot-move-blue1-to-b2
-  (let [;; ==== Setup
-        file                   (setup-file)
-        page                   (thf/current-page file)
-        blue1                  (ths/get-shape file :blue1)
-        b2                     (ths/get-shape file :frame-b2)
-
-
-        ;; ==== Action
-        changes                (cls/generate-move-shapes-to-frame (pcb/empty-changes nil)
-                                                                  #{(:id blue1)}       ;; ids
-                                                                  (:id b2)             ;; frame-id
-                                                                  (:id page)           ;; page-id
-                                                                  (:objects page)      ;; objects
-                                                                  0                    ;; drop-index
-                                                                  nil)                 ;; cell
+        changes                (cls/generate-relocate (pcb/empty-changes nil)
+                                                      (:objects page)
+                                                      (:id b2)              ;; parent-id
+                                                      (:id page)            ;; page-id
+                                                      0                     ;; to-index
+                                                      #{(:id blue1)})       ;; ids
 
         file'                  (thf/apply-changes file changes)
 
@@ -182,26 +121,26 @@
 
         ;; ==== Action
         ;; Move blue1 into yellow
-        changes                (cls/generate-relocate-shapes (pcb/empty-changes nil)
-                                                             (:objects page)
-                                                             #{(:parent-id blue1)} ;; parents
-                                                             (:id yellow)          ;; parent-id
-                                                             (:id page)            ;; page-id
-                                                             0                     ;; to-index
-                                                             #{(:id blue1)})       ;; ids
+        changes                (cls/generate-relocate (pcb/empty-changes nil)
+                                                      (:objects page)
+                                                      (:id yellow)          ;; parent-id
+                                                      (:id page)            ;; page-id
+                                                      0                     ;; to-index
+                                                      #{(:id blue1)})       ;; ids
+
 
         file'                  (thf/apply-changes file changes)
         page'                  (thf/current-page file')
         yellow'                (ths/get-shape file' :frame-yellow)
 
         ;; Move yellow into root
-        changes'               (cls/generate-relocate-shapes (pcb/empty-changes nil)
-                                                             (:objects page')
-                                                             #{(:parent-id yellow')} ;; parents
-                                                             uuid/zero               ;; parent-id
-                                                             (:id page')             ;; page-id
-                                                             0                       ;; to-index
-                                                             #{(:id yellow')})       ;; ids
+        changes'               (cls/generate-relocate (pcb/empty-changes nil)
+                                                      (:objects page')
+                                                      uuid/zero               ;; parent-id
+                                                      (:id page')             ;; page-id
+                                                      0                       ;; to-index
+                                                      #{(:id yellow')})       ;; ids
+
         file''                  (thf/apply-changes file' changes')
 
         ;; ==== Get
@@ -215,50 +154,6 @@
     ;; blue1 has not swap-id after move
     (t/is (some? blue1''))
     (t/is (nil? (ctk/get-swap-slot blue1'')))))
-
-(t/deftest test-remove-swap-slot-move-yellow-to-root
-  (let [;; ==== Setup
-        file                   (setup-file)
-        page                   (thf/current-page file)
-        blue1                  (ths/get-shape file :blue1)
-        yellow                 (ths/get-shape file :frame-yellow)
-
-        ;; ==== Action
-        ;; Move blue1 into yellow
-        changes                (cls/generate-move-shapes-to-frame (pcb/empty-changes nil)
-                                                                  #{(:id blue1)}       ;; ids
-                                                                  (:id yellow)         ;; frame-id
-                                                                  (:id page)           ;; page-id
-                                                                  (:objects page)      ;; objects
-                                                                  0                    ;; drop-index
-                                                                  nil)                 ;; cell
-
-        file'                  (thf/apply-changes file changes)
-        page'                  (thf/current-page file')
-        yellow'                (ths/get-shape file' :frame-yellow)
-
-        ;; Move yellow into root
-        changes'               (cls/generate-move-shapes-to-frame (pcb/empty-changes nil)
-                                                                  #{(:id yellow')}      ;; ids
-                                                                  uuid/zero            ;; frame-id
-                                                                  (:id page')           ;; page-id
-                                                                  (:objects page')      ;; objects
-                                                                  0                    ;; drop-index
-                                                                  nil)                 ;; cell
-        file''                  (thf/apply-changes file' changes')
-
-        ;; ==== Get
-        blue1''                 (ths/get-shape file'' :blue1)]
-
-    ;; ==== Check
-
-    ;; blue1 had swap-id before move
-    (t/is (some? (ctk/get-swap-slot blue1)))
-
-    ;; blue1 has not swap-id after move
-    (t/is (some? blue1''))
-    (t/is (nil? (ctk/get-swap-slot blue1'')))))
-
 
 (t/deftest test-remove-swap-slot-relocating-yellow-to-b2
   (let [;; ==== Setup
@@ -269,13 +164,13 @@
 
         ;; ==== Action
         ;; Move blue1 into yellow
-        changes                (cls/generate-relocate-shapes (pcb/empty-changes nil)
-                                                             (:objects page)
-                                                             #{(:parent-id blue1)} ;; parents
-                                                             (:id yellow)          ;; parent-id
-                                                             (:id page)            ;; page-id
-                                                             0                     ;; to-index
-                                                             #{(:id blue1)})       ;; ids
+        changes                (cls/generate-relocate (pcb/empty-changes nil)
+                                                      (:objects page)
+                                                      (:id yellow)          ;; parent-id
+                                                      (:id page)            ;; page-id
+                                                      0                     ;; to-index
+                                                      #{(:id blue1)})       ;; ids
+
 
         file'                  (thf/apply-changes file changes)
         page'                  (thf/current-page file')
@@ -283,57 +178,12 @@
         b2'                    (ths/get-shape file' :frame-b2)
 
         ;; Move yellow into b2
-        changes'               (cls/generate-relocate-shapes (pcb/empty-changes nil)
-                                                             (:objects page')
-                                                             #{(:parent-id yellow')} ;; parents
-                                                             (:id b2')               ;; parent-id
-                                                             (:id page')             ;; page-id
-                                                             0                       ;; to-index
-                                                             #{(:id yellow')})       ;; ids
-        file''                  (thf/apply-changes file' changes')
-
-        ;; ==== Get
-        blue1''                 (ths/get-shape file'' :blue1)]
-
-    ;; ==== Check
-
-    ;; blue1 had swap-id before move
-    (t/is (some? (ctk/get-swap-slot blue1)))
-
-    ;; blue1 has not swap-id after move
-    (t/is (some? blue1''))
-    (t/is (nil? (ctk/get-swap-slot blue1'')))))
-
-(t/deftest test-remove-swap-slot-move-yellow-to-b2
-  (let [;; ==== Setup
-        file                   (setup-file)
-        page                   (thf/current-page file)
-        blue1                  (ths/get-shape file :blue1)
-        yellow                 (ths/get-shape file :frame-yellow)
-
-        ;; ==== Action
-        ;; Move blue1 into yellow
-        changes                (cls/generate-move-shapes-to-frame (pcb/empty-changes nil)
-                                                                  #{(:id blue1)}       ;; ids
-                                                                  (:id yellow)         ;; frame-id
-                                                                  (:id page)           ;; page-id
-                                                                  (:objects page)      ;; objects
-                                                                  0                    ;; drop-index
-                                                                  nil)                 ;; cell
-
-        file'                  (thf/apply-changes file changes)
-        page'                  (thf/current-page file')
-        yellow'                (ths/get-shape file' :frame-yellow)
-        b2'                    (ths/get-shape file' :frame-b2)
-
-        ;; Move yellow into b2
-        changes'                (cls/generate-move-shapes-to-frame (pcb/empty-changes nil)
-                                                                   #{(:id yellow')}   ;; ids
-                                                                   (:id b2')          ;; frame-id
-                                                                   (:id page')        ;; page-id
-                                                                   (:objects page')   ;; objects
-                                                                   0                  ;; drop-index
-                                                                   nil)               ;; cell
+        changes'               (cls/generate-relocate (pcb/empty-changes nil)
+                                                      (:objects page')
+                                                      (:id b2')               ;; parent-id
+                                                      (:id page')             ;; page-id
+                                                      0                       ;; to-index
+                                                      #{(:id yellow')})       ;; ids
 
         file''                  (thf/apply-changes file' changes')
 
@@ -404,13 +254,12 @@
 
         ;; ==== Action
         ;; Move blue1 into yellow
-        changes                (cls/generate-move-shapes-to-frame (pcb/empty-changes nil)
-                                                                  #{(:id blue1)}       ;; ids
-                                                                  (:id yellow)         ;; frame-id
-                                                                  (:id page)           ;; page-id
-                                                                  (:objects page)      ;; objects
-                                                                  0                    ;; drop-index
-                                                                  nil)                 ;; cell
+        changes                (cls/generate-relocate (pcb/empty-changes nil)
+                                                      (:objects page)
+                                                      (:id yellow)          ;; parent-id
+                                                      (:id page)            ;; page-id
+                                                      0                     ;; to-index
+                                                      #{(:id blue1)})       ;; ids
 
         file'                  (thf/apply-changes file changes)
         page'                  (thf/current-page file')
@@ -459,13 +308,13 @@
         blue1                  (ths/get-shape file :blue1)
 
         ;; ==== Action
-        changes                (cls/generate-relocate-shapes (pcb/empty-changes nil)
-                                                             (:objects page)
-                                                             #{(:parent-id blue1)} ;; parents
-                                                             (:parent-id blue1)    ;; parent-id
-                                                             (:id page)            ;; page-id
-                                                             2                     ;; to-index
-                                                             #{(:id blue1)})       ;; ids
+        changes                (cls/generate-relocate (pcb/empty-changes nil)
+                                                      (:objects page)
+                                                      (:parent-id blue1)    ;; parent-id
+                                                      (:id page)            ;; page-id
+                                                      2                     ;; to-index
+                                                      #{(:id blue1)})       ;; ids
+
         file'                  (thf/apply-changes file changes)
 
         ;; ==== Get
@@ -489,13 +338,12 @@
 
         ;; ==== Action
         ;; Move blue1 into yellow
-        changes                (cls/generate-move-shapes-to-frame (pcb/empty-changes nil)
-                                                                  #{(:id blue1)}       ;; ids
-                                                                  (:id yellow)         ;; frame-id
-                                                                  (:id page)           ;; page-id
-                                                                  (:objects page)      ;; objects
-                                                                  0                    ;; drop-index
-                                                                  nil)                 ;; cell
+        changes                (cls/generate-relocate (pcb/empty-changes nil)
+                                                      (:objects page)
+                                                      (:id yellow)          ;; parent-id
+                                                      (:id page)            ;; page-id
+                                                      0                     ;; to-index
+                                                      #{(:id blue1)})       ;; ids
 
         file'                  (thf/apply-changes file changes)
 
@@ -503,13 +351,12 @@
         page'                  (thf/current-page file')
         blue1'                 (ths/get-shape file' :blue1)
         b1'                    (ths/get-shape file' :frame-b1)
-        changes'               (cls/generate-move-shapes-to-frame (pcb/empty-changes nil)
-                                                                  #{(:id blue1')}      ;; ids
-                                                                  (:id b1')            ;; frame-id
-                                                                  (:id page')          ;; page-id
-                                                                  (:objects page')     ;; objects
-                                                                  0                    ;; drop-index
-                                                                  nil)                 ;; cell
+        changes'               (cls/generate-relocate (pcb/empty-changes nil)
+                                                      (:objects page')
+                                                      (:id b1')             ;; parent-id
+                                                      (:id page)            ;; page-id
+                                                      0                     ;; to-index
+                                                      #{(:id blue1')})      ;; ids
 
         file''                  (thf/apply-changes file' changes')
 
@@ -535,13 +382,13 @@
 
         ;; ==== Action
         ;; Relocate blue1 into yellow
-        changes                (cls/generate-relocate-shapes (pcb/empty-changes nil)
-                                                             (:objects page)
-                                                             #{(:parent-id blue1)} ;; parents
-                                                             (:id yellow)          ;; parent-id
-                                                             (:id page)            ;; page-id
-                                                             0                     ;; to-index
-                                                             #{(:id blue1)})       ;; ids
+        changes                (cls/generate-relocate (pcb/empty-changes nil)
+                                                      (:objects page)
+                                                      (:id yellow)          ;; parent-id
+                                                      (:id page)            ;; page-id
+                                                      0                     ;; to-index
+                                                      #{(:id blue1)})       ;; ids
+
 
         file'                  (thf/apply-changes file changes)
 
@@ -549,13 +396,13 @@
         page'                  (thf/current-page file')
         blue1'                 (ths/get-shape file' :blue1)
         b1'                    (ths/get-shape file' :frame-b1)
-        changes'               (cls/generate-relocate-shapes (pcb/empty-changes nil)
-                                                             (:objects page')
-                                                             #{(:parent-id blue1')} ;; parents
-                                                             (:id b1')          ;; parent-id
-                                                             (:id page')            ;; page-id
-                                                             0                     ;; to-index
-                                                             #{(:id blue1')})       ;; ids
+        changes'               (cls/generate-relocate (pcb/empty-changes nil)
+                                                      (:objects page')
+                                                      (:id b1')          ;; parent-id
+                                                      (:id page')        ;; page-id
+                                                      0                  ;; to-index
+                                                      #{(:id blue1')})   ;; ids
+
 
         file''                  (thf/apply-changes file' changes')
 
@@ -581,43 +428,12 @@
         green-copy             (ths/get-shape file :green-copy)
 
         ;; ==== Action
-        changes                (cls/generate-relocate-shapes (pcb/empty-changes nil)
-                                                             (:objects page)
-                                                             #{(:parent-id green-copy)} ;; parents
-                                                             uuid/zero                  ;; parent-id
-                                                             (:id page)                 ;; page-id
-                                                             0                          ;; to-index
-                                                             #{(:id green-copy)})       ;; ids
-        file'                  (thf/apply-changes file changes)
-
-        ;; ==== Get
-        blue2'                 (ths/get-shape file' :blue2)]
-
-    ;; ==== Check
-
-    ;; blue2 had swap-id before move
-    (t/is (some? (ctk/get-swap-slot blue2)))
-
-    ;; blue1still has swap-id after move
-    (t/is (some? blue2'))
-    (t/is (some? (ctk/get-swap-slot blue2')))))
-
-(t/deftest test-remove-swap-slot-moving-green-copy-to-root
-  (let [;; ==== Setup
-        file                   (setup-file)
-
-        page                   (thf/current-page file)
-        blue2                  (ths/get-shape file :blue2)
-        green-copy             (ths/get-shape file :green-copy)
-
-        ;; ==== Action
-        changes                (cls/generate-move-shapes-to-frame (pcb/empty-changes nil)
-                                                                  #{(:id green-copy)}  ;; ids
-                                                                  uuid/zero            ;; frame-id
-                                                                  (:id page)           ;; page-id
-                                                                  (:objects page)      ;; objects
-                                                                  0                    ;; drop-index
-                                                                  nil)                 ;; cell
+        changes                (cls/generate-relocate (pcb/empty-changes nil)
+                                                      (:objects page)
+                                                      uuid/zero                  ;; parent-id
+                                                      (:id page)                 ;; page-id
+                                                      0                          ;; to-index
+                                                      #{(:id green-copy)})       ;; ids
 
         file'                  (thf/apply-changes file changes)
 
@@ -632,7 +448,6 @@
     ;; blue1still has swap-id after move
     (t/is (some? blue2'))
     (t/is (some? (ctk/get-swap-slot blue2')))))
-
 
 (t/deftest test-remove-swap-slot-relocating-green-copy-to-b2
   (let [;; ==== Setup
@@ -644,44 +459,12 @@
         b2                     (ths/get-shape file :frame-b2)
 
         ;; ==== Action
-        changes                (cls/generate-relocate-shapes (pcb/empty-changes nil)
-                                                             (:objects page)
-                                                             #{(:parent-id green-copy)} ;; parents
-                                                             (:id b2)                   ;; parent-id
-                                                             (:id page)                 ;; page-id
-                                                             0                          ;; to-index
-                                                             #{(:id green-copy)})       ;; ids
-        file'                  (thf/apply-changes file changes)
-
-        ;; ==== Get
-        blue2'                 (ths/get-shape file' :blue2)]
-
-    ;; ==== Check
-
-    ;; blue2 had swap-id before move
-    (t/is (some? (ctk/get-swap-slot blue2)))
-
-    ;; blue1still has swap-id after move
-    (t/is (some? blue2'))
-    (t/is (some? (ctk/get-swap-slot blue2')))))
-
-(t/deftest test-remove-swap-slot-moving-green-copy-to-b2
-  (let [;; ==== Setup
-        file                   (setup-file)
-
-        page                   (thf/current-page file)
-        blue2                  (ths/get-shape file :blue2)
-        green-copy             (ths/get-shape file :green-copy)
-        b2                     (ths/get-shape file :frame-b2)
-
-        ;; ==== Action
-        changes                (cls/generate-move-shapes-to-frame (pcb/empty-changes nil)
-                                                                  #{(:id green-copy)}  ;; ids
-                                                                  (:id b2)             ;; frame-id
-                                                                  (:id page)           ;; page-id
-                                                                  (:objects page)      ;; objects
-                                                                  0                    ;; drop-index
-                                                                  nil)                 ;; cell
+        changes                (cls/generate-relocate (pcb/empty-changes nil)
+                                                      (:objects page)
+                                                      (:id b2)                   ;; parent-id
+                                                      (:id page)                 ;; page-id
+                                                      0                          ;; to-index
+                                                      #{(:id green-copy)})       ;; ids
 
         file'                  (thf/apply-changes file changes)
 
@@ -696,7 +479,6 @@
     ;; blue1still has swap-id after move
     (t/is (some? blue2'))
     (t/is (some? (ctk/get-swap-slot blue2')))))
-
 
 (t/deftest test-remove-swap-slot-duplicating-green-copy
   (let [;; ==== Setup

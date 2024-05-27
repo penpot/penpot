@@ -832,6 +832,30 @@
                                      :ignore-constraints false
                                      :ignore-snap-pixel true}))))))
 
+(defn- cleanup-invalid-moving-shapes [ids objects frame-id]
+  (let [lookup   (d/getf objects)
+        frame   (get objects frame-id)
+        layout?  (:layout frame)
+
+        shapes (->> ids
+                    set
+                    (cfh/clean-loops objects)
+                    (keep lookup)
+                    ;;remove shapes inside copies, because we can't change the structure of copies
+                    (remove #(ctk/in-component-copy? (get objects (:parent-id %))))
+                    ;; remove absolute shapes that won't change parent
+                    (remove #(and (ctl/position-absolute? %) (= frame-id (:parent-id %)))))
+
+        shapes
+        (cond->> shapes
+          (not layout?)
+          (remove #(= (:frame-id %) frame-id))
+
+          layout?
+          (remove #(and (= (:frame-id %) frame-id)
+                        (not= (:parent-id %) frame-id))))]
+    (map :id shapes)))
+
 (defn move-shapes-to-frame
   [ids frame-id drop-index cell]
   (ptk/reify ::move-shapes-to-frame
@@ -839,7 +863,14 @@
     (watch [it state _]
       (let [page-id (:current-page-id state)
             objects (wsh/lookup-page-objects state page-id)
-            changes (cls/generate-move-shapes-to-frame (pcb/empty-changes it) ids frame-id page-id objects drop-index cell)]
+            ids     (cleanup-invalid-moving-shapes ids objects frame-id)
+            changes (cls/generate-relocate (pcb/empty-changes it)
+                                           objects
+                                           frame-id
+                                           page-id
+                                           drop-index
+                                           ids
+                                           :cell cell)]
 
         (when (and (some? frame-id) (d/not-empty? changes))
           (rx/of (dch/commit-changes changes)
