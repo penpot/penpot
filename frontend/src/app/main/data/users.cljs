@@ -343,9 +343,9 @@
     (watch [_ state _]
       (let [on-success (:on-success opts identity)
             on-error   (:on-error opts rx/throw)
-            profile    (:profile state)]
-
-        (->> (rp/cmd! :update-profile (dissoc profile :props))
+            profile    (:profile state)
+            params     (select-keys profile [:fullname :lang :theme])]
+        (->> (rp/cmd! :update-profile params)
              (rx/tap on-success)
              (rx/catch on-error))))))
 
