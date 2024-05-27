@@ -13,6 +13,7 @@
    [app.main.ui.components.search-bar :refer [search-bar]]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.icons :as i]
+   [app.util.avatars :as avatars]
    [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.object :as obj]
@@ -42,7 +43,9 @@
              (on-remove-plugin index))))]
     [:div {:class (stl/css :plugins-list-element)}
      [:div {:class (stl/css :plugin-icon)}
-      (when (some? icon) [:img {:src (dm/str host icon)}])]
+      [:img {:src (if (some? icon)
+                    (dm/str host icon)
+                    (avatars/generate {:name name}))}]]
      [:div {:class (stl/css :plugin-description)}
       [:div {:class (stl/css :plugin-title)} name]
       [:div {:class (stl/css :plugin-summary)} (d/nilv description "")]]
