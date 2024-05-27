@@ -412,7 +412,7 @@ msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Los archivos agregados a las bibliotecas aparecerán aquí. Si quieres probar "
 "con alguna plantilla ve a [Bibliotecas y "
-"plantillas](https://penpot.app/libraries-templates.html)."
+"plantillas](https://penpot.app/libraries-templates)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Descargar %s archivos Penpot (.penpot)"

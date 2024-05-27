@@ -400,7 +400,7 @@ msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Oh não! Ainda não tens ficheiros! Se quiseres experimentar podes começar "
 "com os nossos templates em [Libraries & "
-"templates](https://penpot.app/libraries-templates.html)."
+"templates](https://penpot.app/libraries-templates)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Descarrega %s ficheiros Penpot (.penpot)"
