@@ -27,25 +27,39 @@
 (def tokens-menu-ref
   (l/derived :token-context-menu refs/workspace-local))
 
+(defn additional-actions [token-type token-id]
+  (case token-type
+    :border-radius [{:title "Top Left Corner" :action #(js/console.log "Top Left Corner")}
+                    {:title "Bottom Left Corner" :action #(js/console.log "Bottom Left Corner")}
+                    {:title "Top Right Corner" :action #(js/console.log "Top Right Corner")}
+                    {:title "Bottom Right Corner" :action #(js/console.log "Bottom Right Corner")}]
+                    []))
+
+(defn generate-menu-entries [token-type-props token-id token-type]
+  (let [{:keys [modal]} token-type-props
+        default-actions [{:title "Delete Token" :action #(st/emit! (dt/delete-token token-id))}
+                         {:title "Duplicate Token" :action #(st/emit! (dt/duplicate-token token-id))}
+                         {:title "Edit Token" :action (fn [event]
+                                                         (let [{:keys [key fields]} modal
+                                                               token (dt/get-token-data-from-token-id token-id)]
+                                                           (st/emit! dt/hide-token-context-menu)
+                                                           (dom/stop-propagation event)
+                                                           (modal/show! key {:x (.-clientX ^js event)
+                                                                             :y (.-clientY ^js event)
+                                                                             :position :right
+                                                                             :fields fields
+                                                                             :token token})))}]
+        specific-actions (additional-actions token-type token-id)
+        all-actions (concat default-actions specific-actions)]
+           (map (fn [{:keys [title action]}]
+           [:& menu-entry {:title title :on-click action}])
+         all-actions)))
+
 (mf/defc token-pill-context-menu
-  [{:keys [token-id token-type-props]}]
-  (let [{:keys [modal attributes title]} token-type-props
-        do-delete #(st/emit! (dt/delete-token token-id))
-        do-duplicate #(st/emit! (dt/duplicate-token token-id))
-        do-edit (fn [event]
-                  (let [{:keys [key fields]} modal
-                        token (dt/get-token-data-from-token-id token-id)]
-                    (st/emit! dt/hide-token-context-menu)
-                    (dom/stop-propagation event)
-                    (modal/show! key {:x (.-clientX ^js event)
-                                      :y (.-clientY ^js event)
-                                      :position :right
-                                      :fields fields
-                                      :token token})))]
-    [:*
-     [:& menu-entry {:title "Delete Token" :on-click do-delete}]
-     [:& menu-entry {:title "Duplicate Token" :on-click do-duplicate}]
-     [:& menu-entry {:title "Edit Token" :on-click do-edit}]]))
+  [{:keys [token-id token-type-props token-type]}]
+  (let [menu-entries (generate-menu-entries token-type-props token-id token-type)]
+   (into [:*] menu-entries)
+    ))
 
 (mf/defc token-context-menu
   []
@@ -76,4 +90,5 @@
       (when  (= :token (:type mdata))
         [:ul {:class (stl/css :context-list)}
          [:& token-pill-context-menu {:token-id (:token-id mdata)
-                                      :token-type-props (:token-type-props mdata)}]])]]))
+                                      :token-type-props (:token-type-props mdata)
+                                      :token-type (:token-type mdata)}]])]]))
