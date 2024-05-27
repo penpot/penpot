@@ -196,13 +196,15 @@
         main-root (ths/get-shape file :main-root)
 
         ;; ==== Action
-        changes1 (cls/generate-relocate-shapes (pcb/empty-changes)
-                                               (:objects page)
-                                               #{(:parent-id main-root)} ; parents
-                                               (thi/id :main-root)       ; parent-id
-                                               (:id page)                ; page-id
-                                               0                         ; to-index
-                                               #{(thi/id :free-shape)})  ; ids
+        changes1 (cls/generate-relocate (pcb/empty-changes)
+                                        (:objects page)
+                                        (thi/id :main-root)       ; parent-id
+                                        (:id page)                ; page-id
+                                        0                         ; to-index
+                                        #{(thi/id :free-shape)})   ; ids
+
+
+
 
         updated-file (thf/apply-changes file changes1)
 
@@ -294,13 +296,13 @@
         main-child1 (ths/get-shape file :main-child1)
 
         ;; ==== Action
-        changes1     (cls/generate-relocate-shapes (pcb/empty-changes)
-                                                   (:objects page)
-                                                   #{(:parent-id main-child1)} ; parents
-                                                   (thi/id :main-root)         ; parent-id
-                                                   (:id page)                  ; page-id
-                                                   2                           ; to-index
-                                                   #{(:id main-child1)})       ; ids
+        changes1     (cls/generate-relocate (pcb/empty-changes)
+                                            (:objects page)
+                                            (thi/id :main-root)         ; parent-id
+                                            (:id page)                  ; page-id
+                                            2                           ; to-index
+                                            #{(:id main-child1)})       ; ids
+
 
         updated-file (thf/apply-changes file changes1)
 

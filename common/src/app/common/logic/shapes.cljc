@@ -204,15 +204,35 @@
                                                             (reduce ctp/remove-flow flows))))))]
     [all-parents changes]))
 
-(defn generate-relocate-shapes [changes objects parents parent-id page-id to-index ids]
-  (let [groups-to-delete
+
+(defn generate-relocate
+  [changes objects parent-id page-id to-index ids & {:keys [cell ignore-parents?]}]
+  (let [ids    (cfh/order-by-indexed-shapes objects ids)
+        shapes (map (d/getf objects) ids)
+        parent (get objects parent-id)
+        all-parents (into #{parent-id} (map #(cfh/get-parent-id objects %)) ids)
+        parents  (if ignore-parents? #{parent-id} all-parents)
+
+        children-ids
+        (->> ids
+             (mapcat #(cfh/get-children-ids-with-self objects %)))
+
+        child-heads
+        (->> ids
+             (mapcat #(ctn/get-child-heads objects %))
+             (map :id))
+
+        component-main-parent
+        (ctn/find-component-main objects parent false)
+
+        groups-to-delete
         (loop [current-id  (first parents)
                to-check    (rest parents)
                removed-id? (set ids)
                result #{}]
 
           (if-not current-id
-            ;; Base case, no next element
+                   ;; Base case, no next element
             result
 
             (let [group (get objects current-id)]
@@ -220,14 +240,14 @@
                        (not= current-id parent-id)
                        (empty? (remove removed-id? (:shapes group))))
 
-                ;; Adds group to the remove and check its parent
+                       ;; Adds group to the remove and check its parent
                 (let [to-check (concat to-check [(cfh/get-parent-id objects current-id)])]
                   (recur (first to-check)
                          (rest to-check)
                          (conj removed-id? current-id)
                          (conj result current-id)))
 
-                ;; otherwise recur
+                       ;; otherwise recur
                 (recur (first to-check)
                        (rest to-check)
                        removed-id?
@@ -247,7 +267,6 @@
                       group-ids)))
                 #{}
                 ids)
-
 
         ;; TODO: Probably implementing this using loop/recur will
         ;; be more efficient than using reduce and continuous data
@@ -283,17 +302,7 @@
                 (->> ids
                      (mapcat #(ctn/get-child-heads objects %))
                      (map :id)))
-
-        shapes-to-unconstraint ids
-
-        ordered-indexes       (cfh/order-by-indexed-shapes objects ids)
-        shapes                (map (d/getf objects) ordered-indexes)
-        parent                (get objects parent-id)
-        component-main-parent (ctn/find-component-main objects parent false)
-        child-heads
-        (->> ordered-indexes
-             (mapcat #(ctn/get-child-heads objects %))
-             (map :id))]
+        cell (or cell (ctl/get-cell-by-index parent to-index))]
 
     (-> changes
         (pcb/with-page-id page-id)
@@ -301,18 +310,23 @@
 
         ;; Remove layout-item properties when moving a shape outside a layout
         (cond-> (not (ctl/any-layout? parent))
-          (pcb/update-shapes ordered-indexes ctl/remove-layout-item-data))
+          (pcb/update-shapes ids ctl/remove-layout-item-data))
 
         ;; Remove the hide in viewer flag
         (cond-> (and (not= uuid/zero parent-id) (cfh/frame-shape? parent))
-          (pcb/update-shapes ordered-indexes #(cond-> % (cfh/frame-shape? %) (assoc :hide-in-viewer true))))
+          (pcb/update-shapes ids #(cond-> % (cfh/frame-shape? %) (assoc :hide-in-viewer true))))
 
         ;; Remove the swap slots if it is moving to a different component
-        (pcb/update-shapes child-heads
-                           (fn [shape]
-                             (cond-> shape
-                               (not= component-main-parent (ctn/find-component-main objects shape false))
-                               (ctk/remove-swap-slot))))
+        (pcb/update-shapes
+         child-heads
+         (fn [shape]
+           (cond-> shape
+             (not= component-main-parent (ctn/find-component-main objects shape false))
+             (ctk/remove-swap-slot))))
+
+        ;; Remove component-root property when moving a shape inside a component
+        (cond-> (ctn/get-instance-root objects parent)
+          (pcb/update-shapes children-ids #(dissoc % :component-root)))
 
         ;; Add component-root property when moving a component outside a component
         (cond-> (not (ctn/get-instance-root objects parent))
@@ -345,7 +359,7 @@
                              (assoc shape :component-root true)))
 
         ;; Reset constraints depending on the new parent
-        (pcb/update-shapes shapes-to-unconstraint
+        (pcb/update-shapes ids
                            (fn [shape]
                              (let [frame-id    (if (= (:type parent) :frame)
                                                  (:id parent)
@@ -370,153 +384,29 @@
                                  (assoc :layout-item-v-sizing :fix))
                                parent)))
 
-        ;; Update grid layout
+        ;; Change the grid cell in a grid layout
         (cond-> (ctl/grid-layout? objects parent-id)
-          (pcb/update-shapes [parent-id] #(ctl/add-children-to-index % ids objects to-index)))
-
-        (pcb/update-shapes parents
-                           (fn [parent objects]
-                             (cond-> parent
-                               (ctl/grid-layout? parent)
-                               (ctl/assign-cells objects)))
-                           {:with-objects? true})
-
-        (pcb/reorder-grid-children parents)
+          (-> (pcb/update-shapes
+               [parent-id]
+               (fn [frame objects]
+                 (-> frame
+                     ;; Assign the cell when pushing into a specific grid cell
+                     (cond-> (some? cell)
+                       (-> (ctl/free-cell-shapes ids)
+                           (ctl/push-into-cell ids (:row cell) (:column cell))
+                           (ctl/assign-cells objects)))
+                     (ctl/assign-cell-positions objects)))
+               {:with-objects? true})
+              (pcb/reorder-grid-children [parent-id])))
 
         ;; If parent locked, lock the added shapes
         (cond-> (:blocked parent)
-          (pcb/update-shapes ordered-indexes #(assoc % :blocked true)))
+          (pcb/update-shapes ids #(assoc % :blocked true)))
 
         ;; Resize parent containers that need to
         (pcb/resize-parents parents))))
 
 
-(defn generate-move-shapes-to-frame
-  [changes ids frame-id page-id objects drop-index [row column :as cell]]
-  (let [lookup   (d/getf objects)
-        frame    (get objects frame-id)
-        layout?  (:layout frame)
-
-        component-main-frame (ctn/find-component-main objects frame false)
-
-        shapes (->> ids
-                    (cfh/clean-loops objects)
-                    (keep lookup)
-                    ;;remove shapes inside copies, because we can't change the structure of copies
-                    (remove #(ctk/in-component-copy? (get objects (:parent-id %)))))
-
-        moving-shapes
-        (cond->> shapes
-          (not layout?)
-          (remove #(= (:frame-id %) frame-id))
-
-          layout?
-          (remove #(and (= (:frame-id %) frame-id)
-                        (not= (:parent-id %) frame-id))))
-
-        ordered-indexes (cfh/order-by-indexed-shapes objects (map :id moving-shapes))
-        moving-shapes (map (d/getf objects) ordered-indexes)
-
-        all-parents
-        (reduce (fn [res id]
-                  (into res (cfh/get-parent-ids objects id)))
-                (d/ordered-set)
-                ids)
-
-        find-all-empty-parents
-        (fn recursive-find-empty-parents [empty-parents]
-          (let [all-ids   (into empty-parents ids)
-                contains? (partial contains? all-ids)
-                xform     (comp (map lookup)
-                                (filter cfh/group-shape?)
-                                (remove #(->> (:shapes %) (remove contains?) seq))
-                                (map :id))
-                parents   (into #{} xform all-parents)]
-            (if (= empty-parents parents)
-              empty-parents
-              (recursive-find-empty-parents parents))))
-
-        empty-parents
-        ;; Any empty parent whose children are moved to another frame should be deleted
-        (if (empty? moving-shapes)
-          #{}
-          (into (d/ordered-set) (find-all-empty-parents #{})))
-
-        ;; Not move absolute shapes that won't change parent
-        moving-shapes
-        (->> moving-shapes
-             (remove (fn [shape]
-                       (and (ctl/position-absolute? shape)
-                            (= frame-id (:parent-id shape))))))
-
-        frame-component
-        (ctn/get-component-shape objects frame)
-
-        shape-ids-to-detach
-        (reduce (fn [result shape]
-                  (if (and (some? shape) (ctk/in-component-copy-not-head? shape))
-                    (let [shape-component (ctn/get-component-shape objects shape)]
-                      (if (= (:id frame-component) (:id shape-component))
-                        result
-                        (into result (cfh/get-children-ids-with-self objects (:id shape)))))
-                    result))
-                #{}
-                moving-shapes)
-
-        moving-shapes-ids
-        (map :id moving-shapes)
-
-        moving-shapes-children-ids
-        (->> moving-shapes-ids
-             (mapcat #(cfh/get-children-ids-with-self objects %)))
-
-        child-heads
-        (->> moving-shapes-ids
-             (mapcat #(ctn/get-child-heads objects %))
-             (map :id))]
-    (-> changes
-        (pcb/with-page-id page-id)
-        (pcb/with-objects objects)
-
-        ;; Remove layout-item properties when moving a shape outside a layout
-        (cond-> (not (ctl/any-layout? objects frame-id))
-          (pcb/update-shapes moving-shapes-ids ctl/remove-layout-item-data))
-
-        ;; Remove the swap slots if it is moving to a different component
-        (pcb/update-shapes
-         child-heads
-         (fn [shape]
-           (cond-> shape
-             (not= component-main-frame (ctn/find-component-main objects shape false))
-             (ctk/remove-swap-slot))))
-
-        ;; Remove component-root property when moving a shape inside a component
-        (cond-> (ctn/get-instance-root objects frame)
-          (pcb/update-shapes moving-shapes-children-ids #(dissoc % :component-root)))
-
-        ;; Add component-root property when moving a component outside a component
-        (cond-> (not (ctn/get-instance-root objects frame))
-          (pcb/update-shapes child-heads #(assoc % :component-root true)))
-
-        (pcb/update-shapes moving-shapes-ids #(cond-> % (cfh/frame-shape? %) (assoc :hide-in-viewer true)))
-        (pcb/update-shapes shape-ids-to-detach ctk/detach-shape)
-        (pcb/change-parent frame-id moving-shapes drop-index)
-
-        ;; Change the grid cell in a grid layout
-        (cond-> (ctl/grid-layout? objects frame-id)
-          (-> (pcb/update-shapes
-               [frame-id]
-               (fn [frame objects]
-                 (-> frame
-                     ;; Assign the cell when pushing into a specific grid cell
-                     (cond-> (some? cell)
-                       (-> (ctl/free-cell-shapes moving-shapes-ids)
-                           (ctl/push-into-cell moving-shapes-ids row column)
-                           (ctl/assign-cells objects)))
-                     (ctl/assign-cell-positions objects)))
-               {:with-objects? true})
-              (pcb/reorder-grid-children [frame-id])))
-        (pcb/remove-objects empty-parents))))
 
 
 (defn change-show-in-viewer [shape hide?]

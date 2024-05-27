@@ -856,15 +856,14 @@
             ids      (filter #(not (cfh/is-parent? objects parent-id %)) ids)
 
             all-parents (into #{parent-id} (map #(cfh/get-parent-id objects %)) ids)
-            parents  (if ignore-parents? #{parent-id} all-parents)
 
-            changes (cls/generate-relocate-shapes (pcb/empty-changes it)
-                                                  objects
-                                                  parents
-                                                  parent-id
-                                                  page-id
-                                                  to-index
-                                                  ids)
+            changes (cls/generate-relocate (pcb/empty-changes it)
+                                           objects
+                                           parent-id
+                                           page-id
+                                           to-index
+                                           ids
+                                           :ignore-parents? ignore-parents?)
             undo-id (js/Symbol)]
 
         (rx/of (dwu/start-undo-transaction undo-id)

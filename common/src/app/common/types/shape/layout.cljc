@@ -1474,13 +1474,15 @@
           (push-into-cell children row column))
         (assign-cells objects))))
 
+(defn get-cell-by-index
+  [parent to-index]
+  (let [cells (get-cells parent {:sort? true :remove-empty? true})
+        to-index (- (count cells) to-index)]
+    (nth cells to-index nil)))
+
 (defn add-children-to-index
   [parent ids objects to-index]
-  (let [ids (into (d/ordered-set) ids)
-        cells (get-cells parent {:sort? true :remove-empty? true})
-        to-index (- (count cells) to-index)
-        target-cell (nth cells to-index nil)]
-
+  (let [target-cell (get-cell-by-index parent to-index)]
     (cond-> parent
       (some? target-cell)
       (add-children-to-cell ids objects [(:row target-cell) (:column target-cell)]))))
