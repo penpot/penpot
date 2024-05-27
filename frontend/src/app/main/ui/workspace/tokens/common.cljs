@@ -24,10 +24,16 @@
 
 (mf/defc labeled-input
   {::mf/wrap-props false}
-  [{:keys [input-ref label default-value on-change auto-focus?]}]
-  [:label {:class (stl/css :labeled-input)}
-   [:span {:class (stl/css :label)} label]
-   [:input {:ref input-ref
-            :default-value default-value
-            :autoFocus auto-focus?
-            :on-change on-change}]])
+  [{:keys [input-ref label default-value on-change auto-focus? auto-complete?]}]
+  (let [input-props (cond-> {:ref input-ref
+                             :default-value default-value
+                             :autoFocus auto-focus?
+                             :on-change on-change}
+                      ;; Disable auto-complete on form fields for proprietary password managers
+                      ;; https://github.com/orgs/tokens-studio/projects/69/views/11?pane=issue&itemId=63724204
+                      (not auto-complete?) (assoc :data-1p-ignore true
+                                                  :data-lpignore true
+                                                  :autoComplete "off"))]
+    [:label {:class (stl/css :labeled-input)}
+     [:span {:class (stl/css :label)} label]
+     [:& :input input-props]]))
