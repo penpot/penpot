@@ -22,14 +22,6 @@
 
 ;; Components ------------------------------------------------------------------
 
-(mf/defc input
-  {::mf/wrap-props false}
-  [{:keys [type placeholder]
-    :or {type "text"}}]
-  [:input {:type type
-           :class (stl/css :input)
-           :placeholder placeholder}])
-
 (mf/defc labeled-input
   {::mf/wrap-props false}
   [{:keys [input-ref label default-value on-change auto-focus?]}]
