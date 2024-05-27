@@ -7,6 +7,7 @@
 (ns app.plugins.shape
   "RPC for plugins runtime."
   (:require
+   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.files.helpers :as cfh]
    [app.common.record :as crc]
@@ -14,6 +15,7 @@
    [app.common.text :as txt]
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
+   [app.common.uuid :as uuid]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.changes :as dwc]
    [app.main.data.workspace.selection :as dws]
@@ -196,15 +198,35 @@
            :get #(-> % proxy->shape :shadow array-to-js)
            :set (fn [self value]
                   (let [id (obj/get self "$id")
-                        value (mapv #(utils/from-js %) value)]
-                    (st/emit! (dwc/update-shapes [id] #(assoc % :shadows value)))))}
+                        value (mapv (fn [val]
+                                      ;; Merge default shadow properties
+                                      (d/patch-object
+                                       {:id (uuid/next)
+                                        :style :drop-shadow
+                                        :color {:color clr/black :opacity 0.2}
+                                        :offset-x 4
+                                        :offset-y 4
+                                        :blur 4
+                                        :spread 0
+                                        :hidden false}
+                                       (utils/from-js val)))
+                                    value)]
+                    (st/emit! (dwc/update-shapes [id] #(assoc % :shadow value)))))}
 
           {:name "blur"
            :get #(-> % proxy->shape :blur utils/to-js)
            :set (fn [self value]
-                  (let [id (obj/get self "$id")
-                        value (utils/from-js value)]
-                    (st/emit! (dwc/update-shapes [id] #(assoc % :blur value)))))}
+                  (if (nil? value)
+                    (st/emit! (dwc/update-shapes [id] #(dissoc % :blur)))
+                    (let [id (obj/get self "$id")
+                          value
+                          (d/patch-object
+                           {:id (uuid/next)
+                            :type :layer-blur
+                            :value 4
+                            :hidden false}
+                           (utils/from-js value))]
+                      (st/emit! (dwc/update-shapes [id] #(assoc % :blur value))))))}
 
           {:name "exports"
            :get #(-> % proxy->shape :exports array-to-js)
