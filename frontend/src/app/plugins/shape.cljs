@@ -13,7 +13,6 @@
    [app.common.record :as crc]
    [app.common.spec :as us]
    [app.common.text :as txt]
-   [app.common.text :as txt]
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.shape.radius :as ctsr]
@@ -348,7 +347,9 @@
 
           ;; Strokes and fills
           {:name "fills"
-           :get #(-> % proxy->shape :fills array-to-js)
+           :get #(if (cfh/text-shape? data)
+                   (-> % proxy->shape text-props :fills array-to-js)
+                   (-> % proxy->shape :fills array-to-js))
            :set (fn [self value]
                   (let [id (obj/get self "$id")
                         value (mapv #(utils/from-js %) value)]
@@ -464,4 +465,62 @@
             {:name "fontId"
              :get #(-> % proxy->shape text-props :font-id)
              :set
-             (fn [self value])}))))))
+             (fn [self value]
+               (let [id (obj/get self "$id")]
+                 (st/emit! (dwt/update-attrs id {:font-id value}))))}
+
+            {:name "fontFamily"
+             :get #(-> % proxy->shape text-props :font-family)
+             :set
+             (fn [self value]
+               (let [id (obj/get self "$id")]
+                 (st/emit! (dwt/update-attrs id {:font-id value}))))}
+
+            {:name "fontVariantId"
+             :get #(-> % proxy->shape text-props :font-variant-id)
+             :set
+             (fn [self value]
+               (let [id (obj/get self "$id")]
+                 (st/emit! (dwt/update-attrs id {:font-id value}))))}
+
+            {:name "fontSize"
+             :get #(-> % proxy->shape text-props :font-size)
+             :set
+             (fn [self value]
+               (let [id (obj/get self "$id")]
+                 (st/emit! (dwt/update-attrs id {:font-id value}))))}
+
+            {:name "fontWeight"
+             :get #(-> % proxy->shape text-props :font-weight)
+             :set
+             (fn [self value]
+               (let [id (obj/get self "$id")]
+                 (st/emit! (dwt/update-attrs id {:font-id value}))))}
+
+            {:name "fontStyle"
+             :get #(-> % proxy->shape text-props :font-style)
+             :set
+             (fn [self value]
+               (let [id (obj/get self "$id")]
+                 (st/emit! (dwt/update-attrs id {:font-style value}))))}
+
+            {:name "lineHeight"
+             :get #(-> % proxy->shape text-props :line-height)
+             :set
+             (fn [self value]
+               (let [id (obj/get self "$id")]
+                 (st/emit! (dwt/update-attrs id {:line-height value}))))}
+
+            {:name "letterSpacing"
+             :get #(-> % proxy->shape text-props :letter-spacing)
+             :set
+             (fn [self value]
+               (let [id (obj/get self "$id")]
+                 (st/emit! (dwt/update-attrs id {:letter-spacing value}))))}
+
+            {:name "textTransform"
+             :get #(-> % proxy->shape text-props :text-transform)
+             :set
+             (fn [self value]
+               (let [id (obj/get self "$id")]
+                 (st/emit! (dwt/update-attrs id {:text-transform value}))))}))))))
