@@ -83,7 +83,7 @@
       (st/emit! (on-apply {:token-id (:id token)
                            :shape-id (:id shape)
                            :attributes attributes}))
-      (on-update-shape token-value shape-ids))))
+      (on-update-shape token-value shape-ids attributes))))
 
 (defn update-shape-radius [value shape-ids]
   (st/emit!
