@@ -352,7 +352,7 @@ msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Lêers wat by biblioteke gevoeg is, sal hier verskyn. Probeer om jou lêers te "
 "deel of voeg by vanaf ons [Biblioteke en sjablone](https://penpot.app/"
-"libraries-templates.html)."
+"libraries-templates)."
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
