@@ -823,7 +823,7 @@
 
       (feat.fdata/persist-pointers! cfg file-id))))
 
-(defn- absorb-library!
+(defn- absorb-library
   "Find all files using a shared library, and absorb all library assets
   into the file local libraries"
   [cfg {:keys [id] :as library}]
@@ -841,7 +841,26 @@
            :library-id (str id)
            :files (str/join "," (map str ids)))
 
-    (run! (partial absorb-library-by-file! cfg ldata) ids)))
+    (run! (partial absorb-library-by-file! cfg ldata) ids)
+    library))
+
+(defn absorb-library!
+  [{:keys [::db/conn] :as cfg} id]
+  (let [file (-> (get-file cfg id
+                           :lock-for-update? true
+                           :include-deleted? true)
+                 (check-version!))
+
+        proj (db/get* conn :project {:id (:project-id file)}
+                      {::db/remove-deleted false})
+        team (-> (db/get* conn :team {:id (:team-id proj)}
+                          {::db/remove-deleted false})
+                 (teams/decode-row))]
+
+    (-> (cfeat/get-team-enabled-features cf/flags team)
+        (cfeat/check-file-features! (:features file)))
+
+    (absorb-library cfg file)))
 
 (defn- set-file-shared
   [{:keys [::db/conn] :as cfg} {:keys [profile-id id] :as params}]
@@ -854,25 +873,14 @@
                ;; file, we need to perform more complex operation,
                ;; so in this case we retrieve the complete file and
                ;; perform all required validations.
-               (let [file (-> (get-file cfg id :lock-for-update? true)
-                              (check-version!)
-                              (assoc :is-shared false))
-                     team (teams/get-team conn
-                                          :profile-id profile-id
-                                          :project-id (:project-id file))]
-
-                 (-> (cfeat/get-team-enabled-features cf/flags team)
-                     (cfeat/check-client-features! (:features params))
-                     (cfeat/check-file-features! (:features file)))
-
-                 (absorb-library! cfg file)
-
+               (let [file (-> (absorb-library! cfg id)
+                              (assoc :is-shared false))]
                  (db/delete! conn :file-library-rel {:library-file-id id})
                  (db/update! conn :file
                              {:is-shared false
                               :modified-at (dt/now)}
                              {:id id})
-                 file)
+                 (select-keys file [:id :name :is-shared]))
 
                (and (false? (:is-shared file))
                     (true? (:is-shared params)))
@@ -912,13 +920,19 @@
 
 ;; --- MUTATION COMMAND: delete-file
 
-(defn- mark-file-deleted!
+(defn- mark-file-deleted
   [conn file-id]
-  (db/update! conn :file
-              {:deleted-at (dt/now)}
-              {:id file-id}
-              {::db/return-keys [:id :name :is-shared :deleted-at
-                                 :project-id :created-at :modified-at]}))
+  (let [file (db/update! conn :file
+                         {:deleted-at (dt/now)}
+                         {:id file-id}
+                         {::db/return-keys [:id :name :is-shared :deleted-at
+                                            :project-id :created-at :modified-at]})]
+    (wrk/submit! {::wrk/task :delete-object
+                  ::wrk/conn conn
+                  :object :file
+                  :deleted-at (:deleted-at file)
+                  :id file-id})
+    file))
 
 (def ^:private
   schema:delete-file
@@ -929,36 +943,7 @@
 (defn- delete-file
   [{:keys [::db/conn] :as cfg} {:keys [profile-id id] :as params}]
   (check-edition-permissions! conn profile-id id)
-  (let [file (mark-file-deleted! conn id)]
-
-    (wrk/submit! {::wrk/task :delete-object
-                  ::wrk/delay (dt/duration "1m")
-                  ::wrk/conn conn
-                  :object :file
-                  :deleted-at (:deleted-at file)
-                  :id id})
-
-    ;; NOTE: when a file is a shared library, then we proceed to load
-    ;; the whole file, proceed with feature checking and properly execute
-    ;; the absorb-library procedure
-    (when (:is-shared file)
-      (let [file (-> (get-file cfg id
-                               :lock-for-update? true
-                               :include-deleted? true)
-                     (check-version!))
-
-            team (teams/get-team conn
-                                 :profile-id profile-id
-                                 :project-id (:project-id file))]
-
-
-
-        (-> (cfeat/get-team-enabled-features cf/flags team)
-            (cfeat/check-client-features! (:features params))
-            (cfeat/check-file-features! (:features file)))
-
-        (absorb-library! cfg file)))
-
+  (let [file (mark-file-deleted conn id)]
     (rph/with-meta (rph/wrap)
       {::audit/props {:project-id (:project-id file)
                       :name (:name file)

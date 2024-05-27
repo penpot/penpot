@@ -30,6 +30,8 @@
    [app.rpc.commands.files-snapshot :as fsnap]
    [app.rpc.commands.management :as mgmt]
    [app.rpc.commands.profile :as profile]
+   [app.rpc.commands.projects :as projects]
+   [app.rpc.commands.teams :as teams]
    [app.srepl.fixes :as fixes]
    [app.srepl.helpers :as h]
    [app.util.blob :as blob]
@@ -475,80 +477,107 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; RESTORE DELETED OBJECTS
+;; DELETE/RESTORE OBJECTS (WITH CASCADE, SOFT)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- restore-file*
+  [{:keys [::db/conn]} file-id]
+  (db/update! conn :file
+              {:deleted-at nil
+               :has-media-trimmed false}
+              {:id file-id})
+
+  ;; Fragments are not handled here because they
+  ;; use the database cascade operation and they
+  ;; are not marked for deletion with objects-gc
+  ;; task
+
+  (db/update! conn :file-media-object
+              {:deleted-at nil}
+              {:file-id file-id})
+
+  ;; Mark thumbnails to be deleted
+  (db/update! conn :file-thumbnail
+              {:deleted-at nil}
+              {:file-id file-id})
+
+  (db/update! conn :file-tagged-object-thumbnail
+              {:deleted-at nil}
+              {:file-id file-id})
+
+  :restored)
+
+
+
+(defn- restore-project*
+  [{:keys [::db/conn] :as cfg} project-id]
+
+  (db/update! conn :project
+              {:deleted-at nil}
+              {:id project-id})
+
+  (doseq [{:keys [id]} (db/query conn :file
+                                 {:project-id project-id}
+                                 {::db/columns [:id]})]
+    (restore-file* cfg id))
+
+  :restored)
+
+(defn- restore-team*
+  [{:keys [::db/conn] :as cfg} team-id]
+  (db/update! conn :team
+              {:deleted-at nil}
+              {:id team-id})
+
+  (db/update! conn :team-font-variant
+              {:deleted-at nil}
+              {:team-id team-id})
+
+  (doseq [{:keys [id]} (db/query conn :project
+                                 {:team-id team-id}
+                                 {::db/columns [:id]})]
+    (restore-project* cfg id))
+
+  :restored)
 
 (defn restore-deleted-team!
   "Mark a team and all related objects as not deleted"
   [team-id]
   (let [team-id (h/parse-uuid team-id)]
-    (db/tx-run! main/system
-                (fn [{:keys [::db/conn]}]
-                  (db/update! conn :team-font-variant
-                              {:deleted-at nil}
-                              {:team-id team-id})
-
-                  (doseq [project (db/update! conn :project
-                                              {:deleted-at nil}
-                                              {:team-id team-id}
-                                              {::db/return-keys [:id]
-                                               ::db/many true})]
-
-                    (doseq [file (db/update! conn :file
-                                             {:deleted-at nil
-                                              :has-media-trimmed false}
-                                             {:project-id (:id project)}
-                                             {::db/return-keys [:id]
-                                              ::db/many true})]
-
-                      ;; Fragments are not handled here because they
-                      ;; use the database cascade operation and they
-                      ;; are not marked for deletion with objects-gc
-                      ;; task
-
-                      (db/update! conn :file-media-object
-                                  {:deleted-at nil}
-                                  {:file-id (:id file)})
-
-                      ;; Mark thumbnails to be deleted
-                      (db/update! conn :file-thumbnail
-                                  {:deleted-at nil}
-                                  {:file-id (:id file)})
-
-                      (db/update! conn :file-tagged-object-thumbnail
-                                  {:deleted-at nil}
-                                  {:file-id (:id file)})))))))
-
+    (db/tx-run! main/system restore-team* team-id)))
 
 (defn restore-deleted-project!
   "Mark a project and all related objects as not deleted"
   [project-id]
   (let [project-id (h/parse-uuid project-id)]
-    (db/tx-run! main/system
-                (fn [{:keys [::db/conn]}]
-                  (doseq [file (db/update! conn :file
-                                           {:deleted-at nil
-                                            :has-media-trimmed false}
-                                           {:project-id project-id}
-                                           {::db/return-keys [:id]
-                                            ::db/many true})]
+    (db/tx-run! main/system restore-project* project-id)))
 
-                    ;; Fragments are not handled here because they use
-                    ;; the database cascade operation and they are not
-                    ;; marked for deletion with objects-gc task
+(defn restore-deleted-file!
+  "Mark a file and all related objects as not deleted"
+  [file-id]
+  (let [file-id (h/parse-uuid file-id)]
+    (db/tx-run! main/system restore-file* file-id)))
 
-                    (db/update! conn :file-media-object
-                                {:deleted-at nil}
-                                {:file-id (:id file)})
+(defn delete-team!
+  "Mark a team for deletion"
+  [team-id]
+  (let [team-id (h/parse-uuid team-id)]
+    (db/tx-run! main/system (fn [{:keys [::db/conn]}]
+                              (#'teams/delete-team conn team-id)))))
 
-                    ;; Mark thumbnails to be deleted
-                    (db/update! conn :file-thumbnail
-                                {:deleted-at nil}
-                                {:file-id (:id file)})
+(defn delete-project!
+  "Mark a project for deletion"
+  [project-id]
+  (let [project-id (h/parse-uuid project-id)]
+    (db/tx-run! main/system (fn [{:keys [::db/conn]}]
+                              (#'projects/delete-project conn project-id)))))
 
-                    (db/update! conn :file-tagged-object-thumbnail
-                                {:deleted-at nil}
-                                {:file-id (:id file)}))))))
+(defn delete-file!
+  "Mark a project for deletion"
+  [file-id]
+  (let [file-id (h/parse-uuid file-id)]
+    (db/tx-run! main/system (fn [{:keys [::db/conn]}]
+                              (#'files/mark-file-deleted conn file-id)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MISC
