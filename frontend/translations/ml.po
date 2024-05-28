@@ -221,7 +221,7 @@ msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "ഇതുവരെയും ഇവിടെ ഫയലുകളില്ല. നിങ്ങൾക്ക് ചില ടെമ്പ്ലേറ്റുകൾ "
 "പരീക്ഷിക്കണമെന്നുണ്ടെങ്കിൽ [ലൈബ്രറികളുടെയും ടെമ്പ്ലേറ്റുകളുടെയും "
-"വിഭാഗത്തിലേക്ക്] (https://penpot.app/libraries-templates.html) പോകാവുന്നതാണ്"
+"വിഭാഗത്തിലേക്ക്] (https://penpot.app/libraries-templates) പോകാവുന്നതാണ്"
 
 msgid "dashboard.export-frames"
 msgstr "ആർട്ട്ബോർഡുകൾ പിഡിഎഫായി എക്സ്പോർട്ട് ചെയ്യുക"

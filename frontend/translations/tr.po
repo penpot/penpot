@@ -415,7 +415,7 @@ msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Kütüphanelere eklenen dosyalar burada görünecektir. Dosyalarınızı "
 "paylaşmayı deneyin veya [Kütüphaneler ve "
-"şablonlarımızdan](https://penpot.app/libraries-templates.html) ekleyin."
+"şablonlarımızdan](https://penpot.app/libraries-templates) ekleyin."
 
 msgid "dashboard.export-binary-multi"
 msgstr "%s Penpot dosyasını indir (.penpot)"

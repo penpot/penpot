@@ -304,7 +304,7 @@ msgstr "Kopiraj %s datoteka"
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "O ne! Još nemaš datoteka! Ako želiš isprobati neke predloške, idi na "
-"[Biblioteke i predlošci](https://penpot.app/libraries-templates.html)"
+"[Biblioteke i predlošci](https://penpot.app/libraries-templates)"
 
 msgid "dashboard.export-binary-multi"
 msgstr "Preuzmi %s Penpot datoteke (.penpot)"

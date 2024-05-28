@@ -403,7 +403,7 @@ msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Os ficheiros adicionados às Bibliotecas irão aparecer aqui. Experimenta "
 "adicionar os teus ficheiros ou experimenta algumas das nossas [Bibliotecas "
-"e templates](https://penpot.app/libraries-templates.html)."
+"e templates](https://penpot.app/libraries-templates)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Descarrega %s ficheiros Penpot (.penpot)"

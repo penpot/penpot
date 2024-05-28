@@ -304,7 +304,7 @@ msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "وای نه! شما هنوز هیچ فایلی ندارید! اگر می‌خواهید چند الگو را امتحان کنید، "
 "به [کتابخانه‌ها و الگوها] بروید "
-"(https://penpot.app/libraries-templates.html)"
+"(https://penpot.app/libraries-templates)"
 
 #, fuzzy
 msgid "dashboard.export-binary-multi"

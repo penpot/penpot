@@ -302,7 +302,7 @@ msgstr "Duplicar % ficheiros"
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Ai non! Ainda non tes ficheiros! Se queres facer a proba con algún modelo "
-"vai a [Bibliotecas e modelos] (https://penpot.app/libraries-templates.html)"
+"vai a [Bibliotecas e modelos] (https://penpot.app/libraries-templates)"
 
 msgid "dashboard.export-binary-multi"
 msgstr "Descargar %s ficheiros Penpot (.penpot)"

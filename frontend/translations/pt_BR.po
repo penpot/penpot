@@ -303,7 +303,7 @@ msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Arquivos adicionados na biblioteca de ativos vão aparecer aqui. Tente "
 "compartilhar seus arquivos ou adicione das nossas [Bibliotecas & "
-"modelos](https://penpot.app/libraries-templates.html)."
+"modelos](https://penpot.app/libraries-templates)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Baixar %s arquivos Penpot (.penpot)"

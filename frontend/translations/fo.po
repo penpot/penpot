@@ -294,7 +294,7 @@ msgstr "Tvítak %s fílur"
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Áh nei! Tú hevur ongar fílur enn! Um tú vilt royna við nøkrum skapilónum, "
-"vitja [Libraries & templates](https://penpot.app/libraries-templates.html)"
+"vitja [Libraries & templates](https://penpot.app/libraries-templates)"
 
 msgid "dashboard.export-binary-multi"
 msgstr "Heinta %s Penpot fílur (.penpot)"

@@ -402,7 +402,7 @@ msgstr "שכפול %s קבצים"
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "קבצים שנוספו לספריות יתווספו לכאן. כדאי לנסות לשתף את הקבצים שלך או להוסיף "
-"אותם מ[הספריות והתבניות](https://penpot.app/libraries-templates.html)."
+"אותם מ[הספריות והתבניות](https://penpot.app/libraries-templates)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "הורדת %s קובצי Penpot‏ (‎.penpot)"

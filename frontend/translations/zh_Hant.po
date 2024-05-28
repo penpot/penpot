@@ -291,7 +291,7 @@ msgstr "複製 %s 個檔案"
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "添加在資料庫的檔案會在此處列出。請分享你的檔案或由我們的 [資料庫 & "
-"模板區段](https://penpot.app/libraries-templates.html) 添加。"
+"模板區段](https://penpot.app/libraries-templates) 添加。"
 
 msgid "dashboard.export-binary-multi"
 msgstr "下載 %s 個Penpot 檔案 （.penpot）"
