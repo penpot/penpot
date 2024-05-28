@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 2.1.0
+
+### :rocket: Epics and highlights
+
+### :boom: Breaking changes & Deprecations
+
+### :heart: Community contributions (Thank you!)
+
+### :sparkles: New features
+- Improve auth process [Taiga #Change Auth Process](https://tree.taiga.io/project/penpot/us/Change Auth Process)
+
+### :bug Bugs fixed
+
 ## 2.0.3
 
 ### :bug: Bugs fixed
