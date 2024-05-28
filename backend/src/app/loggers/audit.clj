@@ -53,8 +53,7 @@
                 (assoc (->> sk str/kebab (keyword "penpot")) v))))]
     (reduce-kv process-param {} params)))
 
-(def ^:private
-  profile-props
+(def profile-props
   [:id
    :is-active
    :is-muted
