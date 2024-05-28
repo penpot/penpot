@@ -12,7 +12,7 @@ jobs:
       matrix:
         include:
           - dockerfile: Dockerfile.frontend
-            type: frontend
+            type: pr-frontend
     permissions:
       contents: read
       packages: write
