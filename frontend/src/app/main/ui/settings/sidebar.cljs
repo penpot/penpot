@@ -89,6 +89,7 @@
        [:li {:class (stl/css-case :current options?
                                   :settings-item true)
              :on-click go-settings-options
+             :data-testid "settings-profile"
              :data-test "settings-profile"}
         [:span {:class (stl/css :element-title)} (tr "labels.settings")]]
 

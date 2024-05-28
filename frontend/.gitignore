@@ -10,3 +10,5 @@ node_modules/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+visual-dashboard.spec.js-snapshots
+

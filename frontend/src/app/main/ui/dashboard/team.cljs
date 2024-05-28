@@ -105,7 +105,8 @@
         [:a
          {:class (stl/css :btn-secondary :btn-small)
           :on-click on-invite-member
-          :data-test "invite-member"}
+          :data-test "invite-member"
+          :data-testid "invite-member"}
          (tr "dashboard.invite-profile")]
         [:div {:class (stl/css :blank-space)}])]]))
 
