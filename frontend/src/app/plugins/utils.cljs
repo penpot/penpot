@@ -124,30 +124,32 @@
 
 (defn from-js
   "Converts the object back to js"
-  [obj]
-  (when (some? obj)
-    (let [process-node
-          (fn process-node [node]
-            (reduce-kv
-             (fn [m k v]
-               (let [k (keyword (str/kebab k))
-                     v (cond (map? v)
-                             (process-node v)
+  ([obj]
+   (from-js obj #{:type}))
+  ([obj keyword-keys]
+   (when (some? obj)
+     (let [process-node
+           (fn process-node [node]
+             (reduce-kv
+              (fn [m k v]
+                (let [k (keyword (str/kebab k))
+                      v (cond (map? v)
+                              (process-node v)
 
-                             (vector? v)
-                             (mapv process-node v)
+                              (vector? v)
+                              (mapv process-node v)
 
-                             (and (string? v) (re-matches us/uuid-rx v))
-                             (uuid/uuid v)
+                              (and (string? v) (re-matches us/uuid-rx v))
+                              (uuid/uuid v)
 
-                             (= k :type)
-                             (keyword v)
+                              (contains? keyword-keys k)
+                              (keyword v)
 
-                             :else v)]
-                 (assoc m k v)))
-             {}
-             node))]
-      (process-node (js->clj obj)))))
+                              :else v)]
+                  (assoc m k v)))
+              {}
+              node))]
+       (process-node (js->clj obj))))))
 
 (defn to-js
   "Converts to javascript an camelize the keys"

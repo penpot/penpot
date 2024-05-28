@@ -233,7 +233,7 @@
                                         :blur 4
                                         :spread 0
                                         :hidden false}
-                                       (utils/from-js val)))
+                                       (utils/from-js val #{:style :type})))
                                     value)]
                     (st/emit! (dwc/update-shapes [id] #(assoc % :shadow value)))))}
 
