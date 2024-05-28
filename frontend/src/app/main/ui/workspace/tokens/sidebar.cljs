@@ -68,6 +68,7 @@
                            (st/emit! (dt/show-token-context-menu {:type :token
                                                                   :position (dom/get-client-position event)
                                                                   :token-type-props token-type-props
+                                                                  :token-type type
                                                                   :token-id (:id token)}))))
 
         on-toggle-open-click (mf/use-fn
