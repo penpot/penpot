@@ -5205,3 +5205,6 @@ msgstr "Plugins"
 
 msgid "workspace.plugins.menu.plugins-manager"
 msgstr "Plugins manager"
+
+msgid "workspace.plugins.plugin-list-link"
+msgstr "Plugins List"
