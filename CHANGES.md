@@ -9,7 +9,7 @@
 ### :heart: Community contributions (Thank you!)
 
 ### :sparkles: New features
-- Improve auth process [Taiga #Change Auth Process](https://tree.taiga.io/project/penpot/us/Change Auth Process)
+- Improve auth process [Taiga #Change Auth Process](https://tree.taiga.io/project/penpot/us/7094)
 
 ### :bug: Bugs fixed
 
