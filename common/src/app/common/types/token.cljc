@@ -119,8 +119,7 @@
 (def rotation-keys (schema-keys ::rotation))
 
 (sm/def! ::tokens
-  [:map {:title "Applied Tokens"
-         :closed true}])
+  [:map {:title "Applied Tokens"}])
 
 (sm/def! ::applied-tokens
   (merge-schemas ::tokens
