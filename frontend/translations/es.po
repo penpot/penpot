@@ -5332,3 +5332,5 @@ msgstr "Extensiones"
 msgid "workspace.plugins.menu.plugins-manager"
 msgstr "Gestor de extensiones"
 
+msgid "workspace.plugins.plugin-list-link"
+msgstr "Lista de extensiones"

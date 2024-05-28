@@ -18,6 +18,10 @@
   max-height: $s-472;
   width: $s-472;
   max-width: $s-472;
+
+  hr {
+    border-color: $db-tertiary;
+  }
 }
 
 .close-btn {
@@ -31,7 +35,7 @@
 
 .modal-title {
   @include headlineMediumTypography;
-  margin-block-end: $s-16;
+  margin-block-end: $s-32;
   color: var(--modal-title-foreground-color);
 }
 
@@ -88,7 +92,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: $s-12;
 }
 
 .plugins-list-element {
@@ -115,45 +119,47 @@
 
 .plugin-title {
   @include bodyMediumTypography;
-  color: #ffffff;
+  color: $df-primary;
 }
 
 .plugin-summary {
   @include bodySmallTypography;
-  color: #8f9da3;
+  color: $df-secondary;
 }
 
 .plugins-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
-  margin-top: 3rem;
+  gap: $s-20;
+  margin-top: $s-16;
 }
 
 .plugins-empty-logo {
-  width: 44px;
-  height: 44px;
+  width: $s-44;
+  height: $s-44;
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #212426;
+  background: $db-tertiary;
 
   svg {
-    width: 16px;
-    height: 16px;
-    fill: #8f9da3;
+    width: $s-16;
+    height: $s-16;
+    fill: none;
+    stroke: $df-secondary;
+    stroke-width: 0.8px;
   }
 }
 
 .plugins-empty-text {
   @include bodySmallTypography;
-  color: white;
+  color: $df-primary;
 }
 
 div.input-error {
-  border: 1px solid var(--input-border-color-error);
+  border: $s-1 solid var(--input-border-color-error);
 }
 
 .info {
@@ -166,5 +172,21 @@ div.input-error {
 
   &.success {
     color: var(--input-border-color-success);
+  }
+}
+
+.plugins-link {
+  color: $da-primary;
+  font-size: $fs-12;
+  display: inline-flex;
+  align-items: center;
+  gap: $s-4;
+
+  svg {
+    margin-top: calc(-1 * var($s-2));
+    width: $s-12;
+    height: $s-12;
+    stroke: $da-primary;
+    fill: none;
   }
 }

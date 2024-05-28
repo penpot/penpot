@@ -185,19 +185,22 @@
 
        [:hr]
 
-       [:& title-bar {:collapsable false
-                      :title (tr "workspace.plugins.installed-plugins")}]
-
        (if (empty? plugins-state)
          [:div {:class (stl/css :plugins-empty)}
-          [:div {:class (stl/css :plugins-empty-logo)} i/logo-icon]
-          [:div {:class (stl/css :plugins-empty-text)} (tr "workspace.plugins.empty-plugins")]]
+          [:div {:class (stl/css :plugins-empty-logo)} i/rocket]
+          [:div {:class (stl/css :plugins-empty-text)} (tr "workspace.plugins.empty-plugins")]
+          [:a {:class (stl/css :plugins-link) :href "#"}
+           (tr "workspace.plugins.plugin-list-link") i/external-link]]
 
-         [:div {:class (stl/css :plugins-list)}
+         [:*
+          [:& title-bar {:collapsable false
+                         :title (tr "workspace.plugins.installed-plugins")}]
 
-          (for [[idx manifest] (d/enumerate plugins-state)]
-            [:& plugin-entry {:key (dm/str "plugin-" idx)
-                              :index idx
-                              :manifest manifest
-                              :on-open-plugin handle-open-plugin
-                              :on-remove-plugin handle-remove-plugin}])])]]]))
+          [:div {:class (stl/css :plugins-list)}
+
+           (for [[idx manifest] (d/enumerate plugins-state)]
+             [:& plugin-entry {:key (dm/str "plugin-" idx)
+                               :index idx
+                               :manifest manifest
+                               :on-open-plugin handle-open-plugin
+                               :on-remove-plugin handle-remove-plugin}])]])]]]))
