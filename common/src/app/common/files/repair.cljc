@@ -460,6 +460,21 @@
         (pcb/with-library-data file-data)
         (pcb/update-component (:id shape) repair-component))))
 
+(defmethod repair-error :missing-slot
+  [_ {:keys [shape page-id args] :as error} file-data _]
+  (let [repair-shape
+        (fn [shape]
+          ;; Set the desired swap slot
+          (let [slot (:swap-slot args)]
+            (when (some? slot)
+              (log/debug :hint (str "  -> set swap-slot to " slot))
+              (update shape :touched cfh/set-touched-group (ctk/build-swap-slot-group slot)))))]
+
+    (log/dbg :hint "repairing shape :missing-slot" :id (:id shape) :name (:name shape) :page-id page-id)
+    (-> (pcb/empty-changes nil page-id)
+        (pcb/with-file-data file-data)
+        (pcb/update-shapes [(:id shape)] repair-shape))))
+
 (defmethod repair-error :default
   [_ error file _]
   (log/error :hint "Unknown error code, don't know how to repair" :code (:code error))
