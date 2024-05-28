@@ -27,7 +27,8 @@
    [app.plugins.flex :as flex]
    [app.plugins.grid :as grid]
    [app.plugins.utils :as utils :refer [locate-objects locate-shape proxy->shape array-to-js]]
-   [app.util.object :as obj]))
+   [app.util.object :as obj]
+   [app.util.text-editor :as ted]))
 
 (declare shape-proxy)
 
@@ -451,6 +452,17 @@
              :set
              (fn [self value]
                (let [id (obj/get self "$id")]
+                 ;; The user is currently editing the text. We need to update the
+                 ;; editor as well
+                 (when (contains? (:workspace-editor-state @st/state) id)
+                   (let [shape (proxy->shape self)
+                         editor
+                         (-> shape
+                             (txt/change-text value)
+                             :content
+                             ted/import-content
+                             ted/create-editor-state)]
+                     (st/emit! (dwt/update-editor-state shape editor))))
                  (st/emit! (dwc/update-shapes [id] #(txt/change-text % value)))))}
 
             {:name "growType"
