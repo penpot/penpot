@@ -11,7 +11,7 @@
 ### :sparkles: New features
 - Improve auth process [Taiga #Change Auth Process](https://tree.taiga.io/project/penpot/us/Change Auth Process)
 
-### :bug Bugs fixed
+### :bug: Bugs fixed
 
 ## 2.0.3
 
@@ -134,7 +134,7 @@
 - [REDESIGN] Panels visual separations [Taiga #6692](https://tree.taiga.io/project/penpot/us/6692)
 - [REDESIGN] Onboarding slides [Taiga #6678](https://tree.taiga.io/project/penpot/us/6678)
 
-### :bug Bugs fixed
+### :bug: Bugs fixed
 - Fix pixelated thumbnails [Github #3681](https://github.com/penpot/penpot/issues/3681), [Github #3661](https://github.com/penpot/penpot/issues/3661)
 - Fix problem with not applying colors to boards [Github #3941](https://github.com/penpot/penpot/issues/3941)
 - Fix problem with path editor undoing changes [Github #3998](https://github.com/penpot/penpot/issues/3998)
