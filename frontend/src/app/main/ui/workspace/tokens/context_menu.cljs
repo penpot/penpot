@@ -50,7 +50,7 @@
                          :token-type-props updated-token-type-props
                          :selected-shapes selected-shapes})))
 
-(defn additional-actions [token-type token-id selected-shapes token-type-props]
+(defn additional-actions [{:keys [token-id token-type-props token-type selected-shapes] :as context-data}]
   (case token-type
     :border-radius [{:title "All" :action #(apply-border-radius-token token-id token-type-props :all selected-shapes)}
                     {:title "Top Left" :action #(apply-border-radius-token token-id token-type-props :r1 selected-shapes)}
@@ -59,7 +59,7 @@
                     {:title "Bottom Left" :action #(apply-border-radius-token token-id token-type-props :r4 selected-shapes)}]
     []))
 
-(defn generate-menu-entries [token-type-props token-id token-type selected-shapes]
+(defn generate-menu-entries [{:keys [token-id token-type-props token-type selected-shapes] :as context-data}]
   (let [{:keys [modal]} token-type-props
         default-actions [{:title "Delete Token" :action #(st/emit! (dt/delete-token token-id))}
                          {:title "Duplicate Token" :action #(st/emit! (dt/duplicate-token token-id))}
@@ -73,15 +73,15 @@
                                                                             :position :right
                                                                             :fields fields
                                                                             :token token})))}]
-        specific-actions (additional-actions token-type token-id selected-shapes token-type-props)
+        specific-actions (additional-actions context-data)
         all-actions (concat default-actions specific-actions)]
     all-actions))
 
 (mf/defc token-pill-context-menu
-  [{:keys [token-id token-type-props token-type selected-shapes]}]
-  (let [menu-entries (generate-menu-entries token-type-props token-id token-type selected-shapes)]
-    [:* (for [[index entry] (d/enumerate menu-entries)]
-          [:& menu-entry {:title (:title entry) :on-click (:action entry)}])]))
+  [{:keys [token-id token-type-props token-type selected-shapes] :as context-data}]
+  (let [menu-entries (generate-menu-entries context-data)]
+    (for [[index entry] (d/enumerate menu-entries)]
+      [:& menu-entry {:title (:title entry) :on-click (:action entry) :key index}])))
 
 (mf/defc token-context-menu
   []
