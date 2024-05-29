@@ -116,7 +116,7 @@ jobs:
           name: "backend tests"
           working_directory: "./backend"
           command: |
-            clojure -X:dev:test :patterns '["backend-tests.*-test"]'
+            clojure -M:dev:test
 
           environment:
             PENPOT_TEST_DATABASE_URI: "postgresql://localhost/penpot_test"

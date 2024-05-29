@@ -2,4 +2,5 @@
 {:tests
  [{:id          :unit
    :test-paths  ["test" "src"]
-   :ns-patterns [".*-test$"]}]}
+   :ns-patterns [".*-test$"]
+   :kaocha/reporter [kaocha.report/dots]}]}
