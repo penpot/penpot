@@ -62,7 +62,7 @@
                   [:span {:class (stl/css :check-icon)} i/tick]])))]]])
 
 (mf/defc editable-select
-  [{:keys [value options class on-change placeholder on-blur on-token-remove position input-props] :as params}]
+  [{:keys [value options disabled class on-change placeholder on-blur on-token-remove position input-props] :as params}]
   (let [{:keys [type]} input-props
         input-class (:class input-props)
         state* (mf/use-state {:id (uuid/next)
@@ -215,7 +215,8 @@
       (mf/set-ref-val! emit-blur? (not is-open?)))
 
 
-    [:div {:class (dm/str class " " (stl/css :editable-select))}
+    [:div {:class (dm/str class " " (stl/css-case :editable-select true
+                                                  :editable-select-disabled disabled))}
      (when-let [{:keys [label value]} token]
        [:div {:title (str label ": " value)
               :class (stl/css :token-pill)}
