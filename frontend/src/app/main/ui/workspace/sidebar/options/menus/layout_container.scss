@@ -84,6 +84,7 @@
   gap: $s-4;
   .column-gap {
     @extend .input-element;
+    position: relative;
     width: $s-108;
     &.disabled {
       @extend .disabled-input;
@@ -91,6 +92,7 @@
   }
   .row-gap {
     @extend .input-element;
+    position: relative;
     width: $s-108;
     &.disabled {
       @extend .disabled-input;

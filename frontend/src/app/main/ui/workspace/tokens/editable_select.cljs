@@ -62,8 +62,10 @@
                   [:span {:class (stl/css :check-icon)} i/tick]])))]]])
 
 (mf/defc editable-select
-  [{:keys [value type options class on-change placeholder on-blur input-class on-token-remove position] :as params}]
-  (let [state* (mf/use-state {:id (uuid/next)
+  [{:keys [value options disabled class on-change placeholder on-blur on-token-remove position input-props] :as params}]
+  (let [{:keys [type]} input-props
+        input-class (:class input-props)
+        state* (mf/use-state {:id (uuid/next)
                               :is-open? false
                               :current-value value
                               :token-value nil
@@ -107,11 +109,11 @@
           (swap! state* assoc :token-value value))
 
         set-value
-        (fn [value]
+        (fn [value event]
           (swap! state* assoc
                  :current-value value
                  :token-value value)
-          (when on-change (on-change value)))
+          (when on-change (on-change value event)))
 
         select-item
         (mf/use-fn
@@ -133,7 +135,7 @@
         (fn [event]
           (let [value (-> event dom/get-target dom/get-value)
                 value (or (d/parse-double value) value)]
-            (set-value value)))
+            (set-value value event)))
 
         handle-token-change-input
         (fn [event]
@@ -153,6 +155,7 @@
                          no-text-selected? (str/empty? (.toString (js/document.getSelection)))
                          delete-token? (and backspace? caret-at-beginning? no-text-selected?)
                          replace-token-with-value? (and enter? (seq (str/trim value)))]
+                     (js/console.log "key-down" token delete-token?)
                      (cond
                        delete-token? (do
                                        (dom/prevent-default event)
@@ -212,37 +215,42 @@
       (mf/set-ref-val! emit-blur? (not is-open?)))
 
 
-    [:div {:class (dm/str class " " (stl/css :editable-select))}
+    [:div {:class (dm/str class " " (stl/css-case :editable-select true
+                                                  :editable-select-disabled disabled))}
      (when-let [{:keys [label value]} token]
        [:div {:title (str label ": " value)
               :class (stl/css :token-pill)}
         value])
      (cond
-       token [:input {:value (or (:token-value state) "")
-                      :class input-class
-                      :on-change handle-token-change-input
-                      :on-key-down handle-key-down
-                      :on-focus handle-focus
-                      :on-blur handle-blur}]
-       (= type "number") [:> numeric-input* {:autoFocus refocus?
-                                             :value (or current-value "")
-                                             :className input-class
-                                             :on-change set-value
-                                             :on-focus handle-focus
-                                             :on-blur handle-blur
-                                             :placeholder placeholder}]
-       :else [:input {:value (or current-value "")
-                      :class input-class
-                      :on-change handle-change-input
-                      :on-key-down handle-key-down
-                      :on-focus handle-focus
-                      :on-blur handle-blur
-                      :placeholder placeholder
-                      :type type}])
+       token [:& :input (merge input-props
+                               {:value (or (:token-value state) "")
+                                :type "text"
+                                :class input-class
+                                :onChange handle-token-change-input
+                                :onKeyDown handle-key-down
+                                :onFocus handle-focus
+                                :onBlur handle-blur})]
+       (= type "number") [:& numeric-input* (merge input-props
+                                                   {:autoFocus refocus?
+                                                    :value (or current-value "")
+                                                    :className input-class
+                                                    :onChange set-value
+                                                    :onFocus handle-focus
+                                                    :onBlur handle-blur
+                                                    :placeholder placeholder})]
+       :else [:& :input (merge input-props
+                               {:value (or current-value "")
+                                :class input-class
+                                :onChange handle-change-input
+                                :onKeyDown handle-key-down
+                                :onFocus handle-focus
+                                :onBlur handle-blur
+                                :placeholder placeholder
+                                :type type})])
 
      (when (seq options)
-       [:span {:class (stl/css :dropdown-button)
-               :on-click toggle-dropdown}
+       [:div {:class (stl/css :dropdown-button)
+              :on-click toggle-dropdown}
         i/arrow])
 
      (when (and is-open? (seq options))

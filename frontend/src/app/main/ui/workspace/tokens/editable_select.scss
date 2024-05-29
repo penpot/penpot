@@ -30,6 +30,7 @@
   .dropdown-button {
     @include flexCenter;
     margin-right: -$s-8;
+    padding-right: $s-8;
     padding-left: 0;
     aspect-ratio: 0.8 / 1;
     width: auto;
@@ -88,6 +89,12 @@
       padding: 0;
       display: flex;
 
+      & > span {
+        display: flex;
+        justify-content: flex-start;
+        align-content: center;
+      }
+
       .label,
       .value {
         width: fit-content;
@@ -100,6 +107,7 @@
 
       .value {
         text-align: right;
+        justify-content: flex-end;
         flex: 0.6;
       }
 
@@ -129,4 +137,8 @@
       }
     }
   }
+}
+
+.editable-select-disabled {
+  pointer-events: none;
 }

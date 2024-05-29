@@ -27,6 +27,8 @@
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
+   [app.main.ui.workspace.tokens.core :as wtc]
+   [app.main.ui.workspace.tokens.editable-select :refer [editable-select]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -507,7 +509,7 @@
 
 (mf/defc gap-section
   {::mf/props :obj}
-  [{:keys [is-column wrap-type on-change value]
+  [{:keys [is-column wrap-type on-change value spacing-column-options spacing-row-options]
     :or {wrap-type :none}
     :as props}]
   (let [nowrap? (= :nowrap wrap-type)
@@ -541,38 +543,45 @@
                     :disabled row-gap-disabled?)
             :title "Row gap"}
       [:span {:class (stl/css :icon)} i/gap-vertical]
-      [:> numeric-input*
-       {:class (stl/css :numeric-input true)
-        :no-validate true
+      [:& editable-select
+       {:disabled row-gap-disabled?
         :placeholder "--"
-        :data-type "row-gap"
-        :data-wrap-type (d/name wrap-type)
-        :on-focus on-gap-focus
         :on-change on-change'
         :on-blur on-gap-blur
-        :nillable true
-        :min 0
+        :on-token-remove js/console.log
+        :options spacing-column-options
+        :position :left
         :value (:row-gap value)
-        :disabled row-gap-disabled?}]]
+        :input-props {:type "number"
+                      :data-type "row-gap"
+                      :data-wrap-type (d/name wrap-type)
+                      :no-validate true
+                      :nillable true
+                      :min 0
+                      :class (stl/css :numeric-input)}}]]
 
      [:div {:class (stl/css-case
                     :column-gap true
                     :disabled col-gap-disabled?)
             :title "Column gap"}
       [:span {:class (stl/css :icon)} i/gap-horizontal]
-      [:> numeric-input*
-       {:class (stl/css :numeric-input true)
-        :no-validate true
+      [:& editable-select
+       {:disabled col-gap-disabled?
         :placeholder "--"
-        :data-type "column-gap"
-        :data-wrap-type (d/name wrap-type)
-        :on-focus on-gap-focus
         :on-change on-change'
         :on-blur on-gap-blur
-        :nillable true
-        :min 0
+        :on-token-remove js/console.log
+        :options spacing-row-options
+        :position :right
         :value (:column-gap value)
-        :disabled col-gap-disabled?}]]]))
+        :input-props {:type "number"
+                      :data-type "column-gap"
+                      :data-wrap-type (d/name wrap-type)
+                      :no-validate true
+                      :onFocus on-gap-focus
+                      :nillable true
+                      :min 0
+                      :class (stl/css :numeric-input)}}]]]))
 
 ;; GRID COMPONENTS
 
@@ -823,9 +832,9 @@
   (st/emit! (dom/open-new-window cf/grid-help-uri)))
 
 (mf/defc layout-container-menu
-  {::mf/memo #{:ids :values :multiple}
+  {::mf/memo #{:ids :values :multiple :shape}
    ::mf/props :obj}
-  [{:keys [ids values multiple]}]
+  [{:keys [ids values multiple] :as props}]
   (let [;; Display
         layout-type    (:layout values)
         has-layout?    (some? layout-type)
@@ -838,6 +847,29 @@
 
         on-toggle-visibility
         (mf/use-fn #(swap! open* not))
+
+        shape (when-not multiple
+                (first (deref (refs/objects-by-id ids))))
+        tokens (mf/deref refs/workspace-tokens)
+        spacing-tokens (mf/use-memo (mf/deps tokens) #(:spacing (wtc/group-tokens-by-type tokens)))
+
+        spacing-column-options (mf/use-memo
+                                (mf/deps shape spacing-tokens)
+                                #(when shape
+                                   (wtc/tokens-name-map->select-options
+                                    {:shape shape
+                                     :tokens spacing-tokens
+                                     :attributes (wtc/token-attributes :spacing)
+                                     :selected-attributes #{:spacing-column}})))
+
+        spacing-row-options (mf/use-memo
+                             (mf/deps shape spacing-tokens)
+                             #(when shape
+                                (wtc/tokens-name-map->select-options
+                                 {:shape shape
+                                  :tokens spacing-tokens
+                                  :attributes (wtc/token-attributes :spacing)
+                                  :selected-attributes #{:spacing-row}})))
 
         on-add-layout
         (mf/use-fn
@@ -1084,7 +1116,9 @@
            [:& gap-section {:is-column is-column
                             :wrap-type wrap-type
                             :on-change on-gap-change
-                            :value (:layout-gap values)}]
+                            :value (:layout-gap values)
+                            :spacing-column-options spacing-column-options
+                            :spacing-row-options spacing-row-options}]
 
            [:& padding-section {:value (:layout-padding values)
                                 :type (:layout-padding-type values)

@@ -238,10 +238,3 @@
 .checkbox-button {
   @extend .button-icon;
 }
-
-.token-select {
-  li > span {
-    display: flex;
-    align-content: center;
-  }
-}
