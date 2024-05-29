@@ -22,6 +22,8 @@
    [app.common.schema :as sm]
    [app.common.svg :as csvg]
    [app.common.text :as txt]
+   [app.common.types.component :as ctk]
+   [app.common.types.file :as ctf]
    [app.common.types.shape :as cts]
    [app.common.types.shape.shadow :as ctss]
    [app.common.uuid :as uuid]
@@ -898,6 +900,29 @@
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
 
+(defn migrate-up-47
+  [data]
+  (letfn [(fix-shape [page shape]
+            (let [file {:id (:id data) :data data}
+                  component-file (:component-file shape)
+                  ;; On cloning a file, the component-file of the shapes point to the old file id
+                  ;; this is a workaround to be able to found the components in that case
+                  libraries {component-file {:id component-file :data data}}
+                  ref-shape  (ctf/find-ref-shape file page libraries shape {:include-deleted? true :with-context? true})
+                  ref-parent (get (:objects (:container (meta ref-shape))) (:parent-id ref-shape))
+                  shape-swap-slot (ctk/get-swap-slot shape)
+                  ref-swap-slot   (ctk/get-swap-slot ref-shape)]
+              (if (and (some? shape-swap-slot)
+                       (= shape-swap-slot ref-swap-slot)
+                       (ctk/main-instance? ref-parent))
+                (ctk/remove-swap-slot shape)
+                shape)))
+
+          (update-page [page]
+            (d/update-when page :objects update-vals (partial fix-shape page)))]
+    (-> data
+        (update :pages-index update-vals update-page))))
+
 (def migrations
   "A vector of all applicable migrations"
   [{:id 2 :migrate-up migrate-up-2}
@@ -935,4 +960,5 @@
    {:id 43 :migrate-up migrate-up-43}
    {:id 44 :migrate-up migrate-up-44}
    {:id 45 :migrate-up migrate-up-45}
-   {:id 46 :migrate-up migrate-up-46}])
+   {:id 46 :migrate-up migrate-up-46}
+   {:id 47 :migrate-up migrate-up-47}])
