@@ -249,8 +249,8 @@
                                 :type type})])
 
      (when (seq options)
-       [:span {:class (stl/css :dropdown-button)
-               :on-click toggle-dropdown}
+       [:div {:class (stl/css :dropdown-button)
+              :on-click toggle-dropdown}
         i/arrow])
 
      (when (and is-open? (seq options))

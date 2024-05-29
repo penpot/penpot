@@ -30,6 +30,7 @@
   .dropdown-button {
     @include flexCenter;
     margin-right: -$s-8;
+    padding-right: $s-8;
     padding-left: 0;
     aspect-ratio: 0.8 / 1;
     width: auto;
