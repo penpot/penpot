@@ -883,7 +883,7 @@
                                {:shape shape
                                 :tokens spacing-tokens
                                 :attributes (wtc/token-attributes :spacing)
-                                :selected-attributes #{:padding-p1}})))
+                                :selected-attributes #{:padding-p1 :padding-p3}})))
 
         padding-y-options (mf/use-memo
                            (mf/deps shape spacing-tokens)
@@ -892,7 +892,7 @@
                                {:shape shape
                                 :tokens spacing-tokens
                                 :attributes (wtc/token-attributes :spacing)
-                                :selected-attributes #{:padding-p2}})))
+                                :selected-attributes #{:padding-p2 :padding-p4}})))
 
         on-add-layout
         (mf/use-fn
@@ -991,11 +991,13 @@
              (cond
                (and (= type :simple) (= prop :p1))
                (st/emit! (dwsl/update-layout ids {:layout-padding {:p1 val :p3 val}
-                                                  :applied-tokens {:padding-p1 (if token-value (:id value) nil)}}))
+                                                  :applied-tokens {:padding-p1 (if token-value (:id value) nil)
+                                                                   :padding-p3 (if token-value (:id value) nil)}}))
 
                (and (= type :simple) (= prop :p2))
                (st/emit! (dwsl/update-layout ids {:layout-padding {:p2 val :p4 val}
-                                                  :applied-tokens {:padding-p2 (if token-value (:id value) nil)}}))
+                                                  :applied-tokens {:padding-p2 (if token-value (:id value) nil)
+                                                                   :padding-p4 (if token-value (:id value) nil)}}))
 
                (some? prop)
                (st/emit! (dwsl/update-layout ids {:layout-padding {prop val}}))))))
