@@ -7,9 +7,11 @@
 (ns app.plugins.library
   "RPC for plugins runtime."
   (:require
+   [app.common.colors :as cc]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.record :as cr]
+   [app.main.data.workspace.libraries :as dwl]
    [app.main.store :as st]
    [app.plugins.utils :as u]))
 
@@ -53,13 +55,32 @@
    {:name "id" :get (fn [_] (dm/str id))}
 
    {:name "name"
-    :get #(-> % u/proxy->library-color :name)}
+    :get #(-> % u/proxy->library-color :name)
+    :set
+    (fn [_ value]
+      (if (and (some? value) (string? value))
+        (st/emit! (dwl/rename-color file-id id value))
+        (u/display-not-valid :library-color-name value)))}
 
    {:name "color"
-    :get #(-> % u/proxy->library-color :color)}
+    :get #(-> % u/proxy->library-color :color)
+    :set
+    (fn [self value]
+      (if (and (some? value) (string? value) (cc/valid-hex-color? value))
+        (let [color (-> (u/proxy->library-color self)
+                        (assoc :color value))]
+          (st/emit! (dwl/update-color color file-id)))
+        (u/display-not-valid :library-color-color value)))}
 
    {:name "opacity"
-    :get #(-> % u/proxy->library-color :opacity)}
+    :get #(-> % u/proxy->library-color :opacity)
+    :set
+    (fn [self value]
+      (if (and (some? value) (number? value) (>= value 0) (<= value 1))
+        (let [color (-> (u/proxy->library-color self)
+                        (assoc :opacity value))]
+          (st/emit! (dwl/update-color color file-id)))
+        (u/display-not-valid :library-color-color value)))}
 
    {:name "gradient"
     :get #(-> % u/proxy->library-color :gradient u/to-js)}
@@ -96,8 +117,7 @@
    {:name "$id" :enumerable false :get (constantly id)}
    {:name "$file" :enumerable false :get (constantly file-id)}
    {:name "id" :get (fn [_] (dm/str id))}
-   {:name "name"
-    :get #(-> % u/proxy->library-component :name)}))
+   {:name "name" :get #(-> % u/proxy->library-component :name)}))
 
 (deftype Library [$id]
   Object)
