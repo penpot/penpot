@@ -453,34 +453,34 @@
          [:span {:class (stl/css :icon-text)} "W"]
          [:& editable-select
           {:placeholder (if (= :multiple (:rx values)) (tr "settings.multiple") "--")
-           :no-validate true
-           :min 0.01
            :class (stl/css :token-select)
            :disabled disabled-width-sizing?
-           :input-class (stl/css :numeric-input)
            :on-change on-width-change
            :on-token-remove #(on-width-change (wtc/maybe-resolve-token-value %))
            :options width-options
            :position :left
-           :type "number"
-           :value (:width values)}]]
+           :value (:width values)
+           :input-props {:type "number"
+                         :no-validate true
+                         :input-class (stl/css :numeric-input)
+                         :min 0.01}}]]
         [:div {:class (stl/css-case :height true
                                     :disabled disabled-height-sizing?)
                :title (tr "workspace.options.height")}
          [:span {:class (stl/css :icon-text)} "H"]
          [:& editable-select
           {:placeholder (if (= :multiple (:rx values)) (tr "settings.multiple") "--")
-           :no-validate true
-           :min 0.01
            :class (stl/css :token-select)
            :disabled disabled-height-sizing?
-           :input-class (stl/css :numeric-input)
            :on-change on-height-change
            :on-token-remove #(on-height-change (wtc/maybe-resolve-token-value %))
            :options height-options
            :position :right
-           :type "number"
-           :value (:height values)}]]
+           :value (:height values)
+           :input-props {:type "number"
+                         :no-validate true
+                         :class (stl/css :numeric-input)
+                         :min 0.01}}]]
         [:button {:class (stl/css-case
                           :lock-size-btn true
                           :selected (true? proportion-lock)
@@ -539,15 +539,15 @@
                [:span {:class (stl/css :icon)}  i/corner-radius]
                [:& editable-select
                 {:placeholder (if (= :multiple (:rx values)) (tr "settings.multiple") "--")
-                 :min 0
                  :class (stl/css :token-select)
-                 :input-class (stl/css :numeric-input)
                  :on-change on-radius-1-change
                  :on-token-remove on-border-radius-token-unapply
                  :options border-radius-options
                  :position :right
-                 :type "number"
-                 :value (:rx values)}]]
+                 :value (:rx values)
+                 :input-props {:type "number"
+                               :class (stl/css :numeric-input)
+                               :min 0}}]]
 
               @radius-multi?
               [:div {:class (stl/css :radius-1)
