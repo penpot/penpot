@@ -109,11 +109,11 @@
           (swap! state* assoc :token-value value))
 
         set-value
-        (fn [value]
+        (fn [value event]
           (swap! state* assoc
                  :current-value value
                  :token-value value)
-          (when on-change (on-change value)))
+          (when on-change (on-change value event)))
 
         select-item
         (mf/use-fn
@@ -135,7 +135,7 @@
         (fn [event]
           (let [value (-> event dom/get-target dom/get-value)
                 value (or (d/parse-double value) value)]
-            (set-value value)))
+            (set-value value event)))
 
         handle-token-change-input
         (fn [event]
