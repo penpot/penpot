@@ -160,7 +160,7 @@
                   (let [id (obj/get self "$id")
                         shape (proxy->shape self)]
                     (when (us/safe-int? value)
-                      (when (ctsr/radius-4? shape)
+                      (when (or (not (ctsr/has-radius? shape)) (ctsr/radius-4? shape))
                         (st/emit! (dwc/update-shapes [id] ctsr/switch-to-radius-1)))
                       (st/emit! (dwc/update-shapes [id] #(ctsr/set-radius-1 % value))))))}
 
@@ -170,7 +170,7 @@
                   (let [id (obj/get self "$id")
                         shape (proxy->shape self)]
                     (when (us/safe-int? value)
-                      (when (ctsr/radius-4? shape)
+                      (when (or (not (ctsr/has-radius? shape)) (not (ctsr/radius-4? shape)))
                         (st/emit! (dwc/update-shapes [id] ctsr/switch-to-radius-4)))
                       (st/emit! (dwc/update-shapes [id] #(ctsr/set-radius-4 % :r1 value))))))}
 
@@ -180,7 +180,7 @@
                   (let [id (obj/get self "$id")
                         shape (proxy->shape self)]
                     (when (us/safe-int? value)
-                      (when (ctsr/radius-4? shape)
+                      (when (or (not (ctsr/has-radius? shape)) (not (ctsr/radius-4? shape)))
                         (st/emit! (dwc/update-shapes [id] ctsr/switch-to-radius-4)))
                       (st/emit! (dwc/update-shapes [id] #(ctsr/set-radius-4 % :r2 value))))))}
 
@@ -190,7 +190,7 @@
                   (let [id (obj/get self "$id")
                         shape (proxy->shape self)]
                     (when (us/safe-int? value)
-                      (when (ctsr/radius-4? shape)
+                      (when (or (not (ctsr/has-radius? shape)) (not (ctsr/radius-4? shape)))
                         (st/emit! (dwc/update-shapes [id] ctsr/switch-to-radius-4)))
                       (st/emit! (dwc/update-shapes [id] #(ctsr/set-radius-4 % :r3 value))))))}
 
@@ -200,7 +200,7 @@
                   (let [id (obj/get self "$id")
                         shape (proxy->shape self)]
                     (when (us/safe-int? value)
-                      (when (ctsr/radius-4? shape)
+                      (when (or (not (ctsr/has-radius? shape)) (not (ctsr/radius-4? shape)))
                         (st/emit! (dwc/update-shapes [id] ctsr/switch-to-radius-4)))
                       (st/emit! (dwc/update-shapes [id] #(ctsr/set-radius-4 % :r4 value))))))}
 
@@ -360,7 +360,7 @@
            :get #(-> % proxy->shape :strokes array-to-js)
            :set (fn [self value]
                   (let [id (obj/get self "$id")
-                        value (mapv #(utils/from-js %) value)]
+                        value (mapv #(utils/from-js % #{:stroke-style :stroke-alignment}) value)]
                     (st/emit! (dwc/update-shapes [id] #(assoc % :strokes value)))))}
 
           {:name "layoutChild"

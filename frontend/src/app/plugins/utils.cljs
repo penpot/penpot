@@ -188,3 +188,7 @@
               (remove-watch ret-v ::watcher)
               (resolve value)))))]
     [ret-v ret-p]))
+
+(defn display-not-valid
+  [code value]
+  (.error js/console (dm/str "[PENPOT PLUGIN] Value not valid: " value ". Code: " code)))
