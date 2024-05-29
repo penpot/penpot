@@ -39,8 +39,17 @@ export default defineConfig({
   /* Configure projects for major browsers */
   projects: [
     {
-      name: "chromium",
+      name: "default",
       use: { ...devices["Desktop Chrome"] },
+      testDir: "./playwright/ui/specs",
+    },
+    {
+      name: "ds",
+      use: { ...devices["Desktop Chrome"] },
+      testDir: "./playwright/ui/visual-specs",
+      expect: {
+        toHaveScreenshot: { maxDiffPixelRatio: 0.01 },
+      },
     },
   ],
 
