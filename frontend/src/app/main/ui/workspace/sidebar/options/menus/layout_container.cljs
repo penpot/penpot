@@ -14,8 +14,10 @@
    [app.config :as cf]
    [app.main.data.events :as-alias ev]
    [app.main.data.workspace :as udw]
+   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.grid-layout.editor :as dwge]
    [app.main.data.workspace.shape-layout :as dwsl]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -525,11 +527,8 @@
         on-change'
         (mf/use-fn
          (mf/deps on-change)
-         (fn [value event]
-           (let [target    (dom/get-current-target event)
-                 wrap-type (dom/get-data target "wrap-type")
-                 type      (keyword (dom/get-data target "type"))]
-             (on-change (= "nowrap" wrap-type) type value event))))]
+         (fn [value wrap-type type]
+           (on-change (= "nowrap" wrap-type) type value)))]
 
     (mf/with-effect []
       ;; on destroy component
@@ -546,10 +545,10 @@
       [:& editable-select
        {:disabled row-gap-disabled?
         :placeholder "--"
-        :on-change on-change'
+        :on-change #(on-change' %1 (d/name wrap-type) :row-gap)
         :on-blur on-gap-blur
-        :on-token-remove js/console.log
-        :options spacing-column-options
+        :on-token-remove #(on-change' (wtc/maybe-resolve-token-value %) (d/name wrap-type) :row-gap)
+        :options spacing-row-options
         :position :left
         :value (:row-gap value)
         :input-props {:type "number"
@@ -568,10 +567,10 @@
       [:& editable-select
        {:disabled col-gap-disabled?
         :placeholder "--"
-        :on-change on-change'
+        :on-change #(on-change' %1 (d/name wrap-type) :column-gap)
         :on-blur on-gap-blur
-        :on-token-remove js/console.log
-        :options spacing-row-options
+        :on-token-remove #(on-change' (wtc/maybe-resolve-token-value %) (d/name wrap-type) :column-gap)
+        :options spacing-column-options
         :position :right
         :value (:column-gap value)
         :input-props {:type "number"
@@ -832,7 +831,7 @@
   (st/emit! (dom/open-new-window cf/grid-help-uri)))
 
 (mf/defc layout-container-menu
-  {::mf/memo #{:ids :values :multiple :shape}
+  {#_#_::mf/memo #{:ids :values :multiple :shape}
    ::mf/props :obj}
   [{:keys [ids values multiple] :as props}]
   (let [;; Display
@@ -870,6 +869,7 @@
                                   :tokens spacing-tokens
                                   :attributes (wtc/token-attributes :spacing)
                                   :selected-attributes #{:spacing-row}})))
+
 
         on-add-layout
         (mf/use-fn
@@ -945,6 +945,22 @@
 
               (some? type)
               (st/emit! (dwsl/update-layout ids {:layout-gap {type val}})))))
+
+        on-gap-token-change
+        (fn [multiple? type value]
+          (let [token-value (wtc/maybe-resolve-token-value value)
+                undo-id (js/Symbol)
+                token-type (case type
+                             :column-gap :spacing-column
+                             :row-gap :spacing-row)]
+            (st/emit!
+             (dwu/start-undo-transaction undo-id)
+             (dch/update-shapes ids
+                                (if token-value
+                                  #(assoc-in % [:applied-tokens token-type] (:id value))
+                                  #(d/dissoc-in % [:applied-tokens token-type])))
+             (on-gap-change multiple? type (or token-value value))
+             (dwu/commit-undo-transaction undo-id))))
 
         ;; Padding
         on-padding-type-change
@@ -1115,7 +1131,7 @@
           [:div {:class (stl/css :forth-row)}
            [:& gap-section {:is-column is-column
                             :wrap-type wrap-type
-                            :on-change on-gap-change
+                            :on-change on-gap-token-change
                             :value (:layout-gap values)
                             :spacing-column-options spacing-column-options
                             :spacing-row-options spacing-row-options}]
