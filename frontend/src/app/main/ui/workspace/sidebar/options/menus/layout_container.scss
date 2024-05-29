@@ -115,6 +115,7 @@
 
     .padding-simple {
       @extend .input-element;
+      position: relative;
       max-width: $s-108;
     }
   }

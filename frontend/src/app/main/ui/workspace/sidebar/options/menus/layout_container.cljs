@@ -297,7 +297,7 @@
 
 (mf/defc simple-padding-selection
   {::mf/props :obj}
-  [{:keys [value on-change]}]
+  [{:keys [value on-change padding-x-options padding-y-options]}]
   (let [p1 (:p1 value)
         p2 (:p2 value)
         p3 (:p3 value)
@@ -316,15 +316,12 @@
         on-change'
         (mf/use-fn
          (mf/deps on-change)
-         (fn [value event]
-           (let [attr (-> (dom/get-current-target event)
-                          (dom/get-data "attr")
-                          (keyword))]
-             (on-change :simple attr value event))))
+         (fn [value attr]
+           (on-change :simple attr value)))
 
         on-focus
         (mf/use-fn
-         (fn [event]
+         (fn [attr event]
            (let [attr (-> (dom/get-current-target event)
                           (dom/get-data "attr")
                           (keyword))]
@@ -340,30 +337,39 @@
             :title "Vertical padding"}
       [:span {:class (stl/css :icon)}
        i/padding-top-bottom]
-      [:> numeric-input*
-       {:class (stl/css :numeric-input)
-        :placeholder "--"
-        :data-attr "p1"
-        :on-change on-change'
-        :on-focus on-focus
-        :nillable true
-        :min 0
-        :value p1}]]
+      [:& editable-select
+       {:placeholder "--"
+        :on-change #(on-change' %1 :p1)
+        :on-token-remove #(on-change' (wtc/maybe-resolve-token-value %) :p1)
+        :options padding-x-options
+        :position :left
+        :value p1
+        :input-props {:type "number"
+                      :data-attr "p1"
+                      :onFocus on-focus
+                      :no-validate true
+                      :nillable true
+                      :min 0
+                      :class (stl/css :numeric-input)}}]]
      [:div {:class (stl/css :padding-simple)
             :title "Horizontal padding"}
 
       [:span {:class (stl/css :icon)}
        i/padding-left-right]
-      [:> numeric-input*
-       {:className (stl/css :numeric-input)
-        :placeholder "--"
-        :data-attr "p2"
-        :on-change on-change'
-        :on-focus on-focus
-        :on-blur on-padding-blur
-        :nillable true
-        :min 0
-        :value p2}]]]))
+      [:& editable-select
+       {:placeholder "--"
+        :on-change #(on-change' %1 :p2)
+        :on-token-remove #(on-change' (wtc/maybe-resolve-token-value %) :p2)
+        :options padding-x-options
+        :position :right
+        :value p2
+        :input-props {:type "number"
+                      :data-attr "p2"
+                      :onFocus on-focus
+                      :no-validate true
+                      :nillable true
+                      :min 0
+                      :class (stl/css :numeric-input)}}]]]))
 
 (mf/defc multiple-padding-selection
   {::mf/props :obj}
@@ -870,6 +876,23 @@
                                   :attributes (wtc/token-attributes :spacing)
                                   :selected-attributes #{:spacing-row}})))
 
+        padding-x-options (mf/use-memo
+                           (mf/deps shape spacing-tokens)
+                           #(when shape
+                              (wtc/tokens-name-map->select-options
+                               {:shape shape
+                                :tokens spacing-tokens
+                                :attributes (wtc/token-attributes :spacing)
+                                :selected-attributes #{:position-x}})))
+
+        padding-y-options (mf/use-memo
+                           (mf/deps shape spacing-tokens)
+                           #(when shape
+                              (wtc/tokens-name-map->select-options
+                               {:shape shape
+                                :tokens spacing-tokens
+                                :attributes (wtc/token-attributes :spacing)
+                                :selected-attributes #{:position-y}})))
 
         on-add-layout
         (mf/use-fn
@@ -1130,7 +1153,9 @@
            [:& padding-section {:value (:layout-padding values)
                                 :type (:layout-padding-type values)
                                 :on-type-change on-padding-type-change
-                                :on-change on-padding-change}]]]
+                                :on-change on-padding-change
+                                :padding-x-options padding-x-options
+                                :padding-y-options padding-y-options}]]]
 
          :grid
          [:div {:class (stl/css :grid-layout-menu)}
