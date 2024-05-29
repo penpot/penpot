@@ -462,7 +462,6 @@
            :value (:width values)
            :input-props {:type "number"
                          :no-validate true
-                         :input-class (stl/css :numeric-input)
                          :min 0.01}}]]
         [:div {:class (stl/css-case :height true
                                     :disabled disabled-height-sizing?)
@@ -479,7 +478,6 @@
            :value (:height values)
            :input-props {:type "number"
                          :no-validate true
-                         :class (stl/css :numeric-input)
                          :min 0.01}}]]
         [:button {:class (stl/css-case
                           :lock-size-btn true
@@ -546,7 +544,6 @@
                  :position :right
                  :value (:rx values)
                  :input-props {:type "number"
-                               :class (stl/css :numeric-input)
                                :min 0}}]]
 
               @radius-multi?
