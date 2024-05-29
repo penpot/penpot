@@ -937,30 +937,21 @@
 
         ;; Gap
         on-gap-change
-        (fn [multiple? type val]
-          (let [val (mth/finite val 0)]
-            (cond
-              ^boolean multiple?
-              (st/emit! (dwsl/update-layout ids {:layout-gap {:row-gap val :column-gap val}}))
-
-              (some? type)
-              (st/emit! (dwsl/update-layout ids {:layout-gap {type val}})))))
-
-        on-gap-token-change
         (fn [multiple? type value]
+          (js/console.log "value" value)
           (let [token-value (wtc/maybe-resolve-token-value value)
-                undo-id (js/Symbol)
+                val (or token-value (mth/finite value 0))
                 token-type (case type
                              :column-gap :spacing-column
                              :row-gap :spacing-row)]
-            (st/emit!
-             (dwu/start-undo-transaction undo-id)
-             (dch/update-shapes ids
-                                (if token-value
-                                  #(assoc-in % [:applied-tokens token-type] (:id value))
-                                  #(d/dissoc-in % [:applied-tokens token-type])))
-             (on-gap-change multiple? type (or token-value value))
-             (dwu/commit-undo-transaction undo-id))))
+            (cond
+              ^boolean multiple?
+              (st/emit! (dwsl/update-layout ids {:layout-gap {:row-gap val :column-gap val}
+                                                 :applied-tokens {token-type (if token-value (:id value) nil)}}))
+
+              (some? type)
+              (st/emit! (dwsl/update-layout ids {:layout-gap {type val}
+                                                 :applied-tokens {token-type (if token-value (:id value) nil)}})))))
 
         ;; Padding
         on-padding-type-change
@@ -1131,7 +1122,7 @@
           [:div {:class (stl/css :forth-row)}
            [:& gap-section {:is-column is-column
                             :wrap-type wrap-type
-                            :on-change on-gap-token-change
+                            :on-change on-gap-change
                             :value (:layout-gap values)
                             :spacing-column-options spacing-column-options
                             :spacing-row-options spacing-row-options}]
