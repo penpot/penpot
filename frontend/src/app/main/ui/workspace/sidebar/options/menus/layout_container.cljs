@@ -360,7 +360,7 @@
        {:placeholder "--"
         :on-change #(on-change' %1 :p2)
         :on-token-remove #(on-change' (wtc/maybe-resolve-token-value %) :p2)
-        :options padding-x-options
+        :options padding-y-options
         :position :right
         :value p2
         :input-props {:type "number"
@@ -883,7 +883,7 @@
                                {:shape shape
                                 :tokens spacing-tokens
                                 :attributes (wtc/token-attributes :spacing)
-                                :selected-attributes #{:position-x}})))
+                                :selected-attributes #{:padding-p1}})))
 
         padding-y-options (mf/use-memo
                            (mf/deps shape spacing-tokens)
@@ -892,7 +892,7 @@
                                {:shape shape
                                 :tokens spacing-tokens
                                 :attributes (wtc/token-attributes :spacing)
-                                :selected-attributes #{:position-y}})))
+                                :selected-attributes #{:padding-p2}})))
 
         on-add-layout
         (mf/use-fn
@@ -961,7 +961,6 @@
         ;; Gap
         on-gap-change
         (fn [multiple? type value]
-          (js/console.log "value" value)
           (let [token-value (wtc/maybe-resolve-token-value value)
                 val (or token-value (mth/finite value 0))
                 token-type (case type
@@ -986,14 +985,17 @@
         on-padding-change
         (mf/use-fn
          (mf/deps ids)
-         (fn [type prop val]
-           (let [val (mth/finite val 0)]
+         (fn [type prop value]
+           (let [token-value (wtc/maybe-resolve-token-value value)
+                 val (or token-value (mth/finite value 0))]
              (cond
                (and (= type :simple) (= prop :p1))
-               (st/emit! (dwsl/update-layout ids {:layout-padding {:p1 val :p3 val}}))
+               (st/emit! (dwsl/update-layout ids {:layout-padding {:p1 val :p3 val}
+                                                  :applied-tokens {:padding-p1 (if token-value (:id value) nil)}}))
 
                (and (= type :simple) (= prop :p2))
-               (st/emit! (dwsl/update-layout ids {:layout-padding {:p2 val :p4 val}}))
+               (st/emit! (dwsl/update-layout ids {:layout-padding {:p2 val :p4 val}
+                                                  :applied-tokens {:padding-p2 (if token-value (:id value) nil)}}))
 
                (some? prop)
                (st/emit! (dwsl/update-layout ids {:layout-padding {prop val}}))))))
