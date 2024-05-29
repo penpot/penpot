@@ -27,6 +27,8 @@
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
+   [app.main.ui.workspace.tokens.core :as wtc]
+   [app.main.ui.workspace.tokens.editable-select :refer [editable-select]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -507,7 +509,7 @@
 
 (mf/defc gap-section
   {::mf/props :obj}
-  [{:keys [is-column wrap-type on-change value]
+  [{:keys [is-column wrap-type on-change value options]
     :or {wrap-type :none}
     :as props}]
   (let [nowrap? (= :nowrap wrap-type)
@@ -541,38 +543,45 @@
                     :disabled row-gap-disabled?)
             :title "Row gap"}
       [:span {:class (stl/css :icon)} i/gap-vertical]
-      [:> numeric-input*
-       {:class (stl/css :numeric-input true)
-        :no-validate true
+      [:& editable-select
+       {:disabled row-gap-disabled?
         :placeholder "--"
-        :data-type "row-gap"
-        :data-wrap-type (d/name wrap-type)
-        :on-focus on-gap-focus
         :on-change on-change'
         :on-blur on-gap-blur
-        :nillable true
-        :min 0
+        :on-token-remove js/console.log
+        :options options
+        :position :left
         :value (:row-gap value)
-        :disabled row-gap-disabled?}]]
+        :input-props {:type "number"
+                      :data-type "row-gap"
+                      :data-wrap-type (d/name wrap-type)
+                      :no-validate true
+                      :nillable true
+                      :min 0
+                      :class (stl/css :numeric-input)}}]]
 
      [:div {:class (stl/css-case
                     :column-gap true
                     :disabled col-gap-disabled?)
             :title "Column gap"}
       [:span {:class (stl/css :icon)} i/gap-horizontal]
-      [:> numeric-input*
-       {:class (stl/css :numeric-input true)
-        :no-validate true
+      [:& editable-select
+       {:disabled col-gap-disabled?
         :placeholder "--"
-        :data-type "column-gap"
-        :data-wrap-type (d/name wrap-type)
-        :on-focus on-gap-focus
         :on-change on-change'
         :on-blur on-gap-blur
-        :nillable true
-        :min 0
+        :on-token-remove js/console.log
+        :options options
+        :position :right
         :value (:column-gap value)
-        :disabled col-gap-disabled?}]]]))
+        :input-props {:type "number"
+                      :data-type "column-gap"
+                      :data-wrap-type (d/name wrap-type)
+                      :no-validate true
+                      :onFocus on-gap-focus
+                      :nillable true
+                      :min 0
+                      :class (stl/css :numeric-input)}}]]]))
 
 ;; GRID COMPONENTS
 
