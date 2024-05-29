@@ -816,3 +816,57 @@
           ;; copied-blue1 has swap-id
            (t/is (some? copied-blue2'))
            (t/is (some? (ctk/get-swap-slot copied-blue2')))))))))
+
+
+
+(t/deftest test-remove-swap-slot-copy-paste-swapped-main
+  (t/async
+    done
+    (let [;; ==== Setup
+         ;; {:frame-red} [:name frame-blue]                    # [Component :red]
+         ;; {:frame-blue} [:name frame-blue]                   #[Component :blue]
+         ;; {:frame-green} [:name frame-green]                 #[Component :green]
+         ;;     :blue1 [:name frame-blue, :swap-slot-label :red-copy-green] @--> frame-blue
+
+          file     (-> (cthf/sample-file :file1)
+                       (ctho/add-frame :frame-red :name "frame-blue")
+                       (cthc/make-component :red :frame-red)
+                       (ctho/add-frame :frame-blue :name "frame-blue")
+                       (cthc/make-component :blue :frame-blue)
+                       (ctho/add-frame :frame-green :name "frame-green")
+                       (cthc/make-component :green :frame-green)
+                       (cthc/instantiate-component :red :red-copy-green :parent-label :frame-green)
+                       (cthc/component-swap :red-copy-green :blue :blue1))
+          store    (ths/setup-store file)
+
+         ;; ==== Action
+          page     (cthf/current-page file)
+          green    (cths/get-shape file :frame-green)
+          features #{"components/v2"}
+          version  47
+
+          pdata    (thp/simulate-copy-shape #{(:id green)} (:objects page) {(:id  file) file} page file features version)
+
+          events
+          [(dws/select-shape uuid/zero)
+           (dw/paste-shapes pdata)]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [;; ==== Get
+               file'         (ths/get-file-from-store new-state)
+               page'         (cthf/current-page file')
+               green'        (cths/get-shape file' :frame-green)
+               blue1'        (cths/get-shape file' :blue1)
+               copied-green' (find-copied-shape green' page' uuid/zero)
+               copied-blue1' (find-copied-shape blue1' page' (:id copied-green'))]
+
+          ;; ==== Check
+          ;; blue1 has swap-id
+           (t/is (some? (ctk/get-swap-slot blue1')))
+
+          ;; copied-blue1 has not swap-id
+           (t/is (some? copied-blue1'))
+           (t/is (nil? (ctk/get-swap-slot copied-blue1')))))))))
+
