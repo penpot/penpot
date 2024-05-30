@@ -106,24 +106,28 @@
       (assoc  item :path path :name name))))
 
 (defn add-color
-  [color]
-  (let [id    (uuid/next)
-        color (-> color
-                  (assoc :id id)
-                  (assoc :name (or (get-in color [:image :name])
-                                   (:color color)
-                                   (uc/gradient-type->string (get-in color [:gradient :type])))))]
-    (dm/assert! ::ctc/color color)
-    (ptk/reify ::add-color
-      ev/Event
-      (-data [_] color)
+  ([color]
+   (add-color color nil))
 
-      ptk/WatchEvent
-      (watch [it _ _]
-        (let [changes (-> (pcb/empty-changes it)
-                          (pcb/add-color color))]
-          (rx/of #(assoc-in % [:workspace-local :color-for-rename] id)
-                 (dch/commit-changes changes)))))))
+  ([color {:keys [rename?] :or {rename? true}}]
+   (let [color (-> color
+                   (update :id #(or % (uuid/next)))
+                   (assoc :name (or (get-in color [:image :name])
+                                    (:color color)
+                                    (uc/gradient-type->string (get-in color [:gradient :type])))))]
+     (dm/assert! ::ctc/color color)
+     (ptk/reify ::add-color
+       ev/Event
+       (-data [_] color)
+
+       ptk/WatchEvent
+       (watch [it _ _]
+         (let [changes (-> (pcb/empty-changes it)
+                           (pcb/add-color color))]
+           (rx/of
+            (when rename?
+              (fn [state] (assoc-in state [:workspace-local :color-for-rename] (:id color))))
+            (dch/commit-changes changes))))))))
 
 (defn add-recent-color
   [color]
