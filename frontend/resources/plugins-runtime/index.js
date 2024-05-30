@@ -32,26 +32,26 @@ const x = globalThis, {
   // compartment since in V8 at least it bears stack inspection capabilities.
   Error: le,
   RangeError: Ns,
-  ReferenceError: rt,
+  ReferenceError: ot,
   SyntaxError: Kt,
   TypeError: v
 } = globalThis, {
   assign: Pr,
-  create: V,
+  create: H,
   defineProperties: F,
   entries: te,
   freeze: g,
   getOwnPropertyDescriptor: de,
   getOwnPropertyDescriptors: Je,
   getOwnPropertyNames: Mt,
-  getPrototypeOf: H,
+  getPrototypeOf: B,
   is: kr,
-  isFrozen: sl,
-  isSealed: al,
-  isExtensible: il,
+  isFrozen: ol,
+  isSealed: sl,
+  isExtensible: al,
   keys: co,
   prototype: lo,
-  seal: cl,
+  seal: il,
   preventExtensions: Os,
   setPrototypeOf: uo,
   values: fo,
@@ -63,7 +63,7 @@ const x = globalThis, {
   matchAll: po,
   unscopables: Rs,
   keyFor: Ms,
-  for: ll
+  for: cl
 } = Ot, { isInteger: Ls } = io, { stringify: mo } = Is, { defineProperty: Fs } = ln, L = (t, e, r) => {
   const n = Fs(t, e, r);
   if (n !== t)
@@ -80,10 +80,10 @@ const x = globalThis, {
   getOwnPropertyDescriptor: Us,
   has: ho,
   isExtensible: js,
-  ownKeys: st,
+  ownKeys: it,
   preventExtensions: Zs,
   set: yo
-} = $s, { isArray: gt, prototype: Ie } = Ps, { prototype: It } = Ce, { prototype: Tr } = RegExp, { prototype: Jt } = Pt, { prototype: Re } = ie, { prototype: Ir } = Te, { prototype: go } = kt, { prototype: un } = Function, { prototype: vo } = Cs, zs = H(Uint8Array.prototype), { bind: $n } = un, k = $n.bind($n.call), se = k(lo.hasOwnProperty), Ve = k(Ie.filter), nt = k(Ie.forEach), Ar = k(Ie.includes), At = k(Ie.join), fe = (
+} = $s, { isArray: vt, prototype: Ie } = Ps, { prototype: It } = Ce, { prototype: Tr } = RegExp, { prototype: Jt } = Pt, { prototype: Re } = ie, { prototype: Ir } = Te, { prototype: go } = kt, { prototype: un } = Function, { prototype: vo } = Cs, zs = B(Uint8Array.prototype), { bind: $n } = un, k = $n.bind($n.call), se = k(lo.hasOwnProperty), Ve = k(Ie.filter), st = k(Ie.forEach), Ar = k(Ie.includes), At = k(Ie.join), fe = (
   /** @type {any} */
   k(Ie.map)
 ), Hr = k(Ie.pop), ae = k(Ie.push), Gs = k(Ie.slice), Bs = k(Ie.some), _o = k(Ie.sort), Hs = k(Ie[Yt]), $e = k(It.set), De = k(It.get), Cr = k(It.has), Vs = k(It.delete), Ws = k(It.entries), qs = k(It[Yt]), $r = k(Jt.add);
@@ -98,7 +98,7 @@ const ur = (
   k(vo.then)
 ), oa = bt && k(bt.prototype.register);
 bt && k(bt.prototype.unregister);
-const gn = g(V(null)), We = (t) => ln(t) === t, vn = (t) => t instanceof le, Eo = eval, ve = Function, sa = () => {
+const gn = g(H(null)), We = (t) => ln(t) === t, vn = (t) => t instanceof le, Eo = eval, ve = Function, sa = () => {
   throw v('Cannot eval with evalTaming set to "noEval" (SES_NO_EVAL)');
 };
 function aa() {
@@ -106,7 +106,7 @@ function aa() {
 }
 if (aa())
   throw v("SES failed to initialize, sloppy mode (SES_NO_SLOPPY)");
-const { freeze: et } = Object, { apply: ia } = Reflect, _n = (t) => (e, ...r) => ia(t, e, r), ca = _n(Array.prototype.push), On = _n(Array.prototype.includes), la = _n(String.prototype.split), Qe = JSON.stringify, tr = (t, ...e) => {
+const { freeze: tt } = Object, { apply: ia } = Reflect, _n = (t) => (e, ...r) => ia(t, e, r), ca = _n(Array.prototype.push), On = _n(Array.prototype.includes), la = _n(String.prototype.split), Qe = JSON.stringify, tr = (t, ...e) => {
   let r = t[0];
   for (let n = 0; n < e.length; n += 1)
     r = `${r}${e[n]}${t[n + 1]}`;
@@ -131,25 +131,25 @@ const { freeze: et } = Object, { apply: ia } = Reflect, _n = (t) => (e, ...r) =>
       d
     )}. Expected one of ${Qe([u, ...l])}`, d;
   };
-  et(n);
+  tt(n);
   const a = (c) => {
     const u = n(c, "");
-    return et(u === "" ? [] : la(u, ","));
+    return tt(u === "" ? [] : la(u, ","));
   };
-  et(a);
-  const s = (c, u) => On(a(c), u), i = () => et([...r]);
-  return et(i), et({
+  tt(a);
+  const s = (c, u) => On(a(c), u), i = () => tt([...r]);
+  return tt(i), tt({
     getEnvironmentOption: n,
     getEnvironmentOptionsList: a,
     environmentOptionsListHas: s,
     getCapturedEnvironmentOptionNames: i
   });
 };
-et(xo);
+tt(xo);
 const {
   getEnvironmentOption: he,
-  getEnvironmentOptionsList: ul,
-  environmentOptionsListHas: dl
+  getEnvironmentOptionsList: ll,
+  environmentOptionsListHas: ul
 } = xo(globalThis, !0), dr = (t) => (t = `${t}`, t.length >= 1 && Js("aeiouAEIOU", t[0]) ? `an ${t}` : `a ${t}`);
 g(dr);
 const Po = (t, e = void 0) => {
@@ -164,7 +164,7 @@ const Po = (t, e = void 0) => {
           return `[${s.name}: ${s.message}]`;
         if (He in s)
           return `[${s[He]}]`;
-        if (gt(s))
+        if (vt(s))
           return s;
         const i = co(s);
         if (i.length < 2)
@@ -203,7 +203,7 @@ const Po = (t, e = void 0) => {
   }
 };
 g(Po);
-const { isSafeInteger: ua } = Number, { freeze: mt } = Object, { toStringTag: da } = Symbol, Rn = (t) => {
+const { isSafeInteger: ua } = Number, { freeze: yt } = Object, { toStringTag: da } = Symbol, Rn = (t) => {
   const r = {
     next: void 0,
     prev: void 0,
@@ -230,12 +230,12 @@ const { isSafeInteger: ua } = Number, { freeze: mt } = Object, { toStringTag: da
     if (!(f === void 0 || f.data === void 0))
       return Ur(f), Mn(n, f), f;
   }, s = (d) => a(d) !== void 0;
-  mt(s);
+  yt(s);
   const i = (d) => {
     const f = a(d);
     return f && f.data && f.data.get(d);
   };
-  mt(i);
+  yt(i);
   const c = (d, f) => {
     if (t < 1)
       return l;
@@ -247,13 +247,13 @@ const { isSafeInteger: ua } = Number, { freeze: mt } = Object, { toStringTag: da
       }
     return m.data.set(d, f), l;
   };
-  mt(c);
+  yt(c);
   const u = (d) => {
     const f = e.get(d);
     return f === void 0 || (Ur(f), e.delete(d), f.data === void 0) ? !1 : (f.data = void 0, r -= 1, !0);
   };
-  mt(u);
-  const l = mt({
+  yt(u);
+  const l = yt({
     has: s,
     get: i,
     set: c,
@@ -266,7 +266,7 @@ const { isSafeInteger: ua } = Number, { freeze: mt } = Object, { toStringTag: da
   });
   return l;
 };
-mt(ko);
+yt(ko);
 const { freeze: ar } = Object, { isSafeInteger: fa } = Number, pa = 1e3, ma = 100, To = (t = pa, e = ma) => {
   if (!fa(e) || e < 1)
     throw TypeError(
@@ -287,16 +287,16 @@ const { freeze: ar } = Object, { isSafeInteger: fa } = Number, pa = 1e3, ma = 10
   });
 };
 ar(To);
-const wt = new Te(), at = (t, e = void 0) => {
+const wt = new Te(), ct = (t, e = void 0) => {
   const r = g({
     toString: g(() => Po(t, e))
   });
   return ee(wt, r, t), r;
 };
-g(at);
+g(ct);
 const ha = g(/^[\w:-]( ?[\w:-])*$/), Vr = (t, e = void 0) => {
   if (typeof t != "string" || !fn(ha, t))
-    return at(t, e);
+    return ct(t, e);
   const r = g({
     toString: g(() => t)
   });
@@ -325,7 +325,7 @@ const St = (t, ...e) => {
 g(St);
 const Co = (t, ...e) => (e = fe(
   e,
-  (r) => hn(wt, r) ? r : at(r)
+  (r) => hn(wt, r) ? r : ct(r)
 ), St(t, ...e));
 g(Co);
 const $o = ({ template: t, args: e }) => {
@@ -348,7 +348,7 @@ const Ln = new Te(), No = (t, e = t.name) => {
   typeof t == "string" && (t = St([t]));
   const n = M(Or, t);
   if (n === void 0)
-    throw v(`unrecognized details ${at(t)}`);
+    throw v(`unrecognized details ${ct(t)}`);
   const a = Io(n), s = new e(a);
   return ee(ir, s, $o(n)), r !== void 0 && No(s, r), s;
 };
@@ -357,7 +357,7 @@ const { addLogArgs: ya, takeLogArgsArray: ga } = To(), Kr = new Te(), Oo = (t, e
   typeof e == "string" && (e = St([e]));
   const r = M(Or, e);
   if (r === void 0)
-    throw v(`unrecognized details ${at(e)}`);
+    throw v(`unrecognized details ${ct(e)}`);
   const n = $o(r), a = M(Kr, t);
   if (a !== void 0)
     for (const s of a)
@@ -412,7 +412,7 @@ const Rr = (t = void 0, e = !1) => {
   g(c);
   const u = (f, m, p) => {
     if (typeof f !== m) {
-      if (typeof m == "string" || s`${at(m)} must be a string`, p === void 0) {
+      if (typeof m == "string" || s`${ct(m)} must be a string`, p === void 0) {
         const h = dr(m);
         p = r`${f} must be ${Vr(h)}`;
       }
@@ -429,27 +429,27 @@ const Rr = (t = void 0, e = !1) => {
     note: Oo,
     details: r,
     Fail: s,
-    quote: at,
+    quote: ct,
     bare: Vr,
     makeAssert: Rr
   });
   return g(d);
 };
 g(Rr);
-const z = Rr(), Ro = de(
+const Z = Rr(), Ro = de(
   zs,
   He
 );
-z(Ro);
+Z(Ro);
 const Mo = Ro.get;
-z(Mo);
+Z(Mo);
 const _a = (t) => oe(Mo, t, []) !== void 0, ba = (t) => {
   const e = +ie(t);
   return Ls(e) && ie(e) === t;
 }, wa = (t) => {
-  Os(t), nt(st(t), (e) => {
+  Os(t), st(it(t), (e) => {
     const r = de(t, e);
-    z(r), ba(e) || L(t, e, {
+    Z(r), ba(e) || L(t, e, {
       ...r,
       writable: !1,
       configurable: !1
@@ -476,8 +476,8 @@ const _a = (t) => oe(Mo, t, []) !== void 0, ba = (t) => {
       }
       function i(d) {
         _a(d) ? wa(d) : g(d);
-        const f = M(a, d) || "unknown", m = Je(d), p = H(d);
-        s(p, `${f}.__proto__`), nt(st(m), (h) => {
+        const f = M(a, d) || "unknown", m = Je(d), p = B(d);
+        s(p, `${f}.__proto__`), st(it(m), (h) => {
           const _ = `${f}.${ie(h)}`, w = m[
             /** @type {string} */
             h
@@ -614,7 +614,7 @@ const _a = (t) => oe(Mo, t, []) !== void 0, ba = (t) => {
   get: o,
   set: o
 }, Un = (t) => t === O || t === Ae;
-function dt(t) {
+function pt(t) {
   return {
     // Properties of the NativeError Constructors
     "[[Proto]]": "%SharedError%",
@@ -622,7 +622,7 @@ function dt(t) {
     prototype: t
   };
 }
-function ft(t) {
+function mt(t) {
   return {
     // Properties of the NativeError Prototype Objects
     "[[Proto]]": "%ErrorPrototype%",
@@ -892,18 +892,18 @@ const jn = {
     cause: !1
   },
   // NativeError
-  EvalError: dt("%EvalErrorPrototype%"),
-  RangeError: dt("%RangeErrorPrototype%"),
-  ReferenceError: dt("%ReferenceErrorPrototype%"),
-  SyntaxError: dt("%SyntaxErrorPrototype%"),
-  TypeError: dt("%TypeErrorPrototype%"),
-  URIError: dt("%URIErrorPrototype%"),
-  "%EvalErrorPrototype%": ft("EvalError"),
-  "%RangeErrorPrototype%": ft("RangeError"),
-  "%ReferenceErrorPrototype%": ft("ReferenceError"),
-  "%SyntaxErrorPrototype%": ft("SyntaxError"),
-  "%TypeErrorPrototype%": ft("TypeError"),
-  "%URIErrorPrototype%": ft("URIError"),
+  EvalError: pt("%EvalErrorPrototype%"),
+  RangeError: pt("%RangeErrorPrototype%"),
+  ReferenceError: pt("%ReferenceErrorPrototype%"),
+  SyntaxError: pt("%SyntaxErrorPrototype%"),
+  TypeError: pt("%TypeErrorPrototype%"),
+  URIError: pt("%URIErrorPrototype%"),
+  "%EvalErrorPrototype%": mt("EvalError"),
+  "%RangeErrorPrototype%": mt("RangeError"),
+  "%ReferenceErrorPrototype%": mt("ReferenceError"),
+  "%SyntaxErrorPrototype%": mt("SyntaxError"),
+  "%TypeErrorPrototype%": mt("TypeError"),
+  "%URIErrorPrototype%": mt("URIError"),
   // *** Numbers and Dates
   Number: {
     // Properties of the Number Constructor
@@ -1822,7 +1822,7 @@ function Uo(t, e) {
   return r;
 }
 const jo = () => {
-  const t = V(null);
+  const t = H(null);
   let e;
   const r = (c) => {
     Ta(t, Je(c));
@@ -1899,7 +1899,7 @@ function Aa(t, e) {
   function c(m, p, h) {
     if (!We(p))
       throw v(`Object expected: ${m}, ${p}, ${h}`);
-    const _ = H(p);
+    const _ = B(p);
     if (!(_ === null && h === null)) {
       if (h !== void 0 && typeof h != "string")
         throw v(`Malformed whitelist permit ${m}.__proto__`);
@@ -1954,7 +1954,7 @@ function Aa(t, e) {
       return;
     const _ = h["[[Proto]]"];
     c(m, p, _), typeof p == "function" && e(p);
-    for (const w of st(p)) {
+    for (const w of it(p)) {
       const I = i(m, w), $ = `${m}.${I}`, T = d(p, h, I);
       if (!T || !l($, p, w, T)) {
         T !== !1 && n("warn", `Removing ${$}`);
@@ -1999,7 +1999,7 @@ function Ca() {
         return;
       throw u;
     }
-    const i = H(s), c = function() {
+    const i = B(s), c = function() {
       throw v(
         "Function.prototype.constructor is not a valid constructor."
       );
@@ -2101,7 +2101,7 @@ function $a(t = "safe") {
 function Na(t = "safe") {
   if (t !== "safe" && t !== "unsafe")
     throw v(`unrecognized mathTaming ${t}`);
-  const e = As, r = e, { random: n, ...a } = Je(e), i = V(lo, {
+  const e = As, r = e, { random: n, ...a } = Je(e), i = H(lo, {
     ...a,
     random: {
       value: {
@@ -2359,10 +2359,10 @@ function La(t, e, r = []) {
   }
   function i(l, d) {
     const f = Je(d);
-    f && nt(st(f), (m) => a(l, d, m, f[m]));
+    f && st(it(f), (m) => a(l, d, m, f[m]));
   }
   function c(l, d, f) {
-    for (const m of st(f)) {
+    for (const m of it(f)) {
       const p = de(d, m);
       if (!p || p.get || p.set)
         continue;
@@ -2396,7 +2396,7 @@ function La(t, e, r = []) {
   }
   c("root", t, u);
 }
-const { Fail: Xr, quote: pr } = z, Fa = /^(\w*[a-z])Locale([A-Z]\w*)$/, zo = {
+const { Fail: Xr, quote: pr } = Z, Fa = /^(\w*[a-z])Locale([A-Z]\w*)$/, zo = {
   // See https://tc39.es/ecma262/#sec-string.prototype.localecompare
   localeCompare(t) {
     if (this === null || this === void 0)
@@ -2438,7 +2438,7 @@ const Za = (t) => ({
   eval(r) {
     return typeof r != "string" ? r : t(r);
   }
-}).eval, { Fail: Zn } = z, za = (t) => {
+}).eval, { Fail: Zn } = Z, za = (t) => {
   const e = function(n) {
     const a = `${Hr(arguments) || ""}`, s = `${At(arguments, ",")}`;
     new ve(s, ""), new ve(a);
@@ -2457,13 +2457,13 @@ ${a}
       enumerable: !1,
       configurable: !1
     }
-  }), H(ve) === ve.prototype || Zn`Function prototype is the same accross compartments`, H(e) === ve.prototype || Zn`Function constructor prototype is the same accross compartments`, e;
+  }), B(ve) === ve.prototype || Zn`Function prototype is the same accross compartments`, B(e) === ve.prototype || Zn`Function constructor prototype is the same accross compartments`, e;
 }, Ga = (t) => {
   L(
     t,
     Rs,
     g(
-      Pr(V(null), {
+      Pr(H(null), {
         set: g(() => {
           throw v(
             "Cannot set Symbol.unscopables of a Compartment's globalThis"
@@ -2538,7 +2538,7 @@ ${a}
       configurable: !0
     });
   }
-}, { Fail: Ba, quote: Ho } = z, Vo = new xr(
+}, { Fail: Ba, quote: Ho } = Z, Vo = new xr(
   gn,
   g({
     get(t, e) {
@@ -2549,7 +2549,7 @@ ${a}
   get(t, e) {
   },
   set(t, e, r) {
-    throw rt(`${ie(e)} is not defined`);
+    throw ot(`${ie(e)} is not defined`);
   },
   has(t, e) {
     return e in x;
@@ -2574,7 +2574,7 @@ ${a}
     return [];
   }
 }, Wo = g(
-  V(
+  H(
     Vo,
     Je(Ha)
   )
@@ -2594,7 +2594,7 @@ ${a}
       return !0;
     }
   }, r = g(
-    V(
+    H(
       Vo,
       Je(e)
     )
@@ -2605,8 +2605,8 @@ ${a}
   );
 };
 g(qo);
-const { Fail: Wa } = z, qa = () => {
-  const t = V(null), e = g({
+const { Fail: Wa } = Z, qa = () => {
+  const t = H(null), e = g({
     eval: {
       get() {
         return delete t.eval, Eo;
@@ -2809,7 +2809,7 @@ const ei = (t) => {
     }
   `);
   return oe(s, t, []);
-}, { Fail: ti } = z, Sn = ({
+}, { Fail: ti } = Z, Sn = ({
   globalObject: t,
   moduleLexicals: e = {},
   globalTransforms: r = [],
@@ -2965,7 +2965,7 @@ const cs = (t, e) => {
   if (!t)
     return;
   const { getStackString: r, tagError: n, takeMessageLogArgs: a, takeNoteLogArgsArray: s } = e, i = (w, I) => fe(w, (T) => vn(T) ? (ae(I, T), `(${n(T)})`) : T), c = (w, I, $, T, D) => {
-    const Z = n(I), q = $ === $t.MESSAGE ? `${Z}:` : `${Z} ${$}`, K = i(T, D);
+    const j = n(I), q = $ === $t.MESSAGE ? `${j}:` : `${j} ${$}`, K = i(T, D);
     t[w](q, ...K);
   }, u = (w, I, $ = void 0) => {
     if (I.length === 0)
@@ -2990,7 +2990,7 @@ const cs = (t, e) => {
       return;
     const $ = n(I);
     Nr(l, I);
-    const T = [], D = a(I), Z = s(
+    const T = [], D = a(I), j = s(
       I,
       d(w)
     );
@@ -3005,13 +3005,13 @@ const cs = (t, e) => {
     typeof q == "string" && q.length >= 1 && !bo(q, `
 `) && (q += `
 `), t[w](q);
-    for (const K of Z)
+    for (const K of j)
       c(w, I, $t.NOTE, K, T);
     u(w, T, $);
   }, m = fe(ss, ([w, I]) => {
     const $ = (...T) => {
-      const D = [], Z = i(T, D);
-      t[w](...Z), u(w, D);
+      const D = [], j = i(T, D);
+      t[w](...j), u(w, D);
     };
     return L($, "name", { value: w }), [w, g($)];
   }), p = Ve(
@@ -3161,7 +3161,7 @@ const Vn = (t) => {
     const a = t[n];
     return [n, () => oe(a, t, [])];
   }));
-  return V(r, {});
+  return H(r, {});
 }, li = (t) => fe(t, ci), ui = /\/node_modules\//, di = /^(?:node:)?internal\//, fi = /\/packages\/ses\/src\/error\/assert.js$/, pi = /\/packages\/eventual-send\/src\//, mi = [
   ui,
   di,
@@ -3377,12 +3377,12 @@ function Si(t = "safe", e = "concise") {
     "%SharedError%": c
   };
 }
-const { Fail: Ei, details: en, quote: Le } = z, ls = () => {
+const { Fail: Ei, details: en, quote: Le } = Z, ls = () => {
 }, xi = (t, e) => g({
   compartment: t,
   specifier: e
 }), Pi = (t, e, r) => {
-  const n = V(null);
+  const n = H(null);
   for (const a of t) {
     const s = e(a, r);
     n[a] = s;
@@ -3428,7 +3428,7 @@ const { Fail: Ei, details: en, quote: Le } = z, ls = () => {
   );
   let f = u[n];
   if (f === void 0 && l !== void 0 && (f = l(n)), typeof f == "string")
-    z.fail(
+    Z.fail(
       en`Cannot map module ${Le(n)} to ${Le(
         f
       )} in parent compartment, not yet implemented`,
@@ -3436,11 +3436,11 @@ const { Fail: Ei, details: en, quote: Le } = z, ls = () => {
     );
   else if (f !== void 0) {
     const p = M(e, f);
-    p === void 0 && z.fail(
+    p === void 0 && Z.fail(
       en`Cannot map module ${Le(
         n
       )} because the value is not a module exports namespace, or is from another realm`,
-      rt
+      ot
     );
     const h = await mr(
       t,
@@ -3529,7 +3529,7 @@ const { Fail: Ei, details: en, quote: Le } = z, ls = () => {
       i
     ),
     (d) => {
-      throw z.note(
+      throw Z.note(
         d,
         en`${d.message}, loading ${Le(n)} in compartment ${Le(
           c
@@ -3567,9 +3567,9 @@ const { Fail: Ei, details: en, quote: Le } = z, ls = () => {
         ", "
       )}`
     );
-}, { quote: pt } = z, Ti = () => {
+}, { quote: ht } = Z, Ti = () => {
   let t = !1;
-  const e = V(null, {
+  const e = H(null, {
     // Make this appear like an ESM module namespace object.
     [He]: {
       value: "Module",
@@ -3587,7 +3587,7 @@ const { Fail: Ei, details: en, quote: Le } = z, ls = () => {
       get(r, n, a) {
         if (!t)
           throw v(
-            `Cannot get property ${pt(
+            `Cannot get property ${ht(
               n
             )} of module exports namespace, the module has not yet begun to execute`
           );
@@ -3595,13 +3595,13 @@ const { Fail: Ei, details: en, quote: Le } = z, ls = () => {
       },
       set(r, n, a) {
         throw v(
-          `Cannot set property ${pt(n)} of module exports namespace`
+          `Cannot set property ${ht(n)} of module exports namespace`
         );
       },
       has(r, n) {
         if (!t)
           throw v(
-            `Cannot check property ${pt(
+            `Cannot check property ${ht(
               n
             )}, the module has not yet begun to execute`
           );
@@ -3609,7 +3609,7 @@ const { Fail: Ei, details: en, quote: Le } = z, ls = () => {
       },
       deleteProperty(r, n) {
         throw v(
-          `Cannot delete property ${pt(n)}s of module exports namespace`
+          `Cannot delete property ${ht(n)}s of module exports namespace`
         );
       },
       ownKeys(r) {
@@ -3617,12 +3617,12 @@ const { Fail: Ei, details: en, quote: Le } = z, ls = () => {
           throw v(
             "Cannot enumerate keys, the module has not yet begun to execute"
           );
-        return st(e);
+        return it(e);
       },
       getOwnPropertyDescriptor(r, n) {
         if (!t)
           throw v(
-            `Cannot get own property descriptor ${pt(
+            `Cannot get own property descriptor ${ht(
               n
             )}, the module has not yet begun to execute`
           );
@@ -3650,7 +3650,7 @@ const { Fail: Ei, details: en, quote: Le } = z, ls = () => {
       },
       defineProperty(r, n, a) {
         throw v(
-          `Cannot define property ${pt(n)} of module exports namespace`
+          `Cannot define property ${ht(n)} of module exports namespace`
         );
       },
       apply(r, n, a) {
@@ -3685,7 +3685,7 @@ const { Fail: Ei, details: en, quote: Le } = z, ls = () => {
     let { globalTransforms: s } = t;
     const { globalObject: i } = t;
     let c;
-    n !== void 0 && (s = void 0, c = V(
+    n !== void 0 && (s = void 0, c = H(
       null,
       Je(n)
     )), { safeEvaluate: a } = Sn({
@@ -3714,19 +3714,19 @@ const { Fail: Ei, details: en, quote: Le } = z, ls = () => {
   return u(e, {
     localTransforms: c
   });
-}, { quote: rr } = z, Ai = (t, e, r, n, a, s) => {
+}, { quote: rr } = Z, Ai = (t, e, r, n, a, s) => {
   const { exportsProxy: i, exportsTarget: c, activate: u } = En(
     r,
     M(t, r),
     n,
     a
-  ), l = V(null);
+  ), l = H(null);
   if (e.exports) {
-    if (!gt(e.exports) || Bs(e.exports, (f) => typeof f != "string"))
+    if (!vt(e.exports) || Bs(e.exports, (f) => typeof f != "string"))
       throw v(
         `SES third-party static module record "exports" property must be an array of strings for module ${a}`
       );
-    nt(e.exports, (f) => {
+    st(e.exports, (f) => {
       let m = c[f];
       const p = [];
       L(c, f, {
@@ -3787,21 +3787,21 @@ const { Fail: Ei, details: en, quote: Le } = z, ls = () => {
     _,
     e,
     s
-  ), Z = V(null), q = V(null), K = V(null), je = V(null), pe = V(null);
+  ), j = H(null), q = H(null), K = H(null), je = H(null), pe = H(null);
   c && Pr(pe, c), p && I && I(s, pe);
-  const Ze = V(null), Xe = V(null);
-  nt(te(d), ([me, [G]]) => {
-    let B = Ze[G];
-    if (!B) {
+  const Ze = H(null), Xe = H(null);
+  st(te(d), ([me, [z]]) => {
+    let G = Ze[z];
+    if (!G) {
       let X, Q = !0, ce = [];
       const Y = () => {
         if (Q)
-          throw rt(`binding ${rr(G)} not yet initialized`);
+          throw ot(`binding ${rr(z)} not yet initialized`);
         return X;
       }, _e = g((be) => {
         if (!Q)
           throw v(
-            `Internal: binding ${rr(G)} already initialized`
+            `Internal: binding ${rr(z)} already initialized`
           );
         X = be;
         const In = ce;
@@ -3810,38 +3810,38 @@ const { Fail: Ei, details: en, quote: Le } = z, ls = () => {
           we(be);
         return be;
       });
-      B = {
+      G = {
         get: Y,
         notify: (be) => {
           be !== _e && (Q ? ae(ce || [], be) : be(X));
         }
-      }, Ze[G] = B, K[G] = _e;
+      }, Ze[z] = G, K[z] = _e;
     }
-    Z[me] = {
-      get: B.get,
+    j[me] = {
+      get: G.get,
       set: void 0,
       enumerable: !0,
       configurable: !1
-    }, Xe[me] = B.notify;
-  }), nt(
+    }, Xe[me] = G.notify;
+  }), st(
     te(f),
-    ([me, [G, B]]) => {
-      let X = Ze[G];
+    ([me, [z, G]]) => {
+      let X = Ze[z];
       if (!X) {
         let Q, ce = !0;
         const Y = [], _e = () => {
           if (ce)
-            throw rt(
+            throw ot(
               `binding ${rr(me)} not yet initialized`
             );
           return Q;
-        }, ut = g((we) => {
+        }, ft = g((we) => {
           Q = we, ce = !1;
           for (const Lr of Y)
             Lr(we);
         }), be = (we) => {
           if (ce)
-            throw rt(`binding ${rr(G)} not yet initialized`);
+            throw ot(`binding ${rr(z)} not yet initialized`);
           Q = we;
           for (const Lr of Y)
             Lr(we);
@@ -3849,16 +3849,16 @@ const { Fail: Ei, details: en, quote: Le } = z, ls = () => {
         X = {
           get: _e,
           notify: (we) => {
-            we !== ut && (ae(Y, we), ce || we(Q));
+            we !== ft && (ae(Y, we), ce || we(Q));
           }
-        }, Ze[G] = X, B && L(q, G, {
+        }, Ze[z] = X, G && L(q, z, {
           get: _e,
           set: be,
           enumerable: !0,
           configurable: !1
-        }), je[G] = ut;
+        }), je[z] = ft;
       }
-      Z[me] = {
+      j[me] = {
         get: X.get,
         set: void 0,
         enumerable: !0,
@@ -3871,35 +3871,35 @@ const { Fail: Ei, details: en, quote: Le } = z, ls = () => {
   };
   Xe["*"] = ze;
   function er(me) {
-    const G = V(null);
-    G.default = !1;
-    for (const [B, X] of me) {
-      const Q = De(n, B);
+    const z = H(null);
+    z.default = !1;
+    for (const [G, X] of me) {
+      const Q = De(n, G);
       Q.execute();
       const { notifiers: ce } = Q;
       for (const [Y, _e] of X) {
-        const ut = ce[Y];
-        if (!ut)
+        const ft = ce[Y];
+        if (!ft)
           throw Kt(
-            `The requested module '${B}' does not provide an export named '${Y}'`
+            `The requested module '${G}' does not provide an export named '${Y}'`
           );
         for (const be of _e)
-          ut(be);
+          ft(be);
       }
-      if (Ar(u, B))
+      if (Ar(u, G))
         for (const [Y, _e] of te(
           ce
         ))
-          G[Y] === void 0 ? G[Y] = _e : G[Y] = !1;
-      if (m[B])
-        for (const [Y, _e] of m[B])
-          G[_e] = ce[Y];
+          z[Y] === void 0 ? z[Y] = _e : z[Y] = !1;
+      if (m[G])
+        for (const [Y, _e] of m[G])
+          z[_e] = ce[Y];
     }
-    for (const [B, X] of te(G))
-      if (!Xe[B] && X !== !1) {
-        Xe[B] = X;
+    for (const [G, X] of te(z))
+      if (!Xe[G] && X !== !1) {
+        Xe[G] = X;
         let Q;
-        X((Y) => Q = Y), Z[B] = {
+        X((Y) => Q = Y), j[G] = {
           get() {
             return Q;
           },
@@ -3908,9 +3908,9 @@ const { Fail: Ei, details: en, quote: Le } = z, ls = () => {
           configurable: !1
         };
       }
-    nt(
-      _o(co(Z)),
-      (B) => L(T, B, Z[B])
+    st(
+      _o(co(j)),
+      (G) => L(T, G, j[G])
     ), g(T), D();
   }
   let Ct;
@@ -3933,8 +3933,8 @@ const { Fail: Ei, details: en, quote: Le } = z, ls = () => {
             importMeta: pe
           })
         );
-      } catch (G) {
-        kn = !0, Tn = G;
+      } catch (z) {
+        kn = !0, Tn = z;
       }
     }
     if (kn)
@@ -3945,13 +3945,13 @@ const { Fail: Ei, details: en, quote: Le } = z, ls = () => {
     exportsProxy: $,
     execute: xs
   });
-}, { Fail: tt, quote: W } = z, ds = (t, e, r, n) => {
+}, { Fail: nt, quote: W } = Z, ds = (t, e, r, n) => {
   const { name: a, moduleRecords: s } = M(
     t,
     r
   ), i = De(s, n);
   if (i === void 0)
-    throw rt(
+    throw ot(
       `Missing link to module ${W(n)} from compartment ${W(
         a
       )}`
@@ -3963,9 +3963,9 @@ function $i(t) {
 }
 function Ni(t, e) {
   const { __fixedExportMap__: r, __liveExportMap__: n } = t;
-  We(r) || tt`Property '__fixedExportMap__' of a precompiled module record must be an object, got ${W(
+  We(r) || nt`Property '__fixedExportMap__' of a precompiled module record must be an object, got ${W(
     r
-  )}, for module ${W(e)}`, We(n) || tt`Property '__liveExportMap__' of a precompiled module record must be an object, got ${W(
+  )}, for module ${W(e)}`, We(n) || nt`Property '__liveExportMap__' of a precompiled module record must be an object, got ${W(
     n
   )}, for module ${W(e)}`;
 }
@@ -3974,20 +3974,20 @@ function Oi(t) {
 }
 function Ri(t, e) {
   const { exports: r } = t;
-  gt(r) || tt`Property 'exports' of a third-party static module record must be an array, got ${W(
+  vt(r) || nt`Property 'exports' of a third-party static module record must be an array, got ${W(
     r
   )}, for module ${W(e)}`;
 }
 function Mi(t, e) {
-  We(t) || tt`Static module records must be of type object, got ${W(
+  We(t) || nt`Static module records must be of type object, got ${W(
     t
   )}, for module ${W(e)}`;
   const { imports: r, exports: n, reexports: a = [] } = t;
-  gt(r) || tt`Property 'imports' of a static module record must be an array, got ${W(
+  vt(r) || nt`Property 'imports' of a static module record must be an array, got ${W(
     r
-  )}, for module ${W(e)}`, gt(n) || tt`Property 'exports' of a precompiled module record must be an array, got ${W(
+  )}, for module ${W(e)}`, vt(n) || nt`Property 'exports' of a precompiled module record must be an array, got ${W(
     n
-  )}, for module ${W(e)}`, gt(a) || tt`Property 'reexports' of a precompiled module record must be an array if present, got ${W(
+  )}, for module ${W(e)}`, vt(a) || nt`Property 'reexports' of a precompiled module record must be an array if present, got ${W(
     a
   )}, for module ${W(e)}`;
 }
@@ -4031,7 +4031,7 @@ const Li = (t, e, r) => {
     $e(u, d, m);
   }
   return l;
-}, { quote: zr } = z, Rt = new Te(), Me = new Te(), nr = (t) => {
+}, { quote: zr } = Z, Rt = new Te(), Me = new Te(), nr = (t) => {
   const { importHook: e, resolveHook: r } = M(Me, t);
   if (typeof e != "function" || typeof r != "function")
     throw v(
@@ -4136,15 +4136,15 @@ const tn = (t, e, r) => {
       moduleMapHook: m,
       importMetaHook: p
     } = i, h = [...u, ...l], _ = new Ce(), w = new Ce(), I = new Ce();
-    for (const [D, Z] of te(s || {})) {
-      if (typeof Z == "string")
+    for (const [D, j] of te(s || {})) {
+      if (typeof j == "string")
         throw v(
           `Cannot map module ${zr(D)} to ${zr(
-            Z
+            j
           )} in parent compartment`
         );
-      if (M(Rt, Z) === void 0)
-        throw rt(
+      if (M(Rt, j) === void 0)
+        throw ot(
           `Cannot map module ${zr(
             D
           )} because it has no known compartment in this realm`
@@ -4185,13 +4185,13 @@ const tn = (t, e, r) => {
   return n.prototype = Pn, n;
 };
 function Gr(t) {
-  return H(t).constructor;
+  return B(t).constructor;
 }
 function Fi() {
   return arguments;
 }
 const Di = () => {
-  const t = ve.prototype.constructor, e = de(Fi(), "callee"), r = e && e.get, n = ea(new ie()), a = H(n), s = Tr[po] && Ys(/./), i = s && H(s), c = Hs([]), u = H(c), l = H(Ts), d = qs(new Ce()), f = H(d), m = Ks(new Pt()), p = H(m), h = H(u);
+  const t = ve.prototype.constructor, e = de(Fi(), "callee"), r = e && e.get, n = ea(new ie()), a = B(n), s = Tr[po] && Ys(/./), i = s && B(s), c = Hs([]), u = B(c), l = B(Ts), d = qs(new Ce()), f = B(d), m = Ks(new Pt()), p = B(m), h = B(u);
   function* _() {
   }
   const w = Gr(_), I = w.prototype;
@@ -4199,7 +4199,7 @@ const Di = () => {
   }
   const T = Gr(
     $
-  ), D = T.prototype, Z = D.prototype, q = H(Z);
+  ), D = T.prototype, j = D.prototype, q = B(j);
   async function K() {
   }
   const je = Gr(K), pe = {
@@ -4208,7 +4208,7 @@ const Di = () => {
     "%InertAsyncFunction%": je,
     "%AsyncGenerator%": D,
     "%InertAsyncGeneratorFunction%": T,
-    "%AsyncGeneratorPrototype%": Z,
+    "%AsyncGeneratorPrototype%": j,
     "%AsyncIteratorPrototype%": q,
     "%Generator%": I,
     "%InertGeneratorFunction%": w,
@@ -4221,17 +4221,17 @@ const Di = () => {
     "%TypedArray%": l,
     "%InertCompartment%": xn
   };
-  return x.Iterator && (pe["%IteratorHelperPrototype%"] = H(
+  return x.Iterator && (pe["%IteratorHelperPrototype%"] = B(
     // eslint-disable-next-line @endo/no-polymorphic-call
     x.Iterator.from([]).take(0)
-  ), pe["%WrapForValidIteratorPrototype%"] = H(
+  ), pe["%WrapForValidIteratorPrototype%"] = B(
     // eslint-disable-next-line @endo/no-polymorphic-call
     x.Iterator.from({ next() {
     } })
-  )), x.AsyncIterator && (pe["%AsyncIteratorHelperPrototype%"] = H(
+  )), x.AsyncIterator && (pe["%AsyncIteratorHelperPrototype%"] = B(
     // eslint-disable-next-line @endo/no-polymorphic-call
     x.AsyncIterator.from([]).take(0)
-  ), pe["%WrapForValidAsyncIteratorPrototype%"] = H(
+  ), pe["%WrapForValidAsyncIteratorPrototype%"] = B(
     // eslint-disable-next-line @endo/no-polymorphic-call
     x.AsyncIterator.from({ next() {
     } })
@@ -4301,7 +4301,7 @@ const Ui = () => {
     He,
     "Iterator"
   );
-}, { Fail: eo, details: to, quote: ro } = z;
+}, { Fail: eo, details: to, quote: ro } = Z;
 let or, sr;
 const zi = Sa(), Gi = () => {
   let t = !1;
@@ -4354,9 +4354,9 @@ const zi = Sa(), Gi = () => {
     ..._
   } = t;
   d === "unsafeEval" || d === "safeEval" || d === "noEval" || eo`lockdown(): non supported option evalTaming: ${ro(d)}`;
-  const w = st(_);
+  const w = it(_);
   if (w.length === 0 || eo`lockdown(): non supported option ${ro(w)}`, or === void 0 || // eslint-disable-next-line @endo/no-polymorphic-call
-  z.fail(
+  Z.fail(
     to`Already locked down at ${or} (SES_ALREADY_LOCKED_DOWN)`,
     v
   ), or = v("Prior lockdown (SES_ALREADY_LOCKED_DOWN)"), or.stack, Gi(), x.Function.prototype.constructor !== x.Function && // @ts-ignore harden is absent on globalThis type def.
@@ -4369,9 +4369,9 @@ const zi = Sa(), Gi = () => {
       "Already locked down but not by this SES instance (SES_MULTIPLE_INSTANCES)"
     );
   ni(l);
-  const $ = os(), { addIntrinsics: T, completePrototypes: D, finalIntrinsics: Z } = jo(), q = fs(zi, m);
+  const $ = os(), { addIntrinsics: T, completePrototypes: D, finalIntrinsics: j } = jo(), q = fs(zi, m);
   T({ harden: q }), T(Ca()), T($a(p)), T(Si(e, u)), T(Na(h)), T(Oa(a)), T(Ui()), T(Di()), D();
-  const K = Z(), je = { __proto__: null };
+  const K = j(), je = { __proto__: null };
   typeof x.Buffer == "function" && (je.Buffer = x.Buffer);
   let pe;
   e !== "unsafe" && (pe = K["%InitialGetStackString%"]);
@@ -4383,11 +4383,11 @@ const zi = Sa(), Gi = () => {
   );
   if (x.console = /** @type {Console} */
   Ze.console, typeof /** @type {any} */
-  Ze.console._times == "object" && (je.SafeMap = H(
+  Ze.console._times == "object" && (je.SafeMap = B(
     // eslint-disable-next-line no-underscore-dangle
     /** @type {any} */
     Ze.console._times
-  )), e === "unsafe" && x.assert === z && (x.assert = Rr(void 0, !0)), ja(K, s), Zi(K), Aa(K, $), Go(x), Bo(x, {
+  )), e === "unsafe" && x.assert === Z && (x.assert = Rr(void 0, !0)), ja(K, s), Zi(K), Aa(K, $), Go(x), Bo(x, {
     intrinsics: K,
     newGlobalPropertyNames: Fn,
     makeCompartmentConstructor: tn,
@@ -4408,7 +4408,7 @@ const zi = Sa(), Gi = () => {
   }
   return () => {
     sr === void 0 || // eslint-disable-next-line @endo/no-polymorphic-call
-    z.fail(
+    Z.fail(
       to`Already locked down at ${sr} (SES_ALREADY_LOCKED_DOWN)`,
       v
     ), sr = v(
@@ -4448,7 +4448,7 @@ x.Compartment = tn(
   Ia(x),
   Bi
 );
-x.assert = z;
+x.assert = Z;
 const Hi = (t) => {
   let e = { x: 0, y: 0 }, r = { x: 0, y: 0 }, n = { x: 0, y: 0 };
   const a = (c) => {
@@ -4460,7 +4460,7 @@ const Hi = (t) => {
     n = { x: c.clientX, y: c.clientY }, r = { x: e.x, y: e.y }, document.addEventListener("mousemove", a), document.addEventListener("mouseup", s);
   };
   return t.addEventListener("mousedown", i), s;
-}, Vi = ":host{--spacing-4: .25rem;--spacing-8: calc(var(--spacing-4) * 2);--spacing-12: calc(var(--spacing-4) * 3);--spacing-16: calc(var(--spacing-4) * 4);--spacing-20: calc(var(--spacing-4) * 5);--spacing-24: calc(var(--spacing-4) * 6);--spacing-28: calc(var(--spacing-4) * 7);--spacing-32: calc(var(--spacing-4) * 8);--spacing-36: calc(var(--spacing-4) * 9);--spacing-40: calc(var(--spacing-4) * 10);--font-weight-regular: 400;--font-weight-bold: 500;--font-line-height-s: 1.2;--font-line-height-m: 1.4;--font-line-height-l: 1.5;--font-size-s: 12px;--font-size-m: 14px;--font-size-l: 16px}[data-theme]{background-color:var(--color-background-primary);color:var(--color-foreground-secondary)}.wrapper{display:flex;flex-direction:column;position:fixed;inset-block-end:10px;inset-inline-start:10px;z-index:1000;padding:25px;border-radius:15px;box-shadow:0 0 10px #0000004d}.header{align-items:center;display:flex;justify-content:space-between;border-block-end:2px solid var(--color-background-quaternary);padding-block-end:var(--spacing-4)}button{background:transparent;border:0;cursor:pointer;padding:0}h1{font-size:var(--font-size-s);font-weight:var(--font-weight-bold);margin:0;margin-inline-end:var(--spacing-4);-webkit-user-select:none;user-select:none}iframe{border:none;inline-size:100%;block-size:100%}", Wi = `
+}, Vi = ":host{--spacing-4: .25rem;--spacing-8: calc(var(--spacing-4) * 2);--spacing-12: calc(var(--spacing-4) * 3);--spacing-16: calc(var(--spacing-4) * 4);--spacing-20: calc(var(--spacing-4) * 5);--spacing-24: calc(var(--spacing-4) * 6);--spacing-28: calc(var(--spacing-4) * 7);--spacing-32: calc(var(--spacing-4) * 8);--spacing-36: calc(var(--spacing-4) * 9);--spacing-40: calc(var(--spacing-4) * 10);--font-weight-regular: 400;--font-weight-bold: 500;--font-line-height-s: 1.2;--font-line-height-m: 1.4;--font-line-height-l: 1.5;--font-size-s: 12px;--font-size-m: 14px;--font-size-l: 16px}[data-theme]{background-color:var(--color-background-primary);color:var(--color-foreground-secondary)}.wrapper{display:flex;flex-direction:column;position:fixed;inset-block-start:40px;inset-inline-end:320px;z-index:1000;padding:25px;border-radius:15px;box-shadow:0 0 10px #0000004d}.header{align-items:center;display:flex;justify-content:space-between;border-block-end:2px solid var(--color-background-quaternary);padding-block-end:var(--spacing-4)}button{background:transparent;border:0;cursor:pointer;padding:0}h1{font-size:var(--font-size-s);font-weight:var(--font-weight-bold);margin:0;margin-inline-end:var(--spacing-4);-webkit-user-select:none;user-select:none}iframe{border:none;inline-size:100%;block-size:100%}", Wi = `
 <svg width="16"  height="16"xmlns="http://www.w3.org/2000/svg" fill="none"><g class="fills"><rect rx="0" ry="0" width="16" height="16" class="frame-background"/></g><g class="frame-children"><path d="M11.997 3.997 8 8l-3.997 4.003m-.006-8L8 8l4.003 3.997" class="fills"/><g class="strokes"><path d="M11.997 3.997 8 8l-3.997 4.003m-.006-8L8 8l4.003 3.997" style="fill: none; stroke-width: 1; stroke: rgb(143, 157, 163); stroke-opacity: 1; stroke-linecap: round;" class="stroke-shape"/></g></g></svg>`;
 var ue, qt;
 class qi extends HTMLElement {
@@ -4957,7 +4957,7 @@ class N {
     return Fe.create(this, this._def);
   }
   nullable() {
-    return lt.create(this, this._def);
+    return dt.create(this, this._def);
   }
   nullish() {
     return this.nullable().optional();
@@ -5656,7 +5656,7 @@ Dt.create = (t) => new Dt({
   coerce: (t == null ? void 0 : t.coerce) || !1,
   ...C(t)
 });
-class it extends N {
+class lt extends N {
   _parse(e) {
     if (this._def.coerce && (e.data = new Date(e.data)), this._getType(e) !== b.date) {
       const s = this._getOrReturnCtx(e);
@@ -5696,7 +5696,7 @@ class it extends N {
     };
   }
   _addCheck(e) {
-    return new it({
+    return new lt({
       ...this._def,
       checks: [...this._def.checks, e]
     });
@@ -5728,7 +5728,7 @@ class it extends N {
     return e != null ? new Date(e) : null;
   }
 }
-it.create = (t) => new it({
+lt.create = (t) => new lt({
   checks: [],
   coerce: (t == null ? void 0 : t.coerce) || !1,
   typeName: P.ZodDate,
@@ -5797,7 +5797,7 @@ Et.create = (t) => new Et({
   typeName: P.ZodAny,
   ...C(t)
 });
-class ot extends N {
+class at extends N {
   constructor() {
     super(...arguments), this._unknown = !0;
   }
@@ -5805,7 +5805,7 @@ class ot extends N {
     return re(e.data);
   }
 }
-ot.create = (t) => new ot({
+at.create = (t) => new at({
   typeName: P.ZodUnknown,
   ...C(t)
 });
@@ -5913,12 +5913,12 @@ Pe.create = (t, e) => new Pe({
   typeName: P.ZodArray,
   ...C(e)
 });
-function ht(t) {
+function gt(t) {
   if (t instanceof U) {
     const e = {};
     for (const r in t.shape) {
       const n = t.shape[r];
-      e[r] = Fe.create(ht(n));
+      e[r] = Fe.create(gt(n));
     }
     return new U({
       ...t._def,
@@ -5927,8 +5927,8 @@ function ht(t) {
   } else
     return t instanceof Pe ? new Pe({
       ...t._def,
-      type: ht(t.element)
-    }) : t instanceof Fe ? Fe.create(ht(t.unwrap())) : t instanceof lt ? lt.create(ht(t.unwrap())) : t instanceof Oe ? Oe.create(t.items.map((e) => ht(e))) : t;
+      type: gt(t.element)
+    }) : t instanceof Fe ? Fe.create(gt(t.unwrap())) : t instanceof dt ? dt.create(gt(t.unwrap())) : t instanceof Oe ? Oe.create(t.items.map((e) => gt(e))) : t;
 }
 class U extends N {
   constructor() {
@@ -6165,7 +6165,7 @@ class U extends N {
    * @deprecated
    */
   deepPartial() {
-    return ht(this);
+    return gt(this);
   }
   partial(e) {
     const r = {};
@@ -6557,7 +6557,7 @@ br.create = (t, e, r) => new br({
   typeName: P.ZodMap,
   ...C(r)
 });
-class ct extends N {
+class ut extends N {
   _parse(e) {
     const { status: r, ctx: n } = this._processInputParams(e);
     if (n.parsedType !== b.set)
@@ -6596,13 +6596,13 @@ class ct extends N {
     return n.common.async ? Promise.all(c).then((u) => i(u)) : i(c);
   }
   min(e, r) {
-    return new ct({
+    return new ut({
       ...this._def,
       minSize: { value: e, message: E.toString(r) }
     });
   }
   max(e, r) {
-    return new ct({
+    return new ut({
       ...this._def,
       maxSize: { value: e, message: E.toString(r) }
     });
@@ -6614,14 +6614,14 @@ class ct extends N {
     return this.min(1, e);
   }
 }
-ct.create = (t, e) => new ct({
+ut.create = (t, e) => new ut({
   valueType: t,
   minSize: null,
   maxSize: null,
   typeName: P.ZodSet,
   ...C(e)
 });
-class vt extends N {
+class _t extends N {
   constructor() {
     super(...arguments), this.validate = this.implement;
   }
@@ -6696,13 +6696,13 @@ class vt extends N {
     return this._def.returns;
   }
   args(...e) {
-    return new vt({
+    return new _t({
       ...this._def,
-      args: Oe.create(e).rest(ot.create())
+      args: Oe.create(e).rest(at.create())
     });
   }
   returns(e) {
-    return new vt({
+    return new _t({
       ...this._def,
       returns: e
     });
@@ -6714,9 +6714,9 @@ class vt extends N {
     return this.parse(e);
   }
   static create(e, r, n) {
-    return new vt({
-      args: e || Oe.create([]).rest(ot.create()),
-      returns: r || ot.create(),
+    return new _t({
+      args: e || Oe.create([]).rest(at.create()),
+      returns: r || at.create(),
       typeName: P.ZodFunction,
       ...C(n)
     });
@@ -6960,7 +6960,7 @@ Fe.create = (t, e) => new Fe({
   typeName: P.ZodOptional,
   ...C(e)
 });
-class lt extends N {
+class dt extends N {
   _parse(e) {
     return this._getType(e) === b.null ? re(null) : this._def.innerType._parse(e);
   }
@@ -6968,7 +6968,7 @@ class lt extends N {
     return this._def.innerType;
   }
 }
-lt.create = (t, e) => new lt({
+dt.create = (t, e) => new dt({
   innerType: t,
   typeName: P.ZodNullable,
   ...C(e)
@@ -7133,7 +7133,7 @@ var P;
 })(P || (P = {}));
 const dc = (t, e = {
   message: `Input not instance of ${t.name}`
-}) => vs((r) => r instanceof t, e), _s = Ee.create, bs = qe.create, fc = Sr.create, pc = Ke.create, ws = Dt.create, mc = it.create, hc = vr.create, yc = Ut.create, gc = jt.create, vc = Et.create, _c = ot.create, bc = Ue.create, wc = _r.create, Sc = Pe.create, Ec = U.create, xc = U.strictCreate, Pc = Zt.create, kc = Mr.create, Tc = zt.create, Ic = Oe.create, Ac = Gt.create, Cc = br.create, $c = ct.create, Nc = vt.create, Oc = Bt.create, Rc = Ht.create, Mc = Ye.create, Lc = Vt.create, Fc = xt.create, oo = ke.create, Dc = Fe.create, Uc = lt.create, jc = ke.createWithPreprocess, Zc = Qt.create, zc = () => _s().optional(), Gc = () => bs().optional(), Bc = () => ws().optional(), Hc = {
+}) => vs((r) => r instanceof t, e), _s = Ee.create, bs = qe.create, fc = Sr.create, pc = Ke.create, ws = Dt.create, mc = lt.create, hc = vr.create, yc = Ut.create, gc = jt.create, vc = Et.create, _c = at.create, bc = Ue.create, wc = _r.create, Sc = Pe.create, Ec = U.create, xc = U.strictCreate, Pc = Zt.create, kc = Mr.create, Tc = zt.create, Ic = Oe.create, Ac = Gt.create, Cc = br.create, $c = ut.create, Nc = _t.create, Oc = Bt.create, Rc = Ht.create, Mc = Ye.create, Lc = Vt.create, Fc = xt.create, oo = ke.create, Dc = Fe.create, Uc = dt.create, jc = ke.createWithPreprocess, Zc = Qt.create, zc = () => _s().optional(), Gc = () => bs().optional(), Bc = () => ws().optional(), Hc = {
   string: (t) => Ee.create({ ...t, coerce: !0 }),
   number: (t) => qe.create({ ...t, coerce: !0 }),
   boolean: (t) => Dt.create({
@@ -7141,9 +7141,9 @@ const dc = (t, e = {
     coerce: !0
   }),
   bigint: (t) => Ke.create({ ...t, coerce: !0 }),
-  date: (t) => it.create({ ...t, coerce: !0 })
+  date: (t) => lt.create({ ...t, coerce: !0 })
 }, Vc = A;
-var j = /* @__PURE__ */ Object.freeze({
+var V = /* @__PURE__ */ Object.freeze({
   __proto__: null,
   defaultErrorMap: Lt,
   setErrorMap: Yi,
@@ -7172,12 +7172,12 @@ var j = /* @__PURE__ */ Object.freeze({
   ZodNumber: qe,
   ZodBigInt: Ke,
   ZodBoolean: Dt,
-  ZodDate: it,
+  ZodDate: lt,
   ZodSymbol: vr,
   ZodUndefined: Ut,
   ZodNull: jt,
   ZodAny: Et,
-  ZodUnknown: ot,
+  ZodUnknown: at,
   ZodNever: Ue,
   ZodVoid: _r,
   ZodArray: Pe,
@@ -7188,8 +7188,8 @@ var j = /* @__PURE__ */ Object.freeze({
   ZodTuple: Oe,
   ZodRecord: Gt,
   ZodMap: br,
-  ZodSet: ct,
-  ZodFunction: vt,
+  ZodSet: ut,
+  ZodFunction: _t,
   ZodLazy: Bt,
   ZodLiteral: Ht,
   ZodEnum: Ye,
@@ -7198,7 +7198,7 @@ var j = /* @__PURE__ */ Object.freeze({
   ZodEffects: ke,
   ZodTransformer: ke,
   ZodOptional: Fe,
-  ZodNullable: lt,
+  ZodNullable: dt,
   ZodDefault: Wt,
   ZodCatch: wr,
   ZodNaN: Sr,
@@ -7258,27 +7258,27 @@ var j = /* @__PURE__ */ Object.freeze({
   quotelessJson: Ki,
   ZodError: xe
 });
-const Wc = j.object({
-  width: j.number().positive(),
-  height: j.number().positive()
+const Wc = V.object({
+  width: V.number().positive(),
+  height: V.number().positive()
 });
 function qc(t, e, r, n) {
   const a = document.createElement("plugin-modal");
   return a.setTheme(r), a.setAttribute("title", t), a.setAttribute("iframe-src", e), a.setAttribute("width", String((n == null ? void 0 : n.width) || 285)), a.setAttribute("height", String((n == null ? void 0 : n.height) || 540)), document.body.appendChild(a), a;
 }
-const Kc = j.function().args(
-  j.string(),
-  j.string(),
-  j.enum(["dark", "light"]),
+const Kc = V.function().args(
+  V.string(),
+  V.string(),
+  V.enum(["dark", "light"]),
   Wc.optional()
-).implement((t, e, r, n) => qc(t, e, r, n)), Yc = j.object({
-  name: j.string(),
-  host: j.string().url(),
-  code: j.string(),
-  icon: j.string().optional(),
-  description: j.string().max(200).optional(),
-  permissions: j.array(
-    j.enum([
+).implement((t, e, r, n) => qc(t, e, r, n)), Yc = V.object({
+  name: V.string(),
+  host: V.string().url(),
+  code: V.string(),
+  icon: V.string().optional(),
+  description: V.string().max(200).optional(),
+  permissions: V.array(
+    V.enum([
       "page:read",
       "page:write",
       "file:read",
@@ -7349,7 +7349,7 @@ function el(t, e) {
         ne == null || ne.dispatchEvent(i);
       },
       onMessage: (s) => {
-        j.function().parse(s), cn.push(s);
+        V.function().parse(s), cn.push(s);
       }
     },
     utils: {
@@ -7365,17 +7365,14 @@ function el(t, e) {
         }
       }
     },
-    setTimeout: j.function().args(j.function(), j.number()).implement((s, i) => {
-      setTimeout(s, i);
-    }),
     closePlugin: r,
     on(s, i) {
-      j.enum(an).parse(s), j.function().parse(i), s === "pagechange" ? n("page:read") : s === "filechange" ? n("file:read") : s === "selectionchange" && n("selection:read");
+      V.enum(an).parse(s), V.function().parse(i), s === "pagechange" ? n("page:read") : s === "filechange" ? n("file:read") : s === "selectionchange" && n("selection:read");
       const c = Nt.get(s) || [];
       c.push(i), Nt.set(s, c);
     },
     off(s, i) {
-      j.enum(an).parse(s), j.function().parse(i);
+      V.enum(an).parse(s), V.function().parse(i);
       const c = Nt.get(s) || [];
       Nt.set(
         s,
@@ -7436,33 +7433,37 @@ function el(t, e) {
     }
   };
 }
-let so = !1, yt, _t = null;
+let so = !1, et, rt = null;
 function tl(t) {
-  _t = t;
-}
-function rl(t) {
-  return () => {
-    yt && _t && (yt.closePlugin(), t.id && _t.removeListener(t.id));
-  };
+  rt = t;
 }
 const Es = async function(t) {
   try {
     const e = await Xc(t);
-    if (so || (so = !0, hardenIntrinsics()), yt && yt.closePlugin(), _t) {
-      yt = el(_t, t), new Compartment({
-        penpot: harden(yt),
+    if (so || (so = !0, hardenIntrinsics()), et && et.closePlugin(), rt) {
+      et = el(rt, t), new Compartment({
+        penpot: harden(et),
         fetch: window.fetch.bind(window),
         console: harden(window.console),
-        Math: harden(Math)
+        Math: harden(Math),
+        setTimeout: harden(
+          (...[a, s]) => setTimeout(() => {
+            a();
+          }, s)
+        ),
+        clearTimeout: harden((a) => {
+          clearTimeout(a);
+        })
       }).evaluate(e);
-      let n = {};
-      n.id = _t.addListener("finish", rl(n));
+      const n = rt.addListener("finish", () => {
+        et == null || et.closePlugin(), rt == null || rt.removeListener(n);
+      });
     } else
       console.error("Cannot find Penpot Context");
   } catch (e) {
     console.error(e);
   }
-}, nl = async function(t) {
+}, rl = async function(t) {
   const e = await Jc(t);
   Es(e);
 };
@@ -7476,7 +7477,7 @@ repairIntrinsics({
 const ao = globalThis;
 ao.initPluginsRuntime = (t) => {
   if (t) {
-    console.log("%c[PLUGINS] Initialize context", "color: #008d7c"), ao.ɵcontext = t, globalThis.ɵloadPlugin = Es, globalThis.ɵloadPluginByUrl = nl, tl(t);
+    console.log("%c[PLUGINS] Initialize context", "color: #008d7c"), ao.ɵcontext = t, globalThis.ɵloadPlugin = Es, globalThis.ɵloadPluginByUrl = rl, tl(t);
     for (const e of an)
       t.addListener(e, Qc.bind(null, e));
   }
