@@ -120,16 +120,16 @@
                  (fn [body]
                    (let [name (obj/get body "name")
                          desc (obj/get body "description")
-                         host (obj/get body "host")
                          code (obj/get body "code")
                          icon (obj/get body "icon")
                          permissions (obj/get body "permissions")
+                         origin (obj/get (js/URL. plugin-url) "origin")
 
                          new-state
                          (conj plugins-state
                                {:name name
                                 :description desc
-                                :host host
+                                :host origin
                                 :code code
                                 :icon icon
                                 :permissions (->> permissions (mapv str))})]
