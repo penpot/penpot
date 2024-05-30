@@ -93,6 +93,7 @@
     }
     .input-wrapper {
       @extend .input-element;
+      @include bodySmallTypography;
     }
   }
 }

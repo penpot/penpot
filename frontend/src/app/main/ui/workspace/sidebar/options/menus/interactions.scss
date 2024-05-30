@@ -143,6 +143,7 @@
   }
   .input-element-wrapper {
     @extend .input-element;
+    @include bodySmallTypography;
     grid-area: content;
   }
   .buttons-wrapper {
@@ -319,6 +320,7 @@
 
   .flow-input {
     @extend .input-base;
+    @include bodySmallTypography;
     background-color: transparent;
     height: $s-28;
   }

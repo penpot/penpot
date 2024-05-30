@@ -39,11 +39,6 @@ msgstr ""
 "Ini layanan DEMO, JANGAN GUNAKAN untuk pekerjaan nyata, proyek-proyek ini "
 "akan di hapus secara berkala."
 
-#: src/app/main/ui/auth/register.cljs,
-#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.email"
-msgstr "Surel"
-
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
 msgstr "Lupa kata sandi?"
@@ -163,10 +158,6 @@ msgstr "Belum punya akun?"
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.register-submit"
 msgstr "Buat akun baru"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.register-subtitle"
-msgstr "Gratis dan Sumber Terbuka"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"
@@ -2429,10 +2420,6 @@ msgid "questions.31-50"
 msgstr "31–50"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.a-lot"
-msgstr "Banyak"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.adobe-xd"
 msgstr "Adobe XD"
 
@@ -2462,40 +2449,16 @@ msgid "questions.figma"
 msgstr "Figma"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.founder"
-msgstr "Pendiri/VP"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.freelancer"
 msgstr "Saya seorang pekerja lepas"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.get-the-code-from-my-team-project"
-msgstr "Dapatkan kode dari proyek tim saya "
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.interface-design-visual-assets-design-systems"
-msgstr "... desain antarmuka, aset visual, sistem desain, dll."
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.invision"
 msgstr "InVision"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.leave-feedback-for-my-team-project"
-msgstr "Tinggalkan masukan untuk proyek tim saya"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.lets-get-started"
 msgstr "Mari kita mulai!"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.manager"
-msgstr "Pengelola Produk atau Proyek"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.marketing"
-msgstr "Pemasaran"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.more-than-50"
@@ -2504,10 +2467,6 @@ msgstr "Lebih dari 50"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.next"
 msgstr "Berikutnya"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.none"
-msgstr "Tidak ada"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.other"
@@ -2522,14 +2481,6 @@ msgid "questions.previous"
 msgstr "Sebelumnya"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.questions-how-are-you-planning-to-use-penpot"
-msgstr "Apa rencana Anda menggunakan Penpot?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.role"
-msgstr "Apa peran Anda?"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.select-option"
 msgstr "Pilih opsi"
 
@@ -2538,46 +2489,12 @@ msgid "questions.sketch"
 msgstr "Sketch"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.some"
-msgstr "Beberapa"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.start"
 msgstr "Mulai"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.start-to-work-on-my-project"
-msgstr "Mulai bekerja pada proyek saya"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.student-teacher"
 msgstr "Siswa atau Guru"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.team-size"
-msgstr "Seberapa besar tim Anda?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.test-penpot-to-see-if-its-a-fit-for-team"
-msgstr "Coba Penpot untuk tim Anda "
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.try-out-before-using-penpot-on-premise"
-msgstr "Coba sebelum menggunakan Penpot on-premise"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.wireframes-user-journeys-flows-navigation-trees"
-msgstr "... gambar rangka, perjalanan & alur pengguna, pohon navigasi, dll."
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.work-in-concept-ideas"
-msgstr "Bekerja dalam ide konsep"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.your-feedback-will-help-us"
-msgstr ""
-"Masukan Anda akan membantu kami mengerti kebiasaan dan preferensi Anda "
-"supaya kami dapat membuat Penpot sebuah alat yang berguna dan nyaman."
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
 msgid "settings.detach"

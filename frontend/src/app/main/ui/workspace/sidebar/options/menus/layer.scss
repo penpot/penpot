@@ -19,6 +19,7 @@
   }
   .input {
     @extend .input-element;
+    @include bodySmallTypography;
     width: $s-60;
   }
   .actions {

@@ -169,7 +169,7 @@
        [:& fm/input
         {:name :email
          :type "email"
-         :label (tr "auth.email")
+         :label (tr "auth.work-email")
          :class (stl/css :form-field)}]]
 
       [:div {:class (stl/css :fields-row)}

@@ -291,9 +291,7 @@
 // INPUTS
 .input-base {
   @include removeInputStyle;
-  @include bodySmallTypography;
   @include textEllipsis;
-  // @include focusInput;
   height: $s-28;
   width: 100%;
   flex-grow: 1;
@@ -326,7 +324,6 @@
 }
 
 .input-element {
-  @include bodySmallTypography;
   @include focusInput;
   display: flex;
   align-items: center;

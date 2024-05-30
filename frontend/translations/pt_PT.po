@@ -39,11 +39,6 @@ msgstr ""
 "Este é um serviço de DEMONSTRAÇÃO, NÃO UTILIZES para trabalhos reais. Os "
 "projetos serão eliminados periodicamente."
 
-#: src/app/main/ui/auth/register.cljs,
-#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.email"
-msgstr "E-mail"
-
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
 msgstr "Esqueceste a tua palavra-passe?"
@@ -163,10 +158,6 @@ msgstr "Não tens conta?"
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.register-submit"
 msgstr "Criar conta"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.register-subtitle"
-msgstr "É gratuito, é Open Source"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"
@@ -2454,10 +2445,6 @@ msgid "questions.31-50"
 msgstr "31-50"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.a-lot"
-msgstr "Muita"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.adobe-xd"
 msgstr "Adobe XD"
 
@@ -2466,60 +2453,20 @@ msgid "questions.canva"
 msgstr "Canva"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.describe-your-experience-working-on"
-msgstr "Quanta experiência dirias que tens a trabalhar com..."
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.designer"
-msgstr "Designer"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.developer"
-msgstr "Desenvolvedor(a)"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.discover-more-about-penpot"
-msgstr "Descobrir mais sobre o Penpot"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.figma"
 msgstr "Figma"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.founder"
-msgstr "Direção"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.freelancer"
 msgstr "Sou trabalhador(a) independente (freelancer)"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.get-the-code-from-my-team-project"
-msgstr "Obter código de um projeto "
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.interface-design-visual-assets-design-systems"
-msgstr "... design de interfaces, recursos visuais, sistemas de design, etc."
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.invision"
 msgstr "InVision"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.leave-feedback-for-my-team-project"
-msgstr "Deixar comentários num projeto"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.lets-get-started"
 msgstr "Vamos começar!"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.manager"
-msgstr "Gestor(a) de projeto ou de produto"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.marketing"
-msgstr "Marketing"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.more-than-50"
@@ -2528,10 +2475,6 @@ msgstr "Mais de 50"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.next"
 msgstr "Seguinte"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.none"
-msgstr "Nenhuma"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.other"
@@ -2546,14 +2489,6 @@ msgid "questions.previous"
 msgstr "Anterior"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.questions-how-are-you-planning-to-use-penpot"
-msgstr "Com que objetivo pensas usar o Penpot?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.role"
-msgstr "Qual é o teu cargo?"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.select-option"
 msgstr "Escolhe uma opção"
 
@@ -2562,16 +2497,8 @@ msgid "questions.sketch"
 msgstr "Sketch"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.some"
-msgstr "Alguma"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.start"
 msgstr "Começar"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.start-to-work-on-my-project"
-msgstr "Começar a trabalhar no meu projeto"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.student-teacher"
@@ -5316,3 +5243,4 @@ msgstr "Filtrar"
 
 #~ msgid "workspace.options.layout.direction.left"
 #~ msgstr "Linha"
+

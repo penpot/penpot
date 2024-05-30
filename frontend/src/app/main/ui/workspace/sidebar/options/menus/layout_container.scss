@@ -84,6 +84,7 @@
   gap: $s-4;
   .column-gap {
     @extend .input-element;
+    @include bodySmallTypography;
     width: $s-108;
     &.disabled {
       @extend .disabled-input;
@@ -91,6 +92,7 @@
   }
   .row-gap {
     @extend .input-element;
+    @include bodySmallTypography;
     width: $s-108;
     &.disabled {
       @extend .disabled-input;
@@ -113,6 +115,7 @@
 
     .padding-simple {
       @extend .input-element;
+      @include bodySmallTypography;
       max-width: $s-108;
     }
   }
@@ -124,6 +127,7 @@
 
     .padding-multiple {
       @extend .input-element;
+      @include bodySmallTypography;
       max-width: $s-108;
     }
   }
@@ -239,6 +243,7 @@
 
   .track-info-value {
     @extend .input-element;
+    @include bodySmallTypography;
     border-radius: 0;
     border-right: $s-1 solid var(--panel-background-color);
   }

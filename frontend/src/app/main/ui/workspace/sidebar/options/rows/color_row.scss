@@ -41,6 +41,7 @@
 
 .color-name-wrapper {
   @extend .input-element;
+  @include bodySmallTypography;
   flex-grow: 1;
   width: 100%;
   min-width: 0;
@@ -166,6 +167,7 @@
 
 .opacity-element-wrapper {
   @extend .input-element;
+  @include bodySmallTypography;
   width: $s-60;
   border-radius: 0 $br-8 $br-8 0;
   .opacity-input {

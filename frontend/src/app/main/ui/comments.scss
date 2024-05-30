@@ -236,6 +236,7 @@
 .reply-form {
   textarea {
     @extend .input-element;
+    @include bodySmallTypography;
     line-height: 1.45;
     height: 100%;
     width: 100%;

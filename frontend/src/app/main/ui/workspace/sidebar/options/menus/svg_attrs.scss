@@ -37,6 +37,7 @@
 
 .attr-input {
   @extend .input-element;
+  @include bodySmallTypography;
   width: $s-124;
 }
 

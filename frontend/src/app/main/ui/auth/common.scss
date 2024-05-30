@@ -10,12 +10,20 @@
   width: 100%;
   padding-block-end: 0;
   display: grid;
-  gap: $s-24;
+  gap: $s-12;
   form {
     display: flex;
     flex-direction: column;
     gap: $s-12;
+    margin-top: $s-12;
   }
+}
+
+.auth-title-wrapper {
+  width: 100%;
+  padding-block-end: 0;
+  display: grid;
+  gap: $s-8;
 }
 
 .separator {

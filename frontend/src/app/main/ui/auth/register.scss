@@ -8,15 +8,24 @@
 @use "./common.scss";
 
 .accept-terms-and-privacy-wrapper {
-  margin: $s-16 0;
   :global(a) {
     color: $df-secondary;
     font-weight: $fw700;
   }
 }
 
+.checkbox-terms-and-privacy {
+  align-items: flex-start;
+}
+.register-form {
+  gap: $s-24;
+}
+
 .register-success {
-  padding-bottom: $s-32;
+  gap: $s-24;
+  .auth-title {
+    @include medTitleTipography;
+  }
 }
 
 .notification-icon {
@@ -30,9 +39,30 @@
   }
 }
 
-.notification-text-email,
 .notification-text {
-  font-size: $fs-16;
-  color: var(--notification-foreground-color-default);
-  margin-bottom: $s-16;
+  @include bodyMediumTypography;
+  color: var(--title-foreground-color);
+}
+
+.notification-text-email {
+  @include medTitleTipography;
+  font-size: $fs-20;
+  color: var(--register-confirmation-color);
+  margin-inline: $s-36;
+}
+
+.logo-btn {
+  height: $s-40;
+  svg {
+    width: $s-120;
+    height: $s-40;
+    fill: var(--main-icon-foreground);
+  }
+}
+
+.logo-container {
+  display: flex;
+  justify-content: flex-start;
+  width: $s-120;
+  margin-block-end: $s-24;
 }

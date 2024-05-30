@@ -39,11 +39,6 @@ msgstr ""
 "Das ist eine DEMO-VERSION, verwenden Sie es NICHT zum Arbeiten, die Projekte "
 "werden regelmäßig gelöscht."
 
-#: src/app/main/ui/auth/register.cljs,
-#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.email"
-msgstr "E-Mail"
-
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
 msgstr "Passwort vergessen?"
@@ -175,10 +170,6 @@ msgstr "Noch kein Konto?"
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.register-submit"
 msgstr "Konto erstellen"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.register-subtitle"
-msgstr "Kostenlos, es ist Open Source"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"

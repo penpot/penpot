@@ -540,5 +540,6 @@
 
 .email-input {
   @extend .input-base;
+  @include bodySmallTypography;
   height: auto;
 }

@@ -63,6 +63,7 @@
 
 .input-text {
   @extend .input-element;
+  @include bodySmallTypography;
   color: var(--input-foreground-color-active);
   padding-left: $s-8;
   margin: 0;

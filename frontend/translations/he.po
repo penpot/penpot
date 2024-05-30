@@ -38,11 +38,6 @@ msgid "auth.demo-warning"
 msgstr ""
 "זה שירות ניסיוני, לא להשתמש בו לעבודה אמתית, המיזמים יימחקו מדי פעם בפעם."
 
-#: src/app/main/ui/auth/register.cljs,
-#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.email"
-msgstr "דוא״ל"
-
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
 msgstr "שכחת סיסמה?"
@@ -169,10 +164,6 @@ msgstr "אין לך חשבון עדיין?"
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.register-submit"
 msgstr "יצירת חשבון"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.register-subtitle"
-msgstr "זה חינם, בקוד פתוח"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"
@@ -2448,32 +2439,12 @@ msgid "questions.31-50"
 msgstr "31‏-50"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.a-lot"
-msgstr "הרבה מהם"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.adobe-xd"
 msgstr "Adobe XD"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.canva"
 msgstr "Canva"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.describe-your-experience-working-on"
-msgstr "מה יתאר הכי טוב את אופן השימוש שלך…"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.designer"
-msgstr "עיצוב"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.developer"
-msgstr "פיתוח"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.discover-more-about-penpot"
-msgstr "היכרות מעמיקה יותר עם Penpot"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.figma"
@@ -2508,14 +2479,6 @@ msgid "questions.lets-get-started"
 msgstr "מתחילים!"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.manager"
-msgstr "ניהול מוצר או מיזם"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.marketing"
-msgstr "שיווק"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.more-than-50"
 msgstr "גדול מ־50"
 
@@ -2526,10 +2489,6 @@ msgstr "אין"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.next"
 msgstr "הבאה"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.none"
-msgstr "כלום"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.other"
@@ -2544,24 +2503,12 @@ msgid "questions.previous"
 msgstr "הקודמת"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.questions-how-are-you-planning-to-use-penpot"
-msgstr "מהן התוכניות שלך בנוגע לשימוש ב־Penpot?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.role"
-msgstr "מה התפקיד שלך?"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.select-option"
 msgstr "בחירת אפשרות"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.sketch"
 msgstr "Sketch"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.some"
-msgstr "חלק מהם"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.start"
