@@ -16,15 +16,16 @@
    [app.main.data.tokens :as dt]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.icons :as i]
-   [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.ui.workspace.context-menu :refer [menu-entry prevent-default]]
    [app.main.ui.workspace.tokens.core :as wtc]
    [app.util.dom :as dom]
    [app.util.timers :as timers]
+   [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
@@ -52,20 +53,27 @@
                          :selected-shapes selected-shapes})))
 
 (defn update-layout-spacing [value shape-ids attribute]
-  (st/emit! (dwsl/update-layout shape-ids {:layout-padding {:p1 value}})))
+  (let [layout-padding (into {} (map #(vector % value) attribute))
+        layout-gap (if (= (first attribute) :row-gap)
+                     {:row-gap value}
+                     (if (= (first attribute) :column-gap)
+                       {:column-gap value}
+                       {}))]
+    (if (not-empty layout-gap)
+      (st/emit! (dwsl/update-layout shape-ids {:layout-gap layout-gap}))
+      (st/emit! (dwsl/update-layout shape-ids {:layout-padding layout-padding})))))
 
 
 (defn apply-spacing-token [token-id token-type-props attribute selected-shapes]
-    (let [token (dt/get-token-data-from-token-id token-id)
-        updated-token-type-props (if (#{:padding-p1} attribute)
-                                   (assoc token-type-props
-                                          :on-update-shape update-layout-spacing
-                                          :attributes #{attribute})
-                                   token-type-props)]
+  (let [token (dt/get-token-data-from-token-id token-id)
+        attribute (set attribute)
+        updated-token-type-props (assoc token-type-props
+                                        :on-update-shape update-layout-spacing
+                                        :attributes attribute)]
     (wtc/on-apply-token {:token token
                          :token-type-props updated-token-type-props
                          :selected-shapes selected-shapes})))
-    
+
 
 (defn additional-actions [{:keys [token-id token-type-props token-type selected-shapes] :as context-data}]
   (case token-type
@@ -74,16 +82,15 @@
                     {:title "Top Right" :action #(apply-border-radius-token token-id token-type-props :r2 selected-shapes)}
                     {:title "Bottom Right" :action #(apply-border-radius-token token-id token-type-props :r3 selected-shapes)}
                     {:title "Bottom Left" :action #(apply-border-radius-token token-id token-type-props :r4 selected-shapes)}]
-    :spacing    [{:title "All" :action #(js/console.log "All spacing")}
-                {:title "Gap" :action #(js/console.log "Gap")}
-                {:title "Vertical padding" :action #(js/console.log "Vertical Padding")}
-                {:title "Horizontal padding" :action #(js/console.log "Horizontal Padding")}
-                {:title "Row Gap" :action #(js/console.log "Row Gap")}
-                {:title "Top" :action #(js/console.log "Top")}
-                {:title "Right" :action #(js/console.log "Right")}
-                {:title "Bottom" :action #(js/console.log "Bottom")}
-                {:title "Left" :action #(apply-spacing-token token-id token-type-props :padding-p1 selected-shapes)}
-    ]
+    :spacing    [{:title "All" :action #(apply-spacing-token token-id token-type-props [:p1 :p2 :p3 :p4] selected-shapes)}
+                 {:title "Column Gap" :action #(apply-spacing-token token-id token-type-props [:column-gap] selected-shapes)}
+                 {:title "Vertical padding" :action #(apply-spacing-token token-id token-type-props [:p1 :p3] selected-shapes)}
+                 {:title "Horizontal padding" :action #(apply-spacing-token token-id token-type-props [:p2 :p4] selected-shapes)}
+                 {:title "Row Gap" :action #(apply-spacing-token token-id token-type-props [:row-gap] selected-shapes)}
+                 {:title "Top" :action #(apply-spacing-token token-id token-type-props [:p1] selected-shapes)}
+                 {:title "Right" :action #(apply-spacing-token token-id token-type-props [:p2] selected-shapes)}
+                 {:title "Bottom" :action #(apply-spacing-token token-id token-type-props [:p3] selected-shapes)}
+                 {:title "Left" :action #(apply-spacing-token token-id token-type-props [:p4] selected-shapes)}]
     []))
 
 (defn generate-menu-entries [{:keys [token-id token-type-props token-type selected-shapes] :as context-data}]

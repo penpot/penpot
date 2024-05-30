@@ -92,13 +92,12 @@
 
 (sm/def! ::spacing
   [:map
-   [:spacing-column {:optional true} ::sm/uuid]
-   [:spacing-row {:optional true} ::sm/uuid]
-   [:padding-p1 {:optional true} ::sm/uuid]
-   [:padding-p2 {:optional true} ::sm/uuid]
-   [:padding-p3 {:optional true} ::sm/uuid]
-   [:padding-p4 {:optional true} ::sm/uuid]
-   [:padding-all {:optional true} ::sm/uuid]
+   [:row-gap {:optional true} ::sm/uuid]
+   [:column-gap {:optional true} ::sm/uuid]
+   [:p1 {:optional true} ::sm/uuid]
+   [:p2 {:optional true} ::sm/uuid]
+   [:p3 {:optional true} ::sm/uuid]
+   [:p4 {:optional true} ::sm/uuid]
    [:position-x {:optional true} ::sm/uuid]
    [:position-y {:optional true} ::sm/uuid]])
 
