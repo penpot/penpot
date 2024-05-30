@@ -62,7 +62,8 @@
       var(--palette-button-shadow-final) 100%
     );
   }
-  &.disabled ::after {
+
+  &:disabled::after {
     background-image: none;
   }
 
