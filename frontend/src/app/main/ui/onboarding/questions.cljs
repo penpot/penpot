@@ -287,9 +287,11 @@
                (modal/show! {:type :onboarding-team})
 
                :else
-               (modal/hide!)))))]
+               (modal/hide!)))))
+        onboarding-a-b-test? (cf/external-feature-flag "signup-background" "test")]
 
-    [:div {:class (stl/css :modal-overlay)}
+    [:div {:class (stl/css-case :modal-overlay true
+                                :onboarding-a-b-test onboarding-a-b-test?)}
      [:div {:class (stl/css :modal-container)
             :ref container}
       (case @step
