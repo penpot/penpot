@@ -599,29 +599,32 @@
               (rx/map #(update-attrs % attrs)))
          (rx/of (dwu/commit-undo-transaction undo-id)))))))
 
-
 (defn apply-typography
   "A higher level event that has the resposability of to apply the
   specified typography to the selected shapes."
-  [typography file-id]
-  (ptk/reify ::apply-typography
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [editor-state (:workspace-editor-state state)
-            selected     (wsh/lookup-selected state)
-            attrs        (-> typography
-                             (assoc :typography-ref-file file-id)
-                             (assoc :typography-ref-id (:id typography))
-                             (dissoc :id :name))
-            undo-id (js/Symbol)]
+  ([typography file-id]
+   (apply-typography nil typography file-id))
 
-        (rx/concat
-         (rx/of (dwu/start-undo-transaction undo-id))
-         (->> (rx/from (seq selected))
-              (rx/map (fn [id]
-                        (let [editor (get editor-state id)]
-                          (update-text-attrs {:id id :editor editor :attrs attrs})))))
-         (rx/of (dwu/commit-undo-transaction undo-id)))))))
+  ([ids typography file-id]
+   (assert (or (nil? ids) (and (set? ids) (every? uuid? ids))))
+   (ptk/reify ::apply-typography
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [editor-state (:workspace-editor-state state)
+             ids          (d/nilv ids (wsh/lookup-selected state))
+             attrs        (-> typography
+                              (assoc :typography-ref-file file-id)
+                              (assoc :typography-ref-id (:id typography))
+                              (dissoc :id :name))
+             undo-id (js/Symbol)]
+
+         (rx/concat
+          (rx/of (dwu/start-undo-transaction undo-id))
+          (->> (rx/from (seq ids))
+               (rx/map (fn [id]
+                         (let [editor (get editor-state id)]
+                           (update-text-attrs {:id id :editor editor :attrs attrs})))))
+          (rx/of (dwu/commit-undo-transaction undo-id))))))))
 
 (defn generate-typography-name
   [{:keys [font-id font-variant-id] :as typography}]
@@ -676,4 +679,3 @@
            (rx/of (update-attrs (:id shape)
                                 {:typography-ref-id typ-id
                                  :typography-ref-file file-id}))))))))
-

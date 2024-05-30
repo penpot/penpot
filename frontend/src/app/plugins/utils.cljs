@@ -86,14 +86,14 @@
   (let [file-id (obj/get proxy "$file")
         id (obj/get proxy "$id")]
     (when (and (some? file-id) (some? id))
-      (locate-library-color file-id id))))
+      (locate-library-typography file-id id))))
 
 (defn proxy->library-component
   [proxy]
   (let [file-id (obj/get proxy "$file")
         id (obj/get proxy "$id")]
     (when (and (some? file-id) (some? id))
-      (locate-library-color file-id id))))
+      (locate-library-component file-id id))))
 
 (defn get-data
   ([self attr]
