@@ -41,7 +41,7 @@
   :dev
   {:extra-paths ["dev"]
    :extra-deps
-   {thheller/shadow-cljs {:mvn/version "2.27.4"}
+   {thheller/shadow-cljs {:mvn/version "2.28.8"}
     org.clojure/tools.namespace {:mvn/version "RELEASE"}
     cider/cider-nrepl {:mvn/version "0.44.0"}}}
 
