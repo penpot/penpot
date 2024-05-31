@@ -8,24 +8,17 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.types.shape.radius :as ctsr]
-   [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
-   [app.main.data.shortcuts :as scd]
    [app.main.data.tokens :as dt]
-   [app.main.data.workspace :as dw]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.icons :as i]
    [app.main.ui.workspace.context-menu :refer [menu-entry prevent-default]]
    [app.main.ui.workspace.tokens.core :as wtc]
    [app.util.dom :as dom]
-   [app.util.timers :as timers]
-   [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
@@ -41,7 +34,7 @@
                       {:reg-objects? true
                        :attrs [:rx :ry :r1 :r2 :r3 :r4]})))
 
-(defn apply-border-radius-token [token-id token-type-props attribute selected-shapes]
+(defn apply-border-radius-token [{:keys [token-id token-type-props selected-shapes]} attribute]
   (let [token (dt/get-token-data-from-token-id token-id)
         updated-token-type-props (if (#{:r1 :r2 :r3 :r4} attribute)
                                    (assoc token-type-props
@@ -52,19 +45,15 @@
                          :token-type-props updated-token-type-props
                          :selected-shapes selected-shapes})))
 
-(defn update-layout-spacing [value shape-ids attribute]
-  (let [layout-padding (into {} (map #(vector % value) attribute))
-        layout-gap (if (= (first attribute) :row-gap)
-                     {:row-gap value}
-                     (if (= (first attribute) :column-gap)
-                       {:column-gap value}
-                       {}))]
-    (if (not-empty layout-gap)
-      (st/emit! (dwsl/update-layout shape-ids {:layout-gap layout-gap}))
-      (st/emit! (dwsl/update-layout shape-ids {:layout-padding layout-padding})))))
+(defn update-layout-spacing [value shape-ids attributes]
+  (if-let [layout-gap (cond
+                        (:row-gap attributes) {:row-gap value}
+                        (:column-gap attributes) {:column-gap value})]
+    (st/emit! (dwsl/update-layout shape-ids {:layout-gap layout-gap}))
+    (st/emit! (dwsl/update-layout shape-ids {:layout-padding (zipmap attributes (repeat value))}))))
 
 
-(defn apply-spacing-token [token-id token-type-props attribute selected-shapes]
+(defn apply-spacing-token [{:keys [token-id token-type-props selected-shapes]} attribute]
   (let [token (dt/get-token-data-from-token-id token-id)
         attribute (set attribute)
         updated-token-type-props (assoc token-type-props
@@ -75,22 +64,24 @@
                          :selected-shapes selected-shapes})))
 
 
-(defn additional-actions [{:keys [token-id token-type-props token-type selected-shapes] :as context-data}]
+(defn additional-actions [{:keys [token-type] :as context-data}]
   (case token-type
-    :border-radius [{:title "All" :action #(apply-border-radius-token token-id token-type-props :all selected-shapes)}
-                    {:title "Top Left" :action #(apply-border-radius-token token-id token-type-props :r1 selected-shapes)}
-                    {:title "Top Right" :action #(apply-border-radius-token token-id token-type-props :r2 selected-shapes)}
-                    {:title "Bottom Right" :action #(apply-border-radius-token token-id token-type-props :r3 selected-shapes)}
-                    {:title "Bottom Left" :action #(apply-border-radius-token token-id token-type-props :r4 selected-shapes)}]
-    :spacing    [{:title "All" :action #(apply-spacing-token token-id token-type-props [:p1 :p2 :p3 :p4] selected-shapes)}
-                 {:title "Column Gap" :action #(apply-spacing-token token-id token-type-props [:column-gap] selected-shapes)}
-                 {:title "Vertical padding" :action #(apply-spacing-token token-id token-type-props [:p1 :p3] selected-shapes)}
-                 {:title "Horizontal padding" :action #(apply-spacing-token token-id token-type-props [:p2 :p4] selected-shapes)}
-                 {:title "Row Gap" :action #(apply-spacing-token token-id token-type-props [:row-gap] selected-shapes)}
-                 {:title "Top" :action #(apply-spacing-token token-id token-type-props [:p1] selected-shapes)}
-                 {:title "Right" :action #(apply-spacing-token token-id token-type-props [:p2] selected-shapes)}
-                 {:title "Bottom" :action #(apply-spacing-token token-id token-type-props [:p3] selected-shapes)}
-                 {:title "Left" :action #(apply-spacing-token token-id token-type-props [:p4] selected-shapes)}]
+    :border-radius (let [action #(apply-border-radius-token context-data %)]
+                     [{:title "All" :action #(action :all)}
+                      {:title "Top Left" :action #(action :r1)}
+                      {:title "Top Right" :action #(action :r2)}
+                      {:title "Bottom Right" :action #(action :r3)}
+                      {:title "Bottom Left" :action #(action :r4)}])
+    :spacing       (let [action #(apply-spacing-token context-data %)]
+                     [{:title "All" :action #(action #{:p1 :p2 :p3 :p4})}
+                      {:title "Column Gap" :action #(action #{:column-gap})}
+                      {:title "Vertical padding" :action #(action #{:p1 :p3})}
+                      {:title "Horizontal padding" :action #(action #{:p2 :p4})}
+                      {:title "Row Gap" :action #(action #{:row-gap})}
+                      {:title "Top" :action #(action #{:p1})}
+                      {:title "Right" :action #(action #{:p2})}
+                      {:title "Bottom" :action #(action #{:p3})}
+                      {:title "Left" :action #(action #{:p4})}])
     []))
 
 (defn generate-menu-entries [{:keys [token-id token-type-props token-type selected-shapes] :as context-data}]
