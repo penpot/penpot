@@ -155,7 +155,6 @@
                          no-text-selected? (str/empty? (.toString (js/document.getSelection)))
                          delete-token? (and backspace? caret-at-beginning? no-text-selected?)
                          replace-token-with-value? (and enter? (seq (str/trim value)))]
-                     (js/console.log "key-down" token delete-token?)
                      (cond
                        delete-token? (do
                                        (dom/prevent-default event)
