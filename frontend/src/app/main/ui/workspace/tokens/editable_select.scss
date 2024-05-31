@@ -128,11 +128,21 @@
           visibility: visible;
         }
       }
+
       &:hover {
         background-color: var(--menu-background-color-hover);
         color: var(--menu-foreground-color-hover);
         .check-icon svg {
           stroke: var(--menu-foreground-color-hover);
+        }
+      }
+      &.is-highlighted {
+        background-color: var(--button-primary-background-color-rest);
+        span {
+          color: var(--button-primary-foreground-color-rest);
+        }
+        .check-icon svg {
+          stroke: var(--button-primary-foreground-color-rest);
         }
       }
     }
