@@ -85,6 +85,7 @@
      [:> :div {:class (stl/css-case :custom-select-dropdown true
                                     :custom-select-dropdown-right (= position :right)
                                     :custom-select-dropdown-left (= position :left))
+               :on-mouse-enter #(reset! highlighted* nil)
                :ref element-ref}
       [:ul {:class (stl/css :custom-select-dropdown-list)}
        (for [[index item] (d/enumerate options)]
