@@ -52,6 +52,7 @@
     :not-component-not-allowed
     :component-nil-objects-not-allowed
     :instance-head-not-frame
+    :misplaced-slot
     :missing-slot})
 
 (def ^:private
@@ -287,6 +288,14 @@
                   "Shape inside main instance should not have shape-ref"
                   shape file page)))
 
+(defn- check-empty-swap-slot
+  "Validate that this shape does not have any swap slot."
+  [shape file page]
+  (when (some? (ctk/get-swap-slot shape))
+    (report-error :misplaced-slot
+                  "This shape should not have swap slot"
+                  shape file page)))
+
 (defn- check-shape-main-root-top
   "Root shape of a top main instance:
 
@@ -298,6 +307,7 @@
   (check-component-main-head shape file page libraries)
   (check-component-root shape file page)
   (check-component-not-ref shape file page)
+  (check-empty-swap-slot shape file page)
   (run! #(check-shape % file page libraries :context :main-top) (:shapes shape)))
 
 (defn- check-shape-main-root-nested
@@ -309,6 +319,7 @@
   (check-component-main-head shape file page libraries)
   (check-component-not-root shape file page)
   (check-component-not-ref shape file page)
+  (check-empty-swap-slot shape file page)
   (run! #(check-shape % file page libraries :context :main-nested) (:shapes shape)))
 
 (defn- check-shape-copy-root-top
@@ -323,6 +334,7 @@
     (check-component-not-main-head shape file page libraries)
     (check-component-root shape file page)
     (check-component-ref shape file page libraries)
+    (check-empty-swap-slot shape file page)
     (run! #(check-shape % file page libraries :context :copy-top :library-exists library-exists) (:shapes shape))))
 
 (defn- check-shape-copy-root-nested
@@ -345,6 +357,7 @@
   (check-component-not-main-not-head shape file page)
   (check-component-not-root shape file page)
   (check-component-not-ref shape file page)
+  (check-empty-swap-slot shape file page)
   (run! #(check-shape % file page libraries :context :main-any) (:shapes shape)))
 
 (defn- check-shape-copy-not-root
@@ -353,6 +366,7 @@
   (check-component-not-main-not-head shape file page)
   (check-component-not-root shape file page)
   (check-component-ref shape file page libraries)
+  (check-empty-swap-slot shape file page)
   (run! #(check-shape % file page libraries :context :copy-any) (:shapes shape)))
 
 (defn- check-shape-not-component
@@ -362,6 +376,7 @@
   (check-component-not-main-not-head shape file page)
   (check-component-not-root shape file page)
   (check-component-not-ref shape file page)
+  (check-empty-swap-slot shape file page)
   (run! #(check-shape % file page libraries :context :not-component) (:shapes shape)))
 
 (defn- check-shape
