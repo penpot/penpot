@@ -142,7 +142,9 @@
              (modal/show! {:type :onboarding-newsletter})
 
              (contains? cf/flags :onboarding-team)
-             (modal/show! {:type :onboarding-team}))))]
+             (modal/show! {:type :onboarding-team}))))
+
+        onboarding-a-b-test? (cf/external-feature-flag "signup-background" "test")]
 
     (mf/with-effect [@slide]
       (when (not= :start @slide)
@@ -151,8 +153,8 @@
         (fn []
           (reset! klass nil)
           (tm/dispose! sem))))
-
-    [:div {:class (stl/css :modal-overlay)}
+    [:div {:class (stl/css-case :modal-overlay true
+                                :onboarding-a-b-test onboarding-a-b-test?)}
      [:div.animated {:class (dm/str @klass " " (stl/css :animated))}
       (case @slide
         :start      [:& onboarding-welcome {:next #(navigate :opensource)}]

@@ -9,6 +9,7 @@
   (:require
    [app.common.data.macros :as dmc]
    [app.common.spec :as us]
+   [app.config :as cf]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
    [app.main.data.messages :as msg]
@@ -84,14 +85,16 @@
                                                               ::ev/origin "onboarding"
                                                               :step 1}))))
 
-        teams (mf/deref refs/teams)]
+        teams (mf/deref refs/teams)
+        onboarding-a-b-test? (cf/external-feature-flag "signup-background" "test")]
 
     (mf/with-effect [teams]
       (when (> (count teams) 1)
         (st/emit! (modal/hide))))
 
     (when (< (count teams) 2)
-      [:div {:class (stl/css :modal-overlay)}
+      [:div {:class (stl/css-case :modal-overlay true
+                                  :onboarding-a-b-test onboarding-a-b-test?)}
        [:div.animated.fadeIn {:class (stl/css :modal-container)}
         [:& team-modal-left]
         [:div {:class (stl/css :separator)}]
@@ -212,9 +215,11 @@
              (if (> (count emails) 0)
                (on-invite-now form)
                (on-invite-later form))
-             (modal/hide!))))]
+             (modal/hide!))))
+        onboarding-a-b-test? (cf/external-feature-flag "signup-background" "test")]
 
-    [:div {:class (stl/css :modal-overlay)}
+    [:div {:class (stl/css-case :modal-overlay true
+                                :onboarding-a-b-test onboarding-a-b-test?)}
      [:div.animated.fadeIn {:class (stl/css :modal-container)}
       [:& team-modal-left]
 
