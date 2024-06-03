@@ -64,15 +64,17 @@
                          :token-type-props updated-token-type-props
                          :selected-shapes selected-shapes})))
 
-
-(defn additional-actions [{:keys [token-type] :as context-data}]
+(defn additional-actions [{:keys [token-id token-type selected-shapes] :as context-data}]
   (let [attributes->actions (fn [update-fn coll]
                               (for [{:keys [attributes] :as item} coll]
-                                (assoc item :action #(update-fn context-data attributes))))]
+                                (let [selected? (wtc/tokens-applied? {:id token-id} selected-shapes attributes)]
+                                  (assoc item
+                                         :action #(update-fn context-data attributes)
+                                         :selected? selected?))))]
     (case token-type
       :border-radius (attributes->actions
                       apply-border-radius-token
-                      [{:title "All" :attributes #{:all}}
+                      [{:title "All" :attributes #{:r1 :r2 :r3 :r4}}
                        {:title "Top Left" :attributes #{:r1}}
                        {:title "Top Right" :attributes #{:r2}}
                        {:title "Bottom Right" :attributes #{:r3}}
@@ -111,8 +113,14 @@
 (mf/defc token-pill-context-menu
   [context-data]
   (let [menu-entries (generate-menu-entries context-data)]
-    (for [[index entry] (d/enumerate menu-entries)]
-      [:& menu-entry {:title (:title entry) :on-click (:action entry) :key index}])))
+    (for [[index {:keys [title action selected?]}] (d/enumerate menu-entries)]
+      [:& menu-entry {:key index
+                      :title title
+                      :on-click action
+                      ;; TODO: Allow selected items wihtout an icon for the context menu
+                      :icon (mf/html [:div {:class (stl/css-case :empty-icon true
+                                                                 :hidden-icon (not selected?))}])
+                      :selected? selected?}])))
 
 (mf/defc token-context-menu
   []
