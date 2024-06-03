@@ -83,31 +83,38 @@
         (gsh/update-group-selrect children))))
 
 (defn create-bool
-  [bool-type]
-  (ptk/reify ::create-bool-union
-    ptk/WatchEvent
-    (watch [it state _]
-      (let [page-id (:current-page-id state)
-            objects (wsh/lookup-page-objects state)
-            name (-> bool-type d/name str/capital)
-            ids  (selected-shapes-idx state)
-            ordered-indexes (cph/order-by-indexed-shapes objects ids)
-            shapes (->> ordered-indexes
-                        (map (d/getf objects))
-                        (remove cph/frame-shape?)
-                        (remove #(ctn/has-any-copy-parent? objects %)))]
+  ([bool-type]
+   (create-bool bool-type nil nil))
+  ([bool-type ids {:keys [id-ret]}]
+   (assert (or (nil? ids) (set? ids)))
+   (ptk/reify ::create-bool-union
+     ptk/WatchEvent
+     (watch [it state _]
+       (let [page-id (:current-page-id state)
+             objects (wsh/lookup-page-objects state)
+             name (-> bool-type d/name str/capital)
+             ids  (->> (d/nilv ids (wsh/lookup-selected state))
+                       (cph/clean-loops objects))
+             ordered-indexes (cph/order-by-indexed-shapes objects ids)
+             shapes (->> ordered-indexes
+                         (map (d/getf objects))
+                         (remove cph/frame-shape?)
+                         (remove #(ctn/has-any-copy-parent? objects %)))]
 
-        (when-not (empty? shapes)
-          (let [[boolean-data index] (create-bool-data bool-type name (reverse shapes) objects)
-                index (inc index)
-                shape-id (:id boolean-data)
-                changes (-> (pcb/empty-changes it page-id)
-                            (pcb/with-objects objects)
-                            (pcb/add-object boolean-data {:index index})
-                            (pcb/update-shapes (map :id shapes) ctl/remove-layout-item-data)
-                            (pcb/change-parent shape-id shapes))]
-            (rx/of (dch/commit-changes changes)
-                   (dws/select-shapes (d/ordered-set shape-id)))))))))
+         (when-not (empty? shapes)
+           (let [[boolean-data index] (create-bool-data bool-type name (reverse shapes) objects)
+                 index (inc index)
+                 shape-id (:id boolean-data)
+                 changes (-> (pcb/empty-changes it page-id)
+                             (pcb/with-objects objects)
+                             (pcb/add-object boolean-data {:index index})
+                             (pcb/update-shapes (map :id shapes) ctl/remove-layout-item-data)
+                             (pcb/change-parent shape-id shapes))]
+             (when id-ret
+               (reset! id-ret shape-id))
+
+             (rx/of (dch/commit-changes changes)
+                    (dws/select-shapes (d/ordered-set shape-id))))))))))
 
 (defn group-to-bool
   [shape-id bool-type]

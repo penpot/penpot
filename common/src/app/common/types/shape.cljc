@@ -79,6 +79,12 @@
 (def text-align-types
   #{"left" "right" "center" "justify"})
 
+(def bool-types
+  #{:union
+    :difference
+    :exclude
+    :intersection})
+
 (sm/define! ::points
   [:vector {:gen/max 4 :gen/min 4} ::gpt/point])
 
@@ -200,8 +206,10 @@
    [:type [:= :bool]]
    [:shapes [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]
 
-   ;; FIXME: improve this schema
    [:bool-type :keyword]
+   ;; FIXME: This should be the spec but we need to create a migration
+   ;; to make this transition safely
+   ;; [:bool-type [::sm/one-of bool-types]]
 
    [:bool-content
     [:vector {:gen/max 2}

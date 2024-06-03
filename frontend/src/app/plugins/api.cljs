@@ -15,6 +15,7 @@
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as ch]
+   [app.main.data.workspace.bool :as dwb]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.media :as dwm]
    [app.main.store :as st]
@@ -124,6 +125,26 @@
     [_]
     (create-shape :rect))
 
+  (createEllipse
+    [_]
+    (create-shape :circle))
+
+  (createPath
+    [_]
+    (let [page-id (:current-page-id @st/state)
+          page (dm/get-in @st/state [:workspace-data :pages-index page-id])
+          shape (cts/setup-shape
+                 {:type :path
+                  :content [{:command :move-to :params {:x 0 :y 0}}
+                            {:command :line-to :params {:x 100 :y 100}}]})
+          changes
+          (-> (cb/empty-changes)
+              (cb/with-page page)
+              (cb/with-objects (:objects page))
+              (cb/add-object shape))]
+      (st/emit! (ch/commit-changes changes))
+      (shape/shape-proxy (:id shape))))
+
   (createText
     [_ text]
     (let [file-id (:current-file-id @st/state)
@@ -147,7 +168,18 @@
             file-id (:current-file-id @st/state)
             page-id (:current-page-id @st/state)]
         (st/emit! (dwm/create-svg-shape id "svg" svg-string (gpt/point 0 0)))
-        (shape/shape-proxy file-id page-id id)))))
+        (shape/shape-proxy file-id page-id id))))
+
+  (createBoolean [_ bool-type shapes]
+    (let [ids (into #{} (map #(obj/get % "$id")) shapes)
+          bool-type (keyword bool-type)]
+
+      (if (contains? cts/bool-types bool-type)
+        (let [id-ret (atom nil)]
+          (st/emit! (dwb/create-bool bool-type ids {:id-ret id-ret}))
+          (shape/shape-proxy @id-ret))
+
+        (utils/display-not-valid :bool-shape bool-type)))))
 
 (defn create-context
   []
