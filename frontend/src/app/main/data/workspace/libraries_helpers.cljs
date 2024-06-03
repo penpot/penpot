@@ -233,6 +233,10 @@
         ; If the initial shape was component-root, first level subinstances are converted in top instances
         (pcb/update-shapes [shape-id] #(assoc % :component-root true))
 
+        component-root?
+        ; If the initial shape was component-root, first level subinstances can't have swap-slot
+        (pcb/update-shapes [shape-id] ctk/remove-swap-slot)
+
         :always
         ; Near shape-refs need to be advanced one level
         (generate-advance-nesting-level nil container libraries (:id shape)))
