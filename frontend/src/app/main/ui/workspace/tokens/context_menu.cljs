@@ -65,7 +65,6 @@
                          :selected-shapes selected-shapes})))
 
 (defn update-shape-dimensions [value shape-ids attributes]
-  (println "attributes is " attributes)
   (st/emit! (dwt/update-dimensions shape-ids (first attributes) value)))
 
 (defn update-layout-sizing-limits [value shape-ids attributes]
