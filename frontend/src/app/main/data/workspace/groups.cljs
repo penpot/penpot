@@ -274,7 +274,7 @@
      (watch [it state _]
        (let [page-id     (:current-page-id state)
              objects     (wsh/lookup-page-objects state page-id)
-             selected    (->> (d/nilv ids (wsh/lookup-selected state))
+             selected    (->> (or ids (wsh/lookup-selected state))
                               (cfh/clean-loops objects)
                               (remove #(ctn/has-any-copy-parent? objects (get objects %))))
              shapes      (shapes-for-grouping objects selected)

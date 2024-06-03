@@ -93,7 +93,7 @@
        (let [page-id (:current-page-id state)
              objects (wsh/lookup-page-objects state)
              name (-> bool-type d/name str/capital)
-             ids  (->> (d/nilv ids (wsh/lookup-selected state))
+             ids  (->> (or ids (wsh/lookup-selected state))
                        (cph/clean-loops objects))
              ordered-indexes (cph/order-by-indexed-shapes objects ids)
              shapes (->> ordered-indexes
