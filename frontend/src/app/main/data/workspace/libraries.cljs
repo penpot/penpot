@@ -340,49 +340,56 @@
 
 (defn- add-component2
   "This is the second step of the component creation."
-  [selected components-v2]
-  (ptk/reify ::add-component2
-    ev/Event
-    (-data [_]
-      {::ev/name "add-component"
-       :shapes (count selected)})
+  ([selected components-v2]
+   (add-component2 selected components-v2))
+  ([id-ref selected components-v2]
+   (ptk/reify ::add-component2
+     ev/Event
+     (-data [_]
+       {::ev/name "add-component"
+        :shapes (count selected)})
 
-    ptk/WatchEvent
-    (watch [it state _]
-      (let [file-id  (:current-file-id state)
-            page-id  (:current-page-id state)
-            objects  (wsh/lookup-page-objects state page-id)
-            shapes   (dwg/shapes-for-grouping objects selected)
-            parents  (into #{} (map :parent-id) shapes)]
-        (when-not (empty? shapes)
-          (let [[root _ changes]
-                (cll/generate-add-component (pcb/empty-changes it) shapes objects page-id file-id components-v2
-                                            dwg/prepare-create-group
-                                            cfsh/prepare-create-artboard-from-selection)]
-            (when-not (empty? (:redo-changes changes))
-              (rx/of (dch/commit-changes changes)
-                     (dws/select-shapes (d/ordered-set (:id root)))
-                     (ptk/data-event :layout/update {:ids parents})))))))))
+     ptk/WatchEvent
+     (watch [it state _]
+       (let [file-id  (:current-file-id state)
+             page-id  (:current-page-id state)
+             objects  (wsh/lookup-page-objects state page-id)
+             shapes   (dwg/shapes-for-grouping objects selected)
+             parents  (into #{} (map :parent-id) shapes)]
+         (when-not (empty? shapes)
+           (let [[root component-id changes]
+                 (cll/generate-add-component (pcb/empty-changes it) shapes objects page-id file-id components-v2
+                                             dwg/prepare-create-group
+                                             cfsh/prepare-create-artboard-from-selection)]
+             (when id-ref
+               (reset! id-ref component-id))
+             (when-not (empty? (:redo-changes changes))
+               (rx/of (dch/commit-changes changes)
+                      (dws/select-shapes (d/ordered-set (:id root)))
+                      (ptk/data-event :layout/update {:ids parents}))))))))))
 
 (defn add-component
   "Add a new component to current file library, from the currently selected shapes.
   This operation is made in two steps, first one for calculate the
   shapes that will be part of the component and the second one with
   the component creation."
-  []
-  (ptk/reify ::add-component
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [objects            (wsh/lookup-page-objects state)
-            selected           (->> (wsh/lookup-selected state)
-                                    (cfh/clean-loops objects))
-            selected-objects   (map #(get objects %) selected)
-            components-v2      (features/active-feature? state "components/v2")
-            ;; We don't want to change the structure of component copies
-            can-make-component (every? true? (map #(ctn/valid-shape-for-component? objects %) selected-objects))]
+  ([]
+   (add-component nil nil))
 
-        (when can-make-component
-          (rx/of (add-component2 selected components-v2)))))))
+  ([id-ref ids]
+   (ptk/reify ::add-component
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [objects            (wsh/lookup-page-objects state)
+             selected           (->> (d/nilv ids (wsh/lookup-selected state))
+                                     (cfh/clean-loops objects))
+             selected-objects   (map #(get objects %) selected)
+             components-v2      (features/active-feature? state "components/v2")
+             ;; We don't want to change the structure of component copies
+             can-make-component (every? true? (map #(ctn/valid-shape-for-component? objects %) selected-objects))]
+
+         (when can-make-component
+           (rx/of (add-component2 id-ref selected components-v2))))))))
 
 (defn add-multiple-components
   "Add several new components to current file library, from the currently selected shapes."
@@ -535,7 +542,7 @@
   in the given file library. Then selects the newly created instance."
   ([file-id component-id position]
    (instantiate-component file-id component-id position nil))
-  ([file-id component-id position {:keys [start-move? initial-point]}]
+  ([file-id component-id position {:keys [start-move? initial-point id-ref]}]
    (dm/assert! (uuid? file-id))
    (dm/assert! (uuid? component-id))
    (dm/assert! (gpt/point? position))
@@ -558,6 +565,10 @@
                                                  page
                                                  libraries)
              undo-id (js/Symbol)]
+
+         (when id-ref
+           (reset! id-ref (:id new-shape)))
+
          (rx/of (dwu/start-undo-transaction undo-id)
                 (dch/commit-changes changes)
                 (ptk/data-event :layout/update {:ids [(:id new-shape)]})

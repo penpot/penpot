@@ -10,6 +10,7 @@
    [app.common.colors :as cc]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.geom.point :as gpt]
    [app.common.record :as cr]
    [app.common.schema :as sm]
    [app.common.types.color :as ctc]
@@ -18,7 +19,9 @@
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwt]
    [app.main.store :as st]
-   [app.plugins.utils :as u]))
+   [app.plugins.shape :as shapes]
+   [app.plugins.utils :as u]
+   [app.util.object :as obj]))
 
 (declare lib-color-proxy)
 (declare lib-typography-proxy)
@@ -152,11 +155,12 @@
 
   (applyToText
     [_ shape]
-    (let [typography (u/locate-library-typography $file $id)]
-      (st/emit! (dwt/apply-typography #{(:id typography)} typography $file))))
+    (let [shape-id   (obj/get shape "$id")
+          typography (u/locate-library-typography $file $id)]
+      (st/emit! (dwt/apply-typography #{shape-id} typography $file))))
 
   (applyToTextRange
-    [_ shape from to]
+    [_ _shape _from _to]
     ;; TODO
     ))
 
@@ -282,7 +286,17 @@
         (u/display-not-valid :library-typography-text-transform value)))}))
 
 (deftype LibraryComponentProxy [$file $id]
-  Object)
+  Object
+
+  (remove
+    [_]
+    (st/emit! (dwl/delete-component {:id $id})))
+
+  (instance
+    [_]
+    (let [id-ref (atom nil)]
+      (st/emit! (dwl/instantiate-component $file $id (gpt/point 0 0) {:id-ref id-ref}))
+      (shapes/shape-proxy @id-ref))))
 
 (defn lib-component-proxy
   [file-id id]
@@ -294,7 +308,26 @@
    {:name "$id" :enumerable false :get (constantly id)}
    {:name "$file" :enumerable false :get (constantly file-id)}
    {:name "id" :get (fn [_] (dm/str id))}
-   {:name "name" :get #(-> % u/proxy->library-component :name)}))
+
+   {:name "name"
+    :get #(-> % u/proxy->library-component :name)
+    :set
+    (fn [self value]
+      (if (and (some? value) (string? value))
+        (let [component (u/proxy->library-component self)
+              value (dm/str (d/nilv (:path component) "") " / " value)]
+          (st/emit! (dwl/rename-component id value)))
+        (u/display-not-valid :library-component-name value)))}
+
+   {:name "path"
+    :get #(-> % u/proxy->library-component :path)
+    :set
+    (fn [self value]
+      (if (and (some? value) (string? value))
+        (let [component (u/proxy->library-component self)
+              value (dm/str value " / " (:name component))]
+          (st/emit! (dwl/rename-component id value)))
+        (u/display-not-valid :library-component-path value)))}))
 
 (deftype Library [$id]
   Object
@@ -309,7 +342,14 @@
     [_]
     (let [typography-id (uuid/next)]
       (st/emit! (dwl/add-typography (ctt/make-typography {:id typography-id :name "Typography"}) false))
-      (lib-typography-proxy $id typography-id))))
+      (lib-typography-proxy $id typography-id)))
+
+  (createComponent
+    [_ shapes]
+    (let [id-ref (atom nil)
+          ids (into #{} (map #(obj/get % "$id")) shapes)]
+      (st/emit! (dwl/add-component id-ref ids))
+      (lib-component-proxy $id @id-ref))))
 
 (defn library-proxy
   [file-id]
@@ -343,7 +383,12 @@
     :get
     (fn [_]
       (let [file (u/locate-file file-id)
-            components (->> file :data :componentes keys (map #(lib-component-proxy file-id %)))]
+            components (->> file
+                            :data
+                            :components
+                            (remove (comp :deleted second))
+                            (map first)
+                            (map #(lib-component-proxy file-id %)))]
         (apply array components)))}))
 
 (deftype PenpotLibrarySubcontext []
