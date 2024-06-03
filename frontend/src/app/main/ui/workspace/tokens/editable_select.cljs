@@ -11,14 +11,19 @@
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
    [app.common.uuid :as uuid]
+   [app.main.data.shortcuts :as dsc]
+   [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
+   [app.util.globals :as globals]
    [app.util.keyboard :as kbd]
    [app.util.timers :as timers]
    [cuerdas.core :as str]
-   [rumext.v2 :as mf]))
+   [goog.events :as events]
+   [rumext.v2 :as mf])
+  (:import goog.events.EventType))
 
 (defn on-number-input-key-down [{:keys [event min-val max-val set-value!]}]
   (let [up? (kbd/up-arrow? event)
@@ -38,28 +43,67 @@
                         :else new-value)]
         (set-value! new-value)))))
 
+(defn direction-select
+  "Returns next `n` in `direction` while wrapping around at the last item at the count of `coll`.
+
+  `direction` accepts `:up` or `:down`."
+  [direction n coll]
+  (let [last-n (dec (count coll))
+        next-n (case direction
+                 :up (dec n)
+                 :down (inc n))
+        wrap-around-n (cond
+                        (neg? next-n) last-n
+                        (> next-n last-n) 0
+                        :else next-n)]
+    wrap-around-n))
+
 (mf/defc dropdown-select [{:keys [position on-close element-id element-ref options on-select]}]
-  [:& dropdown {:show true
-                :on-close on-close}
-   [:> :div {:class (stl/css-case :custom-select-dropdown true
-                                  :custom-select-dropdown-right (= position :right)
-                                  :custom-select-dropdown-left (= position :left))
-             :ref element-ref}
-    [:ul {:class (stl/css :custom-select-dropdown-list)}
-     (for [[index item] (d/enumerate options)]
-       (cond
-         (= :separator item) [:li {:class (stl/css :separator)
-                                   :key (dm/str element-id "-" index)}]
-         :else (let [{:keys [value label selected?]} item]
-                 [:li
-                  {:key (str element-id "-" index)
-                   :class (stl/css-case :dropdown-element true
-                                        :is-selected selected?)
-                   :data-label label
-                   :on-click on-select}
-                  [:span {:class (stl/css :label)} label]
-                  [:span {:class (stl/css :value)} value]
-                  [:span {:class (stl/css :check-icon)} i/tick]])))]]])
+  (let [highlighted* (mf/use-state nil)
+        highlighted (deref highlighted*)
+        on-keyup (fn [event]
+                   (cond
+                     (and (kbd/enter? event) highlighted) (on-select (nth options highlighted))
+                     (kbd/up-arrow? event) (do
+                                             (dom/prevent-default event)
+                                             (->> (direction-select :up (or highlighted 0) options)
+                                                  (reset! highlighted*)))
+                     (kbd/down-arrow? event) (do
+                                               (dom/prevent-default event)
+                                               (->> (direction-select :down (or highlighted -1) options)
+                                                    (reset! highlighted*)))))]
+    (mf/with-effect [highlighted]
+      (let [keys [(events/listen globals/document EventType.KEYUP on-keyup)
+                  (events/listen globals/document EventType.KEYDOWN dom/prevent-default)]]
+        (st/emit! (dsc/push-shortcuts :token {}))
+        (fn []
+          (doseq [key keys]
+            (events/unlistenByKey key))
+          (st/emit! (dsc/pop-shortcuts :token)))))
+    [:& dropdown {:show true
+                  :on-close on-close}
+     [:> :div {:class (stl/css-case :custom-select-dropdown true
+                                    :custom-select-dropdown-right (= position :right)
+                                    :custom-select-dropdown-left (= position :left))
+               :on-mouse-enter #(reset! highlighted* nil)
+               :ref element-ref}
+      [:ul {:class (stl/css :custom-select-dropdown-list)}
+       (for [[index item] (d/enumerate options)]
+         (cond
+           (= :separator item) [:li {:class (stl/css :separator)
+                                     :key (dm/str element-id "-" index)}]
+           :else (let [{:keys [value label selected?]} item
+                       highlighted? (= highlighted index)]
+                   [:li
+                    {:key (str element-id "-" index)
+                     :class (stl/css-case :dropdown-element true
+                                          :is-selected selected?
+                                          :is-highlighted highlighted?)
+                     :data-label label
+                     :on-click #(on-select item)}
+                    [:span {:class (stl/css :label)} label]
+                    [:span {:class (stl/css :value)} value]
+                    [:span {:class (stl/css :check-icon)} i/tick]])))]]]))
 
 (mf/defc editable-select
   [{:keys [value options disabled class on-change placeholder on-blur on-token-remove position input-props] :as params}]
@@ -118,18 +162,13 @@
         select-item
         (mf/use-fn
          (mf/deps on-change on-blur labels-map)
-         (fn [event]
-           (let [label (-> (dom/get-current-target event)
-                           (dom/get-data "label")
-                           (d/read-string)
-                           (str))
-                 {:keys [value] :as item} (get labels-map label)]
-             (swap! state* assoc
-                    :current-value value
-                    :token-value nil
-                    :current-item item)
-             (when on-change (on-change item))
-             (when on-blur (on-blur)))))
+         (fn [{:keys [value] :as item}]
+           (swap! state* assoc
+                  :current-value value
+                  :token-value nil
+                  :current-item item)
+           (when on-change (on-change item))
+           (when on-blur (on-blur))))
 
         handle-change-input
         (fn [event]
@@ -167,9 +206,6 @@
                                                    (handle-change-input event)
                                                    (set-token-value! nil))
                        :else (set-token-value! value)))
-             is-open? (let [up? (kbd/up-arrow? event)
-                            down? (kbd/down-arrow? event)]
-                        (dom/prevent-default event))
              (= type "number") (on-number-input-key-down {:event event
                                                           :min-val min-val
                                                           :max-val max-val
