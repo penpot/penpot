@@ -294,7 +294,30 @@
         [:span {:class (stl/css :no-found-text)}
          (tr "workspace.assets.not-found")]])]))
 
+(defn- force-lib-open? [file-id filters]
+  (let [library-ref           (mf/with-memo [file-id]
+                                (create-file-library-ref file-id))
+        library               (mf/deref library-ref)
 
+        colors                (:colors library)
+        components            (:components library)
+        media                 (:media library)
+        typographies          (:typographies library)
+
+        filtered-colors       (mf/with-memo [filters colors]
+                                (cmm/apply-filters colors filters))
+        filtered-components   (mf/with-memo [filters components]
+                                (cmm/apply-filters components filters))
+        filtered-media        (mf/with-memo [filters media]
+                                (cmm/apply-filters media filters))
+        filtered-typographies (mf/with-memo [filters typographies]
+                                (cmm/apply-filters typographies filters))
+
+        filters-term          (:term filters)
+        has-term?             (not (str/blank? filters-term))]
+    (and has-term?
+         (some pos? (map count [filtered-components filtered-colors filtered-media filtered-typographies]))
+         (some #(> 60 (count %)) [filtered-components filtered-colors filtered-media filtered-typographies]))))
 (mf/defc file-library
   {::mf/wrap-props false}
   [{:keys [file local? default-open? filters]}]
@@ -308,7 +331,10 @@
                           (-> (l/key file-id)
                               (l/derived lens:open-status)))
         open-status      (mf/deref open-status-ref)
-        open?            (d/nilv (:library open-status) default-open?)
+        force-open-lib?  (force-lib-open? file-id filters)
+
+        open?            (or force-open-lib?
+                             (d/nilv (:library open-status) default-open?))
 
         unselect-all
         (mf/use-fn
