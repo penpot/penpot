@@ -323,7 +323,7 @@ msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Файлы, добавленные в Библиотеки, появятся здесь. Попробуйте поделиться "
 "своими файлами или добавить их из наших [Библиотек и "
-"шаблонов](https://penpot.app/libraries-templates.html)."
+"шаблонов](https://penpot.app/libraries-templates)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Скачать файлы Penpot (.penpot) (%s)"

@@ -122,12 +122,12 @@
                                                     #(ctst/add-shape (:id shape)
                                                                      shape
                                                                      %
-                                                                     (:parent-id shape)
                                                                      (:frame-id shape)
+                                                                     (:parent-id shape)
                                                                      nil
                                                                      true)))
                                 $
-                                (remove #(= (:id %) (:did copy-root')) copy-shapes)))))]
+                                (remove #(= (:id %) (:id copy-root')) copy-shapes)))))]
     (when children-labels
       (dotimes [idx (count children-labels)]
         (set-child-label file' copy-root-label idx (nth children-labels idx))))

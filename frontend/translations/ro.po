@@ -402,7 +402,7 @@ msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Fișierele adăugate la Biblioteci vor apărea aici. Încercați să partajați "
 "fișierele dvs. sau adăugați-le din [Biblioteci și "
-"șabloane](https://penpot.app/libraries-templates.html)."
+"șabloane](https://penpot.app/libraries-templates)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Descărcați %s fișiere Penpot (.penpot)"

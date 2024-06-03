@@ -404,7 +404,7 @@ msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Los archivos agregados a las Bibliotecas aparecerán aquí. Intente compartir "
 "sus archivos o agréguelos desde nuestras [Libraries & "
-"templates](https://penpot.app/libraries-templates.html)."
+"templates](https://penpot.app/libraries-templates)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Descargar %s archivos Penpot (.penpot)"

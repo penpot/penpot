@@ -7,6 +7,7 @@
 (ns app.plugins.shape
   "RPC for plugins runtime."
   (:require
+   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.files.helpers :as cfh]
    [app.common.record :as crc]
@@ -14,18 +15,29 @@
    [app.common.text :as txt]
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.shape.radius :as ctsr]
+   [app.common.uuid :as uuid]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.changes :as dwc]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.texts :as dwt]
    [app.main.store :as st]
    [app.plugins.flex :as flex]
    [app.plugins.grid :as grid]
    [app.plugins.utils :as utils :refer [locate-objects locate-shape proxy->shape array-to-js]]
-   [app.util.object :as obj]))
+   [app.util.object :as obj]
+   [app.util.text-editor :as ted]))
 
 (declare shape-proxy)
+
+(defn text-props
+  [shape]
+  (d/merge
+   (dwt/current-root-values {:shape shape :attrs txt/root-attrs})
+   (dwt/current-paragraph-values {:shape shape :attrs txt/paragraph-attrs})
+   (dwt/current-text-values {:shape shape :attrs txt/text-node-attrs})))
 
 (deftype ShapeProxy [$file $page $id]
   Object
@@ -145,37 +157,52 @@
           {:name "borderRadius"
            :get #(-> % proxy->shape :rx)
            :set (fn [self value]
-                  (let [id (obj/get self "$id")]
+                  (let [id (obj/get self "$id")
+                        shape (proxy->shape self)]
                     (when (us/safe-int? value)
-                      (st/emit! (dwc/update-shapes [id] #(assoc % :rx value :ry value))))))}
+                      (when (or (not (ctsr/has-radius? shape)) (ctsr/radius-4? shape))
+                        (st/emit! (dwc/update-shapes [id] ctsr/switch-to-radius-1)))
+                      (st/emit! (dwc/update-shapes [id] #(ctsr/set-radius-1 % value))))))}
 
           {:name "borderRadiusTopLeft"
            :get #(-> % proxy->shape :r1)
            :set (fn [self value]
-                  (let [id (obj/get self "$id")]
+                  (let [id (obj/get self "$id")
+                        shape (proxy->shape self)]
                     (when (us/safe-int? value)
-                      (st/emit! (dwc/update-shapes [id] #(assoc % :r1 value))))))}
+                      (when (or (not (ctsr/has-radius? shape)) (not (ctsr/radius-4? shape)))
+                        (st/emit! (dwc/update-shapes [id] ctsr/switch-to-radius-4)))
+                      (st/emit! (dwc/update-shapes [id] #(ctsr/set-radius-4 % :r1 value))))))}
 
           {:name "borderRadiusTopRight"
            :get #(-> % proxy->shape :r2)
            :set (fn [self value]
-                  (let [id (obj/get self "$id")]
+                  (let [id (obj/get self "$id")
+                        shape (proxy->shape self)]
                     (when (us/safe-int? value)
-                      (st/emit! (dwc/update-shapes [id] #(assoc % :r2 value))))))}
+                      (when (or (not (ctsr/has-radius? shape)) (not (ctsr/radius-4? shape)))
+                        (st/emit! (dwc/update-shapes [id] ctsr/switch-to-radius-4)))
+                      (st/emit! (dwc/update-shapes [id] #(ctsr/set-radius-4 % :r2 value))))))}
 
           {:name "borderRadiusBottomRight"
            :get #(-> % proxy->shape :r3)
            :set (fn [self value]
-                  (let [id (obj/get self "$id")]
+                  (let [id (obj/get self "$id")
+                        shape (proxy->shape self)]
                     (when (us/safe-int? value)
-                      (st/emit! (dwc/update-shapes [id] #(assoc % :r3 value))))))}
+                      (when (or (not (ctsr/has-radius? shape)) (not (ctsr/radius-4? shape)))
+                        (st/emit! (dwc/update-shapes [id] ctsr/switch-to-radius-4)))
+                      (st/emit! (dwc/update-shapes [id] #(ctsr/set-radius-4 % :r3 value))))))}
 
           {:name "borderRadiusBottomLeft"
            :get #(-> % proxy->shape :r4)
            :set (fn [self value]
-                  (let [id (obj/get self "$id")]
+                  (let [id (obj/get self "$id")
+                        shape (proxy->shape self)]
                     (when (us/safe-int? value)
-                      (st/emit! (dwc/update-shapes [id] #(assoc % :r4 value))))))}
+                      (when (or (not (ctsr/has-radius? shape)) (not (ctsr/radius-4? shape)))
+                        (st/emit! (dwc/update-shapes [id] ctsr/switch-to-radius-4)))
+                      (st/emit! (dwc/update-shapes [id] #(ctsr/set-radius-4 % :r4 value))))))}
 
           {:name "opacity"
            :get #(-> % proxy->shape :opacity)
@@ -196,15 +223,35 @@
            :get #(-> % proxy->shape :shadow array-to-js)
            :set (fn [self value]
                   (let [id (obj/get self "$id")
-                        value (mapv #(utils/from-js %) value)]
-                    (st/emit! (dwc/update-shapes [id] #(assoc % :shadows value)))))}
+                        value (mapv (fn [val]
+                                      ;; Merge default shadow properties
+                                      (d/patch-object
+                                       {:id (uuid/next)
+                                        :style :drop-shadow
+                                        :color {:color clr/black :opacity 0.2}
+                                        :offset-x 4
+                                        :offset-y 4
+                                        :blur 4
+                                        :spread 0
+                                        :hidden false}
+                                       (utils/from-js val #{:style :type})))
+                                    value)]
+                    (st/emit! (dwc/update-shapes [id] #(assoc % :shadow value)))))}
 
           {:name "blur"
            :get #(-> % proxy->shape :blur utils/to-js)
            :set (fn [self value]
-                  (let [id (obj/get self "$id")
-                        value (utils/from-js value)]
-                    (st/emit! (dwc/update-shapes [id] #(assoc % :blur value)))))}
+                  (if (nil? value)
+                    (st/emit! (dwc/update-shapes [id] #(dissoc % :blur)))
+                    (let [id (obj/get self "$id")
+                          value
+                          (d/patch-object
+                           {:id (uuid/next)
+                            :type :layer-blur
+                            :value 4
+                            :hidden false}
+                           (utils/from-js value))]
+                      (st/emit! (dwc/update-shapes [id] #(assoc % :blur value))))))}
 
           {:name "exports"
            :get #(-> % proxy->shape :exports array-to-js)
@@ -301,7 +348,9 @@
 
           ;; Strokes and fills
           {:name "fills"
-           :get #(-> % proxy->shape :fills array-to-js)
+           :get #(if (cfh/text-shape? data)
+                   (-> % proxy->shape text-props :fills array-to-js)
+                   (-> % proxy->shape :fills array-to-js))
            :set (fn [self value]
                   (let [id (obj/get self "$id")
                         value (mapv #(utils/from-js %) value)]
@@ -311,7 +360,7 @@
            :get #(-> % proxy->shape :strokes array-to-js)
            :set (fn [self value]
                   (let [id (obj/get self "$id")
-                        value (mapv #(utils/from-js %) value)]
+                        value (mapv #(utils/from-js % #{:stroke-style :stroke-alignment}) value)]
                     (st/emit! (dwc/update-shapes [id] #(assoc % :strokes value)))))}
 
           {:name "layoutChild"
@@ -397,18 +446,93 @@
                (obj/unset! "addFlexLayout")))
 
          (cond-> (cfh/text-shape? data)
-           (-> (crc/add-properties!
-                {:name "characters"
-                 :get #(-> % proxy->shape :content txt/content->text)
-                 :set (fn [self value]
-                        (let [id (obj/get self "$id")]
-                          (st/emit! (dwc/update-shapes [id] #(txt/change-text % value)))))})
+           (crc/add-properties!
+            {:name "characters"
+             :get #(-> % proxy->shape :content txt/content->text)
+             :set
+             (fn [self value]
+               (let [id (obj/get self "$id")]
+                 ;; The user is currently editing the text. We need to update the
+                 ;; editor as well
+                 (when (contains? (:workspace-editor-state @st/state) id)
+                   (let [shape (proxy->shape self)
+                         editor
+                         (-> shape
+                             (txt/change-text value)
+                             :content
+                             ted/import-content
+                             ted/create-editor-state)]
+                     (st/emit! (dwt/update-editor-state shape editor))))
+                 (st/emit! (dwc/update-shapes [id] #(txt/change-text % value)))))}
 
-               (crc/add-properties!
-                {:name "growType"
-                 :get #(-> % proxy->shape :grow-type d/name)
-                 :set (fn [self value]
-                        (let [id (obj/get self "$id")
-                              value (keyword value)]
-                          (when (contains? #{:auto-width :auto-height :fixed} value)
-                            (st/emit! (dwc/update-shapes [id] #(assoc % :grow-type value))))))})))))))
+            {:name "growType"
+             :get #(-> % proxy->shape :grow-type d/name)
+             :set
+             (fn [self value]
+               (let [id (obj/get self "$id")
+                     value (keyword value)]
+                 (when (contains? #{:auto-width :auto-height :fixed} value)
+                   (st/emit! (dwc/update-shapes [id] #(assoc % :grow-type value))))))}
+
+            {:name "fontId"
+             :get #(-> % proxy->shape text-props :font-id)
+             :set
+             (fn [self value]
+               (let [id (obj/get self "$id")]
+                 (st/emit! (dwt/update-attrs id {:font-id value}))))}
+
+            {:name "fontFamily"
+             :get #(-> % proxy->shape text-props :font-family)
+             :set
+             (fn [self value]
+               (let [id (obj/get self "$id")]
+                 (st/emit! (dwt/update-attrs id {:font-id value}))))}
+
+            {:name "fontVariantId"
+             :get #(-> % proxy->shape text-props :font-variant-id)
+             :set
+             (fn [self value]
+               (let [id (obj/get self "$id")]
+                 (st/emit! (dwt/update-attrs id {:font-id value}))))}
+
+            {:name "fontSize"
+             :get #(-> % proxy->shape text-props :font-size)
+             :set
+             (fn [self value]
+               (let [id (obj/get self "$id")]
+                 (st/emit! (dwt/update-attrs id {:font-id value}))))}
+
+            {:name "fontWeight"
+             :get #(-> % proxy->shape text-props :font-weight)
+             :set
+             (fn [self value]
+               (let [id (obj/get self "$id")]
+                 (st/emit! (dwt/update-attrs id {:font-id value}))))}
+
+            {:name "fontStyle"
+             :get #(-> % proxy->shape text-props :font-style)
+             :set
+             (fn [self value]
+               (let [id (obj/get self "$id")]
+                 (st/emit! (dwt/update-attrs id {:font-style value}))))}
+
+            {:name "lineHeight"
+             :get #(-> % proxy->shape text-props :line-height)
+             :set
+             (fn [self value]
+               (let [id (obj/get self "$id")]
+                 (st/emit! (dwt/update-attrs id {:line-height value}))))}
+
+            {:name "letterSpacing"
+             :get #(-> % proxy->shape text-props :letter-spacing)
+             :set
+             (fn [self value]
+               (let [id (obj/get self "$id")]
+                 (st/emit! (dwt/update-attrs id {:letter-spacing value}))))}
+
+            {:name "textTransform"
+             :get #(-> % proxy->shape text-props :text-transform)
+             :set
+             (fn [self value]
+               (let [id (obj/get self "$id")]
+                 (st/emit! (dwt/update-attrs id {:text-transform value}))))}))))))

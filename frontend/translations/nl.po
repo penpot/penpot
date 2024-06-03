@@ -427,7 +427,7 @@ msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Bestanden die aan bibliotheken zijn toegevoegd, worden hier weergegeven. "
 "Probeer je bestanden te delen of toe te voegen vanuit onze [Bibliotheken & "
-"sjablonen] (https://penpot.app/libraries-templates.html)."
+"sjablonen] (https://penpot.app/libraries-templates)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "%s Penpot-bestanden downloaden (.penpot)"

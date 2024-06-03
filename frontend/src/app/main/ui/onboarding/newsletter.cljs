@@ -7,6 +7,7 @@
 (ns app.main.ui.onboarding.newsletter
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.config :as cf]
    [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
    [app.main.data.users :as du]
@@ -35,9 +36,11 @@
            (st/emit! (when (or @newsletter-updates @newsletter-news)
                        (msg/success message))
                      (modal/show {:type :onboarding-team})
-                     (du/update-profile-props {:newsletter-updates @newsletter-updates :newsletter-news @newsletter-news}))))]
+                     (du/update-profile-props {:newsletter-updates @newsletter-updates :newsletter-news @newsletter-news}))))
+        onboarding-a-b-test? (cf/external-feature-flag "signup-background" "test")]
 
-    [:div {:class (stl/css :modal-overlay)}
+    [:div {:class (stl/css-case :modal-overlay true
+                                :onboarding-a-b-test onboarding-a-b-test?)}
      [:div.animated.fadeInDown {:class (stl/css :modal-container)}
       [:div {:class (stl/css :modal-left)}
        [:img {:src "images/deco-newsletter.png"

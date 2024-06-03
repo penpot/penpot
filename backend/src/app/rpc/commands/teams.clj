@@ -31,6 +31,7 @@
    [app.tokens :as tokens]
    [app.util.services :as sv]
    [app.util.time :as dt]
+   [app.worker :as wrk]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]))
 
@@ -516,13 +517,31 @@
 
 ;; --- Mutation: Delete Team
 
+(defn- delete-team
+  "Mark a team for deletion"
+  [conn team-id]
+
+  (let [deleted-at (dt/now)
+        team       (db/update! conn :team
+                               {:deleted-at deleted-at}
+                               {:id team-id}
+                               {::db/return-keys true})]
+
+    (when (:is-default team)
+      (ex/raise :type :validation
+                :code :non-deletable-team
+                :hint "impossible to delete default team"))
+
+    (wrk/submit! {::wrk/task :delete-object
+                  ::wrk/conn conn
+                  :object :team
+                  :deleted-at deleted-at
+                  :id team-id})
+    team))
+
 (s/def ::delete-team
   (s/keys :req [::rpc/profile-id]
           :req-un [::id]))
-
-;; TODO: right now just don't allow delete default team, in future it
-;; should raise a specific exception for signal that this action is
-;; not allowed.
 
 (sv/defmethod ::delete-team
   {::doc/added "1.17"}
@@ -533,11 +552,8 @@
         (ex/raise :type :validation
                   :code :only-owner-can-delete-team))
 
-      (db/update! conn :team
-                  {:deleted-at (dt/now)}
-                  {:id id :is-default false})
+      (delete-team conn id)
       nil)))
-
 
 ;; --- Mutation: Team Update Role
 

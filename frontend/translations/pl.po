@@ -305,7 +305,7 @@ msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Tutaj pojawią się pliki dodane do Bibliotek. Spróbuj udostępnić swoje pliki "
 "lub dodać z naszych [Bibliotek i "
-"szablonów](https://penpot.app/libraries-templates.html)."
+"szablonów](https://penpot.app/libraries-templates)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Pobierz %s plików Penpot (.penpot)"

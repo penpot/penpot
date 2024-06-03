@@ -56,38 +56,44 @@
 (defn proxy->file
   [proxy]
   (let [id (obj/get proxy "$id")]
-    (locate-file id)))
+    (when (some? id)
+      (locate-file id))))
 
 (defn proxy->page
   [proxy]
   (let [file-id (obj/get proxy "$file")
         id (obj/get proxy "$id")]
-    (locate-page file-id id)))
+    (when (and (some? file-id) (some? id))
+      (locate-page file-id id))))
 
 (defn proxy->shape
   [proxy]
   (let [file-id (obj/get proxy "$file")
         page-id (obj/get proxy "$page")
         id (obj/get proxy "$id")]
-    (locate-shape file-id page-id id)))
+    (when (and (some? file-id) (some? page-id) (some? id))
+      (locate-shape file-id page-id id))))
 
 (defn proxy->library-color
   [proxy]
   (let [file-id (obj/get proxy "$file")
         id (obj/get proxy "$id")]
-    (locate-library-color file-id id)))
+    (when (and (some? file-id) (some? id))
+      (locate-library-color file-id id))))
 
 (defn proxy->library-typography
   [proxy]
   (let [file-id (obj/get proxy "$file")
         id (obj/get proxy "$id")]
-    (locate-library-color file-id id)))
+    (when (and (some? file-id) (some? id))
+      (locate-library-color file-id id))))
 
 (defn proxy->library-component
   [proxy]
   (let [file-id (obj/get proxy "$file")
         id (obj/get proxy "$id")]
-    (locate-library-color file-id id)))
+    (when (and (some? file-id) (some? id))
+      (locate-library-color file-id id))))
 
 (defn get-data
   ([self attr]
@@ -118,30 +124,32 @@
 
 (defn from-js
   "Converts the object back to js"
-  [obj]
-  (when (some? obj)
-    (let [process-node
-          (fn process-node [node]
-            (reduce-kv
-             (fn [m k v]
-               (let [k (keyword (str/kebab k))
-                     v (cond (map? v)
-                             (process-node v)
+  ([obj]
+   (from-js obj #{:type}))
+  ([obj keyword-keys]
+   (when (some? obj)
+     (let [process-node
+           (fn process-node [node]
+             (reduce-kv
+              (fn [m k v]
+                (let [k (keyword (str/kebab k))
+                      v (cond (map? v)
+                              (process-node v)
 
-                             (vector? v)
-                             (mapv process-node v)
+                              (vector? v)
+                              (mapv process-node v)
 
-                             (and (string? v) (re-matches us/uuid-rx v))
-                             (uuid/uuid v)
+                              (and (string? v) (re-matches us/uuid-rx v))
+                              (uuid/uuid v)
 
-                             (= k :type)
-                             (keyword v)
+                              (contains? keyword-keys k)
+                              (keyword v)
 
-                             :else v)]
-                 (assoc m k v)))
-             {}
-             node))]
-      (process-node (js->clj obj)))))
+                              :else v)]
+                  (assoc m k v)))
+              {}
+              node))]
+       (process-node (js->clj obj))))))
 
 (defn to-js
   "Converts to javascript an camelize the keys"
@@ -180,3 +188,7 @@
               (remove-watch ret-v ::watcher)
               (resolve value)))))]
     [ret-v ret-p]))
+
+(defn display-not-valid
+  [code value]
+  (.error js/console (dm/str "[PENPOT PLUGIN] Value not valid: " value ". Code: " code)))

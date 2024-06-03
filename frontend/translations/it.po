@@ -300,7 +300,7 @@ msgstr "Duplicare %s file"
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Oh no! Non hai ancora nessun file! Se desideri provare alcuni template vai "
-"su [Librerie e template](https://penpot.app/libraries-templates.html)"
+"su [Librerie e template](https://penpot.app/libraries-templates)"
 
 msgid "dashboard.export-binary-multi"
 msgstr "Scarica %s file Penpot (.penpot)"

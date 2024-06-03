@@ -404,7 +404,7 @@ msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Berkas yang ditambahkan ke Pustaka akan muncul di sini. Coba membagikan "
 "berkas Anda atau menambahkan dari [Pustaka & "
-"templat](https://penpot.app/libraries-templates.html) kami."
+"templat](https://penpot.app/libraries-templates) kami."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Unduh %s berkas Penpot (.penpot)"

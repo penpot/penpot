@@ -305,7 +305,7 @@ msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Oh ez! Oraindik ez duzu fitxategirik! Txantiloi batekin proba egin nahi "
 "baduzu joan [Liburutegi eta "
-"txantiloiak](https://penpot.app/libraries-templates.html) atalera."
+"txantiloiak](https://penpot.app/libraries-templates) atalera."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Deskargatu %s Penpot fitxategi (.penpot)"

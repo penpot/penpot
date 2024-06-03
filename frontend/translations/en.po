@@ -408,7 +408,7 @@ msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Files added to Libraries will appear here. Try sharing your files or add "
 "from our [Libraries & "
-"templates](https://penpot.app/libraries-templates.html)."
+"templates](https://penpot.app/libraries-templates)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Download %s Penpot files (.penpot)"
@@ -5205,3 +5205,6 @@ msgstr "Plugins"
 
 msgid "workspace.plugins.menu.plugins-manager"
 msgstr "Plugins manager"
+
+msgid "workspace.plugins.plugin-list-link"
+msgstr "Plugins List"

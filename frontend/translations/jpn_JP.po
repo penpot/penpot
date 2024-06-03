@@ -263,7 +263,7 @@ msgstr "%s ファイルを複製"
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "まだファイルがありません。もしいくつかのテンプレートを試してみたいなら、[Libraries & "
-"templates](https://penpot.app/libraries-templates.html) をチェックしてみてください。"
+"templates](https://penpot.app/libraries-templates) をチェックしてみてください。"
 
 msgid "dashboard.export-frames"
 msgstr "PDFでエクスポート"

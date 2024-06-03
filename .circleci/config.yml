@@ -32,42 +32,42 @@ jobs:
       - run: clj-kondo --version
 
       - run:
-          name: "fmt check backend [clj]"
+          name: "backend fmt check"
           working_directory: "./backend"
           command: |
             yarn install
             yarn run fmt:clj:check
 
       - run:
-          name: "fmt check exporter [clj]"
+          name: "exporter fmt check"
           working_directory: "./exporter"
           command: |
             yarn install
             yarn run fmt:clj:check
 
       - run:
-          name: "fmt check common [clj]"
+          name: "common fmt check"
           working_directory: "./common"
           command: |
             yarn install
             yarn run fmt:clj:check
 
       - run:
-          name: "fmt check frontend [clj]"
+          name: "frontend fmt check"
           working_directory: "./frontend"
           command: |
             yarn install
             yarn run fmt:clj:check
 
       - run:
-          name: common lint
+          name: "common linter check"
           working_directory: "./common"
           command: |
             yarn install
             yarn run lint:clj
 
       - run:
-          name: frontend lint
+          name: "frontend linter check"
           working_directory: "./frontend"
           command: |
             yarn install
@@ -75,14 +75,14 @@ jobs:
             yarn run lint:clj
 
       - run:
-          name: backend lint
+          name: "backend linter check"
           working_directory: "./backend"
           command: |
             yarn install
             yarn run lint:clj
 
       - run:
-          name: exporter lint
+          name: "exporter linter check"
           working_directory: "./exporter"
           command: |
             yarn install
@@ -108,7 +108,7 @@ jobs:
           command: |
             yarn install
             yarn run compile
-            clojure -M:dev:shadow-cljs compile main
+            yarn run compile:cljs
             yarn playwright install --with-deps chromium
             yarn e2e:test
 
@@ -116,7 +116,7 @@ jobs:
           name: "backend tests"
           working_directory: "./backend"
           command: |
-            clojure -X:dev:test :patterns '["backend-tests.*-test"]'
+            clojure -M:dev:test
 
           environment:
             PENPOT_TEST_DATABASE_URI: "postgresql://localhost/penpot_test"

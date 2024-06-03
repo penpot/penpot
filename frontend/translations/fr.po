@@ -397,7 +397,7 @@ msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Oh non ! Vous n'avez pas encore de fichiers ! Si vous voulez essayer avec "
 "des modèles, allez sur [Bibliothèques et modèles] "
-"(https://penpot.app/libraries-templates.html)."
+"(https://penpot.app/libraries-templates)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Télécharger %s fichiers Penpot (.penpot)"

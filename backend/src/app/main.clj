@@ -349,8 +349,8 @@
      :audit-log-archive  (ig/ref :app.loggers.audit.archive-task/handler)
      :audit-log-gc       (ig/ref :app.loggers.audit.gc-task/handler)
 
-     :object-update
-     (ig/ref :app.tasks.object-update/handler)
+     :delete-object
+     (ig/ref :app.tasks.delete-object/handler)
      :process-webhook-event
      (ig/ref ::webhooks/process-event-handler)
      :run-webhook
@@ -380,7 +380,7 @@
    :app.tasks.orphan-teams-gc/handler
    {::db/pool (ig/ref ::db/pool)}
 
-   :app.tasks.object-update/handler
+   :app.tasks.delete-object/handler
    {::db/pool (ig/ref ::db/pool)}
 
    :app.tasks.file-gc/handler

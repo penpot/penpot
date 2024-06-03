@@ -1,10 +1,25 @@
 # CHANGELOG
 
+## 2.1.0
+
+### :rocket: Epics and highlights
+
+### :boom: Breaking changes & Deprecations
+
+### :heart: Community contributions (Thank you!)
+
+### :sparkles: New features
+- Improve auth process [Taiga #Change Auth Process](https://tree.taiga.io/project/penpot/us/7094)
+
+### :bug: Bugs fixed
+
 ## 2.0.3
 
 ### :bug: Bugs fixed
 
 - Fix chrome scrollbar styling [Taiga Issue #7852](https://tree.taiga.io/project/penpot/issue/7852)
+- Fix incorrect password encoding on create-profile manage scritp [Github #3651](https://github.com/penpot/penpot/issues/3651)
+
 
 ## 2.0.2
 
@@ -18,11 +33,13 @@
 - Fix color palette sorting [Taiga Issue #7458](https://tree.taiga.io/project/penpot/issue/7458)
 - Fix style scoping problem with imported SVG [Taiga #7671](https://tree.taiga.io/project/penpot/issue/7671)
 
+
 ## 2.0.1
 
 ### :bug: Bugs fixed
 
 - Fix different issues related to components v2 migrations including [Github #4443](https://github.com/penpot/penpot/issues/4443)
+
 
 ## 2.0.0 - I Just Can't Get Enough
 
@@ -117,7 +134,7 @@
 - [REDESIGN] Panels visual separations [Taiga #6692](https://tree.taiga.io/project/penpot/us/6692)
 - [REDESIGN] Onboarding slides [Taiga #6678](https://tree.taiga.io/project/penpot/us/6678)
 
-### :bug Bugs fixed
+### :bug: Bugs fixed
 - Fix pixelated thumbnails [Github #3681](https://github.com/penpot/penpot/issues/3681), [Github #3661](https://github.com/penpot/penpot/issues/3661)
 - Fix problem with not applying colors to boards [Github #3941](https://github.com/penpot/penpot/issues/3941)
 - Fix problem with path editor undoing changes [Github #3998](https://github.com/penpot/penpot/issues/3998)

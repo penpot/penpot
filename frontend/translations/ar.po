@@ -301,7 +301,7 @@ msgstr "تكرير %s الملفات"
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "أوه لا! ليس لديك ملفات بعد! إذا كنت تريد تجربة بعض القوالب ، فانتقل إلى "
-"[المكتبات والقوالب] (https://penpot.app/libraries-templates.html)"
+"[المكتبات والقوالب] (https://penpot.app/libraries-templates)"
 
 msgid "dashboard.export-binary-multi"
 msgstr "تنزيل ملفات ٪s Penpot (.penpot)"

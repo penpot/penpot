@@ -372,15 +372,14 @@
 (defn calculate-position
   "Calculates the style properties for the given coordinates and position"
   [{vh :height} position x y]
-  (let [;; picker height in pixels
-        h        510
-
+  (let [;; picker size in pixels
+        h 510
+        w 284
         ;; Checks for overflow outside the viewport height
         max-y   (- vh h)
         rulers? (mf/deref refs/rulers?)
         left-offset (if rulers? 40 18)
-
-        x-pos 400]
+        right-offset (+ w 40)]
 
     (cond
       (or (nil? x) (nil? y))
@@ -388,9 +387,9 @@
 
       (= position :left)
       (if (> y max-y)
-        #js {:left (dm/str (- x x-pos) "px")
+        #js {:left (dm/str (- x right-offset) "px")
              :bottom "1rem"}
-        #js {:left (dm/str (- x x-pos) "px")
+        #js {:left (dm/str (- x right-offset) "px")
              :top (dm/str (- y 70) "px")})
 
       (= position :right)
@@ -440,6 +439,7 @@
          (on-close @last-change)))
 
     [:div {:class (stl/css :colorpicker-tooltip)
+           :data-testid "colorpicker"
            :style style}
 
      [:& colorpicker {:data data

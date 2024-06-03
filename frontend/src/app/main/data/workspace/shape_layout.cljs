@@ -119,7 +119,14 @@
         (->> stream
              (rx/filter (ptk/type? :layout/update))
              (rx/map deref)
-             (rx/map #(update-layout-positions %))
+             ;; We buffer the updates to the layout so if there are many changes at the same time
+             ;; they are process together. It will get a better performance.
+             (rx/buffer-time 100)
+             (rx/filter #(d/not-empty? %))
+             (rx/map
+              (fn [data]
+                (let [ids (reduce #(into %1 (:ids %2)) #{} data)]
+                  (update-layout-positions {:ids ids}))))
              (rx/take-until stopper))))))
 
 (defn finalize

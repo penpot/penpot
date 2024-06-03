@@ -307,7 +307,7 @@ msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Encara no hi ha fitxers. Si voleu provar algunes plantilles, podeu anar a "
 "la secció [Biblioteques i "
-"plantilles](https://penpot.app/libraries-templates.html)"
+"plantilles](https://penpot.app/libraries-templates)"
 
 msgid "dashboard.export-binary-multi"
 msgstr "Baixa %s fitxers Penpot (.penpot)"

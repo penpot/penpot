@@ -44,6 +44,7 @@ export class WorkspacePage extends BaseWebSocketPage {
     this.viewport = page.getByTestId("viewport");
     this.rootShape = page.locator(`[id="shape-00000000-0000-0000-0000-000000000000"]`);
     this.rectShapeButton = page.getByRole("button", { name: "Rectangle (R)" });
+    this.colorpicker = page.getByTestId("colorpicker");
   }
 
   async goToWorkspace() {

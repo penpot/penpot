@@ -413,7 +413,7 @@ msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Šeit tiks parādītas bibliotēkām pievienotās datnes. Mēģini koplietot datnes "
 "vai pievienot tās no mūsu [bibliotēkām un "
-"veidnēm](https://penpot.app/libraries-templates.html)."
+"veidnēm](https://penpot.app/libraries-templates)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Lejupielādēt %s Penpot datnes (.penpot)"

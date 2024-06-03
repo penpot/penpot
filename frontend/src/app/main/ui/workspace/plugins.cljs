@@ -13,6 +13,7 @@
    [app.main.ui.components.search-bar :refer [search-bar]]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.icons :as i]
+   [app.util.avatars :as avatars]
    [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.object :as obj]
@@ -24,26 +25,30 @@
 
 
 (mf/defc plugin-entry
-  [{:keys [index _icon url name description on-open-plugin on-remove-plugin]}]
+  [{:keys [index manifest on-open-plugin on-remove-plugin]}]
 
-  (let [handle-open-click
+  (let [{:keys [host icon name description]} manifest
+        handle-open-click
         (mf/use-callback
-         (mf/deps index url on-open-plugin)
+         (mf/deps index manifest on-open-plugin)
          (fn []
            (when on-open-plugin
-             (on-open-plugin index url))))
+             (on-open-plugin manifest))))
 
         handle-delete-click
         (mf/use-callback
-         (mf/deps index url on-remove-plugin)
+         (mf/deps index on-remove-plugin)
          (fn []
            (when on-remove-plugin
-             (on-remove-plugin index url))))]
+             (on-remove-plugin index))))]
     [:div {:class (stl/css :plugins-list-element)}
-     [:div {:class (stl/css :plugin-icon)} ""]
+     [:div {:class (stl/css :plugin-icon)}
+      [:img {:src (if (some? icon)
+                    (dm/str host icon)
+                    (avatars/generate {:name name}))}]]
      [:div {:class (stl/css :plugin-description)}
       [:div {:class (stl/css :plugin-title)} name]
-      [:div {:class (stl/css :plugin-summary)} description]]
+      [:div {:class (stl/css :plugin-summary)} (d/nilv description "")]]
      [:button {:class (stl/css :open-button)
                :on-click handle-open-click} (tr "workspace.plugins.button-open")]
      [:button {:class (stl/css :trash-button)
@@ -65,8 +70,15 @@
     (.setItem ls "plugins" plugins-val)))
 
 (defn open-plugin!
-  [url]
-  (.ɵloadPlugin js/window #js {:manifest url}))
+  [{:keys [name description host code icon permissions]}]
+  (.ɵloadPlugin
+   js/window #js
+              {:name name
+               :description description
+               :host host
+               :code code
+               :icon icon
+               :permissions (apply array permissions)}))
 
 (mf/defc plugin-management-dialog
   {::mf/register modal/components
@@ -107,7 +119,20 @@
                 (rx/subs!
                  (fn [body]
                    (let [name (obj/get body "name")
-                         new-state (conj plugins-state {:name name :url plugin-url})]
+                         desc (obj/get body "description")
+                         code (obj/get body "code")
+                         icon (obj/get body "icon")
+                         permissions (obj/get body "permissions")
+                         origin (obj/get (js/URL. plugin-url) "origin")
+
+                         new-state
+                         (conj plugins-state
+                               {:name name
+                                :description desc
+                                :host origin
+                                :code code
+                                :icon icon
+                                :permissions (->> permissions (mapv str))})]
                      (reset! input-status* :success)
                      (reset! plugin-url* "")
                      (reset! plugins-state* new-state)
@@ -117,18 +142,18 @@
 
         handle-open-plugin
         (mf/use-callback
-         (fn [_ url]
-           (open-plugin! url)
+         (fn [manifest]
+           (open-plugin! manifest)
            (modal/hide!)))
 
         handle-remove-plugin
         (mf/use-callback
          (mf/deps plugins-state)
-         (fn [rm-idx _]
+         (fn [plugin-index]
            (let [new-state
                  (into []
                        (keep-indexed (fn [idx item]
-                                       (when (not= idx rm-idx) item)))
+                                       (when (not= idx plugin-index) item)))
                        plugins-state)]
 
              (reset! plugins-state* new-state)
@@ -160,22 +185,22 @@
 
        [:hr]
 
-       [:& title-bar {:collapsable false
-                      :title (tr "workspace.plugins.installed-plugins")}]
-
        (if (empty? plugins-state)
          [:div {:class (stl/css :plugins-empty)}
-          [:div {:class (stl/css :plugins-empty-logo)} i/logo-icon]
-          [:div {:class (stl/css :plugins-empty-text)} (tr "workspace.plugins.empty-plugins")]]
+          [:div {:class (stl/css :plugins-empty-logo)} i/rocket]
+          [:div {:class (stl/css :plugins-empty-text)} (tr "workspace.plugins.empty-plugins")]
+          [:a {:class (stl/css :plugins-link) :href "#"}
+           (tr "workspace.plugins.plugin-list-link") i/external-link]]
 
-         [:div {:class (stl/css :plugins-list)}
+         [:*
+          [:& title-bar {:collapsable false
+                         :title (tr "workspace.plugins.installed-plugins")}]
 
-          (for [[idx {:keys [name url]}] (d/enumerate plugins-state)]
-            [:& plugin-entry {:key (dm/str "plugin-" idx)
-                              :name name
-                              :url url
-                              :index idx
-                              :icon nil
-                              :description "Nullam ullamcorper ligula ac felis commodo pulvinar."
-                              :on-open-plugin handle-open-plugin
-                              :on-remove-plugin handle-remove-plugin}])])]]]))
+          [:div {:class (stl/css :plugins-list)}
+
+           (for [[idx manifest] (d/enumerate plugins-state)]
+             [:& plugin-entry {:key (dm/str "plugin-" idx)
+                               :index idx
+                               :manifest manifest
+                               :on-open-plugin handle-open-plugin
+                               :on-remove-plugin handle-remove-plugin}])]])]]]))

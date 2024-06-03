@@ -110,7 +110,6 @@
    ::sm/params schema:update-profile
    ::sm/result schema:profile}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id fullname lang theme] :as params}]
-
   (db/with-atomic [conn pool]
     ;; NOTE: we need to retrieve the profile independently if we use
     ;; it or not for explicit locking and avoid concurrent updates of

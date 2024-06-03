@@ -293,7 +293,7 @@ msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Čia bus rodomi prie bibliotekų pridėti failai. Pabandykite bendrinti failus "
 "arba pridėti iš mūsų [Bibliotekos ir šablonai] "
-"(https://penpot.app/libraries-templates.html)"
+"(https://penpot.app/libraries-templates)"
 
 msgid "dashboard.export-frames"
 msgstr "Eksportuokite darbalaukius į PDF"

@@ -406,7 +406,7 @@ msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Zde se zobrazí soubory přidané do knihoven. Zkuste své soubory sdílet nebo "
 "je přidat z našich [Libraries & "
-"templates](https://penpot.app/libraries-templates.html)."
+"templates](https://penpot.app/libraries-templates)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Stáhnout soubory %s Penpot (.penpot)"

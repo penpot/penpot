@@ -48,6 +48,7 @@
                         (and add-container? (nil? component-id))
                         (assoc :page-id  (:current-page-id file)
                                :frame-id (:current-frame-id file)))
+
          valid? (ch/check-change! change)]
 
      (when-not valid?
@@ -135,13 +136,8 @@
    (create-file (uuid/next) name))
 
   ([id name]
-   {:id id
-    :name name
-    :data (-> ctf/empty-file-data
-              (assoc :id id))
-
-    ;; We keep the changes so we can send them to the backend
-    :changes []}))
+   (-> (ctf/make-file {:id id :name name :create-page false})
+       (assoc :changes [])))) ;; We keep the changes so we can send them to the backend
 
 (defn add-page
   [file data]
@@ -511,9 +507,12 @@
          {:type :del-media
           :id id}))))
 
-
 (defn start-component
-  ([file data] (start-component file data :group))
+  ([file data]
+   (let [components-v2 (dm/get-in file [:data :options :components-v2])
+         root-type     (if components-v2 :frame :group)]
+     (start-component file data root-type)))
+
   ([file data root-type]
    ;; FIXME: data probably can be a shape instance, then we can use gsh/shape->rect
    (let [selrect (or (grc/make-rect (:x data) (:y data) (:width data) (:height data))
@@ -566,9 +565,11 @@
 
         file
         (cond
-          ;; Components-v2 component we skip this step
+          ;; In components-v2 components haven't any shape inside them.
           (and component-data (:main-instance-id component-data))
-          file
+          (update file :data
+                  (fn [data]
+                    (ctkl/update-component data component-id dissoc :objects)))
 
           (empty? children)
           (commit-change

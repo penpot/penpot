@@ -387,7 +387,7 @@ msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Fail yang ditambahkan pada Perpustakaan akan dipaparkan di sini. Cuba "
 "kongsi fail anda atau tambahkan daripada [Perpustakaan & "
-"templat](https://penpot.app/libraries-templates.html) kami."
+"templat](https://penpot.app/libraries-templates) kami."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Muat turun %s fail Penpot (.penpot)"

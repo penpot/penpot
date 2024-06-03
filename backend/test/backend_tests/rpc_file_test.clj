@@ -1189,6 +1189,7 @@
         (t/is (nil? error))
         (t/is (map? result)))
 
+      ;; insert another thumbnail with different revn
       (let [data {::th/type :create-file-thumbnail
                   ::rpc/profile-id (:id prof)
                   :file-id (:id file)
@@ -1207,8 +1208,6 @@
         (t/is (= 2 (count rows)))))
 
     (t/testing "gc task"
-      ;; make the file eligible for GC waiting 300ms (configured
-      ;; timeout for testing)
       (let [res (th/run-task! :file-gc {:min-age 0})]
         (t/is (= 1 (:processed res))))
 

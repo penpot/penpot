@@ -52,6 +52,10 @@
     [_ type callback]
     (events/add-listener type callback))
 
+  (removeListener
+    [_ listener-id]
+    (events/remove-listener listener-id))
+
   (getViewport
     [_]
     (viewport/create-proxy))

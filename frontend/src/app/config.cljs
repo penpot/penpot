@@ -130,6 +130,10 @@
 (def worker-uri
   (obj/get global "penpotWorkerURI" "/js/worker.js"))
 
+(defn external-feature-flag [flag value]
+  (when-let [fn (obj/get global "externalFeatureFlag")]
+    (fn flag value)))
+
 ;; --- Helper Functions
 
 (defn ^boolean check-browser? [candidate]
