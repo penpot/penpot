@@ -129,12 +129,12 @@
    :mask                 {:tooltip (ds/meta "M")
                           :command (ds/c-mod "m")
                           :subsections [:modify-layers]
-                          :fn #(emit-when-no-readonly dw/mask-group)}
+                          :fn #(emit-when-no-readonly (dw/mask-group))}
 
    :unmask               {:tooltip (ds/meta-shift "M")
                           :command (ds/c-mod "shift+m")
                           :subsections [:modify-layers]
-                          :fn #(emit-when-no-readonly dw/unmask-group)}
+                          :fn #(emit-when-no-readonly (dw/unmask-group))}
 
    :create-component     {:tooltip (ds/meta "K")
                           :command (ds/c-mod "k")

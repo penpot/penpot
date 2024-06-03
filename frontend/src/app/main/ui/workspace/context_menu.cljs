@@ -244,9 +244,9 @@
         is-bool?   (and single? has-bool?)
 
         do-create-group #(st/emit! dw/group-selected)
-        do-mask-group   #(st/emit! dw/mask-group)
         do-remove-group #(st/emit! dw/ungroup-selected)
-        do-unmask-group #(st/emit! dw/unmask-group)
+        do-mask-group   #(st/emit! (dw/mask-group))
+        do-unmask-group #(st/emit! (dw/unmask-group))
         do-create-artboard-from-selection
         #(st/emit! (dwsh/create-artboard-from-selection))]
 
