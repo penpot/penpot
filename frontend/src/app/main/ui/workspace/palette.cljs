@@ -125,7 +125,6 @@
              (dom/blur! node))))
 
         any-palette? (or color-palette? text-palette?)
-
         size-classname
         (cond
           (<= size 64) (stl/css :small-palette)
