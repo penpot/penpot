@@ -923,6 +923,20 @@
     (-> data
         (update :pages-index update-vals update-page))))
 
+(defn migrate-up-48
+  [data]
+  (letfn [(fix-shape [shape]
+            (let [swap-slot (ctk/get-swap-slot shape)]
+              (if (and (some? swap-slot)
+                       (not (ctk/subcopy-head? shape)))
+                (ctk/remove-swap-slot shape)
+                shape)))
+
+          (update-page [page]
+            (d/update-when page :objects update-vals fix-shape))]
+    (-> data
+        (update :pages-index update-vals update-page))))
+
 (def migrations
   "A vector of all applicable migrations"
   [{:id 2 :migrate-up migrate-up-2}
@@ -961,4 +975,5 @@
    {:id 44 :migrate-up migrate-up-44}
    {:id 45 :migrate-up migrate-up-45}
    {:id 46 :migrate-up migrate-up-46}
-   {:id 47 :migrate-up migrate-up-47}])
+   {:id 47 :migrate-up migrate-up-47}
+   {:id 48 :migrate-up migrate-up-48}])
