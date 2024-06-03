@@ -103,7 +103,7 @@
     all-actions))
 
 (mf/defc token-pill-context-menu
-  [{:keys [token-id token-type-props token-type selected-shapes] :as context-data}]
+  [context-data]
   (let [menu-entries (generate-menu-entries context-data)]
     (for [[index entry] (d/enumerate menu-entries)]
       [:& menu-entry {:title (:title entry) :on-click (:action entry) :key index}])))
