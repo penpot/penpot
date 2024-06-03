@@ -130,6 +130,15 @@
   (and (some? (:component-id shape))
        (nil? (:component-root shape))))
 
+(defn subcopy-head?
+  "Check if this shape is the head of a subinstance that is a copy."
+  [shape]
+  ;; This is redundant with the previous one, but may give more security
+  ;; in case of bugs.
+  (and (some? (:component-id shape))
+       (nil? (:component-root shape))
+       (some? (:shape-ref shape))))
+
 (defn instance-of?
   [shape file-id component-id]
   (and (some? (:component-id shape))
@@ -226,7 +235,6 @@
           :remote-synced
           :shape-ref
           :touched))
-
 
 (defn- extract-ids [shape]
   (if (map? shape)
