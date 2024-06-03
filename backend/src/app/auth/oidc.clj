@@ -7,7 +7,6 @@
 (ns app.auth.oidc
   "OIDC client implementation."
   (:require
-   [app.auth :as auth]
    [app.auth.oidc.providers :as-alias providers]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -17,6 +16,8 @@
    [app.common.uri :as u]
    [app.config :as cf]
    [app.db :as db]
+   [app.email.blacklist :as email.blacklist]
+   [app.email.whitelist :as email.whitelist]
    [app.http.client :as http]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
@@ -570,7 +571,12 @@
         (->> (redirect-to-verify-token token)
              (sxf request))))
 
-    (not (auth/email-domain-in-whitelist? (:email info)))
+    (and (email.blacklist/enabled? cfg)
+         (email.blacklist/contains? cfg (:email info)))
+    (redirect-with-error "email-domain-not-allowed")
+
+    (and (email.whitelist/enabled? cfg)
+         (not (email.whitelist/contains? cfg (:email info))))
     (redirect-with-error "email-domain-not-allowed")
 
     :else

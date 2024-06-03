@@ -6,10 +6,11 @@
 
 (ns backend-tests.rpc-profile-test
   (:require
-   [app.auth :as auth]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.email.blacklist :as email.blacklist]
+   [app.email.whitelist :as email.whitelist]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.profile :as profile]
    [app.tokens :as tokens]
@@ -177,14 +178,15 @@
       (let [result (:result out)]
         (t/is (= uuid/zero (:id result)))))))
 
-(t/deftest registration-domain-whitelist
-  (let [whitelist #{"gmail.com" "hey.com" "ya.ru"}]
-    (t/testing "allowed email domain"
-      (t/is (true? (auth/email-domain-in-whitelist? whitelist "username@ya.ru")))
-      (t/is (true? (auth/email-domain-in-whitelist? #{} "username@somedomain.com"))))
+(t/deftest email-blacklist-1
+  (t/is (false? (email.blacklist/enabled? th/*system*)))
+  (t/is (true? (email.blacklist/enabled? (assoc th/*system* :app.email/blacklist []))))
+  (t/is (true? (email.blacklist/contains? (assoc th/*system* :app.email/blacklist #{"foo.com"}) "AA@FOO.COM"))))
 
-    (t/testing "not allowed email domain"
-      (t/is (false? (auth/email-domain-in-whitelist? whitelist "username@somedomain.com"))))))
+(t/deftest email-whitelist-1
+  (t/is (false? (email.whitelist/enabled? th/*system*)))
+  (t/is (true? (email.whitelist/enabled? (assoc th/*system* :app.email/whitelist []))))
+  (t/is (true? (email.whitelist/contains? (assoc th/*system* :app.email/whitelist #{"foo.com"}) "AA@FOO.COM"))))
 
 (t/deftest prepare-register-and-register-profile-1
   (let [data  {::th/type :prepare-register-profile

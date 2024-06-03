@@ -101,6 +101,9 @@
 (s/def ::audit-log-archive-uri ::us/string)
 (s/def ::audit-log-http-handler-concurrency ::us/integer)
 
+(s/def ::email-domain-blacklist ::fs/path)
+(s/def ::email-domain-whitelist ::fs/path)
+
 (s/def ::deletion-delay ::dt/duration)
 
 (s/def ::admins ::us/set-of-valid-emails)
@@ -230,6 +233,8 @@
                    ::database-max-pool-size
                    ::default-blob-version
                    ::default-rpc-rlimit
+                   ::email-domain-blacklist
+                   ::email-domain-whitelist
                    ::error-report-webhook
                    ::default-executor-parallelism
                    ::scheduled-executor-parallelism

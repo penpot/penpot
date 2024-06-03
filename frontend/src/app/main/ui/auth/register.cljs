@@ -58,6 +58,9 @@
       [:restriction :registration-disabled]
       (st/emit! (msg/error (tr "errors.registration-disabled")))
 
+      [:restriction :email-domain-is-not-allowed]
+      (st/emit! (msg/error (tr "errors.email-domain-not-allowed")))
+
       [:validation :email-as-password]
       (swap! form assoc-in [:errors :password]
              {:message "errors.email-as-password"})
