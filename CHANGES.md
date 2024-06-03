@@ -9,8 +9,9 @@
 ### :heart: Community contributions (Thank you!)
 
 ### :sparkles: New features
-- Improve auth process [Taiga #7094](https://tree.taiga.io/project/penpot/us/7094)
+- Improve auth process [Taiga #Change Auth Process](https://tree.taiga.io/project/penpot/us/7094)
 - Add locking degrees increment (hold shift) on path edition [Taiga #7761](https://tree.taiga.io/project/penpot/issue/7761)
+- Allow library colors as recent colors [Taiga issue #7640](https://tree.taiga.io/project/penpot/issue/7640)
 
 ### :bug: Bugs fixed
 
