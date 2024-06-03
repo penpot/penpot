@@ -18,6 +18,7 @@
    [app.common.types.shape.radius :as ctsr]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as udw]
+   [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
@@ -27,6 +28,7 @@
    [app.plugins.grid :as grid]
    [app.plugins.utils :as utils :refer [locate-objects locate-shape proxy->shape array-to-js]]
    [app.util.object :as obj]
+   [app.util.path.format :as upf]
    [app.util.text-editor :as ted]))
 
 (declare shape-proxy)
@@ -58,30 +60,68 @@
   ;; Only for frames + groups + booleans
   (getChildren
     [_]
-    (apply array (->> (locate-shape $file $page $id)
-                      :shapes
-                      (map #(shape-proxy $file $page %)))))
+    (let [shape (locate-shape $file $page $id)]
+      (if (or (cfh/frame-shape? shape) (cfh/group-shape? shape) (cfh/svg-raw-shape? shape) (cfh/bool-shape? shape))
+        (apply array (->> (locate-shape $file $page $id)
+                          :shapes
+                          (map #(shape-proxy $file $page %))))
+        (utils/display-not-valid :getChildren (:type shape)))))
 
   (appendChild
     [_ child]
-    (let [child-id (obj/get child "$id")]
-      (st/emit! (udw/relocate-shapes #{child-id} $id 0))))
+    (let [shape (locate-shape $file $page $id)]
+      (if (or (cfh/frame-shape? shape) (cfh/group-shape? shape) (cfh/svg-raw-shape? shape) (cfh/bool-shape? shape))
+        (let [child-id (obj/get child "$id")]
+          (st/emit! (udw/relocate-shapes #{child-id} $id 0)))
+        (utils/display-not-valid :appendChild (:type shape)))))
 
   (insertChild
     [_ index child]
-    (let [child-id (obj/get child "$id")]
-      (st/emit! (udw/relocate-shapes #{child-id} $id index))))
+    (let [shape (locate-shape $file $page $id)]
+      (if (or (cfh/frame-shape? shape) (cfh/group-shape? shape) (cfh/svg-raw-shape? shape) (cfh/bool-shape? shape))
+        (let [child-id (obj/get child "$id")]
+          (st/emit! (udw/relocate-shapes #{child-id} $id index)))
+        (utils/display-not-valid :insertChild (:type shape)))))
 
   ;; Only for frames
   (addFlexLayout
     [_]
-    (st/emit! (dwsl/create-layout-from-id $id :flex :from-frame? true :calculate-params? false))
-    (grid/grid-layout-proxy $file $page $id))
+    (let [shape (locate-shape $file $page $id)]
+      (if (cfh/frame-shape? shape)
+        (do (st/emit! (dwsl/create-layout-from-id $id :flex :from-frame? true :calculate-params? false))
+            (grid/grid-layout-proxy $file $page $id))
+        (utils/display-not-valid :addFlexLayout (:type shape)))))
 
   (addGridLayout
     [_]
-    (st/emit! (dwsl/create-layout-from-id $id :grid :from-frame? true :calculate-params? false))
-    (grid/grid-layout-proxy $file $page $id)))
+    (let [shape (locate-shape $file $page $id)]
+      (if (cfh/frame-shape? shape)
+        (do (st/emit! (dwsl/create-layout-from-id $id :grid :from-frame? true :calculate-params? false))
+            (grid/grid-layout-proxy $file $page $id))
+        (utils/display-not-valid :addGridLayout (:type shape)))))
+
+  ;; Make masks for groups
+  (makeMask
+    [_]
+    (let [shape (locate-shape $file $page $id)]
+      (if (cfh/group-shape? shape)
+        (st/emit! (dwg/mask-group #{$id}))
+        (utils/display-not-valid :makeMask (:type shape)))))
+
+  (removeMask
+    [_]
+    (let [shape (locate-shape $file $page $id)]
+      (if (cfh/mask-shape? shape)
+        (st/emit! (dwg/unmask-group #{$id}))
+        (utils/display-not-valid :removeMask (:type shape)))))
+
+  ;; Only for path and bool shapes
+  (toD
+    [_]
+    (let [shape (locate-shape $file $page $id)]
+      (if (cfh/path-shape? shape)
+        (upf/format-path (:content shape))
+        (utils/display-not-valid :makeMask (:type shape))))))
 
 (crc/define-properties!
   ShapeProxy
@@ -388,11 +428,6 @@
              :enumerable false
              :get #(.getChildren ^js %)}))
 
-         (cond-> (not (or (cfh/frame-shape? data) (cfh/group-shape? data) (cfh/svg-raw-shape? data) (cfh/bool-shape? data)))
-           (-> (obj/unset! "appendChild")
-               (obj/unset! "insertChild")
-               (obj/unset! "getChildren")))
-
          (cond-> (cfh/frame-shape? data)
            (-> (crc/add-properties!
                 {:name "grid"
@@ -439,10 +474,6 @@
                          value (keyword value)]
                      (when (contains? #{:fix :auto} value)
                        (st/emit! (dwsl/update-layout #{id} {:layout-item-v-sizing value})))))})))
-
-         (cond-> (not (cfh/frame-shape? data))
-           (-> (obj/unset! "addGridLayout")
-               (obj/unset! "addFlexLayout")))
 
          (cond-> (cfh/text-shape? data)
            (crc/add-properties!
@@ -534,4 +565,9 @@
              :set
              (fn [self value]
                (let [id (obj/get self "$id")]
-                 (st/emit! (dwt/update-attrs id {:text-transform value}))))}))))))
+                 (st/emit! (dwt/update-attrs id {:text-transform value}))))}))
+
+         (cond-> (or (cfh/path-shape? data) (cfh/bool-shape? data))
+           (crc/add-properties!
+            {:name "content"
+             :get #(-> % proxy->shape :content array-to-js)}))))))
