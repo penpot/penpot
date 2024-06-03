@@ -13,6 +13,7 @@
    [app.main.data.tokens :as dt]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.shape-layout :as dwsl]
+   [app.main.data.workspace.transforms :as dwt]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -63,6 +64,30 @@
                          :token-type-props updated-token-type-props
                          :selected-shapes selected-shapes})))
 
+(defn update-shape-dimensions [value shape-ids attributes]
+  (println "attributes is " attributes)
+  (st/emit! (dwt/update-dimensions shape-ids (first attributes) value)))
+
+(defn update-layout-sizing-limits [value shape-ids attributes]
+  (st/emit! (dwsl/update-layout-child shape-ids {(first attributes) value})))
+
+(defn apply-sizing-token [{:keys [token-id token-type-props selected-shapes]} attribute]
+  (let [token (dt/get-token-data-from-token-id token-id)
+        updated-token-type-props (cond
+                                   (#{:width :height} attribute)
+                                   (assoc token-type-props
+                                          :on-update-shape update-shape-dimensions
+                                          :attributes #{attribute})
+
+                                   (#{:layout-item-min-w :layout-item-max-w
+                                      :layout-item-min-h :layout-item-max-h} attribute)
+                                   (assoc token-type-props
+                                          :on-update-shape update-layout-sizing-limits
+                                          :attributes #{attribute}))]
+    (wtc/on-apply-token {:token token
+                         :token-type-props updated-token-type-props
+                         :selected-shapes selected-shapes})))
+
 
 (defn additional-actions [{:keys [token-type] :as context-data}]
   (case token-type
@@ -82,6 +107,16 @@
                       {:title "Right" :action #(action #{:p2})}
                       {:title "Bottom" :action #(action #{:p3})}
                       {:title "Left" :action #(action #{:p4})}])
+
+    :sizing       (let [action #(apply-sizing-token context-data %)]
+                    [{:title "All" :action #(action :all)}
+                     {:title "Width" :action #(action :width)}
+                     {:title "Height" :action #(action :height)}
+                     {:title "Min width" :action #(action :layout-item-min-w)}
+                     {:title "Max width" :action #(action :layout-item-max-w)}
+                     {:title "Min height" :action #(action :layout-item-min-h)}
+                     {:title "Max height" :action #(action :layout-item-max-h)}])
+
     []))
 
 (defn generate-menu-entries [{:keys [token-id token-type-props token-type selected-shapes] :as context-data}]
