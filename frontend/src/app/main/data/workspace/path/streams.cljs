@@ -101,7 +101,12 @@
     (->> ms/mouse-position
          (rx/map to-pixel-snap)
          (rx/with-latest-from (snap-toggled-stream))
-         (rx/map check-path-snap))))
+         (rx/map check-path-snap)
+         (rx/with-latest-from
+           (fn [position shift? alt?]
+             (assoc position :shift? shift? :alt? alt?))
+           ms/mouse-position-shift
+           ms/mouse-position-alt))))
 
 (defn get-angle [node handler opposite]
   (when (and (some? node) (some? handler) (some? opposite))
