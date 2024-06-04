@@ -743,10 +743,6 @@
 (t/deftest test-swap-outside-component-doesnt-have-swap-slot
   (let [;; ==== Setup
         file                   (setup-file)
-
-        page                   (thf/current-page file)
-        blue1                  (ths/get-shape file :blue1)
-
         ;; ==== Action
 
         file'                  (-> file
@@ -761,3 +757,32 @@
     ;; blue-copy1 has not swap-id
     (t/is (some? blue-copy1'))
     (t/is (nil? (ctk/get-swap-slot blue-copy1')))))
+
+
+(t/deftest test-remove-swap-slot-detach
+  (let [;; ==== Setup
+        file                   (setup-file)
+
+        page                   (thf/current-page file)
+        green-copy             (ths/get-shape file :green-copy)
+        blue2                  (ths/get-shape file :blue2)
+
+        ;; ==== Action
+        changes                (cll/generate-detach-component (pcb/empty-changes)
+                                                              (:id green-copy)
+                                                              (:data file)
+                                                              (:id page)
+                                                              {(:id file) file})
+        file'                  (thf/apply-changes file changes)
+
+        ;; ==== Get
+        blue2'                 (ths/get-shape file' :blue2)]
+
+    ;; ==== Check
+
+    ;; blue2 had swap-id before move
+    (t/is (some? (ctk/get-swap-slot blue2)))
+
+    ;; blue2' has not swap-id after move
+    (t/is (some? blue2'))
+    (t/is (nil? (ctk/get-swap-slot blue2')))))
