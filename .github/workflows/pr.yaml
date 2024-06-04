@@ -12,7 +12,8 @@ jobs:
       matrix:
         include:
           - dockerfile: Dockerfile.frontend
-            type: frontend
+            type: pr-frontend
+            name: frontend
     permissions:
       contents: read
       packages: write
@@ -30,7 +31,7 @@ jobs:
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
-        password: ${{ secrets.GHCR_TOKEN  }}
+        password: ${{ secrets.PAT_TOKEN  }}
 
     - name: Docker meta
       id: meta
@@ -42,9 +43,9 @@ jobs:
           ghcr.io/tokens-studio/tokens-studio-for-penpot
     - name: prebuild
       run: |
-        echo "Building ${{ matrix.type }} image"
-        ./manage.sh build-${{matrix.type}}-bundle
-        mv ./bundles/${{matrix.type}} ./docker/images/bundle-${{matrix.type}}/
+        echo "Building ${{ matrix.name }} image"
+        ./manage.sh build-${{matrix.name}}-bundle
+        mv ./bundles/${{matrix.name}} ./docker/images/bundle-${{matrix.name}}/
 
     - name: Publish Docker images
       uses: docker/build-push-action@v5
@@ -65,5 +66,6 @@ jobs:
       - name: 🍍 Deploy with Gimlet
         uses: gimlet-io/gimlet-artifact-shipper-action@v0.8.3
         env:
-            GIMLET_SERVER: ${{ secrets.GIMLET_SERVER }}
-            GIMLET_TOKEN: ${{ secrets.GIMLET_TOKEN }}
+          GIMLET_SERVER: ${{ secrets.GIMLET_SERVER }}
+          GIMLET_TOKEN: ${{ secrets.GIMLET_TOKEN }}
+          DEPLOY: 'true'
