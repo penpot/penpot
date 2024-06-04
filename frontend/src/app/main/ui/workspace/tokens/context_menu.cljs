@@ -19,6 +19,7 @@
    [app.main.ui.workspace.context-menu :refer [menu-entry prevent-default]]
    [app.main.ui.workspace.tokens.core :as wtc]
    [app.util.dom :as dom]
+   [clojure.set :as set]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
@@ -34,12 +35,12 @@
                       {:reg-objects? true
                        :attrs [:rx :ry :r1 :r2 :r3 :r4]})))
 
-(defn apply-border-radius-token [{:keys [token-id token-type-props selected-shapes]} attribute]
+(defn apply-border-radius-token [{:keys [token-id token-type-props selected-shapes]} attributes]
   (let [token (dt/get-token-data-from-token-id token-id)
-        updated-token-type-props (if (#{:r1 :r2 :r3 :r4} attribute)
+        updated-token-type-props (if (set/superset? #{:r1 :r2 :r3 :r4} attributes)
                                    (assoc token-type-props
                                           :on-update-shape update-shape-radius-single-corner
-                                          :attributes #{attribute})
+                                          :attributes attributes)
                                    token-type-props)]
     (wtc/on-apply-token {:token token
                          :token-type-props updated-token-type-props
@@ -63,26 +64,33 @@
                          :token-type-props updated-token-type-props
                          :selected-shapes selected-shapes})))
 
-
-(defn additional-actions [{:keys [token-type] :as context-data}]
-  (case token-type
-    :border-radius (let [action #(apply-border-radius-token context-data %)]
-                     [{:title "All" :action #(action :all)}
-                      {:title "Top Left" :action #(action :r1)}
-                      {:title "Top Right" :action #(action :r2)}
-                      {:title "Bottom Right" :action #(action :r3)}
-                      {:title "Bottom Left" :action #(action :r4)}])
-    :spacing       (let [action #(apply-spacing-token context-data %)]
-                     [{:title "All" :action #(action #{:p1 :p2 :p3 :p4})}
-                      {:title "Column Gap" :action #(action #{:column-gap})}
-                      {:title "Vertical padding" :action #(action #{:p1 :p3})}
-                      {:title "Horizontal padding" :action #(action #{:p2 :p4})}
-                      {:title "Row Gap" :action #(action #{:row-gap})}
-                      {:title "Top" :action #(action #{:p1})}
-                      {:title "Right" :action #(action #{:p2})}
-                      {:title "Bottom" :action #(action #{:p3})}
-                      {:title "Left" :action #(action #{:p4})}])
-    []))
+(defn additional-actions [{:keys [token-id token-type selected-shapes] :as context-data}]
+  (let [attributes->actions (fn [update-fn coll]
+                              (for [{:keys [attributes] :as item} coll]
+                                (let [selected? (wtc/tokens-applied? {:id token-id} selected-shapes attributes)]
+                                  (assoc item
+                                         :action #(update-fn context-data attributes)
+                                         :selected? selected?))))]
+    (case token-type
+      :border-radius (attributes->actions
+                      apply-border-radius-token
+                      [{:title "All" :attributes #{:r1 :r2 :r3 :r4}}
+                       {:title "Top Left" :attributes #{:r1}}
+                       {:title "Top Right" :attributes #{:r2}}
+                       {:title "Bottom Right" :attributes #{:r3}}
+                       {:title "Bottom Left" :attributes #{:r4}}])
+      :spacing       (attributes->actions
+                      apply-spacing-token
+                      [{:title "All" :attributes #{:p1 :p2 :p3 :p4}}
+                       {:title "Column Gap" :attributes #{:column-gap}}
+                       {:title "Vertical padding" :attributes #{:p1 :p3}}
+                       {:title "Horizontal padding" :attributes #{:p2 :p4}}
+                       {:title "Row Gap" :attributes #{:row-gap}}
+                       {:title "Top" :attributes #{:p1}}
+                       {:title "Right" :attributes #{:p2}}
+                       {:title "Bottom" :attributes #{:p3}}
+                       {:title "Left" :attributes #{:p4}}])
+      [])))
 
 (defn generate-menu-entries [{:keys [token-id token-type-props token-type selected-shapes] :as context-data}]
   (let [{:keys [modal]} token-type-props
@@ -103,10 +111,16 @@
     all-actions))
 
 (mf/defc token-pill-context-menu
-  [{:keys [token-id token-type-props token-type selected-shapes] :as context-data}]
+  [context-data]
   (let [menu-entries (generate-menu-entries context-data)]
-    (for [[index entry] (d/enumerate menu-entries)]
-      [:& menu-entry {:title (:title entry) :on-click (:action entry) :key index}])))
+    (for [[index {:keys [title action selected?]}] (d/enumerate menu-entries)]
+      [:& menu-entry {:key index
+                      :title title
+                      :on-click action
+                      ;; TODO: Allow selected items wihtout an icon for the context menu
+                      :icon (mf/html [:div {:class (stl/css-case :empty-icon true
+                                                                 :hidden-icon (not selected?))}])
+                      :selected? selected?}])))
 
 (mf/defc token-context-menu
   []
