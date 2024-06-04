@@ -7,11 +7,14 @@
 (ns app.plugins.page
   "RPC for plugins runtime."
   (:require
+   [app.common.colors :as cc]
    [app.common.data.macros :as dm]
    [app.common.record :as crc]
    [app.common.uuid :as uuid]
+   [app.main.data.workspace :as dw]
+   [app.main.store :as st]
    [app.plugins.shape :as shape]
-   [app.plugins.utils :refer [locate-page proxy->page]]
+   [app.plugins.utils :as u]
    [app.util.object :as obj]))
 
 (deftype PageProxy [$file $id]
@@ -29,7 +32,7 @@
     [_]
     ;; Returns a lazy (iterable) of all available shapes
     (when (and (some? $file) (some? $id))
-      (let [page (locate-page $file $id)]
+      (let [page (u/locate-page $file $id)]
         (apply array (sequence (map shape/shape-proxy) (keys (:objects page))))))))
 
 (crc/define-properties!
@@ -48,8 +51,22 @@
     :get #(dm/str (obj/get % "$id"))}
 
    {:name "name"
-    :get #(-> % proxy->page :name)}
+    :get #(-> % u/proxy->page :name)
+    :set
+    (fn [_ value]
+      (if (string? value)
+        (st/emit! (dw/rename-page id value))
+        (u/display-not-valid :page-name value)))}
 
    {:name "root"
     :enumerable false
-    :get #(.getRoot ^js %)}))
+    :get #(.getRoot ^js %)}
+
+   {:name "background"
+    :enumerable false
+    :get #(or (-> % u/proxy->page :options :background) cc/canvas)
+    :set
+    (fn [_ value]
+      (if (and (some? value) (string? value) (cc/valid-hex-color? value))
+        (st/emit! (dw/change-canvas-color id {:color value}))
+        (u/display-not-valid :page-background-color value)))}))
