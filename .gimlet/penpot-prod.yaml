@@ -116,7 +116,6 @@ manifests: |
           enabled: true
           annotations:
             cert-manager.io/cluster-issuer: letsencrypt-prod
-            networking.gke.io/v1beta1.FrontendConfig: default-frontend-config
           hosts:
             - host: penpot.tokens.studio
           tls:
