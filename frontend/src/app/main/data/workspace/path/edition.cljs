@@ -114,6 +114,9 @@
     (update [_ state]
       (let [id (st/get-path-id state)
             content (st/get-path state :content)
+            to-point (cond-> to-point
+                       (:shift? to-point) (helpers/position-fixed-angle from-point))
+
             delta (gpt/subtract to-point from-point)
 
             modifiers-reducer (partial modify-content-point content delta)
