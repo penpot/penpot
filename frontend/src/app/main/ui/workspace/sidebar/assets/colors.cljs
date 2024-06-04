@@ -68,7 +68,9 @@
         (mf/use-fn
          (mf/deps color)
          (fn [event]
-           (st/emit! (dc/apply-color-from-palette (merge uc/empty-color color) (kbd/alt? event)))))
+           (st/emit!
+            (dwl/add-recent-color color)
+            (dc/apply-color-from-palette (merge uc/empty-color color) (kbd/alt? event)))))
 
         rename-color
         (mf/use-fn
@@ -183,7 +185,9 @@
         on-click
         (mf/use-fn
          (mf/deps color-id apply-color on-asset-click)
-         (partial on-asset-click color-id apply-color))]
+         (do
+           (dwl/add-recent-color color)
+           (partial on-asset-click color-id apply-color)))]
 
     (mf/with-effect [editing?]
       (when editing?

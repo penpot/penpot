@@ -9,6 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.main.data.workspace.colors :as mdc]
+   [app.main.data.workspace.libraries :as dwl]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :as cb]
@@ -24,7 +25,9 @@
   {::mf/wrap [mf/memo]}
   [{:keys [color size]}]
   (letfn [(select-color [event]
-            (st/emit! (mdc/apply-color-from-palette color (kbd/alt? event))))]
+            (st/emit!
+             (dwl/add-recent-color color)
+             (mdc/apply-color-from-palette color (kbd/alt? event))))]
     [:div {:class (stl/css-case  :color-cell true
                                  :is-not-library-color (nil? (:id color))
                                  :no-text (<= size 64))
