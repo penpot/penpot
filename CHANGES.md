@@ -13,6 +13,8 @@
 
 ### :bug: Bugs fixed
 
+- Layout and scrollign fixes for the bottom palette [Taiga Issue #7559](https://tree.taiga.io/project/penpot/issue/7559)
+
 ## 2.0.3
 
 ### :bug: Bugs fixed

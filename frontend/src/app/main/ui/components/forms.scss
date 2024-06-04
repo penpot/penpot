@@ -259,11 +259,10 @@
 // SUBMIT-BUTTON
 .button-submit {
   @extend .button-primary;
-}
-
-:disabled {
-  @extend .button-disabled;
-  min-height: $s-32;
+  &:disabled {
+    @extend .button-disabled;
+    min-height: $s-32;
+  }
 }
 
 // MULTI INPUT

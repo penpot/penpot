@@ -41,27 +41,29 @@
         state          (mf/use-state {:show-menu false})
         offset-step (cond
                       (<= size 64) 40
-                      (<= size 72) 88
-                      (<= size 80) 88
-                      :else 88)
+                      (<= size 80) 72
+                      :else 72)
         buttons-size (cond
                        (<= size 64) 164
-                       (<= size 72) 164
-                       (<= size 80) 132
                        :else 132)
         width          (- width buttons-size)
         visible        (int (/ width offset-step))
         show-arrows?   (> (count current-colors) visible)
+        visible        (if show-arrows?
+                         (int (/ (- width 48) offset-step))
+                         visible)
         offset         (:offset @state 0)
         max-offset     (- (count current-colors)
                           visible)
-
         container      (mf/use-ref nil)
         bullet-size  (cond
                        (<= size 64) "32"
                        (<= size 72) "28"
                        (<= size 80) "32"
                        :else "32")
+        color-cell-width (cond
+                           (<= size 64) 32
+                           :else 64)
 
         on-left-arrow-click
         (mf/use-callback
@@ -103,7 +105,7 @@
 
     [:div {:class (stl/css-case :color-palette true
                                 :no-text (< size 64))
-           :style #js {"--bullet-size" (dm/str bullet-size "px")}}
+           :style #js {"--bullet-size" (dm/str bullet-size "px") "--color-cell-width" (dm/str color-cell-width "px")}}
 
      (when show-arrows?
        [:button {:class (stl/css :left-arrow)
