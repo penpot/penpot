@@ -14,30 +14,38 @@
    [clojure.core :as c]
    [clojure.java.io :as io]
    [cuerdas.core :as str]
+   [datoteka.fs :as fs]
    [integrant.core :as ig]))
+
+(defn- read-whitelist
+  [path]
+  (when (and path (fs/exists? path))
+    (try
+      (with-open [reader (io/reader path)]
+        (reduce (fn [result line]
+                  (if (str/starts-with? line "#")
+                    result
+                    (conj result (-> line str/trim str/lower))))
+                #{}
+                (line-seq reader)))
+
+      (catch Throwable cause
+        (l/wrn :hint "unexpected exception on reading email whitelist"
+               :cause cause)))))
 
 (defmethod ig/init-key ::email/whitelist
   [_ _]
-  (when (c/contains? cf/flags :email-whitelist)
-    (try
-      (let [path   (cf/get :email-domain-whitelist)
-            result (with-open [reader (io/reader path)]
-                     (reduce (fn [result line]
-                               (if (str/starts-with? line "#")
-                                 result
-                                 (conj result (-> line str/trim str/lower))))
-                             #{}
-                             (line-seq reader)))
+  (let [whitelist (or (cf/get :registration-domain-whitelist) #{})
+        whitelist (if (c/contains? cf/flags :email-whitelist)
+                    (into whitelist (read-whitelist (cf/get :email-domain-whitelist)))
+                    whitelist)
+        whitelist (not-empty whitelist)]
 
-            ;; backward comapatibility with previous way to set a
-            ;; whitelist for email domains
-            result (into result (cf/get :registration-domain-whitelist))]
 
-        (l/inf :hint "initializing email whitelist" :domains (count result))
-        (not-empty result))
-      (catch Throwable cause
-        (l/wrn :hint "unexpected exception on initializing email whitelist"
-               :cause cause)))))
+    (when whitelist
+      (l/inf :hint "initializing email whitelist" :domains (count whitelist)))
+
+    whitelist))
 
 (defn contains?
   "Check if email is in the whitelist."
