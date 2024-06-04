@@ -45,6 +45,9 @@
 (def export
   (l/derived :export st/state))
 
+(def persistence
+  (l/derived :persistence st/state))
+
 ;; ---- Dashboard refs
 
 (def dashboard-local

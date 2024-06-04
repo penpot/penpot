@@ -15,9 +15,9 @@
    [app.main.broadcast :as mbc]
    [app.main.data.events :as ev]
    [app.main.data.modal :as md]
-   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.layout :as layout]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.undo :as dwu]
@@ -116,7 +116,7 @@
     (rx/concat
      (rx/of (dwu/start-undo-transaction undo-id))
      (rx/from (map #(dwt/update-text-with-function % transform-attrs) text-ids))
-     (rx/of (dch/update-shapes shape-ids transform-attrs))
+     (rx/of (dwsh/update-shapes shape-ids transform-attrs))
      (rx/of (dwu/commit-undo-transaction undo-id)))))
 
 (defn swap-attrs [shape attr index new-index]
@@ -140,7 +140,7 @@
 
         (rx/concat
          (rx/from (map #(dwt/update-text-with-function % transform-attrs) text-ids))
-         (rx/of (dch/update-shapes shape-ids transform-attrs)))))))
+         (rx/of (dwsh/update-shapes shape-ids transform-attrs)))))))
 
 (defn change-fill
   [ids color position]
@@ -203,10 +203,10 @@
             is-text?  #(= :text (:type (get objects %)))
             shape-ids (filter (complement is-text?) ids)
             attrs {:hide-fill-on-export hide-fill-on-export}]
-        (rx/of (dch/update-shapes shape-ids (fn [shape]
-                                              (if (= (:type shape) :frame)
-                                                (d/merge shape attrs)
-                                                shape))))))))
+        (rx/of (dwsh/update-shapes shape-ids (fn [shape]
+                                               (if (= (:type shape) :frame)
+                                                 (d/merge shape attrs)
+                                                 shape))))))))
 (defn change-stroke
   [ids attrs index]
   (ptk/reify ::change-stroke
@@ -236,7 +236,7 @@
                    (dissoc :image)
                    (dissoc :gradient))]
 
-        (rx/of (dch/update-shapes
+        (rx/of (dwsh/update-shapes
                 ids
                 (fn [shape]
                   (let [new-attrs (merge (get-in shape [:strokes index]) attrs)
@@ -264,7 +264,7 @@
   (ptk/reify ::change-shadow
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (dch/update-shapes
+      (rx/of (dwsh/update-shapes
               ids
               (fn [shape]
                 (let [;; If we try to set a gradient to a shadow (for
@@ -288,7 +288,7 @@
     (watch [_ _ _]
       (let [add-shadow (fn [shape]
                          (update shape :shadow #(into [shadow] %)))]
-        (rx/of (dch/update-shapes ids add-shadow))))))
+        (rx/of (dwsh/update-shapes ids add-shadow))))))
 
 (defn add-stroke
   [ids stroke]
@@ -296,7 +296,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (let [add-stroke (fn [shape] (update shape :strokes #(into [stroke] %)))]
-        (rx/of (dch/update-shapes ids add-stroke))))))
+        (rx/of (dwsh/update-shapes ids add-stroke))))))
 
 (defn remove-stroke
   [ids position]
@@ -309,7 +309,7 @@
                      (mapv second)))
               (remove-stroke [shape]
                 (update shape :strokes remove-fill-by-index position))]
-        (rx/of (dch/update-shapes ids remove-stroke))))))
+        (rx/of (dwsh/update-shapes ids remove-stroke))))))
 
 (defn remove-all-strokes
   [ids]
@@ -317,14 +317,14 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (let [remove-all #(assoc % :strokes [])]
-        (rx/of (dch/update-shapes ids remove-all))))))
+        (rx/of (dwsh/update-shapes ids remove-all))))))
 
 (defn reorder-shadows
   [ids index new-index]
   (ptk/reify ::reorder-shadow
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (dch/update-shapes
+      (rx/of (dwsh/update-shapes
               ids
               #(swap-attrs % :shadow index new-index))))))
 
@@ -333,7 +333,7 @@
   (ptk/reify ::reorder-strokes
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (dch/update-shapes
+      (rx/of (dwsh/update-shapes
               ids
               #(swap-attrs % :strokes index new-index))))))
 

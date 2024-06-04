@@ -16,8 +16,8 @@
    [app.common.types.container :as ctn]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
+   [app.main.data.changes :as dch]
    [app.main.data.comments :as dc]
-   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -25,6 +25,74 @@
    [app.main.features :as features]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
+
+(def ^:private update-layout-attr? #{:hidden})
+
+(defn- add-undo-group
+  [changes state]
+  (let [undo            (:workspace-undo state)
+        items           (:items undo)
+        index           (or (:index undo) (dec (count items)))
+        prev-item       (when-not (or (empty? items) (= index -1))
+                          (get items index))
+        undo-group      (:undo-group prev-item)
+        add-undo-group? (and
+                         (not (nil? undo-group))
+                         (= (get-in changes [:redo-changes 0 :type]) :mod-obj)
+                         (= (get-in prev-item [:redo-changes 0 :type]) :add-obj)
+                         (contains? (:tags prev-item) :alt-duplication))] ;; This is a copy-and-move with mouse+alt
+
+    (cond-> changes add-undo-group? (assoc :undo-group undo-group))))
+
+(defn update-shapes
+  ([ids update-fn] (update-shapes ids update-fn nil))
+  ([ids update-fn {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id ignore-remote? ignore-touched undo-group with-objects?]
+                   :or {reg-objects? false save-undo? true stack-undo? false ignore-remote? false ignore-touched false with-objects? false}}]
+
+   (dm/assert!
+    "expected a valid coll of uuid's"
+    (sm/check-coll-of-uuid! ids))
+
+   (dm/assert! (fn? update-fn))
+
+   (ptk/reify ::update-shapes
+     ptk/WatchEvent
+     (watch [it state _]
+       (let [page-id   (or page-id (:current-page-id state))
+             objects   (wsh/lookup-page-objects state page-id)
+             ids       (into [] (filter some?) ids)
+
+             update-layout-ids
+             (->> ids
+                  (map (d/getf objects))
+                  (filter #(some update-layout-attr? (pcb/changed-attrs % objects update-fn {:attrs attrs :with-objects? with-objects?})))
+                  (map :id))
+
+             changes (-> (pcb/empty-changes it page-id)
+                         (pcb/set-save-undo? save-undo?)
+                         (pcb/set-stack-undo? stack-undo?)
+                         (cls/generate-update-shapes ids
+                                                     update-fn
+                                                     objects
+                                                     {:attrs attrs
+                                                      :ignore-tree ignore-tree
+                                                      :ignore-touched ignore-touched
+                                                      :with-objects? with-objects?})
+                         (cond-> undo-group
+                           (pcb/set-undo-group undo-group)))
+
+             changes (add-undo-group changes state)]
+         (rx/concat
+          (if (seq (:redo-changes changes))
+            (let [changes  (cond-> changes reg-objects? (pcb/resize-parents ids))
+                  changes (cond-> changes ignore-remote? (pcb/ignore-remote))]
+              (rx/of (dch/commit-changes changes)))
+            (rx/empty))
+
+          ;; Update layouts for properties marked
+          (if (d/not-empty? update-layout-ids)
+            (rx/of (ptk/data-event :layout/update {:ids update-layout-ids}))
+            (rx/empty))))))))
 
 (defn add-shape
   ([shape]
@@ -227,7 +295,7 @@
             ids     (if (boolean? blocked)
                       (into ids (->> ids (mapcat #(cfh/get-children-ids objects %))))
                       ids)]
-        (rx/of (dch/update-shapes ids update-fn {:attrs #{:blocked :hidden} :undo-group undo-group}))))))
+        (rx/of (update-shapes ids update-fn {:attrs #{:blocked :hidden} :undo-group undo-group}))))))
 
 (defn toggle-visibility-selected
   []
@@ -235,7 +303,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [selected (wsh/lookup-selected state)]
-        (rx/of (dch/update-shapes selected #(update % :hidden not)))))))
+        (rx/of (update-shapes selected #(update % :hidden not)))))))
 
 (defn toggle-lock-selected
   []
@@ -243,7 +311,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [selected (wsh/lookup-selected state)]
-        (rx/of (dch/update-shapes selected #(update % :blocked not)))))))
+        (rx/of (update-shapes selected #(update % :blocked not)))))))
 
 
 ;; FIXME: this need to be refactored
@@ -273,8 +341,8 @@
                               (map (partial vector id)))))))
                (d/group-by first second)
                (map (fn [[page-id frame-ids]]
-                      (dch/update-shapes frame-ids #(dissoc % :use-for-thumbnail) {:page-id page-id})))))
+                      (update-shapes frame-ids #(dissoc % :use-for-thumbnail) {:page-id page-id})))))
 
          ;; And finally: toggle the flag value on all the selected shapes
-         (rx/of (dch/update-shapes selected #(update % :use-for-thumbnail not))
+         (rx/of (update-shapes selected #(update % :use-for-thumbnail not))
                 (dwu/commit-undo-transaction undo-id)))))))

@@ -11,11 +11,10 @@
    [app.common.files.changes :as cpc]
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
+   [app.main.data.changes :as dch]
    [app.main.data.common :refer [handle-notification]]
    [app.main.data.websocket :as dws]
-   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.libraries :as dwl]
-   [app.main.data.workspace.persistence :as dwp]
    [app.util.globals :refer [global]]
    [app.util.mouse :as mse]
    [app.util.object :as obj]
@@ -84,7 +83,7 @@
                              (->> stream
                                   (rx/filter mse/pointer-event?)
                                   (rx/filter #(= :viewport (mse/get-pointer-source %)))
-                                  (rx/pipe (rxs/throttle 100))
+                                  (rx/pipe (rxs/throttle 50))
                                   (rx/map #(handle-pointer-send file-id (:pt %)))))
 
                             (rx/take-until stopper))]
@@ -197,9 +196,10 @@
      [:changes ::cpc/changes]]))
 
 (defn handle-file-change
-  [{:keys [file-id changes] :as msg}]
+  [{:keys [file-id changes revn] :as msg}]
+
   (dm/assert!
-   "expected valid arguments"
+   "expected valid parameters"
    (sm/check! schema:handle-file-change msg))
 
   (ptk/reify ::handle-file-change
@@ -209,15 +209,11 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [page-id (:current-page-id state)
+
             position-data-operation?
             (fn [{:keys [type attr]}]
-              (and (= :set type) (= attr :position-data)))
-
-            ;;add-origin-session-id
-            ;;(fn [{:keys [] :as op}]
-            ;;  (cond-> op
-            ;;    (position-data-operation? op)
-            ;;    (update :val with-meta {:session-id (:session-id msg)})))
+              (and (= :set type)
+                   (= attr :position-data)))
 
             update-position-data
             (fn [change]
@@ -228,24 +224,23 @@
                      (= :mod-obj (:type change)))
                 (update :operations #(d/removev position-data-operation? %))))
 
-            process-page-changes
-            (fn [[page-id changes]]
-              (dch/update-indices page-id changes))
-
             ;; We update `position-data` from the incoming message
             changes (->> changes
-                         (mapv update-position-data)
-                         (d/removev (fn [change]
-                                      (and (= page-id (:page-id change))
-                                           (:ignore-remote? change)))))
+                         (map update-position-data)
+                         (remove (fn [change]
+                                   (and (= page-id (:page-id change))
+                                        (:ignore-remote? change))))
+                         (vec))]
 
-            changes-by-pages (group-by :page-id changes)]
-
-        (rx/merge
-         (rx/of (dwp/shapes-changes-persisted file-id (assoc msg :changes changes)))
-
-         (when-not (empty? changes-by-pages)
-           (rx/from (map process-page-changes changes-by-pages))))))))
+        ;; The commit event is responsible to apply the data localy
+        ;; and update the persistence internal state with the updated
+        ;; file-revn
+        (rx/of (dch/commit {:file-id file-id
+                            :file-revn revn
+                            :save-undo? false
+                            :source :remote
+                            :redo-changes changes
+                            :undo-changes []}))))))
 
 (def ^:private
   schema:handle-library-change

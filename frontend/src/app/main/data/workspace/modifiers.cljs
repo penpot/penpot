@@ -23,9 +23,9 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.constants :refer [zoom-half-pixel-precision]]
-   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.comments :as-alias dwcm]
    [app.main.data.workspace.guides :as-alias dwg]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [beicon.v2.core :as rx]
@@ -499,7 +499,7 @@
             (rx/empty))
           (rx/of (ptk/event ::dwg/move-frame-guides ids-with-children)
                  (ptk/event ::dwcm/move-frame-comment-threads ids-with-children)
-                 (dch/update-shapes
+                 (dwsh/update-shapes
                   ids
                   (fn [shape]
                     (let [modif (get-in object-modifiers [(:id shape) :modifiers])

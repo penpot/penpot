@@ -24,15 +24,16 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.types.typography :as ctt]
    [app.common.uuid :as uuid]
+   [app.main.data.changes :as dch]
    [app.main.data.comments :as dc]
    [app.main.data.events :as ev]
    [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as-alias dw]
-   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.notifications :as-alias dwn]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.specialized-panel :as dwsp]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.thumbnails :as dwt]
@@ -53,7 +54,6 @@
 
 ;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
 (log/set-level! :warn)
-
 
 (defn- pretty-file
   [file-id state]
@@ -441,7 +441,7 @@
 
            ;; NOTE: only when components-v2 is enabled
              (when (and shape-id page-id)
-               (rx/of (dch/update-shapes [shape-id] #(assoc % :name clean-name) {:page-id page-id :stack-undo? true}))))))))))
+               (rx/of (dwsh/update-shapes [shape-id] #(assoc % :name clean-name) {:page-id page-id :stack-undo? true}))))))))))
 
 (defn duplicate-component
   "Create a new component copied from the one with the given id."
@@ -1148,7 +1148,7 @@
 
             changes-s
             (->> stream
-                 (rx/filter #(or (dch/commit-changes? %)
+                 (rx/filter #(or (dch/commit? %)
                                  (ptk/type? % ::dwn/handle-file-change)))
                  (rx/observe-on :async))
 

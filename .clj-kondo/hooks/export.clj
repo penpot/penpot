@@ -12,6 +12,7 @@
 
 (def registry (atom {}))
 
+
 (defn potok-reify
   [{:keys [:node :filename] :as params}]
   (let [[rnode rtype & other] (:children node)
