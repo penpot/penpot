@@ -24,19 +24,8 @@
   background-color: var(--menu-background-color);
   max-height: 100vh;
   overflow-y: auto;
-
-  // TODO: Fixes missing styles from parent context menu
-  li {
-    @include bodySmallTypography;
-    color: var(--menu-foreground-color);
-  }
 }
 
-// TODO: Allow selected items wihtout an icon for the context menu
-.empty-icon {
-  width: 0;
-  height: 0;
-}
-.hidden-icon {
-  width: 11px;
+.token-context-submenu {
+  position: absolute;
 }

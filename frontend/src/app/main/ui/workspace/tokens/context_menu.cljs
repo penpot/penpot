@@ -13,6 +13,7 @@
    [app.main.data.tokens :as dt]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.shape-layout :as dwsl]
+   [app.main.data.workspace.transforms :as dwt]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -54,12 +55,35 @@
     (st/emit! (dwsl/update-layout shape-ids {:layout-padding (zipmap attributes (repeat value))}))))
 
 
-(defn apply-spacing-token [{:keys [token-id token-type-props selected-shapes]} attribute]
+(defn apply-spacing-token [{:keys [token-id token-type-props selected-shapes]} attributes]
   (let [token (dt/get-token-data-from-token-id token-id)
-        attribute (set attribute)
+        attributes (set attributes)
         updated-token-type-props (assoc token-type-props
                                         :on-update-shape update-layout-spacing
-                                        :attributes attribute)]
+                                        :attributes attributes)]
+    (wtc/on-apply-token {:token token
+                         :token-type-props updated-token-type-props
+                         :selected-shapes selected-shapes})))
+
+(defn update-shape-dimensions [value shape-ids attributes]
+  (st/emit! (dwt/update-dimensions shape-ids (first attributes) value)))
+
+(defn update-layout-sizing-limits [value shape-ids attributes]
+  (st/emit! (dwsl/update-layout-child shape-ids {(first attributes) value})))
+
+(defn apply-sizing-token [{:keys [token-id token-type-props selected-shapes]} attributes]
+  (let [token (dt/get-token-data-from-token-id token-id)
+        updated-token-type-props (cond
+                                   (set/superset? #{:width :height} attributes)
+                                   (assoc token-type-props
+                                          :on-update-shape update-shape-dimensions
+                                          :attributes attributes)
+
+                                   (set/superset? {:layout-item-min-w :layout-item-max-w
+                                                   :layout-item-min-h :layout-item-max-h} attributes)
+                                   (assoc token-type-props
+                                          :on-update-shape update-layout-sizing-limits
+                                          :attributes attributes))]
     (wtc/on-apply-token {:token token
                          :token-type-props updated-token-type-props
                          :selected-shapes selected-shapes})))
@@ -90,6 +114,17 @@
                        {:title "Right" :attributes #{:p2}}
                        {:title "Bottom" :attributes #{:p3}}
                        {:title "Left" :attributes #{:p4}}])
+
+      :sizing       (attributes->actions
+                     apply-sizing-token
+                     [{:title "All" :attributes #{:width :height :layout-item-min-w :layout-item-max-w :layout-item-min-h :layout-item-max-h}}
+                      {:title "Width" :attributes #{:width}}
+                      {:title "Height" :attributes #{:height}}
+                      {:title "Min width" :attributes #{:layout-item-min-w}}
+                      {:title "Max width" :attributes #{:layout-item-max-w}}
+                      {:title "Min height" :attributes #{:layout-item-min-h}}
+                      {:title "Max height" :attributes #{:layout-item-max-h}}])
+
       [])))
 
 (defn generate-menu-entries [{:keys [token-id token-type-props token-type selected-shapes] :as context-data}]

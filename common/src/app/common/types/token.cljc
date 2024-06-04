@@ -77,10 +77,10 @@
   [:map
    [:width {:optional true} ::sm/uuid]
    [:height {:optional true} ::sm/uuid]
-   [:min-height {:optional true} ::sm/uuid]
-   [:max-height {:optional true} ::sm/uuid]
-   [:min-width {:optional true} ::sm/uuid]
-   [:max-width {:optional true} ::sm/uuid]])
+   [:layout-item-min-w {:optional true} ::sm/uuid]
+   [:layout-item-max-w {:optional true} ::sm/uuid]
+   [:layout-item-min-h {:optional true} ::sm/uuid]
+   [:layout-item-max-h {:optional true} ::sm/uuid]])
 
 (def sizing-keys (schema-keys ::sizing))
 
