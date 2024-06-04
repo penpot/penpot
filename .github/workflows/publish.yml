@@ -31,7 +31,8 @@ jobs:
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
-        password: ${{ secrets.GHCR_TOKEN  }}
+        password: ${{ secrets.PAT_TOKEN  }}
+        
 
     - name: Docker meta
       id: meta
@@ -71,7 +72,7 @@ jobs:
         with:
           ENV: "prod"
           APP: "penpot"
-          DEPLOY: "true"
+          WAIT: "true"
   smoke:
     runs-on: ubuntu-latest
     needs:
