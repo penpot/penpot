@@ -2016,16 +2016,18 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn change-canvas-color
-  [color]
-  (ptk/reify ::change-canvas-color
-    ptk/WatchEvent
-    (watch [it state _]
-      (let [page    (wsh/lookup-page state)
-            changes (-> (pcb/empty-changes it)
-                        (pcb/with-page page)
-                        (pcb/set-page-option :background (:color color)))]
-
-        (rx/of (dch/commit-changes changes))))))
+  ([color]
+   (change-canvas-color nil color))
+  ([page-id color]
+   (ptk/reify ::change-canvas-color
+     ptk/WatchEvent
+     (watch [it state _]
+       (let [page-id (or page-id (:current-page-id state))
+             page    (wsh/lookup-page state page-id)
+             changes (-> (pcb/empty-changes it)
+                         (pcb/with-page page)
+                         (pcb/set-page-option :background (:color color)))]
+         (rx/of (dch/commit-changes changes)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Read only

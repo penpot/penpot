@@ -24,6 +24,7 @@
    [app.plugins.library :as library]
    [app.plugins.page :as page]
    [app.plugins.shape :as shape]
+   [app.plugins.user :as user]
    [app.plugins.utils :as utils]
    [app.plugins.viewport :as viewport]
    [app.util.object :as obj]
@@ -91,6 +92,18 @@
       (if (or (not theme) (= theme "default"))
         "dark"
         (get-in @st/state [:profile :theme]))))
+
+  (getCurrentUser
+    [_]
+    (user/current-user-proxy (:session-id @st/state)))
+
+  (getActiveUsers
+    [_]
+    (apply array
+           (->> (:workspace-presence @st/state)
+                (vals)
+                (remove #(= (:id %) (:session-id @st/state)))
+                (map #(user/active-user-proxy (:id %))))))
 
   (uploadMediaUrl
     [_ name url]
@@ -190,4 +203,6 @@
    {:name "currentPage" :get #(.getPage ^js %)}
    {:name "selection" :get #(.getSelectedShapes ^js %)}
    {:name "viewport" :get #(.getViewport ^js %)}
+   {:name "currentUser" :get #(.getCurrentUser ^js %)}
+   {:name "activeUsers" :get #(.getActiveUsers ^js %)}
    {:name "library" :get (fn [_] (library/library-subcontext))}))

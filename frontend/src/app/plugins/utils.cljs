@@ -53,6 +53,15 @@
   (assert (uuid? id) "Component not valid uuid")
   (dm/get-in (locate-file file-id) [:data :components id]))
 
+(defn locate-presence
+  [session-id]
+  (dm/get-in @st/state [:workspace-presence session-id]))
+
+(defn locate-profile
+  [session-id]
+  (let [{:keys [profile-id]} (locate-presence session-id)]
+    (dm/get-in @st/state [:users profile-id])))
+
 (defn proxy->file
   [proxy]
   (let [id (obj/get proxy "$id")]
