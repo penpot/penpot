@@ -100,7 +100,6 @@
                    (= :ldap-not-initialized (:code cause)))
               (st/emit! (msg/error (tr "errors.ldap-disabled")))
 
-
               (and (= :restriction (:type cause))
                    (= :admin-only-profile (:code cause)))
               (reset! error (tr "errors.profile-blocked"))

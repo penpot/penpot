@@ -6,7 +6,6 @@
 
 (ns app.rpc.commands.auth
   (:require
-   [app.auth :as auth]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
@@ -17,6 +16,8 @@
    [app.config :as cf]
    [app.db :as db]
    [app.email :as eml]
+   [app.email.blacklist :as email.blacklist]
+   [app.email.whitelist :as email.whitelist]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
    [app.rpc :as-alias rpc]
@@ -186,8 +187,14 @@
                   :code :email-does-not-match-invitation
                   :hint "email should match the invitation"))))
 
-  (when-not (auth/email-domain-in-whitelist? (:email params))
-    (ex/raise :type :validation
+  (when (and (email.blacklist/enabled? cfg)
+             (email.blacklist/contains? cfg (:email params)))
+    (ex/raise :type :restriction
+              :code :email-domain-is-not-allowed))
+
+  (when (and (email.whitelist/enabled? cfg)
+             (not (email.whitelist/contains? cfg (:email params))))
+    (ex/raise :type :restriction
               :code :email-domain-is-not-allowed))
 
   ;; Perform a basic validation of email & password
@@ -423,10 +430,8 @@
    ::doc/added "1.15"
    ::sm/params schema:register-profile
    ::climit/id :auth/global}
-  [{:keys [::db/pool] :as cfg} params]
-  (db/with-atomic [conn pool]
-    (-> (assoc cfg ::db/conn conn)
-        (register-profile params))))
+  [cfg params]
+  (db/tx-run! cfg register-profile params))
 
 ;; ---- COMMAND: Request Profile Recovery
 

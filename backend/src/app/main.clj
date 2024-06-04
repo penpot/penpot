@@ -267,7 +267,9 @@
                           :github (ig/ref ::oidc.providers/github)
                           :gitlab (ig/ref ::oidc.providers/gitlab)
                           :oidc   (ig/ref ::oidc.providers/generic)}
-    ::session/manager    (ig/ref ::session/manager)}
+    ::session/manager    (ig/ref ::session/manager)
+    ::email/blacklist    (ig/ref ::email/blacklist)
+    ::email/whitelist    (ig/ref ::email/whitelist)}
 
    :app.http/router
    {::session/manager    (ig/ref ::session/manager)
@@ -322,7 +324,10 @@
     ::rpc/climit         (ig/ref ::rpc/climit)
     ::rpc/rlimit         (ig/ref ::rpc/rlimit)
     ::setup/templates    (ig/ref ::setup/templates)
-    ::setup/props        (ig/ref ::setup/props)}
+    ::setup/props        (ig/ref ::setup/props)
+
+    ::email/blacklist    (ig/ref ::email/blacklist)
+    ::email/whitelist    (ig/ref ::email/whitelist)}
 
    :app.rpc.doc/routes
    {:methods (ig/ref :app.rpc/methods)}
@@ -355,6 +360,12 @@
      (ig/ref ::webhooks/process-event-handler)
      :run-webhook
      (ig/ref ::webhooks/run-webhook-handler)}}
+
+   ::email/blacklist
+   {}
+
+   ::email/whitelist
+   {}
 
    ::email/sendmail
    {::email/host             (cf/get :smtp-host)
