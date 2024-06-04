@@ -10,13 +10,13 @@
     "url": "https://github.com/penpot/penpot"
   },
   "dependencies": {
-    "luxon": "^3.4.2",
-    "sax": "^1.2.4"
+    "luxon": "^3.4.4",
+    "sax": "^1.4.1"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1",
+    "nodemon": "^3.1.2",
     "source-map-support": "^0.5.21",
-    "ws": "^8.13.0"
+    "ws": "^8.17.0"
   },
   "scripts": {
     "fmt:clj:check": "cljfmt check --parallel=false src/ test/",
