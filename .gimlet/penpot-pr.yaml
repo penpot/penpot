@@ -14,7 +14,7 @@ values:
   image:
     pullPolicy: IfNotPresent
     repository: ghcr.io/tokens-studio/tokens-studio-for-penpot
-    tag: 'frontend-{{ .SHA }}'
+    tag: 'frontend-pr-{{ .SHA }}'
   ingress:     
     hosts:
       - host: "{{ .BRANCH | sanitizeDNSName }}.penpot.staging.tokens.studio"
