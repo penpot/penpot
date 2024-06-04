@@ -266,6 +266,10 @@
         (pcb/update-shapes [shape-id] #(assoc % :component-root true))
 
         :always
+        ; First level subinstances of a detached component can't have swap-slot
+        (pcb/update-shapes [shape-id] ctk/remove-swap-slot)
+
+        :always
         ; Near shape-refs need to be advanced one level
         (generate-advance-nesting-level nil container libraries (:id shape)))
 
