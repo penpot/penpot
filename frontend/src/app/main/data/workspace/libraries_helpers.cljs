@@ -233,8 +233,8 @@
         ; If the initial shape was component-root, first level subinstances are converted in top instances
         (pcb/update-shapes [shape-id] #(assoc % :component-root true))
 
-        component-root?
-        ; If the initial shape was component-root, first level subinstances can't have swap-slot
+        :always
+        ; First level subinstances of a detached component can't have swap-slot
         (pcb/update-shapes [shape-id] ctk/remove-swap-slot)
 
         :always
