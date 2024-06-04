@@ -13,6 +13,7 @@ jobs:
         include:
           - dockerfile: Dockerfile.frontend
             type: pr-frontend
+            name: frontend
     permissions:
       contents: read
       packages: write
@@ -42,9 +43,9 @@ jobs:
           ghcr.io/tokens-studio/tokens-studio-for-penpot
     - name: prebuild
       run: |
-        echo "Building ${{ matrix.type }} image"
-        ./manage.sh build-${{matrix.type}}-bundle
-        mv ./bundles/${{matrix.type}} ./docker/images/bundle-${{matrix.type}}/
+        echo "Building ${{ matrix.name }} image"
+        ./manage.sh build-${{matrix.name}}-bundle
+        mv ./bundles/${{matrix.name}} ./docker/images/bundle-${{matrix.name}}/
 
     - name: Publish Docker images
       uses: docker/build-push-action@v5
