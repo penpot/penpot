@@ -38,16 +38,17 @@
                         fail-on-spec?]
                  :or   {add-container? false
                         fail-on-spec? false}}]
-   (let [component-id (:current-component-id file)
-         change       (cond-> change
-                        (and add-container? (some? component-id))
-                        (-> (assoc :component-id component-id)
-                            (cond-> (some? (:current-frame-id file))
-                              (assoc :frame-id (:current-frame-id file))))
+   (let [components-v2 (dm/get-in file [:data :options :components-v2])
+         component-id  (:current-component-id file)
+         change        (cond-> change
+                         (and add-container? (some? component-id))
+                         (-> (assoc :component-id component-id)
+                             (cond-> (some? (:current-frame-id file))
+                               (assoc :frame-id (:current-frame-id file))))
 
-                        (and add-container? (nil? component-id))
-                        (assoc :page-id  (:current-page-id file)
-                               :frame-id (:current-frame-id file)))
+                         (and add-container? (nil? component-id))
+                         (assoc :page-id  (:current-page-id file)
+                                :frame-id (:current-frame-id file)))
 
          valid? (ch/check-change! change)]
 
@@ -61,12 +62,12 @@
                      ::sm/explain explain))))
 
      (cond-> file
-       valid?
-       (-> (update :changes conjv change)
-           (update :data ch/process-changes [change] false))
+       (and valid? (not (and components-v2 add-container? (some? component-id))))
+       (-> (update :changes conjv change)                      ;; In components-v2 we do not add shapes
+           (update :data ch/process-changes [change] false))   ;; inside a component
 
        (not valid?)
-       (update :errors conjv change)))))
+       (update :errors conjv change)))));)
 
 (defn- lookup-objects
   ([file]
@@ -181,10 +182,11 @@
         (update :parent-stack conjv (:id obj)))))
 
 (defn close-artboard [file]
-  (let [parent-id (-> file :parent-stack peek)
+  (let [components-v2 (dm/get-in file [:data :options :components-v2])
+        parent-id (-> file :parent-stack peek)
         parent (lookup-shape file parent-id)
         current-frame-id (or (:frame-id parent)
-                             (when (nil? (:current-component-id file))
+                             (when (or (nil? (:current-component-id file)) components-v2)
                                root-id))]
     (-> file
         (assoc :current-frame-id current-frame-id)
@@ -515,7 +517,8 @@
 
   ([file data root-type]
    ;; FIXME: data probably can be a shape instance, then we can use gsh/shape->rect
-   (let [selrect (or (grc/make-rect (:x data) (:y data) (:width data) (:height data))
+   (let [components-v2 (dm/get-in file [:data :options :components-v2])
+         selrect (or (grc/make-rect (:x data) (:y data) (:width data) (:height data))
                      grc/empty-rect)
          name               (:name data)
          path               (:path data)
@@ -542,13 +545,14 @@
 
      (-> file
          (commit-change
-          {:type :add-component
-           :id (:id obj)
-           :name name
-           :path path
-           :main-instance-id main-instance-id
-           :main-instance-page main-instance-page
-           :shapes [obj]})
+          (cond-> {:type :add-component
+                   :id (:id obj)
+                   :name name
+                   :path path
+                   :main-instance-id main-instance-id
+                   :main-instance-page main-instance-page}
+            (not components-v2)
+            (assoc :shapes [obj])))
 
          (assoc :last-id (:id obj))
          (assoc :parent-stack [(:id obj)])
