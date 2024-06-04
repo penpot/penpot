@@ -1,4 +1,4 @@
-Hello {{name}}!
+Hello {{name|abbreviate:25}}!
 
 Thanks for signing up for your Penpot account! Please verify your email using the
 link below and get started building mockups and prototypes today!

@@ -1,6 +1,6 @@
 Hello!
 
-{{invited-by}} has invited you to join the team “{{ team }}”.
+{{invited-by|abbreviate:25}} has invited you to join the team “{{ team|abbreviate:25 }}”.
 
 Accept invitation using this link:
 
