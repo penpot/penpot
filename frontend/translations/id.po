@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2024-04-24 12:55+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Indonesian "
-"<https://hosted.weblate.org/projects/penpot/frontend/id/>\n"
+"Language-Team: Indonesian <https://hosted.weblate.org/projects/penpot/"
+"frontend/id/>\n"
 "Language: id\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -80,11 +80,23 @@ msgstr "LDAP"
 msgid "auth.login-with-oidc-submit"
 msgstr "OpenID Connect"
 
-#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs,
+#: src/app/main/ui/dashboard/team_form.cljs,
+#: src/app/main/ui/onboarding/team_choice.cljs,
+#: src/app/main/ui/settings/access_tokens.cljs,
+#: src/app/main/ui/settings/feedback.cljs,
+#: src/app/main/ui/settings/profile.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "auth.name.not-all-space"
 msgstr "Nama harus berisi beberapa karakter selain spasi."
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/auth/register.cljs,
+#: src/app/main/ui/dashboard/team_form.cljs,
+#: src/app/main/ui/onboarding/team_choice.cljs,
+#: src/app/main/ui/settings/access_tokens.cljs,
+#: src/app/main/ui/settings/feedback.cljs,
+#: src/app/main/ui/settings/profile.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "auth.name.too-long"
 msgstr "Nama harus berisi setidaknya 250 karakter."
 
@@ -102,7 +114,8 @@ msgstr "Kata sandi berhasil diubah"
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.profile-not-verified"
-msgstr "Profil belum terverifikasi, harap verifikasi profil sebelum melanjutkan."
+msgstr ""
+"Profil belum terverifikasi, harap verifikasi profil sebelum melanjutkan."
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.recovery-token-sent"
@@ -173,7 +186,6 @@ msgstr ""
 "privasi kami."
 
 #: src/app/main/ui/auth/register.cljs
-#, markdown
 msgid "auth.terms-privacy-agreement-md"
 msgstr ""
 "Ketika membuat akun baru, Anda menyetujui [persyaratan layanan](%s) dan "
@@ -261,8 +273,8 @@ msgstr "Bersekutu!"
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.tutorial-hero.info"
 msgstr ""
-"Pelajari dasarnya di Penpot sambil bersenang-senang dengan tutorial "
-"langsung ini."
+"Pelajari dasarnya di Penpot sambil bersenang-senang dengan tutorial langsung "
+"ini."
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.tutorial-hero.start"
@@ -403,8 +415,8 @@ msgstr "Gandakan % berkas"
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Berkas yang ditambahkan ke Pustaka akan muncul di sini. Coba membagikan "
-"berkas Anda atau menambahkan dari [Pustaka & "
-"templat](https://penpot.app/libraries-templates) kami."
+"berkas Anda atau menambahkan dari [Pustaka & templat](https://penpot.app/"
+"libraries-templates) kami."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Unduh %s berkas Penpot (.penpot)"
@@ -498,19 +510,19 @@ msgstr[0] "%s fon ditambahkan"
 
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
-"Fon web apa pun yang Anda unggah di sini akan ditambahkan ke daftar "
-"keluarga fon yang tersedia di properti teks dari berkas dari tim ini. Fon "
-"dengan nama keluarga fon yang sama akan dikelompokkan sebagai **keluarga "
-"fon tunggal**. Anda dapat mengunggah fon dengan format berikut: **TTF, OTF, "
-"dan WOFF** (hanya satu yang diperlukan)."
+"Fon web apa pun yang Anda unggah di sini akan ditambahkan ke daftar keluarga "
+"fon yang tersedia di properti teks dari berkas dari tim ini. Fon dengan nama "
+"keluarga fon yang sama akan dikelompokkan sebagai **keluarga fon tunggal**. "
+"Anda dapat mengunggah fon dengan format berikut: **TTF, OTF, dan WOFF** "
+"(hanya satu yang diperlukan)."
 
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "Anda seharusnya hanya mengunggah fon yang Anda miliki atau memiliki izin "
 "untuk menggunakannya dalam Penpot. Ketahui lebih lanjut dalam bagian Hak "
-"konten (Content rights) dari [Ketentuan Layanan "
-"Penpot](https://penpot.app/terms.html). Anda mungkin juga ingin membaca "
-"tentang [lisensi fon](https://www.typography.com/faq)."
+"konten (Content rights) dari [Ketentuan Layanan Penpot](https://penpot.app/"
+"terms.html). Anda mungkin juga ingin membaca tentang [lisensi fon](https://"
+"www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.upload-all"
@@ -518,12 +530,12 @@ msgstr "Unggah semua"
 
 msgid "dashboard.fonts.warning-text"
 msgstr ""
-"Kami telah mendeteksi masalah yang mungkin ada dalam fon Anda terkair "
-"dengan metrik vertikal untuk berbagai sistem operasi. Supaya bisa "
-"diperiksa, Anda dapat menggunakan layanan metrik vertikal fon seperti [yang "
-"ini](https://vertical-metrics.netlify.app/). Sebagai tambahan, kami juga "
-"menyarankan menggunakan [Transfonter](https://transfonter.org/) untuk "
-"membuat fon web dan memperbaiki kesalahan. "
+"Kami telah mendeteksi masalah yang mungkin ada dalam fon Anda terkair dengan "
+"metrik vertikal untuk berbagai sistem operasi. Supaya bisa diperiksa, Anda "
+"dapat menggunakan layanan metrik vertikal fon seperti [yang ini](https://"
+"vertical-metrics.netlify.app/). Sebagai tambahan, kami juga menyarankan "
+"menggunakan [Transfonter](https://transfonter.org/) untuk membuat fon web "
+"dan memperbaiki kesalahan. "
 
 msgid "dashboard.import"
 msgstr "Impor berkas Penpot"
@@ -532,7 +544,8 @@ msgid "dashboard.import.analyze-error"
 msgstr "Aduh! Kami tidak dapat mengimpor berkas ini"
 
 msgid "dashboard.import.analyze-error.components-v2"
-msgstr "Berkas dengan komponen v2 diaktifkan tetapi tim ini belum mendukungnya."
+msgstr ""
+"Berkas dengan komponen v2 diaktifkan tetapi tim ini belum mendukungnya."
 
 msgid "dashboard.import.import-error"
 msgstr "Terdapat masalah saat mengimpor berkas. Berkasnya tidak terimpor."
@@ -782,9 +795,8 @@ msgstr "Kaitan web berhasil dibuat."
 msgid "dashboard.webhooks.description"
 msgstr ""
 "Kaitan web (webhook) adalah cara yang sederhana untuk memperbolehkan situs "
-"web dan aplikasi lain untuk diberi tahu ketika beberapa peristiwa terjadi "
-"di Penpot. Kami mengirim permintaan POST untuk setiap URL yang Anda "
-"sediakan."
+"web dan aplikasi lain untuk diberi tahu ketika beberapa peristiwa terjadi di "
+"Penpot. Kami mengirim permintaan POST untuk setiap URL yang Anda sediakan."
 
 msgid "dashboard.webhooks.empty.add-one"
 msgstr "Klik tombol \"Tambahkan kaitan web\" untuk menambahkan."
@@ -946,8 +958,7 @@ msgstr "Sepertinya ini bukan gambar yang valid."
 #: src/app/main/ui/dashboard/team.cljs
 msgid "errors.member-is-muted"
 msgstr ""
-"Profil yang Anda undang membisukan surel (laporan spam atau lompatan "
-"tinggi)."
+"Profil yang Anda undang membisukan surel (laporan spam atau lompatan tinggi)."
 
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.password-invalid-confirmation"
@@ -1013,7 +1024,6 @@ msgstr "Kesalahan koneksi, URL tidak dapat diraih"
 msgid "errors.webhooks.invalid-uri"
 msgstr "URL tidak melewati validasi."
 
-#, fuzzy
 msgid "errors.webhooks.last-delivery"
 msgstr "Pengiriman terakhir tidak berhasil."
 
@@ -1257,7 +1267,8 @@ msgid "inspect.empty.more-info"
 msgstr "Lebih banyak info tentang inspeksi"
 
 msgid "inspect.empty.select"
-msgstr "Pilih bentuk, papan, atau grup untuk menginskpeksi properti dan kodenya"
+msgstr ""
+"Pilih bentuk, papan, atau grup untuk menginskpeksi properti dan kodenya"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs
 msgid "inspect.tabs.code"
@@ -1538,7 +1549,8 @@ msgstr "Kata sandi baru"
 #: src/app/main/ui/workspace/comments.cljs,
 #: src/app/main/ui/dashboard/comments.cljs
 msgid "labels.no-comments-available"
-msgstr "Anda telah melihat semuanya! Notifikasi komentar baru akan muncul di sini."
+msgstr ""
+"Anda telah melihat semuanya! Notifikasi komentar baru akan muncul di sini."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.no-invitations"
@@ -1551,8 +1563,7 @@ msgstr "Tekan tombol **Undang orang** untuk mengundang orang-orang ke tim ini."
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.desc-message"
 msgstr ""
-"Laman ini mungkin tidak ada atau Anda tidak memiliki izin untuk "
-"mengaksesnya."
+"Laman ini mungkin tidak ada atau Anda tidak memiliki izin untuk mengaksesnya."
 
 #: src/app/main/ui/static.cljs
 msgid "labels.not-found.main-message"
@@ -1968,12 +1979,14 @@ msgid "modals.delete-shared-confirm.accept"
 msgid_plural "modals.delete-shared-confirm.accept"
 msgstr[0] "Hapus berkas"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.activated.no-files-message"
 msgid_plural "modals.delete-shared-confirm.activated.no-files-message"
 msgstr[0] "Tidak diaktifkan dalam berkas mana pun."
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.activated.scd-message"
 msgid_plural "modals.delete-shared-confirm.activated.scd-message"
 msgstr[0] "Pustaka ini diaktifkan di sini: "
@@ -2016,7 +2029,8 @@ msgstr "Apakah Anda yakin ingin mengeluarkan anggota ini dari tim?"
 msgid "modals.delete-team-member-confirm.title"
 msgstr "Keluarkan anggota tim"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-unpublish-shared-confirm.activated.hint"
 msgid_plural "modals.delete-unpublish-shared-confirm.activated.hint"
 msgstr[0] ""
@@ -2047,8 +2061,8 @@ msgstr "Surel, dipisah dengan koma"
 
 msgid "modals.invite-member.repeated-invitation"
 msgstr ""
-"Beberapa surel berasal dari anggota tim saat ini. Undangan mereka tidak "
-"akan dikirim."
+"Beberapa surel berasal dari anggota tim saat ini. Undangan mereka tidak akan "
+"dikirim."
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.invite-team-member.title"
@@ -2110,8 +2124,8 @@ msgstr "Transfer kemilikan"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.hint"
 msgstr ""
-"Jika Anda mentransfer kemilikan, Anda akan mengubah peran Anda ke Admin, "
-"dan kehilangan beberapa izin pada tim ini. "
+"Jika Anda mentransfer kemilikan, Anda akan mengubah peran Anda ke Admin, dan "
+"kehilangan beberapa izin pada tim ini. "
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.message"
@@ -2262,7 +2276,8 @@ msgstr ""
 "pengembangan dan berita produk."
 
 msgid "onboarding-v2.newsletter.news"
-msgstr "Kirimkan saya berita tentang Penpot (pos blog, tutorial video, siaran...)."
+msgstr ""
+"Kirimkan saya berita tentang Penpot (pos blog, tutorial video, siaran...)."
 
 msgid "onboarding-v2.newsletter.privacy1"
 msgstr "Kami peduli tentang privasi, di sini Anda dapat membaca "
@@ -2292,8 +2307,8 @@ msgstr "Berpartisipasi dalam Komunitas"
 
 msgid "onboarding-v2.welcome.desc3"
 msgstr ""
-"Di mana Anda akan menemukan cara berkolaborasi dengan terjemahan, "
-"permintaan fitur, kontribusi inti, pemburuan kutu…"
+"Di mana Anda akan menemukan cara berkolaborasi dengan terjemahan, permintaan "
+"fitur, kontribusi inti, pemburuan kutu…"
 
 msgid "onboarding-v2.welcome.desc3.title"
 msgstr "Panduan berkontribusi"
@@ -2427,7 +2442,8 @@ msgstr "Canva"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.describe-your-experience-working-on"
-msgstr "Bagaimana cara terbaik Anda menggambarkan pengalaman Anda mengerjakan..."
+msgstr ""
+"Bagaimana cara terbaik Anda menggambarkan pengalaman Anda mengerjakan..."
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.designer"
@@ -3181,7 +3197,6 @@ msgstr "Tampilkan interaksi pada klik"
 msgid "viewer.header.sitemap"
 msgstr "Peta Situs"
 
-#, fuzzy
 msgid "webhooks.last-delivery.success"
 msgstr "Pengiriman terakhir berhasil."
 
@@ -3241,7 +3256,8 @@ msgstr "Buat sebuah kelompok"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.create-group-hint"
-msgstr "Butir Anda akan dinamakan \"nama kelompok / nama butir\" secara otomatis"
+msgstr ""
+"Butir Anda akan dinamakan \"nama kelompok / nama butir\" secara otomatis"
 
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs,
 #: src/app/main/ui/workspace/sidebar/assets.cljs,
@@ -4429,7 +4445,8 @@ msgstr "Cari fon"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 msgid "workspace.options.select-a-shape"
-msgstr "Pilih bentuk, papan, atau kelompok untuk menyeret koneksi ke papan lain."
+msgstr ""
+"Pilih bentuk, papan, atau kelompok untuk menyeret koneksi ke papan lain."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
 msgid "workspace.options.selection-color"
@@ -5160,3 +5177,118 @@ msgstr "Perbarui"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klik untuk menutup jalur"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-account-title"
+msgstr "Masuk ke akun saya"
+
+msgid "media.image.short"
+msgstr "gambar"
+
+msgid "media.keep-aspect-ratio"
+msgstr "Jaga rasio aspek"
+
+msgid "modals.move-shared-confirm.title"
+msgid_plural "modals.move-shared-confirm.title"
+msgstr[0] "Pindahkan pustaka"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs
+msgid "settings.select-this-color"
+msgstr "Pilih item menggunakan gaya ini"
+
+msgid "shortcuts.toggle-layout-grid"
+msgstr "Tambahkan/hapus tata letak kisi"
+
+msgid "shortcuts.toggle-rulers"
+msgstr "Tampilkan / Sembunyikan penggaris"
+
+#: src/app/main/data/users.cljs
+msgid "errors.auth-provider-not-allowed"
+msgstr "Penyedia autentikasi tidak diperbolehkan untuk profil ini"
+
+#: src/app/main/data/users.cljs
+msgid "errors.email-domain-not-allowed"
+msgstr "Domain tidak diperbolehkan"
+
+msgid "modals.move-shared-confirm.message"
+msgid_plural "modals.move-shared-confirm.message"
+msgstr[0] "Apakah Anda yakin ingin memindahkan pustaka ini?"
+
+msgid "shortcuts.toggle-guides"
+msgstr "Tampilkan / Sembunyikan panduan"
+
+msgid "onboarding.team-modal.team-definition"
+msgstr "Apa itu tim?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.never-used-one"
+msgstr "Tidak ada"
+
+msgid "shortcuts.toggle-snap-guides"
+msgstr "Pasang ke panduan"
+
+msgid "shortcuts.toggle-snap-ruler-guide"
+msgstr "Pasang ke panduan penggaris"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs
+msgid "workspace.assets.sidebar.components"
+msgid_plural "workspace.assets.sidebar.components"
+msgstr[0] "%s komponen"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-snap-ruler-guides"
+msgstr "Pasang ke panduan penggaris"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-guides"
+msgstr "Sembunyikan panduan"
+
+msgid "workspace.layout_grid.editor.padding.expand"
+msgstr "Tampilkan opsi bantalan 4 sisi"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-grid"
+msgstr "Hapus tata letak kisi"
+
+msgid "shortcuts.scale"
+msgstr "Skala"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-snap-ruler-guides"
+msgstr "Nonaktifkan pemasangan ke panduan penggaris"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-guides"
+msgstr "Tampilkan panduan"
+
+msgid "workspace.top-bar.view-only"
+msgstr "**Menginspeksi kode** (Hanya Lihat)"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.unlink-library-btn"
+msgstr "Putuskan pustaka"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.filter"
+msgstr "Penyaring"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.sort"
+msgstr "Urutkan"
+
+msgid "workspace.layout_grid.editor.top-bar.locate.tooltip"
+msgstr "Lokasi tata letak kisi"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.shared-library-btn"
+msgstr "Hubungkan pustaka"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-tagline"
+msgstr ""
+"Penpot adalah peralatan desain bebas & bersumber terbuka untuk kolaborasi "
+"Desain dan Kode"
+
+msgid "modals.move-shared-confirm.accept"
+msgid_plural "modals.move-shared-confirm.accept"
+msgstr[0] "Pindahkan"
