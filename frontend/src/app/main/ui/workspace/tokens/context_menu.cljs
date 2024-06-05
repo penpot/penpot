@@ -144,9 +144,9 @@
 
       :dimensions    (attributes->actions
                       apply-dimensions-token
-                      [{:title "Spacing"  :children true :submenu :spacing}
-                       {:title "Sizing" :children true :submenu :sizing}
-                       {:title "Border Radius" :children true :submenu :border-radius}
+                      [{:title "\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0Spacing"  :children true :submenu :spacing}
+                       {:title "\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0Sizing" :children true :submenu :sizing}
+                       {:title "\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0Border Radius" :children true :submenu :border-radius}
                       ;; TODO: BORDER_WIDTH {:title "Border Width" :attributes #{:width} :children true}
                        {:title "x" :attributes #{:x}}
                        {:title "y" :attributes #{:y}}])
