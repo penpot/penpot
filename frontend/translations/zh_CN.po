@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-04-24 13:04+0000\n"
+"PO-Revision-Date: 2024-06-05 10:42+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Chinese (Simplified) <https://hosted.weblate.org/projects/"
 "penpot/frontend/zh_Hans/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Weblate 5.5.1-dev\n"
+"X-Generator: Weblate 5.6-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -397,10 +397,11 @@ msgid "dashboard.duplicate-multi"
 msgstr "复制 %s 个文件"
 
 #: src/app/main/ui/dashboard/grid.cljs
+#, fuzzy
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
-"添加到库的文件将出现在这里。尝试分享你的文件或从我们的[库和模板](https://"
-"penpot.app/libraries-templates.html)添加。"
+"添加到库的文件将出现在这里。尝试分享你的文件或从我们的[库和模板](https://penp"
+"ot.app/libraries-templates.html)添加。"
 
 msgid "dashboard.export-binary-multi"
 msgstr "下载 %s Penpot文件 (.penpot)"
