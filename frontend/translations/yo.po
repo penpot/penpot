@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-04-24 13:04+0000\n"
+"PO-Revision-Date: 2024-06-05 10:42+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Yoruba "
-"<https://hosted.weblate.org/projects/penpot/frontend/yo/>\n"
+"Language-Team: Yoruba <https://hosted.weblate.org/projects/penpot/frontend/"
+"yo/>\n"
 "Language: yo\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.5.1-dev\n"
+"X-Generator: Weblate 5.6-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.check-your-email"
@@ -364,11 +364,11 @@ msgid "dashboard.duplicate-multi"
 msgstr "ṣe ẹ̀dà %s fáìlì"
 
 #: src/app/main/ui/dashboard/grid.cljs
-#, markdown
+#, fuzzy, markdown
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
-"\"\" fáìlí tí a dàpọ̀ mọ yàrá ìkàwé á hàn níbí yìí.   gbìyànjú láti má a "
-"pín àwon fáìlì rẹ̀ tàbí ṣàfikún láti ibi [yàrá ìkàwé wa àti  àwòṣe "
+"\"\" fáìlí tí a dàpọ̀ mọ yàrá ìkàwé á hàn níbí yìí.   gbìyànjú láti má a pín "
+"àwon fáìlì rẹ̀ tàbí ṣàfikún láti ibi [yàrá ìkàwé wa àti  àwòṣe "
 "](https://penpot.app/libraries-templates.html)."
 
 msgid "dashboard.export-binary-multi"
