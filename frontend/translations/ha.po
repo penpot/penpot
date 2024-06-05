@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-04-24 12:55+0000\n"
+"PO-Revision-Date: 2024-06-05 10:42+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Hausa "
-"<https://hosted.weblate.org/projects/penpot/frontend/ha/>\n"
+"Language-Team: Hausa <https://hosted.weblate.org/projects/penpot/frontend/ha/"
+">\n"
 "Language: ha\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.5.1-dev\n"
+"X-Generator: Weblate 5.6-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -365,12 +365,12 @@ msgid "dashboard.duplicate-multi"
 msgstr "kwafi %s kundaye"
 
 #: src/app/main/ui/dashboard/grid.cljs
-#, markdown
+#, fuzzy, markdown
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "nan za a sami kundayen da aka sanya a taska. gwada sanya na ka kundin \"a "
-"taskirarmumaginar kundi](https://manhajar fenfot/taskokin maginar "
-"kundaye.html)."
+"taskirarmumaginar kundi](https://manhajar fenfot/taskokin maginar kundaye."
+"html)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "sauke %s kundayen manhajar fenfot(.penpot)"
