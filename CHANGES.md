@@ -20,6 +20,7 @@
 - Layout and scrollign fixes for the bottom palette [Taiga #7559](https://tree.taiga.io/project/penpot/issue/7559)
 - Fix expand libraries when search results are present [Taiga #7876](https://tree.taiga.io/project/penpot/issue/7876)
 - Fix color palette default library [Taiga #8029](https://tree.taiga.io/project/penpot/issue/8029)
+- Component Library is lost after exporting/importing in .zip format [Github #4672](https://github.com/penpot/penpot/issues/4672)
 
 ## 2.0.3
 
