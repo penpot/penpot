@@ -19,12 +19,13 @@
 
 - Layout and scrollign fixes for the bottom palette [Taiga Issue #7559](https://tree.taiga.io/project/penpot/issue/7559)
 - Fix expand libraries when search results are present [Taiga issue #7876](https://tree.taiga.io/project/penpot/issue/7876)
+- Fix color palette default library [Taiga #8029](https://tree.taiga.io/project/penpot/issue/8029)
 
 ## 2.0.3
 
 ### :bug: Bugs fixed
 
-- Fix chrome scrollbar styling [Taiga Issue #7852](https://tree.taiga.io/project/penpot/issue/7852)
+- Fix chrome scrollbar styling [Taiga #7852](https://tree.taiga.io/project/penpot/issue/7852)
 - Fix incorrect password encoding on create-profile manage scritp [Github #3651](https://github.com/penpot/penpot/issues/3651)
 
 
@@ -37,7 +38,7 @@
 
 ### :bug: Bugs fixed
 
-- Fix color palette sorting [Taiga Issue #7458](https://tree.taiga.io/project/penpot/issue/7458)
+- Fix color palette sorting [Taiga #7458](https://tree.taiga.io/project/penpot/issue/7458)
 - Fix style scoping problem with imported SVG [Taiga #7671](https://tree.taiga.io/project/penpot/issue/7671)
 
 
