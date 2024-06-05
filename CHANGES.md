@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 2.2.0
+
+### :rocket: Epics and highlights
+
+### :boom: Breaking changes & Deprecations
+
+### :heart: Community contributions (Thank you!)
+
+### :sparkles: New features
+
 ## 2.1.0
 
 ### :rocket: Epics and highlights
