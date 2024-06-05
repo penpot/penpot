@@ -125,6 +125,16 @@
                       {:title "Min height" :attributes #{:layout-item-min-h}}
                       {:title "Max height" :attributes #{:layout-item-max-h}}])
 
+      :dimensions    (attributes->actions
+                     apply-sizing-token
+                     [{:title "Spacing" :attributes #{:width :height}}
+                      {:title "Sizing" :attributes #{:width}}
+                      {:title "Border Radius" :attributes #{:height}}
+                      {:title "Border Width" :attributes #{:width}}
+                      {:title "x" :attributes #{:width}}
+                      {:title "y" :attributes #{:width}}
+                      {:title "Background blur" :attributes #{:width}}])
+
       [])))
 
 (defn generate-menu-entries [{:keys [token-id token-type-props token-type selected-shapes] :as context-data}]
