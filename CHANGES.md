@@ -11,14 +11,14 @@
 ### :sparkles: New features
 
 - Improve auth process [Taiga #7094](https://tree.taiga.io/project/penpot/us/7094)
-- Add locking degrees increment (hold shift) on path edition [Taiga Issue #7761](https://tree.taiga.io/project/penpot/issue/7761)
+- Add locking degrees increment (hold shift) on path edition [Taiga #7761](https://tree.taiga.io/project/penpot/issue/7761)
 - Persistence & Concurrent Edition Enhancements [Taiga #5657](https://tree.taiga.io/project/penpot/us/5657)
-- Allow library colors as recent colors [Taiga Issue #7640](https://tree.taiga.io/project/penpot/issue/7640)
+- Allow library colors as recent colors [Taiga #7640](https://tree.taiga.io/project/penpot/issue/7640)
 
 ### :bug: Bugs fixed
 
-- Layout and scrollign fixes for the bottom palette [Taiga Issue #7559](https://tree.taiga.io/project/penpot/issue/7559)
-- Fix expand libraries when search results are present [Taiga issue #7876](https://tree.taiga.io/project/penpot/issue/7876)
+- Layout and scrollign fixes for the bottom palette [Taiga #7559](https://tree.taiga.io/project/penpot/issue/7559)
+- Fix expand libraries when search results are present [Taiga #7876](https://tree.taiga.io/project/penpot/issue/7876)
 - Fix color palette default library [Taiga #8029](https://tree.taiga.io/project/penpot/issue/8029)
 
 ## 2.0.3
@@ -27,7 +27,6 @@
 
 - Fix chrome scrollbar styling [Taiga #7852](https://tree.taiga.io/project/penpot/issue/7852)
 - Fix incorrect password encoding on create-profile manage scritp [Github #3651](https://github.com/penpot/penpot/issues/3651)
-
 
 ## 2.0.2
 
@@ -183,7 +182,7 @@
 - Fix problem when changing typography assets [Github #3683](https://github.com/penpot/penpot/issues/3683)
 - Internal error when you copy and paste some main components between files [Taiga #7397](https://tree.taiga.io/project/penpot/issue/7397)
 - Fix toolbar disappearing [Taiga #7411](https://tree.taiga.io/project/penpot/issue/7411)
-- Fix long text on tab breaks UI [Taiga Issue #7421](https://tree.taiga.io/project/penpot/issue/7421)
+- Fix long text on tab breaks UI [Taiga #7421](https://tree.taiga.io/project/penpot/issue/7421)
 
 ## 1.19.5
 
