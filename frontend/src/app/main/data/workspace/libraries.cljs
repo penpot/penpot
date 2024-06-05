@@ -1042,6 +1042,9 @@
                                   {:file-id file-id
                                    :library-id library-id}))))))))))
 
+
+;; FIXME: the data should be set on the backend for clock consistency
+
 (def ignore-sync
   "Mark the file as ignore syncs. All library changes before this moment will not
    ber notified to sync."
