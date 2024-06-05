@@ -61,7 +61,7 @@
   (sm/lazy-validator
    [:and [:fn point?] schema:point-attrs]))
 
-(sm/def! ::point
+(sm/register! ::point
   (letfn [(decode [p]
             (if (map? p)
               (map->Point p)

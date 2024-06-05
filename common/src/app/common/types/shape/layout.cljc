@@ -87,7 +87,7 @@
    :layout-item-absolute
    :layout-item-z-index])
 
-(sm/def! ::layout-attrs
+(sm/register! ::layout-attrs
   [:map {:title "LayoutAttrs"}
    [:layout {:optional true} [::sm/one-of layout-types]]
    [:layout-flex-dir {:optional true} [::sm/one-of flex-direction-types]]
@@ -130,7 +130,7 @@
 (def grid-cell-justify-self-types
   #{:auto :start :center :end :stretch})
 
-(sm/def! ::grid-cell
+(sm/register! ::grid-cell
   [:map {:title "GridCell"}
    [:id ::sm/uuid]
    [:area-name {:optional true} :string]
@@ -144,7 +144,7 @@
    [:shapes
     [:vector {:gen/max 1} ::sm/uuid]]])
 
-(sm/def! ::grid-track
+(sm/register! ::grid-track
   [:map {:title "GridTrack"}
    [:type [::sm/one-of grid-track-types]]
    [:value {:optional true} [:maybe ::sm/safe-number]]])
@@ -166,7 +166,7 @@
 (def item-align-self-types
   #{:start :end :center :stretch})
 
-(sm/def! ::layout-child-attrs
+(sm/register! ::layout-child-attrs
   [:map {:title "LayoutChildAttrs"}
    [:layout-item-margin-type {:optional true} [::sm/one-of item-margin-types]]
    [:layout-item-margin {:optional true}
@@ -192,7 +192,7 @@
 (def valid-layouts
   #{:flex :grid})
 
-(sm/def! ::layout
+(sm/register! ::layout
   [::sm/one-of valid-layouts])
 
 (defn flex-layout?

@@ -26,7 +26,7 @@
 (def valid-container-types
   #{:page :component})
 
-(sm/define! ::container
+(sm/register! ::container
   [:map
    [:id ::sm/uuid]
    [:type {:optional true}

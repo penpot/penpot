@@ -47,7 +47,7 @@
   (s/keys :req-un [::path]
           :opt-un [::mtype]))
 
-(sm/def! ::fs/path
+(sm/register! ::fs/path
   {:type ::fs/path
    :pred fs/path?
    :type-properties
@@ -59,7 +59,7 @@
     ::oapi/format "unix-path"
     ::oapi/decode fs/path}})
 
-(sm/def! ::upload
+(sm/register! ::upload
   [:map {:title "Upload"}
    [:filename :string]
    [:size :int]

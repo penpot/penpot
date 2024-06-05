@@ -15,7 +15,7 @@
 ;; SCHEMA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(sm/def! ::typography
+(sm/register! ::typography
   [:map {:title "Typography"}
    [:id ::sm/uuid]
    [:name :string]

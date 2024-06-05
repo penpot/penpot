@@ -71,7 +71,7 @@
 (def animation-types
   #{:dissolve :slide :push})
 
-(sm/define! ::animation
+(sm/register! ::animation
   [:multi {:dispatch :animation-type :title "Animation"}
    [:dissolve
     [:map {:title "AnimationDisolve"}
@@ -96,7 +96,7 @@
 (def check-animation!
   (sm/check-fn ::animation))
 
-(sm/define! ::interaction
+(sm/register! ::interaction
   [:multi {:dispatch :action-type}
    [:navigate
     [:map

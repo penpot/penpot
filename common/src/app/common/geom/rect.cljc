@@ -80,7 +80,7 @@
    [:x2 ::sm/safe-number]
    [:y2 ::sm/safe-number]])
 
-(sm/define! ::rect
+(sm/register! ::rect
   [:and
    {:gen/gen (->> (sg/tuple (sg/small-double)
                             (sg/small-double)
