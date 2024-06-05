@@ -12,7 +12,6 @@
    [app.common.features :as cfeat]
    [app.common.logging :as l]
    [app.common.schema :as sm]
-   [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -32,15 +31,9 @@
    [app.util.services :as sv]
    [app.util.time :as dt]
    [app.worker :as wrk]
-   [clojure.spec.alpha :as s]
    [cuerdas.core :as str]))
 
 ;; --- Helpers & Specs
-
-(s/def ::id ::us/uuid)
-(s/def ::name ::us/string)
-(s/def ::file-id ::us/uuid)
-(s/def ::team-id ::us/uuid)
 
 (def ^:private sql:team-permissions
   "select tpr.is_owner,
@@ -351,7 +344,7 @@
 
 (def ^:private schema:create-team
   [:map {:title "create-team"}
-   [:name :string]
+   [:name [:string {:max 250}]]
    [:features {:optional true} ::cfeat/features]
    [:id {:optional true} ::sm/uuid]])
 
@@ -438,12 +431,14 @@
 
 ;; --- Mutation: Update Team
 
-(s/def ::update-team
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::name ::id]))
+(def ^:private schema:update-team
+  [:map {:title "update-team"}
+   [:name [:string {:max 250}]]
+   [:id ::sm/uuid]])
 
 (sv/defmethod ::update-team
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::sm/params schema:update-team}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id name] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id id)
@@ -503,14 +498,14 @@
 
     nil))
 
-(s/def ::reassign-to ::us/uuid)
-(s/def ::leave-team
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::id]
-          :opt-un [::reassign-to]))
+(def ^:private schema:leave-team
+  [:map {:title "leave-team"}
+   [:id ::sm/uuid]
+   [:reassign-to {:optional true} ::sm/uuid]])
 
 (sv/defmethod ::leave-team
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::sm/params schema:leave-team}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (db/with-atomic [conn pool]
     (leave-team conn (assoc params :profile-id profile-id))))
@@ -539,12 +534,13 @@
                   :id team-id})
     team))
 
-(s/def ::delete-team
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::id]))
+(def ^:private schema:delete-team
+  [:map {:title "delete-team"}
+   [:id ::sm/uuid]])
 
 (sv/defmethod ::delete-team
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::sm/params schema:delete-team}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (db/with-atomic [conn pool]
     (let [perms (get-permissions conn profile-id id)]
@@ -556,10 +552,6 @@
       nil)))
 
 ;; --- Mutation: Team Update Role
-
-(s/def ::team-id ::us/uuid)
-(s/def ::member-id ::us/uuid)
-(s/def ::role #{:owner :admin :editor})
 
 ;; Temporarily disabled viewer role
 ;; https://tree.taiga.io/project/penpot/issue/1083
@@ -624,25 +616,29 @@
                    :profile-id member-id})
       nil)))
 
-(s/def ::update-team-member-role
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::team-id ::member-id ::role]))
+(def ^:private schema:update-team-member-role
+  [:map {:title "update-team-member-role"}
+   [:team-id ::sm/uuid]
+   [:member-id ::sm/uuid]
+   [:role schema:role]])
 
 (sv/defmethod ::update-team-member-role
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::sm/params schema:update-team-member-role}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (db/with-atomic [conn pool]
     (update-team-member-role conn (assoc params :profile-id profile-id))))
 
-
 ;; --- Mutation: Delete Team Member
 
-(s/def ::delete-team-member
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::team-id ::member-id]))
+(def ^:private schema:delete-team-member
+  [:map {:title "delete-team-member"}
+   [:team-id ::sm/uuid]
+   [:member-id ::sm/uuid]])
 
 (sv/defmethod ::delete-team-member
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::sm/params schema:delete-team-member}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id member-id] :as params}]
   (db/with-atomic [conn pool]
     (let [perms (get-permissions conn profile-id team-id)]
@@ -665,13 +661,14 @@
 (declare upload-photo)
 (declare ^:private update-team-photo)
 
-(s/def ::file ::media/upload)
-(s/def ::update-team-photo
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::team-id ::file]))
+(def ^:private schema:update-team-photo
+  [:map {:title "update-team-photo"}
+   [:team-id ::sm/uuid]
+   [:file ::media/upload]])
 
 (sv/defmethod ::update-team-photo
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::sm/params schema:update-team-photo}
   [cfg {:keys [::rpc/profile-id file] :as params}]
   ;; Validate incoming mime type
   (media/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
@@ -809,7 +806,7 @@
 (def ^:private schema:create-team-invitations
   [:map {:title "create-team-invitations"}
    [:team-id ::sm/uuid]
-   [:role [::sm/one-of #{:owner :admin :editor}]]
+   [:role schema:role]
    [:emails ::sm/set-of-emails]])
 
 (sv/defmethod ::create-team-invitations
@@ -865,12 +862,6 @@
 
 
 ;; --- Mutation: Create Team & Invite Members
-
-(s/def ::emails ::us/set-of-valid-emails)
-(s/def ::create-team-with-invitations
-  (s/merge ::create-team
-           (s/keys :req-un [::emails ::role])))
-
 
 (def ^:private schema:create-team-with-invitations
   [:map {:title "create-team-with-invitations"}
@@ -930,12 +921,14 @@
 
 ;; --- Query: get-team-invitation-token
 
-(s/def ::get-team-invitation-token
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::team-id ::email]))
+(def ^:private schema:get-team-invitation-token
+  [:map {:title "get-team-invitation-token"}
+   [:team-id ::sm/uuid]
+   [:email ::sm/email]])
 
 (sv/defmethod ::get-team-invitation-token
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::sm/params schema:get-team-invitation-token}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id email] :as params}]
   (check-read-permissions! pool profile-id team-id)
   (let [email (profile/clean-email email)
@@ -956,12 +949,15 @@
 
 ;; --- Mutation: Update invitation role
 
-(s/def ::update-team-invitation-role
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::team-id ::email ::role]))
+(def ^:private schema:update-team-invitation-role
+  [:map {:title "update-team-invitation-role"}
+   [:team-id ::sm/uuid]
+   [:email ::sm/email]
+   [:role schema:role]])
 
 (sv/defmethod ::update-team-invitation-role
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::sm/params schema:update-team-invitation-role}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id email role] :as params}]
   (db/with-atomic [conn pool]
     (let [perms    (get-permissions conn profile-id team-id)]
@@ -977,12 +973,14 @@
 
 ;; --- Mutation: Delete invitation
 
-(s/def ::delete-team-invitation
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::team-id ::email]))
+(def ^:private schema:delete-team-invition
+  [:map {:title "delete-team-invitation"}
+   [:team-id ::sm/uuid]
+   [:email ::sm/email]])
 
 (sv/defmethod ::delete-team-invitation
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::sm/params schema:delete-team-invition}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id email] :as params}]
   (db/with-atomic [conn pool]
     (let [perms (get-permissions conn profile-id team-id)]
