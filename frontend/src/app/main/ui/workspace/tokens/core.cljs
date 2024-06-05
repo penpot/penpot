@@ -159,7 +159,7 @@
      :modal {:key :tokens/sizing
              :fields [{:label "Sizing"
                        :key :sizing}]}}]
-   [:dimension
+   [:dimensions
     {:title "Dimensions"
      :attributes ctt/dimensions-keys
      :on-update-shape update-shape-dimensions

@@ -67,6 +67,7 @@
 
         on-submit (fn [e]
                     (dom/prevent-default e)
+                    (println "token type is" (:type token) token-type)
                     (let [token-value (-> (fields->map @state)
                                           (first)
                                           (val))

@@ -37,7 +37,7 @@
     :border-radius
     :stroke-width
     :box-shadow
-    :dimension
+    :dimensions
     :numeric
     :opacity
     :other

@@ -51,7 +51,7 @@
     :stroke-width i/stroke-size
     :typography i/text
     ;; TODO: Add diagonal icon here when it's available
-    :dimension [:div {:style {:rotate "45deg"}} i/constraint-horizontal]
+    :dimensions [:div {:style {:rotate "45deg"}} i/constraint-horizontal]
     :sizing [:div {:style {:rotate "45deg"}} i/constraint-horizontal]
     i/add))
 
