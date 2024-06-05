@@ -656,7 +656,11 @@
     :gen/gen (sg/uri)
     ::oapi/type "string"
     ::oapi/format "uri"
-    ::oapi/decode (comp u/uri str/trim)}})
+    ::oapi/decode
+    (fn [val]
+      (if (u/uri? val)
+        val
+        (-> val str/trim u/uri)))}})
 
 (register! ::plugin-data
   [:map-of {:gen/max 5} :string :string])
