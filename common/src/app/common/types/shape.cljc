@@ -85,10 +85,10 @@
     :exclude
     :intersection})
 
-(sm/define! ::points
+(sm/register! ::points
   [:vector {:gen/max 4 :gen/min 4} ::gpt/point])
 
-(sm/define! ::fill
+(sm/register! ::fill
   [:map {:title "Fill"}
    [:fill-color {:optional true} ::ctc/rgb-color]
    [:fill-opacity {:optional true} ::sm/safe-number]
@@ -97,7 +97,7 @@
    [:fill-color-ref-id {:optional true} [:maybe ::sm/uuid]]
    [:fill-image {:optional true} ::ctc/image-color]])
 
-(sm/define! ::stroke
+(sm/register! ::stroke
   [:map {:title "Stroke"}
    [:stroke-color {:optional true} :string]
    [:stroke-color-ref-file {:optional true} ::sm/uuid]
@@ -115,7 +115,7 @@
    [:stroke-color-gradient {:optional true} ::ctc/gradient]
    [:stroke-image {:optional true} ::ctc/image-color]])
 
-(sm/define! ::shape-base-attrs
+(sm/register! ::shape-base-attrs
   [:map {:title "ShapeMinimalRecord"}
    [:id ::sm/uuid]
    [:name :string]
@@ -127,14 +127,14 @@
    [:parent-id ::sm/uuid]
    [:frame-id ::sm/uuid]])
 
-(sm/define! ::shape-geom-attrs
+(sm/register! ::shape-geom-attrs
   [:map {:title "ShapeGeometryAttrs"}
    [:x ::sm/safe-number]
    [:y ::sm/safe-number]
    [:width ::sm/safe-number]
    [:height ::sm/safe-number]])
 
-(sm/define! ::shape-attrs
+(sm/register! ::shape-attrs
   [:map {:title "ShapeAttrs"}
    [:name {:optional true} :string]
    [:component-id {:optional true}  ::sm/uuid]
@@ -190,12 +190,12 @@
    [:plugin-data {:optional true}
     [:map-of {:gen/max 5} :keyword ::sm/plugin-data]]])
 
-(sm/define! ::group-attrs
+(sm/register! ::group-attrs
   [:map {:title "GroupAttrs"}
    [:type [:= :group]]
    [:shapes [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]])
 
-(sm/define! ::frame-attrs
+(sm/register! ::frame-attrs
   [:map {:title "FrameAttrs"}
    [:type [:= :frame]]
    [:shapes [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]
@@ -203,7 +203,7 @@
    [:show-content {:optional true} :boolean]
    [:hide-in-viewer {:optional true} :boolean]])
 
-(sm/define! ::bool-attrs
+(sm/register! ::bool-attrs
   [:map {:title "BoolAttrs"}
    [:type [:= :bool]]
    [:shapes [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]
@@ -223,19 +223,19 @@
        [:maybe
         [:map-of {:gen/max 5} :keyword ::sm/safe-number]]]]]]])
 
-(sm/define! ::rect-attrs
+(sm/register! ::rect-attrs
   [:map {:title "RectAttrs"}
    [:type [:= :rect]]])
 
-(sm/define! ::circle-attrs
+(sm/register! ::circle-attrs
   [:map {:title "CircleAttrs"}
    [:type [:= :circle]]])
 
-(sm/define! ::svg-raw-attrs
+(sm/register! ::svg-raw-attrs
   [:map {:title "SvgRawAttrs"}
    [:type [:= :svg-raw]]])
 
-(sm/define! ::image-attrs
+(sm/register! ::image-attrs
   [:map {:title "ImageAttrs"}
    [:type [:= :image]]
    [:metadata
@@ -245,17 +245,17 @@
      [:mtype {:optional true} [:maybe :string]]
      [:id ::sm/uuid]]]])
 
-(sm/define! ::path-attrs
+(sm/register! ::path-attrs
   [:map {:title "PathAttrs"}
    [:type [:= :path]]
    [:content ::ctsp/content]])
 
-(sm/define! ::text-attrs
+(sm/register! ::text-attrs
   [:map {:title "TextAttrs"}
    [:type [:= :text]]
    [:content {:optional true} [:maybe ::ctsx/content]]])
 
-(sm/define! ::shape-map
+(sm/register! ::shape-map
   [:multi {:dispatch :type :title "Shape"}
    [:group
     [:and {:title "GroupShape"}
@@ -327,7 +327,7 @@
      ::text-attrs
      ::ctsl/layout-child-attrs]]])
 
-(sm/define! ::shape
+(sm/register! ::shape
   [:and
    {:title "Shape"
     :gen/gen (->> (sg/generator ::shape-base-attrs)
