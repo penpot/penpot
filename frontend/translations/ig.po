@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-04-24 12:55+0000\n"
+"PO-Revision-Date: 2024-06-05 10:42+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Igbo "
-"<https://hosted.weblate.org/projects/penpot/frontend/ig/>\n"
+"Language-Team: Igbo <https://hosted.weblate.org/projects/penpot/frontend/ig/>"
+"\n"
 "Language: ig\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.5.1-dev\n"
+"X-Generator: Weblate 5.6-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.check-your-email"
@@ -353,12 +353,12 @@ msgid "dashboard.duplicate-multi"
 msgstr "Mee o yiri  %s ederede"
 
 #: src/app/main/ui/dashboard/grid.cljs
-#, markdown
+#, fuzzy, markdown
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Ederede a tinyere n'ọba ederede ga-apụta ebe a. Gbalịa ikesa ma ọ bụ  tinye "
-"site n'[Ọba ederede na ndebiri anyị ](https://itemkpịsị.app/ọba ederede "
-"gasị-ndebiri gasị.html)."
+"site n'[Ọba ederede na ndebiri anyị ](https://itemkpịsị.app/ọba ederede gasị-"
+"ndebiri gasị.html)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Butuo %s ederede ite mkpịsị (.penpot)"
