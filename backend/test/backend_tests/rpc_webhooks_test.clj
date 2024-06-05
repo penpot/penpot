@@ -39,6 +39,8 @@
           (t/is (nil? (:error out)))
           (t/is (= 1 (:call-count @http-mock)))
 
+          ;; (th/print-result! out)
+
           (let [result (:result out)]
             (t/is (contains? result :id))
             (t/is (contains? result :team-id))
