@@ -11,6 +11,7 @@
    [app.common.types.shape.radius :as ctsr]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
+   [app.main.data.workspace :as dw]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.transforms :as dwt]
@@ -61,6 +62,22 @@
         updated-token-type-props (assoc token-type-props
                                         :on-update-shape update-layout-spacing
                                         :attributes attributes)]
+    (wtc/on-apply-token {:token token
+                         :token-type-props updated-token-type-props
+                         :selected-shapes selected-shapes})))
+
+(defn update-shape-position [value shape-ids attributes]
+  (doseq [shape-id shape-ids]
+    (st/emit! (dw/update-position shape-id {(first attributes) value}))))
+
+(defn apply-dimensions-token [{:keys [token-id token-type-props selected-shapes]} attributes]
+  (let [token (dt/get-token-data-from-token-id token-id)
+        attributes (set attributes)
+        updated-token-type-props (if (set/superset? #{:x :y} attributes)
+                                   (assoc token-type-props
+                                          :on-update-shape update-shape-position
+                                          :attributes attributes)
+                                   token-type-props)]
     (wtc/on-apply-token {:token token
                          :token-type-props updated-token-type-props
                          :selected-shapes selected-shapes})))
@@ -126,14 +143,14 @@
                       {:title "Max height" :attributes #{:layout-item-max-h}}])
 
       :dimensions    (attributes->actions
-                     apply-sizing-token
-                     [{:title "Spacing" :attributes #{:width :height}}
-                      {:title "Sizing" :attributes #{:width}}
-                      {:title "Border Radius" :attributes #{:height}}
-                      {:title "Border Width" :attributes #{:width}}
-                      {:title "x" :attributes #{:width}}
-                      {:title "y" :attributes #{:width}}
-                      {:title "Background blur" :attributes #{:width}}])
+                      apply-dimensions-token
+                      [{:title "Spacing"  :children true :submenu :spacing}
+                       {:title "Sizing" :children true :submenu :sizing}
+                       {:title "Border Radius" :children true :submenu :border-radius}
+                      ;; TODO: BORDER_WIDTH {:title "Border Width" :attributes #{:width} :children true}
+                       {:title "x" :attributes #{:x}}
+                       {:title "y" :attributes #{:y}}])
+                      ;;TODO: Background blur {:title "Background blur" :attributes #{:width}}])
 
       [])))
 
@@ -158,14 +175,25 @@
 (mf/defc token-pill-context-menu
   [context-data]
   (let [menu-entries (generate-menu-entries context-data)]
-    (for [[index {:keys [title action selected?]}] (d/enumerate menu-entries)]
+  ;;(js/console.log menu-entries)
+    (for [[index {:keys [title action selected? children submenu]}] (d/enumerate menu-entries)]
+    ;;(println "children is " children)
       [:& menu-entry {:key index
                       :title title
-                      :on-click action
+                      :on-click (when (not children) action)
                       ;; TODO: Allow selected items wihtout an icon for the context menu
-                      :icon (mf/html [:div {:class (stl/css-case :empty-icon true
-                                                                 :hidden-icon (not selected?))}])
-                      :selected? selected?}])))
+                      :icon  (when (not children) (mf/html [:div {:class (stl/css-case :empty-icon true
+                                                                                       :hidden-icon (not selected?))}]))
+                      :selected?  (when (not children) selected?)}
+       (when children
+         (let [submenu-entries (additional-actions (assoc context-data :token-type submenu))]
+           (for [[index {:keys [title action selected?]}] (d/enumerate submenu-entries)]
+             [:& menu-entry {:key index
+                             :title title
+                             :on-click action
+                             :icon  (mf/html [:div {:class (stl/css-case :empty-icon true
+                                                                         :hidden-icon (not selected?))}])
+                             :selected? selected?}])))])))
 
 (mf/defc token-context-menu
   []
