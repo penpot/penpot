@@ -175,9 +175,7 @@
 (mf/defc token-pill-context-menu
   [context-data]
   (let [menu-entries (generate-menu-entries context-data)]
-  ;;(js/console.log menu-entries)
     (for [[index {:keys [title action selected? children submenu]}] (d/enumerate menu-entries)]
-    ;;(println "children is " children)
       [:& menu-entry {:key index
                       :title title
                       :on-click (when (not children) action)
