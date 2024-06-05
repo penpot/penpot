@@ -77,10 +77,19 @@
     (when (seq events)
       (db/insert-many! pool :audit-log event-columns events))))
 
+(def valid-event-types
+  #{"action" "identify"})
+
 (def schema:event
   [:map {:title "Event"}
-   [:name [:string {:max 250}]]
-   [:type [:string {:max 250}]]
+   [:name
+    [:and {:gen/elements ["update-file", "get-profile"]}
+     [:string {:max 250}]
+     [:re #"[\d\w-]{1,50}"]]]
+   [:type
+    [:and {:gen/elements valid-event-types}
+     [:string {:max 250}]
+     [::sm/one-of {:format "string"} valid-event-types]]]
    [:props
     [:map-of :keyword :any]]
    [:context {:optional true}

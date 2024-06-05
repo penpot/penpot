@@ -460,6 +460,19 @@
         (pcb/with-library-data file-data)
         (pcb/update-component (:id shape) repair-component))))
 
+(defmethod repair-error :misplaced-slot
+  [_ {:keys [shape page-id] :as error} file-data _]
+  (let [repair-shape
+        (fn [shape]
+          ;; Remove the swap slot
+          (log/debug :hint (str "  -> remove swap-slot"))
+          (ctk/remove-swap-slot shape))]
+
+    (log/dbg :hint "repairing shape :misplaced-slot" :id (:id shape) :name (:name shape) :page-id page-id)
+    (-> (pcb/empty-changes nil page-id)
+        (pcb/with-file-data file-data)
+        (pcb/update-shapes [(:id shape)] repair-shape))))
+
 (defmethod repair-error :missing-slot
   [_ {:keys [shape page-id args] :as error} file-data _]
   (let [repair-shape
