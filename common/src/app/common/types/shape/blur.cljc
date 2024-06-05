@@ -26,7 +26,7 @@
 ;; SCHEMA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(sm/def! ::blur
+(sm/register! ::blur
   [:map {:title "Blur"}
    [:id ::sm/uuid]
    [:type [:= :layer-blur]]
