@@ -39,15 +39,13 @@
       (ex/raise :type :validation
                 :code :invalid-token
                 :reason :token-expired
-                :params params
-                :claims claims))
+                :params params))
     (when (and (contains? params :iss)
                (not= (:iss claims)
                      (:iss params)))
       (ex/raise :type :validation
                 :code :invalid-token
                 :reason :invalid-issuer
-                :claims claims
                 :params params))
     claims))
 
