@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-05-25 18:09+0000\n"
-"Last-Translator: Chan Young Park <designbycy@gmail.com>\n"
+"PO-Revision-Date: 2024-06-05 10:42+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Korean <https://hosted.weblate.org/projects/penpot/frontend/"
 "ko/>\n"
 "Language: ko\n"
@@ -841,7 +841,7 @@ msgid "dashboard.export-binary-multi"
 msgstr "%s 펜팟 파일 (.penpot) 다운로드 하기"
 
 #: src/app/main/ui/dashboard/grid.cljs
-#, markdown
+#, fuzzy, markdown
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "라이브러리에 추가된 파일은 여기에서 볼 수 있습니다. 파일을 공유하거나 펜팟의 "
