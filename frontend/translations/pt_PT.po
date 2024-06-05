@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2024-04-24 12:55+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Portuguese (Portugal) "
-"<https://hosted.weblate.org/projects/penpot/frontend/pt_PT/>\n"
+"Language-Team: Portuguese (Portugal) <https://hosted.weblate.org/projects/"
+"penpot/frontend/pt_PT/>\n"
 "Language: pt_PT\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -80,11 +80,23 @@ msgstr "LDAP"
 msgid "auth.login-with-oidc-submit"
 msgstr "OpenID Connect"
 
-#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs,
+#: src/app/main/ui/dashboard/team_form.cljs,
+#: src/app/main/ui/onboarding/team_choice.cljs,
+#: src/app/main/ui/settings/access_tokens.cljs,
+#: src/app/main/ui/settings/feedback.cljs,
+#: src/app/main/ui/settings/profile.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "auth.name.not-all-space"
 msgstr "O nome deve conter pelo menos um caractere que não seja um espaço."
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/auth/register.cljs,
+#: src/app/main/ui/dashboard/team_form.cljs,
+#: src/app/main/ui/onboarding/team_choice.cljs,
+#: src/app/main/ui/settings/access_tokens.cljs,
+#: src/app/main/ui/settings/feedback.cljs,
+#: src/app/main/ui/settings/profile.cljs,
+#: src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "auth.name.too-long"
 msgstr "O nome deve conter um máximo de 250 caracteres."
 
@@ -122,7 +134,8 @@ msgstr "Mínimo de 8 caracteres"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.password-not-empty"
-msgstr "A palavra-passe deve conter pelo menos um caractere que não seja um espaço."
+msgstr ""
+"A palavra-passe deve conter pelo menos um caractere que não seja um espaço."
 
 msgid "auth.privacy-policy"
 msgstr "Política de privacidade"
@@ -173,7 +186,6 @@ msgstr ""
 "política de privacidade."
 
 #: src/app/main/ui/auth/register.cljs
-#, markdown
 msgid "auth.terms-privacy-agreement-md"
 msgstr ""
 "Ao criar uma nova conta, concordas com os nossos [termos de serviço](%s) e "
@@ -195,8 +207,8 @@ msgstr "Todos os utilizadores Penpot"
 
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
-"Tens a certeza de que queres remover este link? Se o fizeres, deixa de "
-"ficar disponível para ninguém"
+"Tens a certeza de que queres remover este link? Se o fizeres, deixa de ficar "
+"disponível para ninguém"
 
 msgid "common.share-link.current-tag"
 msgstr "(atual)"
@@ -252,8 +264,8 @@ msgstr "Gestão da equipa"
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.team-hero.text"
 msgstr ""
-"O Penpot é destinado a equipas. Convida colegas para colaborarem em "
-"projetos e ficheiros"
+"O Penpot é destinado a equipas. Convida colegas para colaborarem em projetos "
+"e ficheiros"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.team-hero.title"
@@ -261,7 +273,8 @@ msgstr "Trabalho de equipa!"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.tutorial-hero.info"
-msgstr "Aprende os básicos no Penpot enquanto divertes-te a praticar neste tutorial."
+msgstr ""
+"Aprende os básicos no Penpot enquanto divertes-te a praticar neste tutorial."
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.tutorial-hero.start"
@@ -346,9 +359,9 @@ msgstr "Tokens de acesso pessoais"
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.personal.description"
 msgstr ""
-"Os tokens de acesso pessoais funcionam como uma alternativa ao nosso "
-"sistema de autenticação de login/palavra-passe e podem ser usados para "
-"permitir que uma aplicação tenha acesso à API interna do Penpot"
+"Os tokens de acesso pessoais funcionam como uma alternativa ao nosso sistema "
+"de autenticação de login/palavra-passe e podem ser usados para permitir que "
+"uma aplicação tenha acesso à API interna do Penpot"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.token-will-expire"
@@ -402,8 +415,8 @@ msgstr "Duplicar %s ficheiros"
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Os ficheiros adicionados às Bibliotecas irão aparecer aqui. Experimenta "
-"adicionar os teus ficheiros ou experimenta algumas das nossas [Bibliotecas "
-"e templates](https://penpot.app/libraries-templates)."
+"adicionar os teus ficheiros ou experimenta algumas das nossas [Bibliotecas e "
+"templates](https://penpot.app/libraries-templates)."
 
 msgid "dashboard.export-binary-multi"
 msgstr "Descarrega %s ficheiros Penpot (.penpot)"
@@ -508,16 +521,15 @@ msgstr ""
 
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
-"Deves carregar tipos de letra que possuas or tenhas licença para utilizar "
-"no Penpot. Sabe mais na secção de Direitos de Conteúdos dos [Termos de "
-"serviço do Penpot](https://penpot.app/terms.html). Podes também ler mais "
-"sobre [licenciamento de fontes](https://www.typography.com/faq)."
+"Deves carregar tipos de letra que possuas or tenhas licença para utilizar no "
+"Penpot. Sabe mais na secção de Direitos de Conteúdos dos [Termos de serviço "
+"do Penpot](https://penpot.app/terms.html). Podes também ler mais sobre "
+"[licenciamento de fontes](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.upload-all"
 msgstr "Carregar tudo"
 
-#, markdown
 msgid "dashboard.fonts.warning-text"
 msgstr ""
 "Detetámos um possível problema nas tuas fontes relacionado com métricas "
@@ -538,7 +550,8 @@ msgstr ""
 "suporta."
 
 msgid "dashboard.import.import-error"
-msgstr "Ocorreu um problema na importação do ficheiro. O ficheiro não foi importado."
+msgstr ""
+"Ocorreu um problema na importação do ficheiro. O ficheiro não foi importado."
 
 msgid "dashboard.import.import-message"
 msgid_plural "dashboard.import.import-message"
@@ -886,7 +899,8 @@ msgstr "Não podes utilizar o teu e-mail como palavra-passe"
 msgid "errors.email-has-permanent-bounces"
 msgstr "O e-mail «%s» tem muitos relatórios de rejeição permanentes."
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs,
+#: src/app/main/ui/auth/recovery_request.cljs
 msgid "errors.email-invalid"
 msgstr "Por favor introduz um email válido"
 
@@ -944,7 +958,8 @@ msgstr "A imagem é demasiado grande para ser inserida."
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-mismatch"
-msgstr "Parece que o conteúdo da imagem não corresponde à extensão do ficheiro."
+msgstr ""
+"Parece que o conteúdo da imagem não corresponde à extensão do ficheiro."
 
 #: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
 msgid "errors.media-type-not-allowed"
@@ -953,8 +968,8 @@ msgstr "Parece que esta não é uma imagem válida."
 #: src/app/main/ui/dashboard/team.cljs
 msgid "errors.member-is-muted"
 msgstr ""
-"O perfil que estás a convidar tem e-mails silenciados (relatórios de spam "
-"ou devoluções altas)."
+"O perfil que estás a convidar tem e-mails silenciados (relatórios de spam ou "
+"devoluções altas)."
 
 #: src/app/main/ui/settings/password.cljs
 msgid "errors.password-invalid-confirmation"
@@ -987,7 +1002,8 @@ msgid "errors.team-feature-mismatch"
 msgstr "Funcionalidade incompatível '%s' detetada"
 
 msgid "errors.team-leave.insufficient-members"
-msgstr "Membros insuficientes para deixar a equipa, provavelmente queres eliminá-la."
+msgstr ""
+"Membros insuficientes para deixar a equipa, provavelmente queres eliminá-la."
 
 msgid "errors.team-leave.member-does-not-exists"
 msgstr "O membro que tentas atribuir não existe."
@@ -1070,8 +1086,8 @@ msgstr "Assunto"
 msgid "feedback.subtitle"
 msgstr ""
 "Por favor descreve o motivo do teu e-mail, especificando se é um problema, "
-"uma ideia, ou uma dúvida. Um membro da nossa equipa tentará responder o "
-"mais rápido possível."
+"uma ideia, ou uma dúvida. Um membro da nossa equipa tentará responder o mais "
+"rápido possível."
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.title"
@@ -1256,7 +1272,8 @@ msgid "inspect.attributes.typography.text-transform.uppercase"
 msgstr "Maiúsculas"
 
 msgid "inspect.empty.help"
-msgstr "Se quiseres saber mais sobre a inspeção, visita o centro de ajuda do Penpot"
+msgstr ""
+"Se quiseres saber mais sobre a inspeção, visita o centro de ajuda do Penpot"
 
 msgid "inspect.empty.more-info"
 msgstr "Mais informações sobre a inspeção"
@@ -1780,9 +1797,8 @@ msgstr "Sólido"
 msgid "modals.add-shared-confirm-empty.hint"
 msgstr ""
 "A tua biblioteca está vazia. Assim que ela seja adicionada como uma "
-"biblioteca partilhada, os recursos que criares nela estarão disponíveis "
-"para serem usados nos teus outros ficheiros. Tens a certeza que queres "
-"publicá-la?"
+"biblioteca partilhada, os recursos que criares nela estarão disponíveis para "
+"serem usados nos teus outros ficheiros. Tens a certeza que queres publicá-la?"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -1812,8 +1828,8 @@ msgstr "Verificar o novo e-mail"
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.info"
 msgstr ""
-"Vamos enviar um e‑mail para o teu endereço atual \"%s\" para verificar a "
-"tua identidade."
+"Vamos enviar um e‑mail para o teu endereço atual \"%s\" para verificar a tua "
+"identidade."
 
 #: src/app/main/ui/settings/change_email.cljs
 msgid "modals.change-email.new-email"
@@ -1898,8 +1914,8 @@ msgstr "Eliminar conversa"
 #: src/app/main/ui/comments.cljs
 msgid "modals.delete-comment-thread.message"
 msgstr ""
-"Tens a certeza de que pretender eliminar esta conversa? Todos os "
-"comentários neste tópico serão eliminados."
+"Tens a certeza de que pretender eliminar esta conversa? Todos os comentários "
+"neste tópico serão eliminados."
 
 #: src/app/main/ui/comments.cljs
 msgid "modals.delete-comment-thread.title"
@@ -1937,8 +1953,8 @@ msgstr "Eliminando %s ficheiros"
 
 msgid "modals.delete-font-variant.message"
 msgstr ""
-"Tens a certeza de que pretendes eliminar este estilo de fonte? Não "
-"carregará se estiver a ser utilizado num ficheiro."
+"Tens a certeza de que pretendes eliminar este estilo de fonte? Não carregará "
+"se estiver a ser utilizado num ficheiro."
 
 msgid "modals.delete-font-variant.title"
 msgstr "Eliminando estilo de fonte"
@@ -1978,13 +1994,15 @@ msgid_plural "modals.delete-shared-confirm.accept"
 msgstr[0] "Eliminar ficheiro"
 msgstr[1] "Eliminar ficheiros"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.activated.no-files-message"
 msgid_plural "modals.delete-shared-confirm.activated.no-files-message"
 msgstr[0] "Não está ativa em nenhum ficheiro."
 msgstr[1] "Não estão ativas em nenhum ficheiro."
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.activated.scd-message"
 msgid_plural "modals.delete-shared-confirm.activated.scd-message"
 msgstr[0] "Esta biblioteca está ativa aqui: "
@@ -2030,7 +2048,8 @@ msgstr "Tens a certeza de que pretendes eliminar este membro da equipa?"
 msgid "modals.delete-team-member-confirm.title"
 msgstr "Eliminar membro da equipa"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-unpublish-shared-confirm.activated.hint"
 msgid_plural "modals.delete-unpublish-shared-confirm.activated.hint"
 msgstr[0] ""
@@ -2127,8 +2146,8 @@ msgstr "Transferir propriedade"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.hint"
 msgstr ""
-"Se transferires a propriedade, vais alterar a tua função para "
-"Administrador, perdendo algumas permissões sobre esta equipa. "
+"Se transferires a propriedade, vais alterar a tua função para Administrador, "
+"perdendo algumas permissões sobre esta equipa. "
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "modals.promote-owner-confirm.message"
@@ -2158,9 +2177,9 @@ msgstr "Remover como Biblioteca Partilhada"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.hint"
 msgstr ""
-"Uma vez removida como Biblioteca Partilhada, a Biblioteca de Ficheiros "
-"deste ficheiro deixarão de estar disponíveis para serem utilizados com o "
-"resto dos teus ficheiros."
+"Uma vez removida como Biblioteca Partilhada, a Biblioteca de Ficheiros deste "
+"ficheiro deixarão de estar disponíveis para serem utilizados com o resto dos "
+"teus ficheiros."
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -2171,7 +2190,8 @@ msgstr "Remover \"%s\" como Biblioteca Partilhada"
 msgid "modals.small-nudge"
 msgstr "Pequeno deslocamento"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.accept"
 msgid_plural "modals.unpublish-shared-confirm.accept"
 msgstr[0] "Cancelar publicação"
@@ -2181,8 +2201,10 @@ msgstr[1] "Cancelar publicações"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.unpublish-shared-confirm.message"
 msgid_plural "modals.unpublish-shared-confirm.message"
-msgstr[0] "Tens a certeza de que queres cancelar a publicação desta biblioteca?"
-msgstr[1] "Tens a certeza de que queres cancelar a publicação destas bibliotecas?"
+msgstr[0] ""
+"Tens a certeza de que queres cancelar a publicação desta biblioteca?"
+msgstr[1] ""
+"Tens a certeza de que queres cancelar a publicação destas bibliotecas?"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -2289,8 +2311,8 @@ msgstr "Sua privacidade é importante para nós, saiba mais aqui "
 msgid "onboarding-v2.newsletter.privacy2"
 msgstr ""
 "Enviaremos apenas e-mails relevantes para você. Você pode cancelar a "
-"inscrição a qualquer momento através do link de cancelamento de inscrição "
-"em qualquer uma de nossas newsletter."
+"inscrição a qualquer momento através do link de cancelamento de inscrição em "
+"qualquer uma de nossas newsletter."
 
 msgid "onboarding-v2.newsletter.updates"
 msgstr ""
@@ -2353,8 +2375,8 @@ msgstr "Convida membros"
 
 msgid "onboarding.choice.team-up.invite-members-info"
 msgstr ""
-"Lembra-te em incluir todos. Programadores, designers, gestores... "
-"acrescenta diversidade :)"
+"Lembra-te em incluir todos. Programadores, designers, gestores... acrescenta "
+"diversidade :)"
 
 msgid "onboarding.choice.team-up.roles"
 msgstr "Convidar com a função:"
@@ -2569,7 +2591,8 @@ msgstr "Experimentar o Penpot antes de usar num servidor privado"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.wireframes-user-journeys-flows-navigation-trees"
-msgstr "...wireframes, jornadas e fluxos de utilizador, árvores de navegação, etc."
+msgstr ""
+"...wireframes, jornadas e fluxos de utilizador, árvores de navegação, etc."
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.work-in-concept-ideas"
@@ -3149,8 +3172,8 @@ msgstr "%s - Penpot"
 
 msgid "viewer.breaking-change.description"
 msgstr ""
-"Este link partilhável já não é válido. Cria uma nova ou pede ao "
-"proprietário para um novo."
+"Este link partilhável já não é válido. Cria uma nova ou pede ao proprietário "
+"para um novo."
 
 msgid "viewer.breaking-change.message"
 msgstr "Desculpa!"
@@ -3490,7 +3513,7 @@ msgstr "Ocultar grade de píxeis"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-rules"
-msgstr "Ocultar regras"
+msgstr "Ocultar réguas"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.hide-textpalette"
@@ -3536,7 +3559,7 @@ msgstr "Mostrar grade de píxeis"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-rules"
-msgstr "Mostrar regras"
+msgstr "Mostrar réguas"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-textpalette"
@@ -5188,6 +5211,61 @@ msgstr "Atualizar"
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Clica para fechar o caminho"
 
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-account-title"
+msgstr "Entrar na minha conta"
+
+#: src/app/main/data/users.cljs
+msgid "errors.email-domain-not-allowed"
+msgstr "Domínio não permitido"
+
+msgid "media.image.short"
+msgstr "img"
+
+msgid "modals.move-shared-confirm.title"
+msgid_plural "modals.move-shared-confirm.title"
+msgstr[0] "Mover biblioteca"
+msgstr[1] "Mover bibliotecas"
+
+msgid "onboarding.team-modal.team-definition"
+msgstr "O que é uma equipa?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.never-used-one"
+msgstr "Nenhuma"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs
+msgid "settings.select-this-color"
+msgstr "Selecionar itens que usem este estilo"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs
+msgid "workspace.assets.sidebar.components"
+msgid_plural "workspace.assets.sidebar.components"
+msgstr[0] "1 componente"
+msgstr[1] "%s componentes"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.sort"
+msgstr "Ordenar"
+
+msgid "workspace.top-bar.view-only"
+msgstr "**A inspecionar código** (Somente leitura)"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-tagline"
+msgstr ""
+"O Penpot é a ferramenta de desenho gratuita e de código aberto para "
+"colaboração entre Design e Código"
+
+msgid "modals.move-shared-confirm.accept"
+msgid_plural "modals.move-shared-confirm.accept"
+msgstr[0] "Mover"
+msgstr[1] "Mover"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.filter"
+msgstr "Filtrar"
+
 #~ msgid "dashboard.newsletter-title"
 #~ msgstr "Subscrição de Newsletter"
 
@@ -5210,7 +5288,9 @@ msgstr "Clica para fechar o caminho"
 #~ msgstr "projeto no GitHub"
 
 #~ msgid "onboarding.slide.0.desc1"
-#~ msgstr "Cria interfaces maravilhosas em colaboração com todos os membros da equipa."
+#~ msgstr ""
+#~ "Cria interfaces maravilhosas em colaboração com todos os membros da "
+#~ "equipa."
 
 #~ msgid "onboarding.slide.1.desc1"
 #~ msgstr "Cria interações ricas para simular o comportamento do produto."
