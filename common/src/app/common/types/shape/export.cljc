@@ -8,7 +8,7 @@
   (:require
    [app.common.schema :as sm]))
 
-(sm/def! ::export
+(sm/register! ::export
   [:map {:title "ShapeExport"}
    [:type :keyword]
    [:scale ::sm/safe-number]

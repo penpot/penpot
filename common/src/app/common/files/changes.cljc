@@ -33,25 +33,24 @@
 
 (def ^:private
   schema:operation
-  (sm/define
-    [:multi {:dispatch :type :title "Operation" ::smd/simplified true}
-     [:set
-      [:map {:title "SetOperation"}
-       [:type [:= :set]]
-       [:attr :keyword]
-       [:val :any]
-       [:ignore-touched {:optional true} :boolean]
-       [:ignore-geometry {:optional true} :boolean]]]
-     [:set-touched
-      [:map {:title "SetTouchedOperation"}
-       [:type [:= :set-touched]]
-       [:touched [:maybe [:set :keyword]]]]]
-     [:set-remote-synced
-      [:map {:title "SetRemoteSyncedOperation"}
-       [:type [:= :set-remote-synced]]
-       [:remote-synced {:optional true} [:maybe :boolean]]]]]))
+  [:multi {:dispatch :type :title "Operation" ::smd/simplified true}
+   [:set
+    [:map {:title "SetOperation"}
+     [:type [:= :set]]
+     [:attr :keyword]
+     [:val :any]
+     [:ignore-touched {:optional true} :boolean]
+     [:ignore-geometry {:optional true} :boolean]]]
+   [:set-touched
+    [:map {:title "SetTouchedOperation"}
+     [:type [:= :set-touched]]
+     [:touched [:maybe [:set :keyword]]]]]
+   [:set-remote-synced
+    [:map {:title "SetRemoteSyncedOperation"}
+     [:type [:= :set-remote-synced]]
+     [:remote-synced {:optional true} [:maybe :boolean]]]]])
 
-(sm/define! ::change
+(sm/register! ::change
   [:schema
    [:multi {:dispatch :type :title "Change" ::smd/simplified true}
     [:set-option
@@ -246,7 +245,7 @@
       [:type [:= :del-typography]]
       [:id ::sm/uuid]]]]])
 
-(sm/define! ::changes
+(sm/register! ::changes
   [:sequential {:gen/max 2} ::change])
 
 (def check-change!
