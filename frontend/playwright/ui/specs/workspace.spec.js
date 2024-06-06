@@ -92,3 +92,31 @@ test("Bug 7525 - User moves a scrollbar and no selciont rectangle appears", asyn
 
   await expect(workspacePage.selectionRect).not.toBeInViewport();
 });
+
+test("User adds a library and its automatically selected in the color palette", async ({ page }) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockRPC("link-file-to-library", "workspace/link-file-to-library.json");
+  await workspacePage.mockRPC("unlink-file-from-library", "workspace/unlink-file-from-library.json");
+  await workspacePage.mockRPC("get-team-shared-files?team-id=*", "workspace/get-team-shared-libraries-non-empty.json");
+  
+  await workspacePage.goToWorkspace();
+
+  // Add Testing library 1
+  await workspacePage.clickColorPalette();
+  await workspacePage.clickAssets();
+  // Now the get-file call should return a library
+  await workspacePage.mockRPC(/get\-file\?/, "workspace/get-file-library.json");
+  await workspacePage.openLibrariesModal();
+  await workspacePage.clickLibrary("Testing library 1")
+  await workspacePage.closeLibrariesModal(); 
+
+  await expect(workspacePage.palette.getByRole("button", { name: "test-color-187cd5" })).toBeVisible();
+
+  // Remove Testing library 1
+  await workspacePage.openLibrariesModal();
+  await workspacePage.clickLibrary("Testing library 1")
+  await workspacePage.closeLibrariesModal();
+
+  await expect(workspacePage.palette.getByText('There are no color styles in your library yet')).toBeVisible();
+});
