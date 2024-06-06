@@ -45,6 +45,11 @@ export class WorkspacePage extends BaseWebSocketPage {
     this.rootShape = page.locator(`[id="shape-00000000-0000-0000-0000-000000000000"]`);
     this.rectShapeButton = page.getByRole("button", { name: "Rectangle (R)" });
     this.colorpicker = page.getByTestId("colorpicker");
+    this.palette = page.getByTestId("palette");
+    this.assets = page.getByTestId("assets");
+    this.libraries = page.getByTestId("libraries");
+    this.closeLibraries = page.getByTestId("close-libraries");
+    this.librariesModal = page.getByTestId("libraries-modal");
   }
 
   async goToWorkspace() {
@@ -96,5 +101,31 @@ export class WorkspacePage extends BaseWebSocketPage {
     await this.page.mouse.down();
     await this.viewport.hover({ position: { x: x + width, y: y + height } });
     await this.page.mouse.up();
+  }
+
+  async clickAssets(clickOptions = {}) {
+    await this.assets.click(clickOptions);
+  }
+
+  async clickLibraries(clickOptions = {}) {
+    await this.libraries.click(clickOptions);
+  }
+
+  async clickLibrary(name, clickOptions = {}) {
+    await this.page
+      .getByTestId("library-item")
+      .filter({ hasText: name })
+      .getByRole("button")
+      .click(clickOptions);  
+  }
+
+  async clickCloseLibraries(clickOptions = {}) {
+    await this.closeLibraries.click(clickOptions);
+  }
+
+  async clickColorPalette(clickOptions = {}) {
+    await this.palette
+      .getByRole("button", { name: "Color Palette (Alt+P)" })
+      .click(clickOptions);
   }
 }
