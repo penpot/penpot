@@ -967,13 +967,13 @@
         (mf/use-fn
          (mf/deps (:id shape))
          (fn []
-           (st/emit! (st/emit! (dwsl/add-layout-track [(:id shape)] :column ctl/default-track-value)))))
+           (st/emit! (dwsl/add-layout-track [(:id shape)] :column ctl/default-track-value))))
 
         handle-add-row
         (mf/use-fn
          (mf/deps (:id shape))
          (fn []
-           (st/emit! (st/emit! (dwsl/add-layout-track [(:id shape)] :row ctl/default-track-value)))))
+           (st/emit! (dwsl/add-layout-track [(:id shape)] :row ctl/default-track-value))))
 
         target-tracks* (mf/use-ref nil)
         drop-track-type* (mf/use-state nil)
