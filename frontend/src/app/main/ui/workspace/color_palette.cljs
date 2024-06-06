@@ -149,7 +149,7 @@
         shared-libs   (mf/deref refs/workspace-libraries)
         colors        (mf/use-state [])]
 
-    (mf/with-effect [selected]
+    (mf/with-effect [selected shared-libs]
       (let [colors' (cond
                       (= selected :recent) (reverse recent-colors)
                       (= selected :file)   (->> (vals file-colors) (sort-by :name))
