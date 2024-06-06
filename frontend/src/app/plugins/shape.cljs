@@ -32,7 +32,8 @@
    [app.plugins.utils :as u]
    [app.util.object :as obj]
    [app.util.path.format :as upf]
-   [app.util.text-editor :as ted]))
+   [app.util.text-editor :as ted]
+   [cuerdas.core :as str]))
 
 (declare shape-proxy)
 
@@ -176,8 +177,14 @@
           {:name "name"
            :get #(-> % u/proxy->shape :name)
            :set (fn [self value]
-                  (let [id (obj/get self "$id")]
-                    (st/emit! (dwsh/update-shapes [id] #(assoc % :name value)))))}
+                  (let [id (obj/get self "$id")
+                        value  (when (string? value) (-> value str/trim cfh/clean-path))
+                        valid? (and (some? value)
+                                    (not (str/ends-with? value "/"))
+                                    (not (str/blank? value)))]
+                    (if valid?
+                      (st/emit! (dwsh/update-shapes [id] #(assoc % :name value)))
+                      (u/display-not-valid :shape-name value))))}
 
           {:name "blocked"
            :get #(-> % u/proxy->shape :blocked boolean)
