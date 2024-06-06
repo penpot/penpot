@@ -32,6 +32,10 @@
   }
 }
 
+.context-list > li:nth-child(-n + 3) > span:first-of-type {
+  margin: 30px;
+}
+
 // TODO: Allow selected items wihtout an icon for the context menu
 .empty-icon {
   width: 0;
