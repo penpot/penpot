@@ -230,7 +230,8 @@
 
        (for [{:keys [id name] :as library} linked-libraries]
          [:div {:class (stl/css :section-list-item)
-                :key (dm/str id)}
+                :key (dm/str id)
+                :data-testid "library-item"}
           [:div {:class (stl/css :item-content)}
            [:div {:class (stl/css :item-name)} name]
            [:ul {:class (stl/css :item-contents)}
@@ -263,7 +264,8 @@
         [:div {:class (stl/css :section-list-shared)}
          (for [{:keys [id name] :as library} shared-libraries]
            [:div {:class (stl/css :section-list-item)
-                  :key (dm/str id)}
+                  :key (dm/str id)
+                  :data-testid "library-item"}
             [:div {:class (stl/css :item-content)}
              [:div {:class (stl/css :item-name)} name]
              [:ul {:class (stl/css :item-contents)}
@@ -513,10 +515,11 @@
       (when team-id
         (st/emit! (dwl/fetch-shared-files {:team-id team-id}))))
 
-    [:div {:class (stl/css :modal-overlay) :on-click close-dialog-outside}
+    [:div {:class (stl/css :modal-overlay) :on-click close-dialog-outside :data-testid "libraries-modal"}
      [:div {:class (stl/css :modal-dialog)}
       [:button {:class (stl/css :close-btn)
-                :on-click close-dialog}
+                :on-click close-dialog
+                :data-testid "close-libraries"}
        close-icon]
       [:div {:class (stl/css :modal-title)}
        (tr "workspace.libraries.libraries")]

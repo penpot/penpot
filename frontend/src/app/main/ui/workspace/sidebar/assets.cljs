@@ -157,7 +157,8 @@
      [:div {:class (stl/css :assets-header)}
       (when-not ^boolean read-only?
         [:button {:class (stl/css :libraries-button)
-                  :on-click show-libraries-dialog}
+                  :on-click show-libraries-dialog
+                  :data-testid "libraries"}
          [:span {:class (stl/css :libraries-icon)}
           i/library]
          (tr "workspace.assets.libraries")])

@@ -46,6 +46,11 @@ export class WorkspacePage extends BaseWebSocketPage {
     this.rectShapeButton = page.getByRole("button", { name: "Rectangle (R)" });
     this.colorpicker = page.getByTestId("colorpicker");
     this.layers = page.getByTestId("layers");
+    this.palette = page.getByTestId("palette");
+    this.assets = page.getByTestId("assets");
+    this.libraries = page.getByTestId("libraries");
+    this.closeLibraries = page.getByTestId("close-libraries");
+    this.librariesModal = page.getByTestId("libraries-modal");
   }
 
   async goToWorkspace({ fileId = WorkspacePage.anyFileId, pageId = WorkspacePage.anyPageId } = {}) {
@@ -105,5 +110,31 @@ export class WorkspacePage extends BaseWebSocketPage {
   async clickToggableLayer(name, clickOptions = {}) {
     const layer = this.layers.getByTestId("layer-item").filter({ has: this.page.getByText(name) });
     await layer.getByRole("button").click(clickOptions);
+  }
+      
+  async clickAssets(clickOptions = {}) {
+    await this.assets.click(clickOptions);
+  }
+
+  async clickLibraries(clickOptions = {}) {
+    await this.libraries.click(clickOptions);
+  }
+
+  async clickLibrary(name, clickOptions = {}) {
+    await this.page
+      .getByTestId("library-item")
+      .filter({ hasText: name })
+      .getByRole("button")
+      .click(clickOptions);  
+  }
+
+  async clickCloseLibraries(clickOptions = {}) {
+    await this.closeLibraries.click(clickOptions);
+  }
+
+  async clickColorPalette(clickOptions = {}) {
+    await this.palette
+      .getByRole("button", { name: "Color Palette (Alt+P)" })
+      .click(clickOptions);
   }
 }
