@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-05 10:42+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2024-06-06 17:09+0000\n"
+"Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
 "Language: de\n"
@@ -5281,3 +5281,36 @@ msgstr "An den Hilfslinien des Lineals ausrichten deaktivieren"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-snap-ruler-guides"
 msgstr "An den Hilfslinien des Lineals ausrichten"
+
+msgid "workspace.plugins.title"
+msgstr "Plugins"
+
+msgid "workspace.plugins.search-placeholder"
+msgstr "Eine URL des Plugins eingeben"
+
+msgid "workspace.plugins.install"
+msgstr "Installieren"
+
+msgid "workspace.plugins.installed-plugins"
+msgstr "Installierte Plugins"
+
+msgid "workspace.plugins.button-open"
+msgstr "Öffnen"
+
+msgid "workspace.plugins.empty-plugins"
+msgstr "Noch keine Plugins installiert"
+
+msgid "workspace.plugins.error.url"
+msgstr "Das Plugin existiert nicht oder die URL ist nicht korrekt."
+
+msgid "workspace.plugins.menu.plugins-manager"
+msgstr "Plugin-Manager"
+
+msgid "workspace.plugins.plugin-list-link"
+msgstr "Liste der Plugins"
+
+msgid "workspace.plugins.menu.title"
+msgstr "Plugins"
+
+msgid "workspace.plugins.success"
+msgstr "Plugin wurde korrekt geladen."
