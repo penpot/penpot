@@ -141,7 +141,8 @@
         (swap! state* assoc :width width)))
 
     [:div {:class (stl/css :palette-wrapper)
-           :style  (calculate-palette-padding rulers?)}
+           :style  (calculate-palette-padding rulers?)
+           :data-testid "palette"}
      (when-not workspace-read-only?
        [:div {:ref parent-ref
               :class (dm/str size-classname " " (stl/css-case :palettes true
