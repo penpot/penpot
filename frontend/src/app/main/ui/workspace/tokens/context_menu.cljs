@@ -144,9 +144,9 @@
 
       :dimensions    (attributes->actions
                       apply-dimensions-token
-                      [{:title "\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0Spacing"  :children true :submenu :spacing}
-                       {:title "\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0Sizing" :children true :submenu :sizing}
-                       {:title "\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0Border Radius" :children true :submenu :border-radius}
+                      [{:title "\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0Spacing" :submenu :spacing}
+                       {:title "\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0Sizing" :submenu :sizing}
+                       {:title "\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0Border Radius" :submenu :border-radius}
                       ;; TODO: BORDER_WIDTH {:title "Border Width" :attributes #{:width} :children true}
                        {:title "x" :attributes #{:x}}
                        {:title "y" :attributes #{:y}}])
@@ -176,14 +176,14 @@
   [context-data]
   (let [menu-entries (generate-menu-entries context-data)]
     (for [[index {:keys [title action selected? children submenu]}] (d/enumerate menu-entries)]
-      [:& menu-entry {:key index
-                      :title title
-                      :on-click (when (not children) action)
+      [:& menu-entry (cond-> {:key index
+                              :title title}
+                       (not submenu) (assoc :on-click action
                       ;; TODO: Allow selected items wihtout an icon for the context menu
-                      :icon  (when (not children) (mf/html [:div {:class (stl/css-case :empty-icon true
-                                                                                       :hidden-icon (not selected?))}]))
-                      :selected?  (when (not children) selected?)}
-       (when children
+                                            :icon (mf/html [:div {:class (stl/css-case :empty-icon true
+                                                                                       :hidden-icon (not selected?))}])
+                                            :selected? selected?))
+       (when submenu
          (let [submenu-entries (additional-actions (assoc context-data :token-type submenu))]
            (for [[index {:keys [title action selected?]}] (d/enumerate submenu-entries)]
              [:& menu-entry {:key index
