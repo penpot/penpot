@@ -108,7 +108,7 @@ jobs:
           command: |
             yarn install
             yarn run compile
-            yarn run compile:cljs
+            clojure -M:dev:shadow-cljs release main
             yarn playwright install --with-deps chromium
             yarn e2e:test
 

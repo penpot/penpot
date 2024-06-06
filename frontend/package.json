@@ -90,6 +90,7 @@
     "workerpool": "^9.1.1"
   },
   "dependencies": {
+    "compression": "^1.7.4",
     "date-fns": "^3.6.0",
     "eventsource-parser": "^1.1.2",
     "highlight.js": "^11.9.0",
