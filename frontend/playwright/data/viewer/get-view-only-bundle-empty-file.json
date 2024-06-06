@@ -1,0 +1,86 @@
+{
+    "~:users": [
+        {
+            "~:id": "~uc7ce0794-0992-8105-8004-38e630f29a9b",
+            "~:email": "leia@example.com",
+            "~:name": "Princesa Leia",
+            "~:fullname": "Princesa Leia",
+            "~:is-active": true
+        }
+    ],
+    "~:fonts": [],
+    "~:project": {
+        "~:id": "~uc7ce0794-0992-8105-8004-38e630f7920b",
+        "~:name": "Drafts",
+        "~:team-id": "~uc7ce0794-0992-8105-8004-38e630f40f6d"
+    },
+    "~:share-links": [],
+    "~:libraries": [],
+    "~:file": {
+        "~:features": {
+            "~#set": [
+                "layout/grid",
+                "styles/v2",
+                "fdata/pointer-map",
+                "fdata/objects-map",
+                "components/v2",
+                "fdata/shape-data-type"
+            ]
+        },
+        "~:has-media-trimmed": false,
+        "~:comment-thread-seqn": 0,
+        "~:name": "New File 1",
+        "~:revn": 0,
+        "~:modified-at": "~m1717493891000",
+        "~:id": "~uc7ce0794-0992-8105-8004-38f280443849",
+        "~:is-shared": false,
+        "~:version": 48,
+        "~:project-id": "~uc7ce0794-0992-8105-8004-38e630f7920b",
+        "~:created-at": "~m1717493891000",
+        "~:data": {
+            "~:id": "~uc7ce0794-0992-8105-8004-38e630f7920b",
+            "~:options": {
+                "~:components-v2": true
+            },
+            "~:pages": [
+                "~uc7ce0794-0992-8105-8004-38f28044384a"
+            ],
+            "~:pages-index": {
+                "~uc7ce0794-0992-8105-8004-38f28044384a": {
+                    "~#penpot/pointer": [
+                        "~u0515a066-e303-8169-8004-73eb58e899c2",
+                        {
+                            "~:created-at": "~m1717493890978"
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "~:team": {
+        "~:id": "~uc7ce0794-0992-8105-8004-38e630f40f6d",
+        "~:created-at": "~m1717493865581",
+        "~:modified-at": "~m1717493865581",
+        "~:name": "Default",
+        "~:is-default": true,
+        "~:features": {
+            "~#set": [
+                "layout/grid",
+                "styles/v2",
+                "fdata/pointer-map",
+                "fdata/objects-map",
+                "components/v2",
+                "fdata/shape-data-type"
+            ]
+        }
+    },
+    "~:permissions": {
+        "~:type": "~:membership",
+        "~:is-owner": true,
+        "~:is-admin": true,
+        "~:can-edit": true,
+        "~:can-read": true,
+        "~:is-logged": true,
+        "~:in-team": true
+    }
+}
