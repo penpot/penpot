@@ -12,7 +12,6 @@
    [app.common.media :as cm]
    [app.common.types.components-list :as ctkl]
    [app.common.uuid :as uuid]
-   [app.util.dom :as dom]
    [app.util.json :as json]
    [app.util.webapi :as wapi]
    [app.util.zip :as uz]
@@ -262,12 +261,14 @@
     (uuid/next))
 
   (export [_]
-    (->> (export-file file)
-         (rx/subs!
-          (fn [value]
-            (when  (not (contains? value :type))
-              (let [[file export-blob] value]
-                (dom/trigger-download (:name file) export-blob))))))))
+    (js/Promise.
+     (fn [resolve _reject]
+       (-> (export-file file)
+           (rx/subscribe
+            (fn [value]
+              (when (not (contains? value :type))
+                (let [[_ export-blob] value]
+                  (resolve export-blob))))))))))
 
 (defn create-file-export [^string name]
   (binding [cfeat/*current* cfeat/default-features]
