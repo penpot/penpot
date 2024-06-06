@@ -33,7 +33,7 @@
 }
 
 .context-list > li:nth-child(-n + 3) > span:first-of-type {
-  margin: 30px;
+  margin: calc(($s-32 + $s-28) / 2);
 }
 
 // TODO: Allow selected items wihtout an icon for the context menu
