@@ -341,7 +341,7 @@
 (defn- add-component2
   "This is the second step of the component creation."
   ([selected components-v2]
-   (add-component2 selected components-v2))
+   (add-component2 nil selected components-v2))
   ([id-ref selected components-v2]
    (ptk/reify ::add-component2
      ev/Event
