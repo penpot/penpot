@@ -86,37 +86,37 @@
          (mf/deps adjust-textarea-size creating?)
          (fn [event]
            (dom/stop-propagation event)
-           (rerender-fn)
            (when-let [textarea (mf/ref-val textarea-ref)]
              (dom/set-value! textarea annotation)
              (reset! editing* false)
              (when creating?
                (st/emit! (dw/set-annotations-id-for-create nil)))
-             (adjust-textarea-size))))
+             (adjust-textarea-size)
+             (rerender-fn))))
 
         on-edit
         (mf/use-fn
          (fn [event]
            (dom/stop-propagation event)
-           (rerender-fn)
            (when ^boolean main-instance?
              (when-let [textarea (mf/ref-val textarea-ref)]
                (reset! editing* true)
-               (dom/focus! textarea)))))
+               (dom/focus! textarea)
+               (rerender-fn)))))
 
         on-save
         (mf/use-fn
          (mf/deps creating?)
          (fn [event]
            (dom/stop-propagation event)
-           (rerender-fn)
            (when-let [textarea (mf/ref-val textarea-ref)]
              (let [text (dom/get-value textarea)]
                (when-not (str/blank? text)
                  (reset! editing* false)
                  (st/emit! (dw/update-component-annotation component-id text))
                  (when ^boolean creating?
-                   (st/emit! (dw/set-annotations-id-for-create nil))))))))
+                   (st/emit! (dw/set-annotations-id-for-create nil)))
+                 (rerender-fn))))))
 
         on-delete-annotation
         (mf/use-fn
@@ -124,12 +124,12 @@
          (fn [event]
            (dom/stop-propagation event)
            (let [on-accept (fn []
-                             (rerender-fn)
                              (st/emit!
                               ;; (ptk/data-event {::ev/name "delete-component-annotation"})
                               (when creating?
                                 (dw/set-annotations-id-for-create nil))
-                              (dw/update-component-annotation component-id nil)))]
+                              (dw/update-component-annotation component-id nil)
+                              (rerender-fn)))]
              (st/emit! (modal/show
                         {:type :confirm
                          :title (tr "modals.delete-component-annotation.title")
