@@ -138,7 +138,7 @@
          (mf/deps page)
          (fn []
            (modal/show! :share-link {:page page :file file})
-           (modal/allow-click-outside!)))
+           (modal/disallow-click-outside!)))
 
         handle-increase
         (mf/use-fn
