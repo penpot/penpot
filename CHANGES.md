@@ -24,6 +24,7 @@
 - Fix color palette default library [Taiga #8029](https://tree.taiga.io/project/penpot/issue/8029)
 - Component Library is lost after exporting/importing in .zip format [Github #4672](https://github.com/penpot/penpot/issues/4672)
 - Fix problem with moving+selection not working properly [Taiga #7943](https://tree.taiga.io/project/penpot/issue/7943)
+- Fix problem with flex layout fit to content not positioning correctly children [Taiga #7537](https://tree.taiga.io/project/penpot/issue/7537)
 
 ## 2.0.3
 
