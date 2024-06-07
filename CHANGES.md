@@ -16,6 +16,8 @@
 - Add locking degrees increment (hold shift) on path edition [Taiga #7761](https://tree.taiga.io/project/penpot/issue/7761)
 - Persistence & Concurrent Edition Enhancements [Taiga #5657](https://tree.taiga.io/project/penpot/us/5657)
 - Allow library colors as recent colors [Taiga #7640](https://tree.taiga.io/project/penpot/issue/7640)
+- Missing scroll in viewmode comments [Taiga #7427](https://tree.taiga.io/project/penpot/issue/7427)
+- Comments in View mode should mimic the positioning behavior of the Workspace [Taiga #7346](https://tree.taiga.io/project/penpot/issue/7346)
 
 ### :bug: Bugs fixed
 
