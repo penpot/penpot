@@ -207,14 +207,14 @@
                       :on-click on-constraint-button-clicked}
              [:span {:class (stl/css :resalted-area)}]]]]
           [:div {:class (stl/css :contraints-selects)}
-           [:div {:class (stl/css :horizontal-select)}
+           [:div {:class (stl/css :horizontal-select) :data-testid "constraint-h-select"}
             [:& select
-             {:default-value (d/nilv (d/name constraints-h) "scale")
+             {:default-value (if (not= constraints-h :multiple) (d/nilv (d/name constraints-h) "scale") "")
               :options options-h
               :on-change on-constraint-h-select-changed}]]
-           [:div {:class (stl/css :vertical-select)}
+           [:div {:class (stl/css :vertical-select) :data-testid "constraint-v-select"}
             [:& select
-             {:default-value (d/nilv (d/name constraints-v) "scale")
+             {:default-value (if (not= constraints-v :multiple) (d/nilv (d/name constraints-v) "scale") "")
               :options options-v
               :on-change on-constraint-v-select-changed}]]
            (when first-level?
