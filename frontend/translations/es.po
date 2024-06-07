@@ -197,6 +197,8 @@ msgstr ""
 "Al crear una nueva cuenta, aceptas nuestros [términos de servicio](%s) y "
 "[política de privacidad](%s)."
 
+#: src/app/main/ui/auth/register.cljs
+#, markdown
 msgid "auth.terms-and-privacy-agreement"
 msgstr ""
 "Yo acepto los [términos de servicio](%s) y la [política de privacidad](%s)."

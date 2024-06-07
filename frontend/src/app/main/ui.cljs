@@ -98,23 +98,29 @@
         #_[:& app.main.ui.onboarding/onboarding-modal]
         #_[:& app.main.ui.onboarding.team-choice/onboarding-team-modal]
         (when-let [props (get profile :props)]
-          (let [show-question-modal? (and (not (:onboarding-viewed props))
-                                          (contains? cf/flags :onboarding)
-                                          (not (:onboarding-questions-answered props))
-                                          (contains? cf/flags :onboarding-questions))
+          (let [show-question-modal?
+                (and (contains? cf/flags :onboarding)
+                     (not (:onboarding-viewed props))
+                     (not (contains? props :onboarding-questions)))
 
-                show-newsletter-modal? (and (not (:onboarding-viewed props))
-                                            (contains? cf/flags :onboarding)
-                                            (contains? cf/flags :onboarding-newsletter))
+                show-newsletter-modal?
+                (and (contains? cf/flags :onboarding)
+                     (not (:onboarding-viewed props))
+                     (not (contains? props :newsletter-updates))
+                     (contains? props :onboarding-questions))
 
-                show-team-modal? (and (not (:onboarding-viewed props))
-                                      (contains? cf/flags :onboarding)
-                                      (contains? cf/flags :onboarding-team))
+                show-team-modal?
+                (and (contains? cf/flags :onboarding)
+                     (not (:onboarding-viewed props))
+                     (not (contains? props :onboarding-team-id))
+                     (contains? props :newsletter-updates))
 
-                show-release-modal? (and (contains? cf/flags :onboarding)
-                                         (:onboarding-viewed props)
-                                         (not= (:release-notes-viewed props) (:main cf/version))
-                                         (not= "0.0" (:main cf/version)))]
+                show-release-modal?
+                (and (contains? cf/flags :onboarding)
+                     (:onboarding-viewed props)
+                     (not= (:release-notes-viewed props) (:main cf/version))
+                     (not= "0.0" (:main cf/version)))]
+
             (cond
               show-question-modal?
               [:& questions-modal]

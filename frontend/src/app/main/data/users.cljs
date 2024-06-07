@@ -491,7 +491,6 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (let [props {:onboarding-questions-answered true
-                   :onboarding-viewed true
                    :onboarding-questions onboarding-questions}]
         (->> (rp/cmd! :update-profile-props {:props props})
              (rx/map (constantly (fetch-profile))))))))

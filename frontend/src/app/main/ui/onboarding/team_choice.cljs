@@ -86,7 +86,8 @@
         (mf/use-fn
          (fn [response]
            (let [team-id (:id response)]
-             (st/emit! (du/update-profile-props {:onboarding-team-id team-id})
+             (st/emit! (du/update-profile-props {:onboarding-team-id team-id
+                                                 :onboarding-viewed true})
                        (rt/nav :dashboard-projects {:team-id team-id})))))
 
         on-error

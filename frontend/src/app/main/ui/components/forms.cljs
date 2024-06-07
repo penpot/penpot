@@ -298,7 +298,6 @@
                    :value value'
                    :checked checked?}]]))]))
 
-
 (mf/defc image-radio-buttons
   {::mf/wrap-props false}
   [props]
@@ -328,6 +327,7 @@
 
              (when (fn? on-change)
                (on-change name value)))))]
+
     [:div {:class (if image
                     class
                     (dm/str class " " (stl/css :custom-radio)))}
@@ -336,6 +336,7 @@
              value'   (encode-fn value)
              checked? (= value current-value)
              key      (str/ffmt "%-%" (d/name name) (d/name value'))]
+
          [:label {:for key
                   :key key
                   :style {:grid-area area}
