@@ -431,7 +431,7 @@
      (watch [_ state stream]
        (let [initial  (deref ms/mouse-position)
 
-             stopper (mse/drag-stopper stream)
+             stopper (mse/drag-stopper stream {:interrupt? false})
              zoom    (get-in state [:workspace-local :zoom] 1)
 
              ;; We toggle the selection so we don't have to wait for the event
