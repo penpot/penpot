@@ -2573,23 +2573,23 @@ msgid "questions.step5-title"
 msgstr "How did you hear about Penpot?"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.knowledge.youtube"
+msgid "questions.referer.youtube"
 msgstr "YouTube"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.knowledge.event"
+msgid "questions.referer.event"
 msgstr "Event"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.knowledge.search"
+msgid "questions.referer.search"
 msgstr "Search Engine (Google, Yahoo, Bing)"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.knowledge.social"
+msgid "questions.referer.social"
 msgstr "Social Media (X, Linkedin, FB, etc)"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.knowledge.article"
+msgid "questions.referer.article"
 msgstr "Article (Blog, Post, Newsletter)"
 
 #: src/app/main/ui/onboarding/questions.cljs

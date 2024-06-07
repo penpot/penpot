@@ -2682,23 +2682,23 @@ msgid "questions.step5-title"
 msgstr "¿Cómo nos has descubierto?"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.knowledge.youtube"
+msgid "questions.referer.youtube"
 msgstr "YouTube"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.knowledge.event"
+msgid "questions.referer.event"
 msgstr "Evento"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.knowledge.search"
+msgid "questions.referer.search"
 msgstr "Buscador (Google, Yahoo, Bing)"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.knowledge.social"
+msgid "questions.referer.social"
 msgstr "Redes sociales (X, LinkedIn, FB, ect)"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.knowledge.article"
+msgid "questions.referer.article"
 msgstr "Artículo (Blog, Post, Newsletter)"
 
 #: src/app/main/ui/onboarding/questions.cljs
