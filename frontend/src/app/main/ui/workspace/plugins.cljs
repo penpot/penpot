@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]
    [app.main.ui.components.search-bar :refer [search-bar]]
    [app.main.ui.components.title-bar :refer [title-bar]]
@@ -70,15 +71,16 @@
     (.setItem ls "plugins" plugins-val)))
 
 (defn open-plugin!
-  [{:keys [name description host code icon permissions]}]
+  [{:keys [plugin-id name description host code icon permissions]}]
   (.ɵloadPlugin
    js/window #js
-              {:name name
-               :description description
-               :host host
-               :code code
-               :icon icon
-               :permissions (apply array permissions)}))
+   {:pluginId plugin-id
+    :name name
+    :description description
+    :host host
+    :code code
+    :icon icon
+    :permissions (apply array permissions)}))
 
 (mf/defc plugin-management-dialog
   {::mf/register modal/components
@@ -124,10 +126,12 @@
                          icon (obj/get body "icon")
                          permissions (obj/get body "permissions")
                          origin (obj/get (js/URL. plugin-url) "origin")
+                         plugin-id (str (uuid/next))
 
                          new-state
                          (conj plugins-state
-                               {:name name
+                               {:plugin-id plugin-id
+                                :name name
                                 :description desc
                                 :host origin
                                 :code code
