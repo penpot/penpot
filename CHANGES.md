@@ -16,6 +16,7 @@
 - Allow library colors as recent colors [Taiga #7640](https://tree.taiga.io/project/penpot/issue/7640)
 - Missing scroll in viewmode comments [Taiga #7427](https://tree.taiga.io/project/penpot/issue/7427)
 - Comments in View mode should mimic the positioning behavior of the Workspace [Taiga #7346](https://tree.taiga.io/project/penpot/issue/7346)
+- Misaligned input on comments [Taiga #7461](https://tree.taiga.io/project/penpot/issue/7461)
 
 ### :bug: Bugs fixed
 
