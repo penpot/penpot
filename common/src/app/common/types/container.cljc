@@ -375,8 +375,11 @@
                                                             {:skip-components? true
                                                              :bottom-frames? true
                                                              ;; We must avoid that destiny frame is inside the component frame
-                                                             :validator #(nil? (get component-children (:id %)))}))
-
+                                                             :validator #(and
+                                                                          ;; We must avoid that destiny frame is inside the component frame
+                                                                          (nil? (get component-children (:id %)))
+                                                                          ;; We must avoid that destiny frame is inside a copy
+                                                                          (not (ctk/in-component-copy? %)))}))
          frame           (get-shape container frame-id)
          component-frame (get-component-shape objects frame {:allow-main? true})
 

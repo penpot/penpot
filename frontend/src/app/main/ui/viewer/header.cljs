@@ -256,6 +256,10 @@
        [:span {:class (stl/css :frame-name)} frame-name]
        [:span {:class (stl/css :icon)} i/arrow]]]]))
 
+(def ^:private penpot-logo-icon
+  (i/icon-xref :penpot-logo-icon (stl/css :logo-icon)))
+
+
 (mf/defc header
   [{:keys [project file page frame zoom section permissions index interactions-mode shown-thumbnails]}]
   (let [go-to-dashboard
@@ -303,10 +307,10 @@
       ;; If the user doesn't have permission we disable the link
       [:a {:class (stl/css :home-link)
            :on-click go-to-dashboard
+           :data-testid "penpot-logo-link"
            :style {:cursor (when-not (:in-team permissions) "auto")
                    :pointer-events (when-not (:in-team permissions) "none")}}
-       [:span {:class (stl/css :logo-icon)}
-        i/logo-icon]]
+       penpot-logo-icon]
 
       [:& header-sitemap {:project project
                           :file file

@@ -45,6 +45,7 @@ export class WorkspacePage extends BaseWebSocketPage {
     this.rootShape = page.locator(`[id="shape-00000000-0000-0000-0000-000000000000"]`);
     this.rectShapeButton = page.getByRole("button", { name: "Rectangle (R)" });
     this.colorpicker = page.getByTestId("colorpicker");
+    this.layers = page.getByTestId("layers");
     this.palette = page.getByTestId("palette");
     this.assets = page.getByTestId("assets");
     this.libraries = page.getByTestId("libraries");
@@ -52,10 +53,8 @@ export class WorkspacePage extends BaseWebSocketPage {
     this.librariesModal = page.getByTestId("libraries-modal");
   }
 
-  async goToWorkspace() {
-    await this.page.goto(
-      `/#/workspace/${WorkspacePage.anyProjectId}/${WorkspacePage.anyFileId}?page-id=${WorkspacePage.anyPageId}`,
-    );
+  async goToWorkspace({ fileId = WorkspacePage.anyFileId, pageId = WorkspacePage.anyPageId } = {}) {
+    await this.page.goto(`/#/workspace/${WorkspacePage.anyProjectId}/${fileId}?page-id=${pageId}`);
 
     this.#ws = await this.waitForNotificationsWebSocket();
     await this.#ws.mockOpen();
@@ -101,6 +100,16 @@ export class WorkspacePage extends BaseWebSocketPage {
     await this.page.mouse.down();
     await this.viewport.hover({ position: { x: x + width, y: y + height } });
     await this.page.mouse.up();
+  }
+
+  async clickLeafLayer(name, clickOptions = {}) {
+    const layer = this.layers.getByText(name);
+    await layer.click(clickOptions);
+  }
+
+  async clickToggableLayer(name, clickOptions = {}) {
+    const layer = this.layers.getByTestId("layer-item").filter({ has: this.page.getByText(name) });
+    await layer.getByRole("button").click(clickOptions);
   }
 
   async clickAssets(clickOptions = {}) {
