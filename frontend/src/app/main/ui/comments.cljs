@@ -181,6 +181,7 @@
     [:*
      [:div
       {:class (stl/css :floating-thread-bubble)
+       :data-testid "floating-thread-bubble"
        :style {:top (str pos-y "px")
                :left (str pos-x "px")}
        :on-click dom/stop-propagation}
@@ -435,9 +436,9 @@
           [:* {:key (dm/str (:id item))}
            [:& comment-item {:comment item
                              :users users
-                             :origin origin}]])
-        [:div {:ref ref}]]
-       [:& reply-form {:thread thread}]])))
+                             :origin origin}]])]
+       [:& reply-form {:thread thread}]
+       [:div {:ref ref}]])))
 
 (defn use-buble
   [zoom {:keys [position frame-id]}]
@@ -558,6 +559,7 @@
            :on-pointer-move on-pointer-move*
            :on-click on-click*
            :on-lost-pointer-capture on-lost-pointer-capture
+           :data-testid "floating-thread-bubble"
            :class (stl/css-case
                    :floating-thread-bubble true
                    :resolved (:is-resolved thread)
