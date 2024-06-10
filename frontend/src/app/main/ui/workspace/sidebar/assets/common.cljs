@@ -402,9 +402,11 @@
              (st/emit! (dwl/nav-to-component-file library-id comp))))
 
         do-show-component
-        #(if local-component?
-           (do-show-local-component)
-           (do-show-remote-component))
+        (fn []
+          (st/emit! dw/hide-context-menu)
+          (if local-component?
+            (do-show-local-component)
+            (do-show-remote-component)))
 
         do-restore-component
         #(let [;; Extract a map of component-id -> component-file in order to avoid duplicates
