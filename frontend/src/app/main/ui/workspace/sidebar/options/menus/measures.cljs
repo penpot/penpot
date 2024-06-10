@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
+   [app.common.logic.shapes :as cls]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.shape.radius :as ctsr]
    [app.main.constants :refer [size-presets]]
@@ -325,16 +326,15 @@
          (fn [event]
            (let [value (-> event dom/get-target dom/checked?)
                  undo-id (js/Symbol)]
-             (do
-               (st/emit! (dwu/start-undo-transaction undo-id)
-                         (dwsh/update-shapes ids (fn [shape] (assoc shape :hide-in-viewer (not value)))))
+             (st/emit! (dwu/start-undo-transaction undo-id)
+                       (dwsh/update-shapes ids (fn [shape] (cls/change-show-in-viewer shape (not value)))))
 
-               (when-not value
+             (when-not value
                  ;; when a frame is no longer shown in view mode, cannot have
                  ;; interactions that navigate to it.
-                 (apply st/emit! (map #(dwi/remove-all-interactions-nav-to %) ids)))
+               (apply st/emit! (map #(dwi/remove-all-interactions-nav-to %) ids)))
 
-               (st/emit! (dwu/commit-undo-transaction undo-id))))))]
+             (st/emit! (dwu/commit-undo-transaction undo-id)))))]
 
     (mf/use-layout-effect
      (mf/deps radius-mode @radius-multi?)

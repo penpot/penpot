@@ -937,6 +937,26 @@
     (-> data
         (update :pages-index update-vals update-page))))
 
+(defn migrate-up-49
+  "Remove hide-in-viewer for shapes that are origin or destination of an interaction"
+  [data]
+  (letfn [(update-object [destinations object]
+            (cond-> object
+              (or (:interactions object)
+                  (contains? destinations (:id object)))
+              (dissoc object :hide-in-viewer)))
+
+          (update-page [page]
+            (let [destinations (->> page
+                                    :objects
+                                    (vals)
+                                    (mapcat :interactions)
+                                    (map :destination)
+                                    (set))]
+              (update page :objects update-vals (partial update-object destinations))))]
+
+    (update data :pages-index update-vals update-page)))
+
 (def migrations
   "A vector of all applicable migrations"
   [{:id 2 :migrate-up migrate-up-2}
@@ -976,4 +996,5 @@
    {:id 45 :migrate-up migrate-up-45}
    {:id 46 :migrate-up migrate-up-46}
    {:id 47 :migrate-up migrate-up-47}
-   {:id 48 :migrate-up migrate-up-48}])
+   {:id 48 :migrate-up migrate-up-48}
+   {:id 49 :migrate-up migrate-up-49}])

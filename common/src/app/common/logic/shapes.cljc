@@ -517,3 +517,16 @@
                {:with-objects? true})
               (pcb/reorder-grid-children [frame-id])))
         (pcb/remove-objects empty-parents))))
+
+
+(defn change-show-in-viewer [shape hide?]
+  (cond-> (assoc shape :hide-in-viewer hide?)
+    ;; When a frame is no longer shown in view mode, it cannot have interactions
+    hide?
+    (dissoc :interactions)))
+
+(defn add-new-interaction [shape interaction]
+  (-> shape
+      (update :interactions ctsi/add-interaction interaction)
+      ;; When a interaction is created, the frame must be shown in view mode
+      (dissoc :hide-in-viewer)))
