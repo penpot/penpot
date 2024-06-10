@@ -8,8 +8,10 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.types.shape.radius :as ctsr]
    [app.main.data.modal :as modal]
+   [app.main.data.shortcuts :as scd]
    [app.main.data.tokens :as dt]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.changes :as dch]
@@ -18,15 +20,102 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.workspace.context-menu :refer [menu-entry prevent-default]]
+   [app.main.ui.icons :as i]
    [app.main.ui.workspace.tokens.core :as wtc]
    [app.util.dom :as dom]
+   [app.util.timers :as timers]
    [clojure.set :as set]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
 (def tokens-menu-ref
   (l/derived :token-context-menu refs/workspace-local))
+
+(defn- prevent-default
+  [event]
+  (dom/prevent-default event)
+  (dom/stop-propagation event))
+
+(mf/defc menu-entry
+  {::mf/props :obj}
+  [{:keys [title shortcut on-click on-pointer-enter on-pointer-leave
+           on-unmount children selected? icon disabled value]}]
+  (let [submenu-ref (mf/use-ref nil)
+        hovering?   (mf/use-ref false)
+        on-pointer-enter
+        (mf/use-callback
+         (fn []
+           (mf/set-ref-val! hovering? true)
+           (let [submenu-node (mf/ref-val submenu-ref)]
+             (when (some? submenu-node)
+               (dom/set-css-property! submenu-node "display" "block")))
+           (when on-pointer-enter (on-pointer-enter))))
+
+        on-pointer-leave
+        (mf/use-callback
+         (fn []
+           (mf/set-ref-val! hovering? false)
+           (let [submenu-node (mf/ref-val submenu-ref)]
+             (when (some? submenu-node)
+               (timers/schedule
+                50
+                #(when-not (mf/ref-val hovering?)
+                   (dom/set-css-property! submenu-node "display" "none")))))
+           (when on-pointer-leave (on-pointer-leave))))
+
+        set-dom-node
+        (mf/use-callback
+         (fn [dom]
+           (let [submenu-node (mf/ref-val submenu-ref)]
+             (when (and (some? dom) (some? submenu-node))
+               (dom/set-css-property! submenu-node "top" (str (.-offsetTop dom) "px"))))))]
+
+    (mf/use-effect
+     (mf/deps on-unmount)
+     (constantly on-unmount))
+
+    (if icon
+      [:li {:class (stl/css :icon-menu-item)
+            :disabled disabled
+            :data-value value
+            :ref set-dom-node
+            :on-click on-click
+            :on-pointer-enter on-pointer-enter
+            :on-pointer-leave on-pointer-leave}
+       [:span
+        {:class (stl/css :icon-wrapper)}
+        (if selected? [:span {:class (stl/css :selected-icon)}
+                       i/tick]
+            [:span {:class (stl/css :selected-icon)}])
+        [:span {:class (stl/css :shape-icon)} icon]]
+       [:span {:class (stl/css :title)} title]]
+      [:li {:class (stl/css :context-menu-item)
+            :disabled disabled
+            :ref set-dom-node
+            :data-value value
+            :on-click on-click
+            :on-pointer-enter on-pointer-enter
+            :on-pointer-leave on-pointer-leave}
+       [:span {:class (stl/css :title)} title]
+       (when shortcut
+         [:span   {:class (stl/css :shortcut)}
+          (for [[idx sc] (d/enumerate (scd/split-sc shortcut))]
+            [:span {:key (dm/str shortcut "-" idx)
+                    :class (stl/css :shortcut-key)} sc])])
+
+       (when (> (count children) 1)
+         [:span {:class (stl/css :submenu-icon)} i/arrow])
+
+       (when (> (count children) 1)
+         [:ul {:class (stl/css :token-context-submenu)
+               :ref submenu-ref
+               :style {:display "none" :left 235}
+               :on-context-menu prevent-default}
+          children])])))
+
+(mf/defc menu-separator
+  []
+  [:li {:class (stl/css :separator)}])
 
 (defn update-shape-radius-single-corner [value shape-ids attribute]
   (st/emit!
@@ -215,7 +304,6 @@
                                "left: " (- left delta-x) "px;")]
             (when (or (> delta-x 0) (> delta-y 0))
               (.setAttribute ^js dropdown "style" new-style))))))
-
     [:& dropdown {:show (boolean mdata)
                   :on-close #(st/emit! dt/hide-token-context-menu)}
      [:div {:class (stl/css :token-context-menu)
