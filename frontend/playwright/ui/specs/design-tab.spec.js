@@ -44,3 +44,35 @@ test.describe("Constraints", () => {
     expect(false);
   });
 });
+
+test("BUG 7760 - Layout losing properties when changing parents", async ({ page }) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockRPC(/get\-file\?/, "workspace/get-file-7760.json");
+  await workspacePage.mockRPC(
+    "get-file-fragment?file-id=*&fragment-id=*",
+    "workspace/get-file-fragment-7760.json",
+  );
+  await workspacePage.mockRPC("update-file?id=*", "workspace/update-file-create-rect.json");
+
+  await workspacePage.goToWorkspace({
+    fileId: "cd90e028-326a-80b4-8004-7cdec16ffad5",
+    pageId: "cd90e028-326a-80b4-8004-7cdec16ffad6",
+  });
+
+  // Select the flex board and drag it into the other container board
+  await workspacePage.clickLeafLayer("Flex Board");
+
+  // Move the first board into the second
+  const hAuto = await workspacePage.page.getByTitle("Fit content (Horizontal)");
+  const vAuto = await workspacePage.page.getByTitle("Fit content (Vertical)");
+
+  await expect(vAuto.locator("input")).toBeChecked();
+  await expect(hAuto.locator("input")).toBeChecked();
+
+  await workspacePage.moveSelectionToShape("Container Board");
+
+  // The first board properties should still be auto width/height
+  await expect(vAuto.locator("input")).toBeChecked();
+  await expect(hAuto.locator("input")).toBeChecked();
+});

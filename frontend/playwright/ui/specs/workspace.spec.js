@@ -67,7 +67,6 @@ test("User adds a library and its automatically selected in the color palette", 
   await expect(workspacePage.palette.getByText('There are no color styles in your library yet')).toBeVisible();
 });
 
-
 test("User makes a group", async ({ page }) => {
   const workspacePage = new WorkspacePage(page);
   await workspacePage.setupEmptyFile();
