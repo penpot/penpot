@@ -205,15 +205,21 @@
                         (update-status :pending)))
               (rx/take-until stoper-s))
 
+         (->> commits-s
+              (rx/buffer-time 200)
+              (rx/mapcat merge-commit)
+              (rx/map dch/update-indexes)
+              (rx/take-until stoper-s)
+              (rx/finalize (fn []
+                             (log/debug :hint "finalize persistence: changes watcher [index]"))))
+
          ;; Here we watch for local commits, buffer them in a small
          ;; chunks (very near in time commits) and append them to the
          ;; persistence queue
          (->> commits-s
               (rx/buffer-until notifier-s)
               (rx/mapcat merge-commit)
-              (rx/mapcat (fn [commit]
-                           (rx/of (append-commit commit)
-                                  (dch/update-indexes commit))))
+              (rx/map append-commit)
               (rx/take-until (rx/delay 100 stoper-s))
               (rx/finalize (fn []
                              (log/debug :hint "finalize persistence: changes watcher"))))
