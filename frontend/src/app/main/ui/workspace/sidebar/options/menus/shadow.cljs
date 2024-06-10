@@ -298,6 +298,7 @@
 
        (when-not (= :multiple shadows)
          [:button {:class (stl/css :add-shadow)
+                   :data-testid "add-shadow"
                    :on-click on-add-shadow} i/add])]]
 
      (when open?
