@@ -378,6 +378,7 @@
                        :no-padding   (pos? (count @items))
                        :invalid (and (some? valid-item-fn)
                                      touched?
+                                     (not (str/empty? @value))
                                      (not (valid-item-fn @value)))))
 
         on-focus
