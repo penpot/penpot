@@ -55,6 +55,39 @@
     :sizing [:div {:style {:rotate "45deg"}} i/constraint-horizontal]
     i/add))
 
+(defn tokens->sd [tokens]
+  (let [data {:tokens tokens
+              :platforms {:json {:files [{:format "json"
+                                          :destination "-"}]}}
+              :log {:warnings "warn"
+                    :verbosity "verbose"}}
+        js-data (clj->js data)]
+    (js/console.log "Input Data" js-data)
+    (js/window.StyleDictionary. (clj->js data))))
+
+(comment
+  (let [math-token-id (random-uuid)
+        dynamic-token-id (random-uuid)
+        tokens-data (-> @refs/workspace-tokens
+                        (assoc
+                         math-token-id {:id dynamic-token-id
+                                        :name "mathToken"
+                                        :type :dimensions
+                                        :value "1 + 2"})
+                         ;; dynamic-token-id {:id dynamic-token-id
+                         ;;                   :name "ref-token"
+                         ;;                   :type :dimensions
+                         ;;                   :value "{mathToken}"})
+                        (wtc/group-tokens-by-type))
+        sd (tokens->sd tokens-data)]
+    (js/console.log "StyleDictionary" sd)
+    (-> sd
+        #_(.exportPlatform sd "json")
+        (.buildAllPlatforms sd "json")
+        ;; (.then js/console.log)
+        (.catch js/console.error))))
+        ;; (.finally (fn [x] (js/console.log "Finish" x)))
+
 (mf/defc token-component
   [{:keys [type tokens selected-shapes token-type-props]}]
   (let [open? (mf/deref (-> (l/key type)
