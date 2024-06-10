@@ -658,6 +658,9 @@
     ::oapi/format "uri"
     ::oapi/decode (comp u/uri str/trim)}})
 
+(def! ::plugin-data
+  [:map-of {:gen/max 5} :string :string])
+
 ;; ---- PREDICATES
 
 (def valid-safe-number?

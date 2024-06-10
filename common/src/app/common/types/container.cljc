@@ -35,7 +35,9 @@
    [:path {:optional true} [:maybe :string]]
    [:modified-at {:optional true} ::sm/inst]
    [:objects {:optional true}
-    [:map-of {:gen/max 10} ::sm/uuid :map]]])
+    [:map-of {:gen/max 10} ::sm/uuid :map]]
+   [:plugin-data {:optional true}
+    [:map-of {:gen/max 5} :keyword ::sm/plugin-data]]])
 
 (def check-container!
   (sm/check-fn ::container))

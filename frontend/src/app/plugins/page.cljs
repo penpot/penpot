@@ -17,23 +17,90 @@
    [app.plugins.utils :as u]
    [app.util.object :as obj]))
 
-(deftype PageProxy [$file $id]
+(deftype PageProxy [$plugin $file $id]
   Object
   (getShapeById
     [_ shape-id]
     (let [shape-id (uuid/uuid shape-id)]
-      (shape/shape-proxy $file $id shape-id)))
+      (shape/shape-proxy $plugin $file $id shape-id)))
 
   (getRoot
     [_]
-    (shape/shape-proxy $file $id uuid/zero))
+    (shape/shape-proxy $plugin $file $id uuid/zero))
 
   (findShapes
     [_]
     ;; Returns a lazy (iterable) of all available shapes
     (when (and (some? $file) (some? $id))
       (let [page (u/locate-page $file $id)]
-        (apply array (sequence (map shape/shape-proxy) (keys (:objects page))))))))
+        (apply array (sequence (map (partial shape/shape-proxy $plugin)) (keys (:objects page)))))))
+
+  ;; Plugin data
+  (getPluginData
+    [self key]
+    (cond
+      (not (string? key))
+      (u/display-not-valid :page-plugin-data-key key)
+
+      :else
+      (let [page (u/proxy->page self)]
+        (dm/get-in page [:options :plugin-data (keyword "plugin" (str $plugin)) key]))))
+
+  (setPluginData
+    [_ key value]
+    (cond
+      (not (string? key))
+      (u/display-not-valid :page-plugin-data-key key)
+
+      (and (some? value) (not (string? value)))
+      (u/display-not-valid :page-plugin-data value)
+
+      :else
+      (st/emit! (dw/set-plugin-data $file :page $id (keyword "plugin" (str $plugin)) key value))))
+
+  (getPluginDataKeys
+    [self]
+    (let [page (u/proxy->page self)]
+      (apply array (keys (dm/get-in page [:options :plugin-data (keyword "plugin" (str $plugin))])))))
+
+  (getSharedPluginData
+    [self namespace key]
+    (cond
+      (not (string? namespace))
+      (u/display-not-valid :page-plugin-data-namespace namespace)
+
+      (not (string? key))
+      (u/display-not-valid :page-plugin-data-key key)
+
+      :else
+      (let [page (u/proxy->page self)]
+        (dm/get-in page [:options :plugin-data (keyword "shared" namespace) key]))))
+
+  (setSharedPluginData
+    [_ namespace key value]
+
+    (cond
+      (not (string? namespace))
+      (u/display-not-valid :page-plugin-data-namespace namespace)
+
+      (not (string? key))
+      (u/display-not-valid :page-plugin-data-key key)
+
+      (and (some? value) (not (string? value)))
+      (u/display-not-valid :page-plugin-data value)
+
+      :else
+      (st/emit! (dw/set-plugin-data $file :page $id (keyword "shared" namespace) key value))))
+
+  (getSharedPluginDataKeys
+    [self namespace]
+    (cond
+      (not (string? namespace))
+      (u/display-not-valid :page-plugin-data-namespace namespace)
+
+      :else
+      (let [page (u/proxy->page self)]
+        (apply array (keys (dm/get-in page [:options :plugin-data (keyword "shared" namespace)])))))))
 
 (crc/define-properties!
   PageProxy
@@ -41,9 +108,10 @@
    :get (fn [] (str "PageProxy"))})
 
 (defn page-proxy
-  [file-id id]
+  [plugin-id file-id id]
   (crc/add-properties!
-   (PageProxy. file-id id)
+   (PageProxy. plugin-id file-id id)
+   {:name "$plugin" :enumerable false :get (constantly plugin-id)}
    {:name "$id" :enumerable false :get (constantly id)}
    {:name "$file" :enumerable false :get (constantly file-id)}
 

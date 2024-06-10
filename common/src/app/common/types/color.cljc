@@ -84,7 +84,9 @@
     [:ref-id {:optional true} ::sm/uuid]
     [:ref-file {:optional true} ::sm/uuid]
     [:gradient {:optional true} [:maybe ::gradient]]
-    [:image {:optional true} [:maybe ::image-color]]]
+    [:image {:optional true} [:maybe ::image-color]]
+    [:plugin-data {:optional true}
+     [:map-of {:gen/max 5} :keyword ::sm/plugin-data]]]
    [::sm/contains-any {:strict true} [:color :gradient :image]]])
 
 (sm/define! ::recent-color

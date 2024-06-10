@@ -73,14 +73,14 @@
 (defn open-plugin!
   [{:keys [plugin-id name description host code icon permissions]}]
   (.ɵloadPlugin
-   js/window #js
-   {:pluginId plugin-id
-    :name name
-    :description description
-    :host host
-    :code code
-    :icon icon
-    :permissions (apply array permissions)}))
+   js/window
+   #js {:pluginId plugin-id
+        :name name
+        :description description
+        :host host
+        :code code
+        :icon icon
+        :permissions (apply array permissions)}))
 
 (mf/defc plugin-management-dialog
   {::mf/register modal/components

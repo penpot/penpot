@@ -133,6 +133,18 @@
       [:id ::sm/uuid]
       [:name :string]]]
 
+    [:mod-plugin-data
+     [:map {:title "ModPagePluginData"}
+      [:type [:= :mod-plugin-data]]
+      [:object-type [::sm/one-of #{:file :page :shape :color :typography :component}]]
+      ;; It's optional because files don't need the id for type :file
+      [:object-id {:optional true} [:maybe ::sm/uuid]]
+      ;; Only needed in type shape
+      [:page-id {:optional true} [:maybe ::sm/uuid]]
+      [:namespace :keyword]
+      [:key :string]
+      [:value [:maybe :string]]]]
+
     [:del-page
      [:map {:title "DelPageChange"}
       [:type [:= :del-page]]
@@ -585,6 +597,36 @@
 (defmethod process-change :mod-page
   [data {:keys [id name]}]
   (d/update-in-when data [:pages-index id] assoc :name name))
+
+(defmethod process-change :mod-plugin-data
+  [data {:keys [object-type object-id page-id namespace key value]}]
+
+  (when (and (= object-type :shape) (nil? page-id))
+    (ex/raise :type :internal :hint "update for shapes needs a page-id"))
+
+  (letfn [(update-fn
+            [data]
+            (if (some? value)
+              (assoc-in data [:plugin-data namespace key] value)
+              (update-in data [:plugin-data namespace] (fnil dissoc {}) key)))]
+    (case object-type
+      :file
+      (update-fn data)
+
+      :page
+      (d/update-in-when data [:pages-index object-id :options] update-fn)
+
+      :shape
+      (d/update-in-when data [:pages-index page-id :objects object-id] update-fn)
+
+      :color
+      (d/update-in-when data [:colors object-id] update-fn)
+
+      :typography
+      (d/update-in-when data [:typographies object-id] update-fn)
+
+      :component
+      (d/update-in-when data [:components object-id] update-fn))))
 
 (defmethod process-change :del-page
   [data {:keys [id]}]

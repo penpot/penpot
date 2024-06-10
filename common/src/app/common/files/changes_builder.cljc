@@ -201,6 +201,37 @@
       (update :undo-changes conj {:type :mod-page :id (:id page) :name (:name page)})
       (apply-changes-local)))
 
+(defn mod-plugin-data
+  ([changes namespace key value]
+   (mod-plugin-data changes :file nil nil namespace key value))
+  ([changes type id namespace key value]
+   (mod-plugin-data changes type id nil namespace key value))
+  ([changes type id page-id namespace key value]
+   (let [data (::file-data (meta changes))
+         old-val
+         (case type
+           :file
+           (get-in data [:plugin-data namespace key])
+
+           :page
+           (get-in data [:pages-index id :options :plugin-data namespace key])
+
+           :shape
+           (get-in data [:pages-index page-id :objects id :plugin-data namespace key])
+
+           :color
+           (get-in data [:colors id :plugin-data namespace key])
+
+           :typography
+           (get-in data [:typographies id :plugin-data namespace key])
+
+           :component
+           (get-in data [:components id :plugin-data namespace key]))]
+     (-> changes
+         (update :redo-changes conj {:type :mod-plugin-data :object-type type :object-id id :page-id page-id :namespace namespace :key key :value value})
+         (update :undo-changes conj {:type :mod-plugin-data :object-type type :object-id id :page-id page-id :namespace namespace :key key :value old-val})
+         (apply-changes-local)))))
+
 (defn del-page
   [changes page]
   (-> changes

@@ -26,5 +26,4 @@
         (fn []
           (when (features/active-feature? @st/state "plugins/runtime")
             (when-let [init-runtime (obj/get global "initPluginsRuntime")]
-              (let [context (api/create-context)]
-                (init-runtime context))))))))
+              (init-runtime (fn [plugin-id] (api/create-context plugin-id)))))))))

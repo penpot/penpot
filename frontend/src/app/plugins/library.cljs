@@ -16,6 +16,7 @@
    [app.common.types.color :as ctc]
    [app.common.types.typography :as ctt]
    [app.common.uuid :as uuid]
+   [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwt]
    [app.main.store :as st]
@@ -26,7 +27,7 @@
 (declare lib-color-proxy)
 (declare lib-typography-proxy)
 
-(deftype LibraryColorProxy [$file $id]
+(deftype LibraryColorProxy [$plugin $file $id]
   Object
 
   (remove
@@ -39,7 +40,7 @@
           color (-> (u/locate-library-color $file $id)
                     (assoc :id color-id))]
       (st/emit! (dwl/add-color color {:rename? false}))
-      (lib-color-proxy $id color-id)))
+      (lib-color-proxy $plugin $id color-id)))
 
   (asFill [_]
     (let [color (u/locate-library-color $file $id)]
@@ -63,15 +64,87 @@
          :stroke-color-ref-id $id
          :stroke-image (:image color)
          :stroke-style :solid
-         :stroke-alignment :inner})))))
+         :stroke-alignment :inner}))))
+
+  (getPluginData
+    [self key]
+    (cond
+      (not (string? key))
+      (u/display-not-valid :color-plugin-data-key key)
+
+      :else
+      (let [color (u/proxy->library-color self)]
+        (dm/get-in color [:plugin-data (keyword "plugin" (str $plugin)) key]))))
+
+  (setPluginData
+    [_ key value]
+    (cond
+      (not= $file (:current-file-id @st/state))
+      (u/display-not-valid :color-edit-non-local-library $file)
+
+      (not (string? key))
+      (u/display-not-valid :color-plugin-data-key key)
+
+      (and (some? value) (not (string? value)))
+      (u/display-not-valid :color-plugin-data value)
+
+      :else
+      (st/emit! (dw/set-plugin-data $file :color $id (keyword "plugin" (str $plugin)) key value))))
+
+  (getPluginDataKeys
+    [self]
+    (let [color (u/proxy->library-color self)]
+      (apply array (keys (dm/get-in color [:plugin-data (keyword "plugin" (str $plugin))])))))
+
+  (getSharedPluginData
+    [self namespace key]
+    (cond
+      (not (string? namespace))
+      (u/display-not-valid :color-plugin-data-namespace namespace)
+
+      (not (string? key))
+      (u/display-not-valid :color-plugin-data-key key)
+
+      :else
+      (let [color (u/proxy->library-color self)]
+        (dm/get-in color [:plugin-data (keyword "shared" namespace) key]))))
+
+  (setSharedPluginData
+    [_ namespace key value]
+    (cond
+      (not= $file (:current-file-id @st/state))
+      (u/display-not-valid :color-edit-non-local-library $file)
+
+      (not (string? namespace))
+      (u/display-not-valid :color-plugin-data-namespace namespace)
+
+      (not (string? key))
+      (u/display-not-valid :color-plugin-data-key key)
+
+      (and (some? value) (not (string? value)))
+      (u/display-not-valid :color-plugin-data value)
+
+      :else
+      (st/emit! (dw/set-plugin-data $file :color $id (keyword "shared" namespace) key value))))
+
+  (getSharedPluginDataKeys
+    [self namespace]
+    (cond
+      (not (string? namespace))
+      (u/display-not-valid :color-plugin-data-namespace namespace)
+
+      :else
+      (let [color (u/proxy->library-color self)]
+        (apply array (keys (dm/get-in color [:plugin-data (keyword "shared" namespace)])))))))
 
 (defn lib-color-proxy
-  [file-id id]
+  [plugin-id file-id id]
   (assert (uuid? file-id))
   (assert (uuid? id))
 
   (cr/add-properties!
-   (LibraryColorProxy. file-id id)
+   (LibraryColorProxy. plugin-id file-id id)
+   {:name "$plugin" :enumerable false :get (constantly plugin-id)}
    {:name "$id" :enumerable false :get (constantly id)}
    {:name "$file" :enumerable false :get (constantly file-id)}
 
@@ -139,7 +212,7 @@
             (st/emit! (dwl/update-color color file-id)))
           (u/display-not-valid :library-color-image value))))}))
 
-(deftype LibraryTypographyProxy [$file $id]
+(deftype LibraryTypographyProxy [$plugin $file $id]
   Object
   (remove
     [_]
@@ -151,7 +224,7 @@
           typo (-> (u/locate-library-typography $file $id)
                    (assoc :id typo-id))]
       (st/emit! (dwl/add-typography typo false))
-      (lib-typography-proxy $id typo-id)))
+      (lib-typography-proxy $plugin $id typo-id)))
 
   (applyToText
     [_ shape]
@@ -162,15 +235,88 @@
   (applyToTextRange
     [_ _shape _from _to]
     ;; TODO
-    ))
+    )
+
+  ;; PLUGIN DATA
+  (getPluginData
+    [self key]
+    (cond
+      (not (string? key))
+      (u/display-not-valid :typography-plugin-data-key key)
+
+      :else
+      (let [typography (u/proxy->library-typography self)]
+        (dm/get-in typography [:plugin-data (keyword "plugin" (str $plugin)) key]))))
+
+  (setPluginData
+    [_ key value]
+    (cond
+      (not= $file (:current-file-id @st/state))
+      (u/display-not-valid :typography-edit-non-local-library $file)
+
+      (not (string? key))
+      (u/display-not-valid :typography-plugin-data-key key)
+
+      (and (some? value) (not (string? value)))
+      (u/display-not-valid :typography-plugin-data value)
+
+      :else
+      (st/emit! (dw/set-plugin-data $file :typography $id (keyword "plugin" (str $plugin)) key value))))
+
+  (getPluginDataKeys
+    [self]
+    (let [typography (u/proxy->library-typography self)]
+      (apply array (keys (dm/get-in typography [:plugin-data (keyword "plugin" (str $plugin))])))))
+
+  (getSharedPluginData
+    [self namespace key]
+    (cond
+      (not (string? namespace))
+      (u/display-not-valid :typography-plugin-data-namespace namespace)
+
+      (not (string? key))
+      (u/display-not-valid :typography-plugin-data-key key)
+
+      :else
+      (let [typography (u/proxy->library-typography self)]
+        (dm/get-in typography [:plugin-data (keyword "shared" namespace) key]))))
+
+  (setSharedPluginData
+    [_ namespace key value]
+    (cond
+      (not= $file (:current-file-id @st/state))
+      (u/display-not-valid :typography-edit-non-local-library $file)
+
+      (not (string? namespace))
+      (u/display-not-valid :typography-plugin-data-namespace namespace)
+
+      (not (string? key))
+      (u/display-not-valid :typography-plugin-data-key key)
+
+      (and (some? value) (not (string? value)))
+      (u/display-not-valid :typography-plugin-data value)
+
+      :else
+      (st/emit! (dw/set-plugin-data $file :typography $id (keyword "shared" namespace) key value))))
+
+  (getSharedPluginDataKeys
+    [self namespace]
+    (cond
+      (not (string? namespace))
+      (u/display-not-valid :typography-plugin-data-namespace namespace)
+
+      :else
+      (let [typography (u/proxy->library-typography self)]
+        (apply array (keys (dm/get-in typography [:plugin-data (keyword "shared" namespace)])))))))
 
 (defn lib-typography-proxy
-  [file-id id]
+  [plugin-id file-id id]
   (assert (uuid? file-id))
   (assert (uuid? id))
 
   (cr/add-properties!
-   (LibraryTypographyProxy. file-id id)
+   (LibraryTypographyProxy. plugin-id file-id id)
+   {:name "$plugin" :enumerable false :get (constantly plugin-id)}
    {:name "$id" :enumerable false :get (constantly id)}
    {:name "$file" :enumerable false :get (constantly file-id)}
    {:name "id" :get (fn [_] (dm/str id))}
@@ -285,7 +431,7 @@
           (st/emit! (dwl/update-typography typo file-id)))
         (u/display-not-valid :library-typography-text-transform value)))}))
 
-(deftype LibraryComponentProxy [$file $id]
+(deftype LibraryComponentProxy [$plugin $file $id]
   Object
 
   (remove
@@ -296,15 +442,87 @@
     [_]
     (let [id-ref (atom nil)]
       (st/emit! (dwl/instantiate-component $file $id (gpt/point 0 0) {:id-ref id-ref}))
-      (shapes/shape-proxy @id-ref))))
+      (shapes/shape-proxy $plugin @id-ref)))
+
+  (getPluginData
+    [self key]
+    (cond
+      (not (string? key))
+      (u/display-not-valid :component-plugin-data-key key)
+
+      :else
+      (let [component (u/proxy->library-component self)]
+        (dm/get-in component [:plugin-data (keyword "plugin" (str $plugin)) key]))))
+
+  (setPluginData
+    [_ key value]
+    (cond
+      (not= $file (:current-file-id @st/state))
+      (u/display-not-valid :component-edit-non-local-library $file)
+
+      (not (string? key))
+      (u/display-not-valid :component-plugin-data-key key)
+
+      (and (some? value) (not (string? value)))
+      (u/display-not-valid :component-plugin-data value)
+
+      :else
+      (st/emit! (dw/set-plugin-data $file :component $id (keyword "plugin" (str $plugin)) key value))))
+
+  (getPluginDataKeys
+    [self]
+    (let [component (u/proxy->library-component self)]
+      (apply array (keys (dm/get-in component [:plugin-data (keyword "plugin" (str $plugin))])))))
+
+  (getSharedPluginData
+    [self namespace key]
+    (cond
+      (not (string? namespace))
+      (u/display-not-valid :component-plugin-data-namespace namespace)
+
+      (not (string? key))
+      (u/display-not-valid :component-plugin-data-key key)
+
+      :else
+      (let [component (u/proxy->library-component self)]
+        (dm/get-in component [:plugin-data (keyword "shared" namespace) key]))))
+
+  (setSharedPluginData
+    [_ namespace key value]
+    (cond
+      (not= $file (:current-file-id @st/state))
+      (u/display-not-valid :component-edit-non-local-library $file)
+
+      (not (string? namespace))
+      (u/display-not-valid :component-plugin-data-namespace namespace)
+
+      (not (string? key))
+      (u/display-not-valid :component-plugin-data-key key)
+
+      (and (some? value) (not (string? value)))
+      (u/display-not-valid :component-plugin-data value)
+
+      :else
+      (st/emit! (dw/set-plugin-data $file :component $id (keyword "shared" namespace) key value))))
+
+  (getSharedPluginDataKeys
+    [self namespace]
+    (cond
+      (not (string? namespace))
+      (u/display-not-valid :component-plugin-data-namespace namespace)
+
+      :else
+      (let [component (u/proxy->library-component self)]
+        (apply array (keys (dm/get-in component [:plugin-data (keyword "shared" namespace)])))))))
 
 (defn lib-component-proxy
-  [file-id id]
+  [plugin-id file-id id]
   (assert (uuid? file-id))
   (assert (uuid? id))
 
   (cr/add-properties!
-   (LibraryComponentProxy. file-id id)
+   (LibraryComponentProxy. plugin-id file-id id)
+   {:name "$plugin" :enumerable false :get (constantly plugin-id)}
    {:name "$id" :enumerable false :get (constantly id)}
    {:name "$file" :enumerable false :get (constantly file-id)}
    {:name "id" :get (fn [_] (dm/str id))}
@@ -329,34 +547,102 @@
           (st/emit! (dwl/rename-component id value)))
         (u/display-not-valid :library-component-path value)))}))
 
-(deftype Library [$id]
+(deftype Library [$plugin $id]
   Object
 
   (createColor
     [_]
     (let [color-id (uuid/next)]
       (st/emit! (dwl/add-color {:id color-id :name "Color" :color "#000000" :opacity 1} {:rename? false}))
-      (lib-color-proxy $id color-id)))
+      (lib-color-proxy $plugin $id color-id)))
 
   (createTypography
     [_]
     (let [typography-id (uuid/next)]
       (st/emit! (dwl/add-typography (ctt/make-typography {:id typography-id :name "Typography"}) false))
-      (lib-typography-proxy $id typography-id)))
+      (lib-typography-proxy $plugin $id typography-id)))
 
   (createComponent
     [_ shapes]
     (let [id-ref (atom nil)
           ids (into #{} (map #(obj/get % "$id")) shapes)]
       (st/emit! (dwl/add-component id-ref ids))
-      (lib-component-proxy $id @id-ref))))
+      (lib-component-proxy $plugin $id @id-ref)))
+
+  ;; Plugin data
+  (getPluginData
+    [self key]
+    (cond
+      (not (string? key))
+      (u/display-not-valid :file-plugin-data-key key)
+
+      :else
+      (let [file (u/proxy->file self)]
+        (dm/get-in file [:data :plugin-data (keyword "plugin" (str $plugin)) key]))))
+
+  (setPluginData
+    [_ key value]
+    (cond
+      (not (string? key))
+      (u/display-not-valid :file-plugin-data-key key)
+
+      (and (some? value) (not (string? value)))
+      (u/display-not-valid :file-plugin-data value)
+
+      :else
+      (st/emit! (dw/set-plugin-data $id :file (keyword "plugin" (str $plugin)) key value))))
+
+  (getPluginDataKeys
+    [self]
+    (let [file (u/proxy->file self)]
+      (apply array (keys (dm/get-in file [:data :plugin-data (keyword "plugin" (str $plugin))])))))
+
+  (getSharedPluginData
+    [self namespace key]
+    (cond
+      (not (string? namespace))
+      (u/display-not-valid :file-plugin-data-namespace namespace)
+
+      (not (string? key))
+      (u/display-not-valid :file-plugin-data-key key)
+
+      :else
+      (let [file (u/proxy->file self)]
+        (dm/get-in file [:data :plugin-data (keyword "shared" namespace) key]))))
+
+  (setSharedPluginData
+    [_ namespace key value]
+
+    (cond
+      (not (string? namespace))
+      (u/display-not-valid :file-plugin-data-namespace namespace)
+
+      (not (string? key))
+      (u/display-not-valid :file-plugin-data-key key)
+
+      (and (some? value) (not (string? value)))
+      (u/display-not-valid :file-plugin-data value)
+
+      :else
+      (st/emit! (dw/set-plugin-data $id :file (keyword "shared" namespace) key value))))
+
+  (getSharedPluginDataKeys
+    [self namespace]
+    (cond
+      (not (string? namespace))
+      (u/display-not-valid :file-plugin-data-namespace namespace)
+
+      :else
+      (let [file (u/proxy->file self)]
+        (apply array (keys (dm/get-in file [:data :plugin-data (keyword "shared" namespace)])))))))
 
 (defn library-proxy
-  [file-id]
+  [plugin-id file-id]
   (assert (uuid? file-id) "File id not valid")
 
   (cr/add-properties!
-   (Library. file-id)
+   (Library. plugin-id file-id)
+   {:name "$plugin" :enumerable false :get (constantly plugin-id)}
    {:name "$file" :enumerable false :get (constantly file-id)}
 
    {:name "id"
@@ -369,14 +655,14 @@
     :get
     (fn [_]
       (let [file (u/locate-file file-id)
-            colors (->> file :data :colors keys (map #(lib-color-proxy file-id %)))]
+            colors (->> file :data :colors keys (map #(lib-color-proxy plugin-id file-id %)))]
         (apply array colors)))}
 
    {:name "typographies"
     :get
     (fn [_]
       (let [file (u/locate-file file-id)
-            typographies (->> file :data :typographies keys (map #(lib-typography-proxy file-id %)))]
+            typographies (->> file :data :typographies keys (map #(lib-typography-proxy plugin-id file-id %)))]
         (apply array typographies)))}
 
    {:name "components"
@@ -388,10 +674,10 @@
                             :components
                             (remove (comp :deleted second))
                             (map first)
-                            (map #(lib-component-proxy file-id %)))]
+                            (map #(lib-component-proxy plugin-id file-id %)))]
         (apply array components)))}))
 
-(deftype PenpotLibrarySubcontext []
+(deftype PenpotLibrarySubcontext [$plugin]
   Object
   (find
     [_ _name])
@@ -399,14 +685,15 @@
   (find [_]))
 
 (defn library-subcontext
-  []
+  [plugin-id]
   (cr/add-properties!
-   (PenpotLibrarySubcontext.)
+   (PenpotLibrarySubcontext. plugin-id)
+   {:name "$plugin" :enumerable false :get (constantly plugin-id)}
    {:name "local" :get
     (fn [_]
-      (library-proxy (:current-file-id @st/state)))}
+      (library-proxy plugin-id (:current-file-id @st/state)))}
 
    {:name "connected" :get
     (fn [_]
       (let [libraries (get @st/state :workspace-libraries)]
-        (apply array (->> libraries vals (map library-proxy)))))}))
+        (apply array (->> libraries keys (map (partial library-proxy plugin-id))))))}))

@@ -43,7 +43,9 @@
      [:flows {:optional true}
       [:vector {:gen/max 2} ::flow]]
      [:guides {:optional true}
-      [:map-of {:gen/max 2} ::sm/uuid ::guide]]]]])
+      [:map-of {:gen/max 2} ::sm/uuid ::guide]]
+     [:plugin-data {:optional true}
+      [:map-of {:gen/max 5} :keyword ::sm/plugin-data]]]]])
 
 (def check-page-guide!
   (sm/check-fn ::guide))

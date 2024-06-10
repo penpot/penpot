@@ -16,7 +16,7 @@
    [app.main.store :as st]
    [app.util.object :as obj]))
 
-(deftype ViewportProxy []
+(deftype ViewportProxy [$plugin]
   Object
   (zoomIntoView [_ shapes]
     (let [ids
@@ -33,9 +33,9 @@
    :get (fn [] (str "ViewportProxy"))})
 
 (defn create-proxy
-  []
+  [plugin-id]
   (crc/add-properties!
-   (ViewportProxy.)
+   (ViewportProxy. plugin-id)
    {:name "center"
     :get
     (fn [_]
