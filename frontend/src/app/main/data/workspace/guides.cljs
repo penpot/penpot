@@ -79,19 +79,20 @@
         (rx/from (->> guides (mapv #(remove-guide %))))))))
 
 (defmethod ptk/resolve ::move-frame-guides
-  [_ ids]
+  [_ args]
   (dm/assert!
    "expected a coll of uuids"
-   (every? uuid? ids))
+   (every? uuid? (:ids args)))
   (ptk/reify ::move-frame-guides
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects (wsh/lookup-page-objects state)
+      (let [ids (:ids args)
+            object-modifiers (:modifiers args)
+
+            objects (wsh/lookup-page-objects state)
 
             is-frame? (fn [id] (= :frame (get-in objects [id :type])))
             frame-ids? (into #{} (filter is-frame?) ids)
-
-            object-modifiers  (get state :workspace-modifiers)
 
             build-move-event
             (fn [guide]
