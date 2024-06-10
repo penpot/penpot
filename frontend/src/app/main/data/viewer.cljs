@@ -253,6 +253,18 @@
 
 ;; --- Zoom Management
 
+(def update-zoom-querystring
+  (ptk/reify ::update-zoom-querystring
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [zoom-type (get-in state [:viewer-local :zoom-type])
+            route (:route state)
+            screen (-> route :data :name keyword)
+            qparams (:query-params route)
+            pparams (:path-params route)]
+
+        (rx/of (rt/nav screen pparams (assoc qparams :zoom zoom-type)))))))
+
 (def increase-zoom
   (ptk/reify ::increase-zoom
     ptk/UpdateEvent
@@ -293,7 +305,10 @@
             minzoom   (min wdiff hdiff)]
         (-> state
             (assoc-in  [:viewer-local :zoom] minzoom)
-            (assoc-in  [:viewer-local :zoom-type] :fit))))))
+            (assoc-in  [:viewer-local :zoom-type] :fit))))
+
+    ptk/WatchEvent
+    (watch [_ _ _] (rx/of update-zoom-querystring))))
 
 (def zoom-to-fill
   (ptk/reify ::zoom-to-fill
@@ -309,7 +324,9 @@
             maxzoom   (max wdiff hdiff)]
         (-> state
             (assoc-in  [:viewer-local :zoom] maxzoom)
-            (assoc-in  [:viewer-local :zoom-type] :fill))))))
+            (assoc-in  [:viewer-local :zoom-type] :fill))))
+    ptk/WatchEvent
+    (watch [_ _ _] (rx/of update-zoom-querystring))))
 
 (def toggle-zoom-style
   (ptk/reify ::toggle-zoom-style
