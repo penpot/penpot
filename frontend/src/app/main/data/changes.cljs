@@ -69,9 +69,10 @@
         (cpc/check-changes! undo-changes)))
 
   (let [commit-id (or commit-id (uuid/next))
+        source    (d/nilv source :local)
         commit    {:id commit-id
                    :created-at (dt/now)
-                   :source (d/nilv source :local)
+                   :source source
                    :origin (ptk/type origin)
                    :features features
                    :file-id file-id
