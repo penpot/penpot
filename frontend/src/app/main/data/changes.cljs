@@ -111,9 +111,7 @@
 
               redo-changes    (if pending
                                 (into redo-changes
-                                      (comp
-                                       (map :redo-changes)
-                                       (mapcat identity))
+                                      (mapcat :redo-changes)
                                       pending)
                                 redo-changes)]
 
