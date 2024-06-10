@@ -11,14 +11,18 @@
    [app.plugins.utils :as u]
    [app.util.object :as obj]))
 
-(deftype CurrentUserProxy [$session])
-(deftype ActiveUserProxy [$session])
+(deftype CurrentUserProxy [$plugin $session])
+(deftype ActiveUserProxy [$plugin $session])
 
 (defn add-user-properties
   [user-proxy]
-  (let [session-id (obj/get user-proxy "$session")]
+  (let [plugin-id (obj/get user-proxy "$plugin")
+        session-id (obj/get user-proxy "$session")]
     (crc/add-properties!
      user-proxy
+     {:name "$plugin" :enumerable false :get (constantly plugin-id)}
+     {:name "$session" :enumerable false :get (constantly session-id)}
+
      {:name "id"
       :get (fn [_] (-> (u/locate-profile session-id) :id str))}
 
@@ -35,13 +39,13 @@
       :get (fn [_] (str session-id))})))
 
 (defn current-user-proxy
-  [session-id]
-  (-> (CurrentUserProxy. session-id)
+  [plugin-id session-id]
+  (-> (CurrentUserProxy. plugin-id session-id)
       (add-user-properties)))
 
 (defn active-user-proxy
-  [session-id]
-  (-> (ActiveUserProxy. session-id)
+  [plugin-id session-id]
+  (-> (ActiveUserProxy. plugin-id session-id)
       (add-user-properties)
       (crc/add-properties!
        {:name "position" :get (fn [_] (-> (u/locate-presence session-id) :point u/to-js))}

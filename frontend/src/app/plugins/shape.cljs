@@ -9,6 +9,7 @@
   (:require
    [app.common.colors :as clr]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
@@ -20,7 +21,7 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.types.shape.radius :as ctsr]
    [app.common.uuid :as uuid]
-   [app.main.data.workspace :as udw]
+   [app.main.data.workspace :as dw]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shape-layout :as dwsl]
@@ -61,22 +62,89 @@
    (dwt/current-paragraph-values {:shape shape :attrs txt/paragraph-attrs})
    (dwt/current-text-values {:shape shape :attrs txt/text-node-attrs})))
 
-(deftype ShapeProxy [$file $page $id]
+(deftype ShapeProxy [$plugin $file $page $id]
   Object
   (resize
     [_ width height]
-    (st/emit! (udw/update-dimensions [$id] :width width)
-              (udw/update-dimensions [$id] :height height)))
+    (st/emit! (dw/update-dimensions [$id] :width width)
+              (dw/update-dimensions [$id] :height height)))
 
   (clone
     [_]
     (let [ret-v (atom nil)]
       (st/emit! (dws/duplicate-shapes #{$id} :change-selection? false :return-ref ret-v))
-      (shape-proxy (deref ret-v))))
+      (shape-proxy $plugin (deref ret-v))))
 
   (remove
     [_]
     (st/emit! (dwsh/delete-shapes #{$id})))
+
+  ;; Plugin data
+  (getPluginData
+    [self key]
+    (cond
+      (not (string? key))
+      (u/display-not-valid :shape-plugin-data-key key)
+
+      :else
+      (let [shape (u/proxy->shape self)]
+        (dm/get-in shape [:plugin-data (keyword "plugin" (str $plugin)) key]))))
+
+  (setPluginData
+    [_ key value]
+    (cond
+      (not (string? key))
+      (u/display-not-valid :shape-plugin-data-key key)
+
+      (and (some? value) (not (string? value)))
+      (u/display-not-valid :shape-plugin-data value)
+
+      :else
+      (st/emit! (dw/set-plugin-data $file :shape $id $page (keyword "plugin" (str $plugin)) key value))))
+
+  (getPluginDataKeys
+    [self]
+    (let [shape (u/proxy->shape self)]
+      (apply array (keys (dm/get-in shape [:plugin-data (keyword "plugin" (str $plugin))])))))
+
+  (getSharedPluginData
+    [self namespace key]
+    (cond
+      (not (string? namespace))
+      (u/display-not-valid :shape-plugin-data-namespace namespace)
+
+      (not (string? key))
+      (u/display-not-valid :shape-plugin-data-key key)
+
+      :else
+      (let [shape (u/proxy->shape self)]
+        (dm/get-in shape [:plugin-data (keyword "shared" namespace) key]))))
+
+  (setSharedPluginData
+    [_ namespace key value]
+
+    (cond
+      (not (string? namespace))
+      (u/display-not-valid :shape-plugin-data-namespace namespace)
+
+      (not (string? key))
+      (u/display-not-valid :shape-plugin-data-key key)
+
+      (and (some? value) (not (string? value)))
+      (u/display-not-valid :shape-plugin-data value)
+
+      :else
+      (st/emit! (dw/set-plugin-data $file :shape $id $page (keyword "shared" namespace) key value))))
+
+  (getSharedPluginDataKeys
+    [self namespace]
+    (cond
+      (not (string? namespace))
+      (u/display-not-valid :shape-plugin-data-namespace namespace)
+
+      :else
+      (let [shape (u/proxy->shape self)]
+        (apply array (keys (dm/get-in shape [:plugin-data (keyword "shared" namespace)]))))))
 
   ;; Only for frames + groups + booleans
   (getChildren
@@ -85,7 +153,7 @@
       (if (or (cfh/frame-shape? shape) (cfh/group-shape? shape) (cfh/svg-raw-shape? shape) (cfh/bool-shape? shape))
         (apply array (->> (u/locate-shape $file $page $id)
                           :shapes
-                          (map #(shape-proxy $file $page %))))
+                          (map #(shape-proxy $plugin $file $page %))))
         (u/display-not-valid :getChildren (:type shape)))))
 
   (appendChild
@@ -93,7 +161,7 @@
     (let [shape (u/locate-shape $file $page $id)]
       (if (or (cfh/frame-shape? shape) (cfh/group-shape? shape) (cfh/svg-raw-shape? shape) (cfh/bool-shape? shape))
         (let [child-id (obj/get child "$id")]
-          (st/emit! (udw/relocate-shapes #{child-id} $id 0)))
+          (st/emit! (dw/relocate-shapes #{child-id} $id 0)))
         (u/display-not-valid :appendChild (:type shape)))))
 
   (insertChild
@@ -101,7 +169,7 @@
     (let [shape (u/locate-shape $file $page $id)]
       (if (or (cfh/frame-shape? shape) (cfh/group-shape? shape) (cfh/svg-raw-shape? shape) (cfh/bool-shape? shape))
         (let [child-id (obj/get child "$id")]
-          (st/emit! (udw/relocate-shapes #{child-id} $id index)))
+          (st/emit! (dw/relocate-shapes #{child-id} $id index)))
         (u/display-not-valid :insertChild (:type shape)))))
 
   ;; Only for frames
@@ -110,7 +178,7 @@
     (let [shape (u/locate-shape $file $page $id)]
       (if (cfh/frame-shape? shape)
         (do (st/emit! (dwsl/create-layout-from-id $id :flex :from-frame? true :calculate-params? false))
-            (grid/grid-layout-proxy $file $page $id))
+            (grid/grid-layout-proxy $plugin $file $page $id))
         (u/display-not-valid :addFlexLayout (:type shape)))))
 
   (addGridLayout
@@ -118,7 +186,7 @@
     (let [shape (u/locate-shape $file $page $id)]
       (if (cfh/frame-shape? shape)
         (do (st/emit! (dwsl/create-layout-from-id $id :grid :from-frame? true :calculate-params? false))
-            (grid/grid-layout-proxy $file $page $id))
+            (grid/grid-layout-proxy $plugin $file $page $id))
         (u/display-not-valid :addGridLayout (:type shape)))))
 
   ;; Make masks for groups
@@ -142,6 +210,14 @@
     (let [shape (u/locate-shape $file $page $id)]
       (if (cfh/path-shape? shape)
         (upf/format-path (:content shape))
+        (u/display-not-valid :makeMask (:type shape)))))
+
+  ;; Text shapes
+  (getRange
+    [_ _from _to]
+    (let [shape (u/locate-shape $file $page $id)]
+      (if (cfh/text-shape? shape)
+        nil ;; TODO
         (u/display-not-valid :makeMask (:type shape))))))
 
 (crc/define-properties!
@@ -150,20 +226,21 @@
    :get (fn [] (str "ShapeProxy"))})
 
 (defn shape-proxy
-  ([id]
-   (shape-proxy (:current-file-id @st/state) (:current-page-id @st/state) id))
+  ([plugin-id id]
+   (shape-proxy plugin-id (:current-file-id @st/state) (:current-page-id @st/state) id))
 
-  ([page-id id]
-   (shape-proxy (:current-file-id @st/state) page-id id))
+  ([plugin-id page-id id]
+   (shape-proxy plugin-id (:current-file-id @st/state) page-id id))
 
-  ([file-id page-id id]
+  ([plugin-id file-id page-id id]
    (assert (uuid? file-id))
    (assert (uuid? page-id))
    (assert (uuid? id))
 
    (let [data (u/locate-shape file-id page-id id)]
-     (-> (ShapeProxy. file-id page-id id)
+     (-> (ShapeProxy. plugin-id file-id page-id id)
          (crc/add-properties!
+          {:name "$plugin" :enumerable false :get (constantly plugin-id)}
           {:name "$id" :enumerable false :get (constantly id)}
           {:name "$file" :enumerable false :get (constantly file-id)}
           {:name "$page" :enumerable false :get (constantly page-id)}
@@ -332,14 +409,14 @@
            :set
            (fn [self value]
              (let [id (obj/get self "$id")]
-               (st/emit! (udw/update-position id {:x value}))))}
+               (st/emit! (dw/update-position id {:x value}))))}
 
           {:name "y"
            :get #(-> % u/proxy->shape :y)
            :set
            (fn [self value]
              (let [id (obj/get self "$id")]
-               (st/emit! (udw/update-position id {:y value}))))}
+               (st/emit! (dw/update-position id {:y value}))))}
 
           {:name "parentX"
            :get (fn [self]
@@ -353,7 +430,7 @@
                    parent-id (-> self u/proxy->shape :parent-id)
                    parent (u/locate-shape (obj/get self "$file") (obj/get self "$page") parent-id)
                    parent-x (:x parent)]
-               (st/emit! (udw/update-position id {:x (+ parent-x value)}))))}
+               (st/emit! (dw/update-position id {:x (+ parent-x value)}))))}
 
           {:name "parentY"
            :get (fn [self]
@@ -368,7 +445,7 @@
                    parent-id (-> self u/proxy->shape :parent-id)
                    parent (u/locate-shape (obj/get self "$file") (obj/get self "$page") parent-id)
                    parent-y (:y parent)]
-               (st/emit! (udw/update-position id {:y (+ parent-y value)}))))}
+               (st/emit! (dw/update-position id {:y (+ parent-y value)}))))}
 
           {:name "frameX"
            :get (fn [self]
@@ -383,7 +460,7 @@
                    frame-id (-> self u/proxy->shape :frame-id)
                    frame (u/locate-shape (obj/get self "$file") (obj/get self "$page") frame-id)
                    frame-x (:x frame)]
-               (st/emit! (udw/update-position id {:x (+ frame-x value)}))))}
+               (st/emit! (dw/update-position id {:x (+ frame-x value)}))))}
 
           {:name "frameY"
            :get (fn [self]
@@ -398,7 +475,7 @@
                    frame-id (-> self u/proxy->shape :frame-id)
                    frame (u/locate-shape (obj/get self "$file") (obj/get self "$page") frame-id)
                    frame-y (:y frame)]
-               (st/emit! (udw/update-position id {:y (+ frame-y value)}))))}
+               (st/emit! (dw/update-position id {:y (+ frame-y value)}))))}
 
           {:name "width"
            :get #(-> % u/proxy->shape :width)}
@@ -437,7 +514,7 @@
                    id (obj/get self "$id")
                    objects (u/locate-objects file-id page-id)]
                (when (ctl/any-layout-immediate-child-id? objects id)
-                 (flex/layout-child-proxy file-id page-id id))))}
+                 (flex/layout-child-proxy plugin-id file-id page-id id))))}
 
           {:name "layoutCell"
            :get
@@ -447,7 +524,7 @@
                    id (obj/get self "$id")
                    objects (u/locate-objects file-id page-id)]
                (when (ctl/grid-layout-immediate-child-id? objects id)
-                 (grid/layout-cell-proxy file-id page-id id))))})
+                 (grid/layout-cell-proxy plugin-id file-id page-id id))))})
 
          (cond-> (or (cfh/frame-shape? data) (cfh/group-shape? data) (cfh/svg-raw-shape? data) (cfh/bool-shape? data))
            (crc/add-properties!
@@ -465,7 +542,7 @@
                          page-id (obj/get self "$page")
                          id (obj/get self "$id")]
                      (when (= :grid layout)
-                       (grid/grid-layout-proxy file-id page-id id))))}
+                       (grid/grid-layout-proxy plugin-id file-id page-id id))))}
 
                 {:name "flex"
                  :get
@@ -475,7 +552,7 @@
                          page-id (obj/get self "$page")
                          id (obj/get self "$id")]
                      (when (= :flex layout)
-                       (flex/flex-layout-proxy file-id page-id id))))}
+                       (flex/flex-layout-proxy plugin-id file-id page-id id))))}
 
                 {:name "guides"
                  :get #(-> % u/proxy->shape :grids u/array-to-js)

@@ -186,7 +186,9 @@
     [:vector {:gen/max 1} ::ctss/shadow]]
    [:blur {:optional true} ::ctsb/blur]
    [:grow-type {:optional true}
-    [::sm/one-of #{:auto-width :auto-height :fixed}]]])
+    [::sm/one-of #{:auto-width :auto-height :fixed}]]
+   [:plugin-data {:optional true}
+    [:map-of {:gen/max 5} :keyword ::sm/plugin-data]]])
 
 (sm/define! ::group-attrs
   [:map {:title "GroupAttrs"}

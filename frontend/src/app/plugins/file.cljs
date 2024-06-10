@@ -9,15 +9,84 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.record :as crc]
+   [app.main.data.workspace :as dw]
+   [app.main.store :as st]
    [app.plugins.page :as page]
-   [app.plugins.utils :refer [locate-file proxy->file]]
+   [app.plugins.utils :as u]
    [app.util.object :as obj]))
 
-(deftype FileProxy [$id]
+(deftype FileProxy [$plugin $id]
   Object
   (getPages [_]
-    (let [file (locate-file $id)]
-      (apply array (sequence (map #(page/page-proxy $id %)) (dm/get-in file [:data :pages]))))))
+    (let [file (u/locate-file $id)]
+      (apply array (sequence (map #(page/page-proxy $plugin $id %)) (dm/get-in file [:data :pages])))))
+
+  ;; Plugin data
+  (getPluginData
+    [self key]
+    (cond
+      (not (string? key))
+      (u/display-not-valid :file-plugin-data-key key)
+
+      :else
+      (let [file (u/proxy->file self)]
+        (dm/get-in file [:data :plugin-data (keyword "plugin" (str $plugin)) key]))))
+
+  (setPluginData
+    [_ key value]
+    (cond
+      (not (string? key))
+      (u/display-not-valid :file-plugin-data-key key)
+
+      (and (some? value) (not (string? value)))
+      (u/display-not-valid :file-plugin-data value)
+
+      :else
+      (st/emit! (dw/set-plugin-data $id :file (keyword "plugin" (str $plugin)) key value))))
+
+  (getPluginDataKeys
+    [self]
+    (let [file (u/proxy->file self)]
+      (apply array (keys (dm/get-in file [:data :plugin-data (keyword "plugin" (str $plugin))])))))
+
+  (getSharedPluginData
+    [self namespace key]
+    (cond
+      (not (string? namespace))
+      (u/display-not-valid :file-plugin-data-namespace namespace)
+
+      (not (string? key))
+      (u/display-not-valid :file-plugin-data-key key)
+
+      :else
+      (let [file (u/proxy->file self)]
+        (dm/get-in file [:data :plugin-data (keyword "shared" namespace) key]))))
+
+  (setSharedPluginData
+    [_ namespace key value]
+
+    (cond
+      (not (string? namespace))
+      (u/display-not-valid :file-plugin-data-namespace namespace)
+
+      (not (string? key))
+      (u/display-not-valid :file-plugin-data-key key)
+
+      (and (some? value) (not (string? value)))
+      (u/display-not-valid :file-plugin-data value)
+
+      :else
+      (st/emit! (dw/set-plugin-data $id :file (keyword "shared" namespace) key value))))
+
+  (getSharedPluginDataKeys
+    [self namespace]
+    (cond
+      (not (string? namespace))
+      (u/display-not-valid :file-plugin-data-namespace namespace)
+
+      :else
+      (let [file (u/proxy->file self)]
+        (apply array (keys (dm/get-in file [:data :plugin-data (keyword "shared" namespace)])))))))
 
 (crc/define-properties!
   FileProxy
@@ -25,16 +94,17 @@
    :get (fn [] (str "FileProxy"))})
 
 (defn file-proxy
-  [id]
+  [plugin-id id]
   (crc/add-properties!
-   (FileProxy. id)
+   (FileProxy. plugin-id id)
+   {:name "$plugin" :enumerable false :get (constantly plugin-id)}
    {:name "$id" :enumerable false :get (constantly id)}
 
    {:name "id"
     :get #(dm/str (obj/get % "$id"))}
 
    {:name "name"
-    :get #(-> % proxy->file :name)}
+    :get #(-> % u/proxy->file :name)}
 
    {:name "pages"
     :get #(.getPages ^js %)}))

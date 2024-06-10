@@ -17,7 +17,7 @@
    [app.util.object :as obj]
    [potok.v2.core :as ptk]))
 
-(deftype FlexLayout [$file $page $id]
+(deftype FlexLayout [$plugin $file $page $id]
   Object
   (remove
     [_]
@@ -30,9 +30,10 @@
                 (ptk/data-event :layout/update {:ids [$id]})))))
 
 (defn flex-layout-proxy
-  [file-id page-id id]
-  (-> (FlexLayout. file-id page-id id)
+  [plugin-id file-id page-id id]
+  (-> (FlexLayout. plugin-id file-id page-id id)
       (crc/add-properties!
+       {:name "$plugin" :enumerable false :get (constantly plugin-id)}
        {:name "$id" :enumerable false :get (constantly id)}
        {:name "$file" :enumerable false :get (constantly file-id)}
        {:name "$page" :enumerable false :get (constantly page-id)}
@@ -148,12 +149,13 @@
               (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p4 value}})))))})))
 
 
-(deftype LayoutChildProxy [$file $page $id])
+(deftype LayoutChildProxy [$plugin $file $page $id])
 
 (defn layout-child-proxy
-  [file-id page-id id]
-  (-> (LayoutChildProxy. file-id page-id id)
+  [plugin-id file-id page-id id]
+  (-> (LayoutChildProxy. plugin-id file-id page-id id)
       (crc/add-properties!
+       {:name "$plugin" :enumerable false :get (constantly plugin-id)}
        {:name "$id" :enumerable false :get (constantly id)}
        {:name "$file" :enumerable false :get (constantly file-id)}
        {:name "$page" :enumerable false :get (constantly page-id)}

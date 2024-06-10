@@ -35,7 +35,7 @@
 ;; PLUGINS PUBLIC API - The plugins will able to access this functions
 ;;
 (defn create-shape
-  [type]
+  [plugin-id type]
   (let [page-id (:current-page-id @st/state)
         page (dm/get-in @st/state [:workspace-data :pages-index page-id])
         shape (cts/setup-shape {:type type
@@ -46,13 +46,13 @@
             (cb/with-objects (:objects page))
             (cb/add-object shape))]
     (st/emit! (ch/commit-changes changes))
-    (shape/shape-proxy (:id shape))))
+    (shape/shape-proxy plugin-id (:id shape))))
 
-(deftype PenpotContext []
+(deftype PenpotContext [$plugin]
   Object
   (addListener
     [_ type callback]
-    (events/add-listener type callback))
+    (events/add-listener type $plugin callback))
 
   (removeListener
     [_ listener-id]
@@ -60,17 +60,17 @@
 
   (getViewport
     [_]
-    (viewport/create-proxy))
+    (viewport/create-proxy $plugin))
 
   (getFile
     [_]
-    (file/file-proxy (:current-file-id @st/state)))
+    (file/file-proxy $plugin (:current-file-id @st/state)))
 
   (getPage
     [_]
     (let [file-id (:current-file-id @st/state)
           page-id (:current-page-id @st/state)]
-      (page/page-proxy file-id page-id)))
+      (page/page-proxy $plugin file-id page-id)))
 
   (getSelected
     [_]
@@ -80,11 +80,11 @@
   (getSelectedShapes
     [_]
     (let [selection (get-in @st/state [:workspace-local :selected])]
-      (apply array (sequence (map shape/shape-proxy) selection))))
+      (apply array (sequence (map (partial shape/shape-proxy $plugin)) selection))))
 
   (getRoot
     [_]
-    (shape/shape-proxy uuid/zero))
+    (shape/shape-proxy $plugin uuid/zero))
 
   (getTheme
     [_]
@@ -95,7 +95,7 @@
 
   (getCurrentUser
     [_]
-    (user/current-user-proxy (:session-id @st/state)))
+    (user/current-user-proxy $plugin (:session-id @st/state)))
 
   (getActiveUsers
     [_]
@@ -103,7 +103,7 @@
            (->> (:workspace-presence @st/state)
                 (vals)
                 (remove #(= (:id %) (:session-id @st/state)))
-                (map #(user/active-user-proxy (:id %))))))
+                (map #(user/active-user-proxy $plugin (:id %))))))
 
   (uploadMediaUrl
     [_ name url]
@@ -122,7 +122,7 @@
           id (uuid/next)
           ids (into #{} (map #(obj/get % "$id")) shapes)]
       (st/emit! (dwg/group-shapes id ids))
-      (shape/shape-proxy file-id page-id id)))
+      (shape/shape-proxy $plugin file-id page-id id)))
 
   (ungroup
     [_ group & rest]
@@ -132,15 +132,15 @@
 
   (createFrame
     [_]
-    (create-shape :frame))
+    (create-shape $plugin :frame))
 
   (createRectangle
     [_]
-    (create-shape :rect))
+    (create-shape $plugin :rect))
 
   (createEllipse
     [_]
-    (create-shape :circle))
+    (create-shape $plugin :circle))
 
   (createPath
     [_]
@@ -156,7 +156,7 @@
               (cb/with-objects (:objects page))
               (cb/add-object shape))]
       (st/emit! (ch/commit-changes changes))
-      (shape/shape-proxy (:id shape))))
+      (shape/shape-proxy $plugin (:id shape))))
 
   (createText
     [_ text]
@@ -172,7 +172,7 @@
               (cb/with-objects (:objects page))
               (cb/add-object shape))]
       (st/emit! (ch/commit-changes changes))
-      (shape/shape-proxy file-id page-id (:id shape))))
+      (shape/shape-proxy $plugin file-id page-id (:id shape))))
 
   (createShapeFromSvg
     [_ svg-string]
@@ -181,7 +181,7 @@
             file-id (:current-file-id @st/state)
             page-id (:current-page-id @st/state)]
         (st/emit! (dwm/create-svg-shape id "svg" svg-string (gpt/point 0 0)))
-        (shape/shape-proxy file-id page-id id))))
+        (shape/shape-proxy $plugin file-id page-id id))))
 
   (createBoolean [_ bool-type shapes]
     (let [ids (into #{} (map #(obj/get % "$id")) shapes)
@@ -190,14 +190,15 @@
       (if (contains? cts/bool-types bool-type)
         (let [id-ret (atom nil)]
           (st/emit! (dwb/create-bool bool-type ids {:id-ret id-ret}))
-          (shape/shape-proxy @id-ret))
+          (shape/shape-proxy $plugin @id-ret))
 
         (utils/display-not-valid :bool-shape bool-type)))))
 
 (defn create-context
-  []
+  [plugin-id]
   (cr/add-properties!
-   (PenpotContext.)
+   (PenpotContext. plugin-id)
+   {:name "$plugin" :enumerable false :get (constantly plugin-id)}
    {:name "root" :get #(.getRoot ^js %)}
    {:name "currentFile" :get #(.getFile ^js %)}
    {:name "currentPage" :get #(.getPage ^js %)}
@@ -205,4 +206,4 @@
    {:name "viewport" :get #(.getViewport ^js %)}
    {:name "currentUser" :get #(.getCurrentUser ^js %)}
    {:name "activeUsers" :get #(.getActiveUsers ^js %)}
-   {:name "library" :get (fn [_] (library/library-subcontext))}))
+   {:name "library" :get (fn [_] (library/library-subcontext plugin-id))}))

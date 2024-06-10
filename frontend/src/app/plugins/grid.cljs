@@ -23,7 +23,7 @@
    js/Object
    (apply array (->> tracks (map utils/to-js)))))
 
-(deftype GridLayout [$file $page $id]
+(deftype GridLayout [$plugin $file $page $id]
   Object
 
   (addRow
@@ -75,9 +75,10 @@
                 (ptk/data-event :layout/update {:ids [$id]})))))
 
 (defn grid-layout-proxy
-  [file-id page-id id]
-  (-> (GridLayout. file-id page-id id)
+  [plugin-id file-id page-id id]
+  (-> (GridLayout. plugin-id file-id page-id id)
       (crc/add-properties!
+       {:name "$plugin" :enumerable false :get (constantly plugin-id)}
        {:name "$id" :enumerable false :get (constantly id)}
        {:name "$file" :enumerable false :get (constantly file-id)}
        {:name "$page" :enumerable false :get (constantly page-id)}
@@ -164,7 +165,6 @@
             (when (us/safe-int? value)
               (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p2 value :p4 value}})))))}
 
-
        {:name "topPadding"
         :get #(-> % proxy->shape :layout-padding :p1)
         :set
@@ -197,17 +197,18 @@
             (when (us/safe-int? value)
               (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p4 value}})))))})))
 
-(deftype GridCellProxy [$file $page $id])
+(deftype GridCellProxy [$plugin $file $page $id])
 
 (defn layout-cell-proxy
-  [file-id page-id id]
+  [plugin-id file-id page-id id]
   (letfn [(locate-cell [_]
             (let [shape (locate-shape file-id page-id id)
                   parent (locate-shape file-id page-id (:parent-id shape))]
               (ctl/get-cell-by-shape-id parent id)))]
 
-    (-> (GridCellProxy. file-id page-id id)
+    (-> (GridCellProxy. plugin-id file-id page-id id)
         (crc/add-properties!
+         {:name "$plugin" :enumerable false :get (constantly plugin-id)}
          {:name "$id" :enumerable false :get (constantly id)}
          {:name "$file" :enumerable false :get (constantly file-id)}
          {:name "$page" :enumerable false :get (constantly page-id)}
