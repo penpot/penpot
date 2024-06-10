@@ -27,6 +27,8 @@
 - Fix problem with flex layout fit to content not positioning correctly children [Taiga #7537](https://tree.taiga.io/project/penpot/issue/7537)
 - Fix black line is displaying after show main [Taiga #7653](https://tree.taiga.io/project/penpot/issue/7653)
 - Fix "Share prototypes" modal remains open [Taiga #7442](https://tree.taiga.io/project/penpot/issue/7442)
+- Fix "Components visibility and opacity" [#4694](https://github.com/penpot/penpot/issues/4694)
+- Fix "Attribute overrides in copies are not exported in zip file" [Taiga #8072](https://tree.taiga.io/project/penpot/issue/8072)
 
 ## 2.0.3
 
