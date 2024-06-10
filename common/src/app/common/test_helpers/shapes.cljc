@@ -16,6 +16,7 @@
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.shape.interactions :as ctsi]
    [app.common.types.typographies-list :as cttl]
    [app.common.types.typography :as ctt]))
 
@@ -99,3 +100,19 @@
   [file label & {:keys [] :as params}]
   (let [typography (sample-typography label params)]
     (ctf/update-file-data file #(cttl/add-typography % typography))))
+
+(defn add-interaction
+  [file origin-label dest-label]
+  (let [page         (thf/current-page file)
+        origin       (get-shape file origin-label)
+        dest         (get-shape file dest-label)
+        interaction  (-> ctsi/default-interaction
+                         (ctsi/set-destination (:id dest))
+                         (assoc :position-relative-to (:id origin)))
+        interactions (ctsi/add-interaction (:interactions origin) interaction)]
+    (ctf/update-file-data
+     file
+     (fn [file-data]
+       (ctpl/update-page file-data
+                         (:id page)
+                         #(ctst/set-shape % (assoc origin :interactions interactions)))))))

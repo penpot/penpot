@@ -11,6 +11,7 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
+   [app.common.logic.shapes :as cls]
    [app.common.types.page :as ctp]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.interactions :as ctsi]
@@ -131,8 +132,7 @@
                                        (let [new-interaction (-> ctsi/default-interaction
                                                                  (ctsi/set-destination destination)
                                                                  (assoc :position-relative-to (:id shape)))]
-                                         (update shape :interactions
-                                                 ctsi/add-interaction new-interaction)))))
+                                         (cls/add-new-interaction shape new-interaction)))))
           (when (and (not (connected-frame? objects (:id frame)))
                      (nil? flow))
             (rx/of (add-flow (:id frame))))))))))
