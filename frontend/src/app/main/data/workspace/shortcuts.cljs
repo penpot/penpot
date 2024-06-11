@@ -119,12 +119,12 @@
    :group                {:tooltip (ds/meta "G")
                           :command (ds/c-mod "g")
                           :subsections [:modify-layers]
-                          :fn #(emit-when-no-readonly dw/group-selected)}
+                          :fn #(emit-when-no-readonly (dw/group-selected))}
 
    :ungroup              {:tooltip (ds/shift "G")
                           :command "shift+g"
                           :subsections [:modify-layers]
-                          :fn #(emit-when-no-readonly dw/ungroup-selected)}
+                          :fn #(emit-when-no-readonly (dw/ungroup-selected))}
 
    :mask                 {:tooltip (ds/meta "M")
                           :command (ds/c-mod "m")
