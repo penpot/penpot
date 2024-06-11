@@ -40,16 +40,16 @@ test.describe("Assets tab", () => {
     await workspacePage.clickAssets();
     // Now the get-file call should return a library
     await workspacePage.mockRPC(/get\-file\?/, "workspace/get-file-library.json");
-    await workspacePage.clickLibraries();
+    await workspacePage.openLibrariesModal();
     await workspacePage.clickLibrary("Testing library 1");
-    await workspacePage.clickCloseLibraries();
+    await workspacePage.closeLibrariesModal();
 
     await expect(workspacePage.palette.getByRole("button", { name: "test-color-187cd5" })).toBeVisible();
 
     // Remove Testing library 1
-    await workspacePage.clickLibraries();
+    await workspacePage.openLibrariesModal();
     await workspacePage.clickLibrary("Testing library 1");
-    await workspacePage.clickCloseLibraries();
+    await workspacePage.closeLibrariesModal();
 
     await expect(
       workspacePage.palette.getByText("There are no color styles in your library yet"),

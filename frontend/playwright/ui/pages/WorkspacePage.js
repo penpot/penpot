@@ -48,7 +48,6 @@ export class WorkspacePage extends BaseWebSocketPage {
     this.layers = page.getByTestId("layer-tree");
     this.palette = page.getByTestId("palette");
     this.sidebar = page.getByTestId("left-sidebar");
-    this.closeLibraries = page.getByTestId("close-libraries");
     this.librariesModal = page.getByTestId("libraries-modal");
   }
 
@@ -126,7 +125,7 @@ export class WorkspacePage extends BaseWebSocketPage {
     await this.sidebar.getByText("Assets").click(clickOptions);
   }
 
-  async clickLibraries(clickOptions = {}) {
+  async openLibrariesModal(clickOptions = {}) {
     await this.sidebar.getByText("Libraries").click(clickOptions);
   }
 
@@ -138,8 +137,8 @@ export class WorkspacePage extends BaseWebSocketPage {
       .click(clickOptions);
   }
 
-  async clickCloseLibraries(clickOptions = {}) {
-    await this.closeLibraries.click(clickOptions);
+  async closeLibrariesModal(clickOptions = {}) {
+    await this.librariesModal.getByRole("button", { name: "Close" }).click(clickOptions);
   }
 
   async clickColorPalette(clickOptions = {}) {
