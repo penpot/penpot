@@ -32,6 +32,7 @@
 - Fix "Components visibility and opacity" [#4694](https://github.com/penpot/penpot/issues/4694)
 - Fix "Attribute overrides in copies are not exported in zip file" [Taiga #8072](https://tree.taiga.io/project/penpot/issue/8072)
 - Fix group not automatically selected in the Layers panel after creation [Taiga #8078](https://tree.taiga.io/project/penpot/issue/8078)
+- Fix export boards loses opacity [Taiga #7592](https://tree.taiga.io/project/penpot/issue/7592)
 
 ## 2.0.3
 
