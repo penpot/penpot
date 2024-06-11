@@ -244,19 +244,22 @@
                                        (first))
 
             ;; The nodes with the "frame-background" class can have some anidation depending on the strokes they have
-            g-nodes    (find-all-nodes node :g)
-            defs-nodes (flatten (map #(find-all-nodes % :defs) g-nodes))
-            gg-nodes   (flatten (map #(find-all-nodes % :g) g-nodes))
+            g-nodes     (find-all-nodes node :g)
+            defs-nodes  (flatten (map #(find-all-nodes % :defs) g-nodes))
+            gg-nodes    (flatten (map #(find-all-nodes % :g) g-nodes))
 
+            ;; The first g node contains the opacity for frames
+            main-g-node (first g-nodes)
 
-            rect-nodes (flatten [[(find-all-nodes node :rect)]
-                                 (map #(find-all-nodes % #{:rect :path}) defs-nodes)
-                                 (map #(find-all-nodes % #{:rect :path}) g-nodes)
-                                 (map #(find-all-nodes % #{:rect :path}) gg-nodes)])
-            svg-node (d/seek #(= "frame-background" (get-in % [:attrs :class])) rect-nodes)]
+            rect-nodes  (flatten [[(find-all-nodes node :rect)]
+                                  (map #(find-all-nodes % #{:rect :path}) defs-nodes)
+                                  (map #(find-all-nodes % #{:rect :path}) g-nodes)
+                                  (map #(find-all-nodes % #{:rect :path}) gg-nodes)])
+            svg-node    (d/seek #(= "frame-background" (get-in % [:attrs :class])) rect-nodes)]
         (merge
          (add-attrs {} (:attrs frame-clip-rect-node))
          (add-attrs {} (:attrs svg-node))
+         (add-attrs {} (:attrs main-g-node))
          node-attrs))
 
       (= type :svg-raw)
