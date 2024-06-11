@@ -248,7 +248,7 @@
                                     (assoc :stroke-style :solid)
 
                                     (not (contains? new-attrs :stroke-alignment))
-                                    (assoc :stroke-alignment :inner)
+                                    (assoc :stroke-alignment :center)
 
                                     :always
                                     (d/without-nils))]
