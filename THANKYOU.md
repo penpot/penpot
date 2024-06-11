@@ -7,6 +7,7 @@ We want to thank to the amazing people that help us! Thank you! You're the best!
 * [Shiraz Ali Khan](https://www.linkedin.com/in/shiraz-ali-khan-1ba508180/)
 * Vaibhav Shukla
 * Hassan Ahmed (Alias Xen Lee)
+* Michal Biesiada (@mbiesiad)
 
 ## Internationalization
 * [00ff88](https://hosted.weblate.org/user/00ff88)
