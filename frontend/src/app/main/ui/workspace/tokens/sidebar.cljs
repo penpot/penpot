@@ -17,7 +17,8 @@
    [app.main.ui.workspace.tokens.core :as wtc]
    [app.util.dom :as dom]
    [okulary.core :as l]
-   [rumext.v2 :as mf]))
+   [rumext.v2 :as mf]
+   [shadow.resource]))
 
 (def lens:token-type-open-status
   (l/derived (l/in [:workspace-tokens :open-status]) st/state))
@@ -68,41 +69,42 @@
     (js/console.log "Input Data" js-data)
     (js/window.StyleDictionary. js-data)))
 
-(comment
-  (let [performance-start (js/window.performance.now)
-        math-token-id (random-uuid)
-        dynamic-token-id (random-uuid)
-        tokens-data {:dimension {"scale" {"value" "2px"
-                                          "type" :sizing}
-                                 "sm" {"value" "{dimension.scale} * {dimension.scale}"
-                                       "type" :sizing}}}
-        #_#_tokens-data (-> #_@refs/workspace-tokens
+(defn simple-example []
+  (let [math-token-id (random-uuid)
+        dynamic-token-id (random-uuid)]
+    {:dimension {"scale" {"value" "2px"
+                          "type" :sizing}
+                 "sm" {"value" "{dimension.scale} * {dimension.scale}"
+                       "type" :sizing}}}))
 
-                        ;; (assoc math-token-id {:id dynamic-token-id
-                        ;;                       :name "mathToken"
-                        ;;                       :type :dimensions
-                        ;;                       :value "1 + 2"}
-                        ;;        dynamic-token-id {:id dynamic-token-id
-                        ;;                          :name "refToken"
-                        ;;                          :type :dimensions
-                        ;;                          :value "{dimensions.mathToken}"})
-                         #_(wtc/group-tokens-by-type))
-        sd (tokens->sd tokens-data)]
+(defn tokens-studio-example []
+  (-> (shadow.resource/inline "./example-data.json")
+      (js/JSON.parse)
+      .-core))
+
+(defn test-tokens [data]
+  (let [performance-start (js/window.performance.now)
+        sd (tokens->sd data)]
     (js/console.log "StyleDictionary" sd)
     (-> sd
-        ;; (.formatPlatform sd "json")
         (.buildAllPlatforms sd "json")
         (.catch js/console.error)
         (.then (fn [resp]
                  (let [performance-end (js/window.performance.now)
                        duration-ms (- performance-end performance-start)]
                    (js/console.log "Time elapsed" duration-ms "ms")
-                   (js/console.log "Finished" (.-allTokens resp)))))))
+                   (js/console.log "Finished" (.-allTokens resp))))))))
+
+(comment
+
+  (-> (tokens-studio-example)
+      (doto js/console.log))
+
+  (test-tokens (tokens-studio-example))
 
 
 
   nil)
-        ;; (.finally (fn [x] (js/console.log "Finish" x)))
 
 (mf/defc token-component
   [{:keys [type tokens selected-shapes token-type-props]}]
