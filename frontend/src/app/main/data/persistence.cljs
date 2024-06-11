@@ -182,7 +182,7 @@
       (log/debug :hint "initialize persistence")
       (let [stoper-s (rx/filter (ptk/type? ::initialize-persistence) stream)
 
-            commits-s
+            local-commits-s
             (->> stream
                  (rx/filter dch/commit?)
                  (rx/map deref)
@@ -192,20 +192,20 @@
 
             notifier-s
             (rx/merge
-             (->> commits-s
+             (->> local-commits-s
                   (rx/debounce 3000)
                   (rx/tap #(log/trc :hint "persistence beat")))
              (->> stream
                   (rx/filter #(= % ::force-persist))))]
 
         (rx/merge
-         (->> commits-s
+         (->> local-commits-s
               (rx/debounce 200)
               (rx/map (fn [_]
                         (update-status :pending)))
               (rx/take-until stoper-s))
 
-         (->> commits-s
+         (->> local-commits-s
               (rx/buffer-time 200)
               (rx/mapcat merge-commit)
               (rx/map dch/update-indexes)
@@ -216,7 +216,7 @@
          ;; Here we watch for local commits, buffer them in a small
          ;; chunks (very near in time commits) and append them to the
          ;; persistence queue
-         (->> commits-s
+         (->> local-commits-s
               (rx/buffer-until notifier-s)
               (rx/mapcat merge-commit)
               (rx/map append-commit)
