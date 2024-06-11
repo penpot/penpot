@@ -32,7 +32,7 @@
                          (catch js/Error _ nil))]
     [:div {:class (stl/css-case :token-pill true
                                 :token-pill-highlighted highlighted?
-                                :token-pill-invalid (not resolved-value))
+                                #_#_:token-pill-invalid (not resolved-value))
            :title (str (if resolved-value "Token value: " "Invalid token value: ") value)
            :on-click on-click
            :on-context-menu on-context-menu}
