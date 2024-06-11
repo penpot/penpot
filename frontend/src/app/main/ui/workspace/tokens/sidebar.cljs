@@ -56,56 +56,6 @@
     :sizing [:div {:style {:rotate "45deg"}} i/constraint-horizontal]
     i/add))
 
-
-(defn tokens->sd [tokens]
-  (let [data {:tokens tokens
-              :platforms {:json {:transformGroup "tokens-studio"
-                                 :files [{:format "custom/json"
-                                          :destination "foo"}]}}
-              :preprocessors ["tokens-studio"]
-              :log {:warnings "warn"
-                    :verbosity "verbose"}}
-        js-data (clj->js data)]
-    (js/console.log "Input Data" js-data)
-    (js/window.StyleDictionary. js-data)))
-
-(defn simple-example []
-  (let [math-token-id (random-uuid)
-        dynamic-token-id (random-uuid)]
-    {:dimension {"scale" {"value" "2px"
-                          "type" :sizing}
-                 "sm" {"value" "{dimension.scale} * {dimension.scale}"
-                       "type" :sizing}}}))
-
-(defn tokens-studio-example []
-  (-> (shadow.resource/inline "./example-data.json")
-      (js/JSON.parse)
-      .-core))
-
-(defn test-tokens [data]
-  (let [performance-start (js/window.performance.now)
-        sd (tokens->sd data)]
-    (js/console.log "StyleDictionary" sd)
-    (-> sd
-        (.buildAllPlatforms sd "json")
-        (.catch js/console.error)
-        (.then (fn [resp]
-                 (let [performance-end (js/window.performance.now)
-                       duration-ms (- performance-end performance-start)]
-                   (js/console.log "Time elapsed" duration-ms "ms")
-                   (js/console.log "Finished" (.-allTokens resp))))))))
-
-(comment
-
-  (-> (tokens-studio-example)
-      (doto js/console.log))
-
-  (test-tokens (tokens-studio-example))
-
-
-
-  nil)
-
 (mf/defc token-component
   [{:keys [type tokens selected-shapes token-type-props]}]
   (let [open? (mf/deref (-> (l/key type)
