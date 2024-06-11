@@ -12,6 +12,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.svg.path :as svg.path]
+   [app.common.types.component :as ctk]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.uuid :as uuid]
    [app.util.json :as json]
@@ -128,6 +129,15 @@
                 (vector (keyword key) (second (first val)))))
          (into {}))
     style-str))
+
+(defn parse-touched
+  "Transform a string of :touched-groups into a set"
+  [touched-str]
+  (let [touched (->> (str/split touched-str " ")
+                     (map #(keyword (subs % 1)))
+                     (filter ctk/valid-touched-group?)
+                     (into #{}))]
+    touched))
 
 (defn add-attrs
   [m attrs]
@@ -424,7 +434,8 @@
         component-file        (get-meta node :component-file uuid/uuid)
         shape-ref             (get-meta node :shape-ref uuid/uuid)
         component-root?       (get-meta node :component-root str->bool)
-        main-instance?        (get-meta node :main-instance str->bool)]
+        main-instance?        (get-meta node :main-instance str->bool)
+        touched               (get-meta node :touched parse-touched)]
 
     (cond-> props
       (some? stroke-color-ref-id)
@@ -442,7 +453,10 @@
       (assoc :main-instance main-instance?)
 
       (some? shape-ref)
-      (assoc :shape-ref shape-ref))))
+      (assoc :shape-ref shape-ref)
+
+      (seq touched)
+      (assoc :touched touched))))
 
 (defn add-fill
   [props node svg-data]

@@ -189,14 +189,20 @@
   (when swap-slot
     (keyword (str "swap-slot-" swap-slot))))
 
+(defn swap-slot?
+  [group]
+  (str/starts-with? (name group) "swap-slot-"))
+
+(defn group->swap-slot
+  [group]
+  (uuid/uuid (subs (name group) 10)))
+
 (defn get-swap-slot
   "If the shape has a :touched group in the form :swap-slot-<uuid>, get the id."
   [shape]
-  (let [group (->> (:touched shape)
-                   (map name)
-                   (d/seek #(str/starts-with? % "swap-slot-")))]
+  (let [group (d/seek swap-slot? (:touched shape))]
     (when group
-      (uuid/uuid (subs group 10)))))
+      (group->swap-slot group))))
 
 (defn match-swap-slot?
   [shape-main shape-inst]
@@ -264,3 +270,16 @@
          ;; Non instance, non copy. We allow
          (or (not (instance-head? shape))
              (not (in-component-copy? parent))))))
+
+(defn all-touched-groups
+  []
+  (into #{} (vals sync-attrs)))
+
+(defn valid-touched-group?
+  [group]
+  (try
+    (or ((all-touched-groups) group)
+        (and (swap-slot? group)
+             (some? (group->swap-slot group))))
+    (catch #?(:clj Throwable :cljs :default) _
+      false)))
