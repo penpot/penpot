@@ -183,6 +183,15 @@
   (and (= shape-id (:main-instance-id component))
        (= page-id (:main-instance-page component))))
 
+(defn set-touched-group
+  [touched group]
+  (when group
+    (conj (or touched #{}) group)))
+
+(defn touched-group?
+  [shape group]
+  ((or (:touched shape) #{}) group))
+
 (defn build-swap-slot-group
   "Convert a swap-slot into a :touched group"
   [swap-slot]
@@ -203,6 +212,13 @@
   (let [group (d/seek swap-slot? (:touched shape))]
     (when group
       (group->swap-slot group))))
+
+(defn set-swap-slot
+  "Add a touched group with a form :swap-slot-<uuid>."
+  [shape swap-slot]
+  (cond-> shape
+    (some? swap-slot)
+    (update :touched set-touched-group (build-swap-slot-group swap-slot))))
 
 (defn match-swap-slot?
   [shape-main shape-inst]
