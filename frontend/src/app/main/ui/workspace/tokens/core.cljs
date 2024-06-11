@@ -14,7 +14,9 @@
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.transforms :as dwt]
-   [app.main.store :as st]))
+   [app.main.store :as st]
+   [app.main.ui.workspace.tokens.style-dictionary :as sd]
+   [promesa.core :as p]))
 
 ;; Helpers ---------------------------------------------------------------------
 
@@ -77,13 +79,16 @@
         shape-ids (->> selected-shapes
                        (eduction
                         (remove #(tokens-applied? token % attributes))
-                        (map :id)))
-        token-value (resolve-token-value token)]
-    (doseq [shape selected-shapes]
-      (st/emit! (on-apply {:token-id (:id token)
-                           :shape-id (:id shape)
-                           :attributes attributes}))
-      (on-update-shape token-value shape-ids attributes))))
+                        (map :id)))]
+    (p/let [sd-tokens (sd/resolve-workspace-tokens+ {:debug? true})]
+      (let [resolved-token (get sd-tokens (:id token))
+            resolved-token-value (resolve-token-value resolved-token)]
+        (js/console.log "resolved-token resolve-token-value" resolved-token resolve-token-value)
+        (doseq [shape selected-shapes]
+          (st/emit! (on-apply {:token-id (:id token)
+                               :shape-id (:id shape)
+                               :attributes attributes}))
+          (on-update-shape resolved-token-value shape-ids attributes))))))
 
 (defn update-shape-radius [value shape-ids]
   (st/emit!
