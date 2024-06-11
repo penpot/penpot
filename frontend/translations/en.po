@@ -38,8 +38,8 @@ msgstr ""
 "periodically wiped."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.email"
-msgstr "Email"
+msgid "auth.work-email"
+msgstr "Work email"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
@@ -55,7 +55,11 @@ msgstr "Log into my account"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.login-here"
-msgstr "Login here"
+msgstr "Login here."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-mail"
+msgstr "Check your email"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
@@ -64,6 +68,14 @@ msgstr "Login"
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-tagline"
 msgstr "Penpot is the free open-source design tool for Design and Code collaboration"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register-tagline"
+msgstr "With a free Penpot account, you can create unlimited teams and collaborate with other designers and developers on as many projects as you like. "
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register-account-tagline"
+msgstr "Let us know what we should call you on the dashboard and in emails."
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-with-github-submit"
@@ -157,12 +169,12 @@ msgid "auth.register-submit"
 msgstr "Create an account"
 
 #: src/app/main/ui/auth/register.cljs
-msgid "auth.register-subtitle"
-msgstr "It's free, it's Open Source"
-
-#: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"
 msgstr "Create an account"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-account-title"
+msgstr "Your name"
 
 #: src/app/main/ui/auth.cljs
 msgid "auth.sidebar-tagline"
@@ -178,10 +190,9 @@ msgstr ""
 
 #: src/app/main/ui/auth/register.cljs
 #, markdown
-msgid "auth.terms-privacy-agreement-md"
+msgid "auth.terms-and-privacy-agreement"
 msgstr ""
-"When creating a new account, you agree to our [terms of service](%s) and "
-"[privacy policy](%s)."
+"I agree to the [terms of service](%s) and [privacy policy](%s)."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
@@ -2382,24 +2393,52 @@ msgid "profile.recovery.go-to-login"
 msgstr "Go to login"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "question.design-tool-more-experienced-with"
-msgstr "Which is the design tool you have more experience with?"
+msgid "questions.step1-title"
+msgstr "Help us get to know you"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.11-30"
-msgstr "11-30"
+msgid "questions.step1-subtitle"
+msgstr "Let us know a bit about you to help us make Penpot work for you. Your answers will help us prioritize new features and point you in the right direction to get started."
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.2-10"
-msgstr "2-10"
+msgid "questions.step1-question1"
+msgstr "What will you be using Penpot for?"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.31-50"
-msgstr "31-50"
+msgid "questions.use-work"
+msgstr "Work"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.a-lot"
-msgstr "A lot"
+msgid "questions.use-education"
+msgstr "Education"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.use-personal"
+msgstr "Personal"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.step1-question2"
+msgstr "What brings you to Penpot today?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.reasons.exploring"
+msgstr "Just exploring"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.reasons.fit"
+msgstr "Reviewing whether Penpot is a good fit for my team"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.reasons.alternative"
+msgstr "Looking for an alternative to Figma, XD, etc"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.reasons.testing"
+msgstr "Testing before self-hosting"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "question.design-tool-more-used"
+msgstr "Which one of these tools do you use the most?"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.adobe-xd"
@@ -2410,146 +2449,180 @@ msgid "questions.canva"
 msgstr "Canva"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.describe-your-experience-working-on"
-msgstr "How would you best describe your experience working on..."
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.designer"
-msgstr "Designer"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.developer"
-msgstr "Developer"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.discover-more-about-penpot"
-msgstr "Discover more about Penpot"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.figma"
 msgstr "Figma"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.founder"
-msgstr "Founder/VP"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.freelancer"
-msgstr "I'm a freelancer"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.get-the-code-from-my-team-project"
-msgstr "Get the code from my team project "
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.interface-design-visual-assets-design-systems"
-msgstr "... interface design, visual assets, design systems, etc."
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.invision"
 msgstr "InVision"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.leave-feedback-for-my-team-project"
-msgstr "Leave feedback for my team project"
+msgid "questions.sketch"
+msgstr "Sketch"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.lets-get-started"
-msgstr "Let's get started!"
+msgid "questions.step3-title"
+msgstr "Tell us about your job"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.manager"
-msgstr "Product or Project manager"
+msgid "questions.step3.question1"
+msgstr "What kind of work do you do?"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.marketing"
+msgid "questions.work-type.ux"
+msgstr "Product or UX design"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.work-type.dev"
+msgstr "Development"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.work-type.student"
+msgstr "student"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.work-type.graphic"
+msgstr "Graphic design"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.work-type.marketing"
 msgstr "Marketing"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.work-type.product"
+msgstr "Product Managment"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.step3.question2"
+msgstr "What's your role?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.role.team-leader"
+msgstr "Team Leader"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.role.team-member"
+msgstr "Team member"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.role.freelancer"
+msgstr "Freelancer"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.role.founder"
+msgstr "CEO or Founder"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.role.director"
+msgstr "Director"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.company-size"
+msgstr "What's the size of your company?"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.more-than-50"
 msgstr "More than 50"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.never-used-one"
-msgstr "None"
+msgid "questions.31-50"
+msgstr "31-50"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.next"
-msgstr "Next"
+msgid "questions.11-30"
+msgstr "11-30"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.none"
-msgstr "None"
+msgid "questions.2-10"
+msgstr "2-10"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.other"
-msgstr "Other (specify)"
+msgid "questions.freelancer"
+msgstr "I'm a freelancer"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.personal-project"
 msgstr "I’m working in a personal project"
 
 #: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.step4-title"
+msgstr "Where would you like to get started?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.starting-ui"
+msgstr "Design the UI/UX of an app"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.starting-wireframing"
+msgstr "Wireframing"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.starting-prototyping"
+msgstr "Prototyping"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.starting-ds"
+msgstr "Creating Desing Systems"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.starting-code"
+msgstr "Generating real code designs" 
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.step5-title"
+msgstr "How did you hear about Penpot?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.referer.youtube"
+msgstr "YouTube"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.referer.event"
+msgstr "Event"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.referer.search"
+msgstr "Search Engine (Google, Yahoo, Bing)"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.referer.social"
+msgstr "Social Media (X, Linkedin, FB, etc)"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.referer.article"
+msgstr "Article (Blog, Post, Newsletter)"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.lets-get-started"
+msgstr "Let's get started!"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.next"
+msgstr "Next"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.other"
+msgstr "Other (specify)"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "questions.other-short"
+msgstr "Other"
+
+#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.previous"
 msgstr "Previous"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.questions-how-are-you-planning-to-use-penpot"
-msgstr "How are you planning to use Penpot?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.role"
-msgstr "What's your role?"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.select-option"
 msgstr "Select option"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.sketch"
-msgstr "Sketch"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.some"
-msgstr "Some"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.start"
 msgstr "Start"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.start-to-work-on-my-project"
-msgstr "Start to work on my project"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.student-teacher"
 msgstr "Student or teacher"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.team-size"
-msgstr "What's the size of your team?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.test-penpot-to-see-if-its-a-fit-for-team"
-msgstr "Test Penpot to see if it's a fit for team "
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.try-out-before-using-penpot-on-premise"
-msgstr "Try out before using Penpot on-premise"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.wireframes-user-journeys-flows-navigation-trees"
-msgstr "... wireframes, user journeys & flows, navigation trees, etc."
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.work-in-concept-ideas"
-msgstr "Work in concept ideas"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.your-feedback-will-help-us"
-msgstr ""
-"Your feedback will help us understand what your habits and preferences are "
-"so that we can keep making Penpot such a useful and enjoyable tool."
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
 msgid "settings.detach"
@@ -2562,6 +2635,7 @@ msgstr "Mixed"
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs
 msgid "settings.select-this-color"
 msgstr "Select items using this style"
+
 
 # SECTIONS
 msgid "shortcut-section.basics"

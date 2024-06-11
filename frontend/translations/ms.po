@@ -25,10 +25,6 @@ msgstr ""
 "Ini adalah perkhidmatan DEMO, JANGAN GUNAKAN untuk kerja sebenar, projek "
 "akan dipadam secara berkala."
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.email"
-msgstr "E-mel"
-
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
 msgstr "Lupa kata laluan?"

@@ -134,6 +134,8 @@
         page-id        (:id page)
         file-id        (:id file)
         frame-id       (:id frame)
+        vsize          (-> (mf/deref refs/viewer-local)
+                           :viewport-size)
 
         tpos-ref     (mf/with-memo [page-id]
                        (-> (l/in [:pages page-id :options :comment-threads-position])
@@ -216,6 +218,7 @@
          [:& cmt/thread-comments
           {:thread thread
            :position-modifier modifier1
+           :viewport {:offset-x 0 :offset-y 0 :width (:width vsize) :height (:height vsize)}
            :users users
            :zoom zoom}])
 

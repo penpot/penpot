@@ -35,11 +35,6 @@ msgstr "只是想试试？"
 msgid "auth.demo-warning"
 msgstr "这是一个演示服务，请【不要】用于真实工作，这些项目将被周期性地抹除。"
 
-#: src/app/main/ui/auth/register.cljs,
-#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.email"
-msgstr "电子邮件"
-
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
 msgstr "忘记密码？"
@@ -158,10 +153,6 @@ msgstr "现在还没有账号？"
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.register-submit"
 msgstr "创建账号"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.register-subtitle"
-msgstr "免费且开源"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"

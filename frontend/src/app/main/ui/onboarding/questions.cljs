@@ -11,7 +11,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.config :as cf]
-   [app.main.data.modal :as modal]
+   [app.main.data.events :as-alias ev]
    [app.main.data.users :as du]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
@@ -19,223 +19,430 @@
    [app.util.i18n :as i18n :refer [tr]]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc step-container
-  [{:keys [form step on-next on-prev children class] :as props}]
+  {::mf/props :obj}
+  [{:keys [form step on-next on-prev children class label]}]
 
-  [:& fm/form {:form form :on-submit on-next :class (dm/str class " " (stl/css :form-wrapper))}
-   [:div {:class (stl/css :paginator)} (str/ffmt "%/4" step)]
+  (let [on-next*
+        (mf/use-fn
+         (mf/deps on-next step label)
+         (fn [form event]
+           (let [params (-> (:clean-data @form)
+                            (assoc :label label)
+                            (assoc :step step)
+                            (assoc ::ev/name "onboarding-step"))]
+             (st/emit! (ptk/data-event ::ev/event params))
+             (on-next form event))))]
 
-   children
+    [:& fm/form {:form form
+                 :on-submit on-next*
+                 :class (dm/str class " " (stl/css :form-wrapper))}
+     [:div {:class (stl/css :paginator)} (str/ffmt "%/5" step)]
 
-   [:div {:class (stl/css :action-buttons)}
+     children
 
-    (when on-prev
-      [:button {:class (stl/css :prev-button)
-                :on-click on-prev} (tr "questions.previous")])
+     [:div {:class (stl/css :action-buttons)}
 
-    [:> fm/submit-button*
-     {:label (if (< step 4) (tr "questions.next") (tr "questions.start"))
-      :class (stl/css :next-button)}]]])
+      (when (some? on-prev)
+        [:button {:class (stl/css :prev-button)
+                  :on-click on-prev}
+         (tr "questions.previous")])
+
+      [:> fm/submit-button*
+       {:label (if (< step 5)
+                 (tr "questions.next")
+                 (tr "questions.start"))
+        :class (stl/css :next-button)}]]]))
 
 (s/def ::questions-form-step-1
-  (s/keys :req-un [::planning]))
-
-(mf/defc step-1
-  [{:keys [on-next form] :as props}]
-  [:& step-container {:form form :step 1 :on-next on-next :class (stl/css :step-1)}
-   [:img {:class (stl/css :header-image)
-          :src "images/form/use-for-1.png" :alt (tr "questions.lets-get-started")}]
-   [:h1 {:class (stl/css :modal-title)} (tr "questions.lets-get-started")]
-   [:p {:class (stl/css :modal-text)} (tr "questions.your-feedback-will-help-us")]
-
-   [:div {:class (stl/css :modal-question)}
-    [:h3 {:class (stl/css :modal-subtitle)} (tr "questions.questions-how-are-you-planning-to-use-penpot")]
-    [:& fm/select
-     {:options [{:label (tr "questions.select-option")
-                 :value "" :key "questions-how-are-you-planning-to-use-penpot"
-                 :disabled true}
-                {:label (tr "questions.discover-more-about-penpot")
-                 :value "discover-more-about-penpot"
-                 :key "discover-more-about-penpot"}
-                {:label (tr "questions.test-penpot-to-see-if-its-a-fit-for-team")
-                 :value "test-penpot-to-see-if-its-a-fit-for-team"
-                 :key "test-penpot-to-see-if-its-a-fit-for-team"}
-                {:label (tr "questions.start-to-work-on-my-project")
-                 :value "start-to-work-on-my-project"
-                 :key "start-to-work-on-my-project"}
-                {:label (tr "questions.get-the-code-from-my-team-project")
-                 :value "get-the-code-from-my-team-project"
-                 :key "get-the-code-from-my-team-project"}
-                {:label (tr "questions.leave-feedback-for-my-team-project")
-                 :value "leave-feedback-for-my-team-project"
-                 :key "leave-feedback-for-my-team-project"}
-                {:label (tr "questions.work-in-concept-ideas")
-                 :value "work-in-concept-ideas"
-                 :key "work-in-concept-ideas"}
-                {:label (tr "questions.try-out-before-using-penpot-on-premise")
-                 :value "try-out-before-using-penpot-on-premise"
-                 :key "try-out-before-using-penpot-on-premise"}]
-      :default ""
-      :name :planning
-      :dropdown-class (stl/css :question-dropdown)}]]])
-
-(s/def ::questions-form-step-2
-  (s/keys :req-un [::experience-branding-illustrations-marketing-pieces
-                   ::experience-interface-design-visual-assets-design-systems
-                   ::experience-interface-wireframes-user-journeys-flows-navigation-trees]))
-
-(mf/defc step-2
-  [{:keys [on-next on-prev form] :as props}]
-  [:& step-container {:form form :step 2 :on-next on-next :on-prev on-prev :class (stl/css :step-2)}
-   [:h1 {:class (stl/css :modal-title)}
-    (tr "questions.describe-your-experience-working-on")]
-
-   [:div {:class (stl/css-case :modal-question true
-                               :question-centered true)}
-    [:div {:class (stl/css-case :modal-subtitle true
-                                :centered true)}
-     (tr "branding-illustrations-marketing-pieces")]
-    [:& fm/radio-buttons {:options [{:label (tr "questions.none") :value "none"}
-                                    {:label (tr "questions.some") :value "some"}
-                                    {:label (tr "questions.a-lot") :value "a-lot"}]
-                          :name :experience-branding-illustrations-marketing-pieces
-                          :class (stl/css :radio-btns)}]]
-
-   [:div {:class (stl/css-case :modal-question true
-                               :question-centered true)}
-    [:div {:class (stl/css-case :modal-subtitle true
-                                :centered true)}
-     (tr "questions.interface-design-visual-assets-design-systems")]
-    [:& fm/radio-buttons {:options [{:label (tr "questions.none") :value "none"}
-                                    {:label (tr "questions.some") :value "some"}
-                                    {:label (tr "questions.a-lot") :value "a-lot"}]
-                          :name :experience-interface-design-visual-assets-design-systems
-                          :class (stl/css :radio-btns)}]]
-
-   [:div {:class (stl/css-case :modal-question true
-                               :question-centered true)}
-    [:div {:class (stl/css-case :modal-subtitle true
-                                :centered true)}
-     (tr "questions.wireframes-user-journeys-flows-navigation-trees")]
-    [:& fm/radio-buttons {:options [{:label (tr "questions.none") :value "none"}
-                                    {:label (tr "questions.some") :value "some"}
-                                    {:label (tr "questions.a-lot") :value "a-lot"}]
-                          :name :experience-interface-wireframes-user-journeys-flows-navigation-trees
-                          :class (stl/css :radio-btns)}]]])
-
-(s/def ::questions-form-step-3
-  (s/keys :req-un [::experience-design-tool]
-          :opt-un [::experience-design-tool-other]))
+  (s/keys :req-un [::planning
+                   ::expected-use]
+          :opt-un [::planning-other]))
 
 (defn- step-1-form-validator
   [errors data]
-  (let [planning (-> (:planning data) (str/trim))]
+  (let [planning       (:planning data)
+        planning-other (:planning-other data)]
     (cond-> errors
-      (= planning "")
+      (and (= planning "other")
+           (str/blank? planning-other))
+      (assoc :planning-other {:code "missing"})
+
+      (not= planning "other")
+      (assoc :planning-other nil)
+
+      (str/blank? planning)
       (assoc :planning {:code "missing"}))))
+
+(mf/defc step-1
+  {::mf/props :obj}
+  [{:keys [on-next form]}]
+  (let [use-options
+        (mf/with-memo []
+          (shuffle [{:label (tr "questions.use-work") :value "use-work"}
+                    {:label (tr "questions.use-education") :value "use-education"}
+                    {:label (tr "questions.use-personal") :value "use-personal"}]))
+
+        planning-options
+        (mf/with-memo []
+          (-> (shuffle [{:label (tr "questions.select-option")
+                         :value "" :key "questions:what-brings-you-here"
+                         :disabled true}
+                        {:label (tr "questions.reasons.exploring")
+                         :value "discover-more-about-penpot"
+                         :key "discover-more-about-penpot"}
+                        {:label (tr "questions.reasons.fit")
+                         :value "test-penpot-to-see-if-its-a-fit-for-team"
+                         :key "test-penpot-to-see-if-its-a-fit-for-team"}
+                        {:label (tr "questions.reasons.alternative")
+                         :value "alternative-to-figma"
+                         :key "alternative-to-figma"}
+                        {:label (tr "questions.reasons.testing")
+                         :value "try-out-before-using-penpot-on-premise"
+                         :key "try-out-before-using-penpot-on-premise"}])
+              (conj {:label (tr "questions.other-short") :value "other"})))
+
+        current-planning
+        (dm/get-in @form [:data :planning])]
+
+    [:& step-container {:form form
+                        :step 1
+                        :label "questions:about-you"
+                        :on-next on-next
+                        :class (stl/css :step-1)}
+
+     [:img {:class (stl/css :header-image)
+            :src "images/form/use-for-1.png"
+            :alt (tr "questions.lets-get-started")}]
+     [:h1 {:class (stl/css :modal-title)}
+      (tr "questions.step1-title")]
+     [:p {:class (stl/css :modal-text)}
+      (tr "questions.step1-subtitle")]
+
+     [:div {:class (stl/css :modal-question)}
+      [:h3 {:class (stl/css :modal-subtitle)}
+       (tr "questions.step1-question1")]
+
+      [:& fm/radio-buttons {:options use-options
+                            :name :expected-use
+                            :class (stl/css :radio-btns)}]
+
+      [:h3 {:class (stl/css :modal-subtitle)}
+       (tr "questions.step1-question2")]
+
+      [:& fm/select
+       {:options planning-options
+        :select-class (stl/css :select-class)
+        :default ""
+        :name :planning
+        :dropdown-class (stl/css :question-dropdown)}]
+
+      (when (= current-planning "other")
+        [:& fm/input {:name :planning-other
+                      :class (stl/css :input-spacing)
+                      :placeholder (tr "questions.other")
+                      :label ""}])]]))
+
+(s/def ::questions-form-step-2
+  (s/keys :req-un [::experience-design-tool]
+          :opt-un [::experience-design-tool-other]))
+
+(defn- step-2-form-validator
+  [errors data]
+  (let [experience       (:experience-design-tool data)
+        experience-other (:experience-design-tool-other data)]
+
+    (cond-> errors
+      (and (= experience "other")
+           (str/blank? experience-other))
+      (assoc :experience-design-tool-other {:code "missing"})
+
+      (not= experience "other")
+      (assoc :experience-design-tool-other nil))))
+
+(mf/defc step-2
+  {::mf/props :obj}
+  [{:keys [on-next on-prev form]}]
+  (let [design-tool-options
+        (mf/with-memo []
+          (-> (shuffle [{:label (tr "questions.figma")  :img-width "48px" :img-height "60px"
+                         :value "figma" :image "images/form/figma.png"}
+                        {:label (tr "questions.sketch") :img-width "48px" :img-height "60px"
+                         :value "sketch" :image "images/form/sketch.png"}
+                        {:label (tr "questions.adobe-xd") :img-width "48px" :img-height "60px"
+                         :value "adobe-xd" :image "images/form/adobe-xd.png"}
+                        {:label (tr "questions.canva") :img-width "48px" :img-height "60px"
+                         :value "canva" :image "images/form/canva.png"}
+                        {:label (tr "questions.invision")  :img-width "48px" :img-height "60px"
+                         :value "invision" :image "images/form/invision.png"}])
+              (conj {:label (tr "questions.other-short")  :value "other" :icon i/curve})))
+
+        current-experience
+        (dm/get-in @form [:clean-data :experience-design-tool])
+
+        on-design-tool-change
+        (mf/use-fn
+         (mf/deps current-experience)
+         (fn []
+           (when (not= current-experience "other")
+             (swap! form d/dissoc-in [:data :experience-design-tool-other])
+             (swap! form d/dissoc-in [:errors :experience-design-tool-other]))))]
+
+    [:& step-container {:form form
+                        :step 2
+                        :label "questions:experience-design-tool"
+                        :on-next on-next
+                        :on-prev on-prev
+                        :class (stl/css :step-2)}
+
+     [:h1 {:class (stl/css :modal-title)}
+      (tr "question.design-tool-more-used")]
+     [:div {:class (stl/css :radio-wrapper)}
+      [:& fm/image-radio-buttons {:options design-tool-options
+                                  :img-width "48px"
+                                  :img-height "60px"
+                                  :name :experience-design-tool
+                                  :image true
+                                  :class (stl/css :image-radio)
+                                  :on-change on-design-tool-change}]
+
+      (when (= current-experience "other")
+        [:& fm/input {:name :experience-design-tool-other
+                      :class (stl/css :input-spacing)
+                      :placeholder (tr "questions.other")
+                      :label ""}])]]))
+
+(s/def ::questions-form-step-3
+  (s/keys :req-un [::team-size ::role ::responsability]
+          :opt-un [::role-other ::responsability-other]))
 
 (defn- step-3-form-validator
   [errors data]
-  (let [experience-design-tool (:experience-design-tool data)
-        experience-design-tool-other (-> (:experience-design-tool-other data) str/trim)]
+  (let [role                 (:role data)
+        role-other           (:role-other data)
+        responsability       (:responsability data)
+        responsability-other (:responsability-other data)]
+
     (cond-> errors
-      (and (= experience-design-tool "other") (= 0 (count experience-design-tool-other)))
-      (assoc :experience-design-tool-other {:code "missing"}))))
+      (and (= role "other")
+           (str/blank? role-other))
+      (assoc :role-other {:code "missing"})
+
+      (not= role "other")
+      (assoc :role-other nil)
+
+      (and (= responsability "other")
+           (str/blank? responsability-other))
+      (assoc :responsability-other {:code "missing"})
+
+      (not= responsability "other")
+      (assoc :responsability-other nil))))
 
 (mf/defc step-3
-  [{:keys [on-next on-prev form] :as props}]
-  (let [experience-design-tool (dm/get-in @form [:clean-data :experience-design-tool])
-        on-design-tool-change
-        (fn [_ _]
-          (let [experience-design-tool (dm/get-in @form [:clean-data :experience-design-tool])]
-            (when (not= experience-design-tool "other")
-              (do
-                (swap! form d/dissoc-in [:data :experience-design-tool-other])
-                (swap! form d/dissoc-in [:errors :experience-design-tool-other])))))]
+  {::mf/props :obj}
+  [{:keys [on-next on-prev form]}]
+  (let [role-options
+        (mf/with-memo []
+          (-> (shuffle [{:label (tr "questions.select-option") :value "" :key "role" :disabled true}
+                        {:label (tr "questions.work-type.ux") :value "designer" :key "designer"}
+                        {:label (tr "questions.work-type.dev") :value "developer"  :key "developer"}
+                        {:label (tr "questions.work-type.student") :value "student-teacher" :key "student"}
+                        {:label (tr "questions.work-type.graphic") :value "graphic-design" :key "design"}
+                        {:label (tr "questions.work-type.marketing") :value "marketing" :key "marketing"}
+                        {:label (tr "questions.work-type.product") :value "manager" :key "manager"}])
+              (conj {:label (tr "questions.other-short") :value "other"})))
 
-    [:& step-container {:form form :step 3 :on-next on-next :on-prev on-prev :class (stl/css :step-3)}
-     [:h1 {:class (stl/css :modal-title)}
-      (tr "question.design-tool-more-experienced-with")]
-     [:div {:class (stl/css :radio-wrapper)}
-      [:& fm/radio-buttons {:options [{:label (tr "questions.figma") :value "figma" :image "images/form/figma.png" :area "image1"}
-                                      {:label (tr "questions.sketch") :value "sketch" :image "images/form/sketch.png" :area "image2"}
-                                      {:label (tr "questions.adobe-xd") :value "adobe-xd" :image "images/form/adobe-xd.png" :area "image3"}
-                                      {:label (tr "questions.canva") :value "canva" :image "images/form/canva.png" :area "image4"}
-                                      {:label (tr "questions.invision") :value "invision" :image "images/form/invision.png" :area "image5"}
-                                      {:label (tr "questions.never-used-one")  :area "image6" :value "never-used-a-tool" :icon i/curve}
-                                      {:label (tr "questions.other") :value "other" :area "other"}]
-                            :name :experience-design-tool
-                            :image true
-                            :class (stl/css :image-radio)
-                            :on-change on-design-tool-change}]
+        responsability-options
+        (mf/with-memo []
+          (-> (shuffle [{:label (tr "questions.select-option") :value "" :key "responsability" :disabled true}
+                        {:label (tr "questions.role.team-leader") :value "team-leader"}
+                        {:label (tr "questions.role.team-member") :value "team-member"}
+                        {:label (tr "questions.role.freelancer") :value "freelancer"}
+                        {:label (tr "questions.role.founder") :value "ceo-founder"}
+                        {:label (tr "questions.role.director") :value "director"}
+                        {:label (tr "questions.student-teacher") :value "student-teacher"}])
+              (conj {:label (tr "questions.other-short") :value "other"})))
 
-      [:& fm/input {:name :experience-design-tool-other
-                    :class (stl/css :input-spacing)
-                    :placeholder (tr "questions.other")
-                    :label ""
-                    :disabled (not= experience-design-tool "other")}]]]))
+
+        team-size-options
+        (mf/with-memo []
+          [{:label (tr "questions.select-option") :value "" :key "team-size" :disabled true}
+           {:label (tr "questions.more-than-50") :value "more-than-50" :key "more-than-50"}
+           {:label (tr "questions.31-50") :value "31-50"  :key "31-50"}
+           {:label (tr "questions.11-30") :value "11-30" :key "11-30"}
+           {:label (tr "questions.2-10") :value "2-10" :key "2-10"}
+           {:label (tr "questions.freelancer") :value "freelancer" :key "freelancer"}
+           {:label (tr "questions.personal-project") :value "personal-project" :key "personal-project"}])
+
+        current-role
+        (dm/get-in @form [:data :role])
+
+        current-responsability
+        (dm/get-in @form [:data :responsability])]
+
+    [:& step-container {:form form
+                        :step 3
+                        :label "questions:about-your-job"
+                        :on-next on-next
+                        :on-prev on-prev
+                        :class (stl/css :step-3)}
+
+     [:h1 {:class (stl/css :modal-title)} (tr "questions.step3-title")]
+     [:div {:class (stl/css :modal-question)}
+      [:h3 {:class (stl/css :modal-subtitle)} (tr "questions.step3.question1")]
+      [:& fm/select {:options role-options
+                     :select-class (stl/css :select-class)
+                     :default ""
+                     :name :role}]
+
+      (when (= current-role "other")
+        [:& fm/input {:name :role-other
+                      :class (stl/css :input-spacing)
+                      :placeholder (tr "questions.other")
+                      :label ""}])]
+
+     [:div {:class (stl/css :modal-question)}
+      [:h3 {:class (stl/css :modal-subtitle)} (tr "questions.step3.question2")]
+      [:& fm/select {:options responsability-options
+                     :select-class (stl/css :select-class)
+                     :default ""
+                     :name :responsability}]
+
+      (when (= current-responsability "other")
+        [:& fm/input {:name :responsability-other
+                      :class (stl/css :input-spacing)
+                      :placeholder (tr "questions.other")
+                      :label ""}])]
+
+     [:div {:class (stl/css :modal-question)}
+      [:h3 {:class (stl/css :modal-subtitle)} (tr "questions.company-size")]
+      [:& fm/select {:options team-size-options
+                     :default ""
+                     :select-class (stl/css :select-class)
+                     :name :team-size}]]]))
 
 (s/def ::questions-form-step-4
-  (s/keys :req-un [::team-size ::role]
-          :opt-un [::role-other]))
+  (s/keys :req-un [::start-with]
+          :opt-un [::start-with-other]))
 
 (defn- step-4-form-validator
   [errors data]
-  (let [role (:role data)
-        role-other (-> (:role-other data) str/trim)]
+  (let [start       (:start-with data)
+        start-other (:start-with-other data)]
     (cond-> errors
-      (and (= role "other") (= 0 (count role-other)))
-      (assoc :role-other {:code "missing"}))))
+      (and (= start "other")
+           (str/blank? start-other))
+      (assoc :start-with-other {:code "missing"})
+
+      (not= start "other")
+      (assoc :start-with-other nil))))
 
 (mf/defc step-4
-  [{:keys [on-next on-prev form] :as props}]
-  (let [role (dm/get-in @form [:data :role])
-        on-role-change
-        (fn [_ _]
-          (let [experience-design-tool (dm/get-in @form [:clean-data :experience-design-tool])]
-            (when (not= experience-design-tool "other")
-              (do
-                (swap! form d/dissoc-in [:data :role-other])
-                (swap! form d/dissoc-in [:errors :role-other])))))]
+  {::mf/props :obj}
+  [{:keys [on-next on-prev form]}]
+  (let [start-options
+        (mf/with-memo []
+          (-> (shuffle [{:label (tr "questions.starting-ui") :value "ui" :image "images/form/Design.png"}
+                        {:label (tr "questions.starting-wireframing") :value "wireframing" :image "images/form/templates.png"}
+                        {:label (tr "questions.starting-prototyping") :value "prototyping" :image "images/form/Prototype.png"}
+                        {:label (tr "questions.starting-ds") :value "ds" :image "images/form/components.png"}
+                        {:label (tr "questions.starting-code") :value "code" :image "images/form/design-and-dev.png"}])
+              (conj {:label (tr "questions.other-short") :value "other" :icon i/curve})))
 
-    [:& step-container {:form form :step 4 :on-next on-next :on-prev on-prev :class (stl/css :step-4)}
-     [:h1 {:class (stl/css :modal-title)} (tr "questions.role")]
+        current-start (dm/get-in @form [:data :start-with])
+
+        on-start-change
+        (mf/use-fn
+         (mf/deps current-start)
+         (fn [_ _]
+           (when (not= current-start "other")
+             (swap! form d/dissoc-in [:data :start-with-other])
+             (swap! form d/dissoc-in [:errors :start-with-other]))))]
+
+    [:& step-container {:form form
+                        :step 4
+                        :label "questions:how-start"
+                        :on-next on-next
+                        :on-prev on-prev
+                        :class (stl/css :step-4)}
+
+     [:h1 {:class (stl/css :modal-title)} (tr "questions.step4-title")]
      [:div {:class (stl/css :radio-wrapper)}
-      [:& fm/radio-buttons {:options [{:label (tr "questions.designer") :value "designer"}
-                                      {:label (tr "questions.developer") :value "developer"}
-                                      {:label (tr "questions.manager") :value "manager"}
-                                      {:label (tr "questions.founder") :value "founder"}
-                                      {:label (tr "questions.marketing") :value "marketing"}
-                                      {:label (tr "questions.student-teacher") :value "student-teacher"}
-                                      {:label (tr "questions.other") :value "other"}]
-                            :name :role
-                            :on-change on-role-change}]
-      [:& fm/input {:name :role-other
-                    :class (stl/css :input-spacing)
-                    :label ""
-                    :placeholder (tr "questions.other")
-                    :disabled (not= role "other")}]]
+      [:& fm/image-radio-buttons {:options start-options
+                                  :img-width "159px"
+                                  :img-height "120px"
+                                  :class (stl/css :image-radio)
+                                  :name :start-with
+                                  :on-change on-start-change}]
 
-     [:div {:class (stl/css :modal-question)}
-      [:h3 {:class (stl/css :modal-subtitle)} (tr "questions.team-size")]
-      [:& fm/select {:options [{:label (tr "questions.select-option") :value "" :key "team-size" :disabled true}
-                               {:label (tr "questions.more-than-50") :value "more-than-50" :key "more-than-50"}
-                               {:label (tr "questions.31-50") :value "31-50"  :key "31-50"}
-                               {:label (tr "questions.11-30") :value "11-30" :key "11-30"}
-                               {:label (tr "questions.2-10") :value "2-10" :key "2-10"}
-                               {:label (tr "questions.freelancer") :value "freelancer" :key "freelancer"}
-                               {:label (tr "questions.personal-project") :value "personal-project" :key "personal-project"}]
-                     :default ""
-                     :name :team-size}]]]))
+      (when (= current-start "other")
+        [:& fm/input {:name :start-with-other
+                      :class (stl/css :input-spacing)
+                      :label ""
+                      :placeholder (tr "questions.other")}])]]))
 
-;; NOTE: we don't register it on registry modal because we reference
-;; this modal directly on the ui namespace.
+(s/def ::questions-form-step-5
+  (s/keys :req-un [::referer]
+          :opt-un [::referer-other]))
+
+(defn- step-5-form-validator
+  [errors data]
+  (let [referer       (:referer data)
+        referer-other (:referer-other data)]
+    (cond-> errors
+      (and (= referer "other")
+           (str/blank? referer-other))
+      (assoc :referer-other {:code "missing"})
+
+      (not= referer "other")
+      (assoc :referer-other nil))))
+
+(mf/defc step-5
+  {::mf/props :obj}
+  [{:keys [on-next on-prev form]}]
+  (let [referer-options
+        (mf/with-memo []
+          (-> (shuffle [{:label (tr "questions.referer.youtube") :value "youtube"}
+                        {:label (tr "questions.referer.event") :value "event"}
+                        {:label (tr "questions.referer.search") :value "search"}
+                        {:label (tr "questions.referer.social") :value "social"}
+                        {:label (tr "questions.referer.article") :value "article"}])
+              (conj {:label (tr "questions.other-short") :value "other"})))
+
+        current-referer
+        (dm/get-in @form [:data :referer])
+
+        on-referer-change
+        (mf/use-fn
+         (mf/deps current-referer)
+         (fn []
+           (when (not= current-referer "other")
+             (swap! form d/dissoc-in [:data :referer-other])
+             (swap! form d/dissoc-in [:errors :referer-other]))))]
+
+    [:& step-container {:form form
+                        :step 5
+                        :label "questions:referer"
+                        :on-next on-next
+                        :on-prev on-prev
+                        :class (stl/css :step-5)}
+
+     [:h1 {:class (stl/css :modal-title)} (tr "questions.step5-title")]
+     [:div {:class (stl/css :radio-wrapper)}
+      [:& fm/radio-buttons {:options referer-options
+                            :class (stl/css :radio-btns)
+                            :name :referer
+                            :on-change on-referer-change}]
+      (when (= current-referer "other")
+        [:& fm/input {:name :referer-other
+                      :class (stl/css :input-spacing)
+                      :label ""
+                      :placeholder (tr "questions.other")}])]]))
 
 (mf/defc questions-modal
-  {::mf/register modal/components
-   ::mf/register-as :onboarding-questions}
   []
   (let [container   (mf/use-ref)
         step        (mf/use-state 1)
@@ -247,9 +454,12 @@
                      :initial {}
                      :validators [step-1-form-validator]
                      :spec ::questions-form-step-1)
+
         step-2-form (fm/use-form
                      :initial {}
+                     :validators [step-2-form-validator]
                      :spec ::questions-form-step-2)
+
         step-3-form (fm/use-form
                      :initial {}
                      :validators [step-3-form-validator]
@@ -259,6 +469,11 @@
                      :initial {}
                      :validators [step-4-form-validator]
                      :spec ::questions-form-step-4)
+
+        step-5-form (fm/use-form
+                     :initial {}
+                     :validators [step-5-form-validator]
+                     :spec ::questions-form-step-5)
 
         on-next
         (mf/use-fn
@@ -275,27 +490,22 @@
         (mf/use-fn
          (mf/deps @clean-data)
          (fn [form]
-           (let [questionnaire (merge @clean-data (:clean-data @form))]
-             (reset! clean-data questionnaire)
-             (st/emit! (du/mark-questions-as-answered questionnaire))
+           (let [data (merge @clean-data (:clean-data @form))]
+             (reset! clean-data data)
+             (st/emit! (du/mark-questions-as-answered data)))))
 
-             (cond
-               (contains? cf/flags :onboarding-newsletter)
-               (modal/show! {:type :onboarding-newsletter})
+        onboarding-a-b-test?
+        (cf/external-feature-flag "signup-background" "test")]
 
-               (contains? cf/flags :onboarding-team)
-               (modal/show! {:type :onboarding-team})
-
-               :else
-               (modal/hide!)))))
-        onboarding-a-b-test? (cf/external-feature-flag "signup-background" "test")]
-
-    [:div {:class (stl/css-case :modal-overlay true
-                                :onboarding-a-b-test onboarding-a-b-test?)}
+    [:div {:class (stl/css-case
+                   :modal-overlay true
+                   :onboarding-a-b-test onboarding-a-b-test?)}
      [:div {:class (stl/css :modal-container)
             :ref container}
+
       (case @step
         1 [:& step-1 {:on-next on-next :on-prev on-prev :form step-1-form}]
         2 [:& step-2 {:on-next on-next :on-prev on-prev :form step-2-form}]
         3 [:& step-3 {:on-next on-next :on-prev on-prev :form step-3-form}]
-        4 [:& step-4 {:on-next on-submit :on-prev on-prev :form step-4-form}])]]))
+        4 [:& step-4 {:on-next on-next :on-prev on-prev :form step-4-form}]
+        5 [:& step-5 {:on-next on-submit :on-prev on-prev :form step-5-form}])]]))

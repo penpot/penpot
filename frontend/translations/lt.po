@@ -41,10 +41,6 @@ msgstr ""
 "Tai yra DEMONSTRACINĖ versija, NEKURKITE tikrų darbų, nes projektai "
 "periodiškai - šalinami."
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.email"
-msgstr "El. paštas"
-
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
 msgstr "Pamiršote slaptažodį?"
@@ -142,10 +138,6 @@ msgid "auth.register-submit"
 msgstr "Sukurti paskyrą"
 
 #: src/app/main/ui/auth/register.cljs
-msgid "auth.register-subtitle"
-msgstr "Tai - nemokama, tai - atviras kodas"
-
-#: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"
 msgstr "Sukurti paskyrą"
 
@@ -155,12 +147,6 @@ msgstr "Atviro kodo dizaino ir prototipų kūrimo sprendimas."
 
 msgid "auth.terms-of-service"
 msgstr "Paslaugų teikimo sąlygos"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.terms-privacy-agreement"
-msgstr ""
-"Kurdami naują paskyrą sutinkate su mūsų paslaugų teikimo sąlygomis ir "
-"privatumo politika."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"

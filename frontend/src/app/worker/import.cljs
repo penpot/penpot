@@ -278,7 +278,6 @@
             old-id       (parser/get-id node)
             interactions (->> (parser/parse-interactions node)
                               (mapv #(update % :destination resolve)))
-
             data         (-> (parser/parse-data type node)
                              (resolve-data-ids type context)
                              (cond-> (some? old-id)

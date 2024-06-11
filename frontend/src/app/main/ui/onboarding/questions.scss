@@ -11,9 +11,9 @@
 }
 
 .modal-container {
-  max-width: $s-744;
+  max-width: $s-960;
   max-height: fit-content;
-  width: $s-744;
+  width: fit-content;
   padding-inline: $s-100;
   padding-block-start: $s-40;
   padding-block-end: $s-72;
@@ -47,15 +47,15 @@
   @extend .modal-cancel-btn;
 }
 
+.radio-btns label,
+.select-class span {
+  @include bodyMediumTypography;
+}
+
 // STEP 1
 
-// .step-1 {
-//   max-height: $s-468;
-//   height: $s-468;
-// }
-
 .header-image {
-  height: $s-112;
+  height: $s-60;
   width: auto;
   margin-inline-start: auto;
 }
@@ -81,9 +81,15 @@
 }
 
 // STEP-2
-
+.step-1,
+.step-2,
+.step-3,
+.step-5 {
+  max-width: $s-540;
+  width: $s-540;
+}
 .step-2 {
-  grid-template-rows: $s-20 auto auto auto auto $s-32;
+  grid-template-rows: $s-20 auto auto $s-32;
 }
 
 .modal-question {
@@ -103,36 +109,36 @@
 .radio-wrapper {
   display: grid;
   grid-template-columns: 1fr;
-  gap: $s-8;
+  gap: $s-16;
 }
 
 // STEP-3
 .step-3 {
-  grid-template-rows: $s-20 auto auto $s-32;
+  grid-template-rows: $s-20 auto auto auto auto $s-32;
 }
 
 .image-radio {
   display: grid;
-  grid-template-rows: 1fr 1fr $s-32;
-  grid-template-columns: $s-88 $s-92 $s-92 $s-92 $s-88;
-  grid-template-areas:
-    ". image1 image2 image3 ."
-    ". image4 image5 image6 ."
-    "other other other other other";
+  grid-template-rows: 1fr 1fr;
+  grid-template-columns: $s-92 $s-92 $s-92;
   row-gap: $s-16;
   column-gap: $s-24;
+  justify-content: center;
 }
 
 .input-spacing {
   height: $s-32;
-  width: calc(100% - $s-24);
-  margin-inline-start: $s-24;
+  width: 100%;
   margin-block-end: $s-8;
+}
+
+.input-spacing input {
+  @include bodyMediumTypography;
 }
 
 // STEP-4
 
 .step-4 {
-  grid-template-rows: $s-20 auto auto auto $s-32;
+  grid-template-rows: $s-20 auto auto $s-32;
   row-gap: $s-16;
 }

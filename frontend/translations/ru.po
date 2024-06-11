@@ -37,11 +37,6 @@ msgstr ""
 "Это ДЕМОНСТРАЦИЯ, НЕ ИСПОЛЬЗУЙТЕ для работы, проекты будут периодически "
 "удаляться."
 
-#: src/app/main/ui/auth/register.cljs,
-#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.email"
-msgstr "Эл. почта"
-
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
 msgstr "Забыли пароль?"
@@ -138,10 +133,6 @@ msgid "auth.register-submit"
 msgstr "Создать аккаунт"
 
 #: src/app/main/ui/auth/register.cljs
-msgid "auth.register-subtitle"
-msgstr "Это бесплатно, это Open Source"
-
-#: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"
 msgstr "Создать аккаунт"
 
@@ -151,12 +142,6 @@ msgstr "Open Source решение для дизайна и прототипир
 
 msgid "auth.terms-of-service"
 msgstr "Условия использования"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.terms-privacy-agreement"
-msgstr ""
-"Создавая новый аккаунт, вы соглашаетесь с нашими условиями использования и "
-"политикой конфиденциальности."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"

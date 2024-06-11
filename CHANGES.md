@@ -20,15 +20,17 @@
 
 ### :sparkles: New features
 
-- Fix clickable area of Penptot logo in the viewer [Taiga #7988](https://tree.taiga.io/project/penpot/issue/7988)
-- Fix constraints dropdown when selecting multiple shapes [Taiga #7686](https://tree.taiga.io/project/penpot/issue/7686)
 - Improve auth process [Taiga #7094](https://tree.taiga.io/project/penpot/us/7094)
 - Add locking degrees increment (hold shift) on path edition [Taiga #7761](https://tree.taiga.io/project/penpot/issue/7761)
 - Persistence & Concurrent Edition Enhancements [Taiga #5657](https://tree.taiga.io/project/penpot/us/5657)
 - Allow library colors as recent colors [Taiga #7640](https://tree.taiga.io/project/penpot/issue/7640)
+- Missing scroll in viewmode comments [Taiga #7427](https://tree.taiga.io/project/penpot/issue/7427)
+- Comments in View mode should mimic the positioning behavior of the Workspace [Taiga #7346](https://tree.taiga.io/project/penpot/issue/7346)
 
 ### :bug: Bugs fixed
 
+- Fix clickable area of Penptot logo in the viewer [Taiga #7988](https://tree.taiga.io/project/penpot/issue/7988)
+- Fix constraints dropdown when selecting multiple shapes [Taiga #7686](https://tree.taiga.io/project/penpot/issue/7686)
 - Layout and scrollign fixes for the bottom palette [Taiga #7559](https://tree.taiga.io/project/penpot/issue/7559)
 - Fix expand libraries when search results are present [Taiga #7876](https://tree.taiga.io/project/penpot/issue/7876)
 - Fix color palette default library [Taiga #8029](https://tree.taiga.io/project/penpot/issue/8029)
@@ -39,6 +41,9 @@
 - Fix "Share prototypes" modal remains open [Taiga #7442](https://tree.taiga.io/project/penpot/issue/7442)
 - Fix "Components visibility and opacity" [#4694](https://github.com/penpot/penpot/issues/4694)
 - Fix "Attribute overrides in copies are not exported in zip file" [Taiga #8072](https://tree.taiga.io/project/penpot/issue/8072)
+- Fix group not automatically selected in the Layers panel after creation [Taiga #8078](https://tree.taiga.io/project/penpot/issue/8078)
+- Fix export boards loses opacity [Taiga #7592](https://tree.taiga.io/project/penpot/issue/7592)
+- Fix show in view mode and interactions workflow [Taiga #4711](https://github.com/penpot/penpot/pull/4711)
 
 ## 2.0.3
 

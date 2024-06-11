@@ -15,7 +15,9 @@
    [app.main.ui.frame-preview :as frame-preview]
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
-   [app.main.ui.onboarding :refer [onboarding-modal]]
+   [app.main.ui.onboarding.newsletter :refer [onboarding-newsletter]]
+   [app.main.ui.onboarding.questions :refer [questions-modal]]
+   [app.main.ui.onboarding.team-choice :refer [onboarding-team-modal]]
    [app.main.ui.releases :refer [release-notes-modal]]
    [app.main.ui.static :as static]
    [app.util.dom :as dom]
@@ -96,19 +98,43 @@
         #_[:& app.main.ui.onboarding/onboarding-modal]
         #_[:& app.main.ui.onboarding.team-choice/onboarding-team-modal]
         (when-let [props (get profile :props)]
-          (cond
-            (and (not (:onboarding-viewed props))
-                 (contains? cf/flags :onboarding))
-            [:& onboarding-modal {}]
+          (let [show-question-modal?
+                (and (contains? cf/flags :onboarding)
+                     (not (:onboarding-viewed props))
+                     (not (contains? props :onboarding-questions)))
 
-            (and (contains? cf/flags :onboarding)
-                 (:onboarding-viewed props)
-                 (not= (:release-notes-viewed props) (:main cf/version))
-                 (not= "0.0" (:main cf/version)))
-            [:& release-notes-modal {:version (:main cf/version)}]))
+                show-newsletter-modal?
+                (and (contains? cf/flags :onboarding)
+                     (not (:onboarding-viewed props))
+                     (not (contains? props :newsletter-updates))
+                     (contains? props :onboarding-questions))
+
+                show-team-modal?
+                (and (contains? cf/flags :onboarding)
+                     (not (:onboarding-viewed props))
+                     (not (contains? props :onboarding-team-id))
+                     (contains? props :newsletter-updates))
+
+                show-release-modal?
+                (and (contains? cf/flags :onboarding)
+                     (:onboarding-viewed props)
+                     (not= (:release-notes-viewed props) (:main cf/version))
+                     (not= "0.0" (:main cf/version)))]
+
+            (cond
+              show-question-modal?
+              [:& questions-modal]
+
+              show-newsletter-modal?
+              [:& onboarding-newsletter]
+
+              show-team-modal?
+              [:& onboarding-team-modal]
+
+              show-release-modal?
+              [:& release-notes-modal {:version (:main cf/version)}])))
 
         [:& dashboard-page {:route route :profile profile}]]
-
        :viewer
        (let [{:keys [query-params path-params]} route
              {:keys [index share-id section page-id interactions-mode frame-id]

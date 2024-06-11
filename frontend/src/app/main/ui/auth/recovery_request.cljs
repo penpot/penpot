@@ -80,7 +80,7 @@
                  :form form}
      [:div {:class (stl/css :fields-row)}
       [:& fm/input {:name :email
-                    :label (tr "auth.email")
+                    :label (tr "auth.work-email")
                     :type "text"
                     :class (stl/css :form-field)}]]
 

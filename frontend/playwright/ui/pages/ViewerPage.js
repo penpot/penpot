@@ -43,4 +43,18 @@ export class ViewerPage extends BaseWebSocketPage {
   async cleanUp() {
     await this.#ws.mockClose();
   }
+
+  async showComments(clickOptions = {}) {
+    await this.page
+      .getByRole("button", { name: "Comments (G C)" })
+      .click(clickOptions);
+  }
+
+  async showCommentsThread(number, clickOptions = {}) {
+    await this.page
+    .getByTestId("floating-thread-bubble")
+    .filter({ hasText: number.toString() })
+    .click(clickOptions);
+  }
 }
+

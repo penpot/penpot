@@ -81,6 +81,7 @@
     }
     .file-name-edit {
       @extend .input-element;
+      @include bodySmallTypography;
       flex-grow: 1;
     }
     .file-name-label {

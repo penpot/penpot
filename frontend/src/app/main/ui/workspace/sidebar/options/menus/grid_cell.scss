@@ -33,6 +33,7 @@
 
 .area-input {
   @extend .input-element;
+  @include bodySmallTypography;
   width: 100%;
   padding: $s-8;
 }
@@ -51,6 +52,7 @@
 
 .coord-input {
   @extend .input-element;
+  @include bodySmallTypography;
   border-radius: 0 $br-8 $br-8 0;
   border-left: $s-1 solid var(--panel-background-color);
 }

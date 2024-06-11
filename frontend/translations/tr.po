@@ -39,11 +39,6 @@ msgstr ""
 "Bu bir DEMO hizmettir, gerçek işleriniz için KULLANMAYIN, projeler belirli "
 "aralıklarla silinecektir."
 
-#: src/app/main/ui/auth/register.cljs,
-#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.email"
-msgstr "E-posta"
-
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
 msgstr "Parolanı mı unuttun?"
@@ -160,10 +155,6 @@ msgstr "Henüz hesabın yok mu?"
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.register-submit"
 msgstr "Bir hesap oluştur"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.register-subtitle"
-msgstr "Ücretsiz ve Açık Kaynak"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"
