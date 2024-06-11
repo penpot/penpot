@@ -269,6 +269,13 @@
           (keep (mk-check-auto-layout objects))
           shapes)))
 
+(defn full-tree?
+  "Checks if we need to calculate the full tree or we can calculate just a partial tree. Partial
+  trees are more efficient but cannot be done when the layout is centered."
+  [objects layout-id]
+  (let [layout-justify-content (get-in objects [layout-id :layout-justify-content])]
+    (contains? #{:center :end :space-around :space-evenly :stretch} layout-justify-content)))
+
 (defn sizing-auto-modifiers
   "Recalculates the layouts to adjust the sizing: auto new sizes"
   [modif-tree sizing-auto-layouts objects bounds ignore-constraints]
@@ -286,7 +293,7 @@
                          (d/seek sizing-auto-layouts))
 
                     shapes
-                    (if from-layout
+                    (if (and from-layout (not (full-tree? objects from-layout)))
                       (cgst/resolve-subtree from-layout layout-id objects)
                       (cgst/resolve-tree #{layout-id} objects))
 

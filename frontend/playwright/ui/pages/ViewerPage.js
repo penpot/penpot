@@ -33,10 +33,8 @@ export class ViewerPage extends BaseWebSocketPage {
     super(page);
   }
 
-  async goToViewer() {
-    await this.page.goto(
-      `/#/view/${ViewerPage.anyFileId}?page-id=${ViewerPage.anyPageId}&section=interactions&index=0`,
-    );
+  async goToViewer({ fileId = ViewerPage.anyFileId, pageId = ViewerPage.anyPageId } = {}) {
+    await this.page.goto(`/#/view/${fileId}?page-id=${pageId}&section=interactions&index=0`);
 
     this.#ws = await this.waitForNotificationsWebSocket();
     await this.#ws.mockOpen();
