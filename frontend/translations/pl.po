@@ -40,10 +40,6 @@ msgstr ""
 "To jest usługa DEMO, NIE UŻYWAJ jej do prawdziwej pracy, projekty będą "
 "okresowo usuwane."
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.email"
-msgstr "Email"
-
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
 msgstr "Zapomniałeś hasła?"
@@ -140,10 +136,6 @@ msgid "auth.register-submit"
 msgstr "Utwórz konto"
 
 #: src/app/main/ui/auth/register.cljs
-msgid "auth.register-subtitle"
-msgstr "To nic nie kosztuje, to Open Source"
-
-#: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"
 msgstr "Utwórz konto"
 
@@ -153,12 +145,6 @@ msgstr "Rozwiązanie typu Open Source do projektowania i prototypowania."
 
 msgid "auth.terms-of-service"
 msgstr "Warunki świadczenia usług"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.terms-privacy-agreement"
-msgstr ""
-"Tworząc nowe konto, zgadzasz się na nasze warunki świadczenia usług i "
-"politykę prywatności."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"

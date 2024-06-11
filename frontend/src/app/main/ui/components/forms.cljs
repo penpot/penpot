@@ -117,7 +117,7 @@
      [:*
       (cond
         (some? label)
-        [:label {:class (stl/css-case :input-with-label (not is-checkbox?)
+        [:label {:class (stl/css-case :input-with-label-form (not is-checkbox?)
                                       :input-label   is-text?
                                       :radio-label    is-radio?
                                       :checkbox-label is-checkbox?)
@@ -214,7 +214,7 @@
        [:span {:class (stl/css :hint)} hint])]))
 
 (mf/defc select
-  [{:keys [options disabled form default dropdown-class] :as props
+  [{:keys [options disabled form default dropdown-class select-class] :as props
     :or {default ""}}]
   (let [input-name (get props :name)
         form       (or form (mf/use-ctx form-ctx))
@@ -230,6 +230,7 @@
       {:default-value value
        :disabled disabled
        :options options
+       :class select-class
        :dropdown-class dropdown-class
        :on-change handle-change}]]))
 
@@ -289,6 +290,71 @@
              (when checked? [:span {:class (stl/css :radio-dot)}])])
 
           label
+          [:input {:on-change on-change'
+                   :type "radio"
+                   :class (stl/css :radio-input)
+                   :id key
+                   :name name
+                   :value value'
+                   :checked checked?}]]))]))
+
+(mf/defc image-radio-buttons
+  {::mf/wrap-props false}
+  [props]
+  (let [form          (or (unchecked-get props "form")
+                          (mf/use-ctx form-ctx))
+        name          (unchecked-get props "name")
+        image         (unchecked-get props "image")
+        img-height    (unchecked-get props "img-height")
+        img-width     (unchecked-get props "img-width")
+        current-value (or (dm/get-in @form [:data name] "")
+                          (unchecked-get props "value"))
+        on-change     (unchecked-get props "on-change")
+        options       (unchecked-get props "options")
+        trim?         (unchecked-get props "trim")
+        class         (unchecked-get props "class")
+        encode-fn     (d/nilv (unchecked-get props "encode-fn") identity)
+        decode-fn     (d/nilv (unchecked-get props "decode-fn") identity)
+
+        on-change'
+        (mf/use-fn
+         (mf/deps on-change form name)
+         (fn [event]
+           (let [value (-> event dom/get-target dom/get-value decode-fn)]
+             (when (some? form)
+               (swap! form assoc-in [:touched name] true)
+               (fm/on-input-change form name value trim?))
+
+             (when (fn? on-change)
+               (on-change name value)))))]
+
+    [:div {:class (if image
+                    class
+                    (dm/str class " " (stl/css :custom-radio)))}
+     (for [{:keys [image icon value label area]} options]
+       (let [icon?    (some? icon)
+             value'   (encode-fn value)
+             checked? (= value current-value)
+             key      (str/ffmt "%-%" (d/name name) (d/name value'))]
+
+         [:label {:for key
+                  :key key
+                  :style {:grid-area area}
+                  :class (stl/css-case :radio-label-image true
+                                       :global/checked checked?)}
+          (cond
+            icon?
+            [:span {:class (stl/css :icon-inside)
+                    :style {:height img-height
+                            :width img-width}} icon]
+
+            :else
+            [:span {:style {:background-image (str/ffmt "url(%)" image)
+                            :height img-height
+                            :width img-width}
+                    :class (stl/css :image-inside)}])
+
+          [:span {:class (stl/css :image-text)} label]
           [:input {:on-change on-change'
                    :type "radio"
                    :class (stl/css :radio-input)
@@ -378,6 +444,7 @@
                        :no-padding   (pos? (count @items))
                        :invalid (and (some? valid-item-fn)
                                      touched?
+                                     (not (str/empty? @value))
                                      (not (valid-item-fn @value)))))
 
         on-focus

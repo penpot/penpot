@@ -160,6 +160,7 @@
 
 .custom-input-token {
   @extend .input-element;
+  @include bodySmallTypography;
   margin: 0;
   flex-grow: 1;
   &:focus {

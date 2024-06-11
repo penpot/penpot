@@ -16,10 +16,6 @@ msgstr ""
 msgid "auth.already-have-account"
 msgstr "Уже маєте аккаунт?"
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.email"
-msgstr "Електронна пошта"
-
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
 msgstr "Забули пароль?"

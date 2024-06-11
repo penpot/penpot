@@ -7,6 +7,7 @@
 (ns app.util.forms
   (:refer-clojure :exclude [uuid])
   (:require
+   [app.common.data :as d]
    [app.common.spec :as us]
    [app.util.i18n :refer [tr]]
    [cljs.spec.alpha :as s]
@@ -69,11 +70,15 @@
                      (::s/problems (s/explain-data spec (:data state))))
 
           errors   (reduce interpret-problem {} problems)
+
+
           errors   (reduce (fn [errors vf]
                              (merge errors (vf errors (:data state))))
                            errors
                            validators)
-          errors   (merge errors (:errors state))]
+          errors   (merge (:errors state) errors)
+          errors   (d/without-nils errors)]
+
 
       (assoc state
              :errors errors

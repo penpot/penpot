@@ -92,6 +92,7 @@
 .suffix-input {
   grid-column: span 3;
   @extend .input-element;
+  @include bodySmallTypography;
 }
 
 .export-btn {

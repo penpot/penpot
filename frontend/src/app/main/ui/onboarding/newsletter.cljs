@@ -8,39 +8,52 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.config :as cf]
+   [app.main.data.events :as-alias ev]
    [app.main.data.messages :as msg]
-   [app.main.data.modal :as modal]
    [app.main.data.users :as du]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
+   [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc onboarding-newsletter
-  {::mf/register modal/components
-   ::mf/register-as :onboarding-newsletter}
   []
-  (let [message (tr "onboarding.newsletter.acceptance-message")
-        newsletter-updates   (mf/use-state false)
-        newsletter-news      (mf/use-state false)
-        toggle
-        (mf/use-callback
-         (fn [option]
-           (swap! option not)))
+  (let [state* (mf/use-state #(do {:newsletter-updates false
+                                   :newsletter-news false}))
+        state  (deref state*)
 
+        on-change
+        (mf/use-fn
+         (fn [event]
+           (let [attr (-> (dom/get-current-target event)
+                          (dom/get-data "attr")
+                          (keyword))]
+             (swap! state* update attr not))))
 
-        accept
-        (mf/use-callback
-         (mf/deps @newsletter-updates @newsletter-news)
+        on-next
+        (mf/use-fn
+         (mf/deps state)
          (fn []
-           (st/emit! (when (or @newsletter-updates @newsletter-news)
-                       (msg/success message))
-                     (modal/show {:type :onboarding-team})
-                     (du/update-profile-props {:newsletter-updates @newsletter-updates :newsletter-news @newsletter-news}))))
-        onboarding-a-b-test? (cf/external-feature-flag "signup-background" "test")]
+           (when (or (:newsletter-updates state)
+                     (:newsletter-news state))
+             (st/emit! (msg/success (tr "onboarding.newsletter.acceptance-message"))))
 
-    [:div {:class (stl/css-case :modal-overlay true
-                                :onboarding-a-b-test onboarding-a-b-test?)}
+           (let [params (-> state
+                            (assoc ::ev/name "onboarding-step")
+                            (assoc :label "newsletter:subscriptions")
+                            (assoc :step 6))]
+             (st/emit! (ptk/data-event ::ev/event params)
+                       (du/update-profile-props state)))))
+
+        onboarding-a-b-test?
+        (cf/external-feature-flag "signup-background" "test")]
+
+    [:div {:class (stl/css-case
+                   :modal-overlay true
+                   :onboarding-a-b-test onboarding-a-b-test?)}
+
      [:div.animated.fadeInDown {:class (stl/css :modal-container)}
       [:div {:class (stl/css :modal-left)}
        [:img {:src "images/deco-newsletter.png"
@@ -50,30 +63,34 @@
        [:h2 {:class (stl/css :modal-title)
              :data-test "onboarding-newsletter-title"}
         (tr "onboarding.newsletter.title")]
+
        [:p {:class (stl/css :modal-text)}
         (tr "onboarding-v2.newsletter.desc")]
-
 
        [:div {:class (stl/css :newsletter-options)}
         [:div {:class (stl/css :input-wrapper)}
          [:label {:for "newsletter-updates"}
-          [:span {:class (stl/css-case :global/checked @newsletter-updates)}
-           (when @newsletter-updates
-             i/status-tick)]
+          [:span {:class (stl/css-case :global/checked (:newsletter-updates state))}
+           i/status-tick]
+
           (tr "onboarding-v2.newsletter.updates")
           [:input {:type "checkbox"
                    :id "newsletter-updates"
-                   :on-change #(toggle newsletter-updates)}]]]
+                   :data-attr "newsletter-updates"
+                   :value (:newsletter-updates state)
+                   :on-change on-change}]]]
 
         [:div {:class (stl/css :input-wrapper)}
          [:label {:for "newsletter-news"}
-          [:span {:class (stl/css-case :global/checked @newsletter-news)}
-           (when @newsletter-news
-             i/status-tick)]
+          [:span {:class (stl/css-case :global/checked (:newsletter-news state))}
+           i/status-tick]
+
           (tr "onboarding-v2.newsletter.news")
           [:input {:type "checkbox"
                    :id "newsletter-news"
-                   :on-change #(toggle newsletter-news)}]]]]
+                   :data-attr "newsletter-news"
+                   :value (:newsletter-news state)
+                   :on-change on-change}]]]]
 
        [:p {:class (stl/css :modal-text)}
         (tr "onboarding-v2.newsletter.privacy1")
@@ -84,5 +101,6 @@
        [:p {:class (stl/css :modal-text)}
         (tr "onboarding-v2.newsletter.privacy2")]
 
-       [:button {:on-click accept
-                 :class (stl/css :accept-btn)} (tr "labels.continue")]]]]))
+       [:button {:on-click on-next
+                 :class (stl/css :accept-btn)}
+        (tr "labels.continue")]]]]))

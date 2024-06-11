@@ -308,6 +308,7 @@
       .line-height,
       .letter-spacing {
         @extend .input-element;
+        @include bodySmallTypography;
         .icon {
           @include flexCenter;
           width: $s-28;
@@ -339,6 +340,7 @@
   padding: $s-8;
   .numeric-input {
     @extend .input-base;
+    @include bodySmallTypography;
     padding: 0;
   }
 }

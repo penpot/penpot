@@ -92,6 +92,7 @@
 
 .suffix-input {
   @extend .input-element;
+  @include bodySmallTypography;
   grid-column: span 3;
 }
 

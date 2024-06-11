@@ -7,34 +7,29 @@
 (ns app.main.ui.onboarding.team-choice
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data.macros :as dmc]
+   [app.common.data.macros :as dm]
    [app.common.spec :as us]
    [app.config :as cf]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
    [app.main.data.messages :as msg]
-   [app.main.data.modal :as modal]
-   [app.main.refs :as refs]
+   [app.main.data.users :as du]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
-   [app.util.timers :as tm]
    [cljs.spec.alpha :as s]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
-(s/def ::name ::us/not-empty-string)
-(s/def ::team-form
-  (s/keys :req-un [::name]))
-
-(mf/defc team-modal-left
+(mf/defc left-sidebar
+  {::mf/props :obj
+   ::mf/private true}
   []
   [:div {:class (stl/css :modal-left)}
    [:h1 {:class (stl/css :modal-title)}
     (tr "onboarding-v2.welcome.title")]
-
    [:h2 {:class (stl/css :modal-subtitle)}
     (tr "onboarding.team-modal.team-definition")]
    [:p {:class (stl/css :modal-text)}
@@ -61,99 +56,27 @@
      [:p {:class (stl/css :modal-desc)}
       (tr "onboarding.team-modal.create-team-feature-5")]]]])
 
-(mf/defc onboarding-team-modal
-  {::mf/register modal/components
-   ::mf/register-as :onboarding-team}
-  []
-  (let [form  (fm/use-form :spec ::team-form
-                           :initial {}
-                           :validators [(fm/validate-not-empty :name (tr "auth.name.not-all-space"))
-                                        (fm/validate-length :name fm/max-length-allowed (tr "auth.name.too-long"))])
-        on-submit
-        (mf/use-fn
-         (fn [form _]
-           (let [tname (get-in @form [:clean-data :name])]
-             (st/emit! (modal/show {:type :onboarding-team-invitations :name tname})
-                       (ptk/event ::ev/event {::ev/name "choose-team-name"
-                                              ::ev/origin "onboarding"
-                                              :name tname
-                                              :step 1})))))
-        on-skip
-        (fn []
-          (tm/schedule 400  #(st/emit! (modal/hide)
-                                       (ptk/event ::ev/event {::ev/name "create-team-later"
-                                                              ::ev/origin "onboarding"
-                                                              :step 1}))))
-
-        teams (mf/deref refs/teams)
-        onboarding-a-b-test? (cf/external-feature-flag "signup-background" "test")]
-
-    (mf/with-effect [teams]
-      (when (> (count teams) 1)
-        (st/emit! (modal/hide))))
-
-    (when (< (count teams) 2)
-      [:div {:class (stl/css-case :modal-overlay true
-                                  :onboarding-a-b-test onboarding-a-b-test?)}
-       [:div.animated.fadeIn {:class (stl/css :modal-container)}
-        [:& team-modal-left]
-        [:div {:class (stl/css :separator)}]
-        [:div {:class (stl/css :modal-right)}
-         [:div {:class (stl/css :first-block)}
-          [:h2 {:class (stl/css :modal-subtitle)}
-           (tr "onboarding.team-modal.create-team")]
-          [:p {:class (stl/css :modal-text)}
-           (tr "onboarding.choice.team-up.create-team-desc")]
-          [:& fm/form {:form form
-                       :class (stl/css :modal-form)
-                       :on-submit on-submit}
-
-           [:& fm/input {:type "text"
-                         :class (stl/css :team-name-input)
-                         :name :name
-                         :placeholder "Team name"
-                         :label (tr "onboarding.choice.team-up.create-team-placeholder")}]
-
-           [:div {:class (stl/css :action-buttons)}
-            [:> fm/submit-button*
-             {:class (stl/css :accept-button)
-              :label (tr "onboarding.choice.team-up.continue-creating-team")}]]]]
-         [:div {:class (stl/css :second-block)}
-          [:h2 {:class (stl/css :modal-subtitle)}
-           (tr "onboarding.choice.team-up.start-without-a-team")]
-          [:p {:class (stl/css :modal-text)}
-           (tr "onboarding.choice.team-up.start-without-a-team-description")]
-
-          [:div {:class (stl/css :action-buttons)}
-           [:button {:class (stl/css :accept-button)
-                     :on-click on-skip}
-            (tr "onboarding.choice.team-up.continue-without-a-team")]]]]
-
-        [:div {:class (stl/css :paginator)} "1/2"]]])))
-
-(defn get-available-roles
-  []
-  [{:value "editor" :label (tr "labels.editor")}
-   {:value "admin" :label (tr "labels.admin")}])
 
 (s/def ::emails (s/and ::us/set-of-valid-emails))
 (s/def ::role  ::us/keyword)
 (s/def ::invite-form
   (s/keys :req-un [::role ::emails]))
 
-;; This is the final step of team creation, consists in provide a
-;; shortcut for invite users.
+(defn- get-available-roles
+  []
+  [{:value "editor" :label (tr "labels.editor")}
+   {:value "admin" :label (tr "labels.admin")}])
 
-(mf/defc onboarding-team-invitations-modal
-  {::mf/register modal/components
-   ::mf/register-as :onboarding-team-invitations
-   ::mf/props :obj}
-  [{:keys [name]}]
-  (let [initial (mf/use-memo (constantly
-                              {:role "editor"
-                               :name name}))
+(mf/defc team-form-step-2
+  {::mf/props :obj}
+  [{:keys [name on-back]}]
+  (let [initial (mf/use-memo
+                 #(do {:role "editor"
+                       :name name}))
+
         form    (fm/use-form :spec ::invite-form
                              :initial initial)
+
         params  (:clean-data @form)
         emails  (:emails params)
 
@@ -161,51 +84,48 @@
 
         on-success
         (mf/use-fn
-         (fn [_form response]
-           (let [team-id    (:id response)]
-             (st/emit!
-              (modal/hide)
-              (rt/nav :dashboard-projects {:team-id team-id}))
-             (tm/schedule 400 #(st/emit!
-                                (modal/hide))))))
+         (fn [response]
+           (let [team-id (:id response)]
+             (st/emit! (du/update-profile-props {:onboarding-team-id team-id
+                                                 :onboarding-viewed true})
+                       (rt/nav :dashboard-projects {:team-id team-id})))))
 
         on-error
         (mf/use-fn
-         (fn [_form _cause]
-           (st/emit! (msg/error "Error on creating team."))))
+         (fn [_]
+           (st/emit! (msg/error (tr "errors.generic")))))
 
-        ;; The SKIP branch only creates the team, without invitations
         on-invite-later
         (mf/use-fn
-         (fn [_]
-           (let [mdata  {:on-success (partial on-success form)
-                         :on-error   (partial on-error form)}
+         (fn [{:keys [name]}]
+           (let [mdata  {:on-success on-success
+                         :on-error   on-error}
                  params {:name name}]
              (st/emit! (dd/create-team (with-meta params mdata))
-                       (ptk/event ::ev/event {::ev/name "create-team-and-invite-later"
-                                              ::ev/origin "onboarding"
-                                              :name name
-                                              :step 2})))))
+                       (ptk/data-event ::ev/event
+                                       {::ev/name "onboarding-step"
+                                        :label "team:create-team-and-invite-later"
+                                        :team-name name
+                                        :step 7})
+                       (ptk/data-event ::ev/event
+                                       {::ev/name "onboarding-finish"})))))
 
-        ;; The SUBMIT branch creates the team with the invitations
         on-invite-now
         (mf/use-fn
-         (fn [form]
-           (let [mdata  {:on-success (partial on-success form)
-                         :on-error   (partial on-error form)}
-                 params (:clean-data @form)
-                 emails (:emails params)]
+         (fn [{:keys [name] :as params}]
+           (let [mdata  {:on-success on-success
+                         :on-error   on-error}]
 
-             (st/emit! (if (> (count emails) 0)
-                         ;; If the user is only inviting to itself we don't call to create-team-with-invitations
-                         (dd/create-team-with-invitations (with-meta params mdata))
-                         (dd/create-team (with-meta {:name name} mdata)))
-                       (ptk/event ::ev/event {::ev/name "create-team-and-send-invitations"
-                                              ::ev/origin "onboarding"
-                                              :invites (count emails)
-                                              :role (:role params)
-                                              :name name
-                                              :step 2})))))
+             (st/emit! (dd/create-team-with-invitations (with-meta params mdata))
+                       (ptk/data-event ::ev/event
+                                       {::ev/name "onboarding-step"
+                                        :label "team:create-team-and-invite"
+                                        :invites (count emails)
+                                        :team-name name
+                                        :role (:role params)
+                                        :step 7})
+                       (ptk/data-event ::ev/event
+                                       {::ev/name "onboarding-finish"})))))
 
         on-submit
         (mf/use-fn
@@ -213,55 +133,146 @@
            (let [params (:clean-data @form)
                  emails (:emails params)]
              (if (> (count emails) 0)
-               (on-invite-now form)
-               (on-invite-later form))
-             (modal/hide!))))
-        onboarding-a-b-test? (cf/external-feature-flag "signup-background" "test")]
+               (on-invite-now params)
+               (on-invite-later params)))))]
 
-    [:div {:class (stl/css-case :modal-overlay true
-                                :onboarding-a-b-test onboarding-a-b-test?)}
-     [:div.animated.fadeIn {:class (stl/css :modal-container)}
-      [:& team-modal-left]
+    [:*
+     [:div {:class (stl/css :modal-right-invitations)}
+      [:h2 {:class (stl/css :modal-subtitle)} (tr "onboarding.choice.team-up.invite-members")]
+      [:p {:class (stl/css :modal-text)} (tr "onboarding.choice.team-up.invite-members-info")]
+      [:& fm/form {:form form
+                   :class (stl/css :modal-form-invitations)
+                   :on-submit on-submit}
+       [:div {:class (stl/css :role-select)}
+        [:p {:class (stl/css :role-title)} (tr "onboarding.choice.team-up.roles")]
+        [:& fm/select {:name :role :options roles}]]
 
-      [:div {:class (stl/css :separator)}]
-      [:div {:class (stl/css :modal-right-invitations)}
-       [:h2 {:class (stl/css :modal-subtitle)} (tr "onboarding.choice.team-up.invite-members")]
-       [:p {:class (stl/css :modal-text)} (tr "onboarding.choice.team-up.invite-members-info")]
+       [:div {:class (stl/css :invitation-row)}
+        [:& fm/multi-input {:type "email"
+                            :name :emails
+                            :auto-focus? true
+                            :trim true
+                            :valid-item-fn us/parse-email
+                            :caution-item-fn #{}
+                            :label (tr "modals.invite-member.emails")
+                            :on-submit on-submit}]]
+
+       [:div {:class (stl/css :action-buttons)}
+        [:button {:class (stl/css :back-button)
+                  :on-click on-back}
+         (tr "labels.back")]
+
+        [:> fm/submit-button*
+         {:class (stl/css :accept-button)
+          :label (if (> (count emails) 0)
+                   (tr "onboarding.choice.team-up.create-team-and-invite")
+                   (tr "onboarding.choice.team-up.create-team-without-invite"))}]]
+       [:div {:class (stl/css :modal-hint)}
+        "(" (tr "onboarding.choice.team-up.create-team-and-send-invites-description") ")"]]]
+
+
+     [:div {:class (stl/css :paginator)} "2/2"]]))
+
+(mf/defc team-form-step-1
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [on-submit]}]
+  (let [validators (mf/with-memo []
+                     [(fm/validate-not-empty :name (tr "auth.name.not-all-space"))
+                      (fm/validate-length :name fm/max-length-allowed (tr "auth.name.too-long"))])
+
+        form       (fm/use-form
+                    :spec ::team-form
+                    :initial {}
+                    :validators validators)
+
+        on-submit*
+        (mf/use-fn
+         (fn [form]
+           (let [name (dm/get-in @form [:clean-data :name])]
+
+             (st/emit! (ptk/data-event ::ev/event
+                                       {::ev/name "onboarding-step"
+                                        :label "team:choice-team-name"
+                                        :step 7}))
+             (on-submit name))))
+
+        on-skip
+        (mf/use-fn
+         (fn []
+           (st/emit! (du/update-profile-props {:onboarding-viewed true})
+                     (ptk/data-event ::ev/event
+                                     {::ev/name "onboarding-step"
+                                      :label "team:skip-team-creation"
+                                      :step 7})
+                     (ptk/data-event ::ev/event
+                                     {::ev/name "onboarding-finish"}))))]
+    [:*
+     [:div {:class (stl/css :modal-right)}
+      [:div {:class (stl/css :first-block)}
+       [:h2 {:class (stl/css :modal-subtitle)}
+        (tr "onboarding.team-modal.create-team")]
+       [:p {:class (stl/css :modal-text)}
+        (tr "onboarding.choice.team-up.create-team-desc")]
        [:& fm/form {:form form
-                    :class (stl/css :modal-form-invitations)
-                    :on-submit on-submit}
-        [:div {:class (stl/css :role-select)}
-         [:p {:class (stl/css :role-title)} (tr "onboarding.choice.team-up.roles")]
-         [:& fm/select {:name :role :options roles}]]
+                    :class (stl/css :modal-form)
+                    :on-submit on-submit*}
 
-        [:div {:class (stl/css :invitation-row)}
-         [:& fm/multi-input {:type "email"
-                             :name :emails
-                             :auto-focus? true
-                             :trim true
-                             :valid-item-fn us/parse-email
-                             :caution-item-fn #{}
-                             :label (tr "modals.invite-member.emails")
-                             :on-submit  on-submit}]]
+        [:& fm/input {:type "text"
+                      :class (stl/css :team-name-input)
+                      :name :name
+                      :placeholder "Team name"
+                      :label (tr "onboarding.choice.team-up.create-team-placeholder")}]
 
         [:div {:class (stl/css :action-buttons)}
-         [:button {:class (stl/css :back-button)
-                   :on-click #(st/emit! (modal/show {:type :onboarding-team})
-                                        (ptk/event ::ev/event {::ev/name "invite-members-back"
-                                                               ::ev/origin "onboarding"
-                                                               :name name
-                                                               :step 2}))}
-          (tr "labels.back")]
-
          [:> fm/submit-button*
           {:class (stl/css :accept-button)
-           :label (if (> (count emails) 0)
-                    (tr "onboarding.choice.team-up.create-team-and-invite")
-                    (tr "onboarding.choice.team-up.create-team-without-invite"))}]]
-        [:div {:class (stl/css :modal-hint)}
-         (dmc/str "(" (tr "onboarding.choice.team-up.create-team-and-send-invites-description") ")")]]]
+           :label (tr "onboarding.choice.team-up.continue-creating-team")}]]]]
+      [:div {:class (stl/css :second-block)}
+       [:h2 {:class (stl/css :modal-subtitle)}
+        (tr "onboarding.choice.team-up.start-without-a-team")]
+       [:p {:class (stl/css :modal-text)}
+        (tr "onboarding.choice.team-up.start-without-a-team-description")]
+
+       [:div {:class (stl/css :action-buttons)}
+        [:button {:class (stl/css :accept-button)
+                  :on-click on-skip}
+         (tr "onboarding.choice.team-up.continue-without-a-team")]]]]
+
+     [:div {:class (stl/css :paginator)} "1/2"]]))
+
+(s/def ::name ::us/not-empty-string)
+(s/def ::team-form
+  (s/keys :req-un [::name]))
+
+(mf/defc onboarding-team-modal
+  {::mf/props :obj}
+  []
+  (let [name* (mf/use-state nil)
+        name  (deref name*)
+
+        on-submit
+        (mf/use-fn
+         (fn [tname]
+           (swap! name* (constantly tname))))
 
 
-      [:div {:class (stl/css :paginator)} "2/2"]]]))
+        on-back
+        (mf/use-fn
+         (fn []
+           (swap! name* (constantly nil))))
 
+        onboarding-a-b-test?
+        (cf/external-feature-flag "signup-background" "test")]
+
+    [:div {:class (stl/css-case
+                   :modal-overlay true
+                   :onboarding-a-b-test onboarding-a-b-test?)}
+
+     [:div.animated.fadeIn {:class (stl/css :modal-container)}
+      [:& left-sidebar]
+      [:div {:class (stl/css :separator)}]
+      (if name
+        [:& team-form-step-2 {:name name :on-back on-back}]
+        [:& team-form-step-1 {:on-submit on-submit}])]]))
 

@@ -40,11 +40,6 @@ msgstr ""
 "Šis ir IZRĀDĪŠANAS pakalpojums, kas NAV IZMANTOJAMS īstam darbam, jo "
 "projekti ik pēc noteikta laika posma tiks izdzēsti."
 
-#: src/app/main/ui/auth/register.cljs,
-#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.email"
-msgstr "E-pasta adrese"
-
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
 msgstr "Aizmirsta parole?"
@@ -161,10 +156,6 @@ msgstr "Vēl nav konta?"
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.register-submit"
 msgstr "Izveidot kontu"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.register-subtitle"
-msgstr "Tas ir bezmaksas, tā ir atvērtā pirmkoda programmatūra"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"
@@ -2486,10 +2477,6 @@ msgid "questions.31-50"
 msgstr "31-50"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.a-lot"
-msgstr "Plaša"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.adobe-xd"
 msgstr "Adobe XD"
 
@@ -2526,20 +2513,8 @@ msgid "questions.freelancer"
 msgstr "Esmu ārštātnieks(-ce)/Pašnodarbināts(-ā)"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.get-the-code-from-my-team-project"
-msgstr "Koda iegūšana no manas grupas projekta "
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.interface-design-visual-assets-design-systems"
-msgstr "... saskarnes dizains, vizuālie līdzekļi, dizaina sistēmas utt."
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.invision"
 msgstr "InVision"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.leave-feedback-for-my-team-project"
-msgstr "Atstāt atsauksmes par manas grupas projektu"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.lets-get-started"
@@ -2564,10 +2539,6 @@ msgstr "Neviens"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.next"
 msgstr "Nākamais"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.none"
-msgstr "Nav"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.other"
@@ -2596,10 +2567,6 @@ msgstr "Atlasīt iespēju"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.sketch"
 msgstr "Sketch"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.some"
-msgstr "Nelielā"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "questions.start"

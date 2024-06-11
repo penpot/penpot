@@ -36,6 +36,7 @@
 
 .input-wrapper {
   @extend .input-with-label;
+  @include bodySmallTypography;
   label {
     text-transform: none;
   }
