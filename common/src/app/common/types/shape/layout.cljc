@@ -604,18 +604,23 @@
 
 (defn remove-layout-item-data
   [shape]
-  (dissoc shape
-          :layout-item-margin
-          :layout-item-margin-type
-          :layout-item-h-sizing
-          :layout-item-v-sizing
-          :layout-item-max-h
-          :layout-item-min-h
-          :layout-item-max-w
-          :layout-item-min-w
-          :layout-item-align-self
-          :layout-item-absolute
-          :layout-item-z-index))
+  (-> shape
+      (dissoc :layout-item-margin
+              :layout-item-margin-type
+              :layout-item-max-h
+              :layout-item-min-h
+              :layout-item-max-w
+              :layout-item-min-w
+              :layout-item-align-self
+              :layout-item-absolute
+              :layout-item-z-index)
+      (cond-> (or (not (any-layout? shape))
+                  (= :fill (:layout-item-h-sizing shape)))
+        (dissoc :layout-item-h-sizing)
+
+        (or (not (any-layout? shape))
+            (= :fill (:layout-item-v-sizing shape)))
+        (dissoc :layout-item-v-sizing))))
 
 (defn update-flex-scale
   [shape scale]

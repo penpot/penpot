@@ -96,6 +96,7 @@
             (obj/unset! "disable-shadows?")
             (obj/set! "ref" ref)
             (obj/set! "id" (dm/fmt "shape-%" shape-id))
+            (obj/set! "data-testid" (:name shape))
 
             ;; TODO: This is added for backward compatibility.
             (cond-> (and (cfh/text-shape? shape) (empty? (:position-data shape)))

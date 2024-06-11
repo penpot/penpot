@@ -54,7 +54,7 @@
               :name name
               :disabled disabled
               :value value
-              :checked checked?}]]))
+              :default-checked checked?}]]))
 
 (mf/defc radio-buttons
   {::mf/props :obj}
