@@ -111,7 +111,11 @@ export class WorkspacePage extends BaseWebSocketPage {
     const layer = this.layers.getByTestId("layer-item").filter({ has: this.page.getByText(name) });
     await layer.getByRole("button").click(clickOptions);
   }
-      
+
+  async expectSelectedLayer(name) {
+    await expect(this.layers.getByTestId("layer-row").filter({ has: this.page.getByText(name) })).toHaveClass(/selected/);
+  }
+
   async clickAssets(clickOptions = {}) {
     await this.assets.click(clickOptions);
   }

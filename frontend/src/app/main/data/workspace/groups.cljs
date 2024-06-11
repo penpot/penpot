@@ -203,7 +203,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [selected (wsh/lookup-selected state)]
-        (rx/of (group-shapes nil selected))))))
+        (rx/of (group-shapes nil selected :change-selection? true))))))
 
 (defn ungroup-shapes
   [ids & {:keys [change-selection?] :or {change-selection? false}}]

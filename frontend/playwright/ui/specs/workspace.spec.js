@@ -66,3 +66,19 @@ test("User adds a library and its automatically selected in the color palette", 
 
   await expect(workspacePage.palette.getByText('There are no color styles in your library yet')).toBeVisible();
 });
+
+
+test("User makes a group", async ({ page }) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockRPC(/get\-file\?/, "workspace/get-file-not-empty.json");
+  await workspacePage.mockRPC("update-file?id=*", "workspace/update-file-create-rect.json");
+
+  await workspacePage.goToWorkspace({ 
+    fileId: "6191cd35-bb1f-81f7-8004-7cc63d087374", 
+    pageId: "6191cd35-bb1f-81f7-8004-7cc63d087375"
+  });
+  await workspacePage.clickLeafLayer("Rectangle");
+  await workspacePage.page.keyboard.press("ControlOrMeta+g");
+  await workspacePage.expectSelectedLayer("Group");
+});
