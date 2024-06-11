@@ -1,6 +1,7 @@
 (ns app.main.ui.workspace.tokens.style-dictionary
   (:require
    [app.main.refs :as refs]
+   [promesa.core :as p]
    [shadow.resource]))
 
 (def StyleDictionary
@@ -9,6 +10,8 @@
   because shadow-cljs doesn't support some of the more modern bundler features."
   js/window.StyleDictionary)
 
+(defonce !StyleDictionary (atom nil))
+
 ;; Helpers ---------------------------------------------------------------------
 
 (defn tokens->tree
@@ -16,7 +19,8 @@
   [tokens]
   (reduce
    (fn [acc [_ {:keys [type name] :as token}]]
-     (assoc-in acc [type name] token))
+     (->> (update token :id str)
+          (assoc-in acc [type name])))
    {} tokens))
 
 ;; Functions -------------------------------------------------------------------
@@ -57,6 +61,23 @@
                      (js/console.log "Resolved tokens" resolved-tokens))
                    resolved-tokens))))))
 
+(defn resolve-workspace-tokens+
+  [& {:keys [debug?] :as config}]
+  (when-let [workspace-tokens @refs/workspace-tokens]
+    (p/let [sd-tokens (-> workspace-tokens
+                          (tokens->tree)
+                          (clj->js)
+                          (resolve-tokens+ config))]
+      (let [resolved-tokens (reduce
+                             (fn [acc cur]
+                               (let [resolved-value (.-value cur)
+                                     id (uuid (.-id cur))]
+                                 (assoc-in acc [id :value] resolved-value)))
+                             workspace-tokens sd-tokens)]
+        (when debug?
+          (js/console.log "Resolved tokens" resolved-tokens))
+        resolved-tokens))))
+
 ;; Testing ---------------------------------------------------------------------
 
 (defn tokens-studio-example []
@@ -65,6 +86,14 @@
       .-core))
 
 (comment
+
+  (defonce !output (atom nil))
+
+  @!output
+
+  (-> (resolve-workspace-tokens+ {:debug? true})
+      (p/then #(reset! !output %)))
+
   (-> @refs/workspace-tokens
       (tokens->tree)
       (clj->js)
