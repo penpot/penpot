@@ -130,12 +130,21 @@
 
 ;; ---- COMMAND: Logout
 
+(def ^:private schema:logout
+  [:map {:title "logoug"}
+   [:profile-id {:optional true} ::sm/uuid]])
+
 (sv/defmethod ::logout
   "Clears the authentication cookie and logout the current session."
   {::rpc/auth false
-   ::doc/added "1.15"}
-  [cfg _]
-  (rph/with-transform {} (session/delete-fn cfg)))
+   ::doc/changes [["2.1" "Now requires profile-id passed in the body"]]
+   ::doc/added "1.0"
+   ::sm/params schema:logout}
+  [cfg params]
+  (if (= (:profile-id params)
+         (::rpc/profile-id params))
+    (rph/with-transform {} (session/delete-fn cfg))
+    {}))
 
 ;; ---- COMMAND: Recover Profile
 
