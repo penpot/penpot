@@ -69,7 +69,8 @@
     (js/window.StyleDictionary. js-data)))
 
 (comment
-  (let [math-token-id (random-uuid)
+  (let [performance-start (js/window.performance.now)
+        math-token-id (random-uuid)
         dynamic-token-id (random-uuid)
         tokens-data {:dimension {"scale" {"value" "2px"
                                           "type" :sizing}
@@ -92,7 +93,11 @@
         ;; (.formatPlatform sd "json")
         (.buildAllPlatforms sd "json")
         (.catch js/console.error)
-        (.then #(js/console.log "Finished" (.-allTokens %)))))
+        (.then (fn [resp]
+                 (let [performance-end (js/window.performance.now)
+                       duration-ms (- performance-end performance-start)]
+                   (js/console.log "Time elapsed" duration-ms "ms")
+                   (js/console.log "Finished" (.-allTokens resp)))))))
 
 
 
