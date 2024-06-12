@@ -86,7 +86,12 @@
 
 (defonce !tokens-cache (atom nil))
 
-(defn use-resolved-tokens [tokens]
+(defn use-resolved-tokens
+  "The StyleDictionary process function is async, so we can't use resolved values directly.
+
+  This hook will return the unresolved tokens as state until they are processed,
+  then the state will be updated with the resolved tokens."
+  [tokens]
   (let [tokens-state (mf/use-state (get @!tokens-cache tokens tokens))]
     (mf/use-effect
      (mf/deps tokens)
