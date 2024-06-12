@@ -87,7 +87,10 @@
    :ldap-attrs-fullname "cn"
 
    ;; a server prop key where initial project is stored.
-   :initial-project-skey "initial-project"})
+   :initial-project-skey "initial-project"
+
+   ;; time to avoid email sending after profile modification
+   :email-verify-threshold "15m"})
 
 (s/def ::default-rpc-rlimit ::us/vector-of-strings)
 (s/def ::rpc-rlimit-config ::fs/path)
@@ -213,6 +216,7 @@
 (s/def ::telemetry-uri ::us/string)
 (s/def ::telemetry-with-taiga ::us/boolean)
 (s/def ::tenant ::us/string)
+(s/def ::email-verify-threshold ::dt/duration)
 
 (s/def ::config
   (s/keys :opt-un [::secret-key
@@ -334,7 +338,8 @@
                    ::telemetry-uri
                    ::telemetry-referer
                    ::telemetry-with-taiga
-                   ::tenant]))
+                   ::tenant
+                   ::email-verify-threshold]))
 
 (def default-flags
   [:enable-backend-api-doc
