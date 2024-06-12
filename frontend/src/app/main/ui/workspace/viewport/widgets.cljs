@@ -67,6 +67,7 @@
     [:rect.selection-rect
      {:x (:x data)
       :y (:y data)
+      :data-testid "workspace-selection-rect"
       :width (:width data)
       :height (:height data)
       :style {;; Primary with 0.1 opacity

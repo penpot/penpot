@@ -51,6 +51,8 @@ export class WorkspacePage extends BaseWebSocketPage {
     this.palette = page.getByTestId("palette");
     this.sidebar = page.getByTestId("left-sidebar");
     this.librariesModal = page.getByTestId("libraries-modal");
+    this.selectionRect = page.getByTestId("workspace-selection-rect");
+    this.horizontalScrollbar = page.getByTestId("horizontal-scrollbar");
   }
 
   async goToWorkspace({ fileId = WorkspacePage.anyFileId, pageId = WorkspacePage.anyPageId } = {}) {
@@ -100,6 +102,14 @@ export class WorkspacePage extends BaseWebSocketPage {
     await this.page.mouse.down();
     await this.viewport.hover({ position: { x: x + width, y: y + height } });
     await this.page.mouse.up();
+  }
+
+  async panOnViewportAt(x, y, width, height) {
+    await this.page.waitForTimeout(100);
+    await this.viewport.hover({ position: { x, y } });
+    await this.page.mouse.down({ button: "middle" });
+    await this.viewport.hover({ position: { x: x + width, y: y + height } });
+    await this.page.mouse.up({ button: "middle" });
   }
 
   async togglePages() {
