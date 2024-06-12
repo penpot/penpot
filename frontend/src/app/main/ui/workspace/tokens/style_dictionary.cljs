@@ -91,9 +91,18 @@
     (mf/use-effect
      (mf/deps tokens)
      (fn []
-       (p/let [resolved-tokens (resolve-tokens+ tokens)]
-         (reset! !tokens-cache resolved-tokens)
-         (reset! tokens-state resolved-tokens))))
+       (let [cached (get @!tokens-cache tokens)]
+         (cond
+           ;; The tokens are already processing somewhere
+           (p/promise? cached) (p/then cached #(reset! tokens-state %))
+           ;; Get the cached entry
+           (some? cached) (reset! tokens-state cached)
+           ;; No cached entry, start processing
+           :else (let [promise+ (resolve-tokens+ tokens)]
+                   (swap! !tokens-cache assoc tokens promise+)
+                   (p/then promise+ (fn [resolved-tokens]
+                                      (swap! !tokens-cache assoc tokens resolved-tokens)
+                                      (reset! tokens-state resolved-tokens))))))))
     @tokens-state))
 
 ;; Testing ---------------------------------------------------------------------
