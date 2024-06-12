@@ -38,13 +38,11 @@
 (def schema:token
   [::sm/word-string {:max 6000}])
 
-(def ^:private default-verify-threshold
-  (dt/duration "15m"))
-
 (defn- elapsed-verify-threshold?
   [profile]
-  (let [elapsed (dt/diff (:modified-at profile) (dt/now))]
-    (pos? (compare elapsed default-verify-threshold))))
+  (let [elapsed (dt/diff (:modified-at profile) (dt/now))
+        verify-threshold (cf/get :email-verify-threshold)]
+    (pos? (compare elapsed verify-threshold))))
 
 ;; ---- COMMAND: login with password
 
