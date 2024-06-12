@@ -5271,6 +5271,10 @@ msgstr "Texto (%s)"
 msgid "workspace.toolbar.text-palette"
 msgstr "Tipografías (%s)"
 
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.toggle-toolbar"
+msgstr "Alternar barra de herramientas"
+
 msgid "workspace.top-bar.read-only.done"
 msgstr "Hecho"
 

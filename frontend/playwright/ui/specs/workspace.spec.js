@@ -53,3 +53,14 @@ test("User makes a group", async ({ page }) => {
   await workspacePage.page.keyboard.press("ControlOrMeta+g");
   await workspacePage.expectSelectedLayer("Group");
 });
+
+test("Bug 7654 - Toolbar keeps toggling on and off on spacebar press", async ({ page }) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.goToWorkspace();
+
+  await workspacePage.toggleToolbarButton.click();
+  await workspacePage.page.keyboard.press("Backspace");
+  await workspacePage.page.keyboard.press("Enter");
+  await workspacePage.expectHiddenToolbarOptions();
+});
