@@ -162,11 +162,18 @@
 (defn apply-dimensions-token [{:keys [token-id token-type-props selected-shapes]} attributes]
   (let [token (dt/get-token-data-from-token-id token-id)
         attributes (set attributes)
-        updated-token-type-props (if (set/superset? #{:x :y} attributes)
+        updated-token-type-props (cond
+                                   (set/superset? #{:x :y} attributes)
                                    (assoc token-type-props
                                           :on-update-shape update-shape-position
                                           :attributes attributes)
-                                   token-type-props)]
+
+                                   (set/superset? #{:stroke-width} attributes)
+                                   (assoc token-type-props
+                                          :on-update-shape wtc/update-stroke-width
+                                          :attributes attributes)
+
+                                   :else token-type-props)]
     (wtc/on-apply-token {:token token
                          :token-type-props updated-token-type-props
                          :selected-shapes selected-shapes})))
@@ -192,6 +199,12 @@
                                           :attributes attributes))]
     (wtc/on-apply-token {:token token
                          :token-type-props updated-token-type-props
+                         :selected-shapes selected-shapes})))
+
+(defn apply-rotation-opacity-stroke-token [{:keys [token-id token-type-props selected-shapes]} attributes]
+  (let [token (dt/get-token-data-from-token-id token-id)]
+    (wtc/on-apply-token {:token token
+                         :token-type-props token-type-props
                          :selected-shapes selected-shapes})))
 
 (defn additional-actions [{:keys [token-id token-type selected-shapes] :as context-data}]
@@ -236,10 +249,22 @@
                       [{:title "Spacing" :submenu :spacing}
                        {:title "Sizing" :submenu :sizing}
                        {:title "Border Radius" :submenu :border-radius}
-                      ;; TODO: BORDER_WIDTH {:title "Border Width" :attributes #{:width} :children true}
+                       {:title "Border Width" :attributes #{:stroke-width}}
                        {:title "x" :attributes #{:x}}
                        {:title "y" :attributes #{:y}}])
                       ;;TODO: Background blur {:title "Background blur" :attributes #{:width}}])
+
+      :opacity      (attributes->actions
+                     apply-rotation-opacity-stroke-token
+                     [{:title "opacity" :attributes #{:opacity}}])
+
+      :rotation     (attributes->actions
+                     apply-rotation-opacity-stroke-token
+                     [{:title "rotation" :attributes #{:rotation}}])
+
+      :stroke-width (attributes->actions
+                     apply-rotation-opacity-stroke-token
+                     [{:title "stroke width" :attributes #{:stroke-width}}])
 
       [])))
 
