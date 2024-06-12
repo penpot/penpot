@@ -26,6 +26,7 @@
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.tokens.core :as wtc]
    [app.main.ui.workspace.tokens.editable-select :refer [editable-select]]
+   [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [clojure.set :refer [rename-keys union]]
@@ -98,7 +99,8 @@
         selection-parents-ref (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))
         selection-parents     (mf/deref selection-parents-ref)
 
-        tokens (mf/deref refs/workspace-tokens)
+        tokens (-> (mf/deref refs/workspace-tokens)
+                   (sd/use-resolved-tokens))
         tokens-by-type (mf/use-memo (mf/deps tokens) #(wtc/group-tokens-by-type tokens))
 
         border-radius-tokens (:border-radius tokens-by-type)

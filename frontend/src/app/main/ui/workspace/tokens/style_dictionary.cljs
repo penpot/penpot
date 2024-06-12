@@ -2,6 +2,7 @@
   (:require
    [app.main.refs :as refs]
    [promesa.core :as p]
+   [rumext.v2 :as mf]
    [shadow.resource]))
 
 (def StyleDictionary
@@ -80,6 +81,20 @@
   [& {:keys [debug?] :as config}]
   (when-let [workspace-tokens @refs/workspace-tokens]
     (resolve-tokens+ workspace-tokens)))
+
+;; Hooks -----------------------------------------------------------------------
+
+(defonce !tokens-cache (atom nil))
+
+(defn use-resolved-tokens [tokens]
+  (let [tokens-state (mf/use-state (get @!tokens-cache tokens tokens))]
+    (mf/use-effect
+     (mf/deps tokens)
+     (fn []
+       (p/let [resolved-tokens (resolve-tokens+ tokens)]
+         (reset! !tokens-cache resolved-tokens)
+         (reset! tokens-state resolved-tokens))))
+    @tokens-state))
 
 ;; Testing ---------------------------------------------------------------------
 
