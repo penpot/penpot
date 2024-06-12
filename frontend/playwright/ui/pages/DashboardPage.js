@@ -4,11 +4,6 @@ export class DashboardPage extends BaseWebSocketPage {
   static async init(page) {
     await BaseWebSocketPage.initWebSockets(page);
 
-    await BaseWebSocketPage.mockRPC(
-      page,
-      "get-profile",
-      "logged-in-user/get-profile-logged-in-no-onboarding.json",
-    );
     await BaseWebSocketPage.mockRPC(page, "get-teams", "logged-in-user/get-teams-default.json");
     await BaseWebSocketPage.mockRPC(
       page,
