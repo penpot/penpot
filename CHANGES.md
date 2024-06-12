@@ -40,6 +40,7 @@
 - Fix show in view mode and interactions workflow [Taiga #4711](https://github.com/penpot/penpot/pull/4711)
 - Fix internal error when I set up a stroke for some objects without and with stroke [Taiga #7558](https://tree.taiga.io/project/penpot/issue/7558)
 - Toolbar keeps toggling on and off on spacebar press [Taiga #7654](https://github.com/penpot/penpot/pull/7654)
+- Fix toolbar keeps hiding when click outside workspace [Taiga #7776](https://tree.taiga.io/project/penpot/issue/7776)
 
 ## 2.0.3
 
