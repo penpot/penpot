@@ -45,11 +45,9 @@ export class WorkspacePage extends BaseWebSocketPage {
     this.rootShape = page.locator(`[id="shape-00000000-0000-0000-0000-000000000000"]`);
     this.rectShapeButton = page.getByRole("button", { name: "Rectangle (R)" });
     this.colorpicker = page.getByTestId("colorpicker");
-    this.layers = page.getByTestId("layers");
+    this.layers = page.getByTestId("layer-tree");
     this.palette = page.getByTestId("palette");
-    this.assets = page.getByTestId("assets");
-    this.libraries = page.getByTestId("libraries");
-    this.closeLibraries = page.getByTestId("close-libraries");
+    this.sidebar = page.getByTestId("left-sidebar");
     this.librariesModal = page.getByTestId("libraries-modal");
   }
 
@@ -102,6 +100,11 @@ export class WorkspacePage extends BaseWebSocketPage {
     await this.page.mouse.up();
   }
 
+  async togglePages() {
+    const pagesToggle = this.page.getByText("Pages");
+    await pagesToggle.click();
+  }
+
   async clickLeafLayer(name, clickOptions = {}) {
     const layer = this.layers.getByText(name);
     await layer.click(clickOptions);
@@ -113,15 +116,17 @@ export class WorkspacePage extends BaseWebSocketPage {
   }
 
   async expectSelectedLayer(name) {
-    await expect(this.layers.getByTestId("layer-row").filter({ has: this.page.getByText(name) })).toHaveClass(/selected/);
+    await expect(this.layers.getByTestId("layer-row").filter({ has: this.page.getByText(name) })).toHaveClass(
+      /selected/,
+    );
   }
 
   async clickAssets(clickOptions = {}) {
-    await this.assets.click(clickOptions);
+    await this.sidebar.getByText("Assets").click(clickOptions);
   }
 
-  async clickLibraries(clickOptions = {}) {
-    await this.libraries.click(clickOptions);
+  async openLibrariesModal(clickOptions = {}) {
+    await this.sidebar.getByText("Libraries").click(clickOptions);
   }
 
   async clickLibrary(name, clickOptions = {}) {
@@ -129,16 +134,14 @@ export class WorkspacePage extends BaseWebSocketPage {
       .getByTestId("library-item")
       .filter({ hasText: name })
       .getByRole("button")
-      .click(clickOptions);  
+      .click(clickOptions);
   }
 
-  async clickCloseLibraries(clickOptions = {}) {
-    await this.closeLibraries.click(clickOptions);
+  async closeLibrariesModal(clickOptions = {}) {
+    await this.librariesModal.getByRole("button", { name: "Close" }).click(clickOptions);
   }
 
   async clickColorPalette(clickOptions = {}) {
-    await this.palette
-      .getByRole("button", { name: "Color Palette (Alt+P)" })
-      .click(clickOptions);
+    await this.palette.getByRole("button", { name: "Color Palette (Alt+P)" }).click(clickOptions);
   }
 }

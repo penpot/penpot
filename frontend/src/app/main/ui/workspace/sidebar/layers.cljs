@@ -510,7 +510,7 @@
         (mf/use-fn
          #(st/emit! (dw/toggle-focus-mode)))]
 
-    [:div#layers {:class (stl/css :layers) :data-testid "layers"}
+    [:div#layers {:class (stl/css :layers) :data-testid "layer-tree"}
      (if (d/not-empty? focus)
        [:div {:class (stl/css :tool-window-bar)}
         [:button {:class (stl/css :focus-title)

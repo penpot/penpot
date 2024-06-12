@@ -19,7 +19,8 @@
 
 ### :bug: Bugs fixed
 
-- Fix guides move when board is moved by inputs [Taiga 8010](https://tree.taiga.io/project/penpot/issue/8010)
+- Fix layer tree not expanding to the bottom edge [Taiga #7466](https://tree.taiga.io/project/penpot/issue/7466)
+- Fix guides move when board is moved by inputs [Taiga #8010](https://tree.taiga.io/project/penpot/issue/8010)
 - Fix clickable area of Penptot logo in the viewer [Taiga #7988](https://tree.taiga.io/project/penpot/issue/7988)
 - Fix constraints dropdown when selecting multiple shapes [Taiga #7686](https://tree.taiga.io/project/penpot/issue/7686)
 - Layout and scrollign fixes for the bottom palette [Taiga #7559](https://tree.taiga.io/project/penpot/issue/7559)

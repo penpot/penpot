@@ -59,7 +59,6 @@
            [:div {:key (str/concat "tab-" sid)
                   :title tooltip
                   :data-id sid
-                  :data-testid sid
                   :on-click on-click
                   :class  (stl/css-case
                            :tab-container-tab-title true

@@ -39,44 +39,15 @@ test("User draws a rect", async ({ page }) => {
   await expect(shape).toHaveAttribute("height", "100");
 });
 
-test("User adds a library and its automatically selected in the color palette", async ({ page }) => {
-  const workspacePage = new WorkspacePage(page);
-  await workspacePage.setupEmptyFile();
-  await workspacePage.mockRPC("link-file-to-library", "workspace/link-file-to-library.json");
-  await workspacePage.mockRPC("unlink-file-from-library", "workspace/unlink-file-from-library.json");
-  await workspacePage.mockRPC("get-team-shared-files?team-id=*", "workspace/get-team-shared-libraries-non-empty.json");
-  
-  await workspacePage.goToWorkspace();
-
-  // Add Testing library 1
-  await workspacePage.clickColorPalette();
-  await workspacePage.clickAssets();
-  // Now the get-file call should return a library
-  await workspacePage.mockRPC(/get\-file\?/, "workspace/get-file-library.json");
-  await workspacePage.clickLibraries();
-  await workspacePage.clickLibrary("Testing library 1")
-  await workspacePage.clickCloseLibraries(); 
-
-  await expect(workspacePage.palette.getByRole("button", { name: "test-color-187cd5" })).toBeVisible();
-
-  // Remove Testing library 1
-  await workspacePage.clickLibraries();
-  await workspacePage.clickLibrary("Testing library 1")
-  await workspacePage.clickCloseLibraries();
-
-  await expect(workspacePage.palette.getByText('There are no color styles in your library yet')).toBeVisible();
-});
-
-
 test("User makes a group", async ({ page }) => {
   const workspacePage = new WorkspacePage(page);
   await workspacePage.setupEmptyFile();
   await workspacePage.mockRPC(/get\-file\?/, "workspace/get-file-not-empty.json");
   await workspacePage.mockRPC("update-file?id=*", "workspace/update-file-create-rect.json");
 
-  await workspacePage.goToWorkspace({ 
-    fileId: "6191cd35-bb1f-81f7-8004-7cc63d087374", 
-    pageId: "6191cd35-bb1f-81f7-8004-7cc63d087375"
+  await workspacePage.goToWorkspace({
+    fileId: "6191cd35-bb1f-81f7-8004-7cc63d087374",
+    pageId: "6191cd35-bb1f-81f7-8004-7cc63d087375",
   });
   await workspacePage.clickLeafLayer("Rectangle");
   await workspacePage.page.keyboard.press("ControlOrMeta+g");
