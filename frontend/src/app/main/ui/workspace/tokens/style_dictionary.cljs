@@ -41,7 +41,7 @@
       (js/console.log "Input Data" js-data))
     (StyleDictionary. js-data)))
 
-(defn resolve-tokens+
+(defn resolve-sd-tokens+
   "Resolves references and math expressions using StyleDictionary.
   Returns a promise with the resolved dictionary."
   [tokens & {:keys [debug?] :as config}]
@@ -61,22 +61,25 @@
                      (js/console.log "Resolved tokens" resolved-tokens))
                    resolved-tokens))))))
 
+(defn resolve-tokens+
+  [tokens & {:keys [debug?] :as config}]
+  (p/let [sd-tokens (-> (tokens->tree tokens)
+                        (clj->js)
+                        (resolve-sd-tokens+ config))]
+    (let [resolved-tokens (reduce
+                           (fn [acc cur]
+                             (let [resolved-value (.-value cur)
+                                   id (uuid (.-id cur))]
+                               (assoc-in acc [id :value] resolved-value)))
+                           tokens sd-tokens)]
+      (when debug?
+        (js/console.log "Resolved tokens" resolved-tokens))
+      resolved-tokens)))
+
 (defn resolve-workspace-tokens+
   [& {:keys [debug?] :as config}]
   (when-let [workspace-tokens @refs/workspace-tokens]
-    (p/let [sd-tokens (-> workspace-tokens
-                          (tokens->tree)
-                          (clj->js)
-                          (resolve-tokens+ config))]
-      (let [resolved-tokens (reduce
-                             (fn [acc cur]
-                               (let [resolved-value (.-value cur)
-                                     id (uuid (.-id cur))]
-                                 (assoc-in acc [id :value] resolved-value)))
-                             workspace-tokens sd-tokens)]
-        (when debug?
-          (js/console.log "Resolved tokens" resolved-tokens))
-        resolved-tokens))))
+    (resolve-tokens+ workspace-tokens)))
 
 ;; Testing ---------------------------------------------------------------------
 
@@ -98,9 +101,9 @@
       (tokens->tree)
       (clj->js)
       (#(doto % js/console.log))
-      (resolve-tokens+ {:debug? true}))
+      (resolve-sd-tokens+ {:debug? true}))
 
   (-> (tokens-studio-example)
-      (resolve-tokens+ {:debug? true}))
+      (resolve-sd-tokens+ {:debug? true}))
 
   nil)
