@@ -115,13 +115,16 @@
 
         toggle-toolbar
         (mf/use-fn
-         #(st/emit! (dwc/toggle-toolbar-visibility)))]
+         (fn [event]
+           (dom/blur! (dom/get-target event))
+           (st/emit! (dwc/toggle-toolbar-visibility))))]
 
     (when-not ^boolean read-only?
       [:aside {:class (stl/css-case :main-toolbar true
                                     :main-toolbar-no-rulers (not rulers?)
                                     :main-toolbar-hidden hide-toolbar?)}
-       [:ul {:class (stl/css :main-toolbar-options)}
+       [:ul {:class (stl/css :main-toolbar-options)
+             :data-testid "toolbar-options"}
         [:li
          [:button
           {:title (tr "workspace.toolbar.move"  (sc/get-tooltip :move))
@@ -197,7 +200,9 @@
               :on-click toggle-debug-panel}
              i/bug]])]]
 
-       [:button {:class (stl/css :toolbar-handler)
+       [:button {:title (tr "workspace.toolbar.toggle-toolbar")
+                 :aria-label (tr "workspace.toolbar.toggle-toolbar")
+                 :class (stl/css :toolbar-handler)
                  :on-click toggle-toolbar}
         [:div {:class (stl/css :toolbar-handler-btn)}]]])))
 

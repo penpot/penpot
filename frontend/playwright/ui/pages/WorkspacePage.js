@@ -43,7 +43,9 @@ export class WorkspacePage extends BaseWebSocketPage {
     this.presentUserListItems = page.getByTestId("active-users-list").getByAltText("Princesa Leia");
     this.viewport = page.getByTestId("viewport");
     this.rootShape = page.locator(`[id="shape-00000000-0000-0000-0000-000000000000"]`);
+    this.toolbarOptions =  page.getByTestId("toolbar-options");
     this.rectShapeButton = page.getByRole("button", { name: "Rectangle (R)" });
+    this.toggleToolbarButton = page.getByRole("button", { name: "Toggle toolbar" });
     this.colorpicker = page.getByTestId("colorpicker");
     this.layers = page.getByTestId("layer-tree");
     this.palette = page.getByTestId("palette");
@@ -119,6 +121,10 @@ export class WorkspacePage extends BaseWebSocketPage {
     await expect(this.layers.getByTestId("layer-row").filter({ has: this.page.getByText(name) })).toHaveClass(
       /selected/,
     );
+  }
+
+  async expectHiddenToolbarOptions() {
+    await expect(this.toolbarOptions).toHaveCSS("opacity", "0");
   }
 
   async clickAssets(clickOptions = {}) {
