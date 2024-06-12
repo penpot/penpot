@@ -20,6 +20,7 @@
    [app.main.ui.icons :as i]
    [app.util.i18n :refer [tr tr-html]]
    [app.util.router :as rt]
+   [app.util.storage :as sto]
    [beicon.v2.core :as rx]
    [cljs.spec.alpha :as s]
    [rumext.v2 :as mf]))
@@ -163,11 +164,7 @@
 
 ;; --- PAGE: register validation
 
-(defn- handle-register-error
-  [_form _data]
-  (st/emit! (msg/error (tr "errors.generic"))))
-
-(defn- handle-register-success
+(defn- on-register-success
   [data]
   (cond
     (some? (:invitation-token data))
@@ -178,7 +175,9 @@
     (st/emit! (du/login-from-register))
 
     :else
-    (st/emit! (rt/nav :auth-register-success {} {:email (:email data)}))))
+    (do
+      (swap! sto/storage assoc ::email (:email data))
+      (st/emit! (rt/nav :auth-register-success)))))
 
 (s/def ::accept-terms-and-privacy (s/and ::us/boolean true?))
 (s/def ::accept-newsletter-subscription ::us/boolean)
@@ -192,31 +191,63 @@
             :opt-un [::accept-terms-and-privacy
                      ::accept-newsletter-subscription])))
 
+(mf/defc terms-and-privacy
+  {::mf/props :obj
+   ::mf/private true}
+  []
+  (let [terms-label
+        (mf/html
+         [:& tr-html
+          {:tag-name "div"
+           :label "auth.terms-and-privacy-agreement"
+           :params [cf/terms-of-service-uri cf/privacy-policy-uri]}])]
+
+    [:div {:class (stl/css :fields-row :input-visible :accept-terms-and-privacy-wrapper)}
+     [:& fm/input {:name :accept-terms-and-privacy
+                   :class (stl/css :checkbox-terms-and-privacy)
+                   :type "checkbox"
+                   :default-checked false
+                   :label terms-label}]]))
+
 (mf/defc register-validate-form
+  {::mf/props :obj}
   [{:keys [params on-success-callback]}]
-  (let [form       (fm/use-form :spec ::register-validate-form
-                                :validators [(fm/validate-not-empty :fullname (tr "auth.name.not-all-space"))
-                                             (fm/validate-length :fullname fm/max-length-allowed (tr "auth.name.too-long"))]
+  (let [validators (mf/with-memo []
+                     [(fm/validate-not-empty :fullname (tr "auth.name.not-all-space"))
+                      (fm/validate-length :fullname fm/max-length-allowed (tr "auth.name.too-long"))])
+
+        form       (fm/use-form :spec ::register-validate-form
+                                :validators validators
                                 :initial params)
+
         submitted? (mf/use-state false)
 
-        on-success (fn [p]
-                     (if (nil? on-success-callback)
-                       (handle-register-success p)
-                       (on-success-callback (:email p))))
+        on-success
+        (mf/use-fn
+         (mf/deps on-success-callback)
+         (fn [params]
+           (if (nil? on-success-callback)
+             (on-register-success params)
+             (on-success-callback (:email params)))))
+
+        on-error
+        (mf/use-fn
+         (fn [_cause]
+           (st/emit! (msg/error (tr "errors.generic")))))
 
         on-submit
         (mf/use-fn
-         (fn [form _event]
+         (fn [form _]
            (reset! submitted? true)
            (let [params (:clean-data @form)]
              (->> (rp/cmd! :register-profile params)
                   (rx/finalize #(reset! submitted? false))
-                  (rx/subs! on-success
-                            (partial handle-register-error form))))))]
+                  (rx/subs! on-success on-error)))))]
 
-    [:& fm/form {:on-submit on-submit :form form
+    [:& fm/form {:on-submit on-submit
+                 :form form
                  :class (stl/css :register-validate-form)}
+
      [:div {:class (stl/css :fields-row)}
       [:& fm/input {:name :fullname
                     :label (tr "auth.fullname")
@@ -225,18 +256,7 @@
                     :class (stl/css :form-field)}]]
 
      (when (contains? cf/flags :terms-and-privacy-checkbox)
-       (let [terms-label
-             (mf/html
-              [:& tr-html
-               {:tag-name "div"
-                :label "auth.terms-and-privacy-agreement"
-                :params [cf/terms-of-service-uri cf/privacy-policy-uri]}])]
-         [:div {:class (stl/css :fields-row :input-visible :accept-terms-and-privacy-wrapper)}
-          [:& fm/input {:name :accept-terms-and-privacy
-                        :class (stl/css :checkbox-terms-and-privacy)
-                        :type "checkbox"
-                        :default-checked false
-                        :label terms-label}]]))
+       [:& terms-and-privacy])
 
      [:> fm/submit-button*
       {:label (tr "auth.register-submit")
@@ -245,6 +265,7 @@
 
 
 (mf/defc register-validate-page
+  {::mf/props :obj}
   [{:keys [params]}]
   [:div {:class (stl/css :auth-form-wrapper)}
    [:h1 {:class (stl/css :logo-container)}
@@ -263,13 +284,15 @@
       (tr "labels.go-back")]]]])
 
 (mf/defc register-success-page
-  [{:keys [params]}]
-  [:div {:class (stl/css :auth-form-wrapper :register-success)}
-   [:h1 {:class (stl/css :logo-container)}
-    [:a {:href "#/" :title "Penpot" :class (stl/css :logo-btn)} i/logo]]
-   [:div {:class (stl/css :auth-title-wrapper)}
-    [:h2 {:class (stl/css :auth-title)}
-     (tr "auth.check-mail")]
-    [:div {:class (stl/css :notification-text)} (tr "auth.verification-email-sent")]]
-   [:div {:class (stl/css :notification-text-email)} (:email params "")]
-   [:div {:class (stl/css :notification-text)} (tr "auth.check-your-email")]])
+  {::mf/props :obj}
+  []
+  (let [email (::email @sto/storage)]
+    [:div {:class (stl/css :auth-form-wrapper :register-success)}
+     [:h1 {:class (stl/css :logo-container)}
+      [:a {:href "#/" :title "Penpot" :class (stl/css :logo-btn)} i/logo]]
+     [:div {:class (stl/css :auth-title-wrapper)}
+      [:h2 {:class (stl/css :auth-title)}
+       (tr "auth.check-mail")]
+      [:div {:class (stl/css :notification-text)} (tr "auth.verification-email-sent")]]
+     [:div {:class (stl/css :notification-text-email)} email]
+     [:div {:class (stl/css :notification-text)} (tr "auth.check-your-email")]]))
