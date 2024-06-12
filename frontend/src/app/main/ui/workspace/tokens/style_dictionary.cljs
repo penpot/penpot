@@ -111,6 +111,12 @@
                                       (reset! tokens-state resolved-tokens))))))))
     @tokens-state))
 
+(defn use-resolved-workspace-tokens
+  ([] (use-resolved-tokens nil))
+  ([options]
+   (-> (mf/deref refs/workspace-tokens)
+       (use-resolved-tokens options))))
+
 ;; Testing ---------------------------------------------------------------------
 
 (defn tokens-studio-example []
