@@ -83,7 +83,6 @@
     (p/let [sd-tokens (sd/resolve-workspace-tokens+ {:debug? true})]
       (let [resolved-token (get sd-tokens (:id token))
             resolved-token-value (resolve-token-value resolved-token)]
-        (js/console.log "resolved-token resolve-token-value" resolved-token resolve-token-value)
         (doseq [shape selected-shapes]
           (st/emit! (on-apply {:token-id (:id token)
                                :shape-id (:id shape)
