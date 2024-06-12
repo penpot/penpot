@@ -481,7 +481,7 @@
           (let [slot (:swap-slot args)]
             (when (some? slot)
               (log/debug :hint (str "  -> set swap-slot to " slot))
-              (update shape :touched cfh/set-touched-group (ctk/build-swap-slot-group slot)))))]
+              (ctk/set-swap-slot shape slot))))]
 
     (log/dbg :hint "repairing shape :missing-slot" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
