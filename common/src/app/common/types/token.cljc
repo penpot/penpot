@@ -37,7 +37,7 @@
     :border-radius
     :stroke-width
     :box-shadow
-    :dimension
+    :dimensions
     :numeric
     :opacity
     :other
@@ -98,8 +98,8 @@
    [:p2 {:optional true} ::sm/uuid]
    [:p3 {:optional true} ::sm/uuid]
    [:p4 {:optional true} ::sm/uuid]
-   [:position-x {:optional true} ::sm/uuid]
-   [:position-y {:optional true} ::sm/uuid]])
+   [:x {:optional true} ::sm/uuid]
+   [:y {:optional true} ::sm/uuid]])
 
 (def spacing-keys (schema-keys ::spacing))
 
