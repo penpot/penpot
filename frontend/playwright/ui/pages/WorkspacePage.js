@@ -53,6 +53,7 @@ export class WorkspacePage extends BaseWebSocketPage {
     this.selectionRect = page.getByTestId("workspace-selection-rect");
     this.horizontalScrollbar = page.getByTestId("horizontal-scrollbar");
     this.librariesModal = page.getByTestId("libraries-modal");
+    this.togglePalettesVisibility = page.getByTestId("toggle-palettes-visibility");
   }
 
   async goToWorkspace({ fileId = WorkspacePage.anyFileId, pageId = WorkspacePage.anyPageId } = {}) {
@@ -172,5 +173,10 @@ export class WorkspacePage extends BaseWebSocketPage {
     await this.palette
       .getByRole("button", { name: "Color Palette (Alt+P)" })
       .click(clickOptions);
+  }
+
+  async clickTogglePalettesVisibility(clickOptions = {}) {
+    await this.togglePalettesVisibility
+    .click(clickOptions);
   }
 }

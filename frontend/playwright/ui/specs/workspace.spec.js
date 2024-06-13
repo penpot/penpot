@@ -120,3 +120,14 @@ test("User adds a library and its automatically selected in the color palette", 
 
   await expect(workspacePage.palette.getByText('There are no color styles in your library yet')).toBeVisible();
 });
+
+test("Bug 7489 - Workspace-palette items stay hidden when opening with keyboard-shortcut", async ({ page }) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.goToWorkspace();
+
+  await workspacePage.clickTogglePalettesVisibility();
+  await workspacePage.page.keyboard.press("Alt+t");
+
+  await expect(workspacePage.palette.getByText("There are no typography styles in your library yet")).toBeVisible();
+});
