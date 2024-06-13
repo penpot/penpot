@@ -115,10 +115,9 @@
 (mf/defc sidebar
   {::mf/wrap [mf/memo]
    ::mf/props :obj}
-  [{:keys [profile locale section]}]
+  [{:keys [profile section]}]
   [:div {:class (stl/css :dashboard-sidebar :settings)}
    [:& sidebar-content {:profile profile
                         :section section}]
-   [:& profile-section {:profile profile
-                        :locale locale}]])
+   [:& profile-section {:profile profile}]])
 

@@ -7923,6 +7923,7 @@ __metadata:
     eventsource-parser: "npm:^1.1.2"
     express: "npm:^4.19.2"
     fancy-log: "npm:^2.0.0"
+    getopts: "npm:^2.3.0"
     gettext-parser: "npm:^8.0.0"
     gulp: "npm:4.0.2"
     gulp-concat: "npm:^2.6.1"
@@ -8233,6 +8234,13 @@ __metadata:
   version: 2.0.6
   resolution: "get-value@npm:2.0.6"
   checksum: 10c0/f069c132791b357c8fc4adfe9e2929b0a2c6e95f98ca7bc6fcbc27f8a302e552f86b4ae61ec56d9e9ac2544b93b6a39743d479866a37b43fcc104088ba74f0d9
+  languageName: node
+  linkType: hard
+
+"getopts@npm:^2.3.0":
+  version: 2.3.0
+  resolution: "getopts@npm:2.3.0"
+  checksum: 10c0/edbcbd7020e9d87dc41e4ad9add5eb3873ae61339a62431bd92a461be2c0eaa9ec33b6fd0d67fa1b44feedffcf1cf28d6f9dbdb7d604cb1617eaba146a33cbca
   languageName: node
   linkType: hard
 

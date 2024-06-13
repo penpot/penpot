@@ -33,18 +33,16 @@
 (mf/defc settings
   [{:keys [route] :as props}]
   (let [section (get-in route [:data :name])
-        profile (mf/deref refs/profile)
-        locale  (mf/deref i18n/locale)]
+        profile (mf/deref refs/profile)]
 
     (hooks/use-shortcuts ::dashboard sc/shortcuts)
 
-    (mf/use-effect
-     #(when (nil? profile)
+    (mf/with-effect [profile]
+      (when (nil? profile)
         (st/emit! (rt/nav :auth-login))))
 
     [:section {:class (stl/css :dashboard-layout-refactor :dashboard)}
      [:& sidebar {:profile profile
-                  :locale locale
                   :section section}]
 
      [:div {:class (stl/css :dashboard-content)}
@@ -52,16 +50,16 @@
       [:section {:class (stl/css :dashboard-container)}
        (case section
          :settings-profile
-         [:& profile-page {:locale locale}]
+         [:& profile-page]
 
          :settings-feedback
          [:& feedback-page]
 
          :settings-password
-         [:& password-page {:locale locale}]
+         [:& password-page]
 
          :settings-options
-         [:& options-page {:locale locale}]
+         [:& options-page]
 
          :settings-access-tokens
          [:& access-tokens-page])]]]))

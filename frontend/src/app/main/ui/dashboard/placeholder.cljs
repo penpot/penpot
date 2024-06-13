@@ -12,7 +12,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc empty-placeholder
-  [{:keys [dragging? limit origin create-fn] :as props}]
+  [{:keys [dragging? limit origin create-fn]}]
   (let [on-click
         (mf/use-fn
          (mf/deps create-fn)
@@ -29,7 +29,7 @@
       [:div {:class (stl/css :grid-empty-placeholder :libs)
              :data-testid "empty-placeholder"}
        [:div {:class (stl/css :text)}
-        [:& i18n/tr-html {:label "dashboard.empty-placeholder-drafts"}]]]
+        [:> i18n/tr-html* {:content (tr "dashboard.empty-placeholder-drafts")}]]]
 
       :else
       [:div

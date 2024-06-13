@@ -142,9 +142,9 @@
         [:div {:class (stl/css :global/attr-label)}
          (tr "inspect.attributes.typography.text-decoration")]
               ;; Execution time translation strings:
-              ;;   inspect.attributes.typography.text-decoration.none
-              ;;   inspect.attributes.typography.text-decoration.strikethrough
-              ;;   inspect.attributes.typography.text-decoration.underline
+              ;;   (tr "inspect.attributes.typography.text-decoration.none")
+              ;;   (tr "inspect.attributes.typography.text-decoration.strikethrough")
+              ;;   (tr "inspect.attributes.typography.text-decoration.underline")
         [:div {:class (stl/css :global/attr-value)}
          [:& copy-button {:data (copy-style-data style :text-decoration)}
           [:div {:class (stl/css :button-children)}
@@ -155,11 +155,11 @@
         [:div {:class (stl/css :global/attr-label)}
          (tr "inspect.attributes.typography.text-transform")]
               ;; Execution time translation strings:
-              ;;   inspect.attributes.typography.text-transform.lowercase
-              ;;   inspect.attributes.typography.text-transform.none
-              ;;   inspect.attributes.typography.text-transform.titlecase
-              ;;   inspect.attributes.typography.text-transform.uppercase
-              ;;   inspect.attributes.typography.text-transform.unset
+              ;;   (tr "inspect.attributes.typography.text-transform.lowercase")
+              ;;   (tr "inspect.attributes.typography.text-transform.none")
+              ;;   (tr "inspect.attributes.typography.text-transform.titlecase")
+              ;;   (tr "inspect.attributes.typography.text-transform.uppercase")
+              ;;   (tr "inspect.attributes.typography.text-transform.unset")
         [:div {:class (stl/css :global/attr-value)}
          [:& copy-button {:data (copy-style-data style :text-transform)}
           [:div {:class (stl/css :button-children)}
