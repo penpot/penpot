@@ -2503,236 +2503,232 @@ msgstr "Ir al login"
 
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.step1-title"
+msgid "onboarding.questions.step1.title"
 msgstr "Ayúdanos a conocerte"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.step1-subtitle"
+msgid "onboarding.questions.step1.subtitle"
 msgstr "Cuéntanos un poco sobre tí para ayudarnos a que Penpot se adapte mejor a tí. Tus respuestas nos ayudarán a priorizar nuevas funcionalidades y a saber cómo podemos acompañarte mejor."
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.step1-question1"
+msgid "onboarding.questions.step1.question1"
 msgstr "¿Para qué utilizarás Penpot?"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.use-work"
+msgid "onboarding.questions.use.work"
 msgstr "Trabajo"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.use-education"
+msgid "onboarding.questions.use.education"
 msgstr "Educación"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.use-personal"
+msgid "onboarding.questions.use.personal"
 msgstr "Personal"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.step1-question2"
+msgid "onboarding.questions.step1.question2"
 msgstr "¿Qué te ha traído a Penpot?"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.reasons.exploring"
+msgid "onboarding.questions.reasons.exploring"
 msgstr "Estoy echando un vistazo"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.reasons.fit"
+msgid "onboarding.questions.reasons.fit"
 msgstr "Averiguar si Penpot es una buena opción para mi equipo"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.reasons.alternative"
+msgid "onboarding.questions.reasons.alternative"
 msgstr "Buscar una alternativa a Figma, XD, etc."
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.reasons.testing"
+msgid "onboarding.questions.reasons.testing"
 msgstr "Probar antes de self-hosting"
 
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "question.design-tool-more-used"
+msgid "onboarding.questions.step2.title"
 msgstr "¿Cuál de estas herramientas utilizas más?"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.adobe-xd"
+msgid "labels.adobe-xd"
 msgstr "Adobe XD"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.canva"
+msgid "onboarding.questions.canva"
 msgstr "Canva"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.figma"
+msgid "labels.figma"
 msgstr "Figma"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.invision"
+msgid "labels.invision"
 msgstr "InVision"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.sketch"
+msgid "labels.sketch"
 msgstr "Sketch"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.step3-title"
+msgid "onboarding.questions.step3.title"
 msgstr "Háblanos de tu trabajo"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.step3.question1"
+msgid "onboarding.questions.step3.question1"
 msgstr "¿Qué tipo de trabajo haces?"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.work-type.ux"
+msgid "labels.product-design"
 msgstr "Diseño de Producto o UX"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.work-type.dev"
+msgid "labels.developer"
 msgstr "Desarrollo"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.work-type.student"
-msgstr "Estudiante"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.work-type.graphic"
+msgid "labels.graphic-design"
 msgstr "Diseño gráfico"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.work-type.marketing"
+msgid "labels.marketing"
 msgstr "Marketing"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.work-type.product"
+msgid "labels.product-management"
 msgstr "Product Managment"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.step3.question2"
+msgid "onboarding.questions.step3.question2"
 msgstr "¿Cuál es tu puesto?"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.role.team-leader"
+msgid "labels.team-leader"
 msgstr "Líder de equipo"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.role.team-member"
+msgid "labels.team-member"
 msgstr "Miembro de equipo"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.role.freelancer"
+msgid "labels.freelancer"
 msgstr "Autónomo"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.role.founder"
+msgid "labels.founder"
 msgstr "CEO o Fundador"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.role.director"
+msgid "labels.director"
 msgstr "Director"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.company-size"
+msgid "onboarding.questions.step3.question3"
 msgstr "¿Cuál es el tamaño de tu empresa?"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.more-than-50"
+msgid "onboarding.questions.team-size.more-than-50"
 msgstr "Más de 50"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.31-50"
+msgid "onboarding.questions.team-size.31-50"
 msgstr "31-50"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.11-30"
+msgid "onboarding.questions.team-size.11-30"
 msgstr "11-30"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.2-10"
+msgid "onboarding.questions.2-10"
 msgstr "2-10"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.freelancer"
+msgid "onboarding.questions.freelancer"
 msgstr "Soy autónomo"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.personal-project"
+msgid "onboarding.questions.team-size.personal-project"
 msgstr "Estoy trabajando en un proyecto personal"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.step4-title"
+msgid "onboarding.questions.step4.title"
 msgstr "¿Por dónde te apetecería empezar?"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.starting-ui"
+msgid "onboarding.questions.start-with.ui"
 msgstr "Diseñando el UX/UI de una aplicación"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.starting-wireframing"
+msgid "onboarding.questions.start-with.wireframing"
 msgstr "Wireframing"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.starting-prototyping"
+msgid "onboarding.questions.start-with.prototyping"
 msgstr "Prototipado"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.starting-ds"
+msgid "onboarding.questions.start-with.ds"
 msgstr "Creando sistemas de diseño"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.starting-code"
+msgid "onboarding.questions.start-with.code"
 msgstr "Generando código a partir de diseños" 
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.step5-title"
+msgid "onboarding.questions.step5.title"
 msgstr "¿Cómo nos has descubierto?"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.referer.youtube"
+msgid "onboarding.questions.referer.youtube"
 msgstr "YouTube"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.referer.event"
+msgid "onboarding.questions.referer.event"
 msgstr "Evento"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.referer.search"
+msgid "onboarding.questions.referer.search"
 msgstr "Buscador (Google, Yahoo, Bing)"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.referer.social"
+msgid "onboarding.questions.referer.social"
 msgstr "Redes sociales (X, LinkedIn, FB, ect)"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.referer.article"
+msgid "onboarding.questions.referer.article"
 msgstr "Artículo (Blog, Post, Newsletter)"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.lets-get-started"
+msgid "onboarding.questions.lets-get-started"
 msgstr "¡Empecemos!"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.next"
+msgid "labels.next"
 msgstr "Siguiente"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.other"
+msgid "onboarding.questions.other"
 msgstr "Otra (especifica)"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.other-short"
+msgid "labels.other"
 msgstr "Otra"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.previous"
+msgid "labels.previous"
 msgstr "Anterior"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.select-option"
+msgid "labels.select-option"
 msgstr "Selecciona una opción"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.start"
+msgid "labels.start"
 msgstr "Comenzar"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.student-teacher"
+msgid "labels.student-teacher"
 msgstr "Estudiante o profesorado"
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
