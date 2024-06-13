@@ -21,6 +21,7 @@
    [app.main.store :as st]
    [app.plugins.events :as events]
    [app.plugins.file :as file]
+   [app.plugins.fonts :as fonts]
    [app.plugins.library :as library]
    [app.plugins.page :as page]
    [app.plugins.shape :as shape]
@@ -206,4 +207,5 @@
    {:name "viewport" :get #(.getViewport ^js %)}
    {:name "currentUser" :get #(.getCurrentUser ^js %)}
    {:name "activeUsers" :get #(.getActiveUsers ^js %)}
+   {:name "fonts" :get (fn [_] (fonts/fonts-subcontext plugin-id))}
    {:name "library" :get (fn [_] (library/library-subcontext plugin-id))}))
