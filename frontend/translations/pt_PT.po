@@ -76,32 +76,12 @@ msgstr "LDAP"
 msgid "auth.login-with-oidc-submit"
 msgstr "OpenID Connect"
 
-#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs,
-#: src/app/main/ui/dashboard/team_form.cljs,
-#: src/app/main/ui/onboarding/team_choice.cljs,
-#: src/app/main/ui/settings/access_tokens.cljs,
-#: src/app/main/ui/settings/feedback.cljs,
-#: src/app/main/ui/settings/profile.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.not-all-space"
-msgstr "O nome deve conter pelo menos um caractere que não seja um espaço."
-
-#: src/app/main/ui/auth/register.cljs,
-#: src/app/main/ui/dashboard/team_form.cljs,
-#: src/app/main/ui/onboarding/team_choice.cljs,
-#: src/app/main/ui/settings/access_tokens.cljs,
-#: src/app/main/ui/settings/feedback.cljs,
-#: src/app/main/ui/settings/profile.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.too-long"
-msgstr "O nome deve conter um máximo de 250 caracteres."
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
 msgstr "Escreve uma nova palavra-passe"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "O token de recuperação é inválido."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -127,11 +107,6 @@ msgstr "Palavra-passe"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.password-length-hint"
 msgstr "Mínimo de 8 caracteres"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.password-not-empty"
-msgstr ""
-"A palavra-passe deve conter pelo menos um caractere que não seja um espaço."
 
 msgid "auth.privacy-policy"
 msgstr "Política de privacidade"
@@ -291,7 +266,7 @@ msgid "dashboard.access-tokens.create"
 msgstr "Gerar novo token"
 
 #: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.create.success"
+msgid "dashboard.access-tokens.create-success"
 msgstr "Token de acesso criado com sucesso."
 
 #: src/app/main/ui/settings/access-tokens.cljs
@@ -301,10 +276,6 @@ msgstr "Clica no botão \"Gerar novo token\" para gerar um."
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.no-access-tokens"
 msgstr "Ainda não tens nenhum token."
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.errors-required-name"
-msgstr "O nome é obrigatório"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.expiration-180-days"
@@ -887,11 +858,11 @@ msgstr "O e-mail «%s» tem muitos relatórios de rejeição permanentes."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs,
 #: src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
+msgid "errors.invalid-email"
 msgstr "Por favor introduz um email válido"
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "O e-mail de confirmação deve combinar"
 
 msgid "errors.email-spam-or-permanent-bounces"
@@ -2988,10 +2959,6 @@ msgstr "Aumentar zoom na lupa"
 
 msgid "shortcuts.zoom-selected"
 msgstr "Zoom para selecionados"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "team.webhooks.max-length"
-msgstr "O nome do webhook deve conter um máximo de 2048 caracteres."
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"

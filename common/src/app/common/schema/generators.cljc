@@ -77,10 +77,23 @@
 
 (defn word-string
   []
-  (->> (tg/such-that #(re-matches #"\w+" %)
-                     tg/string-alphanumeric
-                     50)
-       (tg/such-that (complement str/blank?))))
+  (as-> tg/string-alphanumeric $$
+    (tg/such-that (fn [v] (re-matches #"\w+" v)) $$ 50)
+    (tg/such-that (fn [v]
+                    (and (not (str/blank? v))
+                         (not (re-matches #"^\d+.*" v))))
+                  $$
+                  50)))
+
+
+(defn email
+  []
+  (->> (word-string)
+       (tg/such-that (fn [v] (>= (count v) 4)))
+       (tg/fmap str/lower)
+       (tg/fmap (fn [v]
+                  (str v "@example.net")))))
+
 
 (defn uri
   []

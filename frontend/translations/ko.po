@@ -683,7 +683,7 @@ msgstr "데모 서비스입니다. 실제 작업에 사용하지 마십시오. �
 "주기적으로 삭제될 것입니다."
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "복구 토큰이 유효하지 않습니다."
 
 msgid "common.share-link.destroy-link"
@@ -717,14 +717,6 @@ msgstr "개인용 엑세스 토큰"
 msgid "dashboard.access-tokens.expired-on"
 msgstr "%s에 만료되었습니다"
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.too-long"
-msgstr "이름은 최대 250자까지만 입력 가능합니다."
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.errors-required-name"
-msgstr "이름을 입력하십시오"
-
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.copied-success"
 msgstr "복사된 토큰"
@@ -754,8 +746,10 @@ msgid "auth.login-tagline"
 msgstr "펜팟은 디자인과 코딩의 협업을 위한 무료 오픈소스 디자인 도구입니다"
 
 #: src/app/main/ui/auth/register.cljs
-msgid "auth.password-not-empty"
-msgstr "비밀번호는 공백 이외의 글자를 포함해야 합니다."
+#, markdown
+msgid "auth.terms-privacy-agreement-md"
+msgstr "새로운 계정을 생성하시면, 사용자는 펜팟의 [서비스 정책](%s)과 [개인 정보 "
+"정책](%s)에 동의하는 것으로 간주됩니다."
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.team-hero.text"
@@ -774,16 +768,12 @@ msgstr "실습용 튜토리얼"
 msgid "auth.login-account-title"
 msgstr "내 계정에 로그인하기"
 
-#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.not-all-space"
-msgstr "이름은 공백 이외의 글자를 포함해야 합니다."
-
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.tutorial-hero.info"
 msgstr "본 실습용 튜토리얼을 통해 펜팟의 기본 기능에 대하여 재미있게 학습하십시오."
 
 #: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.create.success"
+msgid "dashboard.access-tokens.create-success"
 msgstr "엑세스 토큰이 성공적으로 생성되었습니다."
 
 #: src/app/main/ui/settings/access-tokens.cljs

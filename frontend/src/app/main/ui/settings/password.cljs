@@ -7,14 +7,13 @@
 (ns app.main.ui.settings.password
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.main.data.messages :as msg]
    [app.main.data.users :as udu]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [cljs.spec.alpha :as s]
    [rumext.v2 :as mf]))
 
 (defn- on-error
@@ -22,10 +21,10 @@
   (case (:code (ex-data error))
     :old-password-not-match
     (swap! form assoc-in [:errors :password-old]
-           {:message (tr "errors.wrong-old-password")})
+           {:code "errors.wrong-old-password"})
     :email-as-password
     (swap! form assoc-in [:errors :password-1]
-           {:message (tr "errors.email-as-password")})
+           {:code "errors.email-as-password"})
 
     (let [msg (tr "generic.error")]
       (st/emit! (msg/error msg)))))
@@ -47,40 +46,29 @@
                   :on-error (partial on-error form)})]
     (st/emit! (udu/update-password params))))
 
-(s/def ::password-1 ::us/not-empty-string)
-(s/def ::password-2 ::us/not-empty-string)
-(s/def ::password-old (s/nilable ::us/string))
-
-(defn- password-equality
-  [errors data]
-  (let [password-1 (:password-1 data)
-        password-2 (:password-2 data)]
-
-    (cond-> errors
-      (and password-1 password-2 (not= password-1 password-2))
-      (assoc :password-2 {:message (tr "errors.password-invalid-confirmation")})
-
-      (and password-1 (> 8 (count password-1)))
-      (assoc :password-1 {:message (tr "errors.password-too-short")}))))
-
-(s/def ::password-form
-  (s/keys :req-un [::password-1
-                   ::password-2
-                   ::password-old]))
+(def ^:private schema:password-form
+  [:and
+   [:map {:title "PasswordForm"}
+    [:password-1 ::sm/password]
+    [:password-2 ::sm/password]
+    [:password-old ::sm/password]]
+   [:fn {:error/code "errors.password-invalid-confirmation"
+         :error/field :password-2}
+    (fn [{:keys [password-1 password-2]}]
+      (= password-1 password-2))]])
 
 (mf/defc password-form
   []
-  (let [initial (mf/use-memo (constantly {:password-old nil}))
-        form (fm/use-form :spec ::password-form
-                          :validators [(fm/validate-not-all-spaces :password-old (tr "auth.password-not-empty"))
-                                       (fm/validate-not-empty :password-1 (tr "auth.password-not-empty"))
-                                       (fm/validate-not-empty :password-2 (tr "auth.password-not-empty"))
-                                       password-equality]
-                          :initial initial)]
+  (let [initial (mf/with-memo []
+                  {:password-old ""
+                   :password-1 ""
+                   :password-2 ""})
+        form    (fm/use-form :schema schema:password-form
+                             :initial initial)]
+
     [:& fm/form {:class (stl/css :password-form)
                  :on-submit on-submit
                  :form form}
-
      [:div {:class (stl/css :fields-row)}
       [:& fm/input
        {:type "password"

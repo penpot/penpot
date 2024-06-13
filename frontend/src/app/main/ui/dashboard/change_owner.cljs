@@ -7,25 +7,24 @@
 (ns app.main.ui.dashboard.change-owner
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [tr]]
-   [cljs.spec.alpha :as s]
    [rumext.v2 :as mf]))
 
-(s/def ::member-id ::us/uuid)
-(s/def ::leave-modal-form
-  (s/keys :req-un [::member-id]))
+(def ^:private schema:leave-modal-form
+  [:map {:title "LeaveModalForm"}
+   [:member-id ::sm/uuid]])
 
 (mf/defc leave-and-reassign-modal
   {::mf/register modal/components
    ::mf/register-as :leave-and-reassign}
   [{:keys [profile team accept]}]
-  (let [form        (fm/use-form :spec ::leave-modal-form :initial {})
+  (let [form        (fm/use-form :schema schema:leave-modal-form :initial {})
         members-map (mf/deref refs/dashboard-team-members)
         members     (vals members-map)
 

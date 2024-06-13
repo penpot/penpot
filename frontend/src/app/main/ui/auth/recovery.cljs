@@ -7,39 +7,29 @@
 (ns app.main.ui.auth.recovery
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.main.data.messages :as msg]
    [app.main.data.users :as du]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
-   [cljs.spec.alpha :as s]
    [rumext.v2 :as mf]))
 
-(s/def ::password-1 ::us/not-empty-string)
-(s/def ::password-2 ::us/not-empty-string)
-(s/def ::token ::us/not-empty-string)
-
-(s/def ::recovery-form
-  (s/keys :req-un [::password-1
-                   ::password-2]))
-
-(defn- password-equality
-  [errors data]
-  (let [password-1 (:password-1 data)
-        password-2 (:password-2 data)]
-    (cond-> errors
-      (and password-1 password-2
-           (not= password-1 password-2))
-      (assoc :password-2 {:message "errors.password-invalid-confirmation"})
-
-      (and password-1 (> 8 (count password-1)))
-      (assoc :password-1 {:message "errors.password-too-short"}))))
+(def ^:private schema:recovery-form
+  [:and
+   [:map {:title "RecoveryForm"}
+    [:token ::sm/text]
+    [:password-1 ::sm/password]
+    [:password-2 ::sm/password]]
+   [:fn {:error/code "errors.password-invalid-confirmation"
+         :error/field :password-2}
+    (fn [{:keys [password-1 password-2]}]
+      (= password-1 password-2))]])
 
 (defn- on-error
   [_form _error]
-  (st/emit! (msg/error (tr "auth.notifications.invalid-token-error"))))
+  (st/emit! (msg/error (tr "errors.invalid-recovery-token"))))
 
 (defn- on-success
   [_]
@@ -56,14 +46,13 @@
 
 (mf/defc recovery-form
   [{:keys [params] :as props}]
-  (let [form (fm/use-form :spec ::recovery-form
-                          :validators [password-equality
-                                       (fm/validate-not-empty :password-1 (tr "auth.password-not-empty"))
-                                       (fm/validate-not-empty :password-2 (tr "auth.password-not-empty"))]
+  (let [form (fm/use-form :schema schema:recovery-form
                           :initial params)]
+
     [:& fm/form {:on-submit on-submit
                  :class (stl/css :recovery-form)
                  :form form}
+
      [:div {:class (stl/css :fields-row)}
       [:& fm/input {:type "password"
                     :name :password-1

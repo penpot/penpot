@@ -76,20 +76,12 @@ msgstr "LDAP"
 msgid "auth.login-with-oidc-submit"
 msgstr "shaidar buxewa"
 
-#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.not-all-space"
-msgstr "dole suna ya qumshi waxansu alamimon rubutu, sannan tazara."
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.too-long"
-msgstr "suna dole ya qunshi alamomin rubutu 250."
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
 msgstr "sanya sabuwar lambar tsaro"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "lambar tsaron da ka sanya ba daidai ba ce."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -252,7 +244,7 @@ msgid "dashboard.access-tokens.create"
 msgstr "samo sabuwar lambar tsaro"
 
 #: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.create.success"
+msgid "dashboard.access-tokens.create-success"
 msgstr "ka sami lambar tsaron da aka yi."
 
 #: src/app/main/ui/settings/access-tokens.cljs
@@ -264,10 +256,6 @@ msgstr ""
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.no-access-tokens"
 msgstr "ba ka da wasu lambobin tsaro yanzu."
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.errors-required-name"
-msgstr "ana buqatar suna"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.expiration-180-days"
@@ -819,11 +807,11 @@ msgid "errors.email-has-permanent-bounces"
 msgstr "imel Â«%sÂ» na da bayanan matsaloli na dindindin."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
+msgid "errors.invalid-email"
 msgstr "sanya imel mai amfani"
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "tabbata imel xinka ya yi daidai"
 
 msgid "errors.email-spam-or-permanent-bounces"
@@ -2789,10 +2777,6 @@ msgstr "Zuko karuwar ido"
 
 msgid "shortcuts.zoom-selected"
 msgstr "Zuko wanda aka zaba"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "team.webhooks.max-length"
-msgstr "Sunan shafin yanar gizon zai kunshi a mafi yawa haruffa 2048."
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"

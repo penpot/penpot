@@ -83,32 +83,12 @@ msgstr "LDAP"
 msgid "auth.login-with-oidc-submit"
 msgstr "‎OpenID Connect"
 
-#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs,
-#: src/app/main/ui/dashboard/team_form.cljs,
-#: src/app/main/ui/onboarding/team_choice.cljs,
-#: src/app/main/ui/settings/access_tokens.cljs,
-#: src/app/main/ui/settings/feedback.cljs,
-#: src/app/main/ui/settings/profile.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.not-all-space"
-msgstr "השם חייב להכיל תווים שאינם רווחים."
-
-#: src/app/main/ui/auth/register.cljs,
-#: src/app/main/ui/dashboard/team_form.cljs,
-#: src/app/main/ui/onboarding/team_choice.cljs,
-#: src/app/main/ui/settings/access_tokens.cljs,
-#: src/app/main/ui/settings/feedback.cljs,
-#: src/app/main/ui/settings/profile.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.too-long"
-msgstr "השם חייב להכיל 250 תווים לכל היותר."
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
 msgstr "נא להקליד סיסמה חדשה"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "אסימון השחזור שגוי."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -134,10 +114,6 @@ msgstr "סיסמה"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.password-length-hint"
 msgstr "8 תווים לפחות"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.password-not-empty"
-msgstr "הסיסמה חייבת להכיל תווים שאינם רווחים."
 
 msgid "auth.privacy-policy"
 msgstr "מדיניות פרטיות"
@@ -293,7 +269,7 @@ msgid "dashboard.access-tokens.create"
 msgstr "יצירת אסימון חדש"
 
 #: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.create.success"
+msgid "dashboard.access-tokens.create-success"
 msgstr "אסימון הגישה נוצר בהצלחה."
 
 #: src/app/main/ui/settings/access-tokens.cljs
@@ -303,10 +279,6 @@ msgstr "נא ללחוץ על הכפתור „יצירת אסימון חדש” �
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.no-access-tokens"
 msgstr "אין לך אסימונים עדיין."
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.errors-required-name"
-msgstr "השם הוא בגדר חובה"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.expiration-180-days"
@@ -889,11 +861,11 @@ msgstr "לכתובת הדוא״ל „%s” יש יותר מדי דוחות הח�
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs,
 #: src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
+msgid "errors.invalid-email"
 msgstr "נא למלא כתובת דוא״ל תקפה בבקשה"
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "כתובת הדוא״ל לאימות חייבת להיות תואמת"
 
 msgid "errors.email-spam-or-permanent-bounces"
@@ -3008,10 +2980,6 @@ msgstr "הגדלת עדשת תקריב"
 
 msgid "shortcuts.zoom-selected"
 msgstr "התמקדות על הנבחר"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "team.webhooks.max-length"
-msgstr "אורך שם ההתליה הוא עד 2048 תווים."
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"

@@ -81,7 +81,7 @@ msgid "auth.new-password"
 msgstr "புதிய கடவுச்சொல்லை உள்ளிடவும்"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "மீட்பு டோக்கன் செல்லுபடியாகாது."
 
 #: src/app/main/ui/auth/recovery.cljs

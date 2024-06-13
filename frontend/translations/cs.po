@@ -76,20 +76,12 @@ msgstr "LDAP"
 msgid "auth.login-with-oidc-submit"
 msgstr "OpenID"
 
-#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.not-all-space"
-msgstr "Název musí obsahovat jiný znak než mezeru."
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.too-long"
-msgstr "Název musí obsahovat maximálně 250 znaků."
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
 msgstr "Zadejte nové heslo"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "Token pro obnovení je neplatný."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -115,10 +107,6 @@ msgstr "Heslo"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.password-length-hint"
 msgstr "Minimálně 8 znaků"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.password-not-empty"
-msgstr "Heslo musí obsahovat jiný znak než mezeru."
 
 msgid "auth.privacy-policy"
 msgstr "Zásady ochrany osobních údajů"
@@ -278,7 +266,7 @@ msgid "dashboard.access-tokens.create"
 msgstr "Generovat nový token"
 
 #: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.create.success"
+msgid "dashboard.access-tokens.create-success"
 msgstr "Přístupový token byl úspěšně vytvořen."
 
 #: src/app/main/ui/settings/access-tokens.cljs
@@ -290,10 +278,6 @@ msgstr ""
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.no-access-tokens"
 msgstr "Zatím nemáte žádné tokeny."
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.errors-required-name"
-msgstr "Jméno je povinné"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.expiration-180-days"
@@ -865,11 +849,11 @@ msgstr "E-mail «%s» má mnoho trvalých zpráv o nedoručitelnosti."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs,
 #: src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
+msgid "errors.invalid-email"
 msgstr "Zadejte prosím platný email"
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "Potvrzovací e-mail se musí shodovat"
 
 msgid "errors.email-spam-or-permanent-bounces"
@@ -2973,10 +2957,6 @@ msgstr "Zvětšení zoomu"
 
 msgid "shortcuts.zoom-selected"
 msgstr "Přiblížit na vybrané"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "team.webhooks.max-length"
-msgstr "Název webhooku musí obsahovat maximálně 2048 znaků."
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"

@@ -77,20 +77,12 @@ msgstr "LDAP"
 msgid "auth.login-with-oidc-submit"
 msgstr "OpenID"
 
-#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.not-all-space"
-msgstr "Numele trebuie să conțină un caracter altul decât spațiu."
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.too-long"
-msgstr "Numele trebuie să conțină cel mult 250 caractere."
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
 msgstr "Introduceți o parolă nouă"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "Codul de recuperare nu este valid."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -118,10 +110,6 @@ msgstr "Parola"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.password-length-hint"
 msgstr "Cel puțin 8 caractere"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.password-not-empty"
-msgstr "Parola trebuie să conțină un caracter altul decât spațiu."
 
 msgid "auth.privacy-policy"
 msgstr "Politica de Confidențialitate"
@@ -277,7 +265,7 @@ msgid "dashboard.access-tokens.create"
 msgstr "Generați jeton nou"
 
 #: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.create.success"
+msgid "dashboard.access-tokens.create-success"
 msgstr "Jeton de acces creat cu succes."
 
 #: src/app/main/ui/settings/access-tokens.cljs
@@ -287,10 +275,6 @@ msgstr "Apăsați butonul 'Generați jeton nou' pentru a genera unul."
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.no-access-tokens"
 msgstr "Nu aveți încă jetoane."
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.errors-required-name"
-msgstr "Numele este obligatoriu"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.expiration-180-days"
@@ -872,11 +856,11 @@ msgstr "Adresa de email «%s» are multe rapoarte permanente de respingere."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs,
 #: src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
+msgid "errors.invalid-email"
 msgstr "Vă rugăm să introduceți un e-mail valid"
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "E-mailul de confirmare trebuie să se potrivească"
 
 msgid "errors.email-spam-or-permanent-bounces"
@@ -2892,10 +2876,6 @@ msgstr "Creștere obiectiv de zoom"
 
 msgid "shortcuts.zoom-selected"
 msgstr "Mărește la selecție"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "team.webhooks.max-length"
-msgstr "Numele webhook-ului trebuie să conțină maxim 2048 caractere."
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"

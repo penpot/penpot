@@ -77,7 +77,7 @@ msgid "auth.new-password"
 msgstr "新しいパスワードを入力"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "リカバリコードが無効です。"
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -519,7 +519,7 @@ msgid "errors.email-has-permanent-bounces"
 msgstr "メールアドレス «%s» には多くの受信失敗レポートがあります。"
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "メールアドレスは同じものを入力する必要があります"
 
 msgid "errors.email-spam-or-permanent-bounces"
