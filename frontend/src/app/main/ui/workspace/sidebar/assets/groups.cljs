@@ -8,7 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.files.helpers :as cfh]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.store :as st]
@@ -18,7 +18,6 @@
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [cljs.spec.alpha :as s]
    [rumext.v2 :as mf]))
 
 (mf/defc asset-group-title
@@ -92,21 +91,18 @@
                                (compare key1 key2))))
             assets)))
 
-(s/def ::asset-name ::us/not-empty-string)
-(s/def ::name-group-form
-  (s/keys :req-un [::asset-name]))
+(def ^:private schema:group-form
+  [:map {:title "GroupForm"}
+   [:name [::sm/text {:max 250}]]])
 
 (mf/defc name-group-dialog
   {::mf/register modal/components
    ::mf/register-as :name-group-dialog}
   [{:keys [path last-path accept] :as ctx
     :or {path "" last-path ""}}]
-  (let [initial  (mf/use-memo
-                  (mf/deps last-path)
-                  (constantly {:asset-name last-path}))
-        form     (fm/use-form :spec ::name-group-form
-                              :validators [(fm/validate-not-empty :asset-name (tr "auth.name.not-all-space"))
-                                           (fm/validate-length :asset-name fm/max-length-allowed (tr "auth.name.too-long"))]
+  (let [initial  (mf/with-memo [last-path]
+                   {:asset-name last-path})
+        form     (fm/use-form :schema schema:group-form
                               :initial initial)
 
         create?  (empty? path)
@@ -117,7 +113,7 @@
         (mf/use-fn
          (mf/deps form)
          (fn [_]
-           (let [asset-name (get-in @form [:clean-data :asset-name])]
+           (let [asset-name (get-in @form [:clean-data :name])]
              (if create?
                (accept asset-name)
                (accept path asset-name))
@@ -135,7 +131,7 @@
 
       [:div {:class (stl/css :modal-content)}
        [:& fm/form {:form form :on-submit on-accept}
-        [:& fm/input {:name :asset-name
+        [:& fm/input {:name :name
                       :class (stl/css :input-wrapper)
                       :auto-focus? true
                       :label (tr "workspace.assets.group-name")

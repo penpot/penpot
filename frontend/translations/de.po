@@ -86,32 +86,12 @@ msgstr "LDAP"
 msgid "auth.login-with-oidc-submit"
 msgstr "OpenID"
 
-#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs,
-#: src/app/main/ui/dashboard/team_form.cljs,
-#: src/app/main/ui/onboarding/team_choice.cljs,
-#: src/app/main/ui/settings/access_tokens.cljs,
-#: src/app/main/ui/settings/feedback.cljs,
-#: src/app/main/ui/settings/profile.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.not-all-space"
-msgstr "Der Name darf keine Leerzeichen enthalten."
-
-#: src/app/main/ui/auth/register.cljs,
-#: src/app/main/ui/dashboard/team_form.cljs,
-#: src/app/main/ui/onboarding/team_choice.cljs,
-#: src/app/main/ui/settings/access_tokens.cljs,
-#: src/app/main/ui/settings/feedback.cljs,
-#: src/app/main/ui/settings/profile.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.too-long"
-msgstr "Der Name darf höchstens 250 Zeichen lang sein."
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
 msgstr "Geben Sie ein neues Passwort ein"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "Der Wiederherstellungscode ist ungültig."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -140,10 +120,6 @@ msgstr "Passwort"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.password-length-hint"
 msgstr "Mindestens 8 Zeichen"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.password-not-empty"
-msgstr "Das Passwort darf keine Leerzeichen enthalten."
 
 msgid "auth.privacy-policy"
 msgstr "Datenschutzerklärung"
@@ -305,7 +281,7 @@ msgid "dashboard.access-tokens.create"
 msgstr "Neues Token generieren"
 
 #: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.create.success"
+msgid "dashboard.access-tokens.create-success"
 msgstr "Der Zugangstoken wurde erfolgreich erstellt."
 
 #: src/app/main/ui/settings/access-tokens.cljs
@@ -317,10 +293,6 @@ msgstr ""
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.no-access-tokens"
 msgstr "Du hast bisher keine Token."
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.errors-required-name"
-msgstr "Der Name ist erforderlich"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.expiration-180-days"
@@ -921,11 +893,11 @@ msgstr ""
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs,
 #: src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
+msgid "errors.invalid-email"
 msgstr "Geben Sie bitte eine gültige E-Mail-Adresse ein"
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "Bestätigungs-E-Mail muss übereinstimmen"
 
 msgid "errors.email-spam-or-permanent-bounces"
@@ -3098,10 +3070,6 @@ msgstr "Ansicht mit Zoomwerkzeug vergrößern"
 
 msgid "shortcuts.zoom-selected"
 msgstr "Zur Auswahl zoomen"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "team.webhooks.max-length"
-msgstr "Der Name des Webhooks darf höchstens 2048 Zeichen lang sein."
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"

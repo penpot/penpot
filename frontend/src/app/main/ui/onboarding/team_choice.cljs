@@ -8,7 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
    [app.main.data.messages :as msg]
@@ -18,7 +18,6 @@
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
-   [cljs.spec.alpha :as s]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
@@ -55,11 +54,10 @@
      [:p {:class (stl/css :modal-desc)}
       (tr "onboarding.team-modal.create-team-feature-5")]]]])
 
-
-(s/def ::emails (s/and ::us/set-of-valid-emails))
-(s/def ::role  ::us/keyword)
-(s/def ::invite-form
-  (s/keys :req-un [::role ::emails]))
+(def ^:private schema:invite-form
+  [:map {:title "InviteForm"}
+   [:role :keyword]
+   [:emails [::sm/set {:kind ::sm/email}]]])
 
 (defn- get-available-roles
   []
@@ -73,7 +71,7 @@
                  #(do {:role "editor"
                        :name name}))
 
-        form    (fm/use-form :spec ::invite-form
+        form    (fm/use-form :schema schema:invite-form
                              :initial initial)
 
         params  (:clean-data @form)
@@ -151,7 +149,7 @@
                             :name :emails
                             :auto-focus? true
                             :trim true
-                            :valid-item-fn us/parse-email
+                            :valid-item-fn sm/parse-email
                             :caution-item-fn #{}
                             :label (tr "modals.invite-member.emails")
                             :on-submit on-submit}]]
@@ -172,18 +170,16 @@
 
      [:div {:class (stl/css :paginator)} "2/2"]]))
 
+(def ^:private schema:team-form
+  [:map {:title "TeamForm"}
+   [:name [::sm/text {:max 250}]]])
+
 (mf/defc team-form-step-1
   {::mf/props :obj
    ::mf/private true}
   [{:keys [on-submit]}]
-  (let [validators (mf/with-memo []
-                     [(fm/validate-not-empty :name (tr "auth.name.not-all-space"))
-                      (fm/validate-length :name fm/max-length-allowed (tr "auth.name.too-long"))])
-
-        form       (fm/use-form
-                    :spec ::team-form
-                    :initial {}
-                    :validators validators)
+  (let [form (fm/use-form :schema schema:team-form
+                          :initial {})
 
         on-submit*
         (mf/use-fn
@@ -239,10 +235,6 @@
          (tr "onboarding.choice.team-up.continue-without-a-team")]]]]
 
      [:div {:class (stl/css :paginator)} "1/2"]]))
-
-(s/def ::name ::us/not-empty-string)
-(s/def ::team-form
-  (s/keys :req-un [::name]))
 
 (mf/defc onboarding-team-modal
   {::mf/props :obj}

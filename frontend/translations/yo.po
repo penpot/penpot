@@ -72,16 +72,12 @@ msgstr "LDAP"
 msgid "auth.login-with-oidc-submit"
 msgstr "ṣílẹ̀kuǹ ìdánimọ̀"
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.too-long"
-msgstr "orúkọ kò gbọdọ̀ ju àádọ́jọ́ lẹ́tà lọ."
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
 msgstr "tẹ ọ̀rọ̀ ìgbaniwọlé tuntun"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "àmì àtúnwárí ti díbàjẹ́."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -109,10 +105,6 @@ msgstr "ọ̀rọ̀- ìgbaniwọlé"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.password-length-hint"
 msgstr "kò gbọdọ̀ ju ohun kíkọ mẹ́jọ lọ"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.password-not-empty"
-msgstr "ọ̀rọ̀-ìgbaniwọlé gbọ́dọ̀ ní nǹkan kíkọ láìsí àlàfo."
 
 msgid "auth.privacy-policy"
 msgstr "ìpamọ ètò ìmúló"
@@ -252,7 +244,7 @@ msgid "dashboard.access-tokens.create"
 msgstr "ṣe ìpilẹ̀sẹ̀ àmì tókìnnì"
 
 #: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.create.success"
+msgid "dashboard.access-tokens.create-success"
 msgstr "ṣe àyẹ̀wò àmì tókìnnì tí o ṣẹ̀dá bó ṣeyẹ."
 
 #: src/app/main/ui/settings/access-tokens.cljs
@@ -262,10 +254,6 @@ msgstr "tẹ bọ́tìnnì \" ṣe ìpilẹ̀sẹ̀ àmì tókìnnì tuntun\"  l
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.no-access-tokens"
 msgstr "o kò tí ì ní àmì tókínnì títí di ìsinsìn yìí."
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.errors-required-name"
-msgstr "a nílò orúkọ"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.expiration-180-days"
@@ -793,11 +781,11 @@ msgid "errors.email-has-permanent-bounces"
 msgstr "Ímeèlì  «%s» ti ní ìjábọ̀ ọ̀pọ̀ọlọpọ̀ ìta-bọn-ọ̀n ti pẹ́."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
+msgid "errors.invalid-email"
 msgstr "Tẹ àti wọlé pẹ̀lú ímeèlì tó wúlo jọ̀wọ́"
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "Ímeèlì tí a ti mọ̀dájú gbọ́dọ̀ báramu"
 
 msgid "errors.email-spam-or-permanent-bounces"
@@ -2642,10 +2630,6 @@ msgstr "Lílọ̀soké lẹnsi sisun"
 
 msgid "shortcuts.zoom-selected"
 msgstr "Yiyan pelu sun-un"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "team.webhooks.max-length"
-msgstr "Orúkọ̀ webhook kò gbọ́dọ̀ kọjà awọ́n óhun kíkọ́ 2048."
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"

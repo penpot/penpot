@@ -81,7 +81,7 @@ msgid "auth.new-password"
 msgstr "Indtast et nyt kodeord"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "Genopretningspoletten er ugyldig."
 
 #: src/app/main/ui/auth/recovery.cljs

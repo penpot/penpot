@@ -81,7 +81,7 @@ msgid "auth.new-password"
 msgstr "പുതിയൊരു പാസ്‌വേഡ് ചേർക്കുക"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "റിക്കവറി ടോക്കൺ അസാധുവാണ്."
 
 #: src/app/main/ui/auth/recovery.cljs

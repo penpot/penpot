@@ -72,32 +72,12 @@ msgstr "LDAP登录"
 msgid "auth.login-with-oidc-submit"
 msgstr "OpenID登录"
 
-#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs,
-#: src/app/main/ui/dashboard/team_form.cljs,
-#: src/app/main/ui/onboarding/team_choice.cljs,
-#: src/app/main/ui/settings/access_tokens.cljs,
-#: src/app/main/ui/settings/feedback.cljs,
-#: src/app/main/ui/settings/profile.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.not-all-space"
-msgstr "姓名必须包含一些空格以外的字符。"
-
-#: src/app/main/ui/auth/register.cljs,
-#: src/app/main/ui/dashboard/team_form.cljs,
-#: src/app/main/ui/onboarding/team_choice.cljs,
-#: src/app/main/ui/settings/access_tokens.cljs,
-#: src/app/main/ui/settings/feedback.cljs,
-#: src/app/main/ui/settings/profile.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.too-long"
-msgstr "姓名最多包含250个字符。"
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
 msgstr "输入新的密码"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "恢复令牌无效。"
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -123,10 +103,6 @@ msgstr "密码"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.password-length-hint"
 msgstr "至少8位字符"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.password-not-empty"
-msgstr "密码必须包含一些空格以外的字符。"
 
 msgid "auth.privacy-policy"
 msgstr "隐私政策"
@@ -279,7 +255,7 @@ msgid "dashboard.access-tokens.create"
 msgstr "生成新令牌"
 
 #: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.create.success"
+msgid "dashboard.access-tokens.create-success"
 msgstr "成功创建访问令牌。"
 
 #: src/app/main/ui/settings/access-tokens.cljs
@@ -289,10 +265,6 @@ msgstr "点击“生成新令牌”按钮来生成一个。"
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.no-access-tokens"
 msgstr "你目前还没有令牌。"
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.errors-required-name"
-msgstr "名称是必填项"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.expiration-180-days"
@@ -850,11 +822,11 @@ msgstr "电子邮件“%s”收到了非常多的永久退信报告。"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs,
 #: src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
+msgid "errors.invalid-email"
 msgstr "请输入有效的电子邮件"
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "确认电子邮件必须保持一致"
 
 msgid "errors.email-spam-or-permanent-bounces"
@@ -2876,10 +2848,6 @@ msgstr "变焦镜头放大"
 
 msgid "shortcuts.zoom-selected"
 msgstr "缩放到选定对象"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "team.webhooks.max-length"
-msgstr "Webhook的名称最多包含2048个字符。"
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"

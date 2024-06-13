@@ -70,20 +70,12 @@ msgstr "LDAP"
 msgid "auth.login-with-oidc-submit"
 msgstr "Mepe ID"
 
-#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.not-all-space"
-msgstr "Aha ga-enweriri ụfọdụ mkpụrụ edemede karịa oghere ."
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.too-long"
-msgstr "Aha ga-enweriri ọ karịa mkpụrụ okwu narị abụọ na iri ise"
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
 msgstr "Pinye akara mpịbanye ọhụrụ"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "Ọdịmara e nweghachitere adabaghị ."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -105,10 +97,6 @@ msgstr "Sonyere n'otu nke ọma"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.password-length-hint"
 msgstr "Ọ karịa mkpụrụ ederede asatọ"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.password-not-empty"
-msgstr "Akara mpịbanye ga-enweriri ụfọdụ leta/akara mpị karịa oghere ."
 
 msgid "auth.privacy-policy"
 msgstr "Iwu oñiño onwe"
@@ -245,16 +233,12 @@ msgid "dashboard.access-tokens.create"
 msgstr "Mepụta ọdịmara ọhụrụ"
 
 #: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.create.success"
+msgid "dashboard.access-tokens.create-success"
 msgstr "Mmepụtara ọdịmara nnweta gara nke ọma ."
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.add-one"
 msgstr "Pịa mpi \"Nweta ọdịmara ọhụrụ \" inweta otu ."
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.errors-required-name"
-msgstr "A chọrọ aha"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.expiration-180-days"
@@ -724,11 +708,11 @@ msgid "errors.email-has-permanent-bounces"
 msgstr "Ozi-n «%s» nwere ọtụtụ ozi nkọwa mbịaghachigide."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
+msgid "errors.invalid-email"
 msgstr "Debanye aha ozi-n dabara adaba"
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "Ozi-n nnabata ga-adabrịrị"
 
 msgid "errors.email-spam-or-permanent-bounces"

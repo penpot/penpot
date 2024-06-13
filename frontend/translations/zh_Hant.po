@@ -77,7 +77,7 @@ msgid "auth.new-password"
 msgstr "輸入新密碼"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "此 Recovery token 是無效的。"
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -684,11 +684,11 @@ msgid "errors.email-has-permanent-bounces"
 msgstr "電子郵件«%s»有許多永久退件報告。"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
+msgid "errors.invalid-email"
 msgstr "請輸入一個有效的電郵地址"
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "電郵地址必須相同"
 
 msgid "errors.email-spam-or-permanent-bounces"
@@ -2343,7 +2343,7 @@ msgid "dashboard.access-tokens.empty.add-one"
 msgstr "按下\"產生新 Token\" 按鈕來產生一個。"
 
 #: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.create.success"
+msgid "dashboard.access-tokens.create-success"
 msgstr "已成功建立 Access Token。"
 
 #: src/app/main/ui/settings/access-tokens.cljs
@@ -2355,23 +2355,11 @@ msgid "dashboard.access-tokens.copied-success"
 msgstr "已複製 Token"
 
 #: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.errors-required-name"
-msgstr "名稱是必填的"
-
-#: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.token-will-expire"
 msgstr "權杖將於 %s 到期"
 
 msgid "dashboard.export.options.merge.title"
 msgstr "將共享資料庫的內容加入檔案資料庫"
-
-#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.not-all-space"
-msgstr "名稱內必須包含空白以外的文字。"
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.too-long"
-msgstr "名稱最多包含 250 個字元。"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.expiration-90-days"
@@ -2407,10 +2395,6 @@ msgstr "Penpot 是用於設計與開發協作，免費且開源的設計工具"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "branding-illustrations-marketing-pieces"
 msgstr "...品牌設計、插畫、行銷素材等。"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.password-not-empty"
-msgstr "密碼必須包含空白以外的字元。"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.personal"

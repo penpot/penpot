@@ -81,7 +81,7 @@ msgid "auth.new-password"
 msgstr "Inserisci una nuova password"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "Il codice di recupero non è valido."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -706,7 +706,7 @@ msgid "errors.email-as-password"
 msgstr "Non è possibile utilizzare il tuo indirizzo e-mail come password"
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "L'indirizzo e-mail di conferma deve corrispondere"
 
 msgid "errors.email-spam-or-permanent-bounces"

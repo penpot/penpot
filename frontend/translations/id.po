@@ -76,32 +76,12 @@ msgstr "LDAP"
 msgid "auth.login-with-oidc-submit"
 msgstr "OpenID Connect"
 
-#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs,
-#: src/app/main/ui/dashboard/team_form.cljs,
-#: src/app/main/ui/onboarding/team_choice.cljs,
-#: src/app/main/ui/settings/access_tokens.cljs,
-#: src/app/main/ui/settings/feedback.cljs,
-#: src/app/main/ui/settings/profile.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.not-all-space"
-msgstr "Nama harus berisi beberapa karakter selain spasi."
-
-#: src/app/main/ui/auth/register.cljs,
-#: src/app/main/ui/dashboard/team_form.cljs,
-#: src/app/main/ui/onboarding/team_choice.cljs,
-#: src/app/main/ui/settings/access_tokens.cljs,
-#: src/app/main/ui/settings/feedback.cljs,
-#: src/app/main/ui/settings/profile.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.too-long"
-msgstr "Nama harus berisi setidaknya 250 karakter."
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
 msgstr "Ketik kata sandi baru"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "Token pemulihan tidak sah."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -128,10 +108,6 @@ msgstr "Kata sandi"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.password-length-hint"
 msgstr "Setidaknya 8 karakter"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.password-not-empty"
-msgstr "Kata sandi harus berisi beberapa karakter selain spasi."
 
 msgid "auth.privacy-policy"
 msgstr "Kebijakan privasi"
@@ -291,7 +267,7 @@ msgid "dashboard.access-tokens.create"
 msgstr "Buat token baru"
 
 #: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.create.success"
+msgid "dashboard.access-tokens.create-success"
 msgstr "Token akses berhasil dibuat."
 
 #: src/app/main/ui/settings/access-tokens.cljs
@@ -301,10 +277,6 @@ msgstr "Tekan tombol \"Buat token baru\" untuk membuat token."
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.no-access-tokens"
 msgstr "Anda belum memiliki token."
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.errors-required-name"
-msgstr "Nama diperlukan"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.expiration-180-days"
@@ -878,11 +850,11 @@ msgstr "Surel “%s” memiliki banyak laporan lompatan permanen."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs,
 #: src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
+msgid "errors.invalid-email"
 msgstr "Silakan menyediakan surel yang valid"
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "Surel konfirmasi harus cocok"
 
 msgid "errors.email-spam-or-permanent-bounces"
@@ -2963,10 +2935,6 @@ msgstr "Tambahkan lensa zum"
 
 msgid "shortcuts.zoom-selected"
 msgstr "Zum ke terpilih"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "team.webhooks.max-length"
-msgstr "Nama webhook berisi sampai 2048 karakter."
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"

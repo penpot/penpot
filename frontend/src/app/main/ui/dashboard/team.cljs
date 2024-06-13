@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.schema :as sm]
    [app.common.spec :as us]
    [app.config :as cfg]
    [app.main.data.dashboard :as dd]
@@ -32,7 +33,6 @@
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
-
 
 (def ^:private arrow-icon
   (i/icon-xref :arrow (stl/css :arrow-icon)))
@@ -131,6 +131,12 @@
 (s/def ::invite-member-form
   (s/keys :req-un [::role ::emails ::team-id]))
 
+(def ^:private schema:invite-member-form
+  [:map {:title "InviteMemberForm"}
+   [:role :keyword]
+   [:emails [::sm/set {:kind ::sm/email :min 1}]]
+   [:team-id ::sm/uuid]])
+
 (mf/defc invite-members-modal
   {::mf/register modal/components
    ::mf/register-as :invite-members
@@ -139,9 +145,14 @@
   (let [members-map (mf/deref refs/dashboard-team-members)
         perms       (:permissions team)
 
-        roles       (mf/use-memo (mf/deps perms) #(get-available-roles perms))
-        initial     (mf/use-memo (constantly {:role "editor" :team-id (:id team)}))
-        form        (fm/use-form :spec ::invite-member-form
+        roles       (mf/with-memo [perms]
+                      (get-available-roles perms))
+        team-id     (:id team)
+
+        initial     (mf/with-memo [team-id]
+                      {:role "editor" :team-id team-id})
+
+        form        (fm/use-form :schema schema:invite-member-form
                                  :initial initial)
         error-text  (mf/use-state  "")
 
@@ -746,10 +757,11 @@
 ;; WEBHOOKS SECTION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::uri ::us/uri)
-(s/def ::mtype ::us/not-empty-string)
-(s/def ::webhook-form
-  (s/keys :req-un [::uri ::mtype]))
+(def ^:private schema:webhook-form
+  [:map {:title "WebhookForm"}
+   [:uri [::sm/uri {:max 4069 :prefix #"^http[s]?://"
+                    :error/code "errors.webhooks.invalid-uri"}]]
+   [:mtype ::sm/text]])
 
 (def valid-webhook-mtypes
   [{:label "application/json" :value "application/json"}
@@ -763,12 +775,12 @@
   {::mf/register modal/components
    ::mf/register-as :webhook}
   [{:keys [webhook] :as props}]
-  ;; FIXME: this is a workaround because input fields do not support rendering hooks
-  (let [initial (mf/use-memo (fn [] (or (some-> webhook (update :uri str))
-                                        {:is-active false :mtype "application/json"})))
-        form    (fm/use-form :spec ::webhook-form
-                             :initial initial
-                             :validators [(fm/validate-length :uri fm/max-uri-length-allowed (tr "team.webhooks.max-length"))])
+
+  (let [initial (mf/with-memo []
+                  (or (some-> webhook (update :uri str))
+                      {:is-active false :mtype "application/json"}))
+        form    (fm/use-form :schema schema:webhook-form
+                             :initial initial)
         on-success
         (mf/use-fn
          (fn [_]

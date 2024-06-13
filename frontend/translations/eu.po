@@ -81,7 +81,7 @@ msgid "auth.new-password"
 msgstr "Sartu Pasahitz berria"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "Berreskuratzeko kodea ez da zuzena."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -758,11 +758,11 @@ msgstr "«%s» helbideak ez ditu mezuak ondo jasotzen, itzuli egiten ditu."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs,
 #: src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
+msgid "errors.invalid-email"
 msgstr "Mesedez, idatzi eposta helbide zuzen bat"
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "Egiaztapenereko epostak bat etorri behar du aurrekoarekin"
 
 msgid "errors.email-spam-or-permanent-bounces"
