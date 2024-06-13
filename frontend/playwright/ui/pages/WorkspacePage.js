@@ -50,9 +50,9 @@ export class WorkspacePage extends BaseWebSocketPage {
     this.layers = page.getByTestId("layer-tree");
     this.palette = page.getByTestId("palette");
     this.sidebar = page.getByTestId("left-sidebar");
-    this.librariesModal = page.getByTestId("libraries-modal");
     this.selectionRect = page.getByTestId("workspace-selection-rect");
     this.horizontalScrollbar = page.getByTestId("horizontal-scrollbar");
+    this.librariesModal = page.getByTestId("libraries-modal");
   }
 
   async goToWorkspace({ fileId = WorkspacePage.anyFileId, pageId = WorkspacePage.anyPageId } = {}) {
@@ -117,6 +117,13 @@ export class WorkspacePage extends BaseWebSocketPage {
     await pagesToggle.click();
   }
 
+  async moveSelectionToShape(name) {
+    await this.page.locator('rect.viewport-selrect').hover();
+    await this.page.mouse.down();
+    await this.viewport.getByTestId(name).first().hover({ force: true });
+    await this.page.mouse.up();
+  }
+
   async clickLeafLayer(name, clickOptions = {}) {
     const layer = this.layers.getByText(name);
     await layer.click(clickOptions);
@@ -159,5 +166,11 @@ export class WorkspacePage extends BaseWebSocketPage {
 
   async clickColorPalette(clickOptions = {}) {
     await this.palette.getByRole("button", { name: "Color Palette (Alt+P)" }).click(clickOptions);
+  }
+
+  async clickColorPalette(clickOptions = {}) {
+    await this.palette
+      .getByRole("button", { name: "Color Palette (Alt+P)" })
+      .click(clickOptions);
   }
 }
