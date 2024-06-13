@@ -177,9 +177,11 @@
 
 (defn array-to-js
   [value]
-  (.freeze
-   js/Object
-   (apply array (->> value (map to-js)))))
+  (if (coll? value)
+    (.freeze
+     js/Object
+     (apply array (->> value (map to-js))))
+    value))
 
 (defn result-p
   "Creates a pair of atom+promise. The promise will be resolved when the atom gets a value.

@@ -233,9 +233,16 @@
       (st/emit! (dwt/apply-typography #{shape-id} typography $file))))
 
   (applyToTextRange
-    [_ _shape _from _to]
-    ;; TODO
-    )
+    [self range]
+    (let [shape-id (obj/get range "$id")
+          start    (obj/get range "start")
+          end      (obj/get range "end")
+          typography (u/proxy->library-typography self)
+          attrs (-> typography
+                    (assoc :typography-ref-file $file)
+                    (assoc :typography-ref-id (:id typography))
+                    (dissoc :id :name))]
+      (st/emit! (dwt/update-text-range shape-id start end attrs))))
 
   ;; PLUGIN DATA
   (getPluginData

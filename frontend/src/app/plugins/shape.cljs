@@ -36,6 +36,139 @@
    [app.util.text-editor :as ted]
    [cuerdas.core :as str]))
 
+
+(deftype TextRange [$plugin $file $page $id start end]
+  Object
+  (applyTypography [_ typography]
+    (let [typography (u/proxy->library-typography typography)
+          attrs (-> typography
+                    (assoc :typography-ref-file $file)
+                    (assoc :typography-ref-id (:id typography))
+                    (dissoc :id :name))]
+      (st/emit! (dwt/update-text-range $id start end attrs)))))
+
+(defn mixed-value
+  [values]
+  (let [s (set values)]
+    (if (= (count s) 1) (first s) "mixed")))
+
+;; TODO Validate inputs
+(defn text-range
+  [plugin-id file-id page-id id start end]
+  (-> (TextRange. plugin-id file-id page-id id start end)
+      (crc/add-properties!
+       {:name "$plugin" :enumerable false :get (constantly plugin-id)}
+       {:name "$id" :enumerable false :get (constantly id)}
+       {:name "$file" :enumerable false :get (constantly file-id)}
+       {:name "$page" :enumerable false :get (constantly page-id)}
+
+       {:name "shape"
+        :get #(-> % u/proxy->shape)}
+
+       {:name "characters"
+        :get #(let [range-data
+                    (-> % u/proxy->shape :content (txt/content-range->text+styles start end))]
+                (->> range-data (map :text) (str/join "")))}
+
+       {:name "fontId"
+        :get #(let [range-data
+                    (-> % u/proxy->shape :content (txt/content-range->text+styles start end))]
+                (->> range-data (map :font-id) mixed-value))
+
+        :set
+        (fn [_ value]
+          (st/emit! (dwt/update-text-range id start end {:font-id value})))}
+
+       {:name "fontFamily"
+        :get #(let [range-data
+                    (-> % u/proxy->shape :content (txt/content-range->text+styles start end))]
+                (->> range-data (map :font-family) mixed-value))
+
+        :set
+        (fn [_ value]
+          (st/emit! (dwt/update-text-range id start end {:font-family value})))}
+
+       {:name "fontVariantId"
+        :get #(let [range-data
+                    (-> % u/proxy->shape :content (txt/content-range->text+styles start end))]
+                (->> range-data (map :font-variant-id) mixed-value))
+        :set
+        (fn [_ value]
+          (st/emit! (dwt/update-text-range id start end {:font-variant-id value})))}
+
+       {:name "fontSize"
+        :get #(let [range-data
+                    (-> % u/proxy->shape :content (txt/content-range->text+styles start end))]
+                (->> range-data (map :font-size) mixed-value))
+        :set
+        (fn [_ value]
+          (st/emit! (dwt/update-text-range id start end {:font-size value})))}
+
+       {:name "fontWeight"
+        :get #(let [range-data
+                    (-> % u/proxy->shape :content (txt/content-range->text+styles start end))]
+                (->> range-data (map :font-weight) mixed-value))
+        :set
+        (fn [_ value]
+          (st/emit! (dwt/update-text-range id start end {:font-weight value})))}
+
+       {:name "fontStyle"
+        :get #(let [range-data
+                    (-> % u/proxy->shape :content (txt/content-range->text+styles start end))]
+                (->> range-data (map :font-style) mixed-value))
+        :set
+        (fn [_ value]
+          (st/emit! (dwt/update-text-range id start end {:font-style value})))}
+
+       {:name "lineHeight"
+        :get #(let [range-data
+                    (-> % u/proxy->shape :content (txt/content-range->text+styles start end))]
+                (->> range-data (map :line-height) mixed-value))
+        :set
+        (fn [_ value]
+          (st/emit! (dwt/update-text-range id start end {:line-height value})))}
+
+       {:name "letterSpacing"
+        :get #(let [range-data
+                    (-> % u/proxy->shape :content (txt/content-range->text+styles start end))]
+                (->> range-data (map :letter-spacing) mixed-value))
+        :set
+        (fn [_ value]
+          (st/emit! (dwt/update-text-range id start end {:letter-spacing value})))}
+
+       {:name "textTransform"
+        :get #(let [range-data
+                    (-> % u/proxy->shape :content (txt/content-range->text+styles start end))]
+                (->> range-data (map :text-transform) mixed-value))
+        :set
+        (fn [_ value]
+          (st/emit! (dwt/update-text-range id start end {:text-transform value})))}
+
+       {:name "textDecoration"
+        :get #(let [range-data
+                    (-> % u/proxy->shape :content (txt/content-range->text+styles start end))]
+                (->> range-data (map :text-decoration) mixed-value))
+        :set
+        (fn [_ value]
+          (st/emit! (dwt/update-text-range id start end {:text-decoration value})))}
+
+       {:name "direction"
+        :get #(let [range-data
+                    (-> % u/proxy->shape :content (txt/content-range->text+styles start end))]
+                (->> range-data (map :direction) mixed-value))
+        :set
+        (fn [_ value]
+          (st/emit! (dwt/update-text-range id start end {:direction value})))}
+
+       {:name "fills"
+        :get #(let [range-data
+                    (-> % u/proxy->shape :content (txt/content-range->text+styles start end))]
+                (->> range-data (map :fills) mixed-value u/array-to-js))
+        :set
+        (fn [_ value]
+          (let [value (mapv #(u/from-js %) value)]
+            (st/emit! (dwt/update-text-range id start end {:fills value}))))})))
+
 (declare shape-proxy)
 
 (defn parse-command
@@ -214,11 +347,19 @@
 
   ;; Text shapes
   (getRange
-    [_ _from _to]
+    [_ start end]
     (let [shape (u/locate-shape $file $page $id)]
       (if (cfh/text-shape? shape)
-        nil ;; TODO
-        (u/display-not-valid :makeMask (:type shape))))))
+        (text-range $plugin $file $page $id start end)
+        (u/display-not-valid :makeMask (:type shape)))))
+
+  (applyTypography
+    [_ typography]
+    (let [shape (u/locate-shape $file $page $id)]
+      (if (cfh/text-shape? shape)
+        (let [typography (u/proxy->library-typography typography)]
+          (st/emit! (dwt/apply-typography #{$id} typography $file)))
+        (u/display-not-valid :applyTypography (:type shape))))))
 
 (crc/define-properties!
   ShapeProxy
@@ -490,14 +631,18 @@
            :get #(-> % u/proxy->shape :flip-y)}
 
           ;; Strokes and fills
+          ;; TODO: Validate fills input
           {:name "fills"
            :get #(if (cfh/text-shape? data)
                    (-> % u/proxy->shape text-props :fills u/array-to-js)
                    (-> % u/proxy->shape :fills u/array-to-js))
            :set (fn [self value]
-                  (let [id (obj/get self "$id")
+                  (let [shape (u/proxy->shape self)
+                        id    (:id shape)
                         value (mapv #(u/from-js %) value)]
-                    (st/emit! (dwsh/update-shapes [id] #(assoc % :fills value)))))}
+                    (if (cfh/text-shape? shape)
+                      (st/emit! (dwt/update-attrs id {:fills value}))
+                      (st/emit! (dwsh/update-shapes [id] #(assoc % :fills value))))))}
 
           {:name "strokes"
            :get #(-> % u/proxy->shape :strokes u/array-to-js)
@@ -634,7 +779,7 @@
              :set
              (fn [self value]
                (let [id (obj/get self "$id")]
-                 (st/emit! (dwt/update-attrs id {:font-id value}))))}
+                 (st/emit! (dwt/update-attrs id {:font-size value}))))}
 
             {:name "fontWeight"
              :get #(-> % u/proxy->shape text-props :font-weight)

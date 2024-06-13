@@ -205,6 +205,102 @@
 
 ;; --- TEXT EDITION IMPL
 
+(defn count-node-chars
+  ([node]
+   (count-node-chars node false))
+  ([node last?]
+   (case (:type node)
+     ("root" "paragraph-set")
+     (apply + (concat (map count-node-chars (drop-last (:children node)))
+                      (map #(count-node-chars % true) (take-last 1 (:children node)))))
+
+     "paragraph"
+     (+ (apply + (map count-node-chars (:children node))) (if last? 0 1))
+
+     (count (:text node)))))
+
+
+(defn decorate-range-info
+  "Adds information about ranges inside the metadata of the text nodes"
+  [content]
+  (->> (with-meta content {:start 0 :end (count-node-chars content)})
+       (txt/transform-nodes
+        (fn [node]
+          (d/update-when
+           node
+           :children
+           (fn [children]
+             (let [start (-> node meta (:start 0))]
+               (->> children
+                    (reduce (fn [[result start] node]
+                              (let [end (+ start (count-node-chars node))]
+                                [(-> result
+                                     (conj (with-meta node {:start start :end end})))
+                                 end]))
+                            [[] start])
+                    (first)))))))))
+
+(defn split-content-at
+  [content position]
+  (->> content
+       (txt/transform-nodes
+        (fn [node]
+          (and (txt/is-paragraph-node? node)
+               (< (-> node meta :start) position (-> node meta :end))))
+        (fn [node]
+          (letfn
+           [(process-node [child]
+              (let [start (-> child meta :start)
+                    end (-> child meta :end)]
+                (if (< start position end)
+                  [(-> child
+                       (vary-meta assoc :end position)
+                       (update :text subs 0 (- position start)))
+                   (-> child
+                       (vary-meta assoc :start position)
+                       (update :text subs (- position start)))]
+                  [child])))]
+            (-> node
+                (d/update-when :children #(into [] (mapcat process-node) %))))))))
+
+(defn update-content-range
+  [content start end attrs]
+  (->> content
+       (txt/transform-nodes
+        (fn [node]
+          (and (txt/is-text-node? node)
+               (and (>= (-> node meta :start) start)
+                    (<= (-> node meta :end) end))))
+        #(d/patch-object % attrs))))
+
+(defn- update-text-range-attrs
+  [shape start end attrs]
+  (let [new-content (-> (:content shape)
+                        (decorate-range-info)
+                        (split-content-at start)
+                        (split-content-at end)
+                        (update-content-range start end attrs))]
+    (assoc shape :content new-content)))
+
+(defn update-text-range
+  [id start end attrs]
+  (ptk/reify ::update-text-range
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects   (wsh/lookup-page-objects state)
+            shape     (get objects id)
+
+            update-fn
+            (fn [shape]
+              (cond-> shape
+                (cfh/text-shape? shape)
+                (update-text-range-attrs start end attrs)))
+
+            shape-ids (cond (cfh/text-shape? shape)  [id]
+                            (cfh/group-shape? shape) (cfh/get-children-ids objects id))]
+
+        (rx/of (dwsh/update-shapes shape-ids update-fn))))))
+
 (defn- update-text-content
   [shape pred-fn update-fn attrs]
   (let [update-attrs-fn #(update-fn % attrs)
@@ -277,7 +373,6 @@
                           (cfh/text-shape? shape)  [id]
                           (cfh/group-shape? shape) (cfh/get-children-ids objects id))]
           (rx/of (dwsh/update-shapes shape-ids #(update-text-content % update-node? d/txt-merge attrs))))))))
-
 
 (defn migrate-node
   [node]
