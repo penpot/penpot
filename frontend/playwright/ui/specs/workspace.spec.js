@@ -64,3 +64,31 @@ test("Bug 7654 - Toolbar keeps toggling on and off on spacebar press", async ({ 
   await workspacePage.page.keyboard.press("Enter");
   await workspacePage.expectHiddenToolbarOptions();
 });
+
+test("Bug 7525 - User moves a scrollbar and no selciont rectangle appears", async ({ page }) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockRPC(/get\-file\?/, "workspace/get-file-not-empty.json");
+  await workspacePage.mockRPC("update-file?id=*", "workspace/update-file-create-rect.json");
+
+  await workspacePage.goToWorkspace({
+    fileId: "6191cd35-bb1f-81f7-8004-7cc63d087374",
+    pageId: "6191cd35-bb1f-81f7-8004-7cc63d087375",
+  });
+
+  // Move created rect to a corner, in orther to get scrollbars
+  await workspacePage.panOnViewportAt(128, 128, 300, 300);
+
+  // Check scrollbars appear
+  const horizontalScrollbar = workspacePage.horizontalScrollbar;
+  await expect(horizontalScrollbar).toBeVisible();
+
+  // Grab scrollbar and move
+  const {x, y} = await horizontalScrollbar.boundingBox();
+  await page.waitForTimeout(100);
+  await workspacePage.viewport.hover({ position: { x: x, y: y + 5 } });
+  await page.mouse.down();
+  await workspacePage.viewport.hover({ position: { x: x - 130, y: y - 95 } });
+
+  await expect(workspacePage.selectionRect).not.toBeInViewport();
+});

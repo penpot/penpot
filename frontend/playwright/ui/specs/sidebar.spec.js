@@ -16,8 +16,6 @@ test.describe("Layers tab", () => {
     await workspace.togglePages();
     const { height: heightCollapsed } = await workspace.layers.boundingBox();
 
-    console.log(heightExpanded, heightCollapsed);
-
     expect(heightExpanded > heightCollapsed);
   });
 });
