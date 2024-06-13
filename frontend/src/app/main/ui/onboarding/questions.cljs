@@ -82,9 +82,9 @@
   [{:keys [on-next form]}]
   (let [use-options
         (mf/with-memo []
-          (shuffle [{:label (tr "questions.use-work") :value "use-work"}
-                    {:label (tr "questions.use-education") :value "use-education"}
-                    {:label (tr "questions.use-personal") :value "use-personal"}]))
+          (shuffle [{:label (tr "questions.use-work") :value "work"}
+                    {:label (tr "questions.use-education") :value "education"}
+                    {:label (tr "questions.use-personal") :value "personal"}]))
 
         planning-options
         (mf/with-memo []
