@@ -26,9 +26,13 @@
 - Allow library colors as recent colors [Taiga #7640](https://tree.taiga.io/project/penpot/issue/7640)
 - Missing scroll in viewmode comments [Taiga #7427](https://tree.taiga.io/project/penpot/issue/7427)
 - Comments in View mode should mimic the positioning behavior of the Workspace [Taiga #7346](https://tree.taiga.io/project/penpot/issue/7346)
+- Misaligned input on comments [Taiga #7461](https://tree.taiga.io/project/penpot/issue/7461)
 
 ### :bug: Bugs fixed
 
+- Fix selection rectangle appears on scroll [Taiga #7525](https://tree.taiga.io/project/penpot/issue/7525)
+- Fix layer tree not expanding to the bottom edge [Taiga #7466](https://tree.taiga.io/project/penpot/issue/7466)
+- Fix guides move when board is moved by inputs [Taiga #8010](https://tree.taiga.io/project/penpot/issue/8010)
 - Fix clickable area of Penptot logo in the viewer [Taiga #7988](https://tree.taiga.io/project/penpot/issue/7988)
 - Fix constraints dropdown when selecting multiple shapes [Taiga #7686](https://tree.taiga.io/project/penpot/issue/7686)
 - Layout and scrollign fixes for the bottom palette [Taiga #7559](https://tree.taiga.io/project/penpot/issue/7559)
@@ -43,7 +47,12 @@
 - Fix "Attribute overrides in copies are not exported in zip file" [Taiga #8072](https://tree.taiga.io/project/penpot/issue/8072)
 - Fix group not automatically selected in the Layers panel after creation [Taiga #8078](https://tree.taiga.io/project/penpot/issue/8078)
 - Fix export boards loses opacity [Taiga #7592](https://tree.taiga.io/project/penpot/issue/7592)
+- Fix change color on imported svg also changes the stroke alignment[Taiga #7673](https://github.com/penpot/penpot/pull/7673)
 - Fix show in view mode and interactions workflow [Taiga #4711](https://github.com/penpot/penpot/pull/4711)
+- Fix internal error when I set up a stroke for some objects without and with stroke [Taiga #7558](https://tree.taiga.io/project/penpot/issue/7558)
+- Toolbar keeps toggling on and off on spacebar press [Taiga #7654](https://github.com/penpot/penpot/pull/7654)
+- Fix toolbar keeps hiding when click outside workspace [Taiga #7776](https://tree.taiga.io/project/penpot/issue/7776)
+- Fix open overlay relative to a frame [Taiga #7563](https://tree.taiga.io/project/penpot/issue/7563)
 
 ## 2.0.3
 

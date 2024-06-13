@@ -497,7 +497,7 @@
           (if undo-transation?
             (rx/of (dwu/start-undo-transaction undo-id))
             (rx/empty))
-          (rx/of (ptk/event ::dwg/move-frame-guides ids-with-children)
+          (rx/of (ptk/event ::dwg/move-frame-guides {:ids ids-with-children :modifiers object-modifiers})
                  (ptk/event ::dwcm/move-frame-comment-threads ids-with-children)
                  (dwsh/update-shapes
                   ids

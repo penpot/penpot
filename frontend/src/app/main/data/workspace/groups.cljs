@@ -198,7 +198,8 @@
                      (dws/select-shapes (d/ordered-set (:id group))))
                    (ptk/data-event :layout/update {:ids parents}))))))))
 
-(def group-selected
+(defn group-selected
+  []
   (ptk/reify ::group-selected
     ptk/WatchEvent
     (watch [_ state _]
@@ -258,7 +259,8 @@
                  (when change-selection?
                    (dws/select-shapes child-ids))))))))
 
-(def ungroup-selected
+(defn ungroup-selected
+  []
   (ptk/reify ::ungroup-selected
     ptk/WatchEvent
     (watch [_ state _]

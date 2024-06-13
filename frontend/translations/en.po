@@ -5109,6 +5109,10 @@ msgstr "Text (%s)"
 msgid "workspace.toolbar.text-palette"
 msgstr "Typographies (%s)"
 
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.toggle-toolbar"
+msgstr "Toggle toolbar"
+
 msgid "workspace.top-bar.read-only.done"
 msgstr "Done"
 

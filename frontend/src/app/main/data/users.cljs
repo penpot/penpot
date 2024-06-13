@@ -328,11 +328,15 @@
      (-data [_] {})
 
      ptk/WatchEvent
-     (watch [_ _ _]
-       (->> (rp/cmd! :logout)
-            (rx/delay-at-least 300)
-            (rx/catch (constantly (rx/of 1)))
-            (rx/map #(logged-out params)))))))
+     (watch [_ state _]
+       (let [profile-id (:profile-id state)]
+         (->> (rx/interval 500)
+              (rx/take 1)
+              (rx/mapcat (fn [_]
+                           (->> (rp/cmd! :logout {:profile-id profile-id})
+                                (rx/delay-at-least 300)
+                                (rx/catch (constantly (rx/of 1))))))
+              (rx/map #(logged-out params))))))))
 
 ;; --- Update Profile
 

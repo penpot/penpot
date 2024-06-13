@@ -9,6 +9,7 @@
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
+   [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.shapes :as dwsh]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.state :as ths]))
@@ -46,3 +47,36 @@
            (t/is (= (count fills') 1))
            (t/is (= (:fill-color fill') "#fabada"))
            (t/is (= (:fill-opacity fill') 1))))))))
+
+(t/deftest test-update-stroke
+  ;; Old shapes without stroke-alignment are rendered as if it is centered
+  (t/async
+    done
+    (let [;; ==== Setup
+          store
+          (ths/setup-store
+           (-> (cthf/sample-file :file1 :page-label :page1)
+               (cths/add-sample-shape :shape1 :strokes [{:stroke-color "#000000"
+                                                         :stroke-opacity 1
+                                                         :stroke-width 2}])))
+
+          ;; ==== Action
+          events
+          [(dc/change-stroke #{(cthi/id :shape1)} {:color "#FABADA"} 0)]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [;; ==== Get
+               shape1' (get-in new-state [:workspace-data
+                                          :pages-index
+                                          (cthi/id :page1)
+                                          :objects
+                                          (cthi/id :shape1)])
+               stroke'      (-> (:strokes shape1')
+                                first)]
+
+            ;; ==== Check
+           (println stroke')
+           (t/is (some? shape1'))
+           (t/is (= (:stroke-alignment stroke') :center))))))))

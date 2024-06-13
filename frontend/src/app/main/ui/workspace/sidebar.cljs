@@ -38,8 +38,7 @@
   (let [options-mode   (mf/deref refs/options-mode-global)
         mode-inspect?  (= options-mode :inspect)
         project        (mf/deref refs/workspace-project)
-        show-pages?    (mf/use-state true)
-        toggle-pages   (mf/use-callback #(reset! show-pages? not))
+
 
         section        (cond (or mode-inspect? (contains? layout :layers)) :layers
                              (contains? layout :assets) :assets)
@@ -50,9 +49,12 @@
         {on-pointer-down :on-pointer-down on-lost-pointer-capture :on-lost-pointer-capture  on-pointer-move :on-pointer-move parent-ref :parent-ref size :size}
         (use-resize-hook :left-sidebar 275 275 500 :x false :left)
 
-        {on-pointer-down-pages :on-pointer-down on-lost-pointer-capture-pages  :on-lost-pointer-capture on-pointer-move-pages :on-pointer-move size-pages :size}
+        {on-pointer-down-pages :on-pointer-down on-lost-pointer-capture-pages  :on-lost-pointer-capture on-pointer-move-pages :on-pointer-move size-pages-opened :size}
         (use-resize-hook :sitemap 200 38 400 :y false nil)
 
+        show-pages?    (mf/use-state true)
+        toggle-pages   (mf/use-callback #(reset! show-pages? not))
+        size-pages (mf/use-memo (mf/deps show-pages? size-pages-opened) (fn [] (if @show-pages? size-pages-opened 32)))
 
         handle-collapse
         (mf/use-fn #(st/emit! (dw/toggle-layout-flag :collapse-left-sidebar)))
@@ -63,6 +65,7 @@
     [:& (mf/provider muc/sidebar) {:value :left}
      [:aside {:ref parent-ref
               :id "left-sidebar-aside"
+              :data-testid "left-sidebar"
               :data-size (str size)
               :class (stl/css-case :left-settings-bar true
                                    :global/two-row    (<= size 300)

@@ -7,6 +7,8 @@ test.beforeEach(async ({ page }) => {
 
 const multipleConstraintsFileId = `03bff843-920f-81a1-8004-756365e1eb6a`;
 const multipleConstraintsPageId = `03bff843-920f-81a1-8004-756365e1eb6b`;
+const multipleAttributesFileId = `1795a568-0df0-8095-8004-7ba741f56be2`;
+const multipleAttributesPageId = `1795a568-0df0-8095-8004-7ba741f56be3`;
 
 const setupFileWithMultipeConstraints = async (workspace) => {
   await workspace.setupEmptyFile();
@@ -18,6 +20,15 @@ const setupFileWithMultipeConstraints = async (workspace) => {
   await workspace.mockRPC(
     "get-file-fragment?file-id=*",
     "design/get-file-fragment-multiple-constraints.json",
+  );
+};
+
+const setupFileWithMultipeAttributes = async (workspace) => {
+  await workspace.setupEmptyFile();
+  await workspace.mockRPC(/get\-file\?/, "design/get-file-multiple-attributes.json");
+  await workspace.mockRPC(
+    "get-file-object-thumbnails?file-id=*",
+    "design/get-file-object-thumbnails-multiple-attributes.json",
   );
 };
 
@@ -42,6 +53,43 @@ test.describe("Constraints", () => {
     await expect(constraintHDropdown).toContainText("Mixed");
 
     expect(false);
+  });
+});
+
+test.describe("Multiple shapes attributes", () => {
+  test("User selects multiple shapes with sames fills, strokes, shadows and blur", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await setupFileWithMultipeConstraints(workspace);
+    await workspace.goToWorkspace({
+      fileId: multipleConstraintsFileId,
+      pageId: multipleConstraintsPageId,
+    });
+
+    await workspace.clickToggableLayer("Board");
+    await workspace.clickLeafLayer("Ellipse");
+    await workspace.clickLeafLayer("Rectangle", { modifiers: ["Shift"] });
+
+    await expect(workspace.page.getByTestId("add-fill")).toBeVisible();
+    await expect(workspace.page.getByTestId("add-stroke")).toBeVisible();
+    await expect(workspace.page.getByTestId("add-shadow")).toBeVisible();
+    await expect(workspace.page.getByTestId("add-blur")).toBeVisible();
+  });
+
+  test("User selects multiple shapes with different fills, strokes, shadows and blur", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await setupFileWithMultipeAttributes(workspace);
+    await workspace.goToWorkspace({
+      fileId: multipleAttributesFileId,
+      pageId: multipleAttributesPageId,
+    });
+
+    await workspace.clickLeafLayer("Ellipse");
+    await workspace.clickLeafLayer("Rectangle", { modifiers: ["Shift"] });
+
+    await expect(workspace.page.getByTestId("add-fill")).toBeHidden();
+    await expect(workspace.page.getByTestId("add-stroke")).toBeHidden();
+    await expect(workspace.page.getByTestId("add-shadow")).toBeHidden();
+    await expect(workspace.page.getByTestId("add-blur")).toBeHidden();
   });
 });
 

@@ -38,13 +38,11 @@
 (def schema:token
   [::sm/word-string {:max 6000}])
 
-(def ^:private default-verify-threshold
-  (dt/duration "15m"))
-
 (defn- elapsed-verify-threshold?
   [profile]
-  (let [elapsed (dt/diff (:modified-at profile) (dt/now))]
-    (pos? (compare elapsed default-verify-threshold))))
+  (let [elapsed (dt/diff (:modified-at profile) (dt/now))
+        verify-threshold (cf/get :email-verify-threshold)]
+    (pos? (compare elapsed verify-threshold))))
 
 ;; ---- COMMAND: login with password
 
@@ -130,12 +128,21 @@
 
 ;; ---- COMMAND: Logout
 
+(def ^:private schema:logout
+  [:map {:title "logoug"}
+   [:profile-id {:optional true} ::sm/uuid]])
+
 (sv/defmethod ::logout
   "Clears the authentication cookie and logout the current session."
   {::rpc/auth false
-   ::doc/added "1.15"}
-  [cfg _]
-  (rph/with-transform {} (session/delete-fn cfg)))
+   ::doc/changes [["2.1" "Now requires profile-id passed in the body"]]
+   ::doc/added "1.0"
+   ::sm/params schema:logout}
+  [cfg params]
+  (if (= (:profile-id params)
+         (::rpc/profile-id params))
+    (rph/with-transform {} (session/delete-fn cfg))
+    {}))
 
 ;; ---- COMMAND: Recover Profile
 

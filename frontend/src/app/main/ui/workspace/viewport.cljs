@@ -636,8 +636,8 @@
               :objects base-objects
               :modifiers modifiers
               :shape frame
-              :view-only true}]))
-
+              :view-only true}]))]
+       [:g.scrollbar-wrapper {:clipPath "url(#clip-handlers)"}
         [:& scroll-bars/viewport-scrollbars
          {:objects base-objects
           :zoom zoom

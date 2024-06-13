@@ -184,10 +184,7 @@
                                              (ctk/instance-head? child))
                                       (let [slot (guess-swap-slot component-child component-container)]
                                         (l/dbg :hint "child" :id (:id child) :name (:name child) :slot slot)
-                                        (ctn/update-shape container (:id child)
-                                                          #(update % :touched
-                                                                   cfh/set-touched-group
-                                                                   (ctk/build-swap-slot-group slot))))
+                                        (ctn/update-shape container (:id child) #(ctk/set-swap-slot % slot)))
                                       container)]
                       (recur (process-copy-head container child)
                              (rest children)

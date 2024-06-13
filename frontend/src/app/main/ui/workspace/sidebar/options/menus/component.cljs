@@ -86,6 +86,7 @@
          (mf/deps adjust-textarea-size creating?)
          (fn [event]
            (dom/stop-propagation event)
+           (rerender-fn)
            (when-let [textarea (mf/ref-val textarea-ref)]
              (dom/set-value! textarea annotation)
              (reset! editing* false)
@@ -98,6 +99,7 @@
         (mf/use-fn
          (fn [event]
            (dom/stop-propagation event)
+           (rerender-fn)
            (when ^boolean main-instance?
              (when-let [textarea (mf/ref-val textarea-ref)]
                (reset! editing* true)
@@ -109,6 +111,7 @@
          (mf/deps creating?)
          (fn [event]
            (dom/stop-propagation event)
+           (rerender-fn)
            (when-let [textarea (mf/ref-val textarea-ref)]
              (let [text (dom/get-value textarea)]
                (when-not (str/blank? text)
@@ -124,6 +127,7 @@
          (fn [event]
            (dom/stop-propagation event)
            (let [on-accept (fn []
+                             (rerender-fn)
                              (st/emit!
                               ;; (ptk/data-event {::ev/name "delete-component-annotation"})
                               (when creating?

@@ -519,6 +519,7 @@
      [:div {:class (stl/css :modal-dialog)}
       [:button {:class (stl/css :close-btn)
                 :on-click close-dialog
+                :aria-label (tr "labels.close")
                 :data-testid "close-libraries"}
        close-icon]
       [:div {:class (stl/css :modal-title)}

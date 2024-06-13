@@ -43,13 +43,15 @@ export class WorkspacePage extends BaseWebSocketPage {
     this.presentUserListItems = page.getByTestId("active-users-list").getByAltText("Princesa Leia");
     this.viewport = page.getByTestId("viewport");
     this.rootShape = page.locator(`[id="shape-00000000-0000-0000-0000-000000000000"]`);
+    this.toolbarOptions =  page.getByTestId("toolbar-options");
     this.rectShapeButton = page.getByRole("button", { name: "Rectangle (R)" });
+    this.toggleToolbarButton = page.getByRole("button", { name: "Toggle toolbar" });
     this.colorpicker = page.getByTestId("colorpicker");
-    this.layers = page.getByTestId("layers");
+    this.layers = page.getByTestId("layer-tree");
     this.palette = page.getByTestId("palette");
-    this.assets = page.getByTestId("assets");
-    this.libraries = page.getByTestId("libraries");
-    this.closeLibraries = page.getByTestId("close-libraries");
+    this.sidebar = page.getByTestId("left-sidebar");
+    this.selectionRect = page.getByTestId("workspace-selection-rect");
+    this.horizontalScrollbar = page.getByTestId("horizontal-scrollbar");
     this.librariesModal = page.getByTestId("libraries-modal");
   }
 
@@ -102,6 +104,19 @@ export class WorkspacePage extends BaseWebSocketPage {
     await this.page.mouse.up();
   }
 
+  async panOnViewportAt(x, y, width, height) {
+    await this.page.waitForTimeout(100);
+    await this.viewport.hover({ position: { x, y } });
+    await this.page.mouse.down({ button: "middle" });
+    await this.viewport.hover({ position: { x: x + width, y: y + height } });
+    await this.page.mouse.up({ button: "middle" });
+  }
+
+  async togglePages() {
+    const pagesToggle = this.page.getByText("Pages");
+    await pagesToggle.click();
+  }
+
   async moveSelectionToShape(name) {
     await this.page.locator('rect.viewport-selrect').hover();
     await this.page.mouse.down();
@@ -120,15 +135,21 @@ export class WorkspacePage extends BaseWebSocketPage {
   }
 
   async expectSelectedLayer(name) {
-    await expect(this.layers.getByTestId("layer-row").filter({ has: this.page.getByText(name) })).toHaveClass(/selected/);
+    await expect(this.layers.getByTestId("layer-row").filter({ has: this.page.getByText(name) })).toHaveClass(
+      /selected/,
+    );
+  }
+
+  async expectHiddenToolbarOptions() {
+    await expect(this.toolbarOptions).toHaveCSS("opacity", "0");
   }
 
   async clickAssets(clickOptions = {}) {
-    await this.assets.click(clickOptions);
+    await this.sidebar.getByText("Assets").click(clickOptions);
   }
 
-  async clickLibraries(clickOptions = {}) {
-    await this.libraries.click(clickOptions);
+  async openLibrariesModal(clickOptions = {}) {
+    await this.sidebar.getByText("Libraries").click(clickOptions);
   }
 
   async clickLibrary(name, clickOptions = {}) {
@@ -136,11 +157,15 @@ export class WorkspacePage extends BaseWebSocketPage {
       .getByTestId("library-item")
       .filter({ hasText: name })
       .getByRole("button")
-      .click(clickOptions);  
+      .click(clickOptions);
   }
 
-  async clickCloseLibraries(clickOptions = {}) {
-    await this.closeLibraries.click(clickOptions);
+  async closeLibrariesModal(clickOptions = {}) {
+    await this.librariesModal.getByRole("button", { name: "Close" }).click(clickOptions);
+  }
+
+  async clickColorPalette(clickOptions = {}) {
+    await this.palette.getByRole("button", { name: "Color Palette (Alt+P)" }).click(clickOptions);
   }
 
   async clickColorPalette(clickOptions = {}) {

@@ -243,8 +243,8 @@
         is-group?  (and single? has-group?)
         is-bool?   (and single? has-bool?)
 
-        do-create-group #(st/emit! dw/group-selected)
-        do-remove-group #(st/emit! dw/ungroup-selected)
+        do-create-group #(st/emit! (dw/group-selected))
+        do-remove-group #(st/emit! (dw/ungroup-selected))
         do-mask-group   #(st/emit! (dw/mask-group))
         do-unmask-group #(st/emit! (dw/unmask-group))
         do-create-artboard-from-selection

@@ -87,6 +87,7 @@
                      :class        (stl/css-case :title-spacing-blur (not has-value?))}
        (when-not has-value?
          [:button {:class (stl/css :add-blur)
+                   :data-testid "add-blur"
                    :on-click handle-add} i/add])]]
      (when (and open? has-value?)
        [:div {:class (stl/css :element-set-content)}
