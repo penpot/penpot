@@ -74,6 +74,9 @@
       (st/emit! (dwt/move-shapes-to-frame #{child-id} $id nil [row column])
                 (ptk/data-event :layout/update {:ids [$id]})))))
 
+(defn grid-layout-proxy? [p]
+  (instance? GridLayout p))
+
 (defn grid-layout-proxy
   [plugin-id file-id page-id id]
   (-> (GridLayout. plugin-id file-id page-id id)
@@ -198,6 +201,9 @@
               (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p4 value}})))))})))
 
 (deftype GridCellProxy [$plugin $file $page $id])
+
+(defn layout-cell-proxy? [p]
+  (instance? GridCellProxy p))
 
 (defn layout-cell-proxy
   [plugin-id file-id page-id id]

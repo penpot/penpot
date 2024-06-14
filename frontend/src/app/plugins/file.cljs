@@ -93,6 +93,9 @@
   {:name js/Symbol.toStringTag
    :get (fn [] (str "FileProxy"))})
 
+(defn file-proxy? [p]
+  (instance? FileProxy p))
+
 (defn file-proxy
   [plugin-id id]
   (crc/add-properties!

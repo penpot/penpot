@@ -29,6 +29,9 @@
       (st/emit! (dwt/move-shapes-to-frame #{child-id} $id nil nil)
                 (ptk/data-event :layout/update {:ids [$id]})))))
 
+(defn flex-layout-proxy? [p]
+  (instance? FlexLayout p))
+
 (defn flex-layout-proxy
   [plugin-id file-id page-id id]
   (-> (FlexLayout. plugin-id file-id page-id id)
@@ -150,6 +153,9 @@
 
 
 (deftype LayoutChildProxy [$plugin $file $page $id])
+
+(defn layout-child-proxy? [p]
+  (instance? LayoutChildProxy p))
 
 (defn layout-child-proxy
   [plugin-id file-id page-id id]

@@ -380,6 +380,9 @@
   {:name js/Symbol.toStringTag
    :get (fn [] (str "ShapeProxy"))})
 
+(defn shape-proxy? [p]
+  (instance? ShapeProxy p))
+
 (defn shape-proxy
   ([plugin-id id]
    (shape-proxy plugin-id (:current-file-id @st/state) (:current-page-id @st/state) id))

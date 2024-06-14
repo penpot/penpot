@@ -39,6 +39,9 @@
                   :font-weight (d/nilv (obj/get variant "fontWeight") fontWeight)}]
       (st/emit! (dwt/update-text-range id start end values)))))
 
+(defn font-proxy? [p]
+  (instance? PenpotFont p))
+
 (defn font-proxy
   [{:keys [id name variants] :as font}]
   (when (some? font)

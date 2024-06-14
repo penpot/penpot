@@ -137,6 +137,9 @@
       (let [color (u/proxy->library-color self)]
         (apply array (keys (dm/get-in color [:plugin-data (keyword "shared" namespace)])))))))
 
+(defn lib-color-proxy? [p]
+  (instance? LibraryColorProxy p))
+
 (defn lib-color-proxy
   [plugin-id file-id id]
   (assert (uuid? file-id))
@@ -315,6 +318,9 @@
       :else
       (let [typography (u/proxy->library-typography self)]
         (apply array (keys (dm/get-in typography [:plugin-data (keyword "shared" namespace)])))))))
+
+(defn lib-typography-proxy? [p]
+  (instance? LibraryTypographyProxy p))
 
 (defn lib-typography-proxy
   [plugin-id file-id id]
@@ -522,6 +528,9 @@
       (let [component (u/proxy->library-component self)]
         (apply array (keys (dm/get-in component [:plugin-data (keyword "shared" namespace)])))))))
 
+(defn lib-component-proxy? [p]
+  (instance? LibraryComponentProxy p))
+
 (defn lib-component-proxy
   [plugin-id file-id id]
   (assert (uuid? file-id))
@@ -642,6 +651,9 @@
       :else
       (let [file (u/proxy->file self)]
         (apply array (keys (dm/get-in file [:data :plugin-data (keyword "shared" namespace)])))))))
+
+(defn library-proxy? [p]
+  (instance? Library p))
 
 (defn library-proxy
   [plugin-id file-id]

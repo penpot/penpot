@@ -107,6 +107,9 @@
   {:name js/Symbol.toStringTag
    :get (fn [] (str "PageProxy"))})
 
+(defn page-proxy? [p]
+  (instance? PageProxy p))
+
 (defn page-proxy
   [plugin-id file-id id]
   (crc/add-properties!

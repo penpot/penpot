@@ -32,7 +32,10 @@
   {:name js/Symbol.toStringTag
    :get (fn [] (str "ViewportProxy"))})
 
-(defn create-proxy
+(defn viewport-proxy? [p]
+  (instance? ViewportProxy p))
+
+(defn viewport-proxy
   [plugin-id]
   (crc/add-properties!
    (ViewportProxy. plugin-id)
