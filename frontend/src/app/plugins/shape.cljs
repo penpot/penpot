@@ -202,6 +202,20 @@
     (st/emit! (dw/update-dimensions [$id] :width width)
               (dw/update-dimensions [$id] :height height)))
 
+  (rotate
+    [self angle center]
+    (let [center (when center {:x (obj/get center "x") :y (obj/get center "y")})]
+      (cond
+        (not (number? angle))
+        (u/display-not-valid :rotate-angle angle)
+
+        (and (some? center) (or (not (number? (:x center))) (not (number? (:y center)))))
+        (u/display-not-valid :rotate-center center)
+
+        :else
+        (let [id (obj/get self "$id")]
+          (st/emit! (dw/increase-rotation [id] angle {:center center :delta? true}))))))
+
   (clone
     [_]
     (let [ret-v (atom nil)]
@@ -624,11 +638,32 @@
           {:name "height"
            :get #(-> % u/proxy->shape :height)}
 
+          {:name "rotation"
+           :get #(-> % u/proxy->shape :rotation)
+           :set
+           (fn [self value]
+             (if (number? value)
+               (let [shape (u/proxy->shape self)]
+                 (st/emit! (dw/increase-rotation #{(:id shape)} value)))
+               (u/display-not-valid :rotation value)))}
+
           {:name "flipX"
-           :get #(-> % u/proxy->shape :flip-x)}
+           :get #(-> % u/proxy->shape :flip-x boolean)
+           :set
+           (fn [self value]
+             (if (boolean? value)
+               (let [id (obj/get self "$id")]
+                 (st/emit! (dw/flip-horizontal-selected #{id})))
+               (u/display-not-valid :flipX value)))}
 
           {:name "flipY"
-           :get #(-> % u/proxy->shape :flip-y)}
+           :get #(-> % u/proxy->shape :flip-y boolean)
+           :set
+           (fn [self value]
+             (if (boolean? value)
+               (let [id (obj/get self "$id")]
+                 (st/emit! (dw/flip-vertical-selected #{id})))
+               (u/display-not-valid :flipY value)))}
 
           ;; Strokes and fills
           ;; TODO: Validate fills input
