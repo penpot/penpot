@@ -18,10 +18,7 @@
    [app.util.services :as sv]
    [app.util.time :as dt]
    [buddy.core.codecs :as bc]
-   [buddy.core.nonce :as bn]
-   [clojure.spec.alpha :as s]))
-
-(s/def ::create-demo-profile any?)
+   [buddy.core.nonce :as bn]))
 
 (sv/defmethod ::create-demo-profile
   "A command that is responsible of creating a demo purpose
