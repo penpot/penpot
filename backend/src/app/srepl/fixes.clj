@@ -234,3 +234,44 @@
 
     file  (-> file
               (update :data process-fdata))))
+
+
+
+(defn fix-find-duplicated-slots
+  [file _]
+  ;; Find the shapes whose children have duplicated slots
+  (let [check-duplicate-swap-slot
+        (fn [shape page]
+          (let [shapes   (map #(get (:objects page) %) (:shapes shape))
+                slots    (->> (map #(ctk/get-swap-slot %) shapes)
+                              (remove nil?))
+                counts   (frequencies slots)]
+            #_(when (some (fn [[_ count]] (> count 1)) counts)
+                (l/trc :info "This shape has children with the same swap slot" :id (:id shape) :file-id (str (:id file))))
+            (some (fn [[_ count]] (> count 1)) counts)))
+
+        count-slots-shape
+        (fn [page shape]
+          (if (ctk/instance-root? shape)
+            (check-duplicate-swap-slot shape page)
+            false))
+
+        count-slots-page
+        (fn [page]
+          (->> (:objects page)
+               (vals)
+               (mapv #(count-slots-shape page %))
+               (filter true?)
+               count))
+
+        count-slots-data
+        (fn [data]
+          (->> (:pages-index data)
+               (vals)
+               (mapv count-slots-page)
+               (reduce +)))
+
+        num-missing-slots (count-slots-data (:data file))]
+    (when (pos? num-missing-slots)
+      (l/trc :info (str "Shapes with children with the same swap slot: " num-missing-slots) :file-id (str (:id file))))
+    file))
