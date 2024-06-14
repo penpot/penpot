@@ -2556,7 +2556,7 @@ msgid "labels.adobe-xd"
 msgstr "Adobe XD"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "onboarding.questions.canva"
+msgid "labels.canva"
 msgstr "Canva"
 
 #: src/app/main/ui/onboarding/questions.cljs
@@ -2640,11 +2640,11 @@ msgid "onboarding.questions.team-size.11-30"
 msgstr "11-30"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "onboarding.questions.2-10"
+msgid "onboarding.questions.team-size.2-10"
 msgstr "2-10"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "onboarding.questions.freelancer"
+msgid "onboarding.questions.team-size.freelancer"
 msgstr "Soy autónomo"
 
 #: src/app/main/ui/onboarding/questions.cljs
@@ -2673,7 +2673,7 @@ msgstr "Creando sistemas de diseño"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "onboarding.questions.start-with.code"
-msgstr "Generando código a partir de diseños" 
+msgstr "Generando código a partir de diseños"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "onboarding.questions.step5.title"
@@ -2708,11 +2708,11 @@ msgid "labels.next"
 msgstr "Siguiente"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "onboarding.questions.other"
+msgid "labels.other"
 msgstr "Otra (especifica)"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "labels.other"
+msgid "labels.other-short"
 msgstr "Otra"
 
 #: src/app/main/ui/onboarding/questions.cljs
