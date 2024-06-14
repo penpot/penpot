@@ -33,7 +33,6 @@
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [clojure.spec.alpha :as s]
    [cuerdas.core :as str]))
 
 ;; --- FEATURES
@@ -314,14 +313,15 @@
                  :object-id object-id
                  :tag tag})))
 
-(s/def ::delete-file-object-thumbnail
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::file-id ::object-id]))
+(def ^:private schema:delete-file-object-thumbnail
+  [:map {:title "delete-file-object-thumbnail"}
+   [:file-id ::sm/uuid]
+   [:object-id :string]])
 
 (sv/defmethod ::delete-file-object-thumbnail
   {::doc/added "1.19"
    ::doc/module :files
-   ::doc/deprecated "1.20"
+   ::sm/params schema:delete-file-object-thumbnail
    ::climit/id [[:file-thumbnail-ops/by-profile ::rpc/profile-id]
                 [:file-thumbnail-ops/global]]
    ::audit/skip true}
