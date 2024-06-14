@@ -158,6 +158,10 @@
     (avatars/generate {:name name})
     (dm/str (u/join public-uri "assets/by-id/" photo-id))))
 
+(defn resolve-media
+  [id]
+  (dm/str (u/join public-uri "assets/by-id/" (str id))))
+
 (defn resolve-file-media
   ([media]
    (resolve-file-media media false))
