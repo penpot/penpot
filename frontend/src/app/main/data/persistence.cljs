@@ -96,6 +96,13 @@
             (rx/of (run-persistence-task)
                    (update-status :saving))))))))
 
+(defn- discard-persistence-state
+  []
+  (ptk/reify ::discard-persistence-state
+    ptk/UpdateEvent
+    (update [_ state]
+      (dissoc state :persistence))))
+
 (defn- persist-commit
   [commit-id]
   (ptk/reify ::persist-commit
@@ -114,7 +121,6 @@
                         :changes (vec changes)
                         :features features}]
 
-          ;; FIXME: handle lagged here !!!!
           (->> (rp/cmd! :update-file params)
                (rx/mapcat (fn [{:keys [revn lagged] :as response}]
                             (log/debug :hint "changes persisted" :commit-id (dm/str commit-id) :lagged (count lagged))
@@ -128,6 +134,7 @@
                               (rx/of (rt/assign-exception cause)
                                      (ptk/data-event ::error cause)
                                      (update-status :error)))
+                            (rx/of (discard-persistence-state))
                             (rx/throw cause))))))))))
 
 
@@ -172,7 +179,6 @@
                        (assoc :undo-changes uchg)
                        (assoc :redo-changes rchg)
                        (assoc :changes rchg)))))))
-
 
 (defn initialize-persistence
   []
