@@ -54,6 +54,7 @@
 - Fix toolbar keeps hiding when click outside workspace [Taiga #7776](https://tree.taiga.io/project/penpot/issue/7776)
 - Fix open overlay relative to a frame [Taiga #7563](https://tree.taiga.io/project/penpot/issue/7563)
 - Workspace-palette items stay hidden when opening with keyboard-shortcut [Taiga #7489](https://tree.taiga.io/project/penpot/issue/7489)
+- Fix SVG attrs are not handled correctly when exporting/importing in .zip [Taiga #7920](https://tree.taiga.io/project/penpot/issue/7920)
 
 ## 2.0.3
 
