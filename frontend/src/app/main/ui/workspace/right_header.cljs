@@ -43,9 +43,9 @@
         i/status-alert]
 
        :saving
-       [:div {:class (stl/css :status-icon :saving-status)
-              :title (tr "workspace.header.saving")}
-        i/status-update]
+       [:div {:class (stl/css :status-icon :pending-status)
+              :title (tr "workspace.header.unsaved")}
+        i/status-alert]
 
        :saved
        [:div {:class (stl/css :status-icon :saved-status)
