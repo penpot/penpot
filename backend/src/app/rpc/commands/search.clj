@@ -6,13 +6,12 @@
 
 (ns app.rpc.commands.search
   (:require
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.db :as db]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :refer [resolve-public-uri]]
    [app.rpc.doc :as-alias doc]
-   [app.util.services :as sv]
-   [clojure.spec.alpha :as s]))
+   [app.util.services :as sv]))
 
 (def ^:private sql:search-files
   "with projects as (
@@ -65,16 +64,14 @@
                      (assoc :thumbnail-uri (resolve-public-uri media-id)))
                  (dissoc row :media-id))))))
 
-(s/def ::team-id ::us/uuid)
-(s/def ::search-files ::us/string)
-
-(s/def ::search-files
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::team-id]
-          :opt-un [::search-term]))
+(def ^:private schema:search-files
+  [:map {:title "search-files"}
+   [:team-id ::sm/uuid]
+   [:search-term {:optional true} :string]])
 
 (sv/defmethod ::search-files
   {::doc/added "1.17"
-   ::doc/module :files}
+   ::doc/module :files
+   ::sm/params schema:search-files}
   [{:keys [::db/pool]} {:keys [::rpc/profile-id team-id search-term]}]
   (some->> search-term (search-files pool profile-id team-id)))
