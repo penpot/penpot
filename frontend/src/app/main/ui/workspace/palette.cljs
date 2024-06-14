@@ -50,12 +50,12 @@
   [{:keys [layout on-change-palette-size]}]
   (let [color-palette?       (:colorpalette layout)
         text-palette?        (:textpalette layout)
+        hide-palettes?       (:hide-palettes layout)
         workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
         container            (mf/use-ref nil)
-        state*               (mf/use-state {:show-menu false :hide-palettes false})
+        state*               (mf/use-state {:show-menu false})
         state                (deref state*)
         show-menu?           (:show-menu state)
-        hide-palettes?       (:hide-palettes state)
         selected             (h/use-shared-state mdc/colorpalette-selected-broadcast-key :recent)
         selected-text*       (mf/use-state :file)
         selected-text        (deref selected-text*)
@@ -100,15 +100,19 @@
         toggle-palettes
         (mf/use-callback
          (fn [_]
-           (swap! state* update :hide-palettes not)))
+           (r/set-resize-type! :top)
+           (dom/add-class! (dom/get-element-by-class "color-palette") "fade-out-down")
+           (st/emit! (-> (dw/toggle-layout-flag :hide-palettes)
+                         (vary-meta assoc ::ev/origin "workspace-left-toolbar")))))
 
         on-select-color-palette
         (mf/use-fn
          (fn [event]
            (let [node (dom/get-current-target event)]
              (r/set-resize-type! :top)
-             (dom/add-class!  (dom/get-element-by-class "color-palette") "fade-out-down")
-             (ts/schedule 300 #(st/emit! (dw/remove-layout-flag :textpalette)
+             (dom/add-class! (dom/get-element-by-class "color-palette") "fade-out-down")
+             (ts/schedule 300 #(st/emit! (dw/remove-layout-flag :hide-palettes)
+                                         (dw/remove-layout-flag :textpalette)
                                          (-> (dw/toggle-layout-flag :colorpalette)
                                              (vary-meta assoc ::ev/origin "workspace-left-toolbar"))))
              (dom/blur! node))))
@@ -118,8 +122,9 @@
          (fn [event]
            (let [node (dom/get-current-target event)]
              (r/set-resize-type! :top)
-             (dom/add-class!  (dom/get-element-by-class "color-palette") "fade-out-down")
-             (ts/schedule 300 #(st/emit! (dw/remove-layout-flag :colorpalette)
+             (dom/add-class! (dom/get-element-by-class "color-palette") "fade-out-down")
+             (ts/schedule 300 #(st/emit! (dw/remove-layout-flag :hide-palettes)
+                                         (dw/remove-layout-flag :colorpalette)
                                          (-> (dw/toggle-layout-flag :textpalette)
                                              (vary-meta assoc ::ev/origin "workspace-left-toolbar"))))
              (dom/blur! node))))
@@ -198,5 +203,6 @@
                                   :selected @selected
                                   :width vport-width}]])]]
           [:div {:class (stl/css :handler)
-                 :on-click toggle-palettes}
+                 :on-click toggle-palettes
+                 :data-testid "toggle-palettes-visibility"}
            [:div {:class (stl/css :handler-btn)}]])])]))

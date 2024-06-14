@@ -63,6 +63,12 @@ h.watch("resources/templates", null, async function (path) {
   await h.compileTemplates();
 });
 
+log.info("watch: translations (~)")
+h.watch("translations", null, async function (path) {
+  log.info("changed:", path);
+  await h.compileTemplates();
+});
+
 log.info("watch: assets (~)")
 h.watch(["resources/images", "resources/fonts", "resources/plugins-runtime"], null, async function (path) {
   log.info("changed:", path);

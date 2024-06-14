@@ -20,6 +20,7 @@
     :comments
     :assets
     :document-history
+    :hide-palettes
     :colorpalette
     :element-options
     :rulers
@@ -134,7 +135,8 @@
   "A map of layout flags that should be persisted in local storage; the
   value corresponds to the key that will be used for save the data in
   storage object. It should be namespace qualified."
-  {:colorpalette :app.main.data.workspace/show-colorpalette?
+  {:hide-palettes :app.main.data.workspace/hide-palettes?
+   :colorpalette :app.main.data.workspace/show-colorpalette?
    :textpalette :app.main.data.workspace/show-textpalette?})
 
 (defn load-layout-flags

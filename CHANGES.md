@@ -53,6 +53,7 @@
 - Toolbar keeps toggling on and off on spacebar press [Taiga #7654](https://github.com/penpot/penpot/pull/7654)
 - Fix toolbar keeps hiding when click outside workspace [Taiga #7776](https://tree.taiga.io/project/penpot/issue/7776)
 - Fix open overlay relative to a frame [Taiga #7563](https://tree.taiga.io/project/penpot/issue/7563)
+- Workspace-palette items stay hidden when opening with keyboard-shortcut [Taiga #7489](https://tree.taiga.io/project/penpot/issue/7489)
 
 ## 2.0.3
 

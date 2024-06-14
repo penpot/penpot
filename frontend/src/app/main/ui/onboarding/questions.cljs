@@ -49,12 +49,12 @@
       (when (some? on-prev)
         [:button {:class (stl/css :prev-button)
                   :on-click on-prev}
-         (tr "questions.previous")])
+         (tr "labels.previous")])
 
       [:> fm/submit-button*
        {:label (if (< step 5)
-                 (tr "questions.next")
-                 (tr "questions.start"))
+                 (tr "labels.next")
+                 (tr "labels.start"))
         :class (stl/css :next-button)}]]]))
 
 (s/def ::questions-form-step-1
@@ -82,28 +82,28 @@
   [{:keys [on-next form]}]
   (let [use-options
         (mf/with-memo []
-          (shuffle [{:label (tr "questions.use-work") :value "use-work"}
-                    {:label (tr "questions.use-education") :value "use-education"}
-                    {:label (tr "questions.use-personal") :value "use-personal"}]))
+          (shuffle [{:label (tr "onboarding.questions.use.work") :value "work"}
+                    {:label (tr "onboarding.questions.use.education") :value "education"}
+                    {:label (tr "onboarding.questions.use.personal") :value "personal"}]))
 
         planning-options
         (mf/with-memo []
-          (-> (shuffle [{:label (tr "questions.select-option")
+          (-> (shuffle [{:label (tr "labels.select-option")
                          :value "" :key "questions:what-brings-you-here"
                          :disabled true}
-                        {:label (tr "questions.reasons.exploring")
+                        {:label (tr "onboarding.questions.reasons.exploring")
                          :value "discover-more-about-penpot"
                          :key "discover-more-about-penpot"}
-                        {:label (tr "questions.reasons.fit")
+                        {:label (tr "onboarding.questions.reasons.fit")
                          :value "test-penpot-to-see-if-its-a-fit-for-team"
                          :key "test-penpot-to-see-if-its-a-fit-for-team"}
-                        {:label (tr "questions.reasons.alternative")
+                        {:label (tr "onboarding.questions.reasons.alternative")
                          :value "alternative-to-figma"
                          :key "alternative-to-figma"}
-                        {:label (tr "questions.reasons.testing")
+                        {:label (tr "onboarding.questions.reasons.testing")
                          :value "try-out-before-using-penpot-on-premise"
                          :key "try-out-before-using-penpot-on-premise"}])
-              (conj {:label (tr "questions.other-short") :value "other"})))
+              (conj {:label (tr "labels.other-short") :value "other"})))
 
         current-planning
         (dm/get-in @form [:data :planning])]
@@ -116,22 +116,22 @@
 
      [:img {:class (stl/css :header-image)
             :src "images/form/use-for-1.png"
-            :alt (tr "questions.lets-get-started")}]
+            :alt (tr "onboarding.questions.lets-get-started")}]
      [:h1 {:class (stl/css :modal-title)}
-      (tr "questions.step1-title")]
+      (tr "onboarding.questions.step1.title")]
      [:p {:class (stl/css :modal-text)}
-      (tr "questions.step1-subtitle")]
+      (tr "onboarding.questions.step1.subtitle")]
 
      [:div {:class (stl/css :modal-question)}
       [:h3 {:class (stl/css :modal-subtitle)}
-       (tr "questions.step1-question1")]
+       (tr "onboarding.questions.step1.question1")]
 
       [:& fm/radio-buttons {:options use-options
                             :name :expected-use
                             :class (stl/css :radio-btns)}]
 
       [:h3 {:class (stl/css :modal-subtitle)}
-       (tr "questions.step1-question2")]
+       (tr "onboarding.questions.step1.question2")]
 
       [:& fm/select
        {:options planning-options
@@ -143,7 +143,7 @@
       (when (= current-planning "other")
         [:& fm/input {:name :planning-other
                       :class (stl/css :input-spacing)
-                      :placeholder (tr "questions.other")
+                      :placeholder (tr "labels.other")
                       :label ""}])]]))
 
 (s/def ::questions-form-step-2
@@ -168,17 +168,17 @@
   [{:keys [on-next on-prev form]}]
   (let [design-tool-options
         (mf/with-memo []
-          (-> (shuffle [{:label (tr "questions.figma")  :img-width "48px" :img-height "60px"
+          (-> (shuffle [{:label (tr "labels.figma")  :img-width "48px" :img-height "60px"
                          :value "figma" :image "images/form/figma.png"}
-                        {:label (tr "questions.sketch") :img-width "48px" :img-height "60px"
+                        {:label (tr "labels.sketch") :img-width "48px" :img-height "60px"
                          :value "sketch" :image "images/form/sketch.png"}
-                        {:label (tr "questions.adobe-xd") :img-width "48px" :img-height "60px"
+                        {:label (tr "labels.adobe-xd") :img-width "48px" :img-height "60px"
                          :value "adobe-xd" :image "images/form/adobe-xd.png"}
-                        {:label (tr "questions.canva") :img-width "48px" :img-height "60px"
+                        {:label (tr "labels.canva") :img-width "48px" :img-height "60px"
                          :value "canva" :image "images/form/canva.png"}
-                        {:label (tr "questions.invision")  :img-width "48px" :img-height "60px"
+                        {:label (tr "labels.invision")  :img-width "48px" :img-height "60px"
                          :value "invision" :image "images/form/invision.png"}])
-              (conj {:label (tr "questions.other-short")  :value "other" :icon i/curve})))
+              (conj {:label (tr "labels.other-short")  :value "other" :icon i/curve})))
 
         current-experience
         (dm/get-in @form [:clean-data :experience-design-tool])
@@ -199,7 +199,7 @@
                         :class (stl/css :step-2)}
 
      [:h1 {:class (stl/css :modal-title)}
-      (tr "question.design-tool-more-used")]
+      (tr "onboarding.questions.step2.title")]
      [:div {:class (stl/css :radio-wrapper)}
       [:& fm/image-radio-buttons {:options design-tool-options
                                   :img-width "48px"
@@ -212,7 +212,7 @@
       (when (= current-experience "other")
         [:& fm/input {:name :experience-design-tool-other
                       :class (stl/css :input-spacing)
-                      :placeholder (tr "questions.other")
+                      :placeholder (tr "labels.other")
                       :label ""}])]]))
 
 (s/def ::questions-form-step-3
@@ -246,36 +246,35 @@
   [{:keys [on-next on-prev form]}]
   (let [role-options
         (mf/with-memo []
-          (-> (shuffle [{:label (tr "questions.select-option") :value "" :key "role" :disabled true}
-                        {:label (tr "questions.work-type.ux") :value "designer" :key "designer"}
-                        {:label (tr "questions.work-type.dev") :value "developer"  :key "developer"}
-                        {:label (tr "questions.work-type.student") :value "student-teacher" :key "student"}
-                        {:label (tr "questions.work-type.graphic") :value "graphic-design" :key "design"}
-                        {:label (tr "questions.work-type.marketing") :value "marketing" :key "marketing"}
-                        {:label (tr "questions.work-type.product") :value "manager" :key "manager"}])
-              (conj {:label (tr "questions.other-short") :value "other"})))
+          (-> (shuffle [{:label (tr "labels.select-option") :value "" :key "role" :disabled true}
+                        {:label (tr "labels.product-design") :value "ux" :key "ux"}
+                        {:label (tr "labels.developer") :value "developer"  :key "developer"}
+                        {:label (tr "labels.student-teacher") :value "student-teacher" :key "student"}
+                        {:label (tr "labels.graphic-design") :value "designer" :key "design"}
+                        {:label (tr "labels.marketing") :value "marketing" :key "marketing"}
+                        {:label (tr "labels.product-management") :value "manager" :key "manager"}])
+              (conj {:label (tr "labels.other-short") :value "other"})))
 
         responsability-options
         (mf/with-memo []
-          (-> (shuffle [{:label (tr "questions.select-option") :value "" :key "responsability" :disabled true}
-                        {:label (tr "questions.role.team-leader") :value "team-leader"}
-                        {:label (tr "questions.role.team-member") :value "team-member"}
-                        {:label (tr "questions.role.freelancer") :value "freelancer"}
-                        {:label (tr "questions.role.founder") :value "ceo-founder"}
-                        {:label (tr "questions.role.director") :value "director"}
-                        {:label (tr "questions.student-teacher") :value "student-teacher"}])
-              (conj {:label (tr "questions.other-short") :value "other"})))
+          (-> (shuffle [{:label (tr "labels.select-option") :value "" :key "responsability" :disabled true}
+                        {:label (tr "labels.team-leader") :value "team-leader"}
+                        {:label (tr "labels.team-member") :value "team-member"}
+                        {:label (tr "labels.freelancer") :value "freelancer"}
+                        {:label (tr "labels.founder") :value "ceo-founder"}
+                        {:label (tr "labels.director") :value "director"}])
+              (conj {:label (tr "labels.other-short") :value "other"})))
 
 
         team-size-options
         (mf/with-memo []
-          [{:label (tr "questions.select-option") :value "" :key "team-size" :disabled true}
-           {:label (tr "questions.more-than-50") :value "more-than-50" :key "more-than-50"}
-           {:label (tr "questions.31-50") :value "31-50"  :key "31-50"}
-           {:label (tr "questions.11-30") :value "11-30" :key "11-30"}
-           {:label (tr "questions.2-10") :value "2-10" :key "2-10"}
-           {:label (tr "questions.freelancer") :value "freelancer" :key "freelancer"}
-           {:label (tr "questions.personal-project") :value "personal-project" :key "personal-project"}])
+          [{:label (tr "labels.select-option") :value "" :key "team-size" :disabled true}
+           {:label (tr "onboarding.questions.team-size.more-than-50") :value "more-than-50" :key "more-than-50"}
+           {:label (tr "onboarding.questions.team-size.31-50") :value "31-50"  :key "31-50"}
+           {:label (tr "onboarding.questions.team-size.11-30") :value "11-30" :key "11-30"}
+           {:label (tr "onboarding.questions.team-size.2-10") :value "2-10" :key "2-10"}
+           {:label (tr "onboarding.questions.team-size.freelancer") :value "freelancer" :key "freelancer"}
+           {:label (tr "onboarding.questions.team-size.personal-project") :value "personal-project" :key "personal-project"}])
 
         current-role
         (dm/get-in @form [:data :role])
@@ -290,9 +289,10 @@
                         :on-prev on-prev
                         :class (stl/css :step-3)}
 
-     [:h1 {:class (stl/css :modal-title)} (tr "questions.step3-title")]
+     [:h1 {:class (stl/css :modal-title)}
+      (tr "onboarding.questions.step3.title")]
      [:div {:class (stl/css :modal-question)}
-      [:h3 {:class (stl/css :modal-subtitle)} (tr "questions.step3.question1")]
+      [:h3 {:class (stl/css :modal-subtitle)} (tr "onboarding.questions.step3.question1")]
       [:& fm/select {:options role-options
                      :select-class (stl/css :select-class)
                      :default ""
@@ -301,11 +301,11 @@
       (when (= current-role "other")
         [:& fm/input {:name :role-other
                       :class (stl/css :input-spacing)
-                      :placeholder (tr "questions.other")
+                      :placeholder (tr "labels.other")
                       :label ""}])]
 
      [:div {:class (stl/css :modal-question)}
-      [:h3 {:class (stl/css :modal-subtitle)} (tr "questions.step3.question2")]
+      [:h3 {:class (stl/css :modal-subtitle)} (tr "onboarding.questions.step3.question2")]
       [:& fm/select {:options responsability-options
                      :select-class (stl/css :select-class)
                      :default ""
@@ -314,11 +314,11 @@
       (when (= current-responsability "other")
         [:& fm/input {:name :responsability-other
                       :class (stl/css :input-spacing)
-                      :placeholder (tr "questions.other")
+                      :placeholder (tr "labels.other")
                       :label ""}])]
 
      [:div {:class (stl/css :modal-question)}
-      [:h3 {:class (stl/css :modal-subtitle)} (tr "questions.company-size")]
+      [:h3 {:class (stl/css :modal-subtitle)} (tr "onboarding.questions.step3.question3")]
       [:& fm/select {:options team-size-options
                      :default ""
                      :select-class (stl/css :select-class)
@@ -345,12 +345,17 @@
   [{:keys [on-next on-prev form]}]
   (let [start-options
         (mf/with-memo []
-          (-> (shuffle [{:label (tr "questions.starting-ui") :value "ui" :image "images/form/Design.png"}
-                        {:label (tr "questions.starting-wireframing") :value "wireframing" :image "images/form/templates.png"}
-                        {:label (tr "questions.starting-prototyping") :value "prototyping" :image "images/form/Prototype.png"}
-                        {:label (tr "questions.starting-ds") :value "ds" :image "images/form/components.png"}
-                        {:label (tr "questions.starting-code") :value "code" :image "images/form/design-and-dev.png"}])
-              (conj {:label (tr "questions.other-short") :value "other" :icon i/curve})))
+          (-> (shuffle [{:label (tr "onboarding.questions.start-with.ui")
+                         :value "ui" :image "images/form/Design.png"}
+                        {:label (tr "onboarding.questions.start-with.wireframing")
+                         :value "wireframing" :image "images/form/templates.png"}
+                        {:label (tr "onboarding.questions.start-with.prototyping")
+                         :value "prototyping" :image "images/form/Prototype.png"}
+                        {:label (tr "onboarding.questions.start-with.ds")
+                         :value "ds" :image "images/form/components.png"}
+                        {:label (tr "onboarding.questions.start-with.code")
+                         :value "code" :image "images/form/design-and-dev.png"}])
+              (conj {:label (tr "labels.other-short") :value "other" :icon i/curve})))
 
         current-start (dm/get-in @form [:data :start-with])
 
@@ -369,7 +374,7 @@
                         :on-prev on-prev
                         :class (stl/css :step-4)}
 
-     [:h1 {:class (stl/css :modal-title)} (tr "questions.step4-title")]
+     [:h1 {:class (stl/css :modal-title)} (tr "onboarding.questions.step4.title")]
      [:div {:class (stl/css :radio-wrapper)}
       [:& fm/image-radio-buttons {:options start-options
                                   :img-width "159px"
@@ -382,7 +387,7 @@
         [:& fm/input {:name :start-with-other
                       :class (stl/css :input-spacing)
                       :label ""
-                      :placeholder (tr "questions.other")}])]]))
+                      :placeholder (tr "labels.other")}])]]))
 
 (s/def ::questions-form-step-5
   (s/keys :req-un [::referer]
@@ -405,12 +410,12 @@
   [{:keys [on-next on-prev form]}]
   (let [referer-options
         (mf/with-memo []
-          (-> (shuffle [{:label (tr "questions.referer.youtube") :value "youtube"}
-                        {:label (tr "questions.referer.event") :value "event"}
-                        {:label (tr "questions.referer.search") :value "search"}
-                        {:label (tr "questions.referer.social") :value "social"}
-                        {:label (tr "questions.referer.article") :value "article"}])
-              (conj {:label (tr "questions.other-short") :value "other"})))
+          (-> (shuffle [{:label (tr "labels.youtube") :value "youtube"}
+                        {:label (tr "labels.event") :value "event"}
+                        {:label (tr "labels.search") :value "search"}
+                        {:label (tr "labels.social") :value "social"}
+                        {:label (tr "labels.article") :value "article"}])
+              (conj {:label (tr "labels.other-short") :value "other"})))
 
         current-referer
         (dm/get-in @form [:data :referer])
@@ -430,7 +435,7 @@
                         :on-prev on-prev
                         :class (stl/css :step-5)}
 
-     [:h1 {:class (stl/css :modal-title)} (tr "questions.step5-title")]
+     [:h1 {:class (stl/css :modal-title)} (tr "onboarding.questions.step5.title")]
      [:div {:class (stl/css :radio-wrapper)}
       [:& fm/radio-buttons {:options referer-options
                             :class (stl/css :radio-btns)
@@ -440,7 +445,7 @@
         [:& fm/input {:name :referer-other
                       :class (stl/css :input-spacing)
                       :label ""
-                      :placeholder (tr "questions.other")}])]]))
+                      :placeholder (tr "labels.other")}])]]))
 
 (mf/defc questions-modal
   []

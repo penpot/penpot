@@ -436,14 +436,16 @@
                           :command (ds/a-mod "p")
                           :subsections [:panels]
                           :fn #(do (r/set-resize-type! :bottom)
-                                   (emit-when-no-readonly (dw/remove-layout-flag :textpalette)
+                                   (emit-when-no-readonly (dw/remove-layout-flag :hide-palettes)
+                                                          (dw/remove-layout-flag :textpalette)
                                                           (toggle-layout-flag :colorpalette)))}
 
    :toggle-textpalette   {:tooltip (ds/alt "T")
                           :command (ds/a-mod "t")
                           :subsections [:panels]
                           :fn #(do (r/set-resize-type! :bottom)
-                                   (emit-when-no-readonly (dw/remove-layout-flag :colorpalette)
+                                   (emit-when-no-readonly (dw/remove-layout-flag :hide-palettes)
+                                                          (dw/remove-layout-flag :colorpalette)
                                                           (toggle-layout-flag :textpalette)))}
 
    :hide-ui              {:tooltip "\\"
