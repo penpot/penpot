@@ -7,7 +7,6 @@
 (ns app.main.ui.onboarding.newsletter
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.config :as cf]
    [app.main.data.events :as-alias ev]
    [app.main.data.messages :as msg]
    [app.main.data.users :as du]
@@ -45,14 +44,10 @@
                             (assoc :label "newsletter:subscriptions")
                             (assoc :step 6))]
              (st/emit! (ptk/data-event ::ev/event params)
-                       (du/update-profile-props state)))))
-
-        onboarding-a-b-test?
-        (cf/external-feature-flag "signup-background" "test")]
+                       (du/update-profile-props state)))))]
 
     [:div {:class (stl/css-case
-                   :modal-overlay true
-                   :onboarding-a-b-test onboarding-a-b-test?)}
+                   :modal-overlay true)}
 
      [:div.animated.fadeInDown {:class (stl/css :modal-container)}
       [:div {:class (stl/css :modal-left)}
