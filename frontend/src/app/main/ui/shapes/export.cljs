@@ -263,7 +263,7 @@
    [:*
     (when (contains? shape :svg-attrs)
       (let [svg-transform (get shape :svg-transform)
-            svg-attrs     (->> shape :svg-attrs keys (mapv d/name) (str/join ","))
+            svg-attrs     (->> shape :svg-attrs keys (mapv (comp d/name str/kebab)) (str/join ","))
             svg-defs      (->> shape :svg-defs keys (mapv d/name) (str/join ","))]
         [:> "penpot:svg-import"
          #js {:penpot:svg-attrs          (when-not (empty? svg-attrs) svg-attrs)
