@@ -98,7 +98,7 @@
                               (assoc ::perms perms)
                               (assoc :profile-id profile-id))]
 
-                  ;; When we have neither profile nor share, we just return a not
+               ;; When we have neither profile nor share, we just return a not
                ;; found response to the user.
                (when-not perms
                  (ex/raise :type :not-found
