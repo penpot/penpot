@@ -1,20 +1,23 @@
 (ns app.main.ui.workspace.tokens.style-dictionary
   (:require
+   ["@tokens-studio/sd-transforms" :as sd-transforms]
    ["style-dictionary$default" :as sd]
+   [app.common.data :as d]
    [app.main.refs :as refs]
    [promesa.core :as p]
    [rumext.v2 :as mf]
    [shadow.resource]))
 
-(js/console.log "sd" sd)
-
 (def StyleDictionary
   "The global StyleDictionary instance used as an external library for now,
   as the package would need webpack to be bundled,
   because shadow-cljs doesn't support some of the more modern bundler features."
-  js/window.StyleDictionary)
-
-(defonce !StyleDictionary (atom nil))
+  (do
+    (sd-transforms/registerTransforms sd)
+    (.registerFormat sd #js {:name "custom/json"
+                             :format (fn [res]
+                                       (.-tokens (.-dictionary res)))})
+    sd))
 
 ;; Helpers ---------------------------------------------------------------------
 
@@ -37,13 +40,18 @@
                       :platforms {:json {:transformGroup "tokens-studio"
                                          :files [{:format "custom/json"
                                                   :destination "fake-filename"}]}}
-                      :preprocessors ["tokens-studio"]}
-               debug? (assoc :log {:warnings "warn"
-                                   :verbosity "verbose"}))
+                      :log {:errors {:brokenReferences "console"}}
+                      :preprocessors ["tokens-studio"]})
+               ;; debug? (assoc-in :log :warnings "warn"
+               ;;                       :verbosity "verbose"))
         js-data (clj->js data)]
     (when debug?
       (js/console.log "Input Data" js-data))
-    (StyleDictionary. js-data)))
+    (sd-transforms/registerTransforms sd)
+    (.registerFormat sd #js {:name "custom/json"
+                             :format (fn [res]
+                                       (.-tokens (.-dictionary res)))})
+    (sd. js-data)))
 
 (defn resolve-sd-tokens+
   "Resolves references and math expressions using StyleDictionary.
@@ -65,15 +73,20 @@
                      (js/console.log "Resolved tokens" resolved-tokens))
                    resolved-tokens))))))
 
+(defn tokens-name-map [tokens]
+  (->> tokens
+       (map (fn [[_ x]] [(:name x) x]))
+       (into {})))
+
 (defn resolve-tokens+
   [tokens & {:keys [debug?] :as config}]
-  (p/let [sd-tokens (-> (tokens->tree tokens)
+  (p/let [sd-tokens (-> (tokens-name-map tokens)
                         (clj->js)
                         (resolve-sd-tokens+ config))]
     (let [resolved-tokens (reduce
-                           (fn [acc cur]
-                             (let [resolved-value (.-value cur)
-                                   id (uuid (.-id cur))]
+                           (fn [acc ^js cur]
+                             (let [resolved-value (d/parse-integer (.-value cur) (.-value cur))
+                                   id (uuid (.-uuid (.-id cur)))]
                                (assoc-in acc [id :value] resolved-value)))
                            tokens sd-tokens)]
       (when debug?
@@ -136,11 +149,13 @@
   (-> (resolve-workspace-tokens+ {:debug? true})
       (p/then #(reset! !output %)))
 
-  (-> @refs/workspace-tokens
-      (tokens->tree)
-      (clj->js)
-      (#(doto % js/console.log))
-      (resolve-sd-tokens+ {:debug? true}))
+  (->> @refs/workspace-tokens
+       (resolve-tokens+))
+
+  (->
+   (clj->js {"a" {:name "a" :value "5"}
+             "b" {:name "b" :value "{a} * 2"}})
+   (#(resolve-sd-tokens+ % {:debug? true})))
 
   (-> (tokens-studio-example)
       (resolve-sd-tokens+ {:debug? true}))

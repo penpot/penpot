@@ -3863,6 +3863,30 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@tokens-studio/sd-transforms@npm:^0.16.1":
+  version: 0.16.1
+  resolution: "@tokens-studio/sd-transforms@npm:0.16.1"
+  dependencies:
+    "@tokens-studio/types": "npm:^0.4.0"
+    color2k: "npm:^2.0.1"
+    colorjs.io: "npm:^0.4.3"
+    deepmerge: "npm:^4.3.1"
+    expr-eval-fork: "npm:^2.0.2"
+    is-mergeable-object: "npm:^1.1.1"
+    postcss-calc-ast-parser: "npm:^0.1.4"
+  peerDependencies:
+    style-dictionary: ^4.0.0-prerelease.27
+  checksum: 10c0/496a22026ffa25e3f6d8438a1fb39d67383fa55c89de9ac6759e2dce10a16268f5009e4809d03ceab38597fc02025a90eb1d32083b98a9353feded83831549c9
+  languageName: node
+  linkType: hard
+
+"@tokens-studio/types@npm:^0.4.0":
+  version: 0.4.0
+  resolution: "@tokens-studio/types@npm:0.4.0"
+  checksum: 10c0/0641385653c94704f63dc5e10699c49bdbb1e1d8cba54af31bf50c3be85056123109bb2fe5091b1ccebaa9eba4c4afce3148a3b850919ed67bc81e3294ae839c
+  languageName: node
+  linkType: hard
+
 "@trysound/sax@npm:0.2.0":
   version: 0.2.0
   resolution: "@trysound/sax@npm:0.2.0"
@@ -5856,6 +5880,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"color2k@npm:^2.0.1":
+  version: 2.0.3
+  resolution: "color2k@npm:2.0.3"
+  checksum: 10c0/e7c13d212c9d1abb1690e378bbc0a6fb1751e4b02e9a73ba3b2ade9d54da673834597d342791d577d1ce400ec486c7f92c5098f9fa85cd113bcfde57420a2bb9
+  languageName: node
+  linkType: hard
+
 "color@npm:^3.1.3":
   version: 3.2.1
   resolution: "color@npm:3.2.1"
@@ -5863,6 +5894,13 @@ __metadata:
     color-convert: "npm:^1.9.3"
     color-string: "npm:^1.6.0"
   checksum: 10c0/39345d55825884c32a88b95127d417a2c24681d8b57069413596d9fcbb721459ef9d9ec24ce3e65527b5373ce171b73e38dbcd9c830a52a6487e7f37bf00e83c
+  languageName: node
+  linkType: hard
+
+"colorjs.io@npm:^0.4.3":
+  version: 0.4.5
+  resolution: "colorjs.io@npm:0.4.5"
+  checksum: 10c0/4cc58d18223426bcb8caa558e7554002b62bf87bd20db06596abf5efe5ea65416266402db86b504ac5fa2c38360913dbb8e6ef7c4fa19a992fd1818d5710ef6f
   languageName: node
   linkType: hard
 
@@ -7554,6 +7592,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"expr-eval-fork@npm:^2.0.2":
+  version: 2.0.2
+  resolution: "expr-eval-fork@npm:2.0.2"
+  checksum: 10c0/ab5143fe65017d8811c155be55abd700321b8a32117635c35ce1309488f3263a251788f27f2e4a77425f58f7a64f99fd46d652c35a8c1668b22b4a8861702b75
+  languageName: node
+  linkType: hard
+
 "express@npm:^4.17.3, express@npm:^4.19.2":
   version: 4.19.2
   resolution: "express@npm:4.19.2"
@@ -8058,6 +8103,7 @@ __metadata:
     "@storybook/react": "npm:^7.6.17"
     "@storybook/react-vite": "npm:^7.6.17"
     "@storybook/testing-library": "npm:^0.2.2"
+    "@tokens-studio/sd-transforms": "npm:^0.16.1"
     "@types/node": "npm:^20.11.20"
     animate.css: "npm:^4.1.1"
     autoprefixer: "npm:^10.4.17"
@@ -9502,6 +9548,13 @@ __metadata:
   version: 2.0.3
   resolution: "is-map@npm:2.0.3"
   checksum: 10c0/2c4d431b74e00fdda7162cd8e4b763d6f6f217edf97d4f8538b94b8702b150610e2c64961340015fe8df5b1fcee33ccd2e9b62619c4a8a3a155f8de6d6d355fc
+  languageName: node
+  linkType: hard
+
+"is-mergeable-object@npm:^1.1.1":
+  version: 1.1.1
+  resolution: "is-mergeable-object@npm:1.1.1"
+  checksum: 10c0/ed895a17686eb88d28040e0281c507639e5a07e63ac51f033c34091c2d8679ca86775ecfe80d5f0636bc2b7c530acd731527e5a2e9c32a88f8847286451720f1
   languageName: node
   linkType: hard
 
@@ -12221,6 +12274,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"postcss-calc-ast-parser@npm:^0.1.4":
+  version: 0.1.4
+  resolution: "postcss-calc-ast-parser@npm:0.1.4"
+  dependencies:
+    postcss-value-parser: "npm:^3.3.1"
+  checksum: 10c0/6ab488da4024aefe749baff2ee2cd41d1a7b84611291a6fd5d220262255c86f37687b3541696cab3e4edb1b7601634719877184ee426048ad82ed15185a5f64f
+  languageName: node
+  linkType: hard
+
 "postcss-clean@npm:^1.2.2":
   version: 1.2.2
   resolution: "postcss-clean@npm:1.2.2"
@@ -12321,6 +12383,13 @@ __metadata:
     cssesc: "npm:^3.0.0"
     util-deprecate: "npm:^1.0.2"
   checksum: 10c0/91e9c6434772506bc7f318699dd9d19d32178b52dfa05bed24cb0babbdab54f8fb765d9920f01ac548be0a642aab56bce493811406ceb00ae182bbb53754c473
+  languageName: node
+  linkType: hard
+
+"postcss-value-parser@npm:^3.3.1":
+  version: 3.3.1
+  resolution: "postcss-value-parser@npm:3.3.1"
+  checksum: 10c0/23eed98d8eeadb1f9ef1db4a2757da0f1d8e7c1dac2a38d6b35d971aab9eb3c6d8a967d0e9f435558834ffcd966afbbe875a56bcc5bcdd09e663008c106b3e47
   languageName: node
   linkType: hard
 
