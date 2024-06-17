@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-04-25 13:07+0000\n"
-"Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
-"Language-Team: Latvian "
-"<https://hosted.weblate.org/projects/penpot/frontend/lv/>\n"
+"PO-Revision-Date: 2024-06-17 08:07+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
+"lv/>\n"
 "Language: lv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 "
-"<= 19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
-"X-Generator: Weblate 5.5.1-dev\n"
+"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= "
+"19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
+"X-Generator: Weblate 5.6-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -53,6 +53,7 @@ msgid "auth.login-account-title"
 msgstr "Pieteikties manā kontā"
 
 #: src/app/main/ui/auth/register.cljs
+#, fuzzy
 msgid "auth.login-here"
 msgstr "Pieteikties šeit"
 
@@ -173,13 +174,6 @@ msgid "auth.terms-privacy-agreement"
 msgstr ""
 "Ar jauna konta izveidošanu tiek piekrists mūsu pakalpojuma noteikumiem un "
 "privātuma nosacījumiem."
-
-#: src/app/main/ui/auth/register.cljs
-#, markdown
-msgid "auth.terms-privacy-agreement-md"
-msgstr ""
-"Ar jauna konta izveidošanu tiek piekrists mūsu [pakalpojuma "
-"noteikumiem](%s) un [privātuma nosacījumiem](%s)."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"

@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-05 10:42+0000\n"
+"PO-Revision-Date: 2024-06-17 08:07+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Korean <https://hosted.weblate.org/projects/penpot/frontend/"
 "ko/>\n"
@@ -32,6 +32,7 @@ msgid "auth.forgot-password"
 msgstr "비밀번호를 잊어버리셨나요?"
 
 #: src/app/main/ui/auth/register.cljs
+#, fuzzy
 msgid "auth.login-here"
 msgstr "여기서 로그인하세요"
 
@@ -105,10 +106,6 @@ msgstr "아직 계정이 없으신가요?"
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.register-submit"
 msgstr "계정을 생성하세요"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.register-subtitle"
-msgstr "무료 오픈 소스입니다"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"
@@ -759,12 +756,6 @@ msgstr "펜팟은 디자인과 코딩의 협업을 위한 무료 오픈소스 �
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.password-not-empty"
 msgstr "비밀번호는 공백 이외의 글자를 포함해야 합니다."
-
-#: src/app/main/ui/auth/register.cljs
-#, markdown
-msgid "auth.terms-privacy-agreement-md"
-msgstr "새로운 계정을 생성하시면, 사용자는 펜팟의 [서비스 정책](%s)과 [개인 정보 "
-"정책](%s)에 동의하는 것으로 간주됩니다."
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.team-hero.text"

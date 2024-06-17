@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-04-24 12:55+0000\n"
+"PO-Revision-Date: 2024-06-17 08:07+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Czech "
-"<https://hosted.weblate.org/projects/penpot/frontend/cs/>\n"
+"Language-Team: Czech <https://hosted.weblate.org/projects/penpot/frontend/cs/"
+">\n"
 "Language: cs\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=((n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2);\n"
-"X-Generator: Weblate 5.5.1-dev\n"
+"X-Generator: Weblate 5.6-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -48,6 +48,7 @@ msgid "auth.fullname"
 msgstr "Jméno a příjmení"
 
 #: src/app/main/ui/auth/register.cljs
+#, fuzzy
 msgid "auth.login-here"
 msgstr "Přihlaste se zde"
 
@@ -162,13 +163,6 @@ msgid "auth.terms-privacy-agreement"
 msgstr ""
 "Vytvořením nového účtu souhlasíte s všeobecnými podmínkami poskytování "
 "služeb a zásadami ochrany osobních údajů."
-
-#: src/app/main/ui/auth/register.cljs
-#, markdown
-msgid "auth.terms-privacy-agreement-md"
-msgstr ""
-"Při vytváření nového účtu souhlasíte s našimi [smluvními podmínkami](%s) a "
-"[zásadami ochrany soukromí](%s)."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
@@ -2458,10 +2452,6 @@ msgid "labels.next"
 msgstr "Další"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "labels.none"
-msgstr "Žádný"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.other"
 msgstr "Jiné (upřesněte)"
 
@@ -2484,10 +2474,6 @@ msgstr "Vyberte možnost"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.sketch"
 msgstr "Sketch"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "labels.some"
-msgstr "Nějaké"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.start"

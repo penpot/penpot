@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-05-03 13:07+0000\n"
-"Last-Translator: Louis Chance <contact@louischance.com>\n"
+"PO-Revision-Date: 2024-06-17 08:07+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Weblate 5.5.3\n"
+"X-Generator: Weblate 5.6-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -48,6 +48,7 @@ msgid "auth.fullname"
 msgstr "Nom complet"
 
 #: src/app/main/ui/auth/register.cljs
+#, fuzzy
 msgid "auth.login-here"
 msgstr "Connectez-vous ici"
 
@@ -2407,10 +2408,6 @@ msgid "labels.next"
 msgstr "Suivant"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "labels.none"
-msgstr "Aucune"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.other"
 msgstr "Autres (préciser)"
 
@@ -2433,10 +2430,6 @@ msgstr "Sélectionnez une option"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.sketch"
 msgstr "Sketch"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "labels.some"
-msgstr "Un peu"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.start"
@@ -4969,13 +4962,6 @@ msgid "workspace.assets.sidebar.components"
 msgid_plural "workspace.assets.sidebar.components"
 msgstr[0] "1 composant"
 msgstr[1] "%s composants"
-
-#: src/app/main/ui/auth/register.cljs
-#, markdown
-msgid "auth.terms-privacy-agreement-md"
-msgstr ""
-"En créant un compte, vous acceptez nos [conditions d'utilisation](%s) et ["
-"politique de confidentialité](%s)."
 
 msgid "modals.move-shared-confirm.message"
 msgid_plural "modals.move-shared-confirm.message"

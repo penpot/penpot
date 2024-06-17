@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-05 10:42+0000\n"
+"PO-Revision-Date: 2024-06-17 08:07+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Hausa <https://hosted.weblate.org/projects/penpot/frontend/ha/"
 ">\n"
@@ -39,10 +39,6 @@ msgstr ""
 "wannan aikin gwaji ne kawai,kar ka yi amfani da shi a aikin gaske,lokaci "
 "zuwa lokaci za ya ringa vacewa ne."
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.email"
-msgstr "imel"
-
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
 msgstr "ka manta lambar tsaro?"
@@ -52,6 +48,7 @@ msgid "auth.fullname"
 msgstr "cikakken suna"
 
 #: src/app/main/ui/auth/register.cljs
+#, fuzzy
 msgid "auth.login-here"
 msgstr "shiga nan"
 
@@ -129,10 +126,6 @@ msgstr "za mu aika maka da saqon qa'idoji ta imel"
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.recovery-submit"
 msgstr "canza lambar tsaro"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.register-subtitle"
-msgstr "kyauta ne,an buxe hanyar samu"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"
@@ -2280,10 +2273,6 @@ msgid "labels.next"
 msgstr "na gaba"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "labels.none"
-msgstr "babu"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.other"
 msgstr "idan akwai qari (bayyana)"
 
@@ -2306,10 +2295,6 @@ msgstr "dauki wanda kake so"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.sketch"
 msgstr "zana"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "labels.some"
-msgstr "wasu"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.start"

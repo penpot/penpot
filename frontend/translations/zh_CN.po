@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-05 10:42+0000\n"
+"PO-Revision-Date: 2024-06-17 08:07+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Chinese (Simplified) <https://hosted.weblate.org/projects/"
 "penpot/frontend/zh_Hans/>\n"
@@ -44,6 +44,7 @@ msgid "auth.fullname"
 msgstr "全名"
 
 #: src/app/main/ui/auth/register.cljs
+#, fuzzy
 msgid "auth.login-here"
 msgstr "在这里登录"
 
@@ -168,10 +169,6 @@ msgstr "服务协议"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.terms-privacy-agreement"
 msgstr "创建账号意味着您认可我们的服务条例和隐私政策。"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.terms-privacy-agreement-md"
-msgstr "创建新账号，即代表你同意我们的[服务条例](%s)和[隐私政策](%s)。"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
@@ -2364,10 +2361,6 @@ msgstr "50以上"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.next"
 msgstr "下一项"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "labels.none"
-msgstr "无"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.other"

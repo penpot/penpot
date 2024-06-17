@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-04-25 13:07+0000\n"
-"Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
-"Language-Team: Turkish "
-"<https://hosted.weblate.org/projects/penpot/frontend/tr/>\n"
+"PO-Revision-Date: 2024-06-17 08:07+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
+"tr/>\n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.5.1-dev\n"
+"X-Generator: Weblate 5.6-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -52,6 +52,7 @@ msgid "auth.login-account-title"
 msgstr "Hesabımda oturum aç"
 
 #: src/app/main/ui/auth/register.cljs
+#, fuzzy
 msgid "auth.login-here"
 msgstr "Buradan oturum açın"
 
@@ -172,13 +173,6 @@ msgid "auth.terms-privacy-agreement"
 msgstr ""
 "Bir hesap oluştururken, koşullarımızı ve gizlilik politikamızı kabul etmiş "
 "sayılırsınız."
-
-#: src/app/main/ui/auth/register.cljs
-#, markdown
-msgid "auth.terms-privacy-agreement-md"
-msgstr ""
-"Bir hesap oluştururken, [koşullarımızı](%s) ve [gizlilik politikamızı](%s) "
-"kabul etmiş sayılırsınız."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
@@ -2507,10 +2501,6 @@ msgid "labels.next"
 msgstr "Sonraki"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "labels.none"
-msgstr "Hiçbiri"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.other"
 msgstr "Diğer (lütfen belirtiniz)"
 
@@ -2533,10 +2523,6 @@ msgstr "Bir seçenek belirleyin"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.sketch"
 msgstr "Sketch"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "labels.some"
-msgstr "Biraz"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.start"
@@ -5281,3 +5267,36 @@ msgstr "Yolu kapatmak için tıklayın"
 
 #~ msgid "workspace.options.layout-item.title.min-w"
 #~ msgstr "Asgari genişlik"
+
+msgid "workspace.plugins.install"
+msgstr "Kur"
+
+msgid "workspace.plugins.title"
+msgstr "Eklentiler"
+
+msgid "workspace.plugins.search-placeholder"
+msgstr "Bir eklenti URL'si yazın"
+
+msgid "workspace.plugins.installed-plugins"
+msgstr "Kurulu eklentiler"
+
+msgid "workspace.plugins.error.url"
+msgstr "Eklenti yok veya URL doğru değil."
+
+msgid "workspace.plugins.empty-plugins"
+msgstr "Henüz eklenti kurulmadı"
+
+msgid "workspace.plugins.button-open"
+msgstr "Aç"
+
+msgid "workspace.plugins.success"
+msgstr "Eklenti doğru şekilde yüklendi."
+
+msgid "workspace.plugins.menu.plugins-manager"
+msgstr "Eklenti yöneticisi"
+
+msgid "workspace.plugins.menu.title"
+msgstr "Eklentiler"
+
+msgid "workspace.plugins.plugin-list-link"
+msgstr "Eklenti Listesi"

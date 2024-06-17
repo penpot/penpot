@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-11-01 14:29+0000\n"
-"Last-Translator: Tatsuto Yamamoto <me@laminne33569.net>\n"
-"Language-Team: Japanese "
-"<https://hosted.weblate.org/projects/penpot/frontend/jpn_JP/>\n"
+"PO-Revision-Date: 2024-06-17 08:07+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: Japanese <https://hosted.weblate.org/projects/penpot/frontend/"
+"ja/>\n"
 "Language: jpn_JP\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 4.14.2-dev\n"
+"X-Generator: Weblate 5.6-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -44,6 +44,7 @@ msgid "auth.fullname"
 msgstr "フルネーム"
 
 #: src/app/main/ui/auth/register.cljs
+#, fuzzy
 msgid "auth.login-here"
 msgstr "こちらからログイン"
 

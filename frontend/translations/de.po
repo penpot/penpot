@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-05 10:42+0000\n"
+"PO-Revision-Date: 2024-06-17 08:07+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
@@ -52,6 +52,7 @@ msgid "auth.login-account-title"
 msgstr "In mein Konto einloggen"
 
 #: src/app/main/ui/auth/register.cljs
+#, fuzzy
 msgid "auth.login-here"
 msgstr "Hier anmelden"
 
@@ -187,12 +188,6 @@ msgid "auth.terms-privacy-agreement"
 msgstr ""
 "Wenn Sie ein neues Konto erstellen, stimmen Sie unseren Nutzungsbedingungen "
 "und Datenschutzrichtlinien zu."
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.terms-privacy-agreement-md"
-msgstr ""
-"Wenn Sie ein neues Konto erstellen, stimmen Sie unseren [Nutzungsbedingungen]"
-"(%s) und [Datenschutzrichtlinien](%s) zu."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
@@ -2560,10 +2555,6 @@ msgid "labels.next"
 msgstr "Weiter"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "labels.none"
-msgstr "Keine"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.other"
 msgstr "Sonstiges (bitte angeben)"
 
@@ -2586,10 +2577,6 @@ msgstr "Wählen Sie eine Option"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.sketch"
 msgstr "Sketch"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "labels.some"
-msgstr "Einige"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.start"
@@ -5281,3 +5268,36 @@ msgstr "An den Hilfslinien des Lineals ausrichten deaktivieren"
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.enable-snap-ruler-guides"
 msgstr "An den Hilfslinien des Lineals ausrichten"
+
+msgid "workspace.plugins.title"
+msgstr "Plugins"
+
+msgid "workspace.plugins.search-placeholder"
+msgstr "Eine URL des Plugins eingeben"
+
+msgid "workspace.plugins.install"
+msgstr "Installieren"
+
+msgid "workspace.plugins.installed-plugins"
+msgstr "Installierte Plugins"
+
+msgid "workspace.plugins.button-open"
+msgstr "Öffnen"
+
+msgid "workspace.plugins.empty-plugins"
+msgstr "Noch keine Plugins installiert"
+
+msgid "workspace.plugins.error.url"
+msgstr "Das Plugin existiert nicht oder die URL ist nicht korrekt."
+
+msgid "workspace.plugins.menu.plugins-manager"
+msgstr "Plugin-Manager"
+
+msgid "workspace.plugins.plugin-list-link"
+msgstr "Liste der Plugins"
+
+msgid "workspace.plugins.menu.title"
+msgstr "Plugins"
+
+msgid "workspace.plugins.success"
+msgstr "Plugin wurde korrekt geladen."

@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-04-24 12:55+0000\n"
+"PO-Revision-Date: 2024-06-17 08:07+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Indonesian <https://hosted.weblate.org/projects/penpot/"
 "frontend/id/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.5.1-dev\n"
+"X-Generator: Weblate 5.6-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -48,6 +48,7 @@ msgid "auth.fullname"
 msgstr "Nama Lengkap"
 
 #: src/app/main/ui/auth/register.cljs
+#, fuzzy
 msgid "auth.login-here"
 msgstr "Masuk di sini"
 
@@ -175,12 +176,6 @@ msgid "auth.terms-privacy-agreement"
 msgstr ""
 "Ketika membuat akun baru, Anda menyetujui kebijakan layanan dan kebijakan "
 "privasi kami."
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.terms-privacy-agreement-md"
-msgstr ""
-"Ketika membuat akun baru, Anda menyetujui [persyaratan layanan](%s) dan "
-"[kebijakan privasi](%s) kami."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"

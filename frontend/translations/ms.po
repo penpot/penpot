@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-04-24 12:55+0000\n"
+"PO-Revision-Date: 2024-06-17 08:07+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Malay "
-"<https://hosted.weblate.org/projects/penpot/frontend/ms/>\n"
+"Language-Team: Malay <https://hosted.weblate.org/projects/penpot/frontend/ms/"
+">\n"
 "Language: ms\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.5.1-dev\n"
+"X-Generator: Weblate 5.6-dev\n"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.create-demo-account"
@@ -34,6 +34,7 @@ msgid "auth.fullname"
 msgstr "Nama penuh"
 
 #: src/app/main/ui/auth/register.cljs
+#, fuzzy
 msgid "auth.login-here"
 msgstr "Log masuk disini"
 
@@ -133,10 +134,6 @@ msgid "auth.register-submit"
 msgstr "Cipta akaun"
 
 #: src/app/main/ui/auth/register.cljs
-msgid "auth.register-subtitle"
-msgstr "Ia percuma dan Sumber Terbuka"
-
-#: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"
 msgstr "Cipta akaun"
 
@@ -151,13 +148,6 @@ msgid "auth.terms-privacy-agreement"
 msgstr ""
 "Apabila membuat akaun baharu, anda bersetuju menerima syarat perkhidmatan "
 "dan dasar privasi kami."
-
-#: src/app/main/ui/auth/register.cljs
-#, markdown
-msgid "auth.terms-privacy-agreement-md"
-msgstr ""
-"Apabila membuat akaun baharu, anda bersetuju menerima [syarat "
-"perkhidmatan](%s) dan [dasar privasi](%s) kami."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
@@ -2389,10 +2379,6 @@ msgid "labels.next"
 msgstr "Seterusnya"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "labels.none"
-msgstr "Tiada"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.other"
 msgstr "Lain-lain (nyatakan)"
 
@@ -2415,10 +2401,6 @@ msgstr "Pilih pilihan"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.sketch"
 msgstr "Sketch"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "labels.some"
-msgstr "Beberapa"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.start"
