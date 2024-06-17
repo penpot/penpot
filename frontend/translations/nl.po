@@ -186,13 +186,6 @@ msgstr ""
 "gebruiksvoorwaarden en ons privacybeleid."
 
 #: src/app/main/ui/auth/register.cljs
-#, markdown
-msgid "auth.terms-privacy-agreement-md"
-msgstr ""
-"Met het aanmaken van een nieuw account ga je akkoord met onze "
-"[servicevoorwaarden] (%s) en [privacybeleid] (%s)."
-
-#: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
 msgstr "We hebben een verificatie-e-mail verzonden naar"
 

@@ -107,10 +107,6 @@ msgid "auth.register-submit"
 msgstr "계정을 생성하세요"
 
 #: src/app/main/ui/auth/register.cljs
-msgid "auth.register-subtitle"
-msgstr "무료 오픈 소스입니다"
-
-#: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"
 msgstr "계정을 생성하세요"
 
@@ -759,12 +755,6 @@ msgstr "펜팟은 디자인과 코딩의 협업을 위한 무료 오픈소스 �
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.password-not-empty"
 msgstr "비밀번호는 공백 이외의 글자를 포함해야 합니다."
-
-#: src/app/main/ui/auth/register.cljs
-#, markdown
-msgid "auth.terms-privacy-agreement-md"
-msgstr "새로운 계정을 생성하시면, 사용자는 펜팟의 [서비스 정책](%s)과 [개인 정보 "
-"정책](%s)에 동의하는 것으로 간주됩니다."
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.team-hero.text"

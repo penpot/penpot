@@ -4326,13 +4326,6 @@ msgstr "...علامة تجارية، رسوم توضيحية، قطع تسويق
 msgid "auth.login-account-title"
 msgstr "قم بتسجيل الدخول إلى حسابي"
 
-#: src/app/main/ui/auth/register.cljs
-#, markdown
-msgid "auth.terms-privacy-agreement-md"
-msgstr ""
-"عند إنشاء حساب جديد، فإنك توافق على [شروط الخدمة](%s) و [سياسة الخصوصية](%s) "
-"الخاصة بنا."
-
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.create"
 msgstr "قم بإنشاء رمز جديد"

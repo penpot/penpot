@@ -181,12 +181,6 @@ msgid "auth.terms-privacy-agreement"
 msgstr "יצירת חשבון חדש מהווה את הסכמתך לתנאי השירות ולמדיניות הפרטיות."
 
 #: src/app/main/ui/auth/register.cljs
-msgid "auth.terms-privacy-agreement-md"
-msgstr ""
-"עצם יצירת חשבון חדש מהווה הסכמה ל[תנאי השירות](%s) ול[מדיניות הפרטיות](%s) "
-"שלנו."
-
-#: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
 msgstr "שלחנו הודעת דוא״ל לאימות אל"
 

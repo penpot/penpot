@@ -164,13 +164,6 @@ msgstr ""
 "služeb a zásadami ochrany osobních údajů."
 
 #: src/app/main/ui/auth/register.cljs
-#, markdown
-msgid "auth.terms-privacy-agreement-md"
-msgstr ""
-"Při vytváření nového účtu souhlasíte s našimi [smluvními podmínkami](%s) a "
-"[zásadami ochrany soukromí](%s)."
-
-#: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
 msgstr "Ověřovací e-mail jsme odeslali na adresu"
 
@@ -2458,10 +2451,6 @@ msgid "labels.next"
 msgstr "Další"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "labels.none"
-msgstr "Žádný"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.other"
 msgstr "Jiné (upřesněte)"
 
@@ -2484,10 +2473,6 @@ msgstr "Vyberte možnost"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.sketch"
 msgstr "Sketch"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "labels.some"
-msgstr "Nějaké"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.start"

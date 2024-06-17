@@ -2407,10 +2407,6 @@ msgid "labels.next"
 msgstr "Suivant"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "labels.none"
-msgstr "Aucune"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.other"
 msgstr "Autres (préciser)"
 
@@ -2433,10 +2429,6 @@ msgstr "Sélectionnez une option"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.sketch"
 msgstr "Sketch"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "labels.some"
-msgstr "Un peu"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.start"
@@ -4969,13 +4961,6 @@ msgid "workspace.assets.sidebar.components"
 msgid_plural "workspace.assets.sidebar.components"
 msgstr[0] "1 composant"
 msgstr[1] "%s composants"
-
-#: src/app/main/ui/auth/register.cljs
-#, markdown
-msgid "auth.terms-privacy-agreement-md"
-msgstr ""
-"En créant un compte, vous acceptez nos [conditions d'utilisation](%s) et ["
-"politique de confidentialité](%s)."
 
 msgid "modals.move-shared-confirm.message"
 msgid_plural "modals.move-shared-confirm.message"

@@ -2317,11 +2317,6 @@ msgstr "60 天"
 msgid "dashboard.access-tokens.token-will-not-expire"
 msgstr "權杖沒有到期時間"
 
-#: src/app/main/ui/auth/register.cljs
-#, markdown
-msgid "auth.terms-privacy-agreement-md"
-msgstr "當你創立新的帳號，代表你同意我們的 [服務條款](%s) 與 [隱私權政策](%s)。"
-
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.expiration-180-days"
 msgstr "180 天"

@@ -177,12 +177,6 @@ msgstr ""
 "política de privacidade."
 
 #: src/app/main/ui/auth/register.cljs
-msgid "auth.terms-privacy-agreement-md"
-msgstr ""
-"Ao criar uma nova conta, concordas com os nossos [termos de serviço](%s) e "
-"[política de privacidade](%s)."
-
-#: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
 msgstr "Enviámos um email de verificação para"
 
@@ -5211,4 +5205,3 @@ msgstr "Filtrar"
 
 #~ msgid "workspace.options.layout.direction.left"
 #~ msgstr "Linha"
-

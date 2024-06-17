@@ -33,10 +33,6 @@ msgstr ""
 "Ihe bụ ọrụ ozigosi ,e jile ya rụọ ezigbo ọrụ , ọrụ ndị a ga-ekpochapụ site "
 "na oge ruo na oge"
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.email"
-msgstr "Ozi- n"
-
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
 msgstr "Chefuru akara mpibanye ?"
@@ -139,10 +135,6 @@ msgstr "E nweghị ebe Ntinye ihe ma kịta?"
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.register-submit"
 msgstr "Mepee ebe Ntinye ihe"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.register-subtitle"
-msgstr "Ọ bụ n'efu , ọ bụ ebe nsị a jere oje"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"
@@ -1954,10 +1946,6 @@ msgid "labels.next"
 msgstr "Ọzọ"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "labels.none"
-msgstr "Onweghị"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.other"
 msgstr "Ọzọ (zipụta)"
 
@@ -1976,10 +1964,6 @@ msgstr "Họrọ nhọ"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.sketch"
 msgstr "Eserese"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "labels.some"
-msgstr "Ụfọdụ"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.start"

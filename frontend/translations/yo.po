@@ -35,10 +35,6 @@ msgstr ""
 "\"\"This is a DEMO service, DO NOT USE for real work, the projects will be  "
 "parẹ́ lóòrèkóòrè."
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.email"
-msgstr "ímeèlì"
-
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
 msgstr "gbàgbé ọ̀rọ̀-ìgbaniwọlé ?"
@@ -143,10 +139,6 @@ msgstr "kò tí ì sí àkáùntì?"
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.register-submit"
 msgstr "ṣẹ̀dá àkáùntì"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.register-subtitle"
-msgstr "ọ̀fẹ́ ni,orísun rẹ̀ ṣí lẹ"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"
@@ -2180,10 +2172,6 @@ msgid "labels.next"
 msgstr "Èyí tó kàn"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "labels.none"
-msgstr "Kòsí"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.other"
 msgstr "Òmíìràn(ní pàtó)"
 
@@ -2202,10 +2190,6 @@ msgstr "Ṣe àṣàyàn"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.sketch"
 msgstr "Yàwòrán"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "labels.some"
-msgstr "Díẹ̀"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.start"

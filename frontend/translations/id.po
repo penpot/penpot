@@ -177,12 +177,6 @@ msgstr ""
 "privasi kami."
 
 #: src/app/main/ui/auth/register.cljs
-msgid "auth.terms-privacy-agreement-md"
-msgstr ""
-"Ketika membuat akun baru, Anda menyetujui [persyaratan layanan](%s) dan "
-"[kebijakan privasi](%s) kami."
-
-#: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
 msgstr "Kami telah mengirimkan surel verifikasi ke"
 

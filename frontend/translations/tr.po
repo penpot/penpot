@@ -174,13 +174,6 @@ msgstr ""
 "sayılırsınız."
 
 #: src/app/main/ui/auth/register.cljs
-#, markdown
-msgid "auth.terms-privacy-agreement-md"
-msgstr ""
-"Bir hesap oluştururken, [koşullarımızı](%s) ve [gizlilik politikamızı](%s) "
-"kabul etmiş sayılırsınız."
-
-#: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
 msgstr "Onay e-postanı şu adrese gönderdik"
 
@@ -2507,10 +2500,6 @@ msgid "labels.next"
 msgstr "Sonraki"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "labels.none"
-msgstr "Hiçbiri"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.other"
 msgstr "Diğer (lütfen belirtiniz)"
 
@@ -2533,10 +2522,6 @@ msgstr "Bir seçenek belirleyin"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.sketch"
 msgstr "Sketch"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "labels.some"
-msgstr "Biraz"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.start"

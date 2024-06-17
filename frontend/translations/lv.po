@@ -175,13 +175,6 @@ msgstr ""
 "privātuma nosacījumiem."
 
 #: src/app/main/ui/auth/register.cljs
-#, markdown
-msgid "auth.terms-privacy-agreement-md"
-msgstr ""
-"Ar jauna konta izveidošanu tiek piekrists mūsu [pakalpojuma "
-"noteikumiem](%s) un [privātuma nosacījumiem](%s)."
-
-#: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
 msgstr "Mēs esam nosūtījuši apstiprinājuma e-pasta ziņojumu uz"
 

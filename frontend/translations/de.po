@@ -189,12 +189,6 @@ msgstr ""
 "und Datenschutzrichtlinien zu."
 
 #: src/app/main/ui/auth/register.cljs
-msgid "auth.terms-privacy-agreement-md"
-msgstr ""
-"Wenn Sie ein neues Konto erstellen, stimmen Sie unseren [Nutzungsbedingungen]"
-"(%s) und [Datenschutzrichtlinien](%s) zu."
-
-#: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
 msgstr "Wir haben eine Bestätigungs-E-Mail gesendet an"
 
@@ -2560,10 +2554,6 @@ msgid "labels.next"
 msgstr "Weiter"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "labels.none"
-msgstr "Keine"
-
-#: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.other"
 msgstr "Sonstiges (bitte angeben)"
 
@@ -2586,10 +2576,6 @@ msgstr "Wählen Sie eine Option"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.sketch"
 msgstr "Sketch"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "labels.some"
-msgstr "Einige"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.start"

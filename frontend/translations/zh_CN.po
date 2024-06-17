@@ -170,10 +170,6 @@ msgid "auth.terms-privacy-agreement"
 msgstr "创建账号意味着您认可我们的服务条例和隐私政策。"
 
 #: src/app/main/ui/auth/register.cljs
-msgid "auth.terms-privacy-agreement-md"
-msgstr "创建新账号，即代表你同意我们的[服务条例](%s)和[隐私政策](%s)。"
-
-#: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
 msgstr "我们已经发送了一封验证邮件到"
 
@@ -2364,10 +2360,6 @@ msgstr "50以上"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.next"
 msgstr "下一项"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "labels.none"
-msgstr "无"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "labels.other"
