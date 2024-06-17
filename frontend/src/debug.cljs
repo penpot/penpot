@@ -277,15 +277,23 @@
    (let [page-id    (get state :current-page-id)
          file       (assoc (get state :workspace-file)
                            :data (get state :workspace-data))
-         libraries  (get state :workspace-libraries)]
-     (ctf/dump-subtree file page-id shape-id libraries {:show-ids show-ids
-                                                        :show-touched show-touched
-                                                        :show-modified show-modified}))))
+         libraries  (get state :workspace-libraries)
+         shape-id   (if (some? shape-id)
+                      (uuid/uuid shape-id)
+                      (let [objects (get-in state [:workspace-data :pages-index page-id :objects])
+                            selected (get-in state [:workspace-local :selected])]
+                        (->> selected (map (d/getf objects)) first :id)))]
+     (if (some? shape-id)
+       (ctf/dump-subtree file page-id shape-id libraries {:show-ids show-ids
+                                                          :show-touched show-touched
+                                                          :show-modified show-modified})
+       (println "no selected shape")))))
+
 (defn ^:export dump-subtree
-  ([shape-id] (dump-subtree' @st/state (uuid/uuid shape-id)))
-  ([shape-id show-ids] (dump-subtree' @st/state (uuid/uuid shape-id) show-ids false false))
-  ([shape-id show-ids show-touched] (dump-subtree' @st/state (uuid/uuid shape-id) show-ids show-touched false))
-  ([shape-id show-ids show-touched show-modified] (dump-subtree' @st/state (uuid/uuid shape-id) show-ids show-touched show-modified)))
+  ([shape-id] (dump-subtree' @st/state shape-id))
+  ([shape-id show-ids] (dump-subtree' @st/state shape-id show-ids false false))
+  ([shape-id show-ids show-touched] (dump-subtree' @st/state shape-id show-ids show-touched false))
+  ([shape-id show-ids show-touched show-modified] (dump-subtree' @st/state shape-id show-ids show-touched show-modified)))
 
 (when *assert*
   (defonce debug-subscription

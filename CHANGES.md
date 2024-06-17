@@ -55,6 +55,7 @@
 - Fix open overlay relative to a frame [Taiga #7563](https://tree.taiga.io/project/penpot/issue/7563)
 - Workspace-palette items stay hidden when opening with keyboard-shortcut [Taiga #7489](https://tree.taiga.io/project/penpot/issue/7489)
 - Fix SVG attrs are not handled correctly when exporting/importing in .zip [Taiga #7920](https://tree.taiga.io/project/penpot/issue/7920)
+- Fix validation error when detaching with two nested copies and a swap [Taiga #8095](https://tree.taiga.io/project/penpot/issue/8095)
 
 ## 2.0.3
 

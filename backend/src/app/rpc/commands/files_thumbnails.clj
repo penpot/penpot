@@ -87,10 +87,7 @@
    ::sm/params [:map {:title "get-file-object-thumbnails"}
                 [:file-id ::sm/uuid]
                 [:tag {:optional true} :string]]
-   ::sm/result [:map-of :string :string]
-   ::cond/get-object #(files/get-minimal-file %1 (:file-id %2))
-   ::cond/reuse-key? true
-   ::cond/key-fn files/get-file-etag}
+   ::sm/result [:map-of :string :string]}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id tag] :as params}]
   (dm/with-open [conn (db/open pool)]
     (files/check-read-permissions! conn profile-id file-id)
