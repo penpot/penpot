@@ -169,6 +169,7 @@
                                    :expanded (> size 276))
 
               :id "right-sidebar-aside"
+              :data-testid "right-sidebar"
               :data-size (str size)
               :style #js {"--width" (if can-be-expanded? (dm/str size "px") 276)}}
       (when can-be-expanded?
