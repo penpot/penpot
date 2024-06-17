@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-17 08:07+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2024-06-18 13:09+0000\n"
+"Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
 "Language: de\n"
@@ -52,9 +52,8 @@ msgid "auth.login-account-title"
 msgstr "In mein Konto einloggen"
 
 #: src/app/main/ui/auth/register.cljs
-#, fuzzy
 msgid "auth.login-here"
-msgstr "Hier anmelden"
+msgstr "Hier anmelden."
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
@@ -414,12 +413,11 @@ msgid "dashboard.duplicate-multi"
 msgstr "%s Dateien duplizieren"
 
 #: src/app/main/ui/dashboard/grid.cljs
-#, fuzzy
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Zu Bibliotheken hinzugefügte Dateien werden hier angezeigt. Versuchen Sie, "
 "Ihre Dateien zu teilen oder fügen Sie sie aus unseren [Bibliotheken & "
-"Vorlagen](https://penpot.app/libraries-Vorlagen.html) hinzu."
+"Vorlagen](https://penpot.app/libraries-templates) hinzu."
 
 msgid "dashboard.export-binary-multi"
 msgstr "%s Penpot-Dateien herunterladen (.penpot)"
@@ -5301,3 +5299,91 @@ msgstr "Plugins"
 
 msgid "workspace.plugins.success"
 msgstr "Plugin wurde korrekt geladen."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.use.work"
+msgstr "Arbeit"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.use.education"
+msgstr "Bildung"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.use.personal"
+msgstr "Persönlich"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.reasons.alternative"
+msgstr "Suche nach einer Alternative zu Figma, XD, usw."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step2.title"
+msgstr "Welches dieser Tools verwenden Sie am meisten?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.product-design"
+msgstr "Produkt- oder UX-Design"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step3.title"
+msgstr "Erzählen Sie uns von Ihrem Job"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step3.question1"
+msgstr "Was machen Sie beruflich?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.team-member"
+msgstr "Teammitglied"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.team-size.freelancer"
+msgstr "Ich bin ein Freelancer"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.wireframing"
+msgstr "Wireframing"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.prototyping"
+msgstr "Prototyping"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.ds"
+msgstr "Erstellung von Design-Systemen"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.social"
+msgstr "Soziale Netzwerke (X, LinkedIn, FB, usw.)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.toggle-toolbar"
+msgstr "Werkzeugleiste ein- und ausblenden"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.reasons.exploring"
+msgstr "Nur zum Ausprobieren"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.graphic-design"
+msgstr "Grafikdesign"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.team-leader"
+msgstr "Teamleiter"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.director"
+msgstr "Geschäftsführer"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.youtube"
+msgstr "YouTube"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.article"
+msgstr "Artikel (Blog, Post, Newsletter)"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.code"
+msgstr "Generierung echter Code-Entwürfe"
