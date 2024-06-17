@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-05 10:42+0000\n"
+"PO-Revision-Date: 2024-06-17 08:07+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Igbo <https://hosted.weblate.org/projects/penpot/frontend/ig/>"
 "\n"
@@ -42,6 +42,7 @@ msgid "auth.fullname"
 msgstr "Aha n'uju"
 
 #: src/app/main/ui/auth/register.cljs
+#, fuzzy
 msgid "auth.login-here"
 msgstr "Banye ebe a"
 
