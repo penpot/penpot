@@ -520,9 +520,11 @@
                             :name "listing-style"}
           [:& radio-button {:icon i/view-as-list
                             :value "list"
+                            :title (tr "workspace.assets.list-view")
                             :id "opt-list"}]
           [:& radio-button {:icon i/flex-grid
                             :value "grid"
+                            :title (tr "workspace.assets.grid-view")
                             :id "opt-grid"}]]])
 
       (when (and components-v2 (not read-only?) local?)

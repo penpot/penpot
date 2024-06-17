@@ -3396,6 +3396,14 @@ msgstr "Sort"
 msgid "workspace.assets.typography"
 msgstr "Typographies"
 
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs, src/app/main/wui/workspace/sidebar/options/menus/component.cljs
+msgid "workspace.assets.grid-view"
+msgstr "Grid view"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs, src/app/main/wui/workspace/sidebar/options/menus/component.cljs
+msgid "workspace.assets.list-view"
+msgstr "List view"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.assets.typography.font-id"
 msgstr "Font"
