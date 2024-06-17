@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-17 08:07+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2024-06-18 13:09+0000\n"
+"Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
 "Language: he\n"
@@ -51,9 +51,8 @@ msgid "auth.login-account-title"
 msgstr "כניסה לחשבון שלי"
 
 #: src/app/main/ui/auth/register.cljs
-#, fuzzy
 msgid "auth.login-here"
-msgstr "כניסה מכאן"
+msgstr "כניסה מכאן."
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
@@ -5186,3 +5185,7 @@ msgstr "חיבור ספרייה"
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.remove-grid"
 msgstr "הסרת פריסת רשת"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-mail"
+msgstr "נא לבדוק את תיבת הדוא״ל שלך"
