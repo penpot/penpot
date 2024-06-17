@@ -1,9 +1,12 @@
 (ns app.main.ui.workspace.tokens.style-dictionary
   (:require
+   ["style-dictionary$default" :as sd]
    [app.main.refs :as refs]
    [promesa.core :as p]
    [rumext.v2 :as mf]
    [shadow.resource]))
+
+(js/console.log "sd" sd)
 
 (def StyleDictionary
   "The global StyleDictionary instance used as an external library for now,
