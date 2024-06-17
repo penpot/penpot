@@ -34,7 +34,6 @@
     :component-not-main
     :component-main-external
     :component-not-found
-    :duplicate-slot
     :invalid-main-instance-id
     :invalid-main-instance-page
     :invalid-main-instance
@@ -297,18 +296,6 @@
                   "This shape should not have swap slot"
                   shape file page)))
 
-(defn- check-duplicate-swap-slot
-  "Validate that the children of this shape does not have duplicated slots."
-  [shape file page]
-  (let [shapes   (map #(get (:objects page) %) (:shapes shape))
-        slots    (->> (map #(ctk/get-swap-slot %) shapes)
-                      (remove nil?))
-        counts   (frequencies slots)]
-    (when (some (fn [[_ count]] (> count 1)) counts)
-      (report-error :duplicate-slot
-                    "This shape has children with the same swap slot"
-                    shape file page))))
-
 (defn- check-shape-main-root-top
   "Root shape of a top main instance:
 
@@ -321,7 +308,6 @@
   (check-component-root shape file page)
   (check-component-not-ref shape file page)
   (check-empty-swap-slot shape file page)
-  (check-duplicate-swap-slot shape file page)
   (run! #(check-shape % file page libraries :context :main-top) (:shapes shape)))
 
 (defn- check-shape-main-root-nested
@@ -349,7 +335,6 @@
     (check-component-root shape file page)
     (check-component-ref shape file page libraries)
     (check-empty-swap-slot shape file page)
-    (check-duplicate-swap-slot shape file page)
     (run! #(check-shape % file page libraries :context :copy-top :library-exists library-exists) (:shapes shape))))
 
 (defn- check-shape-copy-root-nested

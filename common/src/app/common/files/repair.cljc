@@ -473,29 +473,6 @@
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
-(defmethod repair-error :duplicate-slot
-  [_ {:keys [shape page-id] :as error} file-data _]
-  (let [page      (ctpl/get-page file-data page-id)
-        childs    (map #(get (:objects page) %) (:shapes shape))
-        child-with-duplicate (let [result (reduce (fn [[seen duplicates] item]
-                                                    (let [swap-slot (ctk/get-swap-slot item)]
-                                                      (if (contains? seen swap-slot)
-                                                        [seen (conj duplicates item)]
-                                                        [(conj seen swap-slot) duplicates])))
-                                                  [#{} []]
-                                                  childs)]
-                               (second result))
-        repair-shape
-        (fn [shape]
-          ;; Remove the swap slot
-          (log/debug :hint "  -> remove swap-slot" :child-id (:id shape))
-          (ctk/remove-swap-slot shape))]
-
-    (log/dbg :hint "repairing shape :duplicated-slot" :id (:id shape) :name (:name shape) :page-id page-id)
-    (-> (pcb/empty-changes nil page-id)
-        (pcb/with-file-data file-data)
-        (pcb/update-shapes (map :id child-with-duplicate) repair-shape))))
-
 (defmethod repair-error :missing-slot
   [_ {:keys [shape page-id args] :as error} file-data _]
   (let [repair-shape
