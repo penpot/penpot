@@ -391,7 +391,6 @@
             (rx/of (dwu/start-undo-transaction undo-id)
                    (dwsh/update-shapes ids update-fn {:reg-objects? true
                                                       :stack-undo? true
-                                                      :ignore-remote? true
                                                       :ignore-touched true})
                    (ptk/data-event :layout/update {:ids ids})
                    (dwu/commit-undo-transaction undo-id))))))))
@@ -536,7 +535,7 @@
                  (fn [shape]
                    (-> shape
                        (assoc :position-data (get position-data (:id shape)))))
-                 {:stack-undo? true :reg-objects? false :ignore-remote? true}))
+                 {:stack-undo? true :reg-objects? false}))
          (rx/of (fn [state]
                   (dissoc state ::update-position-data-debounce ::update-position-data))))))))
 

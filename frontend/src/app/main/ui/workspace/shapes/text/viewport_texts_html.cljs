@@ -29,7 +29,8 @@
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
-(defn fix-position [shape]
+(defn fix-position
+  [shape]
   (if-let [modifiers (:modifiers shape)]
     (let [shape' (gsh/transform-shape shape modifiers)
 
