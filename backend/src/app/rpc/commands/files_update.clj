@@ -324,19 +324,21 @@
                  (update :data cpc/process-changes changes)
                  (update :data d/without-nils))]
 
-    (when (contains? cf/flags :soft-file-validation)
-      (soft-validate-file! file libs))
 
-    (when (contains? cf/flags :soft-file-schema-validation)
-      (soft-validate-file-schema! file))
+    (binding [pmap/*tracked* nil]
+      (when (contains? cf/flags :soft-file-validation)
+        (soft-validate-file! file libs))
 
-    (when (and (contains? cf/flags :file-validation)
-               (not skip-validate))
-      (val/validate-file! file libs))
+      (when (contains? cf/flags :soft-file-schema-validation)
+        (soft-validate-file-schema! file))
 
-    (when (and (contains? cf/flags :file-schema-validation)
-               (not skip-validate))
-      (val/validate-file-schema! file))
+      (when (and (contains? cf/flags :file-validation)
+                 (not skip-validate))
+        (val/validate-file! file libs))
+
+      (when (and (contains? cf/flags :file-schema-validation)
+                 (not skip-validate))
+        (val/validate-file-schema! file)))
 
     (cond-> file
       (contains? cfeat/*current* "fdata/objects-map")

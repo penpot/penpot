@@ -10,7 +10,6 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.config :as cf]
    [app.main.data.events :as-alias ev]
    [app.main.data.users :as du]
    [app.main.store :as st]
@@ -497,14 +496,10 @@
          (fn [form]
            (let [data (merge @clean-data (:clean-data @form))]
              (reset! clean-data data)
-             (st/emit! (du/mark-questions-as-answered data)))))
-
-        onboarding-a-b-test?
-        (cf/external-feature-flag "signup-background" "test")]
+             (st/emit! (du/mark-questions-as-answered data)))))]
 
     [:div {:class (stl/css-case
-                   :modal-overlay true
-                   :onboarding-a-b-test onboarding-a-b-test?)}
+                   :modal-overlay true)}
      [:div {:class (stl/css :modal-container)
             :ref container}
 
