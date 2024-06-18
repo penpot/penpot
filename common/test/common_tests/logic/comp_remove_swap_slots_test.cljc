@@ -758,7 +758,6 @@
     (t/is (some? blue-copy1'))
     (t/is (nil? (ctk/get-swap-slot blue-copy1')))))
 
-
 (t/deftest test-remove-swap-slot-detach
   (let [;; ==== Setup
         file                   (setup-file)
