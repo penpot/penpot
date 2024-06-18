@@ -28,7 +28,6 @@
 (mf/defc token-pill
   {::mf/wrap-props false}
   [{:keys [on-click token highlighted? on-context-menu]}]
-  (js/console.log "token" token)
   (let [{:keys [name value resolved-value errors]} token
         errors? (seq errors)]
     [:button {:class (stl/css-case :token-pill true
