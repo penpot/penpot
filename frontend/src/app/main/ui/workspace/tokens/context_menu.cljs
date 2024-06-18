@@ -192,11 +192,13 @@
                                           :on-update-shape update-shape-dimensions
                                           :attributes attributes)
 
-                                   (set/superset? {:layout-item-min-w :layout-item-max-w
-                                                   :layout-item-min-h :layout-item-max-h} attributes)
+                                   (set/superset? #{:layout-item-min-w :layout-item-max-w
+                                                    :layout-item-min-h :layout-item-max-h} attributes)
                                    (assoc token-type-props
                                           :on-update-shape update-layout-sizing-limits
-                                          :attributes attributes))]
+                                          :attributes attributes)
+
+                                   :else token-type-props)]
     (wtc/on-apply-token {:token token
                          :token-type-props updated-token-type-props
                          :selected-shapes selected-shapes})))
