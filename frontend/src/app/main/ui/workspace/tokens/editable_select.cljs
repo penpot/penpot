@@ -93,7 +93,7 @@
          (cond
            (= :separator item) [:li {:class (stl/css :separator)
                                      :key (dm/str element-id "-" index)}]
-           :else (let [{:keys [value label selected?]} item
+           :else (let [{:keys [label selected?]} item
                        highlighted? (= highlighted index)]
                    [:li
                     {:key (str element-id "-" index)
@@ -103,7 +103,7 @@
                      :data-label label
                      :on-click #(on-select item)}
                     [:span {:class (stl/css :label)} label]
-                    [:span {:class (stl/css :value)} value]
+                    [:span {:class (stl/css :value)} (wtc/resolve-token-value item)]
                     [:span {:class (stl/css :check-icon)} i/tick]])))]]]))
 
 (mf/defc editable-select
