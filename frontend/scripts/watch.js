@@ -35,6 +35,7 @@ async function compileSass(path) {
   log.info("done:", `(${ppt(end)})`);
 }
 
+await fs.mkdir("./resources/public/css/", { recursive: true });
 await compileSassAll();
 await h.copyAssets()
 await h.compileSvgSprites()
