@@ -16,6 +16,7 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.icons :as i]
+   [app.main.ui.workspace.tokens.core :as wtc]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
    [app.util.keyboard :as kbd]
@@ -255,7 +256,7 @@
      (when-let [{:keys [label value]} token]
        [:div {:title (str label ": " value)
               :class (stl/css :token-pill)}
-        value])
+        (wtc/resolve-token-value token)])
      (cond
        token [:& :input (merge input-props
                                {:value (or (:token-value state) "")
