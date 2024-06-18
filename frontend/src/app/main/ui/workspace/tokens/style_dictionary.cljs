@@ -4,6 +4,7 @@
    ["style-dictionary$default" :as sd]
    [app.common.data :as d]
    [app.main.refs :as refs]
+   [cuerdas.core :as str]
    [promesa.core :as p]
    [rumext.v2 :as mf]
    [shadow.resource]))
@@ -71,8 +72,13 @@
                      (js/console.log "Resolved tokens" resolved-tokens))
                    resolved-tokens))))))
 
-(def errors
-  {:style-dictionary/missing-reference {:user/message "Could not resolve reference token with the name: %s"}})
+(defn humanize-errors [{:keys [errors value] :as _token}]
+  (->> (map (fn [err]
+              (case err
+                :style-dictionary/missing-reference (str "Could not resolve reference token with the name: " value)
+                nil))
+            errors)
+       (str/join "\n")))
 
 (defn tokens-name-map [tokens]
   (->> tokens

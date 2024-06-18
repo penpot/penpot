@@ -30,6 +30,7 @@
   }
 
   &.token-pill-invalid {
+    background-color: var(--button-secondary-background-color-rest);
     color: var(--status-color-error-500);
     opacity: 0.8;
   }

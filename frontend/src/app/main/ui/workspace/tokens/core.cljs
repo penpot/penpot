@@ -34,10 +34,12 @@
   [token shapes token-attributes]
   (some #(token-applied? token % token-attributes) shapes))
 
-(defn resolve-token-value [{:keys [value] :as token}]
-  (if-let [int-or-double (d/parse-double value)]
-    int-or-double
-    (throw (ex-info (str "Implement token value resolve for " value) token))))
+(defn resolve-token-value [{:keys [value resolved-value] :as token}]
+  (or
+   resolved-value
+   (if-let [int-or-double (d/parse-double value)]
+     int-or-double
+     (throw (ex-info (str "Implement token value resolve for " value) token)))))
 
 (defn maybe-resolve-token-value [{:keys [value] :as token}]
   (when value (resolve-token-value token)))
