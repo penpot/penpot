@@ -256,11 +256,13 @@
      (if (or @focused? (seq search-term))
        [:button {:class (stl/css :search-btn :clear-search-btn)
                  :tab-index "0"
+                 :aria-label "dashboard-clear-search"
                  :on-click on-clear-click
                  :on-key-down handle-clear-search}
         clear-search-icon]
 
        [:button {:class (stl/css :search-btn)
+                 :aria-label "dashboard-search"
                  :on-click on-clear-click}
         search-icon])]))
 
@@ -504,11 +506,13 @@
                               :on-key-down handle-members
                               :className   (stl/css :team-options-item)
                               :id          "teams-options-members"
+                              :data-testid  "team-members"
                               :data-test   "team-members"}
       (tr "labels.members")]
      [:> dropdown-menu-item* {:on-click    go-invitations
                               :on-key-down handle-invitations
                               :className   (stl/css :team-options-item)
+                              :data-testid   "team-invitations"
                               :id          "teams-options-invitations"
                               :data-test   "team-invitations"}
       (tr "labels.invitations")]
@@ -524,6 +528,7 @@
                               :on-key-down handle-settings
                               :className   (stl/css :team-options-item)
                               :id          "teams-options-settings"
+                              :data-testid   "team-settings"
                               :data-test   "team-settings"}
       (tr "labels.settings")]
 
@@ -533,6 +538,7 @@
                                 :on-key-down handle-rename
                                 :id          "teams-options-rename"
                                 :className   (stl/css :team-options-item)
+                                :data-testid   "rename-team"
                                 :data-test   "rename-team"}
         (tr "labels.rename")])
 
@@ -550,6 +556,7 @@
                                 :on-key-down handle-leave-as-owner-clicked
                                 :id          "teams-options-leave-team"
                                 :className   (stl/css :team-options-item)
+                                :data-testid   "leave-team"
                                 :data-test   "leave-team"}
         (tr "dashboard.leave-team")]
 
@@ -654,6 +661,7 @@
       (when-not (:is-default team)
         [:button {:class (stl/css :switch-options)
                   :on-click handle-show-opts-click
+                  :aria-label "team-management"
                   :tab-index "0"
                   :on-key-down handle-show-opts-keydown}
          menu-icon])]
@@ -792,6 +800,7 @@
        [:li {:class (stl/css-case :current libs?
                                   :sidebar-nav-item true)}
         [:& link {:action go-libs
+                  :data-testid "libs-link-sidebar"
                   :class (stl/css :sidebar-link)
                   :keyboard-action go-libs-with-key}
          [:span {:class (stl/css :element-title)} (tr "labels.shared-libraries")]]]]]
@@ -803,6 +812,7 @@
                                   :current fonts?)}
         [:& link {:action go-fonts
                   :class (stl/css :sidebar-link)
+                  :data-testid "fonts-link-sidebar"
                   :keyboard-action go-fonts-with-key
                   :data-test "fonts"}
          [:span {:class (stl/css :element-title)} (tr "labels.fonts")]]]]]
@@ -946,11 +956,11 @@
          :on-hide-comments handle-hide-comments}])
 
      [:div {:class (stl/css :profile-section)}
-      [:div {:class (stl/css :profile)
-             :tab-index "0"
-             :on-click handle-click
-             :on-key-down handle-key-down
-             :data-test "profile-btn"}
+      [:button {:class (stl/css :profile)
+                :tab-index "0"
+                :on-click handle-click
+                :on-key-down handle-key-down
+                :data-test "profile-btn"}
        [:img {:src photo
               :class (stl/css :profile-img)
               :alt (:fullname profile)}]

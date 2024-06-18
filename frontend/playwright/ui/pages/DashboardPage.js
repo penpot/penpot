@@ -50,6 +50,8 @@ export class DashboardPage extends BaseWebSocketPage {
 
   static anyTeamId = "c7ce0794-0992-8105-8004-38e630f40f6d";
 
+  static secondTeamId = "dd33ff88-f4e5-8033-8003-8096cc07bdf3";
+
   static draftProjectId = "c7ce0794-0992-8105-8004-38e630f7920b";
 
   constructor(page) {
@@ -60,10 +62,32 @@ export class DashboardPage extends BaseWebSocketPage {
     this.draftTitle = page.getByRole("heading", { name: "Drafts" });
     this.draftLink = page.getByTestId("drafts-link-sidebar");
     this.draftsFile = page.getByText(/New File 1/);
+    this.fontsLink = page.getByTestId("fonts-link-sidebar");
+    this.fontsTitle = page.getByRole("heading", { name: "Fonts", level: 1 });
+    this.libsLink = page.getByTestId("libs-link-sidebar");
+    this.libsTitle = page.getByRole("heading", { name: "Libraries", level: 1 });
+    this.searchButton = page.getByRole("button", { name: "dashboard-search" });
+    this.searchTitle = page.getByRole("heading", { name: "Search results" });
+    this.searchInput = page.getByPlaceholder('Search…');
+    this.newFileName = page.getByText("New File 3");
+    this.teamDropdown = page.getByRole('button', { name: 'Your Penpot' });
+    this.userAccount = page.getByRole('button', { name: "Princesa Leia Princesa Leia" });
+    this.userProfileOption = page.getByText("Your account");
+    this.userAccountTitle = page.getByRole("heading", {name: "Your account"});
   }
 
   async setupDraftsEmpty() {
     await this.mockRPC("get-project-files?project-id=*", "dashboard/get-project-files-empty.json");
+  }
+
+  async setupSearchEmpty() {
+    await this.mockRPC("search-files", "dashboard/search-files-empty.json", {
+      method: "POST",
+    });
+  }
+
+  async setupLibrariesEmpty() {
+    await this.mockRPC("get-team-shared-files?team-id=*", "dashboard/get-shared-files-empty.json");
   }
 
   async setupDrafts() {
@@ -74,14 +98,94 @@ export class DashboardPage extends BaseWebSocketPage {
     await this.mockRPC("create-project", "dashboard/create-project.json", { method: "POST" });
     await this.mockRPC("get-projects?team-id=*", "dashboard/get-projects-new.json");
   }
-  async goToWorkspace() {
+
+  async setupDashboardFull() {
+    await this.mockRPC("get-projects?team-id=*", "dashboard/get-projects-full.json");
+    await this.mockRPC("get-project-files?project-id=*", "dashboard/get-project-files.json");
+    await this.mockRPC("get-team-shared-files?team-id=*", "dashboard/get-shared-files.json");
+    await this.mockRPC("get-team-shared-files?project-id=*", "dashboard/get-shared-files.json");
+    await this.mockRPC("get-team-recent-files?team-id=*", "dashboard/get-team-recent-files.json");
+    await this.mockRPC("get-font-variants?team-id=*", "dashboard/get-font-variants.json");
+    await this.mockRPC("search-files", "dashboard/search-files.json",  { method: "POST" });
+    await this.mockRPC("search-files", "dashboard/search-files.json" );
+    await this.mockRPC("get-teams", "logged-in-user/get-teams-complete.json");
+  }
+
+  async setupAccessTokensEmpty() {
+    await this.mockRPC("get-access-tokens", "dashboard/get-access-tokens-empty.json");
+  }
+
+  async createAccessToken() {
+    await this.mockRPC("create-access-token", "dashboard/create-access-token.json", { method: "POST" });
+  }
+
+  async setupAccessTokens() {
+    await this.mockRPC("get-access-tokens", "dashboard/get-access-tokens.json");
+  }
+
+  async setupTeamInvitationsEmpty() {
+    await this.mockRPC("get-team-invitations?team-id=*", "dashboard/get-team-invitations-empty.json");
+  }
+
+  async setupTeamInvitations() {
+    await this.mockRPC("get-team-invitations?team-id=*", "dashboard/get-team-invitations.json");
+  }
+
+  async setupTeamWebhooksEmpty() {
+    await this.mockRPC("get-webhooks?team-id=*", "dashboard/get-webhooks-empty.json");
+  }
+
+  async setupTeamWebhooks() {
+    await this.mockRPC("get-webhooks?team-id=*", "dashboard/get-webhooks.json");
+  }
+
+  async setupTeamSettings() {
+    await this.mockRPC("get-team-stats?team-id=*", "dashboard/get-team-stats.json");
+  }
+
+  async goToDashboard() {
     await this.page.goto(`#/dashboard/team/${DashboardPage.anyTeamId}/projects`);
+  }
+
+  async goToSecondTeamDashboard() {
+    await this.page.goto(`#/dashboard/team/${DashboardPage.secondTeamId}/projects`);
+  }
+
+  async goToSecondTeamMembersSection() {
+    await this.page.goto(`#/dashboard/team/${DashboardPage.secondTeamId}/members`);
+  }
+
+  async goToSecondTeamInvitationsSection() {
+    await this.page.goto(`#/dashboard/team/${DashboardPage.secondTeamId}/invitations`);
+  }
+
+  async goToSecondTeamWebhooksSection() {
+    await this.page.goto(`#/dashboard/team/${DashboardPage.secondTeamId}/webhooks`);
+  }
+
+  async goToSecondTeamWebhooksSection() {
+    await this.page.goto(`#/dashboard/team/${DashboardPage.secondTeamId}/webhooks`);
+  }
+
+  async goToSecondTeamSettingsSection() {
+    await this.page.goto(`#/dashboard/team/${DashboardPage.secondTeamId}/settings`);
+  }
+
+  async goToSearch() {
+    await this.page.goto(`#/dashboard/team/${DashboardPage.anyTeamId}/search`);
   }
 
   async goToDrafts() {
     await this.page.goto(
       `#/dashboard/team/${DashboardPage.anyTeamId}/projects/${DashboardPage.draftProjectId}`,
     );
+  }
+
+  async goToAccount() {
+
+    await this.userAccount.click();
+
+    await this.userProfileOption.click();
   }
 }
 
