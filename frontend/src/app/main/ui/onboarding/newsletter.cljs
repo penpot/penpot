@@ -56,7 +56,7 @@
 
       [:div {:class (stl/css :modal-right)}
        [:h2 {:class (stl/css :modal-title)
-             :data-test "onboarding-newsletter-title"}
+             :data-testid "onboarding-newsletter-title"}
         (tr "onboarding.newsletter.title")]
 
        [:p {:class (stl/css :modal-text)}

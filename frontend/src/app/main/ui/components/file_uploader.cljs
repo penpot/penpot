@@ -12,7 +12,7 @@
 
 (mf/defc file-uploader
   {::mf/forward-ref true}
-  [{:keys [accept multi label-text label-class input-id on-selected data-test] :as props} input-ref]
+  [{:keys [accept multi label-text label-class input-id on-selected data-testid] :as props} input-ref]
   (let [opt-pick-one #(if multi % (first %))
 
         on-files-selected
@@ -38,6 +38,6 @@
               :type "file"
               :ref input-ref
               :on-change on-files-selected
-              :data-test data-test
+              :data-testid data-testid
               :aria-label "uploader"}]]))
 
