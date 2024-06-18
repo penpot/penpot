@@ -114,7 +114,7 @@
               (partial not-found-handler request)))
 
           (on-error [cause request]
-            (let [{:keys [body] :as response} (errors/handle cause request)]
+            (let [{:keys [::rres/body] :as response} (errors/handle cause request)]
               (cond-> response
                 (map? body)
                 (-> (update ::rres/headers assoc "content-type" "application/transit+json")
