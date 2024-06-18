@@ -97,7 +97,8 @@
         request   {:method method
                    :uri (u/join cf/public-uri "api/rpc/command/" nid)
                    :credentials "include"
-                   :headers {"accept" "application/transit+json,text/event-stream,*/*"}
+                   :headers {"accept" "application/transit+json,text/event-stream,*/*"
+                             "x-external-session-id" (cf/external-session-id)}
                    :body (when (= method :post)
                            (if form-data?
                              (http/form-data params)
