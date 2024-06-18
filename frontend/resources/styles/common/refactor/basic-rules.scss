@@ -590,9 +590,6 @@
   width: 100%;
   z-index: $z-index-modal;
   background-color: var(--overlay-color);
-  &.onboarding-a-b-test {
-    background-color: var(--overlay-color-onboarding-a-b-test);
-  }
 }
 
 .modal-container-base {

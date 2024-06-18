@@ -9,7 +9,6 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.spec :as us]
-   [app.config :as cf]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
    [app.main.data.messages :as msg]
@@ -260,14 +259,10 @@
         on-back
         (mf/use-fn
          (fn []
-           (swap! name* (constantly nil))))
-
-        onboarding-a-b-test?
-        (cf/external-feature-flag "signup-background" "test")]
+           (swap! name* (constantly nil))))]
 
     [:div {:class (stl/css-case
-                   :modal-overlay true
-                   :onboarding-a-b-test onboarding-a-b-test?)}
+                   :modal-overlay true)}
 
      [:div.animated.fadeIn {:class (stl/css :modal-container)}
       [:& left-sidebar]
