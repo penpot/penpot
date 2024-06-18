@@ -71,6 +71,9 @@
                      (js/console.log "Resolved tokens" resolved-tokens))
                    resolved-tokens))))))
 
+(def errors
+  {:style-dictionary/missing-reference {:user/message "Could not resolve reference token with the name: %s"}})
+
 (defn tokens-name-map [tokens]
   (->> tokens
        (map (fn [[_ x]] [(:name x) x]))
@@ -83,9 +86,15 @@
                         (resolve-sd-tokens+ config))]
     (let [resolved-tokens (reduce
                            (fn [acc ^js cur]
-                             (let [resolved-value (d/parse-integer (.-value cur) (.-value cur))
-                                   id (uuid (.-uuid (.-id cur)))]
-                               (assoc-in acc [id :value] resolved-value)))
+                             (let [value (.-value cur)
+                                   resolved-value (d/parse-integer (.-value cur))
+                                   original-value (-> cur .-original .-value)
+                                   id (uuid (.-uuid (.-id cur)))
+                                   missing-reference? (and (not resolved-value)
+                                                           (re-find #"\{" value)
+                                                           (= value original-value))]
+                               (cond-> (assoc-in acc [id :resolved-value] resolved-value)
+                                 missing-reference? (update-in [id :errors] (fnil conj #{}) :style-dictionary/missing-reference))))
                            tokens sd-tokens)]
       (when debug?
         (js/console.log "Resolved tokens" resolved-tokens))
