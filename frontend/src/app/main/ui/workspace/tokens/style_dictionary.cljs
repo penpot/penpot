@@ -40,17 +40,15 @@
                       :platforms {:json {:transformGroup "tokens-studio"
                                          :files [{:format "custom/json"
                                                   :destination "fake-filename"}]}}
-                      :log {:errors {:brokenReferences "console"}}
-                      :preprocessors ["tokens-studio"]})
-               ;; debug? (assoc-in :log :warnings "warn"
-               ;;                       :verbosity "verbose"))
+                      :log {:verbosity "silent"
+                            :warnings "silent"
+                            :errors {:brokenReferences "console"}}
+                      :preprocessors ["tokens-studio"]}
+               debug? (update :log merge {:verbosity "verbose"
+                                          :warnings "warn"}))
         js-data (clj->js data)]
     (when debug?
       (js/console.log "Input Data" js-data))
-    (sd-transforms/registerTransforms sd)
-    (.registerFormat sd #js {:name "custom/json"
-                             :format (fn [res]
-                                       (.-tokens (.-dictionary res)))})
     (sd. js-data)))
 
 (defn resolve-sd-tokens+
