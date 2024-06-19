@@ -58,6 +58,28 @@
                                     :parent-label frame-label}
                                    child-params))))
 
+(defn add-minimal-component
+  [file component-label root-label
+   & {:keys [component-params root-params]}]
+  ;; Generated shape tree:
+  ;; {:root-label} [:name Frame1]    # [Component :component-label]
+  (-> file
+      (add-frame root-label root-params)
+      (thc/make-component component-label root-label component-params)))
+
+(defn add-minimal-component-with-copy
+  [file component-label main-root-label copy-root-label
+   & {:keys [component-params main-root-params copy-root-params]}]
+  ;; Generated shape tree:
+  ;; {:main-root-label} [:name Frame1]    # [Component :component-label]
+  ;; :copy-root-label [:name Frame1] #--> [Component :component-label] :main-root-label
+  (-> file
+      (add-minimal-component component-label
+                             main-root-label
+                             :component-params component-params
+                             :root-params main-root-params)
+      (thc/instantiate-component component-label copy-root-label copy-root-params)))
+
 (defn add-simple-component
   [file component-label root-label child-label
    & {:keys [component-params root-params child-params]}]

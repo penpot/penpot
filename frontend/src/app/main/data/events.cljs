@@ -168,7 +168,7 @@
       ptk/EffectEvent
       (effect [_ _ stream]
         (let [session (atom nil)
-              stopper  (rx/filter (ptk/type? ::initialize) stream)
+              stopper (rx/filter (ptk/type? ::initialize) stream)
               buffer  (atom #queue [])
               profile (->> (rx/from-atom storage {:emit-current-value? true})
                            (rx/map :profile)
@@ -213,7 +213,9 @@
                          (let [session* (or @session (dt/now))
                                context  (-> @context
                                             (merge (:context event))
-                                            (assoc :session session*))]
+                                            (assoc :session session*)
+                                            (assoc :external-session-id (cf/external-session-id))
+                                            (d/without-nils))]
                            (reset! session session*)
                            (-> event
                                (assoc :timestamp (dt/now))

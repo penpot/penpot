@@ -114,7 +114,7 @@
               (partial not-found-handler request)))
 
           (on-error [cause request]
-            (let [{:keys [body] :as response} (errors/handle cause request)]
+            (let [{:keys [::rres/body] :as response} (errors/handle cause request)]
               (cond-> response
                 (map? body)
                 (-> (update ::rres/headers assoc "content-type" "application/transit+json")
@@ -150,10 +150,10 @@
    [["" {:middleware [[mw/server-timing]
                       [mw/params]
                       [mw/format-response]
+                      [mw/errors errors/handle]
                       [mw/parse-request]
                       [session/soft-auth cfg]
                       [actoken/soft-auth cfg]
-                      [mw/errors errors/handle]
                       [mw/restrict-methods]]}
 
      (::mtx/routes cfg)
