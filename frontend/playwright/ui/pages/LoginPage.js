@@ -1,10 +1,6 @@
 import { BasePage } from "./BasePage";
 
 export class LoginPage extends BasePage {
-  static async initWithLoggedOutUser(page) {
-    await BasePage.mockRPC(page, "get-profile", "get-profile-anonymous.json");
-  }
-
   constructor(page) {
     super(page);
     this.loginButton = page.getByRole("button", { name: "Login" });
@@ -22,6 +18,10 @@ export class LoginPage extends BasePage {
 
   async clickLoginButton() {
     await this.loginButton.click();
+  }
+
+  async initWithLoggedOutUser() {
+    await this.mockRPC("get-profile", "get-profile-anonymous.json");
   }
 
   async setupLoggedInUser() {
