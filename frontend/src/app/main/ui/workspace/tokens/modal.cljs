@@ -180,20 +180,16 @@
                                                       :on-change on-update-name}}]
        (when-let [errors (:errors/name state)]
          [:p {:class (stl/css :error)} (me/humanize errors)])]
-      #_(for [[idx {:keys [label type value]}] (d/enumerate (:fields state))]
-          [:* {:key (str "form-field-" idx)}
-           (case type
-             :box-shadow [:p "TODO BOX SHADOW"]
-             [:& tokens.common/labeled-input {:label "Value"
-                                              :input-props {:default-value value
-                                                            :on-change #(on-update-field idx %)}}])])
+      [:& tokens.common/labeled-input {:label "Value"
+                                       :input-props {:default-value (:value state)
+                                                     #_#_:on-change #(on-update-field idx %)}}]
       ;; (when (and @resolved-value
       ;;            (not= @resolved-value (:value (first @state*))))
       ;;   [:div {:class (stl/css :resolved-value)}
       ;;    [:p @resolved-value]])
-      #_[:& tokens.common/labeled-input {:label "Description"
-                                         :input-props {:default-value (:description state)
-                                                       :on-change #(on-update-description %)}}]
+      [:& tokens.common/labeled-input {:label "Description"
+                                       :input-props {:default-value (:description state)
+                                                     #_#_:on-change #(on-update-description %)}}]
       [:div {:class (stl/css :button-row)}
        [:button {:class (stl/css :button)
                  :type "submit"

@@ -43,6 +43,6 @@
                                                   "data-lpignore" true
                                                   :auto-complete "off"))]
     [:label {:class (stl/css-case :labeled-input true
-                                  :error error?)}
+                                  :labeled-input-error error?)}
      [:span {:class (stl/css :label)} label]
      [:& :input input-props]]))

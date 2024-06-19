@@ -22,6 +22,7 @@
 .error {
   @include bodySmallTypography;
   margin-top: $s-6;
+  margin-bottom: 0;
   color: var(--status-color-error-500);
 }
 
