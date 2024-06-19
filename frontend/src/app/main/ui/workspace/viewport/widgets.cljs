@@ -40,7 +40,7 @@
                :pattern-units "userSpaceOnUse"}
      [:path {:d "M 1 0 L 0 0 0 1"
              :style {:fill "none"
-                     :stroke (if (dbg/enabled? :pixel-grid) "red" "var(--color-info)")
+                     :stroke (if (dbg/enabled? :pixel-grid) "red" "var(--status-color-info-500)")
                      :stroke-opacity (if (dbg/enabled? :pixel-grid) 1 "0.2")
                      :stroke-width (str (/ 1 zoom))}}]]]
    [:rect {:x (:x vbox)

@@ -4,22 +4,6 @@
 //
 // Copyright (c) KALEIDOS INC
 
-// New UI colors
-$db-primary: #18181a;
-$db-secondary: #000000;
-$db-tertiary: #212426;
-$db-quaternary: #2e3434;
-
-$df-primary: #ffffff;
-$df-secondary: #8f9da3;
-
-$da-primary: #7efff5;
-$da-primary-muted: rgba(126, 255, 245, 0.3);
-$da-secondary: #bb97d8;
-$da-tertiary: #00d1b8;
-
-$d-shadow: rgba(0, 0, 0, 0.6);
-
 // Colors
 $color-white: #ffffff;
 $color-black: #000000;
@@ -74,16 +58,3 @@ $color-info-darker: mix($color-info, $color-black, $mix-percentage-darker); // #
 
 // bg transparent
 $color-dark-bg: rgba(0, 0, 0, 0.4);
-
-// Transform scss variables into css variables to use them onto cljs files
-:root {
-  // Secondary colors;
-
-  --color-info: #{$color-info};
-  --color-canvas: #e8e9ea;
-
-  // Gray scale;
-
-  --color-gray-20: #{$color-gray-20};
-  --color-gray-60: #{$color-gray-60};
-}
