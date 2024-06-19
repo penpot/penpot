@@ -4,51 +4,6 @@
 //
 // Copyright (c) KALEIDOS INC
 
-// Buttons
-
-%btn {
-  appearance: none;
-  align-items: center;
-  border: none;
-  border-radius: $br3;
-  cursor: pointer;
-  display: flex;
-  font-family: "worksans", sans-serif;
-  font-size: $fs12;
-  height: 30px;
-  justify-content: center;
-  min-width: 25px;
-  padding: 0 1rem;
-  transition: all 0.4s;
-  text-decoration: none !important;
-  svg {
-    height: 16px;
-    width: 16px;
-  }
-  &.btn-large {
-    font-size: $fs14;
-    height: 40px;
-    svg {
-      height: 20px;
-      width: 20px;
-    }
-  }
-  &.btn-small {
-    height: 25px;
-  }
-}
-
-.btn-primary {
-  @extend %btn;
-  background: $color-primary;
-  color: $color-black;
-  &:hover,
-  &:focus {
-    background: $color-black;
-    color: $color-primary;
-  }
-}
-
 input[type="button"][disabled],
 .btn-disabled {
   background-color: $color-gray-10;
