@@ -140,7 +140,7 @@
                        (::rpc/profile-id params)
                        uuid/zero)
 
-        session-id (rreq/get-header request "x-external-session-id")
+        session-id (get params ::rpc/external-session-id)
         props      (-> (or (::replace-props resultm)
                            (-> params
                                (merge (::props resultm))
