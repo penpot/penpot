@@ -142,7 +142,9 @@
              (modal/show! {:type :onboarding-newsletter})
 
              (contains? cf/flags :onboarding-team)
-             (modal/show! {:type :onboarding-team}))))
+             (modal/show! {:type :onboarding-team})
+             :else ;;remove this else condition when Penpot Tokens Studio is ready to be merged into Penpot
+             (modal/hide!))))
 
         onboarding-a-b-test? (cf/external-feature-flag "signup-background" "test")]
 

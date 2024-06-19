@@ -63,11 +63,11 @@
     :browser
     :webworker))
 
-(def default-flags
-  [:enable-onboarding
-   :enable-onboarding-team
-   :enable-onboarding-questions
-   :enable-onboarding-newsletter
+(def default-flags   ;;uncomment the below flags when Penpot Tokens Studio is ready to be merged into Penpot
+  [;;:enable-onboarding
+   ;;:enable-onboarding-team
+   ;;:enable-onboarding-questions
+   ;;:enable-onboarding-newsletter
    :enable-dashboard-templates-section
    :enable-google-fonts-provider])
 
