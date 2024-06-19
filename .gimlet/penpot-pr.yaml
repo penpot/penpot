@@ -1,6 +1,7 @@
 app: penpot-pr-{{ .BRANCH | sanitizeDNSName }}
 # TODO move to staging cluster when ready
 env: prod
+namespace: penpot
 deploy:
   event: pr
 cleanup:

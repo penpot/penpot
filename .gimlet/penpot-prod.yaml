@@ -1,6 +1,6 @@
 app: penpot
 env: prod
-namespace: apps
+namespace: penpot
 deploy:
   branch: token-studio-develop
   event: push
@@ -102,6 +102,11 @@ manifests: |
         redisEnabled: true
         imagePullSecrets: 
           - name: ghcr-login-secret
+      smtp:
+        enabled: true
+        host: mailslurper
+        tls: false
+        port: 1025
       persistence:
         enabled: true
         storageClass: standard-rwx

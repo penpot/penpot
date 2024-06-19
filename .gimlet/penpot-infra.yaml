@@ -1,0 +1,17 @@
+app: penpot-infra
+env: prod
+namespace: penpot
+chart:
+  repository: https://chart.onechart.dev
+  name: onechart
+  version: 0.64.0
+values:
+  containerPort: 1025
+  gitRepository: tokens-studio/tokens-studio-for-penpot
+  gitSha: '{{ .SHA }}'
+  image:
+    repository: oryd/mailslurper
+    tag: smtps-latest
+  replicas: 1
+  resources:
+    ignoreLimits: true
