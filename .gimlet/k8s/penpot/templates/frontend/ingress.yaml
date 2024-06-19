@@ -12,7 +12,7 @@ apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: {{ $fullName }}
-  namespace: {{ .Values.namespace }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "penpot.labels" . | nindent 4 }}
   {{- with .Values.frontend.ingress.annotations }}
@@ -22,7 +22,7 @@ metadata:
 spec:
 {{- if .Values.frontend.ingress.tls }}
   tls:
-  {{- range .Values.ingress.tls }}
+  {{- range .Values.frontend.ingress.tls }}
     - hosts:
       {{- range .hosts }}
         - {{ . | quote }}

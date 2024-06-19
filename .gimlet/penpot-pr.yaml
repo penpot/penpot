@@ -7,19 +7,66 @@ cleanup:
   event: branchDeleted
   app: penpot-pr-{{ .BRANCH | sanitizeDNSName }}
 chart:
-  name: https://github.com/tokens-studio/tokens-studio-for-penpot.git?branch={{ .BRANCH }}&path=/.gimlet/k8s/preview-frontend/
+  name: https://github.com/tokens-studio/tokens-studio-for-penpot.git?branch={{ .BRANCH }}&path=/.gimlet/k8s/penpot/
 values:
-  namespace: "{{ .BRANCH | sanitizeDNSName }}"
+  namespace: "penpot"
+  redis:
+    replica:
+      replicaCount: 0
+  global:
+    # Try use the existing redis
+    redisEnabled: false
+    imagePullSecrets: 
+      - name: ghcr-login-secret
+  persistence:
+    enabled: true
+    storageClass: standard-rwx
+  postgresql:
+    # use the existing db
+    enabled: false
+    owner: penpot
+    database: penpot
+    # Assumed specified in infra
+    secret: db-penpot-secrets
+    superUser: db-penpot-superuser-secret
+  config:
+    smtp:
+      enabled: true
+      host: mailslurper
+      tls: false
+      port: 1025
+    publicURI: https://{{ .BRANCH | sanitizeDNSName }}.penpot.dev.tokens.studio
+    redis:
+      host: penpot-redis-master.penpot.svc.cluster.local
+    postgresql:
+      # note that this is unchanged
+      host: penpot-db-rw
+      database: penpot
+      existingSecret: db-penpot-secrets
+      secretKeys:
+        usernameKey: username
+        passwordKey: password
+  backend:
+    image:
+      pullPolicy: IfNotPresent
+      repository: ghcr.io/tokens-studio/tokens-studio-for-penpot
+      tag: 'backend-pr-{{ .SHA }}' 
   frontend:
-  image:
-    pullPolicy: IfNotPresent
-    repository: ghcr.io/tokens-studio/tokens-studio-for-penpot
-    tag: 'frontend-pr-{{ .SHA }}'
-  ingress:     
-    hosts:
-      - host: "{{ .BRANCH | sanitizeDNSName }}.penpot.staging.tokens.studio"
-    tls:
-      - secretName: tls-penpot
-        hosts:
-        - "{{ .BRANCH | sanitizeDNSName }}.penpot.staging.tokens.studio"
-  
+    labels:
+      portService: tokens-studio-for-penpot
+    image:
+      pullPolicy: IfNotPresent
+      repository: ghcr.io/tokens-studio/tokens-studio-for-penpot
+      tag: 'frontend-pr-{{ .SHA }}'
+    ingress:     
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-prod
+      hosts:
+        - host: "{{ .BRANCH | sanitizeDNSName }}.penpot.dev.tokens.studio"
+      tls:
+        - secretName: tls-penpot
+          hosts:
+          - {{ .BRANCH | sanitizeDNSName }}.penpot.dev.tokens.studio
+
+

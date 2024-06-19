@@ -1,0 +1,353 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "penpot.fullname" . }}-exporter
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "penpot.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.exporter.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "penpot.exporterSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "penpot.exporterSelectorLabels" . | nindent 8 }}
+    spec:
+    {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ include "penpot.serviceAccountName" . }}
+    {{ if .Values.exporter.podSecurityContext.enabled }}
+      securityContext:
+        {{- omit .Values.exporter.podSecurityContext "enabled" | toYaml | nindent 8 }}
+    {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}-exporter
+        {{ if .Values.exporter.containerSecurityContext.enabled }}
+          securityContext:
+            {{- omit .Values.exporter.containerSecurityContext "enabled" | toYaml | nindent 12 }}
+        {{- end }}
+          image: "{{ .Values.exporter.image.repository }}:{{ .Values.exporter.image.tag }}"
+          imagePullPolicy: {{ .Values.exporter.image.imagePullPolicy }}
+          env:
+            - name: PENPOT_PUBLIC_URI
+              value: {{ .Values.config.publicURI | quote }}
+            - name: PENPOT_FLAGS
+              value: "$PENPOT_FLAGS {{ .Values.config.flags }}"
+            - name: PENPOT_SECRET_KEY
+              value: {{ .Values.config.apiSecretKey | quote }}
+            - name: PENPOT_DATABASE_URI
+              value: "postgresql://{{ .Values.config.postgresql.host }}:{{ .Values.config.postgresql.port }}/{{ .Values.config.postgresql.database }}"
+            - name: PENPOT_DATABASE_USERNAME
+            {{- if not .Values.config.postgresql.secretKeys.usernameKey }}
+              value: {{ .Values.config.postgresql.username | quote }}
+            {{- else }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.postgresql.existingSecret }}
+                  key: {{ .Values.config.postgresql.secretKeys.usernameKey }}
+            {{- end }}
+            - name: PENPOT_DATABASE_PASSWORD
+            {{- if not .Values.config.postgresql.secretKeys.passwordKey }}
+              value: {{ .Values.config.postgresql.password | quote }}
+            {{- else }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.postgresql.existingSecret }}
+                  key: {{ .Values.config.postgresql.secretKeys.passwordKey }}
+            {{- end }}
+            - name: PENPOT_REDIS_URI
+              value: "redis://{{ .Values.config.redis.host }}:{{ .Values.config.redis.port }}/{{ .Values.config.redis.database }}"
+            - name: PENPOT_ASSETS_STORAGE_BACKEND
+              value: {{ .Values.config.assets.storageBackend | quote }}
+          {{- if eq .Values.config.assets.storageBackend "assets-fs" }}
+            - name: PENPOT_STORAGE_ASSETS_FS_DIRECTORY
+              value: {{ .Values.config.assets.filesystem.directory | quote }}
+          {{- else if eq .Values.config.assets.storageBackend "assets-s3" }}
+            - name: PENPOT_STORAGE_ASSETS_S3_REGION
+              value: {{ .Values.config.assets.s3.region | quote }}
+            - name: PENPOT_STORAGE_ASSETS_S3_BUCKET
+              value: {{ .Values.config.assets.s3.bucket | quote }}
+            - name: AWS_ACCESS_KEY_ID
+          {{- if not .Values.config.assets.s3.secretKeys.accessKeyIDKey }}
+              value: {{ .Values.config.assets.s3.accessKeyID | quote }}
+          {{- else }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.assets.s3.existingSecret }}
+                  key: {{ .Values.config.assets.s3.secretKeys.accessKeyIDKey }}
+          {{- end }}
+            - name: AWS_SECRET_ACCESS_KEY
+          {{- if not .Values.config.assets.s3.secretKeys.secretAccessKey }}
+              value: {{ .Values.config.assets.s3.secretAccessKey | quote }}
+          {{- else }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.assets.s3.existingSecret }}
+                  key: {{ .Values.config.assets.s3.secretKeys.secretAccessKey }}
+          {{- end }}
+            - name: PENPOT_STORAGE_ASSETS_S3_ENDPOINT
+          {{- if not .Values.config.assets.s3.secretKeys.endpointURIKey }}
+              value: {{ .Values.config.assets.s3.endpointURI | quote }}
+          {{- else }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.assets.s3.existingSecret }}
+                  key: {{ .Values.config.assets.s3.secretKeys.endpointURIKey }}
+          {{- end }}
+          {{- end }}
+            - name: PENPOT_TELEMETRY_ENABLED
+              value: {{ .Values.config.telemetryEnabled | quote }}
+
+          {{- if .Values.config.smtp.enabled }}
+          {{- if .Values.config.smtp.defaultFrom }}
+            - name: PENPOT_SMTP_DEFAULT_FROM
+              value: {{ .Values.config.smtp.defaultFrom | quote }}
+          {{- end }}
+          {{- if .Values.config.smtp.defaultReplyTo }}
+            - name: PENPOT_SMTP_DEFAULT_REPLY_TO
+              value: {{ .Values.config.smtp.defaultReplyTo | quote }}
+          {{- end }}
+          {{- if .Values.config.smtp.host }}
+            - name: PENPOT_SMTP_HOST
+              value: {{ .Values.config.smtp.host | quote }}
+          {{- end }}
+          {{- if .Values.config.smtp.port }}
+            - name: PENPOT_SMTP_PORT
+              value: {{ .Values.config.smtp.port | quote }}
+          {{- end }}
+          {{- if not .Values.config.smtp.secretKeys.usernameKey }}
+            - name: PENPOT_SMTP_USERNAME
+              value: {{ .Values.config.smtp.username | quote }}
+          {{- else }}
+            - name: PENPOT_SMTP_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.smtp.existingSecret }}
+                  key: {{ .Values.config.smtp.secretKeys.usernameKey }}
+          {{- end }}
+          {{- if not .Values.config.smtp.secretKeys.passwordKey }}
+            - name: PENPOT_SMTP_PASSWORD
+              value: {{ .Values.config.smtp.password | quote }}
+          {{- else }}
+            - name: PENPOT_SMTP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.smtp.existingSecret }}
+                  key: {{ .Values.config.smtp.secretKeys.passwordKey }}
+          {{- end }}
+          {{- if .Values.config.smtp.tls }}
+            - name: PENPOT_SMTP_TLS
+              value: {{ .Values.config.smtp.tls | quote }}
+          {{- end }}
+          {{- if .Values.config.smtp.ssl }}
+            - name: PENPOT_SMTP_SSL
+              value: {{ .Values.config.smtp.ssl | quote }}
+          {{- end }}
+          {{- end }}
+
+
+          {{- if .Values.config.registrationDomainWhitelist }}
+            - name: PENPOT_REGISTRATION_DOMAIN_WHITELIST
+              value: {{ .Values.config.registrationDomainWhitelist | quote }}
+          {{- end }}
+
+          {{- if .Values.config.providers.google.enabled }}
+          {{- if not .Values.config.providers.secretKeys.googleClientIDKey }}
+            - name: PENPOT_GOOGLE_CLIENT_ID
+              value: {{ .Values.config.providers.google.clientID | quote }}
+          {{- else }}
+            - name: PENPOT_GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.providers.existingSecret }}
+                  key: {{ .Values.config.providers.secretKeys.googleClientIDKey }}
+          {{- end }}
+          {{- if not .Values.config.providers.secretKeys.googleClientSecretKey}}
+            - name: PENPOT_GOOGLE_CLIENT_SECRET
+              value: {{ .Values.config.providers.google.clientSecret | quote }}
+          {{- else }}
+            - name: PENPOT_GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.providers.existingSecret }}
+                  key: {{ .Values.config.providers.secretKeys.googleClientSecretKey }}
+          {{- end }}
+          {{- end }}
+
+          {{- if .Values.config.providers.github.enabled }}
+          {{- if not .Values.config.providers.secretKeys.githubClientIDKey }}
+            - name: PENPOT_GITHUB_CLIENT_ID
+              value: {{ .Values.config.providers.github.clientID | quote }}
+          {{- else }}
+            - name: PENPOT_GITHUB_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.providers.existingSecret }}
+                  key: {{ .Values.config.providers.secretKeys.githubClientIDKey }}
+          {{- end }}
+          {{- if not .Values.config.providers.secretKeys.githubClientSecretKey  }}
+            - name: PENPOT_GITHUB_CLIENT_SECRET
+              value: {{ .Values.config.providers.github.clientSecret | quote }}
+          {{- else }}
+            - name: PENPOT_GITHUB_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.providers.existingSecret }}
+                  key: {{ .Values.config.providers.secretKeys.githubClientSecretKey }}
+          {{- end }}
+          {{- end }}
+
+          {{- if .Values.config.providers.gitlab.enabled }}
+          {{- if .Values.config.providers.gitlab.baseURI }}
+            - name: PENPOT_GITLAB_BASE_URI
+              value: {{ .Values.config.providers.gitlab.baseURI | quote }}
+          {{- end }}
+          {{- if not .Values.config.providers.secretKeys.gitlabClientIDKey }}
+            - name: PENPOT_GITLAB_CLIENT_ID
+              value: {{ .Values.config.providers.gitlab.clientID | quote }}
+          {{- else }}
+            - name: PENPOT_GITLAB_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.providers.existingSecret }}
+                  key: {{ .Values.config.providers.secretKeys.gitlabClientIDKey }}
+          {{- end }}
+          {{- if not .Values.config.providers.secretKeys.gitlabClientSecretKey }}
+            - name: PENPOT_GITLAB_CLIENT_SECRET
+              value: {{ .Values.config.providers.gitlab.clientSecret | quote }}
+          {{- else }}
+            - name: PENPOT_GITLAB_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.providers.existingSecret }}
+                  key: {{ .Values.config.providers.secretKeys.gitlabClientSecretKey }}
+          {{- end }}
+          {{- end }}
+
+          {{- if .Values.config.providers.oidc.enabled }}
+          {{- if .Values.config.providers.oidc.baseURI }}
+            - name: PENPOT_OIDC_BASE_URI
+              value: {{ .Values.config.providers.oidc.baseURI | quote }}
+          {{- end }}
+          {{- if not .Values.config.providers.secretKeys.oidcClientIDKey }}
+            - name: PENPOT_OIDC_CLIENT_ID
+              value: {{ .Values.config.providers.oidc.clientID | quote}}
+          {{- else }}
+            - name: PENPOT_OIDC_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.providers.existingSecret }}
+                  key: {{ .Values.config.providers.secretKeys.oidcClientIDKey }}
+          {{- end }}
+          {{- if not .Values.config.providers.secretKeys.oidcClientSecretKey}}
+            - name: PENPOT_OIDC_CLIENT_SECRET
+              value: {{ .Values.config.providers.oidc.clientSecret | quote }}
+          {{- else }}
+            - name: PENPOT_OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.providers.existingSecret }}
+                  key: {{ .Values.config.providers.secretKeys.oidcClientSecretKey }}
+          {{- end }}
+          {{- if .Values.config.providers.oidc.authURI }}
+            - name: PENPOT_OIDC_AUTH_URI
+              value: {{ .Values.config.providers.oidc.authURI | quote }}
+          {{- end }}
+          {{- if .Values.config.providers.oidc.tokenURI }}
+            - name: PENPOT_OIDC_TOKEN_URI
+              value: {{ .Values.config.providers.oidc.tokenURI | quote }}
+          {{- end }}
+          {{- if .Values.config.providers.oidc.userURI }}
+            - name: PENPOT_OIDC_USER_URI
+              value: {{ .Values.config.providers.oidc.userURI | quote }}
+          {{- end }}
+          {{- if .Values.config.providers.oidc.roles }}
+            - name: PENPOT_OIDC_ROLES
+              value: {{ .Values.config.providers.oidc.roles | quote }}
+          {{- end }}
+          {{- if .Values.config.providers.oidc.rolesAttribute }}
+            - name: PENPOT_OIDC_ROLES_ATTR
+              value: {{ .Values.config.providers.oidc.rolesAttribute | quote }}
+          {{- end }}
+          {{- if .Values.config.providers.oidc.scopes }}
+            - name: PENPOT_OIDC_SCOPES
+              value: {{ .Values.config.providers.oidc.scopes | quote }}
+          {{- end }}
+          {{- if .Values.config.providers.oidc.nameAttribute }}
+            - name: PENPOT_OIDC_NAME_ATTR
+              value: {{ .Values.config.providers.oidc.nameAttribute | quote }}
+          {{- end }}
+          {{- if .Values.config.providers.oidc.emailAttribute }}
+            - name: PENPOT_OIDC_EMAIL_ATTR
+              value: {{ .Values.config.providers.oidc.emailAttribute | quote }}
+          {{- end }}
+          {{- end }}
+
+          {{- if .Values.config.providers.ldap.enabled }}
+          {{- if .Values.config.providers.ldap.host }}
+            - name: PENPOT_LDAP_HOST
+              value: {{ .Values.config.providers.ldap.host | quote }}
+          {{- end }}
+          {{- if .Values.config.providers.ldap.port }}
+            - name: PENPOT_LDAP_PORT
+              value: {{ .Values.config.providers.ldap.port | quote }}
+          {{- end }}
+          {{- if .Values.config.providers.ldap.ssl }}
+            - name: PENPOT_LDAP_SSL
+              value: {{ .Values.config.providers.ldap.ssl | quote }}
+          {{- end }}
+          {{- if .Values.config.providers.ldap.startTLS }}
+            - name: PENPOT_LDAP_STARTTLS
+              value: {{ .Values.config.providers.ldap.startTLS | quote }}
+          {{- end }}
+          {{- if .Values.config.providers.ldap.baseDN }}
+            - name: PENPOT_LDAP_BASE_DN
+              value: {{ .Values.config.providers.ldap.baseDN | quote }}
+          {{- end }}
+          {{- if .Values.config.providers.ldap.bindDN }}
+            - name: PENPOT_LDAP_BIND_DN
+              value: {{ .Values.config.providers.ldap.bindDN | quote }}
+          {{- end }}
+          {{- if .Values.config.providers.ldap.bindPassword }}
+            - name: PENPOT_LDAP_BIND_PASSWORD
+              value: {{ .Values.config.providers.ldap.bindPassword | quote }}
+          {{- end }}
+          {{- if .Values.config.providers.ldap.attributesUsername }}
+            - name: PENPOT_LDAP_ATTRS_USERNAME
+              value: {{ .Values.config.providers.ldap.attributesUsername | quote }}
+          {{- end }}
+          {{- if .Values.config.providers.ldap.attributesEmail }}
+            - name: PENPOT_LDAP_ATTRS_EMAIL
+              value: {{ .Values.config.providers.ldap.attributesEmail | quote }}
+          {{- end }}
+          {{- if .Values.config.providers.ldap.attributesFullname }}
+            - name: PENPOT_LDAP_ATTRS_FULLNAME
+              value: {{ .Values.config.providers.ldap.attributesFullname | quote }}
+          {{- end }}
+          {{- if .Values.config.providers.ldap.attributesPhoto }}
+            - name: PENPOT_LDAP_ATTRS_PHOTO
+              value: {{ .Values.config.providers.ldap.attributesPhoto | quote }}
+          {{- end }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.exporter.service.port }}
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.exporter.resources | nindent 12 }}
+      {{- with .Values.exporter.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.exporter.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.exporter.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}

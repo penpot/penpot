@@ -3,178 +3,65 @@ env: prod
 deploy:
   branch: token-studio-develop
   event: push
-manifests: | 
-  apiVersion: source.toolkit.fluxcd.io/v1beta2
-  kind: HelmRepository
-  metadata:
-    name: codechem
-    namespace: penpot
-  spec:
-    interval: 5m
-    url: https://charts.codechem.com
-  ---
-  apiVersion: bitnami.com/v1alpha1
-  kind: SealedSecret
-  metadata:
-    creationTimestamp: null
-    name: db-penpot-secrets
-    namespace: penpot
-  spec:
-    encryptedData:
-      password: AgBzAKLzhBGDrga3ojwgBnbaDmzxQkfoIcu90ji4iutq7t2OQCuJ/8NFD1KUw8hmQ6FlwQY3reaGqRnONdzdM2VyHQmXkaoXEzCAiARh9CWiwzwW2PG6KbSmHzo/YAt17Vkux0euc0z4JAceWqbXdm8Tl8FgUktFmJNY0OGIJ8CfLFNX8p6YujSoYpIRwjG0juiGhbPGeSkJguAAR7uwLwtjCNfFRuSqEDYeaRYHvhxGgh6pyJ70+qVzUQClFJEkVzNJu9CyGx48WSPDDpPbp+h84AWIIY25Cphk48DK/oNVikQitgMVOVBU8swcpz7MSVmKxs407vKRAWN4MGV2HkNrFwFjpQsksNAQ0KTfQrVigz1Hf985w4hji1gjifK7GbSgD9Kzz8pMni3gPMj0mr4y6Nhes+hc8AGTD3N+bhpJsAZKMzSZesdamWDiwyLi+ZPuPu+1/LBVLL68DAp6odKaposQfxeTKAkxqt/6s5jvKWPl3kQ9ud2cg/8Mw3B5pqzKK4dUwUdI1pNV4GyLTj9b+M1aDYaqGmYLzZVcYxeBVh27EFC2aon8/3zkXy6Hm/BZK/aZkrmO5sJTQRYRjnlG6rRtHCWcnXI6KKqKjU5GDFk2otqrlxPMQyXyjbwycP3rTHmhAaHWkR+fOETcq+kNbVUcaR3XTCw7T1qFZ4dtaBN02RHbRE3qxs/SjGMPnzfKQs1626gHAayZqxprpfz6mT0u0Hkn2NGg6RlJr36CxfE=
-      username: AgBw5ALuBj1TpQc5dmyLW927WQO9AXgdyqYeXHwzXbLKIdyAkyihVIkTSD/MS/InTbsiFIYPvZptpAjpWc9p2IN8nvLbEjc8JXS7DA3NDr/SN7J70oDOKS/vT4Vlz4yX/6fmU8pGvjMh22ELBbruxWS+a6Nty/XcZPqJ8gMuj/vAnticq+i4Rmuy1aghEfsYzPVSigS5QfnnFsMBA5lZS7rgiv4voudi5aAh8luIsDx9eCk2WxcN+9f816MYXBxcZL853h4lIQziOfs8LK0jCZm62yOeckmuMt0EznGEwAS1Magrw9PnZdSDOHvTrugRT/sx8JzkpEorJQXTA/6hXT9tqTbZuLnHMcdVGAcU9+1QcJPtlhYH05irbDqMs5IgxqCW7ch3gtiIS1hTRGpaG+LoNGREcZZtiWxkgcVhJG8E+5ailyt0B/NO+RgjYjjK+tH/hcGd2hABvkmS1f9FUHIRdE0uiwvwM/hWU9qTJcSHdN3mJ96/7lQvfnDoDDP8zS09Co0E0zLmLFSAEvOIz7HMvE0Bw2UPzcy4N8J2y+u4m0327FUUN96Y3e2L+o1SrVw/CJO1/haN34j1SMUFh/4q63VvNLDfUD69QbpjMtjNrvhqNWyyET1QNWl4SFsfbMdC7/rXM9Lpg4GEZ6R5G/QcTb27Zo5UuOeFP060XiWJ1/bD8tiZKU1K1QTwJ0Uur3MDcrYRvGw=
-    template:
-      metadata:
-        creationTimestamp: null
-        name: db-penpot-secrets
-        namespace: penpot
-      type: Opaque
-  ---
-  apiVersion: bitnami.com/v1alpha1
-  kind: SealedSecret
-  metadata:
-    creationTimestamp: null
-    name: db-penpot-superuser-secret
-    namespace: penpot
-  spec:
-    encryptedData:
-      password: AgBwTdp950SD3x9c1CjlAz4MGEN3tTDQH0iKLW1e4itCEB+W7c6hf+t2nc4VYLAhxCbMfs+sS2onSuoIuzr7/wTLtia3gSaRAgPFu2t91m6s51ewMMrPxoAmIdpHiojCnBXdhuc6XjinOs40MOoS6/qY1WjEXaPyvKBeMdFkKAdDTvMW6WA9xel8Jyf3U6Tz8/Onj1VAAnhgehFvPMZ1uDCEtUfKDPAe+za4S1SRAL81iNwJCVQJrQdetDpcIMnKkMbUvy8RFDmPPKJ6lxZHFk8ztJgCXlj55ViWlEmUC3QHtktnB0QYd+B2rFf6j/66ozgzyiqHd4nXCuRiCxnFSgFMrWYbaDheJEN4rgDNZBITIBiqnlH5HntieQHj9YohsVkr7r0FObtKpePV1t+Sb0RptJ9+LWexkSs6Rvq3HNj7JdOLN/QVsIZbiU4ctRMjxiVsyl7PDZe84tx3Kl6BiUOrClN8QR6huLLnIdVXetMbrPDDQOCI4FiH5UghLRlPdNkvpoeYLfL79Mxy5yOG+xkydM5HR7//NMGDqP7hf+vZFe8/EKuaSExUX6S0AT+hQVkmWcwy7OKq2Ra37XezjmWf6KGiHAL8Idn47E+PQ5axAlkZ1MgkjB+pc/2Lpyo3bfINa7avf03nOKwJl01cChB9O4bDkUfDh7N+26YkqlwMm6aU4dm80fydsPRBikTKTWafpLsQqtimv1ANTYHvbDDEsufK95O/cq8ER/fTAmmrcg==
-      username: AgAIwqIbS5Ze9e4sefyg77opd801epCHPewxEb+VuuJrxIl4+gFroopQNf/lhRQRFX1unI0PaR/iV5szaIaDmIYz3JQ3OxCyF1zeDYr6YhYNQMtkLgRJRrBr0j7TQPAKwLmgtZok7hDIvTj5bQ2dydibQ1Zg8N1valb03X6Vs/ivvvO3KvQEDckdGgD7UauL8onapU6KAFU5Hu9aEkvMTk4CGNpuLxGhYdA1+HLpLdQYBQPaJyEblGoko4wyv+pF/3m1tRBSQ1L8HsUXfAEn5dAd+0qkS5IvwOM8zXnZcT0ohXmY2mXjvPyv2phOKElQYURPwq9PPI+Sc5Ff7QHcVLjwQ+DYtSMDlRSt5BektWC+peBJfxZQ/X6w2AmICtdkOT03rrMxn0sWKIgQkvmJ0jkERAYlvifcoRmbof0wbFh+ANa0NpGLvxwiG+DsQ6eAsTB0Nu3wPCCBFZOUuTxS+yb4BjE3KPNGgVI6XtArxPnO3z3xglfI/nKDTY1rC2e0ZE72BDnhsLAwQTTgb/R/X2mvS7a0YXJ0gOpAgwP92K9zy1GA9ov2uTVZ2wbb39E69OxMKcbetDWirQrSYMqLYzJ1+W2cBbNdCcYQ2xnSM9cdEd2sPcFJ3NDVQeQRhxSTI6UfKWphUeksqwdW+VN7aODlUzMSxBCwGnxuaS6OVzOdLzQnORdyhyD8zclh5e0AXJpvqs+Z4CuvZA==
-    template:
-      metadata:
-        creationTimestamp: null
-        name: db-penpot-superuser-secret
-        namespace: penpot
-      type: Opaque
-  ---
-  apiVersion: postgresql.cnpg.io/v1
-  kind: Cluster
-  metadata:
-    name: penpot-db
-    namespace: penpot
-  spec:
-    instances: 1
-    superuserSecret:
-      name: db-penpot-superuser-secret
-    bootstrap:
-      initdb:
-        database: penpot
-        owner: penpot
-        secret:
-          name: db-penpot-secrets
-    monitoring:
-      enablePodMonitor: true
-    storage:
-      size: 5Gi
-  ---
-  apiVersion: helm.toolkit.fluxcd.io/v2beta2
-  kind: HelmRelease
-  metadata:
-    name: penpot
-    namespace: penpot
-  spec:
-    releaseName: penpot 
-    chart:
-      spec:
-        version: "1.0.10"
-        chart: penpot 
-        sourceRef:
-          kind: HelmRepository
-          name: codechem
-    interval: 50m
-    install:
-      remediation:
-        retries: 3
-    values:
-      redis:
-        replica:
-          replicaCount: 0
-      global:
-        postgresqlEnabled: false
-        redisEnabled: true
-        imagePullSecrets: 
-          - name: ghcr-login-secret
-      persistence:
-        enabled: true
-        storageClass: standard-rwx
-      backend:
-        image:
-          pullPolicy: IfNotPresent
-          repository: ghcr.io/tokens-studio/tokens-studio-for-penpot
-          tag: 'backend-{{ .SHA }}' 
-      frontend:
-        image:
-          pullPolicy: IfNotPresent
-          repository: ghcr.io/tokens-studio/tokens-studio-for-penpot
-          tag: 'frontend-{{ .SHA }}'
-        ingress:
-          enabled: true
-          annotations:
-            cert-manager.io/cluster-issuer: letsencrypt-prod
+chart:
+  name: https://github.com/tokens-studio/tokens-studio-for-penpot.git?branch={{ .BRANCH }}&path=/.gimlet/k8s/penpot/
+values:
+  namespace: "penpot"
+  redis:
+    replica:
+      replicaCount: 0
+  global:
+    redisEnabled: true
+    imagePullSecrets: 
+      - name: ghcr-login-secret
+  persistence:
+    enabled: true
+    storageClass: standard-rwx
+  postgresql:
+    enabled: true
+    owner: penpot
+    database: penpot
+    # Assumed specified in infra
+    secret: db-penpot-secrets
+    superUser: db-penpot-superuser-secret
+  config:
+    smtp:
+      enabled: true
+      host: mailslurper
+      tls: false
+      port: 1025
+    publicURI: https://penpot.tokens.studio
+    redis:
+      host: penpot-redis-master.penpot.svc.cluster.local
+    postgresql:
+      host: penpot-db-rw
+      database: penpot
+      existingSecret: db-penpot-secrets
+      secretKeys:
+        usernameKey: username
+        passwordKey: password
+  backend:
+    image:
+      pullPolicy: IfNotPresent
+      repository: ghcr.io/tokens-studio/tokens-studio-for-penpot
+      tag: 'backend-{{ .SHA }}' 
+  frontend:
+    labels:
+      portService: tokens-studio-for-penpot
+    image:
+      pullPolicy: IfNotPresent
+      repository: ghcr.io/tokens-studio/tokens-studio-for-penpot
+      tag: 'frontend-{{ .SHA }}'
+    ingress:     
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-prod
+      hosts:
+        - host: "penpot.tokens.studio"
+      tls:
+        - secretName: tls-penpot
           hosts:
-            - host: penpot.tokens.studio
-          tls:
-            - secretName: tls-penpot
-              hosts:
-              - penpot.tokens.studio
-      # https://github.com/codechem/helm/issues/15
-      ingress:
-        tls:
-          - secretName: tls-penpot
-            hosts:
-            - penpot.tokens.studio
-      config:
-        publicURI: https://penpot.tokens.studio
-        smtp:
-          enabled: true
-          host: mailslurper
-          tls: false
-          port: 1025
-        redis:
-          host: penpot-redis-master.penpot.svc.cluster.local
-        postgresql:
-          host: penpot-db-rw
-          database: penpot
-          existingSecret: db-penpot-secrets
-          secretKeys:
-            usernameKey: username
-            passwordKey: password
-json6902Patches:
-- target:
-    group: "apps"
-    version: "v1"
-    kind: "Deployment"
-    name: "penpot-frontend"
-  patch: |
-    ---
-    - op: add
-      path: /metadata/labels
-      value: 
-        portService: tokens-studio-for-penpot
-- target:
-    group: "apps"
-    version: "v1"
-    kind: "Deployment"
-    name: "penpot-exporter"
-  patch: |
-    ---
-    - op: add
-      path: /metadata/labels
-      value: 
-        portService: tokens-studio-for-penpot
-- target:
-    group: "apps"
-    version: "v1"
-    kind: "Deployment"
-    name: "penpot-backend"
-  patch: |
-    ---
-    - op: add
-      path: /metadata/labels
-      value: 
-        portService: tokens-studio-for-penpot
-    - op: add 
-      path: /spec/template/spec/containers/0/env
-      value:
-        name: PENPOT_SMTP_ENABLED
-        value: 'true'
+          - penpot.tokens.studio
+
+
+
