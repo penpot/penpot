@@ -63,7 +63,7 @@
     :browser
     :webworker))
 
-(def default-flags
+(def default-flags   ;;uncomment the below flags when Penpot Tokens Studio is ready to be merged into Penpot
   [;;:enable-onboarding
    ;;:enable-onboarding-team
    ;;:enable-onboarding-questions
