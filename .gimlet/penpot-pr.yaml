@@ -63,7 +63,7 @@ values:
     image:
       pullPolicy: Always
       repository: ghcr.io/tokens-studio/tokens-studio-for-penpot
-      tag: 'backend-pr-{{ .BRANCH }}' 
+      tag: 'backend-pr-{{ .BRANCH | sanitizeDNSName }}' 
   exporter:
     # Unlikely to be used 
     enabled: false
@@ -73,7 +73,7 @@ values:
     image:
       pullPolicy: Always
       repository: ghcr.io/tokens-studio/tokens-studio-for-penpot
-      tag: 'frontend-pr-{{ .BRANCH }}'
+      tag: 'frontend-pr-{{ .BRANCH | sanitizeDNSName }}'
     ingress:     
       enabled: true
       annotations:
