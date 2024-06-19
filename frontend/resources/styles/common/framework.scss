@@ -4,8 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-input[type="button"][disabled],
-.btn-disabled {
+input[type="button"][disabled] {
   background-color: $color-gray-10;
   color: $color-gray-40;
   pointer-events: none;
