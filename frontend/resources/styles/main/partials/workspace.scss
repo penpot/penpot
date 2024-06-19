@@ -121,7 +121,7 @@ $height-palette-max: 80px;
   }
 
   .cursor-tooltip {
-    background-color: $color-dark-bg;
+    background-color: var(--db-secondary-40);
     border-radius: $br3;
     color: var(--df-primary);
     font-size: $fs12;
