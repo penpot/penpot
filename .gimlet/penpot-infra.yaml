@@ -10,9 +10,9 @@ manifests: |
   ---
   apiVersion: apps/v1
   kind: Deployment
-  namespace: penpot
   metadata:
     name: mailslurper
+    namespace: penpot
     labels:
       app: mailslurper
   spec:
