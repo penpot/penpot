@@ -145,14 +145,14 @@
 
    [:sizing
     {:title "Sizing"
-     :attributes ctt/sizing-keys
+     :attributes #{:width :height}
      :on-update-shape update-shape-dimensions
      :modal {:key :tokens/sizing
              :fields [{:label "Sizing"
                        :key :sizing}]}}]
    [:dimensions
     {:title "Dimensions"
-     :attributes ctt/dimensions-keys
+     :attributes #{:width :height}
      :on-update-shape update-shape-dimensions
      :modal {:key :tokens/dimensions
              :fields [{:label "Dimensions"
