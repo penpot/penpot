@@ -41,7 +41,7 @@ jobs:
       uses: docker/metadata-action@v5
       with:
         tags: |
-          type=sha,format=long,prefix=${{matrix.type}}-
+          type=ref,enable=true,priority=600,prefix=${{matrix.type}}-,suffix=,event=branch
         images: |
           ghcr.io/tokens-studio/tokens-studio-for-penpot
     - name: prebuild

@@ -48,9 +48,9 @@ values:
         passwordKey: password
   backend:
     image:
-      pullPolicy: IfNotPresent
+      pullPolicy: Always
       repository: ghcr.io/tokens-studio/tokens-studio-for-penpot
-      tag: 'backend-pr-{{ .SHA }}' 
+      tag: 'backend-pr-{{ .BRANCH }}' 
   exporter:
     # Unlikely to be used 
     enabled: false
@@ -58,9 +58,9 @@ values:
     labels:
       portService: tokens-studio-for-penpot
     image:
-      pullPolicy: IfNotPresent
+      pullPolicy: Always
       repository: ghcr.io/tokens-studio/tokens-studio-for-penpot
-      tag: 'frontend-pr-{{ .SHA }}'
+      tag: 'frontend-pr-{{ .BRANCH }}'
     ingress:     
       enabled: true
       annotations:
