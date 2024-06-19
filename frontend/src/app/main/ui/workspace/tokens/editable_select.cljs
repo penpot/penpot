@@ -93,7 +93,9 @@
          (cond
            (= :separator item) [:li {:class (stl/css :separator)
                                      :key (dm/str element-id "-" index)}]
-           :else (let [{:keys [label selected?]} item
+           ;; Remove items with missing references
+           (seq (:errors item)) nil
+           :else (let [{:keys [label selected? errors]} item
                        highlighted? (= highlighted index)]
                    [:li
                     {:key (str element-id "-" index)
@@ -101,6 +103,7 @@
                                           :is-selected selected?
                                           :is-highlighted highlighted?)
                      :data-label label
+                     :disabled (seq errors)
                      :on-click #(on-select item)}
                     [:span {:class (stl/css :label)} label]
                     [:span {:class (stl/css :value)} (wtc/resolve-token-value item)]
