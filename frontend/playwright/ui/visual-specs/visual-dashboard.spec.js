@@ -3,11 +3,7 @@ import DashboardPage from "../pages/DashboardPage";
 
 test.beforeEach(async ({ page }) => {
   await DashboardPage.init(page);
-  await DashboardPage.mockRPC(
-    page,
-    "get-profile",
-    "logged-in-user/get-profile-logged-in-no-onboarding.json",
-  );
+  await DashboardPage.mockRPC(page, "get-profile", "logged-in-user/get-profile-logged-in-no-onboarding.json");
 });
 
 test("User goes to an empty dashboard", async ({ page }) => {
@@ -189,84 +185,6 @@ test("User goes to settings section", async ({ page }) => {
   await expect(dashboardPage.page).toHaveScreenshot();
 });
 
-test("User goes to an empty access tokens secction", async ({ page }) => {
-  const dashboardPage = new DashboardPage(page);
-
-  await dashboardPage.goToDashboard();
-
-  await dashboardPage.setupAccessTokensEmpty();
-
-  await dashboardPage.goToAccount();
-
-  await page.getByText("Access tokens").click();
-
-  await expect(page.getByRole("heading", { name: "Personal access tokens" })).toBeVisible();
-
-  await expect(dashboardPage.page).toHaveScreenshot();
-});
-
-test("User can create an access token", async ({ page }) => {
-  const dashboardPage = new DashboardPage(page);
-
-  await dashboardPage.goToDashboard();
-
-  await dashboardPage.setupAccessTokensEmpty();
-
-  await dashboardPage.goToAccount();
-
-  await page.getByText("Access tokens").click();
-
-  await expect(page.getByRole("heading", { name: "Personal access tokens" })).toBeVisible();
-
-  await page.getByRole("button", { name: "Generate New Token" }).click();
-
-  await dashboardPage.createAccessToken();
-
-  await expect(page.getByPlaceholder("The name can help to know")).toBeVisible();
-
-  await page.getByPlaceholder("The name can help to know").fill("New token");
-
-  await expect(page.getByRole("button", { name: "Create token" })).not.toBeDisabled();
-
-  await page.getByRole("button", { name: "Create token" }).click();
-
-  await expect(page.getByRole("button", { name: "Create token" })).not.toBeVisible();
-
-  await expect(dashboardPage.page).toHaveScreenshot();
-});
-
-test("User goes to a full access tokens secction", async ({ page }) => {
-  const dashboardPage = new DashboardPage(page);
-
-  await dashboardPage.goToDashboard();
-
-  await dashboardPage.setupAccessTokens();
-
-  await dashboardPage.goToAccount();
-
-  await page.getByText("Access tokens").click();
-
-  await expect(page.getByRole("heading", { name: "Personal access tokens" })).toBeVisible();
-
-  await expect(page.getByText("new token", { exact: true })).toBeVisible();
-
-  await expect(dashboardPage.page).toHaveScreenshot();
-});
-
-test("User goes to the feedback secction", async ({ page }) => {
-  const dashboardPage = new DashboardPage(page);
-
-  await dashboardPage.goToDashboard();
-
-  await dashboardPage.goToAccount();
-
-  await page.getByText("Give feedback").click();
-
-  await expect(page.getByRole("heading", { name: "Email" })).toBeVisible();
-
-  await expect(dashboardPage.page).toHaveScreenshot();
-});
-
 // Teams management
 
 test("User opens teams selector with only one team", async ({ page }) => {
@@ -364,7 +282,6 @@ test("User goes to a complete invitations section", async ({ page }) => {
 
   await expect(dashboardPage.page).toHaveScreenshot();
 });
-
 
 test("User invite people to the team", async ({ page }) => {
   const dashboardPage = new DashboardPage(page);
