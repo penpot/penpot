@@ -33,7 +33,7 @@ svg#loader-icon {
 
 // btn pencil loader
 svg#loader-pencil {
-  fill: $color-primary-darker;
+  fill: var(--color-accent-tertiary);
   width: 60px;
 }
 
