@@ -136,16 +136,8 @@
 
 ;; Testing ---------------------------------------------------------------------
 
-(defn tokens-studio-example []
-  (-> (shadow.resource/inline "./data/example-tokens-set.json")
-      (js/JSON.parse)
-      .-core))
-
 (comment
-
   (defonce !output (atom nil))
-
-  @!output
 
   (-> (resolve-workspace-tokens+ {:debug? true})
       (p/then #(reset! !output %)))
@@ -158,7 +150,9 @@
              "b" {:name "b" :value "{a} * 2"}})
    (#(resolve-sd-tokens+ % {:debug? true})))
 
-  (-> (tokens-studio-example)
-      (resolve-sd-tokens+ {:debug? true}))
+  (let [example (-> (shadow.resource/inline "./data/example-tokens-set.json")
+                    (js/JSON.parse)
+                    .-core)]
+    (resolve-sd-tokens+ example {:debug? true}))
 
   nil)
