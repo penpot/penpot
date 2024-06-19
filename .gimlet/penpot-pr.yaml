@@ -7,7 +7,7 @@ cleanup:
   event: branchDeleted
   app: penpot-pr-{{ .BRANCH | sanitizeDNSName }}
 chart:
-  name: https://github.com/tokens-studio/tokens-studio-for-penpot.git?branch={{ .BRANCH }}&path=/.gimlet/k8s/preview-frontend/
+  name: https://github.com/tokens-studio/tokens-studio-for-penpot.git?branch={{ .BRANCH }}&path=.gimlet/k8s/preview-frontend/
 values:
   namespace: "{{ .BRANCH | sanitizeDNSName }}"
   frontend:
