@@ -1,7 +1,13 @@
 app: penpot-infra
 env: prod
-namespace: penpot
 manifests: |
+  apiVersion: v1
+  kind: Namespace
+  metadata:
+    name: penpot
+    labels:
+      toolkit.fluxcd.io/tenant: penpot-team
+  ---
   apiVersion: apps/v1
   kind: Deployment
   namespace: penpot
