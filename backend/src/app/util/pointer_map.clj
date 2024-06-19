@@ -40,7 +40,8 @@
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
    [app.util.time :as dt]
-   [clojure.core :as c])
+   [clojure.core :as c]
+   [clojure.data.json :as json])
   (:import
    clojure.lang.Counted
    clojure.lang.IDeref
@@ -74,6 +75,14 @@
                      ^:unsynchronized-mutable odata
                      ^:unsynchronized-mutable modified?
                      ^:unsynchronized-mutable loaded?]
+
+  json/JSONWriter
+  (-write [this writter options]
+    (json/-write {:type "pointer"
+                  :id (get-id this)
+                  :meta (meta this)}
+                 writter
+                 options))
 
   IPointerMap
   (load! [_]

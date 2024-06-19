@@ -10,16 +10,13 @@
    [app.common.logging :as l]
    [app.common.transit :as t]
    [app.config :as cf]
-   [app.util.json :as json]
+   [clojure.data.json :as json]
    [cuerdas.core :as str]
    [ring.request :as rreq]
    [ring.response :as rres]
    [yetti.adapter :as yt]
    [yetti.middleware :as ymw])
   (:import
-   com.fasterxml.jackson.core.JsonParseException
-   com.fasterxml.jackson.core.io.JsonEOFException
-   com.fasterxml.jackson.databind.exc.MismatchedInputException
    io.undertow.server.RequestTooBigException
    java.io.InputStream
    java.io.OutputStream))
@@ -34,11 +31,22 @@
   {:name ::params
    :compile (constantly ymw/wrap-params)})
 
-(def ^:private json-mapper
-  (json/mapper
-   {:encode-key-fn str/camel
-    :decode-key-fn (comp keyword str/kebab)
-    :pretty true}))
+(defn- get-reader
+  ^java.io.BufferedReader
+  [request]
+  (let [^InputStream body (rreq/body request)]
+    (java.io.BufferedReader.
+     (java.io.InputStreamReader. body))))
+
+(defn- read-json-key
+  [k]
+  (-> k str/kebab keyword))
+
+(defn- write-json-key
+  [k]
+  (if (or (keyword? k) (symbol? k))
+    (str/camel k)
+    (str k)))
 
 (defn wrap-parse-request
   [handler]
@@ -53,8 +61,8 @@
                         (update :params merge params))))
 
                 (str/starts-with? header "application/json")
-                (with-open [^InputStream is (rreq/body request)]
-                  (let [params (json/decode is json-mapper)]
+                (with-open [reader (get-reader request)]
+                  (let [params (json/read reader :key-fn read-json-key)]
                     (-> request
                         (assoc :body-params params)
                         (update :params merge params))))
@@ -74,9 +82,7 @@
                         :code :request-body-too-large
                         :hint (ex-message cause))
 
-              (or (instance? JsonEOFException cause)
-                  (instance? JsonParseException cause)
-                  (instance? MismatchedInputException cause))
+              (instance? java.io.EOFException cause)
               (ex/raise :type :validation
                         :code :malformed-json
                         :hint (ex-message cause)
@@ -128,7 +134,8 @@
               (-write-body-to-stream [_ _ output-stream]
                 (try
                   (with-open [^OutputStream bos (buffered-output-stream output-stream buffer-size)]
-                    (json/write! bos data json-mapper))
+                    (with-open [^java.io.OutputStreamWriter writer (java.io.OutputStreamWriter. bos)]
+                      (json/write data writer :key-fn write-json-key)))
 
                   (catch java.io.IOException _)
                   (catch Throwable cause
