@@ -379,7 +379,7 @@ test("User invite people to the team", async ({ page }) => {
 
   await expect(page.getByText("Invite with the role")).toBeVisible();
 
-  await page.getByPlaceholder('Emails, comma separated').fill("test5@mail.com");
+  await page.getByPlaceholder("Emails, comma separated").fill("test5@mail.com");
 
   await expect(page.getByText("Send invitation")).not.toBeDisabled();
 
