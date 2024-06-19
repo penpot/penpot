@@ -1,6 +1,7 @@
 app: penpot-pr-{{ .BRANCH | sanitizeDNSName }}
 # TODO move to staging cluster when ready
 env: prod
+namespace: penpot
 deploy:
   event: pr
 cleanup:
@@ -9,7 +10,6 @@ cleanup:
 chart:
   name: https://github.com/tokens-studio/tokens-studio-for-penpot.git?branch={{ .BRANCH }}&path=/.gimlet/k8s/penpot/
 values:
-  namespace: "penpot"
   redis:
     replica:
       replicaCount: 0

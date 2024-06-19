@@ -1,12 +1,12 @@
 app: penpot
 env: prod
+namespace: penpot
 deploy:
   branch: token-studio-develop
   event: push
 chart:
   name: https://github.com/tokens-studio/tokens-studio-for-penpot.git?branch={{ .BRANCH }}&path=/.gimlet/k8s/penpot/
 values:
-  namespace: "penpot"
   redis:
     replica:
       replicaCount: 0
