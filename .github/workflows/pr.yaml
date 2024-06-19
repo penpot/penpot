@@ -14,6 +14,9 @@ jobs:
           - dockerfile: Dockerfile.frontend
             type: pr-frontend
             name: frontend
+          - dockerfile: Dockerfile.backend
+            type: pr-backend
+            name: backend
     permissions:
       contents: read
       packages: write
@@ -68,4 +71,3 @@ jobs:
         env:
           GIMLET_SERVER: ${{ secrets.GIMLET_SERVER }}
           GIMLET_TOKEN: ${{ secrets.GIMLET_TOKEN }}
-          DEPLOY: 'true'
