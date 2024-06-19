@@ -20,7 +20,7 @@
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwt]
    [app.main.store :as st]
-   [app.plugins.shape :as shapes]
+   [app.plugins.shape :as shape]
    [app.plugins.utils :as u]
    [app.util.object :as obj]))
 
@@ -157,63 +157,81 @@
     :get #(-> % u/proxy->library-color :name)
     :set
     (fn [self value]
-      (if (and (some? value) (string? value))
+      (cond
+        (not (string? value))
+        (u/display-not-valid :library-color-name value)
+
+        :else
         (let [color (u/proxy->library-color self)
               value (dm/str (d/nilv (:path color) "") " / " value)]
-          (st/emit! (dwl/rename-color file-id id value)))
-        (u/display-not-valid :library-color-name value)))}
+          (st/emit! (dwl/rename-color file-id id value)))))}
 
    {:name "path"
     :get #(-> % u/proxy->library-color :path)
     :set
     (fn [self value]
-      (if (and (some? value) (string? value))
+      (cond
+        (not (string? value))
+        (u/display-not-valid :library-color-path value)
+
+        :else
         (let [color (-> (u/proxy->library-color self)
                         (update :name #(str value " / " %)))]
-          (st/emit! (dwl/update-color color file-id)))
-        (u/display-not-valid :library-color-path value)))}
+          (st/emit! (dwl/update-color color file-id)))))}
 
    {:name "color"
     :get #(-> % u/proxy->library-color :color)
     :set
     (fn [self value]
-      (if (and (some? value) (string? value) (cc/valid-hex-color? value))
+      (cond
+        (or (not (string? value)) (not (cc/valid-hex-color? value)))
+        (u/display-not-valid :library-color-color value)
+
+        :else
         (let [color (-> (u/proxy->library-color self)
                         (assoc :color value))]
-          (st/emit! (dwl/update-color color file-id)))
-        (u/display-not-valid :library-color-color value)))}
+          (st/emit! (dwl/update-color color file-id)))))}
 
    {:name "opacity"
     :get #(-> % u/proxy->library-color :opacity)
     :set
     (fn [self value]
-      (if (and (some? value) (number? value) (>= value 0) (<= value 1))
+      (cond
+        (or (not (number? value)) (< value 0) (> value 1))
+        (u/display-not-valid :library-color-opacity value)
+
+        :else
         (let [color (-> (u/proxy->library-color self)
                         (assoc :opacity value))]
-          (st/emit! (dwl/update-color color file-id)))
-        (u/display-not-valid :library-color-opacity value)))}
+          (st/emit! (dwl/update-color color file-id)))))}
 
    {:name "gradient"
     :get #(-> % u/proxy->library-color :gradient u/to-js)
     :set
     (fn [self value]
       (let [value (u/from-js value)]
-        (if (sm/fast-check! ::ctc/gradient value)
+        (cond
+          (not (sm/validate ::ctc/gradient value))
+          (u/display-not-valid :library-color-gradient value)
+
+          :else
           (let [color (-> (u/proxy->library-color self)
                           (assoc :gradient value))]
-            (st/emit! (dwl/update-color color file-id)))
-          (u/display-not-valid :library-color-gradient value))))}
+            (st/emit! (dwl/update-color color file-id))))))}
 
    {:name "image"
     :get #(-> % u/proxy->library-color :image u/to-js)
     :set
     (fn [self value]
       (let [value (u/from-js value)]
-        (if (sm/fast-check! ::ctc/image-color value)
+        (cond
+          (not (sm/validate ::ctc/image-color value))
+          (u/display-not-valid :library-color-image value)
+
+          :else
           (let [color (-> (u/proxy->library-color self)
                           (assoc :image value))]
-            (st/emit! (dwl/update-color color file-id)))
-          (u/display-not-valid :library-color-image value))))}))
+            (st/emit! (dwl/update-color color file-id))))))}))
 
 (deftype LibraryTypographyProxy [$plugin $file $id]
   Object
@@ -231,21 +249,31 @@
 
   (applyToText
     [_ shape]
-    (let [shape-id   (obj/get shape "$id")
-          typography (u/locate-library-typography $file $id)]
-      (st/emit! (dwt/apply-typography #{shape-id} typography $file))))
+    (cond
+      (not (shape/shape-proxy? shape))
+      (u/display-not-valid :applyToText shape)
+
+      :else
+      (let [shape-id   (obj/get shape "$id")
+            typography (u/locate-library-typography $file $id)]
+        (st/emit! (dwt/apply-typography #{shape-id} typography $file)))))
 
   (applyToTextRange
     [self range]
-    (let [shape-id (obj/get range "$id")
-          start    (obj/get range "start")
-          end      (obj/get range "end")
-          typography (u/proxy->library-typography self)
-          attrs (-> typography
-                    (assoc :typography-ref-file $file)
-                    (assoc :typography-ref-id (:id typography))
-                    (dissoc :id :name))]
-      (st/emit! (dwt/update-text-range shape-id start end attrs))))
+    (cond
+      (not (shape/text-range? range))
+      (u/display-not-valid :applyToText range)
+
+      :else
+      (let [shape-id (obj/get range "$id")
+            start    (obj/get range "start")
+            end      (obj/get range "end")
+            typography (u/proxy->library-typography self)
+            attrs (-> typography
+                      (assoc :typography-ref-file $file)
+                      (assoc :typography-ref-id (:id typography))
+                      (dissoc :id :name))]
+        (st/emit! (dwt/update-text-range shape-id start end attrs)))))
 
   ;; PLUGIN DATA
   (getPluginData
@@ -322,6 +350,8 @@
 (defn lib-typography-proxy? [p]
   (instance? LibraryTypographyProxy p))
 
+(set! shape/lib-typography-proxy? lib-typography-proxy?)
+
 (defn lib-typography-proxy
   [plugin-id file-id id]
   (assert (uuid? file-id))
@@ -338,111 +368,144 @@
     :get #(-> % u/proxy->library-typography :name)
     :set
     (fn [self value]
-      (if (and (some? value) (string? value))
+      (cond
+        (not (string? value))
+        (u/display-not-valid :library-typography-name value)
+
+        :else
         (let [typo (u/proxy->library-typography self)
               value (dm/str (d/nilv (:path typo) "") " / " value)]
-          (st/emit! (dwl/rename-typography file-id id value)))
-        (u/display-not-valid :library-typography-name value)))}
+          (st/emit! (dwl/rename-typography file-id id value)))))}
 
    {:name "path"
     :get #(-> % u/proxy->library-typography :path)
     :set
     (fn [self value]
-      (if (and (some? value) (string? value))
+      (cond
+        (not (string? value))
+        (u/display-not-valid :library-typography-path value)
+
+        :else
         (let [typo (-> (u/proxy->library-typography self)
                        (update :name #(str value " / " %)))]
-          (st/emit! (dwl/update-typography typo file-id)))
-        (u/display-not-valid :library-typography-path value)))}
+          (st/emit! (dwl/update-typography typo file-id)))))}
 
    {:name "fontId"
     :get #(-> % u/proxy->library-typography :font-id)
     :set
     (fn [self value]
-      (if (and (some? value) (string? value))
+      (cond
+        (not (string? value))
+        (u/display-not-valid :library-typography-font-id value)
+
+        :else
         (let [typo (-> (u/proxy->library-typography self)
                        (assoc :font-id value))]
-          (st/emit! (dwl/update-typography typo file-id)))
-        (u/display-not-valid :library-typography-font-id value)))}
+          (st/emit! (dwl/update-typography typo file-id)))))}
 
    {:name "fontFamily"
     :get #(-> % u/proxy->library-typography :font-family)
     :set
     (fn [self value]
-      (if (and (some? value) (string? value))
+      (cond
+        (not (string? value))
+        (u/display-not-valid :library-typography-font-family value)
+
+        :else
         (let [typo (-> (u/proxy->library-typography self)
                        (assoc :font-family value))]
-          (st/emit! (dwl/update-typography typo file-id)))
-        (u/display-not-valid :library-typography-font-family value)))}
+          (st/emit! (dwl/update-typography typo file-id)))))}
 
    {:name "fontVariantId"
     :get #(-> % u/proxy->library-typography :font-variant-id)
     :set
     (fn [self value]
-      (if (and (some? value) (string? value))
+      (cond
+        (not (string? value))
+        (u/display-not-valid :library-typography-font-variant-id value)
+
+        :else
         (let [typo (-> (u/proxy->library-typography self)
                        (assoc :font-variant-id value))]
-          (st/emit! (dwl/update-typography typo file-id)))
-        (u/display-not-valid :library-typography-font-variant-id value)))}
+          (st/emit! (dwl/update-typography typo file-id)))))}
 
    {:name "fontSize"
     :get #(-> % u/proxy->library-typography :font-size)
     :set
     (fn [self value]
-      (if (and (some? value) (string? value))
+      (cond
+        (not (string? value))
+        (u/display-not-valid :library-typography-font-size value)
+
+        :else
         (let [typo (-> (u/proxy->library-typography self)
                        (assoc :font-size value))]
-          (st/emit! (dwl/update-typography typo file-id)))
-        (u/display-not-valid :library-typography-font-size value)))}
+          (st/emit! (dwl/update-typography typo file-id)))))}
 
    {:name "fontWeight"
     :get #(-> % u/proxy->library-typography :font-weight)
     :set
     (fn [self value]
-      (if (and (some? value) (string? value))
+      (cond
+        (not (string? value))
+        (u/display-not-valid :library-typography-font-weight value)
+
+        :else
         (let [typo (-> (u/proxy->library-typography self)
                        (assoc :font-weight value))]
-          (st/emit! (dwl/update-typography typo file-id)))
-        (u/display-not-valid :library-typography-font-weight value)))}
+          (st/emit! (dwl/update-typography typo file-id)))))}
 
    {:name "fontStyle"
     :get #(-> % u/proxy->library-typography :font-style)
     :set
     (fn [self value]
-      (if (and (some? value) (string? value))
+      (cond
+        (not (string? value))
+        (u/display-not-valid :library-typography-font-style value)
+
+        :else
         (let [typo (-> (u/proxy->library-typography self)
                        (assoc :font-style value))]
-          (st/emit! (dwl/update-typography typo file-id)))
-        (u/display-not-valid :library-typography-font-style value)))}
+          (st/emit! (dwl/update-typography typo file-id)))))}
 
    {:name "lineHeight"
     :get #(-> % u/proxy->library-typography :font-height)
     :set
     (fn [self value]
-      (if (and (some? value) (string? value))
+      (cond
+        (not (string? value))
+        (u/display-not-valid :library-typography-font-height value)
+
+        :else
         (let [typo (-> (u/proxy->library-typography self)
                        (assoc :font-height value))]
-          (st/emit! (dwl/update-typography typo file-id)))
-        (u/display-not-valid :library-typography-font-height value)))}
+          (st/emit! (dwl/update-typography typo file-id)))))}
 
    {:name "letterSpacing"
     :get #(-> % u/proxy->library-typography :letter-spacing)
     :set
     (fn [self value]
-      (if (and (some? value) (string? value))
+      (cond
+        (not (string? value))
+        (u/display-not-valid :library-typography-letter-spacing value)
+
+        :else
         (let [typo (-> (u/proxy->library-typography self)
                        (assoc :letter-spacing value))]
-          (st/emit! (dwl/update-typography typo file-id)))
-        (u/display-not-valid :library-typography-letter-spacing value)))}
+          (st/emit! (dwl/update-typography typo file-id)))))}
 
    {:name "textTransform"
     :get #(-> % u/proxy->library-typography :text-transform)
     :set
     (fn [self value]
-      (if (and (some? value) (string? value))
+      (cond
+        (not (string? value))
+        (u/display-not-valid :library-typography-text-transform value)
+
+        :else
         (let [typo (-> (u/proxy->library-typography self)
                        (assoc :text-transform value))]
-          (st/emit! (dwl/update-typography typo file-id)))
-        (u/display-not-valid :library-typography-text-transform value)))}))
+          (st/emit! (dwl/update-typography typo file-id)))))}))
 
 (deftype LibraryComponentProxy [$plugin $file $id]
   Object
@@ -455,7 +518,7 @@
     [_]
     (let [id-ref (atom nil)]
       (st/emit! (dwl/instantiate-component $file $id (gpt/point 0 0) {:id-ref id-ref}))
-      (shapes/shape-proxy $plugin @id-ref)))
+      (shape/shape-proxy $plugin @id-ref)))
 
   (getPluginData
     [self key]
@@ -547,21 +610,27 @@
     :get #(-> % u/proxy->library-component :name)
     :set
     (fn [self value]
-      (if (and (some? value) (string? value))
+      (cond
+        (not (string? value))
+        (u/display-not-valid :library-component-name value)
+
+        :else
         (let [component (u/proxy->library-component self)
               value (dm/str (d/nilv (:path component) "") " / " value)]
-          (st/emit! (dwl/rename-component id value)))
-        (u/display-not-valid :library-component-name value)))}
+          (st/emit! (dwl/rename-component id value)))))}
 
    {:name "path"
     :get #(-> % u/proxy->library-component :path)
     :set
     (fn [self value]
-      (if (and (some? value) (string? value))
+      (cond
+        (not (string? value))
+        (u/display-not-valid :library-component-path value)
+
+        :else
         (let [component (u/proxy->library-component self)
               value (dm/str value " / " (:name component))]
-          (st/emit! (dwl/rename-component id value)))
-        (u/display-not-valid :library-component-path value)))}))
+          (st/emit! (dwl/rename-component id value)))))}))
 
 (deftype Library [$plugin $id]
   Object

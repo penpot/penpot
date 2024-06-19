@@ -11,6 +11,8 @@
    [app.main.data.workspace.texts :as dwt]
    [app.main.fonts :as fonts]
    [app.main.store :as st]
+   [app.plugins.shape :as shape]
+   [app.plugins.utils :as u]
    [app.util.object :as obj]
    [cuerdas.core :as str]))
 
@@ -20,24 +22,38 @@
   Object
 
   (applyToText [_ text variant]
-    (let [id (obj/get text "$id")
-          values {:font-id fontId
-                  :font-family fontFamily
-                  :font-style (d/nilv (obj/get variant "fontStyle") fontStyle)
-                  :font-variant-id (d/nilv (obj/get variant "fontVariantId") fontVariantId)
-                  :font-weight (d/nilv (obj/get variant "fontWeight") fontWeight)}]
-      (st/emit! (dwt/update-attrs id values))))
+    (cond
+      (not (shape/shape-proxy? text))
+      (u/display-not-valid :applyToText text)
+
+      ;; TODO: Check variant inside font variants
+
+      :else
+      (let [id (obj/get text "$id")
+            values {:font-id fontId
+                    :font-family fontFamily
+                    :font-style (d/nilv (obj/get variant "fontStyle") fontStyle)
+                    :font-variant-id (d/nilv (obj/get variant "fontVariantId") fontVariantId)
+                    :font-weight (d/nilv (obj/get variant "fontWeight") fontWeight)}]
+        (st/emit! (dwt/update-attrs id values)))))
 
   (applyToRange [_ range variant]
-    (let [id    (obj/get range "$id")
-          start (obj/get range "start")
-          end   (obj/get range "end")
-          values {:font-id fontId
-                  :font-family fontFamily
-                  :font-style (d/nilv (obj/get variant "fontStyle") fontStyle)
-                  :font-variant-id (d/nilv (obj/get variant "fontVariantId") fontVariantId)
-                  :font-weight (d/nilv (obj/get variant "fontWeight") fontWeight)}]
-      (st/emit! (dwt/update-text-range id start end values)))))
+    (cond
+      (not (shape/text-range? range))
+      (u/display-not-valid :applyToRange range)
+
+      ;; TODO: Check variant inside font variants
+
+      :else
+      (let [id    (obj/get range "$id")
+            start (obj/get range "start")
+            end   (obj/get range "end")
+            values {:font-id fontId
+                    :font-family fontFamily
+                    :font-style (d/nilv (obj/get variant "fontStyle") fontStyle)
+                    :font-variant-id (d/nilv (obj/get variant "fontVariantId") fontVariantId)
+                    :font-weight (d/nilv (obj/get variant "fontWeight") fontWeight)}]
+        (st/emit! (dwt/update-text-range id start end values))))))
 
 (defn font-proxy? [p]
   (instance? PenpotFont p))
@@ -63,23 +79,43 @@
   Object
   (findById
     [_ id]
-    (font-proxy (d/seek #(str/includes? (str/lower (:id %)) (str/lower id)) (vals @fonts/fontsdb))))
+    (cond
+      (not (string? id))
+      (u/display-not-valid :findbyId id)
+
+      :else
+      (font-proxy (d/seek #(str/includes? (str/lower (:id %)) (str/lower id)) (vals @fonts/fontsdb)))))
 
   (findByName
     [_ name]
-    (font-proxy (d/seek #(str/includes? (str/lower (:name %)) (str/lower name)) (vals @fonts/fontsdb))))
+    (cond
+      (not (string? name))
+      (u/display-not-valid :findByName name)
+
+      :else
+      (font-proxy (d/seek #(str/includes? (str/lower (:name %)) (str/lower name)) (vals @fonts/fontsdb)))))
 
   (findAllById
     [_ id]
-    (apply array (->> (vals @fonts/fontsdb)
-                      (filter #(str/includes? (str/lower (:id %)) (str/lower id)))
-                      (map font-proxy))))
+    (cond
+      (not (string? id))
+      (u/display-not-valid :findAllById name)
+
+      :else
+      (apply array (->> (vals @fonts/fontsdb)
+                        (filter #(str/includes? (str/lower (:id %)) (str/lower id)))
+                        (map font-proxy)))))
 
   (findAllByName
     [_ name]
-    (apply array (->> (vals @fonts/fontsdb)
-                      (filter #(str/includes? (str/lower (:name %)) (str/lower name)))
-                      (map font-proxy)))))
+    (cond
+      (not (string? name))
+      (u/display-not-valid :findAllByName name)
+
+      :else
+      (apply array (->> (vals @fonts/fontsdb)
+                        (filter #(str/includes? (str/lower (:name %)) (str/lower name)))
+                        (map font-proxy))))))
 
 (defn fonts-subcontext
   [plugin-id]

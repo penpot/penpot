@@ -14,12 +14,18 @@
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.record :as crc]
+   [app.common.schema :as sm]
    [app.common.spec :as us]
    [app.common.svg.path.legacy-parser2 :as spp]
    [app.common.text :as txt]
+   [app.common.types.grid :as ctg]
    [app.common.types.shape :as cts]
+   [app.common.types.shape.blur :as ctsb]
+   [app.common.types.shape.export :as ctse]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.shape.path :as ctsp]
    [app.common.types.shape.radius :as ctsr]
+   [app.common.types.shape.shadow :as ctss]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.groups :as dwg]
@@ -36,6 +42,7 @@
    [app.util.text-editor :as ted]
    [cuerdas.core :as str]))
 
+(def lib-typography-proxy? nil)
 
 (deftype TextRange [$plugin $file $page $id start end]
   Object
@@ -52,7 +59,10 @@
   (let [s (set values)]
     (if (= (count s) 1) (first s) "mixed")))
 
-;; TODO Validate inputs
+(defn text-range?
+  [range]
+  (instance? TextRange range))
+
 (defn text-range
   [plugin-id file-id page-id id start end]
   (-> (TextRange. plugin-id file-id page-id id start end)
@@ -77,7 +87,12 @@
 
         :set
         (fn [_ value]
-          (st/emit! (dwt/update-text-range id start end {:font-id value})))}
+          (cond
+            (not (string? value))
+            (u/display-not-valid :fontId value)
+
+            :else
+            (st/emit! (dwt/update-text-range id start end {:font-id value}))))}
 
        {:name "fontFamily"
         :get #(let [range-data
@@ -86,7 +101,12 @@
 
         :set
         (fn [_ value]
-          (st/emit! (dwt/update-text-range id start end {:font-family value})))}
+          (cond
+            (not (string? value))
+            (u/display-not-valid :fontFamily value)
+
+            :else
+            (st/emit! (dwt/update-text-range id start end {:font-family value}))))}
 
        {:name "fontVariantId"
         :get #(let [range-data
@@ -94,7 +114,12 @@
                 (->> range-data (map :font-variant-id) mixed-value))
         :set
         (fn [_ value]
-          (st/emit! (dwt/update-text-range id start end {:font-variant-id value})))}
+          (cond
+            (not (string? value))
+            (u/display-not-valid :fontVariantId value)
+
+            :else
+            (st/emit! (dwt/update-text-range id start end {:font-variant-id value}))))}
 
        {:name "fontSize"
         :get #(let [range-data
@@ -102,7 +127,12 @@
                 (->> range-data (map :font-size) mixed-value))
         :set
         (fn [_ value]
-          (st/emit! (dwt/update-text-range id start end {:font-size value})))}
+          (cond
+            (not (string? value))
+            (u/display-not-valid :fontSize value)
+
+            :else
+            (st/emit! (dwt/update-text-range id start end {:font-size value}))))}
 
        {:name "fontWeight"
         :get #(let [range-data
@@ -110,7 +140,12 @@
                 (->> range-data (map :font-weight) mixed-value))
         :set
         (fn [_ value]
-          (st/emit! (dwt/update-text-range id start end {:font-weight value})))}
+          (cond
+            (not (string? value))
+            (u/display-not-valid :fontWeight value)
+
+            :else
+            (st/emit! (dwt/update-text-range id start end {:font-weight value}))))}
 
        {:name "fontStyle"
         :get #(let [range-data
@@ -118,7 +153,12 @@
                 (->> range-data (map :font-style) mixed-value))
         :set
         (fn [_ value]
-          (st/emit! (dwt/update-text-range id start end {:font-style value})))}
+          (cond
+            (not (string? value))
+            (u/display-not-valid :fontStyle value)
+
+            :else
+            (st/emit! (dwt/update-text-range id start end {:font-style value}))))}
 
        {:name "lineHeight"
         :get #(let [range-data
@@ -126,7 +166,12 @@
                 (->> range-data (map :line-height) mixed-value))
         :set
         (fn [_ value]
-          (st/emit! (dwt/update-text-range id start end {:line-height value})))}
+          (cond
+            (not (string? value))
+            (u/display-not-valid :lineHeight value)
+
+            :else
+            (st/emit! (dwt/update-text-range id start end {:line-height value}))))}
 
        {:name "letterSpacing"
         :get #(let [range-data
@@ -134,7 +179,12 @@
                 (->> range-data (map :letter-spacing) mixed-value))
         :set
         (fn [_ value]
-          (st/emit! (dwt/update-text-range id start end {:letter-spacing value})))}
+          (cond
+            (not (string? value))
+            (u/display-not-valid :letterSpacing value)
+
+            :else
+            (st/emit! (dwt/update-text-range id start end {:letter-spacing value}))))}
 
        {:name "textTransform"
         :get #(let [range-data
@@ -142,7 +192,12 @@
                 (->> range-data (map :text-transform) mixed-value))
         :set
         (fn [_ value]
-          (st/emit! (dwt/update-text-range id start end {:text-transform value})))}
+          (cond
+            (not (string? value))
+            (u/display-not-valid :textTransform value)
+
+            :else
+            (st/emit! (dwt/update-text-range id start end {:text-transform value}))))}
 
        {:name "textDecoration"
         :get #(let [range-data
@@ -150,7 +205,12 @@
                 (->> range-data (map :text-decoration) mixed-value))
         :set
         (fn [_ value]
-          (st/emit! (dwt/update-text-range id start end {:text-decoration value})))}
+          (cond
+            (not (string? value))
+            (u/display-not-valid :textDecoration value)
+
+            :else
+            (st/emit! (dwt/update-text-range id start end {:text-decoration value}))))}
 
        {:name "direction"
         :get #(let [range-data
@@ -158,7 +218,12 @@
                 (->> range-data (map :direction) mixed-value))
         :set
         (fn [_ value]
-          (st/emit! (dwt/update-text-range id start end {:direction value})))}
+          (cond
+            (not (string? value))
+            (u/display-not-valid :direction value)
+
+            :else
+            (st/emit! (dwt/update-text-range id start end {:direction value}))))}
 
        {:name "fills"
         :get #(let [range-data
@@ -167,7 +232,12 @@
         :set
         (fn [_ value]
           (let [value (mapv #(u/from-js %) value)]
-            (st/emit! (dwt/update-text-range id start end {:fills value}))))})))
+            (cond
+              (not (sm/validate [:vector ::cts/fill] value))
+              (u/display-not-valid :fills value)
+
+              :else
+              (st/emit! (dwt/update-text-range id start end {:fills value})))))})))
 
 (declare shape-proxy)
 
@@ -199,8 +269,16 @@
   Object
   (resize
     [_ width height]
-    (st/emit! (dw/update-dimensions [$id] :width width)
-              (dw/update-dimensions [$id] :height height)))
+    (cond
+      (or (not (us/safe-number? width)) (<= width 0))
+      (u/display-not-valid :resize width)
+
+      (or (not (us/safe-number? height)) (<= height 0))
+      (u/display-not-valid :resize height)
+
+      :else
+      (st/emit! (dw/update-dimensions [$id] :width width)
+                (dw/update-dimensions [$id] :height height))))
 
   (rotate
     [self angle center]
@@ -363,17 +441,32 @@
   (getRange
     [_ start end]
     (let [shape (u/locate-shape $file $page $id)]
-      (if (cfh/text-shape? shape)
-        (text-range $plugin $file $page $id start end)
-        (u/display-not-valid :makeMask (:type shape)))))
+      (cond
+        (not (cfh/text-shape? shape))
+        (u/display-not-valid :getRange-shape "shape is not text")
+
+        (or (not (us/safe-int? start)) (< start 0) (> start end))
+        (u/display-not-valid :getRange-start start)
+
+        (not (us/safe-int? end))
+        (u/display-not-valid :getRange-end end)
+
+        :else
+        (text-range $plugin $file $page $id start end))))
 
   (applyTypography
     [_ typography]
     (let [shape (u/locate-shape $file $page $id)]
-      (if (cfh/text-shape? shape)
+      (cond
+        (not (lib-typography-proxy? typography))
+        (u/display-not-valid :applyTypography-typography typography)
+
+        (not (cfh/text-shape? shape))
+        (u/display-not-valid :applyTypography-shape (:type shape))
+
+        :else
         (let [typography (u/proxy->library-typography typography)]
-          (st/emit! (dwt/apply-typography #{$id} typography $file)))
-        (u/display-not-valid :applyTypography (:type shape))))))
+          (st/emit! (dwt/apply-typography #{$id} typography $file)))))))
 
 (crc/define-properties!
   ShapeProxy
@@ -382,6 +475,10 @@
 
 (defn shape-proxy? [p]
   (instance? ShapeProxy p))
+
+;; Prevent circular dependency
+(do (set! flex/shape-proxy? shape-proxy?)
+    (set! grid/shape-proxy? shape-proxy?))
 
 (defn shape-proxy
   ([plugin-id id]
@@ -411,155 +508,251 @@
 
           {:name "name"
            :get #(-> % u/proxy->shape :name)
-           :set (fn [self value]
-                  (let [id (obj/get self "$id")
-                        value  (when (string? value) (-> value str/trim cfh/clean-path))
-                        valid? (and (some? value)
-                                    (not (str/ends-with? value "/"))
-                                    (not (str/blank? value)))]
-                    (if valid?
-                      (st/emit! (dwsh/update-shapes [id] #(assoc % :name value)))
-                      (u/display-not-valid :shape-name value))))}
+           :set
+           (fn [self value]
+             (let [id (obj/get self "$id")
+                   value  (when (string? value) (-> value str/trim cfh/clean-path))
+                   valid? (and (some? value)
+                               (not (str/ends-with? value "/"))
+                               (not (str/blank? value)))]
+               (cond
+                 (not valid?)
+                 (u/display-not-valid :shape-name value)
+
+                 :else
+                 (st/emit! (dwsh/update-shapes [id] #(assoc % :name value))))))}
 
           {:name "blocked"
            :get #(-> % u/proxy->shape :blocked boolean)
-           :set (fn [self value]
-                  (let [id (obj/get self "$id")]
-                    (st/emit! (dwsh/update-shapes [id] #(assoc % :blocked value)))))}
+           :set
+           (fn [self value]
+             (cond
+               (not (boolean? value))
+               (u/display-not-valid :blocked value)
+
+               :else
+               (let [id (obj/get self "$id")]
+                 (st/emit! (dwsh/update-shapes [id] #(assoc % :blocked value))))))}
 
           {:name "hidden"
            :get #(-> % u/proxy->shape :hidden boolean)
-           :set (fn [self value]
-                  (let [id (obj/get self "$id")]
-                    (st/emit! (dwsh/update-shapes [id] #(assoc % :hidden value)))))}
+           :set
+           (fn [self value]
+             (cond
+               (not (boolean? value))
+               (u/display-not-valid :hidden value)
+
+               :else
+               (let [id (obj/get self "$id")]
+                 (st/emit! (dwsh/update-shapes [id] #(assoc % :hidden value))))))}
 
           {:name "proportionLock"
            :get #(-> % u/proxy->shape :proportion-lock boolean)
-           :set (fn [self value]
-                  (let [id (obj/get self "$id")]
-                    (st/emit! (dwsh/update-shapes [id] #(assoc % :proportion-lock value)))))}
+           :set
+           (fn [self value]
+             (cond
+               (not (boolean? value))
+               (u/display-not-valid :proportionLock value)
+
+               :else
+               (let [id (obj/get self "$id")]
+                 (st/emit! (dwsh/update-shapes [id] #(assoc % :proportion-lock value))))))}
 
           {:name "constraintsHorizontal"
            :get #(-> % u/proxy->shape :constraints-h d/name)
-           :set (fn [self value]
-                  (let [id (obj/get self "$id")
-                        value (keyword value)]
-                    (when (contains? cts/horizontal-constraint-types value)
-                      (st/emit! (dwsh/update-shapes [id] #(assoc % :constraints-h value))))))}
+           :set
+           (fn [self value]
+             (let [id (obj/get self "$id")
+                   value (keyword value)]
+               (cond
+                 (not (contains? cts/horizontal-constraint-types value))
+                 (u/display-not-valid :constraintsHorizontal value)
+
+                 :else
+                 (st/emit! (dwsh/update-shapes [id] #(assoc % :constraints-h value))))))}
 
           {:name "constraintsVertical"
            :get #(-> % u/proxy->shape :constraints-v d/name)
-           :set (fn [self value]
-                  (let [id (obj/get self "$id")
-                        value (keyword value)]
-                    (when (contains? cts/vertical-constraint-types value)
-                      (st/emit! (dwsh/update-shapes [id] #(assoc % :constraints-v value))))))}
+           :set
+           (fn [self value]
+             (let [id (obj/get self "$id")
+                   value (keyword value)]
+               (cond
+                 (not (contains? cts/vertical-constraint-types value))
+                 (u/display-not-valid :constraintsVertical value)
+
+                 :else
+                 (st/emit! (dwsh/update-shapes [id] #(assoc % :constraints-v value))))))}
 
           {:name "borderRadius"
            :get #(-> % u/proxy->shape :rx)
-           :set (fn [self value]
-                  (let [id (obj/get self "$id")
-                        shape (u/proxy->shape self)]
-                    (when (us/safe-int? value)
-                      (when (or (not (ctsr/has-radius? shape)) (ctsr/radius-4? shape))
-                        (st/emit! (dwsh/update-shapes [id] ctsr/switch-to-radius-1)))
-                      (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-1 % value))))))}
+           :set
+           (fn [self value]
+             (let [id (obj/get self "$id")
+                   shape (u/proxy->shape self)]
+               (cond
+                 (or (not (us/safe-int? value)) (< value 0))
+                 (u/display-not-valid :borderRadius value)
+
+                 (or (not (ctsr/has-radius? shape)) (ctsr/radius-4? shape))
+                 (st/emit! (dwsh/update-shapes [id] #(-> %
+                                                         ctsr/switch-to-radius-1
+                                                         (ctsr/set-radius-1 value))))
+
+                 :else
+                 (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-1 % value))))))}
 
           {:name "borderRadiusTopLeft"
            :get #(-> % u/proxy->shape :r1)
-           :set (fn [self value]
-                  (let [id (obj/get self "$id")
-                        shape (u/proxy->shape self)]
-                    (when (us/safe-int? value)
-                      (when (or (not (ctsr/has-radius? shape)) (not (ctsr/radius-4? shape)))
-                        (st/emit! (dwsh/update-shapes [id] ctsr/switch-to-radius-4)))
-                      (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-4 % :r1 value))))))}
+           :set
+           (fn [self value]
+             (let [id (obj/get self "$id")
+                   shape (u/proxy->shape self)]
+               (cond
+                 (not (us/safe-int? value))
+                 (u/display-not-valid :borderRadiusTopLeft value)
+
+                 (or (not (ctsr/has-radius? shape)) (not (ctsr/radius-4? shape)))
+                 (st/emit! (dwsh/update-shapes [id] #(-> %
+                                                         (ctsr/switch-to-radius-4)
+                                                         (ctsr/set-radius-4 :r1 value))))
+
+                 :else
+                 (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-4 % :r1 value))))))}
 
           {:name "borderRadiusTopRight"
            :get #(-> % u/proxy->shape :r2)
-           :set (fn [self value]
-                  (let [id (obj/get self "$id")
-                        shape (u/proxy->shape self)]
-                    (when (us/safe-int? value)
-                      (when (or (not (ctsr/has-radius? shape)) (not (ctsr/radius-4? shape)))
-                        (st/emit! (dwsh/update-shapes [id] ctsr/switch-to-radius-4)))
-                      (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-4 % :r2 value))))))}
+           :set
+           (fn [self value]
+             (let [id (obj/get self "$id")
+                   shape (u/proxy->shape self)]
+               (cond
+                 (not (us/safe-int? value))
+                 (u/display-not-valid :borderRadiusTopRight value)
+
+                 (or (not (ctsr/has-radius? shape)) (not (ctsr/radius-4? shape)))
+                 (st/emit! (dwsh/update-shapes [id] #(-> %
+                                                         (ctsr/switch-to-radius-4)
+                                                         (ctsr/set-radius-4 :r2 value))))
+
+                 :else
+                 (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-4 % :r2 value))))))}
 
           {:name "borderRadiusBottomRight"
            :get #(-> % u/proxy->shape :r3)
-           :set (fn [self value]
-                  (let [id (obj/get self "$id")
-                        shape (u/proxy->shape self)]
-                    (when (us/safe-int? value)
-                      (when (or (not (ctsr/has-radius? shape)) (not (ctsr/radius-4? shape)))
-                        (st/emit! (dwsh/update-shapes [id] ctsr/switch-to-radius-4)))
-                      (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-4 % :r3 value))))))}
+           :set
+           (fn [self value]
+             (let [id (obj/get self "$id")
+                   shape (u/proxy->shape self)]
+               (cond
+                 (not (us/safe-int? value))
+                 (u/display-not-valid :borderRadiusBottomRight value)
+
+                 (or (not (ctsr/has-radius? shape)) (not (ctsr/radius-4? shape)))
+                 (st/emit! (dwsh/update-shapes [id] #(-> %
+                                                         (ctsr/switch-to-radius-4)
+                                                         (ctsr/set-radius-4 :r3 value))))
+
+                 :else
+                 (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-4 % :r3 value))))))}
 
           {:name "borderRadiusBottomLeft"
            :get #(-> % u/proxy->shape :r4)
-           :set (fn [self value]
-                  (let [id (obj/get self "$id")
-                        shape (u/proxy->shape self)]
-                    (when (us/safe-int? value)
-                      (when (or (not (ctsr/has-radius? shape)) (not (ctsr/radius-4? shape)))
-                        (st/emit! (dwsh/update-shapes [id] ctsr/switch-to-radius-4)))
-                      (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-4 % :r4 value))))))}
+           :set
+           (fn [self value]
+             (let [id (obj/get self "$id")
+                   shape (u/proxy->shape self)]
+               (cond
+                 (not (us/safe-int? value))
+                 (u/display-not-valid :borderRadiusBottomLeft value)
+
+                 (or (not (ctsr/has-radius? shape)) (not (ctsr/radius-4? shape)))
+                 (st/emit! (dwsh/update-shapes [id] #(-> %
+                                                         (ctsr/switch-to-radius-4)
+                                                         (ctsr/set-radius-4 :r4 value))))
+
+                 :else
+                 (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-4 % :r4 value))))))}
 
           {:name "opacity"
            :get #(-> % u/proxy->shape :opacity)
-           :set (fn [self value]
-                  (let [id (obj/get self "$id")]
-                    (when (and (us/safe-number? value) (>= value 0) (<= value 1))
-                      (st/emit! (dwsh/update-shapes [id] #(assoc % :opacity value))))))}
+           :set
+           (fn [self value]
+             (let [id (obj/get self "$id")]
+               (when (and (us/safe-number? value) (>= value 0) (<= value 1))
+                 (st/emit! (dwsh/update-shapes [id] #(assoc % :opacity value))))))}
 
           {:name "blendMode"
            :get #(-> % u/proxy->shape :blend-mode (d/nilv :normal) d/name)
-           :set (fn [self value]
-                  (let [id (obj/get self "$id")
-                        value (keyword value)]
-                    (when (contains? cts/blend-modes value)
-                      (st/emit! (dwsh/update-shapes [id] #(assoc % :blend-mode value))))))}
+           :set
+           (fn [self value]
+             (let [id (obj/get self "$id")
+                   value (keyword value)]
+               (cond
+                 (not (contains? cts/blend-modes value))
+                 (u/display-not-valid :blendMode value)
+
+                 :else
+                 (st/emit! (dwsh/update-shapes [id] #(assoc % :blend-mode value))))))}
 
           {:name "shadows"
            :get #(-> % u/proxy->shape :shadow u/array-to-js)
-           :set (fn [self value]
-                  (let [id (obj/get self "$id")
-                        value (mapv (fn [val]
-                                      ;; Merge default shadow properties
-                                      (d/patch-object
-                                       {:id (uuid/next)
-                                        :style :drop-shadow
-                                        :color {:color clr/black :opacity 0.2}
-                                        :offset-x 4
-                                        :offset-y 4
-                                        :blur 4
-                                        :spread 0
-                                        :hidden false}
-                                       (u/from-js val #{:style :type})))
-                                    value)]
-                    (st/emit! (dwsh/update-shapes [id] #(assoc % :shadow value)))))}
+           :set
+           (fn [self value]
+             (let [id (obj/get self "$id")
+                   value (mapv (fn [val]
+                                 ;; Merge default shadow properties
+                                 (d/patch-object
+                                  {:id (uuid/next)
+                                   :style :drop-shadow
+                                   :color {:color clr/black :opacity 0.2}
+                                   :offset-x 4
+                                   :offset-y 4
+                                   :blur 4
+                                   :spread 0
+                                   :hidden false}
+                                  (u/from-js val #{:style :type})))
+                               value)]
+               (cond
+                 (not (sm/validate [:vector ::ctss/shadow] value))
+                 (u/display-not-valid :shadows value)
+
+                 :else
+                 (st/emit! (dwsh/update-shapes [id] #(assoc % :shadow value))))))}
 
           {:name "blur"
            :get #(-> % u/proxy->shape :blur u/to-js)
-           :set (fn [self value]
-                  (if (nil? value)
-                    (st/emit! (dwsh/update-shapes [id] #(dissoc % :blur)))
-                    (let [id (obj/get self "$id")
-                          value
-                          (d/patch-object
-                           {:id (uuid/next)
-                            :type :layer-blur
-                            :value 4
-                            :hidden false}
-                           (u/from-js value))]
-                      (st/emit! (dwsh/update-shapes [id] #(assoc % :blur value))))))}
+           :set
+           (fn [self value]
+             (if (nil? value)
+               (st/emit! (dwsh/update-shapes [id] #(dissoc % :blur)))
+               (let [id (obj/get self "$id")
+                     value
+                     (d/patch-object
+                      {:id (uuid/next)
+                       :type :layer-blur
+                       :value 4
+                       :hidden false}
+                      (u/from-js value))]
+                 (cond
+                   (not (sm/validate ::ctsb/blur value))
+                   (u/display-not-valid :blur value)
+
+                   :else
+                   (st/emit! (dwsh/update-shapes [id] #(assoc % :blur value)))))))}
 
           {:name "exports"
            :get #(-> % u/proxy->shape :exports u/array-to-js)
-           :set (fn [self value]
-                  (let [id (obj/get self "$id")
-                        value (mapv #(u/from-js %) value)]
-                    (st/emit! (dwsh/update-shapes [id] #(assoc % :exports value)))))}
+           :set
+           (fn [self value]
+             (let [id (obj/get self "$id")
+                   value (mapv #(u/from-js %) value)]
+               (cond
+                 (not (sm/validate [:vector ::ctse/export] value))
+                 (u/display-not-valid :exports value)
+
+                 :else
+                 (st/emit! (dwsh/update-shapes [id] #(assoc % :exports value))))))}
 
           ;; Geometry properties
           {:name "x"
@@ -567,14 +760,24 @@
            :set
            (fn [self value]
              (let [id (obj/get self "$id")]
-               (st/emit! (dw/update-position id {:x value}))))}
+               (cond
+                 (not (us/safe-number? value))
+                 (u/display-not-valid :x value)
+
+                 :else
+                 (st/emit! (dw/update-position id {:x value})))))}
 
           {:name "y"
            :get #(-> % u/proxy->shape :y)
            :set
            (fn [self value]
              (let [id (obj/get self "$id")]
-               (st/emit! (dw/update-position id {:y value}))))}
+               (cond
+                 (not (us/safe-number? value))
+                 (u/display-not-valid :y value)
+
+                 :else
+                 (st/emit! (dw/update-position id {:y value})))))}
 
           {:name "parentX"
            :get (fn [self]
@@ -584,11 +787,16 @@
                     (- (:x shape) (:x parent))))
            :set
            (fn [self value]
-             (let [id (obj/get self "$id")
-                   parent-id (-> self u/proxy->shape :parent-id)
-                   parent (u/locate-shape (obj/get self "$file") (obj/get self "$page") parent-id)
-                   parent-x (:x parent)]
-               (st/emit! (dw/update-position id {:x (+ parent-x value)}))))}
+             (cond
+               (not (us/safe-number? value))
+               (u/display-not-valid :parentX value)
+
+               :else
+               (let [id (obj/get self "$id")
+                     parent-id (-> self u/proxy->shape :parent-id)
+                     parent (u/locate-shape (obj/get self "$file") (obj/get self "$page") parent-id)
+                     parent-x (:x parent)]
+                 (st/emit! (dw/update-position id {:x (+ parent-x value)})))))}
 
           {:name "parentY"
            :get (fn [self]
@@ -599,11 +807,16 @@
                     (- (:y shape) parent-y)))
            :set
            (fn [self value]
-             (let [id (obj/get self "$id")
-                   parent-id (-> self u/proxy->shape :parent-id)
-                   parent (u/locate-shape (obj/get self "$file") (obj/get self "$page") parent-id)
-                   parent-y (:y parent)]
-               (st/emit! (dw/update-position id {:y (+ parent-y value)}))))}
+             (cond
+               (not (us/safe-number? value))
+               (u/display-not-valid :parentY value)
+
+               :else
+               (let [id (obj/get self "$id")
+                     parent-id (-> self u/proxy->shape :parent-id)
+                     parent (u/locate-shape (obj/get self "$file") (obj/get self "$page") parent-id)
+                     parent-y (:y parent)]
+                 (st/emit! (dw/update-position id {:y (+ parent-y value)})))))}
 
           {:name "frameX"
            :get (fn [self]
@@ -614,11 +827,16 @@
                     (- (:x shape) frame-x)))
            :set
            (fn [self value]
-             (let [id (obj/get self "$id")
-                   frame-id (-> self u/proxy->shape :frame-id)
-                   frame (u/locate-shape (obj/get self "$file") (obj/get self "$page") frame-id)
-                   frame-x (:x frame)]
-               (st/emit! (dw/update-position id {:x (+ frame-x value)}))))}
+             (cond
+               (not (us/safe-number? value))
+               (u/display-not-valid :frameX value)
+
+               :else
+               (let [id (obj/get self "$id")
+                     frame-id (-> self u/proxy->shape :frame-id)
+                     frame (u/locate-shape (obj/get self "$file") (obj/get self "$page") frame-id)
+                     frame-x (:x frame)]
+                 (st/emit! (dw/update-position id {:x (+ frame-x value)})))))}
 
           {:name "frameY"
            :get (fn [self]
@@ -629,11 +847,16 @@
                     (- (:y shape) frame-y)))
            :set
            (fn [self value]
-             (let [id (obj/get self "$id")
-                   frame-id (-> self u/proxy->shape :frame-id)
-                   frame (u/locate-shape (obj/get self "$file") (obj/get self "$page") frame-id)
-                   frame-y (:y frame)]
-               (st/emit! (dw/update-position id {:y (+ frame-y value)}))))}
+             (cond
+               (not (us/safe-number? value))
+               (u/display-not-valid :frameY value)
+
+               :else
+               (let [id (obj/get self "$id")
+                     frame-id (-> self u/proxy->shape :frame-id)
+                     frame (u/locate-shape (obj/get self "$file") (obj/get self "$page") frame-id)
+                     frame-y (:y frame)]
+                 (st/emit! (dw/update-position id {:y (+ frame-y value)})))))}
 
           {:name "width"
            :get #(-> % u/proxy->shape :width)}
@@ -645,49 +868,70 @@
            :get #(-> % u/proxy->shape :rotation)
            :set
            (fn [self value]
-             (if (number? value)
+             (cond
+               (not (number? value))
+               (u/display-not-valid :rotation value)
+
+               :else
                (let [shape (u/proxy->shape self)]
-                 (st/emit! (dw/increase-rotation #{(:id shape)} value)))
-               (u/display-not-valid :rotation value)))}
+                 (st/emit! (dw/increase-rotation #{(:id shape)} value)))))}
 
           {:name "flipX"
            :get #(-> % u/proxy->shape :flip-x boolean)
            :set
            (fn [self value]
-             (if (boolean? value)
+             (cond
+               (not (boolean? value))
+               (u/display-not-valid :flipX value)
+
+               :else
                (let [id (obj/get self "$id")]
-                 (st/emit! (dw/flip-horizontal-selected #{id})))
-               (u/display-not-valid :flipX value)))}
+                 (st/emit! (dw/flip-horizontal-selected #{id})))))}
 
           {:name "flipY"
            :get #(-> % u/proxy->shape :flip-y boolean)
            :set
            (fn [self value]
-             (if (boolean? value)
+             (cond
+               (not (boolean? value))
+               (u/display-not-valid :flipY value)
+
+               :else
                (let [id (obj/get self "$id")]
-                 (st/emit! (dw/flip-vertical-selected #{id})))
-               (u/display-not-valid :flipY value)))}
+                 (st/emit! (dw/flip-vertical-selected #{id})))))}
 
           ;; Strokes and fills
-          ;; TODO: Validate fills input
           {:name "fills"
            :get #(if (cfh/text-shape? data)
                    (-> % u/proxy->shape text-props :fills u/array-to-js)
                    (-> % u/proxy->shape :fills u/array-to-js))
-           :set (fn [self value]
-                  (let [shape (u/proxy->shape self)
-                        id    (:id shape)
-                        value (mapv #(u/from-js %) value)]
-                    (if (cfh/text-shape? shape)
-                      (st/emit! (dwt/update-attrs id {:fills value}))
-                      (st/emit! (dwsh/update-shapes [id] #(assoc % :fills value))))))}
+           :set
+           (fn [self value]
+             (let [shape (u/proxy->shape self)
+                   id    (:id shape)
+                   value (mapv #(u/from-js %) value)]
+               (cond
+                 (not (sm/validate [:vector ::cts/fill] value))
+                 (u/display-not-valid :fills value)
+
+                 (cfh/text-shape? shape)
+                 (st/emit! (dwt/update-attrs id {:fills value}))
+
+                 :else
+                 (st/emit! (dwsh/update-shapes [id] #(assoc % :fills value))))))}
 
           {:name "strokes"
            :get #(-> % u/proxy->shape :strokes u/array-to-js)
-           :set (fn [self value]
-                  (let [id (obj/get self "$id")
-                        value (mapv #(u/from-js % #{:stroke-style :stroke-alignment}) value)]
-                    (st/emit! (dwsh/update-shapes [id] #(assoc % :strokes value)))))}
+           :set
+           (fn [self value]
+             (let [id (obj/get self "$id")
+                   value (mapv #(u/from-js % #{:stroke-style :stroke-alignment}) value)]
+               (cond
+                 (not (sm/validate [:vector ::cts/stroke] value))
+                 (u/display-not-valid :strokes value)
+
+                 :else
+                 (st/emit! (dwsh/update-shapes [id] #(assoc % :strokes value))))))}
 
           {:name "layoutChild"
            :get
@@ -742,7 +986,12 @@
                  :set (fn [self value]
                         (let [id (obj/get self "$id")
                               value (mapv #(u/from-js %) value)]
-                          (st/emit! (dwsh/update-shapes [id] #(assoc % :grids value)))))}
+                          (cond
+                            (not (sm/validate [:vector ::ctg/grid] value))
+                            (u/display-not-valid :guides value)
+
+                            :else
+                            (st/emit! (dwsh/update-shapes [id] #(assoc % :grids value))))))}
 
                 {:name "horizontalSizing"
                  :get #(-> % u/proxy->shape :layout-item-h-sizing (d/nilv :fix) d/name)
@@ -750,7 +999,11 @@
                  (fn [self value]
                    (let [id (obj/get self "$id")
                          value (keyword value)]
-                     (when (contains? #{:fix :auto} value)
+                     (cond
+                       (not (contains? #{:fix :auto} value))
+                       (u/display-not-valid :horizontalSizing value)
+
+                       :else
                        (st/emit! (dwsl/update-layout #{id} {:layout-item-h-sizing value})))))}
 
                 {:name "verticalSizing"
@@ -759,7 +1012,11 @@
                  (fn [self value]
                    (let [id (obj/get self "$id")
                          value (keyword value)]
-                     (when (contains? #{:fix :auto} value)
+                     (cond
+                       (not (contains? #{:fix :auto} value))
+                       (u/display-not-valid :verticalSizing value)
+
+                       :else
                        (st/emit! (dwsl/update-layout #{id} {:layout-item-v-sizing value})))))})))
 
          (cond-> (cfh/text-shape? data)
@@ -771,7 +1028,11 @@
                (let [id (obj/get self "$id")]
                  ;; The user is currently editing the text. We need to update the
                  ;; editor as well
-                 (when (contains? (:workspace-editor-state @st/state) id)
+                 (cond
+                   (or (not (string? value)) (empty? value))
+                   (u/display-not-valid :characters value)
+
+                   (contains? (:workspace-editor-state @st/state) id)
                    (let [shape (u/proxy->shape self)
                          editor
                          (-> shape
@@ -779,8 +1040,10 @@
                              :content
                              ted/import-content
                              ted/create-editor-state)]
-                     (st/emit! (dwt/update-editor-state shape editor))))
-                 (st/emit! (dwsh/update-shapes [id] #(txt/change-text % value)))))}
+                     (st/emit! (dwt/update-editor-state shape editor)))
+
+                   :else
+                   (st/emit! (dwsh/update-shapes [id] #(txt/change-text % value))))))}
 
             {:name "growType"
              :get #(-> % u/proxy->shape :grow-type d/name)
@@ -788,7 +1051,11 @@
              (fn [self value]
                (let [id (obj/get self "$id")
                      value (keyword value)]
-                 (when (contains? #{:auto-width :auto-height :fixed} value)
+                 (cond
+                   (not (contains? #{:auto-width :auto-height :fixed} value))
+                   (u/display-not-valid :growType value)
+
+                   :else
                    (st/emit! (dwsh/update-shapes [id] #(assoc % :grow-type value))))))}
 
             {:name "fontId"
@@ -796,63 +1063,108 @@
              :set
              (fn [self value]
                (let [id (obj/get self "$id")]
-                 (st/emit! (dwt/update-attrs id {:font-id value}))))}
+                 (cond
+                   (not (string? value))
+                   (u/display-not-valid :fontId value)
+
+                   :else
+                   (st/emit! (dwt/update-attrs id {:font-id value})))))}
 
             {:name "fontFamily"
              :get #(-> % u/proxy->shape text-props :font-family)
              :set
              (fn [self value]
                (let [id (obj/get self "$id")]
-                 (st/emit! (dwt/update-attrs id {:font-id value}))))}
+                 (cond
+                   (not (string? value))
+                   (u/display-not-valid :fontFamily value)
+
+                   :else
+                   (st/emit! (dwt/update-attrs id {:font-family value})))))}
 
             {:name "fontVariantId"
              :get #(-> % u/proxy->shape text-props :font-variant-id)
              :set
              (fn [self value]
                (let [id (obj/get self "$id")]
-                 (st/emit! (dwt/update-attrs id {:font-id value}))))}
+                 (cond
+                   (not (string? value))
+                   (u/display-not-valid :fontVariantId value)
+
+                   :else
+                   (st/emit! (dwt/update-attrs id {:font-variant-id value})))))}
 
             {:name "fontSize"
              :get #(-> % u/proxy->shape text-props :font-size)
              :set
              (fn [self value]
                (let [id (obj/get self "$id")]
-                 (st/emit! (dwt/update-attrs id {:font-size value}))))}
+                 (cond
+                   (not (string? value))
+                   (u/display-not-valid :fontSize value)
+
+                   :else
+                   (st/emit! (dwt/update-attrs id {:font-size value})))))}
 
             {:name "fontWeight"
              :get #(-> % u/proxy->shape text-props :font-weight)
              :set
              (fn [self value]
                (let [id (obj/get self "$id")]
-                 (st/emit! (dwt/update-attrs id {:font-id value}))))}
+                 (cond
+                   (not (string? value))
+                   (u/display-not-valid :fontWeight value)
+
+                   :else
+                   (st/emit! (dwt/update-attrs id {:font-weight value})))))}
 
             {:name "fontStyle"
              :get #(-> % u/proxy->shape text-props :font-style)
              :set
              (fn [self value]
                (let [id (obj/get self "$id")]
-                 (st/emit! (dwt/update-attrs id {:font-style value}))))}
+                 (cond
+                   (not (string? value))
+                   (u/display-not-valid :fontStyle value)
+
+                   :else
+                   (st/emit! (dwt/update-attrs id {:font-style value})))))}
 
             {:name "lineHeight"
              :get #(-> % u/proxy->shape text-props :line-height)
              :set
              (fn [self value]
                (let [id (obj/get self "$id")]
-                 (st/emit! (dwt/update-attrs id {:line-height value}))))}
+                 (cond
+                   (not (string? value))
+                   (u/display-not-valid :lineHeight value)
+
+                   :else
+                   (st/emit! (dwt/update-attrs id {:line-height value})))))}
 
             {:name "letterSpacing"
              :get #(-> % u/proxy->shape text-props :letter-spacing)
              :set
              (fn [self value]
                (let [id (obj/get self "$id")]
-                 (st/emit! (dwt/update-attrs id {:letter-spacing value}))))}
+                 (cond
+                   (not (string? value))
+                   (u/display-not-valid :letterSpacing value)
+
+                   :else
+                   (st/emit! (dwt/update-attrs id {:letter-spacing value})))))}
 
             {:name "textTransform"
              :get #(-> % u/proxy->shape text-props :text-transform)
              :set
              (fn [self value]
                (let [id (obj/get self "$id")]
-                 (st/emit! (dwt/update-attrs id {:text-transform value}))))}))
+                 (cond
+                   (not (string? value))
+                   (u/display-not-valid :textTransform value)
+
+                   :else
+                   (st/emit! (dwt/update-attrs id {:text-transform value})))))}))
 
          (cond-> (or (cfh/path-shape? data) (cfh/bool-shape? data))
            (crc/add-properties!
@@ -864,7 +1176,12 @@
                      (->> value
                           (map u/from-js)
                           (mapv parse-command)
-                          (spp/simplify-commands))
-                     selrect  (gsh/content->selrect content)
-                     points   (grc/rect->points selrect)]
-                 (st/emit! (dwsh/update-shapes [id] (fn [shape] (assoc shape :content content :selrect selrect :points points))))))}))))))
+                          (spp/simplify-commands))]
+                 (cond
+                   (not (sm/validate ::ctsp/content content))
+                   (u/display-not-valid :content value)
+
+                   :else
+                   (let [selrect  (gsh/content->selrect content)
+                         points   (grc/rect->points selrect)]
+                     (st/emit! (dwsh/update-shapes [id] (fn [shape] (assoc shape :content content :selrect selrect :points points))))))))}))))))

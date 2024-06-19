@@ -21,8 +21,13 @@
   Object
   (getShapeById
     [_ shape-id]
-    (let [shape-id (uuid/uuid shape-id)]
-      (shape/shape-proxy $plugin $file $id shape-id)))
+    (cond
+      (not (string? shape-id))
+      (u/display-not-valid :getShapeById shape-id)
+
+      :else
+      (let [shape-id (uuid/uuid shape-id)]
+        (shape/shape-proxy $plugin $file $id shape-id))))
 
   (getRoot
     [_]
@@ -125,9 +130,12 @@
     :get #(-> % u/proxy->page :name)
     :set
     (fn [_ value]
-      (if (string? value)
-        (st/emit! (dw/rename-page id value))
-        (u/display-not-valid :page-name value)))}
+      (cond
+        (not (string? value))
+        (u/display-not-valid :page-name value)
+
+        :else
+        (st/emit! (dw/rename-page id value))))}
 
    {:name "root"
     :enumerable false
@@ -138,6 +146,9 @@
     :get #(or (-> % u/proxy->page :options :background) cc/canvas)
     :set
     (fn [_ value]
-      (if (and (some? value) (string? value) (cc/valid-hex-color? value))
-        (st/emit! (dw/change-canvas-color id {:color value}))
-        (u/display-not-valid :page-background-color value)))}))
+      (cond
+        (or (not (string? value)) (not (cc/valid-hex-color? value)))
+        (u/display-not-valid :page-background-color value)
+
+        :else
+        (st/emit! (dw/change-canvas-color id {:color value}))))}))
