@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-04-24 12:55+0000\n"
+"PO-Revision-Date: 2024-06-17 08:07+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Portuguese (Portugal) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_PT/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.5.1-dev\n"
+"X-Generator: Weblate 5.6-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -48,6 +48,7 @@ msgid "auth.fullname"
 msgstr "Nome completo"
 
 #: src/app/main/ui/auth/register.cljs
+#, fuzzy
 msgid "auth.login-here"
 msgstr "Iniciar sessão"
 
@@ -175,12 +176,6 @@ msgid "auth.terms-privacy-agreement"
 msgstr ""
 "Ao criar uma nova conta, concordas com os nossos termos de serviço e "
 "política de privacidade."
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.terms-privacy-agreement-md"
-msgstr ""
-"Ao criar uma nova conta, concordas com os nossos [termos de serviço](%s) e "
-"[política de privacidade](%s)."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
@@ -2429,108 +2424,80 @@ msgid "profile.recovery.go-to-login"
 msgstr "Ir para login"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "question.design-tool-more-experienced-with"
-msgstr "Com que ferramenta de design tens mais experiência?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.11-30"
+msgid "onboarding.questions.team-size.11-30"
 msgstr "11-30"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.2-10"
+msgid "onboarding.questions.team-size.2-10"
 msgstr "2-10"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.31-50"
+msgid "onboarding.questions.team-size.31-50"
 msgstr "31-50"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.adobe-xd"
+msgid "labels.adobe-xd"
 msgstr "Adobe XD"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.canva"
+msgid "labels.canva"
 msgstr "Canva"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.figma"
+msgid "labels.figma"
 msgstr "Figma"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.freelancer"
+msgid "labels.freelancer"
 msgstr "Sou trabalhador(a) independente (freelancer)"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.invision"
+msgid "labels.invision"
 msgstr "InVision"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.lets-get-started"
+msgid "onboarding.questions.lets-get-started"
 msgstr "Vamos começar!"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.more-than-50"
+msgid "onboarding.questions.team-size.more-than-50"
 msgstr "Mais de 50"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.next"
+msgid "labels.next"
 msgstr "Seguinte"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.other"
+msgid "labels.other"
 msgstr "Outra (especificar)"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.personal-project"
+msgid "onboarding.questions.team-size.personal-project"
 msgstr "Estou a trabalhar num projeto pessoal"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.previous"
+msgid "labels.previous"
 msgstr "Anterior"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.select-option"
+msgid "labels.select-option"
 msgstr "Escolhe uma opção"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.sketch"
+msgid "labels.sketch"
 msgstr "Sketch"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.start"
+msgid "labels.start"
 msgstr "Começar"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.student-teacher"
+msgid "labels.student-teacher"
 msgstr "Estudante ou professor(a)"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.team-size"
+msgid "onboarding.questions.step3.question3"
 msgstr "De que tamanho é a tua equipa?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.test-penpot-to-see-if-its-a-fit-for-team"
-msgstr "Testar o Penpot para ver se é adequado para a minha equipa "
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.try-out-before-using-penpot-on-premise"
-msgstr "Experimentar o Penpot antes de usar num servidor privado"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.wireframes-user-journeys-flows-navigation-trees"
-msgstr ""
-"...wireframes, jornadas e fluxos de utilizador, árvores de navegação, etc."
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.work-in-concept-ideas"
-msgstr "Concetualizar ideias"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.your-feedback-will-help-us"
-msgstr ""
-"Os teus comentários ajudar-nos-ão a compreender os teus hábitos e "
-"preferências para que possamos continuar a tornar o Penpot numa ferramenta "
-"fácil e divertida de usar."
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
 msgid "settings.detach"
@@ -5157,10 +5124,6 @@ msgstr[1] "Mover bibliotecas"
 msgid "onboarding.team-modal.team-definition"
 msgstr "O que é uma equipa?"
 
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.never-used-one"
-msgstr "Nenhuma"
-
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs
 msgid "settings.select-this-color"
 msgstr "Selecionar itens que usem este estilo"
@@ -5243,4 +5206,3 @@ msgstr "Filtrar"
 
 #~ msgid "workspace.options.layout.direction.left"
 #~ msgstr "Linha"
-

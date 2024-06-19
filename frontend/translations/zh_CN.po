@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-05 10:42+0000\n"
+"PO-Revision-Date: 2024-06-17 08:07+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Chinese (Simplified) <https://hosted.weblate.org/projects/"
 "penpot/frontend/zh_Hans/>\n"
@@ -44,6 +44,7 @@ msgid "auth.fullname"
 msgstr "全名"
 
 #: src/app/main/ui/auth/register.cljs
+#, fuzzy
 msgid "auth.login-here"
 msgstr "在这里登录"
 
@@ -168,10 +169,6 @@ msgstr "服务协议"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.terms-privacy-agreement"
 msgstr "创建账号意味着您认可我们的服务条例和隐私政策。"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.terms-privacy-agreement-md"
-msgstr "创建新账号，即代表你同意我们的[服务条例](%s)和[隐私政策](%s)。"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
@@ -2306,158 +2303,96 @@ msgid "profile.recovery.go-to-login"
 msgstr "去登录"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "question.design-tool-more-experienced-with"
-msgstr "你最熟悉哪个设计工具？"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.11-30"
+msgid "onboarding.questions.team-size.11-30"
 msgstr "11-30"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.2-10"
+msgid "onboarding.questions.team-size.2-10"
 msgstr "2-10"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.31-50"
+msgid "onboarding.questions.team-size.31-50"
 msgstr "31-50"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.a-lot"
-msgstr "非常多"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.adobe-xd"
+msgid "labels.adobe-xd"
 msgstr "Adobe XD"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.canva"
+msgid "labels.canva"
 msgstr "Canva"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.designer"
-msgstr "设计师"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.developer"
+msgid "labels.developer"
 msgstr "开发者"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.discover-more-about-penpot"
-msgstr "深入了解Penpot的精彩之处"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.figma"
+msgid "labels.figma"
 msgstr "Figma"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.founder"
+msgid "labels.founder"
 msgstr "创始人/副总裁"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.freelancer"
+msgid "labels.freelancer"
 msgstr "我是一名自由职业者"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.get-the-code-from-my-team-project"
-msgstr "从我的团队项目获得邀请码 "
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.interface-design-visual-assets-design-systems"
-msgstr "...界面设计，视觉素材，设计系统等。"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.invision"
+msgid "labels.invision"
 msgstr "InVision"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.leave-feedback-for-my-team-project"
-msgstr "给我的团队项目做反馈"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.lets-get-started"
+msgid "onboarding.questions.lets-get-started"
 msgstr "让我们开始吧！"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.manager"
+msgid "labels.product-management"
 msgstr "产品经理/项目经理"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.marketing"
+msgid "labels.marketing"
 msgstr "市场营销"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.more-than-50"
+msgid "onboarding.questions.team-size.more-than-50"
 msgstr "50以上"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.next"
+msgid "labels.next"
 msgstr "下一项"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.none"
-msgstr "无"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.other"
+msgid "labels.other"
 msgstr "其他（请注明）"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.personal-project"
+msgid "onboarding.questions.team-size.personal-project"
 msgstr "我在做个人项目"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.previous"
+msgid "labels.previous"
 msgstr "前一项"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.questions-how-are-you-planning-to-use-penpot"
-msgstr "你计划用Penpot做什么？"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.role"
+msgid "onboarding.questions.step3.question2"
 msgstr "你是哪种身份？"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.sketch"
+msgid "labels.sketch"
 msgstr "Sketch"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.start"
+msgid "labels.start"
 msgstr "开始"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.start-to-work-on-my-project"
-msgstr "开始着手我的项目"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.student-teacher"
+msgid "labels.student-teacher"
 msgstr "学生/教师"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.team-size"
+msgid "onboarding.questions.step3.question3"
 msgstr "你的团队有多少人？"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.test-penpot-to-see-if-its-a-fit-for-team"
-msgstr "试用Penpot，来看它是否适合团队 "
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.try-out-before-using-penpot-on-premise"
-msgstr "在本地部署Penpot前进行试用"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.wireframes-user-journeys-flows-navigation-trees"
-msgstr "...线框图，用户轨迹和用户流程，导航树等。"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.work-in-concept-ideas"
-msgstr "从事概念构想的工作"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.your-feedback-will-help-us"
-msgstr ""
-"你的反馈将帮助我们更好地理解你的习惯和偏好，以便我们不断改进Penpot，使其成为"
-"一个有用且好用的工具。"
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs,
@@ -5024,14 +4959,6 @@ msgstr "保持宽高比"
 
 msgid "onboarding.team-modal.team-definition"
 msgstr "团队是什么？"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.describe-your-experience-working-on"
-msgstr "对你经历的最好描述是："
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.never-used-one"
-msgstr "都没用过"
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs
 msgid "settings.select-this-color"

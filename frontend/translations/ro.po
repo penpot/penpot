@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-04-24 12:55+0000\n"
+"PO-Revision-Date: 2024-06-17 08:07+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Romanian "
-"<https://hosted.weblate.org/projects/penpot/frontend/ro/>\n"
+"Language-Team: Romanian <https://hosted.weblate.org/projects/penpot/frontend/"
+"ro/>\n"
 "Language: ro\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n==1 ? 0 : (n==0 || (n%100 > 0 && n%100 < "
 "20)) ? 1 : 2;\n"
-"X-Generator: Weblate 5.5.1-dev\n"
+"X-Generator: Weblate 5.6-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -49,6 +49,7 @@ msgid "auth.fullname"
 msgstr "Numele complet"
 
 #: src/app/main/ui/auth/register.cljs
+#, fuzzy
 msgid "auth.login-here"
 msgstr "Conectează-te"
 
@@ -2334,79 +2335,75 @@ msgid "profile.recovery.go-to-login"
 msgstr "Mergi la autentificare"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "question.design-tool-more-experienced-with"
-msgstr "Care este unealta de design cu care aveți mai multă experiență?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.11-30"
+msgid "onboarding.questions.team-size.11-30"
 msgstr "11-30"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.2-10"
+msgid "onboarding.questions.team-size.2-10"
 msgstr "2-10"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.31-50"
+msgid "onboarding.questions.team-size.31-50"
 msgstr "31-50"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.adobe-xd"
+msgid "labels.adobe-xd"
 msgstr "Adobe XD"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.canva"
+msgid "labels.canva"
 msgstr "Canva"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.figma"
+msgid "labels.figma"
 msgstr "Figma"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.freelancer"
+msgid "labels.freelancer"
 msgstr "Sunt un freelancer"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.invision"
+msgid "labels.invision"
 msgstr "InVision"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.lets-get-started"
+msgid "onboarding.questions.lets-get-started"
 msgstr "Să începem!"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.more-than-50"
+msgid "onboarding.questions.team-size.more-than-50"
 msgstr "Mai mult de 50"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.next"
+msgid "labels.next"
 msgstr "Următor"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.other"
+msgid "labels.other"
 msgstr "Alta (specificați)"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.personal-project"
+msgid "onboarding.questions.team-size.personal-project"
 msgstr "Lucrez la un proiect personal"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.previous"
+msgid "labels.previous"
 msgstr "Anterior"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.select-option"
+msgid "labels.select-option"
 msgstr "Selectați opțiune"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.sketch"
+msgid "labels.sketch"
 msgstr "Sketch"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.start"
+msgid "labels.start"
 msgstr "Începeți"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.student-teacher"
+msgid "labels.student-teacher"
 msgstr "Student sau profesor"
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,

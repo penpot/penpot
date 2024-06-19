@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-05 10:42+0000\n"
+"PO-Revision-Date: 2024-06-17 08:07+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Igbo <https://hosted.weblate.org/projects/penpot/frontend/ig/>"
 "\n"
@@ -33,10 +33,6 @@ msgstr ""
 "Ihe bụ ọrụ ozigosi ,e jile ya rụọ ezigbo ọrụ , ọrụ ndị a ga-ekpochapụ site "
 "na oge ruo na oge"
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.email"
-msgstr "Ozi- n"
-
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
 msgstr "Chefuru akara mpibanye ?"
@@ -46,6 +42,7 @@ msgid "auth.fullname"
 msgstr "Aha n'uju"
 
 #: src/app/main/ui/auth/register.cljs
+#, fuzzy
 msgid "auth.login-here"
 msgstr "Banye ebe a"
 
@@ -139,10 +136,6 @@ msgstr "E nweghị ebe Ntinye ihe ma kịta?"
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.register-submit"
 msgstr "Mepee ebe Ntinye ihe"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.register-subtitle"
-msgstr "Ọ bụ n'efu , ọ bụ ebe nsị a jere oje"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"
@@ -1894,162 +1887,96 @@ msgid "profile.recovery.go-to-login"
 msgstr "Gaa na mbanye"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "question.design-tool-more-experienced-with"
-msgstr "Kedu ngwa ọrụ nse ị ka mara eji arụ ọrụ ?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.11-30"
+msgid "onboarding.questions.team-size.11-30"
 msgstr "Iri na otu ruo na iri atọ"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.2-10"
+msgid "onboarding.questions.team-size.2-10"
 msgstr "Abụọ ruo na iri"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.31-50"
+msgid "onboarding.questions.team-size.31-50"
 msgstr "Iri atọ na otu ruo na iri ise"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.a-lot"
-msgstr "Ọtụtụ"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.adobe-xd"
+msgid "labels.adobe-xd"
 msgstr "Ngwa nrụkọrịta ọrụ Adobe"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.canva"
+msgid "labels.canva"
 msgstr "Kanva"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.describe-your-experience-working-on"
-msgstr "Kedụ ka Ị ga-esi kọwaa ọfụma ihe ndị ị hụrụ ịrụ ọrụ na..."
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.developer"
+msgid "labels.developer"
 msgstr "Onye nrụpụta"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.discover-more-about-penpot"
-msgstr "Chọpụta ihe ndị ọzọ gbasara ite mkpịsị"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.figma"
+msgid "labels.figma"
 msgstr "Ihe onyonyo"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.founder"
+msgid "labels.founder"
 msgstr "Onye malitere /VP"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.freelancer"
+msgid "labels.freelancer"
 msgstr "Onye nwere onwe ya"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.get-the-code-from-my-team-project"
-msgstr "Weta akara site n'arụmarụ otu m "
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.interface-design-visual-assets-design-systems"
-msgstr "... Nhazi ihu nse, uru ahụmụzọ, usoro imewe , etc."
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.invision"
+msgid "labels.invision"
 msgstr "Mmakpo"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.leave-feedback-for-my-team-project"
-msgstr "Hapụ Nzaghachi maka arụmarụ ndị otu m"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.lets-get-started"
+msgid "onboarding.questions.lets-get-started"
 msgstr "Ka anyị bido!"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.manager"
+msgid "labels.product-management"
 msgstr "Onye njikwa ngwaahịa ma ọ bụ arụmarụ"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.marketing"
+msgid "labels.marketing"
 msgstr "Ịzụ ahịa"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.more-than-50"
+msgid "onboarding.questions.team-size.more-than-50"
 msgstr "Karịrị iri ise"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.next"
+msgid "labels.next"
 msgstr "Ọzọ"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.none"
-msgstr "Onweghị"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.other"
+msgid "labels.other"
 msgstr "Ọzọ (zipụta)"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.personal-project"
+msgid "onboarding.questions.team-size.personal-project"
 msgstr "A na m arụ ọrụ n'arụmarụ onwe"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.questions-how-are-you-planning-to-use-penpot"
-msgstr "Kedụ ka ị sị akwado iji ite mkpịsị arụ ọrụ ?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.role"
+msgid "onboarding.questions.step3.question2"
 msgstr "Gịnị bụ ọrụ gị ?"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.select-option"
+msgid "labels.select-option"
 msgstr "Họrọ nhọ"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.sketch"
+msgid "labels.sketch"
 msgstr "Eserese"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.some"
-msgstr "Ụfọdụ"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.start"
+msgid "labels.start"
 msgstr "Bido"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.start-to-work-on-my-project"
-msgstr "Bido ịrụ ọrụ m"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.student-teacher"
+msgid "labels.student-teacher"
 msgstr "Nwata akwụkwọ ma ọ bụ onye nkụzi"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.team-size"
+msgid "onboarding.questions.step3.question3"
 msgstr "Kedụ ka otu gị ha?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.test-penpot-to-see-if-its-a-fit-for-team"
-msgstr "Nwale ite mkpịsị ịhụ ma ọ bụ ihe ndaba maka otu "
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.try-out-before-using-penpot-on-premise"
-msgstr "Gbalịa mee mbụ tupu ị jiri ite mkpịsị rụọ ọrụ n'ebe ọ dị"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.wireframes-user-journeys-flows-navigation-trees"
-msgstr "... waya etiti , ndị ọrụ njem na eruba , osisi ngagharị gasị , dgz."
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.work-in-concept-ideas"
-msgstr "Na-arụ ọrụ n'echiche ihe"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.your-feedback-will-help-us"
-msgstr ""
-"Nzaghachi gị ga-enyere anyị aka ịghọta ihe agwa na mmasị gị bụ Ka anyị ga "
-"na-eme Ite mkpịsị ụdị ngwa ọrụ bara uru dị ụtọ ."
 
 msgid "shortcuts.bring-backward"
 msgstr "Wega ebe azụ"

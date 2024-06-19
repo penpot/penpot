@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-04-24 12:55+0000\n"
+"PO-Revision-Date: 2024-06-17 08:07+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Malay "
-"<https://hosted.weblate.org/projects/penpot/frontend/ms/>\n"
+"Language-Team: Malay <https://hosted.weblate.org/projects/penpot/frontend/ms/"
+">\n"
 "Language: ms\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.5.1-dev\n"
+"X-Generator: Weblate 5.6-dev\n"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.create-demo-account"
@@ -34,6 +34,7 @@ msgid "auth.fullname"
 msgstr "Nama penuh"
 
 #: src/app/main/ui/auth/register.cljs
+#, fuzzy
 msgid "auth.login-here"
 msgstr "Log masuk disini"
 
@@ -133,10 +134,6 @@ msgid "auth.register-submit"
 msgstr "Cipta akaun"
 
 #: src/app/main/ui/auth/register.cljs
-msgid "auth.register-subtitle"
-msgstr "Ia percuma dan Sumber Terbuka"
-
-#: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"
 msgstr "Cipta akaun"
 
@@ -151,13 +148,6 @@ msgid "auth.terms-privacy-agreement"
 msgstr ""
 "Apabila membuat akaun baharu, anda bersetuju menerima syarat perkhidmatan "
 "dan dasar privasi kami."
-
-#: src/app/main/ui/auth/register.cljs
-#, markdown
-msgid "auth.terms-privacy-agreement-md"
-msgstr ""
-"Apabila membuat akaun baharu, anda bersetuju menerima [syarat "
-"perkhidmatan](%s) dan [dasar privasi](%s) kami."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
@@ -2329,171 +2319,100 @@ msgid "profile.recovery.go-to-login"
 msgstr "Pergi ke log masuk"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "question.design-tool-more-experienced-with"
-msgstr "Alat reka bentuk yang manakah anda mempunyai lebih banyak pengalaman?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.11-30"
+msgid "onboarding.questions.team-size.11-30"
 msgstr "11-30"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.2-10"
+msgid "onboarding.questions.team-size.2-10"
 msgstr "2-10"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.31-50"
+msgid "onboarding.questions.team-size.31-50"
 msgstr "31-50"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.a-lot"
-msgstr "Banyak"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.adobe-xd"
+msgid "labels.adobe-xd"
 msgstr "Adobe XD"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.canva"
+msgid "labels.canva"
 msgstr "Canva"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.describe-your-experience-working-on"
-msgstr "Bagaimanakah cara terbaik anda menerangkan pengalaman anda bekerja pada..."
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.designer"
-msgstr "Pereka bentuk"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.developer"
+msgid "labels.developer"
 msgstr "Pembangun"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.discover-more-about-penpot"
-msgstr "Ketahui lebih lanjut tentang Penpot"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.figma"
+msgid "labels.figma"
 msgstr "Figma"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.founder"
+msgid "labels.founder"
 msgstr "Pengasas/VP"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.freelancer"
+msgid "labels.freelancer"
 msgstr "Saya seorang pekerja bebas (freelancer)"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.get-the-code-from-my-team-project"
-msgstr "Dapatkan kod daripada projek pasukan saya "
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.interface-design-visual-assets-design-systems"
-msgstr "... reka bentuk antara muka, aset visual, sistem reka bentuk, dsb."
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.invision"
+msgid "labels.invision"
 msgstr "InVision"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.leave-feedback-for-my-team-project"
-msgstr "Tinggalkan maklum balas untuk projek pasukan saya"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.lets-get-started"
+msgid "onboarding.questions.lets-get-started"
 msgstr "Mari mulakan!"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.manager"
+msgid "labels.product-management"
 msgstr "Pengurus Produk atau Projek"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.marketing"
+msgid "labels.marketing"
 msgstr "Pemasaran"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.more-than-50"
+msgid "onboarding.questions.team-size.more-than-50"
 msgstr "Lebih daripada 50"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.next"
+msgid "labels.next"
 msgstr "Seterusnya"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.none"
-msgstr "Tiada"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.other"
+msgid "labels.other"
 msgstr "Lain-lain (nyatakan)"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.personal-project"
+msgid "onboarding.questions.team-size.personal-project"
 msgstr "Saya sedang menjalankan projek peribadi"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.previous"
+msgid "labels.previous"
 msgstr "Sebelumnya"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.questions-how-are-you-planning-to-use-penpot"
-msgstr "Bagaimanakah anda merancang untuk menggunakan Penpot?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.role"
+msgid "onboarding.questions.step3.question2"
 msgstr "Apakah peranan anda?"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.select-option"
+msgid "labels.select-option"
 msgstr "Pilih pilihan"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.sketch"
+msgid "labels.sketch"
 msgstr "Sketch"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.some"
-msgstr "Beberapa"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.start"
+msgid "labels.start"
 msgstr "Mula"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.start-to-work-on-my-project"
-msgstr "Mula mengerjakan projek saya"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.student-teacher"
+msgid "labels.student-teacher"
 msgstr "Pelajar atau guru"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.team-size"
+msgid "onboarding.questions.step3.question3"
 msgstr "Berapakah saiz pasukan anda?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.test-penpot-to-see-if-its-a-fit-for-team"
-msgstr "Uji Penpot untuk melihat sama ada ia sesuai untuk pasukan "
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.try-out-before-using-penpot-on-premise"
-msgstr "Cuba sebelum menggunakan Penpot pada pelayar peribadi"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.wireframes-user-journeys-flows-navigation-trees"
-msgstr "... rangka wayar, perjalanan & aliran pengguna, pepohon navigasi, dsb."
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.work-in-concept-ideas"
-msgstr "Bekerja dalam idea konsep"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.your-feedback-will-help-us"
-msgstr ""
-"Maklum balas anda akan membantu kami memahami tabiat dan keutamaan anda "
-"supaya kami boleh terus menjadikan Penpot sebagai alat yang berguna dan "
-"menyeronokkan."
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
 #, fuzzy

@@ -10,6 +10,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.logging :as l]
    [app.common.thumbnails :as thc]
+   [app.config :as cf]
    [app.main.data.changes :as dch]
    [app.main.data.persistence :as-alias dps]
    [app.main.data.workspace.notifications :as-alias wnt]
@@ -18,7 +19,6 @@
    [app.main.refs :as refs]
    [app.main.render :as render]
    [app.main.repo :as rp]
-   [app.main.store :as st]
    [app.util.http :as http]
    [app.util.queue :as q]
    [app.util.time :as tp]
@@ -30,55 +30,36 @@
 
 (l/set-level! :warn)
 
-(declare update-thumbnail)
+(defn- find-request
+  [params item]
+  (and (= (unchecked-get params "file-id")
+          (unchecked-get item "file-id"))
+       (= (unchecked-get params "page-id")
+          (unchecked-get item "page-id"))
+       (= (unchecked-get params "shape-id")
+          (unchecked-get item "shape-id"))
+       (= (unchecked-get params "tag")
+          (unchecked-get item "tag"))))
 
-(defn resolve-request
-  "Resolves the request to generate a thumbnail for the given ids."
-  [item]
-  (let [file-id (unchecked-get item "file-id")
-        page-id  (unchecked-get item "page-id")
-        shape-id (unchecked-get item "shape-id")
-        tag (unchecked-get item "tag")]
-    (st/emit! (update-thumbnail file-id page-id shape-id tag))))
+(defn- create-request
+  "Creates a request to generate a thumbnail for the given ids."
+  [file-id page-id shape-id tag]
+  #js {:file-id file-id
+       :page-id page-id
+       :shape-id shape-id
+       :tag tag})
 
 ;; Defines the thumbnail queue
 (defonce queue
-  (q/create resolve-request (/ 1000 30)))
-
-(defn create-request
-  "Creates a request to generate a thumbnail for the given ids."
-  [file-id page-id shape-id tag]
-  #js {:file-id file-id :page-id page-id :shape-id shape-id :tag tag})
-
-(defn find-request
-  "Returns true if the given item matches the given ids."
-  [file-id page-id shape-id tag item]
-  (and (= file-id (unchecked-get item "file-id"))
-       (= page-id (unchecked-get item "page-id"))
-       (= shape-id (unchecked-get item "shape-id"))
-       (= tag (unchecked-get item "tag"))))
-
-(defn request-thumbnail
-  "Enqueues a request to generate a thumbnail for the given ids."
-  ([file-id page-id shape-id tag]
-   (request-thumbnail file-id page-id shape-id tag "unknown"))
-  ([file-id page-id shape-id tag requester]
-   (ptk/reify ::request-thumbnail
-     ptk/EffectEvent
-     (effect [_ _ _]
-       (l/dbg :hint "request thumbnail" :requester requester :file-id file-id :page-id page-id :shape-id shape-id :tag tag)
-       (q/enqueue-unique queue
-                         (create-request file-id page-id shape-id tag)
-                         (partial find-request file-id page-id shape-id tag))))))
+  (q/create find-request (/ 1000 30)))
 
 ;; This function first renders the HTML calling `render/render-frame` that
 ;; returns HTML as a string, then we send that data to the iframe rasterizer
 ;; that returns the image as a Blob. Finally we create a URI for that blob.
-(defn get-thumbnail
+(defn- render-thumbnail
   "Returns the thumbnail for the given ids"
-  [state file-id page-id frame-id tag & {:keys [object-id]}]
-
-  (let [object-id (or object-id (thc/fmt-object-id file-id page-id frame-id tag))
+  [state file-id page-id frame-id tag]
+  (let [object-id (thc/fmt-object-id file-id page-id frame-id tag)
         tp        (tp/tpoint-ms)
         objects   (wsh/lookup-objects state file-id page-id)
         shape     (get objects frame-id)]
@@ -87,9 +68,14 @@
          (rx/take 1)
          (rx/filter some?)
          (rx/mapcat thr/render)
-         (rx/map (fn [blob] (wapi/create-uri blob)))
          (rx/tap #(l/dbg :hint "thumbnail rendered"
                          :elapsed (dm/str (tp) "ms"))))))
+
+(defn- request-thumbnail
+  "Enqueues a request to generate a thumbnail for the given ids."
+  [state file-id page-id shape-id tag]
+  (let [request (create-request file-id page-id shape-id tag)]
+    (q/enqueue-unique queue request (partial render-thumbnail state file-id page-id shape-id tag))))
 
 (defn clear-thumbnail
   ([file-id page-id frame-id tag]
@@ -154,8 +140,7 @@
 
 (defn update-thumbnail
   "Updates the thumbnail information for the given `id`"
-
-  [file-id page-id frame-id tag]
+  [file-id page-id frame-id tag requester]
   (let [object-id (thc/fmt-object-id file-id page-id frame-id tag)]
     (ptk/reify ::update-thumbnail
       cljs.core/IDeref
@@ -163,23 +148,25 @@
 
       ptk/WatchEvent
       (watch [_ state stream]
-        (l/dbg :hint "update thumbnail" :object-id object-id :tag tag)
+        (l/dbg :hint "update thumbnail" :requester requester :object-id object-id :tag tag)
         ;; Send the update to the back-end
-        (->> (get-thumbnail state file-id page-id frame-id tag)
-             (rx/mapcat (fn [uri]
-                          (rx/merge
-                           (rx/of (assoc-thumbnail object-id uri))
-                           (->> (http/send! {:uri uri :response-type :blob :method :get})
-                                (rx/map :body)
-                                (rx/mapcat (fn [blob]
-                                             ;; Send the data to backend
-                                             (let [params {:file-id file-id
-                                                           :object-id object-id
-                                                           :media blob
-                                                           :tag (or tag "frame")}]
-                                               (rp/cmd! :create-file-object-thumbnail params))))
-                                (rx/catch rx/empty)
-                                (rx/ignore)))))
+        (->> (request-thumbnail state file-id page-id frame-id tag)
+             (rx/mapcat (fn [blob]
+                          ;; Send the data to backend
+                          (let [params {:file-id file-id
+                                        :object-id object-id
+                                        :media blob
+                                        :tag (or tag "frame")}]
+                            (rp/cmd! :create-file-object-thumbnail params))))
+
+             (rx/mapcat (fn [{:keys [object-id media-id]}]
+                          (let [uri (cf/resolve-media media-id)]
+                            ;; We perform this request just for
+                            ;; populate the browser CACHE and avoid
+                            ;; unnecesary image flickering
+                            (->> (http/send! {:uri uri :method :get})
+                                 (rx/map #(assoc-thumbnail object-id uri))))))
+
              (rx/catch (fn [cause]
                          (.error js/console cause)
                          (rx/empty)))
@@ -260,31 +247,12 @@
                  (rx/observe-on :async)
                  (rx/with-latest-from workspace-data-s)
                  (rx/merge-map (partial extract-root-frame-changes page-id))
-                 (rx/tap #(l/trc :hint "inconming change" :origin "local" :frame-id (dm/str %)))
+                 (rx/tap #(l/trc :hint "inconming change" :origin "all" :frame-id (dm/str %)))
                  (rx/share))
 
-            local-commits-s
-            (->> stream
-                 (rx/filter dch/commit?)
-                 (rx/map deref)
-                 (rx/filter #(= :local (:source %)))
-                 (rx/observe-on :async)
-                 (rx/with-latest-from workspace-data-s)
-                 (rx/merge-map (partial extract-root-frame-changes page-id))
-                 (rx/tap #(l/trc :hint "inconming change" :origin "local" :frame-id (dm/str %)))
-                 (rx/share))
-
-            ;; BUFFER NOTIFIER: only on local changes, remote changes
-            ;; we expect to receive thumbnail uri once it is
-            ;; generated va notifications subsystem
             notifier-s
             (->> stream
                  (rx/filter (ptk/type? ::dps/commit-persisted))
-                 (rx/map deref)
-                 (rx/observe-on :async)
-                 (rx/with-latest-from workspace-data-s)
-                 (rx/merge-map (partial extract-root-frame-changes page-id))
-                 (rx/tap #(l/trc :hint "inconming change" :origin "local" :frame-id (dm/str %)))
                  (rx/debounce 5000)
                  (rx/tap #(l/trc :hint "buffer initialized")))]
 
@@ -296,11 +264,11 @@
                    (rx/map (fn [frame-id]
                              (clear-thumbnail file-id page-id frame-id "frame"))))
 
-              ;; Generate thumbnails in batchs, once user becomes
-              ;; inactive for some instant only for local changes
-              (->> local-commits-s
+              ;; Generate thumbnails in batches, once user becomes
+              ;; inactive for some instant.
+              (->> all-commits-s
                    (rx/buffer-until notifier-s)
                    (rx/mapcat #(into #{} %))
-                   (rx/map #(request-thumbnail file-id page-id % "frame" "watch-state-changes"))))
+                   (rx/map #(update-thumbnail file-id page-id % "frame" "watch-state-changes"))))
 
              (rx/take-until stopper-s))))))

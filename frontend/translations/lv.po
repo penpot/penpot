@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-04-25 13:07+0000\n"
-"Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
-"Language-Team: Latvian "
-"<https://hosted.weblate.org/projects/penpot/frontend/lv/>\n"
+"PO-Revision-Date: 2024-06-17 08:07+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
+"lv/>\n"
 "Language: lv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 "
-"<= 19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
-"X-Generator: Weblate 5.5.1-dev\n"
+"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= "
+"19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
+"X-Generator: Weblate 5.6-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -53,6 +53,7 @@ msgid "auth.login-account-title"
 msgstr "Pieteikties manā kontā"
 
 #: src/app/main/ui/auth/register.cljs
+#, fuzzy
 msgid "auth.login-here"
 msgstr "Pieteikties šeit"
 
@@ -173,13 +174,6 @@ msgid "auth.terms-privacy-agreement"
 msgstr ""
 "Ar jauna konta izveidošanu tiek piekrists mūsu pakalpojuma noteikumiem un "
 "privātuma nosacījumiem."
-
-#: src/app/main/ui/auth/register.cljs
-#, markdown
-msgid "auth.terms-privacy-agreement-md"
-msgstr ""
-"Ar jauna konta izveidošanu tiek piekrists mūsu [pakalpojuma "
-"noteikumiem](%s) un [privātuma nosacījumiem](%s)."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
@@ -2461,150 +2455,100 @@ msgid "profile.recovery.go-to-login"
 msgstr "Doties uz pieteikšanos"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "question.design-tool-more-experienced-with"
-msgstr "Ar kuru no šiem rīkiem ir bijusi lielākā pieredze?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.11-30"
+msgid "onboarding.questions.team-size.11-30"
 msgstr "11-30"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.2-10"
+msgid "onboarding.questions.team-size.2-10"
 msgstr "2-10"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.31-50"
+msgid "onboarding.questions.team-size.31-50"
 msgstr "31-50"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.adobe-xd"
+msgid "labels.adobe-xd"
 msgstr "Adobe XD"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.canva"
+msgid "labels.canva"
 msgstr "Canva"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.describe-your-experience-working-on"
-msgstr "Kā vislabāk raksturotu savu pieredzi strādājot pie..."
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.designer"
-msgstr "Modelētājs"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.developer"
+msgid "labels.developer"
 msgstr "Izstrādātājs"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.discover-more-about-penpot"
-msgstr "Atklāt vairāk par Penpot"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.figma"
+msgid "labels.figma"
 msgstr "Figma"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.founder"
+msgid "labels.founder"
 msgstr "Dibinātājs/viceprezidents"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.freelancer"
+msgid "labels.freelancer"
 msgstr "Esmu ārštātnieks(-ce)/Pašnodarbināts(-ā)"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.invision"
+msgid "labels.invision"
 msgstr "InVision"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.lets-get-started"
+msgid "onboarding.questions.lets-get-started"
 msgstr "Ķeramies pie darba!"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.manager"
+msgid "labels.product-management"
 msgstr "Produktu vai projektu vadītājs"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.marketing"
+msgid "labels.marketing"
 msgstr "Tirgvedība"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.more-than-50"
+msgid "onboarding.questions.team-size.more-than-50"
 msgstr "Vairāk nekā 50"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.never-used-one"
-msgstr "Neviens"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.next"
+msgid "labels.next"
 msgstr "Nākamais"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.other"
+msgid "labels.other"
 msgstr "Cits (jānorāda)"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.personal-project"
+msgid "onboarding.questions.team-size.personal-project"
 msgstr "Strādāju personīgā projektā"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.previous"
+msgid "labels.previous"
 msgstr "Iepriekšējais"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.questions-how-are-you-planning-to-use-penpot"
-msgstr "Kā ir iecerēts izmantot Penpot?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.role"
+msgid "onboarding.questions.step3.question2"
 msgstr "Kāda ir ieņemamā loma?"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.select-option"
+msgid "labels.select-option"
 msgstr "Atlasīt iespēju"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.sketch"
+msgid "labels.sketch"
 msgstr "Sketch"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.start"
+msgid "labels.start"
 msgstr "Sākt"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.start-to-work-on-my-project"
-msgstr "Sākt strādāt pie sava projekta"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.student-teacher"
+msgid "labels.student-teacher"
 msgstr "Students vai pasniedzējs"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.team-size"
+msgid "onboarding.questions.step3.question3"
 msgstr "Cik liela ir komanda?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.test-penpot-to-see-if-its-a-fit-for-team"
-msgstr "Izmēģini Penpot, lai saprastu, vai tā der komandai "
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.try-out-before-using-penpot-on-premise"
-msgstr "Izmēģināt pirms izvietotas Penpot izmantošanas"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.wireframes-user-journeys-flows-navigation-trees"
-msgstr "... struktūrskices, lietotāju ceļi un plūsmas, pārvietošanās koki utt."
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.work-in-concept-ideas"
-msgstr "Darbs koncepcijas idejās"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.your-feedback-will-help-us"
-msgstr ""
-"Atsauksmes palīdzēs mums saprast, kādi ir lietotāju paradumi un izvēles, "
-"lai mēs varētu turpināt padarīt Penpot par noderīgu un patīkamu rīku."
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
 msgid "settings.detach"

@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-04-25 13:07+0000\n"
-"Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
-"Language-Team: Dutch "
-"<https://hosted.weblate.org/projects/penpot/frontend/nl/>\n"
+"PO-Revision-Date: 2024-06-17 08:07+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
+">\n"
 "Language: nl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.5.1-dev\n"
+"X-Generator: Weblate 5.6-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -52,6 +52,7 @@ msgid "auth.login-account-title"
 msgstr "Log in op mijn account"
 
 #: src/app/main/ui/auth/register.cljs
+#, fuzzy
 msgid "auth.login-here"
 msgstr "Hier inloggen"
 
@@ -184,13 +185,6 @@ msgid "auth.terms-privacy-agreement"
 msgstr ""
 "Met het aanmaken van een nieuw account ga je akkoord met onze "
 "gebruiksvoorwaarden en ons privacybeleid."
-
-#: src/app/main/ui/auth/register.cljs
-#, markdown
-msgid "auth.terms-privacy-agreement-md"
-msgstr ""
-"Met het aanmaken van een nieuw account ga je akkoord met onze "
-"[servicevoorwaarden] (%s) en [privacybeleid] (%s)."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
@@ -2479,83 +2473,75 @@ msgid "profile.recovery.go-to-login"
 msgstr "Ga naar inlogscherm"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "question.design-tool-more-experienced-with"
-msgstr "Met welke ontwerptool heb je meer ervaring?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.11-30"
+msgid "onboarding.questions.team-size.11-30"
 msgstr "11-30"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.2-10"
+msgid "onboarding.questions.team-size.2-10"
 msgstr "2-10"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.31-50"
+msgid "onboarding.questions.team-size.31-50"
 msgstr "31-50"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.adobe-xd"
+msgid "labels.adobe-xd"
 msgstr "Adobe XD"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.canva"
+msgid "labels.canva"
 msgstr "Canva"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.figma"
+msgid "labels.figma"
 msgstr "Figma"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.freelancer"
+msgid "labels.freelancer"
 msgstr "Ik ben een freelancer"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.invision"
+msgid "labels.invision"
 msgstr "InVision"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.lets-get-started"
+msgid "onboarding.questions.lets-get-started"
 msgstr "Laten we beginnen!"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.more-than-50"
+msgid "onboarding.questions.team-size.more-than-50"
 msgstr "Meer dan 50"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.never-used-one"
-msgstr "Geen"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.next"
+msgid "labels.next"
 msgstr "Volgende"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.other"
+msgid "labels.other"
 msgstr "Anders (namelijk…)"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.personal-project"
+msgid "onboarding.questions.team-size.personal-project"
 msgstr "Ik werk aan een persoonlijk project"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.previous"
+msgid "labels.previous"
 msgstr "Vorige"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.select-option"
+msgid "labels.select-option"
 msgstr "Selecteer een optie"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.sketch"
+msgid "labels.sketch"
 msgstr "Sketch"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.start"
+msgid "labels.start"
 msgstr "Starten"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.student-teacher"
+msgid "labels.student-teacher"
 msgstr "Student of docent"
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
@@ -5232,3 +5218,36 @@ msgstr "Bijwerken"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klik om het pad te sluiten"
+
+msgid "workspace.plugins.error.url"
+msgstr "De plug-in bestaat niet of de URL is niet correct."
+
+msgid "workspace.plugins.success"
+msgstr "Plug-in met succes geladen."
+
+msgid "workspace.plugins.title"
+msgstr "Plug-ins"
+
+msgid "workspace.plugins.search-placeholder"
+msgstr "De URL van een plug-in invoeren"
+
+msgid "workspace.plugins.installed-plugins"
+msgstr "Geïnstalleerde plug-ins"
+
+msgid "workspace.plugins.install"
+msgstr "Installeren"
+
+msgid "workspace.plugins.empty-plugins"
+msgstr "Nog geen plug-ins geïnstalleerd"
+
+msgid "workspace.plugins.plugin-list-link"
+msgstr "Plug-in-lijst"
+
+msgid "workspace.plugins.button-open"
+msgstr "Openen"
+
+msgid "workspace.plugins.menu.plugins-manager"
+msgstr "Plug-in-beheer"
+
+msgid "workspace.plugins.menu.title"
+msgstr "Plug-ins"

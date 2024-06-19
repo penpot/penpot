@@ -31,9 +31,11 @@
     :child-not-found
     :frame-not-found
     :invalid-frame
+    :component-duplicate-slot
     :component-not-main
     :component-main-external
     :component-not-found
+    :duplicate-slot
     :invalid-main-instance-id
     :invalid-main-instance-page
     :invalid-main-instance
@@ -64,7 +66,7 @@
      [:shape {:optional true} :map] ; Cannot validate a shape because here it may be broken
      [:shape-id {:optional true} ::sm/uuid]
      [:file-id ::sm/uuid]
-     [:page-id ::sm/uuid]]))
+     [:page-id {:optional true} [:maybe ::sm/uuid]]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ERROR HANDLING
@@ -296,6 +298,22 @@
                   "This shape should not have swap slot"
                   shape file page)))
 
+(defn- has-duplicate-swap-slot?
+  [shape container]
+  (let [shapes   (map #(get (:objects container) %) (:shapes shape))
+        slots    (->> (map #(ctk/get-swap-slot %) shapes)
+                      (remove nil?))
+        counts   (frequencies slots)]
+    (some (fn [[_ count]] (> count 1)) counts)))
+
+(defn- check-duplicate-swap-slot
+  "Validate that the children of this shape does not have duplicated slots."
+  [shape file page]
+  (when (has-duplicate-swap-slot? shape page)
+    (report-error :duplicate-slot
+                  "This shape has children with the same swap slot"
+                  shape file page)))
+
 (defn- check-shape-main-root-top
   "Root shape of a top main instance:
 
@@ -308,6 +326,7 @@
   (check-component-root shape file page)
   (check-component-not-ref shape file page)
   (check-empty-swap-slot shape file page)
+  (check-duplicate-swap-slot shape file page)
   (run! #(check-shape % file page libraries :context :main-top) (:shapes shape)))
 
 (defn- check-shape-main-root-nested
@@ -335,6 +354,7 @@
     (check-component-root shape file page)
     (check-component-ref shape file page libraries)
     (check-empty-swap-slot shape file page)
+    (check-duplicate-swap-slot shape file page)
     (run! #(check-shape % file page libraries :context :copy-top :library-exists library-exists) (:shapes shape))))
 
 (defn- check-shape-copy-root-nested
@@ -453,13 +473,24 @@
                             shape file page)
               (check-shape-not-component shape file page libraries))))))))
 
+(defn check-component-duplicate-swap-slot
+  [component file]
+  (let [shape (get-in component [:objects (:main-instance-id component)])]
+    (when (has-duplicate-swap-slot? shape component)
+      (report-error :component-duplicate-slot
+                    "This deleted component has children with the same swap slot"
+                    component file nil))))
+
+
 (defn- check-component
   "Validate semantic coherence of a component. Report all errors found."
   [component file]
   (when (and (contains? component :objects) (nil? (:objects component)))
     (report-error :component-nil-objects-not-allowed
                   "Objects list cannot be nil"
-                  component file nil)))
+                  component file nil))
+  (when (:deleted component)
+    (check-component-duplicate-swap-slot component file)))
 
 (defn- get-orphan-shapes
   [{:keys [objects] :as page}]

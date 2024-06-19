@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-10-13 18:01+0000\n"
-"Last-Translator: Hugo Vermaak <hugo@colossal.co.za>\n"
-"Language-Team: Afrikaans "
-"<https://hosted.weblate.org/projects/penpot/frontend/af/>\n"
+"PO-Revision-Date: 2024-06-17 08:07+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: Afrikaans <https://hosted.weblate.org/projects/penpot/"
+"frontend/af/>\n"
 "Language: af\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.1-dev\n"
+"X-Generator: Weblate 5.6-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -39,10 +39,6 @@ msgstr ""
 "Dit is 'n DEMO-diens, MOENIE vir werklike werk gebruik nie, die projekte "
 "sal periodiek uitgevee word."
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.email"
-msgstr "E-pos"
-
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
 msgstr "Wagwoord vergeet?"
@@ -52,6 +48,7 @@ msgid "auth.fullname"
 msgstr "Volle naam"
 
 #: src/app/main/ui/auth/register.cljs
+#, fuzzy
 msgid "auth.login-here"
 msgstr "Meld hier aan"
 
@@ -151,10 +148,6 @@ msgstr "Nog nie 'n rekening nie?"
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.register-submit"
 msgstr "Skep 'n rekening"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.register-subtitle"
-msgstr "Dit is gratis, dit is oopbron"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"

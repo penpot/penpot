@@ -473,6 +473,59 @@
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
+(defmethod repair-error :duplicate-slot
+  [_ {:keys [shape page-id] :as error} file-data _]
+  (let [page      (ctpl/get-page file-data page-id)
+        childs    (map #(get (:objects page) %) (:shapes shape))
+        child-with-duplicate (let [result (reduce (fn [[seen duplicates] item]
+                                                    (let [swap-slot (ctk/get-swap-slot item)]
+                                                      (if (contains? seen swap-slot)
+                                                        [seen (conj duplicates item)]
+                                                        [(conj seen swap-slot) duplicates])))
+                                                  [#{} []]
+                                                  childs)]
+                               (second result))
+        repair-shape
+        (fn [shape]
+          ;; Remove the swap slot
+          (log/debug :hint "  -> remove swap-slot" :child-id (:id shape))
+          (ctk/remove-swap-slot shape))]
+
+    (log/dbg :hint "repairing shape :duplicated-slot" :id (:id shape) :name (:name shape) :page-id page-id)
+    (-> (pcb/empty-changes nil page-id)
+        (pcb/with-file-data file-data)
+        (pcb/update-shapes (map :id child-with-duplicate) repair-shape))))
+
+
+
+(defmethod repair-error :component-duplicate-slot
+  [_ {:keys [shape] :as error} file-data _]
+  (let [main-shape            (get-in shape [:objects (:main-instance-id shape)])
+        childs                (map #(get (:objects shape) %) (:shapes main-shape))
+        childs-with-duplicate (let [result (reduce (fn [[seen duplicates] item]
+                                                     (let [swap-slot (ctk/get-swap-slot item)]
+                                                       (if (contains? seen swap-slot)
+                                                         [seen (conj duplicates item)]
+                                                         [(conj seen swap-slot) duplicates])))
+                                                   [#{} []]
+                                                   childs)]
+                                (second result))
+        duplicated-ids        (set (mapv :id childs-with-duplicate))
+        repair-component
+        (fn [component]
+          (let [objects (reduce-kv (fn [acc k v]
+                                     (if (contains? duplicated-ids k)
+                                       (assoc acc k (ctk/remove-swap-slot v))
+                                       (assoc acc k v)))
+                                   {}
+                                   (:objects component))]
+            (assoc component :objects objects)))]
+
+    (log/dbg :hint "repairing component :component-duplicated-slot" :id (:id shape) :name (:name shape))
+    (-> (pcb/empty-changes nil)
+        (pcb/with-library-data file-data)
+        (pcb/update-component (:id shape) repair-component))))
+
 (defmethod repair-error :missing-slot
   [_ {:keys [shape page-id args] :as error} file-data _]
   (let [repair-shape

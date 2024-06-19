@@ -12,7 +12,7 @@ volumes:
 
 services:
   ## Traefik service declaration example. Consider using it if you are going to expose
-  ## penpot to the internet or different host than `localhost`.
+  ## penpot to the internet, or a different host than `localhost`.
 
   # traefik:
   #   image: traefik:v2.9
@@ -53,15 +53,15 @@ services:
     labels:
       - "traefik.enable=true"
 
-      ## HTTP: example of labels for the case if you are going to expose penpot to the
-      ## internet using only HTTP (without HTTPS) with traefik
+      ## HTTP: example of labels for the case where penpot will be exposed to the
+      ## internet with only HTTP (without HTTPS) using traefik.
 
       # - "traefik.http.routers.penpot-http.entrypoints=web"
       # - "traefik.http.routers.penpot-http.rule=Host(`<DOMAIN_NAME>`)"
       # - "traefik.http.services.penpot-http.loadbalancer.server.port=80"
 
-      ## HTTPS: example of labels for the case if you are going to expose penpot to the
-      ## internet using with HTTPS using traefik
+      ## HTTPS: example of labels for the case where penpot will be exposed to the
+      ## internet with HTTPS using traefik.
 
       # - "traefik.http.middlewares.http-redirect.redirectscheme.scheme=https"
       # - "traefik.http.middlewares.http-redirect.redirectscheme.permanent=true"
@@ -74,9 +74,9 @@ services:
       # - "traefik.http.routers.penpot-https.tls=true"
       # - "traefik.http.routers.penpot-https.tls.certresolver=letsencrypt"
 
-    ## Configuration envronment variables for frontend the container. In this case this
+    ## Configuration envronment variables for the frontend container. In this case, the
     ## container only needs the `PENPOT_FLAGS`. This environment variable is shared with
-    ## other services but not all flags are relevant to all services.
+    ## other services, but not all flags are relevant to all services.
 
     environment:
       ## Relevant flags for frontend:
@@ -109,7 +109,7 @@ services:
     networks:
       - penpot
 
-    ## Configuration envronment variables for backend the
+    ## Configuration envronment variables for the backend
     ## container.
 
     environment:
@@ -142,24 +142,24 @@ services:
       ## Penpot SECRET KEY. It serves as a master key from which other keys for subsystems
       ## (eg http sessions, or invitations) are derived.
       ##
-      ## If you leve it commented, all created sessions and invitations will
+      ## If you leave it commented, all created sessions and invitations will
       ## become invalid on container restart.
       ##
-      ## If you going to uncomment this, we recommend use here a trully randomly generated
-      ## 512 bits base64 encoded string.  You can generate one with:
+      ## If you going to uncomment this, we recommend to use a trully randomly generated
+      ## 512 bits base64 encoded string here.  You can generate one with:
       ##
       ## python3 -c "import secrets; print(secrets.token_urlsafe(64))"
 
       # - PENPOT_SECRET_KEY=my-insecure-key
 
       ## The PREPL host. Mainly used for external programatic access to penpot backend
-      ## (example: admin). By default it listen on `localhost` but if you are going to use
+      ## (example: admin). By default it will listen on `localhost` but if you are going to use
       ## the `admin`, you will need to uncomment this and set the host to `0.0.0.0`.
 
       # - PENPOT_PREPL_HOST=0.0.0.0
 
       ## Public URI. If you are going to expose this instance to the internet and use it
-      ## under different domain than 'localhost', you will need to adjust it to the final
+      ## under a different domain than 'localhost', you will need to adjust it to the final
       ## domain.
       ##
       ## Consider using traefik and set the 'disable-secure-session-cookies' if you are
@@ -195,16 +195,16 @@ services:
       # - PENPOT_STORAGE_ASSETS_S3_BUCKET=<BUKET_NAME>
 
       ## Telemetry. When enabled, a periodical process will send anonymous data about this
-      ## instance. Telemetry data will enable us to learn on how the application is used,
+      ## instance. Telemetry data will enable us to learn how the application is used,
       ## based on real scenarios. If you want to help us, please leave it enabled. You can
-      ## audit what data we send with the code available on github
+      ## audit what data we send with the code available on github.
 
       - PENPOT_TELEMETRY_ENABLED=true
 
       ## Example SMTP/Email configuration. By default, emails are sent to the mailcatch
-      ## service, but for production usage is recommended to setup a real SMTP
+      ## service, but for production usage it is recommended to setup a real SMTP
       ## provider. Emails are used to confirm user registrations & invitations. Look below
-      ## how mailcatch service is configured.
+      ## how the mailcatch service is configured.
 
       - PENPOT_SMTP_DEFAULT_FROM=no-reply@example.com
       - PENPOT_SMTP_DEFAULT_REPLY_TO=no-reply@example.com
@@ -222,7 +222,7 @@ services:
       - penpot
 
     environment:
-      # Don't touch it; this uses internal docker network to
+      # Don't touch it; this uses an internal docker network to
       # communicate with the frontend.
       - PENPOT_PUBLIC_URI=http://penpot-frontend
 
@@ -254,7 +254,7 @@ services:
 
   ## A mailcatch service, used as temporal SMTP server. You can access via HTTP to the
   ## port 1080 for read all emails the penpot platform has sent. Should be only used as a
-  ## temporal solution meanwhile you don't have a real SMTP provider configured.
+  ## temporal solution while no real SMTP provider is configured.
 
   penpot-mailcatch:
     image: sj26/mailcatcher:latest

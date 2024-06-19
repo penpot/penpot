@@ -192,13 +192,6 @@ msgstr ""
 
 #: src/app/main/ui/auth/register.cljs
 #, markdown
-msgid "auth.terms-privacy-agreement-md"
-msgstr ""
-"Al crear una nueva cuenta, aceptas nuestros [términos de servicio](%s) y "
-"[política de privacidad](%s)."
-
-#: src/app/main/ui/auth/register.cljs
-#, markdown
 msgid "auth.terms-and-privacy-agreement"
 msgstr ""
 "Yo acepto los [términos de servicio](%s) y la [política de privacidad](%s)."
@@ -2472,36 +2465,6 @@ msgstr "Penpot"
 msgid "profile.recovery.go-to-login"
 msgstr "Ir al login"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "onboarding.questions.step1.title"
 msgstr "Ayúdanos a conocerte"
@@ -2546,7 +2509,6 @@ msgstr "Buscar una alternativa a Figma, XD, etc."
 msgid "onboarding.questions.reasons.testing"
 msgstr "Probar antes de self-hosting"
 
-
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "onboarding.questions.step2.title"
 msgstr "¿Cuál de estas herramientas utilizas más?"
@@ -2556,7 +2518,7 @@ msgid "labels.adobe-xd"
 msgstr "Adobe XD"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "onboarding.questions.canva"
+msgid "labels.canva"
 msgstr "Canva"
 
 #: src/app/main/ui/onboarding/questions.cljs
@@ -2640,11 +2602,11 @@ msgid "onboarding.questions.team-size.11-30"
 msgstr "11-30"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "onboarding.questions.2-10"
+msgid "onboarding.questions.team-size.2-10"
 msgstr "2-10"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "onboarding.questions.freelancer"
+msgid "onboarding.questions.team-size.freelancer"
 msgstr "Soy autónomo"
 
 #: src/app/main/ui/onboarding/questions.cljs
@@ -2673,31 +2635,11 @@ msgstr "Creando sistemas de diseño"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "onboarding.questions.start-with.code"
-msgstr "Generando código a partir de diseños" 
+msgstr "Generando código a partir de diseños"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "onboarding.questions.step5.title"
 msgstr "¿Cómo nos has descubierto?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "onboarding.questions.referer.youtube"
-msgstr "YouTube"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "onboarding.questions.referer.event"
-msgstr "Evento"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "onboarding.questions.referer.search"
-msgstr "Buscador (Google, Yahoo, Bing)"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "onboarding.questions.referer.social"
-msgstr "Redes sociales (X, LinkedIn, FB, ect)"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "onboarding.questions.referer.article"
-msgstr "Artículo (Blog, Post, Newsletter)"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "onboarding.questions.lets-get-started"
@@ -2708,11 +2650,11 @@ msgid "labels.next"
 msgstr "Siguiente"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "onboarding.questions.other"
+msgid "labels.other"
 msgstr "Otra (especifica)"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "labels.other"
+msgid "labels.other-short"
 msgstr "Otra"
 
 #: src/app/main/ui/onboarding/questions.cljs

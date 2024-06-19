@@ -140,6 +140,7 @@
                        (::rpc/profile-id params)
                        uuid/zero)
 
+        session-id (rreq/get-header request "x-external-session-id")
         props      (-> (or (::replace-props resultm)
                            (-> params
                                (merge (::props resultm))
@@ -150,6 +151,7 @@
 
         token-id  (::actoken/id request)
         context   (-> (::context resultm)
+                      (assoc :external-session-id session-id)
                       (assoc :access-token-id (some-> token-id str))
                       (d/without-nils))]
 
