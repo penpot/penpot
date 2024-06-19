@@ -15,9 +15,12 @@
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.tokens.core :as wtc]
+   [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.util.dom :as dom]
+   [cuerdas.core :as str]
    [okulary.core :as l]
-   [rumext.v2 :as mf]))
+   [rumext.v2 :as mf]
+   [shadow.resource]))
 
 (def lens:token-type-open-status
   (l/derived (l/in [:workspace-tokens :open-status]) st/state))
@@ -25,16 +28,20 @@
 (mf/defc token-pill
   {::mf/wrap-props false}
   [{:keys [on-click token highlighted? on-context-menu]}]
-  (let [{:keys [name value]} token
-        resolved-value (try
-                         (wtc/resolve-token-value token)
-                         (catch js/Error _ nil))]
-    [:div {:class (stl/css-case :token-pill true
-                                :token-pill-highlighted highlighted?
-                                :token-pill-invalid (not resolved-value))
-           :title (str (if resolved-value "Token value: " "Invalid token value: ") value)
-           :on-click on-click
-           :on-context-menu on-context-menu}
+  (let [{:keys [name value resolved-value errors]} token
+        errors? (seq errors)]
+    [:button {:class (stl/css-case :token-pill true
+                                   :token-pill-highlighted highlighted?
+                                   :token-pill-invalid errors?)
+              :title (cond
+                       errors? (sd/humanize-errors token)
+                       :else (->> [(str "Token: " name)
+                                   (str "Original value: " value)
+                                   (str "Resolved value: " resolved-value)]
+                                  (str/join "\n")))
+              :on-click on-click
+              :on-context-menu on-context-menu
+              :disabled errors?}
      name]))
 
 (mf/defc token-section-icon
@@ -137,7 +144,8 @@
         selected (mf/deref refs/selected-shapes)
         selected-shapes (into [] (keep (d/getf objects)) selected)
 
-        tokens (mf/deref refs/workspace-tokens)
+        tokens (-> (mf/deref refs/workspace-tokens)
+                   (sd/use-resolved-tokens))
         token-groups (mf/with-memo [tokens]
                        (sorted-token-groups tokens))]
     [:article

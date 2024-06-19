@@ -36,12 +36,12 @@
   {::mf/wrap-props false}
   [{:keys [label input-props auto-complete?]}]
   (let [input-props (cond-> input-props
+                      :always camel-keys
                       ;; Disable auto-complete on form fields for proprietary password managers
                       ;; https://github.com/orgs/tokens-studio/projects/69/views/11?pane=issue&itemId=63724204
                       (not auto-complete?) (assoc "data-1p-ignore" true
                                                   "data-lpignore" true
-                                                  :auto-complete "off")
-                      :always camel-keys)]
+                                                  :auto-complete "off"))]
     [:label {:class (stl/css :labeled-input)}
      [:span {:class (stl/css :label)} label]
      [:& :input input-props]]))

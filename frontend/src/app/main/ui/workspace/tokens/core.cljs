@@ -14,7 +14,9 @@
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.transforms :as dwt]
-   [app.main.store :as st]))
+   [app.main.store :as st]
+   [app.main.ui.workspace.tokens.style-dictionary :as sd]
+   [promesa.core :as p]))
 
 ;; Helpers ---------------------------------------------------------------------
 
@@ -32,10 +34,10 @@
   [token shapes token-attributes]
   (some #(token-applied? token % token-attributes) shapes))
 
-(defn resolve-token-value [{:keys [value] :as token}]
-  (if-let [int-or-double (d/parse-double value)]
-    int-or-double
-    (throw (ex-info (str "Implement token value resolve for " value) token))))
+(defn resolve-token-value [{:keys [value resolved-value] :as token}]
+  (or
+   resolved-value
+   (d/parse-double value)))
 
 (defn maybe-resolve-token-value [{:keys [value] :as token}]
   (when value (resolve-token-value token)))
@@ -77,13 +79,15 @@
         shape-ids (->> selected-shapes
                        (eduction
                         (remove #(tokens-applied? token % attributes))
-                        (map :id)))
-        token-value (resolve-token-value token)]
-    (doseq [shape selected-shapes]
-      (st/emit! (on-apply {:token-id (:id token)
-                           :shape-id (:id shape)
-                           :attributes attributes}))
-      (on-update-shape token-value shape-ids attributes))))
+                        (map :id)))]
+    (p/let [sd-tokens (sd/resolve-workspace-tokens+ {:debug? true})]
+      (let [resolved-token (get sd-tokens (:id token))
+            resolved-token-value (resolve-token-value resolved-token)]
+        (doseq [shape selected-shapes]
+          (st/emit! (on-apply {:token-id (:id token)
+                               :shape-id (:id shape)
+                               :attributes attributes}))
+          (on-update-shape resolved-token-value shape-ids attributes))))))
 
 (defn update-shape-radius [value shape-ids]
   (st/emit!

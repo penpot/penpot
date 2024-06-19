@@ -1,0 +1,99 @@
+diff --git a/lib/StyleDictionary.js b/lib/StyleDictionary.js
+index 150e81bdac15e505b74d7f1453c7b7c543fc2b35..c5c695cfb04abc835e457027291b1522bdbdb795 100644
+--- a/lib/StyleDictionary.js
++++ b/lib/StyleDictionary.js
+@@ -14,7 +14,7 @@
+ import JSON5 from 'json5';
+ import { extname } from 'path-unified';
+ import { fs } from 'style-dictionary/fs';
+-import chalk from 'chalk';
++import { chalk } from './penpotPatches.js';
+ import { dirname } from 'path-unified';
+ 
+ import combineJSON from './utils/combineJSON.js';
+@@ -36,9 +36,9 @@ import transformObject from './transform/object.js';
+ import transformConfig from './transform/config.js';
+ import performActions from './performActions.js';
+ import filterTokens from './filterTokens.js';
+-import cleanFiles from './cleanFiles.js';
+-import cleanDirs from './cleanDirs.js';
+-import cleanActions from './cleanActions.js';
++const cleanFiles = {};
++const cleanDirs = {};
++const cleanActions = {};
+ 
+ /**
+  * @typedef {import('../types/Volume.d.ts').Volume} Volume
+@@ -221,7 +221,6 @@ export default class StyleDictionary extends Register {
+           // Windows FS compatibility. If in browser, we use an FS shim which doesn't require this Windows workaround
+           _filePath = new URL(`file:///${_filePath}`).href;
+         }
+-        options = (await import(/* @vite-ignore */ /* webpackIgnore: true */ _filePath)).default;
+       }
+     } else {
+       options = config;
+diff --git a/lib/chalk.js b/lib/chalk.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+diff --git a/lib/penpotPatches.js b/lib/penpotPatches.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..d7012e19f0ce98b0dfddee22244d40415e77146c
+--- /dev/null
++++ b/lib/penpotPatches.js
+@@ -0,0 +1,21 @@
++export const globSync = () => {};
++
++export const chalk = new Proxy(
++  {},
++  {
++    get: () => {
++      return new Proxy(() => {}, {
++        get: () => {
++          return (string) => string;
++        },
++        apply: () => {
++          return new Proxy(() => {}, {
++            get: () => {
++              return (string) => string;
++            },
++          });
++        },
++      });
++    },
++  },
++);
+diff --git a/lib/transform/config.js b/lib/transform/config.js
+index 44efa824d6633e05748ccad114512c612ecf32bd..59bc28f4dab48e533b507ad94d2b99005d7a22c5 100644
+--- a/lib/transform/config.js
++++ b/lib/transform/config.js
+@@ -15,7 +15,7 @@ import isPlainObject from 'is-plain-obj';
+ import deepExtend from '../utils/deepExtend.js';
+ import GroupMessages from '../utils/groupMessages.js';
+ import { deepmerge } from '../utils/deepmerge.js';
+-import chalk from 'chalk';
++import { chalk } from '../penpotPatches.js';
+ 
+ /**
+  * @typedef {import('../StyleDictionary.js').default} StyleDictionary
+diff --git a/lib/utils/combineJSON.js b/lib/utils/combineJSON.js
+index f988886175b730a1a0db4855eaccbdd2add4115b..90e0a5e592701d3fc27324795a8bd90ca457814c 100644
+--- a/lib/utils/combineJSON.js
++++ b/lib/utils/combineJSON.js
+@@ -12,7 +12,7 @@
+  */
+ 
+ import JSON5 from 'json5';
+-import { globSync } from '@bundled-es-modules/glob';
++import { globSync } from '../penpotPatches.js';
+ import { extname } from 'path-unified';
+ import { fs } from 'style-dictionary/fs';
+ import { resolve } from '../resolve.js';
+@@ -101,8 +101,6 @@ export default async function combineJSON(
+             // Windows FS compatibility. If in browser, we use an FS shim which doesn't require this Windows workaround
+             resolvedPath = new URL(`file:///${resolvedPath}`).href;
+           }
+-          file_content = (await import(/* @vite-ignore */ /* webpackIgnore: true */ resolvedPath))
+-            .default;
+         } else {
+           file_content = JSON5.parse(
+             /** @type {string} */ (volume.readFileSync(resolvedPath, 'utf-8')),

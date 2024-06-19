@@ -61,9 +61,8 @@
         state (mf/use-state initial-fields)
 
         on-update-state-field (fn [idx e]
-                                (->> (dom/get-target-val e)
-                                     (assoc-in @state [idx :value])
-                                     (reset! state)))
+                                (let [value (dom/get-target-val e)]
+                                  (swap! state assoc-in [idx :value] value)))
 
         on-submit (fn [e]
                     (dom/prevent-default e)
