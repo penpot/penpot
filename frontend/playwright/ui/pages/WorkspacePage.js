@@ -43,13 +43,14 @@ export class WorkspacePage extends BaseWebSocketPage {
     this.presentUserListItems = page.getByTestId("active-users-list").getByAltText("Princesa Leia");
     this.viewport = page.getByTestId("viewport");
     this.rootShape = page.locator(`[id="shape-00000000-0000-0000-0000-000000000000"]`);
-    this.toolbarOptions =  page.getByTestId("toolbar-options");
+    this.toolbarOptions = page.getByTestId("toolbar-options");
     this.rectShapeButton = page.getByRole("button", { name: "Rectangle (R)" });
     this.toggleToolbarButton = page.getByRole("button", { name: "Toggle toolbar" });
     this.colorpicker = page.getByTestId("colorpicker");
     this.layers = page.getByTestId("layer-tree");
     this.palette = page.getByTestId("palette");
     this.sidebar = page.getByTestId("left-sidebar");
+    this.rightSidebar = page.getByTestId("right-sidebar");
     this.selectionRect = page.getByTestId("workspace-selection-rect");
     this.horizontalScrollbar = page.getByTestId("horizontal-scrollbar");
     this.librariesModal = page.getByTestId("libraries-modal");
@@ -119,7 +120,7 @@ export class WorkspacePage extends BaseWebSocketPage {
   }
 
   async moveSelectionToShape(name) {
-    await this.page.locator('rect.viewport-selrect').hover();
+    await this.page.locator("rect.viewport-selrect").hover();
     await this.page.mouse.down();
     await this.viewport.getByTestId(name).first().hover({ force: true });
     await this.page.mouse.up();
@@ -170,9 +171,7 @@ export class WorkspacePage extends BaseWebSocketPage {
   }
 
   async clickColorPalette(clickOptions = {}) {
-    await this.palette
-      .getByRole("button", { name: "Color Palette (Alt+P)" })
-      .click(clickOptions);
+    await this.palette.getByRole("button", { name: "Color Palette (Alt+P)" }).click(clickOptions);
   }
 
   async clickTogglePalettesVisibility(clickOptions = {}) {
