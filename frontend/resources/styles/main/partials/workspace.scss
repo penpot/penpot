@@ -18,7 +18,7 @@ $height-palette-max: 80px;
   width: 100vw;
   height: 100%;
   user-select: none;
-  background-color: $color-canvas;
+  background-color: var(--color-canvas);
   display: grid;
   grid-template-areas:
     "header header header header"
@@ -69,7 +69,7 @@ $height-palette-max: 80px;
 }
 
 .workspace-content {
-  background-color: $color-canvas;
+  background-color: var(--color-canvas);
   display: flex;
   padding: 0;
   margin: 0;
@@ -208,7 +208,7 @@ $height-palette-max: 80px;
     z-index: 13;
 
     rect {
-      fill: $color-canvas;
+      fill: var(--color-canvas);
     }
     path {
       stroke: $color-gray-20;
@@ -223,7 +223,7 @@ $height-palette-max: 80px;
     z-index: 13;
 
     rect {
-      fill: $color-canvas;
+      fill: var(--color-canvas);
     }
     path {
       stroke: $color-gray-20;
