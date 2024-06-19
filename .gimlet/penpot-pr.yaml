@@ -67,6 +67,4 @@ values:
       tls:
         - secretName: tls-penpot
           hosts:
-          - {{ .BRANCH | sanitizeDNSName }}.penpot.dev.tokens.studio
-
-
+          - "{{ .BRANCH | sanitizeDNSName }}.penpot.dev.tokens.studio"
