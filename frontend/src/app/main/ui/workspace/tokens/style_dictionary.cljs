@@ -128,11 +128,9 @@
                                       (reset! tokens-state resolved-tokens))))))))
     @tokens-state))
 
-(defn use-resolved-workspace-tokens
-  ([] (use-resolved-tokens nil))
-  ([options]
-   (-> (mf/deref refs/workspace-tokens)
-       (use-resolved-tokens options))))
+(defn use-resolved-workspace-tokens [& {:as config}]
+  (-> (mf/deref refs/workspace-tokens)
+      (use-resolved-tokens config)))
 
 ;; Testing ---------------------------------------------------------------------
 
