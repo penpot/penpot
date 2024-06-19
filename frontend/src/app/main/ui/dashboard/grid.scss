@@ -6,6 +6,9 @@
 
 @import "refactor/common-refactor.scss";
 
+// TODO: Legacy sass variables. We should remove them in favor of DS tokens.
+$bp-max-1366: "(max-width: 1366px)";
+
 $thumbnail-default-width: $s-252; // Default width
 $thumbnail-default-height: $s-168; // Default width
 

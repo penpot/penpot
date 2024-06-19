@@ -9,8 +9,8 @@
 }
 
 body {
-  background-color: lighten($color-gray-10, 5%);
-  color: $color-gray-20;
+  background-color: var(--db-primary);
+  color: var(--df-primary);
   display: flex;
   flex-direction: column;
   font-family: var(--font-family);
@@ -79,19 +79,10 @@ p {
   font-size: $fs12;
   margin-bottom: 1rem;
   line-height: $lh-133;
-
-  @include bp(baby-bear) {
-    font-size: $fs16;
-    line-height: $lh-143;
-  }
 }
 
 li {
   line-height: $lh-133;
-
-  @include bp(baby-bear) {
-    line-height: $lh-143;
-  }
 }
 
 ul {
@@ -111,31 +102,16 @@ h1 {
   font-weight: $fw500;
   line-height: $lh-115;
 
-  @include bp(baby-bear) {
-    font-size: $fs38;
-    line-height: $lh-125;
-  }
-
   &.supertitle {
     font-size: $fs44;
     font-weight: $fw300;
     line-height: $lh-115;
-
-    @include bp(baby-bear) {
-      font-size: $fs44;
-      line-height: $lh-125;
-    }
   }
 }
 h2 {
   font-size: $fs24;
   font-weight: $fw300;
   line-height: $lh-115;
-
-  @include bp(baby-bear) {
-    font-size: $fs32;
-    line-height: $lh-125;
-  }
 }
 
 h3 {

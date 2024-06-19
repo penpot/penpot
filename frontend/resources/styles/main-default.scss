@@ -14,8 +14,7 @@
 // MAIN STYLES
 //#################################################
 
-@import "common/dependencies/colors";
-@import "common/dependencies/helpers";
+@import "common/refactor/color-defs.scss";
 @import "common/dependencies/mixin";
 @import "common/dependencies/fonts";
 @import "common/dependencies/reset";
@@ -23,7 +22,6 @@
 @import "common/dependencies/z-index";
 @import "common/dependencies/highlightjs-theme";
 
-@import "common/refactor/color-defs.scss";
 @import "common/refactor/themes.scss";
 @import "common/refactor/design-tokens.scss";
 
@@ -33,7 +31,6 @@
 
 @import "common/base";
 @import "main/layouts/main-layout";
-@import "main/layouts/not-found";
 
 //#################################################
 // Commons
