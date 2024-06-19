@@ -94,11 +94,6 @@ manifests: |
         redisEnabled: true
         imagePullSecrets: 
           - name: ghcr-login-secret
-      smtp:
-        enabled: true
-        host: mailslurper
-        tls: false
-        port: 1025
       persistence:
         enabled: true
         storageClass: standard-rwx
@@ -130,6 +125,11 @@ manifests: |
             - penpot.tokens.studio
       config:
         publicURI: https://penpot.tokens.studio
+        smtp:
+          enabled: true
+          host: mailslurper
+          tls: false
+          port: 1025
         redis:
           host: penpot-redis-master.penpot.svc.cluster.local
         postgresql:
