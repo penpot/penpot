@@ -30,7 +30,7 @@ input[type="checkbox"] {
 }
 
 .form-errors {
-  color: $color-danger;
+  color: var(--status-color-warning-500);
 }
 
 // Input slidebar
