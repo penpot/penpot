@@ -86,6 +86,13 @@
          (remove #(contains? reserved-props (key %))))
         props))
 
+(defn params->context
+  "Extract default context properties from RPC params object"
+  [params]
+  (d/without-nils
+   {:external-session-id (::rpc/external-session-id params)
+    :triggered-by (::rpc/handler-name params)}))
+
 ;; --- SPECS
 
 

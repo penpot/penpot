@@ -82,6 +82,7 @@
         session-id   (rreq/get-header request "x-external-session-id")
 
         data         (-> params
+                         (assoc ::handler-name handler-name)
                          (assoc ::request-at (dt/now))
                          (assoc ::external-session-id session-id)
                          (assoc ::session/id (::session/id request))

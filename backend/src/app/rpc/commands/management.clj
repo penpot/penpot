@@ -398,7 +398,7 @@
 ;; --- COMMAND: Clone Template
 
 (defn- clone-template
-  [cfg {:keys [project-id ::rpc/profile-id ::rpc/external-session-id] :as params} template]
+  [cfg {:keys [project-id ::rpc/profile-id] :as params} template]
   (db/tx-run! cfg (fn [{:keys [::db/conn ::wrk/executor] :as cfg}]
                     ;; NOTE: the importation process performs some operations that
                     ;; are not very friendly with virtual threads, and for avoid
@@ -413,9 +413,8 @@
                                   {:modified-at (dt/now)}
                                   {:id project-id})
 
-                      (let [props   (-> (audit/clean-props params)
-                                        (assoc :triggered-by "clone-template"))
-                            context {:external-session-id external-session-id}]
+                      (let [props   (audit/clean-props params)
+                            context (audit/params->context params)]
                         (doseq [file-id result]
                           (audit/submit! cfg
                                          {::audit/type "action"
