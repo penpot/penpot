@@ -1,17 +1,41 @@
 app: penpot-infra
 env: prod
 namespace: penpot
-chart:
-  repository: https://chart.onechart.dev
-  name: onechart
-  version: 0.64.0
-values:
-  containerPort: 1025
-  gitRepository: tokens-studio/tokens-studio-for-penpot
-  gitSha: '{{ .SHA }}'
-  image:
-    repository: oryd/mailslurper
-    tag: smtps-latest
-  replicas: 1
-  resources:
-    ignoreLimits: true
+manifests: |
+  apiVersion: apps/v1
+  kind: Deployment
+  namespace: penpot
+  metadata:
+    name: mailslurper
+    labels:
+      app: mailslurper
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: mailslurper
+    template:
+      metadata:
+        labels:
+          app: mailslurper
+      spec:
+        containers:
+        - name: mailslurper
+          image: oryd/mailslurper:smtps-latest
+          ports:
+          - containerPort: 1025
+          - containerPort: 4436
+          - containerPort: 4437
+  ---
+  apiVersion: v1
+  kind: Service
+  metadata:
+    name: mailslurper
+    namespace: penpot
+  spec:
+    selector:
+      app: mailslurper
+    ports:
+      - protocol: TCP
+        port: 1025
+        targetPort: 1025
