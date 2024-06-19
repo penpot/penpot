@@ -1,17 +1,9 @@
 app: penpot
 env: prod
-namespace: penpot
 deploy:
   branch: token-studio-develop
   event: push
 manifests: | 
-  apiVersion: v1
-  kind: Namespace
-  metadata:
-    name: penpot
-    labels:
-      toolkit.fluxcd.io/tenant: penpot-team
-  ---
   apiVersion: source.toolkit.fluxcd.io/v1beta2
   kind: HelmRepository
   metadata:
