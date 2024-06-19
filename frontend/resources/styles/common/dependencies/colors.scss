@@ -74,11 +74,3 @@ $color-info-darker: mix($color-info, $color-black, $mix-percentage-darker); // #
 
 // bg transparent
 $color-dark-bg: rgba(0, 0, 0, 0.4);
-
-// Transform scss variables into css variables to use them onto cljs files
-:root {
-  // Secondary colors;
-
-  --color-info: #{$color-info};
-  --color-canvas: #e8e9ea;
-}
