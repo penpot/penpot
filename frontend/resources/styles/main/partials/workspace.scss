@@ -303,61 +303,7 @@ $height-palette-max: 80px;
     border-right: 1px solid $color-gray-20;
   }
 
-  .viewport-actions-entry {
-    width: 28px;
-    height: 28px;
-    margin: 0 0.25rem;
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-radius: $br3;
-
-    svg {
-      pointer-events: none;
-      width: 20px;
-      height: 20px;
-    }
-
-    &:hover svg {
-      fill: $color-primary;
-    }
-
-    &.is-disabled {
-      cursor: initial;
-      svg {
-        fill: $color-gray-20;
-      }
-    }
-
-    &.is-toggled {
-      background: $color-black;
-
-      svg {
-        fill: $color-primary;
-      }
-    }
-  }
-
-  .viewport-actions-entry-wide {
-    width: 27px;
-    height: 20px;
-
-    svg {
-      width: 27px;
-      height: 20px;
-    }
-  }
-
-  .path-actions > :first-child .viewport-actions-entry {
-    margin-left: 0;
-  }
-
   .path-actions > :last-child {
     border: none;
-  }
-
-  .path-actions > :last-child .viewport-actions-entry {
-    margin-right: 0;
   }
 }
