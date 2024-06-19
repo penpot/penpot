@@ -185,29 +185,6 @@ input[type="range"]:focus::-ms-fill-upper {
   background: $color-gray-60;
 }
 
-// Scroll bar (chrome)
-
-::-webkit-scrollbar {
-  background-color: transparent;
-  cursor: pointer;
-  height: 8px;
-  width: 8px;
-}
-
-::-webkit-scrollbar-track,
-::-webkit-scrollbar-corner {
-  background-color: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background-color: $color-gray-20;
-
-  &:hover {
-    background-color: darken($color-gray-20, 14%);
-    outline: 2px solid $color-primary;
-  }
-}
-
 [draggable] {
   -moz-user-select: none;
   -khtml-user-select: none;
