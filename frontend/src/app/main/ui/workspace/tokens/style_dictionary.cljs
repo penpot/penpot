@@ -77,7 +77,6 @@
 (defn resolve-tokens+
   [tokens & {:keys [debug?] :as config}]
   (p/let [sd-tokens (-> (tokens-name-map tokens)
-                        (clj->js)
                         (resolve-sd-tokens+ config))]
     (let [resolved-tokens (reduce
                            (fn [acc ^js cur]
