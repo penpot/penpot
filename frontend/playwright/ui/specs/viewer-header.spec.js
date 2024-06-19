@@ -8,15 +8,6 @@ test.beforeEach(async ({ page }) => {
 const singleBoardFileId = "dd5cc0bb-91ff-81b9-8004-77df9cd3edb1";
 const singleBoardPageId = "dd5cc0bb-91ff-81b9-8004-77df9cd3edb2";
 
-const setupFileWithSingleBoard = async (viewer) => {
-  await viewer.mockRPC(/get\-view\-only\-bundle\?/, "viewer/get-view-only-bundle-single-board.json");
-  await viewer.mockRPC("get-comment-threads?file-id=*", "workspace/get-comment-threads-empty.json");
-  await viewer.mockRPC(
-    "get-file-fragment?file-id=*&fragment-id=*",
-    "viewer/get-file-fragment-single-board.json",
-  );
-};
-
 test("Clips link area of the logo", async ({ page }) => {
   const viewerPage = new ViewerPage(page);
   await viewerPage.setupLoggedInUser();
@@ -37,7 +28,7 @@ test("Clips link area of the logo", async ({ page }) => {
 test("Updates URL with zoom type", async ({ page }) => {
   const viewer = new ViewerPage(page);
   await viewer.setupLoggedInUser();
-  await setupFileWithSingleBoard(viewer);
+  await viewer.setupFileWithSingleBoard(viewer);
 
   await viewer.goToViewer({ fileId: singleBoardFileId, pageId: singleBoardPageId });
 
