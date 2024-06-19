@@ -243,12 +243,12 @@ exporter:
 persistence:
   ## @param persistence.enabled Enable persistence using Persistent Volume Claims.
   ##
-  enabled: false
+  enabled: true
   ## @param persistence.storageClass Persistent Volume storage class.
   ## If defined, storageClassName: <storageClass>.
   ## If undefined (the default) or set to null, no storageClassName spec is set, choosing the default provisioner.
   ##
-  storageClass: ""
+  storageClass: standard-rwx 
   ## @param persistence.size Persistent Volume size.
   ##
   size: 8Gi

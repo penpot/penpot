@@ -102,6 +102,9 @@ manifests: |
         redisEnabled: true
         imagePullSecrets: 
           - name: ghcr-login-secret
+      persistence:
+        enabled: true
+        storageClass: standard-rwx
       backend:
         image:
           pullPolicy: IfNotPresent
