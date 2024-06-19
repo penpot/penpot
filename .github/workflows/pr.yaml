@@ -35,9 +35,14 @@ jobs:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.PAT_TOKEN  }}
-    - name: Get current branch name
-      id: get_branch
-      run: echo "branch_name=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+    - name: Determine the branch name
+      id: determine_branch
+      run: |
+        if [ "${{ github.event_name }}" == "pull_request" ]; then
+          echo "branch_name=${{ github.head_ref }}" >> $GITHUB_ENV
+        else
+          echo "branch_name=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+        fi
 
     - name: Replace / with - in branch name
       id: replace_slash
