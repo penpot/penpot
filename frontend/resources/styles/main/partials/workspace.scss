@@ -96,7 +96,7 @@ $height-palette-max: 80px;
   }
 
   .coordinates {
-    background-color: $color-dark-bg;
+    background-color: var(--db-primary);
     border-radius: $br3;
     bottom: 0px;
     padding-left: 5px;
@@ -114,7 +114,7 @@ $height-palette-max: 80px;
     }
 
     span {
-      color: $color-white;
+      color: var(--df-primary);
       font-size: $fs12;
       padding-right: 5px;
     }
@@ -123,7 +123,7 @@ $height-palette-max: 80px;
   .cursor-tooltip {
     background-color: $color-dark-bg;
     border-radius: $br3;
-    color: $color-white;
+    color: var(--df-primary);
     font-size: $fs12;
     padding: 3px 8px;
     transition: none;
