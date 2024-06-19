@@ -173,3 +173,8 @@ json6902Patches:
       path: /metadata/labels
       value: 
         portService: tokens-studio-for-penpot
+    - op: add 
+      path: /spec/template/spec/containers/0/env
+      value:
+        name: PENPOT_SMTP_ENABLED
+        value: 'true'
