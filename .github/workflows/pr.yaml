@@ -35,13 +35,22 @@ jobs:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.PAT_TOKEN  }}
+    - name: Get current branch name
+      id: get_branch
+      run: echo "branch_name=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+
+    - name: Replace / with - in branch name
+      id: replace_slash
+      run: |
+        SANITIZED_BRANCH_NAME=$(echo "${{ env.branch_name }}" | tr '/' '-')
+        echo "sanitized_branch_name=${SANITIZED_BRANCH_NAME}" >> $GITHUB_ENV
 
     - name: Docker meta
       id: meta
       uses: docker/metadata-action@v5
       with:
         tags: |
-          type=ref,enable=true,priority=600,prefix=${{matrix.type}}-,suffix=,event=branch
+          type=raw,enable=true,prefix=${{matrix.type}}-,value=${{ env.sanitized_branch_name }}
         images: |
           ghcr.io/tokens-studio/tokens-studio-for-penpot
     - name: prebuild
