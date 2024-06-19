@@ -51,6 +51,9 @@ values:
       pullPolicy: IfNotPresent
       repository: ghcr.io/tokens-studio/tokens-studio-for-penpot
       tag: 'backend-pr-{{ .SHA }}' 
+  exporter:
+    # Unlikely to be used 
+    enabled: false
   frontend:
     labels:
       portService: tokens-studio-for-penpot
