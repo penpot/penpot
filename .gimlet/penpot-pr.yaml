@@ -18,9 +18,6 @@ values:
     redisEnabled: false
     imagePullSecrets: 
       - name: ghcr-login-secret
-  persistence:
-    enabled: true
-    storageClass: standard-rwx
   postgresql:
     # use the existing db
     enabled: false
@@ -30,6 +27,22 @@ values:
     secret: db-penpot-secrets
     superUser: db-penpot-superuser-secret
   config:
+    assets:
+      storageBackend: assets-s3
+      s3:
+        bucket: assets
+        endpointURI: http://minio.penpot.svc.cluster.local:80
+        existingSecret: 
+          penpot-assets-user-0
+        secretKeys:
+          accessKeyIDKey: CONSOLE_ACCESS_KEY
+          secretAccessKey: CONSOLE_SECRET_KEY
+      
+      # - AWS_ACCESS_KEY_ID=<KEY_ID>
+      # - AWS_SECRET_ACCESS_KEY=<ACCESS_KEY>
+      # - PENPOT_ASSETS_STORAGE_BACKEND=assets-s3
+      # - PENPOT_STORAGE_ASSETS_S3_ENDPOINT=http://penpot-minio:9000
+      # - PENPOT_STORAGE_ASSETS_S3_BUCKET=<BUKET_NAME>
     smtp:
       enabled: true
       host: mailslurper

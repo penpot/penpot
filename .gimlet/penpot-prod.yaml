@@ -14,9 +14,6 @@ values:
     redisEnabled: true
     imagePullSecrets: 
       - name: ghcr-login-secret
-  persistence:
-    enabled: true
-    storageClass: standard-rwx
   postgresql:
     enabled: true
     owner: penpot
@@ -25,6 +22,16 @@ values:
     secret: db-penpot-secrets
     superUser: db-penpot-superuser-secret
   config:
+    assets:
+      storageBackend: assets-s3
+      s3:
+        bucket: assets
+        endpointURI: http://minio.penpot.svc.cluster.local:80
+        existingSecret: 
+          penpot-assets-user-0
+        secretKeys:
+          accessKeyIDKey: CONSOLE_ACCESS_KEY
+          secretAccessKey: CONSOLE_SECRET_KEY
     smtp:
       enabled: true
       host: mailslurper
