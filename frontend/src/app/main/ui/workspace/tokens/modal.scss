@@ -19,6 +19,12 @@
   gap: $s-8;
 }
 
+.error {
+  @include bodySmallTypography;
+  margin-top: $s-6;
+  color: var(--status-color-error-500);
+}
+
 .resolved-value {
   @include bodySmallTypography;
   padding: $s-4 $s-6;
