@@ -19,6 +19,20 @@
   gap: $s-8;
 }
 
+.resolved-value {
+  @include bodySmallTypography;
+  padding: $s-4 $s-6;
+  font-weight: medium;
+
+  color: var(--color-foreground-primary);
+  border: 1px solid color-mix(in hsl, var(--color-foreground-secondary) 30%, transparent);
+
+  p {
+    font-size: $fs-12;
+    margin: 0;
+  }
+}
+
 .shadow {
   @extend .modal-container-base;
   @include menuShadow;
