@@ -4,31 +4,15 @@
 //
 // Copyright (c) KALEIDOS INC
 
-// Colors
-$color-dashboard: #f6f6f6;
-
-// Main color
-$color-primary: #31efb8;
-
 // Secondary colors
-$color-success: #49d793;
-$color-complete: #a599c6;
-$color-warning: #fc8802;
 $color-danger: #e65244;
-$color-info: #59b9e2;
 
 // Gray scale
 $color-gray-10: #e3e3e3;
 $color-gray-20: #b1b2b5;
-$color-gray-30: #7b7d85;
 $color-gray-40: #64666a;
 $color-gray-50: #303236;
 $color-gray-60: #1f1f1f;
-
-// Mixing Color variable for creating both light and dark colors
-$mix-percentage-dark: 81%;
-$mix-percentage-darker: 60%;
-$mix-percentage-lighter: 20%;
 
 // bg transparent
 $color-dark-bg: rgba(0, 0, 0, 0.4);
