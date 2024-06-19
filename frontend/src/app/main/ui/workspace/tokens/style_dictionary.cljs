@@ -20,17 +20,6 @@
                                        (.-tokens (.-dictionary res)))})
     sd))
 
-;; Helpers ---------------------------------------------------------------------
-
-(defn tokens->tree
-  "Convert flat tokens list into a tokens tree that is consumable by StyleDictionary."
-  [tokens]
-  (reduce
-   (fn [acc [_ {:keys [type name] :as token}]]
-     (->> (update token :id str)
-          (assoc-in acc [type name])))
-   {} tokens))
-
 ;; Functions -------------------------------------------------------------------
 
 (defn tokens->style-dictionary+
