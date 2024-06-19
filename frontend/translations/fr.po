@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-17 08:07+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2024-06-19 20:09+0000\n"
+"Last-Translator: Unreal Vision <unrealvisionyt@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Weblate 5.6-dev\n"
+"X-Generator: Weblate 5.6-rc\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -48,9 +48,8 @@ msgid "auth.fullname"
 msgstr "Nom complet"
 
 #: src/app/main/ui/auth/register.cljs
-#, fuzzy
 msgid "auth.login-here"
-msgstr "Connectez-vous ici"
+msgstr "Connectez-vous ici."
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
@@ -5217,3 +5216,35 @@ msgstr "Cacher les guides"
 
 msgid "workspace.context-menu.grid-cells.area"
 msgstr "Créer une zone"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.work-email"
+msgstr "Email professionnel"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-mail"
+msgstr "Vérifiez vos email"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register-tagline"
+msgstr ""
+"Avec un compte grauit Penpot, vous pouvez créer des équipes en illimité et "
+"collaborer avec d'autres designer et développeurs sur autant de projets que "
+"vous le souhaitez. "
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-account-title"
+msgstr "Votre nom"
+
+#: src/app/main/ui/auth/login.cljs
+#, fuzzy
+msgid "auth.register-account-tagline"
+msgstr ""
+"Faites nous savoir si nous devons vous appelez sur le tableau de bord et "
+"dans les emails."
+
+#, fuzzy
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"En créant un nouveau compte, vous acceptez nos termes d'usage du service et "
+"de traitement de la vie privée."
