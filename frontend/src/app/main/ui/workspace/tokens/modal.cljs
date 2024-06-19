@@ -80,6 +80,12 @@
   {::mf/wrap-props false}
   [{:keys [token-type x y position fields token] :as args}]
   (let [tokens (sd/use-resolved-workspace-tokens {:debug? true})
+        used-token-names (mf/use-memo
+                          (mf/deps tokens)
+                          (fn []
+                            (-> (into #{} (map (fn [[_ {:keys [name]}]] name) tokens))
+                                 ;; Allow setting token to already used name
+                                (disj (:name token)))))
         vport (mf/deref viewport)
         style (calculate-position vport position x y)
 
