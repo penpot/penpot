@@ -5,12 +5,6 @@
 // Copyright (c) KALEIDOS INC
 
 //#################################################
-// Import libraries
-//#################################################
-
-@use "sass:color";
-
-//#################################################
 // MAIN STYLES
 //#################################################
 
@@ -32,7 +26,8 @@
 // Commons
 //#################################################
 
-@import "common/framework";
+// TODO: remove this stylesheet once the new text editor is in place
+//       https: //tree.taiga.io/project/penpot/us/8165
 @import "main/partials/texts";
 
 //#################################################

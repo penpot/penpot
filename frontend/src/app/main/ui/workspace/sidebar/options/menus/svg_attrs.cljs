@@ -36,7 +36,6 @@
         [:span {:class (stl/css :attr-name)} label]
         [:div  {:class (stl/css :attr-input)}
          [:input {:value value
-                  :class "input-text"
                   :on-change handle-change}]]
         [:div  {:class (stl/css :attr-actions)}
          [:button {:class (stl/css :attr-action-btn)

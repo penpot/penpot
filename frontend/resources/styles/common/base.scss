@@ -7,15 +7,16 @@
 // TODO: Legacy sass vars. We should use DS tokens.
 $color-gray-50: #303236;
 $fs12: 0.75rem;
+$fs14: 0.875rem;
 $fs18: 1.125rem;
 $fs24: 1.5rem;
 $fs34: 2.125rem;
 $fs44: 2.75rem;
 $fw300: 300;
 $fw500: 500;
-$fw700: 700;
 $lh-115: 1.15;
 $lh-133: 1.33;
+$size-4: 1rem;
 
 :root {
   --font-family: "worksans", sans-serif;
@@ -42,24 +43,12 @@ body {
 * {
   box-sizing: border-box;
   scrollbar-width: thin;
-  // transition: all .4s ease;
 }
 
+// Firefox-only hack
 @-moz-document url-prefix() {
   * {
     scrollbar-width: auto;
-  }
-}
-
-.global-zeroclipboard-container {
-  transition: none;
-
-  #global-zeroclipboard-flash-bridge {
-    transition: none;
-  }
-
-  object {
-    transition: none;
   }
 }
 
@@ -102,25 +91,12 @@ ul {
   margin-bottom: 1rem;
 }
 
-strong {
-  font-weight: $fw700;
-}
-
-.relative {
-  position: relative;
-}
-
 h1 {
   font-size: $fs34;
   font-weight: $fw500;
   line-height: $lh-115;
-
-  &.supertitle {
-    font-size: $fs44;
-    font-weight: $fw300;
-    line-height: $lh-115;
-  }
 }
+
 h2 {
   font-size: $fs24;
   font-weight: $fw300;
@@ -136,104 +112,6 @@ h3 {
 h4 {
   font-size: $fs18;
   font-weight: $fw300;
-}
-
-@-webkit-keyframes rotation {
-  from {
-    -webkit-transform: rotate(0deg);
-  }
-  to {
-    -webkit-transform: rotate(359deg);
-  }
-}
-
-@-webkit-keyframes rotation-negative {
-  from {
-    -webkit-transform: rotate(0deg);
-  }
-  to {
-    -webkit-transform: rotate(-359deg);
-  }
-}
-
-@keyframes tooltipAppear {
-  0% {
-    opacity: 0;
-    display: none;
-  }
-  1% {
-    display: block;
-    opacity: 0;
-    left: 3rem;
-  }
-  100% {
-    opacity: 1;
-    left: 2rem;
-  }
-}
-
-@keyframes show {
-  0% {
-    opacity: 0;
-    display: none;
-  }
-  1% {
-    display: block;
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
-}
-
-@keyframes hide {
-  0% {
-    opacity: 1;
-    display: block;
-  }
-  99% {
-    opacity: 0;
-    display: block;
-  }
-  100% {
-    display: none;
-  }
-}
-
-.hide {
-  display: none !important;
-  transition: all 0.5s ease;
-}
-
-.visuallyHidden {
-  opacity: 0 !important;
-  transition: all 0.5s ease;
-}
-
-.show {
-  animation: show 0.4s linear;
-  display: block !important;
-}
-
-.center {
-  margin: 0 auto;
-  text-align: center;
-}
-
-.hidden-input {
-  display: none;
-}
-
-.bold {
-  font-weight: $fw700 !important;
-}
-
-.nopd {
-  padding: 0 !important;
-}
-
-.move-cursor {
-  cursor: move;
 }
 
 hr {
@@ -259,7 +137,22 @@ input[type="number"] {
   user-select: text;
 }
 
-[data-hidden="true"] {
-  display: none;
-  pointer-events: none;
+input,
+select {
+  box-sizing: border-box;
+  font-family: "worksans", sans-serif;
+  font-size: $fs14;
+  margin-bottom: $size-4;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+[draggable] {
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  user-select: none;
+  /* Required to make elements draggable in old WebKit */
+  -khtml-user-drag: element;
+  -webkit-user-drag: element;
 }
