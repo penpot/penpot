@@ -5,6 +5,7 @@ namespace: penpot
 deploy:
   event: pr
 cleanup:
+  branch: "*"
   event: branchDeleted
   app: penpot-pr-{{ .BRANCH | sanitizeDNSName }}
 chart:
