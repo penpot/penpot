@@ -45,6 +45,19 @@ manifests: |
         port: 1025
         targetPort: 1025
   ---
+  apiVersion: v1
+  kind: Service
+  metadata:
+    name: mailslurper-ui
+    namespace: penpot
+  spec:
+    selector:
+      app: mailslurper
+    ports:
+      - protocol: TCP
+        port: 1080
+        targetPort: 1080
+  ---
   apiVersion: bitnami.com/v1alpha1
   kind: SealedSecret
   metadata:
@@ -111,3 +124,74 @@ manifests: |
         enabled: false
       replica:
         replicaCount: 0
+  ---
+  apiVersion: source.toolkit.fluxcd.io/v1beta1
+  kind: HelmRepository
+  metadata:
+    name: oauth
+    namespace: penpot
+  spec:
+    interval: 60m
+    url: https://oauth2-proxy.github.io/manifests
+  ---
+  apiVersion: bitnami.com/v1alpha1
+  kind: SealedSecret
+  metadata:
+    creationTimestamp: null
+    name: oauth-secret
+    namespace: penpot
+  spec:
+    encryptedData:
+      client-id: AgAAdMf9uIqEgGAij4ovrpmCHU5lVU3vjnJyOwBoolqbHGFDwL4u1NxzZmMyjjtLeP7vdF8U9A6mO7C9ti2/1KSZQN0TXj0pT8Yz85GxGVMPCOPSZPq6Bi88cV+KmgU7j1XGK+xoXD3w+fP8trOYcv6d5ZUOfnbZ9tHHF09922/U4gV5HXlSdLVSo4dSJvKSOG8lzTkac9kvmQqGIKxbpcH4HHijgj0gGpLGdEectKb38vnCob1Vk2iVTIdmyr2UGzHMATdPK5bbY7gyBcTvxsOQK4XMKd03/hbvF3SsmhDgSy1VOqUx4cGhONT0LEYABmPT7rFmsKk+2/rESYcUMGX7HVgV1vmV37vbsFuAq34vgOZX9hLecF4kyRjPXiuLdhW23APzEWzb7m/GFSlM3oqalBznYUJtJMNd9fF2OH5tyHstJqnNYFNdumW+6gIWQ2GmyTV7k2ESqThNkTEcZivBpO40hAj/uVg/2nRXMba4iEw3bg+cq47fedEtQaSd6zIbf5N5YKm4+TUq5UnK7n/NYP2pPO/uvCm3oXg1AV9DaDmHRBzHkTdaSF4HrNdEfa7o7OS+aieOl/Qf9HhmkEd6YAY/98pdtmdobRdr4pwv2aCiScqI/UMRBJN8Kr85JI5NtjJGk6C2aFoeiBb/kTtNlzPvuSEvPSLCeMHH3UbTb9e/ktQptRuGRqRdLCwZyJrAlAEBxLIl956WgFjH4qbIFay8gfXhf/BgYlpNrkp6IzZkLRMSODpB
+      client-secret: AgAveYBq0zhGemNt6NsnFDymHFBW1PqTCLZW2pXhPTv2xZgy1863/S0YaN341gpD+Ny81r8X/5zhvWQ/vWEOL805yrP/F9Zui6axsuuaMtf018azgmU5Ddn4FyxI6TKzgWTFdRpm5LfmLj2P6ttxoM5Uxe5p15HyKzuSKslK2N0IufT8x2d+qDtOpWzOgNk6jMPVE0NUvhzoX0YySG/AeOqF//oFM9h3F/ywjGiEm3JW4AvTU+zHI9dD97ECWJ7bFp1ffi9Q9cKpoM/2mC1/K/qzkxTdZsQpI5fjZmhimU7HAxzgsswSYNg53RA3XbpSm7K6seo7BKnrX4gXKRj+w2ApOAkmpQAND3j7/w5yTxuzr2I+9ihyh9V1z6bpPqMM7TbnOyF2Ze/MFnx07/gnzbcQ5VhEhjZiXFAwEv/kekEAtiscK9KNriTA4AlHB9o6k92WPso8YLzZYE4GZflerpGlRVdlRoroSFmngvZUQFzCw2JvvHiY/nTBys1R8BSLYcQ7a6bDGOcIk+94RGZGEZS/1utmirJCUWWA8F4tdawB9fkd7NNOrzkAG2Po1wnW0ZkNhT9uOOwPB+msLupKL/SrDGUv7kQKwIf/eELi1xVWCMJl0+iz3NnCPfRIMldbrjP0k8BCUQkjxHH0/AO1xBmgXjCpcPyX7rvHzuE1IRcHOvI6ADewCcqWueu8eSCIFzUYjtFxlH6dLeh/rsUdwbdqdm6MTbD5OhYtmRedHxLIWboKF2tV6fnrJPCygj0enhciHqrPfKbLk0ZeF0f8C3s92pnSQHaYyHSNdePv2gKYs4RPoL3QEFZbLm1aWDWhIJ8697jtCtyVMaMeDKClTotBm6VSaFbH9s0WWmA5ugsYVA==
+      cookie-secret: AgA32CK7bAqb1ym43mJo01vgaTQkQnv744gFj+Uw2s6C6/zHirmZ+/rD7bJAQqyIYkxOet3XHRJEBFHLit0npIdk7mHJInwOGEjgxWab20beiqefknMBGi/vzFhK7vyMU516vjfqL2qH7u6wdP7X0W3KuS6yccdV+9G/OJ3X71qB+RRXW8/qsrnBahvkaiqLNK6S+riUMAf72OPZvqy6b010ErM+jfJzxxYDYUUmfJpHiXzNMp68Zo83fZ0vwEMXJNuhaAAY68qYQn6RFT+VRJIaC6gds6+QkbODlWMClQMp11ldix/T8urSG76ng4aQAmAqIhMN65Sj6iF/94P4AVdUaXZVBw5SmxWZx5Ejh0Z981JL9opzbbYsVpOPDoHK/73fhiRVWNDKL87aFFlJogXSfxOHLPJv2i4U8G8uu8gU5ZcVuH+uOewBP3aV+nBcAzTRHyOhx1jriM1UCaeIr3it8Kt7ecAklbwYslFJ2p5sJKr/tNSo/GarLZChfrboCayGjVWgA+QR2rh30bwvsAvo+JwSmAmk3p9lfcChO62KXPqbty5G7l7MC5vZjUDlIg3lYIUJDQOATk+GnkU8rTrrzM3hf8a/JBX18EDbCnJcVEp4AsOETg4ZltxmNej7UkI4AU8Ww35teWsvjrse9wVViNOT0Z6E++1kTD2LjZmhakxzzVIgp65of2ZIiN2Y5zL2a/XuH1yKniBvo2eWQcuYQZvJ7Jz20JXhIb9fzTwrWg==
+    template:
+      metadata:
+        creationTimestamp: null
+        name: oauth-secret
+        namespace: penpot
+      type: Opaque
+  ---
+  apiVersion: helm.toolkit.fluxcd.io/v2beta2
+  kind: HelmRelease
+  metadata:
+    name: oauth2-proxy-penpot
+    namespace: penpot
+  spec:
+    interval: 60m
+    releaseName: oauth2-proxy-penpot
+    chart:
+      spec:
+        chart: oauth2-proxy
+        version: 7.5.4
+        sourceRef:
+          kind: HelmRepository
+          name: oauth
+        interval: 10m
+    values:
+      ingress:
+        enabled: true
+        className: traefik
+        annotations: 
+          cert-manager.io/cluster-issuer: letsencrypt-prod
+          traefik.ingress.kubernetes.io/router.entrypoints: websecure
+          traefik.ingress.kubernetes.io/router.tls: 'true'
+        hosts:
+          - mail.penpot.tokens.studio
+        tls:
+          - secretName: tls-penpot-mail
+            hosts: 
+              - mail.penpot.tokens.studio
+      config:
+        existingSecret: oauth-secret
+        configFile: | 
+              provider = "oidc"
+              http_address = ":80"
+              upstreams = ["http://mailslurper-ui.penpot.svc:1080"]
+              redirect_url = "https://mail.penpot.tokens.studio/oauth2/callback"
+              oidc_issuer_url = "https://auth.tokens.studio/application/o/penpot-mail/"
+              email_domains = "*"
+              cookie_secure = "true"
+              oidc_groups_claim = "groups"
+              user_id_claim = "preferred_username"
+              skip_provider_button = "true"

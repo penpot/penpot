@@ -148,7 +148,7 @@ data:
 
         gzip_types text/plain text/css text/javascript application/javascript application/json application/transit+json;
 
-        resolver 127.0.0.11;
+        resolver {{ .Values.frontend.resolver }};
 
         map $http_upgrade $connection_upgrade {
             default upgrade;
