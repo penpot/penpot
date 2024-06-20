@@ -21,6 +21,7 @@
    [cuerdas.core :as str]
    [malli.core :as m]
    [malli.dev.pretty :as mdp]
+   [malli.dev.virhe :as v]
    [malli.error :as me]
    [malli.generator :as mg]
    [malli.registry :as mr]
@@ -103,6 +104,10 @@
 (defn error-values
   [exp]
   (malli.error/error-value exp {:malli.error/mask-valid-values '...}))
+
+(defn optional-keys
+  [schema]
+  (mu/optional-keys schema default-options))
 
 (def default-transformer
   (let [default-decoder
@@ -190,9 +195,10 @@
     (fn [v] (@vfn v))))
 
 (defn lazy-decoder
-  [s transformer]
-  (let [vfn (delay (decoder (if (delay? s) (deref s) s) transformer))]
-    (fn [v] (@vfn v))))
+  ([s] (lazy-decoder s default-transformer))
+  ([s transformer]
+   (let [vfn (delay (decoder (if (delay? s) (deref s) s) transformer))]
+     (fn [v] (@vfn v)))))
 
 (defn humanize-explain
   [{:keys [schema errors value]} & {:keys [length level]}]
@@ -207,9 +213,29 @@
                                      :level (d/nilv level 8)
                                      :length (d/nilv length 12)})))))
 
+
+(defmethod v/-format ::schemaless-explain
+  [_ {:keys [schema] :as explanation} printer]
+  {:body [:group
+          (v/-block "Value" (v/-visit (me/error-value explanation printer) printer) printer) :break :break
+          (v/-block "Errors" (v/-visit (me/humanize (me/with-spell-checking explanation)) printer) printer) :break :break
+          (v/-block "Schema" (v/-visit schema printer) printer)]})
+
+
+(defmethod v/-format ::explain
+  [_ {:keys [schema] :as explanation} printer]
+  {:body [:group
+          (v/-block "Value" (v/-visit (me/error-value explanation printer) printer) printer) :break :break
+          (v/-block "Errors" (v/-visit (me/humanize (me/with-spell-checking explanation)) printer) printer) :break :break
+          (v/-block "Schema" (v/-visit schema printer) printer)]})
+
+
 (defn pretty-explain
-  [s d]
-  (mdp/explain (schema s) d))
+  [explain & {:keys [variant message]
+              :or {variant ::explain
+                   message "Validation Error"}}]
+  (let [explain (fn [] (me/with-error-messages explain))]
+    ((mdp/prettifier variant message explain default-options))))
 
 (defmacro ignoring
   [expr]
@@ -297,7 +323,7 @@
        (throw (ex-info hint options))))))
 
 (defn validate-fn
-  "Create a predefined validate function"
+  "Create a predefined validate function that raises an expception"
   [s]
   (let [schema (if (lazy-schema? s) s (define s))]
     (partial fast-validate! schema)))
@@ -317,6 +343,7 @@
              hint    (get options :hint "schema validation error")]
          (throw (ex-info hint options)))))))
 
+;; FIXME: revisit
 (defn conform!
   [schema value]
   (assert (lazy-schema? schema) "expected `schema` to satisfy ILazySchema protocol")
@@ -476,11 +503,14 @@
 
 (define! ::set
   {:type :set
+   :min 0
+   :max 1
    :compile
-   (fn [{:keys [coerce kind max min] :as props} _ _]
+   (fn [{:keys [coerce kind max min] :as props} children _]
      (let [xform (if coerce
                    (comp non-empty-strings-xf (map coerce))
                    non-empty-strings-xf)
+           kind  (or (last children) kind)
            pred  (cond
                    (fn? kind)  kind
                    (nil? kind) any?
@@ -509,7 +539,8 @@
                            (every? pred value))))
 
                   :else
-                  pred)]
+                  (fn [value]
+                    (every? pred value)))]
 
        {:pred pred
         :type-properties
@@ -524,6 +555,64 @@
          ::oapi/decode (fn [v]
                          (let [v (if (string? v) (str/split v #"[\s,]+") v)]
                            (into #{} xform v)))}}))})
+
+
+(define! ::vec
+  {:type :vector
+   :min 0
+   :max 1
+   :compile
+   (fn [{:keys [coerce kind max min] :as props} children _]
+     (let [xform (if coerce
+                   (comp non-empty-strings-xf (map coerce))
+                   non-empty-strings-xf)
+
+           kind  (or (last children) kind)
+           pred  (cond
+                   (fn? kind)  kind
+                   (nil? kind) any?
+                   :else       (validator kind))
+
+           pred (cond
+                  (and max min)
+                  (fn [value]
+                    (let [size (count value)]
+                      (and (set? value)
+                           (<= min size max)
+                           (every? pred value))))
+
+                  min
+                  (fn [value]
+                    (let [size (count value)]
+                      (and (set? value)
+                           (<= min size)
+                           (every? pred value))))
+
+                  max
+                  (fn [value]
+                    (let [size (count value)]
+                      (and (set? value)
+                           (<= size max)
+                           (every? pred value))))
+
+                  :else
+                  (fn [value]
+                    (every? pred value)))]
+
+       {:pred pred
+        :type-properties
+        {:title "set"
+         :description "Set of Strings"
+         :error/message "should be a set of strings"
+         :gen/gen (-> kind sg/generator sg/set)
+         ::oapi/type "array"
+         ::oapi/format "set"
+         ::oapi/items {:type "string"}
+         ::oapi/unique-items true
+         ::oapi/decode (fn [v]
+                         (let [v (if (string? v) (str/split v #"[\s,]+") v)]
+                           (into [] xform v)))}}))})
+
 
 (define! ::set-of-strings
   {:type ::set-of-strings
