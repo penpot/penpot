@@ -104,10 +104,10 @@
                      (dissoc :app.srepl/server
                              :app.http/server
                              :app.http/router
-                             :app.auth.oidc/google-provider
-                             :app.auth.oidc/gitlab-provider
-                             :app.auth.oidc/github-provider
-                             :app.auth.oidc/generic-provider
+                             :app.auth.oidc.providers/google
+                             :app.auth.oidc.providers/gitlab
+                             :app.auth.oidc.providers/github
+                             :app.auth.oidc.providers/generic
                              :app.setup/templates
                              :app.auth.oidc/routes
                              :app.worker/monitor
