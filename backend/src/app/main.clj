@@ -524,6 +524,7 @@
 
 (defn start
   []
+  (cf/validate!)
   (ig/load-namespaces (merge system-config worker-config))
   (alter-var-root #'system (fn [sys]
                              (when sys (ig/halt! sys))

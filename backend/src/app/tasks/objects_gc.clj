@@ -292,7 +292,7 @@
 (defmethod ig/prep-key ::handler
   [_ cfg]
   (assoc cfg
-         ::min-age cf/deletion-delay
+         ::min-age (cf/get-deletion-delay)
          ::chunk-size 10))
 
 (defmethod ig/init-key ::handler
