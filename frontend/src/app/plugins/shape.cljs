@@ -18,6 +18,9 @@
    [app.common.spec :as us]
    [app.common.svg.path.legacy-parser2 :as spp]
    [app.common.text :as txt]
+   [app.common.types.component :as ctk]
+   [app.common.types.container :as ctn]
+   [app.common.types.file :as ctf]
    [app.common.types.grid :as ctg]
    [app.common.types.shape :as cts]
    [app.common.types.shape.blur :as ctsb]
@@ -43,6 +46,7 @@
    [cuerdas.core :as str]))
 
 (def lib-typography-proxy? nil)
+(def lib-component-proxy nil)
 
 (deftype TextRange [$plugin $file $page $id start end]
   Object
@@ -466,7 +470,39 @@
 
         :else
         (let [typography (u/proxy->library-typography typography)]
-          (st/emit! (dwt/apply-typography #{$id} typography $file)))))))
+          (st/emit! (dwt/apply-typography #{$id} typography $file))))))
+
+  ;; COMPONENTS
+  (isComponentInstance
+    [self]
+    (let [shape (u/proxy->shape self)
+          file-id (obj/get self "$file")
+          page-id (obj/get self "$page")
+          objects (u/locate-objects file-id page-id)]
+      (ctn/in-any-component? objects shape)))
+
+  (isComponentMainInstance
+    [self]
+    (let [shape (u/proxy->shape self)
+          file-id (obj/get self "$file")
+          page-id (obj/get self "$page")
+          objects (u/locate-objects file-id page-id)]
+      (ctn/inside-component-main? objects shape)))
+
+  (isComponentCopyInstance
+    [self]
+    (let [shape (u/proxy->shape self)]
+      (ctk/in-component-copy? shape)))
+
+  (isComponentRoot
+    [self]
+    (let [shape (u/proxy->shape self)]
+      (ctk/instance-root? shape)))
+
+  (isComponentHead
+    [self]
+    (let [shape (u/proxy->shape self)]
+      (ctk/instance-head? shape))))
 
 (crc/define-properties!
   ShapeProxy
@@ -951,7 +987,60 @@
                    id (obj/get self "$id")
                    objects (u/locate-objects file-id page-id)]
                (when (ctl/grid-layout-immediate-child-id? objects id)
-                 (grid/layout-cell-proxy plugin-id file-id page-id id))))})
+                 (grid/layout-cell-proxy plugin-id file-id page-id id))))}
+
+          ;; Components
+          {:name "componentRefShape"
+           :get
+           (fn [self]
+             (let [file-id (obj/get self "$file")
+                   page-id (obj/get self "$page")
+                   objects (u/locate-objects file-id page-id)
+                   shape (u/proxy->shape self)]
+               (when (ctn/in-any-component? objects shape)
+                 (let [plugin-id (obj/get self "$plugin")
+                       [root component] (u/locate-component objects shape)
+                       component-page-id (:main-instance-page component)
+                       component-file (u/locate-file (:component-file root))
+                       ref-shape (ctf/get-ref-shape (:data component-file) component shape)]
+                   (when (and (not (:deleted component)) (some? ref-shape) (some? component-file))
+                     (shape-proxy plugin-id (:id component-file) component-page-id (:id ref-shape)))))))}
+
+          {:name "componentRoot"
+           :get
+           (fn [self]
+             (let [file-id (obj/get self "$file")
+                   page-id (obj/get self "$page")
+                   objects (u/locate-objects file-id page-id)
+                   shape (u/proxy->shape self)]
+               (when (ctn/in-any-component? objects shape)
+                 (let [plugin-id (obj/get self "$plugin")
+                       [root component] (u/locate-component objects shape)]
+                   (shape-proxy plugin-id (:component-file root) (:main-instance-page component) (:id root))))))}
+
+          {:name "componentHead"
+           :get
+           (fn [self]
+             (let [file-id (obj/get self "$file")
+                   objects (u/locate-objects file-id page-id)
+                   shape (u/proxy->shape self)]
+               (when (ctn/in-any-component? objects shape)
+                 (let [plugin-id (obj/get self "$plugin")
+                       page-id (obj/get self "$page")
+                       head (ctn/get-head-shape (u/locate-objects file-id page-id) shape)]
+                   (shape-proxy plugin-id file-id page-id (:id head))))))}
+
+          {:name "component"
+           :get
+           (fn [self]
+             (let [file-id (obj/get self "$file")
+                   page-id (obj/get self "$page")
+                   objects (u/locate-objects file-id page-id)
+                   shape (u/proxy->shape self)]
+               (when (ctn/in-any-component? objects shape)
+                 (let [plugin-id (obj/get self "$plugin")
+                       [root component] (u/locate-component objects shape)]
+                   (lib-component-proxy plugin-id (:component-file root) (:id component))))))})
 
          (cond-> (or (cfh/frame-shape? data) (cfh/group-shape? data) (cfh/svg-raw-shape? data) (cfh/bool-shape? data))
            (crc/add-properties!

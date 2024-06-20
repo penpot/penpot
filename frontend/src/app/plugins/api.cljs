@@ -205,7 +205,7 @@
   (createShapeFromSvg
     [_ svg-string]
     (cond
-      (not (string? svg-string))
+      (or (not (string? svg-string)) (empty? svg-string))
       (u/display-not-valid :createShapeFromSvg svg-string)
 
       :else

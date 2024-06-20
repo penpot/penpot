@@ -14,6 +14,7 @@
    [app.common.record :as cr]
    [app.common.schema :as sm]
    [app.common.types.color :as ctc]
+   [app.common.types.file :as ctf]
    [app.common.types.typography :as ctt]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
@@ -630,7 +631,19 @@
         :else
         (let [component (u/proxy->library-component self)
               value (dm/str value " / " (:name component))]
-          (st/emit! (dwl/rename-component id value)))))}))
+          (st/emit! (dwl/rename-component id value)))))}
+
+   {:name "mainInstance"
+    :get
+    (fn [self]
+      (let [file-id (obj/get self "$file")
+            file (u/locate-file file-id)
+            component (u/proxy->library-component self)
+            root (ctf/get-component-root (:data file) component)]
+        (when (some? root)
+          (shape/shape-proxy plugin-id file-id (:main-instance-page component) (:id root)))))}))
+
+(set! shape/lib-component-proxy lib-component-proxy)
 
 (deftype Library [$plugin $id]
   Object
