@@ -30,4 +30,10 @@
   :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Open-Color-Scheme.penpot"}
  {:id "flex-layout-playground"
   :name "Flex Layout Playground"
-  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Flex-Layout-Playground.penpot"}]
+  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Flex-Layout-Playground.penpot"}
+ {:id "prototype-examples"
+  :name "Prototipe template"
+  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/prototype-examples.penpot"}
+ {:id "penpot-design-system"
+  :name "Design system example"
+  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Penpot-Design-system.penpot"}]
