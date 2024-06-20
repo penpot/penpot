@@ -159,7 +159,7 @@
                      (ifn? type) (type (:type error))
                      :else false))]
     (when show?
-      [:ul.form-errors
+      [:ul
        [:li {:key (:code error)} (tr (:message error))]])))
 
 (defn error-class
