@@ -2558,11 +2558,11 @@ msgstr "Prototyping"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "onboarding.questions.start-with.ds"
-msgstr "Creating Desing Systems"
+msgstr "Creating Design Systems"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "onboarding.questions.start-with.code"
-msgstr "Generating real code designs"
+msgstr "Generating real code from designs"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "onboarding.questions.step5.title"
