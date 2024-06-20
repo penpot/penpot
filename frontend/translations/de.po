@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-19 20:09+0000\n"
+"PO-Revision-Date: 2024-06-21 07:09+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
@@ -5429,3 +5429,26 @@ msgstr "Helfen Sie uns, Sie kennen zu lernen"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "onboarding.questions.step5.title"
 msgstr "Wie haben Sie von Penpot erfahren?"
+
+#: src/app/main/ui/auth/register.cljs
+#, markdown
+msgid "auth.terms-and-privacy-agreement"
+msgstr ""
+"Ich stimme den [Nutzungsbedingungen](%s) und der [Datenschutzrichtlinie](%s) "
+"zu."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step1.question2"
+msgstr "Was führt Sie heute zu Penpot?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.reasons.fit"
+msgstr "Prüfen, ob Penpot für mein Team geeignet ist"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.reasons.testing"
+msgstr "Vor dem Selbst-Hosting, testen"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.ui"
+msgstr "UI/UX-Design einer App"
