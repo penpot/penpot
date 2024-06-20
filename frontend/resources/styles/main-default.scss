@@ -14,9 +14,9 @@
 // MAIN STYLES
 //#################################################
 
+@import "common/dependencies/reset";
 @import "common/refactor/color-defs.scss";
 @import "common/dependencies/fonts";
-@import "common/dependencies/reset";
 @import "common/dependencies/animations";
 @import "common/dependencies/z-index";
 @import "common/dependencies/highlightjs-theme";
