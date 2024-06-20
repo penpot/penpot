@@ -22,8 +22,8 @@
 (def ^:private schema:create-share-link
   [:map {:title "create-share-link"}
    [:file-id ::sm/uuid]
-   [:who-comment :string]
-   [:who-inspect :string]
+   [:who-comment [:string {:max 250}]]
+   [:who-inspect [:string {:max 250}]]
    [:pages [:set ::sm/uuid]]])
 
 (sv/defmethod ::create-share-link

@@ -34,7 +34,7 @@
   schema:export-binfile
   (sm/define
     [:map {:title "export-binfile"}
-     [:name :string]
+     [:name [:string {:max 250}]]
      [:file-id ::sm/uuid]
      [:include-libraries :boolean]
      [:embed-assets :boolean]]))
@@ -80,7 +80,7 @@
   schema:import-binfile
   (sm/define
     [:map {:title "import-binfile"}
-     [:name :string]
+     [:name [:string {:max 250}]]
      [:project-id ::sm/uuid]
      [:file ::media/upload]]))
 
