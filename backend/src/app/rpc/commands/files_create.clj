@@ -88,7 +88,7 @@
 
 (def ^:private schema:create-file
   [:map {:title "create-file"}
-   [:name :string]
+   [:name [:string {:max 250}]]
    [:project-id ::sm/uuid]
    [:id {:optional true} ::sm/uuid]
    [:is-shared {:optional true} :boolean]

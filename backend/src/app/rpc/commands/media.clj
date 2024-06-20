@@ -47,7 +47,7 @@
    [:id {:optional true} ::sm/uuid]
    [:file-id ::sm/uuid]
    [:is-local :boolean]
-   [:name :string]
+   [:name [:string {:max 250}]]
    [:content ::media/upload]])
 
 (sv/defmethod ::upload-file-media-object
@@ -177,7 +177,7 @@
    [:is-local :boolean]
    [:url ::sm/uri]
    [:id {:optional true} ::sm/uuid]
-   [:name {:optional true} :string]])
+   [:name {:optional true} [:string {:max 250}]]])
 
 (sv/defmethod ::create-file-media-object-from-url
   {::doc/added "1.17"

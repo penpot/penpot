@@ -35,7 +35,7 @@
 
 (def ^:private schema:create-temp-file
   [:map {:title "create-temp-file"}
-   [:name :string]
+   [:name [:string {:max 250}]]
    [:project-id ::sm/uuid]
    [:id {:optional true} ::sm/uuid]
    [:is-shared :boolean]

@@ -30,9 +30,10 @@
 
 ;; --- Command: export-binfile
 
-(def ^:private schema:export-binfile
+(def ^:private
+  schema:export-binfile
   [:map {:title "export-binfile"}
-   [:name :string]
+   [:name [:string {:max 250}]]
    [:file-id ::sm/uuid]
    [:include-libraries :boolean]
    [:embed-assets :boolean]])
@@ -74,9 +75,10 @@
                 {:id project-id})
     result))
 
-(def ^:private schema:import-binfile
+(def ^:private
+  schema:import-binfile
   [:map {:title "import-binfile"}
-   [:name :string]
+   [:name [:string {:max 250}]]
    [:project-id ::sm/uuid]
    [:file ::media/upload]])
 

@@ -177,7 +177,7 @@
      [:features ::cfeat/features]
      [:has-media-trimmed :boolean]
      [:comment-thread-seqn {:min 0} :int]
-     [:name :string]
+     [:name [:string {:max 250}]]
      [:revn {:min 0} :int]
      [:modified-at ::dt/instant]
      [:is-shared :boolean]
@@ -747,19 +747,19 @@
    [:map {:title "RenameFileEvent"}
     [:id ::sm/uuid]
     [:project-id ::sm/uuid]
-    [:name :string]
+    [:name [:string {:max 250}]]
     [:created-at ::dt/instant]
     [:modified-at ::dt/instant]]
 
    ::sm/params
    [:map {:title "RenameFileParams"}
-    [:name {:min 1} :string]
+    [:name [:string {:min 1 :max 250}]]
     [:id ::sm/uuid]]
 
    ::sm/result
    [:map {:title "SimplifiedFile"}
     [:id ::sm/uuid]
-    [:name :string]
+    [:name [:string {:max 250}]]
     [:created-at ::dt/instant]
     [:modified-at ::dt/instant]]}
 
