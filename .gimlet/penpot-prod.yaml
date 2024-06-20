@@ -7,9 +7,6 @@ deploy:
 chart:
   name: https://github.com/tokens-studio/tokens-studio-for-penpot.git?branch={{ .BRANCH }}&path=/.gimlet/k8s/penpot/
 values:
-  redis:
-    replica:
-      replicaCount: 0
   global:
     redisEnabled: true
     imagePullSecrets: 
@@ -30,7 +27,7 @@ values:
         bucket: assets
         endpointURI: http://minio.penpot.svc.cluster.local:80
         existingSecret: 
-          penpot-assets-user-0
+          penpot-assets-user-penpot
         secretKeys:
           accessKeyIDKey: CONSOLE_ACCESS_KEY
           secretAccessKey: CONSOLE_SECRET_KEY

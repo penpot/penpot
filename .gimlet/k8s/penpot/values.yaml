@@ -107,6 +107,8 @@ backend:
 frontend:
 
   labels: {}
+  # The ip to use for dns resolution. Should be your kube-dns or core-dns ip
+  resolver: 10.116.208.10
 
   ## @param frontend.image.repository The Docker repository to pull the image from.
   ## @param frontend.image.tag The image tag to use.
@@ -304,7 +306,7 @@ config:
   ## @param config.redis.database The Redis database to connect to.
   ##
   redis:
-    host: "redis-headless.penpot.svc.cluster.local"
+    host: "redis-master.penpot.svc.cluster.local"
     port: 6379
     database: "0"
   ## @param config.assets.storageBackend The storage backend for assets to use. Use `assets-fs` for filesystem, and `assets-s3` for S3.
@@ -488,5 +490,7 @@ postgresql:
 ## @param redis.auth.enabled Whether to enable password authentication.
 ##
 redis:
+  replica:
+    replicaCount: 0
   auth:
     enabled: false

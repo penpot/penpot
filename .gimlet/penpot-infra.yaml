@@ -78,3 +78,36 @@ manifests: |
         name: db-penpot-superuser-secret
         namespace: penpot
       type: Opaque
+  ---
+  apiVersion: source.toolkit.fluxcd.io/v1beta2
+  kind: HelmRepository
+  metadata:
+    name: redis
+    namespace: penpot
+  spec:
+    interval: 5m
+    url: https://charts.bitnami.com/bitnami
+  ---
+  apiVersion: helm.toolkit.fluxcd.io/v2beta2
+  kind: HelmRelease
+  metadata:
+    name: redis
+    namespace: penpot
+  spec:
+    chart:
+      spec:
+        chart: redis 
+        sourceRef:
+          kind: HelmRepository
+          name: redis
+        version: 17.17.1
+    install:
+      remediation:
+        retries: 3
+    interval: 50m
+    releaseName: penpot-redis
+    values:
+      auth:
+        enabled: false
+      replica:
+        replicaCount: 0

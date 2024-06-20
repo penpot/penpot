@@ -6,6 +6,107 @@ metadata:
   labels:
     {{- include "penpot.labels" . | nindent 4 }}
 data:
+  nginx-mime.types: | 
+    types {
+        text/html                                        html htm shtml;
+        text/css                                         css;
+        text/xml                                         xml;
+        image/gif                                        gif;
+        image/jpeg                                       jpeg jpg;
+        application/javascript                           js;
+        application/javascript                           mjs;
+        application/atom+xml                             atom;
+        application/rss+xml                              rss;
+
+        text/mathml                                      mml;
+        text/plain                                       txt;
+        text/vnd.sun.j2me.app-descriptor                 jad;
+        text/vnd.wap.wml                                 wml;
+        text/x-component                                 htc;
+
+        image/avif                                       avif;
+        image/png                                        png;
+        image/svg+xml                                    svg svgz;
+        image/tiff                                       tif tiff;
+        image/vnd.wap.wbmp                               wbmp;
+        image/webp                                       webp;
+        image/x-icon                                     ico;
+        image/x-jng                                      jng;
+        image/x-ms-bmp                                   bmp;
+
+        font/woff                                        woff;
+        font/woff2                                       woff2;
+
+        application/java-archive                         jar war ear;
+        application/json                                 json;
+        application/mac-binhex40                         hqx;
+        application/msword                               doc;
+        application/pdf                                  pdf;
+        application/postscript                           ps eps ai;
+        application/rtf                                  rtf;
+        application/vnd.apple.mpegurl                    m3u8;
+        application/vnd.google-earth.kml+xml             kml;
+        application/vnd.google-earth.kmz                 kmz;
+        application/vnd.ms-excel                         xls;
+        application/vnd.ms-fontobject                    eot;
+        application/vnd.ms-powerpoint                    ppt;
+        application/vnd.oasis.opendocument.graphics      odg;
+        application/vnd.oasis.opendocument.presentation  odp;
+        application/vnd.oasis.opendocument.spreadsheet   ods;
+        application/vnd.oasis.opendocument.text          odt;
+        application/vnd.openxmlformats-officedocument.presentationml.presentation
+                                                        pptx;
+        application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+                                                        xlsx;
+        application/vnd.openxmlformats-officedocument.wordprocessingml.document
+                                                        docx;
+        application/vnd.wap.wmlc                         wmlc;
+        application/wasm                                 wasm;
+        application/x-7z-compressed                      7z;
+        application/x-cocoa                              cco;
+        application/x-java-archive-diff                  jardiff;
+        application/x-java-jnlp-file                     jnlp;
+        application/x-makeself                           run;
+        application/x-perl                               pl pm;
+        application/x-pilot                              prc pdb;
+        application/x-rar-compressed                     rar;
+        application/x-redhat-package-manager             rpm;
+        application/x-sea                                sea;
+        application/x-shockwave-flash                    swf;
+        application/x-stuffit                            sit;
+        application/x-tcl                                tcl tk;
+        application/x-x509-ca-cert                       der pem crt;
+        application/x-xpinstall                          xpi;
+        application/xhtml+xml                            xhtml;
+        application/xspf+xml                             xspf;
+        application/zip                                  zip;
+
+        application/octet-stream                         bin exe dll;
+        application/octet-stream                         deb;
+        application/octet-stream                         dmg;
+        application/octet-stream                         iso img;
+        application/octet-stream                         msi msp msm;
+
+        audio/midi                                       mid midi kar;
+        audio/mpeg                                       mp3;
+        audio/ogg                                        ogg;
+        audio/x-m4a                                      m4a;
+        audio/x-realaudio                                ra;
+
+        video/3gpp                                       3gpp 3gp;
+        video/mp2t                                       ts;
+        video/mp4                                        mp4;
+        video/mpeg                                       mpeg mpg;
+        video/quicktime                                  mov;
+        video/webm                                       webm;
+        video/x-flv                                      flv;
+        video/x-m4v                                      m4v;
+        video/x-mng                                      mng;
+        video/x-ms-asf                                   asx asf;
+        video/x-ms-wmv                                   wmv;
+        video/x-msvideo                                  avi;
+    }
+
   nginx.conf: |
     user www-data;
     worker_processes auto;
@@ -124,6 +225,85 @@ data:
                 internal;
                 alias /opt/data/assets;
                 add_header x-internal-redirect "$upstream_http_x_accel_redirect";
+            }
+
+             location / {
+                location ~ ^/github/penpot-files/(?<template_file>[a-zA-Z0-9\-\_\.]+) {
+                    proxy_pass https://raw.githubusercontent.com/penpot/penpot-files/main/$template_file;
+                    proxy_hide_header Access-Control-Allow-Origin;
+                    proxy_set_header User-Agent "curl/7.74.0";
+                    proxy_set_header Host "raw.githubusercontent.com";
+                    proxy_set_header Accept "*/*";
+                    add_header Access-Control-Allow-Origin $http_origin;
+                    proxy_buffering off;
+                }
+
+                location ~ ^/internal/gfonts/font/(?<font_file>.+) {
+                    proxy_pass https://fonts.gstatic.com/s/$font_file;
+
+                    proxy_hide_header Access-Control-Allow-Origin;
+                    proxy_hide_header Cross-Origin-Resource-Policy;
+                    proxy_hide_header Link;
+                    proxy_hide_header Alt-Svc;
+                    proxy_hide_header Cache-Control;
+                    proxy_hide_header Expires;
+                    proxy_hide_header Cross-Origin-Opener-Policy;
+                    proxy_hide_header Report-To;
+
+                    proxy_ignore_headers Set-Cookie Vary Cache-Control Expires;
+
+                    proxy_set_header User-Agent "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36";
+                    proxy_set_header Host "fonts.gstatic.com";
+                    proxy_set_header Accept "*/*";
+
+                    proxy_cache penpot;
+
+                    add_header Access-Control-Allow-Origin $http_origin;
+                    add_header Cache-Control max-age=86400;
+                    add_header X-Cache-Status $upstream_cache_status;
+                }
+
+                location ~ ^/internal/gfonts/css {
+                    proxy_pass https://fonts.googleapis.com/css?$args;
+                    proxy_hide_header Access-Control-Allow-Origin;
+                    proxy_hide_header Cross-Origin-Resource-Policy;
+                    proxy_hide_header Link;
+                    proxy_hide_header Alt-Svc;
+                    proxy_hide_header Cache-Control;
+                    proxy_hide_header Expires;
+
+                    proxy_ignore_headers Set-Cookie Vary Cache-Control Expires;
+
+                    proxy_set_header User-Agent "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36";
+                    proxy_set_header Host "fonts.googleapis.com";
+                    proxy_set_header Accept "*/*";
+
+                    proxy_cache penpot;
+
+                    add_header Access-Control-Allow-Origin $http_origin;
+                    add_header Cache-Control max-age=86400;
+                    add_header X-Cache-Status $upstream_cache_status;
+                }
+
+                location ~ ^/js/config.js$ {
+                    add_header Cache-Control "no-store, no-cache, max-age=0" always;
+                }
+
+                location ~* \.(js|css|jpg|svg|png|mjs|map)$ {
+                    add_header Cache-Control "max-age=604800" always; # 7 days
+                }
+
+                location ~ ^/(/|css|fonts|images|js|wasm|mjs|map) {
+                }
+
+                location ~ ^/[^/]+/(.*)$ {
+                    return 301 " /404";
+                }
+
+                add_header Last-Modified $date_gmt;
+                add_header Cache-Control "no-store, no-cache, max-age=0" always;
+                if_modified_since off;
+                try_files $uri /index.html$is_args$args /index.html =404;
             }
         }
     }

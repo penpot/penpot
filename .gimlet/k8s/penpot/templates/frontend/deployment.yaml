@@ -336,6 +336,10 @@ spec:
               name: "{{ include "penpot.fullname" . }}-frontend-nginx"
               readOnly: true
               subPath: nginx.conf
+            - mountPath: /etc/nginx/nginx-mime.types
+              name: "{{ include "penpot.fullname" . }}-frontend-nginx"
+              readOnly: true
+              subPath: nginx-mime.types
           ports:
             - name: http
               containerPort: {{ .Values.frontend.service.port }}
