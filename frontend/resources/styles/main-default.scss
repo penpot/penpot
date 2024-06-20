@@ -18,8 +18,6 @@
 @import "common/refactor/color-defs.scss";
 @import "common/dependencies/fonts";
 @import "common/dependencies/animations";
-@import "common/dependencies/z-index";
-@import "common/dependencies/highlightjs-theme";
 
 @import "common/refactor/themes.scss";
 @import "common/refactor/design-tokens.scss";
@@ -29,7 +27,6 @@
 //#################################################
 
 @import "common/base";
-@import "main/layouts/main-layout";
 
 //#################################################
 // Commons
