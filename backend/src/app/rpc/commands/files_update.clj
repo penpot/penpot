@@ -51,7 +51,7 @@
     [:vector [:map
               [:changes [:vector ::cpc/change]]
               [:hint-origin {:optional true} :keyword]
-              [:hint-events {:optional true} [:vector :string]]]]]
+              [:hint-events {:optional true} [:vector [:string {:max 250}]]]]]]
    [:skip-validate {:optional true} :boolean]])
 
 (def ^:private
