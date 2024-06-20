@@ -69,7 +69,8 @@
    :enable-onboarding-questions
    :enable-onboarding-newsletter
    :enable-dashboard-templates-section
-   :enable-google-fonts-provider])
+   :enable-google-fonts-provider
+   :enable-component-thumbnails])
 
 (defn- parse-flags
   [global]

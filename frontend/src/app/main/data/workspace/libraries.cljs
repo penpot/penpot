@@ -24,6 +24,7 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.types.typography :as ctt]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.changes :as dch]
    [app.main.data.comments :as dc]
    [app.main.data.events :as ev]
@@ -1203,7 +1204,7 @@
                  (rx/debounce 5000)
                  (rx/tap #(log/trc :hint "buffer initialized")))]
 
-        (when components-v2?
+        (when (and components-v2? (contains? cf/flags :component-thumbnails))
           (->> (rx/merge
                 changes-s
 
