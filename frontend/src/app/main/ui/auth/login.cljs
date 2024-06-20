@@ -9,7 +9,6 @@
   (:require
    [app.common.logging :as log]
    [app.common.schema :as sm]
-   [app.common.spec :as us]
    [app.config :as cf]
    [app.main.data.messages :as msg]
    [app.main.data.users :as du]
@@ -25,7 +24,6 @@
    [app.util.keyboard :as k]
    [app.util.router :as rt]
    [beicon.v2.core :as rx]
-   [cljs.spec.alpha :as s]
    [rumext.v2 :as mf]))
 
 (def show-alt-login-buttons?
@@ -64,14 +62,6 @@
                      :else
                      (st/emit! (msg/error (tr "errors.generic"))))))))
 
-(s/def ::email ::us/email)
-(s/def ::password ::us/not-empty-string)
-(s/def ::invitation-token ::us/not-empty-string)
-
-(s/def ::login-form
-  (s/keys :req-un [::email ::password]
-          :opt-un [::invitation-token]))
-
 (def ^:private schema:login-form
   [:map {:title "LoginForm"}
    [:email [::sm/email {:error/code "errors.invalid-email"}]]
@@ -84,7 +74,6 @@
   (let [initial (mf/with-memo [params] params)
         error   (mf/use-state false)
         form    (fm/use-form :schema schema:login-form
-                             ;; :validators [handle-error-messages]
                              :initial initial)
 
         on-error
