@@ -27,9 +27,11 @@ values:
     secret: db-penpot-secrets
     superUser: db-penpot-superuser-secret
   config:
+    telemetryEnabled: false
     assets:
       storageBackend: assets-s3
       s3:
+        region: eu-west
         bucket: assets
         endpointURI: http://minio.penpot.svc.cluster.local:80
         existingSecret: 
@@ -37,18 +39,18 @@ values:
         secretKeys:
           accessKeyIDKey: CONSOLE_ACCESS_KEY
           secretAccessKey: CONSOLE_SECRET_KEY
-      
-      # - AWS_ACCESS_KEY_ID=<KEY_ID>
-      # - AWS_SECRET_ACCESS_KEY=<ACCESS_KEY>
-      # - PENPOT_ASSETS_STORAGE_BACKEND=assets-s3
-      # - PENPOT_STORAGE_ASSETS_S3_ENDPOINT=http://penpot-minio:9000
-      # - PENPOT_STORAGE_ASSETS_S3_BUCKET=<BUKET_NAME>
+    flags: 'enable-smtp'
     smtp:
       enabled: true
       host: mailslurper
+      defaultFrom: no-reply@penpot.tokens.studio
+      defaultReplyTo: no-reply@penpot.tokens.studio
+      username: test
+      password: test
       tls: false
+      ssl: false
       port: 1025
-    publicURI: https://{{ .BRANCH | sanitizeDNSName }}.penpot.dev.tokens.studio
+    publicURI: https://{{ .BRANCH | sanitizeDNSName }}.penpot.alpha.tokens.studio
     redis:
       host: penpot-redis-master.penpot.svc.cluster.local
     postgresql:
@@ -79,8 +81,8 @@ values:
       annotations:
         cert-manager.io/cluster-issuer: letsencrypt-prod
       hosts:
-        - host: "{{ .BRANCH | sanitizeDNSName }}.penpot.dev.tokens.studio"
+        - host: "{{ .BRANCH | sanitizeDNSName }}.penpot.alpha.tokens.studio"
       tls:
-        - secretName: tls-penpot
+        - secretName: tls-penpot-{{ .BRANCH | sanitizeDNSName }}
           hosts:
-          - "{{ .BRANCH | sanitizeDNSName }}.penpot.dev.tokens.studio"
+          - "{{ .BRANCH | sanitizeDNSName }}.penpot.alpha.tokens.studio"

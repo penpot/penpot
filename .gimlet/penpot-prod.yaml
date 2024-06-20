@@ -22,9 +22,11 @@ values:
     secret: db-penpot-secrets
     superUser: db-penpot-superuser-secret
   config:
+    flags: 'enable-smtp'
     assets:
       storageBackend: assets-s3
       s3:
+        region: eu-west
         bucket: assets
         endpointURI: http://minio.penpot.svc.cluster.local:80
         existingSecret: 
@@ -35,7 +37,12 @@ values:
     smtp:
       enabled: true
       host: mailslurper
+      defaultFrom: no-reply@penpot.tokens.studio
+      defaultReplyTo: no-reply@penpot.tokens.studio
+      username: test
+      password: test
       tls: false
+      ssl: false
       port: 1025
     publicURI: https://penpot.tokens.studio
     redis:

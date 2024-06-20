@@ -27,11 +27,10 @@ manifests: |
       spec:
         containers:
         - name: mailslurper
-          image: oryd/mailslurper:smtps-latest
+          image: sj26/mailcatcher:latest
           ports:
           - containerPort: 1025
-          - containerPort: 4436
-          - containerPort: 4437
+          - containerPort: 1080
   ---
   apiVersion: v1
   kind: Service
