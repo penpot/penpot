@@ -12,6 +12,8 @@ $size-4: 1rem;
 $br7: 7px;
 $br25: 25px;
 $br50: 50px;
+$fs14: 0.875rem;
+$lh-normal: normal; // line-height depends of font-family, font-size, your browser, maybe your OS http://meyerweb.com/eric/thoughts/2008/05/06/line-height-abnormal/
 
 input[type="button"][disabled] {
   background-color: var(--color-canvas); // TODO: see if we can remove this whole selector

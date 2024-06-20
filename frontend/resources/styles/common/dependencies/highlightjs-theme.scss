@@ -2,6 +2,9 @@
 Monokai Sublime style. Derived from Monokai by noformnocontent http://nn.mit-license.org/
 */
 
+// TODO: Legacy sass vars. We should use DS tokens.
+$fw700: 700;
+
 .hljs {
   display: block;
   overflow-x: auto;

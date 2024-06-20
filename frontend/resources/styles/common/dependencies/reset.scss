@@ -1,3 +1,7 @@
+// TODO: Legacy sass vars. We should not be using Sass vars here in this
+//       file at all.
+$lh-143: 1.43;
+
 /*
 http://meyerweb.com/eric/tools/css/reset/
 v2.0 | 20110126
@@ -97,6 +101,9 @@ video {
   border: 0;
   font: inherit;
   font-size: 100%;
+  // TODO: Changing line-height to 1 (as it should be) makes the visual tests
+  //       fail with a max pixel diff ratio of 0.005.
+  //       We should tackle this later.
   line-height: $lh-143;
   margin: 0;
   padding: 0;
@@ -118,7 +125,7 @@ section {
   display: block;
 }
 body {
-  line-height: $lh-100;
+  line-height: 1;
 }
 
 ol,

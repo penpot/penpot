@@ -4,9 +4,12 @@
 //
 // Copyright (c) KALEIDOS INC
 
-// TODO: legacy sass vars. To be removed in favor of DS tokens
+@import "refactor/common-refactor.scss";
+
+// TODO: legacy sass vars. To be removed in favor of DS tokens.
 $br3: 3px;
 $br4: 4px;
+$lh-150: 1.5;
 
 $width-left-toolbar: 48px;
 
@@ -119,7 +122,7 @@ $height-palette-max: 80px;
 
     span {
       color: var(--df-primary);
-      font-size: $fs12;
+      font-size: $fs-12;
       padding-right: 5px;
     }
   }
@@ -128,7 +131,7 @@ $height-palette-max: 80px;
     background-color: var(--db-secondary-40);
     border-radius: $br3;
     color: var(--df-primary);
-    font-size: $fs12;
+    font-size: $fs-12;
     padding: 3px 8px;
     transition: none;
     text-align: center;
@@ -236,7 +239,7 @@ $height-palette-max: 80px;
 }
 
 .workspace-frame-label {
-  font-size: $fs12;
+  font-size: $fs-12;
 }
 
 .multiuser-cursor {
@@ -252,7 +255,7 @@ $height-palette-max: 80px;
   display: flex;
   align-items: center;
   height: 20px;
-  font-size: $fs12;
+  font-size: $fs-12;
   line-height: $lh-150;
 }
 
