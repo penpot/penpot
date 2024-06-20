@@ -873,7 +873,7 @@
 
 (def ^:private schema:create-team-with-invitations
   [:map {:title "create-team-with-invitations"}
-   [:name :string]
+   [:name [:string {:max 250}]]
    [:features {:optional true} ::cfeat/features]
    [:id {:optional true} ::sm/uuid]
    [:emails ::sm/set-of-emails]
