@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-19 20:09+0000\n"
+"PO-Revision-Date: 2024-06-21 07:09+0000\n"
 "Last-Translator: Unreal Vision <unrealvisionyt@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
@@ -409,7 +409,7 @@ msgstr "Exporter"
 msgid "dashboard.export-shapes.how-to"
 msgstr ""
 "Vous pouvez ajouter des paramètres d'exportation aux formes depuis les "
-"propriétés de design (en bas de la barre latérale de droite)"
+"propriétés de design (en bas de la barre latérale de droite)."
 
 #: src/app/main/ui/export.cljs
 msgid "dashboard.export-shapes.how-to-link"
@@ -526,9 +526,6 @@ msgid "dashboard.import.import-error"
 msgstr ""
 "Un problème est survenu lors de l'importation du fichier. Le fichier n'a "
 "pas été importé."
-
-msgid "dashboard.import.import-message"
-msgstr "%s fichiers ont été importés avec succès."
 
 msgid "dashboard.import.import-warning"
 msgstr "Certains fichiers contenaient des objets invalides qui ont été enlevés."
@@ -5067,7 +5064,7 @@ msgid "media.choose-image"
 msgstr "Choisir image"
 
 msgid "media.gradient"
-msgstr "Gradient"
+msgstr "Dégradé"
 
 msgid "workspace.options.guides.title"
 msgstr "Guides"
@@ -5237,14 +5234,187 @@ msgid "auth.register-account-title"
 msgstr "Votre nom"
 
 #: src/app/main/ui/auth/login.cljs
-#, fuzzy
 msgid "auth.register-account-tagline"
 msgstr ""
-"Faites nous savoir si nous devons vous appelez sur le tableau de bord et "
+"Faites nous savoir ce que nous devons vous montrer sur le tableau de bord et "
 "dans les emails."
 
-#, fuzzy
 msgid "auth.terms-privacy-agreement"
 msgstr ""
 "En créant un nouveau compte, vous acceptez nos termes d'usage du service et "
-"de traitement de la vie privée."
+"de politique de confidentialité."
+
+#: src/app/main/ui/auth/register.cljs
+#, markdown
+msgid "auth.terms-and-privacy-agreement"
+msgstr ""
+"J'accepte les [termes du service](%s) et la [politique de "
+"confidentialité](%s)."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.use.work"
+msgstr "Travail"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step1.title"
+msgstr "Aidez-nous à vous connaitre"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step1.question1"
+msgstr "Pour quoi utiliserez-vous Penpot ?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.use.education"
+msgstr "Éducation"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.use.personal"
+msgstr "Personnel"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step1.question2"
+msgstr "Qu'est-ce qui vous amène sur Penpot aujourd'hui ?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.reasons.exploring"
+msgstr "Juste explorer"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.reasons.fit"
+msgstr "Découvrir si Penpot est bien pour mon équipe"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.reasons.alternative"
+msgstr "Regarder pour une alternative à Figma, XD, etc"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.reasons.testing"
+msgstr "Tester avant d'auto-héberger"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step2.title"
+msgstr "Lequel de ces outils utilisez-vous le plus ?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step3.title"
+msgstr "Dites nous quel est votre poste"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step3.question1"
+msgstr "Quel genre de travail faites-vous ?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.product-design"
+msgstr "Product ou UX Designer"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.graphic-design"
+msgstr "Designer graphique"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.team-member"
+msgstr "Membre d'une équipe"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.director"
+msgstr "Directeur"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.team-size.freelancer"
+msgstr "Je suis Freelance"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.ui"
+msgstr "Designer l'UX/UI pour une app"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.wireframing"
+msgstr "Faire du wireframe"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.ds"
+msgstr "Créer des Design Systems"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.code"
+msgstr "Générer du vrai code pour les designs"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step5.title"
+msgstr "Comment avez-vous entendu parlé de Penpot ?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.youtube"
+msgstr "YouTube"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.event"
+msgstr "Évènement"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.social"
+msgstr "Réseau social (X, Linkedin, FB, etc)"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.article"
+msgstr "Article (Blog, Newsletter)"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.other-short"
+msgstr "Autre"
+
+msgid "workspace.plugins.button-open"
+msgstr "Ouvrir"
+
+msgid "workspace.plugins.title"
+msgstr "Extensions"
+
+msgid "workspace.plugins.menu.title"
+msgstr "Extensions"
+
+msgid "workspace.plugins.error.url"
+msgstr "Cette extension n'existe pas ou l'URL n'est pas correcte."
+
+msgid "workspace.plugins.success"
+msgstr "Extension correctement chargée."
+
+msgid "workspace.plugins.plugin-list-link"
+msgstr "Liste d'extensions"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.toggle-toolbar"
+msgstr "Activer/Désactiver la barre d'outils"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step1.subtitle"
+msgstr ""
+"Laissez nous vous connaitre un peu pour nous aider à faire fonctionner "
+"Penpot pour vous. Vos questions nous aiderons à prioriser les nouvelles "
+"fonctionnalités et vous diriger dans la bonne direction pour commencer."
+
+msgid "workspace.plugins.install"
+msgstr "Installer"
+
+msgid "workspace.plugins.search-placeholder"
+msgstr "Écrire une URL d'extension"
+
+msgid "workspace.plugins.menu.plugins-manager"
+msgstr "Manager d'extensions"
+
+msgid "workspace.plugins.installed-plugins"
+msgstr "Extensions installées"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.team-leader"
+msgstr "Chef de projet"
+
+msgid "workspace.plugins.empty-plugins"
+msgstr "Aucune extension installée pour le moment"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step4.title"
+msgstr "Par où souhaitez-vous commencer ?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.prototyping"
+msgstr "Prototyper"
