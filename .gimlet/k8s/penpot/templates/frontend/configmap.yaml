@@ -1,0 +1,129 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ include "penpot.fullname" . }}-frontend-nginx"
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "penpot.labels" . | nindent 4 }}
+data:
+  nginx.conf: |
+    user www-data;
+    worker_processes auto;
+    pid /run/nginx.pid;
+    include /etc/nginx/modules-enabled/*.conf;
+
+    events {
+        worker_connections 2048;
+        # multi_accept on;
+    }
+
+    http {
+        sendfile on;
+        tcp_nopush on;
+        tcp_nodelay on;
+        keepalive_requests 30;
+        keepalive_timeout 65;
+        types_hash_max_size 2048;
+
+        server_tokens off;
+
+        reset_timedout_connection on;
+        client_body_timeout 30s;
+        client_header_timeout 30s;
+
+        include /etc/nginx/mime.types;
+        default_type application/octet-stream;
+
+        error_log /dev/stdout;
+        access_log /dev/stdout;
+
+        gzip on;
+        gzip_vary on;
+        gzip_proxied any;
+        gzip_static on;
+        gzip_comp_level 4;
+        gzip_buffers 16 8k;
+        gzip_http_version 1.1;
+
+        gzip_types text/plain text/css text/javascript application/javascript application/json application/transit+json;
+
+        resolver 127.0.0.11;
+
+        map $http_upgrade $connection_upgrade {
+            default upgrade;
+            ''      close;
+        }
+
+        server {
+            listen 80 default_server;
+            server_name _;
+
+            client_max_body_size 100M;
+            charset utf-8;
+
+            proxy_http_version 1.1;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Scheme $scheme;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+            etag off;
+            root /var/www/app/;
+
+            location ~* \.(js|css).*$ {
+                add_header Cache-Control "max-age=86400" always; # 24 hours
+            }
+
+            location ~* \.(html).*$ {
+                add_header Cache-Control "no-cache, max-age=0" always;
+            }
+
+            location /api/export {
+                proxy_pass http://{{ include "penpot.fullname" . }}-exporter:6061;
+            }
+
+            location /api {
+                proxy_pass http://{{ include "penpot.fullname" . }}-backend:6060/api;
+            }
+
+            location /ws/notifications {
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection 'upgrade';
+                proxy_pass http://{{ include "penpot.fullname" . }}-backend:6060/ws/notifications;
+            }
+
+            location @handle_redirect {
+                set $redirect_uri "$upstream_http_location";
+                set $redirect_host "$upstream_http_x_host";
+                set $redirect_cache_control "$upstream_http_cache_control";
+
+                proxy_buffering off;
+
+                proxy_set_header Host "$redirect_host";
+                proxy_hide_header etag;
+                proxy_hide_header x-amz-id-2;
+                proxy_hide_header x-amz-request-id;
+                proxy_hide_header x-amz-meta-server-side-encryption;
+                proxy_hide_header x-amz-server-side-encryption;
+                proxy_pass $redirect_uri;
+
+                add_header x-internal-redirect "$redirect_uri";
+                add_header x-cache-control "$redirect_cache_control";
+                add_header cache-control "$redirect_cache_control";
+            }
+
+            location /assets {
+                proxy_pass http://{{ include "penpot.fullname" . }}-backend:6060/assets;
+                recursive_error_pages on;
+                proxy_intercept_errors on;
+                error_page 301 302 307 = @handle_redirect;
+            }
+
+            location /internal/assets {
+                internal;
+                alias /opt/data/assets;
+                add_header x-internal-redirect "$upstream_http_x_accel_redirect";
+            }
+        }
+    }

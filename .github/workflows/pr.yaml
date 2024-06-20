@@ -14,6 +14,9 @@ jobs:
           - dockerfile: Dockerfile.frontend
             type: pr-frontend
             name: frontend
+          - dockerfile: Dockerfile.backend
+            type: pr-backend
+            name: backend
     permissions:
       contents: read
       packages: write
@@ -32,13 +35,27 @@ jobs:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.PAT_TOKEN  }}
+    - name: Determine the branch name
+      id: determine_branch
+      run: |
+        if [ "${{ github.event_name }}" == "pull_request" ]; then
+          echo "branch_name=${{ github.head_ref }}" >> $GITHUB_ENV
+        else
+          echo "branch_name=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+        fi
+
+    - name: Replace / with - in branch name
+      id: replace_slash
+      run: |
+        SANITIZED_BRANCH_NAME=$(echo "${{ env.branch_name }}" | tr '/' '-')
+        echo "sanitized_branch_name=${SANITIZED_BRANCH_NAME}" >> $GITHUB_ENV
 
     - name: Docker meta
       id: meta
       uses: docker/metadata-action@v5
       with:
         tags: |
-          type=sha,format=long,prefix=${{matrix.type}}-
+          type=raw,enable=true,prefix=${{matrix.type}}-,value=${{ env.sanitized_branch_name }}
         images: |
           ghcr.io/tokens-studio/tokens-studio-for-penpot
     - name: prebuild
@@ -68,4 +85,3 @@ jobs:
         env:
           GIMLET_SERVER: ${{ secrets.GIMLET_SERVER }}
           GIMLET_TOKEN: ${{ secrets.GIMLET_TOKEN }}
-          DEPLOY: 'true'

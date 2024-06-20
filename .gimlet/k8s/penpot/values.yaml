@@ -2,12 +2,10 @@
 
 ## @section Global parameters
 
-## @param global.postgresqlEnabled Whether to deploy the Bitnami PostgreSQL chart as subchart. Check [the official chart](https://artifacthub.io/packages/helm/bitnami/postgresql) for configuration.
 ## @param global.redisEnabled Whether to deploy the Bitnami Redis chart as subchart. Check [the official chart](https://artifacthub.io/packages/helm/bitnami/redis) for configuration.
 ## @param global.imagePullSecrets Global Docker registry secret names as an array.
 ##
 global:
-  postgresqlEnabled: false
   redisEnabled: false
   ## E.g.
   ## imagePullSecrets:
@@ -37,6 +35,7 @@ serviceAccount:
 ## Penpot Backend
 ##
 backend:
+  labels: {}
   ## @param backend.image.repository The Docker repository to pull the image from.
   ## @param backend.image.tag The image tag to use.
   ## @param backend.image.imagePullPolicy The image pull policy to use.
@@ -106,6 +105,9 @@ backend:
 ## Penpot Frontend
 ##
 frontend:
+
+  labels: {}
+
   ## @param frontend.image.repository The Docker repository to pull the image from.
   ## @param frontend.image.tag The image tag to use.
   ## @param frontend.image.imagePullPolicy The image pull policy to use.
@@ -172,6 +174,7 @@ frontend:
 ## Penpot Exporter
 ##
 exporter:
+  enabled: true
   ## @param exporter.image.repository The Docker repository to pull the image from.
   ## @param exporter.image.tag The image tag to use.
   ## @param exporter.image.imagePullPolicy The image pull policy to use.
@@ -243,12 +246,12 @@ exporter:
 persistence:
   ## @param persistence.enabled Enable persistence using Persistent Volume Claims.
   ##
-  enabled: true
+  enabled: false
   ## @param persistence.storageClass Persistent Volume storage class.
   ## If defined, storageClassName: <storageClass>.
   ## If undefined (the default) or set to null, no storageClassName spec is set, choosing the default provisioner.
   ##
-  storageClass: standard-rwx 
+  storageClass: ""
   ## @param persistence.size Persistent Volume size.
   ##
   size: 8Gi
@@ -275,6 +278,7 @@ config:
   publicURI: "http://localhost:8080"
   flags: "enable-registration enable-login disable-demo-users disable-demo-warning"
   apiSecretKey: "b46a12cb4bedc6b9df8cb3f18c708b65"
+ 
   ## @param config.postgresql.host The PostgreSQL host to connect to.
   ## @param config.postgresql.port The PostgreSQL host port to use.
   ## @param config.postgresql.database The PostgreSQL database to use.
@@ -294,6 +298,7 @@ config:
     secretKeys:
       usernameKey: ""
       passwordKey: ""
+
   ## @param config.redis.host The Redis host to connect to.
   ## @param config.redis.port The Redis host port to use.
   ## @param config.redis.database The Redis database to connect to.
@@ -464,26 +469,24 @@ config:
       oidcClientIDKey: ""
       oidcClientSecretKey: ""
 
+## @section PostgreSQL configuration (Check for [more parameters here](https://artifacthub.io/packages/helm/bitnami/postgresql))
 
-frontend:
-  image:
-    pullPolicy: IfNotPresent
-    repository: ghcr.io/tokens-studio/tokens-studio-for-penpot
-    tag: latest
-  ingress:
-    enabled: true
-    annotations:
-      cert-manager.io/cluster-issuer: letsencrypt-prod
-      networking.gke.io/v1beta1.FrontendConfig: default-frontend-config
+## @param postgresql.secret The secret to reference 
+## @param postgresql.owner The owner of the database
+## @param postgresql.database Name for a custom database to create.
+## @param postgresql.superUser The name of the secret for the superuser
+##
+postgresql:
+  enabled: false
+  secret: db-penpot-secrets
+  owner: penpot
+  database: penpot
+  superUser: db-penpot-superuser-secret
 
-config:
-  publicURI: https://penpot.tokens.studio
-  redis:
-    host: penpot-redis-master.penpot.svc.cluster.local
-  postgresql:
-    host: penpot-db-rw
-    database: penpot
-    existingSecret: db-penpot-secrets
-    secretKeys:
-      usernameKey: username
-      passwordKey: password
+## @section Redis configuration (Check for [more parameters here](https://artifacthub.io/packages/helm/bitnami/redis))
+
+## @param redis.auth.enabled Whether to enable password authentication.
+##
+redis:
+  auth:
+    enabled: false

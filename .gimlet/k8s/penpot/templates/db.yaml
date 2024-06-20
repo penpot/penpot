@@ -1,0 +1,21 @@
+{{- if and .Values.postgresql.enabled -}}
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: {{ include "penpot.fullname" . }}-db
+  namespace: {{ .Release.Namespace }}
+spec:
+  instances: 1
+  superuserSecret:
+    name: {{ .Values.postgresql.superUser | quote }}
+  bootstrap:
+    initdb:
+      database: {{ .Values.postgresql.database | quote }}
+      owner: {{ .Values.postgresql.owner | quote }}
+      secret:
+        name: {{ .Values.postgresql.secret | quote }} 
+  monitoring:
+    enablePodMonitor: true
+  storage:
+    size: 5Gi
+{{- end -}}

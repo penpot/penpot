@@ -1,25 +1,88 @@
 app: penpot-pr-{{ .BRANCH | sanitizeDNSName }}
 # TODO move to staging cluster when ready
 env: prod
+namespace: penpot
 deploy:
   event: pr
 cleanup:
   event: branchDeleted
   app: penpot-pr-{{ .BRANCH | sanitizeDNSName }}
 chart:
-  name: https://github.com/tokens-studio/tokens-studio-for-penpot.git?branch={{ .BRANCH }}&path=/.gimlet/k8s/preview-frontend/
+  name: https://github.com/tokens-studio/tokens-studio-for-penpot.git?branch={{ .BRANCH }}&path=/.gimlet/k8s/penpot/
 values:
-  namespace: "{{ .BRANCH | sanitizeDNSName }}"
+  redis:
+    replica:
+      replicaCount: 0
+  global:
+    # Try use the existing redis
+    redisEnabled: false
+    imagePullSecrets: 
+      - name: ghcr-login-secret
+  postgresql:
+    # use the existing db
+    enabled: false
+    owner: penpot
+    database: penpot
+    # Assumed specified in infra
+    secret: db-penpot-secrets
+    superUser: db-penpot-superuser-secret
+  config:
+    telemetryEnabled: false
+    assets:
+      storageBackend: assets-s3
+      s3:
+        region: eu-west
+        bucket: assets
+        endpointURI: http://minio.penpot.svc.cluster.local:80
+        existingSecret: 
+          penpot-assets-user-0
+        secretKeys:
+          accessKeyIDKey: CONSOLE_ACCESS_KEY
+          secretAccessKey: CONSOLE_SECRET_KEY
+    flags: 'enable-smtp'
+    smtp:
+      enabled: true
+      host: mailslurper
+      defaultFrom: no-reply@penpot.tokens.studio
+      defaultReplyTo: no-reply@penpot.tokens.studio
+      username: test
+      password: test
+      tls: false
+      ssl: false
+      port: 1025
+    publicURI: https://{{ .BRANCH | sanitizeDNSName }}.penpot.alpha.tokens.studio
+    redis:
+      host: penpot-redis-master.penpot.svc.cluster.local
+    postgresql:
+      # note that this is unchanged
+      host: penpot-db-rw
+      database: penpot
+      existingSecret: db-penpot-secrets
+      secretKeys:
+        usernameKey: username
+        passwordKey: password
+  backend:
+    image:
+      pullPolicy: Always
+      repository: ghcr.io/tokens-studio/tokens-studio-for-penpot
+      tag: 'pr-backend-{{ .BRANCH | sanitizeDNSName }}' 
+  exporter:
+    # Unlikely to be used 
+    enabled: false
   frontend:
-  image:
-    pullPolicy: IfNotPresent
-    repository: ghcr.io/tokens-studio/tokens-studio-for-penpot
-    tag: 'frontend-pr-{{ .SHA }}'
-  ingress:     
-    hosts:
-      - host: "{{ .BRANCH | sanitizeDNSName }}.penpot.staging.tokens.studio"
-    tls:
-      - secretName: tls-penpot
-        hosts:
-        - "{{ .BRANCH | sanitizeDNSName }}.penpot.staging.tokens.studio"
-  
+    labels:
+      portService: tokens-studio-for-penpot
+    image:
+      pullPolicy: Always
+      repository: ghcr.io/tokens-studio/tokens-studio-for-penpot
+      tag: 'pr-frontend-{{ .BRANCH | sanitizeDNSName }}'
+    ingress:     
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt-prod
+      hosts:
+        - host: "{{ .BRANCH | sanitizeDNSName }}.penpot.alpha.tokens.studio"
+      tls:
+        - secretName: tls-penpot-{{ .BRANCH | sanitizeDNSName }}
+          hosts:
+          - "{{ .BRANCH | sanitizeDNSName }}.penpot.alpha.tokens.studio"

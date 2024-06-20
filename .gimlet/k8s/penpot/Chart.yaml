@@ -1,4 +1,4 @@
-name: penpot-frontend-preview
+name: penpot
 maintainers:
   - name: Tokens Studio
     url: https://tokens.studio
@@ -15,3 +15,8 @@ keywords:
   - design
 sources:
   - https://github.com/penpot/penpot
+dependencies:
+  - condition: global.redisEnabled
+    name: redis
+    repository: https://charts.bitnami.com/bitnami
+    version: 17.x.x
