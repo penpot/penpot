@@ -106,7 +106,7 @@ data:
         video/x-ms-wmv                                   wmv;
         video/x-msvideo                                  avi;
     }
-
+    
   nginx.conf: |
     user www-data;
     worker_processes auto;
@@ -154,6 +154,11 @@ data:
             default upgrade;
             ''      close;
         }
+
+        proxy_cache_path /tmp/cache/ levels=2:2 keys_zone=penpot:20m;
+        proxy_cache_methods GET HEAD;
+        proxy_cache_valid any 48h;
+        proxy_cache_key "$host$request_uri";
 
         server {
             listen 80 default_server;
@@ -227,7 +232,7 @@ data:
                 add_header x-internal-redirect "$upstream_http_x_accel_redirect";
             }
 
-             location / {
+            location / {
                 location ~ ^/github/penpot-files/(?<template_file>[a-zA-Z0-9\-\_\.]+) {
                     proxy_pass https://raw.githubusercontent.com/penpot/penpot-files/main/$template_file;
                     proxy_hide_header Access-Control-Allow-Origin;
