@@ -125,7 +125,7 @@
 (defn use-debonced-resolve-callback
   [name-ref token tokens callback & {:keys [cached timeout]
                                      :or {cached {}
-                                          timeout 500}}]
+                                          timeout 160}}]
   (let [timeout-id-ref (mf/use-ref nil)
         cache (mf/use-ref cached)
         debounced-resolver-callback
