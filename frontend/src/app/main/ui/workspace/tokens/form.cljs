@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.tokens.form
   (:require-macros [app.main.style :as stl])
   (:require
+   ["lodash.debounce" :as debounce]
    [app.main.ui.workspace.tokens.common :as tokens.common]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.util.dom :as dom]
@@ -64,21 +65,24 @@
         state @state*
         _ (js/console.log "render")
 
+        form-touched (mf/use-state nil)
+        update-form-touched (mf/use-callback
+                             (debounce #(reset! form-touched (js/Symbol)) 120))
+
         ;; Name
         name (mf/use-var (or (:name token) ""))
         name-errors (mf/use-state nil)
         name-schema (mf/use-memo
                      (mf/deps existing-token-names)
                      #(token-name-schema existing-token-names))
-        on-update-name (fn [e]
-                         (let [value (dom/get-target-val e)
-                               errors (->> (finalize-name value)
-                                           (m/explain name-schema))]
-                           (reset! name value)
-                           (reset! name-errors errors)))
-        disabled? (or
-                   @name-errors
-                   (empty? (finalize-name (:name state))))
+        on-update-name (mf/use-callback
+                        (debounce (fn [e]
+                                    (let [value (dom/get-target-val e)
+                                          errors (->> (finalize-name value)
+                                                      (m/explain name-schema))]
+                                      (mf/set-ref-val! name value)
+                                      (reset! name-errors errors)
+                                      (update-form-touched)))))
 
         ;; Value
         value (mf/use-var (or (:value token) ""))
