@@ -124,6 +124,22 @@
                 (rx/take 1)
                 (rx/subs! resolve reject)))))))
 
+  (uploadMediaData
+    [_ name data mime-type]
+    (let [file-id (:current-file-id @st/state)]
+      (p/create
+       (fn [resolve reject]
+         (->> (dwm/process-blobs
+               {:file-id file-id
+                :local? false
+                :name name
+                :blobs [(js/Blob. #js [data] #js {:type mime-type})]
+                :on-image identity
+                :on-svg identity})
+              (rx/take 1)
+              (rx/map u/to-js)
+              (rx/subs! resolve reject))))))
+
   (group
     [_ shapes]
     (cond
