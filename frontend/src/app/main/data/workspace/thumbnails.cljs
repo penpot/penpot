@@ -10,6 +10,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.logging :as l]
    [app.common.thumbnails :as thc]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.changes :as dch]
    [app.main.data.persistence :as-alias dps]
@@ -192,8 +193,8 @@
             :mov-objects (->> (:shapes change) (map #(vector page-id %)))
             []))
 
-        get-frame-id
-        (fn [[_ id]]
+        get-frame-ids
+        (fn get-frame-ids [id]
           (let [old-objects  (wsh/lookup-data-objects old-data page-id)
                 new-objects  (wsh/lookup-data-objects new-data page-id)
 
@@ -208,12 +209,21 @@
               (conj old-frame-id)
 
               (cfh/root-frame? new-objects new-frame-id)
-              (conj new-frame-id))))]
+              (conj new-frame-id)
+
+              (and (uuid? (:frame-id old-shape))
+                   (not= uuid/zero (:frame-id old-shape)))
+              (into (get-frame-ids (:frame-id old-shape)))
+
+              (and (uuid? (:frame-id new-shape))
+                   (not= uuid/zero (:frame-id new-shape)))
+              (into (get-frame-ids (:frame-id new-shape))))))]
 
     (into #{}
           (comp (mapcat extract-ids)
                 (filter (fn [[page-id']] (= page-id page-id')))
-                (mapcat get-frame-id))
+                (map (fn [[_ id]] id))
+                (mapcat get-frame-ids))
           changes)))
 
 (defn watch-state-changes
