@@ -108,18 +108,18 @@
   [tokens on-success & {:keys [cached timeout]
                         :or {cached {}
                              timeout 500}}]
-  (let [id-ref (mf/use-ref nil)
+  (let [timeout-id-ref (mf/use-ref nil)
         cache (mf/use-ref cached)
         debounced-resolver-callback
         (mf/use-callback
          (mf/deps on-success tokens)
          (fn [event]
            (let [input (dom/get-target-val event)
-                 id (js/Symbol)]
-             (mf/set-ref-val! id-ref id)
+                 timeout-id (js/Symbol)]
+             (mf/set-ref-val! timeout-id-ref timeout-id)
              (js/setTimeout
               (fn []
-                (when (= (mf/ref-val id-ref) id)
+                (when (= (mf/ref-val timeout-id-ref) timeout-id)
                   (if-let [cached (-> (mf/ref-val cache)
                                       (get tokens))]
                     (on-success cached)
@@ -130,8 +130,8 @@
                       (-> (resolve-tokens+ new-tokens)
                           (p/catch js/console.error)
                           (p/then (fn [resolved-tokens]
-                                    (mf/set-ref-val! cache (assoc (mf/ref-val cache) tokens resolved-tokens))
-                                    (when (= (mf/ref-val id-ref) id)
+                                    (mf/set-ref-val! cache (assoc (mf/ref-val cache) input resolved-tokens))
+                                    (when (= (mf/ref-val timeout-id-ref) timeout-id)
                                       (on-success (get resolved-tokens token-id))))))))))
               timeout))))]
     debounced-resolver-callback))
