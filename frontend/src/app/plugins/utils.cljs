@@ -10,6 +10,8 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.spec :as us]
+   [app.common.types.container :as ctn]
+   [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
    [app.main.store :as st]
    [app.util.object :as obj]
@@ -61,6 +63,14 @@
   [session-id]
   (let [{:keys [profile-id]} (locate-presence session-id)]
     (dm/get-in @st/state [:users profile-id])))
+
+(defn locate-component
+  [objects shape]
+  (let [current-file-id (:current-file-id @st/state)
+        workspace-data (:workspace-data @st/state)
+        workspace-libraries (:workspace-libraries @st/state)
+        root (ctn/get-instance-root objects shape)]
+    [root (ctf/resolve-component root {:id current-file-id :data workspace-data} workspace-libraries {:include-deleted? true})]))
 
 (defn proxy->file
   [proxy]
@@ -177,9 +187,11 @@
 
 (defn array-to-js
   [value]
-  (.freeze
-   js/Object
-   (apply array (->> value (map to-js)))))
+  (if (coll? value)
+    (.freeze
+     js/Object
+     (apply array (->> value (map to-js))))
+    value))
 
 (defn result-p
   "Creates a pair of atom+promise. The promise will be resolved when the atom gets a value.

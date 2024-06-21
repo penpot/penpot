@@ -400,17 +400,18 @@
 
 (defn increase-rotation
   "Rotate shapes a fixed angle, from a keyboard action."
-  [ids rotation]
-  (ptk/reify ::increase-rotation
-    ptk/WatchEvent
-    (watch [_ state _]
-
-      (let [page-id (:current-page-id state)
-            objects (wsh/lookup-page-objects state page-id)
-            shapes  (->> ids (map #(get objects %)))]
-        (rx/concat
-         (rx/of (dwm/set-delta-rotation-modifiers rotation shapes))
-         (rx/of (dwm/apply-modifiers)))))))
+  ([ids rotation]
+   (increase-rotation ids rotation nil))
+  ([ids rotation params]
+   (ptk/reify ::increase-rotation
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [page-id (:current-page-id state)
+             objects (wsh/lookup-page-objects state page-id)
+             shapes  (->> ids (map #(get objects %)))]
+         (rx/concat
+          (rx/of (dwm/set-delta-rotation-modifiers rotation shapes params))
+          (rx/of (dwm/apply-modifiers))))))))
 
 
 ;; -- Move ----------------------------------------------------------
@@ -889,26 +890,32 @@
 
 ;; -- Flip ----------------------------------------------------------
 
-(defn flip-horizontal-selected []
-  (ptk/reify ::flip-horizontal-selected
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [objects   (wsh/lookup-page-objects state)
-            selected  (wsh/lookup-selected state {:omit-blocked? true})
-            shapes    (map #(get objects %) selected)
-            selrect   (gsh/shapes->rect shapes)
-            center    (grc/rect->center selrect)
-            modifiers (dwm/create-modif-tree selected (ctm/resize-modifiers (gpt/point -1.0 1.0) center))]
-        (rx/of (dwm/apply-modifiers {:modifiers modifiers :ignore-snap-pixel true}))))))
+(defn flip-horizontal-selected
+  ([]
+   (flip-horizontal-selected nil))
+  ([ids]
+   (ptk/reify ::flip-horizontal-selected
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [objects   (wsh/lookup-page-objects state)
+             selected  (or ids (wsh/lookup-selected state {:omit-blocked? true}))
+             shapes    (map #(get objects %) selected)
+             selrect   (gsh/shapes->rect shapes)
+             center    (grc/rect->center selrect)
+             modifiers (dwm/create-modif-tree selected (ctm/resize-modifiers (gpt/point -1.0 1.0) center))]
+         (rx/of (dwm/apply-modifiers {:modifiers modifiers :ignore-snap-pixel true})))))))
 
-(defn flip-vertical-selected []
-  (ptk/reify ::flip-vertical-selected
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [objects   (wsh/lookup-page-objects state)
-            selected  (wsh/lookup-selected state {:omit-blocked? true})
-            shapes    (map #(get objects %) selected)
-            selrect   (gsh/shapes->rect shapes)
-            center    (grc/rect->center selrect)
-            modifiers (dwm/create-modif-tree selected (ctm/resize-modifiers (gpt/point 1.0 -1.0) center))]
-        (rx/of (dwm/apply-modifiers {:modifiers modifiers :ignore-snap-pixel true}))))))
+(defn flip-vertical-selected
+  ([]
+   (flip-vertical-selected nil))
+  ([ids]
+   (ptk/reify ::flip-vertical-selected
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [objects   (wsh/lookup-page-objects state)
+             selected  (or ids (wsh/lookup-selected state {:omit-blocked? true}))
+             shapes    (map #(get objects %) selected)
+             selrect   (gsh/shapes->rect shapes)
+             center    (grc/rect->center selrect)
+             modifiers (dwm/create-modif-tree selected (ctm/resize-modifiers (gpt/point 1.0 -1.0) center))]
+         (rx/of (dwm/apply-modifiers {:modifiers modifiers :ignore-snap-pixel true})))))))

@@ -10,6 +10,7 @@
    [app.main.features :as features]
    [app.main.store :as st]
    [app.plugins.api :as api]
+   [app.plugins.public-utils]
    [app.util.globals :refer [global]]
    [app.util.object :as obj]
    [beicon.v2.core :as rx]

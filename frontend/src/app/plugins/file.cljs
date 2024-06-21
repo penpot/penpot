@@ -35,7 +35,7 @@
   (setPluginData
     [_ key value]
     (cond
-      (not (string? key))
+      (or (not (string? key)) (empty? key))
       (u/display-not-valid :file-plugin-data-key key)
 
       (and (some? value) (not (string? value)))
@@ -66,10 +66,10 @@
     [_ namespace key value]
 
     (cond
-      (not (string? namespace))
+      (or (not (string? namespace)) (empty? namespace))
       (u/display-not-valid :file-plugin-data-namespace namespace)
 
-      (not (string? key))
+      (or (not (string? key)) (empty? key))
       (u/display-not-valid :file-plugin-data-key key)
 
       (and (some? value) (not (string? value)))
@@ -92,6 +92,9 @@
   FileProxy
   {:name js/Symbol.toStringTag
    :get (fn [] (str "FileProxy"))})
+
+(defn file-proxy? [p]
+  (instance? FileProxy p))
 
 (defn file-proxy
   [plugin-id id]
