@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-21 07:09+0000\n"
+"PO-Revision-Date: 2024-06-22 08:09+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
@@ -5452,3 +5452,17 @@ msgstr "Vor dem Selbst-Hosting, testen"
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "onboarding.questions.start-with.ui"
 msgstr "UI/UX-Design einer App"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register-tagline"
+msgstr ""
+"Mit einem kostenlosen Penpot-Konto können Sie unbegrenzt viele Teams "
+"erstellen und mit anderen Designern und Entwicklern an beliebig vielen "
+"Projekten zusammenarbeiten. "
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step1.subtitle"
+msgstr ""
+"Lassen Sie uns ein wenig über Sie erfahren, damit wir Penpot für Sie "
+"optimieren können. Ihre Antworten werden helfen uns, neue Funktionen zu "
+"priorisieren und Ihnen den richtigen Einstieg zu erleichtern."
