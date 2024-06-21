@@ -23,6 +23,7 @@
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.logging :as l]
    [app.common.math :as mth]
+   [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape-tree :as ctst]
@@ -525,8 +526,10 @@
 
 (mf/defc components-svg
   {::mf/wrap-props false}
-  [{:keys [data children embed include-metadata source]}]
-  (let [source (keyword (d/nilv source "components"))]
+  [{:keys [data children embed include-metadata deleted?]}]
+  (let [components (if (not deleted?)
+                     (ctkl/components-seq data)
+                     (ctkl/deleted-components-seq data))]
     [:& (mf/provider embed/context) {:value embed}
      [:& (mf/provider export/include-metadata-ctx) {:value include-metadata}
       [:svg {:version "1.1"
@@ -536,9 +539,9 @@
              :style {:display (when-not (some? children) "none")}
              :fill "none"}
        [:defs
-        (for [[id component] (source data)]
+        (for [component components]
           (let [component (ctf/load-component-objects data component)]
-            [:& component-symbol {:key (dm/str id) :component component}]))]
+            [:& component-symbol {:key (dm/str (:id component)) :component component}]))]
 
        children]]]))
 
@@ -595,10 +598,12 @@
              (rds/renderToStaticMarkup elem)))))))
 
 (defn render-components
-  [data source]
+  [data deleted?]
   (let [;; Join all components objects into a single map
-        objects (->> (source data)
-                     (vals)
+        components  (if (not deleted?)
+                      (ctkl/components-seq data)
+                      (ctkl/deleted-components-seq data))
+        objects (->> components
                      (map (partial ctf/load-component-objects data))
                      (map :objects)
                      (reduce conj))]
@@ -615,7 +620,7 @@
                                     #js {:data data
                                          :embed true
                                          :include-metadata true
-                                         :source (name source)})]
+                                         :deleted? deleted?})]
                (rds/renderToStaticMarkup elem))))))))
 
 (defn render-frame
