@@ -11,7 +11,6 @@
    [app.common.logging :as l]
    [app.common.thumbnails :as thc]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
    [app.main.data.changes :as dch]
    [app.main.data.persistence :as-alias dps]
    [app.main.data.workspace.notifications :as-alias wnt]
@@ -20,7 +19,6 @@
    [app.main.refs :as refs]
    [app.main.render :as render]
    [app.main.repo :as rp]
-   [app.util.http :as http]
    [app.util.queue :as q]
    [app.util.time :as tp]
    [app.util.timers :as tm]
@@ -150,34 +148,34 @@
       ptk/WatchEvent
       (watch [_ state stream]
         (l/dbg :hint "update thumbnail" :requester requester :object-id object-id :tag tag)
-        ;; Send the update to the back-end
-        (->> (request-thumbnail state file-id page-id frame-id tag)
-             (rx/mapcat (fn [blob]
-                          ;; Send the data to backend
-                          (let [params {:file-id file-id
-                                        :object-id object-id
-                                        :media blob
-                                        :tag (or tag "frame")}]
-                            (rp/cmd! :create-file-object-thumbnail params))))
+        (let [tp (tp/tpoint-ms)]
+          ;; Send the update to the back-end
+          (->> (request-thumbnail state file-id page-id frame-id tag)
+               (rx/mapcat (fn [blob]
+                            (let [uri    (wapi/create-uri blob)
+                                  params {:file-id file-id
+                                          :object-id object-id
+                                          :media blob
+                                          :tag (or tag "frame")}]
 
-             (rx/mapcat (fn [{:keys [object-id media-id]}]
-                          (let [uri (cf/resolve-media media-id)]
-                            ;; We perform this request just for
-                            ;; populate the browser CACHE and avoid
-                            ;; unnecesary image flickering
-                            (->> (http/send! {:uri uri :method :get})
-                                 (rx/map #(assoc-thumbnail object-id uri))))))
+                              (rx/merge
+                               (rx/of (assoc-thumbnail object-id uri))
+                               (->> (rp/cmd! :create-file-object-thumbnail params)
+                                    (rx/catch rx/empty)
+                                    (rx/ignore))))))
 
-             (rx/catch (fn [cause]
-                         (.error js/console cause)
-                         (rx/empty)))
+               (rx/catch (fn [cause]
+                           (.error js/console cause)
+                           (rx/empty)))
 
-             ;; We cancel all the stream if user starts editing while
-             ;; thumbnail is generating
-             (rx/take-until
-              (->> stream
-                   (rx/filter (ptk/type? ::clear-thumbnail))
-                   (rx/filter #(= (deref %) object-id)))))))))
+               (rx/tap #(l/trc :hint "thumbnail updated" :elapsed (dm/str (tp) "ms")))
+
+               ;; We cancel all the stream if user starts editing while
+               ;; thumbnail is generating
+               (rx/take-until
+                (->> stream
+                     (rx/filter (ptk/type? ::clear-thumbnail))
+                     (rx/filter #(= (deref %) object-id))))))))))
 
 (defn- extract-root-frame-changes
   "Process a changes set in a commit to extract the frames that are changing"
