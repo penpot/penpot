@@ -117,8 +117,15 @@
       [:& tokens.common/labeled-input {:label "Value"
                                        :input-props {:default-value @value
                                                      :on-change on-update-value}}]
-      [:div {:class (stl/css :resolved-value)}
-       [:p @resolved-value]]
+      [:div {:class (stl/css-case :resolved-value true
+                                  :resolved-value-placeholder (nil? @token-resolve-result)
+                                  :resolved-value-error (when (keyword? @token-resolve-result)
+                                                          (= (namespace @token-resolve-result) "error")))}
+       (case @token-resolve-result
+         :error/token-self-reference "Token has self reference"
+         :error/token-missing-reference "Token has missing reference"
+         nil "Enter token value"
+         [:p @token-resolve-result])]
       [:& tokens.common/labeled-input {:label "Description"
                                        :input-props {:default-value (:description state)
                                                      #_#_:on-change #(on-update-description %)}}]

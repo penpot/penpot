@@ -30,6 +30,7 @@
   @include bodySmallTypography;
   padding: $s-4 $s-6;
   font-weight: medium;
+  height: $s-24;
 
   color: var(--color-foreground-primary);
   border: 1px solid color-mix(in hsl, var(--color-foreground-secondary) 30%, transparent);
@@ -38,4 +39,12 @@
     font-size: $fs-12;
     margin: 0;
   }
+}
+
+.resolved-value-placeholder {
+  color: var(--color-foreground-secondary);
+}
+
+.resolved-value-error {
+  color: var(--status-color-error-500);
 }
