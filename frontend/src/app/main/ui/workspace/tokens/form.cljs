@@ -82,10 +82,9 @@
 
         ;; Value
         value (mf/use-var (or (:value token) ""))
-        resolved-value (mf/use-state nil)
+        resolved-value (mf/use-state (get-in tokens [(:id token) :resolved-value]))
         set-resolve-value (mf/use-callback
                            (fn [token]
-                             (js/console.log "token" (:resolved-value token))
                              (when (:resolved-value token)
                                (reset! resolved-value (:resolved-value token)))))
         value-errors (mf/use-state nil)
