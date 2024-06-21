@@ -192,10 +192,10 @@
 (defn- wrap-all
   [cfg f mdata]
   (as-> f $
-    (wrap-metrics cfg $ mdata)
     (cond/wrap cfg $ mdata)
     (retry/wrap-retry cfg $ mdata)
     (climit/wrap cfg $ mdata)
+    (wrap-metrics cfg $ mdata)
     (rlimit/wrap cfg $ mdata)
     (wrap-audit cfg $ mdata)
     (wrap-spec-conform cfg $ mdata)
