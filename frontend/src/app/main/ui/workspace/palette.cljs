@@ -44,7 +44,7 @@
         calculate-padding-left (+ rulers-width (or left-sidebar-size min-left-sidebar-width) left-padding 1)]
 
     #js {"paddingLeft" (dm/str calculate-padding-left "px")
-         "paddingRight" "calc(var(--s-4) * 70)"}))
+         "paddingRight" "280px"}))
 
 (mf/defc palette
   [{:keys [layout on-change-palette-size]}]

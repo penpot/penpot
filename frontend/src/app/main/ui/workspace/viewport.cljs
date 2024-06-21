@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.viewport
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.colors :as clr]
    [app.common.data :as d]
@@ -276,9 +277,9 @@
     (hooks/setup-shortcuts node-editing? drawing-path? text-editing? grid-editing?)
     (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform vbox)
 
-    [:div.viewport {:style #js {"--zoom" zoom} :data-testid "viewport"}
+    [:div {:class (stl/css :viewport) :style #js {"--zoom" zoom} :data-testid "viewport"}
      [:& top-bar/top-bar {:layout layout}]
-     [:div.viewport-overlays
+     [:div {:class (stl/css :viewport-overlays)}
       ;; The behaviour inside a foreign object is a bit different that in plain HTML so we wrap
       ;; inside a foreign object "dummy" so this awkward behaviour is take into account
       [:svg {:style {:top 0 :left 0 :position "fixed" :width "100%" :height "100%" :opacity (when-not (dbg/enabled? :html-text) 0)}}
@@ -308,8 +309,9 @@
                                          :layout layout
                                          :viewport-ref viewport-ref}])]
 
-     [:svg.render-shapes
+     [:svg
       {:id "render"
+       :class (stl/css :render-shapes)
        :xmlns "http://www.w3.org/2000/svg"
        :xmlnsXlink "http://www.w3.org/1999/xlink"
        :xmlns:penpot "https://penpot.app/xmlns"
@@ -359,7 +361,7 @@
        :key (str "viewport" page-id)
        :view-box (utils/format-viewbox vbox)
        :ref on-viewport-ref
-       :class (dm/str @cursor (when drawing-tool " drawing"))
+       :class (dm/str @cursor (when drawing-tool " drawing") " " (stl/css :viewport-controls))
        :style {:touch-action "none"}
        :fill "none"
 

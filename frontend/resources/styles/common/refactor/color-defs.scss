@@ -6,10 +6,6 @@
 
 @use "sass:color";
 
-// TODO: legacy Sass colors, we should eventually try to remove them in
-//       favor of DS colors.
-$color-gray-20: #b1b2b5;
-
 :root {
   // DARK
   // Dark background
