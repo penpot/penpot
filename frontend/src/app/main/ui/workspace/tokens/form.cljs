@@ -82,13 +82,15 @@
 
         ;; Value
         value (mf/use-var (or (:value token) ""))
-        resolved-value (mf/use-state (get-in tokens [(:id token) :resolved-value]))
+        token-resolve-result (mf/use-state (get-in tokens [(:id token) :resolved-value]))
         set-resolve-value (mf/use-callback
-                           (fn [token]
-                             (when (:resolved-value token)
-                               (reset! resolved-value (:resolved-value token)))))
-        value-errors (mf/use-state nil)
-        on-update-value (sd/use-debonced-resolve-callback tokens set-resolve-value)]
+                           (fn [token-or-err]
+                             (let [value (cond
+                                           (= token-or-err :error/token-self-reference) :error/token-self-reference
+                                           (= token-or-err :error/token-missing-reference) :error/token-missing-reference
+                                           (:resolved-value token-or-err) (:resolved-value token-or-err))]
+                               (reset! token-resolve-result value))))
+        on-update-value (sd/use-debonced-resolve-callback name token tokens set-resolve-value)]
 
         ;; on-submit (fn [e]
         ;;             (dom/prevent-default e)

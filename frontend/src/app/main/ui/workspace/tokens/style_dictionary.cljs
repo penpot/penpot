@@ -23,6 +23,21 @@
 
 ;; Functions -------------------------------------------------------------------
 
+(defn token-self-reference? [token-name reference-string]
+  (let [escaped-name (str/replace token-name "." "\\.")
+        regex (-> (str "{" escaped-name "}")
+                  (re-pattern))]
+    (re-find regex reference-string)))
+
+(comment
+  (token-self-reference? {:name "some.value"} "{md} + {some.value}")
+  (token-self-reference? {:name "some.value"} "some.value")
+  (token-self-reference? {:name "some.value"} "{some|value}")
+  (token-self-reference? {:name "sm"} "{md} + {lg}")
+  (token-self-reference? {:name "sm"} "1")
+  (token-self-reference? {:name ""} "121")
+  nil)
+
 (defn tokens->style-dictionary+
   "Resolves references and math expressions using StyleDictionary.
   Returns a promise with the resolved dictionary."
