@@ -52,7 +52,7 @@
                           :libraries            (->> (:libraries file) (into #{}) (mapv str))
                           :exportType           (d/name export-type)
                           :hasComponents        (d/not-empty? (ctkl/components-seq (:data file)))
-                          :hasDeletedComponents (d/not-empty? (get-in file [:data :deleted-components]))
+                          :hasDeletedComponents (d/not-empty? (ctkl/deleted-components-seq (:data file)))
                           :hasMedia             (d/not-empty? (get-in file [:data :media]))
                           :hasColors            (d/not-empty? (get-in file [:data :colors]))
                           :hasTypographies      (d/not-empty? (get-in file [:data :typographies]))}))))]
@@ -151,12 +151,12 @@
 
 (defn parse-library-components
   [file]
-  (->> (r/render-components (:data file) :components)
+  (->> (r/render-components (:data file) false)
        (rx/map #(vector (str (:id file) "/components.svg") %))))
 
 (defn parse-deleted-components
   [file]
-  (->> (r/render-components (:data file) :deleted-components)
+  (->> (r/render-components (:data file) true)
        (rx/map #(vector (str (:id file) "/deleted-components.svg") %))))
 
 (defn fetch-file-with-libraries
@@ -380,7 +380,7 @@
         deleted-components-stream
         (->> files-stream
              (rx/merge-map vals)
-             (rx/filter #(d/not-empty? (get-in % [:data :deleted-components])))
+             (rx/filter #(d/not-empty? (ctkl/deleted-components-seq (:data %))))
              (rx/merge-map parse-deleted-components))
 
         pages-stream
