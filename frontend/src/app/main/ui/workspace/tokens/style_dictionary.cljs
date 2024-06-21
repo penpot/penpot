@@ -23,6 +23,18 @@
 
 ;; Functions -------------------------------------------------------------------
 
+(defn find-token-references
+  "Finds token reference values in `str` and returns a set with all contained namespaces."
+  [str]
+  (some->> (re-seq #"\{([^}]*)\}" str)
+           (map second)
+           (into #{})))
+
+(comment
+  (find-token-references "{foo} + {bar}")
+  (find-token-references "nothing")
+  nil)
+
 (defn token-self-reference? [token-name reference-string]
   (let [escaped-name (str/replace token-name "." "\\.")
         regex (-> (str "{" escaped-name "}")
