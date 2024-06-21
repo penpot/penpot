@@ -32,7 +32,11 @@
 
 (comment
   (find-token-references "{foo} + {bar}")
-  (find-token-references "nothing")
+  ;; => #{"foo" "bar"}
+  (find-token-references "{foo.bar.baz} + something")
+  ;; => #{"foo.bar.baz"}
+  (find-token-references "1 + 2")
+  ;; => nil
   nil)
 
 (defn token-self-reference? [token-name reference-string]
