@@ -10,8 +10,8 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
-   [app.main.ui.cursors :as c]
    [app.main.ui.debug.components-preview :as cm]
+   [app.main.ui.debug.icons-preview :refer [icons-preview]]
    [app.main.ui.frame-preview :as frame-preview]
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
@@ -76,11 +76,7 @@
 
        :debug-icons-preview
        (when *assert*
-         [:div.debug-preview
-          [:h1 "Cursors"]
-          [:& c/debug-preview]
-          [:h1 "Icons"]
-          [:& i/debug-icons-preview]])
+         [:& icons-preview])
 
        (:dashboard-search
         :dashboard-projects
