@@ -126,7 +126,7 @@
    {::mdef/name "penpot_rpc_climit_timing"
     ::mdef/help "Summary of the time between queuing and executing on the CLIMIT"
     ::mdef/labels ["name"]
-    ::mdef/type :summary}
+    ::mdef/type :histogram}
 
    :audit-http-handler-queue-size
    {::mdef/name "penpot_audit_http_handler_queue_size"
