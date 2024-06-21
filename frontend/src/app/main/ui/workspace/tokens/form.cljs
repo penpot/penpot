@@ -94,7 +94,14 @@
                                            (= token-or-err :error/token-missing-reference) :error/token-missing-reference
                                            (:resolved-value token-or-err) (:resolved-value token-or-err))]
                                (reset! token-resolve-result value))))
-        on-update-value (sd/use-debonced-resolve-callback name token tokens set-resolve-value)]
+        on-update-value (sd/use-debonced-resolve-callback name token tokens set-resolve-value)
+        value-error? (when (keyword? @token-resolve-result)
+                       (= (namespace @token-resolve-result) "error"))
+
+        disabled? (or
+                   @name-errors
+                   value-error?
+                   (empty? (finalize-name (mf/ref-val name))))]
 
         ;; on-submit (fn [e]
         ;;             (dom/prevent-default e)
@@ -125,8 +132,7 @@
                                                      :on-change on-update-value}}]
       [:div {:class (stl/css-case :resolved-value true
                                   :resolved-value-placeholder (nil? @token-resolve-result)
-                                  :resolved-value-error (when (keyword? @token-resolve-result)
-                                                          (= (namespace @token-resolve-result) "error")))}
+                                  :resolved-value-error value-error?)}
        (case @token-resolve-result
          :error/token-self-reference "Token has self reference"
          :error/token-missing-reference "Token has missing reference"
