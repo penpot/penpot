@@ -485,15 +485,18 @@
         path       (:path component)
         root-id    (or (:main-instance-id component)
                        (:id component))
+        orig-root  (get (:objects component) root-id)
         objects    (adapt-objects-for-shape (:objects component)
                                             root-id)
         root-shape (get objects root-id)
         selrect    (:selrect root-shape)
 
-        main-instance-id   (:main-instance-id component)
-        main-instance-page (:main-instance-page component)
-        main-instance-x    (:main-instance-x component)
-        main-instance-y    (:main-instance-y component)
+        main-instance-id     (:main-instance-id component)
+        main-instance-page   (:main-instance-page component)
+        main-instance-x      (when (:deleted component) (:x orig-root))
+        main-instance-y      (when (:deleted component) (:y orig-root))
+        main-instance-parent (when (:deleted component) (:parent-id orig-root))
+        main-instance-frame  (when (:deleted component) (:frame-id orig-root))
 
         vbox
         (format-viewbox
@@ -517,7 +520,9 @@
                         "penpot:main-instance-id" main-instance-id
                         "penpot:main-instance-page" main-instance-page
                         "penpot:main-instance-x" main-instance-x
-                        "penpot:main-instance-y" main-instance-y}
+                        "penpot:main-instance-y" main-instance-y
+                        "penpot:main-instance-parent" main-instance-parent
+                        "penpot:main-instance-frame" main-instance-frame}
        [:title name]
        [:> shape-container {:shape root-shape}
         (case (:type root-shape)
