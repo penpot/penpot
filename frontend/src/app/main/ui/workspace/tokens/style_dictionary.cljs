@@ -4,6 +4,7 @@
    ["style-dictionary$default" :as sd]
    [app.common.data :as d]
    [app.main.refs :as refs]
+   [app.util.dom :as dom]
    [cuerdas.core :as str]
    [promesa.core :as p]
    [rumext.v2 :as mf]
@@ -77,7 +78,9 @@
 (defn resolve-tokens+
   [tokens & {:keys [debug?] :as config}]
   (p/let [sd-tokens (-> (tokens-name-map tokens)
+                        (doto js/console.log)
                         (resolve-sd-tokens+ config))]
+    (js/console.log "sd-tokens" sd-tokens)
     (let [resolved-tokens (reduce
                            (fn [acc ^js cur]
                              (let [value (.-value cur)
@@ -100,6 +103,38 @@
     (resolve-tokens+ workspace-tokens)))
 
 ;; Hooks -----------------------------------------------------------------------
+
+(defn use-debonced-resolve-callback
+  [tokens on-success & {:keys [cached timeout]
+                        :or {cached {}
+                             timeout 500}}]
+  (let [id-ref (mf/use-ref nil)
+        cache (mf/use-ref cached)
+        debounced-resolver-callback
+        (mf/use-callback
+         (mf/deps on-success tokens)
+         (fn [event]
+           (let [input (dom/get-target-val event)
+                 id (js/Symbol)]
+             (mf/set-ref-val! id-ref id)
+             (js/setTimeout
+              (fn []
+                (when (= (mf/ref-val id-ref) id)
+                  (if-let [cached (-> (mf/ref-val cache)
+                                      (get tokens))]
+                    (on-success cached)
+                    (let [token-id (random-uuid)
+                          new-tokens (assoc tokens token-id {:id token-id
+                                                             :value input
+                                                             :name "TEMP"})]
+                      (-> (resolve-tokens+ new-tokens)
+                          (p/catch js/console.error)
+                          (p/then (fn [resolved-tokens]
+                                    (mf/set-ref-val! cache (assoc (mf/ref-val cache) tokens resolved-tokens))
+                                    (when (= (mf/ref-val id-ref) id)
+                                      (on-success (get resolved-tokens token-id))))))))))
+              timeout))))]
+    debounced-resolver-callback))
 
 (defonce !tokens-cache (atom nil))
 

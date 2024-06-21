@@ -15,6 +15,8 @@
    [malli.error :as me]
    [rumext.v2 :as mf]))
 
+;; Schemas ---------------------------------------------------------------------
+
 (defn token-name-schema
   "Generate a dynamic schema validation to check if a token name already exists.
   `existing-token-names` should be a set of strings."
@@ -35,7 +37,12 @@
       (me/humanize))
   nil)
 
+;; Helpers ---------------------------------------------------------------------
+
 (defn finalize-name [name]
+  (str/trim name))
+
+(defn finalize-value [name]
   (str/trim name))
 
 (mf/defc form
@@ -71,22 +78,18 @@
                            (reset! name-errors errors)))
         disabled? (or
                    @name-errors
-                   (empty? (finalize-name (:name state))))]
+                   (empty? (finalize-name (:name state))))
 
-        ;; on-update-name (fn [e]
-        ;;                  (let [{:keys [errors] :as state} (mf/deref state*)
-        ;;                        value (-> (dom/get-target-val e)
-        ;;                                  (str/trim))]
-        ;;                    (cond-> @state*
-        ;;                      ;; Remove existing name errors
-        ;;                      :always (update :errors set/difference #{:empty})
-        ;;                      (str/empty?) (conj))
-        ;;                    (swap! state* assoc :name (dom/get-target-val e))))
-        ;; on-update-description #(swap! state* assoc :description (dom/get-target-val %))
-        ;; on-update-field (fn [idx e]
-        ;;                   (let [value (dom/get-target-val e)]
-        ;;                     (swap! state* assoc-in [idx :value] value)))
-
+        ;; Value
+        value (mf/use-var (or (:value token) ""))
+        resolved-value (mf/use-state nil)
+        set-resolve-value (mf/use-callback
+                           (fn [token]
+                             (js/console.log "token" (:resolved-value token))
+                             (when (:resolved-value token)
+                               (reset! resolved-value (:resolved-value token)))))
+        value-errors (mf/use-state nil)
+        on-update-value (sd/use-debonced-resolve-callback tokens set-resolve-value)]
 
         ;; on-submit (fn [e]
         ;;             (dom/prevent-default e)
@@ -106,19 +109,17 @@
       [:div
        [:& tokens.common/labeled-input {:label "Name"
                                         :error? @name-errors
-                                        :input-props {:default-value (:name state)
+                                        :input-props {:default-value @name
                                                       :auto-focus true
                                                       :on-change on-update-name}}]
        (when @name-errors
          [:p {:class (stl/css :error)}
           (me/humanize @name-errors)])]
       [:& tokens.common/labeled-input {:label "Value"
-                                       :input-props {:default-value (:value state)
-                                                     #_#_:on-change #(on-update-field idx %)}}]
-      ;; (when (and @resolved-value
-      ;;            (not= @resolved-value (:value (first @state*))))
-      ;;   [:div {:class (stl/css :resolved-value)}
-      ;;    [:p @resolved-value]])
+                                       :input-props {:default-value @value
+                                                     :on-change on-update-value}}]
+      [:div {:class (stl/css :resolved-value)}
+       [:p @resolved-value]]
       [:& tokens.common/labeled-input {:label "Description"
                                        :input-props {:default-value (:description state)
                                                      #_#_:on-change #(on-update-description %)}}]
