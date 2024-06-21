@@ -119,15 +119,18 @@
 
 ;; Hooks -----------------------------------------------------------------------
 
+(def new-token-temp-name
+  "TOKEN_STUDIO_SYSTEM.TEMP")
+
 (defn use-debonced-resolve-callback
-  [tokens on-success & {:keys [cached timeout]
-                        :or {cached {}
-                             timeout 500}}]
+  [name-ref token tokens callback & {:keys [cached timeout]
+                                     :or {cached {}
+                                          timeout 500}}]
   (let [timeout-id-ref (mf/use-ref nil)
         cache (mf/use-ref cached)
         debounced-resolver-callback
         (mf/use-callback
-         (mf/deps on-success tokens)
+         (mf/deps token callback tokens)
          (fn [event]
            (let [input (dom/get-target-val event)
                  timeout-id (js/Symbol)]
@@ -135,19 +138,33 @@
              (js/setTimeout
               (fn []
                 (when (= (mf/ref-val timeout-id-ref) timeout-id)
-                  (if-let [cached (-> (mf/ref-val cache)
-                                      (get tokens))]
-                    (on-success cached)
-                    (let [token-id (random-uuid)
-                          new-tokens (assoc tokens token-id {:id token-id
-                                                             :value input
-                                                             :name "TEMP"})]
-                      (-> (resolve-tokens+ new-tokens)
-                          (p/catch js/console.error)
-                          (p/then (fn [resolved-tokens]
-                                    (mf/set-ref-val! cache (assoc (mf/ref-val cache) input resolved-tokens))
-                                    (when (= (mf/ref-val timeout-id-ref) timeout-id)
-                                      (on-success (get resolved-tokens token-id))))))))))
+                  (let [cached (-> (mf/ref-val cache)
+                                   (get tokens))
+                        token-name (if (empty? @name-ref) new-token-temp-name @name-ref)]
+                    (cond
+                      cached (callback cached)
+                      (token-self-reference? token-name input) (callback :error/token-self-reference)
+                      :else (let [token-id (or (:id token) (random-uuid))
+                                  new-tokens (update tokens token-id merge {:id token-id
+                                                                            :value input
+                                                                            :name token-name})]
+                              (-> (resolve-tokens+ new-tokens)
+                                  (p/finally
+                                    (fn [resolved-tokens _err]
+                                      (js/console.log "input" input (empty? (str/trim input)))
+                                      (cond
+                                        ;; Ignore outdated callbacks because the user input changed since it tried to resolve
+                                        (not= (mf/ref-val timeout-id-ref) timeout-id) nil
+                                        (empty? (str/trim input)) (callback nil)
+                                        :else (let [resolved-token (get resolved-tokens token-id)]
+                                                (js/console.log "resolved-token" resolved-token)
+                                                (if (:resolved-value resolved-token)
+                                                  (do
+                                                    (mf/set-ref-val! cache (assoc (mf/ref-val cache) input resolved-tokens))
+                                                    (callback resolved-token))
+                                                  (callback :error/token-missing-reference))))))))))))
+
+
               timeout))))]
     debounced-resolver-callback))
 
