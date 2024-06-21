@@ -102,13 +102,13 @@
    {::mdef/name "penpot_tasks_timing"
     ::mdef/help "Background tasks timing (milliseconds)."
     ::mdef/labels ["name"]
-    ::mdef/type :summary}
+    ::mdef/type :histogram}
 
    :redis-eval-timing
    {::mdef/name "penpot_redis_eval_timing"
     ::mdef/help "Redis EVAL commands execution timings (ms)"
     ::mdef/labels ["name"]
-    ::mdef/type :summary}
+    ::mdef/type :histogram}
 
    :rpc-climit-queue
    {::mdef/name "penpot_rpc_climit_queue"
@@ -144,7 +144,7 @@
    {::mdef/name "penpot_audit_http_handler_timing"
     ::mdef/help "Summary of the time between queuing and executing on the audit log http handler"
     ::mdef/labels []
-    ::mdef/type :summary}
+    ::mdef/type :histogram}
 
    :executors-active-threads
    {::mdef/name "penpot_executors_active_threads"
