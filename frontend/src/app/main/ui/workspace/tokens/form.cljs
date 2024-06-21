@@ -35,6 +35,9 @@
       (me/humanize))
   nil)
 
+(defn finalize-name [name]
+  (str/trim name))
+
 (mf/defc form
   {::mf/wrap-props false}
   [{:keys [token] :as _args}]
@@ -52,22 +55,23 @@
                                      :description ""}
                                     token))
         state @state*
+        _ (js/console.log "render")
 
         ;; Name
-        finalize-name str/trim
+        name (mf/use-var (or (:name token) ""))
+        name-errors (mf/use-state nil)
         name-schema (mf/use-memo
                      (mf/deps existing-token-names)
-                     (fn []
-                       (token-name-schema existing-token-names)))
+                     #(token-name-schema existing-token-names))
         on-update-name (fn [e]
                          (let [value (dom/get-target-val e)
                                errors (->> (finalize-name value)
                                            (m/explain name-schema))]
-                           (swap! state* merge {:name value
-                                                :errors/name errors})))
+                           (reset! name value)
+                           (reset! name-errors errors)))
         disabled? (or
-                   (empty? (finalize-name (:name state)))
-                   (:errors/name state))]
+                   @name-errors
+                   (empty? (finalize-name (:name state))))]
 
         ;; on-update-name (fn [e]
         ;;                  (let [{:keys [errors] :as state} (mf/deref state*)
@@ -101,12 +105,13 @@
      [:div {:class (stl/css :token-rows)}
       [:div
        [:& tokens.common/labeled-input {:label "Name"
-                                        :error? (:errors/name state)
+                                        :error? @name-errors
                                         :input-props {:default-value (:name state)
                                                       :auto-focus true
                                                       :on-change on-update-name}}]
-       (when-let [errors (:errors/name state)]
-         [:p {:class (stl/css :error)} (me/humanize errors)])]
+       (when @name-errors
+         [:p {:class (stl/css :error)}
+          (me/humanize @name-errors)])]
       [:& tokens.common/labeled-input {:label "Value"
                                        :input-props {:default-value (:value state)
                                                      #_#_:on-change #(on-update-field idx %)}}]
