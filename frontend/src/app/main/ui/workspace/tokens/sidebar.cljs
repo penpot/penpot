@@ -35,8 +35,8 @@
                     [(keyword (:name token))
                      {:value (:value token)
                       :type (:type token)}])]
-                      (js/console.log grouped-tokens)
-                      (js/console.log map-token)
+    (js/console.log grouped-tokens)
+    (js/console.log map-token)
     {:core (into (sorted-map)
                  (map (fn [[type tokens]]
                         [type
@@ -47,7 +47,7 @@
 (defn download-tokens-as-json []
   (let [all-tokens (deref refs/workspace-tokens)
         transformed-tokens-json (transform-tokens all-tokens)]
-        (js/console.log transformed-tokens-json)
+    (js/console.log transformed-tokens-json)
     (fb/export-tokens-file transformed-tokens-json)))
 
 
@@ -192,8 +192,6 @@
   [:div {:class (stl/css :sidebar-tab-wrapper)}
    [:& tokens-explorer]
    [:button {:class (stl/css :download-json-button)
-            :on-click download-tokens-as-json} "Download Tokens as JSON"
+             :on-click download-tokens-as-json} "Download Tokens as JSON"
     [:span.separator]
-    download-icon]
-   ])
-   
+    download-icon]])

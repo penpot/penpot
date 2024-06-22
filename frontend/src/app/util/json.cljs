@@ -22,4 +22,4 @@
   [data]
   (-> data
       (clj->js)
-      (js/JSON.stringify nil 2))) 
+      (js/JSON.stringify nil 2)))
