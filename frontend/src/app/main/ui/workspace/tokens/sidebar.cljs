@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.libs.file-builder :as fb]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
    [app.main.refs :as refs]
@@ -24,6 +25,32 @@
 
 (def lens:token-type-open-status
   (l/derived (l/in [:workspace-tokens :open-status]) st/state))
+
+(def ^:private download-icon
+  (i/icon-xref :download (stl/css :download-icon)))
+
+(defn transform-tokens [tokens]
+  (let [grouped-tokens (group-by (comp keyword :type second) tokens)
+        map-token (fn [[_ token]]
+                    [(keyword (:name token))
+                     {:value (:value token)
+                      :type (:type token)}])]
+                      (js/console.log grouped-tokens)
+                      (js/console.log map-token)
+    {:core (into (sorted-map)
+                 (map (fn [[type tokens]]
+                        [type
+                         (into (sorted-map)
+                               (map map-token tokens))])
+                      grouped-tokens))}))
+
+(defn download-tokens-as-json []
+  (let [all-tokens (deref refs/workspace-tokens)
+        transformed-tokens-json (transform-tokens all-tokens)]
+        (js/console.log transformed-tokens-json)
+    (fb/export-tokens-file transformed-tokens-json)))
+
+
 
 (mf/defc token-pill
   {::mf/wrap-props false}
@@ -163,4 +190,10 @@
    ::mf/wrap-props false}
   [_props]
   [:div {:class (stl/css :sidebar-tab-wrapper)}
-   [:& tokens-explorer]])
+   [:& tokens-explorer]
+   [:button {:class (stl/css :download-json-button)
+            :on-click download-tokens-as-json} "Download Tokens as JSON"
+    [:span.separator]
+    download-icon]
+   ])
+   

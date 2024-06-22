@@ -17,3 +17,9 @@
   (-> data
       (clj->js)
       (js/JSON.stringify)))
+
+(defn encode-tokens
+  [data]
+  (-> data
+      (clj->js)
+      (js/JSON.stringify nil 2))) 
