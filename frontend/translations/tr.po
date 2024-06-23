@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-17 08:07+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2024-06-24 19:09+0000\n"
+"Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
 "Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
 "tr/>\n"
 "Language: tr\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.6-dev\n"
+"X-Generator: Weblate 5.6-rc\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -52,9 +52,8 @@ msgid "auth.login-account-title"
 msgstr "Hesabımda oturum aç"
 
 #: src/app/main/ui/auth/register.cljs
-#, fuzzy
 msgid "auth.login-here"
-msgstr "Buradan oturum açın"
+msgstr "Buradan oturum açın."
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
@@ -5300,3 +5299,166 @@ msgstr "Eklentiler"
 
 msgid "workspace.plugins.plugin-list-link"
 msgstr "Eklenti Listesi"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.work-email"
+msgstr "İş e-postası"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-mail"
+msgstr "E-postanıza bakın"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register-tagline"
+msgstr ""
+"Ücretsiz bir Penpot hesabı ile sınırsız sayıda takım oluşturabilir ve diğer "
+"tasarımcı ve geliştiricilerle istediğiniz kadar projede işbirliği "
+"yapabilirsiniz. "
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register-account-tagline"
+msgstr "Denetim panelinde ve e-postalarda size ne dememiz gerektiğini belirtin."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-account-title"
+msgstr "Adınız"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step1.question1"
+msgstr "Penpot'u ne için kullanacaksınız?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.use.work"
+msgstr "İş"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.use.education"
+msgstr "Eğitim"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.use.personal"
+msgstr "Kişisel"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step1.question2"
+msgstr "Bugün sizi Penpot'a getiren nedir?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.reasons.exploring"
+msgstr "Yalnızca keşfediyorum"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.reasons.fit"
+msgstr "Penpot'un takımım için uygun olup olmadığına bakıyorum"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.reasons.alternative"
+msgstr "Figma, XD, vb. için bir alternatif arıyorum"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step2.title"
+msgstr "Bu araçlardan en çok hangisini kullanıyorsunuz?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step3.question1"
+msgstr "Ne tür bir iş yapıyorsunuz?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.team-leader"
+msgstr "Takım Lideri"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.team-member"
+msgstr "Takım üyesi"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.director"
+msgstr "Yönetici"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.team-size.freelancer"
+msgstr "Serbest çalışıyorum"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.ui"
+msgstr "Bir uygulamanın kullanıcı arayüzünü/deneyimini tasarlama"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.toggle-toolbar"
+msgstr "Araç çubuğunu aç/kapat"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step1.title"
+msgstr "Sizi tanımamıza yardımcı olun"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step1.subtitle"
+msgstr ""
+"Penpot'un sizin için çalışmasını sağlamamıza yardımcı olmak için hakkınızda "
+"biraz bilgi verin. Yanıtlarınız, yeni özelliklere öncelik vermemize ve "
+"başlamak için sizi doğru yöne yönlendirmemize yardımcı olacaktır."
+
+#: src/app/main/ui/auth/register.cljs
+#, markdown
+msgid "auth.terms-and-privacy-agreement"
+msgstr "[Hizmet koşullarını](%s) ve [gizlilik politikasını](%s) kabul ediyorum."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.reasons.testing"
+msgstr "Kendim barındırmadan önce test ediyorum"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step3.title"
+msgstr "Bize işiniz hakkında bilgi verin"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.product-design"
+msgstr "Ürün veya kullanıcı deneyimi tasarımı"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.graphic-design"
+msgstr "Grafik tasarımı"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.wireframing"
+msgstr "Çerçeve oluşturma"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step4.title"
+msgstr "Nereden başlamak istersiniz?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.prototyping"
+msgstr "Prototip oluşturma"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.ds"
+msgstr "Tasarım Sistemleri Oluşturma"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.code"
+msgstr "Gerçek kod tasarımları oluşturma"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.youtube"
+msgstr "YouTube"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.event"
+msgstr "Etkinlik"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.social"
+msgstr "Sosyal Medya (X, Linkedin, FB, vb.)"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.article"
+msgstr "Makale (Blog, Yazı, Haber Bülteni)"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.other-short"
+msgstr "Diğer"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step5.title"
+msgstr "Penpot'tan nasıl haberiniz oldu?"
