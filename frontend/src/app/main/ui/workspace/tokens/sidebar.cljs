@@ -168,6 +168,6 @@
   [:div {:class (stl/css :sidebar-tab-wrapper)}
    [:& tokens-explorer]
    [:button {:class (stl/css :download-json-button)
-             :on-click wtc/download-tokens-as-json} "Download Tokens as JSON"
-    [:span.separator]
-    download-icon]])
+             :on-click wtc/download-tokens-as-json}
+    download-icon
+    "Export JSON"]])

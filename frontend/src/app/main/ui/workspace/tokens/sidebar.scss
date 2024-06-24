@@ -51,39 +51,20 @@
 }
 
 .download-json-button {
+  @extend .button-secondary;
   position: absolute;
   bottom: $s-12;
   right: $s-12;
-  padding: $s-8 $s-16;
-  font-size: $fs-12;
-  background-color: var(--button-primary-background-color-rest);
-  color: var(--button-primary-foreground-color-rest);
-  border: none;
-  border-radius: $br-4;
   display: flex;
   align-items: center;
-  cursor: pointer;
-
-  &:hover {
-    background-color: var(--button-primary-background-color-hover);
-  }
-
-  &:active {
-    background-color: var(--button-primary-background-color-active);
-  }
+  padding: $s-6 $s-8;
+  text-transform: uppercase;
+  gap: $s-8;
 
   .download-icon {
     @extend .button-icon;
     stroke: var(--icon-foreground);
     width: 20px;
     height: 20px;
-    margin-left: $s-8;
-  }
-
-  .separator {
-    height: 16px;
-    width: 1px;
-    background-color: var(--button-primary-foreground-color-rest);
-    margin-left: $s-8;
   }
 }
