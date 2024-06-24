@@ -159,7 +159,8 @@
     :warnings {:fn-deprecated false}}}
 
   :test-esm
-  {:target :esm-files
+  {:target :node-test
+   :output-to "target/tests-esm.cjs"
    :output-dir "target/test-esm"
    :ns-regexp "^token-tests.*-test$"
    :autorun true
