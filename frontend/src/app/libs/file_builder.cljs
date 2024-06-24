@@ -273,12 +273,5 @@
   (binding [cfeat/*current* cfeat/default-features]
     (File. (fb/create-file name))))
 
-(defn export-tokens-file [tokens-json]
-  (let [file-name "tokens.json"
-        file-content (json/encode-tokens tokens-json)
-        blob (wapi/create-blob (clj->js file-content) "application/json")]
-    (dom/trigger-download file-name blob)))
-
 (defn exports []
-  #js {:createFile    create-file-export
-       :exportTokens export-tokens-file})
+  #js {:createFile    create-file-export})

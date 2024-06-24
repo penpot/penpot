@@ -18,6 +18,8 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
+   [app.util.dom :as dom]
+   [app.util.webapi :as wapi]
    [promesa.core :as p]))
 
 ;; Helpers ---------------------------------------------------------------------
@@ -131,6 +133,18 @@
        (dwsl/update-layout [shape-id] layout-update)))))
 
 ;; JSON export functions -------------------------------------------------------
+(defn encode-tokens
+  [data]
+  (-> data
+      (clj->js)
+      (js/JSON.stringify nil 2)))
+
+(defn export-tokens-file [tokens-json]
+  (let [file-name "tokens.json"
+        file-content (encode-tokens tokens-json)
+        blob (wapi/create-blob (clj->js file-content) "application/json")]
+    (dom/trigger-download file-name blob)))
+
 (defn transform-tokens-into-json-format [tokens]
   (let [grouped-tokens (group-by (comp keyword :type second) tokens)
         map-token (fn [[_ token]]
@@ -147,7 +161,7 @@
 (defn download-tokens-as-json []
   (let [all-tokens (deref refs/workspace-tokens)
         transformed-tokens-json (transform-tokens-into-json-format all-tokens)]
-    (fb/export-tokens-file transformed-tokens-json)))
+    (export-tokens-file transformed-tokens-json)))
 
 ;; Token types -----------------------------------------------------------------
 
