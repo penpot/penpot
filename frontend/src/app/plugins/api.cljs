@@ -244,7 +244,54 @@
         (let [ids (into #{} (map #(obj/get % "$id")) shapes)
               id-ret (atom nil)]
           (st/emit! (dwb/create-bool bool-type ids {:id-ret id-ret}))
-          (shape/shape-proxy $plugin @id-ret))))))
+          (shape/shape-proxy $plugin @id-ret)))))
+
+  (generateMarkup
+    [_ shapes options]
+    (let [type (d/nilv (obj/get options "type") "html")]
+      (cond
+        (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
+        (u/display-not-valid :generateMarkup-shapes shapes)
+
+        (and (some? type) (not (contains? #{"html" "svg"} type)))
+        (u/display-not-valid :generateMarkup-type type)
+
+        :else
+        (let [objects (u/locate-objects)
+              shapes (into [] (map u/proxy->shape) shapes)]
+          (cg/generate-markup-code objects type shapes)))))
+
+  (generateStyle
+    [_ shapes options]
+    (let [type (d/nilv (obj/get options "type") "css")
+          prelude? (d/nilv (obj/get options "withPrelude") false)
+          children? (d/nilv (obj/get options "includeChildren") true)]
+      (cond
+        (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
+        (u/display-not-valid :generateStyle-shapes shapes)
+
+        (and (some? type) (not (contains? #{"css"} type)))
+        (u/display-not-valid :generateStyle-type type)
+
+        (and (some? prelude?) (not (boolean? prelude?)))
+        (u/display-not-valid :generateStyle-withPrelude prelude?)
+
+        (and (some? children?) (not (boolean? children?)))
+        (u/display-not-valid :generateStyle-includeChildren children?)
+
+        :else
+        (let [objects (u/locate-objects)
+              shapes
+              (->> (into #{} (map u/proxy->shape) shapes)
+                   (cfh/clean-loops objects))
+
+              shapes-with-children
+              (if children?
+                (->> shapes
+                     (mapcat #(cfh/get-children-with-self objects (:id %))))
+                shapes)]
+          (cg/generate-style-code
+           objects type shapes shapes-with-children {:with-prelude? prelude?}))))))
 
 (defn create-context
   [plugin-id]
