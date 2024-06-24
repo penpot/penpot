@@ -7,6 +7,7 @@
 (ns app.common.types.color
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.common.schema.openapi :as-alias oapi]
    [app.common.text :as txt]
@@ -14,7 +15,8 @@
    [app.common.types.color.gradient :as-alias color-gradient]
    [app.common.types.color.gradient.stop :as-alias color-gradient-stop]
    [app.common.uuid :as uuid]
-   [clojure.test.check.generators :as tgen]))
+   [clojure.test.check.generators :as tgen]
+   [cuerdas.core :as str]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMAS
@@ -383,3 +385,121 @@
       (and (some? (:color c1))
            (some? (:color c2))
            (= (:color c1) (:color c2)))))
+
+
+(defn stroke->color-att
+  [stroke file-id shared-libs]
+  (let [color-file-id      (:stroke-color-ref-file stroke)
+        color-id           (:stroke-color-ref-id stroke)
+        shared-libs-colors (dm/get-in shared-libs [color-file-id :data :colors])
+        is-shared?         (contains? shared-libs-colors color-id)
+        has-color?         (or (not (nil? (:stroke-color stroke))) (not (nil? (:stroke-color-gradient stroke))))
+        attrs              (if (or is-shared? (= color-file-id file-id))
+                             (d/without-nils {:color    (str/lower (:stroke-color stroke))
+                                              :opacity  (:stroke-opacity stroke)
+                                              :id       color-id
+                                              :file-id  color-file-id
+                                              :gradient (:stroke-color-gradient stroke)})
+                             (d/without-nils {:color    (str/lower (:stroke-color stroke))
+                                              :opacity  (:stroke-opacity stroke)
+                                              :gradient (:stroke-color-gradient stroke)}))]
+    (when has-color?
+      {:attrs attrs
+       :prop :stroke
+       :shape-id (:shape-id stroke)
+       :index (:index stroke)})))
+
+(defn shadow->color-att
+  [shadow file-id shared-libs]
+  (let [color-file-id      (dm/get-in shadow [:color :file-id])
+        color-id           (dm/get-in shadow [:color :id])
+        shared-libs-colors (dm/get-in shared-libs [color-file-id :data :colors])
+        is-shared?         (contains? shared-libs-colors color-id)
+        attrs              (if (or is-shared? (= color-file-id file-id))
+                             (d/without-nils {:color    (str/lower (dm/get-in shadow [:color :color]))
+                                              :opacity  (dm/get-in shadow [:color :opacity])
+                                              :id       color-id
+                                              :file-id  (dm/get-in shadow [:color :file-id])
+                                              :gradient (dm/get-in shadow [:color :gradient])})
+                             (d/without-nils {:color    (str/lower (dm/get-in shadow [:color :color]))
+                                              :opacity  (dm/get-in shadow [:color :opacity])
+                                              :gradient (dm/get-in shadow [:color :gradient])}))]
+
+
+    {:attrs attrs
+     :prop :shadow
+     :shape-id (:shape-id shadow)
+     :index (:index shadow)}))
+
+(defn text->color-att
+  [fill file-id shared-libs]
+  (let [color-file-id      (:fill-color-ref-file fill)
+        color-id           (:fill-color-ref-id fill)
+        shared-libs-colors (dm/get-in shared-libs [color-file-id :data :colors])
+        is-shared?         (contains? shared-libs-colors color-id)
+        attrs              (if (or is-shared? (= color-file-id file-id))
+                             (d/without-nils {:color    (str/lower (:fill-color fill))
+                                              :opacity  (:fill-opacity fill)
+                                              :id       color-id
+                                              :file-id  color-file-id
+                                              :gradient (:fill-color-gradient fill)})
+                             (d/without-nils {:color    (str/lower (:fill-color fill))
+                                              :opacity  (:fill-opacity fill)
+                                              :gradient (:fill-color-gradient fill)}))]
+    {:attrs attrs
+     :prop :content
+     :shape-id (:shape-id fill)
+     :index (:index fill)}))
+
+(defn treat-node
+  [node shape-id]
+  (map-indexed #(assoc %2 :shape-id shape-id :index %1) node))
+
+(defn extract-text-colors
+  [text file-id shared-libs]
+  (let [content (txt/node-seq txt/is-text-node? (:content text))
+        content-filtered (map :fills content)
+        indexed (mapcat #(treat-node % (:id text)) content-filtered)]
+    (map #(text->color-att % file-id shared-libs) indexed)))
+
+(defn fill->color-att
+  [fill file-id shared-libs]
+  (let [color-file-id      (:fill-color-ref-file fill)
+        color-id           (:fill-color-ref-id fill)
+        shared-libs-colors (dm/get-in shared-libs [color-file-id :data :colors])
+        is-shared?         (contains? shared-libs-colors color-id)
+        has-color?         (or (not (nil? (:fill-color fill))) (not (nil? (:fill-color-gradient fill))))
+        attrs              (if (or is-shared? (= color-file-id file-id))
+                             (d/without-nils {:color    (str/lower (:fill-color fill))
+                                              :opacity  (:fill-opacity fill)
+                                              :id       color-id
+                                              :file-id  color-file-id
+                                              :gradient (:fill-color-gradient fill)})
+                             (d/without-nils {:color    (str/lower (:fill-color fill))
+                                              :opacity  (:fill-opacity fill)
+                                              :gradient (:fill-color-gradient fill)}))]
+    (when has-color?
+      {:attrs attrs
+       :prop :fill
+       :shape-id (:shape-id fill)
+       :index (:index fill)})))
+
+(defn extract-all-colors
+  [shapes file-id shared-libs]
+  (reduce
+   (fn [list shape]
+     (let [fill-obj   (map-indexed #(assoc %2 :shape-id (:id shape) :index %1) (:fills shape))
+           stroke-obj (map-indexed #(assoc %2 :shape-id (:id shape) :index %1) (:strokes shape))
+           shadow-obj (map-indexed #(assoc %2 :shape-id (:id shape) :index %1) (:shadow shape))]
+       (if (= :text (:type shape))
+         (-> list
+             (into (map #(stroke->color-att % file-id shared-libs)) stroke-obj)
+             (into (map #(shadow->color-att % file-id shared-libs)) shadow-obj)
+             (into (extract-text-colors shape file-id shared-libs)))
+
+         (-> list
+             (into (map #(fill->color-att % file-id shared-libs))  fill-obj)
+             (into (map #(stroke->color-att % file-id shared-libs)) stroke-obj)
+             (into (map #(shadow->color-att % file-id shared-libs)) shadow-obj)))))
+   []
+   shapes))
