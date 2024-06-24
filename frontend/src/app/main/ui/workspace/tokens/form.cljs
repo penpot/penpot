@@ -14,6 +14,7 @@
    [cuerdas.core :as str]
    [malli.core :as m]
    [malli.error :as me]
+   [promesa.core :as p]
    [rumext.v2 :as mf]))
 
 ;; Schemas ---------------------------------------------------------------------
@@ -33,11 +34,6 @@
       [:string {:min 1 :max 255}]
       non-existing-token-schema])))
 
-(comment
-  (-> (m/explain (token-name-schema #{"foo"}) nil)
-      (me/humanize))
-  nil)
-
 ;; Helpers ---------------------------------------------------------------------
 
 (defn finalize-name [name]
@@ -45,6 +41,57 @@
 
 (defn finalize-value [name]
   (str/trim name))
+
+;; Component -------------------------------------------------------------------
+
+(defn use-debonced-resolve-callback
+  [name-ref token tokens callback & {:keys [cached timeout]
+                                     :or {cached {}
+                                          timeout 160}}]
+  (let [timeout-id-ref (mf/use-ref nil)
+        cache (mf/use-ref cached)
+        debounced-resolver-callback
+        (mf/use-callback
+         (mf/deps token callback tokens)
+         (fn [event]
+           (let [input (dom/get-target-val event)
+                 timeout-id (js/Symbol)
+                 ;; Dont execute callback when the timout-id-ref is outdated because this function got called again
+                 timeout-outdated-cb? #(not= (mf/ref-val timeout-id-ref) timeout-id)]
+             (mf/set-ref-val! timeout-id-ref timeout-id)
+             (js/setTimeout
+              (fn []
+                (when (not (timeout-outdated-cb?))
+                  (if-let [cached (get (mf/ref-val cache) tokens)]
+                    (callback cached)
+                    (let [token-references (sd/find-token-references input)
+                          ;; When creating a new token we dont have a token name yet,
+                          ;; so we use a temporary token name that hopefully doesn't clash with any of the users token names.
+                          token-name (if (empty? @name-ref) "__TOKEN_STUDIO_SYSTEM.TEMP" @name-ref)
+                          direct-self-reference? (get token-references token-name)
+                          empty-input? (empty? (str/trim input))]
+                      (cond
+                        empty-input? (callback nil)
+                        direct-self-reference? (callback :error/token-direct-self-reference)
+                        :else
+                        (let [token-id (or (:id token) (random-uuid))
+                              new-tokens (update tokens token-id merge {:id token-id
+                                                                        :value input
+                                                                        :name token-name})]
+                          (-> (sd/resolve-tokens+ new-tokens)
+                              (p/finally
+                                (fn [resolved-tokens _err]
+                                  (when-not (timeout-outdated-cb?)
+                                    (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-id)]
+                                      (cond
+                                        resolved-value (do
+                                                         (mf/set-ref-val! cache (assoc (mf/ref-val cache) input resolved-tokens))
+                                                         (callback resolved-token))
+                                        (= #{:style-dictionary/missing-reference} errors) (callback :error/token-missing-reference)
+                                        :else (callback :error/unknown-error)))))))))))))
+
+              timeout))))]
+    debounced-resolver-callback))
 
 (mf/defc form
   {::mf/wrap-props false}
@@ -63,7 +110,6 @@
                                      :description ""}
                                     token))
         state @state*
-        _ (js/console.log "render")
 
         form-touched (mf/use-state nil)
         update-form-touched (mf/use-callback
@@ -90,11 +136,11 @@
         set-resolve-value (mf/use-callback
                            (fn [token-or-err]
                              (let [value (cond
-                                           (= token-or-err :error/token-self-reference) :error/token-self-reference
+                                           (= token-or-err :error/token-direct-self-reference) :error/token-self-reference
                                            (= token-or-err :error/token-missing-reference) :error/token-missing-reference
                                            (:resolved-value token-or-err) (:resolved-value token-or-err))]
                                (reset! token-resolve-result value))))
-        on-update-value (sd/use-debonced-resolve-callback name token tokens set-resolve-value)
+        on-update-value (use-debonced-resolve-callback name token tokens set-resolve-value)
         value-error? (when (keyword? @token-resolve-result)
                        (= (namespace @token-resolve-result) "error"))
 
@@ -136,6 +182,7 @@
        (case @token-resolve-result
          :error/token-self-reference "Token has self reference"
          :error/token-missing-reference "Token has missing reference"
+         :error/unknown-error ""
          nil "Enter token value"
          [:p @token-resolve-result])]
       [:& tokens.common/labeled-input {:label "Description"
