@@ -20,6 +20,7 @@
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.util.dom :as dom]
    [app.util.webapi :as wapi]
+   [cuerdas.core :as str]
    [promesa.core :as p]))
 
 ;; Helpers ---------------------------------------------------------------------
@@ -133,6 +134,10 @@
        (dwsl/update-layout [shape-id] layout-update)))))
 
 ;; JSON export functions -------------------------------------------------------
+(defn kebab-to-camel [token-type]
+  (let [parts (str/split token-type #"-")]
+    (apply str (first parts) (str/capital (second parts)))))
+
 (defn encode-tokens
   [data]
   (-> data
@@ -146,17 +151,15 @@
     (dom/trigger-download file-name blob)))
 
 (defn transform-tokens-into-json-format [tokens]
-  (let [grouped-tokens (group-by (comp keyword :type second) tokens)
-        map-token (fn [[_ token]]
-                    [(keyword (:name token))
-                     {:value (:value token)
-                      :type (:type token)}])]
-    {:core (into (sorted-map)
-                 (map (fn [[type tokens]]
-                        [type
-                         (into (sorted-map)
-                               (map map-token tokens))])
-                      grouped-tokens))}))
+  (let [grouped-tokens (group-by #(keyword (:name (second %))) tokens)
+        map-token (fn [token]
+                    {:value (:value token)
+                     :type (kebab-to-camel (:type token))})]
+    {:global (into (sorted-map)
+                   (map (fn [[name tokens]]
+                          [(keyword name)
+                           (map-token (second (first tokens)))])
+                        grouped-tokens))}))
 
 (defn download-tokens-as-json []
   (let [all-tokens (deref refs/workspace-tokens)
