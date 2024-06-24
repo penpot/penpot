@@ -154,7 +154,7 @@
   (let [grouped-tokens (group-by #(keyword (:name (second %))) tokens)
         map-token (fn [token]
                     {:value (:value token)
-                     :type (kebab-to-camel (:type token))})]
+                     :type (kebab-to-camel (name (:type token)))})]
     {:global (into (sorted-map)
                    (map (fn [[name tokens]]
                           [(keyword name)
