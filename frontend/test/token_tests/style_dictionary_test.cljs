@@ -3,6 +3,7 @@
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
 ;; Copyright (c) KALEIDOS INC
+
 (ns token-tests.style-dictionary-test
   (:require
    [app.main.ui.workspace.tokens.style-dictionary :as wtsd]
