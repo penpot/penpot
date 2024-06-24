@@ -106,8 +106,8 @@
     :warnings {:fn-deprecated false}}}
 
   :lib-penpot
-   {:target :esm
-    :output-dir "resources/public/libs"
+  {:target :esm
+   :output-dir "resources/public/libs"
 
    :modules
    {:penpot {:exports {:renderPage app.libs.render/render-page-export
@@ -158,5 +158,16 @@
     :source-map-detail-level :all
     :warnings {:fn-deprecated false}}}
 
-  }}
+  :test-esm
+  {:target :esm-files
+   :output-dir "target/test-esm"
+   :ns-regexp "^frontend-tests.tokens.*-test$"
+   :autorun true
 
+   :compiler-options
+   {:output-feature-set :es2020
+    :output-wrapper false
+    :source-map true
+    :source-map-include-sources-content true
+    :source-map-detail-level :all
+    :warnings {:fn-deprecated false}}}}}
