@@ -39,8 +39,14 @@
 (defn finalize-name [name]
   (str/trim name))
 
-(defn finalize-value [name]
-  (str/trim name))
+(defn valid-name? [name]
+  (seq (finalize-name name)))
+
+(defn finalize-value [value]
+  (str/trim value))
+
+(defn valid-value? [value]
+  (seq (finalize-value value)))
 
 ;; Component -------------------------------------------------------------------
 
@@ -117,12 +123,17 @@
 
         ;; Name
         name (mf/use-var (or (:name token) ""))
+        name-touched? (mf/use-state (some? (:name token)))
+        on-name-touch (mf/use-callback
+                       #(when (valid-name? (dom/get-target-val %))
+                          (reset! name-touched? true)))
         name-errors (mf/use-state nil)
         name-schema (mf/use-memo
                      (mf/deps existing-token-names)
                      #(token-name-schema existing-token-names))
         on-update-name (mf/use-callback
                         (debounce (fn [e]
+                                    (on-name-touch e)
                                     (let [value (dom/get-target-val e)
                                           errors (->> (finalize-name value)
                                                       (m/explain name-schema))]
@@ -147,7 +158,7 @@
         disabled? (or
                    @name-errors
                    value-error?
-                   (empty? (finalize-name (mf/ref-val name))))]
+                   (not @name-touched?))]
 
         ;; on-submit (fn [e]
         ;;             (dom/prevent-default e)
@@ -169,6 +180,7 @@
                                         :error? @name-errors
                                         :input-props {:default-value @name
                                                       :auto-focus true
+                                                      :on-blur on-name-touch
                                                       :on-change on-update-name}}]
        (when @name-errors
          [:p {:class (stl/css :error)}
