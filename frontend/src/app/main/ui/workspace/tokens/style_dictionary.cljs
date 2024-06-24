@@ -17,7 +17,7 @@
   (do
     (sd-transforms/registerTransforms sd)
     (.registerFormat sd #js {:name "custom/json"
-                             :format (fn [res]
+                             :format (fn [^js res]
                                        (.-tokens (.-dictionary res)))})
     sd))
 
