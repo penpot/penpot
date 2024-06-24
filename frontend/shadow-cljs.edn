@@ -161,7 +161,7 @@
   :test-esm
   {:target :esm-files
    :output-dir "target/test-esm"
-   :ns-regexp "^frontend-tests.tokens.*-test$"
+   :ns-regexp "^token-tests.*-test$"
    :autorun true
 
    :compiler-options
