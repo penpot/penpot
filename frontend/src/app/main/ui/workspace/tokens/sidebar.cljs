@@ -25,6 +25,9 @@
 (def lens:token-type-open-status
   (l/derived (l/in [:workspace-tokens :open-status]) st/state))
 
+(def ^:private download-icon
+  (i/icon-xref :download (stl/css :download-icon)))
+
 (mf/defc token-pill
   {::mf/wrap-props false}
   [{:keys [on-click token highlighted? on-context-menu]}]
@@ -163,4 +166,8 @@
    ::mf/wrap-props false}
   [_props]
   [:div {:class (stl/css :sidebar-tab-wrapper)}
-   [:& tokens-explorer]])
+   [:& tokens-explorer]
+   [:button {:class (stl/css :download-json-button)
+             :on-click wtc/download-tokens-as-json}
+    download-icon
+    "Export JSON"]])

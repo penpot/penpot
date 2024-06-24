@@ -9,13 +9,18 @@
    [app.common.data :as d :refer [ordered-map]]
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.token :as ctt]
+   [app.libs.file-builder :as fb]
    [app.main.data.tokens :as dt]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.transforms :as dwt]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
+   [app.util.dom :as dom]
+   [app.util.webapi :as wapi]
+   [cuerdas.core :as str]
    [promesa.core :as p]))
 
 ;; Helpers ---------------------------------------------------------------------
@@ -127,6 +132,33 @@
                           {:layout-gap {:row-gap value}})]
       (st/emit!
        (dwsl/update-layout [shape-id] layout-update)))))
+
+;; JSON export functions -------------------------------------------------------
+
+(defn encode-tokens
+  [data]
+  (-> data
+      (clj->js)
+      (js/JSON.stringify nil 2)))
+
+(defn export-tokens-file [tokens-json]
+  (let [file-name "tokens.json"
+        file-content (encode-tokens tokens-json)
+        blob (wapi/create-blob (clj->js file-content) "application/json")]
+    (dom/trigger-download file-name blob)))
+
+(defn transform-tokens-into-json-format [tokens]
+  (let [global (reduce
+                (fn [acc [_ {:keys [name value type]}]]
+                  (assoc acc name {:value value
+                                   :type (str/camel type)}))
+                (sorted-map) tokens)]
+    {:global global}))
+
+(defn download-tokens-as-json []
+  (let [all-tokens (deref refs/workspace-tokens)
+        transformed-tokens-json (transform-tokens-into-json-format all-tokens)]
+    (export-tokens-file transformed-tokens-json)))
 
 ;; Token types -----------------------------------------------------------------
 

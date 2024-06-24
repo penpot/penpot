@@ -49,3 +49,22 @@
   // Align better with the label
   translate: 0px -1px;
 }
+
+.download-json-button {
+  @extend .button-secondary;
+  position: absolute;
+  bottom: $s-12;
+  right: $s-12;
+  display: flex;
+  align-items: center;
+  padding: $s-6 $s-8;
+  text-transform: uppercase;
+  gap: $s-8;
+
+  .download-icon {
+    @extend .button-icon;
+    stroke: var(--icon-foreground);
+    width: 20px;
+    height: 20px;
+  }
+}
