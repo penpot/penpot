@@ -134,9 +134,6 @@
        (dwsl/update-layout [shape-id] layout-update)))))
 
 ;; JSON export functions -------------------------------------------------------
-(defn kebab-to-camel [token-type]
-  (let [parts (str/split token-type #"-")]
-    (apply str (first parts) (str/capital (second parts)))))
 
 (defn encode-tokens
   [data]
@@ -151,15 +148,12 @@
     (dom/trigger-download file-name blob)))
 
 (defn transform-tokens-into-json-format [tokens]
-  (let [grouped-tokens (group-by #(keyword (:name (second %))) tokens)
-        map-token (fn [token]
-                    {:value (:value token)
-                     :type (kebab-to-camel (name (:type token)))})]
-    {:global (into (sorted-map)
-                   (map (fn [[name tokens]]
-                          [(keyword name)
-                           (map-token (second (first tokens)))])
-                        grouped-tokens))}))
+  (let [global (reduce
+                (fn [acc [_ {:keys [name value type]}]]
+                  (assoc acc name {:value value
+                                   :type (str/camel type)}))
+                (sorted-map) tokens)]
+    {:global global}))
 
 (defn download-tokens-as-json []
   (let [all-tokens (deref refs/workspace-tokens)
