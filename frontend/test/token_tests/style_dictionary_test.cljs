@@ -18,3 +18,8 @@
   (t/is (nil? (wtsd/find-token-references "1 + 2")))
   ;; Edge-case: Ignore unmatched closing parens
   (t/is (= #{"foo" "bar"} (wtsd/find-token-references "{foo}} + {bar}"))))
+
+(t/deftest test-token-self-reference?
+  (t/is (some? (wtsd/token-self-reference? "some.value" "{md} + {some.value}")))
+  (t/is (nil? (wtsd/token-self-reference? "some.value" "some.value")))
+  (t/is (nil? (wtsd/token-self-reference? "sm" "{md} + {lg}"))))
