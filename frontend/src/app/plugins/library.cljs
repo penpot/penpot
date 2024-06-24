@@ -20,10 +20,14 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.repo :as rp]
    [app.main.store :as st]
    [app.plugins.shape :as shape]
    [app.plugins.utils :as u]
-   [app.util.object :as obj]))
+   [app.util.object :as obj]
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]
+   [promesa.core :as p]))
 
 (declare lib-color-proxy)
 (declare lib-typography-proxy)
@@ -744,7 +748,7 @@
   (cr/add-properties!
    (Library. plugin-id file-id)
    {:name "$plugin" :enumerable false :get (constantly plugin-id)}
-   {:name "$file" :enumerable false :get (constantly file-id)}
+   {:name "$id" :enumerable false :get (constantly file-id)}
 
    {:name "id"
     :get #(-> % u/proxy->file :id str)}
@@ -780,10 +784,43 @@
 
 (deftype PenpotLibrarySubcontext [$plugin]
   Object
-  (find
-    [_ _name])
+  (availableLibraries
+    [_]
+    (let [team-id (:current-team-id @st/state)]
+      (p/create
+       (fn [resolve reject]
+         (let [current-libs (into #{} (map first) (get @st/state :workspace-libraries))]
+           (->> (rp/cmd! :get-team-shared-files {:team-id team-id})
+                (rx/map (fn [result]
+                          (->> result
+                               (filter #(not (contains? current-libs (:id %))))
+                               (map
+                                (fn [{:keys [id name library-summary]}]
+                                  #js {:id (dm/str id)
+                                       :name name
+                                       :numColors (-> library-summary :colors :count)
+                                       :numComponents (-> library-summary :components :count)
+                                       :numTypographies (-> library-summary :typographies :count)}))
+                               (apply array))))
+                (rx/subs! resolve reject)))))))
 
-  (find [_]))
+  (connectLibrary
+    [_ library-id]
+    (p/create
+     (fn [resolve reject]
+       (cond
+         (not (string? library-id))
+         (do (u/display-not-valid :connectLibrary library-id)
+             (reject nil))
+
+         :else
+         (let [file-id (:current-file-id @st/state)
+               library-id (uuid/uuid library-id)]
+           (->> st/stream
+                (rx/filter (ptk/type? ::dwl/attach-library-finished))
+                (rx/take 1)
+                (rx/subs! #(resolve (library-proxy $plugin library-id)) reject))
+           (st/emit! (dwl/link-file-to-library file-id library-id))))))))
 
 (defn library-subcontext
   [plugin-id]

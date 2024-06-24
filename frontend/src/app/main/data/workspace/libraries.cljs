@@ -1281,18 +1281,20 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [features (features/get-team-enabled-features state)]
-        (rx/merge
-         (->> (rp/cmd! :link-file-to-library {:file-id file-id :library-id library-id})
-              (rx/ignore))
-         (->> (rp/cmd! :get-file {:id library-id :features features})
-              (rx/merge-map fpmap/resolve-file)
-              (rx/map (fn [file]
-                        (fn [state]
-                          (assoc-in state [:workspace-libraries library-id] file)))))
-         (->> (rp/cmd! :get-file-object-thumbnails {:file-id library-id :tag "component"})
-              (rx/map (fn [thumbnails]
-                        (fn [state]
-                          (update state :workspace-thumbnails merge thumbnails))))))))))
+        (rx/concat
+         (rx/merge
+          (->> (rp/cmd! :link-file-to-library {:file-id file-id :library-id library-id})
+               (rx/ignore))
+          (->> (rp/cmd! :get-file {:id library-id :features features})
+               (rx/merge-map fpmap/resolve-file)
+               (rx/map (fn [file]
+                         (fn [state]
+                           (assoc-in state [:workspace-libraries library-id] file)))))
+          (->> (rp/cmd! :get-file-object-thumbnails {:file-id library-id :tag "component"})
+               (rx/map (fn [thumbnails]
+                         (fn [state]
+                           (update state :workspace-thumbnails merge thumbnails))))))
+         (rx/of (ptk/reify ::attach-library-finished)))))))
 
 (defn unlink-file-from-library
   [file-id library-id]
