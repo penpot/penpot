@@ -13,6 +13,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.schema :as sm]
    [app.common.schema.desc-native :as smd]
+   [app.common.schema.openapi :as-alias oapi]
    [app.common.types.color :as ctc]
    [app.common.types.colors-list :as ctcl]
    [app.common.types.component :as ctk]
@@ -31,8 +32,7 @@
 ;; SCHEMAS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private
-  schema:operation
+(def ^:private schema:operation
   [:multi {:dispatch :type :title "Operation" ::smd/simplified true}
    [:set
     [:map {:title "SetOperation"}
@@ -50,9 +50,33 @@
      [:type [:= :set-remote-synced]]
      [:remote-synced {:optional true} [:maybe :boolean]]]]])
 
+(def schema:shape
+  (sm/simple-schema
+   {:type :map
+    :pred cts/shape?
+    :type-properties
+    {:title "shape"
+     :description "shape map"
+     :error/message "errors.invalid-shape"
+     ::oapi/type "object"
+     ::oapi/decode
+     (fn [o]
+       (cond
+         (cts/shape? o)
+         o
+
+         (map? o)
+         (cts/map->Shape o)
+
+         :else
+         o))}}))
+
 (sm/register! ::change
   [:schema
-   [:multi {:dispatch :type :title "Change" ::smd/simplified true}
+   [:multi {:dispatch :type
+            :title "Change"
+            :decode/string #(update % :type keyword)
+            ::smd/simplified true}
     [:set-option
      [:map {:title "SetOptionChange"}
       [:type [:= :set-option]]
@@ -66,7 +90,7 @@
      [:map {:title "AddObjChange"}
       [:type [:= :add-obj]]
       [:id ::sm/uuid]
-      [:obj :map]
+      [:obj schema:shape]
       [:page-id {:optional true} ::sm/uuid]
       [:component-id {:optional true} ::sm/uuid]
       [:frame-id ::sm/uuid]
