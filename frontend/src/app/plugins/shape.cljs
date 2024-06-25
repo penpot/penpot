@@ -229,6 +229,19 @@
             :else
             (st/emit! (dwt/update-text-range id start end {:direction value}))))}
 
+       {:name "align"
+        :get #(let [range-data
+                    (-> % u/proxy->shape :content (txt/content-range->text+styles start end))]
+                (->> range-data (map :text-align) mixed-value))
+        :set
+        (fn [_ value]
+          (cond
+            (not (string? value))
+            (u/display-not-valid :text-align value)
+
+            :else
+            (st/emit! (dwt/update-text-range id start end {:text-align value}))))}
+
        {:name "fills"
         :get #(let [range-data
                     (-> % u/proxy->shape :content (txt/content-range->text+styles start end))]
@@ -1253,7 +1266,55 @@
                    (u/display-not-valid :textTransform value)
 
                    :else
-                   (st/emit! (dwt/update-attrs id {:text-transform value})))))}))
+                   (st/emit! (dwt/update-attrs id {:text-transform value})))))}
+
+            {:name "textDecoration"
+             :get #(-> % u/proxy->shape text-props :text-decoration)
+             :set
+             (fn [self value]
+               (let [id (obj/get self "$id")]
+                 (cond
+                   (not (string? value))
+                   (u/display-not-valid :textDecoration value)
+
+                   :else
+                   (st/emit! (dwt/update-attrs id {:text-decoration value})))))}
+
+            {:name "direction"
+             :get #(-> % u/proxy->shape text-props :text-direction)
+             :set
+             (fn [self value]
+               (let [id (obj/get self "$id")]
+                 (cond
+                   (not (string? value))
+                   (u/display-not-valid :textDecoration value)
+
+                   :else
+                   (st/emit! (dwt/update-attrs id {:text-decoration value})))))}
+
+            {:name "align"
+             :get #(-> % u/proxy->shape text-props :text-align)
+             :set
+             (fn [self value]
+               (let [id (obj/get self "$id")]
+                 (cond
+                   (not (string? value))
+                   (u/display-not-valid :align value)
+
+                   :else
+                   (st/emit! (dwt/update-attrs id {:text-align value})))))}
+
+            {:name "verticalAlign"
+             :get #(-> % u/proxy->shape text-props :vertical-align)
+             :set
+             (fn [self value]
+               (let [id (obj/get self "$id")]
+                 (cond
+                   (not (string? value))
+                   (u/display-not-valid :verticalAlign value)
+
+                   :else
+                   (st/emit! (dwt/update-attrs id {:vertical-align value})))))}))
 
          (cond-> (or (cfh/path-shape? data) (cfh/bool-shape? data))
            (crc/add-properties!

@@ -19,8 +19,10 @@
     (generate-markup objects shapes)))
 
 (defn generate-style-code
-  [objects type root-shapes all-shapes]
-  (let [generate-style
-        (case type
-          "css" css/generate-style)]
-    (generate-style objects root-shapes all-shapes)))
+  ([objects type root-shapes all-shapes]
+   (generate-style-code objects type root-shapes all-shapes nil))
+  ([objects type root-shapes all-shapes options]
+   (let [generate-style
+         (case type
+           "css" css/generate-style)]
+     (generate-style objects root-shapes all-shapes options))))

@@ -32,8 +32,10 @@
   (dm/get-in (locate-file file-id) [:data :pages-index id]))
 
 (defn locate-objects
-  [file-id page-id]
-  (:objects (locate-page file-id page-id)))
+  ([]
+   (locate-objects (:current-file-id @st/state) (:current-page-id @st/state)))
+  ([file-id page-id]
+   (:objects (locate-page file-id page-id))))
 
 (defn locate-shape
   [file-id page-id id]
