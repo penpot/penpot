@@ -215,6 +215,8 @@
                                                            :token token
                                                            :tokens tokens})])
                            (p/finally (fn [result err]
+                                        ;; The result should be a vector of all resolved validations
+                                        ;; We do not handle the error case as it will be handled by the components validations
                                         (when (and (seq result) (not err))
                                           (let [token (cond-> {:name final-name
                                                                :type (or (:type token) token-type)
