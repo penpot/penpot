@@ -68,12 +68,12 @@ export class DashboardPage extends BaseWebSocketPage {
     this.libsTitle = page.getByRole("heading", { name: "Libraries", level: 1 });
     this.searchButton = page.getByRole("button", { name: "dashboard-search" });
     this.searchTitle = page.getByRole("heading", { name: "Search results" });
-    this.searchInput = page.getByPlaceholder('Search…');
+    this.searchInput = page.getByPlaceholder("Search…");
     this.newFileName = page.getByText("New File 3");
-    this.teamDropdown = page.getByRole('button', { name: 'Your Penpot' });
-    this.userAccount = page.getByRole('button', { name: "Princesa Leia Princesa Leia" });
+    this.teamDropdown = page.getByRole("button", { name: "Your Penpot" });
+    this.userAccount = page.getByRole("button", { name: "Princesa Leia Princesa Leia" });
     this.userProfileOption = page.getByText("Your account");
-    this.userAccountTitle = page.getByRole("heading", {name: "Your account"});
+    this.userAccountTitle = page.getByRole("heading", { name: "Your account" });
   }
 
   async setupDraftsEmpty() {
@@ -106,8 +106,8 @@ export class DashboardPage extends BaseWebSocketPage {
     await this.mockRPC("get-team-shared-files?project-id=*", "dashboard/get-shared-files.json");
     await this.mockRPC("get-team-recent-files?team-id=*", "dashboard/get-team-recent-files.json");
     await this.mockRPC("get-font-variants?team-id=*", "dashboard/get-font-variants.json");
-    await this.mockRPC("search-files", "dashboard/search-files.json",  { method: "POST" });
-    await this.mockRPC("search-files", "dashboard/search-files.json" );
+    await this.mockRPC("search-files", "dashboard/search-files.json", { method: "POST" });
+    await this.mockRPC("search-files", "dashboard/search-files.json");
     await this.mockRPC("get-teams", "logged-in-user/get-teams-complete.json");
   }
 
@@ -182,7 +182,6 @@ export class DashboardPage extends BaseWebSocketPage {
   }
 
   async goToAccount() {
-
     await this.userAccount.click();
 
     await this.userProfileOption.click();
