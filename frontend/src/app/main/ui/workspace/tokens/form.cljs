@@ -128,14 +128,18 @@
         name-schema (mf/use-memo
                      (mf/deps existing-token-names)
                      #(token-name-schema existing-token-names))
+        on-update-name-debounced (mf/use-callback
+                                  (debounce (fn [e]
+                                              (let [value (dom/get-target-val e)
+                                                    errors (->> (finalize-name value)
+                                                                (m/explain name-schema))]
+                                                (reset! name-errors errors)
+                                                (update-form-touched)))))
         on-update-name (mf/use-callback
-                        (debounce (fn [e]
-                                    (let [value (dom/get-target-val e)
-                                          errors (->> (finalize-name value)
-                                                      (m/explain name-schema))]
-                                      (reset! name-ref value)
-                                      (reset! name-errors errors)
-                                      (update-form-touched)))))
+                        (mf/deps on-update-name-debounced)
+                        (fn [e]
+                          (reset! name-ref (dom/get-target-val e))
+                          (on-update-name-debounced e)))
         valid-name-field? (and
                            (not @name-errors)
                            (valid-name? @name-ref))
@@ -149,25 +153,33 @@
                                        (= token-or-err :error/token-direct-self-reference) :error/token-self-reference
                                        (= token-or-err :error/token-missing-reference) :error/token-missing-reference
                                        (:resolved-value token-or-err) (:resolved-value token-or-err))]
-                               (reset! value-ref v)
                                (reset! token-resolve-result v))))
-        on-update-value (use-debonced-resolve-callback name-ref token tokens set-resolve-value)
+        on-update-value-debounced (use-debonced-resolve-callback name-ref token tokens set-resolve-value)
+        on-update-value (mf/use-callback
+                         (mf/deps on-update-value-debounced)
+                         (fn [e]
+                           (reset! value-ref (dom/get-target-val e))
+                           (on-update-value-debounced e)))
         value-error? (when (keyword? @token-resolve-result)
                        (= (namespace @token-resolve-result) "error"))
         valid-value-field? (and
                             (not value-error?)
-                            (valid-value? (or @token-resolve-result @value-ref)))
+                            (valid-value? @token-resolve-result))
 
         ;; Description
         description-ref (mf/use-var (:description token))
         description-errors (mf/use-state nil)
+        on-update-description-debounced (mf/use-callback
+                                         (debounce (fn [e]
+                                                     (let [value (dom/get-target-val e)
+                                                           errors (m/explain token-description-schema value)]
+                                                       (reset! description-errors errors)
+                                                       (update-form-touched)))))
         on-update-description (mf/use-callback
-                               (debounce (fn [e]
-                                           (let [value (dom/get-target-val e)
-                                                 errors (m/explain token-description-schema value)]
-                                             (reset! description-ref value)
-                                             (reset! description-errors errors)
-                                             (update-form-touched)))))
+                               (mf/deps on-update-description-debounced)
+                               (fn [e]
+                                 (reset! description-ref (dom/get-target-val e))
+                                 (on-update-description-debounced e)))
         valid-description-field? (not @description-errors)
 
         ;; Form
