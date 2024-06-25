@@ -559,8 +559,10 @@
                            :layout-grid-rows]})
                  ;; We've applied the text-modifier so we can dissoc the temporary data
                  (fn [state]
-                   (update state :workspace-text-modifier #(apply dissoc % ids)))
-                 (clear-local-transform))
+                   (update state :workspace-text-modifier #(apply dissoc % ids))))
+          (if (nil? modifiers)
+            (rx/of (clear-local-transform))
+            (rx/empty))
           (if undo-transation?
             (rx/of (dwu/commit-undo-transaction undo-id))
             (rx/empty))))))))
