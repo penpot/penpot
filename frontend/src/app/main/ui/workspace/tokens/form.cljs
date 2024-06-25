@@ -126,7 +126,8 @@
                               (mf/deps tokens)
                               (fn []
                                 (-> (into #{} (map (fn [[_ {:keys [name]}]] name) tokens))
-                                     ;; Allow setting token to already used name
+                                    ;; Remove the currently editing token name,
+                                    ;; as we don't want it to show when checking for duplicate names.
                                     (disj (:name token)))))
 
         ;; Name
