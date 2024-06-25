@@ -158,8 +158,8 @@
         set-resolve-value (mf/use-callback
                            (fn [token-or-err]
                              (let [v (cond
-                                       (= token-or-err :error/token-direct-self-reference) :error/token-self-reference
-                                       (= token-or-err :error/token-missing-reference) :error/token-missing-reference
+                                       (= token-or-err :error/token-direct-self-reference) token-or-err
+                                       (= token-or-err :error/token-missing-reference) token-or-err
                                        (:resolved-value token-or-err) (:resolved-value token-or-err))]
                                (reset! token-resolve-result v))))
         on-update-value-debounced (use-debonced-resolve-callback name-ref token tokens set-resolve-value)
@@ -246,7 +246,7 @@
                                   :resolved-value-placeholder (nil? @token-resolve-result)
                                   :resolved-value-error value-error?)}
        (case @token-resolve-result
-         :error/token-self-reference "Token has self reference"
+         :error/token-direct-self-reference "Token has self reference"
          :error/token-missing-reference "Token has missing reference"
          :error/unknown-error ""
          nil "Enter token value"
