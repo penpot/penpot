@@ -786,7 +786,6 @@
        [:li {:class (stl/css-case :current drafts?
                                   :sidebar-nav-item true)}
         [:& link {:action go-drafts
-                  :data-testid "drafts-link-sidebar"
                   :class (stl/css :sidebar-link)
                   :keyboard-action go-drafts-with-key}
          [:span {:class (stl/css :element-title)} (tr "labels.drafts")]]]
@@ -1052,7 +1051,7 @@
   [props]
   (let [team    (obj/get props "team")
         profile (obj/get props "profile")]
-    [:nav {:class (stl/css :dashboard-sidebar)}
+    [:nav {:class (stl/css :dashboard-sidebar) :data-testid "dashboard-sidebar"}
      [:> sidebar-content props]
      [:& profile-section
       {:profile profile

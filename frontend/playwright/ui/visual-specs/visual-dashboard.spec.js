@@ -11,7 +11,7 @@ test("User goes to an empty dashboard", async ({ page }) => {
 
   await dashboardPage.goToDashboard();
 
-  await expect(dashboardPage.titleLabel).toBeVisible();
+  await expect(dashboardPage.projectsHeading).toBeVisible();
   await expect(dashboardPage.page).toHaveScreenshot();
 });
 
@@ -22,9 +22,9 @@ test("User goes to an empty draft page", async ({ page }) => {
   await dashboardPage.setupDraftsEmpty();
 
   await dashboardPage.goToDashboard();
-  await dashboardPage.draftLink.click();
+  await dashboardPage.draftsLink.click();
 
-  await expect(dashboardPage.draftTitle).toBeVisible();
+  await expect(dashboardPage.draftsTitle).toBeVisible();
   await expect(dashboardPage.page).toHaveScreenshot();
 });
 
@@ -86,9 +86,9 @@ test("User goes to an full draft page", async ({ page }) => {
   await dashboardPage.setupDashboardFull();
 
   await dashboardPage.goToDashboard();
-  await dashboardPage.draftLink.click();
+  await dashboardPage.draftsLink.click();
 
-  await expect(dashboardPage.draftTitle).toBeVisible();
+  await expect(dashboardPage.draftsTitle).toBeVisible();
   await expect(dashboardPage.page).toHaveScreenshot();
 });
 
@@ -146,7 +146,7 @@ test("User goes to user profile", async ({ page }) => {
   await dashboardPage.goToDashboard();
   await dashboardPage.goToAccount();
 
-  await expect(dashboardPage.userAccountTitle).toBeVisible();
+  await expect(dashboardPage.userAccountHeading).toBeVisible();
   await expect(dashboardPage.page).toHaveScreenshot();
 });
 
@@ -180,7 +180,7 @@ test("User opens teams selector with only one team", async ({ page }) => {
   const dashboardPage = new DashboardPage(page);
 
   await dashboardPage.goToDashboard();
-  await expect(dashboardPage.titleLabel).toBeVisible();
+  await expect(dashboardPage.projectsHeading).toBeVisible();
 
   await dashboardPage.teamDropdown.click();
 
@@ -193,7 +193,7 @@ test("User opens teams selector with more than one team", async ({ page }) => {
   await dashboardPage.setupDashboardFull();
 
   await dashboardPage.goToDashboard();
-  await expect(dashboardPage.titleLabel).toBeVisible();
+  await expect(dashboardPage.projectsHeading).toBeVisible();
 
   await dashboardPage.teamDropdown.click();
 
