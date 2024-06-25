@@ -199,6 +199,10 @@
                    (mf/deps validate-name validate-descripion token tokens)
                    (fn [e]
                      (dom/prevent-default e)
+                     ;; We have to re-validate the current form values before submitting
+                     ;; because the validation is asynchronous/debounced
+                     ;; and the user might have edited a valid form to make it invalid,
+                     ;; and press enter before the next validations could return.
                      (let [final-name (finalize-name @name-ref)
                            valid-name?+ (-> (validate-name final-name) schema-validation->promise)
                            final-value (finalize-value @value-ref)
