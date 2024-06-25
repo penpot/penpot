@@ -1164,14 +1164,15 @@
 
             changes-s
             (->> stream
-                 (rx/filter #(or (dch/commit? %)
-                                 (ptk/type? % ::dwn/handle-file-change)))
+                 (rx/filter dch/commit?)
+                 (rx/map deref)
+                 (rx/filter #(= :local (:source %)))
                  (rx/observe-on :async))
 
             check-changes
             (fn [[event [old-data _mid_data _new-data]]]
               (when old-data
-                (let [{:keys [file-id changes save-undo? undo-group]} (deref event)
+                (let [{:keys [file-id changes save-undo? undo-group]} event
 
                       changed-components
                       (when (or (nil? file-id) (= file-id (:id old-data)))
@@ -1181,7 +1182,7 @@
 
                   (if (d/not-empty? changed-components)
                     (if save-undo?
-                      (do (log/info :msg "DETECTED COMPONENTS CHANGED"
+                      (do (log/info :hint "detected component changes"
                                     :ids (map str changed-components)
                                     :undo-group undo-group)
 
@@ -1190,7 +1191,8 @@
                       ;; even if save-undo? is false, we need to update the :modified-date of the component
                       ;; (for example, for undos)
                       (->> (rx/from changed-components)
-                           (rx/map #(touch-component %))))
+                           (rx/map touch-component)))
+
                     (rx/empty)))))
 
             changes-s
