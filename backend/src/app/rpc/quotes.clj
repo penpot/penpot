@@ -83,17 +83,17 @@
                             "- Quote ID: '~(::target params)'\n"
                             "- Max: ~(::quote params)\n"
                             "- Total: ~(::total params) (INCR ~(::incr params 1))\n")]
-      (wrk/submit! {::wrk/task :sendmail
+      (wrk/submit! {::db/conn conn
+                    ::wrk/task :sendmail
                     ::wrk/delay (dt/duration "30s")
                     ::wrk/max-retries 4
                     ::wrk/priority 200
-                    ::wrk/conn conn
                     ::wrk/dedupe true
                     ::wrk/label "quotes-notification"
-                    :to (vec admins)
-                    :subject subject
-                    :body [{:type "text/plain"
-                            :content content}]}))))
+                    ::wrk/params {:to (vec admins)
+                                  :subject subject
+                                  :body [{:type "text/plain"
+                                          :content content}]}}))))
 
 (defn- generic-check!
   [{:keys [::db/conn ::incr ::quote-sql ::count-sql ::default ::target] :or {incr 1} :as params}]

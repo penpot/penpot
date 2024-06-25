@@ -258,11 +258,11 @@
                 :code :non-deletable-project
                 :hint "impossible to delete default project"))
 
-    (wrk/submit! {::wrk/task :delete-object
-                  ::wrk/conn conn
-                  :object :project
-                  :deleted-at (:deleted-at project)
-                  :id project-id})
+    (wrk/submit! {::db/conn conn
+                  ::wrk/task :delete-object
+                  ::wrk/params {:object :project
+                                :deleted-at (:deleted-at project)
+                                :id project-id}})
 
     project))
 

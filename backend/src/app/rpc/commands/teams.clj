@@ -527,11 +527,11 @@
                 :code :non-deletable-team
                 :hint "impossible to delete default team"))
 
-    (wrk/submit! {::wrk/task :delete-object
-                  ::wrk/conn conn
-                  :object :team
-                  :deleted-at deleted-at
-                  :id team-id})
+    (wrk/submit! {::db/conn conn
+                  ::wrk/task :delete-object
+                  ::wrk/params {:object :team
+                                :deleted-at deleted-at
+                                :id team-id}})
     team))
 
 (def ^:private schema:delete-team

@@ -23,9 +23,9 @@
   (when-let [file (db/get* conn :file {:id id} {::db/remove-deleted false})]
     (l/trc :hint "marking for deletion" :rel "file" :id (str id))
     (db/update! conn :file
-              {:deleted-at deleted-at}
-              {:id id}
-              {::db/return-keys false})
+                {:deleted-at deleted-at}
+                {:id id}
+                {::db/return-keys false})
 
     (when (and (:is-shared file)
                (not *team-deletion*))
@@ -97,5 +97,5 @@
 
 (defmethod ig/init-key ::handler
   [_ cfg]
-  (fn [{:keys [props] :as params}]
+  (fn [{:keys [props] :as task}]
     (db/tx-run! cfg delete-object props)))

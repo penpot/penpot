@@ -34,6 +34,7 @@
    [app.util.blob :as blob]
    [app.util.services :as sv]
    [app.util.time :as dt]
+   [app.worker :as wrk]
    [app.worker.runner]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
@@ -377,9 +378,9 @@
   ([name]
    (run-task! name {}))
   ([name params]
-   (let [tasks (:app.worker/registry *system*)]
-     (let [task-fn (get tasks (d/name name))]
-       (task-fn params)))))
+   (wrk/invoke! (-> *system*
+                    (assoc ::wrk/task name)
+                    (assoc ::wrk/params params)))))
 
 (def sql:pending-tasks
   "select t.* from task as t
