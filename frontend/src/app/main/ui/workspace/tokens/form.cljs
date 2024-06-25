@@ -63,13 +63,17 @@
 
 ;; Component -------------------------------------------------------------------
 
-(defn validate-token-value+ [{:keys [input name-value token tokens]}]
-  (let [token-references (sd/find-token-references input)
+(defn validate-token-value+
+  "Validates token value by resolving the value `input` using `StyleDictionary`.
+  Returns a promise of either resolved tokens or rejects with an error state."
+  [{:keys [input name-value token tokens]}]
+  (let [empty-input? (empty? (str/trim input))
+        ;; Check if the given value contains a reference that is the current token-name
         ;; When creating a new token we dont have a token name yet,
         ;; so we use a temporary token name that hopefully doesn't clash with any of the users token names.
         token-name (if (str/empty? name-value) "__TOKEN_STUDIO_SYSTEM.TEMP" name-value)
-        direct-self-reference? (get token-references token-name)
-        empty-input? (empty? (str/trim input))]
+        token-references (sd/find-token-references input)
+        direct-self-reference? (get token-references token-name)]
     (cond
       empty-input? (p/rejected nil)
       direct-self-reference? (p/rejected :error/token-direct-self-reference)
@@ -87,6 +91,9 @@
                          :else (p/rejected :error/unknown-error))))))))))
 
 (defn use-debonced-resolve-callback
+  "Resolves a token values using `StyleDictionary`.
+  This function is debounced as the resolving might be an expensive calculation.
+  Uses a custom debouncing logic, as the resolve function is async."
   [name-ref token tokens callback & {:keys [timeout] :or {timeout 160}}]
   (let [timeout-id-ref (mf/use-ref nil)
         debounced-resolver-callback
