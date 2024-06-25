@@ -56,6 +56,11 @@
 (defn valid-value? [value]
   (seq (finalize-value value)))
 
+(defn schema-validation->promise [validated]
+  (if (:errors validated)
+    (p/rejected validated)
+    (p/resolved validated)))
+
 ;; Component -------------------------------------------------------------------
 
 (defn validate-token-value+ [{:keys [input name-value token tokens]}]
@@ -164,10 +169,11 @@
         ;; Description
         description-ref (mf/use-var (:description token))
         description-errors (mf/use-state nil)
+        validate-descripion (mf/use-callback #(m/explain token-description-schema %))
         on-update-description-debounced (mf/use-callback
                                          (debounce (fn [e]
                                                      (let [value (dom/get-target-val e)
-                                                           errors (m/explain token-description-schema value)]
+                                                           errors (validate-descripion value)]
                                                        (reset! description-errors errors)))))
         on-update-description (mf/use-callback
                                (mf/deps on-update-description-debounced)
@@ -184,18 +190,26 @@
         on-submit (mf/use-callback
                    (fn [e]
                      (dom/prevent-default e)
-                     (let [name (finalize-name @name-ref)
-                           ;; Validate form before submitting
-                           ;; As the form might still be evaluating due to debounce and async form state
-                           invalid-form? (or (:errors (validate-name name)))]
-                       (when-not invalid-form?
-                         (let [token (cond-> {:name (finalize-name @name-ref)
-                                              :type (or (:type token) token-type)
-                                              :value (finalize-value @value-ref)}
-                                       @description-ref (assoc :description @description-ref)
-                                       (:id token) (assoc :id (:id token)))]
-                           (st/emit! (dt/add-token token))
-                           (modal/hide!))))))]
+                     (let [final-name (finalize-name @name-ref)
+                           valid-name+ (-> (validate-name final-name) schema-validation->promise)
+                           final-value (finalize-value @value-ref)
+                           final-description @description-ref
+                           valid-description+ (some-> final-description validate-descripion schema-validation->promise)]
+                       (-> (p/all [valid-name+
+                                   valid-description+
+                                   (validate-token-value+ {:input final-value
+                                                           :name-value final-name
+                                                           :token token
+                                                           :tokens tokens})])
+                           (p/finally (fn [xs err]
+                                        (when (and (seq xs) (not err))
+                                          (let [token (cond-> {:name final-name
+                                                               :type (or (:type token) token-type)
+                                                               :value final-value}
+                                                        final-description (assoc :description final-description)
+                                                        (:id token) (assoc :id (:id token)))]
+                                            (st/emit! (dt/add-token token))
+                                            (modal/hide!)))))))))]
     [:form
      {:on-submit on-submit}
      [:div {:class (stl/css :token-rows)}
