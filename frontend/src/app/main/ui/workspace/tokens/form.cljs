@@ -40,13 +40,15 @@
   (str/trim name))
 
 (defn valid-name? [name]
-  (seq (finalize-name name)))
+  (seq (finalize-name (str name))))
 
 (defn finalize-value [value]
   (str/trim value))
 
 (defn valid-value? [value]
-  (seq (finalize-value value)))
+  (-> (str value)
+      (finalize-value)
+      (seq)))
 
 ;; Component -------------------------------------------------------------------
 
@@ -122,43 +124,43 @@
                              (debounce #(reset! form-touched (js/Symbol)) 120))
 
         ;; Name
-        name (mf/use-var (or (:name token) ""))
-        name-touched? (mf/use-state (some? (:name token)))
-        on-name-touch (mf/use-callback
-                       #(when (valid-name? (dom/get-target-val %))
-                          (reset! name-touched? true)))
+        name-ref (mf/use-var (:name token))
         name-errors (mf/use-state nil)
         name-schema (mf/use-memo
                      (mf/deps existing-token-names)
                      #(token-name-schema existing-token-names))
         on-update-name (mf/use-callback
                         (debounce (fn [e]
-                                    (on-name-touch e)
                                     (let [value (dom/get-target-val e)
                                           errors (->> (finalize-name value)
                                                       (m/explain name-schema))]
-                                      (mf/set-ref-val! name value)
+                                      (reset! name-ref value)
                                       (reset! name-errors errors)
                                       (update-form-touched)))))
+        valid-name-field? (and
+                           (not @name-errors)
+                           (valid-name? @name-ref))
 
         ;; Value
-        value (mf/use-var (or (:value token) ""))
+        value-ref (mf/use-var (:value token))
         token-resolve-result (mf/use-state (get-in tokens [(:id token) :resolved-value]))
         set-resolve-value (mf/use-callback
                            (fn [token-or-err]
-                             (let [value (cond
-                                           (= token-or-err :error/token-direct-self-reference) :error/token-self-reference
-                                           (= token-or-err :error/token-missing-reference) :error/token-missing-reference
-                                           (:resolved-value token-or-err) (:resolved-value token-or-err))]
-                               (reset! token-resolve-result value))))
-        on-update-value (use-debonced-resolve-callback name token tokens set-resolve-value)
+                             (let [v (cond
+                                       (= token-or-err :error/token-direct-self-reference) :error/token-self-reference
+                                       (= token-or-err :error/token-missing-reference) :error/token-missing-reference
+                                       (:resolved-value token-or-err) (:resolved-value token-or-err))]
+                               (reset! value-ref v)
+                               (reset! token-resolve-result v))))
+        on-update-value (use-debonced-resolve-callback name-ref token tokens set-resolve-value)
         value-error? (when (keyword? @token-resolve-result)
                        (= (namespace @token-resolve-result) "error"))
+        valid-value-field? (and
+                            (not value-error?)
+                            (valid-value? (or @token-resolve-result @value-ref)))
 
-        disabled? (or
-                   @name-errors
-                   value-error?
-                   (not @name-touched?))]
+        disabled? (or (not valid-name-field?)
+                      (not valid-value-field?))]
 
         ;; on-submit (fn [e]
         ;;             (dom/prevent-default e)
@@ -178,15 +180,16 @@
       [:div
        [:& tokens.common/labeled-input {:label "Name"
                                         :error? @name-errors
-                                        :input-props {:default-value @name
+                                        :input-props {:default-value @name-ref
                                                       :auto-focus true
-                                                      :on-blur on-name-touch
+                                                      :on-blur on-update-name
                                                       :on-change on-update-name}}]
        (when @name-errors
          [:p {:class (stl/css :error)}
           (me/humanize @name-errors)])]
       [:& tokens.common/labeled-input {:label "Value"
-                                       :input-props {:default-value @value
+                                       :input-props {:default-value @value-ref
+                                                     :on-blur on-update-value
                                                      :on-change on-update-value}}]
       [:div {:class (stl/css-case :resolved-value true
                                   :resolved-value-placeholder (nil? @token-resolve-result)
