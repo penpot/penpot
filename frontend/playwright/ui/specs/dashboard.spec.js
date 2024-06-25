@@ -35,11 +35,12 @@ test("User goes to draft page", async ({ page }) => {
   await expect(dashboardPage.mainHeading).toHaveText("Drafts");
 });
 
-test("User loads the draft page", async ({ page }) => {
+test("Lists files in the drafts page", async ({ page }) => {
   const dashboardPage = new DashboardPage(page);
   await dashboardPage.setupDrafts();
 
   await dashboardPage.goToDrafts();
 
-  await expect(dashboardPage.draftsFile).toBeVisible();
+  await expect(dashboardPage.page.getByRole("button", { name: /New File 1/ })).toBeVisible();
+  await expect(dashboardPage.page.getByRole("button", { name: /New File 2/ })).toBeVisible();
 });

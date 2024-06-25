@@ -64,15 +64,11 @@ export class DashboardPage extends BaseWebSocketPage {
     this.projectName = page.getByText("Project 1");
 
     this.draftsLink = this.sidebar.getByText("Drafts");
-    this.draftsFile = page.getByText(/New File 1/);
-
     this.fontsLink = this.sidebar.getByText("Fonts");
-
     this.libsLink = this.sidebar.getByText("Libraries");
 
     this.searchButton = page.getByRole("button", { name: "dashboard-search" });
     this.searchInput = page.getByPlaceholder("Search…");
-    this.newFileName = page.getByText("New File 3");
 
     this.teamDropdown = this.sidebar.getByRole("button", { name: "Your Penpot" });
     this.userAccount = this.sidebar.getByRole("button", { name: /Princesa Leia/ });
@@ -183,6 +179,7 @@ export class DashboardPage extends BaseWebSocketPage {
     await this.page.goto(
       `#/dashboard/team/${DashboardPage.anyTeamId}/projects/${DashboardPage.draftProjectId}`,
     );
+    await expect(this.mainHeading).toHaveText("Drafts");
   }
 
   async goToAccount() {

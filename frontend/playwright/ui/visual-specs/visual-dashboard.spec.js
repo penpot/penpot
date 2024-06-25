@@ -77,7 +77,6 @@ test("User goes to a full dashboard", async ({ page }) => {
 
   await dashboardPage.goToDashboard();
 
-  await expect(dashboardPage.draftsFile).toBeVisible();
   await expect(dashboardPage.page).toHaveScreenshot();
 });
 
@@ -121,10 +120,10 @@ test("User goes to a full search page", async ({ page }) => {
   await dashboardPage.goToSearch();
   await expect(dashboardPage.searchInput).toBeVisible();
 
-  await dashboardPage.searchInput.fill("New");
+  await dashboardPage.searchInput.fill("3");
 
   await expect(dashboardPage.mainHeading).toHaveText("Search results");
-  await expect(dashboardPage.newFileName).toBeVisible();
+  await expect(dashboardPage.page.getByRole("button", { name: "New File 3" })).toBeVisible();
   await expect(dashboardPage.page).toHaveScreenshot();
 });
 
