@@ -83,7 +83,7 @@
                      (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-id)]
                        (cond
                          resolved-value (p/resolved resolved-token)
-                         (= #{:style-dictionary/missing-reference} errors) (p/rejected :error/token-missing-reference)
+                         (sd/missing-reference-error? errors) (p/rejected :error/token-missing-reference)
                          :else (p/rejected :error/unknown-error))))))))))
 
 (defn use-debonced-resolve-callback

@@ -77,6 +77,11 @@
             errors)
        (str/join "\n")))
 
+(defn missing-reference-error?
+  [errors]
+  (and (set? errors)
+       (get errors :style-dictionary/missing-reference)))
+
 (defn tokens-name-map [tokens]
   (->> tokens
        (map (fn [[_ x]] [(:name x) x]))
