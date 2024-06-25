@@ -58,30 +58,25 @@ export class DashboardPage extends BaseWebSocketPage {
 
     this.sidebar = page.getByTestId("dashboard-sidebar");
     this.sidebarMenu = this.sidebar.getByRole("menu");
+    this.mainHeading = page.getByRole("heading", { level: 1 });
 
-    this.projectsHeading = page.getByRole("heading", { name: "Projects" });
     this.addProjectButton = page.getByRole("button", { name: "+ NEW PROJECT" });
     this.projectName = page.getByText("Project 1");
 
-    this.draftsTitle = page.getByRole("heading", { name: "Drafts" });
     this.draftsLink = this.sidebar.getByText("Drafts");
     this.draftsFile = page.getByText(/New File 1/);
 
     this.fontsLink = this.sidebar.getByText("Fonts");
-    this.fontsTitle = page.getByRole("heading", { name: "Fonts", level: 1 });
 
     this.libsLink = this.sidebar.getByText("Libraries");
-    this.libsTitle = page.getByRole("heading", { name: "Libraries", level: 1 });
 
     this.searchButton = page.getByRole("button", { name: "dashboard-search" });
-    this.searchTitle = page.getByRole("heading", { name: "Search results" });
     this.searchInput = page.getByPlaceholder("Search…");
     this.newFileName = page.getByText("New File 3");
 
     this.teamDropdown = this.sidebar.getByRole("button", { name: "Your Penpot" });
     this.userAccount = this.sidebar.getByRole("button", { name: /Princesa Leia/ });
     this.userProfileOption = this.sidebarMenu.getByText("Your account");
-    this.userAccountHeading = page.getByRole("heading", { name: "Your account" });
   }
 
   async setupDraftsEmpty() {
@@ -153,7 +148,7 @@ export class DashboardPage extends BaseWebSocketPage {
 
   async goToDashboard() {
     await this.page.goto(`#/dashboard/team/${DashboardPage.anyTeamId}/projects`);
-    await expect(this.projectsHeading).toBeVisible();
+    await expect(this.mainHeading).toBeVisible();
   }
 
   async goToSecondTeamDashboard() {

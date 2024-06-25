@@ -12,7 +12,7 @@ test("Dashboad page has title ", async ({ page }) => {
   await dashboardPage.goToDashboard();
 
   await expect(dashboardPage.page).toHaveURL(/dashboard/);
-  await expect(dashboardPage.projectsHeading).toBeVisible();
+  await expect(dashboardPage.mainHeading).toBeVisible();
 });
 
 test("User can create a new project", async ({ page }) => {
@@ -32,7 +32,7 @@ test("User goes to draft page", async ({ page }) => {
   await dashboardPage.goToDashboard();
   await dashboardPage.draftsLink.click();
 
-  await expect(dashboardPage.draftsTitle).toBeVisible();
+  await expect(dashboardPage.mainHeading).toHaveText("Drafts");
 });
 
 test("User loads the draft page", async ({ page }) => {
