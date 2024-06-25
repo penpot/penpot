@@ -118,10 +118,6 @@
                                      ;; Allow setting token to already used name
                                     (disj (:name token)))))
 
-        form-touched (mf/use-state nil)
-        update-form-touched (mf/use-callback
-                             (debounce #(reset! form-touched (js/Symbol)) 120))
-
         ;; Name
         name-ref (mf/use-var (:name token))
         name-errors (mf/use-state nil)
@@ -133,8 +129,7 @@
                                               (let [value (dom/get-target-val e)
                                                     errors (->> (finalize-name value)
                                                                 (m/explain name-schema))]
-                                                (reset! name-errors errors)
-                                                (update-form-touched)))))
+                                                (reset! name-errors errors)))))
         on-update-name (mf/use-callback
                         (mf/deps on-update-name-debounced)
                         (fn [e]
@@ -173,8 +168,7 @@
                                          (debounce (fn [e]
                                                      (let [value (dom/get-target-val e)
                                                            errors (m/explain token-description-schema value)]
-                                                       (reset! description-errors errors)
-                                                       (update-form-touched)))))
+                                                       (reset! description-errors errors)))))
         on-update-description (mf/use-callback
                                (mf/deps on-update-description-debounced)
                                (fn [e]
@@ -189,14 +183,12 @@
 
         on-submit (mf/use-callback
                    (fn [e]
-                     (js/console.log "@value-ref" @value-ref (finalize-value @value-ref))
                      (dom/prevent-default e)
                      (let [token (cond-> {:name (finalize-name @name-ref)
                                           :type (or (:type token) token-type)
                                           :value (finalize-value @value-ref)}
                                    @description-ref (assoc :description @description-ref)
                                    (:id token) (assoc :id (:id token)))]
-                       (js/console.log "token" token)
                        (st/emit! (dt/add-token token))
                        (modal/hide!))))]
     [:form
