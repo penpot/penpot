@@ -121,14 +121,15 @@
         ;; Name
         name-ref (mf/use-var (:name token))
         name-errors (mf/use-state nil)
-        name-schema (mf/use-memo
-                     (mf/deps existing-token-names)
-                     #(token-name-schema existing-token-names))
+        validate-name (mf/use-callback
+                       (mf/deps existing-token-names)
+                       (fn [value]
+                         (let [schema (token-name-schema existing-token-names)]
+                           (m/explain schema (finalize-name value)))))
         on-update-name-debounced (mf/use-callback
                                   (debounce (fn [e]
                                               (let [value (dom/get-target-val e)
-                                                    errors (->> (finalize-name value)
-                                                                (m/explain name-schema))]
+                                                    errors (validate-name value)]
                                                 (reset! name-errors errors)))))
         on-update-name (mf/use-callback
                         (mf/deps on-update-name-debounced)
@@ -184,13 +185,18 @@
         on-submit (mf/use-callback
                    (fn [e]
                      (dom/prevent-default e)
-                     (let [token (cond-> {:name (finalize-name @name-ref)
-                                          :type (or (:type token) token-type)
-                                          :value (finalize-value @value-ref)}
-                                   @description-ref (assoc :description @description-ref)
-                                   (:id token) (assoc :id (:id token)))]
-                       (st/emit! (dt/add-token token))
-                       (modal/hide!))))]
+                     (let [name (finalize-name @name-ref)
+                           ;; Validate form before submitting
+                           ;; As the form might still be evaluating due to debounce and async form state
+                           invalid-form? (or (:errors (validate-name name)))]
+                       (when-not invalid-form?
+                         (let [token (cond-> {:name (finalize-name @name-ref)
+                                              :type (or (:type token) token-type)
+                                              :value (finalize-value @value-ref)}
+                                       @description-ref (assoc :description @description-ref)
+                                       (:id token) (assoc :id (:id token)))]
+                           (st/emit! (dt/add-token token))
+                           (modal/hide!))))))]
     [:form
      {:on-submit on-submit}
      [:div {:class (stl/css :token-rows)}
