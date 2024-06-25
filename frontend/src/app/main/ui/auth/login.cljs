@@ -159,7 +159,7 @@
        [:& context-notification
         {:type :error
          :content message
-         :data-test "login-banner"
+         :data-testid "login-banner"
          :role "alert"}])
 
      [:& fm/form {:on-submit on-submit
@@ -185,7 +185,7 @@
         [:div {:class (stl/css :fields-row :forgot-password)}
          [:& lk/link {:action on-recovery-request
                       :class (stl/css :forgot-pass-link)
-                      :data-test "forgot-password"}
+                      :data-testid "forgot-password"}
           (tr "auth.forgot-password")]])
 
       [:div {:class (stl/css :buttons-stack)}
@@ -193,7 +193,7 @@
                  (contains? cf/flags :login-with-password))
          [:> fm/submit-button*
           {:label (tr "auth.login-submit")
-           :data-test "login-submit"
+           :data-testid "login-submit"
            :class (stl/css :login-button)}])
 
        (when (contains? cf/flags :login-with-ldap)
@@ -279,7 +279,7 @@
 
     [:div {:class (stl/css :auth-form-wrapper)}
      [:h1 {:class (stl/css :auth-title)
-           :data-test "login-title"} (tr "auth.login-account-title")]
+           :data-testid "login-title"} (tr "auth.login-account-title")]
 
      [:p {:class (stl/css :auth-tagline)}
       (tr "auth.login-tagline")]
@@ -298,5 +298,5 @@
           (tr "auth.register") " "]
          [:& lk/link {:action go-register
                       :class (stl/css :register-link)
-                      :data-test "register-submit"}
+                      :data-testid "register-submit"}
           (tr "auth.register-submit")]])]]))

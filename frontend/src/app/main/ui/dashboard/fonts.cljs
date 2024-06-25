@@ -197,12 +197,12 @@
                             :btn-primary true
                             :disabled disable-upload-all?)
                     :on-click on-upload-all
-                    :data-test "upload-all"
+                    :data-testid "upload-all"
                     :disabled disable-upload-all?}
            [:span (tr "dashboard.fonts.upload-all")]]
           [:button {:class (stl/css :btn-secondary)
                     :on-click on-dismis-all
-                    :data-test "dismiss-all"}
+                    :data-testid "dismiss-all"}
            [:span (tr "dashboard.fonts.dismiss-all")]]]])
 
       (for [{:keys [id] :as item} (sort-by :font-family font-vals)]

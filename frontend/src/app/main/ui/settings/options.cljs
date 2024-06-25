@@ -56,7 +56,7 @@
                      :label (tr "dashboard.select-ui-language")
                      :default ""
                      :name :lang
-                     :data-test "setting-lang"}]]
+                     :data-testid "setting-lang"}]]
 
      [:h3 (tr "dashboard.theme-change")]
      [:div {:class (stl/css :fields-row)}
@@ -65,11 +65,11 @@
                      :default "default"
                      :options [{:label "Penpot Dark (default)" :value "default"}
                                {:label "Penpot Light" :value "light"}]
-                     :data-test "setting-theme"}]]
+                     :data-testid "setting-theme"}]]
 
      [:> fm/submit-button*
       {:label (tr "dashboard.update-settings")
-       :data-test "submit-lang-change"
+       :data-testid "submit-lang-change"
        :class (stl/css :btn-primary)}]]))
 
 ;; --- Password Page
@@ -80,7 +80,7 @@
    #(dom/set-html-title (tr "title.settings.options")))
 
   [:div {:class (stl/css :dashboard-settings)}
-   [:div {:class (stl/css :form-container) :data-test "settings-form"}
+   [:div {:class (stl/css :form-container) :data-testid "settings-form"}
     [:h2 (tr "labels.settings")]
     [:& options-form {}]]])
 

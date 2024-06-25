@@ -59,6 +59,6 @@
         [:button {:class (stl/css-case :accept-button true
                                        :danger true)
                   :on-click on-accept
-                  :data-test "delete-account-btn"}
+                  :data-testid "delete-account-btn"}
          (tr "modals.delete-account.confirm")]]]]]))
 

@@ -142,7 +142,7 @@
             :class  (stl/css-case :main-toolbar-options-button true :selected (= selected-drawtool :frame))
             :on-click select-drawtool
             :data-tool "frame"
-            :data-test "artboard-btn"}
+            :data-testid "artboard-btn"}
            i/board]]
          [:li
           [:button
@@ -151,7 +151,7 @@
             :class (stl/css-case :main-toolbar-options-button true :selected (= selected-drawtool :rect))
             :on-click select-drawtool
             :data-tool "rect"
-            :data-test "rect-btn"}
+            :data-testid "rect-btn"}
            i/rectangle]]
          [:li
           [:button
@@ -160,7 +160,7 @@
             :class (stl/css-case :main-toolbar-options-button true :selected (= selected-drawtool :circle))
             :on-click select-drawtool
             :data-tool "circle"
-            :data-test "ellipse-btn"}
+            :data-testid "ellipse-btn"}
            i/elipse]]
          [:li
           [:button
@@ -180,7 +180,7 @@
             :class (stl/css-case :main-toolbar-options-button true :selected (= selected-drawtool :curve))
             :on-click select-drawtool
             :data-tool "curve"
-            :data-test "curve-btn"}
+            :data-testid "curve-btn"}
            i/curve]]
          [:li
           [:button
@@ -189,7 +189,7 @@
             :class (stl/css-case :main-toolbar-options-button true :selected (= selected-drawtool :path))
             :on-click select-drawtool
             :data-tool "path"
-            :data-test "path-btn"}
+            :data-testid "path-btn"}
            i/path]]
 
          (when *assert*

@@ -28,7 +28,7 @@
   []
   [:header {:class (stl/css :dashboard-header)}
    [:div {:class (stl/css :dashboard-title)}
-    [:h1 {:data-test "account-title"} (tr "dashboard.your-account-title")]]])
+    [:h1 {:data-testid "account-title"} (tr "dashboard.your-account-title")]]])
 
 (mf/defc settings
   [{:keys [route] :as props}]

@@ -106,7 +106,7 @@
       [:& fm/input {:type "text"
                     :name :email
                     :label (tr "auth.work-email")
-                    :data-test "email-input"
+                    :data-testid "email-input"
                     :show-success? true
                     :class (stl/css :form-field)}]]
      [:div {:class (stl/css :fields-row)}
@@ -120,7 +120,7 @@
      [:> fm/submit-button*
       {:label (tr "auth.register-submit")
        :disabled @submitted?
-       :data-test "register-form-submit"
+       :data-testid "register-form-submit"
        :class (stl/css :register-btn)}]]))
 
 (mf/defc register-methods
@@ -137,7 +137,7 @@
   [{:keys [params]}]
   [:div {:class (stl/css :auth-form-wrapper :register-form)}
    [:h1 {:class (stl/css :auth-title)
-         :data-test "registration-title"} (tr "auth.register-title")]
+         :data-testid "registration-title"} (tr "auth.register-title")]
    [:p {:class (stl/css :auth-tagline)}
     (tr "auth.register-tagline")]
 
@@ -151,7 +151,7 @@
      [:span {:class (stl/css :account-text)} (tr "auth.already-have-account") " "]
      [:& lk/link {:action  #(st/emit! (rt/nav :auth-login {} params))
                   :class (stl/css :account-link)
-                  :data-test "login-here-link"}
+                  :data-testid "login-here-link"}
       (tr "auth.login-here")]]
 
     (when (contains? cf/flags :demo-users)
@@ -272,7 +272,7 @@
     [:a {:href "#/" :title "Penpot" :class (stl/css :logo-btn)} i/logo]]
    [:div {:class (stl/css :auth-title-wrapper)}
     [:h2 {:class (stl/css :auth-title)
-          :data-test "register-title"} (tr "auth.register-account-title")]
+          :data-testid "register-title"} (tr "auth.register-account-title")]
     [:div {:class (stl/css :auth-subtitle)} (tr "auth.register-account-tagline")]]
 
    [:& register-validate-form {:params params}]
