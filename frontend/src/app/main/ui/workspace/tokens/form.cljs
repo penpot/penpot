@@ -200,18 +200,18 @@
                    (fn [e]
                      (dom/prevent-default e)
                      (let [final-name (finalize-name @name-ref)
-                           valid-name+ (-> (validate-name final-name) schema-validation->promise)
+                           valid-name?+ (-> (validate-name final-name) schema-validation->promise)
                            final-value (finalize-value @value-ref)
                            final-description @description-ref
-                           valid-description+ (some-> final-description validate-descripion schema-validation->promise)]
-                       (-> (p/all [valid-name+
-                                   valid-description+
+                           valid-description?+ (some-> final-description validate-descripion schema-validation->promise)]
+                       (-> (p/all [valid-name?+
+                                   valid-description?+
                                    (validate-token-value+ {:input final-value
                                                            :name-value final-name
                                                            :token token
                                                            :tokens tokens})])
-                           (p/finally (fn [xs err]
-                                        (when (and (seq xs) (not err))
+                           (p/finally (fn [result err]
+                                        (when (and (seq result) (not err))
                                           (let [token (cond-> {:name final-name
                                                                :type (or (:type token) token-type)
                                                                :value final-value}
