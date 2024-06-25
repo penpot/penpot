@@ -318,6 +318,7 @@
     (and has-term?
          (some pos? (map count [filtered-components filtered-colors filtered-media filtered-typographies]))
          (some #(> 60 (count %)) [filtered-components filtered-colors filtered-media filtered-typographies]))))
+
 (mf/defc file-library
   {::mf/wrap-props false}
   [{:keys [file local? default-open? filters]}]
@@ -333,8 +334,10 @@
         open-status      (mf/deref open-status-ref)
         force-open-lib?  (force-lib-open? file-id filters)
 
-        open?            (or force-open-lib?
-                             (d/nilv (:library open-status) default-open?))
+        open?            (if (false? (:library open-status)) ;; if the user has closed it specifically, respect that
+                           false
+                           (or force-open-lib?
+                               (d/nilv (:library open-status) default-open?)))
 
         unselect-all
         (mf/use-fn

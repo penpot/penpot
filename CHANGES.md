@@ -50,6 +50,7 @@
 - Penpot crashes when a new colorpicker is created while uploading an image to another instance [Taiga #8119](https://tree.taiga.io/project/penpot/issue/8119)
 - Removing Underline and Strikethrough Affects the Previous Text Object [Taiga #8103](https://tree.taiga.io/project/penpot/issue/8103)
 - Color library loses association with shapes when exporting/importing the document [Taiga #8132](https://tree.taiga.io/project/penpot/issue/8132)
+- Fix can't collapse groups when searching in the assets tab [Taiga #8125](https://tree.taiga.io/project/penpot/issue/8125)
 
 ## 2.0.3
 
