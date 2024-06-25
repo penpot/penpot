@@ -34,6 +34,10 @@
       [:string {:min 1 :max 255}]
       non-existing-token-schema])))
 
+(def token-description-schema
+  (m/schema
+   [:string {:max 2048}]))
+
 ;; Helpers ---------------------------------------------------------------------
 
 (defn finalize-name [name]
@@ -159,8 +163,22 @@
                             (not value-error?)
                             (valid-value? (or @token-resolve-result @value-ref)))
 
+        ;; Description
+        description-ref (mf/use-var (:description token))
+        description-errors (mf/use-state nil)
+        on-update-description (mf/use-callback
+                               (debounce (fn [e]
+                                           (let [value (dom/get-target-val e)
+                                                 errors (m/explain token-description-schema value)]
+                                             (reset! description-ref value)
+                                             (reset! description-errors errors)
+                                             (update-form-touched)))))
+        valid-description-field? (not @description-errors)
+
+        ;; Form
         disabled? (or (not valid-name-field?)
-                      (not valid-value-field?))]
+                      (not valid-value-field?)
+                      (not valid-description-field?))]
 
         ;; on-submit (fn [e]
         ;;             (dom/prevent-default e)
@@ -200,9 +218,13 @@
          :error/unknown-error ""
          nil "Enter token value"
          [:p @token-resolve-result])]
-      [:& tokens.common/labeled-input {:label "Description"
-                                       :input-props {:default-value (:description state)
-                                                     #_#_:on-change #(on-update-description %)}}]
+      [:div
+       [:& tokens.common/labeled-input {:label "Description"
+                                        :input-props {:default-value @description-ref
+                                                      :on-change on-update-description}}]
+       (when @description-errors
+         [:p {:class (stl/css :error)}
+          (me/humanize @description-errors)])]
       [:div {:class (stl/css :button-row)}
        [:button {:class (stl/css :button)
                  :type "submit"
