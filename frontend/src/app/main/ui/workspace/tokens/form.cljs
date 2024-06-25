@@ -196,6 +196,7 @@
                       (not valid-description-field?))
 
         on-submit (mf/use-callback
+                   (mf/deps validate-name validate-descripion token tokens)
                    (fn [e]
                      (dom/prevent-default e)
                      (let [final-name (finalize-name @name-ref)
