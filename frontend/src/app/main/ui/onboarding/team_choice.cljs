@@ -105,7 +105,7 @@
                                        {::ev/name "onboarding-step"
                                         :label "team:create-team-and-invite-later"
                                         :team-name name
-                                        :step 7})
+                                        :step 8})
                        (ptk/data-event ::ev/event
                                        {::ev/name "onboarding-finish"})))))
 
@@ -122,7 +122,7 @@
                                         :invites (count emails)
                                         :team-name name
                                         :role (:role params)
-                                        :step 7})
+                                        :step 8})
                        (ptk/data-event ::ev/event
                                        {::ev/name "onboarding-finish"})))))
 

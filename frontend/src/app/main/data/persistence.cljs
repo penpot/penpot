@@ -211,14 +211,6 @@
                         (update-status :pending)))
               (rx/take-until stoper-s))
 
-         (->> local-commits-s
-              (rx/buffer-time 200)
-              (rx/mapcat merge-commit)
-              (rx/map dch/update-indexes)
-              (rx/take-until stoper-s)
-              (rx/finalize (fn []
-                             (log/debug :hint "finalize persistence: changes watcher [index]"))))
-
          ;; Here we watch for local commits, buffer them in a small
          ;; chunks (very near in time commits) and append them to the
          ;; persistence queue
@@ -237,6 +229,5 @@
               (rx/map deref)
               (rx/filter #(= :remote (:source %)))
               (rx/mapcat (fn [{:keys [file-id file-revn] :as commit}]
-                           (rx/of (update-file-revn file-id file-revn)
-                                  (dch/update-indexes commit))))
+                           (rx/of (update-file-revn file-id file-revn))))
               (rx/take-until stoper-s)))))))

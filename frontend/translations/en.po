@@ -2558,11 +2558,11 @@ msgstr "Prototyping"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "onboarding.questions.start-with.ds"
-msgstr "Creating Desing Systems"
+msgstr "Creating Design Systems"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "onboarding.questions.start-with.code"
-msgstr "Generating real code designs"
+msgstr "Generating real code from designs"
 
 #: src/app/main/ui/onboarding/questions.cljs
 msgid "onboarding.questions.step5.title"
@@ -3395,6 +3395,14 @@ msgstr "Sort"
 #: src/app/main/ui/workspace/sidebar/assets.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
 msgid "workspace.assets.typography"
 msgstr "Typographies"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs, src/app/main/wui/workspace/sidebar/options/menus/component.cljs
+msgid "workspace.assets.grid-view"
+msgstr "Grid view"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs, src/app/main/wui/workspace/sidebar/options/menus/component.cljs
+msgid "workspace.assets.list-view"
+msgstr "List view"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 msgid "workspace.assets.typography.font-id"

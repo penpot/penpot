@@ -217,40 +217,16 @@
     (-deref [_] {:changes changes})
 
     ptk/WatchEvent
-    (watch [_ state _]
-      (let [page-id (:current-page-id state)
-
-            position-data-operation?
-            (fn [{:keys [type attr]}]
-              (and (= :set type)
-                   (= attr :position-data)))
-
-            update-position-data
-            (fn [change]
-              ;; Remove the position data from remote operations. Will be changed localy, otherwise
-              ;; creates a strange "out-of-sync" behaviour.
-              (cond-> change
-                (and (= page-id (:page-id change))
-                     (= :mod-obj (:type change)))
-                (update :operations #(d/removev position-data-operation? %))))
-
-            ;; We update `position-data` from the incoming message
-            changes (->> changes
-                         (map update-position-data)
-                         (remove (fn [change]
-                                   (and (= page-id (:page-id change))
-                                        (:ignore-remote? change))))
-                         (vec))]
-
-        ;; The commit event is responsible to apply the data localy
-        ;; and update the persistence internal state with the updated
-        ;; file-revn
-        (rx/of (dch/commit {:file-id file-id
-                            :file-revn revn
-                            :save-undo? false
-                            :source :remote
-                            :redo-changes changes
-                            :undo-changes []}))))))
+    (watch [_ _ _]
+      ;; The commit event is responsible to apply the data localy
+      ;; and update the persistence internal state with the updated
+      ;; file-revn
+      (rx/of (dch/commit {:file-id file-id
+                          :file-revn revn
+                          :save-undo? false
+                          :source :remote
+                          :redo-changes (vec changes)
+                          :undo-changes []})))))
 
 (def ^:private
   schema:handle-library-change

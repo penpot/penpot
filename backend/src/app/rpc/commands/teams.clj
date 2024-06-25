@@ -763,6 +763,7 @@
                       {:id (:id member)}))
 
         nil)
+
       (let [id         (uuid/next)
             expire     (dt/in-future "168h") ;; 7 days
             invitation (db/exec-one! conn [sql:upsert-team-invitation id
@@ -783,14 +784,19 @@
         (when (contains? cf/flags :log-invitation-tokens)
           (l/info :hint "invitation token" :token itoken))
 
-        (audit/submit! cfg
-                       {::audit/type "action"
-                        ::audit/name (if updated?
-                                       "update-team-invitation"
-                                       "create-team-invitation")
-                        ::audit/profile-id (:id profile)
-                        ::audit/props (-> (dissoc tprops :profile-id)
-                                          (d/without-nils))})
+
+        (let [props   (-> (dissoc tprops :profile-id)
+                          (audit/clean-props))
+              context (audit/params->context params)]
+
+          (audit/submit! cfg
+                         {::audit/type "action"
+                          ::audit/name (if updated?
+                                         "update-team-invitation"
+                                         "create-team-invitation")
+                          ::audit/profile-id (:id profile)
+                          ::audit/props props
+                          ::audit/context context}))
 
         (eml/send! {::eml/conn conn
                     ::eml/factory eml/invite-to-team
@@ -850,10 +856,11 @@
                                ;;  We don't re-send inviation to already existing members
                                (remove (partial contains? members))
                                (map (fn [email]
-                                      {:email email
-                                       :team team
-                                       :profile profile
-                                       :role role}))
+                                      (-> params
+                                          (assoc :email email)
+                                          (assoc :team team)
+                                          (assoc :profile profile)
+                                          (assoc :role role))))
                                (keep (partial create-invitation cfg)))
                               emails)]
         (with-meta {:total (count invitations)
@@ -879,9 +886,11 @@
 
     (let [features (-> (cfeat/get-enabled-features cf/flags)
                        (cfeat/check-client-features! (:features params)))
-          params   (assoc params
-                          :profile-id profile-id
-                          :features features)
+
+          params   (-> params
+                       (assoc :profile-id profile-id)
+                       (assoc :features features))
+
           cfg      (assoc cfg ::db/conn conn)
           team     (create-team cfg params)
           profile  (db/get-by-id conn :profile profile-id)
@@ -890,10 +899,11 @@
       ;; Create invitations for all provided emails.
       (->> emails
            (map (fn [email]
-                  {:team team
-                   :profile profile
-                   :email email
-                   :role role}))
+                  (-> params
+                      (assoc :team team)
+                      (assoc :profile profile)
+                      (assoc :email email)
+                      (assoc :role role))))
            (run! (partial create-invitation cfg)))
 
       (run! (partial quotes/check-quote! conn)

@@ -473,9 +473,14 @@
 
 (defn setup-rect
   "Initializes the selrect and points for a shape."
-  [{:keys [selrect points] :as shape}]
-  (let [selrect (or selrect (gsh/shape->rect shape))
-        points  (or points  (grc/rect->points selrect))]
+  [{:keys [selrect points transform] :as shape}]
+  (let [selrect   (or selrect (gsh/shape->rect shape))
+        center    (grc/rect->center selrect)
+        transform (or transform (gmt/matrix))
+        points    (or points
+                      (->  selrect
+                           (grc/rect->points)
+                           (gsh/transform-points center transform)))]
     (-> shape
         (assoc :selrect selrect)
         (assoc :points points))))

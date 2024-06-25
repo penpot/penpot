@@ -137,6 +137,7 @@
     (->> (http/send! {:method :post
                       :uri uri
                       :credentials "include"
+                      :headers {"x-external-session-id" (cf/external-session-id)}
                       :query params})
          (rx/map http/conditional-decode-transit)
          (rx/mapcat handle-response))))
@@ -146,6 +147,7 @@
   (->> (http/send! {:method :post
                     :uri (u/join cf/public-uri "api/export")
                     :body (http/transit-data (dissoc params :blob?))
+                    :headers {"x-external-session-id" (cf/external-session-id)}
                     :credentials "include"
                     :response-type (if blob? :blob :text)})
        (rx/map http/conditional-decode-transit)
@@ -165,6 +167,7 @@
   (->> (http/send! {:method :post
                     :uri  (u/join cf/public-uri "api/rpc/command/" (name id))
                     :credentials "include"
+                    :headers {"x-external-session-id" (cf/external-session-id)}
                     :body (http/form-data params)})
        (rx/map http/conditional-decode-transit)
        (rx/mapcat handle-response)))

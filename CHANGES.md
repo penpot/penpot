@@ -56,6 +56,9 @@
 - Workspace-palette items stay hidden when opening with keyboard-shortcut [Taiga #7489](https://tree.taiga.io/project/penpot/issue/7489)
 - Fix SVG attrs are not handled correctly when exporting/importing in .zip [Taiga #7920](https://tree.taiga.io/project/penpot/issue/7920)
 - Fix validation error when detaching with two nested copies and a swap [Taiga #8095](https://tree.taiga.io/project/penpot/issue/8095)
+- Export shapes that are rotated act a bit strange when reimported [Taiga #7585](https://tree.taiga.io/project/penpot/issue/7585)
+- Penpot crashes when a new colorpicker is created while uploading an image to another instance [Taiga #8119](https://tree.taiga.io/project/penpot/issue/8119)
+- Removing Underline and Strikethrough Affects the Previous Text Object [Taiga #8103](https://tree.taiga.io/project/penpot/issue/8103)
 
 ## 2.0.3
 

@@ -32,7 +32,7 @@
   (let [{:keys [text-align]} values
         handle-change
         (mf/use-fn
-         (mf/deps on-blur)
+         (mf/deps on-change on-blur)
          (fn [value]
            (on-change {:text-align value})
            (when (some? on-blur) (on-blur))))]
@@ -64,7 +64,7 @@
   (let [direction     (:text-direction values)
         handle-change
         (mf/use-fn
-         (mf/deps direction)
+         (mf/deps on-change on-blur direction)
          (fn [value]
            (let [dir (if (= value direction)
                        "none"
@@ -93,7 +93,7 @@
         vertical-align (or vertical-align "top")
         handle-change
         (mf/use-fn
-         (mf/deps on-blur)
+         (mf/deps on-change on-blur)
          (fn [value]
            (on-change {:vertical-align value})
            (when (some? on-blur) (on-blur))))]
@@ -154,7 +154,7 @@
   (let [text-decoration (or (:text-decoration values) "none")
         handle-change
         (mf/use-fn
-         (mf/deps text-decoration)
+         (mf/deps on-change on-blur text-decoration)
          (fn [value]
            (let [decoration (if (= value text-decoration)
                               "none"

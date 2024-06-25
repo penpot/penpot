@@ -2,7 +2,9 @@ import { test, expect } from "@playwright/test";
 import { LoginPage } from "../pages/LoginPage";
 
 test.beforeEach(async ({ page }) => {
-  await LoginPage.initWithLoggedOutUser(page);
+  const login = new LoginPage(page);
+  await login.initWithLoggedOutUser();
+
   await page.goto("/#/auth/login");
 });
 

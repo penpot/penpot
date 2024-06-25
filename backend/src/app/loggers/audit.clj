@@ -86,6 +86,13 @@
          (remove #(contains? reserved-props (key %))))
         props))
 
+(defn params->context
+  "Extract default context properties from RPC params object"
+  [params]
+  (d/without-nils
+   {:external-session-id (::rpc/external-session-id params)
+    :triggered-by (::rpc/handler-name params)}))
+
 ;; --- SPECS
 
 
@@ -140,7 +147,7 @@
                        (::rpc/profile-id params)
                        uuid/zero)
 
-        session-id (rreq/get-header request "x-external-session-id")
+        session-id (get params ::rpc/external-session-id)
         props      (-> (or (::replace-props resultm)
                            (-> params
                                (merge (::props resultm))
