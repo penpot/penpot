@@ -615,7 +615,6 @@
       (let [page-id          (:current-page-id state)
             objects          (wsh/lookup-page-objects state page-id)
             file             (wsh/get-local-file state)
-            container        (cfh/get-container file :page page-id)
             libraries        (wsh/get-libraries state)
             selected         (->> state
                                   (wsh/lookup-selected)
@@ -627,7 +626,7 @@
             changes (when can-detach?
                       (reduce
                        (fn [changes id]
-                         (cll/generate-detach-instance changes container libraries id))
+                         (cll/generate-detach-component changes id file page-id libraries))
                        (pcb/empty-changes it)
                        selected))]
 

@@ -51,6 +51,8 @@
 - Removing Underline and Strikethrough Affects the Previous Text Object [Taiga #8103](https://tree.taiga.io/project/penpot/issue/8103)
 - Color library loses association with shapes when exporting/importing the document [Taiga #8132](https://tree.taiga.io/project/penpot/issue/8132)
 - Fix can't collapse groups when searching in the assets tab [Taiga #8125](https://tree.taiga.io/project/penpot/issue/8125)
+- Fix 'Detach instance' shortcut is not working [Taiga #8102](https://tree.taiga.io/project/penpot/issue/8102)
+
 
 ## 2.0.3
 
