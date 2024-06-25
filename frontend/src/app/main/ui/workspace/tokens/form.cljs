@@ -8,6 +8,9 @@
   (:require-macros [app.main.style :as stl])
   (:require
    ["lodash.debounce" :as debounce]
+   [app.main.data.modal :as modal]
+   [app.main.data.tokens :as dt]
+   [app.main.store :as st]
    [app.main.ui.workspace.tokens.common :as tokens.common]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.util.dom :as dom]
@@ -47,12 +50,11 @@
   (seq (finalize-name (str name))))
 
 (defn finalize-value [value]
-  (str/trim value))
+  (-> (str value)
+      (str/trim)))
 
 (defn valid-value? [value]
-  (-> (str value)
-      (finalize-value)
-      (seq)))
+  (seq (finalize-value value)))
 
 ;; Component -------------------------------------------------------------------
 
@@ -107,7 +109,7 @@
 
 (mf/defc form
   {::mf/wrap-props false}
-  [{:keys [token] :as _args}]
+  [{:keys [token token-type] :as _args}]
   (let [tokens (sd/use-resolved-workspace-tokens)
         existing-token-names (mf/use-memo
                               (mf/deps tokens)
@@ -178,22 +180,22 @@
         ;; Form
         disabled? (or (not valid-name-field?)
                       (not valid-value-field?)
-                      (not valid-description-field?))]
+                      (not valid-description-field?))
 
-        ;; on-submit (fn [e]
-        ;;             (dom/prevent-default e)
-        ;;             (let [token-value (-> (fields->map state)
-        ;;                                   (first)
-        ;;                                   (val))
-        ;;                   token (cond-> {:name (:name state)
-        ;;                                  :type (or (:type token) token-type)
-        ;;                                  :value token-value
-        ;;                                  :description (:description state)}
-        ;;                           (:id token) (assoc :id (:id token)))]
-        ;;               (st/emit! (dt/add-token token))
-        ;;               (modal/hide!)))]
+        on-submit (mf/use-callback
+                   (fn [e]
+                     (js/console.log "@value-ref" @value-ref (finalize-value @value-ref))
+                     (dom/prevent-default e)
+                     (let [token (cond-> {:name (finalize-name @name-ref)
+                                          :type (or (:type token) token-type)
+                                          :value (finalize-value @value-ref)}
+                                   @description-ref (assoc :description @description-ref)
+                                   (:id token) (assoc :id (:id token)))]
+                       (js/console.log "token" token)
+                       (st/emit! (dt/add-token token))
+                       (modal/hide!))))]
     [:form
-     {#_#_:on-submit on-submit}
+     {:on-submit on-submit}
      [:div {:class (stl/css :token-rows)}
       [:div
        [:& tokens.common/labeled-input {:label "Name"

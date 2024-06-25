@@ -39,12 +39,13 @@
 
 (mf/defc modal
   {::mf/wrap-props false}
-  [{:keys [x y position token] :as _args}]
+  [{:keys [x y position token token-type] :as _args}]
   (let [wrapper-style (use-viewport-position-style x y position)]
     [:div
      {:class (stl/css :shadow)
       :style wrapper-style}
-     [:& form {:token token}]]))
+     [:& form {:token token
+               :token-type token-type}]]))
 
 ;; Modals ----------------------------------------------------------------------
 
