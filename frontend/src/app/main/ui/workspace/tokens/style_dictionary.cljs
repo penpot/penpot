@@ -87,7 +87,6 @@
   (p/let [sd-tokens (-> (tokens-name-map tokens)
                         (doto js/console.log)
                         (resolve-sd-tokens+ config))]
-    (js/console.log "sd-tokens" sd-tokens)
     (let [resolved-tokens (reduce
                            (fn [acc ^js cur]
                              (let [value (.-value cur)
