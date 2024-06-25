@@ -13,12 +13,14 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.record :as cr]
+   [app.common.schema :as sm]
    [app.common.text :as txt]
    [app.common.types.color :as ctc]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as ch]
    [app.main.data.workspace.bool :as dwb]
+   [app.main.data.workspace.colors :as dwc]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.media :as dwm]
    [app.main.store :as st]
@@ -27,6 +29,7 @@
    [app.plugins.fonts :as fonts]
    [app.plugins.library :as library]
    [app.plugins.page :as page]
+   [app.plugins.parser :as parser]
    [app.plugins.shape :as shape]
    [app.plugins.user :as user]
    [app.plugins.utils :as u]
@@ -87,35 +90,66 @@
     (let [selection (get-in @st/state [:workspace-local :selected])]
       (apply array (sequence (map (partial shape/shape-proxy $plugin)) selection))))
 
-  (getColors
+  (shapesColors
     [_ shapes]
-    (let [objects (u/locate-objects)
-          shapes (->> shapes
-                      (map #(obj/get % "$id"))
-                      (mapcat #(cfh/get-children-with-self objects %)))
+    (cond
+      (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
+      (u/display-not-valid :shapesColors-shapes shapes)
 
-          file-id (:current-file-id @st/state)
-          shared-libs (:workspace-libraries @st/state)
+      :else
+      (let [objects (u/locate-objects)
+            shapes (->> shapes
+                        (map #(obj/get % "$id"))
+                        (mapcat #(cfh/get-children-with-self objects %)))
 
-          colors
-          (apply
-           array
-           (->> (ctc/extract-all-colors shapes file-id shared-libs)
-                (group-by :attrs)
-                (map (fn [[color attrs]]
-                       (let [shapes-info (apply array (map (fn [{:keys [prop shape-id index]}]
-                                                             #js {:property (d/name prop)
-                                                                  :index index
-                                                                  :shapeId (str shape-id)}) attrs))
-                             color (u/to-js color)]
-                         (obj/set! color "shapeInfo" shapes-info)
-                         color)))))]
-      colors))
+            file-id (:current-file-id @st/state)
+            shared-libs (:workspace-libraries @st/state)
 
-  (changeColor
-    [_ _shapes _old-color _new-color]
-    ;; TODO
-    )
+            format-entry
+            (fn [{:keys [prop shape-id index]}]
+              #js {:property (d/name prop)
+                   :index index
+                   :shapeId (str shape-id)})
+            format-result
+            (fn [[color attrs]]
+              (let [shapes-info (apply array (map format-entry attrs))
+                    color (u/to-js color)]
+                (obj/set! color "shapeInfo" shapes-info)
+                color))]
+        (apply
+         array
+         (->> (ctc/extract-all-colors shapes file-id shared-libs)
+              (group-by :attrs)
+              (map format-result))))))
+
+  (replaceColor
+    [_ shapes old-color new-color]
+
+    (let [old-color (parser/parse-color old-color)
+          new-color (parser/parse-color new-color)]
+      (cond
+        (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
+        (u/display-not-valid :replaceColor-shapes shapes)
+
+        (not (sm/validate ::ctc/color old-color))
+        (u/display-not-valid :replaceColor-oldColor old-color)
+
+        (not (sm/validate ::ctc/color new-color))
+        (u/display-not-valid :replaceColor-newColor new-color)
+
+        :else
+        (let [file-id (:current-file-id @st/state)
+              shared-libs (:workspace-libraries @st/state)
+              objects (u/locate-objects)
+              shapes
+              (->> shapes
+                   (map #(obj/get % "$id"))
+                   (mapcat #(cfh/get-children-with-self objects %)))
+
+              shapes-by-color
+              (->> (ctc/extract-all-colors shapes file-id shared-libs)
+                   (group-by :attrs))]
+          (st/emit! (dwc/change-color-in-selected new-color (get shapes-by-color old-color) old-color))))))
 
   (getRoot
     [_]

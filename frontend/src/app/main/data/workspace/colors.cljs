@@ -24,6 +24,7 @@
    [app.util.color :as uc]
    [app.util.storage :refer [storage]]
    [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
 ;; A set of keys that are used for shared state identifiers
@@ -377,7 +378,7 @@
 
 (defn color-att->text
   [color]
-  {:fill-color (:color color)
+  {:fill-color (when (:color color) (str/lower (:color color)))
    :fill-opacity (:opacity color)
    :fill-color-ref-id (:id color)
    :fill-color-ref-file (:file-id color)
