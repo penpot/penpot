@@ -58,6 +58,29 @@
 
 ;; Component -------------------------------------------------------------------
 
+(defn validate-token-value+ [{:keys [input name-value token tokens]}]
+  (let [token-references (sd/find-token-references input)
+        ;; When creating a new token we dont have a token name yet,
+        ;; so we use a temporary token name that hopefully doesn't clash with any of the users token names.
+        token-name (if (str/empty? name-value) "__TOKEN_STUDIO_SYSTEM.TEMP" name-value)
+        direct-self-reference? (get token-references token-name)
+        empty-input? (empty? (str/trim input))]
+    (cond
+      empty-input? (p/rejected nil)
+      direct-self-reference? (p/rejected :error/token-direct-self-reference)
+      :else (let [token-id (or (:id token) (random-uuid))
+                  new-tokens (update tokens token-id merge {:id token-id
+                                                            :value input
+                                                            :name token-name})]
+              (-> (sd/resolve-tokens+ new-tokens)
+                  (p/then
+                   (fn [resolved-tokens]
+                     (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-id)]
+                       (cond
+                         resolved-value (p/resolved resolved-token)
+                         (= #{:style-dictionary/missing-reference} errors) (p/rejected :error/token-missing-reference)
+                         :else (p/rejected :error/unknown-error))))))))))
+
 (defn use-debonced-resolve-callback
   [name-ref token tokens callback & {:keys [timeout] :or {timeout 160}}]
   (let [timeout-id-ref (mf/use-ref nil)
@@ -73,30 +96,13 @@
              (js/setTimeout
               (fn []
                 (when (not (timeout-outdated-cb?))
-                  (let [token-references (sd/find-token-references input)
-                        ;; When creating a new token we dont have a token name yet,
-                        ;; so we use a temporary token name that hopefully doesn't clash with any of the users token names.
-                        token-name (if (empty? @name-ref) "__TOKEN_STUDIO_SYSTEM.TEMP" @name-ref)
-                        direct-self-reference? (get token-references token-name)
-                        empty-input? (empty? (str/trim input))]
-                    (cond
-                      empty-input? (callback nil)
-                      direct-self-reference? (callback :error/token-direct-self-reference)
-                      :else
-                      (let [token-id (or (:id token) (random-uuid))
-                            new-tokens (update tokens token-id merge {:id token-id
-                                                                      :value input
-                                                                      :name token-name})]
-                        (-> (sd/resolve-tokens+ new-tokens)
-                            (p/finally
-                              (fn [resolved-tokens _err]
-                                (when-not (timeout-outdated-cb?)
-                                  (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-id)]
-                                    (cond
-                                      resolved-value (callback resolved-token)
-                                      (= #{:style-dictionary/missing-reference} errors) (callback :error/token-missing-reference)
-                                      :else (callback :error/unknown-error))))))))))))
-
+                  (-> (validate-token-value+ {:input input
+                                              :name-value @name-ref
+                                              :token token
+                                              :tokens tokens})
+                      (p/finally (fn [x err]
+                                   (when-not (timeout-outdated-cb?)
+                                     (callback (or err x))))))))
               timeout))))]
     debounced-resolver-callback))
 
