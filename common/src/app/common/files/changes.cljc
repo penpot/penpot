@@ -33,7 +33,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private schema:operation
-  [:multi {:dispatch :type :title "Operation" ::smd/simplified true}
+  [:multi {:dispatch :type
+           :title "Operation"
+           ::smd/simplified true
+           :decode/string #(update % :type keyword)}
    [:set
     [:map {:title "SetOperation"}
      [:type [:= :set]]
