@@ -2,6 +2,9 @@
 
 Add changes that are meaningful to the user here after each PR so they can be updated in feature base.
 
+<details>
+<summary>Template</summary>
+
 ## Template
 
 ### <DATE> - <CHANGE_DESCRIPTION>
@@ -11,6 +14,7 @@ Add changes that are meaningful to the user here after each PR so they can be up
 If possible add video here from PR as well
 
 - Outline of changes
+</details>
 
 ## Changes
 
