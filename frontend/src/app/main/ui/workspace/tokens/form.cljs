@@ -59,11 +59,8 @@
 ;; Component -------------------------------------------------------------------
 
 (defn use-debonced-resolve-callback
-  [name-ref token tokens callback & {:keys [cached timeout]
-                                     :or {cached {}
-                                          timeout 160}}]
+  [name-ref token tokens callback & {:keys [timeout] :or {timeout 160}}]
   (let [timeout-id-ref (mf/use-ref nil)
-        cache (mf/use-ref cached)
         debounced-resolver-callback
         (mf/use-callback
          (mf/deps token callback tokens)
@@ -76,33 +73,29 @@
              (js/setTimeout
               (fn []
                 (when (not (timeout-outdated-cb?))
-                  (if-let [cached (get (mf/ref-val cache) tokens)]
-                    (callback cached)
-                    (let [token-references (sd/find-token-references input)
-                          ;; When creating a new token we dont have a token name yet,
-                          ;; so we use a temporary token name that hopefully doesn't clash with any of the users token names.
-                          token-name (if (empty? @name-ref) "__TOKEN_STUDIO_SYSTEM.TEMP" @name-ref)
-                          direct-self-reference? (get token-references token-name)
-                          empty-input? (empty? (str/trim input))]
-                      (cond
-                        empty-input? (callback nil)
-                        direct-self-reference? (callback :error/token-direct-self-reference)
-                        :else
-                        (let [token-id (or (:id token) (random-uuid))
-                              new-tokens (update tokens token-id merge {:id token-id
-                                                                        :value input
-                                                                        :name token-name})]
-                          (-> (sd/resolve-tokens+ new-tokens)
-                              (p/finally
-                                (fn [resolved-tokens _err]
-                                  (when-not (timeout-outdated-cb?)
-                                    (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-id)]
-                                      (cond
-                                        resolved-value (do
-                                                         (mf/set-ref-val! cache (assoc (mf/ref-val cache) input resolved-tokens))
-                                                         (callback resolved-token))
-                                        (= #{:style-dictionary/missing-reference} errors) (callback :error/token-missing-reference)
-                                        :else (callback :error/unknown-error)))))))))))))
+                  (let [token-references (sd/find-token-references input)
+                        ;; When creating a new token we dont have a token name yet,
+                        ;; so we use a temporary token name that hopefully doesn't clash with any of the users token names.
+                        token-name (if (empty? @name-ref) "__TOKEN_STUDIO_SYSTEM.TEMP" @name-ref)
+                        direct-self-reference? (get token-references token-name)
+                        empty-input? (empty? (str/trim input))]
+                    (cond
+                      empty-input? (callback nil)
+                      direct-self-reference? (callback :error/token-direct-self-reference)
+                      :else
+                      (let [token-id (or (:id token) (random-uuid))
+                            new-tokens (update tokens token-id merge {:id token-id
+                                                                      :value input
+                                                                      :name token-name})]
+                        (-> (sd/resolve-tokens+ new-tokens)
+                            (p/finally
+                              (fn [resolved-tokens _err]
+                                (when-not (timeout-outdated-cb?)
+                                  (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-id)]
+                                    (cond
+                                      resolved-value (callback resolved-token)
+                                      (= #{:style-dictionary/missing-reference} errors) (callback :error/token-missing-reference)
+                                      :else (callback :error/unknown-error))))))))))))
 
               timeout))))]
     debounced-resolver-callback))
