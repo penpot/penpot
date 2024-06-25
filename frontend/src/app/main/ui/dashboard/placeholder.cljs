@@ -27,7 +27,7 @@
 
       (= :libraries origin)
       [:div {:class (stl/css :grid-empty-placeholder :libs)
-             :data-test "empty-placeholder"}
+             :data-testid "empty-placeholder"}
        [:div {:class (stl/css :text)}
         [:& i18n/tr-html {:label "dashboard.empty-placeholder-drafts"}]]]
 

@@ -126,7 +126,7 @@
                     :element-list-body true
                     :hover hovering?
                     :selected selected?)
-            :data-test (dm/str "page-" id)
+            :data-testid (dm/str "page-" id)
             :tab-index "0"
             :on-click navigate-fn
             :on-double-click on-double-click

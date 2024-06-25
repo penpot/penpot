@@ -11,7 +11,7 @@
 
 (mf/defc link-button
   {::mf/wrap-props false}
-  [{:keys [on-click class value data-test]}]
+  [{:keys [on-click class value data-testid]}]
   (let [on-key-down (mf/use-fn
                      (mf/deps on-click)
                      (fn [event]
@@ -24,4 +24,4 @@
              :tab-index "0"
              :on-click on-click
              :on-key-down on-key-down
-             :data-test data-test}]))
+             :data-testid data-testid}]))

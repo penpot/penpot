@@ -104,7 +104,7 @@
 
      [:> fm/submit-button*
       {:label (t locale "dashboard.password-change")
-       :data-test "submit-password"
+       :data-testid "submit-password"
        :class (stl/css :update-btn)}]]))
 
 ;; --- Password Page
