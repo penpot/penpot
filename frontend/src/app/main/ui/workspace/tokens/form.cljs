@@ -118,13 +118,6 @@
                                      ;; Allow setting token to already used name
                                     (disj (:name token)))))
 
-        ;; State
-        state* (mf/use-state (merge {:name ""
-                                     :value ""
-                                     :description ""}
-                                    token))
-        state @state*
-
         form-touched (mf/use-state nil)
         update-form-touched (mf/use-callback
                              (debounce #(reset! form-touched (js/Symbol)) 120))
