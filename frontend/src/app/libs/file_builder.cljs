@@ -17,7 +17,8 @@
    [app.util.zip :as uz]
    [app.worker.export :as e]
    [beicon.v2.core :as rx]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [promesa.core :as p]))
 
 (defn parse-data [data]
   (as-> data $
@@ -261,14 +262,16 @@
     (uuid/next))
 
   (export [_]
-    (js/Promise.
-     (fn [resolve _reject]
-       (-> (export-file file)
-           (rx/subscribe
-            (fn [value]
-              (when (not (contains? value :type))
-                (let [[_ export-blob] value]
-                  (resolve export-blob))))))))))
+    (p/create
+     (fn [resolve reject]
+       (->> (export-file file)
+            (rx/take 1)
+            (rx/subs!
+             (fn [value]
+               (when (not (contains? value :type))
+                 (let [[_ export-blob] value]
+                   (resolve export-blob))))
+             reject))))))
 
 (defn create-file-export [^string name]
   (binding [cfeat/*current* cfeat/default-features]
