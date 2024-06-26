@@ -241,18 +241,16 @@
                             :else               label)
             dedupe?       (boolean (and batch-key batch-timeout))]
 
-        (wrk/submit! ::wrk/conn (::db/conn cfg)
-                     ::wrk/task :process-webhook-event
-                     ::wrk/queue :webhooks
-                     ::wrk/max-retries 0
-                     ::wrk/delay (or batch-timeout 0)
-                     ::wrk/dedupe dedupe?
-                     ::wrk/label label
-
-                     ::webhooks/event
-                     (-> params
-                         (dissoc :ip-addr)
-                         (dissoc :type)))))
+        (wrk/submit! (-> cfg
+                         (assoc ::wrk/task :process-webhook-event)
+                         (assoc ::wrk/queue :webhooks)
+                         (assoc ::wrk/max-retries 0)
+                         (assoc ::wrk/delay (or batch-timeout 0))
+                         (assoc ::wrk/dedupe dedupe?)
+                         (assoc ::wrk/label label)
+                         (assoc ::wrk/params (-> params
+                                                 (dissoc :ip-addr)
+                                                 (dissoc :type)))))))
     params))
 
 (defn submit!
