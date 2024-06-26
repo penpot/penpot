@@ -10,9 +10,9 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.files.helpers :as cfh]
-   [app.common.geom.shapes :as gsh]
-   [app.common.geom.point :as gpt]
    [app.common.geom.matrix :as gmt]
+   [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
    [app.common.schema :as sm]
    [app.common.schema.desc-native :as smd]
    [app.common.schema.openapi :as-alias oapi]
@@ -34,53 +34,58 @@
 ;; SCHEMAS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def schema:operation-set-value
-  [:and
-   [:map-of :keyword :any]
-   [:multi {:dispatch :type
-            :title "OperationSetVal"
-            :decode/string
-            (fn [v]
-              (if (map? v)
+(def schema:set-operation
+  [:map {:title "SetOperation"
+         :decode/string sm/decode-kw-map}
+   [:type [:= :set]]
+   [:attr :keyword]
+   [:ignore-touched {:optional true} :boolean]
+   [:ignore-geometry {:optional true} :boolean]
+   [:val [:multi {:dispatch :type
+                  :title "OperationSetVal"
+                  :decode/string
+                  (fn [v]
+                    (if (map? v)
+                      (update v :type keyword)
+                      v))
+                  ::smd/simplified true}
+          [:point
+           [:map
+            [:type [:= :point]]
+            [:val ::gpt/point]]]
 
-                (update v :type keyword)
-                v))
-            ::smd/simplified true}
-    [:point
-     [:map
-      [:type [:= :point]]
-      [:val ::gpt/point]]]
+          [:matrix
+           [:map
+            [:type [:= :matrix]]
+            [:val ::gmt/matrix]]]
 
-    [:matrix
-     [:map
-      [:type [:= :matrix]]
-      [:val ::gmt/matrix]]]
+          [:malli.core/default
+           [:map-of :keyword :any]]]]])
 
-    [:malli.core/default :any]]])
+(def schema:set-touched-operation
+  [:map {:title "SetTouchedOperation"
+         :decode/string sm/decode-kw-map}
+   [:type [:= :set-touched]]
+   [:touched [:maybe [:set :keyword]]]])
+
+(def schema:set-remote-synced-operation
+  [:map {:title "SetRemoteSyncedOperation"
+         :decode/string sm/decode-kw-map}
+   [:type [:= :set-remote-synced]]
+   [:remote-synced {:optional true} [:maybe :boolean]]])
 
 (def schema:operation
-  [:and
-   [:map-of :keyword :any]
-   [:multi {:dispatch :type
-            :title "Operation"
-            ::smd/simplified true
-            :decode/string #(update % :type keyword)}
-    [:set
-     [:map {:title "SetOperation"}
-      [:type [:= :set]]
-      [:attr :keyword]
-      [:val schema:operation-set-value]
-      [:ignore-touched {:optional true} :boolean]
-      [:ignore-geometry {:optional true} :boolean]]]
-    [:set-touched
-     [:map {:title "SetTouchedOperation"}
-      [:type [:= :set-touched]]
-      [:touched [:maybe [:set :keyword]]]]]
-    [:set-remote-synced
-     [:map {:title "SetRemoteSyncedOperation"}
-      [:type [:= :set-remote-synced]]
-      [:remote-synced {:optional true} [:maybe :boolean]]]]]])
+  [:multi {:dispatch :type
+           :title "Operation"
+           ::smd/simplified true
+           :decode/string sm/decode-kw-map}
+   [:set schema:set-operation]
+   [:set-touched schema:set-touched-operation]
+   [:set-remote-synced schema:set-remote-synced-operation]])
 
+
+;; TODO: buggy and experimental, it should use proper shape decoder
+;; instead of direct map to shape coerce.
 (def schema:shape
   (sm/simple-schema
    {:type :map
@@ -102,205 +107,202 @@
          :else
          o))}}))
 
-
 (def schema:change
-  [:and
-   [:map-of :keyword :any]
-   [:multi {:dispatch :type
-            :title "Change"
-            :decode/string #(update % :type keyword)
-            ::smd/simplified true}
-    [:set-option
-     [:map {:title "SetOptionChange"}
-      [:type [:= :set-option]]
-      [:page-id ::sm/uuid]
-      [:option [:union
-                [:keyword]
-                [:vector {:gen/max 10} :keyword]]]
-      [:value :any]]]
+  [:multi {:dispatch :type
+           :title "Change"
+           :decode/string sm/decode-kw-map
+           ::smd/simplified true}
+   [:set-option
+    [:map {:title "SetOptionChange"}
+     [:type [:= :set-option]]
+     [:page-id ::sm/uuid]
+     [:option [:union
+               [:keyword]
+               [:vector {:gen/max 10} :keyword]]]
+     [:value :any]]]
 
-    [:add-obj
-     [:map {:title "AddObjChange"}
-      [:type [:= :add-obj]]
-      [:id ::sm/uuid]
-      [:obj schema:shape]
-      [:page-id {:optional true} ::sm/uuid]
-      [:component-id {:optional true} ::sm/uuid]
-      [:frame-id ::sm/uuid]
-      [:parent-id {:optional true} [:maybe ::sm/uuid]]
-      [:index {:optional true} [:maybe :int]]
-      [:ignore-touched {:optional true} :boolean]]]
+   [:add-obj
+    [:map {:title "AddObjChange"}
+     [:type [:= :add-obj]]
+     [:id ::sm/uuid]
+     [:obj schema:shape]
+     [:page-id {:optional true} ::sm/uuid]
+     [:component-id {:optional true} ::sm/uuid]
+     [:frame-id ::sm/uuid]
+     [:parent-id {:optional true} [:maybe ::sm/uuid]]
+     [:index {:optional true} [:maybe :int]]
+     [:ignore-touched {:optional true} :boolean]]]
 
-    [:mod-obj
-     [:map {:title "ModObjChange"}
-      [:type [:= :mod-obj]]
-      [:id ::sm/uuid]
-      [:page-id {:optional true} ::sm/uuid]
-      [:component-id {:optional true} ::sm/uuid]
-      [:operations [:vector {:gen/max 5} schema:operation]]]]
+   [:mod-obj
+    [:map {:title "ModObjChange"}
+     [:type [:= :mod-obj]]
+     [:id ::sm/uuid]
+     [:page-id {:optional true} ::sm/uuid]
+     [:component-id {:optional true} ::sm/uuid]
+     [:operations [:vector {:gen/max 5} schema:operation]]]]
 
-    [:del-obj
-     [:map {:title "DelObjChange"}
-      [:type [:= :del-obj]]
-      [:id ::sm/uuid]
-      [:page-id {:optional true} ::sm/uuid]
-      [:component-id {:optional true} ::sm/uuid]
-      [:ignore-touched {:optional true} :boolean]]]
+   [:del-obj
+    [:map {:title "DelObjChange"}
+     [:type [:= :del-obj]]
+     [:id ::sm/uuid]
+     [:page-id {:optional true} ::sm/uuid]
+     [:component-id {:optional true} ::sm/uuid]
+     [:ignore-touched {:optional true} :boolean]]]
 
-    [:fix-obj
-     [:map {:title "FixObjChange"}
-      [:type [:= :fix-obj]]
-      [:id ::sm/uuid]
-      [:fix {:optional true} :keyword]
-      [:page-id {:optional true} ::sm/uuid]
-      [:component-id {:optional true} ::sm/uuid]]]
+   [:fix-obj
+    [:map {:title "FixObjChange"}
+     [:type [:= :fix-obj]]
+     [:id ::sm/uuid]
+     [:fix {:optional true} :keyword]
+     [:page-id {:optional true} ::sm/uuid]
+     [:component-id {:optional true} ::sm/uuid]]]
 
-    [:mov-objects
-     [:map {:title "MovObjectsChange"}
-      [:type [:= :mov-objects]]
-      [:page-id {:optional true} ::sm/uuid]
-      [:component-id {:optional true} ::sm/uuid]
-      [:ignore-touched {:optional true} :boolean]
-      [:parent-id ::sm/uuid]
-      [:shapes :any]
-      [:index {:optional true} [:maybe :int]]
-      [:after-shape {:optional true} :any]
-      [:component-swap {:optional true} :boolean]]]
+   [:mov-objects
+    [:map {:title "MovObjectsChange"}
+     [:type [:= :mov-objects]]
+     [:page-id {:optional true} ::sm/uuid]
+     [:component-id {:optional true} ::sm/uuid]
+     [:ignore-touched {:optional true} :boolean]
+     [:parent-id ::sm/uuid]
+     [:shapes :any]
+     [:index {:optional true} [:maybe :int]]
+     [:after-shape {:optional true} :any]
+     [:component-swap {:optional true} :boolean]]]
 
-    [:reorder-children
-     [:map {:title "ReorderChildrenChange"}
-      [:type [:= :reorder-children]]
-      [:page-id {:optional true} ::sm/uuid]
-      [:component-id {:optional true} ::sm/uuid]
-      [:ignore-touched {:optional true} :boolean]
-      [:parent-id ::sm/uuid]
-      [:shapes :any]]]
+   [:reorder-children
+    [:map {:title "ReorderChildrenChange"}
+     [:type [:= :reorder-children]]
+     [:page-id {:optional true} ::sm/uuid]
+     [:component-id {:optional true} ::sm/uuid]
+     [:ignore-touched {:optional true} :boolean]
+     [:parent-id ::sm/uuid]
+     [:shapes :any]]]
 
-    [:add-page
-     [:map {:title "AddPageChange"}
-      [:type [:= :add-page]]
-      [:id {:optional true} ::sm/uuid]
-      [:name {:optional true} :string]
-      [:page {:optional true} :any]]]
+   [:add-page
+    [:map {:title "AddPageChange"}
+     [:type [:= :add-page]]
+     [:id {:optional true} ::sm/uuid]
+     [:name {:optional true} :string]
+     [:page {:optional true} :any]]]
 
-    [:mod-page
-     [:map {:title "ModPageChange"}
-      [:type [:= :mod-page]]
-      [:id ::sm/uuid]
-      [:name :string]]]
+   [:mod-page
+    [:map {:title "ModPageChange"}
+     [:type [:= :mod-page]]
+     [:id ::sm/uuid]
+     [:name :string]]]
 
-    [:mod-plugin-data
-     [:map {:title "ModPagePluginData"}
-      [:type [:= :mod-plugin-data]]
-      [:object-type [::sm/one-of #{:file :page :shape :color :typography :component}]]
-      ;; It's optional because files don't need the id for type :file
-      [:object-id {:optional true} [:maybe ::sm/uuid]]
-      ;; Only needed in type shape
-      [:page-id {:optional true} [:maybe ::sm/uuid]]
-      [:namespace :keyword]
-      [:key :string]
-      [:value [:maybe :string]]]]
+   [:mod-plugin-data
+    [:map {:title "ModPagePluginData"}
+     [:type [:= :mod-plugin-data]]
+     [:object-type [::sm/one-of #{:file :page :shape :color :typography :component}]]
+     ;; It's optional because files don't need the id for type :file
+     [:object-id {:optional true} [:maybe ::sm/uuid]]
+     ;; Only needed in type shape
+     [:page-id {:optional true} [:maybe ::sm/uuid]]
+     [:namespace :keyword]
+     [:key :string]
+     [:value [:maybe :string]]]]
 
-    [:del-page
-     [:map {:title "DelPageChange"}
-      [:type [:= :del-page]]
-      [:id ::sm/uuid]]]
+   [:del-page
+    [:map {:title "DelPageChange"}
+     [:type [:= :del-page]]
+     [:id ::sm/uuid]]]
 
-    [:mov-page
-     [:map {:title "MovPageChange"}
-      [:type [:= :mov-page]]
-      [:id ::sm/uuid]
-      [:index :int]]]
+   [:mov-page
+    [:map {:title "MovPageChange"}
+     [:type [:= :mov-page]]
+     [:id ::sm/uuid]
+     [:index :int]]]
 
-    [:reg-objects
-     [:map {:title "RegObjectsChange"}
-      [:type [:= :reg-objects]]
-      [:page-id {:optional true} ::sm/uuid]
-      [:component-id {:optional true} ::sm/uuid]
-      [:shapes [:vector {:gen/max 5} ::sm/uuid]]]]
+   [:reg-objects
+    [:map {:title "RegObjectsChange"}
+     [:type [:= :reg-objects]]
+     [:page-id {:optional true} ::sm/uuid]
+     [:component-id {:optional true} ::sm/uuid]
+     [:shapes [:vector {:gen/max 5} ::sm/uuid]]]]
 
-    [:add-color
-     [:map {:title "AddColorChange"}
-      [:type [:= :add-color]]
-      [:color :any]]]
+   [:add-color
+    [:map {:title "AddColorChange"}
+     [:type [:= :add-color]]
+     [:color :any]]]
 
-    [:mod-color
-     [:map {:title "ModColorChange"}
-      [:type [:= :mod-color]]
-      [:color :any]]]
+   [:mod-color
+    [:map {:title "ModColorChange"}
+     [:type [:= :mod-color]]
+     [:color :any]]]
 
-    [:del-color
-     [:map {:title "DelColorChange"}
-      [:type [:= :del-color]]
-      [:id ::sm/uuid]]]
+   [:del-color
+    [:map {:title "DelColorChange"}
+     [:type [:= :del-color]]
+     [:id ::sm/uuid]]]
 
-    [:add-recent-color
-     [:map {:title "AddRecentColorChange"}
-      [:type [:= :add-recent-color]]
-      [:color ::ctc/recent-color]]]
+   [:add-recent-color
+    [:map {:title "AddRecentColorChange"}
+     [:type [:= :add-recent-color]]
+     [:color ::ctc/recent-color]]]
 
-    [:add-media
-     [:map {:title "AddMediaChange"}
-      [:type [:= :add-media]]
-      [:object ::ctf/media-object]]]
+   [:add-media
+    [:map {:title "AddMediaChange"}
+     [:type [:= :add-media]]
+     [:object ::ctf/media-object]]]
 
-    [:mod-media
-     [:map {:title "ModMediaChange"}
-      [:type [:= :mod-media]]
-      [:object ::ctf/media-object]]]
+   [:mod-media
+    [:map {:title "ModMediaChange"}
+     [:type [:= :mod-media]]
+     [:object ::ctf/media-object]]]
 
-    [:del-media
-     [:map {:title "DelMediaChange"}
-      [:type [:= :del-media]]
-      [:id ::sm/uuid]]]
+   [:del-media
+    [:map {:title "DelMediaChange"}
+     [:type [:= :del-media]]
+     [:id ::sm/uuid]]]
 
-    [:add-component
-     [:map {:title "AddComponentChange"}
-      [:type [:= :add-component]]
-      [:id ::sm/uuid]
-      [:name :string]
-      [:shapes {:optional true} [:vector {:gen/max 3} :any]]
-      [:path {:optional true} :string]]]
+   [:add-component
+    [:map {:title "AddComponentChange"}
+     [:type [:= :add-component]]
+     [:id ::sm/uuid]
+     [:name :string]
+     [:shapes {:optional true} [:vector {:gen/max 3} :any]]
+     [:path {:optional true} :string]]]
 
-    [:mod-component
-     [:map {:title "ModCompoenentChange"}
-      [:type [:= :mod-component]]
-      [:id ::sm/uuid]
-      [:shapes {:optional true} [:vector {:gen/max 3} :any]]
-      [:name {:optional true} :string]]]
+   [:mod-component
+    [:map {:title "ModCompoenentChange"}
+     [:type [:= :mod-component]]
+     [:id ::sm/uuid]
+     [:shapes {:optional true} [:vector {:gen/max 3} :any]]
+     [:name {:optional true} :string]]]
 
-    [:del-component
-     [:map {:title "DelComponentChange"}
-      [:type [:= :del-component]]
-      [:id ::sm/uuid]
-      [:main-instance {:optional true} :any]
-      [:skip-undelete? {:optional true} :boolean]]]
+   [:del-component
+    [:map {:title "DelComponentChange"}
+     [:type [:= :del-component]]
+     [:id ::sm/uuid]
+     [:main-instance {:optional true} :any]
+     [:skip-undelete? {:optional true} :boolean]]]
 
-    [:restore-component
-     [:map {:title "RestoreComponentChange"}
-      [:type [:= :restore-component]]
-      [:id ::sm/uuid]
-      [:page-id ::sm/uuid]]]
+   [:restore-component
+    [:map {:title "RestoreComponentChange"}
+     [:type [:= :restore-component]]
+     [:id ::sm/uuid]
+     [:page-id ::sm/uuid]]]
 
-    [:purge-component
-     [:map {:title "PurgeComponentChange"}
-      [:type [:= :purge-component]]
-      [:id ::sm/uuid]]]
+   [:purge-component
+    [:map {:title "PurgeComponentChange"}
+     [:type [:= :purge-component]]
+     [:id ::sm/uuid]]]
 
-    [:add-typography
-     [:map {:title "AddTypogrphyChange"}
-      [:type [:= :add-typography]]
-      [:typography ::ctt/typography]]]
+   [:add-typography
+    [:map {:title "AddTypogrphyChange"}
+     [:type [:= :add-typography]]
+     [:typography ::ctt/typography]]]
 
-    [:mod-typography
-     [:map {:title "ModTypogrphyChange"}
-      [:type [:= :mod-typography]]
-      [:typography ::ctt/typography]]]
+   [:mod-typography
+    [:map {:title "ModTypogrphyChange"}
+     [:type [:= :mod-typography]]
+     [:typography ::ctt/typography]]]
 
-    [:del-typography
-     [:map {:title "DelTypogrphyChange"}
-      [:type [:= :del-typography]]
-      [:id ::sm/uuid]]]]])
+   [:del-typography
+    [:map {:title "DelTypogrphyChange"}
+     [:type [:= :del-typography]]
+     [:id ::sm/uuid]]]])
 
 (def schema:changes
   [:sequential {:gen/max 2} schema:change])

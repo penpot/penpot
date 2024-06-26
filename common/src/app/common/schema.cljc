@@ -687,3 +687,9 @@
 
 (def check-set-of-emails!
   (check-fn ::set-of-emails))
+
+
+;; ---- DECODERS
+
+(def decode-kw-map
+  (lazy-decoder [:map-of :keyword :any] default-transformer))
