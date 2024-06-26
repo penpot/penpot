@@ -927,11 +927,11 @@
                          {:id file-id}
                          {::db/return-keys [:id :name :is-shared :deleted-at
                                             :project-id :created-at :modified-at]})]
-    (wrk/submit! {::wrk/task :delete-object
-                  ::wrk/conn conn
-                  :object :file
-                  :deleted-at (:deleted-at file)
-                  :id file-id})
+    (wrk/submit! {::db/conn conn
+                  ::wrk/task :delete-object
+                  ::wrk/params {:object :file
+                                :deleted-at (:deleted-at file)
+                                :id file-id}})
     file))
 
 (def ^:private

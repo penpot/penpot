@@ -8,6 +8,7 @@
   "Async tasks abstraction (impl)."
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.logging :as l]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
@@ -58,17 +59,6 @@
 ;; SUBMIT API
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- extract-props
-  [options]
-  (let [cns (namespace ::sample)]
-    (persistent!
-     (reduce-kv (fn [res k v]
-                  (cond-> res
-                    (not= (namespace k) cns)
-                    (assoc! k v)))
-                (transient {})
-                options))))
-
 (def ^:private sql:insert-new-task
   "insert into task (id, name, props, queue, label, priority, max_retries, scheduled_at)
    values (?, ?, ?, ?, ?, ?, ?, now() + ?)
@@ -87,14 +77,13 @@
 (s/def ::task (s/or :kw keyword? :str string?))
 (s/def ::queue (s/or :kw keyword? :str string?))
 (s/def ::delay (s/or :int integer? :duration dt/duration?))
-(s/def ::conn (s/or :pool ::db/pool :connection some?))
 (s/def ::priority integer?)
 (s/def ::max-retries integer?)
 (s/def ::dedupe boolean?)
 
 (s/def ::submit-options
   (s/and
-   (s/keys :req [::task ::conn]
+   (s/keys :req [::task]
            :opt [::label ::delay ::queue ::priority ::max-retries ::dedupe])
    (fn [{:keys [::dedupe ::label] :or {label ""}}]
      (if dedupe
@@ -102,21 +91,23 @@
        true))))
 
 (defn submit!
-  [& {:keys [::task ::delay ::queue ::priority ::max-retries ::conn ::dedupe ::label]
+  [& {:keys [::params ::task ::delay ::queue ::priority ::max-retries ::dedupe ::label]
       :or {delay 0 queue :default priority 100 max-retries 3 label ""}
       :as options}]
 
   (us/verify! ::submit-options options)
   (let [duration  (dt/duration delay)
         interval  (db/interval duration)
-        props     (-> options extract-props db/tjson)
+        props     (db/tjson params)
         id        (uuid/next)
         tenant    (cf/get :tenant)
         task      (d/name task)
         queue     (str/ffmt "%:%" tenant (d/name queue))
+        conn      (db/get-connectable options)
         deleted   (when dedupe
                     (-> (db/exec-one! conn [sql:remove-not-started-tasks task queue label])
                         :next.jdbc/update-count))]
+
     (l/trc :hint "submit task"
            :name task
            :task-id (str id)
@@ -126,7 +117,13 @@
            :delay (dt/format-duration duration)
            :replace (or deleted 0))
 
-
     (db/exec-one! conn [sql:insert-new-task id task props queue
                         label priority max-retries interval])
     id))
+
+(defn invoke!
+  [{:keys [::task ::params] :as cfg}]
+  (assert (contains? cfg :app.worker/registry)
+          "missing worker registry on `cfg`")
+  (let [task-fn (dm/get-in cfg [:app.worker/registry (name task)])]
+    (task-fn {:props params})))

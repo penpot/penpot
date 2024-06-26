@@ -59,32 +59,27 @@
   ([tname]
    (run-task! tname {}))
   ([tname params]
-   (let [tasks (:app.worker/registry main/system)
-         tname (if (keyword? tname) (name tname) name)]
-     (if-let [task-fn (get tasks tname)]
-       (task-fn params)
-       (println (format "no task '%s' found" tname))))))
+   (wrk/invoke! (-> main/system
+                    (assoc ::wrk/task tname)
+                    (assoc ::wrk/params params)))))
 
 (defn schedule-task!
   ([name]
    (schedule-task! name {}))
-  ([name props]
-   (let [pool (:app.db/pool main/system)]
-     (wrk/submit!
-      ::wrk/conn pool
-      ::wrk/task name
-      ::wrk/props props))))
+  ([name params]
+   (wrk/submit! (-> main/system
+                    (assoc ::wrk/task name)
+                    (assoc ::wrk/params params)))))
 
 (defn send-test-email!
   [destination]
-  (us/verify!
-   :expr (string? destination)
-   :hint "destination should be provided")
-
-  (let [handler (:app.email/sendmail main/system)]
-    (handler {:body "test email"
-              :subject "test email"
-              :to [destination]})))
+  (assert (string? destination) "destination should be provided")
+  (-> main/system
+      (assoc ::wrk/task :sendmail)
+      (assoc ::wrk/params {:body "test email"
+                           :subject "test email"
+                           :to [destination]})
+      (wrk/invoke!)))
 
 (defn resend-email-verification-email!
   [email]
@@ -562,22 +557,30 @@
   "Mark a team for deletion"
   [team-id]
   (let [team-id (h/parse-uuid team-id)]
-    (db/tx-run! main/system (fn [{:keys [::db/conn]}]
-                              (#'teams/delete-team conn team-id)))))
-
+    (wrk/invoke! (-> main/system
+                     (assoc ::wrk/task :delete-object)
+                     (assoc ::wrk/params {:object :team
+                                          :deleted-at (dt/now)
+                                          :id team-id})))))
 (defn delete-project!
   "Mark a project for deletion"
   [project-id]
   (let [project-id (h/parse-uuid project-id)]
-    (db/tx-run! main/system (fn [{:keys [::db/conn]}]
-                              (#'projects/delete-project conn project-id)))))
+    (wrk/invoke! (-> main/system
+                     (assoc ::wrk/task :delete-object)
+                     (assoc ::wrk/params {:object :project
+                                          :deleted-at (dt/now)
+                                          :id project-id})))))
 
 (defn delete-file!
   "Mark a project for deletion"
   [file-id]
   (let [file-id (h/parse-uuid file-id)]
-    (db/tx-run! main/system (fn [{:keys [::db/conn]}]
-                              (#'files/mark-file-deleted conn file-id)))))
+    (wrk/invoke! (-> main/system
+                     (assoc ::wrk/task :delete-object)
+                     (assoc ::wrk/params {:object :file
+                                          :deleted-at (dt/now)
+                                          :id file-id})))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MISC
