@@ -81,7 +81,7 @@
                                   :team team
                                   :origin :team}))))]
 
-    [:header {:class (stl/css :dashboard-header :team)}
+    [:header {:class (stl/css :dashboard-header :team) :data-testid "dashboard-header"}
      [:div {:class (stl/css :dashboard-title)}
       [:h1 (cond
              members-section? (tr "labels.members")

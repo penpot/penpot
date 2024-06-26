@@ -26,7 +26,7 @@
 (mf/defc header
   {::mf/wrap [mf/memo]}
   []
-  [:header {:class (stl/css :dashboard-header)}
+  [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}
    [:div {:class (stl/css :dashboard-title)}
     [:h1 {:data-testid "account-title"} (tr "dashboard.your-account-title")]]])
 

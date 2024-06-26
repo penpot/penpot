@@ -58,7 +58,7 @@ export class DashboardPage extends BaseWebSocketPage {
 
     this.sidebar = page.getByTestId("dashboard-sidebar");
     this.sidebarMenu = this.sidebar.getByRole("menu");
-    this.mainHeading = page.getByRole("heading", { level: 1 });
+    this.mainHeading = page.getByTestId("dashboard-header").getByRole("heading", { level: 1 });
 
     this.addProjectButton = page.getByRole("button", { name: "+ NEW PROJECT" });
     this.projectName = page.getByText("Project 1");
