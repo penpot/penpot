@@ -18,6 +18,10 @@
   }
 }
 
+.labeled-input-error {
+  border: 1px solid var(--status-color-error-500) !important;
+}
+
 .button {
   @extend .button-primary;
 }
