@@ -582,6 +582,38 @@
                                           :deleted-at (dt/now)
                                           :id file-id})))))
 
+
+(defn process-deleted-teams-cascade
+  []
+  (->> (db/exec! main/system ["select id, deleted_at from team where deleted_at is not null"])
+       (run! (fn [{:keys [id deleted-at]}]
+               (wrk/invoke! (-> main/system
+                                (assoc ::wrk/task :delete-object)
+                                (assoc ::wrk/params {:object :team
+                                                     :deleted-at deleted-at
+                                                     :id id})))))))
+
+
+(defn process-deleted-projects-cascade
+  []
+  (->> (db/exec! main/system ["select id, deleted_at from project where deleted_at is not null"])
+       (run! (fn [{:keys [id deleted-at]}]
+               (wrk/invoke! (-> main/system
+                                (assoc ::wrk/task :delete-object)
+                                (assoc ::wrk/params {:object :project
+                                                     :deleted-at deleted-at
+                                                     :id id})))))))
+
+(defn process-deleted-files-cascade
+  []
+  (->> (db/exec! main/system ["select id, deleted_at from file where deleted_at is not null"])
+       (run! (fn [{:keys [id deleted-at]}]
+               (wrk/invoke! (-> main/system
+                                (assoc ::wrk/task :delete-object)
+                                (assoc ::wrk/params {:object :file
+                                                     :deleted-at deleted-at
+                                                     :id id})))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MISC
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
