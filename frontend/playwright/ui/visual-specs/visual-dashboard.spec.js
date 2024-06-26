@@ -11,7 +11,7 @@ test("User goes to an empty dashboard", async ({ page }) => {
 
   await dashboardPage.goToDashboard();
 
-  await expect(dashboardPage.titleLabel).toBeVisible();
+  await expect(dashboardPage.mainHeading).toBeVisible();
   await expect(dashboardPage.page).toHaveScreenshot();
 });
 
@@ -22,9 +22,9 @@ test("User goes to an empty draft page", async ({ page }) => {
   await dashboardPage.setupDraftsEmpty();
 
   await dashboardPage.goToDashboard();
-  await dashboardPage.draftLink.click();
+  await dashboardPage.draftsLink.click();
 
-  await expect(dashboardPage.draftTitle).toBeVisible();
+  await expect(dashboardPage.mainHeading).toHaveText("Drafts");
   await expect(dashboardPage.page).toHaveScreenshot();
 });
 
@@ -34,7 +34,7 @@ test("User goes to an empty fonts page", async ({ page }) => {
   await dashboardPage.goToDashboard();
   await dashboardPage.fontsLink.click();
 
-  await expect(dashboardPage.fontsTitle).toBeVisible();
+  await expect(dashboardPage.mainHeading).toHaveText("Fonts");
   await expect(dashboardPage.page).toHaveScreenshot();
 });
 
@@ -45,7 +45,7 @@ test("User goes to an empty libraries page", async ({ page }) => {
   await dashboardPage.goToDashboard();
   await dashboardPage.libsLink.click();
 
-  await expect(dashboardPage.libsTitle).toBeVisible();
+  await expect(dashboardPage.mainHeading).toHaveText("Libraries");
   await expect(dashboardPage.page).toHaveScreenshot();
 });
 
@@ -55,7 +55,7 @@ test("User goes to an empty search page", async ({ page }) => {
 
   await dashboardPage.goToSearch();
 
-  await expect(dashboardPage.searchTitle).toBeVisible();
+  await expect(dashboardPage.mainHeading).toHaveText("Search results");
   await expect(dashboardPage.page).toHaveScreenshot();
 });
 
@@ -77,54 +77,53 @@ test("User goes to a full dashboard", async ({ page }) => {
 
   await dashboardPage.goToDashboard();
 
-  await expect(dashboardPage.draftsFile).toBeVisible();
   await expect(dashboardPage.page).toHaveScreenshot();
 });
 
-test("User goes to an full draft page", async ({ page }) => {
+test("User goes to a full draft page", async ({ page }) => {
   const dashboardPage = new DashboardPage(page);
   await dashboardPage.setupDashboardFull();
 
   await dashboardPage.goToDashboard();
-  await dashboardPage.draftLink.click();
+  await dashboardPage.draftsLink.click();
 
-  await expect(dashboardPage.draftTitle).toBeVisible();
+  await expect(dashboardPage.mainHeading).toHaveText("Drafts");
   await expect(dashboardPage.page).toHaveScreenshot();
 });
 
-test("User goes to an full library page", async ({ page }) => {
+test("User goes to a full library page", async ({ page }) => {
   const dashboardPage = new DashboardPage(page);
   await dashboardPage.setupDashboardFull();
 
   await dashboardPage.goToDashboard();
   await dashboardPage.libsLink.click();
 
-  await expect(dashboardPage.libsTitle).toBeVisible();
+  await expect(dashboardPage.mainHeading).toHaveText("Libraries");
   await expect(dashboardPage.page).toHaveScreenshot();
 });
 
-test("User goes to an full fonts page", async ({ page }) => {
+test("User goes to a full fonts page", async ({ page }) => {
   const dashboardPage = new DashboardPage(page);
   await dashboardPage.setupDashboardFull();
 
   await dashboardPage.goToDashboard();
   await dashboardPage.fontsLink.click();
 
-  await expect(dashboardPage.fontsTitle).toBeVisible();
+  await expect(dashboardPage.mainHeading).toHaveText("Fonts");
   await expect(dashboardPage.page).toHaveScreenshot();
 });
 
-test("User goes to an full search page", async ({ page }) => {
+test("User goes to a full search page", async ({ page }) => {
   const dashboardPage = new DashboardPage(page);
   await dashboardPage.setupDashboardFull();
 
   await dashboardPage.goToSearch();
   await expect(dashboardPage.searchInput).toBeVisible();
 
-  await dashboardPage.searchInput.fill("New");
+  await dashboardPage.searchInput.fill("3");
 
-  await expect(dashboardPage.searchTitle).toBeVisible();
-  await expect(dashboardPage.newFileName).toBeVisible();
+  await expect(dashboardPage.mainHeading).toHaveText("Search results");
+  await expect(dashboardPage.page.getByRole("button", { name: "New File 3" })).toBeVisible();
   await expect(dashboardPage.page).toHaveScreenshot();
 });
 
@@ -146,7 +145,7 @@ test("User goes to user profile", async ({ page }) => {
   await dashboardPage.goToDashboard();
   await dashboardPage.goToAccount();
 
-  await expect(dashboardPage.userAccountTitle).toBeVisible();
+  await expect(dashboardPage.mainHeading).toHaveText("Your account");
   await expect(dashboardPage.page).toHaveScreenshot();
 });
 
@@ -180,8 +179,6 @@ test("User opens teams selector with only one team", async ({ page }) => {
   const dashboardPage = new DashboardPage(page);
 
   await dashboardPage.goToDashboard();
-  await expect(dashboardPage.titleLabel).toBeVisible();
-
   await dashboardPage.teamDropdown.click();
 
   await expect(page.getByText("Create new team")).toBeVisible();
@@ -193,8 +190,6 @@ test("User opens teams selector with more than one team", async ({ page }) => {
   await dashboardPage.setupDashboardFull();
 
   await dashboardPage.goToDashboard();
-  await expect(dashboardPage.titleLabel).toBeVisible();
-
   await dashboardPage.teamDropdown.click();
 
   await expect(page.getByText("Second Team")).toBeVisible();
