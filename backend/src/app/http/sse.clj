@@ -61,6 +61,8 @@
                            (let [result (handler)]
                              (events/tap :end result))
                            (catch Throwable cause
+                             (l/err :hint "unexpected error on processing sse response"
+                                    :cause cause)
                              (events/tap :error (errors/handle' cause request)))
                            (finally
                              (sp/close! events/*channel*)
