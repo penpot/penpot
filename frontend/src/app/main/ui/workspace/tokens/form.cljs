@@ -38,14 +38,6 @@
     :type-properties {:error/fn #(str (:value %) " is not a valid token name.
 Token names should only contain letters and digits separated by . characters.")}}))
 
-(comment
-  (m/validate valid-token-name-schema "Hey [1]")
-  (m/valid? valid-token-name-schema "Hey")
-  (m/validate valid-token-name-schema "Hey.foo.")
-  (m/validate valid-token-name-schema "🤣")
-  (m/validate valid-token-name-schema ".")
-  nil)
-
 (defn token-name-schema
   "Generate a dynamic schema validation to check if a token name already exists.
   `existing-token-names` should be a set of strings."
