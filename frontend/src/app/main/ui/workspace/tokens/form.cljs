@@ -22,6 +22,30 @@
 
 ;; Schemas ---------------------------------------------------------------------
 
+(def valid-token-name-regexp
+  "Only allow letters and digits for token names.
+  Also allow one `.` for a namespace separator.
+
+  Caution: This will allow a trailing dot like `token-name.`,
+  But we will trim that in the `finalize-name`,
+  to not throw too many errors while the user is editing."
+  #"([a-zA-Z0-9]+\.?)*")
+
+(def valid-token-name-schema
+  (m/-simple-schema
+   {:type :token/invalid-token-name
+    :pred #(re-matches valid-token-name-regexp %)
+    :type-properties {:error/fn #(str (:value %) " is not a valid token name.
+Token names should only contain letters and digits separated by . characters.")}}))
+
+(comment
+  (m/validate valid-token-name-schema "Hey [1]")
+  (m/valid? valid-token-name-schema "Hey")
+  (m/validate valid-token-name-schema "Hey.foo.")
+  (m/validate valid-token-name-schema "🤣")
+  (m/validate valid-token-name-schema ".")
+  nil)
+
 (defn token-name-schema
   "Generate a dynamic schema validation to check if a token name already exists.
   `existing-token-names` should be a set of strings."
@@ -35,6 +59,7 @@
     (m/schema
      [:and
       [:string {:min 1 :max 255}]
+      valid-token-name-schema
       non-existing-token-schema])))
 
 (def token-description-schema
@@ -44,7 +69,9 @@
 ;; Helpers ---------------------------------------------------------------------
 
 (defn finalize-name [name]
-  (str/trim name))
+  (-> (str/trim name)
+      ;; Remove trailing dots
+      (str/replace #"\.+$" "")))
 
 (defn valid-name? [name]
   (seq (finalize-name (str name))))
