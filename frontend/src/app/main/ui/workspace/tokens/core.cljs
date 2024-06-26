@@ -150,8 +150,8 @@
 (defn transform-tokens-into-json-format [tokens]
   (let [global (reduce
                 (fn [acc [_ {:keys [name value type]}]]
-                  (assoc acc name {:value value
-                                   :type (str/camel type)}))
+                  (assoc acc name {:$value value
+                                   :$type (str/camel type)}))
                 (sorted-map) tokens)]
     {:global global}))
 
