@@ -49,6 +49,7 @@
 - Export shapes that are rotated act a bit strange when reimported [Taiga #7585](https://tree.taiga.io/project/penpot/issue/7585)
 - Penpot crashes when a new colorpicker is created while uploading an image to another instance [Taiga #8119](https://tree.taiga.io/project/penpot/issue/8119)
 - Removing Underline and Strikethrough Affects the Previous Text Object [Taiga #8103](https://tree.taiga.io/project/penpot/issue/8103)
+- Color library loses association with shapes when exporting/importing the document [Taiga #8132](https://tree.taiga.io/project/penpot/issue/8132)
 
 ## 2.0.3
 
