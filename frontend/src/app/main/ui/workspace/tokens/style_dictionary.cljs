@@ -4,6 +4,7 @@
    ["style-dictionary$default" :as sd]
    [app.common.data :as d]
    [app.main.refs :as refs]
+   [app.util.dom :as dom]
    [cuerdas.core :as str]
    [promesa.core :as p]
    [rumext.v2 :as mf]
@@ -16,11 +17,18 @@
   (do
     (sd-transforms/registerTransforms sd)
     (.registerFormat sd #js {:name "custom/json"
-                             :format (fn [res]
+                             :format (fn [^js res]
                                        (.-tokens (.-dictionary res)))})
     sd))
 
 ;; Functions -------------------------------------------------------------------
+
+(defn find-token-references
+  "Finds token reference values in `value-string` and returns a set with all contained namespaces."
+  [value-string]
+  (some->> (re-seq #"\{([^}]*)\}" value-string)
+           (map second)
+           (into #{})))
 
 (defn tokens->style-dictionary+
   "Resolves references and math expressions using StyleDictionary.
@@ -69,6 +77,11 @@
             errors)
        (str/join "\n")))
 
+(defn missing-reference-error?
+  [errors]
+  (and (set? errors)
+       (get errors :style-dictionary/missing-reference)))
+
 (defn tokens-name-map [tokens]
   (->> tokens
        (map (fn [[_ x]] [(:name x) x]))
@@ -77,7 +90,6 @@
 (defn resolve-tokens+
   [tokens & {:keys [debug?] :as config}]
   (p/let [sd-tokens (-> (tokens-name-map tokens)
-                        (clj->js)
                         (resolve-sd-tokens+ config))]
     (let [resolved-tokens (reduce
                            (fn [acc ^js cur]
@@ -129,24 +141,14 @@
                                       (reset! tokens-state resolved-tokens))))))))
     @tokens-state))
 
-(defn use-resolved-workspace-tokens
-  ([] (use-resolved-tokens nil))
-  ([options]
-   (-> (mf/deref refs/workspace-tokens)
-       (use-resolved-tokens options))))
+(defn use-resolved-workspace-tokens [& {:as config}]
+  (-> (mf/deref refs/workspace-tokens)
+      (use-resolved-tokens config)))
 
 ;; Testing ---------------------------------------------------------------------
 
-(defn tokens-studio-example []
-  (-> (shadow.resource/inline "./data/example-tokens-set.json")
-      (js/JSON.parse)
-      .-core))
-
 (comment
-
   (defonce !output (atom nil))
-
-  @!output
 
   (-> (resolve-workspace-tokens+ {:debug? true})
       (p/then #(reset! !output %)))
@@ -159,7 +161,9 @@
              "b" {:name "b" :value "{a} * 2"}})
    (#(resolve-sd-tokens+ % {:debug? true})))
 
-  (-> (tokens-studio-example)
-      (resolve-sd-tokens+ {:debug? true}))
+  (let [example (-> (shadow.resource/inline "./data/example-tokens-set.json")
+                    (js/JSON.parse)
+                    .-core)]
+    (resolve-sd-tokens+ example {:debug? true}))
 
   nil)
