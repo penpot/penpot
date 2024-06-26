@@ -111,7 +111,7 @@
            (let [value (or (-> (dom/get-target event)
                                (dom/get-value))
                            (as-> (dom/get-current-target event) $
-                             (dom/get-attribute $ "data-test")))]
+                             (dom/get-attribute $ "data-testid")))]
              (swap! filters* assoc :section value :open-menu false))))
 
         show-libraries-dialog
@@ -130,28 +130,28 @@
                                  [{:option-name    (tr "workspace.assets.box-filter-all")
                                    :id             "section-all"
                                    :option-handler on-section-filter-change
-                                   :data-test      "all"}
+                                   :data-testid      "all"}
 
                                   {:option-name    (tr "workspace.assets.components")
                                    :id             "section-components"
                                    :option-handler on-section-filter-change
-                                   :data-test      "components"}
+                                   :data-testid      "components"}
 
                                   (when (not components-v2)
                                     {:option-name    (tr "workspace.assets.graphics")
                                      :id             "section-graphics"
                                      :option-handler on-section-filter-change
-                                     :data-test      "graphics"})
+                                     :data-testid      "graphics"})
 
                                   {:option-name    (tr "workspace.assets.colors")
                                    :id             "section-color"
                                    :option-handler on-section-filter-change
-                                   :data-test      "colors"}
+                                   :data-testid      "colors"}
 
                                   {:option-name    (tr "workspace.assets.typography")
                                    :id             "section-typography"
                                    :option-handler on-section-filter-change
-                                   :data-test      "typographies"}]))]
+                                   :data-testid      "typographies"}]))]
 
     [:article  {:class (stl/css :assets-bar)}
      [:div {:class (stl/css :assets-header)}

@@ -300,10 +300,10 @@ body {
 (defn generate-style
   ([objects root-shapes all-shapes]
    (generate-style objects root-shapes all-shapes nil))
-  ([objects root-shapes all-shapes options]
+  ([objects root-shapes all-shapes {:keys [with-prelude?] :or {with-prelude? true} :as options}]
    (let [options (assoc options :root-shapes (into #{} (map :id) root-shapes))]
      (dm/str
-      prelude
+      (if with-prelude? prelude "")
       (->> all-shapes
            (keep #(get-shape-css-selector % objects options))
            (str/join "\n\n"))))))

@@ -39,12 +39,11 @@
                                {:deleted-at deleted-at}
                                {:id team-id})
 
-                   (wrk/submit! {::wrk/task :delete-object
-                                 ::wrk/conn conn
-                                 :object :team
-                                 :deleted-at deleted-at
-                                 :id team-id})
-
+                   (wrk/submit! (-> cfg
+                                    (assoc ::wrk/task :delete-object)
+                                    (assoc ::wrk/params {:object :team
+                                                         :deleted-at deleted-at
+                                                         :id team-id})))
                    (inc total))
                  0))))
 
@@ -53,15 +52,15 @@
 
 (defmethod ig/init-key ::handler
   [_ cfg]
-  (fn [params]
+  (fn [{:keys [props] :as task}]
     (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                      (l/inf :hint "gc started" :rollback? (boolean (:rollback? params)))
+                      (l/inf :hint "gc started" :rollback? (boolean (:rollback? props)))
                       (let [total (delete-orphan-teams cfg)]
                         (l/inf :hint "task finished"
                                :teams total
-                               :rollback? (boolean (:rollback? params)))
+                               :rollback? (boolean (:rollback? props)))
 
-                        (when (:rollback? params)
+                        (when (:rollback? props)
                           (db/rollback! conn))
 
                         {:processed total})))))

@@ -240,12 +240,12 @@
                       [{:option-name    (tr "dashboard.duplicate-multi" file-count)
                         :id             "file-duplicate-multi"
                         :option-handler on-duplicate
-                        :data-test      "duplicate-multi"}
+                        :data-testid      "duplicate-multi"}
                        (when (or (seq current-projects) (seq other-teams))
                          {:option-name    (tr "dashboard.move-to-multi" file-count)
                           :id             "file-move-multi"
                           :sub-options    sub-options
-                          :data-test      "move-to-multi"})
+                          :data-testid      "move-to-multi"})
                        {:option-name    (tr "dashboard.export-binary-multi" file-count)
                         :id             "file-binari-export-multi"
                         :option-handler on-export-binary-files}
@@ -256,13 +256,13 @@
                          {:option-name    (tr "labels.unpublish-multi-files" file-count)
                           :id             "file-unpublish-multi"
                           :option-handler on-del-shared
-                          :data-test      "file-del-shared"})
+                          :data-testid      "file-del-shared"})
                        (when (not is-lib-page?)
                          {:option-name    :separator}
                          {:option-name    (tr "labels.delete-multi-files" file-count)
                           :id             "file-delete-multi"
                           :option-handler on-delete
-                          :data-test      "delete-multi-files"})]
+                          :data-testid      "delete-multi-files"})]
 
                       [{:option-name    (tr "dashboard.open-in-new-tab")
                         :id             "file-open-new-tab"
@@ -271,42 +271,42 @@
                          {:option-name    (tr "labels.rename")
                           :id             "file-rename"
                           :option-handler on-edit
-                          :data-test      "file-rename"})
+                          :data-testid      "file-rename"})
                        (when (not is-search-page?)
                          {:option-name    (tr "dashboard.duplicate")
                           :id             "file-duplicate"
                           :option-handler on-duplicate
-                          :data-test      "file-duplicate"})
+                          :data-testid      "file-duplicate"})
                        (when (and (not is-lib-page?) (not is-search-page?) (or (seq current-projects) (seq other-teams)))
                          {:option-name    (tr "dashboard.move-to")
                           :id             "file-move-to"
                           :sub-options    sub-options
-                          :data-test      "file-move-to"})
+                          :data-testid      "file-move-to"})
                        (when (not is-search-page?)
                          (if (:is-shared file)
                            {:option-name    (tr "dashboard.unpublish-shared")
                             :id             "file-del-shared"
                             :option-handler on-del-shared
-                            :data-test      "file-del-shared"}
+                            :data-testid      "file-del-shared"}
                            {:option-name    (tr "dashboard.add-shared")
                             :id             "file-add-shared"
                             :option-handler on-add-shared
-                            :data-test      "file-add-shared"}))
+                            :data-testid      "file-add-shared"}))
                        {:option-name   :separator}
                        {:option-name    (tr "dashboard.download-binary-file")
                         :id             "file-download-binary"
                         :option-handler on-export-binary-files
-                        :data-test      "download-binary-file"}
+                        :data-testid      "download-binary-file"}
                        {:option-name    (tr "dashboard.download-standard-file")
                         :id             "file-download-standard"
                         :option-handler on-export-standard-files
-                        :data-test      "download-standard-file"}
+                        :data-testid      "download-standard-file"}
                        (when (and (not is-lib-page?) (not is-search-page?))
                          {:option-name   :separator}
                          {:option-name    (tr "labels.delete")
                           :id             "file-delete"
                           :option-handler on-delete
-                          :data-test      "file-delete"})])]
+                          :data-testid      "file-delete"})])]
 
         [:& context-menu-a11y {:on-close on-menu-close
                                :show show?

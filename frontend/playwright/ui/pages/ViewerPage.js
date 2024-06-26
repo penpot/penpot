@@ -27,6 +27,26 @@ export class ViewerPage extends BaseWebSocketPage {
     );
   }
 
+  async setupFileWithSingleBoard() {
+    await this.mockRPC(/get\-view\-only\-bundle\?/, "viewer/get-view-only-bundle-single-board.json");
+    await this.mockRPC("get-comment-threads?file-id=*", "workspace/get-comment-threads-empty.json");
+    await this.mockRPC(
+      "get-file-fragment?file-id=*&fragment-id=*",
+      "viewer/get-file-fragment-single-board.json",
+    );
+  };
+
+  async setupFileWithComments() {
+    await this.mockRPC(/get\-view\-only\-bundle\?/, "viewer/get-view-only-bundle-single-board.json");
+    await this.mockRPC("get-comment-threads?file-id=*", "workspace/get-comment-threads-not-empty.json");
+    await this.mockRPC(
+      "get-file-fragment?file-id=*&fragment-id=*",
+      "viewer/get-file-fragment-single-board.json",
+    );
+    await this.mockRPC("get-comments?thread-id=*", "workspace/get-thread-comments.json");
+    await this.mockRPC("update-comment-thread-status", "workspace/update-comment-thread-status.json");
+  };
+
   #ws = null;
 
   constructor(page) {
@@ -55,6 +75,12 @@ export class ViewerPage extends BaseWebSocketPage {
     .getByTestId("floating-thread-bubble")
     .filter({ hasText: number.toString() })
     .click(clickOptions);
+  }
+
+  async showCode(clickOptions = {}) {
+    await this.page
+      .getByRole("button", { name: 'Inspect (G I)' })
+      .click(clickOptions);
   }
 }
 

@@ -131,7 +131,7 @@
           (rx/merge-map svg->clj)
           (rx/tap on-svg)))))
 
-(defn- process-blobs
+(defn process-blobs
   [{:keys [file-id local? name blobs force-media on-image on-svg]}]
   (letfn [(svg-blob? [blob]
             (and (not force-media)

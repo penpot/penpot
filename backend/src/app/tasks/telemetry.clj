@@ -206,13 +206,15 @@
 
 (defmethod ig/init-key ::handler
   [_ {:keys [::db/pool ::setup/props] :as cfg}]
-  (fn [{:keys [send? enabled?] :or {send? true enabled? false}}]
-    (let [subs     {:newsletter-updates (get-subscriptions-newsletter-updates pool)
-                    :newsletter-news (get-subscriptions-newsletter-news pool)}
-
-          enabled? (or enabled?
+  (fn [task]
+    (let [params   (:props task)
+          send?    (get params :send? true)
+          enabled? (or (get params :enabled? false)
                        (contains? cf/flags :telemetry)
                        (cf/get :telemetry-enabled))
+
+          subs     {:newsletter-updates (get-subscriptions-newsletter-updates pool)
+                    :newsletter-news (get-subscriptions-newsletter-news pool)}
 
           data     {:subscriptions subs
                     :version (:full cf/version)

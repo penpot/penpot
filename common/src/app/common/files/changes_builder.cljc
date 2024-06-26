@@ -801,15 +801,6 @@
       (update :undo-changes conj {:type :del-component
                                   :id id
                                   :main-instance main-instance})))
-(defn ignore-remote
-  [changes]
-  (letfn [(add-ignore-remote
-            [change-list]
-            (->> change-list
-                 (mapv #(assoc % :ignore-remote? true))))]
-    (-> changes
-        (update :redo-changes add-ignore-remote)
-        (update :undo-changes add-ignore-remote))))
 
 (defn reorder-grid-children
   [changes ids]

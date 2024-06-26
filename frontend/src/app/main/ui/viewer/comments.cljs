@@ -65,6 +65,7 @@
              (st/emit! (dcm/update-options {:show-sidebar? (not mode)})))))]
 
     [:div {:class (stl/css :view-options)
+           :data-testid "viewer-comments-dropdown"
            :on-click toggle-dropdown}
      [:span {:class (stl/css :dropdown-title)} (tr "labels.comments")]
      [:span {:class (stl/css :icon-dropdown)} i/arrow]

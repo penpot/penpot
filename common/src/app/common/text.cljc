@@ -361,7 +361,7 @@
 
             new-acc
             (cond
-              (:children node)
+              (not (is-text-node? node))
               (reduce #(rec-style-text-map %1 %2 node-style) acc (:children node))
 
               (not= head-style node-style)
@@ -380,6 +380,28 @@
 
     (-> (rec-style-text-map [] node {})
         reverse)))
+
+(defn content-range->text+styles
+  "Given a root node of a text content extracts the texts with its associated styles"
+  [node start end]
+  (let [sss (content->text+styles node)]
+    (loop [styles  (seq sss)
+           taking? false
+           acc      0
+           result   []]
+      (if styles
+        (let [[node-style text] (first styles)
+              from      acc
+              to        (+ acc (count text))
+              taking?   (or taking? (and (<= from start) (< start to)))
+              text      (subs text (max 0 (- start acc)) (- end acc))
+              result    (cond-> result
+                          (and taking? (d/not-empty? text))
+                          (conj (assoc node-style :text text)))
+              continue? (or (> from end) (>= end to))]
+          (recur (when continue? (rest styles)) taking? to result))
+        result))))
+
 
 (defn content->text
   "Given a root node of a text content extracts the texts with its associated styles"

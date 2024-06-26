@@ -46,8 +46,8 @@
 
 (defn update-shapes
   ([ids update-fn] (update-shapes ids update-fn nil))
-  ([ids update-fn {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id ignore-remote? ignore-touched undo-group with-objects?]
-                   :or {reg-objects? false save-undo? true stack-undo? false ignore-remote? false ignore-touched false with-objects? false}}]
+  ([ids update-fn {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id ignore-touched undo-group with-objects?]
+                   :or {reg-objects? false save-undo? true stack-undo? false ignore-touched false with-objects? false}}]
 
    (dm/assert!
     "expected a valid coll of uuid's"
@@ -84,8 +84,7 @@
              changes (add-undo-group changes state)]
          (rx/concat
           (if (seq (:redo-changes changes))
-            (let [changes  (cond-> changes reg-objects? (pcb/resize-parents ids))
-                  changes (cond-> changes ignore-remote? (pcb/ignore-remote))]
+            (let [changes (cond-> changes reg-objects? (pcb/resize-parents ids))]
               (rx/of (dch/commit-changes changes)))
             (rx/empty))
 

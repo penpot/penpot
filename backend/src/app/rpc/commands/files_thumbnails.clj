@@ -321,18 +321,14 @@
 (sv/defmethod ::delete-file-object-thumbnail
   {::doc/added "1.19"
    ::doc/module :files
-   ::doc/deprecated "1.20"
-   ::climit/id [[:file-thumbnail-ops/by-profile ::rpc/profile-id]
-                [:file-thumbnail-ops/global]]
    ::audit/skip true}
   [cfg {:keys [::rpc/profile-id file-id object-id]}]
+  (files/check-edition-permissions! cfg profile-id file-id)
   (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                    (files/check-edition-permissions! conn profile-id file-id)
-                    (when-not (db/read-only? conn)
-                      (-> cfg
-                          (update ::sto/storage media/configure-assets-storage conn)
-                          (delete-file-object-thumbnail! file-id object-id))
-                      nil))))
+                    (-> cfg
+                        (update ::sto/storage media/configure-assets-storage conn)
+                        (delete-file-object-thumbnail! file-id object-id))
+                    nil)))
 
 ;; --- MUTATION COMMAND: create-file-thumbnail
 

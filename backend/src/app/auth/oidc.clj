@@ -32,6 +32,7 @@
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]
+   [ring.request :as rreq]
    [ring.response :as-alias rres]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -470,6 +471,9 @@
       (some? (:invitation-token state))
       (assoc :invitation-token (:invitation-token state))
 
+      (some? (:external-session-id state))
+      (assoc :external-session-id (:external-session-id state))
+
       ;; If state token comes with props, merge them. The state token
       ;; props can contain pm_ and utm_ prefixed query params.
       (map? (:props state))
@@ -554,19 +558,22 @@
         (redirect-to-register cfg info request))
 
       :else
-      (let [sxf   (session/create-fn cfg (:id profile))
-            token (or (:invitation-token info)
-                      (tokens/generate (::setup/props cfg)
-                                       {:iss :auth
-                                        :exp (dt/in-future "15m")
-                                        :props (:props info)
-                                        :profile-id (:id profile)}))]
+      (let [sxf     (session/create-fn cfg (:id profile))
+            token   (or (:invitation-token info)
+                        (tokens/generate (::setup/props cfg)
+                                         {:iss :auth
+                                          :exp (dt/in-future "15m")
+                                          :props (:props info)
+                                          :profile-id (:id profile)}))
+            props   (audit/profile->props profile)
+            context (d/without-nils {:external-session-id (:external-session-id info)})]
 
         (audit/submit! cfg {::audit/type "command"
                             ::audit/name "login-with-oidc"
                             ::audit/profile-id (:id profile)
                             ::audit/ip-addr (audit/parse-client-ip request)
-                            ::audit/props (audit/profile->props profile)})
+                            ::audit/props props
+                            ::audit/context context})
 
         (->> (redirect-to-verify-token token)
              (sxf request))))
@@ -588,9 +595,11 @@
 (defn- auth-handler
   [cfg {:keys [params] :as request}]
   (let [props (audit/extract-utm-params params)
+        esid  (rreq/get-header request "x-external-session-id")
         state (tokens/generate (::setup/props cfg)
                                {:iss :oauth
                                 :invitation-token (:invitation-token params)
+                                :external-session-id esid
                                 :props props
                                 :exp (dt/in-future "4h")})
         uri   (build-auth-uri cfg state)]

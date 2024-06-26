@@ -23,6 +23,7 @@
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.logging :as l]
    [app.common.math :as mth]
+   [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape-tree :as ctst]
@@ -484,15 +485,18 @@
         path       (:path component)
         root-id    (or (:main-instance-id component)
                        (:id component))
+        orig-root  (get (:objects component) root-id)
         objects    (adapt-objects-for-shape (:objects component)
                                             root-id)
         root-shape (get objects root-id)
         selrect    (:selrect root-shape)
 
-        main-instance-id   (:main-instance-id component)
-        main-instance-page (:main-instance-page component)
-        main-instance-x    (:main-instance-x component)
-        main-instance-y    (:main-instance-y component)
+        main-instance-id     (:main-instance-id component)
+        main-instance-page   (:main-instance-page component)
+        main-instance-x      (when (:deleted component) (:x orig-root))
+        main-instance-y      (when (:deleted component) (:y orig-root))
+        main-instance-parent (when (:deleted component) (:parent-id orig-root))
+        main-instance-frame  (when (:deleted component) (:frame-id orig-root))
 
         vbox
         (format-viewbox
@@ -516,7 +520,9 @@
                         "penpot:main-instance-id" main-instance-id
                         "penpot:main-instance-page" main-instance-page
                         "penpot:main-instance-x" main-instance-x
-                        "penpot:main-instance-y" main-instance-y}
+                        "penpot:main-instance-y" main-instance-y
+                        "penpot:main-instance-parent" main-instance-parent
+                        "penpot:main-instance-frame" main-instance-frame}
        [:title name]
        [:> shape-container {:shape root-shape}
         (case (:type root-shape)
@@ -525,8 +531,10 @@
 
 (mf/defc components-svg
   {::mf/wrap-props false}
-  [{:keys [data children embed include-metadata source]}]
-  (let [source (keyword (d/nilv source "components"))]
+  [{:keys [data children embed include-metadata deleted?]}]
+  (let [components (if (not deleted?)
+                     (ctkl/components-seq data)
+                     (ctkl/deleted-components-seq data))]
     [:& (mf/provider embed/context) {:value embed}
      [:& (mf/provider export/include-metadata-ctx) {:value include-metadata}
       [:svg {:version "1.1"
@@ -536,9 +544,9 @@
              :style {:display (when-not (some? children) "none")}
              :fill "none"}
        [:defs
-        (for [[id component] (source data)]
+        (for [component components]
           (let [component (ctf/load-component-objects data component)]
-            [:& component-symbol {:key (dm/str id) :component component}]))]
+            [:& component-symbol {:key (dm/str (:id component)) :component component}]))]
 
        children]]]))
 
@@ -595,10 +603,12 @@
              (rds/renderToStaticMarkup elem)))))))
 
 (defn render-components
-  [data source]
+  [data deleted?]
   (let [;; Join all components objects into a single map
-        objects (->> (source data)
-                     (vals)
+        components  (if (not deleted?)
+                      (ctkl/components-seq data)
+                      (ctkl/deleted-components-seq data))
+        objects (->> components
                      (map (partial ctf/load-component-objects data))
                      (map :objects)
                      (reduce conj))]
@@ -615,7 +625,7 @@
                                     #js {:data data
                                          :embed true
                                          :include-metadata true
-                                         :source (name source)})]
+                                         :deleted? deleted?})]
                (rds/renderToStaticMarkup elem))))))))
 
 (defn render-frame

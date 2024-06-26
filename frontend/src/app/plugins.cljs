@@ -10,20 +10,26 @@
    [app.main.features :as features]
    [app.main.store :as st]
    [app.plugins.api :as api]
+   [app.plugins.public-utils]
    [app.util.globals :refer [global]]
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
-(defn init!
+(defn init-plugins-runtime!
   []
-  (->> st/stream
-       (rx/filter (ptk/type? ::features/initialize))
-       (rx/take 1)
-       ;; We need to wait to the init event to finish
-       (rx/observe-on :async)
-       (rx/subs!
-        (fn []
-          (when (features/active-feature? @st/state "plugins/runtime")
-            (when-let [init-runtime (obj/get global "initPluginsRuntime")]
-              (init-runtime (fn [plugin-id] (api/create-context plugin-id)))))))))
+  (when-let [init-runtime (obj/get global "initPluginsRuntime")]
+    (init-runtime (fn [plugin-id] (api/create-context plugin-id)))))
+
+(defn initialize
+  []
+  (ptk/reify ::initialize
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (->> stream
+           (rx/filter (ptk/type? ::features/initialize))
+           (rx/observe-on :async)
+           (rx/filter #(features/active-feature? @st/state "plugins/runtime"))
+           (rx/take 1)
+           (rx/tap init-plugins-runtime!)
+           (rx/ignore)))))

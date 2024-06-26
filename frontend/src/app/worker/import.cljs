@@ -253,6 +253,7 @@
         frame (when (and (some? frame-id) (not= frame-id uuid/zero))
                 (fb/lookup-shape file frame-id))]
 
+    (js/console.log "    translate-frame" (clj->js frame))
     (if (some? frame)
       (-> data
           (d/update-when :x + (:x frame))
@@ -283,7 +284,13 @@
                              (cond-> (some? old-id)
                                (assoc :id (resolve old-id)))
                              (cond-> (< (:version context 1) 2)
-                               (translate-frame type file)))]
+                               (translate-frame type file))
+                             ;; Shapes inside the deleted component should be stored with absolute coordinates 
+                             ;; so we calculate that with the x and y stored in the context
+                             (cond-> (:x context)
+                               (assoc :x (:x context)))
+                             (cond-> (:y context)
+                               (assoc :y (:y context))))]
         (try
           (let [file (case type
                        :frame    (fb/add-artboard   file data)
@@ -455,17 +462,19 @@
          (rx/map fb/finish-component))))
 
 (defn import-deleted-component [context file node]
-  (let [resolve            (:resolve context)
-        content            (parser/find-node node :g)
-        file-id            (:id file)
-        old-id             (parser/get-id node)
-        id                 (resolve old-id)
-        path               (get-in node [:attrs :penpot:path] "")
-        main-instance-id   (resolve (uuid (get-in node [:attrs :penpot:main-instance-id] "")))
-        main-instance-page (resolve (uuid (get-in node [:attrs :penpot:main-instance-page] "")))
-        main-instance-x    (get-in node [:attrs :penpot:main-instance-x] "")
-        main-instance-y    (get-in node [:attrs :penpot:main-instance-y] "")
-        type               (parser/get-type content)
+  (let [resolve              (:resolve context)
+        content              (parser/find-node node :g)
+        file-id              (:id file)
+        old-id               (parser/get-id node)
+        id                   (resolve old-id)
+        path                 (get-in node [:attrs :penpot:path] "")
+        main-instance-id     (resolve (uuid (get-in node [:attrs :penpot:main-instance-id] "")))
+        main-instance-page   (resolve (uuid (get-in node [:attrs :penpot:main-instance-page] "")))
+        main-instance-x      (-> (get-in node [:attrs :penpot:main-instance-x] "") (d/parse-double))
+        main-instance-y      (-> (get-in node [:attrs :penpot:main-instance-y] "") (d/parse-double))
+        main-instance-parent (resolve (uuid (get-in node [:attrs :penpot:main-instance-parent] "")))
+        main-instance-frame  (resolve (uuid (get-in node [:attrs :penpot:main-instance-frame] "")))
+        type                 (parser/get-type content)
 
         data (-> (parser/parse-data type content)
                  (assoc :path path)
@@ -473,12 +482,20 @@
                  (assoc :main-instance-id main-instance-id)
                  (assoc :main-instance-page main-instance-page)
                  (assoc :main-instance-x main-instance-x)
-                 (assoc :main-instance-y main-instance-y))
+                 (assoc :main-instance-y main-instance-y)
+                 (assoc :main-instance-parent main-instance-parent)
+                 (assoc :main-instance-frame main-instance-frame))
 
-        file         (-> file (fb/start-component data))
+        file         (-> file
+                         (fb/start-component data)
+                         (fb/start-deleted-component data))
         component-id (:current-component-id file)
-        children     (parser/node-seq node)]
+        children     (parser/node-seq node)
 
+        ;; Shapes inside the deleted component should be stored with absolute coordinates so we include this info in the context.
+        context (-> context
+                    (assoc :x main-instance-x)
+                    (assoc :y main-instance-y))]
     (->> (rx/from children)
          (rx/filter parser/shape?)
          (rx/skip 1)
@@ -486,11 +503,7 @@
          (rx/mapcat (partial resolve-media context file-id))
          (rx/reduce (partial process-import-node context) file)
          (rx/map fb/finish-component)
-         (rx/map (partial fb/finish-deleted-component
-                          component-id
-                          main-instance-page
-                          main-instance-x
-                          main-instance-y)))))
+         (rx/map (partial fb/finish-deleted-component component-id)))))
 
 (defn process-pages
   [context file]

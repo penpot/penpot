@@ -27,8 +27,8 @@
 
 (defmethod ig/init-key ::handler
   [_ {:keys [::db/pool ::min-age] :as cfg}]
-  (fn [params]
-    (let [min-age (or (:min-age params) min-age)]
+  (fn [{:keys [props] :as task}]
+    (let [min-age (or (:min-age props) min-age)]
       (db/with-atomic [conn pool]
         (let [interval (db/interval min-age)
               result   (db/exec-one! conn [sql:delete-completed-tasks interval])
@@ -36,7 +36,7 @@
 
           (l/debug :hint "task finished" :total result)
 
-          (when (:rollback? params)
+          (when (:rollback? props)
             (db/rollback! conn))
 
           result)))))

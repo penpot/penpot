@@ -299,13 +299,13 @@
 
 (defmethod ig/init-key ::handler
   [_ cfg]
-  (fn [{:keys [file-id] :as params}]
+  (fn [{:keys [props] :as task}]
     (db/tx-run! cfg
                 (fn [{:keys [::db/conn] :as cfg}]
-                  (let [min-age (dt/duration (or (:min-age params) (::min-age cfg)))
+                  (let [min-age (dt/duration (or (:min-age props) (::min-age cfg)))
                         cfg     (-> cfg
                                     (update ::sto/storage media/configure-assets-storage conn)
-                                    (assoc ::file-id file-id)
+                                    (assoc ::file-id (:file-id props))
                                     (assoc ::min-age min-age))
 
                         total   (reduce (fn [total file]
@@ -319,7 +319,7 @@
                            :processed total)
 
                     ;; Allow optional rollback passed by params
-                    (when (:rollback? params)
+                    (when (:rollback? props)
                       (db/rollback! conn))
 
                     {:processed total})))))

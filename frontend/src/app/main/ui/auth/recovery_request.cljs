@@ -86,7 +86,7 @@
 
      [:> fm/submit-button*
       {:label (tr "auth.recovery-request-submit")
-       :data-test "recovery-resquest-submit"
+       :data-testid "recovery-resquest-submit"
        :class (stl/css :recover-btn)}]]))
 
 
@@ -106,5 +106,5 @@
      [:div {:class (stl/css :go-back)}
       [:& lk/link {:action go-back
                    :class (stl/css :go-back-link)
-                   :data-test "go-back-link"}
+                   :data-testid "go-back-link"}
        (tr "labels.go-back")]]]))

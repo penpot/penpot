@@ -54,7 +54,7 @@
      [:button {:tab-index "0"
                :on-click on-show-comments
                :on-key-down handle-keydown
-               :data-test "open-comments"
+               :data-testid "open-comments"
                :class (stl/css-case :comment-button true
                                     :open show?
                                     :unread (boolean (seq tgroups)))}

@@ -86,6 +86,13 @@
          (remove #(contains? reserved-props (key %))))
         props))
 
+(defn params->context
+  "Extract default context properties from RPC params object"
+  [params]
+  (d/without-nils
+   {:external-session-id (::rpc/external-session-id params)
+    :triggered-by (::rpc/handler-name params)}))
+
 ;; --- SPECS
 
 
@@ -140,7 +147,7 @@
                        (::rpc/profile-id params)
                        uuid/zero)
 
-        session-id (rreq/get-header request "x-external-session-id")
+        session-id (get params ::rpc/external-session-id)
         props      (-> (or (::replace-props resultm)
                            (-> params
                                (merge (::props resultm))
@@ -234,18 +241,16 @@
                             :else               label)
             dedupe?       (boolean (and batch-key batch-timeout))]
 
-        (wrk/submit! ::wrk/conn (::db/conn cfg)
-                     ::wrk/task :process-webhook-event
-                     ::wrk/queue :webhooks
-                     ::wrk/max-retries 0
-                     ::wrk/delay (or batch-timeout 0)
-                     ::wrk/dedupe dedupe?
-                     ::wrk/label label
-
-                     ::webhooks/event
-                     (-> params
-                         (dissoc :ip-addr)
-                         (dissoc :type)))))
+        (wrk/submit! (-> cfg
+                         (assoc ::wrk/task :process-webhook-event)
+                         (assoc ::wrk/queue :webhooks)
+                         (assoc ::wrk/max-retries 0)
+                         (assoc ::wrk/delay (or batch-timeout 0))
+                         (assoc ::wrk/dedupe dedupe?)
+                         (assoc ::wrk/label label)
+                         (assoc ::wrk/params (-> params
+                                                 (dissoc :ip-addr)
+                                                 (dissoc :type)))))))
     params))
 
 (defn submit!

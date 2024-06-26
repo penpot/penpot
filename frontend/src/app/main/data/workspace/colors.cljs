@@ -590,7 +590,7 @@
     (update [_ state]
       (update state :colorpicker
               (fn [state]
-                (let [type  (:type state)
+                (let [type (:type state)
                       state (-> state
                                 (update :current-color merge changes)
                                 (update :current-color materialize-color-components)
@@ -605,11 +605,12 @@
 
                     (-> state
                         (dissoc :gradient :stops :editing-stop)
-                        (cond-> (not= :image (:type state))
+                        (cond-> (not= :image type)
                           (assoc :type :color))))))))
     ptk/WatchEvent
     (watch [_ state _]
-      (when add-recent?
+      ;; Type can be null, because the colorpicker can be closed while a color image finish its upload
+      (when (and add-recent? (some? (:type state)))
         (let [formated-color  (get-color-from-colorpicker-state (:colorpicker state))]
           (rx/of (dwl/add-recent-color formated-color)))))))
 

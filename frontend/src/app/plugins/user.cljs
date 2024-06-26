@@ -38,10 +38,16 @@
      {:name "sessionId"
       :get (fn [_] (str session-id))})))
 
+(defn current-user-proxy? [p]
+  (instance? CurrentUserProxy p))
+
 (defn current-user-proxy
   [plugin-id session-id]
   (-> (CurrentUserProxy. plugin-id session-id)
       (add-user-properties)))
+
+(defn active-user-proxy? [p]
+  (instance? ActiveUserProxy p))
 
 (defn active-user-proxy
   [plugin-id session-id]

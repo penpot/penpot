@@ -302,8 +302,8 @@
 
 (defmethod ig/init-key ::handler
   [_ cfg]
-  (fn [params]
-    (let [min-age (dt/duration (or (:min-age params) (::min-age cfg)))
+  (fn [{:keys [props] :as task}]
+    (let [min-age (dt/duration (or (:min-age props) (::min-age cfg)))
           cfg     (-> cfg
                       (assoc ::min-age (db/interval min-age))
                       (update ::sto/storage media/configure-assets-storage))]

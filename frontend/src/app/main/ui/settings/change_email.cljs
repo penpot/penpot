@@ -103,7 +103,7 @@
 
        [:div {:class (stl/css :modal-header)}
         [:h2 {:class (stl/css :modal-title)
-              :data-test "change-email-title"}
+              :data-testid "change-email-title"}
          (tr "modals.change-email.title")]
         [:button {:class (stl/css :modal-close-btn)
                   :on-click on-close} i/close]]
@@ -131,7 +131,7 @@
 
        [:div {:class (stl/css :modal-footer)}
         [:div {:class (stl/css :action-buttons)
-               :data-test "change-email-submit"}
+               :data-testid "change-email-submit"}
          [:> fm/submit-button*
           {:label (tr "modals.change-email.submit")}]]]]]]))
 

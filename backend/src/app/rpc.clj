@@ -79,8 +79,12 @@
         profile-id   (or (::session/profile-id request)
                          (::actoken/profile-id request))
 
+        session-id   (rreq/get-header request "x-external-session-id")
+
         data         (-> params
+                         (assoc ::handler-name handler-name)
                          (assoc ::request-at (dt/now))
+                         (assoc ::external-session-id session-id)
                          (assoc ::session/id (::session/id request))
                          (assoc ::cond/key etag)
                          (cond-> (uuid? profile-id)
@@ -188,10 +192,10 @@
 (defn- wrap-all
   [cfg f mdata]
   (as-> f $
-    (wrap-metrics cfg $ mdata)
     (cond/wrap cfg $ mdata)
     (retry/wrap-retry cfg $ mdata)
     (climit/wrap cfg $ mdata)
+    (wrap-metrics cfg $ mdata)
     (rlimit/wrap cfg $ mdata)
     (wrap-audit cfg $ mdata)
     (wrap-spec-conform cfg $ mdata)

@@ -14,6 +14,7 @@
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+   [app.config :as cf]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
@@ -287,7 +288,7 @@
            (when (< @retry 3)
              (inc retry))))]
 
-    (if (some? thumbnail-uri)
+    (if (and (some? thumbnail-uri) (contains? cf/flags :component-thumbnails))
       [:& component-svg-thumbnail
        {:thumbnail-uri thumbnail-uri
         :class class

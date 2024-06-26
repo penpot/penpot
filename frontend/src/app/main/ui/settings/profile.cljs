@@ -82,7 +82,7 @@
      [:div {:class (stl/css :links)}
       [:div {:class (stl/css :link-item)}
        [:a {:on-click handle-show-delete-account
-            :data-test "remove-acount-btn"}
+            :data-testid "remove-acount-btn"}
         (tr "dashboard.remove-account")]]]]))
 
 ;; --- Profile Photo Form
@@ -106,7 +106,7 @@
                          :multi false
                          :ref file-input
                          :on-selected on-file-selected
-                         :data-test "profile-image-input"}]]]))
+                         :data-testid "profile-image-input"}]]]))
 
 ;; --- Profile Page
 

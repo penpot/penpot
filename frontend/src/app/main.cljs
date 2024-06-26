@@ -105,8 +105,7 @@
             (rx/map deref)
             (rx/filter du/is-authenticated?)
             (rx/take 1)
-            (rx/map #(ws/initialize))
-            (rx/tap #(plugins/init!)))))))
+            (rx/map #(ws/initialize)))))))
 
 (defn ^:export init
   []
@@ -116,7 +115,8 @@
   (cur/init-styles)
   (thr/init!)
   (init-ui)
-  (st/emit! (initialize)))
+  (st/emit! (plugins/initialize)
+            (initialize)))
 
 (defn ^:export reinit
   ([]
