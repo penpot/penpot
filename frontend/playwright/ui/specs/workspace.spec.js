@@ -50,7 +50,7 @@ test("User makes a group", async ({ page }) => {
     pageId: "6191cd35-bb1f-81f7-8004-7cc63d087375",
   });
   await workspacePage.clickLeafLayer("Rectangle");
-  await workspacePage.page.keyboard.press("ControlOrMeta+g");
+  await workspacePage.page.keyboard.press("Control+g");
   await workspacePage.expectSelectedLayer("Group");
 });
 
