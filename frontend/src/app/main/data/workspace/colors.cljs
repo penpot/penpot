@@ -609,9 +609,13 @@
                           (assoc :type :color))))))))
     ptk/WatchEvent
     (watch [_ state _]
-      ;; Type can be null, because the colorpicker can be closed while a color image finish its upload
-      (when (and add-recent? (some? (:type state)))
-        (let [formated-color  (get-color-from-colorpicker-state (:colorpicker state))]
+      (let [selected-type  (-> state
+                               :colorpicker
+                               :type)
+            formated-color  (get-color-from-colorpicker-state (:colorpicker state))
+            ;; Type is set to color on closing the colorpicker, but we can can close it while still uploading an image fill
+            ignore-color?   (and (= selected-type :color) (nil? (:color formated-color)))]
+        (when (and add-recent? (not ignore-color?))
           (rx/of (dwl/add-recent-color formated-color)))))))
 
 (defn update-colorpicker-gradient
