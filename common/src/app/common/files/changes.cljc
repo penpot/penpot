@@ -11,6 +11,8 @@
    [app.common.exceptions :as ex]
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.point :as gpt]
+   [app.common.geom.matrix :as gmt]
    [app.common.schema :as sm]
    [app.common.schema.desc-native :as smd]
    [app.common.schema.openapi :as-alias oapi]
@@ -32,26 +34,52 @@
 ;; SCHEMAS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private schema:operation
-  [:multi {:dispatch :type
-           :title "Operation"
-           ::smd/simplified true
-           :decode/string #(update % :type keyword)}
-   [:set
-    [:map {:title "SetOperation"}
-     [:type [:= :set]]
-     [:attr :keyword]
-     [:val :any]
-     [:ignore-touched {:optional true} :boolean]
-     [:ignore-geometry {:optional true} :boolean]]]
-   [:set-touched
-    [:map {:title "SetTouchedOperation"}
-     [:type [:= :set-touched]]
-     [:touched [:maybe [:set :keyword]]]]]
-   [:set-remote-synced
-    [:map {:title "SetRemoteSyncedOperation"}
-     [:type [:= :set-remote-synced]]
-     [:remote-synced {:optional true} [:maybe :boolean]]]]])
+(def schema:operation-set-value
+  [:and
+   [:map-of :keyword :any]
+   [:multi {:dispatch :type
+            :title "OperationSetVal"
+            :decode/string
+            (fn [v]
+              (if (map? v)
+
+                (update v :type keyword)
+                v))
+            ::smd/simplified true}
+    [:point
+     [:map
+      [:type [:= :point]]
+      [:val ::gpt/point]]]
+
+    [:matrix
+     [:map
+      [:type [:= :matrix]]
+      [:val ::gmt/matrix]]]
+
+    [:malli.core/default :any]]])
+
+(def schema:operation
+  [:and
+   [:map-of :keyword :any]
+   [:multi {:dispatch :type
+            :title "Operation"
+            ::smd/simplified true
+            :decode/string #(update % :type keyword)}
+    [:set
+     [:map {:title "SetOperation"}
+      [:type [:= :set]]
+      [:attr :keyword]
+      [:val schema:operation-set-value]
+      [:ignore-touched {:optional true} :boolean]
+      [:ignore-geometry {:optional true} :boolean]]]
+    [:set-touched
+     [:map {:title "SetTouchedOperation"}
+      [:type [:= :set-touched]]
+      [:touched [:maybe [:set :keyword]]]]]
+    [:set-remote-synced
+     [:map {:title "SetRemoteSyncedOperation"}
+      [:type [:= :set-remote-synced]]
+      [:remote-synced {:optional true} [:maybe :boolean]]]]]])
 
 (def schema:shape
   (sm/simple-schema
@@ -74,8 +102,10 @@
          :else
          o))}}))
 
-(sm/register! ::change
-  [:schema
+
+(def schema:change
+  [:and
+   [:map-of :keyword :any]
    [:multi {:dispatch :type
             :title "Change"
             :decode/string #(update % :type keyword)
@@ -272,8 +302,11 @@
       [:type [:= :del-typography]]
       [:id ::sm/uuid]]]]])
 
-(sm/register! ::changes
-  [:sequential {:gen/max 2} ::change])
+(def schema:changes
+  [:sequential {:gen/max 2} schema:change])
+
+(sm/register! ::change schema:change)
+(sm/register! ::changes schema:changes)
 
 (def check-change!
   (sm/check-fn ::change))
