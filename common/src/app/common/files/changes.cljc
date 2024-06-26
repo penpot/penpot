@@ -777,11 +777,17 @@
   (let [attr            (:attr op)
         group           (get ctk/sync-attrs attr)
         val             (:val op)
+        val             (if (and (map? val)
+                                 (contains? val :type)
+                                 (contains? val :val))
+                          (:val val)
+                          val)
         shape-val       (get shape attr)
         ignore          (or (:ignore-touched op) (= attr :position-data)) ;; position-data is a derived attribute and
         ignore-geometry (:ignore-geometry op)                             ;; never triggers touched by itself
         is-geometry?    (and (or (= group :geometry-group)
-                                 (and (= group :content-group) (= (:type shape) :path)))
+                                 (and (= group :content-group)
+                                      (= (:type shape) :path)))
                              (not (#{:width :height} attr))) ;; :content in paths are also considered geometric
                         ;; TODO: the check of :width and :height probably may be removed
                         ;;       after the check added in data/workspace/modifiers/check-delta
