@@ -63,7 +63,7 @@
 - Fix can't collapse groups when searching in the assets tab [Taiga #8125](https://tree.taiga.io/project/penpot/issue/8125)
 - Fix 'Detach instance' shortcut is not working [Taiga #8102](https://tree.taiga.io/project/penpot/issue/8102)
 - Fix import file message does not detect 0 as error [Taiga #6824](https://tree.taiga.io/project/penpot/issue/6824)
-
+- Image Color Library is not persisted when exporting/importing in .zip [Taiga #8131](https://tree.taiga.io/project/penpot/issue/8131)
 
 ## 2.0.3
 

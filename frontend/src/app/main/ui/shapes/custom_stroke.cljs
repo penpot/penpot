@@ -16,6 +16,7 @@
    [app.config :as cf]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
+   [app.main.ui.shapes.embed :as embed]
    [app.main.ui.shapes.gradients :as grad]
    [app.util.object :as obj]
    [cuerdas.core :as str]
@@ -213,6 +214,7 @@
                            :force-transform (cfh/path-shape? shape)}
         stroke-image  (:stroke-image stroke)
         uri           (when stroke-image (cf/resolve-file-media stroke-image))
+        embed         (embed/use-data-uris [uri])
 
         stroke-width  (case (:stroke-alignment stroke :center)
                         :center (/ (:stroke-width stroke 0) 2)
@@ -229,7 +231,7 @@
 
         w             (+ (dm/get-prop selrect :width) (* 2 stroke-margin))
         h             (+ (dm/get-prop selrect :height) (* 2 stroke-margin))
-        image-props   #js {:href uri
+        image-props   #js {:href (get embed uri uri)
                            :preserveAspectRatio "xMidYMid slice"
                            :width 1
                            :height 1
