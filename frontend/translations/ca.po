@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-17 08:07+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2024-06-28 22:09+0000\n"
+"Last-Translator: Aryiu <aryiu@users.noreply.hosted.weblate.org>\n"
 "Language-Team: Catalan <https://hosted.weblate.org/projects/penpot/frontend/"
 "ca/>\n"
 "Language: ca\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.6-dev\n"
+"X-Generator: Weblate 5.7-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -48,9 +48,8 @@ msgid "auth.fullname"
 msgstr "Nom complet"
 
 #: src/app/main/ui/auth/register.cljs
-#, fuzzy
 msgid "auth.login-here"
-msgstr "Inicieu la sessió aquí"
+msgstr "Inicieu la sessió aquí."
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
@@ -501,11 +500,11 @@ msgstr "Fitxer nou"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dashboard.new-project"
-msgstr "+ Projecte nou"
+msgstr "+ Crea un projecte"
 
 #: src/app/main/data/dashboard.cljs
 msgid "dashboard.new-project-prefix"
-msgstr "Projecte nou"
+msgstr "Crea un projecte"
 
 #: src/app/main/ui/dashboard/search.cljs
 msgid "dashboard.no-matches-for"
@@ -4155,3 +4154,100 @@ msgstr "Feu clic per a tancar el camí"
 
 #~ msgid "workspace.options.blur-options.layer-blur"
 #~ msgstr "Capa"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-mail"
+msgstr "Comproveu el correu"
+
+#: src/app/main/ui/workspace.cljs
+msgid "labels.reload-file"
+msgstr "Recarrega el fitxer"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.search"
+msgstr "Cerca"
+
+msgid "labels.share"
+msgstr "Comparteix"
+
+msgid "labels.view-only"
+msgstr "Només lectura"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.name.label"
+msgstr "Nom"
+
+msgid "shortcuts.toggle-guides"
+msgstr "Mostra / Amaga les guies"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-guides"
+msgstr "Amaga les guies"
+
+msgid "workspace.options.inspect"
+msgstr "Inspecciona"
+
+msgid "workspace.shape.menu.create-multiple-components"
+msgstr "Crea components múltiples"
+
+#, markdown
+msgid "workspace.top-bar.view-only"
+msgstr "**S'està inspeccionant el codi** (només lectura)"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-30-days"
+msgstr "30 dies"
+
+msgid "workspace.header.menu.redo"
+msgstr "Refés"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.copy-invitation-link"
+msgstr "Copia l'enllaç"
+
+msgid "modals.publish-empty-library.accept"
+msgstr "Publica"
+
+msgid "workspace.assets.local-library"
+msgstr "llibreria local"
+
+msgid "workspace.header.menu.undo"
+msgstr "Desfés"
+
+msgid "workspace.top-bar.read-only.done"
+msgstr "Fet"
+
+msgid "media.image"
+msgstr "Imatge"
+
+msgid "workspace.header.menu.toggle-light-theme"
+msgstr "Canvia al mode clar"
+
+msgid "workspace.header.menu.toggle-dark-theme"
+msgstr "Canvia al mode fosc"
+
+msgid "workspace.layout_grid.editor.top-bar.done"
+msgstr "Fet"
+
+msgid "workspace.plugins.install"
+msgstr "Instal·la"
+
+msgid "workspace.plugins.button-open"
+msgstr "Obre"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-never"
+msgstr "Mai"
+
+msgid "modals.move-shared-confirm.accept"
+msgid_plural "modals.move-shared-confirm.accept"
+msgstr[0] "Mou"
+msgstr[1] "Mou"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-60-days"
+msgstr "60 dies"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-90-days"
+msgstr "90 dies"
