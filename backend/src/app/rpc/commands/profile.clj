@@ -400,18 +400,18 @@
 ;; --- HELPERS
 
 (def sql:owned-teams
-  "with owner_teams as (
-      select tpr.team_id as id
-        from team_profile_rel as tpr
-       where tpr.is_owner is true
-         and tpr.profile_id = ?
+  "WITH owner_teams AS (
+      SELECT tpr.team_id AS id
+        FROM team_profile_rel AS tpr
+       WHERE tpr.is_owner IS TRUE
+         AND tpr.profile_id = ?
    )
-   select tpr.team_id as id,
-          count(tpr.profile_id) - 1 as participants
-     from team_profile_rel as tpr
-    where tpr.team_id in (select id from owner_teams)
-      and tpr.profile_id != ?
-    group by 1")
+   SELECT tpr.team_id AS id,
+          count(tpr.profile_id) AS participants
+     FROM team_profile_rel AS tpr
+    WHERE tpr.team_id IN (SELECT id from owner_teams)
+      AND tpr.profile_id != ?
+    GROUP BY 1")
 
 (defn- get-owned-teams-with-participants
   [conn profile-id]

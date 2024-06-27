@@ -126,7 +126,7 @@
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))))))
 
-(t/deftest profile-deletion-simple
+(t/deftest profile-deletion-1
   (let [prof (th/create-profile* 1)
         file (th/create-file* 1 {:profile-id (:id prof)
                                  :project-id (:default-project-id prof)
@@ -176,6 +176,161 @@
       ;; (th/print-result! out)
       (let [result (:result out)]
         (t/is (= uuid/zero (:id result)))))))
+
+
+(t/deftest profile-deletion-2
+  (let [prof1 (th/create-profile* 1)
+        prof2 (th/create-profile* 2)
+        file1 (th/create-file* 1 {:profile-id (:id prof1)
+                                  :project-id (:default-project-id prof1)
+                                  :is-shared false})
+        team1 (th/create-team* 1 {:profile-id (:id prof1)})
+
+        role1 (th/create-team-role* {:team-id (:id team1)
+                                     :profile-id (:id prof2)
+
+                                     :role :editor})]
+    ;; Assert all roles for team
+    (let [roles (th/db-query :team-profile-rel {:team-id (:id team1)})]
+      (t/is (= 2 (count roles))))
+
+    ;; Request profile to be deleted
+    (let [params {::th/type :delete-profile
+                  ::rpc/profile-id (:id prof1)}
+          out    (th/command! params)]
+      ;; (th/print-result! out)
+
+      (let [error (:error out)
+            edata (ex-data error)]
+        (t/is (th/ex-info? error))
+        (t/is (= (:type edata) :validation))
+        (t/is (= (:code edata) :owner-teams-with-people))))))
+
+(t/deftest profile-deletion-3
+  (let [prof1 (th/create-profile* 1)
+        prof2 (th/create-profile* 2)
+        prof3 (th/create-profile* 3)
+        file1 (th/create-file* 1 {:profile-id (:id prof1)
+                                  :project-id (:default-project-id prof1)
+                                  :is-shared false})
+        team1 (th/create-team* 1 {:profile-id (:id prof1)})
+
+        role1 (th/create-team-role* {:team-id (:id team1)
+                                     :profile-id (:id prof2)
+                                     :role :editor})
+        role2 (th/create-team-role* {:team-id (:id team1)
+                                     :profile-id (:id prof3)
+                                     :role :editor})]
+
+    ;; Assert all roles for team
+    (let [roles (th/db-query :team-profile-rel {:team-id (:id team1)})]
+      (t/is (= 3 (count roles))))
+
+    ;; Request profile to be deleted (it should fail)
+    (let [params {::th/type :delete-profile
+                  ::rpc/profile-id (:id prof1)}
+          out    (th/command! params)]
+      ;; (th/print-result! out)
+
+      (let [error (:error out)
+            edata (ex-data error)]
+        (t/is (th/ex-info? error))
+        (t/is (= (:type edata) :validation))
+        (t/is (= (:code edata) :owner-teams-with-people))))
+
+    ;; Leave team by role 1
+    (let [params {::th/type :leave-team
+                  ::rpc/profile-id (:id prof2)
+                  :id (:id team1)}
+          out    (th/command! params)]
+
+      ;; (th/print-result! out)
+      (t/is (nil? (:result out)))
+      (t/is (nil? (:error out))))
+
+    ;; Request profile to be deleted (it should fail)
+    (let [params {::th/type :delete-profile
+                  ::rpc/profile-id (:id prof1)}
+          out    (th/command! params)]
+      ;; (th/print-result! out)
+      (let [error (:error out)
+            edata (ex-data error)]
+        (t/is (th/ex-info? error))
+        (t/is (= (:type edata) :validation))
+        (t/is (= (:code edata) :owner-teams-with-people))))
+
+
+    ;; Leave team by role 0 (the default) and reassing owner to role 3
+    ;; without reassinging it (should fail)
+    (let [params {::th/type :leave-team
+                  ::rpc/profile-id (:id prof1)
+                  ;; :reassign-to (:id prof3)
+                  :id (:id team1)}
+          out    (th/command! params)]
+
+      ;; (th/print-result! out)
+
+      (let [error (:error out)
+            edata (ex-data error)]
+        (t/is (th/ex-info? error))
+        (t/is (= (:type edata) :validation))
+        (t/is (= (:code edata) :owner-cant-leave-team))))
+
+    ;; Leave team by role 0 (the default) and reassing owner to role 3
+    (let [params {::th/type :leave-team
+                  ::rpc/profile-id (:id prof1)
+                  :reassign-to (:id prof3)
+                  :id (:id team1)}
+          out    (th/command! params)]
+
+      ;; (th/print-result! out)
+      (t/is (nil? (:result out)))
+      (t/is (nil? (:error out))))
+
+    ;; Request profile to be deleted (it should fail)
+    (let [params {::th/type :delete-profile
+                  ::rpc/profile-id (:id prof1)}
+          out    (th/command! params)]
+      ;; (th/print-result! out)
+
+      (t/is (= {} (:result out)))
+      (t/is (nil? (:error out))))
+
+    ;; query files after profile soft deletion
+    (let [params {::th/type :get-project-files
+                  ::rpc/profile-id (:id prof1)
+                  :project-id (:default-project-id prof1)}
+          out    (th/command! params)]
+      ;; (th/print-result! out)
+      (t/is (nil? (:error out)))
+      (t/is (= 1 (count (:result out)))))
+
+    ;; execute permanent deletion task
+    (let [result (th/run-task! :objects-gc {:min-age 0})]
+      (t/is (= 1 (:processed result))))
+
+    (let [row (th/db-get :team
+                         {:id (:default-team-id prof1)}
+                         {::db/remove-deleted false})]
+      (t/is (nil? (:deleted-at row))))
+
+    (let [result (th/run-task! :orphan-teams-gc {:min-age 0})]
+      (t/is (= 1 (:processed result))))
+
+    (let [row (th/db-get :team
+                         {:id (:default-team-id prof1)}
+                         {::db/remove-deleted false})]
+      (t/is (dt/instant? (:deleted-at row))))
+
+    ;; query profile after delete
+    (let [params {::th/type :get-profile
+                  ::rpc/profile-id (:id prof1)}
+          out    (th/command! params)]
+      ;; (th/print-result! out)
+      (let [result (:result out)]
+        (t/is (= uuid/zero (:id result)))))))
+
+
 
 (t/deftest registration-domain-whitelist
   (let [whitelist #{"gmail.com" "hey.com" "ya.ru"}]
