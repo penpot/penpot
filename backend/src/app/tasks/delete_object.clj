@@ -10,6 +10,8 @@
    [app.common.logging :as l]
    [app.db :as db]
    [app.rpc.commands.files :as files]
+   [app.rpc.commands.profile :as profile]
+   [app.util.time :as dt]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
 
@@ -21,7 +23,9 @@
 (defmethod delete-object :file
   [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
   (when-let [file (db/get* conn :file {:id id} {::db/remove-deleted false})]
-    (l/trc :hint "marking for deletion" :rel "file" :id (str id))
+    (l/trc :hint "marking for deletion" :rel "file" :id (str id)
+           :deleted-at (dt/format-instant deleted-at))
+
     (db/update! conn :file
                 {:deleted-at deleted-at}
                 {:id id}
@@ -53,7 +57,9 @@
 
 (defmethod delete-object :project
   [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
-  (l/trc :hint "marking for deletion" :rel "project" :id (str id))
+  (l/trc :hint "marking for deletion" :rel "project" :id (str id)
+         :deleted-at (dt/format-instant deleted-at))
+
   (db/update! conn :project
               {:deleted-at deleted-at}
               {:id id}
@@ -68,7 +74,8 @@
 
 (defmethod delete-object :team
   [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
-  (l/trc :hint "marking for deletion" :rel "team" :id (str id))
+  (l/trc :hint "marking for deletion" :rel "team" :id (str id)
+         :deleted-at (dt/format-instant deleted-at))
   (db/update! conn :team
               {:deleted-at deleted-at}
               {:id id}
@@ -87,6 +94,20 @@
                                 :object :project
                                 :deleted-at deleted-at)))))
 
+(defmethod delete-object :profile
+  [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
+  (l/trc :hint "marking for deletion" :rel "profile" :id (str id)
+         :deleted-at (dt/format-instant deleted-at))
+
+  (db/update! conn :profile
+              {:deleted-at deleted-at}
+              {:id id}
+              {::db/return-keys false})
+
+  (doseq [team (profile/get-owned-teams conn id)]
+    (delete-object cfg (assoc team
+                              :object :team
+                              :deleted-at deleted-at))))
 
 (defmethod delete-object :default
   [_cfg props]

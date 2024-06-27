@@ -35,11 +35,6 @@
                  ;; Mark as deleted the storage object
                  (some->> photo-id (sto/touch-object! storage))
 
-                 ;; And finally, permanently delete the profile. The
-                 ;; relevant objects will be deleted using DELETE
-                 ;; CASCADE database triggers. This may leave orphan
-                 ;; teams, but there is a special task for deleting
-                 ;; orphaned teams.
                  (db/delete! conn :profile {:id id})
 
                  (inc total))
@@ -269,15 +264,15 @@
                0)))
 
 (def ^:private deletion-proc-vars
-  [#'delete-file-media-objects!
+  [#'delete-profiles!
+   #'delete-file-media-objects!
    #'delete-file-data-fragments!
    #'delete-file-object-thumbnails!
    #'delete-file-thumbnails!
    #'delete-files!
    #'delete-projects!
    #'delete-fonts!
-   #'delete-teams!
-   #'delete-profiles!])
+   #'delete-teams!])
 
 (defn- execute-proc!
   "A generic function that executes the specified proc iterativelly

@@ -153,22 +153,21 @@
       (t/is (nil? (:error out)))
       (t/is (= 1 (count (:result out)))))
 
-    ;; execute permanent deletion task
-    (let [result (th/run-task! :objects-gc {:min-age 0})]
-      (t/is (= 1 (:processed result))))
-
-    (let [row (th/db-get :team
-                         {:id (:default-team-id prof)}
-                         {::db/remove-deleted false})]
-      (t/is (nil? (:deleted-at row))))
-
-    (let [result (th/run-task! :orphan-teams-gc {:min-age 0})]
-      (t/is (= 1 (:processed result))))
+    (th/run-pending-tasks!)
 
     (let [row (th/db-get :team
                          {:id (:default-team-id prof)}
                          {::db/remove-deleted false})]
       (t/is (dt/instant? (:deleted-at row))))
+
+    ;; execute permanent deletion task
+    (let [result (th/run-task! :objects-gc {:min-age 0})]
+      (t/is (= 4 (:processed result))))
+
+    (let [row (th/db-get :team
+                         {:id (:default-team-id prof)}
+                         {::db/remove-deleted false})]
+      (t/is (nil? row)))
 
     ;; query profile after delete
     (let [params {::th/type :get-profile
@@ -259,7 +258,6 @@
         (t/is (= (:type edata) :validation))
         (t/is (= (:code edata) :owner-teams-with-people))))
 
-
     ;; Leave team by role 0 (the default) and reassing owner to role 3
     ;; without reassinging it (should fail)
     (let [params {::th/type :leave-team
@@ -287,7 +285,7 @@
       (t/is (nil? (:result out)))
       (t/is (nil? (:error out))))
 
-    ;; Request profile to be deleted (it should fail)
+    ;; Request profile to be deleted
     (let [params {::th/type :delete-profile
                   ::rpc/profile-id (:id prof1)}
           out    (th/command! params)]
@@ -305,22 +303,16 @@
       (t/is (nil? (:error out)))
       (t/is (= 1 (count (:result out)))))
 
+    (th/run-pending-tasks!)
+
     ;; execute permanent deletion task
     (let [result (th/run-task! :objects-gc {:min-age 0})]
-      (t/is (= 1 (:processed result))))
+      (t/is (= 4 (:processed result))))
 
     (let [row (th/db-get :team
                          {:id (:default-team-id prof1)}
                          {::db/remove-deleted false})]
-      (t/is (nil? (:deleted-at row))))
-
-    (let [result (th/run-task! :orphan-teams-gc {:min-age 0})]
-      (t/is (= 1 (:processed result))))
-
-    (let [row (th/db-get :team
-                         {:id (:default-team-id prof1)}
-                         {::db/remove-deleted false})]
-      (t/is (dt/instant? (:deleted-at row))))
+      (t/is (nil? row)))
 
     ;; query profile after delete
     (let [params {::th/type :get-profile
@@ -329,6 +321,33 @@
       ;; (th/print-result! out)
       (let [result (:result out)]
         (t/is (= uuid/zero (:id result)))))))
+
+
+(t/deftest profile-deletion-4
+  (let [prof1 (th/create-profile* 1)
+        file1 (th/create-file* 1 {:profile-id (:id prof1)
+                                  :project-id (:default-project-id prof1)
+                                  :is-shared false})
+        team1 (th/create-team* 1 {:profile-id (:id prof1)})
+        team2 (th/create-team* 2 {:profile-id (:id prof1)})]
+
+    ;; Request profile to be deleted
+    (let [params {::th/type :delete-profile
+                  ::rpc/profile-id (:id prof1)}
+          out    (th/command! params)]
+      ;; (th/print-result! out)
+      (t/is (= {} (:result out)))
+      (t/is (nil? (:error out))))
+
+    (th/run-pending-tasks!)
+
+    (let [rows (th/db-exec! ["select id,name,deleted_at from team where deleted_at is not null"])]
+      (t/is (= 3 (count rows))))
+
+    ;; execute permanent deletion task
+    (let [result (th/run-task! :objects-gc {:min-age 0})]
+      (t/is (= 8 (:processed result))))))
+
 
 (t/deftest email-blacklist-1
   (t/is (false? (email.blacklist/enabled? th/*system*)))
