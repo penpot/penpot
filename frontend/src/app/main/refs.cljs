@@ -232,7 +232,7 @@
 
 (def workspace-tokens
   (l/derived (fn [data]
-               (get data :tokens []))
+               (get data :tokens {}))
              workspace-data
              =))
 
