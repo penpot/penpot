@@ -867,7 +867,6 @@
                     :invitations invitations}
           {::audit/props {:invitations (count invitations)}})))))
 
-
 ;; --- Mutation: Create Team & Invite Members
 
 (def ^:private schema:create-team-with-invitations
