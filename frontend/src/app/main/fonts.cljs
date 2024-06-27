@@ -71,6 +71,13 @@
 (defn get-font-data [id]
   (get @fontsdb id))
 
+(defn find-font-data [data]
+  (d/seek
+   (fn [font]
+     (= (select-keys font (keys data))
+        data))
+   (vals @fontsdb)))
+
 (defn resolve-variants
   [id]
   (get-in @fontsdb [id :variants]))
@@ -248,6 +255,11 @@
   [{:keys [variants] :as font} font-variant-id]
   (or (d/seek #(= (:id %) font-variant-id) variants)
       (get-default-variant font)))
+
+(defn find-variant
+  [{:keys [variants] :as font} variant-data]
+  (let [props (keys variant-data)]
+    (d/seek #(= (select-keys % props) variant-data) variants)))
 
 ;; Font embedding functions
 (defn get-node-fonts

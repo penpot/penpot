@@ -23,6 +23,12 @@
   (when (some? coll)
     (apply array (keep format-fn coll))))
 
+(defn format-mixed
+  [value]
+  (if (= value :multiple)
+    "mixed"
+    value))
+
 ;; export type PenpotPoint = { x: number; y: number };
 (defn format-point
   [{:keys [x y] :as point}]
@@ -183,7 +189,14 @@
 
 (defn format-fills
   [fills]
-  (when (some? fills)
+  (cond
+    (= fills :multiple)
+    "mixed"
+
+    (= fills "mixed")
+    "mixed"
+
+    (some? fills)
     (format-array format-fill fills)))
 
 ;; export interface PenpotStroke {
@@ -393,7 +406,7 @@
     (format-array format-command content)))
 
 ;; export type PenpotTrackType = 'flex' | 'fixed' | 'percent' | 'auto';
-;; 
+;;
 ;; export interface PenpotTrack {
 ;;   type: PenpotTrackType;
 ;;   value: number | null;

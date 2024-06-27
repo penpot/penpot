@@ -19,6 +19,9 @@
 
 (deftype PenpotFontVariant [name fontVariantId fontWeight fontStyle])
 
+(defn variant-proxy? [p]
+  (instance? PenpotFontVariant p))
+
 (deftype PenpotFont [name fontId fontFamily fontStyle fontVariantId fontWeight variants]
   Object
 
@@ -60,13 +63,13 @@
   (instance? PenpotFont p))
 
 (defn font-proxy
-  [{:keys [id name variants] :as font}]
+  [{:keys [id family name variants] :as font}]
   (when (some? font)
     (let [default-variant (fonts/get-default-variant font)]
       (PenpotFont.
        name
        id
-       id
+       family
        (:style default-variant)
        (:id default-variant)
        (:weight default-variant)
