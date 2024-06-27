@@ -489,7 +489,7 @@
 
            :else
            [:& context-notification
-            {:type :success
+            {:type (if (zero? success-num) :warning :success)
              :content (tr "dashboard.import.import-message" (i18n/c success-num))}]))
 
        (for [entry entries]
