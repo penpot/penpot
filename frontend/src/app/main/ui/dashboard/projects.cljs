@@ -46,7 +46,7 @@
   {::mf/wrap [mf/memo]}
   []
   (let [on-click (mf/use-fn #(st/emit! (dd/create-project)))]
-    [:header {:class (stl/css :dashboard-header)}
+    [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}
      [:div#dashboard-projects-title {:class (stl/css :dashboard-title)}
       [:h1 (tr "dashboard.projects-title")]]
      [:button {:class (stl/css :btn-secondary :btn-small)

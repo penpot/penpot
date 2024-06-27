@@ -47,7 +47,7 @@
    ::mf/private true}
   [{:keys [section team]}]
   (use-page-title team section)
-  [:header {:class (stl/css :dashboard-header)}
+  [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}
    [:div#dashboard-fonts-title {:class (stl/css :dashboard-title)}
     [:h1 (tr "labels.fonts")]]])
 

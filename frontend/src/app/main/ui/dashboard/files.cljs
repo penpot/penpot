@@ -66,7 +66,7 @@
                      (dd/clear-selected-files))))]
 
 
-    [:header {:class (stl/css :dashboard-header)}
+    [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}
      (if (:is-default project)
        [:div#dashboard-drafts-title {:class (stl/css :dashboard-title)}
         [:h1 (tr "labels.drafts")]]
