@@ -155,3 +155,18 @@
                          :files files
                          :binary? binary?}))))))))
 
+;;;;;;;;;;;;;;;;;;;;;;
+;; Team Request
+;;;;;;;;;;;;;;;;;;;;;;
+
+(defn create-team-access-request
+  [params]
+  (ptk/reify ::create-team-access-request
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [{:keys [on-success on-error]
+             :or {on-success identity
+                  on-error rx/throw}} (meta params)]
+        (->> (rp/cmd! :create-team-access-request params)
+             (rx/tap on-success)
+             (rx/catch on-error))))))

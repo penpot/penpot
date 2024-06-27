@@ -13,6 +13,7 @@
    [app.main.data.events :as ev]
    [app.util.browser-history :as bhistory]
    [app.util.dom :as dom]
+   [app.util.globals :as globals]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
    [goog.events :as e]
@@ -142,6 +143,11 @@
     (when (or (nil? (:host referrer))
               (= (.-hostname location) (:host referrer)))
       (nav-back))))
+
+(defn nav-root
+  "Navigate to the root page."
+  []
+  (set! (.-href globals/location) "/"))
 
 ;; --- History API
 

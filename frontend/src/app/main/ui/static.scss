@@ -28,6 +28,7 @@
 .deco-before {
   height: 34vh;
   top: 0;
+
   svg {
     bottom: 0;
   }
@@ -36,22 +37,66 @@
 .deco-after {
   height: 34vh;
   bottom: 0;
+
   svg {
     top: 0;
   }
 }
 
+.deco-after2 {
+  display: flex;
+  justify-content: center;
+  gap: $s-8;
+  width: 100%;
+  height: 34vh;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  color: var(--color-foreground-primary);
+
+  svg {
+    fill: var(--color-foreground-secondary);
+    height: 1537px;
+    width: $s-80;
+  }
+
+  span {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    height: 100%;
+    width: 25%;
+
+    &:first-child {
+      text-align: right;
+    }
+  }
+}
+
 .exception-header {
+  color: var(--color-foreground-secondary);
   padding: $s-24 $s-32;
   position: fixed;
   background: none;
   border: none;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+
   svg {
     fill: var(--color-foreground-primary);
     width: $s-48;
     height: auto;
   }
+}
+
+.login-header {
+  @extend .button-primary;
+  padding: $s-8 $s-16;
+  font-size: $fs-11;
+  position: fixed;
+  right: 0;
+  margin: $s-40 $s-32;
 }
 
 .exception-content {
@@ -85,6 +130,7 @@
 
 .sign-info {
   text-align: center;
+
   button {
     @extend .button-primary;
     text-transform: uppercase;
@@ -97,4 +143,181 @@
   svg {
     fill: var(--color-foreground-primary);
   }
+}
+
+.workspace {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: space-between;
+  background-color: var(--color-canvas);
+  position: relative;
+
+  .workspace-left,
+  .workspace-right {
+    padding: $s-12;
+    width: $s-276;
+    height: 100%;
+    background-color: var(--color-background-primary);
+    display: flex;
+    gap: $s-4;
+
+    svg {
+      width: 2rem;
+      height: 2rem;
+      fill: var(--icon-foreground-hover);
+    }
+
+    .project-name {
+      @include uppercaseTitleTipography;
+      color: var(--title-foreground-color);
+    }
+
+    .file-name {
+      @include smallTitleTipography;
+      text-transform: none;
+      color: var(--title-foreground-color-hover);
+    }
+  }
+}
+
+.dashboard {
+  width: 100%;
+  height: 100%;
+
+  .dashboard-sidebar {
+    width: $s-300;
+    height: 100%;
+  }
+}
+
+.viewer {
+  width: 100%;
+  height: 100%;
+}
+
+.overlay {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  background-color: rgba(0, 0, 0, 0.65);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  .dialog,
+  .dialog-login {
+    width: 556px;
+    background-color: var(--color-background-primary);
+    border-radius: $s-8;
+    display: flex;
+    flex-direction: column;
+    align-content: stretch;
+    padding: $s-36;
+    color: var(--modal-text-foreground-color);
+
+    .modal-close {
+      text-align: right;
+
+      .modal-close-button {
+        background: none;
+        border: none;
+        cursor: pointer;
+
+        svg {
+          cursor: pointer;
+          width: $s-24;
+          height: $s-24;
+          fill: var(--modal-text-foreground-color);
+          stroke: var(--modal-text-foreground-color);
+        }
+      }
+    }
+
+    .dialog-title {
+      font-size: $fs-20;
+    }
+
+    .sign-info {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: $s-32;
+
+      button {
+        @extend .button-primary;
+        text-transform: uppercase;
+        padding: $s-8 $s-16;
+        font-size: $fs-11;
+      }
+
+      .cancel-button {
+        @extend .button-secondary;
+        text-transform: uppercase;
+        padding: $s-8 $s-16;
+        font-size: $fs-11;
+        margin-right: $s-16;
+      }
+    }
+  }
+
+  .dialog {
+    gap: $s-12;
+  }
+
+  .login {
+    gap: 0;
+    padding: 0 $s-36 $s-72 $s-36;
+
+    .logo {
+      margin-bottom: $s-40;
+
+      svg {
+        fill: var(--color-foreground-primary);
+        width: $s-120;
+        height: $s-40;
+      }
+    }
+
+    .logo-title {
+      font-size: $fs-20;
+      color: var(--title-foreground-color-hover);
+      margin-bottom: $s-4;
+    }
+
+    .logo-subtitle {
+      font-size: $fs-14;
+      color: var(--title-foreground-color-hover);
+      margin-bottom: $s-24;
+    }
+
+    .change-section {
+      width: 100%;
+      text-align: center;
+
+      a {
+        color: var(--link-foreground-color);
+      }
+    }
+
+    hr {
+      margin: $s-20 0;
+      border-top: solid 1px var(--modal-separator-backogrund-color);
+    }
+
+    .separator {
+      margin: $s-20 0;
+    }
+
+    form div {
+      margin-bottom: $s-8;
+    }
+  }
+}
+
+.login-container {
+  width: 100%;
+  background-color: red;
 }
