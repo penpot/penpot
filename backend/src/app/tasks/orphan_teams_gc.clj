@@ -22,7 +22,6 @@
   [_ cfg]
   (fn [params]
     (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                      (l/inf :hint "gc started" :rollback? (boolean (:rollback? params)))
                       (let [total (delete-orphan-teams! cfg)]
                         (l/inf :hint "task finished"
                                :teams total
