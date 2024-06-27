@@ -1046,7 +1046,6 @@
     (str/includes? data "<!DOCTYPE")
     (str/replace #"<\!DOCTYPE[^>]*>" "")))
 
-
 (defn parse
   [text]
   #?(:cljs (tubax/xml->clj text)

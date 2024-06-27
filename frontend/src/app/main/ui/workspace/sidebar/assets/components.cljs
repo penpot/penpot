@@ -192,8 +192,10 @@
            on-drag-start do-rename cancel-rename on-rename-group on-group on-ungroup on-context-menu
            selected-full local]}]
 
-  (let [group-open?    (or ^boolean force-open?
-                           ^boolean (get open-groups prefix (if (= prefix "") true false)))
+  (let [group-open?    (if (false? (get open-groups prefix)) ;; if the user has closed it specifically, respect that
+                         false
+                         (or ^boolean force-open?
+                             ^boolean (get open-groups prefix (if (= prefix "") true false))))
         dragging*      (mf/use-state false)
         dragging?      (deref dragging*)
 

@@ -223,6 +223,32 @@
               (uuid? (get item :typography-ref-file))
               (d/update-when :typography-ref-file resolve)))))))
 
+(defn resolve-fills-content
+  [fills context]
+  (let [resolve (:resolve context)]
+    (->> fills
+         (mapv
+          (fn [fill]
+            (cond-> fill
+              (uuid? (get fill :fill-color-ref-id))
+              (d/update-when :fill-color-ref-id resolve)
+
+              (uuid? (get fill :fill-color-ref-file))
+              (d/update-when :fill-color-ref-file resolve)))))))
+
+(defn resolve-strokes-content
+  [fills context]
+  (let [resolve (:resolve context)]
+    (->> fills
+         (mapv
+          (fn [fill]
+            (cond-> fill
+              (uuid? (get fill :stroke-color-ref-id))
+              (d/update-when :stroke-color-ref-id resolve)
+
+              (uuid? (get fill :stroke-color-ref-file))
+              (d/update-when :stroke-color-ref-file resolve)))))))
+
 (defn resolve-data-ids
   [data type context]
   (let [resolve (:resolve context)]
@@ -237,6 +263,12 @@
 
         (cond-> (= type :text)
           (d/update-when :content resolve-text-content context))
+
+        (cond-> (:fills data)
+          (d/update-when :fills resolve-fills-content context))
+
+        (cond-> (:strokes data)
+          (d/update-when :strokes resolve-strokes-content context))
 
         (cond-> (and (= type :frame) (= :grid (:layout data)))
           (update

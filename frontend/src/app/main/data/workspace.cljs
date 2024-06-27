@@ -1124,6 +1124,14 @@
     (update [_ state]
       (assoc-in state [:workspace-assets :open-status file-id section] open?))))
 
+(defn clear-assets-section-open
+  []
+  (ptk/reify ::clear-assets-section-open
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-assets :open-status] {}))))
+
+
 (defn set-assets-group-open
   [file-id section path open?]
   (ptk/reify ::set-assets-group-open
