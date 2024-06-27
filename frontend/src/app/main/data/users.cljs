@@ -538,6 +538,7 @@
         (->> (rp/cmd! :delete-profile {})
              (rx/tap on-success)
              (rx/catch on-error)
+             (rx/map logged-out)
              (rx/delay-at-least 300))))))
 
 ;; --- EVENT: request-profile-recovery
