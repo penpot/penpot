@@ -9,6 +9,7 @@
   (:require
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
+   [app.plugins.format :as format]
    [app.plugins.shape :as shape]
    [app.plugins.utils :as u]))
 
@@ -22,4 +23,4 @@
     (let [shapes (->> shapes (map u/proxy->shape))]
       (-> (gsh/shapes->rect shapes)
           (grc/rect->center)
-          (u/to-js)))))
+          (format/format-point)))))

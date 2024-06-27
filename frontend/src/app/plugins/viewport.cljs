@@ -14,6 +14,7 @@
    [app.main.data.workspace.viewport :as dwv]
    [app.main.data.workspace.zoom :as dwz]
    [app.main.store :as st]
+   [app.plugins.format :as format]
    [app.plugins.utils :as u]
    [app.util.object :as obj]))
 
@@ -88,6 +89,6 @@
     :get
     (fn [_]
       (let [vport (dm/get-in @st/state [:workspace-local :vport])]
-        (.freeze js/Object (clj->js vport))))}))
+        (.freeze js/Object (format/format-bounds vport))))}))
 
 

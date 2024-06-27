@@ -13,18 +13,13 @@
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.store :as st]
+   [app.plugins.format :as format]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
    [potok.v2.core :as ptk]))
 
 ;; Define in `app.plugins.shape` we do this way to prevent circular dependency
 (def shape-proxy? nil)
-
-(defn- make-tracks
-  [tracks]
-  (.freeze
-   js/Object
-   (apply array (->> tracks (map u/to-js)))))
 
 (deftype GridLayout [$plugin $file $page $id]
   Object
@@ -190,10 +185,10 @@
                 (st/emit! (dwsl/update-layout #{id} {:layout-grid-dir value}))))))}
 
        {:name "rows"
-        :get #(-> % u/proxy->shape :layout-grid-rows make-tracks)}
+        :get #(-> % u/proxy->shape :layout-grid-rows format/format-tracks)}
 
        {:name "columns"
-        :get #(-> % u/proxy->shape :layout-grid-columns make-tracks)}
+        :get #(-> % u/proxy->shape :layout-grid-columns format/format-tracks)}
 
        {:name "alignItems"
         :get #(-> % u/proxy->shape :layout-align-items d/name)

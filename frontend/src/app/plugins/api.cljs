@@ -27,6 +27,7 @@
    [app.plugins.events :as events]
    [app.plugins.file :as file]
    [app.plugins.fonts :as fonts]
+   [app.plugins.format :as format]
    [app.plugins.library :as library]
    [app.plugins.page :as page]
    [app.plugins.parser :as parser]
@@ -101,26 +102,12 @@
             shapes (->> shapes
                         (map #(obj/get % "$id"))
                         (mapcat #(cfh/get-children-with-self objects %)))
-
             file-id (:current-file-id @st/state)
-            shared-libs (:workspace-libraries @st/state)
+            shared-libs (:workspace-libraries @st/state)]
 
-            format-entry
-            (fn [{:keys [prop shape-id index]}]
-              #js {:property (d/name prop)
-                   :index index
-                   :shapeId (str shape-id)})
-            format-result
-            (fn [[color attrs]]
-              (let [shapes-info (apply array (map format-entry attrs))
-                    color (u/to-js color)]
-                (obj/set! color "shapeInfo" shapes-info)
-                color))]
-        (apply
-         array
-         (->> (ctc/extract-all-colors shapes file-id shared-libs)
-              (group-by :attrs)
-              (map format-result))))))
+        (->> (ctc/extract-all-colors shapes file-id shared-libs)
+             (group-by :attrs)
+             (format/format-array format/format-color-result)))))
 
   (replaceColor
     [_ shapes old-color new-color]
@@ -188,8 +175,8 @@
         (p/create
          (fn [resolve reject]
            (->> (dwm/upload-media-url name file-id url)
-                (rx/map u/to-js)
                 (rx/take 1)
+                (rx/map format/format-image)
                 (rx/subs! resolve reject)))))))
 
   (uploadMediaData
@@ -205,7 +192,7 @@
                 :on-image identity
                 :on-svg identity})
               (rx/take 1)
-              (rx/map u/to-js)
+              (rx/map format/format-image)
               (rx/subs! resolve reject))))))
 
   (group

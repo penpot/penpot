@@ -9,13 +9,10 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.spec :as us]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
-   [app.common.uuid :as uuid]
    [app.main.store :as st]
    [app.util.object :as obj]
-   [cuerdas.core :as str]
    [promesa.core :as p]))
 
 (defn locate-file
@@ -142,58 +139,6 @@
   ([self attr mapfn]
    (-> (get-state self attr)
        (mapfn))))
-
-(defn from-js
-  "Converts the object back to js"
-  ([obj]
-   (from-js obj #{:type}))
-  ([obj keyword-keys]
-   (when (some? obj)
-     (let [process-node
-           (fn process-node [node]
-             (reduce-kv
-              (fn [m k v]
-                (let [k (keyword (str/kebab k))
-                      v (cond (map? v)
-                              (process-node v)
-
-                              (vector? v)
-                              (mapv process-node v)
-
-                              (and (string? v) (re-matches us/uuid-rx v))
-                              (uuid/uuid v)
-
-                              (contains? keyword-keys k)
-                              (keyword v)
-
-                              :else v)]
-                  (assoc m k v)))
-              {}
-              node))]
-       (process-node (js->clj obj))))))
-
-(defn to-js
-  "Converts to javascript an camelize the keys"
-  [obj]
-  (when (some? obj)
-    (let [result
-          (reduce-kv
-           (fn [m k v]
-             (let [v (cond (object? v) (to-js v)
-                           (uuid? v) (dm/str v)
-                           :else v)]
-               (assoc m (str/camel (name k)) v)))
-           {}
-           obj)]
-      (clj->js result))))
-
-(defn array-to-js
-  [value]
-  (if (coll? value)
-    (.freeze
-     js/Object
-     (apply array (->> value (map to-js))))
-    value))
 
 (defn result-p
   "Creates a pair of atom+promise. The promise will be resolved when the atom gets a value.

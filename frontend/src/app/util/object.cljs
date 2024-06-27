@@ -156,3 +156,8 @@
              x)
 
      :else x)))
+
+(defn clear-empty
+  [^js obj]
+  (when (some? obj)
+    (js* "Object.entries(~{}).reduce((a, [k,v]) => (v == null ? a : (a[k]=v, a)), {}) " obj)))

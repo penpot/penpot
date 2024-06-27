@@ -13,9 +13,11 @@
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [app.main.store :as st]
+   [app.plugins.parser :as parser]
    [app.plugins.shape :as shape]
    [app.plugins.utils :as u]
-   [app.util.object :as obj]))
+   [app.util.object :as obj]
+   [cuerdas.core :as str]))
 
 (deftype PageProxy [$plugin $file $id]
   Object
@@ -34,11 +36,28 @@
     (shape/shape-proxy $plugin $file $id uuid/zero))
 
   (findShapes
-    [_]
+    [_ criteria]
     ;; Returns a lazy (iterable) of all available shapes
-    (when (and (some? $file) (some? $id))
-      (let [page (u/locate-page $file $id)]
-        (apply array (sequence (map (partial shape/shape-proxy $plugin)) (keys (:objects page)))))))
+    (let [criteria (parser/parse-criteria criteria)
+          match-criteria?
+          (if (some? criteria)
+            (fn [[_ shape]]
+              (and
+               (or (not (:name criteria))
+                   (= (str/lower (:name criteria)) (str/lower (:name shape))))
+
+               (or (not (:name-like criteria))
+                   (str/includes? (str/lower (:name shape)) (str/lower (:name-like criteria))))
+
+               (or (not (:type criteria))
+                   (= (:type criteria) (:type shape)))))
+            identity)]
+      (when (and (some? $file) (some? $id))
+        (let [page (u/locate-page $file $id)
+              xf (comp
+                  (filter match-criteria?)
+                  (map #(shape/shape-proxy $plugin $file $id (first %))))]
+          (apply array (sequence xf (:objects page)))))))
 
   ;; Plugin data
   (getPluginData

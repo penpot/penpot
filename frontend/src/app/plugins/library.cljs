@@ -22,7 +22,10 @@
    [app.main.data.workspace.texts :as dwt]
    [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.plugins.format :as format]
+   [app.plugins.parser :as parser]
    [app.plugins.shape :as shape]
+   [app.plugins.text :as text]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
@@ -49,27 +52,25 @@
 
   (asFill [_]
     (let [color (u/locate-library-color $file $id)]
-      (u/to-js
-       (d/without-nils
-        {:fill-color (:color color)
-         :fill-opacity (:opacity color)
-         :fill-color-gradient (:gradient color)
-         :fill-color-ref-file $file
-         :fill-color-ref-id $id
-         :fill-image (:image color)}))))
+      (format/format-fill
+       {:fill-color (:color color)
+        :fill-opacity (:opacity color)
+        :fill-color-gradient (:gradient color)
+        :fill-color-ref-file $file
+        :fill-color-ref-id $id
+        :fill-image (:image color)})))
 
   (asStroke [_]
     (let [color (u/locate-library-color $file $id)]
-      (u/to-js
-       (d/without-nils
-        {:stroke-color (:color color)
-         :stroke-opacity (:opacity color)
-         :stroke-color-gradient (:gradient color)
-         :stroke-color-ref-file $file
-         :stroke-color-ref-id $id
-         :stroke-image (:image color)
-         :stroke-style :solid
-         :stroke-alignment :inner}))))
+      (format/format-stroke
+       {:stroke-color (:color color)
+        :stroke-opacity (:opacity color)
+        :stroke-color-gradient (:gradient color)
+        :stroke-color-ref-file $file
+        :stroke-color-ref-id $id
+        :stroke-image (:image color)
+        :stroke-style :solid
+        :stroke-alignment :inner})))
 
   (getPluginData
     [self key]
@@ -211,10 +212,10 @@
           (st/emit! (dwl/update-color color file-id)))))}
 
    {:name "gradient"
-    :get #(-> % u/proxy->library-color :gradient u/to-js)
+    :get #(-> % u/proxy->library-color :gradient format/format-gradient)
     :set
     (fn [self value]
-      (let [value (u/from-js value)]
+      (let [value (parser/parse-gradient value)]
         (cond
           (not (sm/validate ::ctc/gradient value))
           (u/display-not-valid :library-color-gradient value)
@@ -225,10 +226,10 @@
             (st/emit! (dwl/update-color color file-id))))))}
 
    {:name "image"
-    :get #(-> % u/proxy->library-color :image u/to-js)
+    :get #(-> % u/proxy->library-color :image format/format-image)
     :set
     (fn [self value]
-      (let [value (u/from-js value)]
+      (let [value (parser/parse-image-data value)]
         (cond
           (not (sm/validate ::ctc/image-color value))
           (u/display-not-valid :library-color-image value)
@@ -266,7 +267,7 @@
   (applyToTextRange
     [self range]
     (cond
-      (not (shape/text-range? range))
+      (not (text/text-range? range))
       (u/display-not-valid :applyToText range)
 
       :else

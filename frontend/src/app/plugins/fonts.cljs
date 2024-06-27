@@ -12,6 +12,7 @@
    [app.main.fonts :as fonts]
    [app.main.store :as st]
    [app.plugins.shape :as shape]
+   [app.plugins.text :as text]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
    [cuerdas.core :as str]))
@@ -39,7 +40,7 @@
 
   (applyToRange [_ range variant]
     (cond
-      (not (shape/text-range? range))
+      (not (text/text-range? range))
       (u/display-not-valid :applyToRange range)
 
       ;; TODO: Check variant inside font variants

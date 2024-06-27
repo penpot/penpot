@@ -8,6 +8,7 @@
   (:require
    [app.common.record :as crc]
    [app.config :as cfg]
+   [app.plugins.format :as format]
    [app.plugins.utils :as u]
    [app.util.object :as obj]))
 
@@ -54,5 +55,5 @@
   (-> (ActiveUserProxy. plugin-id session-id)
       (add-user-properties)
       (crc/add-properties!
-       {:name "position" :get (fn [_] (-> (u/locate-presence session-id) :point u/to-js))}
+       {:name "position" :get (fn [_] (-> (u/locate-presence session-id) :point format/format-point))}
        {:name "zoom" :get (fn [_] (-> (u/locate-presence session-id) :zoom))})))
