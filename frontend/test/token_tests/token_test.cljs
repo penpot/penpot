@@ -4,15 +4,15 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns token-tests.token-core-test
+(ns token-tests.token-test
   (:require
-   [app.main.ui.workspace.tokens.core :as wtc]
+   [app.main.ui.workspace.tokens.token :as wtt]
    [cljs.test :as t :include-macros true]))
 
 (t/deftest name->path-test
-  (t/is (= ["foo" "bar" "baz"] (wtc/name->path "foo.bar.baz")))
-  (t/is (= ["foo" "bar" "baz"] (wtc/name->path "foo..bar.baz")))
-  (t/is (= ["foo" "bar" "baz"] (wtc/name->path "foo..bar.baz...."))))
+  (t/is (= ["foo" "bar" "baz"] (wtt/token-name->path "foo.bar.baz")))
+  (t/is (= ["foo" "bar" "baz"] (wtt/token-name->path "foo..bar.baz")))
+  (t/is (= ["foo" "bar" "baz"] (wtt/token-name->path "foo..bar.baz...."))))
 
 (t/deftest tokens-name-tree
   (t/is (= {"foo"
@@ -20,7 +20,7 @@
              {"baz" {:name "foo.bar.baz", :value "a"},
               "bam" {:name "foo.bar.bam", :value "b"}}},
             "baz" {"bar" {"foo" {:name "baz.bar.foo", :value "{foo.bar.baz}"}}}}
-           (wtc/tokens-name-tree {:a {:name "foo.bar.baz"
+           (wtt/token-names-tree {:a {:name "foo.bar.baz"
                                       :value "a"}
                                   :b {:name "foo.bar.bam"
                                       :value "b"}
