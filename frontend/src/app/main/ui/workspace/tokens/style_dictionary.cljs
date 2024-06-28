@@ -82,14 +82,18 @@
   (and (set? errors)
        (get errors :style-dictionary/missing-reference)))
 
-(defn tokens-name-map [tokens]
-  (->> tokens
-       (map (fn [[_ x]] [(:name x) x]))
-       (into {})))
+(defn tokens-name-tree [tokens]
+  (reduce
+   (fn [acc [_ {:keys [name] :as token}]]
+     (if (string? name)
+       (let [name-path (->> (str/split name #"\.")
+                            (remove str/blank?))]
+         (assoc-in acc name-path token))))
+   {} tokens))
 
 (defn resolve-tokens+
   [tokens & {:keys [debug?] :as config}]
-  (p/let [sd-tokens (-> (tokens-name-map tokens)
+  (p/let [sd-tokens (-> (tokens-name-tree tokens)
                         (resolve-sd-tokens+ config))]
     (let [resolved-tokens (reduce
                            (fn [acc ^js cur]
