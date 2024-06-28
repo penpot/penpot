@@ -6,15 +6,10 @@
 
 (ns app.main.ui.ds
   (:require
-   [app.main.ui.ds.buttons.simple-button :as sb]
-   [rumext.v2 :as mf]))
-
-(mf/defc story-wrapper
-  {::mf/wrap-props false}
-  [{:keys [children]}]
-  [:.default children])
+   [app.main.ui.ds.buttons.simple-button :refer [simple-button]]
+   [app.main.ui.ds.storybook :as sb]))
 
 (def default
   "A export used for storybook"
-  #js {:SimpleButton sb/simple-button
-       :StoryWrapper story-wrapper})
+  #js {:SimpleButton simple-button
+       :StoryWrapper sb/story-wrapper})

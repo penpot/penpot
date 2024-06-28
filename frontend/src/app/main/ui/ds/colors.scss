@@ -1,0 +1,23 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+// Accent colors
+$mint-150: #7efff5;
+$purple-700: #6911d4;
+
+// Background colors
+$white: #fff;
+$gray-950: #18181a;
+
+:global(.light) {
+  --color-accent-primary: #{$mint-150};
+  --color-background-primary: #{$white};
+}
+
+:global(.default) {
+  --color-accent-primary: #{$purple-700};
+  --color-background-primary: #{$gray-950};
+}
