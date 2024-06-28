@@ -91,7 +91,7 @@
   [params]
   (d/without-nils
    {:external-session-id (::rpc/external-session-id params)
-    :triggered-by (::rpc/handler-name params)}))
+    :event-origin (::rpc/handler-name params)}))
 
 ;; --- SPECS
 
