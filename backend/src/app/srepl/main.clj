@@ -502,8 +502,6 @@
 
   :restored)
 
-
-
 (defn- restore-project*
   [{:keys [::db/conn] :as cfg} project-id]
 
@@ -535,6 +533,24 @@
 
   :restored)
 
+(defn- restore-profile*
+  [{:keys [::db/conn] :as cfg} profile-id]
+  (db/update! conn :profile
+              {:deleted-at nil}
+              {:id profile-id})
+
+  (doseq [{:keys [id]} (profile/get-owned-teams conn profile-id)]
+    (restore-team* cfg id))
+
+  :restored)
+
+
+(defn restore-deleted-profile!
+  "Mark a team and all related objects as not deleted"
+  [profile-id]
+  (let [profile-id (h/parse-uuid profile-id)]
+    (db/tx-run! main/system restore-profile* profile-id)))
+
 (defn restore-deleted-team!
   "Mark a team and all related objects as not deleted"
   [team-id]
@@ -562,6 +578,15 @@
                      (assoc ::wrk/params {:object :team
                                           :deleted-at (dt/now)
                                           :id team-id})))))
+(defn delete-profile!
+  "Mark a profile for deletion"
+  [profile-id]
+  (let [profile-id (h/parse-uuid profile-id)]
+    (wrk/invoke! (-> main/system
+                     (assoc ::wrk/task :delete-object)
+                     (assoc ::wrk/params {:object :profile
+                                          :deleted-at (dt/now)
+                                          :id profile-id})))))
 (defn delete-project!
   "Mark a project for deletion"
   [project-id]
@@ -582,6 +607,15 @@
                                           :deleted-at (dt/now)
                                           :id file-id})))))
 
+(defn process-deleted-profiles-cascade
+  []
+  (->> (db/exec! main/system ["select id, deleted_at from profile where deleted_at is not null"])
+       (run! (fn [{:keys [id deleted-at]}]
+               (wrk/invoke! (-> main/system
+                                (assoc ::wrk/task :delete-object)
+                                (assoc ::wrk/params {:object :profile
+                                                     :deleted-at deleted-at
+                                                     :id id})))))))
 
 (defn process-deleted-teams-cascade
   []
@@ -592,7 +626,6 @@
                                 (assoc ::wrk/params {:object :team
                                                      :deleted-at deleted-at
                                                      :id id})))))))
-
 
 (defn process-deleted-projects-cascade
   []
