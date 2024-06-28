@@ -76,6 +76,12 @@
               (cond-> (assoc item :label name)
                 (token-applied? item shape (or selected-attributes attributes)) (assoc :selected? true))))))
 
+(defn name->path
+  "Splits token-name into a path vector split by `.` characters.
+  Will concatenate multiple `.` characters into one."
+  [token-name]
+  (str/split token-name #"\.+"))
+
 ;; Update functions ------------------------------------------------------------
 
 (defn on-apply-token [{:keys [token token-type-props selected-shapes] :as _props}]

@@ -91,9 +91,12 @@
          (assoc-in acc name-path token))))
    {} tokens))
 
+(tokens-name-tree @refs/workspace-tokens)
+
 (defn resolve-tokens+
   [tokens & {:keys [debug?] :as config}]
   (p/let [sd-tokens (-> (tokens-name-tree tokens)
+                        (doto js/console.log)
                         (resolve-sd-tokens+ config))]
     (let [resolved-tokens (reduce
                            (fn [acc ^js cur]
