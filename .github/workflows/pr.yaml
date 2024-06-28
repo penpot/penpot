@@ -2,6 +2,7 @@ name: Publish docker image
 
 on:
   pull_request:
+    types: [opened, synchronize]
     branches: 
         - "*"
 
