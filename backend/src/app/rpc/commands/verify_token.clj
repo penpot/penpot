@@ -147,7 +147,7 @@
 
 (defmethod process-token :team-invitation
   [{:keys [conn] :as cfg}
-   {:keys [::rpc/profile-id token]}
+   {:keys [::rpc/profile-id token] :as params}
    {:keys [member-id team-id member-email] :as claims}]
 
   (us/verify! ::team-invitation-claims claims)
@@ -169,13 +169,20 @@
         ;; if we have logged-in user and it matches the invitation we proceed
         ;; with accepting the invitation and joining the current profile to the
         ;; invited team.
-        (let [profile (accept-invitation cfg claims invitation profile)]
-          (-> (assoc claims :state :created)
-              (rph/with-meta {::audit/name "accept-team-invitation"
-                              ::audit/profile-id (:id profile)
-                              ::audit/props {:team-id (:team-id claims)
-                                             :role (:role claims)
-                                             :invitation-id (:id invitation)}})))
+        (let [context (audit/params->context params)
+              props   {:team-id (:team-id claims)
+                       :role (:role claims)
+                       :invitation-id (:id invitation)}]
+
+          (accept-invitation cfg claims invitation profile)
+          (audit/submit! cfg
+                         {::audit/type "action"
+                          ::audit/name "accept-team-invitation"
+                          ::audit/profile-id profile-id
+                          ::audit/props props
+                          ::audit/context context})
+
+          (assoc claims :state :created))
 
         (ex/raise :type :validation
                   :code :invalid-token
