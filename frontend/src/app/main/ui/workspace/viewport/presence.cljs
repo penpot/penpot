@@ -5,6 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.viewport.presence
+  (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
    [app.main.refs :as refs]
@@ -40,15 +41,15 @@
                     (dm/str (str/slice fullname 0 12) "...")
                     fullname)]
 
-    [:g.multiuser-cursor {:transform transform}
+    [:g {:class (stl/css :multiuser-cursor) :transform transform}
      [:path {:fill bg-color :d pointer-path}]
      [:g {:transform "translate(17 -10)"}
       [:foreignObject {:x -0.3
                        :y -12.5
                        :width 300
                        :height 120}
-       [:div.profile-name {:style {:background-color bg-color
-                                   :color fg-color}}
+       [:div {:class (stl/css :profile-name)
+              :style {:background-color bg-color :color fg-color}}
         fullname]]]]))
 
 (mf/defc active-cursors
@@ -74,8 +75,3 @@
         :zoom zoom
         :profile (get users (:profile-id session))
         :key (dm/str (:id session))}])))
-
-
-
-
-

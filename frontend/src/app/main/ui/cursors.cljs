@@ -5,11 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.cursors
-  (:require-macros [app.main.ui.cursors :refer [cursor-ref cursor-fn collect-cursors]])
-  (:require
-   [app.util.timers :as ts]
-   [cuerdas.core :as str]
-   [rumext.v2 :as mf]))
+  (:require-macros [app.main.ui.cursors :refer [cursor-ref cursor-fn collect-cursors]]))
 
 ;; Static cursors
 (def ^:cursor comments (cursor-ref :comments 0 2 20))
@@ -53,28 +49,3 @@
 (def default
   "A collection of all icons"
   (collect-cursors))
-
-(mf/defc debug-preview
-  {::mf/wrap-props false}
-  []
-  (let [rotation (mf/use-state 0)
-        entries  (->> (seq (js/Object.entries default))
-                      (sort-by first))]
-
-    (mf/with-effect []
-      (ts/interval 100 #(reset! rotation inc)))
-
-    [:section.debug-icons-preview
-     (for [[key value] entries]
-       (let [value (if (fn? value) (value @rotation) value)]
-         [:div.cursor-item {:key key}
-          [:div {:style {:width "100px"
-                         :height "100px"
-                         :background-image (-> value (str/replace #"(url\(.*\)).*" "$1"))
-                         :background-size "contain"
-                         :background-repeat "no-repeat"
-                         :background-position "center"
-                         :cursor value}}]
-
-          [:span {:style {:white-space "nowrap"
-                          :margin-right "1rem"}} (pr-str key)]]))]))

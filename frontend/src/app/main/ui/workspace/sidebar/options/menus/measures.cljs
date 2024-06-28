@@ -480,7 +480,7 @@
               [:div {:class (stl/css :radius-1)
                      :title (tr "workspace.options.radius")}
                [:span {:class (stl/css :icon)}  i/corner-radius]
-               [:input.input-text
+               [:input
                 {:type "number"
                  :placeholder "Mixed"
                  :min 0

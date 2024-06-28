@@ -36,7 +36,7 @@
         title       (unchecked-get props "title")
         default     (unchecked-get props "default")
         nillable?   (unchecked-get props "nillable")
-        class       (d/nilv (unchecked-get props "className") "input-text")
+        class       (d/nilv (unchecked-get props "className") "")
 
         min-value   (d/parse-double min-value)
         max-value   (d/parse-double max-value)

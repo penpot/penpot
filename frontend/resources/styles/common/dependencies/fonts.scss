@@ -4,64 +4,18 @@
 //
 // Copyright (c) KALEIDOS INC
 
-// Font sizes
-$fs8: 0.5rem;
-$fs9: 0.5625rem;
-$fs10: 0.625rem;
-$fs11: 0.6875rem;
-$fs12: 0.75rem;
-$fs13: 0.8125rem;
-$fs14: 0.875rem;
-$fs15: 0.9375rem;
-$fs16: 1rem;
-$fs17: 1.0625rem;
-$fs18: 1.125rem;
-$fs19: 1.1875rem;
-$fs20: 1.25rem;
-$fs21: 1.315rem;
-$fs22: 1.375rem;
-$fs23: 1.4375rem;
-$fs24: 1.5rem;
-$fs26: 1.625rem;
-$fs30: 1.875rem;
-$fs32: 2rem;
-$fs34: 2.125rem;
-$fs36: 2.25rem;
-$fs38: 2.375rem;
-$fs40: 2.5rem;
-$fs42: 2.675rem;
-$fs44: 2.75rem;
-$fs80: 5rem;
+@mixin font-face($style-name, $file, $weight: unquote("normal"), $style: unquote("normal")) {
+  $filepath: "/fonts/" + $file;
 
-// Font weight
-// Taken from https://fonts.google.com/specimen/Work+Sans
-$fw100: 100; // Thin
-$fw200: 200; // Extra Light
-$fw300: 300; // Light
-$fw400: 400; // Regular (CSS value: 'normal')
-$fw500: 500; // Medium
-$fw600: 600; // Semi Bold
-$fw700: 700; // Bold (CSS value: 'bold')
-$fw800: 800; // Extra Bold
-$fw900: 900; // Black
-
-// Line height
-// Value are predefined as unitless (ratio to font size in %), because that is the best approach for browsers according to https://developer.mozilla.org/en-US/docs/Web/CSS/line-height#values
-$lh-normal: normal; // line-height depends of font-family, font-size, your browser, maybe your OS http://meyerweb.com/eric/thoughts/2008/05/06/line-height-abnormal/
-$lh-088: 0.88;
-$lh-100: 1;
-$lh-115: 1.15; // original $title-lh-sm
-$lh-125: 1.25; // original $title-lh
-$lh-128: 1.28;
-$lh-133: 1.33; // original $base-lh-sm
-$lh-143: 1.43; // original $base-lh
-$lh-145: 1.45;
-$lh-150: 1.5;
-$lh-188: 1.88;
-$lh-192: 1.92;
-$lh-200: 2;
-$lh-236: 2.36;
-$lh-500: 5;
+  @font-face {
+    font-family: "#{$style-name}";
+    src:
+      url($filepath + ".woff2") format("woff2"),
+      url($filepath + ".ttf") format("truetype");
+    font-weight: unquote($weight);
+    font-style: unquote($style);
+  }
+}
 
 // Work Sans
 @include font-face("worksans", "WorkSans-Thin", "100");
@@ -105,3 +59,6 @@ $lh-500: 5;
 @include font-face("vazirmatn", "Vazirmatn-Bold", bold);
 @include font-face("vazirmatn", "Vazirmatn-ExtraBold", "800");
 @include font-face("vazirmatn", "Vazirmatn-Black", "900");
+
+// Space mono
+@include font-face("robotomono", "RobotoMono-Regular", normal);

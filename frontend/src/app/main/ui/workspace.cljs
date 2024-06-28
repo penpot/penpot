@@ -86,8 +86,9 @@
        [:& palette {:layout layout
                     :on-change-palette-size on-resize-palette}])
 
-     [:section.workspace-content
+     [:section
       {:key (dm/str "workspace-" page-id)
+       :class (stl/css :workspace-content)
        :ref node-ref}
 
       [:section {:class (stl/css :workspace-viewport)}
@@ -203,9 +204,9 @@
        [:& (mf/provider ctx/current-page-id) {:value page-id}
         [:& (mf/provider ctx/components-v2) {:value components-v2?}
          [:& (mf/provider ctx/workspace-read-only?) {:value read-only?}
-          [:section#workspace-refactor {:class (stl/css :workspace)
-                                        :style {:background-color background-color
-                                                :touch-action "none"}}
+          [:section {:class (stl/css :workspace)
+                     :style {:background-color background-color
+                             :touch-action "none"}}
            [:& context-menu]
 
            (if ^boolean file-ready?
