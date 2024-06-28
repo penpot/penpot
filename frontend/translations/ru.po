@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-17 08:07+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2024-06-28 22:09+0000\n"
+"Last-Translator: The_BadUser <vanjavs41@gmail.com>\n"
 "Language-Team: Russian <https://hosted.weblate.org/projects/penpot/frontend/"
 "ru/>\n"
 "Language: ru\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Weblate 5.6-dev\n"
+"X-Generator: Weblate 5.7-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -46,9 +46,8 @@ msgid "auth.fullname"
 msgstr "Полное имя"
 
 #: src/app/main/ui/auth/register.cljs
-#, fuzzy
 msgid "auth.login-here"
-msgstr "Войти здесь"
+msgstr "Войти здесь."
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
@@ -3139,3 +3138,1099 @@ msgstr "Расширить боковую панель"
 
 msgid "workspace.shape.menu.union"
 msgstr "Суммировать"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-mail"
+msgstr "Проверьте свою электронную почту"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register-account-tagline"
+msgstr ""
+"Сообщите нам, как следует к вам обращаться, на панели управления и в "
+"электронных письмах."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.work-email"
+msgstr "Рабочая эл. почта"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-not-empty"
+msgstr "Пароль должен содержать символы, отличные от пробела."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-account-title"
+msgstr "Ваше имя"
+
+#: src/app/main/ui/auth/register.cljs
+#, markdown
+msgid "auth.terms-and-privacy-agreement"
+msgstr ""
+"Я согласен с [условиями обслуживания](%s) и [политикой "
+"конфиденциальности](%s)."
+
+#: src/app/main/data/users.cljs
+msgid "errors.auth-provider-not-allowed"
+msgstr "Поставщик аутентификации не разрешён для этого профиля"
+
+msgid "errors.cannot-upload"
+msgstr "Невозможно загрузить медиафайл."
+
+#: src/app/main/ui/auth/verify_token.cljs
+msgid "errors.invite-invalid"
+msgstr "Приглашение недействительно"
+
+#: src/app/main/errors.cljs
+msgid "errors.max-quote-reached"
+msgstr "Вы достигли указанного значения «%s». Обратитесь в службу поддержки."
+
+msgid "errors.webhooks.connection"
+msgstr "Ошибка подключения, URL недоступен"
+
+#: src/app/main/ui/inspect/attributes/text.cljs
+msgid "inspect.attributes.typography.font-weight"
+msgstr "Толщина шрифта"
+
+msgid "labels.inactive"
+msgstr "Недействующий"
+
+msgid "labels.webhooks"
+msgstr "Вебхуки"
+
+msgid "media.keep-aspect-ratio"
+msgstr "Сохранять соотношение сторон"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.copy-token"
+msgstr "Копировать токен"
+
+msgid "modals.create-webhook.title"
+msgstr "Создать вебхук"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.title"
+msgstr "Удалить токен"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.activated.scd-message"
+msgid_plural "modals.delete-shared-confirm.activated.scd-message"
+msgstr[0] "Эта библиотека активируется здесь: "
+msgstr[1] "Эти библиотеки активируются здесь: "
+
+#, fuzzy
+msgid "modals.move-shared-confirm.accept"
+msgid_plural "modals.move-shared-confirm.accept"
+msgstr[0] "Переместить"
+msgstr[1] "Переместить"
+
+msgid "modals.move-shared-confirm.message"
+msgid_plural "modals.move-shared-confirm.message"
+msgstr[0] "Вы уверены, что хотите переместить эту библиотеку?"
+msgstr[1] "Вы уверены, что хотите переместить эти библиотеки?"
+
+msgid "modals.move-shared-confirm.title"
+msgid_plural "modals.move-shared-confirm.title"
+msgstr[0] "Переместить библиотеку"
+msgstr[1] "Переместить библиотеки"
+
+msgid "onboarding-v2.newsletter.privacy1"
+msgstr "Мы заботимся о конфиденциальности, поэтому вы можете ознакомиться с "
+
+msgid "onboarding-v2.welcome.desc2.title"
+msgstr "Участие в жизни общества"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites"
+msgstr "Создать команду и отправить приглашения"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.edit"
+msgstr "Изменить"
+
+msgid "workspace.layout_grid.editor.options.exit"
+msgstr "Выход"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.library-updates"
+msgstr "ОБНОВЛЕНИЯ БИБЛИОТЕКИ"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.loading"
+msgstr "Загрузка…"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.shared-library-btn"
+msgstr "Подключить библиотеку"
+
+#: src/app/main/data/workspace/libraries.cljs
+msgid "workspace.libraries.update.see-all-changes"
+msgstr "смотреть все изменения"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.unlink-library-btn"
+msgstr "Отключить библиотеку"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints"
+msgstr "Ограничения"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.exporting-object-slow"
+msgstr "Неожиданно медленный экспорт"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.right"
+msgstr "Право"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.left"
+msgstr "Лево"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-navigate-to"
+msgstr "Перейти к"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-none"
+msgstr "Ничего"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-navigate-to-dest"
+msgstr "Перейти к: %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-on-click"
+msgstr "При клике"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-offset-effect"
+msgstr "Эффект смещения"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-none"
+msgstr "(не задано)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-while-pressing"
+msgstr "При нажатии"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-trigger"
+msgstr "Триггер"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-item-min-h"
+msgstr "Мин. высота"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-item-max-w"
+msgstr "Макс. ширина"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-item-max-h"
+msgstr "Макс. высота"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.layout-item-min-w"
+msgstr "Мин. ширина"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-item-min-w"
+msgstr "Минимальная ширина"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-item-max-w"
+msgstr "Максимальная ширина"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.gap"
+msgstr "Отступ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.column-reverse"
+msgstr "Обратный столбец"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.bottom"
+msgstr "Снизу"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.left"
+msgstr "Слева"
+
+msgid "workspace.options.opacity"
+msgstr "Непрозрачность"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.right"
+msgstr "Справа"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding-simple"
+msgstr "Простой внутренний отступ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.diamond-marker"
+msgstr "Алмазный маркер"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.circle-marker"
+msgstr "Круговой маркер"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-grid"
+msgstr "Удалить макет сетки"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-flex"
+msgstr "Удалить макет гибкости"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.group"
+msgstr "Группа"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.flip-vertical"
+msgstr "Отразить по вертикали"
+
+msgid "workspace.shape.menu.add-grid"
+msgstr "Добавить макет сетки"
+
+msgid "workspace.plugins.title"
+msgstr "Плагины"
+
+msgid "workspace.plugins.success"
+msgstr "Плагин загружен правильно."
+
+msgid "workspace.plugins.error.url"
+msgstr "Плагин не существует или его URL неверен."
+
+msgid "workspace.plugins.button-open"
+msgstr "Открыть"
+
+msgid "workspace.plugins.install"
+msgstr "Установить"
+
+msgid "workspace.plugins.search-placeholder"
+msgstr "Введите URL-адрес плагина"
+
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"Создавая новый аккаунт, вы соглашаетесь с нашими условиями обслуживания и "
+"политикой конфиденциальности."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.add-one"
+msgstr "Нажмите кнопку «Сгенерировать новый токен», чтобы сгенерировать его."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create.success"
+msgstr "Токен доступа успешно создан."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expires-on"
+msgstr "Срок истекает %s"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.no-expiration"
+msgstr "Срока истечения нет"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expired-on"
+msgstr "Срок истёк %s"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal.description"
+msgstr ""
+"Личные токены доступа функционируют как альтернатива нашей системе "
+"аутентификации по логину/паролю и могут использоваться для предоставления "
+"приложению доступа к внутреннему API Penpot"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.token-will-expire"
+msgstr "Срок действия токена истечёт %s"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal"
+msgstr "Личные токены доступа"
+
+msgid "dashboard.webhooks.update.success"
+msgstr "Вебхук успешно обновлён."
+
+#: src/app/main/errors.cljs
+msgid "errors.version-not-supported"
+msgstr "Файл имеет несовместимый номер версии"
+
+#: src/app/main/errors.cljs
+msgid "errors.team-feature-mismatch"
+msgstr "Обнаружена несовместимая функция «%s»"
+
+#: src/app/main/errors.cljs
+msgid "errors.file-feature-mismatch"
+msgstr ""
+"Похоже, что существует несоответствие между включенными функциями и "
+"функциями файла, который вы пытаетесь открыть. Прежде чем файл можно будет "
+"открыть, необходимо применить миграцию для «%s»."
+
+msgid "errors.validation"
+msgstr "Ошибка проверки"
+
+msgid "errors.paste-data-validation"
+msgstr "Недопустимые данные в буфере обмена"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.expiration-date.label"
+msgstr "Дата истечения срока действия"
+
+msgid "modals.create-webhook.url.placeholder"
+msgstr "https://пример.com/postreceive"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.submit-label"
+msgstr "Создать токен"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.title"
+msgstr "Сгенерировать токен доступа"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.accept"
+msgstr "Удалить токен"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.delete-acces-token.message"
+msgstr "Вы уверены, что хотите удалить этот токен?"
+
+msgid "modals.edit-webhook.submit-label"
+msgstr "Изменить вебхук"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "notifications.invitation-email-sent"
+msgstr "Приглашение успешно отправлено"
+
+#: src/app/main/ui/settings/change_email.cljs
+msgid "notifications.validation-email-sent"
+msgstr "Письмо с подтверждением отправлено на %s. Проверьте свою эл. почту!"
+
+msgid "onboarding-v2.before-start.desc3.title"
+msgstr "Видеоуроки"
+
+msgid "onboarding-v2.newsletter.news"
+msgstr ""
+"Присылайте мне новости о Penpot (записи в блоге, видеоуроки, стримы...)."
+
+msgid "onboarding-v2.before-start.title"
+msgstr "Прежде чем начать"
+
+msgid "onboarding-v2.newsletter.desc"
+msgstr ""
+"Подпишитесь на рассылку Penpot, чтобы всегда быть в курсе развития продукта "
+"и новостей."
+
+msgid "onboarding.choice.team-up.continue-without-a-team"
+msgstr "Продолжить без команды"
+
+msgid "onboarding.choice.team-up.continue-creating-team"
+msgstr "Продолжить создание команды"
+
+msgid "onboarding.choice.team-up.create-team-and-invite"
+msgstr "Создать команду и пригласить"
+
+msgid "workspace.layout_grid.editor.top-bar.done"
+msgstr "Готово"
+
+msgid "workspace.options.component.annotation"
+msgstr "Аннотация"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.topbottom"
+msgstr "Верх и низ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
+msgid "workspace.options.export-multiple"
+msgstr "Экспорт выбранного"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-delay"
+msgstr "Задержка"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-close-outside"
+msgstr "Закрывать при нажатии снаружи"
+
+msgid "workspace.options.interaction-auto"
+msgstr "авто"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-duration"
+msgstr "Длительность"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-top-left"
+msgstr "Сверху слева"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-top-center"
+msgstr "Сверху по центру"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-manual"
+msgstr "Вручную"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-url"
+msgstr "Ссылка"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-toggle-overlay-dest"
+msgstr "Переключить наложение: %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.exclusion"
+msgstr "Исключение"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.color-dodge"
+msgstr "Осветление основы"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.lighten"
+msgstr "Замена светлым"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.hue"
+msgstr "Цветовой тон"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.luminosity"
+msgstr "Яркость"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.normal"
+msgstr "Нормально"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.advanced-ops"
+msgstr "Дополнительные параметры"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.space-around"
+msgstr "пространство вокруг"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.top"
+msgstr "Сверху"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-left"
+msgstr "Снизу слева"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-bottom-right"
+msgstr "Снизу справа"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-right"
+msgstr "Сверху справа"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius-top-left"
+msgstr "Сверху слева"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius.single-corners"
+msgstr "Независимые углы"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.title.multiple"
+msgstr "Выборочные тени"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.diamond-marker-short"
+msgstr "Алмаз"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.line-arrow-short"
+msgstr "Стрелка"
+
+msgid "workspace.options.stroke-width"
+msgstr "Толщина обводки"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.back"
+msgstr "На задний план"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.backward"
+msgstr "Перенести назад"
+
+msgid "workspace.shape.menu.create-multiple-components"
+msgstr "Создать несколько компонентов"
+
+msgid "workspace.shape.menu.create-annotation"
+msgstr "Создать аннотацию"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.detach-instances-in-bulk"
+msgstr "Отсоединить экземпляры"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.front"
+msgstr "На передний план"
+
+#: src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.mask"
+msgstr "Маска"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.show-in-assets"
+msgstr "Показать на панели ресурсов"
+
+msgid "workspace.sidebar.layers.frames"
+msgstr "Доски"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs, src/app/main/ui/inspect/attributes/svg.cljs
+msgid "workspace.sidebar.options.svg-attrs.title"
+msgstr "Импортированные атрибуты SVG"
+
+msgid "media.radial"
+msgstr "Радиальный"
+
+msgid "media.solid"
+msgstr "Сплошной"
+
+msgid "media.image"
+msgstr "Изображение"
+
+msgid "media.linear"
+msgstr "Линейный"
+
+msgid "media.choose-image"
+msgstr "Выбрать изображение"
+
+msgid "workspace.plugins.installed-plugins"
+msgstr "Установленные плагины"
+
+msgid "workspace.plugins.empty-plugins"
+msgstr "Плагины ещё не установлены"
+
+msgid "workspace.plugins.menu.title"
+msgstr "Плагины"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.title.multiple"
+msgstr "Выборка размытия"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-close-overlay-dest"
+msgstr "Закрыть наложение: %s"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-tagline"
+msgstr ""
+"Penpot - это бесплатный инструмент проектирования с открытым исходным кодом "
+"для совместной работы над дизайном и кодом"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register-tagline"
+msgstr ""
+"С бесплатным аккаунтом Penpot вы можете создавать неограниченное количество "
+"команд и сотрудничать с другими дизайнерами и разработчиками над любым "
+"количеством проектов. "
+
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.not-all-space"
+msgstr "Имя должно содержать какой-либо символ, отличный от пробела."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.too-long"
+msgstr "Имя должно содержать не более 250 символов."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "branding-illustrations-marketing-pieces"
+msgstr "...брендинг, иллюстрации, маркетинговые материалы и т.д."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.no-access-tokens"
+msgstr "У вас пока нет токенов."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.errors-required-name"
+msgstr "Имя обязательно"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create"
+msgstr "Сгенерировать новый токен"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.token-will-not-expire"
+msgstr "Токен не имеет срока действия"
+
+#: src/app/main/ui/settings/sidebar.cljs
+msgid "labels.access-tokens"
+msgstr "Токены доступа"
+
+msgid "modals.delete-webhook.accept"
+msgstr "Удалить вебхук"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.center"
+msgstr "Центр"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-close-overlay"
+msgstr "Закрыть наложение"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-destination"
+msgstr "Место назначения"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.multiply"
+msgstr "Умножение"
+
+msgid "workspace.layout_grid.editor.title"
+msgstr "Редактирование сетки"
+
+msgid "dashboard.webhooks.active.explain"
+msgstr "Когда этот хук сработает, будут доставлены подробные сведения о событии"
+
+msgid "dashboard.webhooks.create.success"
+msgstr "Вебхук успешно создан."
+
+msgid "dashboard.webhooks.description"
+msgstr ""
+"Вебхуки - это простой способ уведомлять другие веб-сайты и приложения о тех "
+"или иных событиях в Penpot. Мы отправим POST-запрос на каждый из указанных "
+"вами URL-адресов."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
+msgid "errors.email-invalid"
+msgstr "Введите действительный адрес электронной почты"
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-mismatch"
+msgstr ""
+"Похоже, вы открываете файл, в котором включена функция '%s', но текущая "
+"версия penpot её не поддерживает или она отключена."
+
+#: src/app/main/errors.cljs
+msgid "errors.feature-not-supported"
+msgstr "Функция «%s» не поддерживается."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "labels.copy-invitation-link"
+msgstr "Копировать ссылку"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.soft-light"
+msgstr "Мягкий свет"
+
+#, markdown
+msgid "dashboard.fonts.warning-text"
+msgstr ""
+"Мы обнаружили возможную проблему в ваших шрифтах, связанную с вертикальными "
+"метриками для разных операционных систем. Чтобы проверить это, вы можете "
+"воспользоваться сервисами вертикальных метрик шрифтов, такими как "
+"[этот](https://vertical-metrics.netlify.app/). Кроме того, мы рекомендуем "
+"использовать [Transfonter](https://transfonter.org/) для создания веб-"
+"шрифтов и исправления ошибок. "
+
+msgid "dashboard.webhooks.empty.no-webhooks"
+msgstr "Вебхуки пока не созданы."
+
+#: src/app/main/ui/inspect/attributes/layout.cljs
+msgid "inspect.attributes.size"
+msgstr "Размер и положение"
+
+msgid "dashboard.import.analyze-error.components-v2"
+msgstr ""
+"Файл с компонентами v2 активирован, но эта команда пока не поддерживает его."
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "dashboard.success-duplicate-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Ваш файл был успешно продублирован"
+msgstr[1] "Ваши файлы были успешно продублированы"
+
+msgid "dashboard.webhooks.empty.add-one"
+msgstr "Нажмите кнопку «Добавить вебхук», чтобы добавить его."
+
+msgid "inspect.empty.select"
+msgstr "Выберите фигуру, доску или группу, чтобы просмотреть свойства и код"
+
+msgid "media.gradient"
+msgstr "Градиент"
+
+msgid "labels.discard"
+msgstr "Отказаться"
+
+#: src/app/main/ui/workspace.cljs
+msgid "labels.reload-file"
+msgstr "Перезагрузить файл"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.name.label"
+msgstr "Название"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "modals.create-access-token.name.placeholder"
+msgstr "Название может помочь понять, для чего предназначен токен"
+
+msgid "modals.create-webhook.submit-label"
+msgstr "Создать вебхук"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.leftright"
+msgstr "Лево и право"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.forward"
+msgstr "Перенести вперёд"
+
+msgid "errors.webhooks.invalid-uri"
+msgstr "URL-адрес не проходит проверку."
+
+msgid "modals.delete-webhook.title"
+msgstr "Удаление вебхука"
+
+msgid "workspace.options.inspect"
+msgstr "Осмотр"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-action"
+msgstr "Действие"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-after-delay"
+msgstr "После задержки"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation"
+msgstr "Анимация"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-preserve-scroll"
+msgstr "Сохранить положение прокрутки"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-prev-screen"
+msgstr "Предыдущий экран"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-toggle-overlay"
+msgstr "Переключить наложение"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.space-between"
+msgstr "пространство между"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.more-lib-colors"
+msgstr "Больше цветов библиотеки"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.spread"
+msgstr "Распространение"
+
+msgid "workspace.options.stroke-color"
+msgstr "Цвет обводки"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-shared-confirm.activated.no-files-message"
+msgid_plural "modals.delete-shared-confirm.activated.no-files-message"
+msgstr[0] "Он не активирован ни в одном файле."
+msgstr[1] "Они не активированы ни в одном файле."
+
+msgid "modals.delete-component-annotation.title"
+msgstr "Удалить аннотацию"
+
+msgid "modals.delete-component-annotation.message"
+msgstr "Вы уверены, что хотите удалить эту аннотацию?"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.bottom"
+msgstr "Низ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-slide"
+msgstr "Слайд"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-push"
+msgstr "Толчок"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-animation-dissolve"
+msgstr "Растворение"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-item-min-h"
+msgstr "Минимальная высота"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
+msgid "workspace.options.retry"
+msgstr "Повторить"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "notifications.invitation-link-copied"
+msgstr "Ссылка на приглашение скопирована"
+
+msgid "onboarding-v2.newsletter.privacy2"
+msgstr ""
+"Мы будем отправлять вам только актуальные электронные письма. Вы можете "
+"отказаться от рассылки в любое время, воспользовавшись ссылкой \"Отказаться "
+"от рассылки\" в любом из наших информационных бюллетеней."
+
+msgid "onboarding-v2.welcome.desc3"
+msgstr ""
+"Здесь вы узнаете, как сотрудничать с переводами, запросами функций, основным "
+"вкладом, поиском ошибок…"
+
+msgid "workspace.options.height"
+msgstr "Высота"
+
+msgid "labels.active"
+msgstr "Действующий"
+
+#: src/app/main/data/common.cljs
+msgid "notifications.by-code.upgrade-version"
+msgstr "Доступна новая версия, обновите страницу"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-open-overlay"
+msgstr "Открыть наложение"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.add-flex"
+msgstr "Добавить макет гибкости"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.none"
+msgstr "Ничего"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square"
+msgstr "Квадрат"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.round"
+msgstr "Круг"
+
+msgid "workspace.plugins.plugin-list-link"
+msgstr "Список плагинов"
+
+msgid "workspace.plugins.menu.plugins-manager"
+msgstr "Менеджер плагинов"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.toggle-toolbar"
+msgstr "Переключить панель инструментов"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-account-title"
+msgstr "Войдите в свой аккаунт"
+
+#: src/app/main/data/users.cljs
+msgid "errors.email-domain-not-allowed"
+msgstr "Домен не разрешён"
+
+msgid "onboarding-v2.welcome.desc2"
+msgstr ""
+"Общественное пространство, где можно узнавать, делиться и обсуждать Penpot, "
+"его настоящее и будущее со всем сообществом и основной командой Penpot."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.top"
+msgstr "Верх"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.scale"
+msgstr "Масштаб"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+msgid "workspace.options.grid.grid-title"
+msgstr "Сетка"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-background"
+msgstr "Добавить фоновое наложение"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-top-right"
+msgstr "Сверху справа"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-position"
+msgstr "Позиция"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-center"
+msgstr "По центру"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-bottom-right"
+msgstr "Снизу справа"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-bottom-left"
+msgstr "Снизу слева"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.overlay"
+msgstr "Наложение"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.screen"
+msgstr "Экран"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.saturation"
+msgstr "Насыщенность"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.row-reverse"
+msgstr "Обратный ряд"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.row"
+msgstr "Ряд"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin"
+msgstr "Внешний отступ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin-simple"
+msgstr "Простой внешний отступ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout.margin-all"
+msgstr "Все стороны"
+
+msgid "workspace.options.recent-fonts"
+msgstr "Последние"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.radius.all-corners"
+msgstr "Все углы"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.selection-color"
+msgstr "Выбранные цвета"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.drop-shadow"
+msgstr "Отбрасывание тени"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.flip-horizontal"
+msgstr "Отразить по горизонтали"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.detach-instance"
+msgstr "Отсоединить экземпляр"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.square-marker"
+msgstr "Квадратный маркер"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+msgid "workspace.options.stroke-cap.line-arrow"
+msgstr "Линия со стрелкой"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+msgid "workspace.options.shadow-options.title.group"
+msgstr "Групповая тень"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.more-colors"
+msgstr "Больше цветов"
+
+msgid "workspace.options.component.copy"
+msgstr "Копировать"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs
+msgid "workspace.options.component"
+msgstr "Компонент"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.title"
+msgstr "Размытие"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+msgid "workspace.options.blur-options.title.group"
+msgstr "Групповое размытие"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding"
+msgstr "Внутренний отступ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.padding-all"
+msgstr "Все стороны"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+msgid "workspace.options.layout-item.title.layout-item-max-h"
+msgstr "Максимальная высота"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.direction.column"
+msgstr "Столбец"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-while-hovering"
+msgstr "При наведении"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-relative-to"
+msgstr "Относительно"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-ms"
+msgstr "мс"
+
+msgid "workspace.options.grid.params.color"
+msgstr "Цвет"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-pos-bottom-center"
+msgstr "Снизу по центру"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-open-url"
+msgstr "Открыть ссылку"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-open-overlay-dest"
+msgstr "Открыть наложение: %s"
+
+msgid "labels.share"
+msgstr "Поделиться"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.search"
+msgstr "Поиск"
+
+msgid "modals.add-shared-confirm-empty.hint"
+msgstr ""
+"Ваша библиотека пуста. После добавления в качестве общей библиотеки "
+"созданные вами ресурсы будут доступны для использования среди остальных "
+"ваших файлов. Вы уверены, что хотите опубликовать это?"
+
+msgid "onboarding-v2.before-start.desc2.title"
+msgstr "Руководство пользователя"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.color-burn"
+msgstr "Затемнение основы"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.hard-light"
+msgstr "Жёсткий свет"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.difference"
+msgstr "Разница"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.blend-mode.darken"
+msgstr "Затемнение"
