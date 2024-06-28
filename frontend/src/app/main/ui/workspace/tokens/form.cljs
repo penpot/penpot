@@ -254,9 +254,12 @@ Token names should only contain letters and digits separated by . characters.")}
                                                       :auto-focus true
                                                       :on-blur on-update-name
                                                       :on-change on-update-name}}]
-       (when @name-errors
-         [:p {:class (stl/css :error)}
-          (me/humanize @name-errors)])]
+       (for [error (->> (:errors @name-errors)
+                        (map #(-> (assoc @name-errors :errors [%])
+                                  (me/humanize))))]
+         [:p {:key error
+              :class (stl/css :error)}
+          error])]
       [:& tokens.common/labeled-input {:label "Value"
                                        :input-props {:default-value @value-ref
                                                      :on-blur on-update-value
