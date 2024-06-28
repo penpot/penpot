@@ -70,27 +70,28 @@
            (rx/subs!
             (fn [tdata]
               (handle-token tdata))
-            (fn [{:keys [type code] :as error}]
-              (cond
-                (or (= :validation type)
-                    (= :invalid-token code)
-                    (= :token-expired (:reason error)))
-                (reset! bad-token true)
+            (fn [cause]
+              (let [{:keys [type code] :as error} (ex-data cause)]
+                (cond
+                  (or (= :validation type)
+                      (= :invalid-token code)
+                      (= :token-expired (:reason error)))
+                  (reset! bad-token true)
 
-                (= :email-already-exists code)
-                (let [msg (tr "errors.email-already-exists")]
-                  (ts/schedule 100 #(st/emit! (msg/error msg)))
-                  (st/emit! (rt/nav :auth-login)))
+                  (= :email-already-exists code)
+                  (let [msg (tr "errors.email-already-exists")]
+                    (ts/schedule 100 #(st/emit! (msg/error msg)))
+                    (st/emit! (rt/nav :auth-login)))
 
-                (= :email-already-validated code)
-                (let [msg (tr "errors.email-already-validated")]
-                  (ts/schedule 100 #(st/emit! (msg/warn msg)))
-                  (st/emit! (rt/nav :auth-login)))
+                  (= :email-already-validated code)
+                  (let [msg (tr "errors.email-already-validated")]
+                    (ts/schedule 100 #(st/emit! (msg/warn msg)))
+                    (st/emit! (rt/nav :auth-login)))
 
-                :else
-                (let [msg (tr "errors.generic")]
-                  (ts/schedule 100 #(st/emit! (msg/error msg)))
-                  (st/emit! (rt/nav :auth-login))))))))
+                  :else
+                  (let [msg (tr "errors.generic")]
+                    (ts/schedule 100 #(st/emit! (msg/error msg)))
+                    (st/emit! (rt/nav :auth-login)))))))))
 
     (if @bad-token
       [:> static/invalid-token {}]

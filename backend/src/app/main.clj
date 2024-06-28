@@ -343,7 +343,6 @@
     ::wrk/tasks
     {:sendmail           (ig/ref ::email/handler)
      :objects-gc         (ig/ref :app.tasks.objects-gc/handler)
-     :orphan-teams-gc    (ig/ref :app.tasks.orphan-teams-gc/handler)
      :file-gc            (ig/ref :app.tasks.file-gc/handler)
      :file-xlog-gc       (ig/ref :app.tasks.file-xlog-gc/handler)
      :tasks-gc           (ig/ref :app.tasks.tasks-gc/handler)
@@ -387,9 +386,6 @@
    :app.tasks.objects-gc/handler
    {::db/pool     (ig/ref ::db/pool)
     ::sto/storage (ig/ref ::sto/storage)}
-
-   :app.tasks.orphan-teams-gc/handler
-   {::db/pool (ig/ref ::db/pool)}
 
    :app.tasks.delete-object/handler
    {::db/pool (ig/ref ::db/pool)}
@@ -478,9 +474,6 @@
 
      {:cron #app/cron "0 0 0 * * ?" ;; daily
       :task :objects-gc}
-
-     {:cron #app/cron "0 0 0 * * ?" ;; daily
-      :task :orphan-teams-gc}
 
      {:cron #app/cron "0 0 0 * * ?" ;; daily
       :task :storage-gc-deleted}

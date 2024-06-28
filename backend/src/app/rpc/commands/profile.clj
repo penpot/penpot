@@ -28,7 +28,7 @@
    [app.tokens :as tokens]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [app.worker :as-alias wrk]
+   [app.worker :as wrk]
    [cuerdas.core :as str]
    [promesa.exec :as px]))
 
@@ -366,13 +366,13 @@
 
 ;; --- MUTATION: Delete Profile
 
-(declare ^:private get-owned-teams-with-participants)
+(declare ^:private get-owned-teams)
 
 (sv/defmethod ::delete-profile
   {::doc/added "1.0"}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (db/with-atomic [conn pool]
-    (let [teams      (get-owned-teams-with-participants conn profile-id)
+    (let [teams      (get-owned-teams conn profile-id)
           deleted-at (dt/now)]
 
       ;; If we found owned teams with participants, we don't allow
@@ -384,14 +384,17 @@
                   :hint "The user need to transfer ownership of owned teams."
                   :context {:teams (mapv :id teams)}))
 
-      (doseq [{:keys [id]} teams]
-        (db/update! conn :team
-                    {:deleted-at deleted-at}
-                    {:id id}))
-
+      ;; Mark profile deleted immediatelly
       (db/update! conn :profile
                   {:deleted-at deleted-at}
                   {:id profile-id})
+
+      ;; Schedule cascade deletion to a worker
+      (wrk/submit! {::db/conn conn
+                    ::wrk/task :delete-object
+                    ::wrk/params {:object :profile
+                                  :deleted-at deleted-at
+                                  :id profile-id}})
 
       (rph/with-transform {} (session/delete-fn cfg)))))
 
@@ -399,22 +402,21 @@
 ;; --- HELPERS
 
 (def sql:owned-teams
-  "with owner_teams as (
-      select tpr.team_id as id
-        from team_profile_rel as tpr
-       where tpr.is_owner is true
-         and tpr.profile_id = ?
+  "WITH owner_teams AS (
+      SELECT tpr.team_id AS id
+        FROM team_profile_rel AS tpr
+       WHERE tpr.is_owner IS TRUE
+         AND tpr.profile_id = ?
    )
-   select tpr.team_id as id,
-          count(tpr.profile_id) - 1 as participants
-     from team_profile_rel as tpr
-    where tpr.team_id in (select id from owner_teams)
-      and tpr.profile_id != ?
-    group by 1")
+   SELECT tpr.team_id AS id,
+          count(tpr.profile_id) - 1 AS participants
+     FROM team_profile_rel AS tpr
+    WHERE tpr.team_id IN (SELECT id from owner_teams)
+    GROUP BY 1")
 
-(defn- get-owned-teams-with-participants
+(defn get-owned-teams
   [conn profile-id]
-  (db/exec! conn [sql:owned-teams profile-id profile-id]))
+  (db/exec! conn [sql:owned-teams profile-id]))
 
 (def ^:private sql:profile-existence
   "select exists (select * from profile
