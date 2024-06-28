@@ -13,6 +13,7 @@
    [app.main.store :as st]
    [app.main.ui.workspace.tokens.common :as tokens.common]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
+   [app.main.ui.workspace.tokens.token :as wtt]
    [app.util.dom :as dom]
    [cuerdas.core :as str]
    [malli.core :as m]
@@ -41,17 +42,24 @@ Token names should only contain letters and digits separated by . characters.")}
 (defn token-name-schema
   "Generate a dynamic schema validation to check if a token name already exists.
   `existing-token-names` should be a set of strings."
-  [existing-token-names]
+  [{:keys [existing-token-names tokens-tree]}]
   (let [non-existing-token-schema
         (m/-simple-schema
          {:type :token/name-exists
           :pred #(not (get existing-token-names %))
           :type-properties {:error/fn #(str (:value %) " is an already existing token name")
+                            :existing-token-names existing-token-names}})
+        path-exists-schema
+        (m/-simple-schema
+         {:type :token/name-exists
+          :pred #(wtt/token-name-path-exists? % tokens-tree)
+          :type-properties {:error/fn #(str "A token already exists at the path: " (:value %))
                             :existing-token-names existing-token-names}})]
     (m/schema
      [:and
       [:string {:min 1 :max 255}]
       valid-token-name-schema
+      path-exists-schema
       non-existing-token-schema])))
 
 (def token-description-schema
@@ -100,7 +108,7 @@ Token names should only contain letters and digits separated by . characters.")}
                   new-tokens (update tokens token-id merge {:id token-id
                                                             :value input
                                                             :name token-name})]
-              (-> (sd/resolve-tokens+ new-tokens)
+              (-> (sd/resolve-tokens+ new-tokens {:debug? true})
                   (p/then
                    (fn [resolved-tokens]
                      (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-id)]
@@ -141,6 +149,9 @@ Token names should only contain letters and digits separated by . characters.")}
   {::mf/wrap-props false}
   [{:keys [token token-type] :as _args}]
   (let [tokens (sd/use-resolved-workspace-tokens)
+        tokens-tree (mf/use-memo
+                     (mf/deps tokens)
+                     #(wtt/token-names-tree tokens))
         existing-token-names (mf/use-memo
                               (mf/deps tokens)
                               (fn []
@@ -152,10 +163,12 @@ Token names should only contain letters and digits separated by . characters.")}
         ;; Name
         name-ref (mf/use-var (:name token))
         name-errors (mf/use-state nil)
+        _ (js/console.log "name-errors" @name-errors)
         validate-name (mf/use-callback
-                       (mf/deps existing-token-names)
+                       (mf/deps tokens-tree existing-token-names)
                        (fn [value]
-                         (let [schema (token-name-schema existing-token-names)]
+                         (let [schema (token-name-schema {:existing-token-names existing-token-names
+                                                          :tokens-tree tokens-tree})]
                            (m/explain schema (finalize-name value)))))
         on-update-name-debounced (mf/use-callback
                                   (debounce (fn [e]
