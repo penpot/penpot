@@ -91,7 +91,8 @@
   [params]
   (d/without-nils
    {:external-session-id (::rpc/external-session-id params)
-    :event-origin (::rpc/handler-name params)}))
+    :event-origin (::rpc/external-event-origin params)
+    :triggered-by (::rpc/handler-name params)}))
 
 ;; --- SPECS
 
@@ -147,18 +148,20 @@
                        (::rpc/profile-id params)
                        uuid/zero)
 
-        session-id (get params ::rpc/external-session-id)
-        props      (-> (or (::replace-props resultm)
-                           (-> params
-                               (merge (::props resultm))
-                               (dissoc :profile-id)
-                               (dissoc :type)))
+        session-id   (get params ::rpc/external-session-id)
+        event-origin (get params ::rpc/external-event-origin)
+        props        (-> (or (::replace-props resultm)
+                             (-> params
+                                 (merge (::props resultm))
+                                 (dissoc :profile-id)
+                                 (dissoc :type)))
 
-                       (clean-props))
+                         (clean-props))
 
         token-id  (::actoken/id request)
         context   (-> (::context resultm)
                       (assoc :external-session-id session-id)
+                      (assoc :external-event-origin event-origin)
                       (assoc :access-token-id (some-> token-id str))
                       (d/without-nils))]
 
