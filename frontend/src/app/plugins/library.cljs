@@ -594,7 +594,15 @@
 
       :else
       (let [component (u/proxy->library-component self)]
-        (apply array (keys (dm/get-in component [:plugin-data (keyword "shared" namespace)])))))))
+        (apply array (keys (dm/get-in component [:plugin-data (keyword "shared" namespace)]))))))
+
+  (mainInstance
+    [self]
+    (let [file (u/locate-file $file)
+          component (u/proxy->library-component self)
+          root (ctf/get-component-root (:data file) component)]
+      (when (some? root)
+        (shape/shape-proxy $plugin $file (:main-instance-page component) (:id root))))))
 
 (defn lib-component-proxy? [p]
   (instance? LibraryComponentProxy p))
@@ -635,17 +643,7 @@
         :else
         (let [component (u/proxy->library-component self)
               value (dm/str value " / " (:name component))]
-          (st/emit! (dwl/rename-component id value)))))}
-
-   {:name "mainInstance"
-    :get
-    (fn [self]
-      (let [file-id (obj/get self "$file")
-            file (u/locate-file file-id)
-            component (u/proxy->library-component self)
-            root (ctf/get-component-root (:data file) component)]
-        (when (some? root)
-          (shape/shape-proxy plugin-id file-id (:main-instance-page component) (:id root)))))}))
+          (st/emit! (dwl/rename-component id value)))))}))
 
 (set! shape/lib-component-proxy lib-component-proxy)
 
