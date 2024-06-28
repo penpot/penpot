@@ -13,3 +13,16 @@
   (t/is (= ["foo" "bar" "baz"] (wtc/name->path "foo.bar.baz")))
   (t/is (= ["foo" "bar" "baz"] (wtc/name->path "foo..bar.baz")))
   (t/is (= ["foo" "bar" "baz"] (wtc/name->path "foo..bar.baz...."))))
+
+(t/deftest tokens-name-tree
+  (t/is (= {"foo"
+            {"bar"
+             {"baz" {:name "foo.bar.baz", :value "a"},
+              "bam" {:name "foo.bar.bam", :value "b"}}},
+            "baz" {"bar" {"foo" {:name "baz.bar.foo", :value "{foo.bar.baz}"}}}}
+           (wtc/tokens-name-tree {:a {:name "foo.bar.baz"
+                                      :value "a"}
+                                  :b {:name "foo.bar.bam"
+                                      :value "b"}
+                                  :c {:name "baz.bar.foo"
+                                      :value "{foo.bar.baz}"}}))))

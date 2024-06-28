@@ -61,6 +61,23 @@
   (->> (map (fn [{:keys [name] :as token}] [name token]) tokens)
        (into {})))
 
+(defn name->path
+  "Splits token-name into a path vector split by `.` characters.
+
+  Will concatenate multiple `.` characters into one."
+  [token-name]
+  (str/split token-name #"\.+"))
+
+(defn tokens-name-tree
+  "Convert tokens into a nested tree with their `:name` as the path."
+  [tokens]
+  (reduce
+   (fn [acc [_ {:keys [name] :as token}]]
+     (when (string? name)
+       (let [path (name->path name)]
+         (assoc-in acc path token))))
+   {} tokens))
+
 (defn tokens-name-map-for-type
   "Convert tokens with `token-type` into a map with their `:name` as the key.
 
@@ -75,12 +92,6 @@
        (map (fn [[_k {:keys [name] :as item}]]
               (cond-> (assoc item :label name)
                 (token-applied? item shape (or selected-attributes attributes)) (assoc :selected? true))))))
-
-(defn name->path
-  "Splits token-name into a path vector split by `.` characters.
-  Will concatenate multiple `.` characters into one."
-  [token-name]
-  (str/split token-name #"\.+"))
 
 ;; Update functions ------------------------------------------------------------
 

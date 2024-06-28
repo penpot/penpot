@@ -82,20 +82,9 @@
   (and (set? errors)
        (get errors :style-dictionary/missing-reference)))
 
-(defn tokens-name-tree [tokens]
-  (reduce
-   (fn [acc [_ {:keys [name] :as token}]]
-     (if (string? name)
-       (let [name-path (->> (str/split name #"\.")
-                            (remove str/blank?))]
-         (assoc-in acc name-path token))))
-   {} tokens))
-
-(tokens-name-tree @refs/workspace-tokens)
-
 (defn resolve-tokens+
   [tokens & {:keys [debug?] :as config}]
-  (p/let [sd-tokens (-> (tokens-name-tree tokens)
+  (p/let [sd-tokens (-> (wtc/tokens-name-tree tokens)
                         (doto js/console.log)
                         (resolve-sd-tokens+ config))]
     (let [resolved-tokens (reduce
