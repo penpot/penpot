@@ -92,10 +92,6 @@
    {:base
     {:entries []}
 
-    :icons
-    {:exports {default app.main.ui.icons/default}
-     :depends-on #{:base}}
-
     :components
     {:exports {:default app.main.ui.ds/default}
      :depends-on #{:base}}}
