@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-28 22:09+0000\n"
+"PO-Revision-Date: 2024-06-28 23:26+0000\n"
 "Last-Translator: The_BadUser <vanjavs41@gmail.com>\n"
 "Language-Team: Russian <https://hosted.weblate.org/projects/penpot/frontend/"
 "ru/>\n"
@@ -1734,6 +1734,8 @@ msgstr "Удалить из общих библиотек"
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.hint"
 msgstr ""
+"После удаления из общей библиотеки, файл библиотеки этого файла перестанет "
+"быть доступной для использования вместе с остальными вашими файлами."
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -2279,7 +2281,7 @@ msgstr "Помощь и информация"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.select-all"
-msgstr ""
+msgstr "Выбрать все"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.menu.show-artboard-names"
@@ -4234,3 +4236,642 @@ msgstr "Разница"
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
 msgid "workspace.options.layer-options.blend-mode.darken"
 msgstr "Затемнение"
+
+msgid "workspace.focus.focus-mode"
+msgstr "Режим фокусировки"
+
+msgid "errors.webhooks.last-delivery"
+msgstr "Последняя доставка не удалась."
+
+msgid "inspect.empty.help"
+msgstr ""
+"Если вы хотите узнать больше о осмотре дизайна, посетите справочный центр "
+"Penpot"
+
+msgid "modals.delete-webhook.message"
+msgstr "Вы уверены, что хотите удалить этот вебхук?"
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.nudge-title"
+msgstr "Величина сдвига"
+
+msgid "onboarding-v2.before-start.desc2"
+msgstr ""
+"Подробная информация о том, как пользоваться Penpot. От создания прототипов "
+"до организации или обмена проектами."
+
+msgid "onboarding.newsletter.policy"
+msgstr "Политика конфиденциальности."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step1.title"
+msgstr "Помогите нам лучше узнать вас"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.use.education"
+msgstr "Образование"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.reasons.exploring"
+msgstr "Просто исследую"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.reasons.alternative"
+msgstr "Ищу альтернативу Figma, XD и т.д."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.use.personal"
+msgstr "В личных целях"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.reasons.fit"
+msgstr "Анализ того, подходит ли Penpot для моей команды"
+
+#: src/app/main/ui/onboarding/questions.cljs
+#, fuzzy
+msgid "labels.adobe-xd"
+msgstr "Adobe XD"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.invision"
+msgstr "InVision"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.graphic-design"
+msgstr "Графический дизайн"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.marketing"
+msgstr "Маркетинг"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.product-management"
+msgstr "Управление продуктом"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.director"
+msgstr "Директор"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.freelancer"
+msgstr "Фрилансер"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.team-size.2-10"
+msgstr "2-10"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.team-size.31-50"
+msgstr "31-50"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.ds"
+msgstr "Создание систем дизайна"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.code"
+msgstr "Генерация реального кода дизайнов"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step5.title"
+msgstr "Как вы узнали о Penpot?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.team-size.freelancer"
+msgstr "Я фрилансер"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.team-size.personal-project"
+msgstr "Я работаю над личным проектом"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.team-size.more-than-50"
+msgstr "Более 50"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.prototyping"
+msgstr "Создание прототипов"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.article"
+msgstr "Статья (блог, пост, новости)"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.event"
+msgstr "Событие"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.lets-get-started"
+msgstr "Давайте начнём!"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.next"
+msgstr "Далее"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.other-short"
+msgstr "Другое"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.other"
+msgstr "Другое (укажите)"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.previous"
+msgstr "Предыдущий"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.select-option"
+msgstr "Выбрать вариант"
+
+msgid "shortcut-subsection.general-dashboard"
+msgstr "Общее"
+
+msgid "shortcut-subsection.general-viewer"
+msgstr "Общее"
+
+msgid "shortcuts.align-right"
+msgstr "Выровнять по правому краю"
+
+msgid "shortcuts.bool-exclude"
+msgstr "Логическое исключение"
+
+msgid "shortcuts.clear-undo"
+msgstr "Очистить отмену"
+
+msgid "shortcuts.artboard-selection"
+msgstr "Создать доску из выбора"
+
+msgid "shortcuts.create-new-project"
+msgstr "Создать новый"
+
+msgid "shortcuts.draw-ellipse"
+msgstr "Эллипс"
+
+msgid "shortcuts.duplicate"
+msgstr "Дублировать"
+
+msgid "shortcuts.export-shapes"
+msgstr "Экспорт фигур"
+
+msgid "shortcuts.letter-spacing-dec"
+msgstr "Уменьшить межбуквенный интервал"
+
+msgid "shortcuts.make-corner"
+msgstr "Сделать угол"
+
+msgid "shortcuts.open-comments"
+msgstr "Перейти в раздел комментариев"
+
+msgid "shortcuts.not-found"
+msgstr "Ярлыки не найдены"
+
+msgid "shortcuts.prev-frame"
+msgstr "Предыдущая доска"
+
+msgid "shortcuts.scale"
+msgstr "Масштаб"
+
+msgid "shortcuts.text-align-justify"
+msgstr "Выровнять по ширине"
+
+msgid "shortcuts.toggle-layout-grid"
+msgstr "Добавить/удалить макет сетки"
+
+msgid "shortcuts.toggle-rulers"
+msgstr "Показать/скрыть линейки"
+
+msgid "shortcuts.v-distribute"
+msgstr "Распределить вертикально"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.filter"
+msgstr "Фильтр"
+
+msgid "workspace.context-menu.grid-track.column.add-after"
+msgstr "Добавить 1 столбец справа"
+
+msgid "workspace.context-menu.grid-cells.area"
+msgstr "Создать область"
+
+msgid "workspace.context-menu.grid-cells.create-board"
+msgstr "Создать доску"
+
+msgid "workspace.context-menu.grid-cells.merge"
+msgstr "Объединить ячейки"
+
+msgid "workspace.context-menu.grid-track.column.add-before"
+msgstr "Добавить 1 столбец слева"
+
+msgid "workspace.context-menu.grid-track.column.delete"
+msgstr "Удалить столбец"
+
+msgid "workspace.context-menu.grid-track.column.duplicate"
+msgstr "Дублировать столбец"
+
+msgid "workspace.context-menu.grid-track.row.add-after"
+msgstr "Добавить 1 строку ниже"
+
+msgid "workspace.context-menu.grid-track.row.add-before"
+msgstr "Добавить 1 строку выше"
+
+msgid "workspace.context-menu.grid-track.row.delete"
+msgstr "Удалить строку"
+
+msgid "workspace.context-menu.grid-track.row.delete-shapes"
+msgstr "Удалить строку и фигуры"
+
+msgid "workspace.header.menu.disable-snap-pixel-grid"
+msgstr "Отключить привязку к пикселю"
+
+msgid "workspace.context-menu.grid-track.row.duplicate"
+msgstr "Дублировать строку"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-snap-ruler-guides"
+msgstr "Отключить привязку к направляющим линейки"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-guides"
+msgstr "Скрыть направляющие"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-guides"
+msgstr "Показать направляющие"
+
+msgid "workspace.layout_grid.editor.options.edit-grid"
+msgstr "Изменить сетку"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.save-error"
+msgstr "Ошибка при сохранении"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.saved"
+msgstr "Сохранено"
+
+msgid "workspace.options.component.main"
+msgstr "Главный"
+
+#, markdown
+msgid "workspace.top-bar.view-only"
+msgstr "**Осмотр кода** (Только просмотр)"
+
+msgid "modals.edit-webhook.title"
+msgstr "Изменить вебхук"
+
+#: src/app/main/ui/dashboard/sidebar.cljs
+msgid "modals.leave-and-reassign.title"
+msgstr "Прежде чем вы уйдёте"
+
+msgid "onboarding.choice.team-up.create-team-without-inviting"
+msgstr "Создать команду без приглашения"
+
+msgid "shortcuts.align-center"
+msgstr "Выровнять по центру"
+
+msgid "shortcut-subsection.shape"
+msgstr "Фигуры"
+
+msgid "shortcuts.draw-frame"
+msgstr "Доска"
+
+msgid "shortcuts.detach-component"
+msgstr "Отсоединить компонент"
+
+msgid "shortcuts.bring-back"
+msgstr "Переместить на задний план"
+
+msgid "shortcuts.delete-node"
+msgstr "Удалить узел"
+
+msgid "shortcuts.flip-horizontal"
+msgstr "Отразить по горизонтали"
+
+msgid "shortcuts.escape"
+msgstr "Отмена"
+
+msgid "shortcuts.group"
+msgstr "Группа"
+
+msgid "shortcuts.h-distribute"
+msgstr "Распределить горизонтально"
+
+msgid "shortcuts.join-nodes"
+msgstr "Соединение узлов"
+
+msgid "shortcuts.flip-vertical"
+msgstr "Отразить по вертикали"
+
+msgid "shortcuts.mask"
+msgstr "Маска"
+
+msgid "shortcuts.merge-nodes"
+msgstr "Объединить узлы"
+
+msgid "shortcuts.make-curve"
+msgstr "Сделать изгиб"
+
+msgid "shortcuts.opacity-3"
+msgstr "Установить непрозрачность на 30%"
+
+msgid "shortcuts.opacity-0"
+msgstr "Установить непрозрачность на 100%"
+
+msgid "shortcuts.opacity-4"
+msgstr "Установить непрозрачность на 40%"
+
+msgid "shortcuts.open-interactions"
+msgstr "Перейти в раздел взаимодействия"
+
+msgid "shortcuts.open-inspect"
+msgstr "Перейти в раздел осмотра"
+
+msgid "shortcuts.search-placeholder"
+msgstr "Поиск ярлыков"
+
+msgid "shortcuts.reset-zoom"
+msgstr "Сбросить масштаб"
+
+msgid "shortcuts.text-align-center"
+msgstr "Выровнять по центру"
+
+msgid "shortcuts.toggle-lock"
+msgstr "Запереть/Отпереть"
+
+msgid "shortcuts.toggle-layout-flex"
+msgstr "Добавить/удалить макет гибкости"
+
+msgid "workspace.focus.focus-off"
+msgstr "Фокусировка выключена"
+
+msgid "workspace.header.menu.enable-scale-content"
+msgstr "Включить пропорциональный масштаб"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.preferences"
+msgstr "Предпочтения"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-full-screen"
+msgstr "На весь экран"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.saving"
+msgstr "Сохранение"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.delete"
+msgstr "Удалено %s"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.modify"
+msgstr "Изменено %s"
+
+msgid "workspace.undo.entry.multiple.rect"
+msgstr "прямоугольники"
+
+msgid "shortcuts.bool-difference"
+msgstr "Логическая разница"
+
+msgid "shortcuts.draw-rect"
+msgstr "Прямоугольник"
+
+msgid "shortcuts.open-viewer"
+msgstr "Перейти в раздел взаимодействия"
+
+msgid "workspace.focus.selection"
+msgstr "Выбор"
+
+msgid "shortcut-section.dashboard"
+msgstr "Панель управления"
+
+msgid "inspect.empty.more-info"
+msgstr "Подробнее об осмотре"
+
+msgid "workspace.header.menu.show-pixel-grid"
+msgstr "Показать пиксельную сетку"
+
+msgid "errors.webhooks.ssl-validation"
+msgstr "Ошибка при проверке SSL."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.hint"
+msgstr ""
+"Если вы передадите права собственности, вы измените свою роль на "
+"администратора, потеряв некоторые права доступа в этой команде. "
+
+msgid "shortcuts.align-vcenter"
+msgstr "Выровнять по центру по вертикали"
+
+msgid "shortcuts.align-top"
+msgstr "Выровнять по верхнему краю"
+
+msgid "shortcuts.align-justify"
+msgstr "Выровнять по ширине"
+
+msgid "shortcuts.align-left"
+msgstr "Выровнять по левому краю"
+
+msgid "shortcuts.font-size-dec"
+msgstr "Уменьшить размер шрифта"
+
+msgid "shortcuts.go-to-drafts"
+msgstr "Перейти к черновикам"
+
+msgid "shortcuts.font-size-inc"
+msgstr "Увеличить размер шрифта"
+
+msgid "shortcuts.line-height-dec"
+msgstr "Уменьшить высоту строки"
+
+msgid "shortcuts.line-height-inc"
+msgstr "Увеличить высоту строки"
+
+msgid "shortcuts.letter-spacing-inc"
+msgstr "Увеличить междустрочный интервал"
+
+msgid "shortcuts.select-parent-layer"
+msgstr "Выбрать родительский слой"
+
+msgid "shortcuts.text-align-right"
+msgstr "Выровнять по правому краю"
+
+msgid "shortcuts.thumbnail-set"
+msgstr "Установить миниатюры"
+
+#: src/app/main/data/workspace/libraries.cljs, src/app/main/ui/components/color_bullet.cljs
+msgid "workspace.gradients.linear"
+msgstr "Линейный градиент"
+
+#: src/app/main/data/workspace/libraries.cljs, src/app/main/ui/components/color_bullet.cljs
+msgid "workspace.gradients.radial"
+msgstr "Радиальный градиент"
+
+msgid "workspace.header.menu.disable-scale-content"
+msgstr "Отключить пропорциональное масштабирование"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-unpublish-shared-confirm.activated.hint"
+msgid_plural "modals.delete-unpublish-shared-confirm.activated.hint"
+msgstr[0] ""
+"Ресурсы, которые уже использовались в этом файле, останутся там (дизайн не "
+"будет нарушен)."
+msgstr[1] ""
+"Ресурсы, которые уже использовались в этих файлах, останутся там (дизайн не "
+"будет нарушен)."
+
+msgid "modals.publish-empty-library.accept"
+msgstr "Опубликовать"
+
+# SUBSECTIONS
+msgid "shortcut-subsection.alignment"
+msgstr "Выравнивание"
+
+msgid "shortcuts.bring-forward"
+msgstr "Перенести вперёд"
+
+msgid "shortcuts.bring-backward"
+msgstr "Переместить назад"
+
+msgid "workspace.options.component.edit-annotation"
+msgstr "Изменить аннотацию"
+
+msgid "workspace.options.component.create-annotation"
+msgstr "Создать аннотацию"
+
+msgid "webhooks.last-delivery.success"
+msgstr "Последняя доставка прошла успешно."
+
+msgid "shortcuts.toggle-theme"
+msgstr "Сменить тему"
+
+msgid "shortcuts.toggle-lock-size"
+msgstr "Запереть пропорции"
+
+msgid "shortcuts.toggle-visibility"
+msgstr "Показать/скрыть"
+
+msgid "workspace.assets.duplicate-main"
+msgstr "Дублировать главное"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
+msgid "settings.detach"
+msgstr "Отсоединить"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs
+msgid "settings.select-this-color"
+msgstr "Выбрать элементы, использующие этот стиль"
+
+# SECTIONS
+msgid "shortcut-section.basics"
+msgstr "Основное"
+
+msgid "shortcuts.opacity-1"
+msgstr "Установить непрозрачность на 10%"
+
+msgid "shortcuts.next-frame"
+msgstr "Следующая доска"
+
+msgid "shortcuts.opacity-2"
+msgstr "Установить непрозрачность на 20%"
+
+msgid "workspace.assets.open-library"
+msgstr "Открыть файл библиотеки"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs
+msgid "workspace.assets.sidebar.components"
+msgid_plural "workspace.assets.sidebar.components"
+msgstr[0] "1 компонент"
+msgstr[1] "%s компонентов"
+
+msgid "shortcuts.add-node"
+msgstr "Добавить узел"
+
+msgid "shortcuts.align-bottom"
+msgstr "Выровнять по нижнему краю"
+
+msgid "shortcuts.align-hcenter"
+msgstr "Выровнять по центру по горизонтали"
+
+msgid "shortcuts.bool-union"
+msgstr "Логическое объединение"
+
+msgid "shortcuts.bring-front"
+msgstr "Вынести на передний план"
+
+msgid "onboarding.choice.team-up.create-team-without-invite"
+msgstr "Создать команду"
+
+msgid "workspace.context-menu.grid-track.column.delete-shapes"
+msgstr "Удалить столбец и фигуры"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.developer"
+msgstr "Разработка"
+
+msgid "shortcuts.text-align-left"
+msgstr "Выровнять по левому краю"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-scale-text"
+msgstr "Отключить масштабирование текста"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-snap-guides"
+msgstr "Отключить привязку к направляющим"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.figma"
+msgstr "Figma"
+
+msgid "workspace.focus.focus-on"
+msgstr "Фокусировка включена"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-scale-text"
+msgstr "Включить масштабирование текста"
+
+msgid "shortcuts.open-dashboard"
+msgstr "Перейти в панель управления"
+
+msgid "shortcuts.insert-image"
+msgstr "Вставить изображение"
+
+msgid "viewer.header.inspect-section"
+msgstr "Осмотр (%s)"
+
+msgid "onboarding.choice.team-up.roles"
+msgstr "Пригласить с ролью:"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step1.subtitle"
+msgstr ""
+"Расскажите нам немного о себе, чтобы мы могли заставить Penpot работать на "
+"вас. Ваши ответы помогут нам определить приоритетность новых функций и "
+"укажут вам правильное направление для начала работы."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "title.settings.access-tokens"
+msgstr "Профиль - токены доступа"
+
+msgid "shortcuts.toggle-guides"
+msgstr "Показать/скрыть направляющие"
+
+msgid "shortcuts.add-comment"
+msgstr "Комментарии"
+
+msgid "shortcuts.select-prev"
+msgstr "Выбрать предыдущий слой"
+
+msgid "shortcuts.separate-nodes"
+msgstr "Отдельные узлы"
+
+msgid "shortcuts.select-next"
+msgstr "Выбрать следующий слой"
+
+msgid "workspace.header.menu.enable-snap-pixel-grid"
+msgstr "Включить привязку к пикселю"
+
+msgid "shortcuts.bool-intersection"
+msgstr "Логическое пересечение"
