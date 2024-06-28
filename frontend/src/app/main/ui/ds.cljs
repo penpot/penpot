@@ -4,9 +4,9 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.components
+(ns app.main.ui.ds
   (:require
-   [app.main.ui.components.buttons.simple-button :as sb]
+   [app.main.ui.ds.buttons.simple-button :as sb]
    [rumext.v2 :as mf]))
 
 (mf/defc story-wrapper

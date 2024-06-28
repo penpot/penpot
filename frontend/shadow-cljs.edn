@@ -97,7 +97,7 @@
      :depends-on #{:base}}
 
     :components
-    {:exports {:default app.main.ui.components/default}
+    {:exports {:default app.main.ui.ds/default}
      :depends-on #{:base}}}
 
    :compiler-options
