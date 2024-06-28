@@ -58,6 +58,7 @@ jobs:
           command: |
             yarn install
             yarn run fmt:clj:check
+            yarn run fmt:js:check
 
       - run:
           name: "common linter check"
