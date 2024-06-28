@@ -73,7 +73,7 @@
     "p-limit": "^5.0.0",
     "postcss": "^8.4.38",
     "postcss-clean": "^1.2.2",
-    "prettier": "^3.2.5",
+    "prettier": "3.3.2",
     "pretty-time": "^1.1.0",
     "prop-types": "^15.8.1",
     "rimraf": "^5.0.7",
