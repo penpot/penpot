@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-28 23:26+0000\n"
+"PO-Revision-Date: 2024-06-30 19:10+0000\n"
 "Last-Translator: The_BadUser <vanjavs41@gmail.com>\n"
 "Language-Team: Russian <https://hosted.weblate.org/projects/penpot/frontend/"
 "ru/>\n"
@@ -87,7 +87,7 @@ msgstr "Пароль успешно изменён"
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.profile-not-verified"
-msgstr "Профиль не подтверждён, пожалуйста, проверьте почту."
+msgstr "Профиль не подтверждён, проверьте почту."
 
 #: src/app/main/ui/auth/recovery_request.cljs
 msgid "auth.notifications.recovery-token-sent"
@@ -126,7 +126,7 @@ msgstr "Изменить пароль"
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.register"
-msgstr "Еще нет аккаунта?"
+msgstr "Ещё нет аккаунта?"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.register-submit"
@@ -138,7 +138,7 @@ msgstr "Создать аккаунт"
 
 #: src/app/main/ui/auth.cljs
 msgid "auth.sidebar-tagline"
-msgstr "Open Source решение для дизайна и прототипирования."
+msgstr "Решение с открытым исходным кодом для создания дизайна и прототипов."
 
 msgid "auth.terms-of-service"
 msgstr "Условия использования"
@@ -159,7 +159,7 @@ msgstr ""
 "доступной"
 
 msgid "common.share-link.current-tag"
-msgstr "(текущее)"
+msgstr "(текущая)"
 
 msgid "common.share-link.destroy-link"
 msgstr "Удалить ссылку"
@@ -179,7 +179,7 @@ msgstr[0] "1 общая страница"
 msgstr[1] "%s общих страниц"
 
 msgid "common.share-link.permissions-can-comment"
-msgstr "Может комментировать"
+msgstr "Можно оставлять комментарии"
 
 msgid "common.share-link.permissions-can-inspect"
 msgstr "Может проверять код"
@@ -191,7 +191,7 @@ msgid "common.share-link.permissions-pages"
 msgstr "Общие страницы"
 
 msgid "common.share-link.placeholder"
-msgstr "Ссылка появится здесь"
+msgstr "Ссылка общего доступа появится здесь"
 
 msgid "common.share-link.team-members"
 msgstr "Только участники команды"
@@ -1429,14 +1429,14 @@ msgstr "Библиотеки"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-all-comments"
-msgstr "Показать все"
+msgstr "Все комментарии"
 
 msgid "labels.show-comments-list"
 msgstr "Показать список комментариев"
 
 #: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
 msgid "labels.show-your-comments"
-msgstr "Показать только ваши"
+msgstr "Только мои"
 
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.status"
@@ -1740,7 +1740,7 @@ msgstr ""
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.remove-shared-confirm.message"
-msgstr ""
+msgstr "Удалить “%s” из общей библиотеки"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -1916,7 +1916,7 @@ msgid "shortcuts.go-to-search"
 msgstr "Поиск"
 
 msgid "shortcuts.hide-ui"
-msgstr "Показать/скрыть UI"
+msgstr "Показать/скрыть интерфейс"
 
 msgid "shortcuts.opacity-5"
 msgstr "Установить непрозрачность на 50%"
@@ -1949,7 +1949,7 @@ msgid "shortcuts.select-all"
 msgstr "Выбрать все"
 
 msgid "shortcuts.show-pixel-grid"
-msgstr "Показать/скрыть сетку пикселей"
+msgstr "Показать/скрыть пиксельную сетку"
 
 msgid "shortcuts.show-shortcuts"
 msgstr "Показать/скрыть горячие клавиши"
@@ -2301,7 +2301,7 @@ msgstr "Сброс"
 
 #: src/app/main/ui/workspace/header.cljs
 msgid "workspace.header.viewer"
-msgstr "Режим просмотра (%s)"
+msgstr "Открыть предпросмотр (%s)"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.add"
@@ -2309,7 +2309,7 @@ msgstr "Добавить"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.colors"
-msgstr ""
+msgstr "%s цветов"
 
 #: src/app/main/ui/workspace/colorpicker/libraries.cljs,
 #: src/app/main/ui/workspace/colorpalette.cljs
@@ -2339,7 +2339,7 @@ msgstr "Сохранить стиль цвета"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.components"
-msgstr ""
+msgstr "%s компонентов"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.file-library"
@@ -2347,7 +2347,7 @@ msgstr "Библиотека файлов"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.graphics"
-msgstr ""
+msgstr "%s графики"
 
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.in-this-file"
@@ -3218,11 +3218,10 @@ msgid_plural "modals.delete-shared-confirm.activated.scd-message"
 msgstr[0] "Эта библиотека активируется здесь: "
 msgstr[1] "Эти библиотеки активируются здесь: "
 
-#, fuzzy
 msgid "modals.move-shared-confirm.accept"
 msgid_plural "modals.move-shared-confirm.accept"
 msgstr[0] "Переместить"
-msgstr[1] "Переместить"
+msgstr[1] "Перемещение"
 
 msgid "modals.move-shared-confirm.message"
 msgid_plural "modals.move-shared-confirm.message"
@@ -3734,7 +3733,7 @@ msgstr ""
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.register-tagline"
 msgstr ""
-"С бесплатным аккаунтом Penpot вы можете создавать неограниченное количество "
+"С бесплатным аккаунтом Penpot можно создавать неограниченное количество "
 "команд и сотрудничать с другими дизайнерами и разработчиками над любым "
 "количеством проектов. "
 
@@ -4288,7 +4287,6 @@ msgid "onboarding.questions.reasons.fit"
 msgstr "Анализ того, подходит ли Penpot для моей команды"
 
 #: src/app/main/ui/onboarding/questions.cljs
-#, fuzzy
 msgid "labels.adobe-xd"
 msgstr "Adobe XD"
 
@@ -4875,3 +4873,514 @@ msgstr "Включить привязку к пикселю"
 
 msgid "shortcuts.bool-intersection"
 msgstr "Логическое пересечение"
+
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "labels.unpublish-multi-files"
+msgstr "Отменить публикацию %s файлов"
+
+msgid "labels.view-only"
+msgstr "Только просмотр"
+
+msgid "media.image.short"
+msgstr "изобр."
+
+msgid "modals.create-webhook.url.label"
+msgstr "Ссылка полезной нагрузки"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "modals.promote-owner-confirm.accept"
+msgstr "Передача прав собственности"
+
+msgid "modals.publish-empty-library.message"
+msgstr "Ваша библиотека пуста. Вы уверены, что хотите опубликовать её?"
+
+#: src/app/main/ui/workspace/nudge.cljs
+msgid "modals.small-nudge"
+msgstr "Небольшое подталкивание"
+
+msgid "onboarding-v2.before-start.desc1"
+msgstr ""
+"Вы должны знать, что существует множество ресурсов, которые помогут вам "
+"начать работу с Penpot, например, руководство пользователя и наш канал на "
+"Youtube."
+
+msgid "onboarding.newsletter.accept"
+msgstr "Да, подписаться"
+
+msgid "onboarding.newsletter.acceptance-message"
+msgstr ""
+"Ваш запрос на подписку отправлен, мы вышлем вам электронное письмо для "
+"подтверждения."
+
+msgid "onboarding.team-modal.team-definition"
+msgstr "Что такое команда?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step1.question1"
+msgstr "В каких целях вы планируете использовать Penpot?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.use.work"
+msgstr "Для работы"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step1.question2"
+msgstr "Что привело вас сегодня в Penpot?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.reasons.testing"
+msgstr "Тестирование перед самохостингом"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.canva"
+msgstr "Canva"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.sketch"
+msgstr "Sketch"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.product-design"
+msgstr "Дизайн продуктов или UX"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step3.question2"
+msgstr "Какова ваша роль?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.team-leader"
+msgstr "Руководитель группы"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.team-member"
+msgstr "Член команды"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.founder"
+msgstr "Генеральный директор или основатель"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step3.question3"
+msgstr "Каков размер вашей компании?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.team-size.11-30"
+msgstr "11-30"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step4.title"
+msgstr "С чего бы вы хотели начать?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.ui"
+msgstr "Проектирование UI/UX приложения"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.wireframing"
+msgstr "Вайрфрейминг"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.youtube"
+msgstr "YouTube"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.social"
+msgstr "Социальные сети (X, Linkedin, FB и т.д.)"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.start"
+msgstr "Начать"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.student-teacher"
+msgstr "Студент или преподаватель"
+
+msgid "shortcut-subsection.path-editor"
+msgstr "Пути"
+
+msgid "shortcuts.bold"
+msgstr "Переключить толщину"
+
+msgid "shortcuts.cut"
+msgstr "Вырезать"
+
+msgid "shortcuts.draw-path"
+msgstr "Контур"
+
+msgid "shortcuts.fit-all"
+msgstr "Увеличить, чтобы вместить все"
+
+msgid "shortcuts.increase-zoom"
+msgstr "Приблизить"
+
+msgid "shortcuts.italic"
+msgstr "Переключить курсив"
+
+msgid "shortcuts.move"
+msgstr "Переместить"
+
+msgid "shortcuts.snap-nodes"
+msgstr "Привязать к узлам"
+
+msgid "shortcuts.toggle-alignment"
+msgstr "Переключить динамическое выравнивание"
+
+msgid "shortcuts.toggle-snap-guides"
+msgstr "Привязать к направляющим"
+
+msgid "shortcuts.ungroup"
+msgstr "Разгруппировать"
+
+msgid "shortcuts.zoom-lense-decrease"
+msgstr "Уменьшить зум-объектив"
+
+msgid "shortcuts.zoom-lense-increase"
+msgstr "Увеличить зум-объектив"
+
+msgid "shortcuts.zoom-selected"
+msgstr "Приблизить выбранное"
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "team.webhooks.max-length"
+msgstr "Название вебхука должно содержать не более 2048 символов."
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.sort"
+msgstr "Сортировка"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-snap-ruler-guides"
+msgstr "Привязка к направляющим линейки"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-textpalette"
+msgstr "Показать палитру шрифтов"
+
+msgid "workspace.header.menu.toggle-dark-theme"
+msgstr "Переключить на тёмную тему"
+
+msgid "workspace.header.menu.toggle-light-theme"
+msgstr "Переключить на светлую тему"
+
+msgid "workspace.layout_grid.editor.padding.expand"
+msgstr "Настроить внутренний отступ по отдельности"
+
+msgid "workspace.layout_grid.editor.top-bar.locate.tooltip"
+msgstr "Размещение макета сетки"
+
+#: src/app/main/ui/workspace/textpalette.cljs
+msgid "workspace.libraries.colors.empty-typography-palette"
+msgstr "В вашей библиотеке ещё нет стилей типографики"
+
+msgid "workspace.options.component.swap"
+msgstr "Заменить компонент"
+
+msgid "workspace.options.component.swap.empty"
+msgstr "В этой библиотеке ещё нет ресурсов"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing-linear"
+msgstr "Линейно"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#, fuzzy
+msgid "workspace.options.interaction-easing-ease"
+msgstr "Ease"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-self"
+msgstr "само"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.empty"
+msgstr "Изменений в истории ещё нет"
+
+msgid "workspace.undo.entry.single.curve"
+msgstr "кривая"
+
+msgid "workspace.undo.entry.single.typography"
+msgstr "ресурс типографики"
+
+msgid "shortcuts.toggle-snap-ruler-guide"
+msgstr "Привязать к направляющим линейки"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.create-group-hint"
+msgstr ""
+"Вашим элементам будет автоматически присвоено название «название группы/"
+"название элемента»"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs, src/app/main/ui/inspect/attributes/text.cljs, src/app/main/ui/inspect/attributes/text.cljs
+msgid "workspace.assets.typography.sample"
+msgstr "В то же время"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fit-all"
+msgstr "Масштабировать, чтобы всё вместилось"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-selected"
+msgstr "Масштабировать до выбранного"
+
+#: src/app/main/ui/workspace/colorpalette.cljs
+msgid "workspace.libraries.colors.empty-palette"
+msgstr "В вашей библиотеке ещё нет цветовых стилей"
+
+msgid "workspace.undo.entry.single.media"
+msgstr "ресурс графики"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-mouse-leave"
+msgstr "Отведение мыши"
+
+#, fuzzy
+msgid "workspace.shape.menu.flatten"
+msgstr "Flatten"
+
+msgid "errors.webhooks.unexpected"
+msgstr "Неожиданная ошибка при проверке"
+
+msgid "errors.webhooks.unexpected-status"
+msgstr "Неожиданный статус %s"
+
+msgid "inspect.attributes.typography.text-transform.unset"
+msgstr "Не установлено"
+
+msgid "onboarding.choice.team-up.start-without-a-team"
+msgstr "Начать без команды"
+
+msgid "onboarding.choice.team-up.start-without-a-team-description"
+msgstr "Вы сможете создать команду позже."
+
+msgid "shortcut-subsection.text-editor"
+msgstr "Тексты"
+
+msgid "shortcuts.draw-curve"
+msgstr "Кривая"
+
+msgid "shortcuts.decrease-zoom"
+msgstr "Отдалить"
+
+msgid "shortcuts.draw-nodes"
+msgstr "Нарисовать контур"
+
+msgid "shortcuts.move-nodes"
+msgstr "Переместить узел"
+
+msgid "shortcuts.move-unit-down"
+msgstr "Переместить вниз"
+
+msgid "shortcuts.redo"
+msgstr "Вернуть"
+
+msgid "shortcuts.toggle-fullscreen"
+msgstr "Переключить полноэкранный режим"
+
+msgid "shortcuts.underline"
+msgstr "Переключить подчёркивание"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.shared-library"
+msgstr "Общая библиотека"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom"
+msgstr "Масштаб"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fit"
+msgstr "Подогнать - масштабировать до необходимого размера"
+
+msgid "workspace.layout_grid.editor.top-bar.locate"
+msgstr "Разместить"
+
+msgid "workspace.options.clip-content"
+msgstr "Зажать содержимое"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
+msgid "workspace.options.export.suffix"
+msgstr "Суффикс"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.flow"
+msgstr "Поток"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-in"
+msgstr "Внутри"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#, fuzzy
+msgid "workspace.options.interaction-easing-ease-out"
+msgstr "Ease out"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-mouse-enter"
+msgstr "Наведение мыши"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.unmask"
+msgstr "Убрать маску"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.move"
+msgstr "Перемещённые объекты"
+
+msgid "workspace.undo.entry.multiple.curve"
+msgstr "кривые"
+
+msgid "shortcut-subsection.tools"
+msgstr "Инструменты"
+
+msgid "shortcut-subsection.zoom-viewer"
+msgstr "Увеличение"
+
+msgid "shortcuts.draw-text"
+msgstr "Текст"
+
+msgid "shortcuts.move-unit-up"
+msgstr "Переместить вверх"
+
+msgid "shortcuts.snap-pixel-grid"
+msgstr "Привязать к пиксельной сетке"
+
+msgid "workspace.undo.entry.single.color"
+msgstr "ресурс цвета"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.unpublish-shared-confirm.accept"
+msgid_plural "modals.unpublish-shared-confirm.accept"
+msgstr[0] "Отменить публикацию"
+msgstr[1] "Отменить публикации"
+
+msgid "errors.webhooks.timeout"
+msgstr "Время вышло"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#, fuzzy
+msgid "workspace.options.interaction-easing-ease-in-out"
+msgstr "Ease in out"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#, fuzzy
+msgid "workspace.options.interaction-easing-ease-in"
+msgstr "Ease in"
+
+msgid "modals.invite-member.repeated-invitation"
+msgstr ""
+"Некоторые электронные письма отправлены от текущих членов команды. Их "
+"приглашения не будут отправлены."
+
+msgid "shortcuts.line-through"
+msgstr "Переключить междустрочность"
+
+msgid "shortcuts.toggle-zoom-style"
+msgstr "Переключить стиль масштабирования"
+
+msgid "workspace.assets.local-library"
+msgstr "локальная библиотека"
+
+msgid "workspace.assets.typography.text-styles"
+msgstr "Стиль текста"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.option.view"
+msgstr "Вид"
+
+msgid "workspace.header.menu.redo"
+msgstr "Вернуть"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.unsaved"
+msgstr "Есть несохранённые изменения"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.zoom-fill"
+msgstr "Заполнение - Масштаб заполнения"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+msgid "workspace.options.constraints.fix-when-scrolling"
+msgstr "Закрепить при прокрутке"
+
+msgid "shortcut-section.workspace"
+msgstr "Рабочая область"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-out"
+msgstr "Снаружи"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+msgid "workspace.options.layout.packed"
+msgstr "упаковано"
+
+msgid "shortcuts.toggle-textpalette"
+msgstr "Переключить текстовую палитру"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step3.question1"
+msgstr "Какую работу вы выполняете?"
+
+msgid "modals.publish-empty-library.title"
+msgstr "Опубликовать пустую библиотеку"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step2.title"
+msgstr "Каким из этих инструментов вы пользуетесь чаще всего?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step3.title"
+msgstr "Расскажите нам о своей работе"
+
+msgid "shortcuts.move-fast-down"
+msgstr "Быстрое перемещение вниз"
+
+msgid "shortcuts.move-fast-left"
+msgstr "Быстрое перемещение влево"
+
+msgid "onboarding.choice.team-up.create-team-and-send-invites-description"
+msgstr "Вы сможете пригласить позже"
+
+msgid "onboarding.newsletter.title"
+msgstr "Хотите получать новости Penpot?"
+
+msgid "shortcut-section.viewer"
+msgstr "Просмотрщик"
+
+msgid "shortcuts.move-unit-right"
+msgstr "Переместить вправо"
+
+msgid "shortcuts.move-fast-right"
+msgstr "Быстрое перемещение вправо"
+
+msgid "shortcuts.move-fast-up"
+msgstr "Быстрое перемещение вверх"
+
+msgid "shortcuts.move-unit-left"
+msgstr "Переместить влево"
+
+msgid "shortcuts.undo"
+msgstr "Отменить"
+
+msgid "shortcuts.unmask"
+msgstr "Убрать маску"
+
+msgid "title.team-webhooks"
+msgstr "Вебхуки - %s - Penpot"
+
+msgid "workspace.header.menu.undo"
+msgstr "Отменить"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interaction-easing"
+msgstr "Поведение"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs
+msgid "workspace.undo.entry.unknown"
+msgstr "Работа над %s"
+
+msgid "shortcut-subsection.zoom-workspace"
+msgstr "Увеличение"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-snap-guides"
+msgstr "Привязка к направляющим"
