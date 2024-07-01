@@ -18,7 +18,21 @@ If possible add video here from PR as well
 
 ## Changes
 
+### 2024-07-01 - Disallow creating tokens at existing paths
+
+Disallow creating tokens at an existing path.
+
+[Video](https://github.com/tokens-studio/tokens-studio-for-penpot/assets/1898374/557990fe-efe7-445b-8a1d-824396049db7
+)
+
+Example:
+We've got a token with `borderRadius.sm`, so we can't allow to create a token at `borderRadius` or `borderRadius.sm`.
+But we can allow creating a token at `borderRadius.md`.
+
+
 ### 2024-06-26 - Disallow special characters in token name
+
+- Only allows digits, letters and `-` as a part of a token name
 
 [Video](https://github.com/tokens-studio/tokens-studio-for-penpot/assets/1898374/7c59c0cc-d6e1-4b0d-9646-9a27eafcccc4
 )
