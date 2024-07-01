@@ -35,6 +35,14 @@
     {:path (seq path)
      :selector selector}))
 
+(defn token-names-map
+  "Convert tokens into a map with their `:name` as the key.
+
+  E.g.: {\"sm\" {:token-type :border-radius :id #uuid \"000\" ...}}"
+  [tokens]
+  (->> (map (fn [{:keys [name] :as token}] [name token]) tokens)
+       (into {})))
+
 (defn token-names-tree
   "Convert tokens into a nested tree with their `:name` as the path."
   [tokens]

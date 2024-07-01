@@ -39,25 +39,9 @@
   (->> (vals tokens)
        (group-by :type)))
 
-(defn tokens-name-map
-  "Convert tokens into a map with their `:name` as the key.
-
-  E.g.: {\"sm\" {:token-type :border-radius :id #uuid \"000\" ...}}"
-  [tokens]
-  (->> (map (fn [{:keys [name] :as token}] [name token]) tokens)
-       (into {})))
-
-(defn tokens-name-map-for-type
-  "Convert tokens with `token-type` into a map with their `:name` as the key.
-
-  E.g.: {\"sm\" {:token-type :border-radius :id #uuid \"000\" ...}}"
-  [token-type tokens]
-  (-> (group-tokens-by-type tokens)
-      (get token-type [])
-      (tokens-name-map)))
 
 (defn tokens-name-map->select-options [{:keys [shape tokens attributes selected-attributes]}]
-  (->> (tokens-name-map tokens)
+  (->> (wtt/token-names-map tokens)
        (map (fn [[_k {:keys [name] :as item}]]
               (cond-> (assoc item :label name)
                 (wtt/token-applied? item shape (or selected-attributes attributes)) (assoc :selected? true))))))

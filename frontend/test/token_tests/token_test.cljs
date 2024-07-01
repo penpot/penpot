@@ -37,6 +37,13 @@
   (t/is (= ["foo" "bar" "baz"] (wtt/token-name->path "foo..bar.baz")))
   (t/is (= ["foo" "bar" "baz"] (wtt/token-name->path "foo..bar.baz...."))))
 
+(t/deftest tokens-name-map-test
+  (t/testing "creates a a names map from tokens"
+    (t/is (= {"border-radius.sm" {:name "border-radius.sm", :value "10"}
+              "border-radius.md" {:name "border-radius.md", :value "20"}}
+             (wtt/token-names-map [{:name "border-radius.sm" :value "10"}
+                                   {:name "border-radius.md" :value "20"}])))))
+
 (t/deftest tokens-name-tree-test
   (t/is (= {"foo"
             {"bar"
