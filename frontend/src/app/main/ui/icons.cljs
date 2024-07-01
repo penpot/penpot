@@ -285,19 +285,6 @@
   "A collection of all icons"
   (collect-icons))
 
-(mf/defc debug-icons-preview
-  {::mf/wrap-props false}
-  []
-  (let [entries   (->> (seq (js/Object.entries default))
-                       (sort-by first))]
-    [:section.debug-icons-preview
-     [:h2 "icons"]
-     (for [[key val] entries]
-       [:div.icon-item-old {:key key
-                            :title key}
-        val
-        [:span key]])]))
-
 (defn key->icon
   [icon-key]
   (when icon-key
