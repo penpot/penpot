@@ -9,6 +9,18 @@
   [token-name]
   (str/split token-name #"\.+"))
 
+(defn token-name->path-selector
+  "Splits token-name into map with `:path` and `:selector` using `token-name->path`.
+
+  `:selector` is the last item of the names path
+  `:path` is everything leading up the the `:selector`."
+  [token-name]
+  (let [path-segments (token-name->path token-name)
+        last-idx (dec (count path-segments))
+        [path [selector]] (split-at last-idx path-segments)]
+    {:path (seq path)
+     :selector selector}))
+
 (defn token-names-tree
   "Convert tokens into a nested tree with their `:name` as the path."
   [tokens]
@@ -31,18 +43,22 @@
 
     {\"foo\" {:name \"other\"}}"
   [token-name token-names-tree]
-  (let [name-path (token-name->path token-name)
-        result (reduce
-                (fn [acc cur]
-                  (let [target (get acc cur)]
-                    (cond
-                      ;; Path segment doesn't exist yet
-                      (nil? target) (reduced false)
-                      ;; A token exists at this path
-                      (:name target) (reduced true)
-                      ;; Continue traversing the true
-                      :else target)))
-                token-names-tree name-path)]
-    (if (map? result)
-      (some? (:name result))
-      result)))
+  (let [{:keys [path selector]} (token-name->path-selector token-name)
+        path-target (reduce
+                     (fn [acc cur]
+                       (let [target (get acc cur)]
+                         (prn target cur)
+                         (cond
+                           ;; Path segment doesn't exist yet
+                           (nil? target) (reduced false)
+                           ;; A token exists at this path
+                           (:name target) (reduced true)
+                           ;; Continue traversing the true
+                           :else target)))
+                     token-names-tree path)]
+    (cond
+      (boolean? path-target) path-target
+      (get path-target :name) true
+      :else (-> (get path-target selector)
+                (seq)
+                (boolean)))))
