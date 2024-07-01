@@ -9,7 +9,6 @@
    [app.common.data :as d :refer [ordered-map]]
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.token :as ctt]
-   [app.libs.file-builder :as fb]
    [app.main.data.tokens :as dt]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.changes :as dch]
@@ -18,26 +17,13 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
+   [app.main.ui.workspace.tokens.token :as wtt]
    [app.util.dom :as dom]
    [app.util.webapi :as wapi]
    [cuerdas.core :as str]
    [promesa.core :as p]))
 
 ;; Helpers ---------------------------------------------------------------------
-
-(defn token-applied?
-  "Test if `token` is applied to a `shape` with the given `token-attributes`."
-  [token shape token-attributes]
-  (let [{:keys [id]} token
-        applied-tokens (get shape :applied-tokens {})]
-    (some (fn [attr]
-            (= (get applied-tokens attr) id))
-          token-attributes)))
-
-(defn tokens-applied?
-  "Test if `token` is applied to to any of `shapes` with the given `token-attributes`."
-  [token shapes token-attributes]
-  (some #(token-applied? token % token-attributes) shapes))
 
 (defn resolve-token-value [{:keys [value resolved-value] :as token}]
   (or
@@ -74,7 +60,7 @@
   (->> (tokens-name-map tokens)
        (map (fn [[_k {:keys [name] :as item}]]
               (cond-> (assoc item :label name)
-                (token-applied? item shape (or selected-attributes attributes)) (assoc :selected? true))))))
+                (wtt/token-applied? item shape (or selected-attributes attributes)) (assoc :selected? true))))))
 
 ;; Update functions ------------------------------------------------------------
 
@@ -83,7 +69,7 @@
          :or {on-apply dt/update-token-from-attributes}} token-type-props
         shape-ids (->> selected-shapes
                        (eduction
-                        (remove #(tokens-applied? token % attributes))
+                        (remove #(wtt/tokens-applied? token % attributes))
                         (map :id)))]
     (p/let [sd-tokens (sd/resolve-workspace-tokens+ {:debug? true})]
       (let [resolved-token (get sd-tokens (:id token))

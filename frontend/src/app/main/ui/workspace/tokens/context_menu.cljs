@@ -22,6 +22,7 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.tokens.core :as wtc]
+   [app.main.ui.workspace.tokens.token :as wtt]
    [app.util.dom :as dom]
    [app.util.timers :as timers]
    [clojure.set :as set]
@@ -212,7 +213,7 @@
 (defn additional-actions [{:keys [token-id token-type selected-shapes] :as context-data}]
   (let [attributes->actions (fn [update-fn coll]
                               (for [{:keys [attributes] :as item} coll]
-                                (let [selected? (wtc/tokens-applied? {:id token-id} selected-shapes attributes)]
+                                (let [selected? (wtt/tokens-applied? {:id token-id} selected-shapes attributes)]
                                   (assoc item
                                          :action #(update-fn context-data attributes)
                                          :selected? selected?))))]

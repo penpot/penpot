@@ -2,6 +2,20 @@
   (:require
    [cuerdas.core :as str]))
 
+(defn token-applied?
+  "Test if `token` is applied to a `shape` with the given `token-attributes`."
+  [token shape token-attributes]
+  (let [{:keys [id]} token
+        applied-tokens (get shape :applied-tokens {})]
+    (some (fn [attr]
+            (= (get applied-tokens attr) id))
+          token-attributes)))
+
+(defn tokens-applied?
+  "Test if `token` is applied to to any of `shapes` with the given `token-attributes`."
+  [token shapes token-attributes]
+  (some #(token-applied? token % token-attributes) shapes))
+
 (defn token-name->path
   "Splits token-name into a path vector split by `.` characters.
 
