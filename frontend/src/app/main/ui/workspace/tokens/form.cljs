@@ -30,7 +30,7 @@
   Caution: This will allow a trailing dot like `token-name.`,
   But we will trim that in the `finalize-name`,
   to not throw too many errors while the user is editing."
-  #"([a-zA-Z0-9]+\.?)*")
+  #"([a-zA-Z0-9-]+\.?)*")
 
 (def valid-token-name-schema
   (m/-simple-schema
