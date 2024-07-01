@@ -154,7 +154,6 @@ Token names should only contain letters and digits separated by . characters.")}
         ;; Name
         name-ref (mf/use-var (:name token))
         name-errors (mf/use-state nil)
-        _ (js/console.log "name-errors" @name-errors)
         validate-name (mf/use-callback
                        (mf/deps tokens-tree)
                        (fn [value]

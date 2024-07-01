@@ -47,7 +47,6 @@
         path-target (reduce
                      (fn [acc cur]
                        (let [target (get acc cur)]
-                         (prn target cur)
                          (cond
                            ;; Path segment doesn't exist yet
                            (nil? target) (reduced false)
