@@ -3,7 +3,6 @@ import { ViewerPage } from "../pages/ViewerPage";
 
 test.beforeEach(async ({ page }) => {
   await ViewerPage.init(page);
-
 });
 
 const singleBoardFileId = "dd5cc0bb-91ff-81b9-8004-77df9cd3edb1";
@@ -25,7 +24,10 @@ test("User goes to the Viewer", async ({ page }) => {
   await viewerPage.setupLoggedInUser();
   await viewerPage.setupFileWithSingleBoard();
 
-  await viewerPage.goToViewer({ fileId: singleBoardFileId, pageId: singleBoardPageId });
+  await viewerPage.goToViewer({
+    fileId: singleBoardFileId,
+    pageId: singleBoardPageId,
+  });
 
   await expect(viewerPage.page.getByTestId("penpot-logo-link")).toBeVisible();
   await expect(viewerPage.page).toHaveScreenshot();
@@ -36,7 +38,10 @@ test("User goes to the Viewer and opens zoom modal", async ({ page }) => {
   await viewerPage.setupLoggedInUser();
   await viewerPage.setupFileWithSingleBoard();
 
-  await viewerPage.goToViewer({ fileId: singleBoardFileId, pageId: singleBoardPageId });
+  await viewerPage.goToViewer({
+    fileId: singleBoardFileId,
+    pageId: singleBoardPageId,
+  });
 
   await viewerPage.page.getByTitle("Zoom").click();
 
@@ -49,11 +54,16 @@ test("User goes to the Viewer Comments", async ({ page }) => {
   await viewerPage.setupLoggedInUser();
   await viewerPage.setupFileWithComments();
 
-  await viewerPage.goToViewer({ fileId: singleBoardFileId, pageId: singleBoardPageId });
+  await viewerPage.goToViewer({
+    fileId: singleBoardFileId,
+    pageId: singleBoardPageId,
+  });
 
   await viewerPage.showComments();
   await viewerPage.showCommentsThread(1);
-  await expect(viewerPage.page.getByRole("textbox", { name: "Reply" })).toBeVisible();
+  await expect(
+    viewerPage.page.getByRole("textbox", { name: "Reply" }),
+  ).toBeVisible();
 
   await expect(viewerPage.page).toHaveScreenshot();
 });
@@ -63,14 +73,19 @@ test("User opens Viewer comment list", async ({ page }) => {
   await viewerPage.setupLoggedInUser();
   await viewerPage.setupFileWithComments();
 
-  await viewerPage.goToViewer({ fileId: singleBoardFileId, pageId: singleBoardPageId });
+  await viewerPage.goToViewer({
+    fileId: singleBoardFileId,
+    pageId: singleBoardPageId,
+  });
 
   await viewerPage.showComments();
   await viewerPage.page.getByTestId("viewer-comments-dropdown").click();
 
   await viewerPage.page.getByText("Show comments list").click();
 
-  await expect(viewerPage.page.getByRole("button", { name: "Show all comments" })).toBeVisible();
+  await expect(
+    viewerPage.page.getByRole("button", { name: "Show all comments" }),
+  ).toBeVisible();
   await expect(viewerPage.page).toHaveScreenshot();
 });
 
@@ -79,7 +94,10 @@ test("User goes to the Viewer Inspect code", async ({ page }) => {
   await viewerPage.setupLoggedInUser();
   await viewerPage.setupFileWithComments();
 
-  await viewerPage.goToViewer({ fileId: singleBoardFileId, pageId: singleBoardPageId });
+  await viewerPage.goToViewer({
+    fileId: singleBoardFileId,
+    pageId: singleBoardPageId,
+  });
 
   await viewerPage.showCode();
 
@@ -93,12 +111,17 @@ test("User goes to the Viewer Inspect code, code tab", async ({ page }) => {
   await viewerPage.setupLoggedInUser();
   await viewerPage.setupFileWithComments();
 
-  await viewerPage.goToViewer({ fileId: singleBoardFileId, pageId: singleBoardPageId });
+  await viewerPage.goToViewer({
+    fileId: singleBoardFileId,
+    pageId: singleBoardPageId,
+  });
 
   await viewerPage.showCode();
   await viewerPage.page.getByTestId("code").click();
 
-  await expect(viewerPage.page.getByRole("button", { name: "Copy all code" })).toBeVisible();
+  await expect(
+    viewerPage.page.getByRole("button", { name: "Copy all code" }),
+  ).toBeVisible();
 
   await expect(viewerPage.page).toHaveScreenshot();
 });
@@ -108,10 +131,15 @@ test("User opens Share modal", async ({ page }) => {
   await viewerPage.setupLoggedInUser();
   await viewerPage.setupFileWithSingleBoard();
 
-  await viewerPage.goToViewer({ fileId: singleBoardFileId, pageId: singleBoardPageId });
+  await viewerPage.goToViewer({
+    fileId: singleBoardFileId,
+    pageId: singleBoardPageId,
+  });
 
   await viewerPage.page.getByRole("button", { name: "Share" }).click();
 
-  await expect(viewerPage.page.getByRole("button", { name: "Get link" })).toBeVisible();
+  await expect(
+    viewerPage.page.getByRole("button", { name: "Get link" }),
+  ).toBeVisible();
   await expect(viewerPage.page).toHaveScreenshot();
 });

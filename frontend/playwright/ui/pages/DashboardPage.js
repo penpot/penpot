@@ -5,7 +5,11 @@ export class DashboardPage extends BaseWebSocketPage {
   static async init(page) {
     await BaseWebSocketPage.initWebSockets(page);
 
-    await BaseWebSocketPage.mockRPC(page, "get-teams", "logged-in-user/get-teams-default.json");
+    await BaseWebSocketPage.mockRPC(
+      page,
+      "get-teams",
+      "logged-in-user/get-teams-default.json",
+    );
     await BaseWebSocketPage.mockRPC(
       page,
       "get-font-variants?team-id=*",
@@ -58,7 +62,9 @@ export class DashboardPage extends BaseWebSocketPage {
 
     this.sidebar = page.getByTestId("dashboard-sidebar");
     this.sidebarMenu = this.sidebar.getByRole("menu");
-    this.mainHeading = page.getByTestId("dashboard-header").getByRole("heading", { level: 1 });
+    this.mainHeading = page
+      .getByTestId("dashboard-header")
+      .getByRole("heading", { level: 1 });
 
     this.addProjectButton = page.getByRole("button", { name: "+ NEW PROJECT" });
     this.projectName = page.getByText("Project 1");
@@ -70,13 +76,20 @@ export class DashboardPage extends BaseWebSocketPage {
     this.searchButton = page.getByRole("button", { name: "dashboard-search" });
     this.searchInput = page.getByPlaceholder("Search…");
 
-    this.teamDropdown = this.sidebar.getByRole("button", { name: "Your Penpot" });
-    this.userAccount = this.sidebar.getByRole("button", { name: /Princesa Leia/ });
+    this.teamDropdown = this.sidebar.getByRole("button", {
+      name: "Your Penpot",
+    });
+    this.userAccount = this.sidebar.getByRole("button", {
+      name: /Princesa Leia/,
+    });
     this.userProfileOption = this.sidebarMenu.getByText("Your account");
   }
 
   async setupDraftsEmpty() {
-    await this.mockRPC("get-project-files?project-id=*", "dashboard/get-project-files-empty.json");
+    await this.mockRPC(
+      "get-project-files?project-id=*",
+      "dashboard/get-project-files-empty.json",
+    );
   }
 
   async setupSearchEmpty() {
@@ -86,36 +99,74 @@ export class DashboardPage extends BaseWebSocketPage {
   }
 
   async setupLibrariesEmpty() {
-    await this.mockRPC("get-team-shared-files?team-id=*", "dashboard/get-shared-files-empty.json");
+    await this.mockRPC(
+      "get-team-shared-files?team-id=*",
+      "dashboard/get-shared-files-empty.json",
+    );
   }
 
   async setupDrafts() {
-    await this.mockRPC("get-project-files?project-id=*", "dashboard/get-project-files.json");
+    await this.mockRPC(
+      "get-project-files?project-id=*",
+      "dashboard/get-project-files.json",
+    );
   }
 
   async setupNewProject() {
-    await this.mockRPC("create-project", "dashboard/create-project.json", { method: "POST" });
-    await this.mockRPC("get-projects?team-id=*", "dashboard/get-projects-new.json");
+    await this.mockRPC("create-project", "dashboard/create-project.json", {
+      method: "POST",
+    });
+    await this.mockRPC(
+      "get-projects?team-id=*",
+      "dashboard/get-projects-new.json",
+    );
   }
 
   async setupDashboardFull() {
-    await this.mockRPC("get-projects?team-id=*", "dashboard/get-projects-full.json");
-    await this.mockRPC("get-project-files?project-id=*", "dashboard/get-project-files.json");
-    await this.mockRPC("get-team-shared-files?team-id=*", "dashboard/get-shared-files.json");
-    await this.mockRPC("get-team-shared-files?project-id=*", "dashboard/get-shared-files.json");
-    await this.mockRPC("get-team-recent-files?team-id=*", "dashboard/get-team-recent-files.json");
-    await this.mockRPC("get-font-variants?team-id=*", "dashboard/get-font-variants.json");
-    await this.mockRPC("search-files", "dashboard/search-files.json", { method: "POST" });
+    await this.mockRPC(
+      "get-projects?team-id=*",
+      "dashboard/get-projects-full.json",
+    );
+    await this.mockRPC(
+      "get-project-files?project-id=*",
+      "dashboard/get-project-files.json",
+    );
+    await this.mockRPC(
+      "get-team-shared-files?team-id=*",
+      "dashboard/get-shared-files.json",
+    );
+    await this.mockRPC(
+      "get-team-shared-files?project-id=*",
+      "dashboard/get-shared-files.json",
+    );
+    await this.mockRPC(
+      "get-team-recent-files?team-id=*",
+      "dashboard/get-team-recent-files.json",
+    );
+    await this.mockRPC(
+      "get-font-variants?team-id=*",
+      "dashboard/get-font-variants.json",
+    );
+    await this.mockRPC("search-files", "dashboard/search-files.json", {
+      method: "POST",
+    });
     await this.mockRPC("search-files", "dashboard/search-files.json");
     await this.mockRPC("get-teams", "logged-in-user/get-teams-complete.json");
   }
 
   async setupAccessTokensEmpty() {
-    await this.mockRPC("get-access-tokens", "dashboard/get-access-tokens-empty.json");
+    await this.mockRPC(
+      "get-access-tokens",
+      "dashboard/get-access-tokens-empty.json",
+    );
   }
 
   async createAccessToken() {
-    await this.mockRPC("create-access-token", "dashboard/create-access-token.json", { method: "POST" });
+    await this.mockRPC(
+      "create-access-token",
+      "dashboard/create-access-token.json",
+      { method: "POST" },
+    );
   }
 
   async setupAccessTokens() {
@@ -123,15 +174,24 @@ export class DashboardPage extends BaseWebSocketPage {
   }
 
   async setupTeamInvitationsEmpty() {
-    await this.mockRPC("get-team-invitations?team-id=*", "dashboard/get-team-invitations-empty.json");
+    await this.mockRPC(
+      "get-team-invitations?team-id=*",
+      "dashboard/get-team-invitations-empty.json",
+    );
   }
 
   async setupTeamInvitations() {
-    await this.mockRPC("get-team-invitations?team-id=*", "dashboard/get-team-invitations.json");
+    await this.mockRPC(
+      "get-team-invitations?team-id=*",
+      "dashboard/get-team-invitations.json",
+    );
   }
 
   async setupTeamWebhooksEmpty() {
-    await this.mockRPC("get-webhooks?team-id=*", "dashboard/get-webhooks-empty.json");
+    await this.mockRPC(
+      "get-webhooks?team-id=*",
+      "dashboard/get-webhooks-empty.json",
+    );
   }
 
   async setupTeamWebhooks() {
@@ -139,36 +199,53 @@ export class DashboardPage extends BaseWebSocketPage {
   }
 
   async setupTeamSettings() {
-    await this.mockRPC("get-team-stats?team-id=*", "dashboard/get-team-stats.json");
+    await this.mockRPC(
+      "get-team-stats?team-id=*",
+      "dashboard/get-team-stats.json",
+    );
   }
 
   async goToDashboard() {
-    await this.page.goto(`#/dashboard/team/${DashboardPage.anyTeamId}/projects`);
+    await this.page.goto(
+      `#/dashboard/team/${DashboardPage.anyTeamId}/projects`,
+    );
     await expect(this.mainHeading).toBeVisible();
   }
 
   async goToSecondTeamDashboard() {
-    await this.page.goto(`#/dashboard/team/${DashboardPage.secondTeamId}/projects`);
+    await this.page.goto(
+      `#/dashboard/team/${DashboardPage.secondTeamId}/projects`,
+    );
   }
 
   async goToSecondTeamMembersSection() {
-    await this.page.goto(`#/dashboard/team/${DashboardPage.secondTeamId}/members`);
+    await this.page.goto(
+      `#/dashboard/team/${DashboardPage.secondTeamId}/members`,
+    );
   }
 
   async goToSecondTeamInvitationsSection() {
-    await this.page.goto(`#/dashboard/team/${DashboardPage.secondTeamId}/invitations`);
+    await this.page.goto(
+      `#/dashboard/team/${DashboardPage.secondTeamId}/invitations`,
+    );
   }
 
   async goToSecondTeamWebhooksSection() {
-    await this.page.goto(`#/dashboard/team/${DashboardPage.secondTeamId}/webhooks`);
+    await this.page.goto(
+      `#/dashboard/team/${DashboardPage.secondTeamId}/webhooks`,
+    );
   }
 
   async goToSecondTeamWebhooksSection() {
-    await this.page.goto(`#/dashboard/team/${DashboardPage.secondTeamId}/webhooks`);
+    await this.page.goto(
+      `#/dashboard/team/${DashboardPage.secondTeamId}/webhooks`,
+    );
   }
 
   async goToSecondTeamSettingsSection() {
-    await this.page.goto(`#/dashboard/team/${DashboardPage.secondTeamId}/settings`);
+    await this.page.goto(
+      `#/dashboard/team/${DashboardPage.secondTeamId}/settings`,
+    );
   }
 
   async goToSearch() {

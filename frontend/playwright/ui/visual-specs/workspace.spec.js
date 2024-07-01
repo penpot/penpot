@@ -9,15 +9,20 @@ const setupFileWithAssets = async (workspace) => {
   const fileId = "015fda4f-caa6-8103-8004-862a00dd4f31";
   const pageId = "015fda4f-caa6-8103-8004-862a00ddbe94";
   const fragments = {
-    "015fda4f-caa6-8103-8004-862a9e4b4d4b": "assets/get-file-fragment-with-assets-components.json",
-    "015fda4f-caa6-8103-8004-862a9e4ad279": "assets/get-file-fragmnet-with-assets-page.json",
+    "015fda4f-caa6-8103-8004-862a9e4b4d4b":
+      "assets/get-file-fragment-with-assets-components.json",
+    "015fda4f-caa6-8103-8004-862a9e4ad279":
+      "assets/get-file-fragmnet-with-assets-page.json",
   };
 
   await workspace.setupEmptyFile();
   await workspace.mockRPC(/get\-file\?/, "assets/get-file-with-assets.json");
 
   for (const [id, fixture] of Object.entries(fragments)) {
-    await workspace.mockRPC(`get-file-fragment?file-id=*&fragment-id=${id}`, fixture);
+    await workspace.mockRPC(
+      `get-file-fragment?file-id=*&fragment-id=${id}`,
+      fixture,
+    );
   }
 
   return { fileId, pageId };
@@ -69,7 +74,10 @@ test.describe("Assets tab", () => {
   test("Shows the libraries modal correctly", async ({ page }) => {
     const workspace = new WorkspacePage(page);
     await workspace.setupEmptyFile();
-    await workspace.mockRPC("link-file-to-library", "workspace/link-file-to-library.json");
+    await workspace.mockRPC(
+      "link-file-to-library",
+      "workspace/link-file-to-library.json",
+    );
     await workspace.mockRPC(
       "get-team-shared-files?team-id=*",
       "workspace/get-team-shared-libraries-non-empty.json",
@@ -95,7 +103,9 @@ test.describe("Assets tab", () => {
     await workspace.clickAssets();
     await workspace.sidebar.getByRole("button", { name: "Components" }).click();
     await workspace.sidebar.getByRole("button", { name: "Colors" }).click();
-    await workspace.sidebar.getByRole("button", { name: "Typographies" }).click();
+    await workspace.sidebar
+      .getByRole("button", { name: "Typographies" })
+      .click();
 
     await expect(workspace.page).toHaveScreenshot();
 
@@ -114,11 +124,19 @@ test.describe("Palette", () => {
 
     await expect(workspace.page).toHaveScreenshot();
 
-    await workspace.palette.getByRole("button", { name: "Typographies" }).click();
-    await expect(workspace.palette.getByText("Source Sans Pro Regular")).toBeVisible();
+    await workspace.palette
+      .getByRole("button", { name: "Typographies" })
+      .click();
+    await expect(
+      workspace.palette.getByText("Source Sans Pro Regular"),
+    ).toBeVisible();
     await expect(workspace.page).toHaveScreenshot();
 
-    await workspace.palette.getByRole("button", { name: "Color Palette" }).click();
-    await expect(workspace.palette.getByRole("button", { name: "#7798ff" })).toBeVisible();
+    await workspace.palette
+      .getByRole("button", { name: "Color Palette" })
+      .click();
+    await expect(
+      workspace.palette.getByRole("button", { name: "#7798ff" }),
+    ).toBeVisible();
   });
 });

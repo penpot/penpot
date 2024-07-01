@@ -12,7 +12,10 @@ const multipleAttributesPageId = `1795a568-0df0-8095-8004-7ba741f56be3`;
 
 const setupFileWithMultipeConstraints = async (workspace) => {
   await workspace.setupEmptyFile();
-  await workspace.mockRPC(/get\-file\?/, "design/get-file-multiple-constraints.json");
+  await workspace.mockRPC(
+    /get\-file\?/,
+    "design/get-file-multiple-constraints.json",
+  );
   await workspace.mockRPC(
     "get-file-object-thumbnails?file-id=*",
     "design/get-file-object-thumbnails-multiple-constraints.json",
@@ -25,7 +28,10 @@ const setupFileWithMultipeConstraints = async (workspace) => {
 
 const setupFileWithMultipeAttributes = async (workspace) => {
   await workspace.setupEmptyFile();
-  await workspace.mockRPC(/get\-file\?/, "design/get-file-multiple-attributes.json");
+  await workspace.mockRPC(
+    /get\-file\?/,
+    "design/get-file-multiple-attributes.json",
+  );
   await workspace.mockRPC(
     "get-file-object-thumbnails?file-id=*",
     "design/get-file-object-thumbnails-multiple-attributes.json",
@@ -47,9 +53,13 @@ test.describe("Constraints", () => {
     await workspace.clickLeafLayer("Ellipse");
     await workspace.clickLeafLayer("Rectangle", { modifiers: ["Shift"] });
 
-    const constraintVDropdown = workspace.page.getByTestId("constraint-v-select");
+    const constraintVDropdown = workspace.page.getByTestId(
+      "constraint-v-select",
+    );
     await expect(constraintVDropdown).toContainText("Mixed");
-    const constraintHDropdown = workspace.page.getByTestId("constraint-h-select");
+    const constraintHDropdown = workspace.page.getByTestId(
+      "constraint-h-select",
+    );
     await expect(constraintHDropdown).toContainText("Mixed");
 
     expect(false);
@@ -57,7 +67,9 @@ test.describe("Constraints", () => {
 });
 
 test.describe("Multiple shapes attributes", () => {
-  test("User selects multiple shapes with sames fills, strokes, shadows and blur", async ({ page }) => {
+  test("User selects multiple shapes with sames fills, strokes, shadows and blur", async ({
+    page,
+  }) => {
     const workspace = new WorkspacePage(page);
     await setupFileWithMultipeConstraints(workspace);
     await workspace.goToWorkspace({
@@ -75,7 +87,9 @@ test.describe("Multiple shapes attributes", () => {
     await expect(workspace.page.getByTestId("add-blur")).toBeVisible();
   });
 
-  test("User selects multiple shapes with different fills, strokes, shadows and blur", async ({ page }) => {
+  test("User selects multiple shapes with different fills, strokes, shadows and blur", async ({
+    page,
+  }) => {
     const workspace = new WorkspacePage(page);
     await setupFileWithMultipeAttributes(workspace);
     await workspace.goToWorkspace({
@@ -93,7 +107,9 @@ test.describe("Multiple shapes attributes", () => {
   });
 });
 
-test("BUG 7760 - Layout losing properties when changing parents", async ({ page }) => {
+test("BUG 7760 - Layout losing properties when changing parents", async ({
+  page,
+}) => {
   const workspacePage = new WorkspacePage(page);
   await workspacePage.setupEmptyFile();
   await workspacePage.mockRPC(/get\-file\?/, "workspace/get-file-7760.json");
@@ -101,7 +117,10 @@ test("BUG 7760 - Layout losing properties when changing parents", async ({ page 
     "get-file-fragment?file-id=*&fragment-id=*",
     "workspace/get-file-fragment-7760.json",
   );
-  await workspacePage.mockRPC("update-file?id=*", "workspace/update-file-create-rect.json");
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-create-rect.json",
+  );
 
   await workspacePage.goToWorkspace({
     fileId: "cd90e028-326a-80b4-8004-7cdec16ffad5",

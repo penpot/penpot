@@ -6,7 +6,9 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe("Layers tab", () => {
-  test("BUG 7466 - Layers tab height extends to the bottom when 'Pages' is collapsed", async ({ page }) => {
+  test("BUG 7466 - Layers tab height extends to the bottom when 'Pages' is collapsed", async ({
+    page,
+  }) => {
     const workspace = new WorkspacePage(page);
     await workspace.setupEmptyFile();
 
@@ -21,11 +23,19 @@ test.describe("Layers tab", () => {
 });
 
 test.describe("Assets tab", () => {
-  test("User adds a library and its automatically selected in the color palette", async ({ page }) => {
+  test("User adds a library and its automatically selected in the color palette", async ({
+    page,
+  }) => {
     const workspacePage = new WorkspacePage(page);
     await workspacePage.setupEmptyFile();
-    await workspacePage.mockRPC("link-file-to-library", "workspace/link-file-to-library.json");
-    await workspacePage.mockRPC("unlink-file-from-library", "workspace/unlink-file-from-library.json");
+    await workspacePage.mockRPC(
+      "link-file-to-library",
+      "workspace/link-file-to-library.json",
+    );
+    await workspacePage.mockRPC(
+      "unlink-file-from-library",
+      "workspace/unlink-file-from-library.json",
+    );
     await workspacePage.mockRPC(
       "get-team-shared-files?team-id=*",
       "workspace/get-team-shared-libraries-non-empty.json",
@@ -37,12 +47,17 @@ test.describe("Assets tab", () => {
     await workspacePage.clickColorPalette();
     await workspacePage.clickAssets();
     // Now the get-file call should return a library
-    await workspacePage.mockRPC(/get\-file\?/, "workspace/get-file-library.json");
+    await workspacePage.mockRPC(
+      /get\-file\?/,
+      "workspace/get-file-library.json",
+    );
     await workspacePage.openLibrariesModal();
     await workspacePage.clickLibrary("Testing library 1");
     await workspacePage.closeLibrariesModal();
 
-    await expect(workspacePage.palette.getByRole("button", { name: "test-color-187cd5" })).toBeVisible();
+    await expect(
+      workspacePage.palette.getByRole("button", { name: "test-color-187cd5" }),
+    ).toBeVisible();
 
     // Remove Testing library 1
     await workspacePage.openLibrariesModal();
@@ -50,7 +65,9 @@ test.describe("Assets tab", () => {
     await workspacePage.closeLibrariesModal();
 
     await expect(
-      workspacePage.palette.getByText("There are no color styles in your library yet"),
+      workspacePage.palette.getByText(
+        "There are no color styles in your library yet",
+      ),
     ).toBeVisible();
   });
 });

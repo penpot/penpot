@@ -8,7 +8,9 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/#/auth/login");
 });
 
-test("User is redirected to the login page when logged out", async ({ page }) => {
+test("User is redirected to the login page when logged out", async ({
+  page,
+}) => {
   const loginPage = new LoginPage(page);
 
   await loginPage.setupLoggedInUser();
@@ -30,7 +32,9 @@ test.describe("Login form", () => {
     await expect(loginPage.page).toHaveURL(/dashboard/);
   });
 
-  test("User gets error message when submitting an bad formatted email ", async ({ page }) => {
+  test("User gets error message when submitting an bad formatted email ", async ({
+    page,
+  }) => {
     const loginPage = new LoginPage(page);
     await loginPage.setupLoginSuccess();
 
@@ -39,11 +43,16 @@ test.describe("Login form", () => {
     await expect(loginPage.invalidEmailError).toBeVisible();
   });
 
-  test("User gets error message when submitting wrong credentials", async ({ page }) => {
+  test("User gets error message when submitting wrong credentials", async ({
+    page,
+  }) => {
     const loginPage = new LoginPage(page);
     await loginPage.setupLoginError();
 
-    await loginPage.fillEmailAndPasswordInputs("test@example.com", "loremipsum");
+    await loginPage.fillEmailAndPasswordInputs(
+      "test@example.com",
+      "loremipsum",
+    );
     await loginPage.clickLoginButton();
 
     await expect(loginPage.invalidCredentialsError).toBeVisible();

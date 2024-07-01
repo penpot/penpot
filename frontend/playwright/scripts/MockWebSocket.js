@@ -188,13 +188,18 @@ window.WebSocket = class MockWebSocket extends EventTarget {
 
   mockClose(code, reason) {
     this.#readyState = MockWebSocket.CLOSED;
-    this.dispatchEvent(new CloseEvent("close", { code: code || 1000, reason: reason || "" }));
+    this.dispatchEvent(
+      new CloseEvent("close", { code: code || 1000, reason: reason || "" }),
+    );
     return this;
   }
 
   send(data) {
     if (this.#readyState === MockWebSocket.CONNECTING) {
-      throw new DOMException("InvalidStateError", "MockWebSocket is not connected");
+      throw new DOMException(
+        "InvalidStateError",
+        "MockWebSocket is not connected",
+      );
     }
 
     if (this.#spyMessage) {
@@ -203,7 +208,12 @@ window.WebSocket = class MockWebSocket extends EventTarget {
   }
 
   close(code, reason) {
-    if (code && !Number.isInteger(code) && code !== 1000 && (code < 3000 || code > 4999)) {
+    if (
+      code &&
+      !Number.isInteger(code) &&
+      code !== 1000 &&
+      (code < 3000 || code > 4999)
+    ) {
       throw new DOMException("InvalidAccessError", "Invalid code");
     }
 
@@ -214,7 +224,9 @@ window.WebSocket = class MockWebSocket extends EventTarget {
       }
     }
 
-    if ([MockWebSocket.CLOSED, MockWebSocket.CLOSING].includes(this.#readyState)) {
+    if (
+      [MockWebSocket.CLOSED, MockWebSocket.CLOSING].includes(this.#readyState)
+    ) {
       return;
     }
 

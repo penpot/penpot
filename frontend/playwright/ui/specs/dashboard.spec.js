@@ -3,7 +3,11 @@ import DashboardPage from "../pages/DashboardPage";
 
 test.beforeEach(async ({ page }) => {
   await DashboardPage.init(page);
-  await DashboardPage.mockRPC(page, "get-profile", "logged-in-user/get-profile-logged-in-no-onboarding.json");
+  await DashboardPage.mockRPC(
+    page,
+    "get-profile",
+    "logged-in-user/get-profile-logged-in-no-onboarding.json",
+  );
 });
 
 test("Dashboad page has title ", async ({ page }) => {
@@ -41,6 +45,10 @@ test("Lists files in the drafts page", async ({ page }) => {
 
   await dashboardPage.goToDrafts();
 
-  await expect(dashboardPage.page.getByRole("button", { name: /New File 1/ })).toBeVisible();
-  await expect(dashboardPage.page.getByRole("button", { name: /New File 2/ })).toBeVisible();
+  await expect(
+    dashboardPage.page.getByRole("button", { name: /New File 1/ }),
+  ).toBeVisible();
+  await expect(
+    dashboardPage.page.getByRole("button", { name: /New File 2/ }),
+  ).toBeVisible();
 });

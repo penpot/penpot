@@ -3,7 +3,11 @@ import DashboardPage from "../pages/DashboardPage";
 
 test.beforeEach(async ({ page }) => {
   await DashboardPage.init(page);
-  await DashboardPage.mockRPC(page, "get-profile", "logged-in-user/get-profile-logged-in-no-onboarding.json");
+  await DashboardPage.mockRPC(
+    page,
+    "get-profile",
+    "logged-in-user/get-profile-logged-in-no-onboarding.json",
+  );
 });
 
 test("User goes to an empty dashboard", async ({ page }) => {
@@ -123,7 +127,9 @@ test("User goes to a full search page", async ({ page }) => {
   await dashboardPage.searchInput.fill("3");
 
   await expect(dashboardPage.mainHeading).toHaveText("Search results");
-  await expect(dashboardPage.page.getByRole("button", { name: "New File 3" })).toBeVisible();
+  await expect(
+    dashboardPage.page.getByRole("button", { name: "New File 3" }),
+  ).toBeVisible();
   await expect(dashboardPage.page).toHaveScreenshot();
 });
 
@@ -157,7 +163,9 @@ test("User goes to password management section", async ({ page }) => {
 
   await page.getByText("Password").click();
 
-  await expect(page.getByRole("heading", { name: "Change Password" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Change Password" }),
+  ).toBeVisible();
   await expect(dashboardPage.page).toHaveScreenshot();
 });
 
