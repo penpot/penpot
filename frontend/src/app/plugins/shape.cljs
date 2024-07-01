@@ -60,23 +60,6 @@
 (declare shape-proxy)
 (declare shape-proxy?)
 
-#_(defn parse-command
-    [entry]
-    (update entry
-            :command
-            #(case %
-               "M" :move-to
-               "Z" :close-path
-               "L" :line-to
-               "H" :line-to-horizontal
-               "V" :line-to-vertical
-               "C" :curve-to
-               "S" :smooth-curve-to
-               "Q" :quadratic-bezier-curve-to
-               "T" :smooth-quadratic-bezier-curve-to
-               "A" :elliptical-arc
-               (keyword %))))
-
 (defn- shadow-defaults
   [shadow]
   (d/patch-object
