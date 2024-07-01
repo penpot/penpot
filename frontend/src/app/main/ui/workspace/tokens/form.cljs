@@ -8,11 +8,13 @@
   (:require-macros [app.main.style :as stl])
   (:require
    ["lodash.debounce" :as debounce]
+   [app.common.data :as d]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
    [app.main.store :as st]
    [app.main.ui.workspace.tokens.common :as tokens.common]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
+   [app.main.ui.workspace.tokens.token :as wtt]
    [app.util.dom :as dom]
    [cuerdas.core :as str]
    [malli.core :as m]
@@ -22,20 +24,35 @@
 
 ;; Schemas ---------------------------------------------------------------------
 
+(def valid-token-name-regexp
+  "Only allow letters and digits for token names.
+  Also allow one `.` for a namespace separator.
+
+  Caution: This will allow a trailing dot like `token-name.`,
+  But we will trim that in the `finalize-name`,
+  to not throw too many errors while the user is editing."
+  #"([a-zA-Z0-9-]+\.?)*")
+
+(def valid-token-name-schema
+  (m/-simple-schema
+   {:type :token/invalid-token-name
+    :pred #(re-matches valid-token-name-regexp %)
+    :type-properties {:error/fn #(str (:value %) " is not a valid token name.
+Token names should only contain letters and digits separated by . characters.")}}))
+
 (defn token-name-schema
-  "Generate a dynamic schema validation to check if a token name already exists.
-  `existing-token-names` should be a set of strings."
-  [existing-token-names]
-  (let [non-existing-token-schema
+  "Generate a dynamic schema validation to check if a token path derived from the name already exists at `tokens-tree`."
+  [{:keys [token tokens-tree]}]
+  (let [path-exists-schema
         (m/-simple-schema
          {:type :token/name-exists
-          :pred #(not (get existing-token-names %))
-          :type-properties {:error/fn #(str (:value %) " is an already existing token name")
-                            :existing-token-names existing-token-names}})]
+          :pred #(not (wtt/token-name-path-exists? % tokens-tree))
+          :type-properties {:error/fn #(str "A token already exists at the path: " (:value %))}})]
     (m/schema
      [:and
       [:string {:min 1 :max 255}]
-      non-existing-token-schema])))
+      valid-token-name-schema
+      path-exists-schema])))
 
 (def token-description-schema
   (m/schema
@@ -44,7 +61,9 @@
 ;; Helpers ---------------------------------------------------------------------
 
 (defn finalize-name [name]
-  (str/trim name))
+  (-> (str/trim name)
+      ;; Remove trailing dots
+      (str/replace #"\.+$" "")))
 
 (defn valid-name? [name]
   (seq (finalize-name (str name))))
@@ -81,7 +100,7 @@
                   new-tokens (update tokens token-id merge {:id token-id
                                                             :value input
                                                             :name token-name})]
-              (-> (sd/resolve-tokens+ new-tokens)
+              (-> (sd/resolve-tokens+ new-tokens {:debug? true})
                   (p/then
                    (fn [resolved-tokens]
                      (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-id)]
@@ -122,21 +141,24 @@
   {::mf/wrap-props false}
   [{:keys [token token-type] :as _args}]
   (let [tokens (sd/use-resolved-workspace-tokens)
-        existing-token-names (mf/use-memo
-                              (mf/deps tokens)
-                              (fn []
-                                (-> (into #{} (map (fn [[_ {:keys [name]}]] name) tokens))
-                                    ;; Remove the currently editing token name,
-                                    ;; as we don't want it to show when checking for duplicate names.
-                                    (disj (:name token)))))
+        token-path (mf/use-memo
+                    (mf/deps (:name token))
+                    #(wtt/token-name->path (:name token)))
+        tokens-tree (mf/use-memo
+                     (mf/deps token-path tokens)
+                     (fn []
+                       (-> (wtt/token-names-tree tokens)
+                           ;; Allow setting editing token to it's own path
+                           (d/dissoc-in token-path))))
 
         ;; Name
         name-ref (mf/use-var (:name token))
         name-errors (mf/use-state nil)
         validate-name (mf/use-callback
-                       (mf/deps existing-token-names)
+                       (mf/deps tokens-tree)
                        (fn [value]
-                         (let [schema (token-name-schema existing-token-names)]
+                         (let [schema (token-name-schema {:token token
+                                                          :tokens-tree tokens-tree})]
                            (m/explain schema (finalize-name value)))))
         on-update-name-debounced (mf/use-callback
                                   (debounce (fn [e]
@@ -235,9 +257,12 @@
                                                       :auto-focus true
                                                       :on-blur on-update-name
                                                       :on-change on-update-name}}]
-       (when @name-errors
-         [:p {:class (stl/css :error)}
-          (me/humanize @name-errors)])]
+       (for [error (->> (:errors @name-errors)
+                        (map #(-> (assoc @name-errors :errors [%])
+                                  (me/humanize))))]
+         [:p {:key error
+              :class (stl/css :error)}
+          error])]
       [:& tokens.common/labeled-input {:label "Value"
                                        :input-props {:default-value @value-ref
                                                      :on-blur on-update-value

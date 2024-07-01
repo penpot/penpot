@@ -4,7 +4,7 @@
    ["style-dictionary$default" :as sd]
    [app.common.data :as d]
    [app.main.refs :as refs]
-   [app.util.dom :as dom]
+   [app.main.ui.workspace.tokens.token :as wtt]
    [cuerdas.core :as str]
    [promesa.core :as p]
    [rumext.v2 :as mf]
@@ -82,14 +82,9 @@
   (and (set? errors)
        (get errors :style-dictionary/missing-reference)))
 
-(defn tokens-name-map [tokens]
-  (->> tokens
-       (map (fn [[_ x]] [(:name x) x]))
-       (into {})))
-
 (defn resolve-tokens+
   [tokens & {:keys [debug?] :as config}]
-  (p/let [sd-tokens (-> (tokens-name-map tokens)
+  (p/let [sd-tokens (-> (wtt/token-names-tree tokens)
                         (resolve-sd-tokens+ config))]
     (let [resolved-tokens (reduce
                            (fn [acc ^js cur]
