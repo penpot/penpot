@@ -1,4 +1,4 @@
-(ns app.main.ui.components.buttons.simple-button
+(ns app.main.ui.ds.buttons.simple-button
   (:require-macros [app.main.style :as stl])
   (:require
    [rumext.v2 :as mf]))
