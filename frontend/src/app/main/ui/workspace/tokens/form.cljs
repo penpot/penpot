@@ -40,27 +40,18 @@
 Token names should only contain letters and digits separated by . characters.")}}))
 
 (defn token-name-schema
-  "Generate a dynamic schema validation to check if a token name already exists.
-  `existing-token-names` should be a set of strings."
-  [{:keys [existing-token-names tokens-tree]}]
-  (let [non-existing-token-schema
+  "Generate a dynamic schema validation to check if a token path derived from the name already exists at `tokens-tree`."
+  [{:keys [token tokens-tree]}]
+  (let [path-exists-schema
         (m/-simple-schema
          {:type :token/name-exists
-          :pred #(not (get existing-token-names %))
-          :type-properties {:error/fn #(str (:value %) " is an already existing token name")
-                            :existing-token-names existing-token-names}})
-        path-exists-schema
-        (m/-simple-schema
-         {:type :token/name-exists
-          :pred #(wtt/token-name-path-exists? % tokens-tree)
-          :type-properties {:error/fn #(str "A token already exists at the path: " (:value %))
-                            :existing-token-names existing-token-names}})]
+          :pred #(not (wtt/token-name-path-exists? % tokens-tree))
+          :type-properties {:error/fn #(str "A token already exists at the path: " (:value %))}})]
     (m/schema
      [:and
       [:string {:min 1 :max 255}]
       valid-token-name-schema
-      path-exists-schema
-      non-existing-token-schema])))
+      path-exists-schema])))
 
 (def token-description-schema
   (m/schema
@@ -152,22 +143,15 @@ Token names should only contain letters and digits separated by . characters.")}
         tokens-tree (mf/use-memo
                      (mf/deps tokens)
                      #(wtt/token-names-tree tokens))
-        existing-token-names (mf/use-memo
-                              (mf/deps tokens)
-                              (fn []
-                                (-> (into #{} (map (fn [[_ {:keys [name]}]] name) tokens))
-                                    ;; Remove the currently editing token name,
-                                    ;; as we don't want it to show when checking for duplicate names.
-                                    (disj (:name token)))))
 
         ;; Name
         name-ref (mf/use-var (:name token))
         name-errors (mf/use-state nil)
         _ (js/console.log "name-errors" @name-errors)
         validate-name (mf/use-callback
-                       (mf/deps tokens-tree existing-token-names)
+                       (mf/deps tokens-tree)
                        (fn [value]
-                         (let [schema (token-name-schema {:existing-token-names existing-token-names
+                         (let [schema (token-name-schema {:token token
                                                           :tokens-tree tokens-tree})]
                            (m/explain schema (finalize-name value)))))
         on-update-name-debounced (mf/use-callback
