@@ -1,7 +1,7 @@
-import {promises as fs} from 'fs';
-import gt from 'gettext-parser';
-import l from 'lodash';
-import path from 'path';
+import { promises as fs } from "fs";
+import gt from "gettext-parser";
+import l from "lodash";
+import path from "path";
 
 async function* getFiles(dir) {
   const dirents = await fs.readdir(dir, { withFileTypes: true });
@@ -15,7 +15,7 @@ async function* getFiles(dir) {
   }
 }
 
-;(async () => {
+(async () => {
   const fileRe = /.+\.po$/;
   const target = path.normalize("./translations/");
   const parent = path.join(target, "..");
@@ -24,8 +24,8 @@ async function* getFiles(dir) {
     const entry = path.relative(parent, f);
     console.log(`=> processing: ${entry}`);
     const content = await fs.readFile(f);
-    const data = gt.po.parse(content, "utf-8")
-    const buff = gt.po.compile(data, {sort: true});
+    const data = gt.po.parse(content, "utf-8");
+    const buff = gt.po.compile(data, { sort: true });
     await fs.writeFile(f, buff);
   }
-})()
+})();

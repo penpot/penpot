@@ -34,7 +34,9 @@ async function findFiles(basePath, predicate, options = {}) {
       return true;
     };
 
-  let files = await fs.readdir(basePath, { recursive: options.recursive ?? false });
+  let files = await fs.readdir(basePath, {
+    recursive: options.recursive ?? false,
+  });
   files = files.map((path) => ph.join(basePath, path));
 
   return files;
@@ -232,7 +234,9 @@ async function readTranslations() {
       lang = lang[0];
     }
 
-    const content = await fs.readFile(`./translations/${filename}`, { encoding: "utf-8" });
+    const content = await fs.readFile(`./translations/${filename}`, {
+      encoding: "utf-8",
+    });
 
     lang = lang.toLowerCase();
 
@@ -291,15 +295,23 @@ async function generateSvgSprite(files, prefix) {
 }
 
 async function generateSvgSprites() {
-  await fs.mkdir("resources/public/images/sprites/symbol/", { recursive: true });
+  await fs.mkdir("resources/public/images/sprites/symbol/", {
+    recursive: true,
+  });
 
   const icons = await findFiles("resources/images/icons/", isSvgFile);
   const iconsSprite = await generateSvgSprite(icons, "icon-");
-  await fs.writeFile("resources/public/images/sprites/symbol/icons.svg", iconsSprite);
+  await fs.writeFile(
+    "resources/public/images/sprites/symbol/icons.svg",
+    iconsSprite,
+  );
 
   const cursors = await findFiles("resources/images/cursors/", isSvgFile);
   const cursorsSprite = await generateSvgSprite(icons, "cursor-");
-  await fs.writeFile("resources/public/images/sprites/symbol/cursors.svg", cursorsSprite);
+  await fs.writeFile(
+    "resources/public/images/sprites/symbol/cursors.svg",
+    cursorsSprite,
+  );
 }
 
 async function generateTemplates() {
@@ -310,15 +322,23 @@ async function generateTemplates() {
   const manifest = await readShadowManifest();
   let content;
 
-  const iconsSprite = await fs.readFile("resources/public/images/sprites/symbol/icons.svg", "utf8");
-  const cursorsSprite = await fs.readFile("resources/public/images/sprites/symbol/cursors.svg", "utf8");
+  const iconsSprite = await fs.readFile(
+    "resources/public/images/sprites/symbol/icons.svg",
+    "utf8",
+  );
+  const cursorsSprite = await fs.readFile(
+    "resources/public/images/sprites/symbol/cursors.svg",
+    "utf8",
+  );
   const partials = {
     "../public/images/sprites/symbol/icons.svg": iconsSprite,
     "../public/images/sprites/symbol/cursors.svg": cursorsSprite,
   };
 
   const pluginRuntimeUri =
-    process.env.PENPOT_PLUGIN_DEV === "true" ? "http://localhost:4200" : "./plugins-runtime";
+    process.env.PENPOT_PLUGIN_DEV === "true"
+      ? "http://localhost:4200"
+      : "./plugins-runtime";
 
   content = await renderTemplate(
     "resources/templates/index.mustache",
@@ -411,7 +431,10 @@ export async function copyAssets() {
 
   await syncDirs("resources/images/", "resources/public/images/");
   await syncDirs("resources/fonts/", "resources/public/fonts/");
-  await syncDirs("resources/plugins-runtime/", "resources/public/plugins-runtime/");
+  await syncDirs(
+    "resources/plugins-runtime/",
+    "resources/public/plugins-runtime/",
+  );
 
   const end = process.hrtime(start);
   log.info("done: copy assets", `(${ppt(end)})`);

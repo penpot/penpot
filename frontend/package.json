@@ -19,6 +19,8 @@
   "scripts": {
     "fmt:clj:check": "cljfmt check --parallel=false src/ test/",
     "fmt:clj": "cljfmt fix --parallel=true src/ test/",
+    "fmt:js:check": "yarn run prettier -c src/**/*.stories.jsx -c playwright/**/*.js -c scripts/**/*.js",
+    "fmt:js": "yarn run prettier -c src/**/*.stories.jsx -c playwright/**/*.js -c scripts/**/*.js -w",
     "lint:scss": "yarn run prettier -c resources/styles -c src/**/*.scss",
     "lint:scss:fix": "yarn run prettier -c resources/styles -c src/**/*.scss -w",
     "lint:clj": "clj-kondo --parallel --lint src/",
@@ -73,7 +75,7 @@
     "p-limit": "^5.0.0",
     "postcss": "^8.4.38",
     "postcss-clean": "^1.2.2",
-    "prettier": "^3.2.5",
+    "prettier": "3.3.2",
     "pretty-time": "^1.1.0",
     "prop-types": "^15.8.1",
     "rimraf": "^5.0.7",

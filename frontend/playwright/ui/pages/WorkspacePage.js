@@ -11,7 +11,11 @@ export class WorkspacePage extends BaseWebSocketPage {
   static async init(page) {
     await BaseWebSocketPage.initWebSockets(page);
 
-    await BaseWebSocketPage.mockRPC(page, "get-profile", "logged-in-user/get-profile-logged-in.json");
+    await BaseWebSocketPage.mockRPC(
+      page,
+      "get-profile",
+      "logged-in-user/get-profile-logged-in.json",
+    );
     await BaseWebSocketPage.mockRPC(
       page,
       "get-team-users?file-id=*",
@@ -22,8 +26,16 @@ export class WorkspacePage extends BaseWebSocketPage {
       "get-comment-threads?file-id=*",
       "workspace/get-comment-threads-empty.json",
     );
-    await BaseWebSocketPage.mockRPC(page, "get-project?id=*", "workspace/get-project-default.json");
-    await BaseWebSocketPage.mockRPC(page, "get-team?id=*", "workspace/get-team-default.json");
+    await BaseWebSocketPage.mockRPC(
+      page,
+      "get-project?id=*",
+      "workspace/get-project-default.json",
+    );
+    await BaseWebSocketPage.mockRPC(
+      page,
+      "get-team?id=*",
+      "workspace/get-team-default.json",
+    );
     await BaseWebSocketPage.mockRPC(
       page,
       "get-profiles-for-file-comments?file-id=*",
@@ -40,12 +52,18 @@ export class WorkspacePage extends BaseWebSocketPage {
   constructor(page) {
     super(page);
     this.pageName = page.getByTestId("page-name");
-    this.presentUserListItems = page.getByTestId("active-users-list").getByAltText("Princesa Leia");
+    this.presentUserListItems = page
+      .getByTestId("active-users-list")
+      .getByAltText("Princesa Leia");
     this.viewport = page.getByTestId("viewport");
-    this.rootShape = page.locator(`[id="shape-00000000-0000-0000-0000-000000000000"]`);
+    this.rootShape = page.locator(
+      `[id="shape-00000000-0000-0000-0000-000000000000"]`,
+    );
     this.toolbarOptions = page.getByTestId("toolbar-options");
     this.rectShapeButton = page.getByRole("button", { name: "Rectangle (R)" });
-    this.toggleToolbarButton = page.getByRole("button", { name: "Toggle toolbar" });
+    this.toggleToolbarButton = page.getByRole("button", {
+      name: "Toggle toolbar",
+    });
     this.colorpicker = page.getByTestId("colorpicker");
     this.layers = page.getByTestId("layer-tree");
     this.palette = page.getByTestId("palette");
@@ -54,11 +72,18 @@ export class WorkspacePage extends BaseWebSocketPage {
     this.selectionRect = page.getByTestId("workspace-selection-rect");
     this.horizontalScrollbar = page.getByTestId("horizontal-scrollbar");
     this.librariesModal = page.getByTestId("libraries-modal");
-    this.togglePalettesVisibility = page.getByTestId("toggle-palettes-visibility");
+    this.togglePalettesVisibility = page.getByTestId(
+      "toggle-palettes-visibility",
+    );
   }
 
-  async goToWorkspace({ fileId = WorkspacePage.anyFileId, pageId = WorkspacePage.anyPageId } = {}) {
-    await this.page.goto(`/#/workspace/${WorkspacePage.anyProjectId}/${fileId}?page-id=${pageId}`);
+  async goToWorkspace({
+    fileId = WorkspacePage.anyFileId,
+    pageId = WorkspacePage.anyPageId,
+  } = {}) {
+    await this.page.goto(
+      `/#/workspace/${WorkspacePage.anyProjectId}/${fileId}?page-id=${pageId}`,
+    );
 
     this.#ws = await this.waitForNotificationsWebSocket();
     await this.#ws.mockOpen();
@@ -79,10 +104,22 @@ export class WorkspacePage extends BaseWebSocketPage {
   }
 
   async setupEmptyFile() {
-    await this.mockRPC("get-profile", "logged-in-user/get-profile-logged-in.json");
-    await this.mockRPC("get-team-users?file-id=*", "logged-in-user/get-team-users-single-user.json");
-    await this.mockRPC("get-comment-threads?file-id=*", "workspace/get-comment-threads-empty.json");
-    await this.mockRPC("get-project?id=*", "workspace/get-project-default.json");
+    await this.mockRPC(
+      "get-profile",
+      "logged-in-user/get-profile-logged-in.json",
+    );
+    await this.mockRPC(
+      "get-team-users?file-id=*",
+      "logged-in-user/get-team-users-single-user.json",
+    );
+    await this.mockRPC(
+      "get-comment-threads?file-id=*",
+      "workspace/get-comment-threads-empty.json",
+    );
+    await this.mockRPC(
+      "get-project?id=*",
+      "workspace/get-project-default.json",
+    );
     await this.mockRPC("get-team?id=*", "workspace/get-team-default.json");
     await this.mockRPC(
       "get-profiles-for-file-comments?file-id=*",
@@ -93,9 +130,18 @@ export class WorkspacePage extends BaseWebSocketPage {
       "get-file-object-thumbnails?file-id=*",
       "workspace/get-file-object-thumbnails-blank.json",
     );
-    await this.mockRPC("get-font-variants?team-id=*", "workspace/get-font-variants-empty.json");
-    await this.mockRPC("get-file-fragment?file-id=*", "workspace/get-file-fragment-blank.json");
-    await this.mockRPC("get-file-libraries?file-id=*", "workspace/get-file-libraries-empty.json");
+    await this.mockRPC(
+      "get-font-variants?team-id=*",
+      "workspace/get-font-variants-empty.json",
+    );
+    await this.mockRPC(
+      "get-file-fragment?file-id=*",
+      "workspace/get-file-fragment-blank.json",
+    );
+    await this.mockRPC(
+      "get-file-libraries?file-id=*",
+      "workspace/get-file-libraries-empty.json",
+    );
   }
 
   async clickWithDragViewportAt(x, y, width, height) {
@@ -132,14 +178,18 @@ export class WorkspacePage extends BaseWebSocketPage {
   }
 
   async clickToggableLayer(name, clickOptions = {}) {
-    const layer = this.layers.getByTestId("layer-item").filter({ has: this.page.getByText(name) });
+    const layer = this.layers
+      .getByTestId("layer-item")
+      .filter({ has: this.page.getByText(name) });
     await layer.getByRole("button").click(clickOptions);
   }
 
   async expectSelectedLayer(name) {
-    await expect(this.layers.getByTestId("layer-row").filter({ has: this.page.getByText(name) })).toHaveClass(
-      /selected/,
-    );
+    await expect(
+      this.layers
+        .getByTestId("layer-row")
+        .filter({ has: this.page.getByText(name) }),
+    ).toHaveClass(/selected/);
   }
 
   async expectHiddenToolbarOptions() {
@@ -163,19 +213,24 @@ export class WorkspacePage extends BaseWebSocketPage {
   }
 
   async closeLibrariesModal(clickOptions = {}) {
-    await this.librariesModal.getByRole("button", { name: "Close" }).click(clickOptions);
+    await this.librariesModal
+      .getByRole("button", { name: "Close" })
+      .click(clickOptions);
   }
 
   async clickColorPalette(clickOptions = {}) {
-    await this.palette.getByRole("button", { name: "Color Palette (Alt+P)" }).click(clickOptions);
+    await this.palette
+      .getByRole("button", { name: "Color Palette (Alt+P)" })
+      .click(clickOptions);
   }
 
   async clickColorPalette(clickOptions = {}) {
-    await this.palette.getByRole("button", { name: "Color Palette (Alt+P)" }).click(clickOptions);
+    await this.palette
+      .getByRole("button", { name: "Color Palette (Alt+P)" })
+      .click(clickOptions);
   }
 
   async clickTogglePalettesVisibility(clickOptions = {}) {
-    await this.togglePalettesVisibility
-    .click(clickOptions);
+    await this.togglePalettesVisibility.click(clickOptions);
   }
 }

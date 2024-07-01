@@ -30,7 +30,10 @@ test("Updates URL with zoom type", async ({ page }) => {
   await viewer.setupLoggedInUser();
   await viewer.setupFileWithSingleBoard(viewer);
 
-  await viewer.goToViewer({ fileId: singleBoardFileId, pageId: singleBoardPageId });
+  await viewer.goToViewer({
+    fileId: singleBoardFileId,
+    pageId: singleBoardPageId,
+  });
 
   await viewer.page.getByTitle("Zoom").click();
   await viewer.page.getByText(/Fit/).click();

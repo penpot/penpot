@@ -9,7 +9,10 @@ const port = 3000;
 
 app.use(compression());
 
-const staticPath = path.join(fileURLToPath(import.meta.url), "../../resources/public");
+const staticPath = path.join(
+  fileURLToPath(import.meta.url),
+  "../../resources/public",
+);
 app.use(express.static(staticPath));
 
 app.listen(port, () => {
