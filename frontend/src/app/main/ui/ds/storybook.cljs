@@ -10,9 +10,17 @@
   (:require
    [rumext.v2 :as mf]))
 
-(mf/defc story-wrapper
-  {::mf/wrap-props false}
-  [{:keys [children]}]
+(mf/defc story-wrapper*
+  {::mf/props :obj}
+  [{:keys [theme children]}]
   [:article {:class (stl/css :story-wrapper)}
-   [:section {:class "default"} children]
-   [:section {:class "light"} children]])
+   (if (some? theme)
+     [:section {:class theme} children]
+     [*
+      [:section {:class "default"} children]
+      [:section {:class "light"} children]])])
+
+(mf/defc icon-grid*
+  {::mf/props :obj}
+  [{:keys [children]}]
+  [:article {:class (stl/css :icon-grid)} children])
