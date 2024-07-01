@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    ["lodash.debounce" :as debounce]
+   [app.common.data :as d]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
    [app.main.store :as st]
@@ -140,9 +141,15 @@ Token names should only contain letters and digits separated by . characters.")}
   {::mf/wrap-props false}
   [{:keys [token token-type] :as _args}]
   (let [tokens (sd/use-resolved-workspace-tokens)
+        token-path (mf/use-memo
+                    (mf/deps (:name token))
+                    #(wtt/token-name->path (:name token)))
         tokens-tree (mf/use-memo
-                     (mf/deps tokens)
-                     #(wtt/token-names-tree tokens))
+                     (mf/deps token-path tokens)
+                     (fn []
+                       (-> (wtt/token-names-tree tokens)
+                           ;; Allow setting editing token to it's own path
+                           (d/dissoc-in token-path))))
 
         ;; Name
         name-ref (mf/use-var (:name token))
