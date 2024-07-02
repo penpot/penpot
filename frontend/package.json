@@ -28,7 +28,7 @@
     "test:run": "node target/tests.cjs",
     "test:watch": "clojure -M:dev:shadow-cljs watch test",
     "test": "yarn run test:compile && yarn run test:run",
-    "translations:validate": "node ./scripts/validate-translations.js",
+    "translations": "node ./scripts/translations.js",
     "translations:find-unused": "node ./scripts/find-unused-translations.js",
     "compile": "node ./scripts/compile.js",
     "compile:cljs": "clojure -M:dev:shadow-cljs compile main",

@@ -1,8 +1,10 @@
-const fs = require("fs").promises;
-const gt = require("gettext-parser");
-const path = require("path");
-const util = require("node:util");
-const execFile = util.promisify(require("node:child_process").execFile);
+import gt from "gettext-parser";
+import fs from "node:fs/promises";
+import path from "node:path";
+import util from "node:util";
+import { execFile as execFileCb } from "node:child_process";
+
+const execFile = util.promisify(execFileCb);
 
 async function processMsgId(msgId) {
   return execFile("grep", ["-r", "-o", msgId, "./src"]).catch(() => {
