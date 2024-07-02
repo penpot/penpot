@@ -100,7 +100,8 @@
            (let [mdata  {:on-success on-success
                          :on-error   on-error}
                  params {:name name}]
-             (st/emit! (dd/create-team (with-meta params mdata))
+             (st/emit! (-> (dd/create-team (with-meta params mdata))
+                           (with-meta {::ev/origin :onboarding-without-invitations}))
                        (ptk/data-event ::ev/event
                                        {::ev/name "onboarding-step"
                                         :label "team:create-team-and-invite-later"
@@ -115,7 +116,8 @@
            (let [mdata  {:on-success on-success
                          :on-error   on-error}]
 
-             (st/emit! (dd/create-team-with-invitations (with-meta params mdata))
+             (st/emit! (-> (dd/create-team-with-invitations (with-meta params mdata))
+                           (with-meta {::ev/origin :onboarding-with-invitations}))
                        (ptk/data-event ::ev/event
                                        {::ev/name "onboarding-step"
                                         :label "team:create-team-and-invite"

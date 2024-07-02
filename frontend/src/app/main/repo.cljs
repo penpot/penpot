@@ -10,6 +10,7 @@
    [app.common.transit :as t]
    [app.common.uri :as u]
    [app.config :as cf]
+   [app.main.data.events :as-alias ev]
    [app.util.http :as http]
    [app.util.sse :as sse]
    [beicon.v2.core :as rx]
@@ -93,12 +94,12 @@
                     (= query-params :all)  :get
                     (str/starts-with? nid "get-") :get
                     :else :post)
-
         request   {:method method
                    :uri (u/join cf/public-uri "api/rpc/command/" nid)
                    :credentials "include"
                    :headers {"accept" "application/transit+json,text/event-stream,*/*"
-                             "x-external-session-id" (cf/external-session-id)}
+                             "x-external-session-id" (cf/external-session-id)
+                             "x-event-origin" (::ev/origin (meta params))}
                    :body (when (= method :post)
                            (if form-data?
                              (http/form-data params)
@@ -137,7 +138,8 @@
     (->> (http/send! {:method :post
                       :uri uri
                       :credentials "include"
-                      :headers {"x-external-session-id" (cf/external-session-id)}
+                      :headers {"x-external-session-id" (cf/external-session-id)
+                                "x-event-origin" (::ev/origin (meta params))}
                       :query params})
          (rx/map http/conditional-decode-transit)
          (rx/mapcat handle-response))))
@@ -147,7 +149,8 @@
   (->> (http/send! {:method :post
                     :uri (u/join cf/public-uri "api/export")
                     :body (http/transit-data (dissoc params :blob?))
-                    :headers {"x-external-session-id" (cf/external-session-id)}
+                    :headers {"x-external-session-id" (cf/external-session-id)
+                              "x-event-origin" (::ev/origin (meta params))}
                     :credentials "include"
                     :response-type (if blob? :blob :text)})
        (rx/map http/conditional-decode-transit)
@@ -167,7 +170,8 @@
   (->> (http/send! {:method :post
                     :uri  (u/join cf/public-uri "api/rpc/command/" (name id))
                     :credentials "include"
-                    :headers {"x-external-session-id" (cf/external-session-id)}
+                    :headers {"x-external-session-id" (cf/external-session-id)
+                              "x-event-origin" (::ev/origin (meta params))}
                     :body (http/form-data params)})
        (rx/map http/conditional-decode-transit)
        (rx/mapcat handle-response)))

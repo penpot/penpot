@@ -880,7 +880,7 @@
 (sv/defmethod ::create-team-with-invitations
   {::doc/added "1.17"
    ::sm/params schema:create-team-with-invitations}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id emails role] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id emails role name] :as params}]
   (db/with-atomic [conn pool]
 
     (let [features (-> (cfeat/get-enabled-features cf/flags)
@@ -893,7 +893,8 @@
           cfg      (assoc cfg ::db/conn conn)
           team     (create-team cfg params)
           profile  (db/get-by-id conn :profile profile-id)
-          emails   (into #{} (map profile/clean-email) emails)]
+          emails   (into #{} (map profile/clean-email) emails)
+          context  (audit/params->context params)]
 
       ;; Create invitations for all provided emails.
       (->> emails
@@ -916,6 +917,14 @@
                    ::quotes/profile-id profile-id
                    ::quotes/team-id (:id team)
                    ::quotes/incr (count emails)}))
+
+      (audit/submit! cfg
+                     {::audit/type "action"
+                      ::audit/name "create-team"
+                      ::audit/profile-id profile-id
+                      ::audit/props {:name name
+                                     :features features}
+                      ::audit/context context})
 
       (audit/submit! cfg
                      {::audit/type "command"
