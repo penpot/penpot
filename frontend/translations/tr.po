@@ -86,20 +86,12 @@ msgstr "LDAP"
 msgid "auth.login-with-oidc-submit"
 msgstr "OpenID"
 
-#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.not-all-space"
-msgstr "İsim boşluk dışında bir karakter içermelidir."
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.too-long"
-msgstr "İsim en fazla 250 karakter içermelidir."
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
 msgstr "Yeni bir parola gir"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "Kurtarma jetonu geçerli değil."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -125,10 +117,6 @@ msgstr "Parola"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.password-length-hint"
 msgstr "En az 8 karakter"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.password-not-empty"
-msgstr "Parola boşluk dışında bir karakter içermelidir."
 
 msgid "auth.privacy-policy"
 msgstr "Gizlilik politikası"
@@ -289,7 +277,7 @@ msgid "dashboard.access-tokens.create"
 msgstr "Yeni belirteç oluştur"
 
 #: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.create.success"
+msgid "dashboard.access-tokens.create-success"
 msgstr "Erişim belirteci başarıyla oluşturuldu."
 
 #: src/app/main/ui/settings/access-tokens.cljs
@@ -299,10 +287,6 @@ msgstr "Bir belirteç oluşturmak için \"Yeni belirteç oluştur\" düğmesine 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.no-access-tokens"
 msgstr "Şu ana kadar hiç belirteciniz yok."
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.errors-required-name"
-msgstr "İsim gereklidir"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.expiration-180-days"
@@ -895,11 +879,11 @@ msgstr "«%s» adresi için çok fazla geri dönme raporu var."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs,
 #: src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
+msgid "errors.invalid-email"
 msgstr "Lütfen geçerli bir e-posta adresi girin"
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "Doğrulama e-postası eşleşmiyor"
 
 msgid "errors.email-spam-or-permanent-bounces"
@@ -3047,10 +3031,6 @@ msgstr "Görüntüyü büyült"
 
 msgid "shortcuts.zoom-selected"
 msgstr "Seçilene yakınlaştır"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "team.webhooks.max-length"
-msgstr "Webhook adı en fazla 2048 karakter içermelidir."
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"

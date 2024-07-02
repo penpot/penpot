@@ -86,32 +86,12 @@ msgstr "LDAP"
 msgid "auth.login-with-oidc-submit"
 msgstr "OpenID"
 
-#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs,
-#: src/app/main/ui/dashboard/team_form.cljs,
-#: src/app/main/ui/onboarding/team_choice.cljs,
-#: src/app/main/ui/settings/access_tokens.cljs,
-#: src/app/main/ui/settings/feedback.cljs,
-#: src/app/main/ui/settings/profile.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.not-all-space"
-msgstr "De naam mag geen spatie bevatten."
-
-#: src/app/main/ui/auth/register.cljs,
-#: src/app/main/ui/dashboard/team_form.cljs,
-#: src/app/main/ui/onboarding/team_choice.cljs,
-#: src/app/main/ui/settings/access_tokens.cljs,
-#: src/app/main/ui/settings/feedback.cljs,
-#: src/app/main/ui/settings/profile.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.too-long"
-msgstr "De naam mag maximaal 250 tekens bevatten."
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
 msgstr "Typ een nieuw wachtwoord"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "De herstelbewijsstuk is ongeldig."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -137,10 +117,6 @@ msgstr "Wachtwoord"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.password-length-hint"
 msgstr "Minimaal 8 tekens"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.password-not-empty"
-msgstr "Het wachtwoord mag geen spatie bevatten."
 
 msgid "auth.privacy-policy"
 msgstr "Privacybeleid"
@@ -301,7 +277,7 @@ msgid "dashboard.access-tokens.create"
 msgstr "Nieuw toegangsbewijs aanmaken"
 
 #: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.create.success"
+msgid "dashboard.access-tokens.create-success"
 msgstr "Toegangsbewijs is succesvol aangemaakt."
 
 #: src/app/main/ui/settings/access-tokens.cljs
@@ -311,10 +287,6 @@ msgstr "Klik op de knop \"Nieuw toegangsbewijs aanmaken\" om er een aan te maken
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.no-access-tokens"
 msgstr "Je hebt nog geen toegangsbewijzen."
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.errors-required-name"
-msgstr "De naam is verplicht"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.expiration-180-days"
@@ -909,11 +881,11 @@ msgstr "Het emailadres «%s» heeft veel permanente bounce-rapporten."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs,
 #: src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
+msgid "errors.invalid-email"
 msgstr "Voer een geldig e-mailadres in"
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "Bevestigingsmail moet overeenkomen"
 
 msgid "errors.email-spam-or-permanent-bounces"
@@ -3055,10 +3027,6 @@ msgstr "Zoomlens vergroten"
 
 msgid "shortcuts.zoom-selected"
 msgstr "Zoomen naar selectie"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "team.webhooks.max-length"
-msgstr "De webhooknaam mag maximaal 2048 tekens bevatten."
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"

@@ -77,19 +77,20 @@ msgid "auth.login-with-oidc-submit"
 msgstr "Open ID"
 
 #: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.not-all-space"
+msgid "errors.field-not-all-whitespace"
 msgstr "El nombre debe contener algún carácter distinto al del espacio."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.too-long"
-msgstr "El nombre debe contener como máximo 250 caracteres."
+msgid "errors.field-max-length"
+msgstr[0] "El nombre debe contener como máximo 1 caracter."
+msgstr[1] "El nombre debe contener como máximo %s caracteres."
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
 msgstr "Escribe una nueva contraseña"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "El token de recuperación no es válido."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -117,10 +118,6 @@ msgstr "Contraseña"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.password-length-hint"
 msgstr "Al menos 8 carácteres"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.password-not-empty"
-msgstr "La contraseña debe contener algún carácter que no sea espacio."
 
 msgid "auth.privacy-policy"
 msgstr "Política de privacidad"
@@ -280,7 +277,7 @@ msgid "dashboard.access-tokens.create"
 msgstr "Generar nuevo token"
 
 #: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.create.success"
+msgid "dashboard.access-tokens.create-success"
 msgstr "Token de acceso creado correctamente."
 
 #: src/app/main/ui/settings/access-tokens.cljs
@@ -290,10 +287,6 @@ msgstr "Presione el botón \"Generar nuevo token\" para generar uno."
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.no-access-tokens"
 msgstr "No tienes tokens hasta el momento."
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.errors-required-name"
-msgstr "El nombre es requerido"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.expiration-180-days"

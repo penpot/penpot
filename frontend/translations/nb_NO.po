@@ -28,7 +28,7 @@ msgid "auth.new-password"
 msgstr "Skriv inn et nytt passord"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "Gjenopprettelsessymbolet er ugyldig."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs

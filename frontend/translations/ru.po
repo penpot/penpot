@@ -79,7 +79,7 @@ msgid "auth.new-password"
 msgstr "Введите новый пароль"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "Неверный код восстановления."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -745,7 +745,7 @@ msgid "errors.email-has-permanent-bounces"
 msgstr "Эл. почта «%s» постоянно недоступна."
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "Эл. почта для подтверждения должна совпадать"
 
 msgid "errors.email-spam-or-permanent-bounces"

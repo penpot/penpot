@@ -17,7 +17,6 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -96,7 +95,7 @@
   (let [show-buttons? (mf/use-state false)
         content       (mf/use-state "")
 
-        disabled? (or (fm/all-spaces? @content)
+        disabled? (or (str/blank? @content)
                       (str/empty-or-nil? @content))
 
         on-focus
@@ -155,7 +154,7 @@
         pos-x    (* (:x position) zoom)
         pos-y    (* (:y position) zoom)
 
-        disabled? (or (fm/all-spaces? content)
+        disabled? (or (str/blank? content)
                       (str/empty-or-nil? content))
 
         on-esc
@@ -225,7 +224,7 @@
          (mf/deps @content)
          (fn [] (on-submit @content)))
 
-        disabled? (or (fm/all-spaces? @content)
+        disabled? (or (str/blank? @content)
                       (str/empty-or-nil? @content))]
 
     [:div {:class (stl/css :edit-form)}

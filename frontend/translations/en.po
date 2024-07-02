@@ -98,19 +98,24 @@ msgid "auth.login-with-oidc-submit"
 msgstr "OpenID"
 
 #: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.not-all-space"
+msgid "errors.field-not-all-whitespace"
 msgstr "The name must contain some character other than space."
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.too-long"
-msgstr "The name must contain at most 250 characters."
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/setti ngs/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "errors.field-max-length"
+msgstr[0] "Must contain at most 1 characters."
+msgstr[1] "Must contain at most %s characters."
+
+msgid "errors.field-min-length"
+msgstr[0] "Must contain at least 1 character."
+msgstr[1] "Must contain at least %s characters."
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
 msgstr "Type a new password"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "The recovery token is invalid."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -136,10 +141,6 @@ msgstr "Password"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.password-length-hint"
 msgstr "At least 8 characters"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.password-not-empty"
-msgstr "Password must contain some character other than space."
 
 msgid "auth.privacy-policy"
 msgstr "Privacy policy"
@@ -309,7 +310,7 @@ msgid "dashboard.access-tokens.create"
 msgstr "Generate new token"
 
 #: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.create.success"
+msgid "dashboard.access-tokens.create-success"
 msgstr "Access token created successfully."
 
 #: src/app/main/ui/settings/access-tokens.cljs
@@ -319,10 +320,6 @@ msgstr "Press the button \"Generate new token\" to generate one."
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.no-access-tokens"
 msgstr "You have no tokens so far."
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.errors-required-name"
-msgstr "The name is required"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.expiration-180-days"
@@ -898,11 +895,11 @@ msgid "errors.email-has-permanent-bounces"
 msgstr "The email «%s» has many permanent bounce reports."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
+msgid "errors.invalid-email"
 msgstr "Enter a valid email please"
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "Confirmation email must match"
 
 msgid "errors.email-spam-or-permanent-bounces"
@@ -3130,10 +3127,6 @@ msgstr "Zoom lense increase"
 
 msgid "shortcuts.zoom-selected"
 msgstr "Zoom to selected"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "team.webhooks.max-length"
-msgstr "The webhook name must contain at most 2048 characters."
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"

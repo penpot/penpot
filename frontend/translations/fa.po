@@ -81,7 +81,7 @@ msgid "auth.new-password"
 msgstr "یک رمزعبور جدید تایپ کنید"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "توکن بازیابی نامعتبر است."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -728,7 +728,7 @@ msgid "errors.email-as-password"
 msgstr "شما نمی‌توانید از ایمیل خود به عنوان رمزعبور استفاده کنید"
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "ایمیل تأیید باید مطابقت داشته باشد"
 
 #: src/app/main/ui/auth/verify_token.cljs,

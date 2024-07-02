@@ -10,13 +10,13 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.schema :as sm]
    [app.main.data.events :as-alias ev]
    [app.main.data.users :as du]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [tr]]
-   [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
@@ -56,25 +56,20 @@
                  (tr "labels.start"))
         :class (stl/css :next-button)}]]]))
 
-(s/def ::questions-form-step-1
-  (s/keys :req-un [::planning
-                   ::expected-use]
-          :opt-un [::planning-other]))
+(def ^:private schema:questions-form-1
+  [:and
 
-(defn- step-1-form-validator
-  [errors data]
-  (let [planning       (:planning data)
-        planning-other (:planning-other data)]
-    (cond-> errors
-      (and (= planning "other")
-           (str/blank? planning-other))
-      (assoc :planning-other {:code "missing"})
+   [:map {:title "QuestionsFormStep1"}
+    [:planning ::sm/text]
+    [:expected-use [:enum "work" "education" "personal"]]
+    [:planning-other {:optional true}
+     [::sm/text {:max 512}]]]
 
-      (not= planning "other")
-      (assoc :planning-other nil)
-
-      (str/blank? planning)
-      (assoc :planning {:code "missing"}))))
+   [:fn {:error/field :planning-other}
+    (fn [{:keys [planning planning-other]}]
+      (or (not= planning "other")
+          (and (= planning "other")
+               (not (str/blank? planning-other)))))]])
 
 (mf/defc step-1
   {::mf/props :obj}
@@ -143,24 +138,24 @@
         [:& fm/input {:name :planning-other
                       :class (stl/css :input-spacing)
                       :placeholder (tr "labels.other")
+                      :show-error false
                       :label ""}])]]))
 
-(s/def ::questions-form-step-2
-  (s/keys :req-un [::experience-design-tool]
-          :opt-un [::experience-design-tool-other]))
+(def ^:private schema:questions-form-2
+  [:and
+   [:map {:title "QuestionsFormStep2"}
+    [:experience-design-tool
+     [:enum "figma" "sketch" "adobe-xd" "canva" "invision" "other"]]
+    [:experience-design-tool-other {:optional true}
+     [::sm/text {:max 512}]]]
 
-(defn- step-2-form-validator
-  [errors data]
-  (let [experience       (:experience-design-tool data)
-        experience-other (:experience-design-tool-other data)]
-
-    (cond-> errors
-      (and (= experience "other")
-           (str/blank? experience-other))
-      (assoc :experience-design-tool-other {:code "missing"})
-
-      (not= experience "other")
-      (assoc :experience-design-tool-other nil))))
+   [:fn {:error/field :experience-design-tool-other}
+    (fn [data]
+      (let [experience       (:experience-design-tool data)
+            experience-other (:experience-design-tool-other data)]
+        (or (not= experience "other")
+            (and (= experience "other")
+                 (not (str/blank? experience-other))))))]])
 
 (mf/defc step-2
   {::mf/props :obj}
@@ -180,7 +175,7 @@
               (conj {:label (tr "labels.other-short")  :value "other" :icon i/curve})))
 
         current-experience
-        (dm/get-in @form [:clean-data :experience-design-tool])
+        (dm/get-in @form [:data :experience-design-tool])
 
         on-design-tool-change
         (mf/use-fn
@@ -212,33 +207,34 @@
         [:& fm/input {:name :experience-design-tool-other
                       :class (stl/css :input-spacing)
                       :placeholder (tr "labels.other")
+                      :show-error false
                       :label ""}])]]))
 
-(s/def ::questions-form-step-3
-  (s/keys :req-un [::team-size ::role ::responsability]
-          :opt-un [::role-other ::responsability-other]))
 
-(defn- step-3-form-validator
-  [errors data]
-  (let [role                 (:role data)
-        role-other           (:role-other data)
-        responsability       (:responsability data)
-        responsability-other (:responsability-other data)]
+(def ^:private schema:questions-form-3
+  [:and
+   [:map {:title "QuestionsFormStep3"}
+    [:team-size
+     [:enum "more-than-50" "31-50" "11-30" "2-10" "freelancer" "personal-project"]]
+    [:role
+     [:enum "designer" "developer" "student-teacher" "graphic-design" "marketing" "manager" "other"]]
+    [:responsability
+     [:enum "team-leader" "team-member" "freelancer" "ceo-founder" "director" "student-teacher" "other"]]
 
-    (cond-> errors
-      (and (= role "other")
-           (str/blank? role-other))
-      (assoc :role-other {:code "missing"})
+    [:role-other {:optional true} [::sm/text {:max 512}]]
+    [:responsability-other {:optional true} [::sm/text {:max 512}]]]
 
-      (not= role "other")
-      (assoc :role-other nil)
+   [:fn {:error/field :role-other}
+    (fn [{:keys [role role-other]}]
+      (or (not= role "other")
+          (and (= role "other")
+               (not (str/blank? role-other)))))]
 
-      (and (= responsability "other")
-           (str/blank? responsability-other))
-      (assoc :responsability-other {:code "missing"})
-
-      (not= responsability "other")
-      (assoc :responsability-other nil))))
+   [:fn {:error/field :responsability-other}
+    (fn [{:keys [responsability responsability-other]}]
+      (or (not= responsability "other")
+          (and (= responsability "other")
+               (not (str/blank? responsability-other)))))]])
 
 (mf/defc step-3
   {::mf/props :obj}
@@ -263,7 +259,6 @@
                         {:label (tr "labels.founder") :value "ceo-founder"}
                         {:label (tr "labels.director") :value "director"}])
               (conj {:label (tr "labels.other-short") :value "other"})))
-
 
         team-size-options
         (mf/with-memo []
@@ -301,6 +296,7 @@
         [:& fm/input {:name :role-other
                       :class (stl/css :input-spacing)
                       :placeholder (tr "labels.other")
+                      :show-error false
                       :label ""}])]
 
      [:div {:class (stl/css :modal-question)}
@@ -314,6 +310,7 @@
         [:& fm/input {:name :responsability-other
                       :class (stl/css :input-spacing)
                       :placeholder (tr "labels.other")
+                      :show-error false
                       :label ""}])]
 
      [:div {:class (stl/css :modal-question)}
@@ -323,21 +320,18 @@
                      :select-class (stl/css :select-class)
                      :name :team-size}]]]))
 
-(s/def ::questions-form-step-4
-  (s/keys :req-un [::start-with]
-          :opt-un [::start-with-other]))
+(def ^:private schema:questions-form-4
+  [:and
+   [:map {:title "QuestionsFormStep4"}
+    [:start-with
+     [:enum "ui" "wireframing" "prototyping" "ds" "code" "other"]]
+    [:start-with-other {:optional true} [::sm/text {:max 512}]]]
 
-(defn- step-4-form-validator
-  [errors data]
-  (let [start       (:start-with data)
-        start-other (:start-with-other data)]
-    (cond-> errors
-      (and (= start "other")
-           (str/blank? start-other))
-      (assoc :start-with-other {:code "missing"})
-
-      (not= start "other")
-      (assoc :start-with-other nil))))
+   [:fn {:error/field :start-with-other}
+    (fn [{:keys [start-with start-with-other]}]
+      (or (not= start-with "other")
+          (and (= start-with "other")
+               (not (str/blank? start-with-other)))))]])
 
 (mf/defc step-4
   {::mf/props :obj}
@@ -386,23 +380,21 @@
         [:& fm/input {:name :start-with-other
                       :class (stl/css :input-spacing)
                       :label ""
+                      :show-error false
                       :placeholder (tr "labels.other")}])]]))
 
-(s/def ::questions-form-step-5
-  (s/keys :req-un [::referer]
-          :opt-un [::referer-other]))
+(def ^:private schema:questions-form-5
+  [:and
+   [:map {:title "QuestionsFormStep5"}
+    [:referer
+     [:enum "youtube" "event" "search" "social" "article" "other"]]
+    [:referer-other {:optional true} [::sm/text {:max 512}]]]
 
-(defn- step-5-form-validator
-  [errors data]
-  (let [referer       (:referer data)
-        referer-other (:referer-other data)]
-    (cond-> errors
-      (and (= referer "other")
-           (str/blank? referer-other))
-      (assoc :referer-other {:code "missing"})
-
-      (not= referer "other")
-      (assoc :referer-other nil))))
+   [:fn {:error/field :referer-other}
+    (fn [{:keys [referer referer-other]}]
+      (or (not= referer "other")
+          (and (= referer "other")
+               (not (str/blank? referer-other)))))]])
 
 (mf/defc step-5
   {::mf/props :obj}
@@ -444,6 +436,7 @@
         [:& fm/input {:name :referer-other
                       :class (stl/css :input-spacing)
                       :label ""
+                      :show-error false
                       :placeholder (tr "labels.other")}])]]))
 
 (mf/defc questions-modal
@@ -456,28 +449,23 @@
         ;; and we want to keep the filled info
         step-1-form (fm/use-form
                      :initial {}
-                     :validators [step-1-form-validator]
-                     :spec ::questions-form-step-1)
+                     :schema schema:questions-form-1)
 
         step-2-form (fm/use-form
                      :initial {}
-                     :validators [step-2-form-validator]
-                     :spec ::questions-form-step-2)
+                     :schema schema:questions-form-2)
 
         step-3-form (fm/use-form
                      :initial {}
-                     :validators [step-3-form-validator]
-                     :spec ::questions-form-step-3)
+                     :schema schema:questions-form-3)
 
         step-4-form (fm/use-form
                      :initial {}
-                     :validators [step-4-form-validator]
-                     :spec ::questions-form-step-4)
+                     :schema schema:questions-form-4)
 
         step-5-form (fm/use-form
                      :initial {}
-                     :validators [step-5-form-validator]
-                     :spec ::questions-form-step-5)
+                     :schema schema:questions-form-5)
 
         on-next
         (mf/use-fn

@@ -78,7 +78,7 @@ msgid "auth.new-password"
 msgstr "اكتب كلمة مرور جديدة"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "رمز الاسترداد غير صالح."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -743,11 +743,11 @@ msgstr "يحتوي البريد الإلكتروني «%s» على العديد 
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs,
 #: src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
+msgid "errors.invalid-email"
 msgstr "أدخل بريدًا إلكترونيًا صالحًا من فضلك"
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "يجب أن يتطابق البريد الإلكتروني للتأكيد"
 
 msgid "errors.email-spam-or-permanent-bounces"
@@ -2291,10 +2291,6 @@ msgstr "زيادة عدسة التكبير"
 
 msgid "shortcuts.zoom-selected"
 msgstr "كبر المحدد"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "team.webhooks.max-length"
-msgstr "يجب الا يزيد اسم الويبهوك على 2048 حرفا"
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"
@@ -4307,14 +4303,6 @@ msgstr "الرمز منسوخ"
 msgid "auth.login-tagline"
 msgstr "Penpot هو أداة تصميم مجانية ومفتوحة المصدر للتعاون بين التصميم والبرمجة"
 
-#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.not-all-space"
-msgstr "يجب أن يحتوي الاسم على بعض الأحرف غير الفراغات."
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.too-long"
-msgstr "يجب أن يحتوي الاسم على 250 حرفًا كحد أقصى."
-
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.add-one"
 msgstr "اضغط على الزر \"إنشاء رمز جديد\" لإنشاء واحد."
@@ -4332,5 +4320,5 @@ msgid "dashboard.access-tokens.create"
 msgstr "قم بإنشاء رمز جديد"
 
 #: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.create.success"
+msgid "dashboard.access-tokens.create-success"
 msgstr "تم إنشاء رمز الوصول بنجاح."

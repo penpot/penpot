@@ -7,7 +7,7 @@
 (ns app.main.ui.settings.profile
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.config :as cf]
    [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
@@ -18,14 +18,12 @@
    [app.main.ui.components.forms :as fm]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [cljs.spec.alpha :as s]
    [rumext.v2 :as mf]))
 
-(s/def ::fullname ::us/not-empty-string)
-(s/def ::email ::us/email)
-
-(s/def ::profile-form
-  (s/keys :req-un [::fullname ::email]))
+(def ^:private schema:profile-form
+  [:map {:title "ProfileForm"}
+   [:fullname [::sm/text {:max 250}]]
+   [:email ::sm/email]])
 
 (defn- on-submit
   [form _event]
@@ -37,19 +35,18 @@
 ;; --- Profile Form
 
 (mf/defc profile-form
+  {::mf/private true}
   []
   (let [profile (mf/deref refs/profile)
-        form    (fm/use-form :spec ::profile-form
-                             :initial profile
-                             :validators [(fm/validate-length :fullname fm/max-length-allowed (tr "auth.name.too-long"))
-                                          (fm/validate-not-empty :fullname (tr "auth.name.not-all-space"))])
+        form    (fm/use-form :schema schema:profile-form
+                             :initial profile)
 
-        handle-show-change-email
-        (mf/use-callback
+        on-show-change-email
+        (mf/use-fn
          #(modal/show! :change-email {}))
 
-        handle-show-delete-account
-        (mf/use-callback
+        on-show-delete-account
+        (mf/use-fn
          #(modal/show! :delete-account {}))]
 
     [:& fm/form {:on-submit on-submit
@@ -62,7 +59,7 @@
         :label (tr "dashboard.your-name")}]]
 
      [:div {:class (stl/css :fields-row)
-            :on-click handle-show-change-email}
+            :on-click on-show-change-email}
       [:& fm/input
        {:type "email"
         :name :email
@@ -71,7 +68,7 @@
 
       [:div {:class (stl/css :options)}
        [:div.change-email
-        [:a {:on-click handle-show-change-email}
+        [:a {:on-click on-show-change-email}
          (tr "dashboard.change-email")]]]]
 
      [:> fm/submit-button*
@@ -81,17 +78,25 @@
 
      [:div {:class (stl/css :links)}
       [:div {:class (stl/css :link-item)}
-       [:a {:on-click handle-show-delete-account
+       [:a {:on-click on-show-delete-account
             :data-testid "remove-acount-btn"}
         (tr "dashboard.remove-account")]]]]))
 
 ;; --- Profile Photo Form
 
-(mf/defc profile-photo-form []
-  (let [file-input     (mf/use-ref nil)
-        profile        (mf/deref refs/profile)
-        photo          (cf/resolve-profile-photo-url profile)
-        on-image-click #(dom/click (mf/ref-val file-input))
+(mf/defc profile-photo-form
+  {::mf/private true}
+  []
+  (let [input-ref  (mf/use-ref nil)
+        profile    (mf/deref refs/profile)
+
+        photo
+        (mf/with-memo [profile]
+          (cf/resolve-profile-photo-url profile))
+
+        on-image-click
+        (mf/use-fn
+         #(dom/click (mf/ref-val input-ref)))
 
         on-file-selected
         (fn [file]
@@ -104,15 +109,17 @@
       [:img {:src photo}]
       [:& file-uploader {:accept "image/jpeg,image/png"
                          :multi false
-                         :ref file-input
+                         :ref input-ref
                          :on-selected on-file-selected
                          :data-testid "profile-image-input"}]]]))
 
 ;; --- Profile Page
 
-(mf/defc profile-page []
+(mf/defc profile-page
+  []
   (mf/with-effect []
     (dom/set-html-title (tr "title.settings.profile")))
+
   [:div {:class (stl/css :dashboard-settings)}
    [:div {:class (stl/css :form-container)}
     [:h2 (tr "labels.profile")]

@@ -18,7 +18,6 @@
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [cljs.core :as c]
-   [clojure.string]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -26,7 +25,9 @@
 (def use-form fm/use-form)
 
 (mf/defc input
-  [{:keys [label help-icon disabled form hint trim children data-testid on-change-value placeholder show-success?] :as props}]
+  [{:keys [label help-icon disabled form hint trim children data-testid on-change-value placeholder show-success? show-error]
+    :or {show-error true}
+    :as props}]
   (let [input-type   (get props :type "text")
         input-name   (get props :name)
         more-classes (get props :class)
@@ -152,11 +153,14 @@
          children])
 
       (cond
-        (and touched? (:message error))
-        [:div {:id (dm/str "error-" input-name)
-               :class (stl/css :error)
-               :data-testid (clojure.string/join [data-testid "-error"])}
-         (tr (:message error))]
+        (and touched? (:code error) show-error)
+        (let [code (:code error)]
+          [:div {:id (dm/str "error-" input-name)
+                 :class (stl/css :error)
+                 :data-testid (dm/str data-testid "-error")}
+           (if (vector? code)
+             (tr (nth code 0) (i18n/c (nth code 1)))
+             (tr code))])
 
         (string? hint)
         [:div {:class (stl/css :hint)} hint])]]))
@@ -207,8 +211,8 @@
      [:label {:class (stl/css :textarea-label)} label]
      [:> :textarea props]
      (cond
-       (and touched? (:message error))
-       [:span {:class (stl/css :error)} (tr (:message error))]
+       (and touched? (:code error))
+       [:span {:class (stl/css :error)} (tr (:code error))]
 
        (string? hint)
        [:span {:class (stl/css :hint)} hint])]))
@@ -550,41 +554,3 @@
             [:span {:class (stl/css :text)} (:text item)]
             [:button {:class (stl/css :icon)
                       :on-click #(remove-item! item)} i/close]]])])]))
-
-;; --- Validators
-
-(defn all-spaces?
-  [value]
-  (let [trimmed (str/trim value)]
-    (str/empty? trimmed)))
-
-(def max-length-allowed 250)
-(def max-uri-length-allowed 2048)
-
-(defn max-length?
-  [value length]
-  (> (count value) length))
-
-(defn validate-length
-  [field length errors-msg]
-  (fn [errors data]
-    (cond-> errors
-      (max-length? (get data field) length)
-      (assoc field {:message errors-msg}))))
-
-(defn validate-not-empty
-  [field error-msg]
-  (fn [errors data]
-    (cond-> errors
-      (all-spaces? (get data field))
-      (assoc field {:message error-msg}))))
-
-(defn validate-not-all-spaces
-  [field error-msg]
-  (fn [errors data]
-    (let [value (get data field)]
-      (cond-> errors
-        (and
-         (all-spaces? value)
-         (> (count value) 0))
-        (assoc field {:message error-msg})))))

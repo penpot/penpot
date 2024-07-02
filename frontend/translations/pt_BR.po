@@ -81,7 +81,7 @@ msgid "auth.new-password"
 msgstr "Digite uma nova senha"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "O código de recuperação é inválido."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -731,11 +731,11 @@ msgid "errors.email-has-permanent-bounces"
 msgstr "O e-mail «%s» tem muitos relatórios de devolução permanentes."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
+msgid "errors.invalid-email"
 msgstr "Por favor, insira um email válido"
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "E-mail de confirmação deve ser o mesmo"
 
 msgid "errors.email-spam-or-permanent-bounces"
