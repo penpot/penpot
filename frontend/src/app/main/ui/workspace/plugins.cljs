@@ -209,34 +209,34 @@
           [:div {:class (stl/css :permissions-list-entry)}
            i/oauth-1
            [:p {:class (stl/css :permissions-list-text)}
-            (tr "workspace.plugins.permissions.disclaimer")]])
+            (tr "workspace.plugins.permissions.content-read")]])
 
         (when (contains? permissions "content:write")
           [:div {:class (stl/css :permissions-list-entry)}
            i/oauth-1
            [:p {:class (stl/css :permissions-list-text)}
-            (tr "workspace.plugins.permissions.content-read")]])
+            (tr "workspace.plugins.permissions.content-write")]])
 
         (when (contains? permissions "user:read")
           [:div {:class (stl/css :permissions-list-entry)}
            i/oauth-2
            [:p {:class (stl/css :permissions-list-text)}
-            (tr "workspace.plugins.permissions.content-write")]])
+            (tr "workspace.plugins.permissions.user-read")]])
 
         (when (contains? permissions "library:read")
           [:div {:class (stl/css :permissions-list-entry)}
            i/oauth-3
            [:p {:class (stl/css :permissions-list-text)}
-            (tr "workspace.plugins.permissions.user-read")]])
+            (tr "workspace.plugins.permissions.library-read")]])
 
         (when (contains? permissions "library:write")
           [:div {:class (stl/css :permissions-list-entry)}
            i/oauth-3
            [:p {:class (stl/css :permissions-list-text)}
-            (tr "workspace.plugins.permissions.library-read")]])]
+            (tr "workspace.plugins.permissions.library-write")]])]
 
        [:div {:class (stl/css :permissions-disclaimer)}
-        (tr "workspace.plugins.permissions.library-write")]]
+        (tr "workspace.plugins.permissions.disclaimer")]]
 
       [:div {:class (stl/css :modal-footer)}
        [:div {:class (stl/css :action-buttons)}
