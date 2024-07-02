@@ -693,8 +693,8 @@
   [:div {:class (stl/css :empty-invitations)}
    [:span (tr "labels.no-invitations")]
    (when can-invite?
-     [:& i18n/tr-html {:label "labels.no-invitations-hint"
-                       :tag-name "span"}])])
+     [:> i18n/tr-html* {:content (tr "labels.no-invitations-hint")
+                        :tag-name "span"}])])
 
 (mf/defc invitation-section
   [{:keys [team invitations] :as props}]
@@ -878,8 +878,8 @@
   [:div {:class (stl/css :webhooks-hero-container)}
    [:h2 {:class (stl/css :hero-title)}
     (tr "labels.webhooks")]
-   [:& i18n/tr-html {:class (stl/css :hero-desc)
-                     :label "dashboard.webhooks.description"}]
+   [:> i18n/tr-html* {:class (stl/css :hero-desc)
+                      :content (tr "dashboard.webhooks.description")}]
    [:button {:class (stl/css :hero-btn)
              :on-click #(st/emit! (modal/show :webhook {}))}
     (tr "dashboard.webhooks.create")]])

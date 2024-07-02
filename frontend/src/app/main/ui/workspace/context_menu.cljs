@@ -474,7 +474,7 @@
         [:& menu-separator]
         (for [entry components-menu-entries :when (not (nil? entry))]
           [:& menu-entry {:key (uuid/next)
-                          :title (tr (:msg entry))
+                          :title (:title entry)
                           :shortcut (when (contains? entry :shortcut) (sc/get-tooltip (:shortcut entry)))
                           :on-click (:action entry)}])])]))
 

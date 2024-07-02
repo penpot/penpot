@@ -18,7 +18,7 @@
    [app.main.ui.components.forms :as fm]
    [app.main.ui.components.link :as lk]
    [app.main.ui.icons :as i]
-   [app.util.i18n :refer [tr tr-html]]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.storage :as sto]
    [beicon.v2.core :as rx]
@@ -197,10 +197,11 @@
   []
   (let [terms-label
         (mf/html
-         [:& tr-html
+         [:> i18n/tr-html*
           {:tag-name "div"
-           :label "auth.terms-and-privacy-agreement"
-           :params [cf/terms-of-service-uri cf/privacy-policy-uri]}])]
+           :content (tr "auth.terms-and-privacy-agreement"
+                        cf/terms-of-service-uri
+                        cf/privacy-policy-uri)}])]
 
     [:div {:class (stl/css :fields-row :input-visible :accept-terms-and-privacy-wrapper)}
      [:& fm/input {:name :accept-terms-and-privacy

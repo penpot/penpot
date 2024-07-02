@@ -432,12 +432,12 @@
              [:label {:for (str "export-" type)
                       :class (stl/css-case :global/checked (= selected type))}
                                 ;; Execution time translation strings:
-                                ;;   dashboard.export.options.all.message
-                                ;;   dashboard.export.options.all.title
-                                ;;   dashboard.export.options.detach.message
-                                ;;   dashboard.export.options.detach.title
-                                ;;   dashboard.export.options.merge.message
-                                ;;   dashboard.export.options.merge.title
+                                ;;   (tr "dashboard.export.options.all.message")
+                                ;;   (tr "dashboard.export.options.all.title")
+                                ;;   (tr "dashboard.export.options.detach.message")
+                                ;;   (tr "dashboard.export.options.detach.title")
+                                ;;   (tr "dashboard.export.options.merge.message")
+                                ;;   (tr "dashboard.export.options.merge.title")
               [:span {:class (stl/css-case :global/checked (= selected type))}
                (when (= selected type)
                  i/status-tick)]

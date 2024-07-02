@@ -94,18 +94,18 @@
            [:*
             [:span {:class (stl/css :shape-icon)}
              [:& sir/element-icon {:shape first-shape :main-instance? main-instance?}]]
-                       ;; Execution time translation strings:
-                       ;;   inspect.tabs.code.selected.circle
-                       ;;   inspect.tabs.code.selected.component
-                       ;;   inspect.tabs.code.selected.curve
-                       ;;   inspect.tabs.code.selected.frame
-                       ;;   inspect.tabs.code.selected.group
-                       ;;   inspect.tabs.code.selected.image
-                       ;;   inspect.tabs.code.selected.mask
-                       ;;   inspect.tabs.code.selected.path
-                       ;;   inspect.tabs.code.selected.rect
-                       ;;   inspect.tabs.code.selected.svg-raw
-                       ;;   inspect.tabs.code.selected.text
+            ;; Execution time translation strings:
+            ;;   (tr "inspect.tabs.code.selected.circle")
+            ;;   (tr "inspect.tabs.code.selected.component")
+            ;;   (tr "inspect.tabs.code.selected.curve")
+            ;;   (tr "inspect.tabs.code.selected.frame")
+            ;;   (tr "inspect.tabs.code.selected.group")
+            ;;   (tr "inspect.tabs.code.selected.image")
+            ;;   (tr "inspect.tabs.code.selected.mask")
+            ;;   (tr "inspect.tabs.code.selected.path")
+            ;;   (tr "inspect.tabs.code.selected.rect")
+            ;;   (tr "inspect.tabs.code.selected.svg-raw")
+            ;;   (tr "inspect.tabs.code.selected.text")
             [:span {:class (stl/css :layer-title)} (:name first-shape)]])]
         [:div {:class (stl/css :inspect-content)}
          [:& tab-container {:on-change-tab handle-change-tab
