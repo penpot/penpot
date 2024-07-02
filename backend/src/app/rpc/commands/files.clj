@@ -15,7 +15,6 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.schema.desc-js-like :as-alias smdj]
-   [app.common.spec :as us]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
    [app.config :as cf]
@@ -36,7 +35,6 @@
    [app.util.services :as sv]
    [app.util.time :as dt]
    [app.worker :as wrk]
-   [clojure.spec.alpha :as s]
    [cuerdas.core :as str]))
 
 ;; --- FEATURES
@@ -45,18 +43,6 @@
   [media-id]
   (when media-id
     (str (cf/get :public-uri) "/assets/by-id/" media-id)))
-
-;; --- SPECS
-
-(s/def ::features ::us/set-of-strings)
-(s/def ::file-id ::us/uuid)
-(s/def ::frame-id ::us/uuid)
-(s/def ::id ::us/uuid)
-(s/def ::is-shared ::us/boolean)
-(s/def ::name ::us/string)
-(s/def ::project-id ::us/uuid)
-(s/def ::search-term ::us/string)
-(s/def ::team-id ::us/uuid)
 
 ;; --- HELPERS
 
@@ -191,7 +177,7 @@
      [:features ::cfeat/features]
      [:has-media-trimmed :boolean]
      [:comment-thread-seqn {:min 0} :int]
-     [:name :string]
+     [:name [:string {:max 250}]]
      [:revn {:min 0} :int]
      [:modified-at ::dt/instant]
      [:is-shared :boolean]
@@ -761,19 +747,19 @@
    [:map {:title "RenameFileEvent"}
     [:id ::sm/uuid]
     [:project-id ::sm/uuid]
-    [:name :string]
+    [:name [:string {:max 250}]]
     [:created-at ::dt/instant]
     [:modified-at ::dt/instant]]
 
    ::sm/params
    [:map {:title "RenameFileParams"}
-    [:name {:min 1} :string]
+    [:name [:string {:min 1 :max 250}]]
     [:id ::sm/uuid]]
 
    ::sm/result
    [:map {:title "SimplifiedFile"}
     [:id ::sm/uuid]
-    [:name :string]
+    [:name [:string {:max 250}]]
     [:created-at ::dt/instant]
     [:modified-at ::dt/instant]]}
 
@@ -1047,14 +1033,16 @@
               {:id file-id}
               {::db/return-keys true}))
 
-(s/def ::ignore-file-library-sync-status
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::file-id ::date]))
+(def ^:private schema:ignore-file-library-sync-status
+  [:map {:title "ignore-file-library-sync-status"}
+   [:file-id ::sm/uuid]
+   [:date ::dt/duration]])
 
 ;; TODO: improve naming
 (sv/defmethod ::ignore-file-library-sync-status
   "Ignore updates in linked files"
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::sm/params schema:ignore-file-library-sync-status}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id file-id)

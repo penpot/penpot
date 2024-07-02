@@ -9,7 +9,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.media :as cm]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -25,7 +25,6 @@
    [app.util.services :as sv]
    [app.util.time :as dt]
    [app.worker :as-alias wrk]
-   [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [datoteka.io :as io]
    [promesa.exec :as px]))
@@ -39,25 +38,21 @@
    :quality 85
    :format :jpeg})
 
-(s/def ::id ::us/uuid)
-(s/def ::name ::us/string)
-(s/def ::file-id ::us/uuid)
-(s/def ::team-id ::us/uuid)
-
 ;; --- Create File Media object (upload)
 
 (declare create-file-media-object)
 
-(s/def ::content ::media/upload)
-(s/def ::is-local ::us/boolean)
-
-(s/def ::upload-file-media-object
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::file-id ::is-local ::name ::content]
-          :opt-un [::id]))
+(def ^:private schema:upload-file-media-object
+  [:map {:title "upload-file-media-object"}
+   [:id {:optional true} ::sm/uuid]
+   [:file-id ::sm/uuid]
+   [:is-local :boolean]
+   [:name [:string {:max 250}]]
+   [:content ::media/upload]])
 
 (sv/defmethod ::upload-file-media-object
   {::doc/added "1.17"
+   ::sm/params schema:upload-file-media-object
    ::climit/id [[:process-image/by-profile ::rpc/profile-id]
                 [:process-image/global]]}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id content] :as params}]
@@ -176,14 +171,17 @@
 
 (declare ^:private create-file-media-object-from-url)
 
-(s/def ::create-file-media-object-from-url
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::file-id ::is-local ::url]
-          :opt-un [::id ::name]))
+(def ^:private schema:create-file-media-object-from-url
+  [:map {:title "create-file-media-object-from-url"}
+   [:file-id ::sm/uuid]
+   [:is-local :boolean]
+   [:url ::sm/uri]
+   [:id {:optional true} ::sm/uuid]
+   [:name {:optional true} [:string {:max 250}]]])
 
 (sv/defmethod ::create-file-media-object-from-url
   {::doc/added "1.17"
-   ::doc/deprecated "1.19"}
+   ::sm/params schema:create-file-media-object-from-url}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (let [cfg (update cfg ::sto/storage media/configure-assets-storage)]
     (files/check-edition-permissions! pool profile-id file-id)
@@ -255,12 +253,15 @@
 
 (declare clone-file-media-object)
 
-(s/def ::clone-file-media-object
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::file-id ::is-local ::id]))
+(def ^:private schema:clone-file-media-object
+  [:map {:title "clone-file-media-object"}
+   [:file-id ::sm/uuid]
+   [:is-local :boolean]
+   [:id ::sm/uuid]])
 
 (sv/defmethod ::clone-file-media-object
-  {::doc/added "1.17"}
+  {::doc/added "1.17"
+   ::sm/params schema:clone-file-media-object}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id file-id)

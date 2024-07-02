@@ -24,7 +24,7 @@
 
 ;; Auxiliary functions to help create a set of changes (undo + redo)
 
-(sm/define! ::changes
+(sm/register! ::changes
   [:map {:title "changes"}
    [:redo-changes vector?]
    [:undo-changes seq?]

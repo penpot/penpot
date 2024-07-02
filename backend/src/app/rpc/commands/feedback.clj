@@ -8,29 +8,25 @@
   "A general purpose feedback module."
   (:require
    [app.common.exceptions :as ex]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.config :as cf]
    [app.db :as db]
    [app.email :as eml]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]
-   [app.util.services :as sv]
-   [clojure.spec.alpha :as s]))
+   [app.util.services :as sv]))
 
 (declare ^:private send-feedback!)
 
-(s/def ::content ::us/string)
-(s/def ::from    ::us/email)
-(s/def ::subject ::us/string)
-
-(s/def ::send-user-feedback
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::subject
-                   ::content]))
+(def ^:private schema:send-user-feedback
+  [:map {:title "send-user-feedback"}
+   [:subject [:string {:max 250}]]
+   [:content [:string {:max 250}]]])
 
 (sv/defmethod ::send-user-feedback
-  {::doc/added "1.18"}
+  {::doc/added "1.18"
+   ::sm/params schema:send-user-feedback}
   [{:keys [::db/pool]} {:keys [::rpc/profile-id] :as params}]
   (when-not (contains? cf/flags :user-feedback)
     (ex/raise :type :restriction

@@ -8,7 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.db :as db]
    [app.db.sql :as-alias sql]
    [app.loggers.audit :as-alias audit]
@@ -21,11 +21,7 @@
    [app.rpc.quotes :as quotes]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [app.worker :as wrk]
-   [clojure.spec.alpha :as s]))
-
-(s/def ::id ::us/uuid)
-(s/def ::name ::us/string)
+   [app.worker :as wrk]))
 
 ;; --- Check Project Permissions
 
@@ -75,13 +71,13 @@
 
 (declare get-projects)
 
-(s/def ::team-id ::us/uuid)
-(s/def ::get-projects
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::team-id]))
+(def ^:private schema:get-projects
+  [:map {:title "get-projects"}
+   [:team-id ::sm/uuid]])
 
 (sv/defmethod ::get-projects
-  {::doc/added "1.18"}
+  {::doc/added "1.18"
+   ::sm/params schema:get-projects}
   [{:keys [::db/pool]} {:keys [::rpc/profile-id team-id]}]
   (dm/with-open [conn (db/open pool)]
     (teams/check-read-permissions! conn profile-id team-id)
@@ -112,11 +108,12 @@
 
 (declare get-all-projects)
 
-(s/def ::get-all-projects
-  (s/keys :req [::rpc/profile-id]))
+(def ^:private schema:get-all-projects
+  [:map {:title "get-all-projects"}])
 
 (sv/defmethod ::get-all-projects
-  {::doc/added "1.18"}
+  {::doc/added "1.18"
+   ::sm/params schema:get-all-projects}
   [{:keys [::db/pool]} {:keys [::rpc/profile-id]}]
   (dm/with-open [conn (db/open pool)]
     (get-all-projects conn profile-id)))
@@ -154,12 +151,13 @@
 
 ;; --- QUERY: Get project
 
-(s/def ::get-project
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::id]))
+(def ^:private schema:get-project
+  [:map {:title "get-project"}
+   [:id ::sm/uuid]])
 
 (sv/defmethod ::get-project
-  {::doc/added "1.18"}
+  {::doc/added "1.18"
+   ::sm/params schema:get-project}
   [{:keys [::db/pool]} {:keys [::rpc/profile-id id]}]
   (dm/with-open [conn (db/open pool)]
     (let [project (db/get-by-id conn :project id)]
@@ -170,14 +168,16 @@
 
 ;; --- MUTATION: Create Project
 
-(s/def ::create-project
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::team-id ::name]
-          :opt-un [::id]))
+(def ^:private schema:create-project
+  [:map {:title "create-project"}
+   [:team-id ::sm/uuid]
+   [:name [:string {:max 250 :min 1}]]
+   [:id {:optional true} ::sm/uuid]])
 
 (sv/defmethod ::create-project
   {::doc/added "1.18"
-   ::webhooks/event? true}
+   ::webhooks/event? true
+   ::sm/params schema:create-project}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id] :as params}]
   (db/with-atomic [conn pool]
     (teams/check-edition-permissions! conn profile-id team-id)
@@ -205,14 +205,15 @@
        on conflict (team_id, project_id, profile_id)
        do update set is_pinned=?")
 
-(s/def ::is-pinned ::us/boolean)
-(s/def ::project-id ::us/uuid)
-(s/def ::update-project-pin
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::id ::team-id ::is-pinned]))
+(def ^:private schema:update-project-pin
+  [:map {:title "update-project-pin"}
+   [:team-id ::sm/uuid]
+   [:is-pinned :boolean]
+   [:id ::sm/uuid]])
 
 (sv/defmethod ::update-project-pin
   {::doc/added "1.18"
+   ::sm/params schema:update-project-pin
    ::webhooks/batch-timeout (dt/duration "5s")
    ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
    ::webhooks/event? true}
@@ -226,12 +227,14 @@
 
 (declare rename-project)
 
-(s/def ::rename-project
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::name ::id]))
+(def ^:private schema:rename-project
+  [:map {:title "rename-project"}
+   [:name [:string {:max 250 :min 1}]]
+   [:id ::sm/uuid]])
 
 (sv/defmethod ::rename-project
   {::doc/added "1.18"
+   ::sm/params schema:rename-project
    ::webhooks/event? true}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id name] :as params}]
   (db/with-atomic [conn pool]
@@ -266,12 +269,14 @@
 
     project))
 
-(s/def ::delete-project
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::id]))
+
+(def ^:private schema:delete-project
+  [:map {:title "delete-project"}
+   [:id ::sm/uuid]])
 
 (sv/defmethod ::delete-project
   {::doc/added "1.18"
+   ::sm/params schema:delete-project
    ::webhooks/event? true}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (db/with-atomic [conn pool]

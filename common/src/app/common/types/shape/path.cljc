@@ -12,7 +12,7 @@
 ;; SCHEMA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(sm/define! ::segment
+(sm/register! ::segment
   [:multi {:title "PathSegment" :dispatch :command}
    [:line-to
     [:map
@@ -43,5 +43,5 @@
        [:c2x ::sm/safe-number]
        [:c2y ::sm/safe-number]]]]]])
 
-(sm/define! ::content
+(sm/register! ::content
   [:vector ::segment])

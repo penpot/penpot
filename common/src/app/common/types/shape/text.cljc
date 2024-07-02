@@ -16,7 +16,7 @@
 
 (def node-types #{"root" "paragraph-set" "paragraph"})
 
-(sm/def! ::content
+(sm/register! ::content
   [:map
    [:type [:= "root"]]
    [:key {:optional true} :string]
@@ -64,7 +64,7 @@
 
 
 
-(sm/def! ::position-data
+(sm/register! ::position-data
   [:vector {:min 1 :gen/max 2}
    [:map
     [:x ::sm/safe-number]

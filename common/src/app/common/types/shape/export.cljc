@@ -10,8 +10,8 @@
 
 (def export-types #{:png :jpeg :svg :pdf})
 
-(sm/def! ::export
+(sm/register! ::export
   [:map {:title "ShapeExport"}
-   [:type :keyword]
+   [:type [::sm/one-of export-types]]
    [:scale ::sm/safe-number]
    [:suffix :string]])

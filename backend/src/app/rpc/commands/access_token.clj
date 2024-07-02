@@ -6,7 +6,7 @@
 
 (ns app.rpc.commands.access-token
   (:require
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.main :as-alias main]
@@ -16,8 +16,7 @@
    [app.setup :as-alias setup]
    [app.tokens :as tokens]
    [app.util.services :as sv]
-   [app.util.time :as dt]
-   [clojure.spec.alpha :as s]))
+   [app.util.time :as dt]))
 
 (defn- decode-row
   [row]
@@ -44,7 +43,7 @@
                  :perms (db/create-array conn "text" [])})))
 
 
-(defn repl-create-access-token
+(defn repl:create-access-token
   [{:keys [::db/pool] :as system} profile-id name expiration]
   (db/with-atomic [conn pool]
     (let [props (:app.setup/props system)]
@@ -53,16 +52,14 @@
                            name
                            expiration))))
 
-(s/def ::name ::us/not-empty-string)
-(s/def ::expiration ::dt/duration)
-
-(s/def ::create-access-token
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::name]
-          :opt-un [::expiration]))
+(def ^:private schema:create-access-token
+  [:map {:title "create-access-token"}
+   [:name [:string {:max 250 :min 1}]]
+   [:expiration {:optional true} ::dt/duration]])
 
 (sv/defmethod ::create-access-token
-  {::doc/added "1.18"}
+  {::doc/added "1.18"
+   ::sm/params schema:create-access-token}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id name expiration]}]
   (db/with-atomic [conn pool]
     (let [cfg (assoc cfg ::db/conn conn)]
@@ -72,21 +69,23 @@
       (-> (create-access-token cfg profile-id name expiration)
           (decode-row)))))
 
-(s/def ::delete-access-token
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::us/id]))
+(def ^:private schema:delete-access-token
+  [:map {:title "delete-access-token"}
+   [:id ::sm/uuid]])
 
 (sv/defmethod ::delete-access-token
-  {::doc/added "1.18"}
+  {::doc/added "1.18"
+   ::sm/params schema:delete-access-token}
   [{:keys [::db/pool]} {:keys [::rpc/profile-id id]}]
   (db/delete! pool :access-token {:id id :profile-id profile-id})
   nil)
 
-(s/def ::get-access-tokens
-  (s/keys :req [::rpc/profile-id]))
+(def ^:private schema:get-access-tokens
+  [:map {:title "get-access-tokens"}])
 
 (sv/defmethod ::get-access-tokens
-  {::doc/added "1.18"}
+  {::doc/added "1.18"
+   ::sm/params schema:get-access-tokens}
   [{:keys [::db/pool]} {:keys [::rpc/profile-id]}]
   (->> (db/query pool :access-token
                  {:profile-id profile-id}

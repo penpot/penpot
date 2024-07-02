@@ -7,29 +7,24 @@
 (ns app.rpc.commands.files-share
   "Share link related rpc mutation methods."
   (:require
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.rpc.doc :as-alias doc]
-   [app.util.services :as sv]
-   [clojure.spec.alpha :as s]))
-
-;; --- Helpers & Specs
-
-(s/def ::file-id ::us/uuid)
-(s/def ::who-comment ::us/string)
-(s/def ::who-inspect ::us/string)
-(s/def ::pages (s/every ::us/uuid :kind set?))
+   [app.util.services :as sv]))
 
 ;; --- MUTATION: Create Share Link
 
 (declare create-share-link)
 
-(s/def ::create-share-link
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::file-id ::who-comment ::who-inspect ::pages]))
+(def ^:private schema:create-share-link
+  [:map {:title "create-share-link"}
+   [:file-id ::sm/uuid]
+   [:who-comment [:string {:max 250}]]
+   [:who-inspect [:string {:max 250}]]
+   [:pages [:set ::sm/uuid]]])
 
 (sv/defmethod ::create-share-link
   "Creates a share-link object.
@@ -37,7 +32,8 @@
   Share links are resources that allows external users access to specific
   pages of a file with specific permissions (who-comment and who-inspect)."
   {::doc/added "1.18"
-   ::doc/module :files}
+   ::doc/module :files
+   ::sm/params schema:create-share-link}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id file-id)
@@ -58,13 +54,14 @@
 
 ;; --- MUTATION: Delete Share Link
 
-(s/def ::delete-share-link
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::us/id]))
+(def ^:private schema:delete-share-link
+  [:map {:title "delete-share-link"}
+   [:id ::sm/uuid]])
 
 (sv/defmethod ::delete-share-link
   {::doc/added "1.18"
-   ::doc/module ::files}
+   ::doc/module ::files
+   ::sm/params schema:delete-share-link}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (db/with-atomic [conn pool]
     (let [slink (db/get-by-id conn :share-link id)]

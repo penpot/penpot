@@ -37,7 +37,7 @@
             (.. g (toString 16) (padStart 2 "0"))
             (.. b (toString 16) (padStart 2 "0"))))))
 
-(sm/define! ::rgb-color
+(sm/register! ::rgb-color
   {:type ::rgb-color
    :pred #(and (string? %) (some? (re-matches rgb-color-re %)))
    :type-properties
@@ -49,7 +49,7 @@
     ::oapi/type "integer"
     ::oapi/format "int64"}})
 
-(sm/define! ::image-color
+(sm/register! ::image-color
   [:map {:title "ImageColor"}
    [:name {:optional true} :string]
    [:width :int]
@@ -58,7 +58,7 @@
    [:id ::sm/uuid]
    [:keep-aspect-ratio {:optional true} :boolean]])
 
-(sm/define! ::gradient
+(sm/register! ::gradient
   [:map {:title "Gradient"}
    [:type [::sm/one-of #{:linear :radial}]]
    [:start-x ::sm/safe-number]
@@ -73,7 +73,7 @@
       [:opacity {:optional true} [:maybe ::sm/safe-number]]
       [:offset ::sm/safe-number]]]]])
 
-(sm/define! ::color
+(sm/register! ::color
   [:and
    [:map {:title "Color"}
     [:id {:optional true} ::sm/uuid]
@@ -91,7 +91,7 @@
      [:map-of {:gen/max 5} :keyword ::sm/plugin-data]]]
    [::sm/contains-any {:strict true} [:color :gradient :image]]])
 
-(sm/define! ::recent-color
+(sm/register! ::recent-color
   [:and
    [:map {:title "RecentColor"}
     [:opacity {:optional true} [:maybe ::sm/safe-number]]
