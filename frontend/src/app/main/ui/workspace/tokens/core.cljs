@@ -59,10 +59,9 @@
                                             shapes)]
     (and (empty? with-token) (seq without-token))))
 
-(defn on-add-token [{:keys [token-type-props token shapes] :as _props}]
+(defn on-add-token [{:keys [token-type-props token shape-ids] :as _props}]
   (p/let [sd-tokens (sd/resolve-workspace-tokens+)]
     (let [{:keys [attributes on-update-shape]} token-type-props
-          shape-ids (map :id shapes)
           resolved-value (-> (get sd-tokens (:id token))
                              (resolve-token-value))
           tokenized-attributes (->> (map (fn [attr] {attr (:id token)}) attributes)
@@ -84,7 +83,7 @@
   (let [remove-tokens? (wtt/shapes-token-applied? token shapes (:attributes token-type-props))]
     (if remove-tokens?
       (on-remove-token props)
-      (on-add-token props))))
+      (on-add-token (assoc props :shape-ids (map :id shapes))))))
 
 (defn on-apply-token [{:keys [token token-type-props selected-shapes] :as _props}]
   (let [{:keys [attributes on-apply on-update-shape]
