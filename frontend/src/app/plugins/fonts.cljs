@@ -11,6 +11,7 @@
    [app.main.data.workspace.texts :as dwt]
    [app.main.fonts :as fonts]
    [app.main.store :as st]
+   [app.plugins.register :as r]
    [app.plugins.shape :as shape]
    [app.plugins.text :as text]
    [app.plugins.utils :as u]
@@ -30,7 +31,8 @@
       (not (shape/shape-proxy? text))
       (u/display-not-valid :applyToText text)
 
-      ;; TODO: Check variant inside font variants
+      (not (r/check-permission (obj/get text "$plugin") "content:write"))
+      (u/display-not-valid :applyToText "Plugin doesn't have 'content:write' permission")
 
       :else
       (let [id (obj/get text "$id")
@@ -46,7 +48,8 @@
       (not (text/text-range? range))
       (u/display-not-valid :applyToRange range)
 
-      ;; TODO: Check variant inside font variants
+      (not (r/check-permission (obj/get range "$plugin") "content:write"))
+      (u/display-not-valid :applyToRange "Plugin doesn't have 'content:write' permission")
 
       :else
       (let [id    (obj/get range "$id")

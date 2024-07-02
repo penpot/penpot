@@ -609,7 +609,7 @@
    ::mf/wrap [mf/memo]}
   [{:keys [open-plugins on-close]}]
   (when (features/active-feature? @st/state "plugins/runtime")
-    (let [plugins (plugins/load-from-store)]
+    (let [plugins @plugins/pluginsdb]
       [:& dropdown-menu {:show true
                          :list-class (stl/css-case :sub-menu true :plugins true)
                          :on-close on-close}

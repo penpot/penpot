@@ -18,6 +18,7 @@
    [app.main.store :as st]
    [app.plugins.format :as format]
    [app.plugins.parser :as parser]
+   [app.plugins.register :as r]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
    [app.util.text-editor :as ted]
@@ -107,6 +108,9 @@
               (not (some? font))
               (u/display-not-valid :fontId value)
 
+              (not (r/check-permission plugin-id "content:write"))
+              (u/display-not-valid :fontId "Plugin doesn't have 'content:write' permission")
+
               :else
               (st/emit! (dwt/update-text-range id start end (font-data font variant))))))}
 
@@ -123,6 +127,9 @@
               (not (string? value))
               (u/display-not-valid :fontFamily value)
 
+              (not (r/check-permission plugin-id "content:write"))
+              (u/display-not-valid :fontFamily "Plugin doesn't have 'content:write' permission")
+
               :else
               (st/emit! (dwt/update-text-range id start end (font-data font variant))))))}
 
@@ -138,6 +145,9 @@
               (not (string? value))
               (u/display-not-valid :fontVariantId value)
 
+              (not (r/check-permission plugin-id "content:write"))
+              (u/display-not-valid :fontVariantId "Plugin doesn't have 'content:write' permission")
+
               :else
               (st/emit! (dwt/update-text-range id start end (variant-data variant))))))}
 
@@ -151,6 +161,9 @@
             (cond
               (or (empty? value) (not (re-matches font-size-re value)))
               (u/display-not-valid :fontSize value)
+
+              (not (r/check-permission plugin-id "content:write"))
+              (u/display-not-valid :fontSize "Plugin doesn't have 'content:write' permission")
 
               :else
               (st/emit! (dwt/update-text-range id start end {:font-size value})))))}
@@ -167,6 +180,9 @@
               (nil? variant)
               (u/display-not-valid :fontWeight (dm/str "Font weight '" value "' not supported for the current font"))
 
+              (not (r/check-permission plugin-id "content:write"))
+              (u/display-not-valid :fontWeight "Plugin doesn't have 'content:write' permission")
+
               :else
               (st/emit! (dwt/update-text-range id start end (variant-data variant))))))}
 
@@ -182,6 +198,9 @@
               (nil? variant)
               (u/display-not-valid :fontStyle (dm/str "Font style '" value "' not supported for the current font"))
 
+              (not (r/check-permission plugin-id "content:write"))
+              (u/display-not-valid :fontStyle "Plugin doesn't have 'content:write' permission")
+
               :else
               (st/emit! (dwt/update-text-range id start end (variant-data variant))))))}
 
@@ -195,6 +214,9 @@
             (cond
               (or (empty? value) (not (re-matches line-height-re value)))
               (u/display-not-valid :lineHeight value)
+
+              (not (r/check-permission plugin-id "content:write"))
+              (u/display-not-valid :lineHeight "Plugin doesn't have 'content:write' permission")
 
               :else
               (st/emit! (dwt/update-text-range id start end {:line-height value})))))}
@@ -210,6 +232,9 @@
               (or (empty? value) (re-matches letter-spacing-re value))
               (u/display-not-valid :letterSpacing value)
 
+              (not (r/check-permission plugin-id "content:write"))
+              (u/display-not-valid :letterSpacing "Plugin doesn't have 'content:write' permission")
+
               :else
               (st/emit! (dwt/update-text-range id start end {:letter-spacing value})))))}
 
@@ -222,6 +247,9 @@
           (cond
             (and (string? value) (re-matches text-transform-re value))
             (u/display-not-valid :textTransform value)
+
+            (not (r/check-permission plugin-id "content:write"))
+            (u/display-not-valid :textTransform "Plugin doesn't have 'content:write' permission")
 
             :else
             (st/emit! (dwt/update-text-range id start end {:text-transform value}))))}
@@ -236,6 +264,9 @@
             (and (string? value) (re-matches text-decoration-re value))
             (u/display-not-valid :textDecoration value)
 
+            (not (r/check-permission plugin-id "content:write"))
+            (u/display-not-valid :textDecoration "Plugin doesn't have 'content:write' permission")
+
             :else
             (st/emit! (dwt/update-text-range id start end {:text-decoration value}))))}
 
@@ -249,6 +280,9 @@
             (and (string? value) (re-matches text-direction-re value))
             (u/display-not-valid :direction value)
 
+            (not (r/check-permission plugin-id "content:write"))
+            (u/display-not-valid :direction "Plugin doesn't have 'content:write' permission")
+
             :else
             (st/emit! (dwt/update-text-range id start end {:direction value}))))}
 
@@ -260,7 +294,10 @@
         (fn [_ value]
           (cond
             (and (string? value) (re-matches text-align-re value))
-            (u/display-not-valid :text-align value)
+            (u/display-not-valid :align value)
+
+            (not (r/check-permission plugin-id "content:write"))
+            (u/display-not-valid :align "Plugin doesn't have 'content:write' permission")
 
             :else
             (st/emit! (dwt/update-text-range id start end {:text-align value}))))}
@@ -276,11 +313,14 @@
               (not (sm/validate [:vector ::cts/fill] value))
               (u/display-not-valid :fills value)
 
+              (not (r/check-permission plugin-id "content:write"))
+              (u/display-not-valid :fills "Plugin doesn't have 'content:write' permission")
+
               :else
               (st/emit! (dwt/update-text-range id start end {:fills value})))))})))
 
 (defn add-text-props
-  [shape-proxy]
+  [plugin-id shape-proxy]
   (crc/add-properties!
    shape-proxy
    {:name "characters"
@@ -293,6 +333,9 @@
         (cond
           (or (not (string? value)) (empty? value))
           (u/display-not-valid :characters value)
+
+          (not (r/check-permission plugin-id "content:write"))
+          (u/display-not-valid :characters "Plugin doesn't have 'content:write' permission")
 
           (contains? (:workspace-editor-state @st/state) id)
           (let [shape (u/proxy->shape self)
@@ -317,6 +360,9 @@
           (not (contains? #{:auto-width :auto-height :fixed} value))
           (u/display-not-valid :growType value)
 
+          (not (r/check-permission plugin-id "content:write"))
+          (u/display-not-valid :growType "Plugin doesn't have 'content:write' permission")
+
           :else
           (st/emit! (dwsh/update-shapes [id] #(assoc % :grow-type value))))))}
 
@@ -330,6 +376,9 @@
         (cond
           (not (some? font))
           (u/display-not-valid :fontId value)
+
+          (not (r/check-permission plugin-id "content:write"))
+          (u/display-not-valid :fontId "Plugin doesn't have 'content:write' permission")
 
           :else
           (st/emit! (dwt/update-attrs id (font-data font variant))))))}
@@ -345,6 +394,9 @@
           (not (some? font))
           (u/display-not-valid :fontFamily value)
 
+          (not (r/check-permission plugin-id "content:write"))
+          (u/display-not-valid :fontFamily "Plugin doesn't have 'content:write' permission")
+
           :else
           (st/emit! (dwt/update-attrs id (font-data font variant))))))}
 
@@ -359,6 +411,9 @@
           (not (some? variant))
           (u/display-not-valid :fontVariantId value)
 
+          (not (r/check-permission plugin-id "content:write"))
+          (u/display-not-valid :fontVariantId "Plugin doesn't have 'content:write' permission")
+
           :else
           (st/emit! (dwt/update-attrs id (variant-data variant))))))}
 
@@ -371,6 +426,9 @@
         (cond
           (or (empty? value) (not (re-matches font-size-re value)))
           (u/display-not-valid :fontSize value)
+
+          (not (r/check-permission plugin-id "content:write"))
+          (u/display-not-valid :fontSize "Plugin doesn't have 'content:write' permission")
 
           :else
           (st/emit! (dwt/update-attrs id {:font-size value})))))}
@@ -386,6 +444,9 @@
           (nil? variant)
           (u/display-not-valid :fontWeight (dm/str "Font weight '" value "' not supported for the current font"))
 
+          (not (r/check-permission plugin-id "content:write"))
+          (u/display-not-valid :fontWeight "Plugin doesn't have 'content:write' permission")
+
           :else
           (st/emit! (dwt/update-attrs id (variant-data variant))))))}
 
@@ -400,6 +461,9 @@
           (nil? variant)
           (u/display-not-valid :fontStyle (dm/str "Font style '" value "' not supported for the current font"))
 
+          (not (r/check-permission plugin-id "content:write"))
+          (u/display-not-valid :fontStyle "Plugin doesn't have 'content:write' permission")
+
           :else
           (st/emit! (dwt/update-attrs id (variant-data variant))))))}
 
@@ -412,6 +476,9 @@
         (cond
           (or (empty? value) (not (re-matches line-height-re value)))
           (u/display-not-valid :lineHeight value)
+
+          (not (r/check-permission plugin-id "content:write"))
+          (u/display-not-valid :lineHeight "Plugin doesn't have 'content:write' permission")
 
           :else
           (st/emit! (dwt/update-attrs id {:line-height value})))))}
@@ -426,6 +493,9 @@
           (or (empty? value) (re-matches letter-spacing-re value))
           (u/display-not-valid :letterSpacing value)
 
+          (not (r/check-permission plugin-id "content:write"))
+          (u/display-not-valid :letterSpacing "Plugin doesn't have 'content:write' permission")
+
           :else
           (st/emit! (dwt/update-attrs id {:letter-spacing value})))))}
 
@@ -437,6 +507,9 @@
         (cond
           (and (string? value) (re-matches text-transform-re value))
           (u/display-not-valid :textTransform value)
+
+          (not (r/check-permission plugin-id "content:write"))
+          (u/display-not-valid :textTransform "Plugin doesn't have 'content:write' permission")
 
           :else
           (st/emit! (dwt/update-attrs id {:text-transform value})))))}
@@ -450,6 +523,9 @@
           (and (string? value) (re-matches text-decoration-re value))
           (u/display-not-valid :textDecoration value)
 
+          (not (r/check-permission plugin-id "content:write"))
+          (u/display-not-valid :textDecoration "Plugin doesn't have 'content:write' permission")
+
           :else
           (st/emit! (dwt/update-attrs id {:text-decoration value})))))}
 
@@ -460,10 +536,13 @@
       (let [id (obj/get self "$id")]
         (cond
           (and (string? value) (re-matches text-direction-re value))
-          (u/display-not-valid :textDecoration value)
+          (u/display-not-valid :textDirection value)
+
+          (not (r/check-permission plugin-id "content:write"))
+          (u/display-not-valid :textDirection "Plugin doesn't have 'content:write' permission")
 
           :else
-          (st/emit! (dwt/update-attrs id {:text-decoration value})))))}
+          (st/emit! (dwt/update-attrs id {:text-direction value})))))}
 
    {:name "align"
     :get #(-> % u/proxy->shape text-props :text-align format/format-mixed)
@@ -473,6 +552,9 @@
         (cond
           (and (string? value) (re-matches text-align-re value))
           (u/display-not-valid :align value)
+
+          (not (r/check-permission plugin-id "content:write"))
+          (u/display-not-valid :align "Plugin doesn't have 'content:write' permission")
 
           :else
           (st/emit! (dwt/update-attrs id {:text-align value})))))}
@@ -485,6 +567,9 @@
         (cond
           (and (string? value) (re-matches vertical-align-re value))
           (u/display-not-valid :verticalAlign value)
+
+          (not (r/check-permission plugin-id "content:write"))
+          (u/display-not-valid :verticalAlign "Plugin doesn't have 'content:write' permission")
 
           :else
           (st/emit! (dwt/update-attrs id {:vertical-align value})))))}))

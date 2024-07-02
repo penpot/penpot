@@ -77,7 +77,7 @@
    ::mf/register-as :plugin-management}
   []
 
-  (let [plugins-state* (mf/use-state [])
+  (let [plugins-state* (mf/use-state @plugins/pluginsdb)
         plugins-state @plugins-state*
 
         plugin-url* (mf/use-state "")
@@ -110,20 +110,16 @@
                 (rx/map :body)
                 (rx/subs!
                  (fn [body]
-                   (let [plugin (plugins/parser-manifest plugin-url body)
-                         new-state (vec (conj (seq plugins-state) plugin))]
-
-                     (reset! input-status* :success)
-                     (reset! plugin-url* "")
-                     (reset! plugins-state* new-state)
-
+                   (let [plugin (plugins/parser-manifest plugin-url body)]
                      (modal/show!
                       :plugin-permissions
                       {:plugin plugin
                        :on-accept
                        #(do
-                          (plugins/save-to-store new-state)
-                          (modal/show! :plugin-management {}))})))
+                          (plugins/install-plugin! plugin)
+                          (modal/show! :plugin-management {}))})
+                     (reset! input-status* :success)
+                     (reset! plugin-url* "")))
                  (fn [_]
                    (reset! input-status* :error-url))))))
 
@@ -137,17 +133,9 @@
         (mf/use-callback
          (mf/deps plugins-state)
          (fn [plugin-index]
-           (let [new-state
-                 (into []
-                       (keep-indexed (fn [idx item]
-                                       (when (not= idx plugin-index) item)))
-                       plugins-state)]
-             (reset! plugins-state* new-state)
-             (plugins/save-to-store new-state))))]
-
-    (mf/use-effect
-     (fn []
-       (reset! plugins-state* (d/nilv (plugins/load-from-store) []))))
+           (let [plugin (nth @plugins/pluginsdb plugin-index)]
+             (plugins/remove-plugin! plugin)
+             (reset! plugins-state* @plugins/pluginsdb))))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog :plugin-management)}

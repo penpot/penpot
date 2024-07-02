@@ -24,6 +24,7 @@
    [app.main.store :as st]
    [app.plugins.format :as format]
    [app.plugins.parser :as parser]
+   [app.plugins.register :as r]
    [app.plugins.shape :as shape]
    [app.plugins.text :as text]
    [app.plugins.utils :as u]
@@ -40,15 +41,25 @@
 
   (remove
     [_]
-    (st/emit! (dwl/delete-color {:id $id})))
+    (cond
+      (not (r/check-permission $plugin "library:write"))
+      (u/display-not-valid :remove "Plugin doesn't have 'library:write' permission")
+
+      :else
+      (st/emit! (dwl/delete-color {:id $id}))))
 
   (clone
     [_]
-    (let [color-id (uuid/next)
-          color (-> (u/locate-library-color $file $id)
-                    (assoc :id color-id))]
-      (st/emit! (dwl/add-color color {:rename? false}))
-      (lib-color-proxy $plugin $id color-id)))
+    (cond
+      (not (r/check-permission $plugin "library:write"))
+      (u/display-not-valid :clone "Plugin doesn't have 'library:write' permission")
+
+      :else
+      (let [color-id (uuid/next)
+            color (-> (u/locate-library-color $file $id)
+                      (assoc :id color-id))]
+        (st/emit! (dwl/add-color color {:rename? false}))
+        (lib-color-proxy $plugin $id color-id))))
 
   (asFill [_]
     (let [color (u/locate-library-color $file $id)]
@@ -76,7 +87,7 @@
     [self key]
     (cond
       (not (string? key))
-      (u/display-not-valid :color-plugin-data-key key)
+      (u/display-not-valid :getPluginData-key key)
 
       :else
       (let [color (u/proxy->library-color self)]
@@ -86,13 +97,16 @@
     [_ key value]
     (cond
       (not= $file (:current-file-id @st/state))
-      (u/display-not-valid :color-edit-non-local-library $file)
+      (u/display-not-valid :setPluginData-non-local-library $file)
 
       (not (string? key))
-      (u/display-not-valid :color-plugin-data-key key)
+      (u/display-not-valid :setPluginData-key key)
 
       (and (some? value) (not (string? value)))
-      (u/display-not-valid :color-plugin-data value)
+      (u/display-not-valid :setPluginData-value value)
+
+      (not (r/check-permission $plugin "library:write"))
+      (u/display-not-valid :setPluginData "Plugin doesn't have 'library:write' permission")
 
       :else
       (st/emit! (dw/set-plugin-data $file :color $id (keyword "plugin" (str $plugin)) key value))))
@@ -106,10 +120,10 @@
     [self namespace key]
     (cond
       (not (string? namespace))
-      (u/display-not-valid :color-plugin-data-namespace namespace)
+      (u/display-not-valid :getSharedPluginData-namespace namespace)
 
       (not (string? key))
-      (u/display-not-valid :color-plugin-data-key key)
+      (u/display-not-valid :getSharedPluginData-key key)
 
       :else
       (let [color (u/proxy->library-color self)]
@@ -119,16 +133,19 @@
     [_ namespace key value]
     (cond
       (not= $file (:current-file-id @st/state))
-      (u/display-not-valid :color-edit-non-local-library $file)
+      (u/display-not-valid :setSharedPluginData-non-local-library $file)
 
       (not (string? namespace))
-      (u/display-not-valid :color-plugin-data-namespace namespace)
+      (u/display-not-valid :setSharedPluginData-namespace namespace)
 
       (not (string? key))
-      (u/display-not-valid :color-plugin-data-key key)
+      (u/display-not-valid :setSharedPluginData-key key)
 
       (and (some? value) (not (string? value)))
-      (u/display-not-valid :color-plugin-data value)
+      (u/display-not-valid :setSharedPluginData-value value)
+
+      (not (r/check-permission $plugin "library:write"))
+      (u/display-not-valid :setSharedPluginData "Plugin doesn't have 'library:write' permission")
 
       :else
       (st/emit! (dw/set-plugin-data $file :color $id (keyword "shared" namespace) key value))))
@@ -137,7 +154,7 @@
     [self namespace]
     (cond
       (not (string? namespace))
-      (u/display-not-valid :color-plugin-data-namespace namespace)
+      (u/display-not-valid :getSharedPluginDataKeys-namespace namespace)
 
       :else
       (let [color (u/proxy->library-color self)]
@@ -165,7 +182,10 @@
     (fn [self value]
       (cond
         (not (string? value))
-        (u/display-not-valid :library-color-name value)
+        (u/display-not-valid :name value)
+
+        (not (r/check-permission plugin-id "library:write"))
+        (u/display-not-valid :name "Plugin doesn't have 'library:write' permission")
 
         :else
         (let [color (u/proxy->library-color self)
@@ -178,7 +198,10 @@
     (fn [self value]
       (cond
         (not (string? value))
-        (u/display-not-valid :library-color-path value)
+        (u/display-not-valid :path value)
+
+        (not (r/check-permission plugin-id "library:write"))
+        (u/display-not-valid :path "Plugin doesn't have 'library:write' permission")
 
         :else
         (let [color (-> (u/proxy->library-color self)
@@ -191,7 +214,10 @@
     (fn [self value]
       (cond
         (or (not (string? value)) (not (cc/valid-hex-color? value)))
-        (u/display-not-valid :library-color-color value)
+        (u/display-not-valid :color value)
+
+        (not (r/check-permission plugin-id "library:write"))
+        (u/display-not-valid :color "Plugin doesn't have 'library:write' permission")
 
         :else
         (let [color (-> (u/proxy->library-color self)
@@ -204,7 +230,10 @@
     (fn [self value]
       (cond
         (or (not (number? value)) (< value 0) (> value 1))
-        (u/display-not-valid :library-color-opacity value)
+        (u/display-not-valid :opacity value)
+
+        (not (r/check-permission plugin-id "library:write"))
+        (u/display-not-valid :opacity "Plugin doesn't have 'library:write' permission")
 
         :else
         (let [color (-> (u/proxy->library-color self)
@@ -218,7 +247,10 @@
       (let [value (parser/parse-gradient value)]
         (cond
           (not (sm/validate ::ctc/gradient value))
-          (u/display-not-valid :library-color-gradient value)
+          (u/display-not-valid :gradient value)
+
+          (not (r/check-permission plugin-id "library:write"))
+          (u/display-not-valid :gradient "Plugin doesn't have 'library:write' permission")
 
           :else
           (let [color (-> (u/proxy->library-color self)
@@ -232,7 +264,10 @@
       (let [value (parser/parse-image-data value)]
         (cond
           (not (sm/validate ::ctc/image-color value))
-          (u/display-not-valid :library-color-image value)
+          (u/display-not-valid :image value)
+
+          (not (r/check-permission plugin-id "library:write"))
+          (u/display-not-valid :image "Plugin doesn't have 'library:write' permission")
 
           :else
           (let [color (-> (u/proxy->library-color self)
@@ -243,21 +278,34 @@
   Object
   (remove
     [_]
-    (st/emit! (dwl/delete-typography {:id $id})))
+    (cond
+      (not (r/check-permission $plugin "library:write"))
+      (u/display-not-valid :remove "Plugin doesn't have 'library:write' permission")
+
+      :else
+      (st/emit! (dwl/delete-typography {:id $id}))))
 
   (clone
     [_]
-    (let [typo-id (uuid/next)
-          typo (-> (u/locate-library-typography $file $id)
-                   (assoc :id typo-id))]
-      (st/emit! (dwl/add-typography typo false))
-      (lib-typography-proxy $plugin $id typo-id)))
+    (cond
+      (not (r/check-permission $plugin "library:write"))
+      (u/display-not-valid :clone "Plugin doesn't have 'library:write' permission")
+
+      :else
+      (let [typo-id (uuid/next)
+            typo (-> (u/locate-library-typography $file $id)
+                     (assoc :id typo-id))]
+        (st/emit! (dwl/add-typography typo false))
+        (lib-typography-proxy $plugin $id typo-id))))
 
   (applyToText
     [_ shape]
     (cond
       (not (shape/shape-proxy? shape))
       (u/display-not-valid :applyToText shape)
+
+      (not (r/check-permission $plugin "content:write"))
+      (u/display-not-valid :applyToText "Plugin doesn't have 'content:write' permission")
 
       :else
       (let [shape-id   (obj/get shape "$id")
@@ -269,6 +317,9 @@
     (cond
       (not (text/text-range? range))
       (u/display-not-valid :applyToText range)
+
+      (not (r/check-permission $plugin "content:write"))
+      (u/display-not-valid :applyToText "Plugin doesn't have 'content:write' permission")
 
       :else
       (let [shape-id (obj/get range "$id")
@@ -296,13 +347,16 @@
     [_ key value]
     (cond
       (not= $file (:current-file-id @st/state))
-      (u/display-not-valid :typography-edit-non-local-library $file)
+      (u/display-not-valid :setPluginData-non-local-library $file)
 
       (not (string? key))
-      (u/display-not-valid :typography-plugin-data-key key)
+      (u/display-not-valid :setPluginData-key key)
 
       (and (some? value) (not (string? value)))
-      (u/display-not-valid :typography-plugin-data value)
+      (u/display-not-valid :setPluginData-value value)
+
+      (not (r/check-permission $plugin "library:write"))
+      (u/display-not-valid :setPluginData "Plugin doesn't have 'library:write' permission")
 
       :else
       (st/emit! (dw/set-plugin-data $file :typography $id (keyword "plugin" (str $plugin)) key value))))
@@ -316,10 +370,10 @@
     [self namespace key]
     (cond
       (not (string? namespace))
-      (u/display-not-valid :typography-plugin-data-namespace namespace)
+      (u/display-not-valid :getSharedPluginData-namespace namespace)
 
       (not (string? key))
-      (u/display-not-valid :typography-plugin-data-key key)
+      (u/display-not-valid :getSharedPluginData-key key)
 
       :else
       (let [typography (u/proxy->library-typography self)]
@@ -329,16 +383,19 @@
     [_ namespace key value]
     (cond
       (not= $file (:current-file-id @st/state))
-      (u/display-not-valid :typography-edit-non-local-library $file)
+      (u/display-not-valid :setSharedPluginData-non-local-library $file)
 
       (not (string? namespace))
-      (u/display-not-valid :typography-plugin-data-namespace namespace)
+      (u/display-not-valid :setSharedPluginData-namespace namespace)
 
       (not (string? key))
-      (u/display-not-valid :typography-plugin-data-key key)
+      (u/display-not-valid :setSharedPluginData-key key)
 
       (and (some? value) (not (string? value)))
-      (u/display-not-valid :typography-plugin-data value)
+      (u/display-not-valid :setSharedPluginData-value value)
+
+      (not (r/check-permission $plugin "library:write"))
+      (u/display-not-valid :setSharedPluginData "Plugin doesn't have 'library:write' permission")
 
       :else
       (st/emit! (dw/set-plugin-data $file :typography $id (keyword "shared" namespace) key value))))
@@ -347,7 +404,7 @@
     [self namespace]
     (cond
       (not (string? namespace))
-      (u/display-not-valid :typography-plugin-data-namespace namespace)
+      (u/display-not-valid :getSharedPluginDataKeys-namespace namespace)
 
       :else
       (let [typography (u/proxy->library-typography self)]
@@ -376,7 +433,10 @@
     (fn [self value]
       (cond
         (not (string? value))
-        (u/display-not-valid :library-typography-name value)
+        (u/display-not-valid :name value)
+
+        (not (r/check-permission plugin-id "library:write"))
+        (u/display-not-valid :name "Plugin doesn't have 'library:write' permission")
 
         :else
         (let [typo (u/proxy->library-typography self)
@@ -389,7 +449,10 @@
     (fn [self value]
       (cond
         (not (string? value))
-        (u/display-not-valid :library-typography-path value)
+        (u/display-not-valid :path value)
+
+        (not (r/check-permission plugin-id "library:write"))
+        (u/display-not-valid :path "Plugin doesn't have 'library:write' permission")
 
         :else
         (let [typo (-> (u/proxy->library-typography self)
@@ -402,7 +465,10 @@
     (fn [self value]
       (cond
         (not (string? value))
-        (u/display-not-valid :library-typography-font-id value)
+        (u/display-not-valid :fontId value)
+
+        (not (r/check-permission plugin-id "library:write"))
+        (u/display-not-valid :fontId "Plugin doesn't have 'library:write' permission")
 
         :else
         (let [typo (-> (u/proxy->library-typography self)
@@ -415,7 +481,10 @@
     (fn [self value]
       (cond
         (not (string? value))
-        (u/display-not-valid :library-typography-font-family value)
+        (u/display-not-valid :fontFamily value)
+
+        (not (r/check-permission plugin-id "library:write"))
+        (u/display-not-valid :fontFamily "Plugin doesn't have 'library:write' permission")
 
         :else
         (let [typo (-> (u/proxy->library-typography self)
@@ -428,7 +497,10 @@
     (fn [self value]
       (cond
         (not (string? value))
-        (u/display-not-valid :library-typography-font-variant-id value)
+        (u/display-not-valid :fontVariantId value)
+
+        (not (r/check-permission plugin-id "library:write"))
+        (u/display-not-valid :fontVariantId "Plugin doesn't have 'library:write' permission")
 
         :else
         (let [typo (-> (u/proxy->library-typography self)
@@ -441,7 +513,10 @@
     (fn [self value]
       (cond
         (not (string? value))
-        (u/display-not-valid :library-typography-font-size value)
+        (u/display-not-valid :fontSize value)
+
+        (not (r/check-permission plugin-id "library:write"))
+        (u/display-not-valid :fontSize "Plugin doesn't have 'library:write' permission")
 
         :else
         (let [typo (-> (u/proxy->library-typography self)
@@ -454,7 +529,10 @@
     (fn [self value]
       (cond
         (not (string? value))
-        (u/display-not-valid :library-typography-font-weight value)
+        (u/display-not-valid :fontWeight value)
+
+        (not (r/check-permission plugin-id "library:write"))
+        (u/display-not-valid :fontWeight "Plugin doesn't have 'library:write' permission")
 
         :else
         (let [typo (-> (u/proxy->library-typography self)
@@ -467,7 +545,10 @@
     (fn [self value]
       (cond
         (not (string? value))
-        (u/display-not-valid :library-typography-font-style value)
+        (u/display-not-valid :fontStyle value)
+
+        (not (r/check-permission plugin-id "library:write"))
+        (u/display-not-valid :fontStyle "Plugin doesn't have 'library:write' permission")
 
         :else
         (let [typo (-> (u/proxy->library-typography self)
@@ -480,7 +561,10 @@
     (fn [self value]
       (cond
         (not (string? value))
-        (u/display-not-valid :library-typography-font-height value)
+        (u/display-not-valid :lineHeight value)
+
+        (not (r/check-permission plugin-id "library:write"))
+        (u/display-not-valid :lineHeight "Plugin doesn't have 'library:write' permission")
 
         :else
         (let [typo (-> (u/proxy->library-typography self)
@@ -493,7 +577,10 @@
     (fn [self value]
       (cond
         (not (string? value))
-        (u/display-not-valid :library-typography-letter-spacing value)
+        (u/display-not-valid :letterSpacing value)
+
+        (not (r/check-permission plugin-id "library:write"))
+        (u/display-not-valid :letterSpacing "Plugin doesn't have 'library:write' permission")
 
         :else
         (let [typo (-> (u/proxy->library-typography self)
@@ -506,7 +593,10 @@
     (fn [self value]
       (cond
         (not (string? value))
-        (u/display-not-valid :library-typography-text-transform value)
+        (u/display-not-valid :textTransform value)
+
+        (not (r/check-permission plugin-id "library:write"))
+        (u/display-not-valid :textTransform "Plugin doesn't have 'library:write' permission")
 
         :else
         (let [typo (-> (u/proxy->library-typography self)
@@ -518,13 +608,23 @@
 
   (remove
     [_]
-    (st/emit! (dwl/delete-component {:id $id})))
+    (cond
+      (not (r/check-permission $plugin "library:write"))
+      (u/display-not-valid :remove "Plugin doesn't have 'library:write' permission")
+
+      :else
+      (st/emit! (dwl/delete-component {:id $id}))))
 
   (instance
     [_]
-    (let [id-ref (atom nil)]
-      (st/emit! (dwl/instantiate-component $file $id (gpt/point 0 0) {:id-ref id-ref}))
-      (shape/shape-proxy $plugin @id-ref)))
+    (cond
+      (not (r/check-permission $plugin "content:write"))
+      (u/display-not-valid :instance "Plugin doesn't have 'content:write' permission")
+
+      :else
+      (let [id-ref (atom nil)]
+        (st/emit! (dwl/instantiate-component $file $id (gpt/point 0 0) {:id-ref id-ref}))
+        (shape/shape-proxy $plugin @id-ref))))
 
   (getPluginData
     [self key]
@@ -540,13 +640,16 @@
     [_ key value]
     (cond
       (not= $file (:current-file-id @st/state))
-      (u/display-not-valid :component-edit-non-local-library $file)
+      (u/display-not-valid :setPluginData-non-local-library $file)
 
       (not (string? key))
-      (u/display-not-valid :component-plugin-data-key key)
+      (u/display-not-valid :setPluginData-key key)
 
       (and (some? value) (not (string? value)))
-      (u/display-not-valid :component-plugin-data value)
+      (u/display-not-valid :setPluginData-value value)
+
+      (not (r/check-permission $plugin "library:write"))
+      (u/display-not-valid :setPluginData "Plugin doesn't have 'library:write' permission")
 
       :else
       (st/emit! (dw/set-plugin-data $file :component $id (keyword "plugin" (str $plugin)) key value))))
@@ -573,16 +676,19 @@
     [_ namespace key value]
     (cond
       (not= $file (:current-file-id @st/state))
-      (u/display-not-valid :component-edit-non-local-library $file)
+      (u/display-not-valid :setSharedPluginData-non-local-library $file)
 
       (not (string? namespace))
-      (u/display-not-valid :component-plugin-data-namespace namespace)
+      (u/display-not-valid :setSharedPluginData-namespace namespace)
 
       (not (string? key))
-      (u/display-not-valid :component-plugin-data-key key)
+      (u/display-not-valid :setSharedPluginData-key key)
 
       (and (some? value) (not (string? value)))
-      (u/display-not-valid :component-plugin-data value)
+      (u/display-not-valid :setSharedPluginData-value value)
+
+      (not (r/check-permission $plugin "library:write"))
+      (u/display-not-valid :setSharedPluginData "Plugin doesn't have 'library:write' permission")
 
       :else
       (st/emit! (dw/set-plugin-data $file :component $id (keyword "shared" namespace) key value))))
@@ -626,7 +732,10 @@
     (fn [self value]
       (cond
         (not (string? value))
-        (u/display-not-valid :library-component-name value)
+        (u/display-not-valid :name value)
+
+        (not (r/check-permission plugin-id "library:write"))
+        (u/display-not-valid :name "Plugin doesn't have 'library:write' permission")
 
         :else
         (let [component (u/proxy->library-component self)
@@ -639,7 +748,10 @@
     (fn [self value]
       (cond
         (not (string? value))
-        (u/display-not-valid :library-component-path value)
+        (u/display-not-valid :path value)
+
+        (not (r/check-permission plugin-id "library:write"))
+        (u/display-not-valid :path "Plugin doesn't have 'library:write' permission")
 
         :else
         (let [component (u/proxy->library-component self)
@@ -653,22 +765,37 @@
 
   (createColor
     [_]
-    (let [color-id (uuid/next)]
-      (st/emit! (dwl/add-color {:id color-id :name "Color" :color "#000000" :opacity 1} {:rename? false}))
-      (lib-color-proxy $plugin $id color-id)))
+    (cond
+      (not (r/check-permission $plugin "library:write"))
+      (u/display-not-valid :createColor "Plugin doesn't have 'library:write' permission")
+
+      :else
+      (let [color-id (uuid/next)]
+        (st/emit! (dwl/add-color {:id color-id :name "Color" :color "#000000" :opacity 1} {:rename? false}))
+        (lib-color-proxy $plugin $id color-id))))
 
   (createTypography
     [_]
-    (let [typography-id (uuid/next)]
-      (st/emit! (dwl/add-typography (ctt/make-typography {:id typography-id :name "Typography"}) false))
-      (lib-typography-proxy $plugin $id typography-id)))
+    (cond
+      (not (r/check-permission $plugin "library:write"))
+      (u/display-not-valid :createTypography "Plugin doesn't have 'library:write' permission")
+
+      :else
+      (let [typography-id (uuid/next)]
+        (st/emit! (dwl/add-typography (ctt/make-typography {:id typography-id :name "Typography"}) false))
+        (lib-typography-proxy $plugin $id typography-id))))
 
   (createComponent
     [_ shapes]
-    (let [id-ref (atom nil)
-          ids (into #{} (map #(obj/get % "$id")) shapes)]
-      (st/emit! (dwl/add-component id-ref ids))
-      (lib-component-proxy $plugin $id @id-ref)))
+    (cond
+      (not (r/check-permission $plugin "library:write"))
+      (u/display-not-valid :createComponent "Plugin doesn't have 'library:write' permission")
+
+      :else
+      (let [id-ref (atom nil)
+            ids (into #{} (map #(obj/get % "$id")) shapes)]
+        (st/emit! (dwl/add-component id-ref ids))
+        (lib-component-proxy $plugin $id @id-ref))))
 
   ;; Plugin data
   (getPluginData
@@ -685,10 +812,13 @@
     [_ key value]
     (cond
       (not (string? key))
-      (u/display-not-valid :file-plugin-data-key key)
+      (u/display-not-valid :setPluginData-key key)
 
       (and (some? value) (not (string? value)))
-      (u/display-not-valid :file-plugin-data value)
+      (u/display-not-valid :setPluginData-value value)
+
+      (not (r/check-permission $plugin "library:write"))
+      (u/display-not-valid :setPluginData "Plugin doesn't have 'library:write' permission")
 
       :else
       (st/emit! (dw/set-plugin-data $id :file (keyword "plugin" (str $plugin)) key value))))
@@ -716,13 +846,16 @@
 
     (cond
       (not (string? namespace))
-      (u/display-not-valid :file-plugin-data-namespace namespace)
+      (u/display-not-valid :setSharedPluginData-namespace namespace)
 
       (not (string? key))
-      (u/display-not-valid :file-plugin-data-key key)
+      (u/display-not-valid :setSharedPluginData-key key)
 
       (and (some? value) (not (string? value)))
-      (u/display-not-valid :file-plugin-data value)
+      (u/display-not-valid :setSharedPluginData-value value)
+
+      (not (r/check-permission $plugin "library:write"))
+      (u/display-not-valid :setSharedPluginData "Plugin doesn't have 'library:write' permission")
 
       :else
       (st/emit! (dw/set-plugin-data $id :file (keyword "shared" namespace) key value))))
@@ -731,7 +864,7 @@
     [self namespace]
     (cond
       (not (string? namespace))
-      (u/display-not-valid :file-plugin-data-namespace namespace)
+      (u/display-not-valid :namespace namespace)
 
       :else
       (let [file (u/proxy->file self)]
@@ -805,21 +938,26 @@
 
   (connectLibrary
     [_ library-id]
-    (p/create
-     (fn [resolve reject]
-       (cond
-         (not (string? library-id))
-         (do (u/display-not-valid :connectLibrary library-id)
-             (reject nil))
+    (cond
+      (not (r/check-permission $plugin "library:write"))
+      (u/display-not-valid :connectLibrary "Plugin doesn't have 'library:write' permission")
 
-         :else
-         (let [file-id (:current-file-id @st/state)
-               library-id (uuid/uuid library-id)]
-           (->> st/stream
-                (rx/filter (ptk/type? ::dwl/attach-library-finished))
-                (rx/take 1)
-                (rx/subs! #(resolve (library-proxy $plugin library-id)) reject))
-           (st/emit! (dwl/link-file-to-library file-id library-id))))))))
+      :else
+      (p/create
+       (fn [resolve reject]
+         (cond
+           (not (string? library-id))
+           (do (u/display-not-valid :connectLibrary library-id)
+               (reject nil))
+
+           :else
+           (let [file-id (:current-file-id @st/state)
+                 library-id (uuid/uuid library-id)]
+             (->> st/stream
+                  (rx/filter (ptk/type? ::dwl/attach-library-finished))
+                  (rx/take 1)
+                  (rx/subs! #(resolve (library-proxy $plugin library-id)) reject))
+             (st/emit! (dwl/link-file-to-library file-id library-id)))))))))
 
 (defn library-subcontext
   [plugin-id]

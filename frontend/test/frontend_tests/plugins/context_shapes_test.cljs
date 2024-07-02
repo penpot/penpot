@@ -23,7 +23,7 @@
 
         _ (set! st/state store)
 
-        context (api/create-context "tests")
+        context (api/create-context "TEST")
 
         page  (. context -currentPage)
 

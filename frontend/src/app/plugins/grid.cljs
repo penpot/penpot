@@ -14,6 +14,7 @@
    [app.main.data.workspace.transforms :as dwt]
    [app.main.store :as st]
    [app.plugins.format :as format]
+   [app.plugins.register :as r]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
    [potok.v2.core :as ptk]))
@@ -35,6 +36,9 @@
              (not (us/safe-number? value)))
         (u/display-not-valid :addRow-value value)
 
+        (not (r/check-permission $plugin "content:write"))
+        (u/display-not-valid :addRow "Plugin doesn't have 'content:write' permission")
+
         :else
         (st/emit! (dwsl/add-layout-track #{$id} :row {:type type :value value})))))
 
@@ -52,6 +56,9 @@
              (not (us/safe-number? value)))
         (u/display-not-valid :addRowAtIndex-value value)
 
+        (not (r/check-permission $plugin "content:write"))
+        (u/display-not-valid :addRowAtIndex "Plugin doesn't have 'content:write' permission")
+
         :else
         (st/emit! (dwsl/add-layout-track #{$id} :row {:type type :value value} index)))))
 
@@ -65,6 +72,9 @@
         (and (or (= :percent type) (= :flex type) (= :lex type))
              (not (us/safe-number? value)))
         (u/display-not-valid :addColumn-value value)
+
+        (not (r/check-permission $plugin "content:write"))
+        (u/display-not-valid :addColumn "Plugin doesn't have 'content:write' permission")
 
         :else
         (st/emit! (dwsl/add-layout-track #{$id} :column {:type type :value value})))))
@@ -82,6 +92,9 @@
            (not (us/safe-number? value)))
       (u/display-not-valid :addColumnAtIndex-value value)
 
+      (not (r/check-permission $plugin "content:write"))
+      (u/display-not-valid :addColumnAtIndex "Plugin doesn't have 'content:write' permission")
+
       :else
       (let [type (keyword type)]
         (st/emit! (dwsl/add-layout-track #{$id} :column {:type type :value value} index)))))
@@ -92,6 +105,9 @@
       (not (us/safe-int? index))
       (u/display-not-valid :removeRow index)
 
+      (not (r/check-permission $plugin "content:write"))
+      (u/display-not-valid :removeRow "Plugin doesn't have 'content:write' permission")
+
       :else
       (st/emit! (dwsl/remove-layout-track #{$id} :row index))))
 
@@ -100,6 +116,9 @@
     (cond
       (not (us/safe-int? index))
       (u/display-not-valid :removeColumn index)
+
+      (not (r/check-permission $plugin "content:write"))
+      (u/display-not-valid :removeColumn "Plugin doesn't have 'content:write' permission")
 
       :else
       (st/emit! (dwsl/remove-layout-track #{$id} :column index))))
@@ -118,6 +137,9 @@
              (not (us/safe-number? value)))
         (u/display-not-valid :setColumn-value value)
 
+        (not (r/check-permission $plugin "content:write"))
+        (u/display-not-valid :setColumn "Plugin doesn't have 'content:write' permission")
+
         :else
         (st/emit! (dwsl/change-layout-track #{$id} :column index (d/without-nils {:type type :value value}))))))
 
@@ -135,12 +157,20 @@
              (not (us/safe-number? value)))
         (u/display-not-valid :setRow-value value)
 
+        (not (r/check-permission $plugin "content:write"))
+        (u/display-not-valid :setRow "Plugin doesn't have 'content:write' permission")
+
         :else
         (st/emit! (dwsl/change-layout-track #{$id} :row index (d/without-nils {:type type :value value}))))))
 
   (remove
     [_]
-    (st/emit! (dwsl/remove-layout #{$id})))
+    (cond
+      (not (r/check-permission $plugin "content:write"))
+      (u/display-not-valid :remove "Plugin doesn't have 'content:write' permission")
+
+      :else
+      (st/emit! (dwsl/remove-layout #{$id}))))
 
   (appendChild
     [_ child row column]
@@ -153,6 +183,9 @@
 
       (or (< column 0) (not (us/safe-int? column)))
       (u/display-not-valid :appendChild-column column)
+
+      (not (r/check-permission $plugin "content:write"))
+      (u/display-not-valid :appendChild "Plugin doesn't have 'content:write' permission")
 
       :else
       (let [child-id  (obj/get child "$id")]
@@ -180,6 +213,9 @@
               (not (contains? ctl/grid-direction-types value))
               (u/display-not-valid :dir value)
 
+              (not (r/check-permission plugin-id "content:write"))
+              (u/display-not-valid :dir "Plugin doesn't have 'content:write' permission")
+
               :else
               (let [id (obj/get self "$id")]
                 (st/emit! (dwsl/update-layout #{id} {:layout-grid-dir value}))))))}
@@ -199,6 +235,9 @@
               (not (contains? ctl/align-items-types value))
               (u/display-not-valid :alignItems value)
 
+              (not (r/check-permission plugin-id "content:write"))
+              (u/display-not-valid :alignItems "Plugin doesn't have 'content:write' permission")
+
               :else
               (let [id (obj/get self "$id")]
                 (st/emit! (dwsl/update-layout #{id} {:layout-align-items value}))))))}
@@ -211,6 +250,9 @@
             (cond
               (not (contains? ctl/align-content-types value))
               (u/display-not-valid :alignContent value)
+
+              (not (r/check-permission plugin-id "content:write"))
+              (u/display-not-valid :alignContent "Plugin doesn't have 'content:write' permission")
 
               :else
               (let [id (obj/get self "$id")]
@@ -225,6 +267,9 @@
               (not (contains? ctl/justify-items-types value))
               (u/display-not-valid :justifyItems value)
 
+              (not (r/check-permission plugin-id "content:write"))
+              (u/display-not-valid :justifyItems "Plugin doesn't have 'content:write' permission")
+
               :else
               (let [id (obj/get self "$id")]
                 (st/emit! (dwsl/update-layout #{id} {:layout-justify-items value}))))))}
@@ -238,6 +283,9 @@
               (not (contains? ctl/justify-content-types value))
               (u/display-not-valid :justifyContent value)
 
+              (not (r/check-permission plugin-id "content:write"))
+              (u/display-not-valid :justifyContent "Plugin doesn't have 'content:write' permission")
+
               :else
               (let [id (obj/get self "$id")]
                 (st/emit! (dwsl/update-layout #{id} {:layout-justify-content value}))))))}
@@ -249,6 +297,9 @@
           (cond
             (not (us/safe-int? value))
             (u/display-not-valid :rowGap value)
+
+            (not (r/check-permission plugin-id "content:write"))
+            (u/display-not-valid :rowGap "Plugin doesn't have 'content:write' permission")
 
             :else
             (let [id (obj/get self "$id")]
@@ -262,6 +313,9 @@
             (not (us/safe-int? value))
             (u/display-not-valid :columnGap value)
 
+            (not (r/check-permission plugin-id "content:write"))
+            (u/display-not-valid :columnGap "Plugin doesn't have 'content:write' permission")
+
             :else
             (let [id (obj/get self "$id")]
               (st/emit! (dwsl/update-layout #{id} {:layout-gap {:column-gap value}})))))}
@@ -273,6 +327,9 @@
           (cond
             (not (us/safe-int? value))
             (u/display-not-valid :verticalPadding value)
+
+            (not (r/check-permission plugin-id "content:write"))
+            (u/display-not-valid :verticalPadding "Plugin doesn't have 'content:write' permission")
 
             :else
             (let [id (obj/get self "$id")]
@@ -286,6 +343,9 @@
             (not (us/safe-int? value))
             (u/display-not-valid :horizontalPadding value)
 
+            (not (r/check-permission plugin-id "content:write"))
+            (u/display-not-valid :horizontalPadding "Plugin doesn't have 'content:write' permission")
+
             :else
             (let [id (obj/get self "$id")]
               (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p2 value :p4 value}})))))}
@@ -297,6 +357,9 @@
           (cond
             (not (us/safe-int? value))
             (u/display-not-valid :topPadding value)
+
+            (not (r/check-permission plugin-id "content:write"))
+            (u/display-not-valid :topPadding "Plugin doesn't have 'content:write' permission")
 
             :else
             (let [id (obj/get self "$id")]
@@ -310,6 +373,9 @@
             (not (us/safe-int? value))
             (u/display-not-valid :rightPadding value)
 
+            (not (r/check-permission plugin-id "content:write"))
+            (u/display-not-valid :righPadding "Plugin doesn't have 'content:write' permission")
+
             :else
             (let [id (obj/get self "$id")]
               (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p2 value}})))))}
@@ -322,6 +388,9 @@
             (not (us/safe-int? value))
             (u/display-not-valid :bottomPadding value)
 
+            (not (r/check-permission plugin-id "content:write"))
+            (u/display-not-valid :bottomPadding "Plugin doesn't have 'content:write' permission")
+
             :else
             (let [id (obj/get self "$id")]
               (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p3 value}})))))}
@@ -333,6 +402,9 @@
           (cond
             (not (us/safe-int? value))
             (u/display-not-valid :leftPadding value)
+
+            (not (r/check-permission plugin-id "content:write"))
+            (u/display-not-valid :leftPadding "Plugin doesn't have 'content:write' permission")
 
             :else
             (let [id (obj/get self "$id")]
@@ -365,10 +437,13 @@
                   shape (u/proxy->shape self)]
               (cond
                 (not (us/safe-int? value))
-                (u/display-not-valid :row value)
+                (u/display-not-valid :row-value value)
 
                 (nil? cell)
-                (u/display-not-valid :cell "cell not found")
+                (u/display-not-valid :row-cell "cell not found")
+
+                (not (r/check-permission plugin-id "content:write"))
+                (u/display-not-valid :row "Plugin doesn't have 'content:write' permission")
 
                 :else
                 (st/emit! (dwsl/update-grid-cell-position (:parent-id shape) (:id cell) {:row value})))))}
@@ -386,6 +461,9 @@
                 (nil? cell)
                 (u/display-not-valid :rowSpan-cell "cell not found")
 
+                (not (r/check-permission plugin-id "content:write"))
+                (u/display-not-valid :rowSpan "Plugin doesn't have 'content:write' permission")
+
                 :else
                 (st/emit! (dwsl/update-grid-cell-position (:parent-id shape) (:id cell) {:row-span value})))))}
 
@@ -401,6 +479,9 @@
 
                 (nil? cell)
                 (u/display-not-valid :column-cell "cell not found")
+
+                (not (r/check-permission plugin-id "content:write"))
+                (u/display-not-valid :column "Plugin doesn't have 'content:write' permission")
 
                 :else
                 (st/emit! (dwsl/update-grid-cell-position (:parent-id shape) (:id cell) {:column value})))))}
@@ -418,6 +499,9 @@
                 (nil? cell)
                 (u/display-not-valid :columnSpan-cell "cell not found")
 
+                (not (r/check-permission plugin-id "content:write"))
+                (u/display-not-valid :columnSpan "Plugin doesn't have 'content:write' permission")
+
                 :else
                 (st/emit! (dwsl/update-grid-cell-position (:parent-id shape) (:id cell) {:column-span value})))))}
 
@@ -433,6 +517,9 @@
 
                 (nil? cell)
                 (u/display-not-valid :areaName-cell "cell not found")
+
+                (not (r/check-permission plugin-id "content:write"))
+                (u/display-not-valid :areaName "Plugin doesn't have 'content:write' permission")
 
                 :else
                 (st/emit! (dwsl/update-grid-cells (:parent-id shape) #{(:id cell)} {:area-name value})))))}
@@ -451,6 +538,9 @@
                 (nil? cell)
                 (u/display-not-valid :position-cell "cell not found")
 
+                (not (r/check-permission plugin-id "content:write"))
+                (u/display-not-valid :position "Plugin doesn't have 'content:write' permission")
+
                 :else
                 (st/emit! (dwsl/change-cells-mode (:parent-id shape) #{(:id cell)} value)))))}
 
@@ -468,6 +558,9 @@
                 (nil? cell)
                 (u/display-not-valid :alignSelf-cell "cell not found")
 
+                (not (r/check-permission plugin-id "content:write"))
+                (u/display-not-valid :alignSelf "Plugin doesn't have 'content:write' permission")
+
                 :else
                 (st/emit! (dwsl/update-grid-cells (:parent-id shape) #{(:id cell)} {:align-self value})))))}
 
@@ -484,6 +577,9 @@
 
                 (nil? cell)
                 (u/display-not-valid :justifySelf-cell "cell not found")
+
+                (not (r/check-permission plugin-id "content:write"))
+                (u/display-not-valid :justifySelf "Plugin doesn't have 'content:write' permission")
 
                 :else
                 (st/emit! (dwsl/update-grid-cells (:parent-id shape) #{(:id cell)} {:justify-self value})))))}))))

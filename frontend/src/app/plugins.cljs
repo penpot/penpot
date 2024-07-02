@@ -12,14 +12,20 @@
    [app.main.store :as st]
    [app.plugins.api :as api]
    [app.plugins.public-utils]
+   [app.plugins.register :as register]
    [app.util.globals :refer [global]]
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
+(def pluginsdb register/pluginsdb)
+(def install-plugin! register/install-plugin!)
+(def remove-plugin! register/remove-plugin!)
+
 (defn init-plugins-runtime!
   []
   (when-let [init-runtime (obj/get global "initPluginsRuntime")]
+    (register/init)
     (init-runtime (fn [plugin-id] (api/create-context plugin-id)))))
 
 (defn initialize
@@ -51,18 +57,3 @@
      :code code
      :icon icon
      :permissions (->> permissions (mapv str))}))
-
-(defn load-from-store
-  []
-  (let [ls (.-localStorage js/window)
-        plugins-val (.getItem ls "plugins")]
-    (when plugins-val
-      (let [plugins-js (.parse js/JSON plugins-val)]
-        (js->clj plugins-js {:keywordize-keys true})))))
-
-(defn save-to-store
-  [plugins]
-  (let [ls (.-localStorage js/window)
-        plugins-js (clj->js plugins)
-        plugins-val (.stringify js/JSON plugins-js)]
-    (.setItem ls "plugins" plugins-val)))
