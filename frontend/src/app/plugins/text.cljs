@@ -105,7 +105,7 @@
           (let [font (when (string? value) (fonts/get-font-data value))
                 variant (fonts/get-default-variant font)]
             (cond
-              (not (some? font))
+              (not font)
               (u/display-not-valid :fontId value)
 
               (not (r/check-permission plugin-id "content:write"))
@@ -121,7 +121,7 @@
 
         :set
         (fn [_ value]
-          (let [font (fonts/find-font-data {:font-family value})
+          (let [font (fonts/find-font-data {:family value})
                 variant (fonts/get-default-variant font)]
             (cond
               (not (string? value))
@@ -320,7 +320,7 @@
               (st/emit! (dwt/update-text-range id start end {:fills value})))))})))
 
 (defn add-text-props
-  [plugin-id shape-proxy]
+  [shape-proxy plugin-id]
   (crc/add-properties!
    shape-proxy
    {:name "characters"
@@ -374,7 +374,7 @@
             font (when (string? value) (fonts/get-font-data value))
             variant (fonts/get-default-variant font)]
         (cond
-          (not (some? font))
+          (not font)
           (u/display-not-valid :fontId value)
 
           (not (r/check-permission plugin-id "content:write"))
@@ -388,10 +388,10 @@
     :set
     (fn [self value]
       (let [id (obj/get self "$id")
-            font (fonts/find-font-data {:font-family value})
+            font (fonts/find-font-data {:family value})
             variant (fonts/get-default-variant font)]
         (cond
-          (not (some? font))
+          (not font)
           (u/display-not-valid :fontFamily value)
 
           (not (r/check-permission plugin-id "content:write"))
@@ -408,7 +408,7 @@
             font    (fonts/get-font-data (obj/get self "fontId"))
             variant (fonts/get-variant font value)]
         (cond
-          (not (some? variant))
+          (not variant)
           (u/display-not-valid :fontVariantId value)
 
           (not (r/check-permission plugin-id "content:write"))
@@ -490,7 +490,7 @@
       (let [id (obj/get self "$id")
             value (str/trim (dm/str value))]
         (cond
-          (or (empty? value) (re-matches letter-spacing-re value))
+          (or (not (string? value)) (not (re-matches letter-spacing-re value)))
           (u/display-not-valid :letterSpacing value)
 
           (not (r/check-permission plugin-id "content:write"))
@@ -505,7 +505,7 @@
     (fn [self value]
       (let [id (obj/get self "$id")]
         (cond
-          (and (string? value) (re-matches text-transform-re value))
+          (or (not (string? value)) (not (re-matches text-transform-re value)))
           (u/display-not-valid :textTransform value)
 
           (not (r/check-permission plugin-id "content:write"))
@@ -520,7 +520,7 @@
     (fn [self value]
       (let [id (obj/get self "$id")]
         (cond
-          (and (string? value) (re-matches text-decoration-re value))
+          (or (not (string? value)) (not (re-matches text-decoration-re value)))
           (u/display-not-valid :textDecoration value)
 
           (not (r/check-permission plugin-id "content:write"))
@@ -535,7 +535,7 @@
     (fn [self value]
       (let [id (obj/get self "$id")]
         (cond
-          (and (string? value) (re-matches text-direction-re value))
+          (or (not (string? value)) (not (re-matches text-direction-re value)))
           (u/display-not-valid :textDirection value)
 
           (not (r/check-permission plugin-id "content:write"))
@@ -550,7 +550,7 @@
     (fn [self value]
       (let [id (obj/get self "$id")]
         (cond
-          (and (string? value) (re-matches text-align-re value))
+          (or (not (string? value)) (not (re-matches text-align-re value)))
           (u/display-not-valid :align value)
 
           (not (r/check-permission plugin-id "content:write"))
@@ -565,7 +565,7 @@
     (fn [self value]
       (let [id (obj/get self "$id")]
         (cond
-          (and (string? value) (re-matches vertical-align-re value))
+          (or (not (string? value)) (not (re-matches vertical-align-re value)))
           (u/display-not-valid :verticalAlign value)
 
           (not (r/check-permission plugin-id "content:write"))
