@@ -357,10 +357,12 @@
                                                ::quotes/profile-id profile-id})
 
                     (let [features (-> (cfeat/get-enabled-features cf/flags)
-                                       (cfeat/check-client-features! (:features params)))]
-                      (create-team cfg (assoc params
-                                              :profile-id profile-id
-                                              :features features))))))
+                                       (cfeat/check-client-features! (:features params)))
+                          team (create-team cfg (assoc params
+                                                       :profile-id profile-id
+                                                       :features features))]
+                      (with-meta team
+                        {::audit/props {:id (:id team)}})))))
 
 (defn create-team
   "This is a complete team creation process, it creates the team
