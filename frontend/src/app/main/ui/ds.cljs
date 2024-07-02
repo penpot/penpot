@@ -6,10 +6,12 @@
 
 (ns app.main.ui.ds
   (:require
-   [app.main.ui.ds.buttons.simple-button :refer [simple-button]]
+   [app.main.ui.ds.foundations.icon :refer [icon* icon-list]]
    [app.main.ui.ds.storybook :as sb]))
 
 (def default
   "A export used for storybook"
-  #js {:SimpleButton simple-button
-       :StoryWrapper sb/story-wrapper})
+  #js {:Icon icon*
+       ;; meta / misc
+       :meta #js {:icons icon-list}
+       :storybook #js {:StoryWrapper sb/story-wrapper* :IconGrid sb/icon-grid*}})
