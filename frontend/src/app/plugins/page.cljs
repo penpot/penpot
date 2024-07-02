@@ -13,9 +13,12 @@
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [app.main.store :as st]
+   [app.plugins.parser :as parser]
+   [app.plugins.register :as r]
    [app.plugins.shape :as shape]
    [app.plugins.utils :as u]
-   [app.util.object :as obj]))
+   [app.util.object :as obj]
+   [cuerdas.core :as str]))
 
 (deftype PageProxy [$plugin $file $id]
   Object
@@ -34,11 +37,28 @@
     (shape/shape-proxy $plugin $file $id uuid/zero))
 
   (findShapes
-    [_]
+    [_ criteria]
     ;; Returns a lazy (iterable) of all available shapes
-    (when (and (some? $file) (some? $id))
-      (let [page (u/locate-page $file $id)]
-        (apply array (sequence (map (partial shape/shape-proxy $plugin)) (keys (:objects page)))))))
+    (let [criteria (parser/parse-criteria criteria)
+          match-criteria?
+          (if (some? criteria)
+            (fn [[_ shape]]
+              (and
+               (or (not (:name criteria))
+                   (= (str/lower (:name criteria)) (str/lower (:name shape))))
+
+               (or (not (:name-like criteria))
+                   (str/includes? (str/lower (:name shape)) (str/lower (:name-like criteria))))
+
+               (or (not (:type criteria))
+                   (= (:type criteria) (:type shape)))))
+            identity)]
+      (when (and (some? $file) (some? $id))
+        (let [page (u/locate-page $file $id)
+              xf (comp
+                  (filter match-criteria?)
+                  (map #(shape/shape-proxy $plugin $file $id (first %))))]
+          (apply array (sequence xf (:objects page)))))))
 
   ;; Plugin data
   (getPluginData
@@ -55,10 +75,13 @@
     [_ key value]
     (cond
       (not (string? key))
-      (u/display-not-valid :page-plugin-data-key key)
+      (u/display-not-valid :setPluginData-key key)
 
       (and (some? value) (not (string? value)))
-      (u/display-not-valid :page-plugin-data value)
+      (u/display-not-valid :setPluginData-value value)
+
+      (not (r/check-permission $plugin "content:write"))
+      (u/display-not-valid :setPluginData "Plugin doesn't have 'content:write' permission")
 
       :else
       (st/emit! (dw/set-plugin-data $file :page $id (keyword "plugin" (str $plugin)) key value))))
@@ -86,13 +109,16 @@
 
     (cond
       (not (string? namespace))
-      (u/display-not-valid :page-plugin-data-namespace namespace)
+      (u/display-not-valid :setSharedPluginData-namespace namespace)
 
       (not (string? key))
-      (u/display-not-valid :page-plugin-data-key key)
+      (u/display-not-valid :setSharedPluginData-key key)
 
       (and (some? value) (not (string? value)))
-      (u/display-not-valid :page-plugin-data value)
+      (u/display-not-valid :setSharedPluginData-value value)
+
+      (not (r/check-permission $plugin "content:write"))
+      (u/display-not-valid :setSharedPluginData "Plugin doesn't have 'content:write' permission")
 
       :else
       (st/emit! (dw/set-plugin-data $file :page $id (keyword "shared" namespace) key value))))
@@ -132,7 +158,10 @@
     (fn [_ value]
       (cond
         (not (string? value))
-        (u/display-not-valid :page-name value)
+        (u/display-not-valid :name value)
+
+        (not (r/check-permission plugin-id "content:write"))
+        (u/display-not-valid :name "Plugin doesn't have 'content:write' permission")
 
         :else
         (st/emit! (dw/rename-page id value))))}
@@ -148,7 +177,10 @@
     (fn [_ value]
       (cond
         (or (not (string? value)) (not (cc/valid-hex-color? value)))
-        (u/display-not-valid :page-background-color value)
+        (u/display-not-valid :background value)
+
+        (not (r/check-permission plugin-id "content:write"))
+        (u/display-not-valid :background "Plugin doesn't have 'content:write' permission")
 
         :else
         (st/emit! (dw/change-canvas-color id {:color value}))))}))

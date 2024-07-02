@@ -12,6 +12,7 @@
    [app.main.data.workspace :as dw]
    [app.main.store :as st]
    [app.plugins.page :as page]
+   [app.plugins.register :as r]
    [app.plugins.utils :as u]
    [app.util.object :as obj]))
 
@@ -26,7 +27,7 @@
     [self key]
     (cond
       (not (string? key))
-      (u/display-not-valid :file-plugin-data-key key)
+      (u/display-not-valid :getPluginData-key key)
 
       :else
       (let [file (u/proxy->file self)]
@@ -36,10 +37,13 @@
     [_ key value]
     (cond
       (or (not (string? key)) (empty? key))
-      (u/display-not-valid :file-plugin-data-key key)
+      (u/display-not-valid :setPluginData-key key)
 
       (and (some? value) (not (string? value)))
-      (u/display-not-valid :file-plugin-data value)
+      (u/display-not-valid :setPluginData-value value)
+
+      (not (r/check-permission $plugin "content:write"))
+      (u/display-not-valid :setPluginData "Plugin doesn't have 'content:write' permission")
 
       :else
       (st/emit! (dw/set-plugin-data $id :file (keyword "plugin" (str $plugin)) key value))))
@@ -53,10 +57,10 @@
     [self namespace key]
     (cond
       (not (string? namespace))
-      (u/display-not-valid :file-plugin-data-namespace namespace)
+      (u/display-not-valid :getSharedPluginData-namespace namespace)
 
       (not (string? key))
-      (u/display-not-valid :file-plugin-data-key key)
+      (u/display-not-valid :getSharedPluginData-key key)
 
       :else
       (let [file (u/proxy->file self)]
@@ -67,13 +71,16 @@
 
     (cond
       (or (not (string? namespace)) (empty? namespace))
-      (u/display-not-valid :file-plugin-data-namespace namespace)
+      (u/display-not-valid :setSharedPluginData-namespace namespace)
 
       (or (not (string? key)) (empty? key))
-      (u/display-not-valid :file-plugin-data-key key)
+      (u/display-not-valid :setSharedPluginData-key key)
 
       (and (some? value) (not (string? value)))
-      (u/display-not-valid :file-plugin-data value)
+      (u/display-not-valid :setSharedPluginData-value value)
+
+      (not (r/check-permission $plugin "content:write"))
+      (u/display-not-valid :setSharedPluginData "Plugin doesn't have 'content:write' permission")
 
       :else
       (st/emit! (dw/set-plugin-data $id :file (keyword "shared" namespace) key value))))
@@ -82,7 +89,7 @@
     [self namespace]
     (cond
       (not (string? namespace))
-      (u/display-not-valid :file-plugin-data-namespace namespace)
+      (u/display-not-valid :getSharedPluginDataKeys namespace)
 
       :else
       (let [file (u/proxy->file self)]

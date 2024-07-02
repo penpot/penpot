@@ -13,13 +13,25 @@
 .modal-dialog {
   @extend .modal-container-base;
   display: grid;
-  grid-template-rows: auto 1fr;
-  width: $s-472;
-  max-width: $s-472;
+  grid-template-rows: auto 1fr auto;
+
+  &.plugin-permissions {
+    width: $s-412;
+    max-width: $s-412;
+  }
+
+  &.plugin-management {
+    width: $s-472;
+    max-width: $s-472;
+  }
 
   hr {
     border-color: $db-tertiary;
   }
+}
+
+.modal-footer {
+  margin-top: 2rem;
 }
 
 .close-btn {
@@ -40,12 +52,30 @@
 .modal-content {
   display: flex;
   flex-direction: column;
-  height: $s-380;
-  max-height: $s-380;
+
+  .plugin-permissions & {
+    gap: $s-20;
+  }
+
+  .plugin-management & {
+    height: $s-380;
+    max-height: $s-380;
+  }
 }
 
 .primary-button {
   @extend .button-primary;
+  @include headlineSmallTypography;
+  padding: $s-0 $s-16;
+}
+
+.button-expand {
+  width: 100%;
+  margin: 0;
+}
+
+.cancel-button {
+  @extend .button-secondary;
   @include headlineSmallTypography;
   padding: $s-0 $s-16;
 }
@@ -87,7 +117,7 @@
 .plugins-list {
   padding-top: $s-20;
   overflow-x: hidden;
-  overflow-y: scroll;
+  overflow-y: auto;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -148,8 +178,8 @@
   svg {
     width: $s-16;
     height: $s-16;
-    fill: $df-secondary;
-    stroke-width: 0;
+    stroke: $df-secondary;
+    fill: none;
   }
 }
 
@@ -189,4 +219,46 @@ div.input-error {
     stroke: $da-primary;
     fill: none;
   }
+}
+
+.plugin-permissions {
+}
+
+.permissions-list {
+  display: flex;
+  flex-direction: column;
+  gap: $s-24;
+}
+
+.permissions-list-entry {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: $s-16;
+  align-items: center;
+
+  svg {
+    width: $s-24;
+    height: $s-24;
+    stroke: $da-primary;
+    fill: none;
+  }
+}
+
+.permissions-list-text {
+  @include bodySmallTypography;
+  margin: 0;
+  color: $df-secondary;
+}
+
+.permissions-disclaimer {
+  @include bodySmallTypography;
+  padding: $s-16;
+  background: $db-tertiary;
+  color: $df-secondary;
+  border-radius: $br-4;
+}
+
+.action-buttons {
+  display: flex;
+  gap: $s-12;
 }

@@ -30,6 +30,7 @@
    [app.main.ui.hooks.resize :as r]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.plugins :as uwp]
+   [app.plugins :as plugins]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -608,7 +609,7 @@
    ::mf/wrap [mf/memo]}
   [{:keys [open-plugins on-close]}]
   (when (features/active-feature? @st/state "plugins/runtime")
-    (let [plugins (uwp/load-from-store)]
+    (let [plugins @plugins/pluginsdb]
       [:& dropdown-menu {:show true
                          :list-class (stl/css-case :sub-menu true :plugins true)
                          :on-close on-close}

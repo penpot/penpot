@@ -11,12 +11,17 @@
    [app.main.data.workspace.texts :as dwt]
    [app.main.fonts :as fonts]
    [app.main.store :as st]
+   [app.plugins.register :as r]
    [app.plugins.shape :as shape]
+   [app.plugins.text :as text]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
    [cuerdas.core :as str]))
 
 (deftype PenpotFontVariant [name fontVariantId fontWeight fontStyle])
+
+(defn variant-proxy? [p]
+  (instance? PenpotFontVariant p))
 
 (deftype PenpotFont [name fontId fontFamily fontStyle fontVariantId fontWeight variants]
   Object
@@ -26,7 +31,8 @@
       (not (shape/shape-proxy? text))
       (u/display-not-valid :applyToText text)
 
-      ;; TODO: Check variant inside font variants
+      (not (r/check-permission (obj/get text "$plugin") "content:write"))
+      (u/display-not-valid :applyToText "Plugin doesn't have 'content:write' permission")
 
       :else
       (let [id (obj/get text "$id")
@@ -39,10 +45,11 @@
 
   (applyToRange [_ range variant]
     (cond
-      (not (shape/text-range? range))
+      (not (text/text-range? range))
       (u/display-not-valid :applyToRange range)
 
-      ;; TODO: Check variant inside font variants
+      (not (r/check-permission (obj/get range "$plugin") "content:write"))
+      (u/display-not-valid :applyToRange "Plugin doesn't have 'content:write' permission")
 
       :else
       (let [id    (obj/get range "$id")
@@ -59,13 +66,13 @@
   (instance? PenpotFont p))
 
 (defn font-proxy
-  [{:keys [id name variants] :as font}]
+  [{:keys [id family name variants] :as font}]
   (when (some? font)
     (let [default-variant (fonts/get-default-variant font)]
       (PenpotFont.
        name
        id
-       id
+       family
        (:style default-variant)
        (:id default-variant)
        (:weight default-variant)

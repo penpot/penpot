@@ -6,7 +6,6 @@
 
 (ns app.plugins.events
   (:require
-   [app.common.data.macros :as dm]
    [app.main.store :as st]
    [app.plugins.file :as file]
    [app.plugins.page :as page]
@@ -24,25 +23,19 @@
 
 (defmethod handle-state-change "filechange"
   [_ plugin-id old-val new-val]
-  (let [old-file (:workspace-file old-val)
-        new-file (:workspace-file new-val)
-        old-data (:workspace-data old-val)
-        new-data (:workspace-data new-val)]
-    (if (and (identical? old-file new-file)
-             (identical? old-data new-data))
+  (let [old-file-id (:current-file-id old-val)
+        new-file-id (:current-file-id new-val)]
+    (if (identical? old-file-id new-file-id)
       ::not-changed
-      (file/file-proxy plugin-id (:id new-file)))))
+      (file/file-proxy plugin-id new-file-id))))
 
 (defmethod handle-state-change "pagechange"
   [_ plugin-id old-val new-val]
-  (let [file-id     (:current-file-id new-val)
-        old-page-id (:current-page-id old-val)
-        new-page-id (:current-page-id new-val)
-        old-page    (dm/get-in old-val [:workspace-data :pages-index old-page-id])
-        new-page    (dm/get-in new-val [:workspace-data :pages-index new-page-id])]
-    (if (identical? old-page new-page)
+  (let [old-page-id (:current-page-id old-val)
+        new-page-id (:current-page-id new-val)]
+    (if (identical? old-page-id new-page-id)
       ::not-changed
-      (page/page-proxy plugin-id file-id new-page-id))))
+      (page/page-proxy plugin-id (:current-file-id new-val) new-page-id))))
 
 (defmethod handle-state-change "selectionchange"
   [_ _ old-val new-val]
@@ -75,7 +68,10 @@
      (fn [_ _ old-val new-val]
        (let [result (handle-state-change type plugin-id old-val new-val)]
          (when (not= ::not-changed result)
-           (callback result)))))
+           (try
+             (callback result)
+             (catch :default cause
+               (.error js/console cause)))))))
 
     ;; return the generated key
     key))

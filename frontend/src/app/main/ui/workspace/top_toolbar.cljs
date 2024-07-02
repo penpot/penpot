@@ -11,11 +11,13 @@
    [app.common.geom.point :as gpt]
    [app.common.media :as cm]
    [app.main.data.events :as ev]
+   [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.path.state :as pst]
    [app.main.data.workspace.shortcuts :as sc]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
@@ -191,6 +193,17 @@
             :data-tool "path"
             :data-testid "path-btn"}
            i/path]]
+
+         (when (features/active-feature? @st/state "plugins/runtime")
+           [:li
+            [:button
+             {:title (tr "workspace.toolbar.plugins" (sc/get-tooltip :plugins))
+              :aria-label (tr "workspace.toolbar.plugins" (sc/get-tooltip :plugins))
+              :class (stl/css :main-toolbar-options-button)
+              :on-click #(modal/show! :plugin-management {})
+              :data-tool "plugins"
+              :data-testid "plugins-btn"}
+             i/puzzle]])
 
          (when *assert*
            [:li

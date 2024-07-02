@@ -847,6 +847,9 @@ msgstr "Cancel"
 msgid "ds.confirm-ok"
 msgstr "Ok"
 
+msgid "ds.confirm-allow"
+msgstr "Allow"
+
 #: src/app/main/ui/confirm.cljs, src/app/main/ui/confirm.cljs
 msgid "ds.confirm-title"
 msgstr "Are you sure?"
@@ -5290,3 +5293,24 @@ msgstr "Plugins manager"
 
 msgid "workspace.plugins.plugin-list-link"
 msgstr "Plugins List"
+
+msgid "workspace.plugins.permissions.title"
+msgstr "THIS PLUGIN WANTS ACCESS TO:"
+
+msgid "workspace.plugins.permissions.disclaimer"
+msgstr "Note that this plugin has been created by an external party."
+
+msgid "workspace.plugins.permissions.content-read"
+msgstr "Read the content of files that users have access to."
+
+msgid "workspace.plugins.permissions.content-write"
+msgstr "Read and modify the content of files that users have access to."
+
+msgid "workspace.plugins.permissions.user-read"
+msgstr "Read the profile information of the current user."
+
+msgid "workspace.plugins.permissions.library-read"
+msgstr "Read your libraries and assets."
+
+msgid "workspace.plugins.permissions.library-write"
+msgstr "Read and modify your libraries and assets."

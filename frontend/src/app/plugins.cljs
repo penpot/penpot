@@ -7,18 +7,25 @@
 (ns app.plugins
   "RPC for plugins runtime."
   (:require
+   [app.common.uuid :as uuid]
    [app.main.features :as features]
    [app.main.store :as st]
    [app.plugins.api :as api]
    [app.plugins.public-utils]
+   [app.plugins.register :as register]
    [app.util.globals :refer [global]]
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
+(def pluginsdb register/pluginsdb)
+(def install-plugin! register/install-plugin!)
+(def remove-plugin! register/remove-plugin!)
+
 (defn init-plugins-runtime!
   []
   (when-let [init-runtime (obj/get global "initPluginsRuntime")]
+    (register/init)
     (init-runtime (fn [plugin-id] (api/create-context plugin-id)))))
 
 (defn initialize
@@ -33,3 +40,20 @@
            (rx/take 1)
            (rx/tap init-plugins-runtime!)
            (rx/ignore)))))
+
+(defn parser-manifest
+  [plugin-url ^js manifest]
+  (let [name (obj/get manifest "name")
+        desc (obj/get manifest "description")
+        code (obj/get manifest "code")
+        icon (obj/get manifest "icon")
+        permissions (obj/get manifest "permissions")
+        origin (obj/get (js/URL. plugin-url) "origin")
+        plugin-id (str (uuid/next))]
+    {:plugin-id plugin-id
+     :name name
+     :description desc
+     :host origin
+     :code code
+     :icon icon
+     :permissions (->> permissions (mapv str))}))

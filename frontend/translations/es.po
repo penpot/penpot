@@ -869,6 +869,9 @@ msgstr "Cancelar"
 msgid "ds.confirm-ok"
 msgstr "Ok"
 
+msgid "ds.confirm-allow"
+msgstr "Permitir"
+
 #: src/app/main/ui/confirm.cljs, src/app/main/ui/confirm.cljs
 msgid "ds.confirm-title"
 msgstr "¿Está Seguro?"
@@ -5394,3 +5397,24 @@ msgstr "Gestor de extensiones"
 
 msgid "workspace.plugins.plugin-list-link"
 msgstr "Lista de extensiones"
+
+msgid "workspace.plugins.permissions.title"
+msgstr "LA EXTENSIÓN SOLICITA PERMISO PARA ACCEDER:"
+
+msgid "workspace.plugins.permissions.disclaimer"
+msgstr "Tenga en cuenta que esta extensión ha sido desarrollada por terceros."
+
+msgid "workspace.plugins.permissions.content-read"
+msgstr "Leer el contenido de sus archivos."
+
+msgid "workspace.plugins.permissions.content-write"
+msgstr "Leer y modificar el contenido de sus archivos."
+
+msgid "workspace.plugins.permissions.user-read"
+msgstr "Leer la información del usuario actual."
+
+msgid "workspace.plugins.permissions.library-read"
+msgstr "Leer la información de sus bibliotecas y recursos."
+
+msgid "workspace.plugins.permissions.library-write"
+msgstr "Leer y modificar la información de sus bibliotecas y recursos."
