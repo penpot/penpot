@@ -213,7 +213,7 @@
 (defn additional-actions [{:keys [token-id token-type selected-shapes] :as context-data}]
   (let [attributes->actions (fn [update-fn coll]
                               (for [{:keys [attributes] :as item} coll]
-                                (let [selected? (wtt/tokens-applied? {:id token-id} selected-shapes attributes)]
+                                (let [selected? (wtt/shapes-token-applied? {:id token-id} selected-shapes attributes)]
                                   (assoc item
                                          :action #(update-fn context-data attributes)
                                          :selected? selected?))))]

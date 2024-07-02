@@ -21,14 +21,14 @@
 
 (t/deftest tokens-applied-test
   (t/testing "is true when single shape matches the token and attributes"
-    (t/is (true? (wtt/tokens-applied? {:id :a} [{:applied-tokens {:x :a}}
+    (t/is (true? (wtt/shapes-token-applied? {:id :a} [{:applied-tokens {:x :a}}
                                                 {:applied-tokens {:x :b}}]
                                       #{:x}))))
   (t/testing "is false when no shape matches the token or attributes"
-    (t/is (nil? (wtt/tokens-applied? {:id :a} [{:applied-tokens {:x :b}}
+    (t/is (nil? (wtt/shapes-token-applied? {:id :a} [{:applied-tokens {:x :b}}
                                                {:applied-tokens {:x :b}}]
                                      #{:x})))
-    (t/is (nil? (wtt/tokens-applied? {:id :a} [{:applied-tokens {:x :a}}
+    (t/is (nil? (wtt/shapes-token-applied? {:id :a} [{:applied-tokens {:x :a}}
                                                {:applied-tokens {:x :a}}]
                                      #{:y})))))
 

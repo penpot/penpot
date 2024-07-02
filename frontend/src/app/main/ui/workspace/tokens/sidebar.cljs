@@ -99,9 +99,9 @@
                              (mf/deps selected-shapes token-type-props)
                              (fn [event token]
                                (dom/stop-propagation event)
-                               (wtc/on-apply-token {:token token
-                                                    :token-type-props token-type-props
-                                                    :selected-shapes selected-shapes})))
+                               (wtc/on-toggle-token {:token token
+                                                     :shapes selected-shapes
+                                                     :token-type-props token-type-props})))
         tokens-count (count tokens)]
     [:div {:on-click on-toggle-open-click}
      [:& cmm/asset-section {:icon (mf/fnc icon-wrapper [_]
@@ -122,7 +122,7 @@
             [:& token-pill
              {:key (:id token)
               :token token
-              :highlighted? (wtt/tokens-applied? token selected-shapes attributes)
+              :highlighted? (wtt/shapes-token-applied? token selected-shapes attributes)
               :on-click #(on-token-pill-click % token)
               :on-context-menu #(on-context-menu % token)}])]])]]))
 

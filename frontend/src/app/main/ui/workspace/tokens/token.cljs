@@ -11,7 +11,7 @@
             (= (get applied-tokens attr) id))
           token-attributes)))
 
-(defn tokens-applied?
+(defn shapes-token-applied?
   "Test if `token` is applied to to any of `shapes` with the given `token-attributes`."
   [token shapes token-attributes]
   (some #(token-applied? token % token-attributes) shapes))
