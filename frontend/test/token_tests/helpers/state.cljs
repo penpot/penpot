@@ -10,8 +10,12 @@
   [event-type]
   (fn [stream]
     (->> stream
-         (rx/tap #(prn (ptk/type %)))
+         #_(rx/tap #(prn (ptk/type %)))
          (rx/filter #(ptk/type? event-type %)))))
+
+(def stop-on-send-update-indices
+  "Stops on `send-update-indices` function being called, which should be the last function of an event chain."
+  (stop-on :app.main.data.workspace.changes/send-update-indices))
 
 ;; Support for async events in tests
 ;; https://chat.kaleidos.net/penpot-partners/pl/tz1yoes3w3fr9qanxqpuhoz3ch
@@ -36,3 +40,10 @@
      (doall (for [event events]
               (ptk/emit! store event)))
      (ptk/emit! store :the/end))))
+
+(defn run-store-async
+  "Helper version of `run-store` that automatically stops on the `send-update-indices` event"
+  ([store done events completed-cb]
+   (run-store store done events completed-cb stop-on-send-update-indices))
+  ([store done events completed-cb stop-on]
+   (run-store store done events completed-cb stop-on)))
