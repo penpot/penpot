@@ -39,21 +39,25 @@
     store))
 
 (defn run-store
-  [store done events completed-cb]
-  (let [stream (ptk/input-stream store)]
-    (->> stream
-         (rx/take-until (rx/filter #(= :the/end %) stream))
-         (rx/last)
-         (rx/tap (fn []
-                   (completed-cb @store)))
-         (rx/subs! (fn [_] (done))
-                   (fn [cause]
-                     (js/console.log "[error]:" cause))
-                   (fn [_]
-                     (js/console.log "[complete]"))))
-    (doall (for [event events]
-             (ptk/emit! store event)))
-    (ptk/emit! store :the/end)))
+  ([store done events completed-cb]
+   (run-store store done events completed-cb nil))
+  ([store done events completed-cb stopper]
+   (let [stream (ptk/input-stream store)]
+     (->> stream
+          (rx/take-until (if stopper
+                           (stopper stream)
+                           (rx/filter #(= :the/end %) stream)))
+          (rx/last)
+          (rx/tap (fn []
+                    (completed-cb @store)))
+          (rx/subs! (fn [_] (done))
+                    (fn [cause]
+                      (js/console.log "[error]:" cause))
+                    (fn [_]
+                      (js/console.log "[complete]"))))
+     (doall (for [event events]
+              (ptk/emit! store event)))
+     (ptk/emit! store :the/end))))
 
 (defn get-file-from-store
   [store]

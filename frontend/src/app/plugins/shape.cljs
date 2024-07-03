@@ -36,6 +36,7 @@
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.repo :as rp]
    [app.main.store :as st]
    [app.plugins.flex :as flex]
    [app.plugins.format :as format]
@@ -46,7 +47,9 @@
    [app.plugins.utils :as u]
    [app.util.object :as obj]
    [app.util.path.format :as upf]
-   [cuerdas.core :as str]))
+   [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
+   [promesa.core :as p]))
 
 (def lib-typography-proxy? nil)
 (def lib-component-proxy nil)
@@ -436,7 +439,34 @@
           shape (u/proxy->shape self)]
       (when (ctn/in-any-component? objects shape)
         (let [[root component] (u/locate-component objects shape)]
-          (lib-component-proxy $plugin (:component-file root) (:id component)))))))
+          (lib-component-proxy $plugin (:component-file root) (:id component))))))
+
+  (export
+    [self value]
+    (let [value (parser/parse-export value)]
+      (cond
+        (not (sm/validate ::ctse/export value))
+        (u/display-not-valid :export value)
+
+        :else
+        (let [payload
+              {:cmd :export-shapes
+               :profile-id (:profile-id @st/state)
+               :wait true
+               :exports [{:file-id   $file
+                          :page-id   $page
+                          :object-id $id
+                          :name      (obj/get self "name")
+                          :type      (:type value :png)
+                          :suffix    (:suffix value "")
+                          :scale     (:scale value 1)}]}]
+          (p/create
+           (fn [resolve reject]
+             (->> (rp/cmd! :export payload)
+                  (rx/mapcat #(rp/cmd! :export {:cmd :get-resource :wait true :id (:id %) :blob? true}))
+                  (rx/mapcat #(.arrayBuffer %))
+                  (rx/map #(js/Uint8Array. %))
+                  (rx/subs! resolve reject)))))))))
 
 (defn shape-proxy? [p]
   (instance? ShapeProxy p))
@@ -885,6 +915,12 @@
 
           {:name "height"
            :get #(-> % u/proxy->shape :height)}
+
+          {:name "bounds"
+           :get #(-> % u/proxy->shape :points grc/points->rect format/format-bounds)}
+
+          {:name "center"
+           :get #(-> % u/proxy->shape gsh/shape->center format/format-point)}
 
           {:name "rotation"
            :get #(-> % u/proxy->shape :rotation)

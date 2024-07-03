@@ -23,6 +23,7 @@
    [app.main.data.workspace.colors :as dwc]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.media :as dwm]
+   [app.main.data.workspace.selection :as dws]
    [app.main.store :as st]
    [app.plugins.events :as events]
    [app.plugins.file :as file]
@@ -356,7 +357,19 @@
    {:name "root" :get #(.getRoot ^js %)}
    {:name "currentFile" :get #(.getFile ^js %)}
    {:name "currentPage" :get #(.getPage ^js %)}
-   {:name "selection" :get #(.getSelectedShapes ^js %)}
+
+   {:name "selection"
+    :get #(.getSelectedShapes ^js %)
+    :set
+    (fn [_ shapes]
+      (cond
+        (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
+        (u/display-not-valid :selection shapes)
+
+        :else
+        (let [ids (into (d/ordered-set) (map #(obj/get % "$id")) shapes)]
+          (st/emit! (dws/select-shapes ids)))))}
+
    {:name "viewport" :get #(.getViewport ^js %)}
    {:name "currentUser" :get #(.getCurrentUser ^js %)}
    {:name "activeUsers" :get #(.getActiveUsers ^js %)}
