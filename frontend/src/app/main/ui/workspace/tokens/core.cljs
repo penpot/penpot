@@ -102,9 +102,9 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (let [{:keys [attributes on-update-shape]} token-type-props
-            remove-tokens? (wtt/shapes-token-applied? token shapes (:attributes token-type-props))
+            unapply-tokens? (wtt/shapes-token-applied? token shapes (:attributes token-type-props))
             shape-ids (map :id shapes)]
-        (if remove-tokens?
+        (if unapply-tokens?
           (rx/of
            (unapply-token {:attributes attributes
                            :shape-ids shape-ids}))
