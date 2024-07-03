@@ -77,5 +77,5 @@ msgid "auth.new-password"
 msgstr "নতুন পাসওয়ার্ড টাইপ করুন"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "রিকভারি টোকেন সঠিক নয়।"

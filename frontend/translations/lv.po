@@ -85,20 +85,12 @@ msgstr "LDAP"
 msgid "auth.login-with-oidc-submit"
 msgstr "AtvērtoID (OpenID)"
 
-#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.not-all-space"
-msgstr "Nosaukumam jāsatur simboli, kas nav atstarpe."
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.too-long"
-msgstr "Nosaukumus nedrīkst pārsniegt 250 simbolus."
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
 msgstr "Ierakstiet jaunu paroli"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "Atkopšanas tekstvienība nav derīga."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -126,10 +118,6 @@ msgstr "Parole"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.password-length-hint"
 msgstr "Vismaz 8 rakstzīmes"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.password-not-empty"
-msgstr "Parolē ir jābūt arī citām rakstzīmēm bez atstarpes."
 
 msgid "auth.privacy-policy"
 msgstr "Privātuma politika"
@@ -287,7 +275,7 @@ msgid "dashboard.access-tokens.create"
 msgstr "Izveidot jaunu pilnvaru"
 
 #: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.create.success"
+msgid "dashboard.access-tokens.create-success"
 msgstr "Piekļuves pilnvara ir veiksmīgi izveidota."
 
 #: src/app/main/ui/settings/access-tokens.cljs
@@ -297,10 +285,6 @@ msgstr "Jānospiež poga \"Izveidot jaunu pilnvaru\", lai izveidotu kādu."
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.no-access-tokens"
 msgstr "Pagaidām vēl nav pilnvaru."
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.errors-required-name"
-msgstr "Nosaukums ir obligāts"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.expiration-180-days"
@@ -890,11 +874,11 @@ msgstr "E-pastam “%s” ir daudz pastāvīgu atlēcienu atskaišu."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs,
 #: src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
+msgid "errors.invalid-email"
 msgstr "Lūgums ievadīt derīgu e-pasta adresi"
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "Apstiprinājuma e-pastam jāatbilst"
 
 msgid "errors.email-spam-or-permanent-bounces"
@@ -3061,10 +3045,6 @@ msgstr "Tālummaiņas palielinājums"
 
 msgid "shortcuts.zoom-selected"
 msgstr "Tālummainīt uz atlasi"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "team.webhooks.max-length"
-msgstr "Tīmekļa aizķeres nosaukumā drīkst būt ne vairāk kā 2048 rakstzīmes."
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"

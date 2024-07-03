@@ -82,7 +82,7 @@ msgid "auth.new-password"
 msgstr "Wpisz nowe hasło"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "Token odzyskiwania jest nieprawidłowy."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -732,11 +732,11 @@ msgid "errors.email-has-permanent-bounces"
 msgstr "Email «%s» zawiera wiele stałych raportów o odrzuceniu."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
+msgid "errors.invalid-email"
 msgstr "Podaj prawidłowy adres e-mail"
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "E-mail potwierdzający musi być zgodny"
 
 msgid "errors.email-spam-or-permanent-bounces"

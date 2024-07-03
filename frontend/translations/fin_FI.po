@@ -81,7 +81,7 @@ msgid "auth.new-password"
 msgstr "Syötä uusi salasana"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "Palautustunnus on virheellinen."
 
 #: src/app/main/ui/auth/recovery.cljs

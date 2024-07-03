@@ -58,7 +58,7 @@ msgid "auth.new-password"
 msgstr "Введіть новий пароль"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "Невірний код відновлення."
 
 #: src/app/main/ui/auth/recovery.cljs

@@ -21,6 +21,7 @@
    [cuerdas.core :as str]
    [malli.core :as m]
    [malli.dev.pretty :as mdp]
+   [malli.dev.virhe :as v]
    [malli.error :as me]
    [malli.generator :as mg]
    [malli.registry :as mr]
@@ -43,6 +44,14 @@
 (defn schema?
   [o]
   (m/schema? o))
+
+(defn properties
+  [s]
+  (m/properties s))
+
+(defn type-properties
+  [s]
+  (m/type-properties s))
 
 (defn lazy-schema?
   [s]
@@ -96,6 +105,10 @@
   [exp]
   (malli.error/error-value exp {:malli.error/mask-valid-values '...}))
 
+(defn optional-keys
+  [schema]
+  (mu/optional-keys schema default-options))
+
 (def default-transformer
   (let [default-decoder
         {:compile (fn [s _registry]
@@ -144,6 +157,8 @@
    (m/encode s val options transformer)))
 
 (defn decode
+  ([s val]
+   (m/decode s val default-options default-transformer))
   ([s val transformer]
    (m/decode s val default-options transformer))
   ([s val options transformer]
@@ -180,9 +195,10 @@
     (fn [v] (@vfn v))))
 
 (defn lazy-decoder
-  [s transformer]
-  (let [vfn (delay (decoder (if (delay? s) (deref s) s) transformer))]
-    (fn [v] (@vfn v))))
+  ([s] (lazy-decoder s default-transformer))
+  ([s transformer]
+   (let [vfn (delay (decoder (if (delay? s) (deref s) s) transformer))]
+     (fn [v] (@vfn v)))))
 
 (defn humanize-explain
   [{:keys [schema errors value]} & {:keys [length level]}]
@@ -197,9 +213,29 @@
                                      :level (d/nilv level 8)
                                      :length (d/nilv length 12)})))))
 
+
+(defmethod v/-format ::schemaless-explain
+  [_ {:keys [schema] :as explanation} printer]
+  {:body [:group
+          (v/-block "Value" (v/-visit (me/error-value explanation printer) printer) printer) :break :break
+          (v/-block "Errors" (v/-visit (me/humanize (me/with-spell-checking explanation)) printer) printer) :break :break
+          (v/-block "Schema" (v/-visit schema printer) printer)]})
+
+
+(defmethod v/-format ::explain
+  [_ {:keys [schema] :as explanation} printer]
+  {:body [:group
+          (v/-block "Value" (v/-visit (me/error-value explanation printer) printer) printer) :break :break
+          (v/-block "Errors" (v/-visit (me/humanize (me/with-spell-checking explanation)) printer) printer) :break :break
+          (v/-block "Schema" (v/-visit schema printer) printer)]})
+
+
 (defn pretty-explain
-  [s d]
-  (mdp/explain (schema s) d))
+  [explain & {:keys [variant message]
+              :or {variant ::explain
+                   message "Validation Error"}}]
+  (let [explain (fn [] (me/with-error-messages explain))]
+    ((mdp/prettifier variant message explain default-options))))
 
 (defmacro ignoring
   [expr]
@@ -287,7 +323,7 @@
        (throw (ex-info hint options))))))
 
 (defn validate-fn
-  "Create a predefined validate function"
+  "Create a predefined validate function that raises an expception"
   [s]
   (let [schema (if (lazy-schema? s) s (define s))]
     (partial fast-validate! schema)))
@@ -307,6 +343,7 @@
              hint    (get options :hint "schema validation error")]
          (throw (ex-info hint options)))))))
 
+;; FIXME: revisit
 (defn conform!
   [schema value]
   (assert (lazy-schema? schema) "expected `schema` to satisfy ILazySchema protocol")
@@ -428,29 +465,154 @@
   [s]
   (if (string? s)
     (re-matches email-re s)
-    s))
+    nil))
 
-;; FIXME: add proper email generator
+(defn email-string?
+  [s]
+  (and (string? s)
+       (re-seq email-re s)))
+
 (define! ::email
-  {:type ::email
-   :pred (fn [s]
-           (and (string? s)
-                (< (count s) 250)
-                (re-seq email-re s)))
+  {:type :string
+   :pred email-string?
+   :property-pred
+   (fn [{:keys [max] :as props}]
+     (if (some? max)
+       (fn [value]
+         (<= (count value) max))
+       (constantly true)))
+
    :type-properties
    {:title "email"
     :description "string with valid email address"
-    :error/message "expected valid email"
-    :gen/gen (-> :string sg/generator)
+    :error/code "errors.invalid-email"
+    :gen/gen (sg/email)
     ::oapi/type "string"
     ::oapi/format "email"
-    ::oapi/decode parse-email}})
+    ::oapi/decode
+    (fn [v]
+      (or (parse-email v) v))}})
 
 (def non-empty-strings-xf
   (comp
    (filter string?)
    (remove str/empty?)
    (remove str/blank?)))
+
+;; NOTE: this is general purpose set spec and should be used over the other
+
+(define! ::set
+  {:type :set
+   :min 0
+   :max 1
+   :compile
+   (fn [{:keys [coerce kind max min] :as props} children _]
+     (let [xform (if coerce
+                   (comp non-empty-strings-xf (map coerce))
+                   non-empty-strings-xf)
+           kind  (or (last children) kind)
+           pred  (cond
+                   (fn? kind)  kind
+                   (nil? kind) any?
+                   :else       (validator kind))
+
+           pred (cond
+                  (and max min)
+                  (fn [value]
+                    (let [size (count value)]
+                      (and (set? value)
+                           (<= min size max)
+                           (every? pred value))))
+
+                  min
+                  (fn [value]
+                    (let [size (count value)]
+                      (and (set? value)
+                           (<= min size)
+                           (every? pred value))))
+
+                  max
+                  (fn [value]
+                    (let [size (count value)]
+                      (and (set? value)
+                           (<= size max)
+                           (every? pred value))))
+
+                  :else
+                  (fn [value]
+                    (every? pred value)))]
+
+       {:pred pred
+        :type-properties
+        {:title "set"
+         :description "Set of Strings"
+         :error/message "should be a set of strings"
+         :gen/gen (-> kind sg/generator sg/set)
+         ::oapi/type "array"
+         ::oapi/format "set"
+         ::oapi/items {:type "string"}
+         ::oapi/unique-items true
+         ::oapi/decode (fn [v]
+                         (let [v (if (string? v) (str/split v #"[\s,]+") v)]
+                           (into #{} xform v)))}}))})
+
+
+(define! ::vec
+  {:type :vector
+   :min 0
+   :max 1
+   :compile
+   (fn [{:keys [coerce kind max min] :as props} children _]
+     (let [xform (if coerce
+                   (comp non-empty-strings-xf (map coerce))
+                   non-empty-strings-xf)
+
+           kind  (or (last children) kind)
+           pred  (cond
+                   (fn? kind)  kind
+                   (nil? kind) any?
+                   :else       (validator kind))
+
+           pred (cond
+                  (and max min)
+                  (fn [value]
+                    (let [size (count value)]
+                      (and (set? value)
+                           (<= min size max)
+                           (every? pred value))))
+
+                  min
+                  (fn [value]
+                    (let [size (count value)]
+                      (and (set? value)
+                           (<= min size)
+                           (every? pred value))))
+
+                  max
+                  (fn [value]
+                    (let [size (count value)]
+                      (and (set? value)
+                           (<= size max)
+                           (every? pred value))))
+
+                  :else
+                  (fn [value]
+                    (every? pred value)))]
+
+       {:pred pred
+        :type-properties
+        {:title "set"
+         :description "Set of Strings"
+         :error/message "should be a set of strings"
+         :gen/gen (-> kind sg/generator sg/set)
+         ::oapi/type "array"
+         ::oapi/format "set"
+         ::oapi/items {:type "string"}
+         ::oapi/unique-items true
+         ::oapi/decode (fn [v]
+                         (let [v (if (string? v) (str/split v #"[\s,]+") v)]
+                           (into [] xform v)))}}))})
+
 
 (define! ::set-of-strings
   {:type ::set-of-strings
@@ -634,6 +796,8 @@
 (define! ::fn
   [:schema fn?])
 
+;; FIXME: deprecated, replace with ::text
+
 (define! ::word-string
   {:type ::word-string
    :pred #(and (string? %) (not (str/blank? %)))
@@ -649,16 +813,102 @@
 (define! ::uri
   {:type ::uri
    :pred u/uri?
+   :property-pred
+   (fn [{:keys [min max prefix] :as props}]
+     (if (seq props)
+       (fn [value]
+         (let [value  (str value)
+               size   (count value)]
+
+           (and
+            (cond
+              (and min max)
+              (<= min size max)
+
+              min
+              (<= min size)
+
+              max
+              (<= size max))
+
+            (cond
+              (d/regexp? prefix)
+              (some? (re-seq prefix value))
+
+              :else
+              true))))
+
+       (constantly true)))
+
    :type-properties
    {:title "uri"
     :description "URI formatted string"
-    :error/message "expected URI instance"
+    :error/code "errors.invalid-uri"
     :gen/gen (sg/uri)
     ::oapi/type "string"
     ::oapi/format "uri"
     ::oapi/decode (comp u/uri str/trim)}})
 
-(def! ::plugin-data
+(define! ::text
+  {:type :string
+   :pred #(and (string? %) (not (str/blank? %)))
+   :property-pred
+   (fn [{:keys [min max] :as props}]
+     (if (seq props)
+       (fn [value]
+         (let [size (count value)]
+           (cond
+             (and min max)
+             (<= min size max)
+
+             min
+             (<= min size)
+
+             max
+             (<= size max))))
+       (constantly true)))
+
+   :type-properties
+   {:title "string"
+    :description "not whitespace string"
+    :gen/gen (sg/word-string)
+    :error/code "errors.invalid-text"
+    :error/fn
+    (fn [{:keys [value schema]}]
+      (let [{:keys [max min] :as props} (properties schema)]
+        (cond
+          (and (string? value)
+               (number? max)
+               (> (count value) max))
+          ["errors.field-max-length" max]
+
+          (and (string? value)
+               (number? min)
+               (< (count value) min))
+          ["errors.field-min-length" min]
+
+          (and (string? value)
+               (str/blank? value))
+          "errors.field-not-all-whitespace")))}})
+
+(define! ::password
+  {:type :string
+   :pred
+   (fn [value]
+     (and (string? value)
+          (>= (count value) 8)
+          (not (str/blank? value))))
+   :type-properties
+   {:title "password"
+    :gen/gen (->> (sg/word-string)
+                  (sg/filter #(>= (count %) 8)))
+    :error/code "errors.password-too-short"
+    ::oapi/type "string"
+    ::oapi/format "password"}})
+
+
+;; FIXME: this should not be here
+(define! ::plugin-data
   [:map-of {:gen/max 5} :string :string])
 
 ;; ---- PREDICATES

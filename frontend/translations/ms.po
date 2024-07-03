@@ -62,20 +62,12 @@ msgstr "LDAP"
 msgid "auth.login-with-oidc-submit"
 msgstr "OpenID Connect"
 
-#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.not-all-space"
-msgstr "Nama mesti mengandungi beberapa aksara selain ruang."
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.too-long"
-msgstr "Nama mesti mengandungi paling banyak 250 aksara."
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
 msgstr "Taip kata laluan baharu"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "Token pemulihan adalah tidak sah."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -101,10 +93,6 @@ msgstr "Kata laluan"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.password-length-hint"
 msgstr "Sekurang-kurangnya 8 aksara"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.password-not-empty"
-msgstr "Kata laluan mesti mengandungi beberapa aksara selain daripada ruang."
 
 msgid "auth.privacy-policy"
 msgstr "Dasar privasi"
@@ -263,7 +251,7 @@ msgid "dashboard.access-tokens.create"
 msgstr "Jana token baru"
 
 #: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.create.success"
+msgid "dashboard.access-tokens.create-success"
 msgstr "Token capaian berjaya dihasilkan."
 
 #: src/app/main/ui/settings/access-tokens.cljs
@@ -273,10 +261,6 @@ msgstr "Tekan butang \"Jana token baharu\" untuk menjana token."
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.no-access-tokens"
 msgstr "Anda tidak mempunyai token setakat ini."
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.errors-required-name"
-msgstr "Nama diperlukan"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.expiration-180-days"
@@ -840,11 +824,11 @@ msgid "errors.email-has-permanent-bounces"
 msgstr "E-mel «%s» mempunyai banyak laporan lantunan kekal."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
+msgid "errors.invalid-email"
 msgstr "Sila masukkan e-mel yang sah"
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "E-mel pengesahan mesti sepadan"
 
 msgid "errors.email-spam-or-permanent-bounces"

@@ -7,7 +7,6 @@
 (ns app.main.ui.settings.options
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.spec :as us]
    [app.main.data.messages :as msg]
    [app.main.data.users :as du]
    [app.main.refs :as refs]
@@ -15,14 +14,12 @@
    [app.main.ui.components.forms :as fm]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [cljs.spec.alpha :as s]
    [rumext.v2 :as mf]))
 
-(s/def ::lang (s/nilable ::us/string))
-(s/def ::theme (s/nilable ::us/not-empty-string))
-
-(s/def ::options-form
-  (s/keys :opt-un [::lang ::theme]))
+(def ^:private schema:options-form
+  [:map {:title "OptionsForm"}
+   [:lang {:optional true} [:string {:max 20}]]
+   [:theme {:optional true} [:string {:max 250}]]])
 
 (defn- on-success
   [profile]
@@ -41,7 +38,7 @@
   (let [profile (mf/deref refs/profile)
         initial (mf/with-memo [profile]
                   (update profile :lang #(or % "")))
-        form    (fm/use-form :spec ::options-form
+        form    (fm/use-form :schema schema:options-form
                              :initial initial)]
 
     [:& fm/form {:class (stl/css :options-form)

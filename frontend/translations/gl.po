@@ -81,7 +81,7 @@ msgid "auth.new-password"
 msgstr "Escribe un contrasinal novo"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "O código de recuperación non é correcto."
 
 #: src/app/main/ui/auth/recovery.cljs

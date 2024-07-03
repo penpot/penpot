@@ -81,7 +81,7 @@ msgid "auth.new-password"
 msgstr "Escriviu una contrasenya nova"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "El codi de recuperació no és vàlid."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -722,7 +722,7 @@ msgid "errors.email-has-permanent-bounces"
 msgstr "El correu «%s» té molts informes de retorn permanents."
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "El correu de confirmació ha de coincidir"
 
 msgid "errors.email-spam-or-permanent-bounces"

@@ -76,20 +76,12 @@ msgstr "LDAP"
 msgid "auth.login-with-oidc-submit"
 msgstr "OpenID"
 
-#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.not-all-space"
-msgstr "Le nom doit contenir au moins un caractère autre que l'espace."
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.too-long"
-msgstr "Le nom ne doit pas contenir plus de 250 caractères."
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
 msgstr "Saisissez un nouveau mot de passe"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "Le code de récupération n’est pas valide."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -115,10 +107,6 @@ msgstr "Mot de passe"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.password-length-hint"
 msgstr "Au moins 8 caractères"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.password-not-empty"
-msgstr "Le mot de passe doit contenir au moins un caractère autre que l'espace."
 
 msgid "auth.privacy-policy"
 msgstr "Politique de confidentialité"
@@ -271,7 +259,7 @@ msgid "dashboard.access-tokens.create"
 msgstr "Générer un nouveau jeton"
 
 #: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.create.success"
+msgid "dashboard.access-tokens.create-success"
 msgstr "Jeton d'accès créé avec succès."
 
 #: src/app/main/ui/settings/access-tokens.cljs
@@ -281,10 +269,6 @@ msgstr "Pressez le bouton \"Générer un nouveau jeton\" pour en générer un."
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.no-access-tokens"
 msgstr "Vous n'avez pas encore de jeton."
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.errors-required-name"
-msgstr "Le nom est requis"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.expiration-180-days"
@@ -874,11 +858,11 @@ msgid "errors.email-has-permanent-bounces"
 msgstr "L'adresse e-mail « %s » a un taux de rebond trop élevé."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
+msgid "errors.invalid-email"
 msgstr "Veuillez entrer une adresse mail valide"
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "L’adresse e‑mail de confirmation doit correspondre"
 
 msgid "errors.email-spam-or-permanent-bounces"
@@ -2929,10 +2913,6 @@ msgstr "Augmenter le zoom"
 
 msgid "shortcuts.zoom-selected"
 msgstr "Zoomer sur la sélection"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "team.webhooks.max-length"
-msgstr "Le nom du webhook ne peut pas contenir plus de 2048 caractères."
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"

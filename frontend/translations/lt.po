@@ -83,7 +83,7 @@ msgstr "Įveskite naują slaptažodį"
 
 #: src/app/main/ui/auth/recovery.cljs
 #, fuzzy
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "Atkūrimo prieigos raktas neteisingas."
 
 #: src/app/main/ui/auth/recovery.cljs

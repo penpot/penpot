@@ -80,7 +80,7 @@ msgid "auth.new-password"
 msgstr "Unesi novu lozinku"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "Token za oporavak je nevažeći."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -715,7 +715,7 @@ msgid "errors.email-has-permanent-bounces"
 msgstr "E-pmail «%s» ima mnogo trajnih izvješća o odbijanju."
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "E-mail za potvrdu mora odgovarati"
 
 msgid "errors.email-spam-or-permanent-bounces"

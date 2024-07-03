@@ -98,19 +98,24 @@ msgid "auth.login-with-oidc-submit"
 msgstr "OpenID"
 
 #: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.not-all-space"
-msgstr "El nombre debe contener algún carácter diferente de espacio"
+msgid "errors.field-not-all-whitespace"
+msgstr "Debe contener algún carácter diferente de espacio."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.too-long"
-msgstr "El nombre debe contener como máximo 250 caracteres."
+msgid "errors.field-max-length"
+msgstr[0] "Debe contener como máximo 1 caracter."
+msgstr[1] "Debe contener como máximo %s caracteres."
+
+msgid "errors.field-min-length"
+msgstr[0] "Debe contener como mínimo 1 caracter."
+msgstr[1] "Debe contener como mínimo %s caracteres."
 
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
 msgstr "Introduce la nueva contraseña"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "El código de recuperación no es válido."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -138,10 +143,6 @@ msgstr "Contraseña"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.password-length-hint"
 msgstr "8 caracteres como mínimo"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.password-not-empty"
-msgstr "La contraseña debe contener algún caracter diferente de espacio"
 
 msgid "auth.privacy-policy"
 msgstr "Política de privacidad"
@@ -315,7 +316,7 @@ msgid "dashboard.access-tokens.create"
 msgstr "Generar nuevo token"
 
 #: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.create.success"
+msgid "dashboard.access-tokens.create-success"
 msgstr "Access token creado con éxito."
 
 #: src/app/main/ui/settings/access-tokens.cljs
@@ -325,10 +326,6 @@ msgstr "Pulsa el botón \"Generar nuevo token\" para generar uno."
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.no-access-tokens"
 msgstr "Todavía no tienes ningún token."
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.errors-required-name"
-msgstr "El nombre es obligatorio"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.expiration-180-days"
@@ -924,11 +921,11 @@ msgid "errors.email-has-permanent-bounces"
 msgstr "El correo electrónico «%s» tiene varios reportes de rebote permanente."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
+msgid "errors.invalid-email"
 msgstr "Por favor, escribe un email válido"
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "El correo de confirmación debe coincidir"
 
 msgid "errors.email-spam-or-permanent-bounces"
@@ -3187,10 +3184,6 @@ msgstr "Incrementar zoom a objetivo"
 
 msgid "shortcuts.zoom-selected"
 msgstr "Zoom a selección"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "team.webhooks.max-length"
-msgstr "El nombre del webhook debe contener como máximo 2048 caracteres."
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"
