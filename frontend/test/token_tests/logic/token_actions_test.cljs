@@ -4,11 +4,12 @@
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.shapes :as cths]
    [app.main.data.workspace.changes :as dch]
-   [app.main.data.workspace.selection :as dws]
    [app.main.ui.workspace.tokens.core :as wtc]
+   [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.pages :as thp]
-   [frontend-tests.helpers.state :as ths]))
+   [frontend-tests.helpers.state :as ths]
+   [potok.v2.core :as ptk]))
 
 (t/use-fixtures :each
   {:before thp/reset-idmap!})
@@ -21,43 +22,36 @@
         (ctho/add-rect :rect-1 {})
         (ctho/add-rect :rect-2 {})
         (ctho/add-rect :rect-3 {})
-        (assoc-in [:data :tokens] {token-id {:id token-id
-                                             :value "12"
-                                             :name "sm"
-                                             :type :border-radius}}))))
+        (assoc-in [:data :tokens] {#uuid "91bf7f1f-fce2-482f-a423-c6b502705ff1"
+                                   {:id #uuid "91bf7f1f-fce2-482f-a423-c6b502705ff1"
+                                    :value "12"
+                                    :name "sm"
+                                    :type :border-radius}}))))
 
-(t/deftest test-update-shape
+(t/deftest test-apply-token
   (t/async
-    done
-    (let [;; ==== Setup
-          file (setup-file)
-          store (ths/setup-store file)
-          rect-1 (cths/get-shape file :rect-1)
+   done
+   (let [file (setup-file)
+         store (ths/setup-store file)
+         rect-1 (cths/get-shape file :rect-1)
+         events [(wtc/apply-token {:shape-ids [(:id rect-1)]
+                                   :attributes #{:rx :ry}
+                                   :token {:id #uuid "91bf7f1f-fce2-482f-a423-c6b502705ff1"}
+                                   :on-update-shape wtc/update-shape-radius})]]
 
-          ;; ==== Action
-          events [(dws/select-shape (:id rect-1))
-                  (dch/update-shapes [(:id rect-1)] (fn [shape] (assoc shape :applied-tokens {:rx (random-uuid)})))
-                  #_(wtc/on-add-token {:token-type-props {:attributes {:rx :ry}
-                                                          :on-update-shape #(fn [& _])}
-                                       :shape-ids [(:id rect-1)]
-                                       :token {:id (random-uuid)}})]]
-      (ths/run-store
-       store done events
-       (fn [new-state]
-         (let [file' (ths/get-file-from-store new-state)
-               page' (cthf/current-page file')
-               rect-1' (cths/get-shape file' :rect-1)
-               ;; ==== Get
-               #_#_rect-1' (get-in new-state [:workspace-data
-                                              :pages-index
-                                              (cthi/id :page-1)
-                                              :objects
-                                              (cthi/id :rect-1)])]
+     (ths/run-store
+      store done events
+      (fn [new-state]
+        (let [file' (ths/get-file-from-store new-state)
+              rect-1' (cths/get-shape file' :rect-1)]
+          (t/is (some? (:applied-tokens rect-1')))
+          (t/is (= (:rx (:applied-tokens rect-1')) #uuid "91bf7f1f-fce2-482f-a423-c6b502705ff1"))
+          (t/is (= (:rx rect-1') 12))))
 
-           ;; ==== Check
-           (t/is (some? (:applied-tokens rect-1')))))))))
-
-
+      (fn [stream]
+        (->> stream
+             ;; (rx/tap #(prn (ptk/type %)))
+             (rx/filter #(ptk/type? :app.main.data.workspace.changes/send-update-indices %))))))))
 
 
 (comment

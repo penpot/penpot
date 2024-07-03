@@ -53,7 +53,7 @@
   "Resolves references and math expressions using StyleDictionary.
   Returns a promise with the resolved dictionary."
   [tokens & {:keys [debug?] :as config}]
-  (let [performance-start (js/window.performance.now)
+  (let [#_#_performance-start (js/window.performance.now)
         sd (tokens->style-dictionary+ tokens config)]
     (when debug?
       (js/console.log "StyleDictionary" sd))
@@ -61,12 +61,12 @@
         (.buildAllPlatforms "json")
         (.catch js/console.error)
         (.then (fn [^js resp]
-                 (let [performance-end (js/window.performance.now)
-                       duration-ms (- performance-end performance-start)
+                 (let [#_#_performance-end (js/window.performance.now)
+                       #_#_duration-ms (- performance-end performance-start)
                        resolved-tokens (.-allTokens resp)]
-                   (when debug?
-                     (js/console.log "Time elapsed" duration-ms "ms")
-                     (js/console.log "Resolved tokens" resolved-tokens))
+                   #_(when debug?
+                       (js/console.log "Time elapsed" duration-ms "ms")
+                       (js/console.log "Resolved tokens" resolved-tokens))
                    resolved-tokens))))))
 
 (defn humanize-errors [{:keys [errors value] :as _token}]

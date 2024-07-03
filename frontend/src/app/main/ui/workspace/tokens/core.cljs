@@ -60,15 +60,19 @@
                                             shapes)]
     (and (empty? with-token) (seq without-token))))
 
-(defn apply-token
-  "Applies `attributes` to `token` for `shapes-ids`.
-
-  When a `on-shape-update` function is passed, use this to update the shape attributes as well."
-  [{:keys [attributes token shape-ids on-update-shape] :as _props}]
-  (ptk/reify ::apply-token
+(defn done
+  []
+  (ptk/reify ::done
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rx/from (sd/resolve-workspace-tokens+))
+      (rx/from (p/resolved true)))))
+
+(defn apply-token
+  [{:keys [attributes shape-ids token on-update-shape cb] :as _props}]
+  (ptk/reify ::apply-token
+    ptk/WatchEvent
+    (watch [_ state _]
+      (->> (rx/from (sd/resolve-tokens+ (get-in state [:workspace-data :tokens])))
            (rx/mapcat
             (fn [sd-tokens]
               (let [resolved-value (-> (get sd-tokens (:id token))
@@ -77,8 +81,13 @@
                                               (into {}))]
                 (rx/of
                  (dch/update-shapes shape-ids (fn [shape] (update shape :applied-tokens merge tokenized-attributes)))
+                 (when cb
+                   (cb))
                  (when on-update-shape
-                   (on-update-shape resolved-value shape-ids attributes))))))))))
+                   (on-update-shape resolved-value shape-ids attributes))))
+              #_(rx/of
+                 (dch/update-shapes shape-ids #(assoc % :applied-tokens {:found 1})))))))))
+
 
 (def remove-keys #(apply dissoc %1 %2))
 
