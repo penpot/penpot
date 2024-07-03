@@ -3,7 +3,6 @@
   promesa.core/->> clojure.core/->>
   promesa.core/-> clojure.core/->
   promesa.exec.csp/go-loop clojure.core/loop
-  rumext.v2/defc clojure.core/defn
   promesa.util/with-open clojure.core/with-open
   app.common.schema.generators/let clojure.core/let
   app.common.data/export clojure.core/def
@@ -20,6 +19,7 @@
    app.db/with-atomic hooks.export/penpot-with-atomic
    potok.v2.core/reify hooks.export/potok-reify
    rumext.v2/fnc hooks.export/rumext-fnc
+   rumext.v2/defc hooks.export/rumext-defc
    rumext.v2/lazy-component hooks.export/rumext-lazycomponent
    shadow.lazy/loadable hooks.export/rumext-lazycomponent
    }}
