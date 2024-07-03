@@ -229,8 +229,8 @@
   (when (some? export)
     (d/without-nils
      {:type (-> (obj/get export "type") parse-keyword)
-      :scale (obj/get export "scale")
-      :suffix (obj/get export "suffix")})))
+      :scale (obj/get export "scale" 1)
+      :suffix (obj/get export "suffix" "")})))
 
 (defn parse-exports
   [^js exports]
