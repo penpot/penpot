@@ -9,6 +9,7 @@
   (:require
    [app.common.schema :as sm]
    [app.main.data.dashboard :as dd]
+   [app.main.data.events :as ev]
    [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
    [app.main.store :as st]
@@ -50,7 +51,8 @@
   (let [mdata  {:on-success (partial on-create-success form)
                 :on-error   (partial on-error form)}
         params {:name (get-in @form [:clean-data :name])}]
-    (st/emit! (dd/create-team (with-meta params mdata)))))
+    (st/emit! (-> (dd/create-team (with-meta params mdata))
+                  (with-meta {::ev/origin :dashboard})))))
 
 (defn- on-update-submit
   [form]
