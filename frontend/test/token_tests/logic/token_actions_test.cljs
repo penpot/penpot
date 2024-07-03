@@ -6,6 +6,7 @@
    [app.main.data.workspace.changes :as dch]
    [app.main.ui.workspace.tokens.core :as wtc]
    [beicon.v2.core :as rx]
+   [token-tests.helpers.state :as tohs]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
@@ -15,18 +16,30 @@
   {:before thp/reset-idmap!})
 
 
+(def radius-token
+  {:id #uuid "91bf7f1f-fce2-482f-a423-c6b502705ff1"
+   :value "12"
+   :name "sm"
+   :type :border-radius})
+
+(def radius-ref-token
+  {:id #uuid "4c2bf84d-3a98-47a2-8e3c-e7fb037a615c"
+   :value "{sm} * 2"
+   :name "md"
+   :type :border-radius})
+
+
+(def test-tokens
+  {(:id radius-token) radius-token
+   (:id radius-ref-token) radius-ref-token})
+
 (defn- setup-file
   []
-  (let [token-id (random-uuid)]
-    (-> (cthf/sample-file :file-1 :page-label :page-1)
-        (ctho/add-rect :rect-1 {})
-        (ctho/add-rect :rect-2 {})
-        (ctho/add-rect :rect-3 {})
-        (assoc-in [:data :tokens] {#uuid "91bf7f1f-fce2-482f-a423-c6b502705ff1"
-                                   {:id #uuid "91bf7f1f-fce2-482f-a423-c6b502705ff1"
-                                    :value "12"
-                                    :name "sm"
-                                    :type :border-radius}}))))
+  (-> (cthf/sample-file :file-1 :page-label :page-1)
+      (ctho/add-rect :rect-1 {})
+      (ctho/add-rect :rect-2 {})
+      (ctho/add-rect :rect-3 {})
+      (assoc-in [:data :tokens] test-tokens)))
 
 (t/deftest test-apply-token
   (t/async
@@ -36,23 +49,23 @@
          rect-1 (cths/get-shape file :rect-1)
          events [(wtc/apply-token {:shape-ids [(:id rect-1)]
                                    :attributes #{:rx :ry}
-                                   :token {:id #uuid "91bf7f1f-fce2-482f-a423-c6b502705ff1"}
+                                   :token radius-token
+                                   :on-update-shape wtc/update-shape-radius})
+                 ;; Will override
+                 (wtc/apply-token {:shape-ids [(:id rect-1)]
+                                   :attributes #{:rx :ry}
+                                   :token radius-ref-token
                                    :on-update-shape wtc/update-shape-radius})]]
-
-     (ths/run-store
+     (tohs/run-store-async
       store done events
       (fn [new-state]
         (let [file' (ths/get-file-from-store new-state)
               rect-1' (cths/get-shape file' :rect-1)]
           (t/is (some? (:applied-tokens rect-1')))
-          (t/is (= (:rx (:applied-tokens rect-1')) #uuid "91bf7f1f-fce2-482f-a423-c6b502705ff1"))
-          (t/is (= (:rx rect-1') 12))))
-
-      (fn [stream]
-        (->> stream
-             ;; (rx/tap #(prn (ptk/type %)))
-             (rx/filter #(ptk/type? :app.main.data.workspace.changes/send-update-indices %))))))))
-
+          (t/is (= (:rx (:applied-tokens rect-1')) (:id radius-ref-token)))
+          (t/is (= (:ry (:applied-tokens rect-1')) (:id radius-ref-token)))
+          (t/is (= (:rx rect-1') 24))
+          (t/is (= (:ry rect-1') 24))))))))
 
 (comment
   (t/run-tests)
