@@ -3,14 +3,11 @@
    [app.common.test-helpers.compositions :as ctho]
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.shapes :as cths]
-   [app.main.data.workspace.changes :as dch]
    [app.main.ui.workspace.tokens.core :as wtc]
-   [beicon.v2.core :as rx]
-   [token-tests.helpers.state :as tohs]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
-   [potok.v2.core :as ptk]))
+   [token-tests.helpers.state :as tohs]))
 
 (t/use-fixtures :each
   {:before thp/reset-idmap!})
