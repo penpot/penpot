@@ -60,29 +60,59 @@
                                             shapes)]
     (and (empty? with-token) (seq without-token))))
 
+(defn apply-token
+  "Applies `attributes` to `token` for `shapes-ids`.
 
+  When a `on-shape-update` function is passed, use this to update the shape attributes as well."
+  [{:keys [attributes token shape-ids on-update-shape] :as _props}]
+  (ptk/reify ::apply-token
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rx/from (sd/resolve-workspace-tokens+))
+           (rx/mapcat
+            (fn [sd-tokens]
+              (let [resolved-value (-> (get sd-tokens (:id token))
+                                       (resolve-token-value))
+                    tokenized-attributes (->> (map (fn [attr] {attr (:id token)}) attributes)
+                                              (into {}))]
+                (rx/of
+                 (dch/update-shapes shape-ids (fn [shape] (update shape :applied-tokens merge tokenized-attributes)))
+                 (when on-update-shape
+                   (on-update-shape resolved-value shape-ids attributes))))))))))
 
+(def remove-keys #(apply dissoc %1 %2))
 
+(defn unapply-token
+  "Removes `attributes` that match `token` for `shape-ids`.
 
-
-(defn on-add-token [{:keys [token-type-props token shape-ids] :as _props}]
-  (ptk/reify ::on-add-token
+  Doesn't update shape attributes."
+  [{:keys [attributes shape-ids] :as _props}]
+  (ptk/reify ::unapply-token
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of
-       (p/resolved 1)
-       (dch/update-shapes shape-ids (fn [shape] (assoc shape :applied-tokens {:rx (:id token)})))))))
+       (dch/update-shapes
+        shape-ids
+        (fn [shape]
+          (update shape :applied-tokens remove-keys attributes)))))))
 
 (defn on-toggle-token
-  [{:keys [token-type-props token shapes] :as props}]
+  [{:keys [token-type-props token shapes] :as _props}]
   (ptk/reify ::on-toggle-token
     ptk/WatchEvent
-    (watch [it state _]
-      (let [remove-tokens? (wtt/shapes-token-applied? token shapes (:attributes token-type-props))
+    (watch [_ _ _]
+      (let [{:keys [attributes on-update-shape]} token-type-props
+            remove-tokens? (wtt/shapes-token-applied? token shapes (:attributes token-type-props))
             shape-ids (map :id shapes)]
         (if remove-tokens?
-          (rx/of (dch/update-shapes shape-ids (fn [shape] (assoc shape :applied-tokens {}))))
-          (rx/of (on-add-token (assoc props :shape-ids shape-ids))))))))
+          (rx/of
+           (unapply-token {:attributes attributes
+                           :shape-ids shape-ids}))
+          (rx/of
+           (apply-token {:attributes attributes
+                         :token token
+                         :shape-ids shape-ids
+                         :on-update-shape on-update-shape})))))))
 
 (defn on-apply-token [{:keys [token token-type-props selected-shapes] :as _props}]
   (let [{:keys [attributes on-apply on-update-shape]
