@@ -4,18 +4,6 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@mixin font-face($style-name, $file, $weight: unquote("normal"), $style: unquote("normal")) {
-  $filepath: "/fonts/" + $file;
-  @font-face {
-    font-family: "#{$style-name}";
-    src:
-      url($filepath + ".woff2") format("woff2"),
-      url($filepath + ".ttf") format("truetype");
-    font-weight: unquote($weight);
-    font-style: unquote($style);
-  }
-}
-
 @mixin flexCenter {
   display: flex;
   justify-content: center;
@@ -47,7 +35,7 @@
 }
 
 @mixin uppercaseTitleTipography {
-  font-family: "worksans", sans-serif;
+  font-family: "worksans", "vazirmatn", sans-serif;
   font-size: $fs-11;
   font-weight: $fw500;
   line-height: 1.2;
@@ -55,28 +43,28 @@
 }
 
 @mixin bigTitleTipography {
-  font-family: "worksans", sans-serif;
+  font-family: "worksans", "vazirmatn", sans-serif;
   font-size: $fs-24;
   font-weight: $fw400;
   line-height: 1.2;
 }
 
 @mixin medTitleTipography {
-  font-family: "worksans", sans-serif;
+  font-family: "worksans", "vazirmatn", sans-serif;
   font-size: $fs-20;
   font-weight: $fw400;
   line-height: 1.2;
 }
 
 @mixin smallTitleTipography {
-  font-family: "worksans", sans-serif;
+  font-family: "worksans", "vazirmatn", sans-serif;
   font-size: $fs-14;
   font-weight: $fw400;
   line-height: 1.2;
 }
 
 @mixin headlineLargeTypography {
-  font-family: "worksans", sans-serif;
+  font-family: "worksans", "vazirmatn", sans-serif;
   font-size: $fs-18;
   line-height: 1.2;
   text-transform: uppercase;
@@ -84,7 +72,7 @@
 }
 
 @mixin headlineMediumTypography {
-  font-family: "worksans", sans-serif;
+  font-family: "worksans", "vazirmatn", sans-serif;
   font-size: $fs-16;
   line-height: 1.4;
   text-transform: uppercase;
@@ -92,7 +80,7 @@
 }
 
 @mixin headlineSmallTypography {
-  font-family: "worksans", sans-serif;
+  font-family: "worksans", "vazirmatn", sans-serif;
   font-size: $fs-12;
   line-height: 1.2;
   text-transform: uppercase;
@@ -100,21 +88,21 @@
 }
 
 @mixin bodyLargeTypography {
-  font-family: "worksans", sans-serif;
+  font-family: "worksans", "vazirmatn", sans-serif;
   font-size: $fs-16;
   line-height: 1.5;
   font-weight: $fw400;
 }
 
 @mixin bodyMediumTypography {
-  font-family: "worksans", sans-serif;
+  font-family: "worksans", "vazirmatn", sans-serif;
   font-size: $fs-14;
   line-height: 1.4;
   font-weight: $fw400;
 }
 
 @mixin bodySmallTypography {
-  font-family: "worksans", sans-serif;
+  font-family: "worksans", "vazirmatn", sans-serif;
   font-size: $fs-12;
   font-weight: $fw400;
   line-height: 1.4;
