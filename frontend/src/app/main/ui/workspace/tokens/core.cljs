@@ -20,9 +20,10 @@
    [app.main.ui.workspace.tokens.token :as wtt]
    [app.util.dom :as dom]
    [app.util.webapi :as wapi]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
-   [promesa.core :as p]
-   [clojure.set :as set]))
+   [potok.v2.core :as ptk]
+   [promesa.core :as p]))
 
 ;; Helpers ---------------------------------------------------------------------
 
@@ -59,31 +60,29 @@
                                             shapes)]
     (and (empty? with-token) (seq without-token))))
 
+
+
+
+
+
 (defn on-add-token [{:keys [token-type-props token shape-ids] :as _props}]
-  (p/let [sd-tokens (sd/resolve-workspace-tokens+)]
-    (let [{:keys [attributes on-update-shape]} token-type-props
-          resolved-value (-> (get sd-tokens (:id token))
-                             (resolve-token-value))
-          tokenized-attributes (->> (map (fn [attr] {attr (:id token)}) attributes)
-                                    (into {}))]
-      (st/emit!
-       (dch/update-shapes shape-ids (fn [shape] (update shape :applied-tokens merge tokenized-attributes))))
-      (on-update-shape resolved-value shape-ids attributes))))
-
-(def remove-keys #(apply dissoc %1 %2))
-
-(defn on-remove-token [{:keys [token-type-props shapes] :as _props}]
-  (st/emit!
-   (dch/update-shapes (map :id shapes)
-                      (fn [shape]
-                        (update shape :applied-tokens remove-keys (:attributes token-type-props))))))
+  (ptk/reify ::on-add-token
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of
+       (p/resolved 1)
+       (dch/update-shapes shape-ids (fn [shape] (assoc shape :applied-tokens {:rx (:id token)})))))))
 
 (defn on-toggle-token
   [{:keys [token-type-props token shapes] :as props}]
-  (let [remove-tokens? (wtt/shapes-token-applied? token shapes (:attributes token-type-props))]
-    (if remove-tokens?
-      (on-remove-token props)
-      (on-add-token (assoc props :shape-ids (map :id shapes))))))
+  (ptk/reify ::on-toggle-token
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [remove-tokens? (wtt/shapes-token-applied? token shapes (:attributes token-type-props))
+            shape-ids (map :id shapes)]
+        (if remove-tokens?
+          (rx/of (dch/update-shapes shape-ids (fn [shape] (assoc shape :applied-tokens {}))))
+          (rx/of (on-add-token (assoc props :shape-ids shape-ids))))))))
 
 (defn on-apply-token [{:keys [token token-type-props selected-shapes] :as _props}]
   (let [{:keys [attributes on-apply on-update-shape]
@@ -103,13 +102,12 @@
           (on-update-shape resolved-token-value shape-ids attributes))))))
 
 (defn update-shape-radius [value shape-ids]
-  (st/emit!
-   (dch/update-shapes shape-ids
-                      (fn [shape]
-                        (when (ctsr/has-radius? shape)
-                          (ctsr/set-radius-1 shape value)))
-                      {:reg-objects? true
-                       :attrs ctt/border-radius-keys})))
+  (dch/update-shapes shape-ids
+                     (fn [shape]
+                       (when (ctsr/has-radius? shape)
+                         (ctsr/set-radius-1 shape value)))
+                     {:reg-objects? true
+                      :attrs ctt/border-radius-keys}))
 
 (defn update-shape-dimensions [value shape-ids]
   (st/emit!
