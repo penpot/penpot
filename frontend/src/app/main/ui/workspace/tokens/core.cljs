@@ -65,10 +65,10 @@
   (ptk/reify ::done
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/from (p/resolved true)))))
+      (rx/of :the/end))))
 
 (defn apply-token
-  [{:keys [attributes shape-ids token on-update-shape cb] :as _props}]
+  [{:keys [attributes shape-ids token on-update-shape] :as _props}]
   (ptk/reify ::apply-token
     ptk/WatchEvent
     (watch [_ state _]
@@ -80,14 +80,10 @@
                     tokenized-attributes (->> (map (fn [attr] {attr (:id token)}) attributes)
                                               (into {}))]
                 (rx/of
-                 (dch/update-shapes shape-ids (fn [shape] (update shape :applied-tokens merge tokenized-attributes)))
-                 (when cb
-                   (cb))
+                 (dch/update-shapes shape-ids (fn [shape]
+                                                (update shape :applied-tokens merge tokenized-attributes)))
                  (when on-update-shape
-                   (on-update-shape resolved-value shape-ids attributes))))
-              #_(rx/of
-                 (dch/update-shapes shape-ids #(assoc % :applied-tokens {:found 1})))))))))
-
+                   (on-update-shape resolved-value shape-ids attributes))))))))))
 
 (def remove-keys #(apply dissoc %1 %2))
 
