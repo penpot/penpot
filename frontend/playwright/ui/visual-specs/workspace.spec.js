@@ -83,6 +83,11 @@ test.describe("Assets tab", () => {
       "workspace/get-team-shared-libraries-non-empty.json",
     );
 
+    await workspace.mockRPC(
+      "push-audit-events",
+      "workspace/audit-event-empty.json",
+    );
+
     await workspace.goToWorkspace();
     await workspace.clickAssets();
     await workspace.openLibrariesModal();
