@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.schema :as sm]
    [app.common.text :as txt]
+   [app.common.types.plugins :as ctpg]
    [app.common.uuid :as uuid]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -31,7 +32,7 @@
    [:modified-at {:optional true} ::sm/inst]
    [:path {:optional true} [:maybe :string]]
    [:plugin-data {:optional true}
-    [:map-of {:gen/max 5} :keyword ::sm/plugin-data]]])
+    [:map-of {:gen/max 5} :keyword ::ctpg/plugin-data]]])
 
 (def check-typography!
   (sm/check-fn ::typography))
