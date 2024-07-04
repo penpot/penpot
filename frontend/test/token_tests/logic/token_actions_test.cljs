@@ -50,31 +50,60 @@
                            :type :border-radius})))
 
 (t/deftest test-apply-token
+  (t/testing "applying a token twice with the same attributes will override")
   (t/async
-   done
-   (let [file (setup-file)
-         store (ths/setup-store file)
-         rect-1 (cths/get-shape file :rect-1)
-         events [(wtc/apply-token {:shape-ids [(:id rect-1)]
-                                   :attributes #{:rx :ry}
-                                   :token (get-token file :token-1)
-                                   :on-update-shape wtc/update-shape-radius})
-                 ;; Will override
-                 (wtc/apply-token {:shape-ids [(:id rect-1)]
-                                   :attributes #{:rx :ry}
-                                   :token (get-token file :token-2)
-                                   :on-update-shape wtc/update-shape-radius})]]
-     (tohs/run-store-async
-      store done events
-      (fn [new-state]
-        (let [file' (ths/get-file-from-store new-state)
-              token-2' (get-token file' :token-2)
-              rect-1' (cths/get-shape file' :rect-1)]
-          (t/is (some? (:applied-tokens rect-1')))
-          (t/is (= (:rx (:applied-tokens rect-1')) (:id token-2')))
-          (t/is (= (:ry (:applied-tokens rect-1')) (:id token-2')))
-          (t/is (= (:rx rect-1') 24))
-          (t/is (= (:ry rect-1') 24))))))))
+    done
+    (let [file (setup-file)
+          store (ths/setup-store file)
+          rect-1 (cths/get-shape file :rect-1)
+          events [(wtc/apply-token {:shape-ids [(:id rect-1)]
+                                    :attributes #{:rx :ry}
+                                    :token (get-token file :token-1)
+                                    :on-update-shape wtc/update-shape-radius})
+                  ;; Will override
+                  (wtc/apply-token {:shape-ids [(:id rect-1)]
+                                    :attributes #{:rx :ry}
+                                    :token (get-token file :token-2)
+                                    :on-update-shape wtc/update-shape-radius})]]
+      (tohs/run-store-async
+       store done events
+       (fn [new-state]
+         (let [file' (ths/get-file-from-store new-state)
+               token-2' (get-token file' :token-2)
+               rect-1' (cths/get-shape file' :rect-1)]
+           (t/is (some? (:applied-tokens rect-1')))
+           (t/is (= (:rx (:applied-tokens rect-1')) (:id token-2')))
+           (t/is (= (:ry (:applied-tokens rect-1')) (:id token-2')))
+           (t/is (= (:rx rect-1') 24))
+           (t/is (= (:ry rect-1') 24))))))))
+
+(t/deftest test-toggle-token
+  (t/testing "will apply token to all selected items, where no item has the token applied"
+    (t/async
+      done
+      (let [file (setup-file)
+                 store (ths/setup-store file)
+                 rect-1 (cths/get-shape file :rect-1)
+                 rect-2 (cths/get-shape file :rect-2)
+                 events [(wtc/toggle-token {:shapes [rect-1 rect-2]
+                                            :token-type-props {:attributes #{:rx :ry}
+                                                               :on-update-shape wtc/update-shape-radius}
+                                            :token (get-token file :token-2)})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-store new-state)
+                      token-2' (get-token file' :token-2)
+                      rect-1' (cths/get-shape file' :rect-1)
+                      rect-2' (cths/get-shape file' :rect-2)]
+             (t/is (some? (:applied-tokens rect-1')))
+             (t/is (some? (:applied-tokens rect-2')))
+             (t/is (= (:rx (:applied-tokens rect-1')) (:id token-2')))
+             (t/is (= (:rx (:applied-tokens rect-2')) (:id token-2')))
+             (t/is (= (:ry (:applied-tokens rect-1')) (:id token-2')))
+             (t/is (= (:ry (:applied-tokens rect-2')) (:id token-2')))
+             (t/is (= (:rx rect-1') 24))
+             (t/is (= (:rx rect-2') 24)))))))))
 
 (comment
   (t/run-tests)
