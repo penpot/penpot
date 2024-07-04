@@ -156,8 +156,7 @@
        (dwt/update-dimensions shape-ids :height value)))))
 
 (defn update-opacity [value shape-ids]
-  (st/emit!
-   (dch/update-shapes shape-ids #(assoc % :opacity value))))
+  (dch/update-shapes shape-ids #(assoc % :opacity value)))
 
 (defn update-stroke-width
   [value shape-ids]
