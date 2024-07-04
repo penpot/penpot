@@ -163,7 +163,7 @@
    :output-to "target/tests-esm.cjs"
    :output-dir "target/test-esm"
    :ns-regexp "^token-tests.*-test$"
-   :autorun true
+   :autorun false
 
    :compiler-options
    {:output-feature-set :es2020
