@@ -89,6 +89,54 @@
            (t/is (= (:rx rect-1') 24))
            (t/is (= (:ry rect-1') 24))))))))
 
+(t/deftest test-apply-border-radius
+  (t/testing "applies radius token and updates the shapes radius")
+  (t/async
+    done
+    (let [file (setup-file)
+          store (ths/setup-store file)
+          rect-1 (cths/get-shape file :rect-1)
+          events [(wtc/apply-token {:shape-ids [(:id rect-1)]
+                                    :attributes #{:rx :ry}
+                                    :token (get-token file :token-2)
+                                    :on-update-shape wtc/update-shape-radius})]]
+      (tohs/run-store-async
+       store done events
+       (fn [new-state]
+         (let [file' (ths/get-file-from-store new-state)
+               token-2' (get-token file' :token-2)
+               rect-1' (cths/get-shape file' :rect-1)]
+           (t/is (some? (:applied-tokens rect-1')))
+           (t/is (= (:rx (:applied-tokens rect-1')) (:id token-2')))
+           (t/is (= (:ry (:applied-tokens rect-1')) (:id token-2')))
+           (t/is (= (:rx rect-1') 24))
+           (t/is (= (:ry rect-1') 24))))))))
+
+(t/deftest test-apply-dimensions
+  (t/testing "applies radius token and updates the shapes radius")
+  (t/async
+    done
+    (let [file (-> (setup-file)
+                   (add-token :token-target {:value "100"
+                                             :name "dimensions.sm"
+                                             :type :dimensions}))
+          store (ths/setup-store file)
+          rect-1 (cths/get-shape file :rect-1)
+          events [(wtc/apply-token {:shape-ids [(:id rect-1)]
+                                    :attributes #{:width :height}
+                                    :token (get-token file :token-target)
+                                    :on-update-shape wtc/update-shape-dimensions})]]
+      (tohs/run-store-async
+       store done events
+       (fn [new-state]
+         (let [file' (ths/get-file-from-store new-state)
+               token-target' (get-token file' :token-target)
+               rect-1' (cths/get-shape file' :rect-1)]
+           (t/is (some? (:applied-tokens rect-1')))
+           (t/is (= (:width (:applied-tokens rect-1')) (:id token-target')))
+           (t/is (= (:height (:applied-tokens rect-1')) (:id token-target')))
+           (t/is (= (:width rect-1') 100))
+           (t/is (= (:height rect-1') 100))))))))
 
 (t/deftest test-toggle-token-none
   (t/testing "should apply token to all selected items, where no item has the token applied"
