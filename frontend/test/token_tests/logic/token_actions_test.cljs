@@ -137,6 +137,30 @@
            ;; TODO Fix opacity shape update not working?
            #_(t/is (= (:opacity rect-1') 0.5))))))))
 
+(t/deftest test-apply-rotation
+  (t/testing "applies rotation token and updates the shapes rotation")
+  (t/async
+    done
+    (let [file (-> (setup-file)
+                   (toht/add-token :token-target {:value "120"
+                                                  :name "rotation.medium"
+                                                  :type :rotation}))
+          store (ths/setup-store file)
+          rect-1 (cths/get-shape file :rect-1)
+          events [(wtc/apply-token {:shape-ids [(:id rect-1)]
+                                    :attributes #{:rotation}
+                                    :token (toht/get-token file :token-target)
+                                    :on-update-shape wtc/update-rotation})]]
+      (tohs/run-store-async
+       store done events
+       (fn [new-state]
+         (let [file' (ths/get-file-from-store new-state)
+               token-target' (toht/get-token file' :token-target)
+               rect-1' (cths/get-shape file' :rect-1)]
+           (t/is (some? (:applied-tokens rect-1')))
+           (t/is (= (:rotation (:applied-tokens rect-1')) (:id token-target')))
+           (t/is (= (:rotation rect-1') 120))))))))
+
 (t/deftest test-toggle-token-none
   (t/testing "should apply token to all selected items, where no item has the token applied"
     (t/async

@@ -166,8 +166,12 @@
                                     (assoc-in shape [:strokes 0 :stroke-width] value))))))
 
 (defn update-rotation [value shape-ids]
-  (st/emit! (udw/trigger-bounding-box-cloaking shape-ids)
-            (udw/increase-rotation shape-ids value)))
+  (ptk/reify ::update-shape-dimensions
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of
+       (udw/trigger-bounding-box-cloaking shape-ids)
+       (udw/increase-rotation shape-ids value)))))
 
 (defn update-layout-spacing-column [value shape-ids]
   (doseq [shape-id shape-ids]
