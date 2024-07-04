@@ -165,6 +165,8 @@
    :ns-regexp "^token-tests.*-test$"
    :autorun false
 
+   :devtools {:http-port 3460}
+
    :compiler-options
    {:output-feature-set :es2020
     :output-wrapper false
