@@ -47,7 +47,16 @@
         desc (obj/get manifest "description")
         code (obj/get manifest "code")
         icon (obj/get manifest "icon")
-        permissions (obj/get manifest "permissions")
+
+        permissions (into #{} (obj/get manifest "permissions" []))
+        permissions
+        (cond-> permissions
+          (contains? permissions "content:write")
+          (conj "content:read")
+
+          (contains? permissions "library:write")
+          (conj "content:write"))
+
         origin (obj/get (js/URL. plugin-url) "origin")
         plugin-id (str (uuid/next))]
     {:plugin-id plugin-id
