@@ -77,8 +77,7 @@
             (fn [sd-tokens]
               (let [resolved-value (-> (get sd-tokens (:id token))
                                        (resolve-token-value))
-                    tokenized-attributes (->> (map (fn [attr] {attr (:id token)}) attributes)
-                                              (into {}))]
+                    tokenized-attributes (wtt/attributes-map attributes (:id token))]
                 (rx/of
                  (dch/update-shapes shape-ids (fn [shape]
                                                 (update shape :applied-tokens merge tokenized-attributes)))

@@ -2,6 +2,12 @@
   (:require
    [cuerdas.core :as str]))
 
+(defn attributes-map
+  "Creats an attributes map using collection of `attributes` for `id`."
+  [attributes id]
+  (->> (map (fn [attr] {attr id}) attributes)
+       (into {})))
+
 (defn token-applied?
   "Test if `token` is applied to a `shape` with the given `token-attributes`."
   [token shape token-attributes]
