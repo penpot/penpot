@@ -87,7 +87,7 @@
            (t/is (= (:ry rect-1') 24))))))))
 
 (t/deftest test-apply-dimensions
-  (t/testing "applies radius token and updates the shapes radius")
+  (t/testing "applies dimensions token and updates the shapes width and height")
   (t/async
     done
     (let [file (-> (setup-file)
@@ -111,6 +111,32 @@
            (t/is (= (:height (:applied-tokens rect-1')) (:id token-target')))
            (t/is (= (:width rect-1') 100))
            (t/is (= (:height rect-1') 100))))))))
+
+(t/deftest test-apply-sizing
+  (t/testing "applies sizing token and updates the shapes width and height")
+  (t/async
+   done
+   (let [file (-> (setup-file)
+                  (toht/add-token :token-target {:value "100"
+                                                 :name "sizing.sm"
+                                                 :type :sizing}))
+         store (ths/setup-store file)
+         rect-1 (cths/get-shape file :rect-1)
+         events [(wtc/apply-token {:shape-ids [(:id rect-1)]
+                                   :attributes #{:width :height}
+                                   :token (toht/get-token file :token-target)
+                                   :on-update-shape wtc/update-shape-dimensions})]]
+     (tohs/run-store-async
+      store done events
+      (fn [new-state]
+        (let [file' (ths/get-file-from-store new-state)
+              token-target' (toht/get-token file' :token-target)
+              rect-1' (cths/get-shape file' :rect-1)]
+          (t/is (some? (:applied-tokens rect-1')))
+          (t/is (= (:width (:applied-tokens rect-1')) (:id token-target')))
+          (t/is (= (:height (:applied-tokens rect-1')) (:id token-target')))
+          (t/is (= (:width rect-1') 100))
+          (t/is (= (:height rect-1') 100))))))))
 
 (t/deftest test-apply-opacity
   (t/testing "applies opacity token and updates the shapes opacity")
