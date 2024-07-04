@@ -19,7 +19,7 @@ $lh-133: 1.33;
 $size-4: 1rem;
 
 :root {
-  --font-family: "worksans", sans-serif;
+  --font-family: "worksans", "vazirmatn", sans-serif;
 }
 
 body {
@@ -74,7 +74,7 @@ a {
 }
 
 button {
-  font-family: "worksans", sans-serif;
+  font-family: "worksans", "vazirmatn", sans-serif;
 }
 
 p {
@@ -140,7 +140,7 @@ input[type="number"] {
 input,
 select {
   box-sizing: border-box;
-  font-family: "worksans", sans-serif;
+  font-family: "worksans", "vazirmatn", sans-serif;
   font-size: $fs14;
   margin-bottom: $size-4;
   -webkit-appearance: none;
