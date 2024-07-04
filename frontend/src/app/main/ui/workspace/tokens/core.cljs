@@ -148,9 +148,12 @@
                       :attrs ctt/border-radius-keys}))
 
 (defn update-shape-dimensions [value shape-ids]
-  (st/emit!
-   (dwt/update-dimensions shape-ids :width value)
-   (dwt/update-dimensions shape-ids :height value)))
+  (ptk/reify ::update-shape-dimensions
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of
+       (dwt/update-dimensions shape-ids :width value)
+       (dwt/update-dimensions shape-ids :height value)))))
 
 (defn update-opacity [value shape-ids]
   (st/emit!
