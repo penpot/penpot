@@ -8,7 +8,8 @@
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
-   [token-tests.helpers.state :as tohs]))
+   [token-tests.helpers.state :as tohs]
+   [app.main.ui.workspace.tokens.token :as wtt]))
 
 (t/use-fixtures :each
   {:before thp/reset-idmap!})
@@ -35,6 +36,17 @@
 (def test-tokens
   {(:id radius-token) radius-token
    (:id radius-ref-token) radius-ref-token})
+
+(defn apply-token-to-shape [file shape-label token-label attributes]
+  (let [first-page-id (get-in file [:data :pages 0])
+        shape-id (thi/id shape-label)
+        token-id (thi/id token-label)
+        applied-attributes (wtt/attributes-map attributes token-id)]
+    (update-in file [:data
+                     :pages-index first-page-id
+                     :objects shape-id
+                     :applied-tokens]
+               merge applied-attributes)))
 
 (defn- setup-file
   []
