@@ -312,6 +312,13 @@ async function generateSvgSprites() {
     "resources/public/images/sprites/symbol/cursors.svg",
     cursorsSprite,
   );
+
+  const assets = await findFiles("resources/images/assets/", isSvgFile);
+  const assetsSprite = await generateSvgSprite(assets, "asset-");
+  await fs.writeFile(
+    "resources/public/images/sprites/assets.svg",
+    assetsSprite,
+  );
 }
 
 async function generateTemplates() {
@@ -330,9 +337,14 @@ async function generateTemplates() {
     "resources/public/images/sprites/symbol/cursors.svg",
     "utf8",
   );
+  const assetsSprite = await fs.readFile(
+    "resources/public/images/sprites/assets.svg",
+    "utf-8",
+  );
   const partials = {
     "../public/images/sprites/symbol/icons.svg": iconsSprite,
     "../public/images/sprites/symbol/cursors.svg": cursorsSprite,
+    "../public/images/sprites/assets.svg": assetsSprite,
   };
 
   const pluginRuntimeUri =
