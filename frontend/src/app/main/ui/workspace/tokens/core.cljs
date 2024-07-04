@@ -99,7 +99,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of
-       (let [remove-token #(wtt/remove-attributes-for-token-id attributes (:id token) %)]
+       (let [remove-token #(when % (wtt/remove-attributes-for-token-id attributes (:id token) %))]
          (dch/update-shapes
           shape-ids
           (fn [shape]

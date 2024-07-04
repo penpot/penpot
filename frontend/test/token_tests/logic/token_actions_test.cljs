@@ -206,28 +206,35 @@
              (t/is (= (:rx rect-2') 24)))))))))
 
 (t/deftest test-toggle-token-mixed
-  (t/testing "should unapply given token if one of the selected items has the token applied"
+  (t/testing "should unapply given token if one of the selected items has the token applied while keeping other tokens with some attributes"
     (t/async
       done
       (let [file (-> (setup-file)
-                     (toht/apply-token-to-shape :rect-1 :token-1 #{:rx :ry}))
+                     (toht/apply-token-to-shape :rect-1 :token-1 #{:rx :ry})
+                     (toht/apply-token-to-shape :rect-3 :token-2 #{:rx :ry}))
             store (ths/setup-store file)
-            rect-1 (cths/get-shape file :rect-1)
-            rect-2 (cths/get-shape file :rect-2)
-            events [(wtc/toggle-token {:shapes [rect-1 rect-2]
+
+            rect-with-token (cths/get-shape file :rect-1)
+            rect-without-token (cths/get-shape file :rect-2)
+            rect-with-other-token (cths/get-shape file :rect-3)
+
+            events [(wtc/toggle-token {:shapes [rect-with-token rect-without-token rect-with-other-token]
                                        :token (toht/get-token file :token-1)
                                        :token-type-props {:attributes #{:rx :ry}}})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
            (let [file' (ths/get-file-from-store new-state)
-                      token-2' (toht/get-token file' :token-2)
-                      rect-1' (cths/get-shape file' :rect-1)
-                      rect-2' (cths/get-shape file' :rect-2)]
-             (t/is (nil? (:rx (:applied-tokens rect-1'))))
-             (t/is (nil? (:ry (:applied-tokens rect-1'))))
-             (t/is (nil? (:rx (:applied-tokens rect-2'))))
-             (t/is (nil? (:ry (:applied-tokens rect-2'))))
-             ;; Verify that shape attributes didn't get changed
-             (t/is (zero? (:rx rect-1')))
-             (t/is (zero? (:rx rect-2'))))))))))
+                 rect-with-token' (cths/get-shape file' :rect-1)
+                 rect-without-token' (cths/get-shape file' :rect-2)
+                 rect-with-other-token' (cths/get-shape file' :rect-3)]
+
+             (t/testing "rect-with-token got the token remove"
+               (t/is (nil? (:rx (:applied-tokens rect-with-token'))))
+               (t/is (nil? (:ry (:applied-tokens rect-with-token')))))
+
+             (t/testing "rect-without-token didn't get updated"
+               (t/is (= (:applied-tokens rect-without-token') (:applied-tokens rect-without-token))))
+
+             (t/testing "rect-with-other-token didn't get updated"
+               (t/is (= (:applied-tokens rect-with-other-token') (:applied-tokens rect-with-other-token)))))))))))
