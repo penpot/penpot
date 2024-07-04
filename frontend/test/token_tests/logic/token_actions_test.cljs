@@ -238,3 +238,37 @@
 
              (t/testing "rect-with-other-token didn't get updated"
                (t/is (= (:applied-tokens rect-with-other-token') (:applied-tokens rect-with-other-token)))))))))))
+
+(t/deftest test-toggle-token-apply-to-all
+  (t/testing "should apply token to all if none of the shapes has it applied"
+    (t/async
+      done
+      (let [file (-> (setup-file)
+                     (toht/apply-token-to-shape :rect-1 :token-2 #{:rx :ry})
+                     (toht/apply-token-to-shape :rect-3 :token-2 #{:rx :ry}))
+            store (ths/setup-store file)
+
+            rect-with-other-token-1 (cths/get-shape file :rect-1)
+            rect-without-token (cths/get-shape file :rect-2)
+            rect-with-other-token-2 (cths/get-shape file :rect-3)
+
+            events [(wtc/toggle-token {:shapes [rect-with-other-token-1 rect-without-token rect-with-other-token-2]
+                                       :token (toht/get-token file :token-1)
+                                       :token-type-props {:attributes #{:rx :ry}}})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-store new-state)
+                 target-token (toht/get-token file' :token-1)
+                 rect-with-other-token-1' (cths/get-shape file' :rect-1)
+                 rect-without-token' (cths/get-shape file' :rect-2)
+                 rect-with-other-token-2' (cths/get-shape file' :rect-3)]
+
+             (t/testing "token got applied to all shapes"
+               (t/is (= (:rx (:applied-tokens rect-with-other-token-1')) (:id target-token)))
+               (t/is (= (:rx (:applied-tokens rect-without-token')) (:id target-token)))
+               (t/is (= (:rx (:applied-tokens rect-with-other-token-2')) (:id target-token)))
+
+               (t/is (= (:ry (:applied-tokens rect-with-other-token-1')) (:id target-token)))
+               (t/is (= (:ry (:applied-tokens rect-without-token')) (:id target-token)))
+               (t/is (= (:ry (:applied-tokens rect-with-other-token-2')) (:id target-token)))))))))))
