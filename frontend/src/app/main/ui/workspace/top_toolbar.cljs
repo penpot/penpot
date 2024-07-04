@@ -27,6 +27,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.timers :as ts]
    [okulary.core :as l]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc image-upload
@@ -200,7 +201,9 @@
              {:title (tr "workspace.toolbar.plugins" (sc/get-tooltip :plugins))
               :aria-label (tr "workspace.toolbar.plugins" (sc/get-tooltip :plugins))
               :class (stl/css :main-toolbar-options-button)
-              :on-click #(modal/show! :plugin-management {})
+              :on-click #(st/emit!
+                          (ptk/event ::ev/event {::ev/name "open-plugins-manager" ::ev/origin "workspace:toolbar"})
+                          (modal/show :plugin-management {}))
               :data-tool "plugins"
               :data-testid "plugins-btn"}
              i/puzzle]])
