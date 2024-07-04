@@ -64,7 +64,8 @@
   ([svg-data position]
    (add-svg-shapes nil svg-data position nil))
 
-  ([id svg-data position {:keys [change-selection?] :or {change-selection? false}}]
+  ([id svg-data position {:keys [change-selection? ignore-selection?]
+                          :or {ignore-selection? false change-selection? true}}]
    (ptk/reify ::add-svg-shapes
      ptk/WatchEvent
      (watch [it state _]
@@ -73,7 +74,7 @@
                page-id         (:current-page-id state)
                objects         (wsh/lookup-page-objects state page-id)
                frame-id        (ctst/top-nested-frame objects position)
-               selected        (wsh/lookup-selected state)
+               selected        (if ignore-selection? #{} (wsh/lookup-selected state))
                base            (cfh/get-base-shape objects selected)
 
                selected-id     (first selected)
