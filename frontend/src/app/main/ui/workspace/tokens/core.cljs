@@ -14,6 +14,7 @@
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.transforms :as dwt]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
@@ -75,14 +76,17 @@
       (->> (rx/from (sd/resolve-tokens+ (get-in state [:workspace-data :tokens])))
            (rx/mapcat
             (fn [sd-tokens]
-              (let [resolved-value (-> (get sd-tokens (:id token))
+              (let [undo-id (js/Symbol)
+                    resolved-value (-> (get sd-tokens (:id token))
                                        (resolve-token-value))
                     tokenized-attributes (wtt/attributes-map attributes (:id token))]
                 (rx/of
+                 (dwu/start-undo-transaction undo-id)
                  (dch/update-shapes shape-ids (fn [shape]
                                                 (update shape :applied-tokens merge tokenized-attributes)))
                  (when on-update-shape
-                   (on-update-shape resolved-value shape-ids attributes))))))))))
+                   (on-update-shape resolved-value shape-ids attributes))
+                 (dwu/commit-undo-transaction undo-id)))))))))
 
 (def remove-keys #(apply dissoc %1 %2))
 
