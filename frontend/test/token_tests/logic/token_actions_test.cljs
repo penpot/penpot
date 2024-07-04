@@ -23,20 +23,6 @@
   (let [id (thi/id label)]
     (get-in file [:data :tokens id])))
 
-(def radius-token
-  {:value "12"
-   :name "sm"
-   :type :border-radius})
-
-(def radius-ref-token
-  {:value "{sm} * 2"
-   :name "md"
-   :type :border-radius})
-
-(def test-tokens
-  {(:id radius-token) radius-token
-   (:id radius-ref-token) radius-ref-token})
-
 (defn apply-token-to-shape [file shape-label token-label attributes]
   (let [first-page-id (get-in file [:data :pages 0])
         shape-id (thi/id shape-label)
