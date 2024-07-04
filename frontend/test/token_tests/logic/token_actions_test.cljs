@@ -206,7 +206,7 @@
              (t/is (= (:rx rect-2') 24)))))))))
 
 (t/deftest test-toggle-token-mixed
-  (t/testing "should unapply token if one of the selected items has the token applied"
+  (t/testing "should unapply given token if one of the selected items has the token applied"
     (t/async
       done
       (let [file (-> (setup-file)
@@ -215,6 +215,7 @@
             rect-1 (cths/get-shape file :rect-1)
             rect-2 (cths/get-shape file :rect-2)
             events [(wtc/toggle-token {:shapes [rect-1 rect-2]
+                                       :token (toht/get-token file :token-1)
                                        :token-type-props {:attributes #{:rx :ry}}})]]
         (tohs/run-store-async
          store done events
