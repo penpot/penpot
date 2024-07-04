@@ -89,18 +89,19 @@
            (t/is (= (:rx rect-1') 24))
            (t/is (= (:ry rect-1') 24))))))))
 
-(t/deftest test-toggle-token
-  (t/testing "will apply token to all selected items, where no item has the token applied"
+
+(t/deftest test-toggle-token-none
+  (t/testing "should apply token to all selected items, where no item has the token applied"
     (t/async
       done
       (let [file (setup-file)
-                 store (ths/setup-store file)
-                 rect-1 (cths/get-shape file :rect-1)
-                 rect-2 (cths/get-shape file :rect-2)
-                 events [(wtc/toggle-token {:shapes [rect-1 rect-2]
-                                            :token-type-props {:attributes #{:rx :ry}
-                                                               :on-update-shape wtc/update-shape-radius}
-                                            :token (get-token file :token-2)})]]
+            store (ths/setup-store file)
+            rect-1 (cths/get-shape file :rect-1)
+            rect-2 (cths/get-shape file :rect-2)
+            events [(wtc/toggle-token {:shapes [rect-1 rect-2]
+                                       :token-type-props {:attributes #{:rx :ry}
+                                                          :on-update-shape wtc/update-shape-radius}
+                                       :token (get-token file :token-2)})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -117,25 +118,28 @@
              (t/is (= (:rx rect-1') 24))
              (t/is (= (:rx rect-2') 24)))))))))
 
-(comment
-  (t/run-tests)
-  (defn make-printable
-    "Convert records that are not printable by cider inspect into regular maps."
-    [coll]
-    (letfn [(stringifyable? [x]
-              (not (or (map? x)
-                       (sequential? x)
-                       (keyword? x)
-                       (number? x)
-                       (uuid? x))))]
-      (clojure.walk/postwalk #(cond->> %
-                                (record? %) (into {})
-                                (stringifyable? %) str)
-                             coll)))
-
-  (-> (cthf/sample-file :file-1)
-      (assoc :tokens {})
-      (make-printable))
-
- (make-printable (setup-file))
- nil)
+(t/deftest test-toggle-token-mixed
+  (t/testing "should unapply token if one of the selected items has the token applied"
+    (t/async
+      done
+      (let [file (-> (setup-file)
+                     (apply-token-to-shape :rect-1 :token-1 #{:rx :ry}))
+            store (ths/setup-store file)
+            rect-1 (cths/get-shape file :rect-1)
+            rect-2 (cths/get-shape file :rect-2)
+            events [(wtc/toggle-token {:shapes [rect-1 rect-2]
+                                       :token-type-props {:attributes #{:rx :ry}}})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-store new-state)
+                      token-2' (get-token file' :token-2)
+                      rect-1' (cths/get-shape file' :rect-1)
+                      rect-2' (cths/get-shape file' :rect-2)]
+             (t/is (nil? (:rx (:applied-tokens rect-1'))))
+             (t/is (nil? (:ry (:applied-tokens rect-1'))))
+             (t/is (nil? (:rx (:applied-tokens rect-2'))))
+             (t/is (nil? (:ry (:applied-tokens rect-2'))))
+             ;; Verify that shape attributes didn't get changed
+             (t/is (zero? (:rx rect-1')))
+             (t/is (zero? (:rx rect-2'))))))))))
