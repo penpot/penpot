@@ -24,6 +24,24 @@
 
 (mf/defc story-grid*
   {::mf/props :obj}
-  [{:keys [children size]}]
-  [:article {:class (stl/css :story-grid)
-             :style (when (some? size) #js {"--component-grid-size" (dm/str size "px")})} children])
+  [{:keys [children size style] :rest other}]
+  (let [class (stl/css :story-grid)
+        size (or size 16)
+        style (or style {})
+        style (mf/spread style :--component-grid-size (dm/str size "px"))
+        props (mf/spread-props other {:class class :style style})]
+    [:> "article" props children]))
+
+(mf/defc story-grid-cell*
+  {::mf/props :obj}
+  [{:keys [children] :rest other}]
+  (let [class (stl/css :story-grid-cell)
+        props (mf/spread-props other {:class class})]
+    [:> "article" props children]))
+
+(mf/defc story-header*
+  {::mf/props :obj}
+  [{:keys [children] :rest other}]
+  (let [class (stl/css :story-header)
+        props (mf/spread-props other {:class class})]
+    [:> "header" props children]))

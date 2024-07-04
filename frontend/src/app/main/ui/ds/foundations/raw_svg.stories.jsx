@@ -2,7 +2,8 @@ import * as React from "react";
 import Components from "@target/components";
 
 const { RawSvg } = Components;
-const { StoryWrapper, StoryGrid } = Components.storybook;
+const { StoryWrapper, StoryGrid, StoryGridCell, StoryHeader } =
+  Components.storybook;
 const { svgs } = Components.meta;
 
 export default {
@@ -16,28 +17,30 @@ const assetList = Object.entries(svgs)
 
 export const AllAssets = {
   render: () => (
-    <StoryWrapper theme="default">
-      <h1>All assets</h1>
-      <p>Hover on a asset to see its id.</p>
+    <StoryWrapper theme="light">
+      <StoryHeader>
+        <h1>All assets</h1>
+        <p>Hover on a asset to see its id.</p>
+      </StoryHeader>
 
       <StoryGrid size="200">
-        {assetList.map(x => (
-          <div key={x} title={x}>
-            <RawSvg asset={x} style={{maxWidth: "100%"}} />
-          </div>
+        {assetList.map((x) => (
+          <StoryGridCell key={x} title={x}>
+            <RawSvg asset={x} style={{ maxWidth: "100%" }} />
+          </StoryGridCell>
         ))}
       </StoryGrid>
     </StoryWrapper>
   ),
   parameters: {
-    backgrounds: { default: "debug" }
-  }
-}
+    backgrounds: { values: [{ name: "debug", value: "#ccc" }] },
+  },
+};
 
 export const Default = {
   render: () => (
     <StoryWrapper theme="default">
-      <RawSvg asset="brand-gitlab" width="200" />
+      <RawSvg asset={svgs.BrandGitlab} width="200" />
     </StoryWrapper>
   ),
-}
+};

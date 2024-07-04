@@ -17,4 +17,6 @@
        ;; meta / misc
        :meta #js {:icons icon-list :svgs raw-svg-list}
        :storybook #js {:StoryGrid sb/story-grid*
+                       :StoryGridCell sb/story-grid-cell*
+                       :StoryHeader sb/story-header*
                        :StoryWrapper sb/story-wrapper*}})
