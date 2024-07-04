@@ -1,7 +1,5 @@
 (ns token-tests.logic.token-actions-test
   (:require
-   [token-tests.helpers.tokens :as toht]
-   [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.compositions :as ctho]
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.shapes :as cths]
@@ -10,7 +8,7 @@
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
    [token-tests.helpers.state :as tohs]
-   [app.main.ui.workspace.tokens.token :as wtt]))
+   [token-tests.helpers.tokens :as toht]))
 
 (t/use-fixtures :each
   {:before thp/reset-idmap!})
@@ -27,14 +25,6 @@
       (toht/add-token :token-2 {:value "{borderRadius.sm} * 2"
                                 :name "borderRadius.md"
                                 :type :border-radius})))
-
-(comment
-
-  (floscr/make-printable
-   (-> (setup-file)
-       (toht/apply-token-to-shape :rect-1 :token-1 #{:rx :ry})))
-  (-> (setup-file))
-  nil)
 
 (t/deftest test-apply-token
   (t/testing "applying a token twice with the same attributes will override")
