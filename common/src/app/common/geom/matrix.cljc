@@ -90,7 +90,7 @@
   (sm/lazy-validator
    [:and [:fn matrix?] schema:matrix-attrs]))
 
-(sm/def! ::matrix
+(sm/register! ::matrix
   (letfn [(decode [o]
             (if (map? o)
               (map->Matrix o)

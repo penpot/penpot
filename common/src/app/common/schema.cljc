@@ -75,7 +75,8 @@
     (-explain s value)
     (m/explain s value default-options)))
 
-(defn humanize
+(defn simplify
+  "Given an explain data structure, return a simplified version of it"
   [exp]
   (me/humanize exp))
 
@@ -86,10 +87,12 @@
    (mg/generate (schema s) o)))
 
 (defn form
+  "Returns a readable form of the schema"
   [s]
   (m/form s default-options))
 
 (defn merge
+  "Merge two schemas"
   [& items]
   (apply mu/merge (map schema items)))
 
@@ -102,6 +105,7 @@
   (m/deref s))
 
 (defn error-values
+  "Get error values form explain data structure"
   [exp]
   (malli.error/error-value exp {:malli.error/mask-valid-values '...}))
 
@@ -138,18 +142,6 @@
       :decoders coders
       :encoders coders})))
 
-(defn validator
-  [s]
-  (if (lazy-schema? s)
-    (-get-validator s)
-    (-> s schema m/validator)))
-
-(defn explainer
-  [s]
-  (if (lazy-schema? s)
-    (-get-explainer s)
-    (-> s schema m/explainer)))
-
 (defn encode
   ([s val transformer]
    (m/encode s val default-options transformer))
@@ -163,6 +155,18 @@
    (m/decode s val default-options transformer))
   ([s val options transformer]
    (m/decode s val options transformer)))
+
+(defn validator
+  [s]
+  (if (lazy-schema? s)
+    (-get-validator s)
+    (-> s schema m/validator)))
+
+(defn explainer
+  [s]
+  (if (lazy-schema? s)
+    (-get-explainer s)
+    (-> s schema m/explainer)))
 
 (defn encoder
   ([s]
@@ -201,6 +205,7 @@
      (fn [v] (@vfn v)))))
 
 (defn humanize-explain
+  "Returns a string representation of the explain data structure"
   [{:keys [schema errors value]} & {:keys [length level]}]
   (let [errors (mapv #(update % :schema form) errors)]
     (with-out-str
@@ -212,7 +217,6 @@
       (println (pp/pprint-str value {:width 160
                                      :level (d/nilv level 8)
                                      :length (d/nilv length 12)})))))
-
 
 (defmethod v/-format ::schemaless-explain
   [_ {:keys [schema] :as explanation} printer]
@@ -353,15 +357,8 @@
 
 (defn register! [type s]
   (let [s (if (map? s) (simple-schema s) s)]
-    (swap! sr/registry assoc type s)))
-
-(defn def! [type s]
-  (register! type s)
-  nil)
-
-(defn define! [id s]
-  (register! id s)
-  nil)
+    (swap! sr/registry assoc type s)
+    nil))
 
 (defn define
   "Create ans instance of ILazySchema"
@@ -435,8 +432,8 @@
 
 ;; --- BUILTIN SCHEMAS
 
-(define! :merge (mu/-merge))
-(define! :union (mu/-union))
+(register! :merge (mu/-merge))
+(register! :union (mu/-union))
 
 (def uuid-rx
   #"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
@@ -447,7 +444,7 @@
     (some->> (re-matches uuid-rx s) uuid/uuid)
     s))
 
-(define! ::uuid
+(register! ::uuid
   {:type ::uuid
    :pred uuid?
    :type-properties
@@ -472,7 +469,7 @@
   (and (string? s)
        (re-seq email-re s)))
 
-(define! ::email
+(register! ::email
   {:type :string
    :pred email-string?
    :property-pred
@@ -501,7 +498,7 @@
 
 ;; NOTE: this is general purpose set spec and should be used over the other
 
-(define! ::set
+(register! ::set
   {:type :set
    :min 0
    :max 1
@@ -557,7 +554,7 @@
                            (into #{} xform v)))}}))})
 
 
-(define! ::vec
+(register! ::vec
   {:type :vector
    :min 0
    :max 1
@@ -614,7 +611,7 @@
                            (into [] xform v)))}}))})
 
 
-(define! ::set-of-strings
+(register! ::set-of-strings
   {:type ::set-of-strings
    :pred #(and (set? %) (every? string? %))
    :type-properties
@@ -630,7 +627,7 @@
                     (let [v (if (string? v) (str/split v #"[\s,]+") v)]
                       (into #{} non-empty-strings-xf v)))}})
 
-(define! ::set-of-keywords
+(register! ::set-of-keywords
   {:type ::set-of-keywords
    :pred #(and (set? %) (every? keyword? %))
    :type-properties
@@ -646,7 +643,7 @@
                     (let [v (if (string? v) (str/split v #"[\s,]+") v)]
                       (into #{} (comp non-empty-strings-xf (map keyword)) v)))}})
 
-(define! ::set-of-emails
+(register! ::set-of-emails
   {:type ::set-of-emails
    :pred #(and (set? %) (every? string? %))
    :type-properties
@@ -662,7 +659,7 @@
                (let [v (if (string? v) (str/split v #"[\s,]+") v)]
                  (into #{} (keep parse-email) v)))}})
 
-(define! ::set-of-uuid
+(register! ::set-of-uuid
   {:type ::set-of-uuid
    :pred #(and (set? %) (every? uuid? %))
    :type-properties
@@ -678,7 +675,7 @@
                     (let [v (if (string? v) (str/split v #"[\s,]+") v)]
                       (into #{} (keep parse-uuid) v)))}})
 
-(define! ::coll-of-uuid
+(register! ::coll-of-uuid
   {:type ::set-of-uuid
    :pred (partial every? uuid?)
    :type-properties
@@ -694,7 +691,7 @@
                     (let [v (if (string? v) (str/split v #"[\s,]+") v)]
                       (into [] (keep parse-uuid) v)))}})
 
-(define! ::one-of
+(register! ::one-of
   {:type ::one-of
    :min 1
    :max 1
@@ -717,7 +714,7 @@
 ;; Integer/MIN_VALUE
 (def min-safe-int -2147483648)
 
-(define! ::safe-int
+(register! ::safe-int
   {:type ::safe-int
    :pred #(and (int? %) (>= max-safe-int %) (>= % min-safe-int))
    :type-properties
@@ -732,7 +729,7 @@
                       (parse-long s)
                       s))}})
 
-(define! ::safe-number
+(register! ::safe-number
   {:type ::safe-number
    :pred #(and (number? %) (>= max-safe-int %) (>= % min-safe-int))
    :type-properties
@@ -748,7 +745,7 @@
                       (parse-double s)
                       s))}})
 
-(define! ::safe-double
+(register! ::safe-double
   {:type ::safe-double
    :pred #(and (double? %) (>= max-safe-int %) (>= % min-safe-int))
    :type-properties
@@ -763,7 +760,7 @@
                       (parse-double s)
                       s))}})
 
-(define! ::contains-any
+(register! ::contains-any
   {:type ::contains-any
    :min 1
    :max 1
@@ -781,7 +778,7 @@
                  {:title "contains"
                   :description "contains predicate"}}))})
 
-(define! ::inst
+(register! ::inst
   {:type ::inst
    :pred inst?
    :type-properties
@@ -793,12 +790,12 @@
     ::oapi/type "number"
     ::oapi/format "int64"}})
 
-(define! ::fn
+(register! ::fn
   [:schema fn?])
 
 ;; FIXME: deprecated, replace with ::text
 
-(define! ::word-string
+(register! ::word-string
   {:type ::word-string
    :pred #(and (string? %) (not (str/blank? %)))
    :property-pred (m/-min-max-pred count)
@@ -810,7 +807,7 @@
     ::oapi/type "string"
     ::oapi/format "string"}})
 
-(define! ::uri
+(register! ::uri
   {:type ::uri
    :pred u/uri?
    :property-pred
@@ -847,9 +844,13 @@
     :gen/gen (sg/uri)
     ::oapi/type "string"
     ::oapi/format "uri"
-    ::oapi/decode (comp u/uri str/trim)}})
+    ::oapi/decode
+    (fn [val]
+      (if (u/uri? val)
+        val
+        (-> val str/trim u/uri)))}})
 
-(define! ::text
+(register! ::text
   {:type :string
    :pred #(and (string? %) (not (str/blank? %)))
    :property-pred
@@ -891,7 +892,7 @@
                (str/blank? value))
           "errors.field-not-all-whitespace")))}})
 
-(define! ::password
+(register! ::password
   {:type :string
    :pred
    (fn [value]
@@ -908,7 +909,7 @@
 
 
 ;; FIXME: this should not be here
-(define! ::plugin-data
+(register! ::plugin-data
   [:map-of {:gen/max 5} :string :string])
 
 ;; ---- PREDICATES

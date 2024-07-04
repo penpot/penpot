@@ -33,7 +33,6 @@
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [clojure.spec.alpha :as s]
    [cuerdas.core :as str]))
 
 ;; --- FEATURES
@@ -86,8 +85,8 @@
    ::doc/module :files
    ::sm/params [:map {:title "get-file-object-thumbnails"}
                 [:file-id ::sm/uuid]
-                [:tag {:optional true} :string]]
-   ::sm/result [:map-of :string :string]}
+                [:tag {:optional true} [:string {:max 50}]]]
+   ::sm/result [:map-of [:string {:max 250}] [:string {:max 250}]]}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id tag] :as params}]
   (dm/with-open [conn (db/open pool)]
     (files/check-read-permissions! conn profile-id file-id)
@@ -276,9 +275,9 @@
   schema:create-file-object-thumbnail
   [:map {:title "create-file-object-thumbnail"}
    [:file-id ::sm/uuid]
-   [:object-id :string]
+   [:object-id [:string {:max 250}]]
    [:media ::media/upload]
-   [:tag {:optional true} :string]])
+   [:tag {:optional true} [:string {:max 50}]]])
 
 (sv/defmethod ::create-file-object-thumbnail
   {::doc/added "1.19"
@@ -314,13 +313,15 @@
                  :object-id object-id
                  :tag tag})))
 
-(s/def ::delete-file-object-thumbnail
-  (s/keys :req [::rpc/profile-id]
-          :req-un [::file-id ::object-id]))
+(def ^:private schema:delete-file-object-thumbnail
+  [:map {:title "delete-file-object-thumbnail"}
+   [:file-id ::sm/uuid]
+   [:object-id [:string {:max 250}]]])
 
 (sv/defmethod ::delete-file-object-thumbnail
   {::doc/added "1.19"
    ::doc/module :files
+   ::sm/params schema:delete-file-object-thumbnail
    ::audit/skip true}
   [cfg {:keys [::rpc/profile-id file-id object-id]}]
   (files/check-edition-permissions! cfg profile-id file-id)

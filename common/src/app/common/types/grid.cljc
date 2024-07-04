@@ -13,12 +13,12 @@
 ;; SCHEMA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(sm/def! ::grid-color
+(sm/register! ::grid-color
   [:map {:title "PageGridColor"}
    [:color ::ctc/rgb-color]
    [:opacity ::sm/safe-number]])
 
-(sm/def! ::column-params
+(sm/register! ::column-params
   [:map
    [:color ::grid-color]
    [:type {:optional true} [::sm/one-of #{:stretch :left :center :right}]]
@@ -27,12 +27,12 @@
    [:item-length {:optional true} [:maybe ::sm/safe-number]]
    [:gutter {:optional true} [:maybe ::sm/safe-number]]])
 
-(sm/def! ::square-params
+(sm/register! ::square-params
   [:map
    [:size {:optional true} [:maybe ::sm/safe-number]]
    [:color ::grid-color]])
 
-(sm/def! ::grid
+(sm/register! ::grid
   [:multi {:dispatch :type}
    [:column
     [:map
@@ -52,7 +52,7 @@
      [:display :boolean]
      [:params ::square-params]]]])
 
-(sm/def! ::saved-grids
+(sm/register! ::saved-grids
   [:map {:title "PageGrid"}
    [:square {:optional true} ::square-params]
    [:row {:optional true} ::column-params]

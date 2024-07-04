@@ -91,7 +91,7 @@
   (sm/define
     [:map {:title "duplicate-file"}
      [:file-id ::sm/uuid]
-     [:name {:optional true} :string]]))
+     [:name {:optional true} [:string {:max 250}]]]))
 
 (sv/defmethod ::duplicate-file
   "Duplicate a single file in the same team."
@@ -153,7 +153,7 @@
   (sm/define
     [:map {:title "duplicate-project"}
      [:project-id ::sm/uuid]
-     [:name {:optional true} :string]]))
+     [:name {:optional true} [:string {:max 250}]]]))
 
 (sv/defmethod ::duplicate-project
   "Duplicate an entire project with all the files"

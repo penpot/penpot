@@ -17,20 +17,20 @@
 ;; SCHEMAS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(sm/define! ::flow
+(sm/register! ::flow
   [:map {:title "PageFlow"}
    [:id ::sm/uuid]
    [:name :string]
    [:starting-frame ::sm/uuid]])
 
-(sm/define! ::guide
+(sm/register! ::guide
   [:map {:title "PageGuide"}
    [:id ::sm/uuid]
    [:axis [::sm/one-of #{:x :y}]]
    [:position ::sm/safe-number]
    [:frame-id {:optional true} [:maybe ::sm/uuid]]])
 
-(sm/define! ::page
+(sm/register! ::page
   [:map {:title "FilePage"}
    [:id ::sm/uuid]
    [:name :string]

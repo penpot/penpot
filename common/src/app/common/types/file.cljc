@@ -34,7 +34,7 @@
 ;; SCHEMA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(sm/define! ::media-object
+(sm/register! ::media-object
   [:map {:title "FileMediaObject"}
    [:id ::sm/uuid]
    [:name :string]
@@ -43,7 +43,7 @@
    [:mtype :string]
    [:path {:optional true} [:maybe :string]]])
 
-(sm/define! ::data
+(sm/register! ::data
   [:map {:title "FileData"}
    [:pages [:vector ::sm/uuid]]
    [:pages-index

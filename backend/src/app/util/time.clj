@@ -368,7 +368,7 @@
   (let [p1 (System/nanoTime)]
     #(duration {:nanos (- (System/nanoTime) p1)})))
 
-(sm/def! ::instant
+(sm/register! ::instant
   {:type ::instant
    :pred instant?
    :type-properties
@@ -379,7 +379,7 @@
     ::oapi/type "string"
     ::oapi/format "iso"}})
 
-(sm/def! ::duration
+(sm/register! ::duration
   {:type :durations
    :pred duration?
    :type-properties
