@@ -105,7 +105,7 @@
         (fn [shape]
           (update shape :applied-tokens remove-keys attributes)))))))
 
-(defn on-toggle-token
+(defn toggle-token
   [{:keys [token-type-props token shapes] :as _props}]
   (ptk/reify ::on-toggle-token
     ptk/WatchEvent
