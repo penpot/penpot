@@ -72,7 +72,6 @@
                                     :attributes #{:rx :ry}
                                     :token (get-token file :token-1)
                                     :on-update-shape wtc/update-shape-radius})
-                  ;; Will override
                   (wtc/apply-token {:shape-ids [(:id rect-1)]
                                     :attributes #{:rx :ry}
                                     :token (get-token file :token-2)
