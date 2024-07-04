@@ -36,7 +36,7 @@
                     (fn [cause]
                       (js/console.log "[error]:" cause))
                     (fn [_]
-                      (js/console.log "[complete]"))))
+                      #_(js/console.log "[complete]"))))
      (doall (for [event events]
               (ptk/emit! store event)))
      (ptk/emit! store :the/end))))
