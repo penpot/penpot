@@ -42,31 +42,59 @@
   (->> (vals tokens)
        (group-by :type)))
 
-
 (defn tokens-name-map->select-options [{:keys [shape tokens attributes selected-attributes]}]
   (->> (wtt/token-names-map tokens)
        (map (fn [[_k {:keys [name] :as item}]]
               (cond-> (assoc item :label name)
                 (wtt/token-applied? item shape (or selected-attributes attributes)) (assoc :selected? true))))))
 
-;; Update functions ------------------------------------------------------------
+;; Shape Update Functions ------------------------------------------------------
 
-(defn apply-tokens?
-  [{:keys [attributes token shapes] :as _props}]
-  (let [{:keys [with-token without-token]} (group-by
-                                            (fn [shape]
-                                              (if (wtt/shapes-token-applied? token shape attributes)
-                                                :with-token
-                                                :without-token))
-                                            shapes)]
-    (and (empty? with-token) (seq without-token))))
+(defn update-shape-radius [value shape-ids]
+  (dch/update-shapes shape-ids
+                     (fn [shape]
+                       (when (ctsr/has-radius? shape)
+                         (ctsr/set-radius-1 shape value)))
+                     {:reg-objects? true
+                      :attrs ctt/border-radius-keys}))
 
-(defn done
-  []
-  (ptk/reify ::done
+(defn update-shape-dimensions [value shape-ids]
+  (ptk/reify ::update-shape-dimensions
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of :the/end))))
+      (rx/of
+       (dwt/update-dimensions shape-ids :width value)
+       (dwt/update-dimensions shape-ids :height value)))))
+
+(defn update-opacity [value shape-ids]
+  (dch/update-shapes shape-ids #(assoc % :opacity value)))
+
+(defn update-stroke-width
+  [value shape-ids]
+  (st/emit!
+   (dch/update-shapes shape-ids (fn [shape]
+                                  (when (seq (:strokes shape))
+                                    (assoc-in shape [:strokes 0 :stroke-width] value))))))
+
+(defn update-rotation [value shape-ids]
+  (ptk/reify ::update-shape-dimensions
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of
+       (udw/trigger-bounding-box-cloaking shape-ids)
+       (udw/increase-rotation shape-ids value)))))
+
+(defn update-layout-spacing-column [value shape-ids]
+  (doseq [shape-id shape-ids]
+    (let [shape (dt/get-shape-from-state shape-id @st/state)
+          layout-direction (:layout-flex-dir shape)
+          layout-update (if (or (= layout-direction :row-reverse) (= layout-direction :row))
+                          {:layout-gap {:column-gap value}}
+                          {:layout-gap {:row-gap value}})]
+      (st/emit!
+       (dwsl/update-layout [shape-id] layout-update)))))
+
+;; Events ----------------------------------------------------------------------
 
 (defn apply-token
   [{:keys [attributes shape-ids token on-update-shape] :as _props}]
@@ -87,8 +115,6 @@
                  (when on-update-shape
                    (on-update-shape resolved-value shape-ids attributes))
                  (dwu/commit-undo-transaction undo-id)))))))))
-
-(def remove-keys #(apply dissoc %1 %2))
 
 (defn unapply-token
   "Removes `attributes` that match `token` for `shape-ids`.
@@ -140,50 +166,6 @@
                                :shape-id (:id shape)
                                :attributes attributes}))
           (on-update-shape resolved-token-value shape-ids attributes))))))
-
-(defn update-shape-radius [value shape-ids]
-  (dch/update-shapes shape-ids
-                     (fn [shape]
-                       (when (ctsr/has-radius? shape)
-                         (ctsr/set-radius-1 shape value)))
-                     {:reg-objects? true
-                      :attrs ctt/border-radius-keys}))
-
-(defn update-shape-dimensions [value shape-ids]
-  (ptk/reify ::update-shape-dimensions
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of
-       (dwt/update-dimensions shape-ids :width value)
-       (dwt/update-dimensions shape-ids :height value)))))
-
-(defn update-opacity [value shape-ids]
-  (dch/update-shapes shape-ids #(assoc % :opacity value)))
-
-(defn update-stroke-width
-  [value shape-ids]
-  (st/emit!
-   (dch/update-shapes shape-ids (fn [shape]
-                                  (when (seq (:strokes shape))
-                                    (assoc-in shape [:strokes 0 :stroke-width] value))))))
-
-(defn update-rotation [value shape-ids]
-  (ptk/reify ::update-shape-dimensions
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of
-       (udw/trigger-bounding-box-cloaking shape-ids)
-       (udw/increase-rotation shape-ids value)))))
-
-(defn update-layout-spacing-column [value shape-ids]
-  (doseq [shape-id shape-ids]
-    (let [shape (dt/get-shape-from-state shape-id @st/state)
-          layout-direction (:layout-flex-dir shape)
-          layout-update (if (or (= layout-direction :row-reverse) (= layout-direction :row))
-                          {:layout-gap {:column-gap value}}
-                          {:layout-gap {:row-gap value}})]
-      (st/emit!
-       (dwsl/update-layout [shape-id] layout-update)))))
 
 ;; JSON export functions -------------------------------------------------------
 
