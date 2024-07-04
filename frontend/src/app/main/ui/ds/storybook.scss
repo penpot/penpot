@@ -7,7 +7,11 @@
 
 .icon-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, 16px);
+  grid-template-columns: repeat(auto-fit, var(--component-grid-size, 16px));
   gap: 1rem;
   color: var(--color-foreground-primary);
+
+  & > * {
+    max-width: 100%;
+  }
 }

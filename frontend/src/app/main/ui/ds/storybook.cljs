@@ -6,7 +6,9 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.ds.storybook
-  (:require-macros [app.main.style :as stl])
+  (:require-macros
+   [app.common.data.macros :as dm]
+   [app.main.style :as stl])
   (:require
    [rumext.v2 :as mf]))
 
@@ -22,5 +24,6 @@
 
 (mf/defc icon-grid*
   {::mf/props :obj}
-  [{:keys [children]}]
-  [:article {:class (stl/css :icon-grid)} children])
+  [{:keys [children size]}]
+  [:article {:class (stl/css :icon-grid)
+             :style (when (some? size) #js {"--component-grid-size" (dm/str size "px")})} children])
