@@ -2,7 +2,7 @@ import * as React from "react";
 import Components from "@target/components";
 
 const { Icon } = Components;
-const { StoryWrapper, IconGrid } = Components.storybook;
+const { StoryWrapper, StoryGrid } = Components.storybook;
 const { icons } = Components.meta;
 
 export default {
@@ -19,13 +19,13 @@ export const AllIcons = {
     <StoryWrapper theme="default">
       <h1>All Icons</h1>
       <p>Hover on an icon to see its ID</p>
-      <IconGrid>
+      <StoryGrid>
         {iconList.map((iconId) => (
           <div title={iconId} key={iconId}>
             <Icon icon={iconId} />
           </div>
         ))}
-      </IconGrid>
+      </StoryGrid>
     </StoryWrapper>
   ),
 };

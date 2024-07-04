@@ -16,4 +16,5 @@
        :RawSvg raw-svg*
        ;; meta / misc
        :meta #js {:icons icon-list :svgs raw-svg-list}
-       :storybook #js {:StoryWrapper sb/story-wrapper* :IconGrid sb/icon-grid*}})
+       :storybook #js {:StoryGrid sb/story-grid*
+                       :StoryWrapper sb/story-wrapper*}})

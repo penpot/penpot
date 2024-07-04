@@ -2,7 +2,7 @@ import * as React from "react";
 import Components from "@target/components";
 
 const { RawSvg } = Components;
-const { StoryWrapper, IconGrid } = Components.storybook;
+const { StoryWrapper, StoryGrid } = Components.storybook;
 const { svgs } = Components.meta;
 
 export default {
@@ -20,13 +20,13 @@ export const AllAssets = {
       <h1>All assets</h1>
       <p>Hover on a asset to see its id.</p>
 
-      <IconGrid size="200">
+      <StoryGrid size="200">
         {assetList.map(x => (
           <div key={x} title={x}>
             <RawSvg asset={x} style={{maxWidth: "100%"}} />
           </div>
         ))}
-      </IconGrid>
+      </StoryGrid>
     </StoryWrapper>
   ),
   parameters: {

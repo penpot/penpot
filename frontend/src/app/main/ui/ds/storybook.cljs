@@ -22,8 +22,8 @@
       [:section {:class "default"} children]
       [:section {:class "light"} children]])])
 
-(mf/defc icon-grid*
+(mf/defc story-grid*
   {::mf/props :obj}
   [{:keys [children size]}]
-  [:article {:class (stl/css :icon-grid)
+  [:article {:class (stl/css :story-grid)
              :style (when (some? size) #js {"--component-grid-size" (dm/str size "px")})} children])
