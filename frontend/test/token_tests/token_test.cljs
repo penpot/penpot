@@ -9,6 +9,12 @@
    [app.main.ui.workspace.tokens.token :as wtt]
    [cljs.test :as t :include-macros true]))
 
+(t/deftest remove-attributes-for-token-id
+  (t/testing "removes attributes matching the `token-id`, keeps other attributes"
+    (t/is (= {:ry :b}
+             (wtt/remove-attributes-for-token-id
+              #{:rx :ry} :a {:rx :a :ry :b})))))
+
 (t/deftest token-applied-test
   (t/testing "matches passed token with `:token-attributes`"
     (t/is (true? (wtt/token-applied? {:id :a} {:applied-tokens {:x :a}} #{:x}))))

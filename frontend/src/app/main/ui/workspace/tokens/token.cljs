@@ -8,6 +8,16 @@
   (->> (map (fn [attr] {attr id}) attributes)
        (into {})))
 
+(defn remove-attributes-for-token-id
+  "Removes applied tokens with `token-id` for the given `attributes` set from `applied-tokens`."
+  [attributes token-id applied-tokens]
+  (let [attr? (set attributes)]
+    (->> (remove (fn [[k v]]
+                   (and (attr? k)
+                        (= v token-id)))
+                 applied-tokens)
+        (into {}))))
+
 (defn token-applied?
   "Test if `token` is applied to a `shape` with the given `token-attributes`."
   [token shape token-attributes]
