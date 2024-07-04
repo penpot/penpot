@@ -7776,6 +7776,9 @@ function Ml(t, e) {
     get selection() {
       return o("content:read"), t.selection;
     },
+    set selection(i) {
+      o("content:read"), t.selection = i;
+    },
     get viewport() {
       return t.viewport;
     },
