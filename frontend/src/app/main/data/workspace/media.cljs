@@ -467,4 +467,5 @@
     (watch [_ _ _]
       (->> (svg->clj [name svg-string])
            (rx/take 1)
-           (rx/map #(svg/add-svg-shapes id % position {:change-selection? false}))))))
+           (rx/map #(svg/add-svg-shapes id % position {:ignore-selection? true
+                                                       :change-selection? false}))))))
