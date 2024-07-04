@@ -317,8 +317,7 @@
      (effect [_ _ _]
        ;; We prefer to keek some stuff in the storage like the current-team-id and the profile
        (swap! storage dissoc :redirect-url)
-       (set-current-team! nil)
-       (i18n/reset-locale)))))
+       (set-current-team! nil)))))
 
 (defn logout
   ([] (logout {}))
