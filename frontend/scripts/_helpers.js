@@ -307,7 +307,7 @@ async function generateSvgSprites() {
   );
 
   const cursors = await findFiles("resources/images/cursors/", isSvgFile);
-  const cursorsSprite = await generateSvgSprite(icons, "cursor-");
+  const cursorsSprite = await generateSvgSprite(cursors, "cursor-");
   await fs.writeFile(
     "resources/public/images/sprites/symbol/cursors.svg",
     cursorsSprite,
