@@ -10,7 +10,6 @@
    [app.common.data :as d]
    [app.common.logging :as log]
    [app.config :as cfg]
-   [app.util.dom :as dom]
    [app.util.globals :as globals]
    [app.util.storage :refer [storage]]
    [cuerdas.core :as str]
@@ -105,23 +104,6 @@
                         cfg/default-language))]
       (swap! storage assoc ::locale lname)
       (reset! locale lname))))
-
-(defn reset-locale
-  "Set the current locale to the browser detected one if it is
-  supported or default locale if not."
-  []
-  (swap! storage dissoc ::locale)
-  (reset! locale (autodetect)))
-
-(add-watch locale "browser-font"
-           (fn [_ _ _ locale]
-             (log/info :hint "locale changed" :locale locale)
-             (dom/set-html-lang! locale)
-             (let [node  (dom/get-body)]
-               (if (or (= locale "fa")
-                       (= locale "ar"))
-                 (dom/set-css-property! node "--font-family" "'vazirmatn', 'worksans', sans-serif")
-                 (dom/unset-css-property! node "--font-family")))))
 
 (deftype C [val]
   IDeref

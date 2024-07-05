@@ -18,16 +18,12 @@ $lh-115: 1.15;
 $lh-133: 1.33;
 $size-4: 1rem;
 
-:root {
-  --font-family: "worksans", "vazirmatn", sans-serif;
-}
-
 body {
   background-color: var(--db-primary);
   color: var(--df-primary);
   display: flex;
   flex-direction: column;
-  font-family: var(--font-family);
+  font-family: "worksans", "vazirmatn", sans-serif;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
