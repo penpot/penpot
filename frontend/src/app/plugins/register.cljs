@@ -34,7 +34,12 @@
 
 (defn install-plugin!
   [plugin]
-  (let [plugins (vec (conj (seq @pluginsdb) plugin))]
+  (let [plugins (as-> @pluginsdb $
+                  (remove (fn [{:keys [name host]}]
+                            (and (= name (:name plugin))
+                                 (= host (:host plugin)))) $)
+                  (conj $ plugin)
+                  (vec $))]
     (reset! pluginsdb plugins)
     (save-to-store plugins)))
 
