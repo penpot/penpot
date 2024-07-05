@@ -19,3 +19,11 @@
 .story-header {
   color: var(--color-foreground-primary);
 }
+
+.story-grid-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 60px;
+  gap: 1rem;
+  color: var(--color-foreground-primary);
+}
