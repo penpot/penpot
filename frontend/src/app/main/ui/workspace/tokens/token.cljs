@@ -18,17 +18,24 @@
                  applied-tokens)
         (into {}))))
 
+(defn token-attribute-applied?
+  "Test if `token` is applied to a `shape` on single `token-attribute`."
+  [token shape token-attribute]
+  (when-let [id (get-in shape [:applied-tokens token-attribute])]
+    (= (:id token) id)))
+
 (defn token-applied?
-  "Test if `token` is applied to a `shape` with the given `token-attributes`."
+  "Test if `token` is applied to a `shape` with at least one of the one of the given `token-attributes`."
   [token shape token-attributes]
-  (let [{:keys [id]} token
-        applied-tokens (get shape :applied-tokens {})]
-    (some (fn [attr]
-            (= (get applied-tokens attr) id))
-          token-attributes)))
+  (some #(token-attribute-applied? token shape %) token-attributes))
 
 (defn shapes-token-applied?
-  "Test if `token` is applied to to any of `shapes` with the given `token-attributes`."
+  "Test if `token` is applied to to any of `shapes` with at least one of the one of the given `token-attributes`."
+  [token shapes token-attributes]
+  (some #(token-applied? token % token-attributes) shapes))
+
+(defn shapes-token-applied-all?
+  "Test if `token` is applied to to any of `shapes` with at least one of the one of the given `token-attributes`."
   [token shapes token-attributes]
   (some #(token-applied? token % token-attributes) shapes))
 
