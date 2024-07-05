@@ -71,10 +71,9 @@
 
 (defn update-stroke-width
   [value shape-ids]
-  (st/emit!
-   (dch/update-shapes shape-ids (fn [shape]
-                                  (when (seq (:strokes shape))
-                                    (assoc-in shape [:strokes 0 :stroke-width] value))))))
+  (dch/update-shapes shape-ids (fn [shape]
+                                 (when (seq (:strokes shape))
+                                   (assoc-in shape [:strokes 0 :stroke-width] value)))))
 
 (defn update-rotation [value shape-ids]
   (ptk/reify ::update-shape-dimensions
