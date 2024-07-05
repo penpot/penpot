@@ -18,6 +18,18 @@ If possible add video here from PR as well
 
 ## Changes
 
+### 2024-07-05 - UX Improvements when applying tokens
+
+[Link to PR](https://github.com/tokens-studio/tokens-studio-for-penpot/compare/token-studio-develop...ux-improvements?body=&expand=1)
+
+- When unapplying tokens, the shape doesn't change anymore
+- Multi Select behavior according to [Specs](https://github.com/tokens-studio/obsidian-docs/blob/31f0d7f98ff5ac922970f3009fe877cc02d6d0cd/Products/TS%20for%20Penpot/Specs/Token%20State%20Specs.md)
+- Undo for applying tokens and change the shape is now one undo step
+  (before applying a token created multiple undo steps)
+  
+[Video](https://github.com/tokens-studio/tokens-studio-for-penpot/assets/1898374/01d9d429-cab1-41cd-a3ff-495003edd3e8
+)
+
 ### 2024-07-01 - Disallow creating tokens at existing paths
 
 Disallow creating tokens at an existing path.
