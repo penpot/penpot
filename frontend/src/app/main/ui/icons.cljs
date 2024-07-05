@@ -199,7 +199,6 @@
 (def ^:icon remove-icon (icon-xref :remove))
 (def ^:icon rgba (icon-xref :rgba))
 (def ^:icon rgba-complementary (icon-xref :rgba-complementary))
-(def ^:icon rocket (icon-xref :rocket))
 (def ^:icon rotation (icon-xref :rotation))
 (def ^:icon row (icon-xref :row))
 (def ^:icon row-reverse (icon-xref :row-reverse))

@@ -212,7 +212,6 @@
 (def ^:icon-id remove-icon "remove")
 (def ^:icon-id rgba "rgba")
 (def ^:icon-id rgba-complementary "rgba-complementary")
-(def ^:icon-id rocket "rocket")
 (def ^:icon-id rotation "rotation")
 (def ^:icon-id row "row")
 (def ^:icon-id row-reverse "row-reverse")
