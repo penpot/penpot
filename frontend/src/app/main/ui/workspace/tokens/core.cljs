@@ -85,14 +85,17 @@
        (udw/increase-rotation shape-ids value)))))
 
 (defn update-layout-spacing-column [value shape-ids]
-  (doseq [shape-id shape-ids]
-    (let [shape (dt/get-shape-from-state shape-id @st/state)
-          layout-direction (:layout-flex-dir shape)
-          layout-update (if (or (= layout-direction :row-reverse) (= layout-direction :row))
-                          {:layout-gap {:column-gap value}}
-                          {:layout-gap {:row-gap value}})]
-      (st/emit!
-       (dwsl/update-layout [shape-id] layout-update)))))
+  (ptk/reify ::update-layout-spacing-column
+    ptk/WatchEvent
+    (watch [_ state _]
+      (rx/concat
+       (for [shape-id shape-ids]
+         (let [shape (dt/get-shape-from-state shape-id state)
+               layout-direction (:layout-flex-dir shape)
+               layout-update (if (or (= layout-direction :row-reverse) (= layout-direction :row))
+                               {:layout-gap {:column-gap value}}
+                               {:layout-gap {:row-gap value}})]
+           (dwsl/update-layout [shape-id] layout-update)))))))
 
 ;; Events ----------------------------------------------------------------------
 
