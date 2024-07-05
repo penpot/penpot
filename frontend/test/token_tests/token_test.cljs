@@ -25,6 +25,29 @@
   (t/testing "doesn't match passed `:token-attributes`"
     (t/is (nil? (wtt/token-applied? {:id :a} {:applied-tokens {:x :a}} #{:y})))))
 
+(t/deftest token-applied-attributes
+  (t/is (= #{:x} (wtt/token-applied-attributes {:id :a}
+                                               {:applied-tokens {:x :a :y :b}}
+                                               #{:x :missing}))))
+(comment
+  (let [test-fn (fn [& args])]
+    (t/deftest token-context-menu
+      (let [shapes [{:applied-tokens {:x :a
+                                      :y :a}}
+                    {:applied-tokens {:x :a
+                                      :y :a}}]]
+        (t/is (= :all (test-fn {:id :a} shapes #{:x :y}))))
+      (let [shapes [{:applied-tokens {:x :a
+                                      :y :_}}
+                    {:applied-tokens {:x :_
+                                      :y :a}}]]
+        (t/is (= #{:x :y} (test-fn {:id :a} shapes #{:x :y}))))
+      (let [shapes [{:applied-tokens {:x :a
+                                      :y :_}}
+                    {:applied-tokens {:x :a
+                                      :y :_}}]]
+        (t/is (= #{:x} (test-fn {:id :a} shapes #{:x})))))))
+
 (t/deftest tokens-applied-test
   (t/testing "is true when single shape matches the token and attributes"
     (t/is (true? (wtt/shapes-token-applied? {:id :a} [{:applied-tokens {:x :a}}
