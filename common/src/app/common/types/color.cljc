@@ -14,6 +14,7 @@
    [app.common.types.color.generic :as-alias color-generic]
    [app.common.types.color.gradient :as-alias color-gradient]
    [app.common.types.color.gradient.stop :as-alias color-gradient-stop]
+   [app.common.types.plugins :as ctpg]
    [app.common.uuid :as uuid]
    [clojure.test.check.generators :as tgen]
    [cuerdas.core :as str]))
@@ -88,7 +89,7 @@
     [:gradient {:optional true} [:maybe ::gradient]]
     [:image {:optional true} [:maybe ::image-color]]
     [:plugin-data {:optional true}
-     [:map-of {:gen/max 5} :keyword ::sm/plugin-data]]]
+     [:map-of {:gen/max 5} :keyword ::ctpg/plugin-data]]]
    [::sm/contains-any {:strict true} [:color :gradient :image]]])
 
 (sm/register! ::recent-color

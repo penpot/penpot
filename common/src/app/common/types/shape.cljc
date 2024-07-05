@@ -20,6 +20,7 @@
    [app.common.transit :as t]
    [app.common.types.color :as ctc]
    [app.common.types.grid :as ctg]
+   [app.common.types.plugins :as ctpg]
    [app.common.types.shape.attrs :refer [default-color]]
    [app.common.types.shape.blur :as ctsb]
    [app.common.types.shape.export :as ctse]
@@ -188,7 +189,7 @@
    [:grow-type {:optional true}
     [::sm/one-of #{:auto-width :auto-height :fixed}]]
    [:plugin-data {:optional true}
-    [:map-of {:gen/max 5} :keyword ::sm/plugin-data]]])
+    [:map-of {:gen/max 5} :keyword ::ctpg/plugin-data]]])
 
 (sm/register! ::group-attrs
   [:map {:title "GroupAttrs"}

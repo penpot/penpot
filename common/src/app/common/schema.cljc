@@ -908,10 +908,6 @@
     ::oapi/format "password"}})
 
 
-;; FIXME: this should not be here
-(register! ::plugin-data
-  [:map-of {:gen/max 5} :string :string])
-
 ;; ---- PREDICATES
 
 (def valid-safe-number?

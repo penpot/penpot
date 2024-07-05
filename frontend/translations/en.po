@@ -5281,6 +5281,9 @@ msgstr "Plugin correctly loaded."
 msgid "workspace.plugins.menu.title"
 msgstr "Plugins"
 
+msgid "workspace.toolbar.plugins"
+msgstr "Plugins"
+
 msgid "workspace.plugins.menu.plugins-manager"
 msgstr "Plugins manager"
 

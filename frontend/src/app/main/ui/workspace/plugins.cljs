@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.config :as cf]
+   [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
    [app.main.store :as st]
    [app.main.ui.components.search-bar :refer [search-bar]]
@@ -21,6 +22,8 @@
    [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
    [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def ^:private close-icon
@@ -111,6 +114,7 @@
                 (rx/subs!
                  (fn [body]
                    (let [plugin (plugins/parser-manifest plugin-url body)]
+                     (st/emit! (ptk/event ::ev/event {::ev/name "install-plugin" :name (:name plugin) :url plugin-url}))
                      (modal/show!
                       :plugin-permissions
                       {:plugin plugin
@@ -126,6 +130,10 @@
         handle-open-plugin
         (mf/use-callback
          (fn [manifest]
+           (st/emit! (ptk/event ::ev/event {::ev/name "start-plugin"
+                                            ::ev/origin "workspace:plugins"
+                                            :name (:name manifest)
+                                            :host (:host manifest)}))
            (open-plugin! manifest)
            (modal/hide!)))
 
@@ -134,6 +142,9 @@
          (mf/deps plugins-state)
          (fn [plugin-index]
            (let [plugin (nth @plugins/pluginsdb plugin-index)]
+             (st/emit! (ptk/event ::ev/event {::ev/name "remove-plugin"
+                                              :name (:name plugin)
+                                              :host (:host plugin)}))
              (plugins/remove-plugin! plugin)
              (reset! plugins-state* @plugins/pluginsdb))))]
 
@@ -162,7 +173,10 @@
          [:div {:class (stl/css :plugins-empty)}
           [:div {:class (stl/css :plugins-empty-logo)} i/puzzle]
           [:div {:class (stl/css :plugins-empty-text)} (tr "workspace.plugins.empty-plugins")]
-          [:a {:class (stl/css :plugins-link) :href cf/plugins-list-uri :target "_blank"}
+          [:a {:class (stl/css :plugins-link)
+               :href cf/plugins-list-uri
+               :target "_blank"
+               :on-click #(st/emit! (ptk/event ::ev/event {::ev/name "open-plugins-list"}))}
            (tr "workspace.plugins.plugin-list-link") i/external-link]]
 
          [:*
@@ -182,7 +196,7 @@
    ::mf/register-as :plugin-permissions}
   [{:keys [plugin on-accept]}]
 
-  (let [{:keys [permissions]} plugin
+  (let [{:keys [host permissions]} plugin
         permissions (set permissions)
 
         handle-accept-dialog
@@ -190,12 +204,18 @@
          (fn [event]
            (dom/prevent-default event)
            (st/emit! (modal/hide))
+           (ptk/event ::ev/event {::ev/name "allow-plugin-permissions"
+                                  :host host
+                                  :permissions (->> permissions (str/join ", "))})
            (on-accept)))
 
         handle-close-dialog
         (mf/use-callback
          (fn [event]
            (dom/prevent-default event)
+           (ptk/event ::ev/event {::ev/name "reject-plugin-permissions"
+                                  :host host
+                                  :permissions (->> permissions (str/join ", "))})
            (st/emit! (modal/hide))))]
 
     [:div {:class (stl/css :modal-overlay)}
@@ -205,35 +225,38 @@
 
       [:div {:class (stl/css :modal-content)}
        [:div {:class (stl/css :permissions-list)}
-        (when (contains? permissions "content:read")
+        (cond
+          (contains? permissions "content:write")
+          [:div {:class (stl/css :permissions-list-entry)}
+           i/oauth-1
+           [:p {:class (stl/css :permissions-list-text)}
+            (tr "workspace.plugins.permissions.content-write")]]
+
+          (contains? permissions "content:read")
           [:div {:class (stl/css :permissions-list-entry)}
            i/oauth-1
            [:p {:class (stl/css :permissions-list-text)}
             (tr "workspace.plugins.permissions.content-read")]])
 
-        (when (contains? permissions "content:write")
-          [:div {:class (stl/css :permissions-list-entry)}
-           i/oauth-1
-           [:p {:class (stl/css :permissions-list-text)}
-            (tr "workspace.plugins.permissions.content-write")]])
-
-        (when (contains? permissions "user:read")
+        (cond
+          (contains? permissions "user:read")
           [:div {:class (stl/css :permissions-list-entry)}
            i/oauth-2
            [:p {:class (stl/css :permissions-list-text)}
             (tr "workspace.plugins.permissions.user-read")]])
 
-        (when (contains? permissions "library:read")
+        (cond
+          (contains? permissions "library:write")
           [:div {:class (stl/css :permissions-list-entry)}
            i/oauth-3
            [:p {:class (stl/css :permissions-list-text)}
-            (tr "workspace.plugins.permissions.library-read")]])
+            (tr "workspace.plugins.permissions.library-write")]]
 
-        (when (contains? permissions "library:write")
+          (contains? permissions "library:read")
           [:div {:class (stl/css :permissions-list-entry)}
            i/oauth-3
            [:p {:class (stl/css :permissions-list-text)}
-            (tr "workspace.plugins.permissions.library-write")]])]
+            (tr "workspace.plugins.permissions.library-read")]])]
 
        [:div {:class (stl/css :permissions-disclaimer)}
         (tr "workspace.plugins.permissions.disclaimer")]]

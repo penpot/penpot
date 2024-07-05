@@ -24,6 +24,7 @@
    [app.common.types.container :as ctn]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
+   [app.common.types.plugins :as ctpg]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.typographies-list :as ctyl]
    [app.common.types.typography :as cty]
@@ -59,7 +60,7 @@
    [:media {:optional true}
     [:map-of {:gen/max 5} ::sm/uuid ::media-object]]
    [:plugin-data {:optional true}
-    [:map-of {:gen/max 5} :keyword ::sm/plugin-data]]])
+    [:map-of {:gen/max 5} :keyword ::ctpg/plugin-data]]])
 
 (def check-file-data!
   (sm/check-fn ::data))

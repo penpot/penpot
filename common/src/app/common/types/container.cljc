@@ -15,6 +15,7 @@
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.pages-list :as ctpl]
+   [app.common.types.plugins :as ctpg]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]))
@@ -37,7 +38,7 @@
    [:objects {:optional true}
     [:map-of {:gen/max 10} ::sm/uuid :map]]
    [:plugin-data {:optional true}
-    [:map-of {:gen/max 5} :keyword ::sm/plugin-data]]])
+    [:map-of {:gen/max 5} :keyword ::ctpg/plugin-data]]])
 
 (def check-container!
   (sm/check-fn ::container))

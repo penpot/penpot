@@ -10,6 +10,7 @@
    [app.common.schema :as sm]
    [app.common.types.color :as-alias ctc]
    [app.common.types.grid :as ctg]
+   [app.common.types.plugins :as ctpg]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]))
 
@@ -45,7 +46,7 @@
      [:guides {:optional true}
       [:map-of {:gen/max 2} ::sm/uuid ::guide]]
      [:plugin-data {:optional true}
-      [:map-of {:gen/max 5} :keyword ::sm/plugin-data]]]]])
+      [:map-of {:gen/max 5} :keyword ::ctpg/plugin-data]]]]])
 
 (def check-page-guide!
   (sm/check-fn ::guide))

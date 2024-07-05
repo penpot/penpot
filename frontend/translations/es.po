@@ -5361,6 +5361,9 @@ msgstr "Pulsar para cerrar la ruta"
 msgid "workspace.plugins.title"
 msgstr "Extensiones"
 
+msgid "workspace.toolbar.plugins"
+msgstr "Extensiones"
+
 msgid "workspace.plugins.search-placeholder"
 msgstr "Intruduzca URL de la extensión"
 
