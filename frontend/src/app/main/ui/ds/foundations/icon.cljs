@@ -253,7 +253,7 @@
   {::mf/props :obj}
   [{:keys [icon size class] :rest props}]
   (let [class (dm/str (or class "") " " (stl/css :icon))
-        props (mf/spread props {:class class :width icon-size-m :height icon-size-m})
+        props (mf/spread-props props {:class class :width icon-size-m :height icon-size-m})
         size-px (cond (= size "s") icon-size-s :else icon-size-m)
         offset (/ (- icon-size-m size-px) 2)]
     [:> "svg" props

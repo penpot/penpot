@@ -19,6 +19,10 @@ const preview = {
           name: "light",
           value: "#fff",
         },
+        {
+          name: "debug",
+          value: "#ccc",
+        },
       ],
     },
   },

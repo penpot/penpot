@@ -2,7 +2,8 @@ import * as React from "react";
 import Components from "@target/components";
 
 const { Icon } = Components;
-const { StoryWrapper, IconGrid } = Components.storybook;
+const { StoryWrapper, StoryGrid, StoryGridCell, StoryHeader } =
+  Components.storybook;
 const { icons } = Components.meta;
 
 export default {
@@ -17,23 +18,32 @@ const iconList = Object.entries(icons)
 export const AllIcons = {
   render: () => (
     <StoryWrapper theme="default">
-      <h1>All Icons</h1>
-      <p>Hover on an icon to see its ID</p>
-      <IconGrid>
+      <StoryHeader>
+        <h1>All Icons</h1>
+        <p>Hover on an icon to see its ID</p>
+      </StoryHeader>
+      <StoryGrid>
         {iconList.map((iconId) => (
-          <div title={iconId} key={iconId}>
+          <StoryGridCell
+            title={iconId}
+            key={iconId}
+            style={{ color: "var(--color-accent-primary)" }}
+          >
             <Icon icon={iconId} />
-          </div>
+          </StoryGridCell>
         ))}
-      </IconGrid>
+      </StoryGrid>
     </StoryWrapper>
   ),
+  parameters: {
+    backgrounds: { disable: true },
+  },
 };
 
 export const Default = {
   render: () => (
     <StoryWrapper theme="default">
-      <Icon icon="pin" />
+      <Icon icon={icons.Pin} />
     </StoryWrapper>
   ),
 };
@@ -41,7 +51,7 @@ export const Default = {
 export const Small = {
   render: () => (
     <StoryWrapper theme="default">
-      <Icon icon="pin" size="s" />
+      <Icon icon={icons.Pin} size="s" />
     </StoryWrapper>
   ),
 };

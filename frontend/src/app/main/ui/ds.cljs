@@ -7,11 +7,16 @@
 (ns app.main.ui.ds
   (:require
    [app.main.ui.ds.foundations.icon :refer [icon* icon-list]]
+   [app.main.ui.ds.foundations.raw-svg :refer [raw-svg* raw-svg-list]]
    [app.main.ui.ds.storybook :as sb]))
 
 (def default
   "A export used for storybook"
   #js {:Icon icon*
+       :RawSvg raw-svg*
        ;; meta / misc
-       :meta #js {:icons icon-list}
-       :storybook #js {:StoryWrapper sb/story-wrapper* :IconGrid sb/icon-grid*}})
+       :meta #js {:icons icon-list :svgs raw-svg-list}
+       :storybook #js {:StoryGrid sb/story-grid*
+                       :StoryGridCell sb/story-grid-cell*
+                       :StoryHeader sb/story-header*
+                       :StoryWrapper sb/story-wrapper*}})
