@@ -275,7 +275,7 @@
 
       [])))
 
-(defn generate-menu-entries [{:keys [token-id token-type-props token-type selected-shapes] :as context-data}]
+(defn generate-menu-entries [{:keys [token-id token-type-props _token-type _selected-shapes] :as context-data}]
   (let [{:keys [modal]} token-type-props
         attribute-actions (additional-actions context-data)
         default-actions [{:title "Delete Token" :action #(st/emit! (dt/delete-token token-id))}
