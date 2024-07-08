@@ -290,7 +290,7 @@
                                                                             :fields fields
                                                                             :token token})))}]
         specific-actions (additional-actions context-data)
-        all-actions (concat specific-actions default-actions)]
+        all-actions (concat specific-actions [:separator] default-actions)]
     all-actions))
 
 (mf/defc token-pill-context-menu

@@ -40,8 +40,6 @@
 .separator {
   @include bodySmallTypography;
   margin: $s-6;
-  display: flex;
-  align-items: center;
   border-block-start: $s-1 solid var(--panel-border-color);
 }
 
