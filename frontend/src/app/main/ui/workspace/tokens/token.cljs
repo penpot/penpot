@@ -29,6 +29,12 @@
   [token shape token-attributes]
   (some #(token-attribute-applied? token shape %) token-attributes))
 
+(defn token-applied-attributes
+  "Return a set of which `token-attributes` are applied with `token`."
+  [token shape token-attributes]
+  (-> (filter #(token-attribute-applied? token shape %) token-attributes)
+      (set)))
+
 (defn shapes-token-applied?
   "Test if `token` is applied to to any of `shapes` with at least one of the one of the given `token-attributes`."
   [token shapes token-attributes]
@@ -38,6 +44,20 @@
   "Test if `token` is applied to to any of `shapes` with at least one of the one of the given `token-attributes`."
   [token shapes token-attributes]
   (some #(token-applied? token % token-attributes) shapes))
+
+(defn group-shapes-by-all-applied
+  ""
+  [token shapes token-attributes]
+  (reduce
+   (fn [acc cur-shape]
+     (let [applied-attrs (token-applied-attributes token cur-shape token-attributes)]
+       (cond
+         (empty? applied-attrs) (update acc :none (fnil conj []) cur-shape)
+         (= applied-attrs token-attributes) (update acc :all (fnil conj []) cur-shape)
+         :else (reduce (fn [acc' cur']
+                         (update-in acc' [:some cur'] (fnil conj []) cur-shape))
+                       acc applied-attrs))))
+   {} shapes))
 
 (defn token-name->path
   "Splits token-name into a path vector split by `.` characters.
