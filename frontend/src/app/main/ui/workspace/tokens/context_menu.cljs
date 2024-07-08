@@ -213,10 +213,13 @@
 (defn additional-actions [{:keys [token-id token-type selected-shapes] :as context-data}]
   (let [attributes->actions (fn [update-fn coll]
                               (for [{:keys [attributes] :as item} coll]
-                                (let [selected? (wtt/shapes-token-applied? {:id token-id} selected-shapes attributes)]
-                                  (assoc item
-                                         :action #(update-fn context-data attributes)
-                                         :selected? selected?))))]
+                                (cond
+                                  (= :separator item) item
+                                  :else
+                                  (let [selected? (wtt/shapes-token-applied? {:id token-id} selected-shapes attributes)]
+                                    (assoc item
+                                           :action #(update-fn context-data attributes)
+                                           :selected? selected?)))))]
     (case token-type
       :border-radius (attributes->actions
                       apply-border-radius-token
@@ -228,14 +231,15 @@
       :spacing       (attributes->actions
                       apply-spacing-token
                       [{:title "All" :attributes #{:p1 :p2 :p3 :p4}}
-                       {:title "Column Gap" :attributes #{:column-gap}}
-                       {:title "Vertical padding" :attributes #{:p1 :p3}}
-                       {:title "Horizontal padding" :attributes #{:p2 :p4}}
-                       {:title "Row Gap" :attributes #{:row-gap}}
                        {:title "Top" :attributes #{:p1}}
                        {:title "Right" :attributes #{:p2}}
                        {:title "Bottom" :attributes #{:p3}}
-                       {:title "Left" :attributes #{:p4}}])
+                       {:title "Left" :attributes #{:p4}}
+                       :separator
+                       {:title "Column Gap" :attributes #{:column-gap}}
+                       {:title "Vertical padding" :attributes #{:p1 :p3}}
+                       {:title "Horizontal padding" :attributes #{:p2 :p4}}
+                       {:title "Row Gap" :attributes #{:row-gap}}])
 
       :sizing       (attributes->actions
                      apply-sizing-token
@@ -292,23 +296,29 @@
 (mf/defc token-pill-context-menu
   [context-data]
   (let [menu-entries (generate-menu-entries context-data)]
-    (for [[index {:keys [title action selected? children submenu]}] (d/enumerate menu-entries)]
-      [:& menu-entry (cond-> {:key index
-                              :title title}
-                       (not submenu) (assoc :on-click action
-                      ;; TODO: Allow selected items wihtout an icon for the context menu
-                                            :icon (mf/html [:div {:class (stl/css-case :empty-icon true
-                                                                                       :hidden-icon (not selected?))}])
-                                            :selected? selected?))
-       (when submenu
-         (let [submenu-entries (additional-actions (assoc context-data :token-type submenu))]
-           (for [[index {:keys [title action selected?]}] (d/enumerate submenu-entries)]
-             [:& menu-entry {:key index
-                             :title title
-                             :on-click action
-                             :icon  (mf/html [:div {:class (stl/css-case :empty-icon true
-                                                                         :hidden-icon (not selected?))}])
-                             :selected? selected?}])))])))
+    (for [[index {:keys [title action selected? children submenu] :as entry}] (d/enumerate menu-entries)]
+      (cond
+        (= :separator entry) [:& menu-separator]
+        :else
+        [:& menu-entry (cond-> {:key index
+                                :title title}
+                         (not submenu) (assoc :on-click action
+                                              ;; TODO: Allow selected items wihtout an icon for the context menu
+                                              :icon (mf/html [:div {:class (stl/css-case :empty-icon true
+                                                                                         :hidden-icon (not selected?))}])
+                                              :selected? selected?))
+         (when submenu
+           (let [submenu-entries (additional-actions (assoc context-data :token-type submenu))]
+             (for [[index {:keys [title action selected?] :as sub-entry}] (d/enumerate submenu-entries)]
+               (cond
+                 (= :separator sub-entry) [:& menu-separator]
+                 :else
+                 [:& menu-entry {:key index
+                                 :title title
+                                 :on-click action
+                                 :icon  (mf/html [:div {:class (stl/css-case :empty-icon true
+                                                                             :hidden-icon (not selected?))}])
+                                 :selected? selected?}]))))]))))
 
 (mf/defc token-context-menu
   []
