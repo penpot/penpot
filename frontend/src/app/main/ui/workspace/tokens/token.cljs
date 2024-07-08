@@ -59,6 +59,11 @@
                        acc applied-attrs))))
    {} shapes))
 
+(defn group-shapes-by-all-applied-all? [grouped-shapes]
+  (and (seq (:all grouped-shapes))
+       (empty? (:other grouped-shapes))
+       (empty? (:some grouped-shapes))))
+
 (defn token-name->path
   "Splits token-name into a path vector split by `.` characters.
 

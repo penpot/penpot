@@ -34,6 +34,7 @@
     (let [shapes [{:applied-tokens {:x 1 :y 1}}
                   {:applied-tokens {:x 1 :y 1}}]
           expected (wtt/group-shapes-by-all-applied {:id 1} shapes #{:x :y})]
+      (t/is (true? (wtt/group-shapes-by-all-applied-all? expected)))
       (t/is (= (:all expected) shapes))
       (t/is (empty? (:other expected)))
       (t/is (empty? (:some expected)))))
