@@ -277,7 +277,8 @@
 
 (defn generate-menu-entries [{:keys [token-id token-type-props _token-type _selected-shapes] :as context-data}]
   (let [{:keys [modal]} token-type-props
-        attribute-actions (shape-attribute-actions context-data)
+        attribute-actions (when (seq selected-shapes)
+                            (shape-attribute-actions context-data))
         default-actions [{:title "Delete Token" :action #(st/emit! (dt/delete-token token-id))}
                          {:title "Duplicate Token" :action #(st/emit! (dt/duplicate-token token-id))}
                          {:title "Edit Token" :action (fn [event]
@@ -292,7 +293,7 @@
                                                                             :token token})))}]]
     (concat
      attribute-actions
-     [:separator]
+     (when attribute-actions [:separator])
      default-actions)))
 
 (mf/defc token-pill-context-menu
