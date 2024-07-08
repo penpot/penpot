@@ -36,11 +36,11 @@
           events [(wtc/apply-token {:shape-ids [(:id rect-1)]
                                     :attributes #{:rx :ry}
                                     :token (toht/get-token file :token-1)
-                                    :on-update-shape wtc/update-shape-radius})
+                                    :on-update-shape wtc/update-shape-radius-all})
                   (wtc/apply-token {:shape-ids [(:id rect-1)]
                                     :attributes #{:rx :ry}
                                     :token (toht/get-token file :token-2)
-                                    :on-update-shape wtc/update-shape-radius})]]
+                                    :on-update-shape wtc/update-shape-radius-all})]]
       (tohs/run-store-async
        store done events
        (fn [new-state]
@@ -63,7 +63,7 @@
           events [(wtc/apply-token {:shape-ids [(:id rect-1)]
                                     :attributes #{:rx :ry}
                                     :token (toht/get-token file :token-2)
-                                    :on-update-shape wtc/update-shape-radius})]]
+                                    :on-update-shape wtc/update-shape-radius-all})]]
       (tohs/run-store-async
        store done events
        (fn [new-state]
@@ -187,7 +187,7 @@
             rect-2 (cths/get-shape file :rect-2)
             events [(wtc/toggle-token {:shapes [rect-1 rect-2]
                                        :token-type-props {:attributes #{:rx :ry}
-                                                          :on-update-shape wtc/update-shape-radius}
+                                                          :on-update-shape wtc/update-shape-radius-all}
                                        :token (toht/get-token file :token-2)})]]
         (tohs/run-store-async
          store done events

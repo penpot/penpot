@@ -50,7 +50,15 @@
 
 ;; Shape Update Functions ------------------------------------------------------
 
-(defn update-shape-radius [value shape-ids]
+(defn update-shape-radius-single-corner [value shape-ids attribute]
+  (dch/update-shapes shape-ids
+                     (fn [shape]
+                       (when (ctsr/has-radius? shape)
+                         (ctsr/set-radius-4 shape (first attribute) value)))
+                     {:reg-objects? true
+                      :attrs [:rx :ry :r1 :r2 :r3 :r4]}))
+
+(defn update-shape-radius-all [value shape-ids]
   (dch/update-shapes shape-ids
                      (fn [shape]
                        (when (ctsr/has-radius? shape)
@@ -203,7 +211,7 @@
    [:border-radius
     {:title "Border Radius"
      :attributes ctt/border-radius-keys
-     :on-update-shape update-shape-radius
+     :on-update-shape update-shape-radius-all
      :modal {:key :tokens/border-radius
              :fields [{:label "Border Radius"
                        :key :border-radius}]}}]
