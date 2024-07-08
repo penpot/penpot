@@ -79,16 +79,27 @@ export async function compileSassAll(worker) {
   const limitFn = pLimit(4);
   const sourceDir = "src";
 
-  let files = await fs.readdir(sourceDir, { recursive: true });
-  files = files.filter((path) => path.endsWith(".scss"));
-  files = files.map((path) => ph.join(sourceDir, path));
+  const isDesignSystemFile = (path) => {
+    return path.startsWith("app/main/ui/ds/");
+  };
+
+  let files = (await fs.readdir(sourceDir, { recursive: true })).filter(
+    isSassFile,
+  );
+
+  const appFiles = files
+    .filter((path) => !isDesignSystemFile(path))
+    .map((path) => ph.join(sourceDir, path));
+  const dsFiles = files
+    .filter(isDesignSystemFile)
+    .map((path) => ph.join(sourceDir, path));
 
   const procs = [
     compileSass(worker, "resources/styles/main-default.scss", {}),
     compileSass(worker, "resources/styles/debug.scss", {}),
   ];
 
-  for (let path of files) {
+  for (let path of [...dsFiles, ...appFiles]) {
     const proc = limitFn(() => compileSass(worker, path, { modules: true }));
     procs.push(proc);
   }
@@ -96,7 +107,7 @@ export async function compileSassAll(worker) {
   const result = await Promise.all(procs);
 
   return result.reduce(
-    (acc, item, index) => {
+    (acc, item) => {
       acc.index[item.outputPath] = item.css;
       acc.items.push(item.outputPath);
       return acc;
