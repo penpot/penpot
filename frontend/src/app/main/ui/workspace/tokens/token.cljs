@@ -2,6 +2,36 @@
   (:require
    [cuerdas.core :as str]))
 
+(defn attributes-map
+  "Creats an attributes map using collection of `attributes` for `id`."
+  [attributes id]
+  (->> (map (fn [attr] {attr id}) attributes)
+       (into {})))
+
+(defn remove-attributes-for-token-id
+  "Removes applied tokens with `token-id` for the given `attributes` set from `applied-tokens`."
+  [attributes token-id applied-tokens]
+  (let [attr? (set attributes)]
+    (->> (remove (fn [[k v]]
+                   (and (attr? k)
+                        (= v token-id)))
+                 applied-tokens)
+        (into {}))))
+
+(defn token-applied?
+  "Test if `token` is applied to a `shape` with the given `token-attributes`."
+  [token shape token-attributes]
+  (let [{:keys [id]} token
+        applied-tokens (get shape :applied-tokens {})]
+    (some (fn [attr]
+            (= (get applied-tokens attr) id))
+          token-attributes)))
+
+(defn shapes-token-applied?
+  "Test if `token` is applied to to any of `shapes` with the given `token-attributes`."
+  [token shapes token-attributes]
+  (some #(token-applied? token % token-attributes) shapes))
+
 (defn token-name->path
   "Splits token-name into a path vector split by `.` characters.
 
@@ -20,6 +50,14 @@
         [path [selector]] (split-at last-idx path-segments)]
     {:path (seq path)
      :selector selector}))
+
+(defn token-names-map
+  "Convert tokens into a map with their `:name` as the key.
+
+  E.g.: {\"sm\" {:token-type :border-radius :id #uuid \"000\" ...}}"
+  [tokens]
+  (->> (map (fn [{:keys [name] :as token}] [name token]) tokens)
+       (into {})))
 
 (defn token-names-tree
   "Convert tokens into a nested tree with their `:name` as the path."

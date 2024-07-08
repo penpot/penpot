@@ -16,6 +16,7 @@
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.tokens.core :as wtc]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
+   [app.main.ui.workspace.tokens.token :as wtt]
    [app.util.dom :as dom]
    [cuerdas.core :as str]
    [okulary.core :as l]
@@ -98,9 +99,10 @@
                              (mf/deps selected-shapes token-type-props)
                              (fn [event token]
                                (dom/stop-propagation event)
-                               (wtc/on-apply-token {:token token
-                                                    :token-type-props token-type-props
-                                                    :selected-shapes selected-shapes})))
+                               (st/emit!
+                                (wtc/toggle-token {:token token
+                                                   :shapes selected-shapes
+                                                   :token-type-props token-type-props}))))
         tokens-count (count tokens)]
     [:div {:on-click on-toggle-open-click}
      [:& cmm/asset-section {:icon (mf/fnc icon-wrapper [_]
@@ -121,7 +123,7 @@
             [:& token-pill
              {:key (:id token)
               :token token
-              :highlighted? (wtc/tokens-applied? token selected-shapes attributes)
+              :highlighted? (wtt/shapes-token-applied? token selected-shapes attributes)
               :on-click #(on-token-pill-click % token)
               :on-context-menu #(on-context-menu % token)}])]])]]))
 

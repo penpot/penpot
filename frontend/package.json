@@ -5,9 +5,7 @@
   "author": "Kaleidos INC",
   "private": true,
   "packageManager": "yarn@4.2.2",
-  "browserslist": [
-    "defaults"
-  ],
+  "browserslist": ["defaults"],
   "type": "module",
   "repository": {
     "type": "git",
@@ -29,6 +27,7 @@
     "token-test:compile": "clojure -M:dev:shadow-cljs compile test-esm --config-merge '{:autorun false}'",
     "token-test:run": "bun target/tests-esm.cjs",
     "token-test:watch": "clojure -M:dev:shadow-cljs watch test-esm",
+    "token-test:nodemon": "nodemon --watch ./target/tests-esm.cjs --exec 'bun run token-test:run'",
     "token-test": "yarn run token-test:compile && yarn run token-test:run",
     "translations:validate": "node ./scripts/validate-translations.js",
     "translations:find-unused": "node ./scripts/find-unused-translations.js",
