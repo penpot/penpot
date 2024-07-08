@@ -1,6 +1,7 @@
 (ns app.main.ui.workspace.tokens.token
   (:require
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [clojure.set :as set]))
 
 (defn attributes-map
   "Creats an attributes map using collection of `attributes` for `id`."
@@ -45,8 +46,20 @@
   [token shapes token-attributes]
   (some #(token-applied? token % token-attributes) shapes))
 
+(defn shapes-ids-by-applied-attributes [token shapes token-attributes]
+  (reduce (fn [acc shape]
+            (let [applied-ids-by-attribute (->> (map #(when (token-attribute-applied? token shape %)
+                                                        [% #{(:id shape)}])
+                                                     token-attributes)
+                                                (filter some?)
+                                                (into {}))]
+              (merge-with into acc applied-ids-by-attribute)))
+          {} shapes))
+
+(defn shapes-applied-all? [ids-by-attributes shape-ids attributes]
+  (every? #(set/superset? (get ids-by-attributes %) shape-ids) attributes))
+
 (defn group-shapes-by-all-applied
-  ""
   [token shapes token-attributes]
   (reduce
    (fn [acc cur-shape]
