@@ -210,7 +210,7 @@
                          :token-type-props token-type-props
                          :selected-shapes selected-shapes})))
 
-(defn additional-actions [{:keys [token-id token-type selected-shapes] :as context-data}]
+(defn shape-attribute-actions [{:keys [token-id token-type selected-shapes] :as context-data}]
   (let [attributes->actions (fn [update-fn coll]
                               (for [{:keys [attributes] :as item} coll]
                                 (cond
@@ -277,7 +277,7 @@
 
 (defn generate-menu-entries [{:keys [token-id token-type-props _token-type _selected-shapes] :as context-data}]
   (let [{:keys [modal]} token-type-props
-        attribute-actions (additional-actions context-data)
+        attribute-actions (shape-attribute-actions context-data)
         default-actions [{:title "Delete Token" :action #(st/emit! (dt/delete-token token-id))}
                          {:title "Duplicate Token" :action #(st/emit! (dt/duplicate-token token-id))}
                          {:title "Edit Token" :action (fn [event]
@@ -310,7 +310,7 @@
                                                                                          :hidden-icon (not selected?))}])
                                               :selected? selected?))
          (when submenu
-           (let [submenu-entries (additional-actions (assoc context-data :token-type submenu))]
+           (let [submenu-entries (shape-attribute-actions (assoc context-data :token-type submenu))]
              (for [[index {:keys [title action selected?] :as sub-entry}] (d/enumerate submenu-entries)]
                (cond
                  (= :separator sub-entry) [:& menu-separator]
