@@ -54,6 +54,7 @@
 - Fix 'Detach instance' shortcut is not working [Taiga #8102](https://tree.taiga.io/project/penpot/issue/8102)
 - Fix import file message does not detect 0 as error [Taiga #6824](https://tree.taiga.io/project/penpot/issue/6824)
 - Image Color Library is not persisted when exporting/importing in .zip [Taiga #8131](https://tree.taiga.io/project/penpot/issue/8131)
+- Fix export files including libraries [Taiga #8266](https://tree.taiga.io/project/penpot/issue/8266)
 
 ## 2.0.3
 
