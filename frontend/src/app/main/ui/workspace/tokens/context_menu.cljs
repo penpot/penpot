@@ -210,6 +210,30 @@
                          :token-type-props token-type-props
                          :selected-shapes selected-shapes})))
 
+(defn border-radius-attribute-actions [{:keys [token-id selected-shapes] :as _props}]
+  (let [all-attributes #{:r1 :r2 :r3 :r4}
+        ids-by-attributes (wtt/shapes-ids-by-applied-attributes {:id token-id} selected-shapes all-attributes)
+        shape-ids (into #{} (map :id selected-shapes))
+        all? (wtt/shapes-applied-all? ids-by-attributes shape-ids all-attributes)
+        selected? #(and
+                    (not all?)
+                    (seq (% ids-by-attributes)))]
+    [{:title "All"
+      :selected? all?
+      :action (when all? #(js/console.log "all"))}
+     {:title "Top Left"
+      :selected? (selected? :r1)
+      :action (when all? #(js/console.log "all"))}
+     {:title "Top Right"
+      :selected? (selected? :r2)
+      :action (when all? #(js/console.log "all"))}
+     {:title "Bottom Right"
+      :selected? (selected? :r3)
+      :action (when all? #(js/console.log "all"))}
+     {:title "Bottom Left"
+      :selected? (selected? :r4)
+      :action (when all? #(js/console.log "all"))}]))
+
 (defn shape-attribute-actions [{:keys [token-id token-type selected-shapes] :as context-data}]
   (let [attributes->actions (fn [update-fn coll]
                               (for [{:keys [attributes] :as item} coll]
@@ -221,13 +245,7 @@
                                            :action #(update-fn context-data attributes)
                                            :selected? selected?)))))]
     (case token-type
-      :border-radius (attributes->actions
-                      apply-border-radius-token
-                      [{:title "All" :attributes #{:r1 :r2 :r3 :r4}}
-                       {:title "Top Left" :attributes #{:r1}}
-                       {:title "Top Right" :attributes #{:r2}}
-                       {:title "Bottom Right" :attributes #{:r3}}
-                       {:title "Bottom Left" :attributes #{:r4}}])
+      :border-radius (border-radius-attribute-actions context-data)
       :spacing       (attributes->actions
                       apply-spacing-token
                       [{:title "All" :attributes #{:p1 :p2 :p3 :p4}}
@@ -275,7 +293,7 @@
 
       [])))
 
-(defn generate-menu-entries [{:keys [token-id token-type-props _token-type _selected-shapes] :as context-data}]
+(defn generate-menu-entries [{:keys [token-id token-type-props _token-type selected-shapes] :as context-data}]
   (let [{:keys [modal]} token-type-props
         attribute-actions (when (seq selected-shapes)
                             (shape-attribute-actions context-data))
