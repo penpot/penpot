@@ -220,7 +220,14 @@
                     (seq (% ids-by-attributes)))]
     [{:title "All"
       :selected? all?
-      :action (when all? #(js/console.log "all"))}
+      :action #(if all?
+                 (st/emit! (wtc/unapply-token {:token {:id token-id}
+                                               :attributes all-attributes
+                                               :shape-ids shape-ids}))
+                 (st/emit! (wtc/apply-token {:token {:id token-id}
+                                             :attributes all-attributes
+                                             :on-update-shape wtc/update-shape-radius
+                                             :shape-ids shape-ids})))}
      {:title "Top Left"
       :selected? (selected? :r1)
       :action (when all? #(js/console.log "all"))}
