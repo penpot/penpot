@@ -211,35 +211,42 @@
                          :selected-shapes selected-shapes})))
 
 (defn border-radius-attribute-actions [{:keys [token-id selected-shapes] :as _props}]
-  (let [all-attributes #{:r1 :r2 :r3 :r4}
-        ids-by-attributes (wtt/shapes-ids-by-applied-attributes {:id token-id} selected-shapes all-attributes)
+  (let [token {:id token-id}
+        all-attributes #{:r1 :r2 :r3 :r4}
+        ids-by-attributes (wtt/shapes-ids-by-applied-attributes token selected-shapes all-attributes)
         shape-ids (into #{} (map :id selected-shapes))
         all? (wtt/shapes-applied-all? ids-by-attributes shape-ids all-attributes)
-        selected? #(and
-                    (not all?)
-                    (seq (% ids-by-attributes)))]
-    [{:title "All"
-      :selected? all?
-      :action #(if all?
-                 (st/emit! (wtc/unapply-token {:token {:id token-id}
-                                               :attributes all-attributes
-                                               :shape-ids shape-ids}))
-                 (st/emit! (wtc/apply-token {:token {:id token-id}
-                                             :attributes all-attributes
-                                             :on-update-shape wtc/update-shape-radius
-                                             :shape-ids shape-ids})))}
-     {:title "Top Left"
-      :selected? (selected? :r1)
-      :action (when all? #(js/console.log "all"))}
-     {:title "Top Right"
-      :selected? (selected? :r2)
-      :action (when all? #(js/console.log "all"))}
-     {:title "Bottom Right"
-      :selected? (selected? :r3)
-      :action (when all? #(js/console.log "all"))}
-     {:title "Bottom Left"
-      :selected? (selected? :r4)
-      :action (when all? #(js/console.log "all"))}]))
+        selected-pred #(and
+                        (not all?)
+                        (seq (% ids-by-attributes)))
+        single-attributes (->> {:r1 "Top Left"
+                                :r2 "Top Right"
+                                :r3 "Bottom Left"
+                                :r4 "Bottom Right"}
+                               (map (fn [[attr title]]
+                                      (let [selected? (selected-pred attr)]
+                                        {:title title
+                                         :selected? selected?
+                                         :action (if selected?
+                                                   (st/emit! (wtc/unapply-token {:token token
+                                                                                 :attributes #{attr}
+                                                                                 :shape-ids shape-ids}))
+                                                   (st/emit! (wtc/apply-token {:token token
+                                                                               :attributes #{attr}
+                                                                               :on-update-shape wtc/update-shape-radius-single-corner
+                                                                               :shape-ids shape-ids})))}))))]
+    (concat
+     [{:title "All"
+       :selected? all?
+       :action #(if all?
+                  (st/emit! (wtc/unapply-token {:token token
+                                                :attributes all-attributes
+                                                :shape-ids shape-ids}))
+                  (st/emit! (wtc/apply-token {:token token
+                                              :attributes all-attributes
+                                              :on-update-shape wtc/update-shape-radius-all
+                                              :shape-ids shape-ids})))}]
+     single-attributes)))
 
 (defn shape-attribute-actions [{:keys [token-id token-type selected-shapes] :as context-data}]
   (let [attributes->actions (fn [update-fn coll]
