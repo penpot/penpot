@@ -15,6 +15,7 @@
    [app.common.files.migrations :as fmg]
    [app.common.files.validate :as fval]
    [app.common.logging :as l]
+   [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -331,54 +332,12 @@
 
 (defn embed-assets
   [cfg data file-id]
-  (letfn [(walk-map-form [form state]
-            (cond
-              (uuid? (:fill-color-ref-file form))
-              (do
-                (vswap! state conj [(:fill-color-ref-file form) :colors (:fill-color-ref-id form)])
-                (assoc form :fill-color-ref-file file-id))
-
-              (uuid? (:stroke-color-ref-file form))
-              (do
-                (vswap! state conj [(:stroke-color-ref-file form) :colors (:stroke-color-ref-id form)])
-                (assoc form :stroke-color-ref-file file-id))
-
-              (uuid? (:typography-ref-file form))
-              (do
-                (vswap! state conj [(:typography-ref-file form) :typographies (:typography-ref-id form)])
-                (assoc form :typography-ref-file file-id))
-
-              (uuid? (:component-file form))
-              (do
-                (vswap! state conj [(:component-file form) :components (:component-id form)])
-                (assoc form :component-file file-id))
-
-              :else
-              form))
-
-          (process-group-of-assets [data [lib-id items]]
-            ;; NOTE: there is a possibility that shape refers to an
-            ;; non-existant file because the file was removed. In this
-            ;; case we just ignore the asset.
-            (if-let [lib (get-file cfg lib-id)]
-              (reduce (partial process-asset lib) data items)
-              data))
-
-          (process-asset [lib data [bucket asset-id]]
-            (let [asset (get-in lib [:data bucket asset-id])
-                  ;; Add a special case for colors that need to have
-                  ;; correctly set the :file-id prop (pending of the
-                  ;; refactor that will remove it).
-                  asset (cond-> asset
-                          (= bucket :colors) (assoc :file-id file-id))]
-              (update data bucket assoc asset-id asset)))]
-
-    (let [assets (volatile! [])]
-      (walk/postwalk #(cond-> % (map? %) (walk-map-form assets)) data)
-      (->> (deref assets)
-           (filter #(as-> (first %) $ (and (uuid? $) (not= $ file-id))))
-           (d/group-by first rest)
-           (reduce (partial process-group-of-assets) data)))))
+  (let [library-ids (get-libraries cfg [file-id])]
+    (reduce (fn [data library-id]
+              (let [library (get-file cfg library-id)]
+                (ctf/absorb-assets data (:data library))))
+            data
+            library-ids)))
 
 (defn- fix-version
   [file]

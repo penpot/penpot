@@ -636,19 +636,24 @@
   "Find all assets of a library that are used in the file, and
   move them to the file local library."
   [file-data library-data]
-  (let [used-components (find-asset-type-usages file-data library-data :component)
-        used-colors (find-asset-type-usages file-data library-data :color)
-        used-typographies (find-asset-type-usages file-data library-data :typography)]
+  (let [used-components   (find-asset-type-usages file-data library-data :component)
+        file-data         (cond-> file-data
+                            (d/not-empty? used-components)
+                            (absorb-components used-components library-data))
+                            ;; Note that absorbed components may also be using colors
+                            ;; and typographies. This is the reason of doing this first
+                            ;; and accumulating file data for the next ones.
 
-    (cond-> file-data
-      (d/not-empty? used-components)
-      (absorb-components used-components library-data)
+        used-colors       (find-asset-type-usages file-data library-data :color)
+        file-data         (cond-> file-data
+                            (d/not-empty? used-colors)
+                            (absorb-colors used-colors))
 
-      (d/not-empty? used-colors)
-      (absorb-colors used-colors)
-
-      (d/not-empty? used-typographies)
-      (absorb-typographies used-typographies))))
+        used-typographies (find-asset-type-usages file-data library-data :typography)
+        file-data         (cond-> file-data
+                            (d/not-empty? used-typographies)
+                            (absorb-typographies used-typographies))]
+    file-data))
 
 ;; Debug helpers
 
