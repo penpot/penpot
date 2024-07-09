@@ -299,7 +299,19 @@
   (ptk/reify ::libraries-fetched
     ptk/UpdateEvent
     (update [_ state]
-      (assoc state :builtin-templates libraries))))
+      (let [templates-a-b-test? (cf/external-feature-flag "dashboard-01" "test")
+            remove-ids (if templates-a-b-test?
+                         #{"wireframing-kit" "prototype-examples" "plants-app" "penpot-design-system"}
+                         #{"prototype-examples" "penpot-design-system"})
+            libraries (cond->> libraries
+                        :always
+                        (remove #(contains? remove-ids (:id %)))
+                        templates-a-b-test?
+                        (concat [{:id "wireframing-kit", :name "Wireframe library"}
+                                 {:id "prototype-examples", :name "Prototype template"}
+                                 {:id "plants-app", :name "UI mockup example"}
+                                 {:id "penpot-design-system", :name "Design system example"}]))]
+        (assoc state :builtin-templates libraries)))))
 
 (defn fetch-builtin-templates
   []
