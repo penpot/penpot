@@ -695,15 +695,20 @@
   (ptk/reify ::show-redirect-error
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [hint (case error
-                   "registration-disabled"
-                   (tr "errors.registration-disabled")
-                   "profile-blocked"
-                   (tr "errors.profile-blocked")
-                   "auth-provider-not-allowed"
-                   (tr "errors.auth-provider-not-allowed")
-                   "email-domain-not-allowed"
-                   (tr "errors.email-domain-not-allowed")
-                   :else
-                   (tr "errors.generic"))]
+      (when-let [hint (case error
+                        "registration-disabled"
+                        (tr "errors.registration-disabled")
+                        "profile-blocked"
+                        (tr "errors.profile-blocked")
+                        "auth-provider-not-allowed"
+                        (tr "errors.auth-provider-not-allowed")
+                        "email-domain-not-allowed"
+                        (tr "errors.email-domain-not-allowed")
+
+                        ;; We explicitly do not show any error here, it a explicit user operation.
+                        "unable-to-auth"
+                        nil
+
+                        (tr "errors.generic"))]
+
         (rx/of (msg/warn hint))))))
