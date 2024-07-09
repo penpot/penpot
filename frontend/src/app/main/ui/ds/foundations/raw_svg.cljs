@@ -23,10 +23,10 @@
 (def ^:svg-id logo-error-screen "logo-error-screen")
 (def ^:svg-id login-illustration "login-illustration")
 
-(def ^:svg-id v2-icon-1 "v2-icon-1")
-(def ^:svg-id v2-icon-2 "v2-icon-2")
-(def ^:svg-id v2-icon-3 "v2-icon-3")
-(def ^:svg-id v2-icon-4 "v2-icon-4")
+(def ^:svg-id marketing-arrows "marketing-arrows")
+(def ^:svg-id marketing-exchange "marketing-exchange")
+(def ^:svg-id marketing-file "marketing-file")
+(def ^:svg-id marketing-layers "marketing-layers")
 
 (def raw-svg-list "A collection of all raw SVG assets" (collect-raw-svgs))
 
