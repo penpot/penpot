@@ -420,12 +420,6 @@
 
 (defn- get-info
   [{:keys [::provider ::setup/props] :as cfg} {:keys [params] :as request}]
-  (when-let [error (get params :error)]
-    (ex/raise :type :internal
-              :code :error-on-retrieving-code
-              :error-id error
-              :error-desc (get params :error_description)))
-
   (let [state  (get params :state)
         code   (get params :code)
         state  (tokens/verify props {:token state :iss :oauth})
@@ -609,9 +603,11 @@
 (defn- callback-handler
   [cfg request]
   (try
-    (let [info    (get-info cfg request)
-          profile (get-profile cfg info)]
-      (process-callback cfg request info profile))
+    (if-let [error (dm/get-in request [:params :error])]
+      (redirect-with-error "unable-to-auth" error)
+      (let [info    (get-info cfg request)
+            profile (get-profile cfg info)]
+        (process-callback cfg request info profile)))
     (catch Throwable cause
       (l/err :hint "error on oauth process" :cause cause)
       (redirect-with-error "unable-to-auth" (ex-message cause)))))
