@@ -27,6 +27,8 @@ export function startWorker() {
   });
 }
 
+export const isDebug = process.env.NODE_ENV !== "production";
+
 async function findFiles(basePath, predicate, options = {}) {
   predicate =
     predicate ??
@@ -75,20 +77,33 @@ export async function compileSass(worker, path, options) {
   return worker.exec("compileSass", [path, options]);
 }
 
+export async function compileSassDebug(worker) {
+  const result = await compileSass(worker, "resources/styles/debug.scss", {});
+  return `${result.css}\n`;
+}
+
 export async function compileSassAll(worker) {
   const limitFn = pLimit(4);
   const sourceDir = "src";
 
-  let files = await fs.readdir(sourceDir, { recursive: true });
-  files = files.filter((path) => path.endsWith(".scss"));
-  files = files.map((path) => ph.join(sourceDir, path));
+  const isDesignSystemFile = (path) => {
+    return path.startsWith("app/main/ui/ds/");
+  };
 
-  const procs = [
-    compileSass(worker, "resources/styles/main-default.scss", {}),
-    compileSass(worker, "resources/styles/debug.scss", {}),
-  ];
+  let files = (await fs.readdir(sourceDir, { recursive: true })).filter(
+    isSassFile,
+  );
 
-  for (let path of files) {
+  const appFiles = files
+    .filter((path) => !isDesignSystemFile(path))
+    .map((path) => ph.join(sourceDir, path));
+  const dsFiles = files
+    .filter(isDesignSystemFile)
+    .map((path) => ph.join(sourceDir, path));
+
+  const procs = [compileSass(worker, "resources/styles/main-default.scss", {})];
+
+  for (let path of [...dsFiles, ...appFiles]) {
     const proc = limitFn(() => compileSass(worker, path, { modules: true }));
     procs.push(proc);
   }
@@ -96,23 +111,13 @@ export async function compileSassAll(worker) {
   const result = await Promise.all(procs);
 
   return result.reduce(
-    (acc, item, index) => {
+    (acc, item) => {
       acc.index[item.outputPath] = item.css;
       acc.items.push(item.outputPath);
       return acc;
     },
     { index: {}, items: [] },
   );
-}
-
-function compare(a, b) {
-  if (a < b) {
-    return -1;
-  } else if (a > b) {
-    return 1;
-  } else {
-    return 0;
-  }
 }
 
 export function concatSass(data) {
@@ -175,7 +180,7 @@ async function renderTemplate(path, context = {}, partials = {}) {
 
   context = Object.assign({}, context, {
     ts: ts,
-    isDebug: process.env.NODE_ENV !== "production",
+    isDebug,
   });
 
   return mustache.render(content, context, partials);
@@ -399,6 +404,11 @@ export async function compileStyles() {
 
   await fs.mkdir("./resources/public/css", { recursive: true });
   await fs.writeFile("./resources/public/css/main.css", result);
+
+  if (isDebug) {
+    let debugCSS = await compileSassDebug(worker);
+    await fs.writeFile("./resources/public/css/debug.css", debugCSS);
+  }
 
   const end = process.hrtime(start);
   log.info("done: compile styles", `(${ppt(end)})`);
