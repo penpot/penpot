@@ -9,7 +9,7 @@
    [app.common.data.macros :as dm]
    [app.main.style :as stl])
   (:require
-   [app.main.ui.ds.foundations.typography :refer [typography-list]]
+   [app.main.ui.ds.foundations.typography :as t]
    [rumext.v2 :as mf]))
 
 (defn- valid-level? [value]
@@ -17,7 +17,7 @@
     (contains? number-set (dm/str value))))
 
 (defn- valid-typography? [value]
-  (contains? typography-list value))
+  (contains? t/typography-list value))
 
 (mf/defc heading*
   {::mf/props :obj}
@@ -31,17 +31,17 @@
 
   (let [level (or level "1")
         tag   (dm/str "h" level)
-        class (dm/str (or class "") " " (stl/css-case :display-typography (= typography "display")
-                                                      :title-large-typography (= typography "title-large")
-                                                      :title-medium-typography (= typography "title-medium")
-                                                      :title-small-typography (= typography "title-small")
-                                                      :headline-large-typography (= typography "headline-large")
-                                                      :headline-medium-typography (= typography "headline-medium")
-                                                      :headline-small-typography (= typography "headline-small")
-                                                      :body-large-typography (= typography "body-large")
-                                                      :body-medium-typography (= typography "body-medium")
-                                                      :body-small-typography (= typography "body-small")
-                                                      :code-font-typography (= typography "code-font")))
+        class (dm/str (or class "") " " (stl/css-case :display-typography (= typography t/display)
+                                                      :title-large-typography (= typography t/title-large)
+                                                      :title-medium-typography (= typography t/title-medium)
+                                                      :title-small-typography (= typography t/title-small)
+                                                      :headline-large-typography (= typography t/headline-large)
+                                                      :headline-medium-typography (= typography t/headline-medium)
+                                                      :headline-small-typography (= typography t/headline-small)
+                                                      :body-large-typography (= typography t/body-large)
+                                                      :body-medium-typography (= typography t/body-medium)
+                                                      :body-small-typography (= typography t/body-small)
+                                                      :code-font-typography (= typography t/code-font)))
         props (mf/spread-props props {:class class})]
     [:> tag props
      children]))
