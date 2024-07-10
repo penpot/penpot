@@ -1,54 +1,40 @@
 import * as React from "react";
 import Components from "@target/components";
+import { typographyIds } from "./typography.stories";
 
 const { Text } = Components;
-const { StoryWrapper, StoryGridRow } = Components.storybook;
+const { StoryWrapper } = Components.storybook;
 
 export default {
-  title: "Foundations/Text",
-  component: Components.Text,
+  title: "Foundations/Typography/Text",
+  component: Text,
+  argTypes: {
+    typography: {
+      options: typographyIds,
+      control: { type: "select" },
+    }
+  }
 };
 
-export const TextTags = {
-  render: () => (
+export const Default = {
+  render: ({typography, ...args}) => (
     <StoryWrapper theme="default">
-      <StoryGridRow title={"p / title-large"}>
-        <Text tag="p" typography="title-large">
-          p / Title
-        </Text>
-      </StoryGridRow>
-      <StoryGridRow title={"span / title-large"}>
-        <Text tag="span" typography="title-large">
-          span / Title large
-        </Text>
-      </StoryGridRow>
-      <StoryGridRow title={"div / title-large"}>
-        <Text tag="div" typography="title-large">
-          div / Title large
-        </Text>
-      </StoryGridRow>
+      <Text typography={typography} {...args}>Lorem ipsum</Text>
     </StoryWrapper>
   ),
+  args: {
+    typography: "display"
+  }
 };
 
-export const TypographyParagraph = {
-  render: () => (
+export const CustomTag = {
+  render: ({typography, ...args}) => (
     <StoryWrapper theme="default">
-      <StoryGridRow title={"p / title-large"}>
-        <Text tag="p" typography="title-large">
-          p / Title large
-        </Text>
-      </StoryGridRow>
-      <StoryGridRow title={"p / title-medium"}>
-        <Text tag="p" typography="title-medium">
-          p / Title medium
-        </Text>
-      </StoryGridRow>
-      <StoryGridRow title={"p / code-font"}>
-        <Text tag="p" typography="code-font">
-          p / Code font
-        </Text>
-      </StoryGridRow>
+      <Text typography={typography} {...args}>Lorem ipsum</Text>
     </StoryWrapper>
   ),
-};
+  args: {
+    typography: "display",
+    as: "li"
+  }
+}

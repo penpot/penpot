@@ -17,12 +17,12 @@
 
 (mf/defc text*
   {::mf/props :obj}
-  [{:keys [tag typography children class] :rest props}]
+  [{:keys [as typography children class] :rest props}]
 
   (assert (valid-typography? (dm/str typography))
           (dm/str typography " is an unknown typography"))
 
-  (let [tag (or tag "p")
+  (let [as (or as "p")
         class (dm/str (or class "") " " (stl/css-case :display-typography (= typography t/display)
                                                       :title-large-typography (= typography t/title-large)
                                                       :title-medium-typography (= typography t/title-medium)
@@ -35,5 +35,5 @@
                                                       :body-small-typography (= typography t/body-small)
                                                       :code-font-typography (= typography t/code-font)))
         props (mf/spread-props props {:class class})]
-    [:> tag props
+    [:> as props
      children]))
