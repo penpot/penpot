@@ -11,12 +11,14 @@
    [app.main.ui.ds.foundations.typography :refer [typography-list]]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
+   [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.ds.storybook :as sb]))
 
 (def default
   "A export used for storybook"
   #js {:Heading heading*
        :Icon icon*
+       :Loader loader*
        :RawSvg raw-svg*
        :Text text*
        ;; meta / misc

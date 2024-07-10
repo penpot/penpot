@@ -1,0 +1,25 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@keyframes line-pencil {
+  0% {
+    transform: translateY(0);
+  }
+
+  100% {
+    transform: translateY(-150px);
+  }
+}
+
+.loader {
+  --color-loader-foreground: var(--color-foreground-secondary);
+  fill: var(--color-loader-foreground);
+}
+
+.loader-line {
+  fill: var(--color-loader-foreground);
+  animation: line-pencil 0.8s infinite linear;
+}
