@@ -141,7 +141,7 @@
         result (api/list-node
                 (into [(api/token-node 'defn)
                        cname
-                       (api/vector-node (into [param1] paramN))]
+                       (api/vector-node (filter some? (cons param1 paramN)))]
                       (cons mdata body)))]
 
     ;; (prn (api/sexpr result))
