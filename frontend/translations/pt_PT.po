@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-17 08:07+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2024-07-11 20:09+0000\n"
+"Last-Translator: TheScientistPT <joao.ed.reis.gomes@gmail.com>\n"
 "Language-Team: Portuguese (Portugal) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_PT/>\n"
 "Language: pt_PT\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.6-dev\n"
+"X-Generator: Weblate 5.7-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -48,9 +48,8 @@ msgid "auth.fullname"
 msgstr "Nome completo"
 
 #: src/app/main/ui/auth/register.cljs
-#, fuzzy
 msgid "auth.login-here"
-msgstr "Iniciar sessão"
+msgstr "Inicia a sessão aqui."
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
@@ -1022,7 +1021,6 @@ msgstr "Erro de conexão, não foi possível alcançar o URL"
 msgid "errors.webhooks.invalid-uri"
 msgstr "O URL não passou na validação."
 
-#, fuzzy
 msgid "errors.webhooks.last-delivery"
 msgstr "Último envio sem sucesso."
 
@@ -3117,7 +3115,6 @@ msgstr "Mostrar interações com click"
 msgid "viewer.header.sitemap"
 msgstr "Mapa do site"
 
-#, fuzzy
 msgid "webhooks.last-delivery.success"
 msgstr "Último envio com sucesso."
 
@@ -5206,3 +5203,263 @@ msgstr "Filtrar"
 
 #~ msgid "workspace.options.layout.direction.left"
 #~ msgstr "Linha"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.work-email"
+msgstr "Email profissional"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-mail"
+msgstr "Verifica o teu email"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register-account-tagline"
+msgstr "Diz-nos como te devemos tratar no painel principal e em emails."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-account-title"
+msgstr "O teu nome"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step1.title"
+msgstr "Ajuda-nos a conhecer-te"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.use.work"
+msgstr "Trabalho"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.use.education"
+msgstr "Educação"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step1.question1"
+msgstr "Para que fim vais usar o Penpot?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.reasons.exploring"
+msgstr "Só estou a experimentar"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.reasons.fit"
+msgstr "A averiguar se o Penpot se adequa à minha equipa"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step1.question2"
+msgstr "O que te traz ao Penpot?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.reasons.testing"
+msgstr "Testar antes de fazer self-hosting"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.reasons.alternative"
+msgstr "À procura de uma alternativa ao Figma, XD, etc"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step2.title"
+msgstr "Qual destas ferramentas usas mais?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step3.question1"
+msgstr "Que tipo de trabalho fazes?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.product-design"
+msgstr "Design de produtos ou UX"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.graphic-design"
+msgstr "Design gráfico"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.marketing"
+msgstr "Marketing"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.product-management"
+msgstr "Product Management"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.team-leader"
+msgstr "Líder de equipa"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.team-member"
+msgstr "Membro de equipa"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.founder"
+msgstr "CEO ou Fundador"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.director"
+msgstr "Diretor"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step3.question2"
+msgstr "Qual é a tua posição?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.team-size.freelancer"
+msgstr "Sou freelancer"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.ui"
+msgstr "Desenhar o UI/UX de uma aplicação"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step4.title"
+msgstr "Por onde é que gostarias de começar?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.wireframing"
+msgstr "Wireframing"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.prototyping"
+msgstr "Prototipagem"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.youtube"
+msgstr "YouTube"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.ds"
+msgstr "Criar sistemas de design"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.code"
+msgstr "Gerar código a partir de designs"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.social"
+msgstr "Redes sociais (X, Linkedin, FB, etc.)"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.article"
+msgstr "Artigo (Blog, Post, Newsletter)"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.other-short"
+msgstr "Outra"
+
+msgid "shortcuts.toggle-layout-grid"
+msgstr "Adicionar/remover layout em grelha"
+
+msgid "shortcuts.toggle-guides"
+msgstr "Mostrar / Ocultar guias"
+
+msgid "shortcuts.toggle-rulers"
+msgstr "Mostrar / Ocultar réguas"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-guides"
+msgstr "Mostrar guias"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-guides"
+msgstr "Ocultar guias"
+
+msgid "workspace.layout_grid.editor.top-bar.locate.tooltip"
+msgstr "Localizar layout em grelha"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.unlink-library-btn"
+msgstr "Desconectar biblioteca"
+
+msgid "workspace.plugins.title"
+msgstr "Plugins"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.toggle-toolbar"
+msgstr "Alternar barra de ferramentas"
+
+msgid "workspace.plugins.error.url"
+msgstr "O plugin não existe ou o URL está incorreto."
+
+msgid "workspace.plugins.menu.title"
+msgstr "Plugins"
+
+msgid "workspace.plugins.search-placeholder"
+msgstr "Introduz um URL de plugin"
+
+msgid "workspace.plugins.empty-plugins"
+msgstr "Sem plugins instalados"
+
+msgid "workspace.plugins.install"
+msgstr "Instalar"
+
+msgid "workspace.plugins.success"
+msgstr "Plugin carregado com sucesso."
+
+msgid "media.keep-aspect-ratio"
+msgstr "Manter proporções"
+
+msgid "modals.move-shared-confirm.message"
+msgid_plural "modals.move-shared-confirm.message"
+msgstr[0] "Tens a certeza que queres mover esta biblioteca?"
+msgstr[1] "Tens a certeza que queres mover estas bibliotecas?"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-grid"
+msgstr "Remover layout em grelha"
+
+#: src/app/main/ui/auth/register.cljs
+#, markdown
+msgid "auth.terms-and-privacy-agreement"
+msgstr "Aceito os [termos de serviço](%s) e a [política de privacidade](%s)."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step3.title"
+msgstr "Fala-nos do teu trabalho"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.developer"
+msgstr "Desenvolvimento"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step5.title"
+msgstr "Como descobriste o Penpot?"
+
+msgid "workspace.plugins.menu.plugins-manager"
+msgstr "Gestor de plugins"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.use.personal"
+msgstr "Uso pessoal"
+
+msgid "workspace.plugins.plugin-list-link"
+msgstr "Lista de plugins"
+
+msgid "workspace.plugins.installed-plugins"
+msgstr "Plugins instalados"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register-tagline"
+msgstr ""
+"Com uma conta gratuita no Penpot, podes criar um número ilimitado de equipas "
+"e colaborar com outros designers e desenvolvedores em quantos projetos "
+"desejares. "
+
+msgid "workspace.plugins.button-open"
+msgstr "Abrir"
+
+#: src/app/main/data/users.cljs
+msgid "errors.auth-provider-not-allowed"
+msgstr "O provedor de autenticação não é permitido neste perfil"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.event"
+msgstr "Evento"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step1.subtitle"
+msgstr ""
+"Conta-nos um pouco sobre ti para que possamos fazer com que o Penpot se "
+"adapte a ti. As tuas respostas ajudar-nos-ão a priorizar novas "
+"funcionalidades e indicar-te o melhor caminho para começar."
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.shared-library-btn"
+msgstr "Conectar biblioteca"
