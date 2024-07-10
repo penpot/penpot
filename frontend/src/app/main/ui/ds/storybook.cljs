@@ -45,3 +45,10 @@
   (let [class (stl/css :story-header)
         props (mf/spread-props other {:class class})]
     [:> "header" props children]))
+
+(mf/defc story-grid-row*
+  {::mf/props :obj}
+  [{:keys [children] :rest other}]
+  (let [class (stl/css :story-grid-row)
+        props (mf/spread-props other {:class class})]
+    [:> "article" props children]))

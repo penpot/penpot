@@ -1,0 +1,153 @@
+import { Canvas, Meta, Story } from "@storybook/blocks";
+import * as TypographyStories from "./typography.stories";
+import Components from "@target/components";
+
+<Meta of={TypographyStories} />
+
+# Typography
+
+We currently work with 3 scales depending on whether the typography
+is applied in the workspace, in the dashboard and access areas
+and in the communication modalities.
+
+This situation is something to be corrected in future improvements.
+
+## Usage
+
+### Standard text colours
+
+Typographic colours are used in text elements such as headers
+and body and in the various components that make up the tool...
+
+The colours used in typography are the Foreground colours such 
+`--color-foreground-primary` or `--color-foreground-secondary`
+but different colours can be applied in specific component
+applications with their own styles, such as buttons.
+
+As far as possible and as long as accessibility is not affected,
+we will use colour in typography as a way of hierarchising
+the content displayed using tone, built in luminance changes and
+size as differentiating elements between main and secondary text.
+
+### Status text colous
+
+Another possible application of colour is semantic, when we use text to convey some system state.
+
+Use the tokens:
+
+`--color-accent-success` - Use as text colour to indicate success.
+
+`--color-accent-warning` - Use as text colour to indicate a warning or caution.
+
+`--color-accent-error` - Use as text colour to indicate an error.
+
+
+## Accesibility
+
+Typefaces should be sized for legibility and accessibility.
+The minimum size for texts in Penpot will be 14px except
+for exceptions based on the size of the components.
+
+## Title
+
+### Display `display`
+
+Hero style text for transitional pages (Login). If too large use large title in narrow windows.
+
+<Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
+  <Components.Heading level="1" typography="display" >Display - 400 - 36px/1.4 "Work Sans" </Components.Heading>
+</Canvas>
+
+### Title large `title-large`
+
+Page headers for main pages (dashboard, Profiles...). If too big use title
+(medium) in narrow windows.
+
+<Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
+  <Components.Heading level="1" typography="title-large" >Title large - 400 - 24px/1.4 "Work Sans" </Components.Heading>
+</Canvas>
+
+### Title medium `title-medium`
+
+Default page title. Equivalent line height of 32px matches the height
+of buttons and other medium controls. Ideal for page header layout.
+
+<Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
+  <Components.Heading level="1" typography="title-medium" >Title medium - 400 - 20px/1.4 "Work Sans"</Components.Heading>
+</Canvas>
+
+### Title small `title-small`
+
+Uses the same size as body (large).
+
+<Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
+  <Components.Heading level="1" typography="title-small" >Title small - 400 - 14px/1.2 "Work Sans"</Components.Heading>
+</Canvas>
+
+## Headline
+
+Page sections/subtitles, or names of less important objects in
+page titles (automated action titles, for example). Same line height as title (medium).
+
+### Headline large `headline-large`
+
+<Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
+  <Components.Heading level="1" typography="headline-large" >Headline large - 400 - 18px/1.4 "Work Sans"</Components.Heading>
+</Canvas>
+
+### Headline medium `headline-medium`
+
+<Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
+  <Components.Heading level="1" typography="headline-medium" >Headline medium - 400 - 16px/1.4 "Work Sans"</Components.Heading>
+</Canvas>
+
+
+### Headline small `headline-small`
+
+<Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
+  <Components.Heading level="1" typography="headline-small" >Headline small - 500 - 12px/1.2 "Work Sans"</Components.Heading>
+</Canvas>
+
+## Body
+
+### Body large `body-large`
+
+Generic content.
+
+<Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
+  <Components.Heading level="1" typography="body-large" >Body large - 400 - 16px/1.4 "Work Sans"</Components.Heading>
+</Canvas>
+
+### Body medium `body-medium`
+
+Default UI font. Most commonly used for body text.
+
+<Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
+  <Components.Heading level="1" typography="body-medium" >Body medium - 400 - 14px/1.3 "Work Sans"</Components.Heading>
+</Canvas>
+
+
+### Body small `body-small`
+
+Small compact font with a line height of less than 16px.
+Use for single line scenarios, as the small size does not meet accessibility requirements.
+
+<Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
+  <Components.Heading level="1" typography="body-small" >Body small - 400 - 12px/1.3 "Work Sans"</Components.Heading>
+</Canvas>
+
+## Code font `code-font`
+
+Default style for rendering code blocks.
+
+<Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
+  <Components.Heading level="1" typography="code-font" >Code font - 400 - 12px/1.2 "Roboto Mono"</Components.Heading>
+</Canvas>
+
+## Fonts
+
+We are using 3 fonts
+
+- The default font family is `Work Sans`. It was chosen for its efficiency and legibility.
+- In case of having the interface in Farsi or Arabic this font will be replaced by `Vazirmatn`.
+- For code blocks we are useng `Roboto Mono`.
