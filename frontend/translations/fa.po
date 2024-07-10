@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-07-09 16:09+0000\n"
+"PO-Revision-Date: 2024-07-11 20:09+0000\n"
 "Last-Translator: Nima K <nimiossa@gmail.com>\n"
 "Language-Team: Persian <https://hosted.weblate.org/projects/penpot/frontend/"
 "fa/>\n"
@@ -48,9 +48,8 @@ msgid "auth.fullname"
 msgstr "نام کامل"
 
 #: src/app/main/ui/auth/register.cljs
-#, fuzzy
 msgid "auth.login-here"
-msgstr "ورود از اینجا"
+msgstr "ورود از اینجا."
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
@@ -222,13 +221,13 @@ msgstr ""
 "و فایل‌ها با هم کار کنند"
 
 #: src/app/main/ui/dashboard/projects.cljs
-#, fuzzy
 msgid "dasboard.team-hero.title"
-msgstr "تیم!"
+msgstr "تیم ایجاد کن!"
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.tutorial-hero.info"
-msgstr "در حالی که با این آموزش سرگرم می‌شوید، اصول اولیه را در Penpot بیاموزید."
+msgstr ""
+"در عین حالی که با این آموزش سرگرم می‌شوید، اصول اولیه را در Penpot بیاموزید."
 
 #: src/app/main/ui/dashboard/projects.cljs
 msgid "dasboard.tutorial-hero.start"
@@ -3082,4 +3081,41 @@ msgstr "برای بستن مسیر کلیک کنید"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.work-email"
-msgstr "ایمیل کار"
+msgstr "ایمیلِ کار"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-mail"
+msgstr "ایمیل خود را مرور کنید"
+
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.not-all-space"
+msgstr "در نام کاربری نباید فاصله (space) وجود داشته باشد."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "auth.name.too-long"
+msgstr "نام کاربری حداکثر ۲۵۰ کاراکتر میتواند داشته باشد."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-account-title"
+msgstr "نام شما"
+
+#: src/app/main/ui/dashboard/projects.cljs
+msgid "dasboard.tutorial-hero.title"
+msgstr "یادگیری با انجام کار"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.password-not-empty"
+msgstr "رمز عبور نباید کاراکترِ فاصله (space) داشته باشد."
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-account-title"
+msgstr "ورود به حسابِ من"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-tagline"
+msgstr ""
+"Penpot یک ابزار طراحی و همکاری در کد نویسی است که رایگان و کد آن متن باز است."
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register-account-tagline"
+msgstr "اطلاع دهید که شما را با چه نامی در ایمیل ها و حساب کاربری صدا کنیم."
