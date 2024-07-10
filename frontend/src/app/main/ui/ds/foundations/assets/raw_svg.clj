@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.ds.foundations.raw-svg
+(ns app.main.ui.ds.foundations.assets.raw-svg
   (:require
    [clojure.core :as c]
    [cuerdas.core :as str]

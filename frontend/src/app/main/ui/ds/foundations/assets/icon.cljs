@@ -4,12 +4,12 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.ds.foundations.icon
+(ns app.main.ui.ds.foundations.assets.icon
   (:refer-clojure :exclude [mask])
   (:require-macros
    [app.common.data.macros :as dm]
    [app.main.style :as stl]
-   [app.main.ui.ds.foundations.icon :refer [collect-icons]])
+   [app.main.ui.ds.foundations.assets.icon :refer [collect-icons]])
   (:require
    [rumext.v2 :as mf]))
 
