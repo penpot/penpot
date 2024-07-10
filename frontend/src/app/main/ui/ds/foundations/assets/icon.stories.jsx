@@ -16,17 +16,17 @@ export default {
   argTypes: {
     id: {
       options: iconList,
-      control: { type: "select" }
+      control: { type: "select" },
     },
     size: {
       options: ["m", "s"],
-      control: { type: "radio" }
-    }
-  }
+      control: { type: "radio" },
+    },
+  },
 };
 
 export const All = {
-  render: ({size}) => (
+  render: ({ size }) => (
     <StoryWrapper theme="default">
       <StoryHeader>
         <h1>All Icons</h1>
@@ -55,7 +55,7 @@ export const All = {
 };
 
 export const Default = {
-  render: ({id, ...args}) => (
+  render: ({ id, ...args }) => (
     <StoryWrapper theme="default">
       <Icon id={id} {...args} />
     </StoryWrapper>
@@ -64,12 +64,12 @@ export const Default = {
     id: "pin",
   },
   parameters: {
-    controls: { exclude: ["size"] }
-  }
+    controls: { exclude: ["size"] },
+  },
 };
 
 export const CustomSize = {
-  render: ({id, size, ...args}) => (
+  render: ({ id, size, ...args }) => (
     <StoryWrapper theme="default">
       <Icon id={id} size={size} {...args} />
     </StoryWrapper>
@@ -77,6 +77,5 @@ export const CustomSize = {
   args: {
     id: "pin",
     size: "m",
-  }
+  },
 };
-

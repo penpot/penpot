@@ -32,6 +32,6 @@
 
 (mf/defc raw-svg*
   {::mf/props :obj}
-  [{:keys [asset] :rest props}]
+  [{:keys [id] :rest props}]
   [:> "svg" props
-   [:use {:href (dm/str "#asset-" asset)}]])
+   [:use {:href (dm/str "#asset-" id)}]])

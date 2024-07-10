@@ -6,41 +6,51 @@ const { StoryWrapper, StoryGrid, StoryGridCell, StoryHeader } =
   Components.storybook;
 const { svgs } = Components.meta;
 
-export default {
-  title: "Foundations/RawSvg",
-  component: Components.RawSvg,
-};
-
 const assetList = Object.entries(svgs)
   .map(([_, value]) => value)
   .sort();
 
-export const AllAssets = {
-  render: () => (
+export default {
+  title: "Foundations/Assets/RawSvg",
+  component: Components.RawSvg,
+  argTypes: {
+    id: {
+      options: assetList,
+      control: { type: "select" },
+    },
+  },
+};
+
+export const All = {
+  render: ({}) => (
     <StoryWrapper theme="light">
       <StoryHeader>
-        <h1>All assets</h1>
-        <p>Hover on a asset to see its id.</p>
+        <h1>All SVG Assets</h1>
+        <p>Hover on an asset to see its ID.</p>
       </StoryHeader>
 
       <StoryGrid size="200">
         {assetList.map((x) => (
           <StoryGridCell key={x} title={x}>
-            <RawSvg asset={x} style={{ maxWidth: "100%" }} />
+            <RawSvg id={x} style={{ maxWidth: "100%" }} />
           </StoryGridCell>
         ))}
       </StoryGrid>
     </StoryWrapper>
   ),
   parameters: {
+    controls: { exclude: ["id"] },
     backgrounds: { values: [{ name: "debug", value: "#ccc" }] },
   },
 };
 
 export const Default = {
-  render: () => (
+  render: ({ id, ...args }) => (
     <StoryWrapper theme="default">
-      <RawSvg asset={svgs.BrandGitlab} width="200" />
+      <RawSvg id={id} {...args} width="200" />
     </StoryWrapper>
   ),
+  args: {
+    id: "brand-gitlab",
+  },
 };

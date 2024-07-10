@@ -24,13 +24,15 @@ export default {
 
 export const AnyHeading = {
   name: "Heading",
-  render: ({level, typography, ...args}) => (
+  render: ({ level, typography, ...args }) => (
     <StoryWrapper theme="default">
-      <Heading level={level} typography={typography} {...args}>Lorem ipsum</Heading>
+      <Heading level={level} typography={typography} {...args}>
+        Lorem ipsum
+      </Heading>
     </StoryWrapper>
   ),
   args: {
     level: 1,
     typography: "display",
-  }
+  },
 };

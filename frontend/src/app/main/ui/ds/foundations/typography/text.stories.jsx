@@ -14,29 +14,33 @@ export default {
     typography: {
       options: typographyIds,
       control: { type: "select" },
-    }
-  }
+    },
+  },
 };
 
 export const Default = {
-  render: ({typography, ...args}) => (
+  render: ({ typography, ...args }) => (
     <StoryWrapper theme="default">
-      <Text typography={typography} {...args}>Lorem ipsum</Text>
-    </StoryWrapper>
-  ),
-  args: {
-    typography: "display"
-  }
-};
-
-export const CustomTag = {
-  render: ({typography, ...args}) => (
-    <StoryWrapper theme="default">
-      <Text typography={typography} {...args}>Lorem ipsum</Text>
+      <Text typography={typography} {...args}>
+        Lorem ipsum
+      </Text>
     </StoryWrapper>
   ),
   args: {
     typography: "display",
-    as: "li"
-  }
-}
+  },
+};
+
+export const CustomTag = {
+  render: ({ typography, ...args }) => (
+    <StoryWrapper theme="default">
+      <Text typography={typography} {...args}>
+        Lorem ipsum
+      </Text>
+    </StoryWrapper>
+  ),
+  args: {
+    typography: "display",
+    as: "li",
+  },
+};
