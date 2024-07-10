@@ -106,6 +106,8 @@ const typographyList = {
   },
 };
 
+export const typographyIds = Object.values(typographyList).map(x => x.id);
+
 export default {
   title: "Foundations/Typography",
   component: Components.StoryHeader,
