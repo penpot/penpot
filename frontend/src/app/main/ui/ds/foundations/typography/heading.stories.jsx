@@ -1,9 +1,11 @@
 import * as React from "react";
 import Components from "@target/components";
-import { typographyIds } from "./typography.stories";
 
 const { Heading } = Components;
 const { StoryWrapper } = Components.storybook;
+const { typography } = Components.meta;
+
+const typographyIds = typography.sort();
 
 export default {
   title: "Foundations/Typography/Heading",

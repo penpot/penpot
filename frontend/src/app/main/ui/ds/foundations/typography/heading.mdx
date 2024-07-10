@@ -11,7 +11,7 @@ This component will add a heading tag element to our code.
 
 This components accepts to props:
 
-- `level` (default value: `1`) : A number from `1` to `6`, to set the heading level (i.e. `<h1>`, `<h2>`, etc.). 
+- `level` (default value: `1`) : A number from `1` to `6`, to set the heading level (i.e. `<h1>`, `<h2>`, etc.).
 - `typography` (mandatory): Any of the [supported typography IDs](?path=/docs/foundations-typography--docs).
 
 You can check passed props to renderized components on hover `level / typography`;
@@ -28,8 +28,8 @@ Assuming the namespace of the typography is required as `t`:
 ```clj
 (ns app.main.ui.foo
   (:require
-   [app.main.ui.ds.foundations.heading :refer [heading*]]
-   [app.main.ui.ds.foundations.typography :as t]))
+   [app.main.ui.ds.foundations.typography :as t]
+   [app.main.ui.ds.foundations.typography.heading :refer [heading*]]))
 ```
 
 You can now use the typography IDs defined in the namespace:

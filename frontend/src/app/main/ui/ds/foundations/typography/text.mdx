@@ -10,7 +10,7 @@ This component will add a text element to our code that will match the tag prop.
 
 This components accepts to props:
 
-- `tag` (default value: `p`) : Give a proper tag name (i.e. `p`, `span`, etc.). 
+- `tag` (default value: `p`) : Give a proper tag name (i.e. `p`, `span`, etc.).
 - `typography` (mandatory): Any of the [supported typography IDs](?path=/docs/foundations-typography--docs).
 
 You can check passed props to renderized components on hover `tag / typography`
@@ -28,8 +28,8 @@ Assuming the namespace of the typography is required as `t`:
 ```clj
 (ns app.main.ui.foo
   (:require
-   [app.main.ui.ds.foundations.text :refer [text*]]
-   [app.main.ui.ds.foundations.typography :as t]))
+   [app.main.ui.ds.foundations.typography :as t]
+   [app.main.ui.ds.foundations.typography.text :refer [text*]]))
 ```
 
 You can now use the typography IDs defined in the namespace:
