@@ -6,14 +6,24 @@ const { StoryWrapper, StoryGrid, StoryGridCell, StoryHeader } =
   Components.storybook;
 const { icons } = Components.meta;
 
-export default {
-  title: "Foundations/Icons",
-  component: Components.Icon,
-};
-
 const iconList = Object.entries(icons)
   .map(([_, value]) => value)
   .sort();
+
+export default {
+  title: "Foundations/Assets/Icon",
+  component: Components.Icon,
+  argTypes: {
+    icon: {
+      options: iconList,
+      control: { type: "select" }
+    },
+    size: {
+      options: ["m", "s"],
+      control: { type: "radio" }
+    }
+  }
+};
 
 export const AllIcons = {
   render: () => (
@@ -41,17 +51,28 @@ export const AllIcons = {
 };
 
 export const Default = {
-  render: () => (
+  render: ({icon, ...args}) => (
     <StoryWrapper theme="default">
-      <Icon icon={icons.Pin} />
+      <Icon icon={icon} />
     </StoryWrapper>
   ),
+  args: {
+    icon: "pin",
+  },
+  parameters: {
+    controls: { exclude: "size" }
+  }
 };
 
-export const Small = {
-  render: () => (
+export const CustomSize = {
+  render: ({icon, size, ...args}) => (
     <StoryWrapper theme="default">
-      <Icon icon={icons.Pin} size="s" />
+      <Icon icon={icon} size={size} />
     </StoryWrapper>
   ),
+  args: {
+    icon: "pin",
+    size: "m",
+  }
 };
+
