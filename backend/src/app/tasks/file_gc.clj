@@ -295,7 +295,7 @@
 
 (defmethod ig/prep-key ::handler
   [_ cfg]
-  (assoc cfg ::min-age cf/deletion-delay))
+  (assoc cfg ::min-age (cf/get-deletion-delay)))
 
 (defmethod ig/init-key ::handler
   [_ cfg]

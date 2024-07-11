@@ -1127,9 +1127,9 @@
         (t/is (= 1 (:processed res))))
 
       ;; check that object thumbnails are still here
-      (let [res (th/db-exec! ["select * from file_tagged_object_thumbnail"])]
-        ;; (th/print-result! res)
-        (t/is (= 1 (count res))))
+      (let [rows (th/db-query :file-tagged-object-thumbnail {:file-id (:id file)})]
+        ;; (app.common.pprint/pprint rows)
+        (t/is (= 1 (count rows))))
 
       ;; insert object snapshot for for unknown frame
       (let [data {::th/type :create-file-object-thumbnail
@@ -1148,12 +1148,19 @@
       (th/db-exec! ["update file set has_media_trimmed=false where id=?" (:id file)])
 
       ;; check that we have all object thumbnails
-      (let [res (th/db-exec! ["select * from file_tagged_object_thumbnail"])]
-        (t/is (= 2 (count res))))
+      (let [rows (th/db-query :file-tagged-object-thumbnail {:file-id (:id file)})]
+        ;; (app.common.pprint/pprint rows)
+        (t/is (= 2 (count rows))))
 
       ;; run the task again
       (let [res (th/run-task! :file-gc {:min-age 0})]
         (t/is (= 1 (:processed res))))
+
+      ;; check that we have all object thumbnails
+      (let [rows (th/db-query :file-tagged-object-thumbnail {:file-id (:id file)})]
+        ;; (app.common.pprint/pprint rows)
+        (t/is (= 2 (count rows))))
+
 
       ;; check that the unknown frame thumbnail is deleted
       (let [rows (th/db-query :file-tagged-object-thumbnail {:file-id (:id file)})]
@@ -1164,6 +1171,7 @@
         (t/is (= 3 (:processed res))))
 
       (let [rows (th/db-query :file-tagged-object-thumbnail {:file-id (:id file)})]
+        ;; (app.common.pprint/pprint rows)
         (t/is (= 1 (count rows)))))))
 
 (t/deftest file-thumbnail-ops
@@ -1220,7 +1228,3 @@
 
       (let [rows (th/db-query :file-thumbnail {:file-id (:id file)})]
         (t/is (= 1 (count rows)))))))
-
-
-
-

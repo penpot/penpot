@@ -58,15 +58,14 @@
 (def ^:dynamic *system* nil)
 (def ^:dynamic *pool* nil)
 
-(def defaults
+(def default
   {:database-uri "postgresql://postgres/penpot_test"
    :redis-uri "redis://redis/1"
    :file-change-snapshot-every 1})
 
 (def config
-  (->> (cf/read-env "penpot-test")
-       (merge cf/defaults defaults)
-       (us/conform ::cf/config)))
+  (cf/read-config :prefix "penpot-test"
+                  :default (merge cf/default default)))
 
 (def default-flags
   [:enable-secure-session-cookies
@@ -87,6 +86,8 @@
                 app.auth/derive-password identity
                 app.auth/verify-password (fn [a b] {:valid (= a b)})
                 app.common.features/get-enabled-features (fn [& _] app.common.features/supported-features)]
+
+    (cf/validate! :exit-on-error? false)
 
     (fs/create-dir "/tmp/penpot")
 
@@ -523,7 +524,6 @@
      (get data key (get cf/config key)))
     ([key default]
      (get data key (get cf/config key default)))))
-
 
 (defn reset-mock!
   [m]

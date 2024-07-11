@@ -219,12 +219,10 @@
                                      :length (d/nilv length 12)})))))
 
 (defmethod v/-format ::schemaless-explain
-  [_ {:keys [schema] :as explanation} printer]
+  [_ explanation printer]
   {:body [:group
           (v/-block "Value" (v/-visit (me/error-value explanation printer) printer) printer) :break :break
-          (v/-block "Errors" (v/-visit (me/humanize (me/with-spell-checking explanation)) printer) printer) :break :break
-          (v/-block "Schema" (v/-visit schema printer) printer)]})
-
+          (v/-block "Errors" (v/-visit (me/humanize (me/with-spell-checking explanation)) printer) printer)]})
 
 (defmethod v/-format ::explain
   [_ {:keys [schema] :as explanation} printer]
@@ -232,7 +230,6 @@
           (v/-block "Value" (v/-visit (me/error-value explanation printer) printer) printer) :break :break
           (v/-block "Errors" (v/-visit (me/humanize (me/with-spell-checking explanation)) printer) printer) :break :break
           (v/-block "Schema" (v/-visit schema printer) printer)]})
-
 
 (defn pretty-explain
   [explain & {:keys [variant message]

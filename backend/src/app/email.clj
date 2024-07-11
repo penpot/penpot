@@ -7,9 +7,11 @@
 (ns app.email
   "Main api for send emails."
   (:require
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.pprint :as pp]
+   [app.common.schema :as sm]
    [app.common.spec :as us]
    [app.config :as cf]
    [app.db :as db]
@@ -149,9 +151,27 @@
     "mail.smtp.timeout" timeout
     "mail.smtp.connectiontimeout" timeout}))
 
+(def ^:private schema:smtp-config
+  [:map
+   [::username {:optional true} :string]
+   [::password {:optional true} :string]
+   [::tls {:optional true} :boolean]
+   [::ssl {:optional true} :boolean]
+   [::host {:optional true} :string]
+   [::port {:optional true} :int]
+   [::default-from {:optional true} :string]
+   [::default-reply-to {:optional true} :string]])
+
+(def valid-smtp-config?
+  (sm/check-fn schema:smtp-config))
+
 (defn- create-smtp-session
   ^Session
   [cfg]
+  (dm/assert!
+   "expected valid smtp config"
+   (valid-smtp-config? cfg))
+
   (let [props (opts->props cfg)]
     (Session/getInstance props)))
 
@@ -273,31 +293,9 @@
 ;; SENDMAIL FN / TASK HANDLER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::username ::cf/smtp-username)
-(s/def ::password ::cf/smtp-password)
-(s/def ::tls ::cf/smtp-tls)
-(s/def ::ssl ::cf/smtp-ssl)
-(s/def ::host ::cf/smtp-host)
-(s/def ::port ::cf/smtp-port)
-(s/def ::default-reply-to ::cf/smtp-default-reply-to)
-(s/def ::default-from ::cf/smtp-default-from)
-
-(s/def ::smtp-config
-  (s/keys :opt [::username
-                ::password
-                ::tls
-                ::ssl
-                ::host
-                ::port
-                ::default-from
-                ::default-reply-to]))
-
 (declare send-to-logger!)
 
 (s/def ::sendmail fn?)
-
-(defmethod ig/pre-init-spec ::sendmail [_]
-  (s/spec ::smtp-config))
 
 (defmethod ig/init-key ::sendmail
   [_ cfg]
