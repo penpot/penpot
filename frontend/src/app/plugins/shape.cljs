@@ -819,6 +819,13 @@
                  :else
                  (st/emit! (dw/update-position id {:y value})))))}
 
+          {:name "parent"
+           ;; not enumerable so there are no infinite loops
+           :enumerable false
+           :get (fn [self]
+                  (let [shape (u/proxy->shape self)
+                        parent-id (:parent-id shape)]
+                    (shape-proxy (obj/get self "$file") (obj/get self "$page") parent-id)))}
           {:name "parentX"
            :get (fn [self]
                   (let [shape (u/proxy->shape self)
