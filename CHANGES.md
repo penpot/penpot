@@ -10,6 +10,11 @@
 
 ### :sparkles: New features
 
+## 2.1.1
+
+### :bug: Bugs fixed
+
+- Fix pencil loader [Taiga #8348](https://tree.taiga.io/project/penpot/issue/8348)
 
 ## 2.1.0 - Things can only get better!
 
