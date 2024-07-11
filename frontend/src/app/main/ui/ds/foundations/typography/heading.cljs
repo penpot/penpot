@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.ds.foundations.text
+(ns app.main.ui.ds.foundations.typography.heading
   (:require-macros
    [app.common.data.macros :as dm]
    [app.main.style :as stl])
@@ -12,17 +12,24 @@
    [app.main.ui.ds.foundations.typography :as t]
    [rumext.v2 :as mf]))
 
+(defn- valid-level? [value]
+  (let [number-set #{"1" "2" "3" "4" "5" "6"}]
+    (contains? number-set (dm/str value))))
+
 (defn- valid-typography? [value]
   (contains? t/typography-list value))
 
-(mf/defc text*
+(mf/defc heading*
   {::mf/props :obj}
-  [{:keys [tag typography children class] :rest props}]
-
+  [{:keys [level typography class children] :rest props}]
+  (assert (or (valid-level? level)
+              (nil? level))
+          (dm/str "Invalid level: " level ". Valid numbers are 1 to 6."))
   (assert (valid-typography? (dm/str typography))
           (dm/str typography " is an unknown typography"))
 
-  (let [tag (or tag "p")
+  (let [level (or level "1")
+        tag   (dm/str "h" level)
         class (dm/str (or class "") " " (stl/css-case :display-typography (= typography t/display)
                                                       :title-large-typography (= typography t/title-large)
                                                       :title-medium-typography (= typography t/title-medium)

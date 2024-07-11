@@ -4,11 +4,11 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.ds.foundations.raw-svg
+(ns app.main.ui.ds.foundations.assets.raw-svg
   (:refer-clojure :exclude [mask])
   (:require-macros
    [app.common.data.macros :as dm]
-   [app.main.ui.ds.foundations.raw-svg :refer [collect-raw-svgs]])
+   [app.main.ui.ds.foundations.assets.raw-svg :refer [collect-raw-svgs]])
   (:require
    [rumext.v2 :as mf]))
 
@@ -32,6 +32,6 @@
 
 (mf/defc raw-svg*
   {::mf/props :obj}
-  [{:keys [asset] :rest props}]
+  [{:keys [id] :rest props}]
   [:> "svg" props
-   [:use {:href (dm/str "#asset-" asset)}]])
+   [:use {:href (dm/str "#asset-" id)}]])

@@ -18,7 +18,6 @@
 (def ^:typography-id body-small "body-small")
 (def ^:typography-id code-font "code-font")
 
-
 (def typography-list #{display
                        title-large
                        title-medium

@@ -4,12 +4,12 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.ds.foundations.icon
+(ns app.main.ui.ds.foundations.assets.icon
   (:refer-clojure :exclude [mask])
   (:require-macros
    [app.common.data.macros :as dm]
    [app.main.style :as stl]
-   [app.main.ui.ds.foundations.icon :refer [collect-icons]])
+   [app.main.ui.ds.foundations.assets.icon :refer [collect-icons]])
   (:require
    [rumext.v2 :as mf]))
 
@@ -279,10 +279,10 @@
 
 (mf/defc icon*
   {::mf/props :obj}
-  [{:keys [icon size class] :rest props}]
+  [{:keys [id size class] :rest props}]
   (let [class (dm/str (or class "") " " (stl/css :icon))
         props (mf/spread-props props {:class class :width icon-size-m :height icon-size-m})
         size-px (cond (= size "s") icon-size-s :else icon-size-m)
         offset (/ (- icon-size-m size-px) 2)]
     [:> "svg" props
-     [:use {:href (dm/str "#icon-" icon) :width size-px :height size-px :x offset :y offset}]]))
+     [:use {:href (dm/str "#icon-" id) :width size-px :height size-px :x offset :y offset}]]))

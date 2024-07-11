@@ -1,8 +1,7 @@
-import { Canvas, Meta, Story } from "@storybook/blocks";
-import * as TypographyStories from "./typography.stories";
+import { Canvas, Meta } from "@storybook/blocks";
 import Components from "@target/components";
 
-<Meta of={TypographyStories} />
+<Meta title="Foundations/Typography" />
 
 # Typography
 
@@ -19,7 +18,7 @@ This situation is something to be corrected in future improvements.
 Typographic colours are used in text elements such as headers
 and body and in the various components that make up the tool...
 
-The colours used in typography are the Foreground colours such 
+The colours used in typography are the Foreground colours such
 `--color-foreground-primary` or `--color-foreground-secondary`
 but different colours can be applied in specific component
 applications with their own styles, such as buttons.
@@ -55,7 +54,7 @@ for exceptions based on the size of the components.
 Hero style text for transitional pages (Login). If too large use large title in narrow windows.
 
 <Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
-  <Components.Heading level="1" typography="display" >Display - 400 - 36px/1.4 "Work Sans" </Components.Heading>
+  <Components.Text typography="display" >Display - 400 - 36px/1.4 "Work Sans" </Components.Text>
 </Canvas>
 
 ### Title large `title-large`
@@ -64,7 +63,7 @@ Page headers for main pages (dashboard, Profiles...). If too big use title
 (medium) in narrow windows.
 
 <Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
-  <Components.Heading level="1" typography="title-large" >Title large - 400 - 24px/1.4 "Work Sans" </Components.Heading>
+  <Components.Text typography="title-large" >Title large - 400 - 24px/1.4 "Work Sans" </Components.Text>
 </Canvas>
 
 ### Title medium `title-medium`
@@ -73,7 +72,7 @@ Default page title. Equivalent line height of 32px matches the height
 of buttons and other medium controls. Ideal for page header layout.
 
 <Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
-  <Components.Heading level="1" typography="title-medium" >Title medium - 400 - 20px/1.4 "Work Sans"</Components.Heading>
+  <Components.Text typography="title-medium" >Title medium - 400 - 20px/1.4 "Work Sans"</Components.Text>
 </Canvas>
 
 ### Title small `title-small`
@@ -81,7 +80,7 @@ of buttons and other medium controls. Ideal for page header layout.
 Uses the same size as body (large).
 
 <Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
-  <Components.Heading level="1" typography="title-small" >Title small - 400 - 14px/1.2 "Work Sans"</Components.Heading>
+  <Components.Text typography="title-small" >Title small - 400 - 14px/1.2 "Work Sans"</Components.Text>
 </Canvas>
 
 ## Headline
@@ -92,20 +91,20 @@ page titles (automated action titles, for example). Same line height as title (m
 ### Headline large `headline-large`
 
 <Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
-  <Components.Heading level="1" typography="headline-large" >Headline large - 400 - 18px/1.4 "Work Sans"</Components.Heading>
+  <Components.Text typography="headline-large" >Headline large - 400 - 18px/1.4 "Work Sans"</Components.Text>
 </Canvas>
 
 ### Headline medium `headline-medium`
 
 <Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
-  <Components.Heading level="1" typography="headline-medium" >Headline medium - 400 - 16px/1.4 "Work Sans"</Components.Heading>
+  <Components.Text typography="headline-medium" >Headline medium - 400 - 16px/1.4 "Work Sans"</Components.Text>
 </Canvas>
 
 
 ### Headline small `headline-small`
 
 <Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
-  <Components.Heading level="1" typography="headline-small" >Headline small - 500 - 12px/1.2 "Work Sans"</Components.Heading>
+  <Components.Text typography="headline-small" >Headline small - 500 - 12px/1.2 "Work Sans"</Components.Text>
 </Canvas>
 
 ## Body
@@ -115,7 +114,7 @@ page titles (automated action titles, for example). Same line height as title (m
 Generic content.
 
 <Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
-  <Components.Heading level="1" typography="body-large" >Body large - 400 - 16px/1.4 "Work Sans"</Components.Heading>
+  <Components.Text typography="body-large" >Body large - 400 - 16px/1.4 "Work Sans"</Components.Text>
 </Canvas>
 
 ### Body medium `body-medium`
@@ -123,7 +122,7 @@ Generic content.
 Default UI font. Most commonly used for body text.
 
 <Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
-  <Components.Heading level="1" typography="body-medium" >Body medium - 400 - 14px/1.3 "Work Sans"</Components.Heading>
+  <Components.Text typography="body-medium" >Body medium - 400 - 14px/1.3 "Work Sans"</Components.Text>
 </Canvas>
 
 
@@ -133,7 +132,7 @@ Small compact font with a line height of less than 16px.
 Use for single line scenarios, as the small size does not meet accessibility requirements.
 
 <Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
-  <Components.Heading level="1" typography="body-small" >Body small - 400 - 12px/1.3 "Work Sans"</Components.Heading>
+  <Components.Text typography="body-small" >Body small - 400 - 12px/1.3 "Work Sans"</Components.Text>
 </Canvas>
 
 ## Code font `code-font`
@@ -141,7 +140,7 @@ Use for single line scenarios, as the small size does not meet accessibility req
 Default style for rendering code blocks.
 
 <Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
-  <Components.Heading level="1" typography="code-font" >Code font - 400 - 12px/1.2 "Roboto Mono"</Components.Heading>
+  <Components.Text typography="code-font" >Code font - 400 - 12px/1.2 "Roboto Mono"</Components.Text>
 </Canvas>
 
 ## Fonts

@@ -6,21 +6,31 @@ const { StoryWrapper, StoryGrid, StoryGridCell, StoryHeader } =
   Components.storybook;
 const { icons } = Components.meta;
 
-export default {
-  title: "Foundations/Icons",
-  component: Components.Icon,
-};
-
 const iconList = Object.entries(icons)
   .map(([_, value]) => value)
   .sort();
 
-export const AllIcons = {
-  render: () => (
+export default {
+  title: "Foundations/Assets/Icon",
+  component: Components.Icon,
+  argTypes: {
+    id: {
+      options: iconList,
+      control: { type: "select" },
+    },
+    size: {
+      options: ["m", "s"],
+      control: { type: "radio" },
+    },
+  },
+};
+
+export const All = {
+  render: ({ size }) => (
     <StoryWrapper theme="default">
       <StoryHeader>
         <h1>All Icons</h1>
-        <p>Hover on an icon to see its ID</p>
+        <p>Hover on an icon to see its ID.</p>
       </StoryHeader>
       <StoryGrid>
         {iconList.map((iconId) => (
@@ -29,29 +39,43 @@ export const AllIcons = {
             key={iconId}
             style={{ color: "var(--color-accent-primary)" }}
           >
-            <Icon icon={iconId} />
+            <Icon id={iconId} size={size} />
           </StoryGridCell>
         ))}
       </StoryGrid>
     </StoryWrapper>
   ),
+  args: {
+    size: "m",
+  },
   parameters: {
+    controls: { exclude: ["id", "size"] },
     backgrounds: { disable: true },
   },
 };
 
 export const Default = {
-  render: () => (
+  render: ({ id, ...args }) => (
     <StoryWrapper theme="default">
-      <Icon icon={icons.Pin} />
+      <Icon id={id} {...args} />
     </StoryWrapper>
   ),
+  args: {
+    id: "pin",
+  },
+  parameters: {
+    controls: { exclude: ["size"] },
+  },
 };
 
-export const Small = {
-  render: () => (
+export const CustomSize = {
+  render: ({ id, size, ...args }) => (
     <StoryWrapper theme="default">
-      <Icon icon={icons.Pin} size="s" />
+      <Icon id={id} size={size} {...args} />
     </StoryWrapper>
   ),
+  args: {
+    id: "pin",
+    size: "m",
+  },
 };
