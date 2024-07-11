@@ -1,5 +1,6 @@
 import { Canvas, Meta } from "@storybook/blocks";
 import Components from "@target/components";
+import * as TextStories from "../typography/text.stories";
 
 <Meta title="Foundations/Typography" />
 
@@ -53,59 +54,44 @@ for exceptions based on the size of the components.
 
 Hero style text for transitional pages (Login). If too large use large title in narrow windows.
 
-<Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
-  <Components.Text typography="display" >Display - 400 - 36px/1.4 "Work Sans" </Components.Text>
-</Canvas>
+<Canvas of={TextStories.Display} />
 
-### Title large `title-large`
+### Title Large `title-large`
 
 Page headers for main pages (dashboard, Profiles...). If too big use title
 (medium) in narrow windows.
 
-<Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
-  <Components.Text typography="title-large" >Title large - 400 - 24px/1.4 "Work Sans" </Components.Text>
-</Canvas>
+<Canvas of={TextStories.TitleLarge} />
 
-### Title medium `title-medium`
+### Title Medium `title-medium`
 
 Default page title. Equivalent line height of 32px matches the height
 of buttons and other medium controls. Ideal for page header layout.
 
-<Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
-  <Components.Text typography="title-medium" >Title medium - 400 - 20px/1.4 "Work Sans"</Components.Text>
-</Canvas>
+<Canvas of={TextStories.TitleMedium} />
 
-### Title small `title-small`
+### Title Small `title-small`
 
 Uses the same size as body (large).
 
-<Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
-  <Components.Text typography="title-small" >Title small - 400 - 14px/1.2 "Work Sans"</Components.Text>
-</Canvas>
+<Canvas of={TextStories.TitleSmall} />
 
 ## Headline
 
-Page sections/subtitles, or names of less important objects in
-page titles (automated action titles, for example). Same line height as title (medium).
+Page sections/subtitles, or names of less important objects in page titles
+(automated action titles, for example). Same line height as title (medium).
 
-### Headline large `headline-large`
+### Headline Large `headline-large`
 
-<Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
-  <Components.Text typography="headline-large" >Headline large - 400 - 18px/1.4 "Work Sans"</Components.Text>
-</Canvas>
+<Canvas of={TextStories.HeadlineLarge} />
 
-### Headline medium `headline-medium`
+### Headline Medium `headline-medium`
 
-<Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
-  <Components.Text typography="headline-medium" >Headline medium - 400 - 16px/1.4 "Work Sans"</Components.Text>
-</Canvas>
-
+<Canvas of={TextStories.HeadlineMedium} />
 
 ### Headline small `headline-small`
 
-<Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
-  <Components.Text typography="headline-small" >Headline small - 500 - 12px/1.2 "Work Sans"</Components.Text>
-</Canvas>
+<Canvas of={TextStories.HeadlineSmall} />
 
 ## Body
 
@@ -113,35 +99,26 @@ page titles (automated action titles, for example). Same line height as title (m
 
 Generic content.
 
-<Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
-  <Components.Text typography="body-large" >Body large - 400 - 16px/1.4 "Work Sans"</Components.Text>
-</Canvas>
+<Canvas of={TextStories.BodyLarge} />
 
 ### Body medium `body-medium`
 
 Default UI font. Most commonly used for body text.
 
-<Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
-  <Components.Text typography="body-medium" >Body medium - 400 - 14px/1.3 "Work Sans"</Components.Text>
-</Canvas>
-
+<Canvas of={TextStories.BodyMedium} />
 
 ### Body small `body-small`
 
 Small compact font with a line height of less than 16px.
 Use for single line scenarios, as the small size does not meet accessibility requirements.
 
-<Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
-  <Components.Text typography="body-small" >Body small - 400 - 12px/1.3 "Work Sans"</Components.Text>
-</Canvas>
+<Canvas of={TextStories.BodySmall} />
 
 ## Code font `code-font`
 
 Default style for rendering code blocks.
 
-<Canvas style={{background: "var(--color-background-primary)", color: "var(--color-foreground-primary)"}}>
-  <Components.Text typography="code-font" >Code font - 400 - 12px/1.2 "Roboto Mono"</Components.Text>
-</Canvas>
+<Canvas of={TextStories.CodeFont} />
 
 ## Fonts
 
