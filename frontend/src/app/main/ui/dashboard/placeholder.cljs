@@ -41,5 +41,5 @@
 (mf/defc loading-placeholder
   []
   [:div {:class (stl/css :grid-empty-placeholder :loader)}
-   [:div {:class (stl/css :icon)} i/loader]
+   [:div {:class (stl/css :icon)} i/loader-pencil]
    [:div {:class (stl/css :text)} (tr "dashboard.loading-files")]])
