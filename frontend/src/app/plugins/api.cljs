@@ -61,8 +61,8 @@
 (deftype PenpotContext [$plugin]
   Object
   (addListener
-    [_ type callback]
-    (events/add-listener type $plugin callback))
+    [_ type callback props]
+    (events/add-listener type $plugin callback props))
 
   (removeListener
     [_ listener-id]
