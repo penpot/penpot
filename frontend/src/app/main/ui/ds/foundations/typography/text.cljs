@@ -22,7 +22,7 @@
   (assert (valid-typography? (dm/str typography))
           (dm/str typography " is an unknown typography"))
 
-  (let [as (or as "p")
+  (let [as (if (or (empty? as) (nil? as)) "p" as)
         class (dm/str (or class "") " " (stl/css-case :display-typography (= typography t/display)
                                                       :title-large-typography (= typography t/title-large)
                                                       :title-medium-typography (= typography t/title-medium)

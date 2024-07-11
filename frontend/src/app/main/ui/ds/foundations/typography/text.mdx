@@ -8,14 +8,6 @@ This component will add a text element to our code that will match the tag prop.
 
 ## Technical notes
 
-This components accepts to props:
-
-- `tag` (default value: `p`) : Give a proper tag name (i.e. `p`, `span`, etc.).
-- `typography` (mandatory): Any of the [supported typography IDs](?path=/docs/foundations-typography--docs).
-
-You can check passed props to renderized components on hover `tag / typography`
-
-
 ### Using typography IDs
 
 There are typography ID definitions you can use in your code rather than typing the
@@ -35,5 +27,5 @@ Assuming the namespace of the typography is required as `t`:
 You can now use the typography IDs defined in the namespace:
 
 ```clj
-[:> text* {:typography t/title-large :tag "p"} "Welcome to Penpot"]
+[:> text* {:typography t/title-large :as "p"} "Welcome to Penpot"]
 ```
