@@ -22,6 +22,7 @@
    [app.http.errors :as errors]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
+   [app.rpc :as rpc]
    [app.rpc.commands.profile :as profile]
    [app.setup :as-alias setup]
    [app.tokens :as tokens]
@@ -589,17 +590,28 @@
         (redirect-to-register cfg info request)
         (redirect-with-error "registration-disabled")))))
 
+(defn- get-external-session-id
+  [request]
+  (let [session-id (rreq/get-header request "x-external-session-id")]
+    (when (string? session-id)
+      (if (or (> (count session-id) 256)
+              (= session-id "null")
+              (str/blank? session-id))
+        nil
+        session-id))))
+
 (defn- auth-handler
   [cfg {:keys [params] :as request}]
-  (let [props (audit/extract-utm-params params)
-        esid  (rreq/get-header request "x-external-session-id")
-        state (tokens/generate (::setup/props cfg)
-                               {:iss :oauth
-                                :invitation-token (:invitation-token params)
-                                :external-session-id esid
-                                :props props
-                                :exp (dt/in-future "4h")})
-        uri   (build-auth-uri cfg state)]
+  (let [props  (audit/extract-utm-params params)
+        esid   (rpc/get-external-session-id request)
+        params {:iss :oauth
+                :invitation-token (:invitation-token params)
+                :external-session-id esid
+                :props props
+                :exp (dt/in-future "4h")}
+        state  (tokens/generate (::setup/props cfg)
+                                (d/without-nils params))
+        uri    (build-auth-uri cfg state)]
     {::rres/status 200
      ::rres/body {:redirect-uri uri}}))
 
