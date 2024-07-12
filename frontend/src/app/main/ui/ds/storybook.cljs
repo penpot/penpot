@@ -12,16 +12,6 @@
   (:require
    [rumext.v2 :as mf]))
 
-(mf/defc story-wrapper*
-  {::mf/props :obj}
-  [{:keys [theme children]}]
-  [:article {:class (stl/css :story-wrapper)}
-   (if (some? theme)
-     [:section {:class theme} children]
-     [*
-      [:section {:class "default"} children]
-      [:section {:class "light"} children]])])
-
 (mf/defc story-grid*
   {::mf/props :obj}
   [{:keys [children size style] :rest other}]

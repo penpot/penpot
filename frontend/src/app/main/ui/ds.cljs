@@ -28,5 +28,4 @@
        :storybook #js {:StoryGrid sb/story-grid*
                        :StoryGridCell sb/story-grid-cell*
                        :StoryGridRow sb/story-grid-row*
-                       :StoryHeader sb/story-header*
-                       :StoryWrapper sb/story-wrapper*}})
+                       :StoryHeader sb/story-header*}})
