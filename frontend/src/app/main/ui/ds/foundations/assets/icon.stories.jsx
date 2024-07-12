@@ -2,8 +2,7 @@ import * as React from "react";
 import Components from "@target/components";
 
 const { Icon } = Components;
-const { StoryWrapper, StoryGrid, StoryGridCell, StoryHeader } =
-  Components.storybook;
+const { StoryGrid, StoryGridCell, StoryHeader } = Components.storybook;
 const { icons } = Components.meta;
 
 const iconList = Object.entries(icons)
@@ -23,11 +22,12 @@ export default {
       control: { type: "radio" },
     },
   },
+  render: ({ ...args }) => <Icon {...args} />,
 };
 
 export const All = {
   render: ({ size }) => (
-    <StoryWrapper theme="default">
+    <>
       <StoryHeader>
         <h1>All Icons</h1>
         <p>Hover on an icon to see its ID.</p>
@@ -43,7 +43,7 @@ export const All = {
           </StoryGridCell>
         ))}
       </StoryGrid>
-    </StoryWrapper>
+    </>
   ),
   args: {
     size: "m",
@@ -55,11 +55,6 @@ export const All = {
 };
 
 export const Default = {
-  render: ({ id, ...args }) => (
-    <StoryWrapper theme="default">
-      <Icon id={id} {...args} />
-    </StoryWrapper>
-  ),
   args: {
     id: "pin",
   },
@@ -69,11 +64,6 @@ export const Default = {
 };
 
 export const CustomSize = {
-  render: ({ id, size, ...args }) => (
-    <StoryWrapper theme="default">
-      <Icon id={id} size={size} {...args} />
-    </StoryWrapper>
-  ),
   args: {
     id: "pin",
     size: "m",

@@ -43,6 +43,7 @@
   "devDependencies": {
     "@playwright/test": "1.44.1",
     "@storybook/addon-essentials": "^8.2.2",
+    "@storybook/addon-themes": "^8.2.2",
     "@storybook/blocks": "^8.2.2",
     "@storybook/react": "^8.2.2",
     "@storybook/react-vite": "^8.2.2",
