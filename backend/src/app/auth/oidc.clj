@@ -132,8 +132,8 @@
           (-> body json/decode :keys process-oidc-jwks)
           (do
             (l/warn :hint "unable to retrieve JWKs (unexpected response status code)"
-                    :http-status status
-                    :http-body  body)
+                    :response-status status
+                    :response-body  body)
             nil)))
       (catch Throwable cause
         (l/warn :hint "unable to retrieve JWKs (unexpected exception)"
@@ -252,7 +252,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defmethod ig/init-key ::providers/gitlab
-  [_ _]
+  [_ cfg]
   (let [base (cf/get :gitlab-base-uri "https://gitlab.com")
         opts {:base-uri      base
               :client-id     (cf/get :gitlab-client-id)
@@ -261,17 +261,18 @@
               :auth-uri      (str base "/oauth/authorize")
               :token-uri     (str base "/oauth/token")
               :user-uri      (str base "/oauth/userinfo")
+              :jwks-uri      (str base "/oauth/discovery/keys")
               :name          "gitlab"}]
     (when (contains? cf/flags :login-with-gitlab)
       (if (and (string? (:client-id opts))
                (string? (:client-secret opts)))
-        (do
+        (let [jwks (fetch-oidc-jwks cfg opts)]
           (l/inf :hint "provider initialized"
                  :provider "gitlab"
                  :base-uri base
                  :client-id (:client-id opts)
                  :client-secret (obfuscate-string (:client-secret opts)))
-          opts)
+          (assoc opts :jwks jwks))
 
         (do
           (l/warn :hint "unable to initialize auth provider, missing configuration" :provider "gitlab")
@@ -337,11 +338,15 @@
     (let [{:keys [status body]} (http/req! cfg req {:sync? true})]
       (l/trc :hint "access token fetched" :status status :body body)
       (if (= status 200)
-        (let [data (json/decode body)]
-          {:token/access (get data :access_token)
-           :token/id     (get data :id_token)
-           :token/type   (get data :token_type)})
-
+        (let [data (json/decode body)
+              data {:token/access (get data :access_token)
+                    :token/id     (get data :id_token)
+                    :token/type   (get data :token_type)}]
+          (l/trc :hint "access token fetched"
+                 :token-id (:token/id data)
+                 :token-type (:token/type data)
+                 :token (:token/access data))
+          data)
         (ex/raise :type :internal
                   :code :unable-to-fetch-access-token
                   :hint "unable to fetch access token"
