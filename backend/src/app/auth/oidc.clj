@@ -19,6 +19,7 @@
    [app.email.blacklist :as email.blacklist]
    [app.email.whitelist :as email.whitelist]
    [app.http.client :as http]
+   [app.http.errors :as errors]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
    [app.rpc.commands.profile :as profile]
@@ -208,8 +209,9 @@
           (ex/raise :type :internal
                     :code :unable-to-retrieve-github-emails
                     :hint "unable to retrieve github emails"
-                    :http-status status
-                    :http-body body))
+                    :request-uri (:uri params)
+                    :response-status status
+                    :response-body body))
 
         (->> body json/decode (filter :primary) first :email))))
 
@@ -324,7 +326,7 @@
                 :uri (:token-uri provider)
                 :body (u/map->query-string params)}]
 
-    (l/trace :hint "request access token"
+    (l/trace :hint "fetch access token"
              :provider (:name provider)
              :client-id (:client-id provider)
              :client-secret (obfuscate-string (:client-secret provider))
@@ -332,7 +334,7 @@
              :redirect-uri (:redirect_uri params))
 
     (let [{:keys [status body]} (http/req! cfg req {:sync? true})]
-      (l/trace :hint "access token response" :status status :body body)
+      (l/trace :hint "access token fetched" :status status :body body)
       (if (= status 200)
         (let [data (json/decode body)]
           {:token/access (get data :access_token)
@@ -340,10 +342,11 @@
            :token/type   (get data :token_type)})
 
         (ex/raise :type :internal
-                  :code :unable-to-retrieve-token
-                  :hint "unable to retrieve token"
-                  :http-status status
-                  :http-body body)))))
+                  :code :unable-to-fetch-access-token
+                  :hint "unable to fetch access token"
+                  :request-uri (:uri req)
+                  :response-status status
+                  :response-body body)))))
 
 (defn- process-user-info
   [provider tdata info]
@@ -601,7 +604,7 @@
      ::rres/body {:redirect-uri uri}}))
 
 (defn- callback-handler
-  [cfg request]
+  [{:keys [::provider] :as cfg} request]
   (try
     (if-let [error (dm/get-in request [:params :error])]
       (redirect-with-error "unable-to-auth" error)
@@ -609,7 +612,16 @@
             profile (get-profile cfg info)]
         (process-callback cfg request info profile)))
     (catch Throwable cause
-      (l/err :hint "error on oauth process" :cause cause)
+      (binding [l/*context* (-> (errors/request->context request)
+                                (assoc :auth/provider (:name provider)))]
+        (let [edata (ex-data cause)]
+          (cond
+            (= :validation (:type edata))
+            (l/wrn :hint "invalid token received" :cause cause)
+
+            :else
+            (l/err :hint "error on oauth process" :cause cause))))
+
       (redirect-with-error "unable-to-auth" (ex-message cause)))))
 
 (def provider-lookup
