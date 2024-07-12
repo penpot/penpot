@@ -147,18 +147,18 @@
   (when (contains? cf/flags :login-with-oidc)
     (if-let [opts (prepare-oidc-opts cfg)]
       (let [jwks (fetch-oidc-jwks cfg opts)]
-        (l/info :hint "provider initialized"
-                :provider "oidc"
-                :method (if (:discover? opts) "discover" "manual")
-                :client-id (:client-id opts)
-                :client-secret (obfuscate-string (:client-secret opts))
-                :scopes     (str/join "," (:scopes opts))
-                :auth-uri   (:auth-uri opts)
-                :user-uri   (:user-uri opts)
-                :token-uri  (:token-uri opts)
-                :roles-attr (:roles-attr opts)
-                :roles      (:roles opts)
-                :keys       (str/join "," (map str (keys jwks))))
+        (l/inf :hint "provider initialized"
+               :provider "oidc"
+               :method (if (:discover? opts) "discover" "manual")
+               :client-id (:client-id opts)
+               :client-secret (obfuscate-string (:client-secret opts))
+               :scopes     (str/join "," (:scopes opts))
+               :auth-uri   (:auth-uri opts)
+               :user-uri   (:user-uri opts)
+               :token-uri  (:token-uri opts)
+               :roles-attr (:roles-attr opts)
+               :roles      (:roles opts)
+               :keys       (str/join "," (map str (keys jwks))))
         (assoc opts :jwks jwks))
       (do
         (l/warn :hint "unable to initialize auth provider, missing configuration" :provider "oidc")
@@ -182,10 +182,10 @@
       (if (and (string? (:client-id opts))
                (string? (:client-secret opts)))
         (do
-          (l/info :hint "provider initialized"
-                  :provider "google"
-                  :client-id (:client-id opts)
-                  :client-secret (obfuscate-string (:client-secret opts)))
+          (l/inf :hint "provider initialized"
+                 :provider "google"
+                 :client-id (:client-id opts)
+                 :client-secret (obfuscate-string (:client-secret opts)))
           opts)
 
         (do
@@ -237,10 +237,10 @@
       (if (and (string? (:client-id opts))
                (string? (:client-secret opts)))
         (do
-          (l/info :hint "provider initialized"
-                  :provider "github"
-                  :client-id (:client-id opts)
-                  :client-secret (obfuscate-string (:client-secret opts)))
+          (l/inf :hint "provider initialized"
+                 :provider "github"
+                 :client-id (:client-id opts)
+                 :client-secret (obfuscate-string (:client-secret opts)))
           opts)
 
         (do
@@ -266,11 +266,11 @@
       (if (and (string? (:client-id opts))
                (string? (:client-secret opts)))
         (do
-          (l/info :hint "provider initialized"
-                  :provider "gitlab"
-                  :base-uri base
-                  :client-id (:client-id opts)
-                  :client-secret (obfuscate-string (:client-secret opts)))
+          (l/inf :hint "provider initialized"
+                 :provider "gitlab"
+                 :base-uri base
+                 :client-id (:client-id opts)
+                 :client-secret (obfuscate-string (:client-secret opts)))
           opts)
 
         (do
@@ -327,15 +327,15 @@
                 :uri (:token-uri provider)
                 :body (u/map->query-string params)}]
 
-    (l/trace :hint "fetch access token"
-             :provider (:name provider)
-             :client-id (:client-id provider)
-             :client-secret (obfuscate-string (:client-secret provider))
-             :grant-type (:grant_type params)
-             :redirect-uri (:redirect_uri params))
+    (l/trc :hint "fetch access token"
+           :provider (:name provider)
+           :client-id (:client-id provider)
+           :client-secret (obfuscate-string (:client-secret provider))
+           :grant-type (:grant_type params)
+           :redirect-uri (:redirect_uri params))
 
     (let [{:keys [status body]} (http/req! cfg req {:sync? true})]
-      (l/trace :hint "access token fetched" :status status :body body)
+      (l/trc :hint "access token fetched" :status status :body body)
       (if (= status 200)
         (let [data (json/decode body)]
           {:token/access (get data :access_token)
@@ -374,9 +374,9 @@
 
 (defn- fetch-user-info
   [{:keys [::provider] :as cfg} tdata]
-  (l/trace :hint "fetch user info"
-           :uri (:user-uri provider)
-           :token (obfuscate-string (:token/access tdata)))
+  (l/trc :hint "fetch user info"
+         :uri (:user-uri provider)
+         :token (obfuscate-string (:token/access tdata)))
 
   (let [params   {:uri (:user-uri provider)
                   :headers {"Authorization" (str (:token/type tdata) " " (:token/access tdata))}
@@ -384,9 +384,9 @@
                   :method :get}
         response (http/req! cfg params {:sync? true})]
 
-    (l/trace :hint "user info response"
-             :status (:status response)
-             :body   (:body response))
+    (l/trc :hint "user info response"
+           :status (:status response)
+           :body   (:body response))
 
     (when-not (s/int-in-range? 200 300 (:status response))
       (ex/raise :type :internal
@@ -436,7 +436,7 @@
 
         info   (process-user-info provider tdata info)]
 
-    (l/trace :hint "user info" :info info)
+    (l/trc :hint "user info" :info info)
 
     (when-not (s/valid? ::info info)
       (l/warn :hint "received incomplete profile info object (please set correct scopes)" :info info)
