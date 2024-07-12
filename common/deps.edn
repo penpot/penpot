@@ -58,7 +58,9 @@
 
   io.aviso/pretty {:mvn/version "1.4.4"}
   environ/environ {:mvn/version "1.2.0"}}
+
  :paths ["src" "vendor" "target/classes"]
+
  :aliases
  {:dev
   {:extra-deps

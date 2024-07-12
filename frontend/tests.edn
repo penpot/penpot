@@ -1,0 +1,5 @@
+#kaocha/v1
+ {:tests [{:id :unit
+           :type :kaocha.type/cljs2
+           :test-paths ["test"]}]
+  :kaocha/reporter [kaocha.report/dots]}
