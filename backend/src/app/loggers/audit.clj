@@ -35,9 +35,13 @@
 
 (defn parse-client-ip
   [request]
-  (or (some-> (rreq/get-header request "x-forwarded-for") (str/split ",") first)
-      (rreq/get-header request "x-real-ip")
-      (some-> (rreq/remote-addr request) str)))
+  (let [ip-addr (or (some-> (rreq/get-header request "x-forwarded-for") (str/split ",") first)
+                    (rreq/get-header request "x-real-ip")
+                    (some-> (rreq/remote-addr request) str))
+        ip-addr (-> ip-addr
+                    (str/split ":" 2)
+                    (first))]
+    ip-addr))
 
 (defn extract-utm-params
   "Extracts additional data from params and namespace them under
