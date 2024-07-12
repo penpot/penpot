@@ -20,17 +20,28 @@ export default {
       control: { type: "select" },
     },
   },
+  parameters: {
+    controls: { exclude: ["children", "theme", "style"] },
+    backgrounds: { default: "light" },
+  },
+  args: {
+    children: "Lorem ipsum",
+    theme: "light",
+    style: {
+      color: "var(--color-foreground-primary)",
+      background: "var(--color-background-primary)",
+    },
+  },
+  render: ({ style, children, theme, ...args }) => (
+    // TODO: this <div> is a hack until we have proper theming
+    <div style={style} className={theme}>
+      <Heading {...args}>{children}</Heading>
+    </div>
+  ),
 };
 
 export const AnyHeading = {
   name: "Heading",
-  render: ({ level, typography, ...args }) => (
-    <StoryWrapper theme="default">
-      <Heading level={level} typography={typography} {...args}>
-        Lorem ipsum
-      </Heading>
-    </StoryWrapper>
-  ),
   args: {
     level: 1,
     typography: "display",
