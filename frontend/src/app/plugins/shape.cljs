@@ -32,6 +32,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.groups :as dwg]
+   [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
@@ -440,6 +441,10 @@
       (when (ctn/in-any-component? objects shape)
         (let [[root component] (u/locate-component objects shape)]
           (lib-component-proxy $plugin (:component-file root) (:id component))))))
+
+  (detach
+    [_]
+    (st/emit! (dwl/detach-component $id)))
 
   (export
     [self value]
