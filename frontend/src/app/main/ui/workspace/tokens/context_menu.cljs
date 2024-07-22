@@ -215,38 +215,34 @@
         all-attributes #{:r1 :r2 :r3 :r4}
         ids-by-attributes (wtt/shapes-ids-by-applied-attributes token selected-shapes all-attributes)
         shape-ids (into #{} (map :id selected-shapes))
-        all? (wtt/shapes-applied-all? ids-by-attributes shape-ids all-attributes)
-        selected-pred #(and
-                        (not all?)
-                        (seq (% ids-by-attributes)))
+        all-selected? (wtt/shapes-applied-all? ids-by-attributes shape-ids all-attributes)
         single-attributes (->> {:r1 "Top Left"
                                 :r2 "Top Right"
                                 :r3 "Bottom Left"
                                 :r4 "Bottom Right"}
                                (map (fn [[attr title]]
-                                      (let [selected? (selected-pred attr)]
+                                      (let [selected? (seq (attr ids-by-attributes))]
                                         {:title title
-                                         :selected? selected?
-                                         :action (if selected?
-                                                   (st/emit! (wtc/unapply-token {:token token
-                                                                                 :attributes #{attr}
-                                                                                 :shape-ids shape-ids}))
-                                                   (st/emit! (wtc/apply-token {:token token
-                                                                               :attributes #{attr}
-                                                                               :on-update-shape wtc/update-shape-radius-single-corner
-                                                                               :shape-ids shape-ids})))}))))]
-    (concat
-     [{:title "All"
-       :selected? all?
-       :action #(if all?
-                  (st/emit! (wtc/unapply-token {:token token
-                                                :attributes all-attributes
-                                                :shape-ids shape-ids}))
-                  (st/emit! (wtc/apply-token {:token token
-                                              :attributes all-attributes
-                                              :on-update-shape wtc/update-shape-radius-all
-                                              :shape-ids shape-ids})))}]
-     single-attributes)))
+                                         :selected? (and (not all-selected?) selected?)
+                                         :action #(let [props {:attributes #{attr}
+                                                               :token token
+                                                               :shape-ids shape-ids}
+                                                        event (cond
+                                                                all-selected? (-> (assoc props :attributes-to-remove #{:r1 :r2 :r3 :r4 :rx :ry})
+                                                                                  (wtc/apply-token))
+                                                                selected? (wtc/unapply-token props)
+                                                                :else (-> (assoc props :on-update-shape wtc/update-shape-radius-single-corner)
+                                                                          (wtc/apply-token)))]
+                                                    (st/emit! event))}))))
+        all-attribute (let [props {:attributes all-attributes
+                                   :token token
+                                   :shape-ids shape-ids}]
+                        {:title "All"
+                         :selected? all-selected?
+                         :action #(if all-selected?
+                                    (st/emit! (wtc/unapply-token props))
+                                    (st/emit! (wtc/apply-token (assoc props :on-update-shape wtc/update-shape-radius-all))))})]
+    (concat [all-attribute] single-attributes)))
 
 (defn shape-attribute-actions [{:keys [token-id token-type selected-shapes] :as context-data}]
   (let [attributes->actions (fn [update-fn coll]
