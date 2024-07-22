@@ -16,7 +16,7 @@
    [app.main.ui.components.search-bar :refer [search-bar]]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.icons :as i]
-   [app.plugins :as plugins]
+   [app.plugins.register :as preg]
    [app.util.avatars :as avatars]
    [app.util.dom :as dom]
    [app.util.http :as http]
@@ -80,7 +80,7 @@
    ::mf/register-as :plugin-management}
   []
 
-  (let [plugins-state* (mf/use-state @plugins/pluginsdb)
+  (let [plugins-state* (mf/use-state #(preg/plugins-list))
         plugins-state @plugins-state*
 
         plugin-url* (mf/use-state "")
@@ -117,14 +117,14 @@
                 (rx/subs!
                  (fn [body]
                    (reset! fetching-manifest? false)
-                   (let [plugin (plugins/parser-manifest plugin-url body)]
+                   (let [plugin (preg/parse-manifest plugin-url body)]
                      (st/emit! (ptk/event ::ev/event {::ev/name "install-plugin" :name (:name plugin) :url plugin-url}))
                      (modal/show!
                       :plugin-permissions
                       {:plugin plugin
                        :on-accept
                        #(do
-                          (plugins/install-plugin! plugin)
+                          (preg/install-plugin! plugin)
                           (modal/show! :plugin-management {}))})
                      (reset! input-status* :success)
                      (reset! plugin-url* "")))
@@ -146,12 +146,13 @@
         (mf/use-callback
          (mf/deps plugins-state)
          (fn [plugin-index]
-           (let [plugin (nth @plugins/pluginsdb plugin-index)]
+           (let [plugins-list (preg/plugins-list)
+                 plugin (nth plugins-list plugin-index)]
              (st/emit! (ptk/event ::ev/event {::ev/name "remove-plugin"
                                               :name (:name plugin)
                                               :host (:host plugin)}))
-             (plugins/remove-plugin! plugin)
-             (reset! plugins-state* @plugins/pluginsdb))))]
+             (preg/remove-plugin! plugin)
+             (reset! plugins-state* (preg/plugins-list)))))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog :plugin-management)}

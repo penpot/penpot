@@ -32,6 +32,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.groups :as dwg]
+   [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
@@ -441,6 +442,10 @@
         (let [[root component] (u/locate-component objects shape)]
           (lib-component-proxy $plugin (:component-file root) (:id component))))))
 
+  (detach
+    [_]
+    (st/emit! (dwl/detach-component $id)))
+
   (export
     [self value]
     (let [value (parser/parse-export value)]
@@ -819,6 +824,13 @@
                  :else
                  (st/emit! (dw/update-position id {:y value})))))}
 
+          {:name "parent"
+           ;; not enumerable so there are no infinite loops
+           :enumerable false
+           :get (fn [self]
+                  (let [shape (u/proxy->shape self)
+                        parent-id (:parent-id shape)]
+                    (shape-proxy (obj/get self "$file") (obj/get self "$page") parent-id)))}
           {:name "parentX"
            :get (fn [self]
                   (let [shape (u/proxy->shape self)
