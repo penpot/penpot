@@ -24,7 +24,8 @@
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]
-   [promesa.core :as p]))
+   [promesa.core :as p]
+   [cljs.pprint :as pprint]))
 
 ;; Helpers ---------------------------------------------------------------------
 
@@ -107,7 +108,12 @@
 ;; Events ----------------------------------------------------------------------
 
 (defn apply-token
-  [{:keys [attributes shape-ids token on-update-shape] :as _props}]
+  "Apply `attributes` that match `token` for `shape-ids`.
+
+  Optionally remove attributes from `attributes-to-remove`,
+  this is useful for applying a single attribute from an attributes set
+  while removing other applied tokens from this set."
+  [{:keys [attributes attributes-to-remove token shape-ids on-update-shape] :as _props}]
   (ptk/reify ::apply-token
     ptk/WatchEvent
     (watch [_ state _]
@@ -121,7 +127,9 @@
                 (rx/of
                  (dwu/start-undo-transaction undo-id)
                  (dch/update-shapes shape-ids (fn [shape]
-                                                (update shape :applied-tokens merge tokenized-attributes)))
+                                                (cond-> shape
+                                                  attributes-to-remove (update :applied-tokens #(apply (partial dissoc %) attributes-to-remove))
+                                                  :always (update :applied-tokens merge tokenized-attributes))))
                  (when on-update-shape
                    (on-update-shape resolved-value shape-ids attributes))
                  (dwu/commit-undo-transaction undo-id)))))))))
