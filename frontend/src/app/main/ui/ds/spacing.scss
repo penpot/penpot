@@ -1,0 +1,27 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "./utils.scss" as *;
+
+$_sp-2: px2rem(2);
+$_sp-4: px2rem(4);
+$_sp-8: px2rem(8);
+$_sp-12: px2rem(12);
+$_sp-16: px2rem(16);
+$_sp-20: px2rem(20);
+$_sp-24: px2rem(24);
+$_sp-32: px2rem(32);
+
+:global(:root) {
+  --sp-xxs: #{$_sp-2};
+  --sp-xs: #{$_sp-4};
+  --sp-s: #{$_sp-8};
+  --sp-m: #{$_sp-12};
+  --sp-l: #{$_sp-16};
+  --sp-xl: #{$_sp-20};
+  --sp-xxl: #{$_sp-24};
+  --sp-xxxl: #{$_sp-32};
+}

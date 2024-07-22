@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "sass:math";
+@use "./utils.scss" as *;
 
 $_font-weight-regular: 400;
 $_font-weight-medium: 500;
@@ -12,11 +12,6 @@ $_font-weight-medium: 500;
 $_font-lineheight-dense: 1.2;
 $_font-lineheight-compact: 1.3;
 $_font-lineheight-normal: 1.4;
-
-@function px2rem($value) {
-  $remValue: math.div($value, 16) * 1rem;
-  @return $remValue;
-}
 
 $_fs-12: px2rem(12);
 $_fs-14: px2rem(14);
